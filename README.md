@@ -10,6 +10,7 @@ binary, with output meant for both people and coding agents.
 | `itos-cc mutate` | Would the tests notice if this code were wrong? |
 | `itos-cc scrap` | Which test files should an agent leave alone, table-drive, refactor, or split? |
 | `itos-cc units` | What functions and methods do the tools see? |
+| `itos-cc serve` | Live architecture graph for the viewer: what depends on what, and where is it risky? |
 
 The ideas come from Robert C. Martin's
 [crapper](https://github.com/unclebob/crapper),
@@ -102,6 +103,40 @@ fingerprints. Each file gets one action: `LEAVE_ALONE`, `AUTO_TABLE_DRIVE`,
 recommendations with line ranges. Every run is compared with the previous
 snapshot, so rerunning after a refactor says whether it helped.
 
+## The architecture viewer
+
+`itos-cc serve` watches one or more repositories and publishes their
+architecture over HTTP; `viewer/` is a separate web app (TypeScript, React,
+React Flow, ELK) that draws it as a canvas you drill into: repositories →
+directories → modules → functions.
+
+```bash
+itos-cc serve . ../other-repo          # API on http://127.0.0.1:7070
+cd viewer && npm install && npm run dev # viewer on http://localhost:5173
+
+# or serve a built viewer from the same port
+(cd viewer && npm run build) && itos-cc serve --ui viewer/dist .
+```
+
+- A module is a file in TypeScript, Python, and Kotlin, and a package in Go.
+  Directories with a single child collapse into one box, so a deep
+  `src/main/kotlin/com/acme` tree is one click, not five.
+- Arrows are imports, rolled up to the boxes on the current level; boxes sit
+  above what they depend on. Arrows in a dependency cycle are red at every
+  level.
+- Box color combines the worst CRAP score and the mutation score, from red
+  to green; grey means not measured yet.
+- Saving a file updates complexity, dependencies, and CRAP (live complexity
+  with the last measured coverage) within a second. Rerunning `crap`,
+  `mutate`, or `dry` updates their numbers. Functions edited since their last
+  mutation run are marked stale.
+- Click a box for its functions, a function for its source, an arrow for the
+  imports behind it. Double-click or Enter opens a box; Esc goes up.
+
+API: `GET /api/graph` (JSON), `GET /api/events` (server-sent events carrying
+the graph version), `GET /api/source?repo=&file=` (only files in the graph).
+The server listens on localhost only.
+
 ## .metrics
 
 Every command writes a JSON snapshot under `.metrics/`: `crap.json`,
@@ -120,7 +155,9 @@ to `.metrics/coverage/`, which ignores itself.
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
 | `crap`, `dry`, `mutate`, `scrap` | The tools |
 | `metrics` | Snapshot files |
+| `graph`, `server` | The architecture graph and its live HTTP API |
 | `cmd/itos-cc` | The command line |
+| `viewer/` | The web viewer, a separate npm project |
 
 Adding a language means one file in `lang/` (grammar, units, decisions,
 syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
