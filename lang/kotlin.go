@@ -1,11 +1,12 @@
 package lang
 
 import (
+	"path/filepath"
 	"strings"
 	"unsafe"
 
-	sitter "github.com/tree-sitter/go-tree-sitter"
 	kotlin "github.com/tree-sitter-grammars/tree-sitter-kotlin/bindings/go"
+	sitter "github.com/tree-sitter/go-tree-sitter"
 )
 
 // Kotlin units are functions and methods, named under the file's package and
@@ -28,7 +29,28 @@ func init() {
 		Private: func(n *sitter.Node, _ string, src []byte) bool {
 			return ktHasModifier(n, "private", src)
 		},
+		Decision: ktDecision,
+		IsTest:   ktIsTest,
 	})
+}
+
+func ktDecision(n *sitter.Node, src []byte) bool {
+	switch n.Kind() {
+	case "binary_expression":
+		return operatorIn(n, src, "&&", "||", "?:")
+	case "when_entry":
+		return !strings.HasPrefix(n.Utf8Text(src), "else")
+	}
+	return kindIn(n, "if_expression", "for_statement", "while_statement", "do_while_statement",
+		"catch_block")
+}
+
+func ktIsTest(path string) bool {
+	p := filepath.ToSlash(path)
+	base := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
+	return strings.Contains(p, "/src/test/") || strings.HasPrefix(p, "src/test/") ||
+		underDir(path, "test", "tests") ||
+		strings.HasSuffix(base, "Test") || strings.HasSuffix(base, "Tests") || strings.HasSuffix(base, "Spec")
 }
 
 func ktPackage(_ string, root *sitter.Node, src []byte) string {

@@ -36,6 +36,14 @@ func init() {
 			r, _ := utf8.DecodeRuneInString(name)
 			return !unicode.IsUpper(r)
 		},
+		Decision: func(n *sitter.Node, src []byte) bool {
+			if n.Kind() == "binary_expression" {
+				return operatorIn(n, src, "&&", "||")
+			}
+			return kindIn(n, "if_statement", "for_statement", "expression_case", "type_case",
+				"communication_case")
+		},
+		IsTest: func(path string) bool { return strings.HasSuffix(path, "_test.go") },
 	})
 }
 

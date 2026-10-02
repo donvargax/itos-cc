@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"path/filepath"
 	"strings"
 	"unsafe"
 
@@ -17,7 +18,7 @@ func init() {
 		Separator:  ".",
 		Grammar:    func(string) unsafe.Pointer { return python.Language() },
 		Namespace: func(path string, _ *sitter.Node, _ []byte) string {
-			return strings.TrimSuffix(modulePath(path), ".__init__")
+			return strings.TrimSuffix(modulePath(path, "pyproject.toml", "setup.py", "setup.cfg"), ".__init__")
 		},
 		Unit: func(n *sitter.Node, src []byte) (string, bool) {
 			if n.Kind() == "function_definition" {
@@ -30,6 +31,22 @@ func init() {
 				return fieldText(n, "name", src), true
 			}
 			return "", false
+		},
+		Decision: func(n *sitter.Node, _ []byte) bool {
+			return kindIn(n, "if_statement", "elif_clause", "for_statement", "while_statement",
+				"except_clause", "case_clause", "conditional_expression", "boolean_operator",
+				"for_in_clause", "if_clause")
+		},
+		BodyLine: func(n *sitter.Node) int {
+			if body := n.ChildByFieldName("body"); body != nil {
+				return int(body.StartPosition().Row) + 1
+			}
+			return 0
+		},
+		IsTest: func(path string) bool {
+			base := filepath.Base(path)
+			return base == "conftest.py" || strings.HasPrefix(base, "test_") ||
+				strings.HasSuffix(base, "_test.py") || underDir(path, "test", "tests")
 		},
 		// A leading underscore is private; dunder methods such as __init__ are not.
 		Private: func(_ *sitter.Node, name string, _ []byte) bool {

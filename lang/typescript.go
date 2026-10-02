@@ -2,6 +2,7 @@ package lang
 
 import (
 	"path/filepath"
+	"strings"
 	"unsafe"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
@@ -23,12 +24,28 @@ func init() {
 			return typescript.LanguageTypescript()
 		},
 		Namespace: func(path string, _ *sitter.Node, _ []byte) string {
-			return modulePath(path)
+			return modulePath(path, "package.json", "tsconfig.json")
 		},
 		Unit:      tsUnit,
 		Container: tsContainer,
 		Private:   tsPrivate,
+		Decision:  tsDecision,
+		IsTest:    tsIsTest,
 	})
+}
+
+func tsDecision(n *sitter.Node, src []byte) bool {
+	if n.Kind() == "binary_expression" {
+		return operatorIn(n, src, "&&", "||", "??")
+	}
+	return kindIn(n, "if_statement", "for_statement", "for_in_statement", "while_statement",
+		"do_statement", "catch_clause", "ternary_expression", "switch_case")
+}
+
+func tsIsTest(path string) bool {
+	base := filepath.Base(path)
+	return strings.Contains(base, ".test.") || strings.Contains(base, ".spec.") ||
+		underDir(path, "__tests__", "test", "tests")
 }
 
 func tsUnit(n *sitter.Node, src []byte) (string, bool) {

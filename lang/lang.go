@@ -23,6 +23,13 @@ type Unit struct {
 	Private   bool   `json:"private"`
 	StartLine int    `json:"start_line"`
 	EndLine   int    `json:"end_line"`
+
+	// BodyLine is the first line whose coverage belongs to the unit. It is
+	// StartLine except where defining the unit executes its first lines.
+	BodyLine int `json:"-"`
+
+	// Node is the unit's syntax tree. It is valid until its File is closed.
+	Node *sitter.Node `json:"-"`
 }
 
 // Spec describes one language to the generic walker.
@@ -49,6 +56,18 @@ type Spec struct {
 	// Private reports whether the unit named name, declared by n, is private.
 	Private func(n *sitter.Node, name string, src []byte) bool
 
+	// Decision reports whether n adds a path through a unit: a branch, a
+	// loop, a catch, a case, or a short-circuit operator.
+	Decision func(n *sitter.Node, src []byte) bool
+
+	// BodyLine returns the first line of n whose coverage reflects calls to
+	// the unit, or 0 to use the unit's first line. Python needs it: importing
+	// a module executes every def line, so those lines are always covered.
+	BodyLine func(n *sitter.Node) int
+
+	// IsTest reports whether path is test code rather than production code.
+	IsTest func(path string) bool
+
 	// Separator joins namespace segments ("." for most languages).
 	Separator string
 }
@@ -69,8 +88,27 @@ func Detect(path string) *Spec {
 	return specs[filepath.Ext(path)]
 }
 
-// UnitsInFile parses path and returns its units in source order.
-func UnitsInFile(path string) ([]Unit, error) {
+// File is a parsed source file. Close it to free the syntax tree.
+type File struct {
+	Path  string
+	Spec  *Spec
+	Src   []byte
+	Units []Unit
+	Root  *sitter.Node
+
+	tree *sitter.Tree
+}
+
+// Close frees the syntax tree. Units' nodes are invalid afterwards.
+func (f *File) Close() {
+	if f.tree != nil {
+		f.tree.Close()
+		f.tree = nil
+	}
+}
+
+// ParseFile reads and parses path.
+func ParseFile(path string) (*File, error) {
 	spec := Detect(path)
 	if spec == nil {
 		return nil, fmt.Errorf("unsupported language: %s", path)
@@ -79,23 +117,49 @@ func UnitsInFile(path string) ([]Unit, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Units(spec, path, src)
+	return Parse(spec, path, src)
 }
 
-// Units parses src as spec's language and returns its units in source order.
-func Units(spec *Spec, path string, src []byte) ([]Unit, error) {
+// Parse parses src as spec's language. path names the file and decides its
+// namespace; it does not have to exist unless the language reads a project
+// file such as go.mod to name it.
+func Parse(spec *Spec, path string, src []byte) (*File, error) {
+	tree, err := ParseTree(spec, path, src)
+	if err != nil {
+		return nil, err
+	}
+	root := tree.RootNode()
+	w := walker{spec: spec, path: path, src: src}
+	w.walk(root, spec.Namespace(path, root, src), false)
+	return &File{Path: path, Spec: spec, Src: src, Units: w.units, Root: root, tree: tree}, nil
+}
+
+// ParseTree parses src without finding units. The caller closes the tree.
+func ParseTree(spec *Spec, path string, src []byte) (*sitter.Tree, error) {
 	parser := sitter.NewParser()
 	defer parser.Close()
 	if err := parser.SetLanguage(sitter.NewLanguage(spec.Grammar(path))); err != nil {
 		return nil, fmt.Errorf("%s: %w", spec.Name, err)
 	}
 	tree := parser.Parse(src, nil)
-	defer tree.Close()
-	root := tree.RootNode()
+	if tree == nil {
+		return nil, fmt.Errorf("%s: parse failed", path)
+	}
+	return tree, nil
+}
 
-	w := walker{spec: spec, path: path, src: src}
-	w.walk(root, spec.Namespace(path, root, src), false)
-	return w.units, nil
+// UnitsInFile parses path and returns its units without their nodes.
+func UnitsInFile(path string) ([]Unit, error) {
+	f, err := ParseFile(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	units := f.Units
+	for i := range units {
+		units[i].Node = nil
+	}
+	return units, nil
 }
 
 type walker struct {
@@ -130,15 +194,48 @@ func (w *walker) unit(n *sitter.Node, ns, name string, inClass bool) Unit {
 	if inClass {
 		kind = "method"
 	}
+	start := int(n.StartPosition().Row) + 1
+	body := start
+	if w.spec.BodyLine != nil {
+		if line := w.spec.BodyLine(n); line > 0 {
+			body = line
+		}
+	}
 	return Unit{
+		BodyLine:  body,
 		File:      w.path,
 		Language:  w.spec.Name,
 		Namespace: ns,
 		Name:      name,
 		Kind:      kind,
 		Private:   w.spec.Private(n, name, w.src),
-		StartLine: int(n.StartPosition().Row) + 1,
+		StartLine: start,
 		EndLine:   int(n.EndPosition().Row) + 1,
+		Node:      n,
+	}
+}
+
+// Complexity is the cyclomatic complexity of u: one plus each decision inside
+// it, including decisions in callbacks and closures it contains.
+func (f *File) Complexity(u Unit) int {
+	cc := 1
+	Walk(u.Node, func(n *sitter.Node) bool {
+		if n != u.Node && f.Spec.Decision(n, f.Src) {
+			cc++
+		}
+		return true
+	})
+	return cc
+}
+
+// Walk visits n and its descendants depth-first, in source order. Returning
+// false from visit skips that node's children.
+func Walk(n *sitter.Node, visit func(*sitter.Node) bool) {
+	if !visit(n) {
+		return
+	}
+	for i := uint(0); i < n.ChildCount(); i++ {
+		Walk(n.Child(i), visit)
 	}
 }
 
@@ -157,13 +254,78 @@ func fieldText(n *sitter.Node, field string, src []byte) string {
 	return ""
 }
 
-// modulePath turns src/demo/board.ts into demo.board, dropping a leading
-// src/ or lib/ segment the way crapper names TypeScript and Python modules.
-func modulePath(path string) string {
-	p := filepath.ToSlash(strings.TrimSuffix(path, filepath.Ext(path)))
+// operatorIn reports whether n's operator field is one of ops.
+func operatorIn(n *sitter.Node, src []byte, ops ...string) bool {
+	op := fieldText(n, "operator", src)
+	for _, o := range ops {
+		if op == o {
+			return true
+		}
+	}
+	return false
+}
+
+// kindIn reports whether n's kind is one of kinds.
+func kindIn(n *sitter.Node, kinds ...string) bool {
+	k := n.Kind()
+	for _, want := range kinds {
+		if k == want {
+			return true
+		}
+	}
+	return false
+}
+
+// modulePath names a module by its path from the nearest directory holding
+// one of markers, without a leading src/ or lib/: src/demo/board.ts under
+// package.json is demo.board. Without a marker the path is used as given.
+func modulePath(path string, markers ...string) string {
+	rel := path
+	if root := FindUp(path, markers...); root != "" {
+		if abs, err := filepath.Abs(path); err == nil {
+			if r, err := filepath.Rel(root, abs); err == nil {
+				rel = r
+			}
+		}
+	}
+	p := filepath.ToSlash(strings.TrimSuffix(rel, filepath.Ext(rel)))
 	p = strings.TrimPrefix(p, "./")
-	for _, root := range []string{"src/", "lib/"} {
-		p = strings.TrimPrefix(p, root)
+	for _, dir := range []string{"src/", "lib/"} {
+		p = strings.TrimPrefix(p, dir)
 	}
 	return strings.ReplaceAll(p, "/", ".")
+}
+
+// FindUp returns the nearest directory at or above path's directory that
+// contains one of markers, or "" when none does.
+func FindUp(path string, markers ...string) string {
+	dir, err := filepath.Abs(filepath.Dir(path))
+	if err != nil {
+		return ""
+	}
+	for {
+		for _, m := range markers {
+			if _, err := os.Stat(filepath.Join(dir, m)); err == nil {
+				return dir
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
+}
+
+// underDir reports whether any directory in path is one of dirs.
+func underDir(path string, dirs ...string) bool {
+	parts := strings.Split(filepath.ToSlash(filepath.Dir(path)), "/")
+	for _, p := range parts {
+		for _, d := range dirs {
+			if p == d {
+				return true
+			}
+		}
+	}
+	return false
 }

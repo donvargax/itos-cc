@@ -2,6 +2,7 @@ package lang
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"testing"
 )
@@ -20,17 +21,23 @@ func describe(units []Unit) []string {
 	return out
 }
 
-func unitsOf(t *testing.T, path, src string) []string {
+func parse(t *testing.T, path, src string) *File {
 	t.Helper()
 	spec := Detect(path)
 	if spec == nil {
 		t.Fatalf("no spec for %s", path)
 	}
-	units, err := Units(spec, path, []byte(src))
+	f, err := Parse(spec, path, []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return describe(units)
+	t.Cleanup(f.Close)
+	return f
+}
+
+func unitsOf(t *testing.T, path, src string) []string {
+	t.Helper()
+	return describe(parse(t, path, src).Units)
 }
 
 func assertUnits(t *testing.T, got, want []string) {
@@ -65,7 +72,7 @@ export abstract class Board {
   onClick = () => this.clear();
 }
 `
-	assertUnits(t, unitsOf(t, "src/demo/board.ts", src), []string{
+	assertUnits(t, unitsOf(t, "testdata/ts/src/demo/board.ts", src), []string{
 		"function demo.board#place 3-6",
 		"function demo.board#score 8-8",
 		"function demo.board#helper 9-9",
@@ -83,7 +90,7 @@ func TestTSXUsesTheTSXGrammar(t *testing.T) {
   return <td>{v > 0 && <b>{v}</b>}</td>;
 }
 `
-	assertUnits(t, unitsOf(t, "src/ui/cell.tsx", src), []string{
+	assertUnits(t, unitsOf(t, "testdata/ts/src/ui/cell.tsx", src), []string{
 		"function ui.cell#Cell 1-3",
 	})
 }
@@ -121,7 +128,7 @@ class Board:
         def value(self):
             return 0
 `
-	assertUnits(t, unitsOf(t, "src/demo/board.py", src), []string{
+	assertUnits(t, unitsOf(t, "testdata/py/src/demo/board.py", src), []string{
 		"function demo.board#place 3-6",
 		"function demo.board#_hidden 9-10 private",
 		"method demo.board.Board#__init__ 13-14",
@@ -132,7 +139,7 @@ class Board:
 }
 
 func TestPythonPackageInit(t *testing.T) {
-	assertUnits(t, unitsOf(t, "src/demo/__init__.py", "def main():\n    pass\n"), []string{
+	assertUnits(t, unitsOf(t, "testdata/py/src/demo/__init__.py", "def main():\n    pass\n"), []string{
 		"function demo#main 1-2",
 	})
 }
@@ -186,4 +193,162 @@ func TestGo(t *testing.T) {
 		"method example.com/demo/board.Board#size 14-14 private",
 		"function example.com/demo/board#helper 16-16 private",
 	})
+}
+
+// complexities maps each unit name to its cyclomatic complexity.
+func complexities(t *testing.T, path, src string) map[string]int {
+	t.Helper()
+	f := parse(t, path, src)
+	out := map[string]int{}
+	for _, u := range f.Units {
+		out[u.Name] = f.Complexity(u)
+	}
+	return out
+}
+
+func assertComplexities(t *testing.T, got, want map[string]int) {
+	t.Helper()
+	if !maps.Equal(got, want) {
+		t.Errorf("complexity:\n got  %v\n want %v", got, want)
+	}
+}
+
+func TestTypeScriptComplexity(t *testing.T) {
+	src := `function straight() { return 1; }
+function branches(a: number, b?: string) {
+  if (a > 0 && b) { return 1; } else if (a < 0 || !b) { return 2; }
+  for (const x of [1]) {}
+  while (a--) {}
+  try { a++; } catch (e) {}
+  const c = a ? 1 : 2;
+  const d = b ?? "x";
+  [1].forEach((n) => { if (n) {} });
+  switch (a) { case 1: break; case 2: break; default: break; }
+}
+`
+	assertComplexities(t, complexities(t, "testdata/ts/src/c.ts", src), map[string]int{
+		// if, &&, else-if, ||, for, while, catch, ?:, ??, callback if, 2 cases
+		"straight": 1, "branches": 13,
+	})
+}
+
+func TestPythonComplexity(t *testing.T) {
+	src := `def straight():
+    return 1
+
+def branches(a, b):
+    if a and b:
+        pass
+    elif a or not b:
+        pass
+    for x in range(3):
+        pass
+    while a:
+        a -= 1
+    try:
+        pass
+    except ValueError:
+        pass
+    c = 1 if a else 2
+    d = [x for x in range(3) if x]
+    match a:
+        case 1:
+            pass
+        case _:
+            pass
+`
+	assertComplexities(t, complexities(t, "testdata/py/c.py", src), map[string]int{
+		// if, and, elif, or, for, while, except, if-else, comprehension for + if, 2 cases
+		"straight": 1, "branches": 13,
+	})
+}
+
+func TestGoComplexity(t *testing.T) {
+	src := `package c
+
+func straight() int { return 1 }
+
+func branches(a int, ch chan int, v any) {
+	if a > 0 && a < 9 || a == 20 {
+	}
+	for i := 0; i < a; i++ {
+	}
+	switch a {
+	case 1:
+	case 2:
+	default:
+	}
+	switch v.(type) {
+	case int:
+	}
+	select {
+	case <-ch:
+	default:
+	}
+	f := func() { if a > 0 {} }
+	f()
+}
+`
+	assertComplexities(t, complexities(t, "testdata/c.go", src), map[string]int{
+		// if, &&, ||, for, 2 cases, type case, comm case, closure if
+		"straight": 1, "branches": 10,
+	})
+}
+
+func TestKotlinComplexity(t *testing.T) {
+	src := `package c
+
+fun straight() = 1
+
+fun branches(a: Int, b: String?) {
+    if (a > 0 && b != null || a < -5) { }
+    for (x in 1..3) { }
+    while (false) { }
+    do { } while (false)
+    try { } catch (e: Exception) { }
+    val c = b ?: "x"
+    when (a) {
+        1 -> {}
+        2, 3 -> {}
+        else -> {}
+    }
+    listOf(1).forEach { if (it > 0) { } }
+}
+`
+	assertComplexities(t, complexities(t, "testdata/c.kt", src), map[string]int{
+		// if, &&, ||, for, while, do-while, catch, ?:, 2 when entries, lambda if
+		"straight": 1, "branches": 12,
+	})
+}
+
+func TestTestFiles(t *testing.T) {
+	cases := map[string]bool{
+		"src/board.ts":                      false,
+		"src/board.test.ts":                 true,
+		"src/board.spec.tsx":                true,
+		"src/__tests__/board.ts":            true,
+		"pkg/board.py":                      false,
+		"pkg/test_board.py":                 true,
+		"pkg/board_test.py":                 true,
+		"tests/helpers.py":                  true,
+		"conftest.py":                       true,
+		"board.go":                          false,
+		"board_test.go":                     true,
+		"src/main/kotlin/demo/Board.kt":     false,
+		"src/test/kotlin/demo/BoardTest.kt": true,
+		"src/test/kotlin/demo/Fixtures.kt":  true,
+	}
+	for path, want := range cases {
+		if got := Detect(path).IsTest(path); got != want {
+			t.Errorf("IsTest(%s) = %v, want %v", path, got, want)
+		}
+	}
+}
+
+func TestPythonCoverageStartsAtTheBody(t *testing.T) {
+	f := parse(t, "testdata/py/c.py", "@cache\ndef f(\n    x,\n):\n    return x\n\ndef g(): return 1\n")
+	got := []int{f.Units[0].StartLine, f.Units[0].BodyLine, f.Units[1].BodyLine}
+	if !slices.Equal(got, []int{2, 5, 7}) {
+		t.Errorf("start, body, one-liner body = %v, want [2 5 7]", got)
+	}
 }
