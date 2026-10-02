@@ -171,25 +171,63 @@ func (f *fileInfo) clone() *fileInfo {
 }
 
 // overlay is what the snapshots in .metrics know about each function.
+// Functions are matched by file, namespace, name, and which same-named
+// function of the file they are: a Go package has an init per file, and
+// overloads share a name.
 type overlay struct {
-	coverage   map[string]float64 // namespace#name → percent
-	mutation   map[string]*mutate.UnitResult
+	coverage   keyed[float64]
+	mutation   keyed[*mutate.UnitResult]
 	duplicates map[string]int // file#line → candidate pairs it is in
 }
 
-func key(namespace, name string) string { return namespace + "#" + name }
+type keyed[T any] struct {
+	values map[string]T
+	seen   map[string]int // occurrences so far, per file#namespace#name
+	files  map[string]bool
+}
+
+func newKeyed[T any]() keyed[T] {
+	return keyed[T]{values: map[string]T{}, seen: map[string]int{}, files: map[string]bool{}}
+}
+
+// add records v for the next function named namespace#name in file, in
+// source order.
+func (k keyed[T]) add(file, namespace, name string, v T) {
+	base := file + "#" + namespace + "#" + name
+	k.values[fmt.Sprintf("%s#%d", base, k.seen[base])] = v
+	k.seen[base]++
+	k.files[file] = true
+}
+
+// get finds a function's value. A snapshot written from another directory
+// names the same file with a longer or shorter path, so a file the snapshot
+// does not name exactly is matched by path suffix.
+func (k keyed[T]) get(file, namespace, name string, occurrence int) (T, bool) {
+	if !k.files[file] {
+		for f := range k.files {
+			if strings.HasSuffix(f, "/"+file) || strings.HasSuffix(file, "/"+f) {
+				file = f
+				break
+			}
+		}
+	}
+	v, ok := k.values[fmt.Sprintf("%s#%s#%s#%d", file, namespace, name, occurrence)]
+	return v, ok
+}
 
 func loadOverlay(root string) overlay {
-	o := overlay{coverage: map[string]float64{}, mutation: map[string]*mutate.UnitResult{}, duplicates: map[string]int{}}
+	o := overlay{coverage: newKeyed[float64](), mutation: newKeyed[*mutate.UnitResult](), duplicates: map[string]int{}}
 	dir := filepath.Join(root, ".metrics")
 	var crapSnap struct {
 		Entries []crap.Entry `json:"entries"`
 	}
 	if readJSON(filepath.Join(dir, "crap.json"), &crapSnap) {
 		for _, e := range crapSnap.Entries {
+			cov := -1.0 // keeps occurrences aligned for functions without coverage
 			if e.Coverage != nil {
-				o.coverage[key(e.Namespace, e.Name)] = *e.Coverage
+				cov = *e.Coverage
 			}
+			o.coverage.add(filepath.ToSlash(e.File), e.Namespace, e.Name, cov)
 		}
 	}
 	filepath.WalkDir(filepath.Join(dir, "mutate"), func(p string, d os.DirEntry, err error) error {
@@ -197,7 +235,7 @@ func loadOverlay(root string) overlay {
 		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".json") && readJSON(p, &snap) {
 			for i := range snap.Units {
 				u := &snap.Units[i]
-				o.mutation[key(u.Namespace, u.Name)] = u
+				o.mutation.add(snap.File, u.Namespace, u.Name, u)
 			}
 		}
 		return nil
@@ -223,15 +261,18 @@ func loadOverlay(root string) overlay {
 // live complexity and the last measured coverage, so it moves as you edit.
 // Mutation results of a function whose source changed since are stale.
 func (o overlay) apply(info *fileInfo) *fileInfo {
+	occurrence := map[string]int{}
 	for i := range info.units {
 		u := &info.units[i]
-		k := key(u.Namespace, u.Name)
-		if cov, ok := o.coverage[k]; ok {
+		k := u.Namespace + "#" + u.Name
+		n := occurrence[k]
+		occurrence[k]++
+		if cov, ok := o.coverage.get(u.File, u.Namespace, u.Name, n); ok && cov >= 0 {
 			c := cov
 			score := float64(int(crap.Score(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
-		if m, ok := o.mutation[k]; ok {
+		if m, ok := o.mutation.get(u.File, u.Namespace, u.Name, n); ok {
 			u.Mutated = true
 			u.Stale = m.Hash != u.hash
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered

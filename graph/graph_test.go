@@ -2,6 +2,8 @@ package graph
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 )
@@ -109,5 +111,52 @@ func TestGrades(t *testing.T) {
 		if c.got != c.want {
 			t.Errorf("case %d: %v, want %v", i, c.got, c.want)
 		}
+	}
+}
+
+// A Go package has an init per file: results for one file's init must not
+// land on the others.
+func TestMetricsMatchTheirOwnFile(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, text string) {
+		p := filepath.Join(root, rel)
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("go.mod", "module example.com/p\n\ngo 1.22\n")
+	write("a.go", "package p\n\nfunc init() { _ = 1 > 0 }\n")
+	write("b.go", "package p\n\nfunc init() { _ = 2 > 0 }\n")
+	write(".metrics/mutate/a.go.json", `{"version":1,"file":"a.go","language":"go","units":[
+		{"namespace":"example.com/p","name":"init","hash":"x","killed":2,"survived":0,"uncovered":0,"sites":2,"mutants":[]}]}`)
+	write(".metrics/crap.json", `{"version":1,"entries":[
+		{"namespace":"example.com/p","name":"init","file":"a.go","complexity":1,"coverage":100,"crap":1},
+		{"namespace":"example.com/p","name":"init","file":"b.go","complexity":1,"coverage":0,"crap":2}]}`)
+	b, _ := NewBuilder([]string{root})
+	g, _, err := b.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, n := range g.Nodes {
+		for _, u := range n.Units {
+			got = append(got, fmt.Sprintf("%s mutated=%v killed=%d coverage=%v", u.File, u.Mutated, u.Killed, *u.Coverage))
+		}
+	}
+	want := []string{"a.go mutated=true killed=2 coverage=100", "b.go mutated=false killed=0 coverage=0"}
+	if !slices.Equal(got, want) {
+		t.Errorf("units:\n got  %q\n want %q", got, want)
+	}
+}
+
+func TestSnapshotsFromAnotherDirectoryMatchBySuffix(t *testing.T) {
+	k := newKeyed[int]()
+	k.add("repo/lang/kotlin.go", "p", "init", 7)
+	if v, ok := k.get("lang/kotlin.go", "p", "init", 0); !ok || v != 7 {
+		t.Errorf("suffix match: %v %v", v, ok)
+	}
+	if _, ok := k.get("lang/golang.go", "p", "init", 0); ok {
+		t.Error("another file's init matched")
 	}
 }
