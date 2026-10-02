@@ -1,0 +1,87 @@
+package lang
+
+import (
+	"path/filepath"
+	"unsafe"
+
+	sitter "github.com/tree-sitter/go-tree-sitter"
+	typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
+)
+
+// TypeScript units are top-level functions, class methods, and top-level
+// arrow or function expressions bound to a name. Callbacks stay inside the
+// function that encloses them.
+func init() {
+	register(&Spec{
+		Name:       "typescript",
+		Extensions: []string{".ts", ".tsx", ".mts", ".cts"},
+		Separator:  ".",
+		Grammar: func(path string) unsafe.Pointer {
+			if filepath.Ext(path) == ".tsx" {
+				return typescript.LanguageTSX()
+			}
+			return typescript.LanguageTypescript()
+		},
+		Namespace: func(path string, _ *sitter.Node, _ []byte) string {
+			return modulePath(path)
+		},
+		Unit:      tsUnit,
+		Container: tsContainer,
+		Private:   tsPrivate,
+	})
+}
+
+func tsUnit(n *sitter.Node, src []byte) (string, bool) {
+	switch n.Kind() {
+	case "function_declaration", "generator_function_declaration", "method_definition":
+		return fieldText(n, "name", src), true
+	case "public_field_definition":
+		if isFunctionValue(n.ChildByFieldName("value")) {
+			return fieldText(n, "name", src), true
+		}
+	case "variable_declarator":
+		if isFunctionValue(n.ChildByFieldName("value")) && isTopLevelDeclaration(n) {
+			return fieldText(n, "name", src), true
+		}
+	}
+	return "", false
+}
+
+func isFunctionValue(v *sitter.Node) bool {
+	return v != nil && (v.Kind() == "arrow_function" || v.Kind() == "function_expression")
+}
+
+// isTopLevelDeclaration is true for `const f = …` and `export const f = …`
+// at module scope.
+func isTopLevelDeclaration(declarator *sitter.Node) bool {
+	decl := declarator.Parent()
+	if decl == nil {
+		return false
+	}
+	scope := decl.Parent()
+	if scope != nil && scope.Kind() == "export_statement" {
+		scope = scope.Parent()
+	}
+	return scope != nil && scope.Kind() == "program"
+}
+
+func tsContainer(n *sitter.Node, src []byte) (string, bool) {
+	switch n.Kind() {
+	case "class_declaration", "abstract_class_declaration":
+		return fieldText(n, "name", src), true
+	}
+	return "", false
+}
+
+func tsPrivate(n *sitter.Node, _ string, src []byte) bool {
+	if name := n.ChildByFieldName("name"); name != nil && name.Kind() == "private_property_identifier" {
+		return true
+	}
+	for i := uint(0); i < n.NamedChildCount(); i++ {
+		c := n.NamedChild(i)
+		if c.Kind() == "accessibility_modifier" && c.Utf8Text(src) == "private" {
+			return true
+		}
+	}
+	return false
+}
