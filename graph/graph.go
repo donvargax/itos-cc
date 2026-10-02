@@ -177,11 +177,12 @@ type index struct {
 	byImport   map[string]string   // Go import path → module
 	byPackage  map[string][]string // Kotlin package → modules
 	byKotlinFQ map[string]string   // Kotlin package.Name → module
+	tsconfigs  map[string]*tsAliases
 }
 
 func (g *repoGraph) index() *index {
 	idx := &index{g: g, byFile: map[string]string{}, byDotted: map[string]string{}, byImport: map[string]string{},
-		byPackage: map[string][]string{}, byKotlinFQ: map[string]string{}}
+		byPackage: map[string][]string{}, byKotlinFQ: map[string]string{}, tsconfigs: map[string]*tsAliases{}}
 	for _, f := range g.files {
 		id := g.moduleID(f)
 		switch f.language {
@@ -223,24 +224,53 @@ func (idx *index) resolve(f *fileInfo, imp lang.Import) (targets []string, exter
 var tsExtensions = []string{".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"}
 
 func (idx *index) typescript(f *fileInfo, spec string) ([]string, string) {
-	if !strings.HasPrefix(spec, ".") {
-		parts := strings.SplitN(spec, "/", 3)
-		if strings.HasPrefix(spec, "@") && len(parts) > 1 {
-			return nil, parts[0] + "/" + parts[1]
+	if strings.HasPrefix(spec, ".") {
+		if id, ok := idx.tsFile(path.Join(path.Dir(f.rel), spec)); ok {
+			return []string{id}, ""
 		}
-		return nil, parts[0]
+		return nil, ""
 	}
-	target := path.Join(path.Dir(f.rel), spec)
-	// ESM TypeScript imports name the compiled file: ./a.js means a.ts.
+	// An alias from tsconfig paths or baseUrl names a project file.
+	for _, abs := range idx.aliases(f).resolve(spec) {
+		if id, ok := idx.tsFile(rel(idx.g.root, abs)); ok {
+			return []string{id}, ""
+		}
+	}
+	parts := strings.SplitN(spec, "/", 3)
+	if strings.HasPrefix(spec, "@") && len(parts) > 1 {
+		return nil, parts[0] + "/" + parts[1]
+	}
+	return nil, parts[0]
+}
+
+// tsFile finds the module a repository-relative import target names: the
+// file itself, or the index of a directory. ESM imports name the compiled
+// file, so ./a.js means a.ts.
+func (idx *index) tsFile(target string) (string, bool) {
 	for _, ext := range tsExtensions {
 		target = strings.TrimSuffix(target, ext)
 	}
 	for _, candidate := range []string{target, target + "/index"} {
 		if id, ok := idx.byFile[candidate]; ok {
-			return []string{id}, ""
+			return id, true
 		}
 	}
-	return nil, ""
+	return "", false
+}
+
+// aliases are the tsconfig aliases that apply to f: those of the nearest
+// tsconfig.json above it.
+func (idx *index) aliases(f *fileInfo) *tsAliases {
+	dir := lang.FindUp(f.abs, "tsconfig.json")
+	a, ok := idx.tsconfigs[dir]
+	if !ok {
+		a = &tsAliases{}
+		if dir != "" {
+			a = loadTSAliases(dir)
+		}
+		idx.tsconfigs[dir] = a
+	}
+	return a
 }
 
 func (idx *index) python(f *fileInfo, imp lang.Import) ([]string, string) {

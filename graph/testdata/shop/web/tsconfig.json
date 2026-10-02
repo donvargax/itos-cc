@@ -1,0 +1,5 @@
+{
+  // Vite-style solution config: the aliases live in the referenced config.
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }],
+}

@@ -124,8 +124,15 @@ cd viewer && npm install && npm run dev # viewer on http://localhost:5173
 - Arrows are imports, rolled up to the boxes on the current level; boxes sit
   above what they depend on. Arrows in a dependency cycle are red at every
   level.
-- Box color combines the worst CRAP score and the mutation score, from red
-  to green; grey means not measured yet.
+- Box color runs from red to green and combines CRAP with the mutation
+  score; grey means not measured yet. A module is as risky as its worst
+  function. A directory or repository is graded by the share of its functions
+  that are risky, and by its overall kill rate, so one bad file does not
+  paint a whole system red. The bar under each box splits its functions into
+  risky, worth a look, low risk, and unmeasured. `mut 100% · 6/53` means every
+  mutant run was killed, in the 6 of 53 functions mutation-tested so far.
+- TypeScript imports through `tsconfig.json` aliases (`paths`, `baseUrl`,
+  `extends`, and Vite-style `references`) resolve to project files.
 - Saving a file updates complexity, dependencies, and CRAP (live complexity
   with the last measured coverage) within a second. Rerunning `crap`,
   `mutate`, or `dry` updates their numbers. Functions edited since their last

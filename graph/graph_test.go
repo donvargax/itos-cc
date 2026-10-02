@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -45,6 +46,9 @@ func TestEdgesResolveEachLanguagesImports(t *testing.T) {
 		"shop/py/src/shop/cli -> shop/py/src/shop/billing/tax",
 		"shop/web/src/app -> shop/web/src/cart/total",
 		"shop/web/src/cart/total -> shop/web/src/format/index",
+		// Through tsconfig paths: "@/format", "~format", "@/cart/total".
+		"shop/web/src/cart/view -> shop/web/src/cart/total",
+		"shop/web/src/cart/view -> shop/web/src/format/index",
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("edges:\n got  %q\n want %q", got, want)
@@ -106,6 +110,10 @@ func TestGrades(t *testing.T) {
 	}{
 		{crapGrade(3), 10}, {crapGrade(30), 1}, {crapGrade(17.5), 5.5},
 		{mutationGrade(9, 1), 9.1}, {mutationGrade(0, 4), 1},
+		// One high-risk function in ten: noticeable, not alarming.
+		{must(bandGrade(Bands{Low: 9, High: 1})), 8.2},
+		{must(bandGrade(Bands{Low: 1, High: 1})), 1},
+		{must(bandGrade(Bands{Low: 7, Medium: 3, Unknown: 40})), 8.4},
 	}
 	for i, c := range cases {
 		if c.got != c.want {
@@ -158,5 +166,72 @@ func TestSnapshotsFromAnotherDirectoryMatchBySuffix(t *testing.T) {
 	}
 	if _, ok := k.get("lang/golang.go", "p", "init", 0); ok {
 		t.Error("another file's init matched")
+	}
+}
+
+func must(v float64, ok bool) float64 {
+	if !ok {
+		panic("no grade")
+	}
+	return v
+}
+
+func TestContainersAreGradedByTheirShareOfRisk(t *testing.T) {
+	low, high := 2.0, 120.0
+	g := &repoGraph{name: "r", nodes: map[string]*Node{}}
+	dir := &Node{ID: "r", Kind: "repo"}
+	bad := &Node{ID: "r/bad", Kind: "module", Units: []Unit{{CRAP: &high, Mutated: true, Killed: 1, Survived: 1}}}
+	var good []*Node
+	for i := range 9 {
+		good = append(good, &Node{ID: fmt.Sprintf("r/ok%d", i), Kind: "module", Units: []Unit{{CRAP: &low, Mutated: true, Killed: 4}}})
+	}
+	dir.children = append([]*Node{bad}, good...)
+	g.nodes["r"] = dir
+	g.summarize()
+	if *bad.Metrics.CRAPGrade != 1 {
+		t.Errorf("a module is as bad as its worst function: %v", *bad.Metrics.CRAPGrade)
+	}
+	m := dir.Metrics
+	if *m.CRAPGrade != 8.2 || m.Mutated != 10 || m.Functions != 10 {
+		t.Errorf("repo grade %v mutated %d/%d, want 8.2 and 10/10", *m.CRAPGrade, m.Mutated, m.Functions)
+	}
+	if *m.MutationGrade != mutationGrade(37, 1) {
+		t.Errorf("repo mutation grade %v is not the overall kill rate", *m.MutationGrade)
+	}
+}
+
+func TestTSConfigAliases(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "tsconfig.json"), []byte(`{
+		// comment with "quotes" and a // inside
+		"compilerOptions": { "baseUrl": "src", "paths": { "@app/*": ["app/*", "legacy/*"], "@app/core": ["core/index"], }, },
+	}`), 0o644)
+	a := loadTSAliases(dir)
+	rels := func(spec string) []string {
+		var out []string
+		for _, p := range a.resolve(spec) {
+			r, _ := filepath.Rel(dir, p)
+			out = append(out, filepath.ToSlash(r))
+		}
+		return out
+	}
+	cases := map[string][]string{
+		"@app/button":  {"src/app/button", "src/legacy/button", "src/@app/button"},
+		"@app/core":    {"src/core/index", "src/@app/core"},
+		"utils/format": {"src/utils/format"},
+	}
+	for spec, want := range cases {
+		if got := rels(spec); !slices.Equal(got, want) {
+			t.Errorf("%s → %v, want %v", spec, got, want)
+		}
+	}
+}
+
+func TestStripJSONC(t *testing.T) {
+	in := `{"a": "x // not a comment", /* gone */ "b": [1, 2,], // gone
+}`
+	var v map[string]any
+	if err := json.Unmarshal(stripJSONC([]byte(in)), &v); err != nil || v["a"] != "x // not a comment" {
+		t.Errorf("stripped %q: %v %v", stripJSONC([]byte(in)), v, err)
 	}
 }

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.base",
+  /* paths resolve against the config that declares them */
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"], "~format": ["./src/format/index.ts"], },
+  },
+}

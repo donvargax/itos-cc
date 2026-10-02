@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RiskBar } from "./BoxNode";
 import { fetchSource, repoOf, type Unit } from "./api";
 import type { Index, ViewEdge, ViewNode } from "./model";
 
@@ -71,9 +72,17 @@ function NodePanel({ idx, node, unit, onUnit }: { idx: Index; node: ViewNode; un
           <dd>{m.functions}</dd>
           <dt>worst CRAP</dt>
           <dd>{m.max_crap?.toFixed(1) ?? "–"}</dd>
+          <dt>by CRAP</dt>
+          <dd>
+            {m.crap_bands.high} risky · {m.crap_bands.medium} worth a look · {m.crap_bands.low} low · {m.crap_bands.unknown} unmeasured
+          </dd>
           <dt>mutants</dt>
           <dd>
             {m.killed} killed · {m.survived} survived · {m.uncovered} uncovered
+          </dd>
+          <dt>mutation-tested</dt>
+          <dd>
+            {m.mutated} of {m.functions} functions
           </dd>
           {m.stale > 0 && (
             <>
@@ -87,6 +96,7 @@ function NodePanel({ idx, node, unit, onUnit }: { idx: Index; node: ViewNode; un
           </dd>
         </dl>
       )}
+      {m && m.functions > 0 && <RiskBar bands={m.crap_bands} />}
       {external.length > 0 && (
         <p className="external">
           uses {external.map((x) => <code key={x}>{x}</code>)}

@@ -1,6 +1,24 @@
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { gradeHue, type ViewNode } from "./model";
 import { BOX_HEIGHT } from "./layout";
+import type { Bands } from "./api";
+
+// RiskBar splits a box's functions by CRAP band: what share is fine, worth
+// a look, risky, or not measured.
+export function RiskBar({ bands }: { bands: Bands }) {
+  const total = bands.low + bands.medium + bands.high + bands.unknown;
+  const parts: [keyof Bands, string][] = [
+    ["high", "risky (CRAP ≥ 30)"],
+    ["medium", "worth a look (CRAP 5–30)"],
+    ["low", "low risk (CRAP ≤ 5)"],
+    ["unknown", "no coverage measured"],
+  ];
+  return (
+    <div className="risk-bar" title={parts.map(([k, label]) => `${bands[k]} ${label}`).join("\n")}>
+      {parts.map(([k]) => bands[k] > 0 && <span key={k} className={`risk-${k}`} style={{ flexGrow: bands[k] / total }} />)}
+    </div>
+  );
+}
 
 export type BoxData = { view: ViewNode; width: number; changed: boolean; onOpen: (id: string) => void };
 export type BoxNodeType = Node<BoxData, "box">;
@@ -39,8 +57,12 @@ export function BoxNode({ data, selected }: NodeProps<BoxNodeType>) {
       <div className="box-stats">
         <span>{m?.functions ?? 0} fn</span>
         <span title="worst CRAP score">CRAP {m?.max_crap !== undefined ? m.max_crap.toFixed(1) : "–"}</span>
-        <span title="killed / (killed + survived)">mut {mutation !== null ? `${mutation}%` : "–"}</span>
+        <span title="killed / (killed + survived), and how many functions were mutation-tested">
+          mut {mutation !== null ? `${mutation}%` : "–"}
+          {m && m.mutated > 0 && m.mutated < m.functions && ` · ${m.mutated}/${m.functions}`}
+        </span>
       </div>
+      {m && m.functions > 0 && <RiskBar bands={m.crap_bands} />}
       <div className="box-badges">
         {m && m.survived > 0 && <span className="badge warn">{m.survived} survived</span>}
         {m && m.stale > 0 && <span className="badge muted" title="functions changed since mutation testing">{m.stale} stale</span>}

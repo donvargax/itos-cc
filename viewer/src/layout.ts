@@ -6,10 +6,10 @@ import type { View } from "./model";
 
 const elk = new ELK();
 
-export const BOX_HEIGHT = 84;
+export const BOX_HEIGHT = 92;
 
 export function boxWidth(label: string): number {
-  return Math.min(340, Math.max(190, label.length * 7.6 + 56));
+  return Math.min(360, Math.max(240, label.length * 7.6 + 56));
 }
 
 export interface Placed {

@@ -403,3 +403,39 @@ main {
 .error {
   color: var(--bad);
 }
+
+.risk-bar {
+  display: flex;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--border);
+  margin-top: auto;
+}
+
+.panel .risk-bar {
+  height: 8px;
+  margin: 10px 0;
+}
+
+.risk-bar span {
+  flex-basis: 0;
+  min-width: 2px;
+}
+
+.risk-high {
+  background: hsl(0 70% 50%);
+}
+
+.risk-medium {
+  background: hsl(38 90% 52%);
+}
+
+.risk-low {
+  background: hsl(130 50% 42%);
+}
+
+.risk-unknown {
+  background: var(--muted);
+  opacity: 0.35;
+}

@@ -19,8 +19,19 @@ export interface Unit {
   duplicates: number;
 }
 
+// Bands count functions by CRAP: low ≤5, medium <30, high ≥30, unknown
+// without coverage.
+export interface Bands {
+  low: number;
+  medium: number;
+  high: number;
+  unknown: number;
+}
+
 export interface Metrics {
   functions: number;
+  mutated: number; // functions with mutation results
+  crap_bands: Bands;
   max_crap?: number;
   killed: number;
   survived: number;
