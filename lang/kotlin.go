@@ -36,6 +36,17 @@ func init() {
 			Literals: set("string_literal", "multiline_string_literal", "number_literal",
 				"float_literal", "character_literal", "true", "false", "null"),
 		},
+		Mutations: Mutations{
+			Swaps:         swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&"}),
+			SwapParents:   set("binary_expression"),
+			Deletions:     set("!", "-"),
+			DeleteParents: set("unary_expression"),
+			Literals:      cLikeLiterals,
+			// The grammar reads true and false as identifiers; Kotlin
+			// reserves both words, so no real name is ever mutated.
+			LiteralKinds: set("identifier", "number_literal"),
+		},
+		Comment:  "//",
 		Decision: ktDecision,
 		IsTest:   ktIsTest,
 	})

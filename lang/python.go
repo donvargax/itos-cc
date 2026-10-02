@@ -38,6 +38,15 @@ func init() {
 			Identifiers: set("identifier"),
 			Literals:    set("string", "concatenated_string", "integer", "float", "true", "false", "none"),
 		},
+		Mutations: Mutations{
+			Swaps:         swaps(map[string]string{"and": "or", "or": "and"}),
+			SwapParents:   set("binary_operator", "comparison_operator", "boolean_operator"),
+			Deletions:     set("not", "-"),
+			DeleteParents: set("not_operator", "unary_operator"),
+			Literals:      map[string]string{"True": "False", "False": "True", "0": "1", "1": "0"},
+			LiteralKinds:  set("true", "false", "integer"),
+		},
+		Comment: "#",
 		Decision: func(n *sitter.Node, _ []byte) bool {
 			return kindIn(n, "if_statement", "elif_clause", "for_statement", "while_statement",
 				"except_clause", "case_clause", "conditional_expression", "boolean_operator",

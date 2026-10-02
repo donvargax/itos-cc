@@ -43,6 +43,15 @@ func init() {
 			Literals: set("interpreted_string_literal", "raw_string_literal", "int_literal",
 				"float_literal", "imaginary_literal", "rune_literal", "true", "false", "nil"),
 		},
+		Mutations: Mutations{
+			Swaps:         swaps(map[string]string{"&&": "||", "||": "&&"}),
+			SwapParents:   set("binary_expression"),
+			Deletions:     set("!", "-"),
+			DeleteParents: set("unary_expression"),
+			Literals:      cLikeLiterals,
+			LiteralKinds:  set("true", "false", "int_literal"),
+		},
+		Comment: "//",
 		Decision: func(n *sitter.Node, src []byte) bool {
 			if n.Kind() == "binary_expression" {
 				return operatorIn(n, src, "&&", "||")

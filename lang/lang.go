@@ -73,7 +73,46 @@ type Spec struct {
 
 	// Syntax names the node kinds tools normalize across languages.
 	Syntax Syntax
+
+	// Mutations are the changes mutation testing makes to this language.
+	Mutations Mutations
+
+	// Comment starts a line comment.
+	Comment string
 }
+
+// Mutations are small changes a test suite should notice. Operator tokens
+// are only changed under the parent kinds listed, so `<` in a type argument
+// or `-` in a type never is.
+type Mutations struct {
+	// Swaps maps an operator to the operator that replaces it, under any of
+	// SwapParents.
+	Swaps       map[string]string
+	SwapParents map[string]bool
+	// Deletions are unary operators removed under any of DeleteParents:
+	// !x becomes x, -x becomes x.
+	Deletions     map[string]bool
+	DeleteParents map[string]bool
+	// Literals maps a literal's text to its replacement, for leaves of
+	// LiteralKinds: true and false, 0 and 1.
+	Literals     map[string]string
+	LiteralKinds map[string]bool
+}
+
+// swaps returns the shared operator swaps plus extra.
+func swaps(extra map[string]string) map[string]string {
+	m := map[string]string{
+		"+": "-", "-": "+", "*": "/", "/": "*",
+		"<": "<=", "<=": "<", ">": ">=", ">=": ">",
+		"==": "!=", "!=": "==",
+	}
+	for k, v := range extra {
+		m[k] = v
+	}
+	return m
+}
+
+var cLikeLiterals = map[string]string{"true": "false", "false": "true", "0": "1", "1": "0"}
 
 // Syntax names a grammar's node kinds for the structure every language
 // shares: calls, member access, names, and literal values.
