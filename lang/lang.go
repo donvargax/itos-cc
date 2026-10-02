@@ -70,6 +70,76 @@ type Spec struct {
 
 	// Separator joins namespace segments ("." for most languages).
 	Separator string
+
+	// Syntax names the node kinds tools normalize across languages.
+	Syntax Syntax
+}
+
+// Syntax names a grammar's node kinds for the structure every language
+// shares: calls, member access, names, and literal values.
+type Syntax struct {
+	// Calls maps a call node kind to the field holding the callee, or "" when
+	// the callee is the first named child.
+	Calls map[string]string
+	// Members maps a member-access node kind to the field holding the member
+	// name, or "" when the name is the last named child.
+	Members map[string]string
+	// Identifiers are leaf kinds that name something.
+	Identifiers map[string]bool
+	// Literals are kinds whose whole subtree is one literal value.
+	Literals map[string]bool
+}
+
+func set(kinds ...string) map[string]bool {
+	m := make(map[string]bool, len(kinds))
+	for _, k := range kinds {
+		m[k] = true
+	}
+	return m
+}
+
+// IsCallee reports whether the identifier n names the function a call
+// invokes: f in f(x), or m in obj.m(x).
+func (s Syntax) IsCallee(n *sitter.Node) bool {
+	p := n.Parent()
+	if p == nil {
+		return false
+	}
+	if field, ok := s.Members[p.Kind()]; ok {
+		if !sameNode(memberName(p, field), n) {
+			return false
+		}
+		n, p = p, p.Parent()
+		if p == nil {
+			return false
+		}
+	}
+	field, ok := s.Calls[p.Kind()]
+	return ok && sameNode(callee(p, field), n)
+}
+
+func callee(call *sitter.Node, field string) *sitter.Node {
+	if field != "" {
+		return call.ChildByFieldName(field)
+	}
+	if call.NamedChildCount() == 0 {
+		return nil
+	}
+	return call.NamedChild(0)
+}
+
+func memberName(member *sitter.Node, field string) *sitter.Node {
+	if field != "" {
+		return member.ChildByFieldName(field)
+	}
+	if n := member.NamedChildCount(); n > 0 {
+		return member.NamedChild(n - 1)
+	}
+	return nil
+}
+
+func sameNode(a, b *sitter.Node) bool {
+	return a != nil && b != nil && a.Id() == b.Id()
 }
 
 var specs = map[string]*Spec{}

@@ -29,6 +29,13 @@ func init() {
 		Private: func(n *sitter.Node, _ string, src []byte) bool {
 			return ktHasModifier(n, "private", src)
 		},
+		Syntax: Syntax{
+			Calls:       map[string]string{"call_expression": ""},
+			Members:     map[string]string{"navigation_expression": ""},
+			Identifiers: set("identifier"),
+			Literals: set("string_literal", "multiline_string_literal", "number_literal",
+				"float_literal", "character_literal", "true", "false", "null"),
+		},
 		Decision: ktDecision,
 		IsTest:   ktIsTest,
 	})

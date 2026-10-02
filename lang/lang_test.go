@@ -5,6 +5,8 @@ import (
 	"maps"
 	"slices"
 	"testing"
+
+	sitter "github.com/tree-sitter/go-tree-sitter"
 )
 
 // describe renders a unit as "kind namespace#name lines [private]" so a
@@ -362,5 +364,40 @@ func TestTypeScriptCoverageStartsAtTheFirstStatement(t *testing.T) {
 	}
 	if !slices.Equal(got, []int{3, 6, 8}) {
 		t.Errorf("body lines = %v, want [3 6 8]", got)
+	}
+}
+
+// callees lists the identifiers in src that name the function a call invokes.
+func callees(t *testing.T, path, src string) []string {
+	t.Helper()
+	f := parse(t, path, src)
+	var out []string
+	Walk(f.Root, func(n *sitter.Node) bool {
+		if f.Spec.Syntax.Identifiers[n.Kind()] && f.Spec.Syntax.IsCallee(n) {
+			out = append(out, n.Utf8Text(f.Src))
+		}
+		return true
+	})
+	return out
+}
+
+func TestCallees(t *testing.T) {
+	cases := []struct {
+		path, src string
+		want      []string
+	}{
+		{"testdata/ts/src/a.ts", "function f(xs) { return xs.map(inc).filter(odd) + g(xs.length) + new Board(); }",
+			[]string{"map", "filter", "g", "Board"}},
+		{"testdata/py/a.py", "def f(xs):\n    return xs.append(g(xs.size))\n",
+			[]string{"append", "g"}},
+		{"testdata/a.go", "package a\nfunc f(xs []int) { fmt.Println(g(xs), xs.n) }\n",
+			[]string{"Println", "g"}},
+		{"testdata/a.kt", "fun f(xs: List<Int>) = xs.map(::inc).size + g(xs.first())\n",
+			[]string{"map", "g", "first"}},
+	}
+	for _, c := range cases {
+		if got := callees(t, c.path, c.src); !slices.Equal(got, c.want) {
+			t.Errorf("%s: callees %v, want %v", c.path, got, c.want)
+		}
 	}
 }

@@ -36,6 +36,13 @@ func init() {
 			r, _ := utf8.DecodeRuneInString(name)
 			return !unicode.IsUpper(r)
 		},
+		Syntax: Syntax{
+			Calls:       map[string]string{"call_expression": "function"},
+			Members:     map[string]string{"selector_expression": "field"},
+			Identifiers: set("identifier", "field_identifier", "type_identifier", "package_identifier"),
+			Literals: set("interpreted_string_literal", "raw_string_literal", "int_literal",
+				"float_literal", "imaginary_literal", "rune_literal", "true", "false", "nil"),
+		},
 		Decision: func(n *sitter.Node, src []byte) bool {
 			if n.Kind() == "binary_expression" {
 				return operatorIn(n, src, "&&", "||")

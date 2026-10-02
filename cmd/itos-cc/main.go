@@ -10,6 +10,7 @@ const usage = `usage: itos-cc <command> [options] [path ...]
 
 commands:
   crap    CRAP score per function: complexity × untested risk
+  dry     functions similar enough to be duplicates
   units   list the functions and methods every tool measures
 
 Paths are files, directories, or fragments of a path under the working
@@ -19,6 +20,7 @@ directory. Without paths the working directory is analyzed. Run
 
 var commands = map[string]func(args []string) int{
 	"crap":  runCrap,
+	"dry":   runDry,
 	"units": runUnits,
 }
 

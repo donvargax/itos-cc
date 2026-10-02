@@ -29,9 +29,17 @@ func init() {
 		Unit:      tsUnit,
 		Container: tsContainer,
 		Private:   tsPrivate,
-		Decision:  tsDecision,
-		BodyLine:  tsBodyLine,
-		IsTest:    tsIsTest,
+		Syntax: Syntax{
+			Calls:   map[string]string{"call_expression": "function", "new_expression": "constructor"},
+			Members: map[string]string{"member_expression": "property"},
+			Identifiers: set("identifier", "property_identifier", "private_property_identifier",
+				"shorthand_property_identifier", "shorthand_property_identifier_pattern",
+				"type_identifier", "statement_identifier"),
+			Literals: set("string", "template_string", "number", "regex", "true", "false", "null", "undefined"),
+		},
+		Decision: tsDecision,
+		BodyLine: tsBodyLine,
+		IsTest:   tsIsTest,
 	})
 }
 

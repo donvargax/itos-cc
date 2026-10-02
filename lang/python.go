@@ -32,6 +32,12 @@ func init() {
 			}
 			return "", false
 		},
+		Syntax: Syntax{
+			Calls:       map[string]string{"call": "function"},
+			Members:     map[string]string{"attribute": "attribute"},
+			Identifiers: set("identifier"),
+			Literals:    set("string", "concatenated_string", "integer", "float", "true", "false", "none"),
+		},
 		Decision: func(n *sitter.Node, _ []byte) bool {
 			return kindIn(n, "if_statement", "elif_clause", "for_statement", "while_statement",
 				"except_clause", "case_clause", "conditional_expression", "boolean_operator",
