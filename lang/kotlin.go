@@ -63,11 +63,10 @@ func ktDecision(n *sitter.Node, src []byte) bool {
 		"catch_block")
 }
 
+// ktIsTest covers Gradle and Maven's src/test/ through its test directory.
 func ktIsTest(path string) bool {
-	p := filepath.ToSlash(path)
-	base := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
-	return strings.Contains(p, "/src/test/") || strings.HasPrefix(p, "src/test/") ||
-		underDir(path, "test", "tests") ||
+	base := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	return underDir(path, "test", "tests") ||
 		strings.HasSuffix(base, "Test") || strings.HasSuffix(base, "Tests") || strings.HasSuffix(base, "Spec")
 }
 

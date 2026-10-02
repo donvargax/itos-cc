@@ -339,6 +339,12 @@ func TestTestFiles(t *testing.T) {
 		"src/main/kotlin/demo/Board.kt":     false,
 		"src/test/kotlin/demo/BoardTest.kt": true,
 		"src/test/kotlin/demo/Fixtures.kt":  true,
+		// Each Kotlin rule on its own, so no rule hides behind another.
+		"app/src/test/kotlin/demo/Fixtures.kt": true,
+		"app/tests/Fixtures.kt":                true,
+		"src/main/kotlin/demo/BoardTests.kt":   true,
+		"src/main/kotlin/demo/BoardSpec.kt":    true,
+		"src/main/kotlin/demo/BoardTest.kt":    true,
 	}
 	for path, want := range cases {
 		if got := Detect(path).IsTest(path); got != want {
