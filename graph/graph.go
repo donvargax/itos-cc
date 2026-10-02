@@ -25,6 +25,8 @@ type Node struct {
 	Files    []string `json:"files,omitempty"` // repository-relative
 	Units    []Unit   `json:"units,omitempty"`
 	External []string `json:"external,omitempty"` // packages imported from outside the repository
+	Serves   []string `json:"serves,omitempty"`   // HTTP routes the module handles
+	Calls    []string `json:"calls,omitempty"`    // HTTP requests the module makes
 	Metrics  *Metrics `json:"metrics,omitempty"`
 	children []*Node
 }
@@ -49,11 +51,15 @@ type Unit struct {
 	hash string
 }
 
-// Edge is a dependency between modules: From imports To, Count times.
+// Edge is a dependency between modules. An import edge counts From's import
+// statements of To; an http edge counts From's requests that match a route
+// To serves, and Via lists those routes.
 type Edge struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Count int    `json:"count"`
+	From  string   `json:"from"`
+	To    string   `json:"to"`
+	Count int      `json:"count"`
+	Kind  string   `json:"kind"` // import or http
+	Via   []string `json:"via,omitempty"`
 }
 
 // Graph is every repository's tree and the module dependencies.
@@ -71,7 +77,10 @@ type fileInfo struct {
 	namespace string
 	imports   []lang.Import
 	topLevel  []string // Kotlin declarations other files import
+	refs      []string // Kotlin names used, for dependencies within a package
 	units     []Unit
+	serves    []lang.Endpoint
+	calls     []lang.Endpoint
 }
 
 // repoGraph builds one repository's nodes and edges. Node ids are prefixed
@@ -93,6 +102,12 @@ func newRepoGraph(name, root string, files []*fileInfo) *repoGraph {
 		m := g.module(f)
 		m.Files = appendUnique(m.Files, f.rel)
 		m.Units = append(m.Units, f.units...)
+		for _, e := range f.serves {
+			m.Serves = appendUnique(m.Serves, e.String())
+		}
+		for _, e := range f.calls {
+			m.Calls = appendUnique(m.Calls, e.String())
+		}
 	}
 	g.resolveAll()
 	return g
@@ -154,6 +169,13 @@ func (g *repoGraph) resolveAll() {
 	idx := g.index()
 	for _, f := range g.files {
 		from := g.moduleID(f)
+		// Kotlin needs no import for its own package: a name the file uses
+		// that another file of the package declares is a dependency.
+		for _, to := range idx.samePackage(f) {
+			if to != from {
+				g.edges[[2]string{from, to}]++
+			}
+		}
 		for _, imp := range f.imports {
 			targets, external := idx.resolve(f, imp)
 			for _, to := range targets {
@@ -316,6 +338,21 @@ func (idx *index) python(f *fileInfo, imp lang.Import) ([]string, string) {
 	return targets, ""
 }
 
+// samePackage lists the modules of f's own Kotlin package that declare a
+// name f uses, once each.
+func (idx *index) samePackage(f *fileInfo) []string {
+	if f.language != "kotlin" {
+		return nil
+	}
+	var out []string
+	for _, name := range f.refs {
+		if id, ok := idx.byKotlinFQ[f.namespace+"."+name]; ok {
+			out = appendUnique(out, id)
+		}
+	}
+	return out
+}
+
 func (idx *index) kotlin(imp lang.Import) ([]string, string) {
 	if imp.Wildcard {
 		if ids, ok := idx.byPackage[imp.Path]; ok {
@@ -368,6 +405,8 @@ func (g *repoGraph) output(out *Graph) {
 	for _, id := range ids {
 		n := g.nodes[id]
 		sort.Strings(n.External)
+		sort.Strings(n.Serves)
+		sort.Strings(n.Calls)
 		sort.Slice(n.Units, func(i, j int) bool {
 			if n.Units[i].File != n.Units[j].File {
 				return n.Units[i].File < n.Units[j].File
@@ -378,7 +417,7 @@ func (g *repoGraph) output(out *Graph) {
 	}
 	var edges []Edge
 	for k, c := range g.edges {
-		edges = append(edges, Edge{From: k[0], To: k[1], Count: c})
+		edges = append(edges, Edge{From: k[0], To: k[1], Count: c, Kind: "import"})
 	}
 	sort.Slice(edges, func(i, j int) bool {
 		if edges[i].From != edges[j].From {

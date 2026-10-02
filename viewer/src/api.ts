@@ -52,13 +52,19 @@ export interface GraphNode {
   files?: string[];
   units?: Unit[];
   external?: string[];
+  serves?: string[]; // HTTP routes the module handles
+  calls?: string[]; // HTTP requests the module makes
   metrics?: Metrics;
 }
 
+// An import edge is a source dependency; an http edge is a request that
+// matches a route the target serves, listed in via.
 export interface GraphEdge {
   from: string;
   to: string;
   count: number;
+  kind: "import" | "http";
+  via?: string[];
 }
 
 export interface Graph {

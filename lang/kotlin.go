@@ -158,3 +158,25 @@ func firstChildOfKind(n *sitter.Node, kind string) *sitter.Node {
 	}
 	return nil
 }
+
+// ReferencedNames are the names a Kotlin file uses outside its package and
+// import lines. Code in the same package needs no import, so a graph finds
+// those dependencies by matching these names to what the package declares.
+func ReferencedNames(f *File) []string {
+	seen := map[string]bool{}
+	var out []string
+	Walk(f.Root, func(n *sitter.Node) bool {
+		switch n.Kind() {
+		case "package_header", "import_list", "import_header":
+			return false
+		case "simple_identifier", "type_identifier":
+			if name := n.Utf8Text(f.Src); !seen[name] {
+				seen[name] = true
+				out = append(out, name)
+			}
+			return false
+		}
+		return true
+	})
+	return out
+}

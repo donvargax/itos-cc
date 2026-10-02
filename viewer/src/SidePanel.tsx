@@ -39,9 +39,18 @@ export function SidePanel({ idx, selection }: { idx: Index; selection: Selection
           {short(e.source)} → {short(e.target)}
         </h2>
         <p className="meta">
-          {e.count} import{e.count === 1 ? "" : "s"}
+          {e.kind === "http" ? `${e.count} HTTP request${e.count === 1 ? "" : "s"}` : `${e.count} import${e.count === 1 ? "" : "s"}`}
           {e.cycle && <span className="badge cycle">cycle</span>}
         </p>
+        {e.via.length > 0 && (
+          <ul className="routes">
+            {e.via.map((v) => (
+              <li key={v}>
+                <code>{v}</code>
+              </li>
+            ))}
+          </ul>
+        )}
         <ul className="pairs">
           {e.pairs.map(([from, to]) => (
             <li key={from + to}>
@@ -97,6 +106,8 @@ function NodePanel({ idx, node, unit, onUnit }: { idx: Index; node: ViewNode; un
         </dl>
       )}
       {m && m.functions > 0 && <RiskBar bands={m.crap_bands} />}
+      {(node.node.serves?.length ?? 0) > 0 && <Routes title="serves" routes={node.node.serves!} />}
+      {(node.node.calls?.length ?? 0) > 0 && <Routes title="calls" routes={node.node.calls!} />}
       {external.length > 0 && (
         <p className="external">
           uses {external.map((x) => <code key={x}>{x}</code>)}
@@ -134,6 +145,17 @@ function NodePanel({ idx, node, unit, onUnit }: { idx: Index; node: ViewNode; un
       )}
       {unit && <SourceView repo={repoOf(node.target)} unit={unit} />}
     </aside>
+  );
+}
+
+function Routes({ title, routes }: { title: string; routes: string[] }) {
+  return (
+    <div className="routes">
+      <span className="meta">{title}</span>
+      {routes.map((r) => (
+        <code key={r}>{r}</code>
+      ))}
+    </div>
   );
 }
 

@@ -439,3 +439,54 @@ main {
   background: var(--muted);
   opacity: 0.35;
 }
+
+.react-flow__edge.http path {
+  stroke: var(--accent) !important;
+  stroke-dasharray: 6 4;
+}
+
+.react-flow__edge.http.cycle path {
+  stroke: var(--accent) !important;
+}
+
+.legend .line.http {
+  width: 18px;
+  height: 0;
+  border-top: 2px dashed var(--accent);
+  margin-left: 8px;
+}
+
+.edge-label {
+  position: absolute;
+  pointer-events: none;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.edge-label.http {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.edge-label.selected {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.routes code {
+  font-size: 12px;
+}

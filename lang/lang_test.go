@@ -434,6 +434,8 @@ func TestImports(t *testing.T) {
 			[]string{"1:./a", "2:lodash", "3:../c", "4:./d", "5:./e", "6:./f"}},
 		{"testdata/py/x.py", "import os.path\nimport shop.cart as c, shop.items\nfrom . import util\nfrom ..core.models import User\nfrom shop import cart as k, items\ndef f():\n    import json\n",
 			[]string{"1:os.path", "2:shop.cart", "2:shop.items", "3:. util", "4:..core.models User", "5:shop cart,items", "7:json"}},
+		{"testdata/py/y.py", "import importlib\n\ndef load(name):\n    plugins = importlib.import_module(\"shop.plugins\")\n    legacy = __import__('shop.legacy')\n    return importlib.import_module(name)\n",
+			[]string{"1:importlib", "4:shop.plugins", "5:shop.legacy"}},
 		{"testdata/x.go", "package x\nimport (\n\t\"fmt\"\n\tm \"example.com/demo/board\"\n)\nimport \"strings\"\n",
 			[]string{"3:fmt", "4:example.com/demo/board", "6:strings"}},
 		{"testdata/x.kt", "package a.b\nimport com.acme.billing.Invoice\nimport com.acme.util.*\nimport kotlin.math.max as mx\n",
@@ -461,4 +463,11 @@ func TestKotlinMultiAnnotatedClass(t *testing.T) {
 		"method demo.SecurityConfig#chain 6-6",
 		"function demo#other 9-9",
 	})
+}
+
+func TestKotlinReferencedNames(t *testing.T) {
+	f := parse(t, "testdata/x.kt", "package a.b\nimport c.D\n\nclass Invoice(val total: Money) {\n    fun show() = fmt(total)\n}\n")
+	if got := ReferencedNames(f); !slices.Equal(got, []string{"Invoice", "total", "Money", "show", "fmt"}) {
+		t.Errorf("names %v", got)
+	}
 }

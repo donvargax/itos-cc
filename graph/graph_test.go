@@ -35,12 +35,17 @@ func TestEdgesResolveEachLanguagesImports(t *testing.T) {
 	g := build(t)
 	var got []string
 	for _, e := range g.Edges {
-		got = append(got, fmt.Sprintf("%s -> %s", e.From, e.To))
+		if e.Kind == "import" {
+			got = append(got, fmt.Sprintf("%s -> %s", e.From, e.To))
+		}
 	}
 	want := []string{
 		"shop/api -> shop/api/internal/store",
 		"shop/app/src/main/kotlin/com/acme/billing/Invoice -> shop/app/src/main/kotlin/com/acme/util/Format",
 		"shop/app/src/main/kotlin/com/acme/billing/Invoice -> shop/app/src/main/kotlin/com/acme/util/Money",
+		// Same package, no import: Receipt uses Invoice.
+		"shop/app/src/main/kotlin/com/acme/billing/Receipt -> shop/app/src/main/kotlin/com/acme/billing/Invoice",
+		"shop/app/src/main/kotlin/com/acme/util/Format -> shop/app/src/main/kotlin/com/acme/util/Money",
 		"shop/py/src/shop/billing/invoice -> shop/py/src/shop/billing/tax",
 		"shop/py/src/shop/cli -> shop/py/src/shop/billing/invoice",
 		"shop/py/src/shop/cli -> shop/py/src/shop/billing/tax",
@@ -60,7 +65,7 @@ func TestExternalPackagesAreListedNotDrawn(t *testing.T) {
 	cases := map[string][]string{
 		"shop/web/src/app":                 {"@scope/zod", "react"},
 		"shop/py/src/shop/billing/invoice": {"os"},
-		"shop/api":                         {"fmt"},
+		"shop/api":                         {"fmt", "net/http"},
 		"shop/app/src/main/kotlin/com/acme/billing/Invoice": {"kotlin.math"},
 	}
 	for id, want := range cases {
@@ -233,5 +238,22 @@ func TestStripJSONC(t *testing.T) {
 	var v map[string]any
 	if err := json.Unmarshal(stripJSONC([]byte(in)), &v); err != nil || v["a"] != "x // not a comment" {
 		t.Errorf("stripped %q: %v %v", stripJSONC([]byte(in)), v, err)
+	}
+}
+
+func TestHTTPCallsLinkToTheModuleServingTheRoute(t *testing.T) {
+	g := build(t)
+	var got []string
+	for _, e := range g.Edges {
+		if e.Kind == "http" {
+			got = append(got, fmt.Sprintf("%s -> %s %v", e.From, e.To, e.Via))
+		}
+	}
+	want := []string{"shop/web/src/cart/invoices -> shop/api [GET /api/invoices/*]"}
+	if !slices.Equal(got, want) {
+		t.Errorf("http edges:\n got  %q\n want %q", got, want)
+	}
+	if api := node(g, "shop/api"); !slices.Equal(api.Serves, []string{"GET /api/invoices/*"}) {
+		t.Errorf("serves %v", api.Serves)
 	}
 }

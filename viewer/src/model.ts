@@ -46,8 +46,10 @@ export interface ViewEdge {
   id: string;
   source: string;
   target: string;
+  kind: "import" | "http";
   count: number;
   pairs: [string, string][]; // the module dependencies behind this arrow
+  via: string[]; // routes, for http
   cycle: boolean;
 }
 
@@ -110,10 +112,11 @@ export function view(idx: Index, container: string): View {
     const a = box.get(e.from);
     const b = box.get(e.to);
     if (a && b && a !== b) {
-      const key = `${a}->${b}`;
-      const edge = edges.get(key) ?? { id: key, source: a, target: b, count: 0, pairs: [], cycle: false };
+      const key = `${e.kind}:${a}->${b}`;
+      const edge = edges.get(key) ?? { id: key, source: a, target: b, kind: e.kind, count: 0, pairs: [], via: [], cycle: false };
       edge.count += e.count;
       edge.pairs.push([e.from, e.to]);
+      for (const v of e.via ?? []) if (!edge.via.includes(v)) edge.via.push(v);
       edges.set(key, edge);
     } else if (a && !b) {
       byId.get(a)!.outgoingOutside += e.count;
@@ -126,11 +129,12 @@ export function view(idx: Index, container: string): View {
   return { container, nodes, edges: list };
 }
 
-// markCycles flags every arrow and box inside a strongly connected
-// component: dependencies that lead back to where they started.
+// markCycles flags every import arrow and box inside a strongly connected
+// component: dependencies that lead back to where they started. HTTP calls
+// are not source dependencies, so a client and its server are no cycle.
 export function markCycles(nodes: ViewNode[], edges: ViewEdge[]): void {
   const out = new Map<string, string[]>();
-  for (const e of edges) out.set(e.source, [...(out.get(e.source) ?? []), e.target]);
+  for (const e of edges) if (e.kind === "import") out.set(e.source, [...(out.get(e.source) ?? []), e.target]);
   const order = new Map<string, number>();
   const low = new Map<string, number>();
   const stack: string[] = [];
@@ -171,7 +175,9 @@ export function markCycles(nodes: ViewNode[], edges: ViewEdge[]): void {
 
   const cyclic = (id: string) => sizes[component.get(id)!] > 1;
   for (const n of nodes) n.inCycle = cyclic(n.id);
-  for (const e of edges) e.cycle = component.get(e.source) === component.get(e.target) && cyclic(e.source);
+  for (const e of edges) {
+    e.cycle = e.kind === "import" && component.get(e.source) === component.get(e.target) && cyclic(e.source);
+  }
 }
 
 // trail is the path from the top to container, for breadcrumbs.

@@ -7,15 +7,16 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  type Edge,
 } from "@xyflow/react";
 import { fetchGraph, subscribe, type Graph } from "./api";
 import { buildIndex, nearestExisting, startingLevel, SYSTEM, trail, view, type ViewEdge } from "./model";
-import { BOX_HEIGHT, layout, type Placed } from "./layout";
+import { BOX_HEIGHT, layout, type Layout } from "./layout";
+import { RoutedEdge, type RoutedEdgeType } from "./RoutedEdge";
 import { BoxNode, type BoxNodeType } from "./BoxNode";
 import { SidePanel, type Selection } from "./SidePanel";
 
 const nodeTypes = { box: BoxNode };
+const edgeTypes = { routed: RoutedEdge };
 
 // changedNodes are the ids whose numbers or functions differ between two
 // graphs, so a live update can point at what moved.
@@ -32,7 +33,7 @@ function Canvas() {
   const [live, setLive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState<Set<string>>(new Set());
-  const [placed, setPlaced] = useState<Map<string, Placed>>(new Map());
+  const [placed, setPlaced] = useState<Layout>({ nodes: new Map(), routes: new Map() });
   const graphRef = useRef<Graph | null>(null);
   // Boxes call the latest open() without being rebuilt when it changes.
   const openRef = useRef<(id: string) => void>(() => {});
@@ -86,7 +87,7 @@ function Canvas() {
   const nodes: BoxNodeType[] = useMemo(
     () =>
       (current?.nodes ?? []).map((v) => {
-        const p = placed.get(v.id) ?? { x: 0, y: 0, width: 190 };
+        const p = placed.nodes.get(v.id) ?? { x: 0, y: 0, width: 240 };
         return {
           id: v.id,
           type: "box",
@@ -100,20 +101,20 @@ function Canvas() {
     [current, placed, changed, selection],
   );
 
-  const edges: Edge[] = useMemo(
+  const edges: RoutedEdgeType[] = useMemo(
     () =>
       (current?.edges ?? []).map((e) => ({
         id: e.id,
+        type: "routed",
         source: e.source,
         target: e.target,
-        label: e.count > 1 ? String(e.count) : undefined,
-        className: e.cycle ? "edge cycle" : "edge",
+        className: ["edge", e.kind, e.cycle ? "cycle" : ""].join(" "),
         selected: selection?.kind === "edge" && selection.edge.id === e.id,
-        markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
         style: { strokeWidth: 1.2 + Math.log2(e.count) },
-        data: { view: e },
+        data: { view: e, points: placed.routes.get(e.id) },
       })),
-    [current, selection],
+    [current, selection, placed],
   );
 
   const open = useCallback(
@@ -176,6 +177,7 @@ function Canvas() {
           <span className="swatch" style={{ "--hue": 130 } as React.CSSProperties} /> healthy
           <span className="swatch none" /> no data
           <span className="line cycle" /> cycle
+          <span className="line http" /> HTTP
         </div>
       </header>
       <main>
@@ -184,12 +186,13 @@ function Canvas() {
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             onNodeClick={(_, n) => setSelection({ kind: "node", node: (n as BoxNodeType).data.view })}
             zoomOnDoubleClick={false}
             onEdgeClick={(_, e) => setSelection({ kind: "edge", edge: e.data!.view as ViewEdge })}
             onPaneClick={() => setSelection(null)}
             nodesConnectable={false}
-            nodesDraggable
+            nodesDraggable={false}
             minZoom={0.1}
             proOptions={{ hideAttribution: true }}
           >

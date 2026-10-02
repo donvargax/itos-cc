@@ -78,6 +78,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 
 	g := &Graph{Nodes: []*Node{}, Edges: []Edge{}}
 	live := map[string]bool{}
+	var built []*repoGraph
 	for _, r := range repos {
 		overlay := loadOverlay(r.root)
 		var infos []*fileInfo
@@ -92,7 +93,9 @@ func (b *Builder) Build() (*Graph, bool, error) {
 		rg := newRepoGraph(r.name, r.root, infos)
 		rg.summarize()
 		rg.output(g)
+		built = append(built, rg)
 	}
+	g.Edges = append(g.Edges, httpEdges(built)...)
 	for path := range b.cache {
 		if !live[path] {
 			delete(b.cache, path)
@@ -151,8 +154,10 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 	}
 	defer f.Close()
 	info := &fileInfo{rel: rel(root, path), abs: path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports()}
+	info.serves, info.calls = f.Endpoints()
 	if f.Spec.Name == "kotlin" {
 		info.topLevel = lang.TopLevelNames(f)
+		info.refs = lang.ReferencedNames(f)
 	}
 	for _, u := range f.Units {
 		info.units = append(info.units, Unit{

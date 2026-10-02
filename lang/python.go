@@ -88,6 +88,19 @@ func pyImports(root *sitter.Node, src []byte) []Import {
 				}
 			}
 			return false
+		case "call":
+			// importlib.import_module("pkg.mod") and __import__("pkg.mod")
+			// with a literal name are imports made at run time.
+			fn := n.ChildByFieldName("function")
+			args := n.ChildByFieldName("arguments")
+			if fn == nil || args == nil || args.NamedChildCount() == 0 || args.NamedChild(0).Kind() != "string" {
+				return true
+			}
+			name := fn.Utf8Text(src)
+			if name == "__import__" || name == "import_module" || strings.HasSuffix(name, ".import_module") {
+				out = append(out, Import{Path: strings.Trim(args.NamedChild(0).Utf8Text(src), "\"'"), Line: line(n)})
+			}
+			return true
 		case "import_from_statement":
 			module := n.ChildByFieldName("module_name")
 			if module == nil {
