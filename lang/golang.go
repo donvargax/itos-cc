@@ -52,6 +52,19 @@ func init() {
 			LiteralKinds:  set("true", "false", "int_literal"),
 		},
 		Comment: "//",
+		Imports: func(root *sitter.Node, src []byte) []Import {
+			var out []Import
+			Walk(root, func(n *sitter.Node) bool {
+				if n.Kind() == "import_spec" {
+					if p := n.ChildByFieldName("path"); p != nil {
+						out = append(out, Import{Path: unquote(p.Utf8Text(src)), Line: line(n)})
+					}
+					return false
+				}
+				return n.Kind() == "source_file" || n.Kind() == "import_declaration" || n.Kind() == "import_spec_list"
+			})
+			return out
+		},
 		Decision: func(n *sitter.Node, src []byte) bool {
 			if n.Kind() == "binary_expression" {
 				return operatorIn(n, src, "&&", "||")

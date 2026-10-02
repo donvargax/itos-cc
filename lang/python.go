@@ -47,6 +47,7 @@ func init() {
 			LiteralKinds:  set("true", "false", "integer"),
 		},
 		Comment: "#",
+		Imports: pyImports,
 		Decision: func(n *sitter.Node, _ []byte) bool {
 			return kindIn(n, "if_statement", "elif_clause", "for_statement", "while_statement",
 				"except_clause", "case_clause", "conditional_expression", "boolean_operator",
@@ -68,4 +69,47 @@ func init() {
 			return strings.HasPrefix(name, "_") && !strings.HasSuffix(name, "__")
 		},
 	})
+}
+
+// pyImports finds import and from-import statements anywhere in the file,
+// including imports inside functions.
+func pyImports(root *sitter.Node, src []byte) []Import {
+	var out []Import
+	Walk(root, func(n *sitter.Node) bool {
+		switch n.Kind() {
+		case "import_statement":
+			for i := uint(0); i < n.NamedChildCount(); i++ {
+				c := n.NamedChild(i)
+				if c.Kind() == "aliased_import" {
+					c = c.ChildByFieldName("name")
+				}
+				if c != nil && c.Kind() == "dotted_name" {
+					out = append(out, Import{Path: c.Utf8Text(src), Line: line(n)})
+				}
+			}
+			return false
+		case "import_from_statement":
+			module := n.ChildByFieldName("module_name")
+			if module == nil {
+				return false
+			}
+			imp := Import{Path: module.Utf8Text(src), Line: line(n)}
+			for i := uint(0); i < n.NamedChildCount(); i++ {
+				c := n.NamedChild(i)
+				if c.Id() == module.Id() {
+					continue
+				}
+				if c.Kind() == "aliased_import" {
+					c = c.ChildByFieldName("name")
+				}
+				if c != nil && c.Kind() == "dotted_name" {
+					imp.Names = append(imp.Names, c.Utf8Text(src))
+				}
+			}
+			out = append(out, imp)
+			return false
+		}
+		return true
+	})
+	return out
 }

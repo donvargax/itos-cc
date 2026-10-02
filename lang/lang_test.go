@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
@@ -405,5 +406,49 @@ func TestCallees(t *testing.T) {
 		if got := callees(t, c.path, c.src); !slices.Equal(got, c.want) {
 			t.Errorf("%s: callees %v, want %v", c.path, got, c.want)
 		}
+	}
+}
+
+func importsOf(t *testing.T, path, src string) []string {
+	t.Helper()
+	var out []string
+	for _, imp := range parse(t, path, src).Imports() {
+		s := imp.Path
+		if len(imp.Names) > 0 {
+			s += " " + strings.Join(imp.Names, ",")
+		}
+		if imp.Wildcard {
+			s += ".*"
+		}
+		out = append(out, fmt.Sprintf("%d:%s", imp.Line, s))
+	}
+	return out
+}
+
+func TestImports(t *testing.T) {
+	cases := []struct {
+		path, src string
+		want      []string
+	}{
+		{"testdata/ts/src/x.ts", "import { a } from './a';\nimport * as b from \"lodash\";\nexport { c } from '../c';\nconst d = require('./d');\nasync function f() { await import('./e'); }\nimport type { F } from './f';\nexport const g = 1;\n",
+			[]string{"1:./a", "2:lodash", "3:../c", "4:./d", "5:./e", "6:./f"}},
+		{"testdata/py/x.py", "import os.path\nimport shop.cart as c, shop.items\nfrom . import util\nfrom ..core.models import User\nfrom shop import cart as k, items\ndef f():\n    import json\n",
+			[]string{"1:os.path", "2:shop.cart", "2:shop.items", "3:. util", "4:..core.models User", "5:shop cart,items", "7:json"}},
+		{"testdata/x.go", "package x\nimport (\n\t\"fmt\"\n\tm \"example.com/demo/board\"\n)\nimport \"strings\"\n",
+			[]string{"3:fmt", "4:example.com/demo/board", "6:strings"}},
+		{"testdata/x.kt", "package a.b\nimport com.acme.billing.Invoice\nimport com.acme.util.*\nimport kotlin.math.max as mx\n",
+			[]string{"2:com.acme.billing.Invoice", "3:com.acme.util.*", "4:kotlin.math.max"}},
+	}
+	for _, c := range cases {
+		if got := importsOf(t, c.path, c.src); !slices.Equal(got, c.want) {
+			t.Errorf("%s imports:\n got  %q\n want %q", c.path, got, c.want)
+		}
+	}
+}
+
+func TestKotlinTopLevelNames(t *testing.T) {
+	f := parse(t, "testdata/x.kt", "package a\nclass Foo\ninterface Bar\nobject Baz\nfun qux() {}\ntypealias Q = Int\n")
+	if got := TopLevelNames(f); !slices.Equal(got, []string{"Foo", "Bar", "Baz", "qux", "Q"}) {
+		t.Errorf("names %v", got)
 	}
 }

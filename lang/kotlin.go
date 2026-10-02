@@ -47,6 +47,7 @@ func init() {
 			LiteralKinds: set("identifier", "number_literal"),
 		},
 		Comment:  "//",
+		Imports:  ktImports,
 		Decision: ktDecision,
 		IsTest:   ktIsTest,
 	})
@@ -106,4 +107,55 @@ func ktHasModifier(n *sitter.Node, modifier string, src []byte) bool {
 		}
 	}
 	return false
+}
+
+func ktImports(root *sitter.Node, src []byte) []Import {
+	var out []Import
+	for i := uint(0); i < root.NamedChildCount(); i++ {
+		n := root.NamedChild(i)
+		if n.Kind() != "import" {
+			continue
+		}
+		imp := Import{Line: line(n)}
+		for j := uint(0); j < n.ChildCount(); j++ {
+			c := n.Child(j)
+			switch c.Kind() {
+			case "qualified_identifier", "identifier":
+				if imp.Path == "" {
+					imp.Path = c.Utf8Text(src)
+				}
+			case "*":
+				imp.Wildcard = true
+			}
+		}
+		out = append(out, imp)
+	}
+	return out
+}
+
+// TopLevelNames are the classes, objects, interfaces, functions, and type
+// aliases a Kotlin file declares at the top level: what other files import.
+func TopLevelNames(f *File) []string {
+	var out []string
+	for i := uint(0); i < f.Root.NamedChildCount(); i++ {
+		n := f.Root.NamedChild(i)
+		switch n.Kind() {
+		case "class_declaration", "object_declaration", "function_declaration", "type_alias":
+			if name := fieldText(n, "name", f.Src); name != "" {
+				out = append(out, name)
+			} else if id := firstChildOfKind(n, "identifier"); id != nil {
+				out = append(out, id.Utf8Text(f.Src))
+			}
+		}
+	}
+	return out
+}
+
+func firstChildOfKind(n *sitter.Node, kind string) *sitter.Node {
+	for i := uint(0); i < n.NamedChildCount(); i++ {
+		if c := n.NamedChild(i); c.Kind() == kind {
+			return c
+		}
+	}
+	return nil
 }

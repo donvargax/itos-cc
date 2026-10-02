@@ -1,0 +1,113 @@
+package graph
+
+import (
+	"fmt"
+	"slices"
+	"testing"
+)
+
+func build(t *testing.T) *Graph {
+	t.Helper()
+	b, err := NewBuilder([]string{"testdata/shop"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, changed, err := b.Build()
+	if err != nil || !changed {
+		t.Fatalf("build: changed=%v err=%v", changed, err)
+	}
+	return g
+}
+
+func node(g *Graph, id string) *Node {
+	for _, n := range g.Nodes {
+		if n.ID == id {
+			return n
+		}
+	}
+	return nil
+}
+
+func TestEdgesResolveEachLanguagesImports(t *testing.T) {
+	g := build(t)
+	var got []string
+	for _, e := range g.Edges {
+		got = append(got, fmt.Sprintf("%s -> %s", e.From, e.To))
+	}
+	want := []string{
+		"shop/api -> shop/api/internal/store",
+		"shop/app/src/main/kotlin/com/acme/billing/Invoice -> shop/app/src/main/kotlin/com/acme/util/Format",
+		"shop/app/src/main/kotlin/com/acme/billing/Invoice -> shop/app/src/main/kotlin/com/acme/util/Money",
+		"shop/py/src/shop/billing/invoice -> shop/py/src/shop/billing/tax",
+		"shop/py/src/shop/cli -> shop/py/src/shop/billing/invoice",
+		"shop/py/src/shop/cli -> shop/py/src/shop/billing/tax",
+		"shop/web/src/app -> shop/web/src/cart/total",
+		"shop/web/src/cart/total -> shop/web/src/format/index",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("edges:\n got  %q\n want %q", got, want)
+	}
+}
+
+func TestExternalPackagesAreListedNotDrawn(t *testing.T) {
+	g := build(t)
+	cases := map[string][]string{
+		"shop/web/src/app":                 {"@scope/zod", "react"},
+		"shop/py/src/shop/billing/invoice": {"os"},
+		"shop/api":                         {"fmt"},
+		"shop/app/src/main/kotlin/com/acme/billing/Invoice": {"kotlin.math"},
+	}
+	for id, want := range cases {
+		n := node(g, id)
+		if n == nil {
+			t.Fatalf("no node %s", id)
+		}
+		if !slices.Equal(n.External, want) {
+			t.Errorf("%s external %v, want %v", id, n.External, want)
+		}
+	}
+}
+
+func TestTreeAndModules(t *testing.T) {
+	g := build(t)
+	api := node(g, "shop/api")
+	if api.Kind != "module" || api.Parent != "shop" || api.Language != "go" || len(api.children) != 1 {
+		t.Errorf("a Go package with a subpackage is one module node: %+v", api)
+	}
+	if pkg := node(g, "shop/py/src/shop/billing"); pkg.Kind != "module" || pkg.Language != "python" {
+		t.Errorf("a Python package is its __init__ module: %+v", pkg)
+	}
+	if n := node(g, "shop/web/src"); n == nil || n.Kind != "dir" || n.Parent != "shop/web" {
+		t.Errorf("directory node %+v", n)
+	}
+	if n := node(g, "shop"); n == nil || n.Kind != "repo" {
+		t.Errorf("repo node %+v", n)
+	}
+	inv := node(g, "shop/py/src/shop/billing/invoice")
+	if inv.Metrics == nil || inv.Metrics.Functions != 1 || inv.Units[0].Name != "invoice" {
+		t.Errorf("module units %+v metrics %+v", inv.Units, inv.Metrics)
+	}
+}
+
+func TestUnchangedSourcesDoNotRebuild(t *testing.T) {
+	b, _ := NewBuilder([]string{"testdata/shop"})
+	first, _, _ := b.Build()
+	again, changed, err := b.Build()
+	if err != nil || changed || again.Version != first.Version {
+		t.Errorf("second build changed=%v version %d→%d err=%v", changed, first.Version, again.Version, err)
+	}
+}
+
+func TestGrades(t *testing.T) {
+	cases := []struct {
+		got, want float64
+	}{
+		{crapGrade(3), 10}, {crapGrade(30), 1}, {crapGrade(17.5), 5.5},
+		{mutationGrade(9, 1), 9.1}, {mutationGrade(0, 4), 1},
+	}
+	for i, c := range cases {
+		if c.got != c.want {
+			t.Errorf("case %d: %v, want %v", i, c.got, c.want)
+		}
+	}
+}

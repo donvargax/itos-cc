@@ -79,6 +79,21 @@ type Spec struct {
 
 	// Comment starts a line comment.
 	Comment string
+
+	// Imports lists what the file imports, as written.
+	Imports func(root *sitter.Node, src []byte) []Import
+}
+
+// Import is one imported module as the source names it: a relative or
+// package specifier in TypeScript, a dotted module in Python (with leading
+// dots when relative), an import path in Go, a qualified name in Kotlin.
+type Import struct {
+	Path string
+	// Names are what a Python `from x import a, b` takes from Path; each may
+	// be a submodule.
+	Names    []string
+	Wildcard bool // Kotlin's import a.b.*
+	Line     int
 }
 
 // Mutations are small changes a test suite should notice. Operator tokens
@@ -199,11 +214,12 @@ func Detect(path string) *Spec {
 
 // File is a parsed source file. Close it to free the syntax tree.
 type File struct {
-	Path  string
-	Spec  *Spec
-	Src   []byte
-	Units []Unit
-	Root  *sitter.Node
+	Path      string
+	Spec      *Spec
+	Src       []byte
+	Units     []Unit
+	Root      *sitter.Node
+	Namespace string // the file's own namespace, before any class
 
 	tree *sitter.Tree
 }
@@ -238,9 +254,10 @@ func Parse(spec *Spec, path string, src []byte) (*File, error) {
 		return nil, err
 	}
 	root := tree.RootNode()
+	ns := spec.Namespace(path, root, src)
 	w := walker{spec: spec, path: path, src: src}
-	w.walk(root, spec.Namespace(path, root, src), false)
-	return &File{Path: path, Spec: spec, Src: src, Units: w.units, Root: root, tree: tree}, nil
+	w.walk(root, ns, false)
+	return &File{Path: path, Spec: spec, Src: src, Units: w.units, Root: root, Namespace: ns, tree: tree}, nil
 }
 
 // ParseTree parses src without finding units. The caller closes the tree.
@@ -354,6 +371,18 @@ func join(ns, name, sep string) string {
 	}
 	return ns + sep + name
 }
+
+// Imports lists what the file imports.
+func (f *File) Imports() []Import {
+	if f.Spec.Imports == nil {
+		return nil
+	}
+	return f.Spec.Imports(f.Root, f.Src)
+}
+
+func line(n *sitter.Node) int { return int(n.StartPosition().Row) + 1 }
+
+func unquote(s string) string { return strings.Trim(s, "\"'`") }
 
 // fieldText returns the text of n's field, or "" when the field is absent.
 func fieldText(n *sitter.Node, field string, src []byte) string {

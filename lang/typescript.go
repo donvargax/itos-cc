@@ -46,10 +46,36 @@ func init() {
 			LiteralKinds:  set("true", "false", "number"),
 		},
 		Comment:  "//",
+		Imports:  tsImports,
 		Decision: tsDecision,
 		BodyLine: tsBodyLine,
 		IsTest:   tsIsTest,
 	})
+}
+
+// tsImports finds import and export-from statements, require(…), and
+// import(…) with a literal specifier. Type-only imports count: they are
+// still a dependency of the source.
+func tsImports(root *sitter.Node, src []byte) []Import {
+	var out []Import
+	Walk(root, func(n *sitter.Node) bool {
+		switch n.Kind() {
+		case "import_statement", "export_statement":
+			if s := n.ChildByFieldName("source"); s != nil {
+				out = append(out, Import{Path: unquote(s.Utf8Text(src)), Line: line(n)})
+			}
+			return n.Kind() == "export_statement"
+		case "call_expression":
+			fn := n.ChildByFieldName("function")
+			args := n.ChildByFieldName("arguments")
+			if fn != nil && (fn.Kind() == "import" || fn.Utf8Text(src) == "require") &&
+				args != nil && args.NamedChildCount() == 1 && args.NamedChild(0).Kind() == "string" {
+				out = append(out, Import{Path: unquote(args.NamedChild(0).Utf8Text(src)), Line: line(n)})
+			}
+		}
+		return true
+	})
+	return out
 }
 
 func tsDecision(n *sitter.Node, src []byte) bool {
