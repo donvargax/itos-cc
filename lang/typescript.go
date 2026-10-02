@@ -30,6 +30,7 @@ func init() {
 		Container: tsContainer,
 		Private:   tsPrivate,
 		Decision:  tsDecision,
+		BodyLine:  tsBodyLine,
 		IsTest:    tsIsTest,
 	})
 }
@@ -40,6 +41,18 @@ func tsDecision(n *sitter.Node, src []byte) bool {
 	}
 	return kindIn(n, "if_statement", "for_statement", "for_in_statement", "while_statement",
 		"do_statement", "catch_clause", "ternary_expression", "switch_case")
+}
+
+// tsBodyLine skips the declaration line: loading a module runs
+// `export const f = () => {`, so that line is covered without a call.
+func tsBodyLine(n *sitter.Node) int {
+	if v := n.ChildByFieldName("value"); isFunctionValue(v) {
+		n = v
+	}
+	if body := n.ChildByFieldName("body"); body != nil {
+		return firstStatementLine(body)
+	}
+	return 0
 }
 
 func tsIsTest(path string) bool {

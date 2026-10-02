@@ -265,6 +265,18 @@ func operatorIn(n *sitter.Node, src []byte, ops ...string) bool {
 	return false
 }
 
+// firstStatementLine is the line of the first statement in body, skipping
+// comments, or the line body starts on when it holds no statement or is an
+// expression.
+func firstStatementLine(body *sitter.Node) int {
+	for i := uint(0); i < body.NamedChildCount(); i++ {
+		if c := body.NamedChild(i); c.Kind() != "comment" {
+			return int(c.StartPosition().Row) + 1
+		}
+	}
+	return int(body.StartPosition().Row) + 1
+}
+
 // kindIn reports whether n's kind is one of kinds.
 func kindIn(n *sitter.Node, kinds ...string) bool {
 	k := n.Kind()

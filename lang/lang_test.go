@@ -352,3 +352,15 @@ func TestPythonCoverageStartsAtTheBody(t *testing.T) {
 		t.Errorf("start, body, one-liner body = %v, want [2 5 7]", got)
 	}
 }
+
+func TestTypeScriptCoverageStartsAtTheFirstStatement(t *testing.T) {
+	src := "export const f = (x: number) => {\n  // why\n  return x;\n};\nfunction g() {\n  return 1;\n}\nconst h = () => 1;\n"
+	f := parse(t, "testdata/ts/src/b.ts", src)
+	var got []int
+	for _, u := range f.Units {
+		got = append(got, u.BodyLine)
+	}
+	if !slices.Equal(got, []int{3, 6, 8}) {
+		t.Errorf("body lines = %v, want [3 6 8]", got)
+	}
+}
