@@ -121,9 +121,18 @@ cd viewer && npm install && npm run dev # viewer on http://localhost:5173
 - A module is a file in TypeScript, Python, and Kotlin, and a package in Go.
   Directories with a single child collapse into one box, so a deep
   `src/main/kotlin/com/acme` tree is one click, not five.
-- Arrows are imports, rolled up to the boxes on the current level; boxes sit
-  above what they depend on. Arrows in a dependency cycle are red at every
-  level.
+- Solid arrows are imports, rolled up to the boxes on the current level;
+  boxes sit above what they depend on. Arrows in a dependency cycle are red at
+  every level. Kotlin dependencies within a package count even without an
+  import, and Python's `importlib.import_module("x")` counts as an import.
+- Dashed arrows are HTTP: a request (`fetch`, `EventSource`, axios,
+  `requests`, `httpx`, `http.Get`, RestTemplate, WebClient, Ktor client)
+  whose path matches a route another module serves (`net/http`, chi, gin,
+  echo, Express, Fastify, Hono, Flask, FastAPI, Spring, Ktor). Matching runs
+  across every repository served together, so a frontend in one repository
+  points at the service it calls in another. Requests whose path is all
+  parameters, such as `${base}/${path}`, are too vague to place and are
+  skipped.
 - Box color runs from red to green and combines CRAP with the mutation
   score; grey means not measured yet. A module is as risky as its worst
   function. A directory or repository is graded by the share of its functions
