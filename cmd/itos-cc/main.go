@@ -12,6 +12,7 @@ commands:
   crap    CRAP score per function: complexity × untested risk
   dry     functions similar enough to be duplicates
   mutate  mutation testing: do the tests notice small changes?
+  scrap   test-code structure: which tests to leave, table-drive, refactor, or split
   units   list the functions and methods every tool measures
 
 Paths are files, directories, or fragments of a path under the working
@@ -23,6 +24,7 @@ var commands = map[string]func(args []string) int{
 	"crap":   runCrap,
 	"dry":    runDry,
 	"mutate": runMutate,
+	"scrap":  runScrap,
 	"units":  runUnits,
 }
 
