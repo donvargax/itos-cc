@@ -290,3 +290,8 @@ func TestCompare(t *testing.T) {
 		t.Errorf("compare %+v", r.Compare)
 	}
 }
+
+func TestKotlinMultiAnnotatedTestClass(t *testing.T) {
+	r := analyze(t, "ApiTest.kt", "package demo\n\n@SpringBootTest\n@AutoConfigureMockMvc\nclass ApiTest {\n    @Test\n    fun lists() { assertEquals(1, list().size) }\n}\n")
+	assertSummary(t, r, []string{"ApiTest/lists a=1 d=0 m=0"})
+}

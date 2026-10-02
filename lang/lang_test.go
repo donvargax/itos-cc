@@ -452,3 +452,13 @@ func TestKotlinTopLevelNames(t *testing.T) {
 		t.Errorf("names %v", got)
 	}
 }
+
+// The grammar must keep a class with several annotations and no
+// constructor: Spring configuration classes look like this.
+func TestKotlinMultiAnnotatedClass(t *testing.T) {
+	src := "package demo\n\n@Configuration\n@EnableWebSecurity\nclass SecurityConfig {\n    fun chain(): Int = 1\n}\n\nfun other() {}\n"
+	assertUnits(t, unitsOf(t, "testdata/x.kt", src), []string{
+		"method demo.SecurityConfig#chain 6-6",
+		"function demo#other 9-9",
+	})
+}

@@ -153,14 +153,19 @@ func set(kinds ...string) map[string]bool {
 }
 
 // IsCallee reports whether the identifier n names the function a call
-// invokes: f in f(x), or m in obj.m(x).
+// invokes: f in f(x), or m in obj.m(x). Single-child wrappers between them,
+// such as Kotlin's navigation_suffix, are looked through.
 func (s Syntax) IsCallee(n *sitter.Node) bool {
+	id := n
 	p := n.Parent()
+	for p != nil && !s.isMember(p) && !s.isCall(p) && p.NamedChildCount() == 1 {
+		n, p = p, p.Parent()
+	}
 	if p == nil {
 		return false
 	}
 	if field, ok := s.Members[p.Kind()]; ok {
-		if !sameNode(memberName(p, field), n) {
+		if !sameNode(s.memberName(p, field), id) {
 			return false
 		}
 		n, p = p, p.Parent()
@@ -170,6 +175,40 @@ func (s Syntax) IsCallee(n *sitter.Node) bool {
 	}
 	field, ok := s.Calls[p.Kind()]
 	return ok && sameNode(callee(p, field), n)
+}
+
+func (s Syntax) isMember(n *sitter.Node) bool { _, ok := s.Members[n.Kind()]; return ok }
+func (s Syntax) isCall(n *sitter.Node) bool   { _, ok := s.Calls[n.Kind()]; return ok }
+
+// Callee splits a call into the object it is made on, if any, and the
+// called name: ("http", "Get") for http.Get(u), ("", "fetch") for fetch(u).
+// A call made on a call's result, a.b().c(), has the object text a.b().
+func (s Syntax) Callee(n *sitter.Node, src []byte) (object, name string, ok bool) {
+	field, isCall := s.Calls[n.Kind()]
+	if !isCall {
+		return "", "", false
+	}
+	fn := callee(n, field)
+	// Kotlin's trailing lambda nests the call: get("/x") { } is
+	// call(call(get, args), lambda).
+	if fn != nil && fn.Kind() == n.Kind() && field == "" {
+		fn = callee(fn, field)
+	}
+	if fn == nil {
+		return "", "", false
+	}
+	if s.Identifiers[fn.Kind()] {
+		return "", fn.Utf8Text(src), true
+	}
+	memberField, isMember := s.Members[fn.Kind()]
+	if !isMember || fn.NamedChildCount() == 0 {
+		return "", "", false
+	}
+	member := s.memberName(fn, memberField)
+	if member == nil {
+		return "", "", false
+	}
+	return fn.NamedChild(0).Utf8Text(src), member.Utf8Text(src), true
 }
 
 func callee(call *sitter.Node, field string) *sitter.Node {
@@ -182,14 +221,19 @@ func callee(call *sitter.Node, field string) *sitter.Node {
 	return call.NamedChild(0)
 }
 
-func memberName(member *sitter.Node, field string) *sitter.Node {
+// memberName is the name in a member access: the field, or the last named
+// child, unwrapped down to the identifier inside it.
+func (s Syntax) memberName(member *sitter.Node, field string) *sitter.Node {
+	var name *sitter.Node
 	if field != "" {
-		return member.ChildByFieldName(field)
+		name = member.ChildByFieldName(field)
+	} else if n := member.NamedChildCount(); n > 0 {
+		name = member.NamedChild(n - 1)
 	}
-	if n := member.NamedChildCount(); n > 0 {
-		return member.NamedChild(n - 1)
+	for name != nil && !s.Identifiers[name.Kind()] && name.NamedChildCount() > 0 {
+		name = name.NamedChild(name.NamedChildCount() - 1)
 	}
-	return nil
+	return name
 }
 
 func sameNode(a, b *sitter.Node) bool {

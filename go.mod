@@ -3,7 +3,7 @@ module itos-cc
 go 1.27.1
 
 require (
-	github.com/tree-sitter-grammars/tree-sitter-kotlin v1.1.0
+	github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6
 	github.com/tree-sitter/go-tree-sitter v0.25.0
 	github.com/tree-sitter/tree-sitter-go v0.25.0
 	github.com/tree-sitter/tree-sitter-python v0.25.0

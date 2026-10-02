@@ -105,35 +105,11 @@ func (m *measurer) fixtureLines(n *sitter.Node) int {
 // callee splits a call into the object it is called on, if any, and the
 // called name: ("vi", "fn") for vi.fn(), ("", "expect") for expect(x).
 func (m *measurer) callee(n *sitter.Node) (object, name string, ok bool) {
-	syntax := m.f.Spec.Syntax
-	field, isCall := syntax.Calls[n.Kind()]
-	if !isCall {
-		return "", "", false
+	object, name, ok = m.f.Spec.Syntax.Callee(n, m.f.Src)
+	if object != "" {
+		object = lastSegment(object)
 	}
-	var fn *sitter.Node
-	if field != "" {
-		fn = n.ChildByFieldName(field)
-	} else if n.NamedChildCount() > 0 {
-		fn = n.NamedChild(0)
-	}
-	if fn == nil {
-		return "", "", false
-	}
-	if syntax.Identifiers[fn.Kind()] {
-		return "", fn.Utf8Text(m.f.Src), true
-	}
-	memberField, isMember := syntax.Members[fn.Kind()]
-	if !isMember || fn.NamedChildCount() == 0 {
-		return "", "", false
-	}
-	member := fn.NamedChild(fn.NamedChildCount() - 1)
-	if memberField != "" {
-		member = fn.ChildByFieldName(memberField)
-	}
-	if member == nil {
-		return "", "", false
-	}
-	return lastSegment(fn.NamedChild(0).Utf8Text(m.f.Src)), member.Utf8Text(m.f.Src), true
+	return object, name, ok
 }
 
 // lastSegment keeps the final name of a dotted object: patch for

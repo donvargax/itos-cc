@@ -261,14 +261,14 @@ var (
 func (x *extractor) kotlin(n *sitter.Node, groups []string) {
 	switch n.Kind() {
 	case "class_declaration", "object_declaration":
-		groups = append(groups, fieldText(n, "name", x.f.Src))
+		groups = append(groups, ktName(n, x.f.Src))
 	case "function_declaration":
 		annotations := x.ktAnnotations(n)
 		switch {
 		case annotations["Test"] || annotations["RepeatedTest"] || annotations["TestFactory"]:
-			x.add(fieldText(n, "name", x.f.Src), groups, n, ktBody(n), false)
+			x.add(ktName(n, x.f.Src), groups, n, ktBody(n), false)
 		case annotations["ParameterizedTest"]:
-			x.add(fieldText(n, "name", x.f.Src), groups, n, ktBody(n), true)
+			x.add(ktName(n, x.f.Src), groups, n, ktBody(n), true)
 		default:
 			for a := range annotations {
 				if ktSetupAnnotations[a] {
@@ -323,33 +323,42 @@ func ktBody(fn *sitter.Node) *sitter.Node {
 	return fn
 }
 
+// ktName is a Kotlin declaration's name: its first identifier child.
+func ktName(n *sitter.Node, src []byte) string {
+	for _, c := range children(n) {
+		if c.Kind() == "simple_identifier" || c.Kind() == "type_identifier" {
+			return c.Utf8Text(src)
+		}
+	}
+	return ""
+}
+
 // ktCall returns the called name and trailing lambda of a kotest-style
-// call, or a nil lambda. With a trailing lambda the grammar nests the call:
-// test("name") { … } is call(call(test, ("name")), lambda).
+// call, test("name") { … }, or a nil lambda. The arguments and the lambda
+// share the call's suffix.
 func (x *extractor) ktCall(call *sitter.Node) (string, *sitter.Node) {
 	kids := children(call)
-	if len(kids) != 2 || kids[1].Kind() != "annotated_lambda" {
+	if len(kids) != 2 || kids[0].Kind() != "simple_identifier" || kids[1].Kind() != "call_suffix" {
 		return "", nil
 	}
-	fn := kids[0]
-	if fn.Kind() == "call_expression" && fn.NamedChildCount() > 0 {
-		fn = fn.NamedChild(0)
+	for _, c := range children(kids[1]) {
+		if c.Kind() == "annotated_lambda" {
+			return x.text(kids[0]), c
+		}
 	}
-	if fn.Kind() != "identifier" {
-		return "", nil
-	}
-	return x.text(fn), kids[1]
+	return "", nil
 }
 
 // ktTitle is the first argument of a kotest-style call.
 func (x *extractor) ktTitle(call *sitter.Node) string {
-	inner := call.NamedChild(0)
-	if inner.Kind() != "call_expression" {
-		return ""
-	}
-	for _, k := range children(inner) {
-		if k.Kind() == "value_arguments" && k.NamedChildCount() > 0 {
-			return strings.Trim(x.text(k.NamedChild(0)), "\"")
+	for _, suffix := range children(call) {
+		if suffix.Kind() != "call_suffix" {
+			continue
+		}
+		for _, args := range children(suffix) {
+			if args.Kind() == "value_arguments" && args.NamedChildCount() > 0 {
+				return strings.Trim(x.text(args.NamedChild(0)), "\"")
+			}
 		}
 	}
 	return ""
