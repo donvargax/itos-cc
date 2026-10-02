@@ -1,0 +1,127 @@
+# itos-cc
+
+Code-quality measurements for TypeScript, Python, Kotlin, and Go, in one
+binary, with output meant for both people and coding agents.
+
+| Command | Question it answers |
+| --- | --- |
+| `itos-cc crap` | Which functions are complex *and* under-tested? |
+| `itos-cc dry` | Which functions are the same code with the names changed? |
+| `itos-cc mutate` | Would the tests notice if this code were wrong? |
+| `itos-cc scrap` | Which test files should an agent leave alone, table-drive, refactor, or split? |
+| `itos-cc units` | What functions and methods do the tools see? |
+
+The ideas come from Robert C. Martin's
+[crapper](https://github.com/unclebob/crapper),
+[mutator](https://github.com/unclebob/mutator),
+[dryer](https://github.com/unclebob/dryer), and
+[scrap](https://github.com/unclebob/scrap). This is a separate
+implementation in Go around one shared core, so every tool understands every
+language the same way.
+
+## Build
+
+Parsing uses tree-sitter, which needs cgo and a C compiler:
+
+```bash
+go build -o itos-cc ./cmd/itos-cc
+go test ./...
+```
+
+Linux and Windows release binaries cross-compile from Linux with
+[zig](https://ziglang.org) as the C compiler:
+
+```bash
+CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC="zig cc -target aarch64-linux-musl" \
+  go build -ldflags='-linkmode=external -extldflags=-static' -o itos-cc ./cmd/itos-cc
+CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zig cc -target x86_64-windows-gnu" \
+  go build -o itos-cc.exe ./cmd/itos-cc
+```
+
+macOS binaries need a macOS machine or CI runner: Go's macOS link step asks
+for a system library zig does not ship.
+
+## Use
+
+Run from a project root. Paths are files, directories, or fragments of a
+path (`itos-cc crap billing`); `--changed` selects what git reports as added
+or modified. Every command takes `-h`.
+
+```bash
+itos-cc crap --top 20             # runs the tests with coverage first
+itos-cc crap --use-existing-coverage
+itos-cc dry --changed             # changed files against the whole project
+itos-cc mutate src/billing/invoice.ts
+itos-cc scrap --verbose
+```
+
+### crap
+
+`CRAP = CC² × (1 − coverage)³ + CC`. Coverage comes from each language's own
+tools, run per build root: `go test -coverprofile`, Vitest, Jest, or c8
+(LCOV), coverage.py (LCOV), and JaCoCo or Kover XML for Kotlin. Bring your own
+with `--coverage-command` and `--coverage-report`. Python and TypeScript
+coverage is measured from the first line of the body, because loading a
+module executes every `def` and `export const f = …` line.
+
+### dry
+
+Local names, field names, and literals are normalized away; called function
+names, operators, and the tree's shape stay. Functions are compared by the
+Jaccard similarity of their subtree fingerprints. The default threshold is
+0.82.
+
+### mutate
+
+Swaps operators (`<`/`<=`, `==`/`!=`, `&&`/`||`, `+`/`-`, …), deletes `!` and
+unary `-`, and flips `true`/`false` and `0`/`1`, one at a time, inside
+functions only. What keeps it fast:
+
+- **Differential runs.** Each function's source is hashed. Killed mutants of
+  unchanged functions stay killed; survivors and changed functions rerun.
+- **Coverage first.** Mutants on lines no test executes are reported as
+  uncovered and never run.
+- **Narrow, fail-fast test runs.** The file's own Go package
+  (`-failfast`), `vitest related` / `jest --findRelatedTests`, `pytest -x`.
+- **Parallel workers** in private copies of the project, so the real tree is
+  never modified while tests run. The baseline runs inside a worker, which
+  proves the copy works before any mutant does.
+
+Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
+the end of each source file (`--no-annotate` turns it off). Exit codes: 0 all
+killed, 2 a baseline failed, 3 a mutant survived.
+
+### scrap
+
+Finds the test cases of Vitest/Jest, pytest/unittest, Go `testing`
+(including `t.Run` and table loops), and JUnit/kotest, and scores each one on
+size (fixture text excluded), logic, mocking, and assertions (helpers that
+assert count as assertions). Similar examples are clustered with dry's
+fingerprints. Each file gets one action: `LEAVE_ALONE`, `AUTO_TABLE_DRIVE`,
+`AUTO_REFACTOR`, `MANUAL_SPLIT`, or `REVIEW_FIRST`, plus ranked
+recommendations with line ranges. Every run is compared with the previous
+snapshot, so rerunning after a refactor says whether it helped.
+
+## .metrics
+
+Every command writes a JSON snapshot under `.metrics/`: `crap.json`,
+`dry.json`, `scrap.json`, and `mutate/`. Commit them: a clone then has the
+numbers without rerunning, and mutation results are shared, so nobody reruns
+mutants that are already killed. Snapshots carry no timestamps and are
+sorted, so an unchanged result is an unchanged file. Raw coverage reports go
+to `.metrics/coverage/`, which ignores itself.
+
+## Layout
+
+| Package | Role |
+| --- | --- |
+| `lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules |
+| `project` | Finding source and test files |
+| `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
+| `crap`, `dry`, `mutate`, `scrap` | The tools |
+| `metrics` | Snapshot files |
+| `cmd/itos-cc` | The command line |
+
+Adding a language means one file in `lang/` (grammar, units, decisions,
+syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
+plan in `coverage/`.
