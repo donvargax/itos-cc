@@ -17,8 +17,8 @@ import (
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
-	"itos-cc/lang"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Options bound which functions are compared and which pairs are reported.

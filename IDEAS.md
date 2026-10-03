@@ -142,7 +142,8 @@ reads `.metrics/`. Only itos's config wires them together.
 
 ## Release and packaging
 
-- **Name.** `itos-cc` is a placeholder module path.
+- **Name.** `itos-cc` is a working name; the module is
+  `github.com/donvargax/itos-cc`, so a rename moves the module path too.
 - **itos integration.** As an itos extension: `itos cc …` runs `itos-cc …`
   from the `PATH`, a subprocess, not imported Go packages, so neither side
   depends on the other's code. See "With itos" above.

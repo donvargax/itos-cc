@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // Plan is how to measure one project: the directory to run in, the commands

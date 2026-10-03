@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"itos-cc/server"
+	"github.com/donvargax/itos-cc/server"
 )
 
 func runServe(args []string) int {

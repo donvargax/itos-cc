@@ -11,7 +11,7 @@ import (
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // Example is one test case.

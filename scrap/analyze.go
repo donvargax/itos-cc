@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"itos-cc/dry"
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/dry"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // Actions tell an assistant how far it may go on its own.

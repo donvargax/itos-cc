@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"itos-cc/lang"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 func runUnits(args []string) int {

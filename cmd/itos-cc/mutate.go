@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"strings"
 
-	"itos-cc/coverage"
-	"itos-cc/lang"
-	"itos-cc/mutate"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 const (

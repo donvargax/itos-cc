@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"itos-cc/lang"
-	"itos-cc/metrics"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/metrics"
 )
 
 // Outcomes of a mutant.

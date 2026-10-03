@@ -8,9 +8,9 @@ import (
 	"math"
 	"sort"
 
-	"itos-cc/coverage"
-	"itos-cc/lang"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Entry is one function's score. Coverage and CRAP are nil when no coverage

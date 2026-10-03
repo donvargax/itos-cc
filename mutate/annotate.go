@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 const (

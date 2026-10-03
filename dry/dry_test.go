@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // score fingerprints the only unit in each source and returns their

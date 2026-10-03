@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"itos-cc/dry"
-	"itos-cc/metrics"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/dry"
+	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 type drySnapshot struct {

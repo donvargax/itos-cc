@@ -3,7 +3,7 @@ package graph
 import (
 	"sort"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // endpoint is a route or request of one module.

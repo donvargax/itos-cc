@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // skipDirs are never walked: dependencies, build output, caches, and

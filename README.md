@@ -41,6 +41,12 @@ tar -xzf itos-cc-<version>-linux-amd64.tar.gz itos-cc
 itos-cc version
 ```
 
+Or build it with Go, which needs cgo and a C compiler (tree-sitter is C):
+
+```bash
+go install github.com/donvargax/itos-cc/cmd/itos-cc@latest
+```
+
 ## Build
 
 Parsing uses tree-sitter, which needs cgo and a C compiler:

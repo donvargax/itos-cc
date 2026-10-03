@@ -6,8 +6,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"itos-cc/crap"
-	"itos-cc/metrics"
+	"github.com/donvargax/itos-cc/crap"
+	"github.com/donvargax/itos-cc/metrics"
 )
 
 type crapSnapshot struct {

@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"itos-cc/coverage"
-	"itos-cc/metrics"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Exit codes shared by every command.

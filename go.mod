@@ -1,4 +1,4 @@
-module itos-cc
+module github.com/donvargax/itos-cc
 
 go 1.27.1
 

@@ -6,10 +6,10 @@ import (
 	"os"
 	"sort"
 
-	"itos-cc/lang"
-	"itos-cc/metrics"
-	"itos-cc/project"
-	"itos-cc/scrap"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/scrap"
 )
 
 type scrapSnapshot struct {

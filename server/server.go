@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"itos-cc/graph"
+	"github.com/donvargax/itos-cc/graph"
 )
 
 // Server holds the latest graph and the clients listening for changes.

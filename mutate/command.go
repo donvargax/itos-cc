@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // Command runs the tests that should kill a file's mutants. Root is the tree a

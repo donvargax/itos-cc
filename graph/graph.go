@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 // Node is one box: a repository, a directory, or a module.

@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 )
 
 const usage = `usage: itos-cc <command> [options] [path ...]
@@ -22,8 +23,19 @@ directory. Without paths the working directory is analyzed. Run
 'itos-cc <command> -h' for a command's options.
 `
 
-// version is set at release time with -ldflags '-X main.version=…'.
+// version is set at release time with -ldflags '-X main.version=…'. A binary
+// built by `go install …@<version>` reports the module version instead.
 var version = "dev"
+
+func versionString() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return version
+}
 
 var commands = map[string]func(args []string) int{
 	"crap":   runCrap,
@@ -43,7 +55,7 @@ func main() {
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 	case "version", "--version":
-		fmt.Println("itos-cc", version)
+		fmt.Println("itos-cc", versionString())
 	default:
 		run, ok := commands[name]
 		if !ok {

@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
-	"itos-cc/crap"
-	"itos-cc/lang"
-	"itos-cc/mutate"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/crap"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Builder rebuilds the graph of some repositories, reparsing only files that

@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"itos-cc/coverage"
-	"itos-cc/lang"
-	"itos-cc/metrics"
-	"itos-cc/project"
+	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Options control a mutation run.

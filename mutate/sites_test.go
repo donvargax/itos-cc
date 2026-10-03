@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"itos-cc/lang"
+	"github.com/donvargax/itos-cc/lang"
 )
 
 func parse(t *testing.T, path, src string) *lang.File {
