@@ -3,6 +3,14 @@
 Code-quality measurements for TypeScript, Python, Kotlin, and Go, in one
 binary, with output meant for both people and coding agents.
 
+> **Experimental.** This is a proof of concept: commands, output, file
+> formats, and exit codes may change in any release.
+
+The aim is for coding agents to use it through
+[itos](https://github.com/donvargax/itos), to find out where code is risky
+before and after they change it. [IDEAS.md](IDEAS.md) lists what is planned
+and what has not been verified.
+
 | Command | Question it answers |
 | --- | --- |
 | `itos-cc crap` | Which functions are complex *and* under-tested? |
@@ -178,3 +186,7 @@ to `.metrics/coverage/`, which ignores itself.
 Adding a language means one file in `lang/` (grammar, units, decisions,
 syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
 plan in `coverage/`.
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE).
