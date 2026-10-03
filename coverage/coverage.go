@@ -114,14 +114,14 @@ func Merge(reports ...*Report) *Report {
 // where paths start (module paths, package directories, the working
 // directory), but the tail of the path is always the file.
 type matcher struct {
-	sources map[string]bool
+	sources map[string]string // cleaned path → the path as the caller gave it
 	byName  map[string][]string
 }
 
 func newMatcher(sources []string) *matcher {
-	m := &matcher{sources: map[string]bool{}, byName: map[string][]string{}}
+	m := &matcher{sources: map[string]string{}, byName: map[string][]string{}}
 	for _, s := range sources {
-		m.sources[s] = true
+		m.sources[filepath.Clean(s)] = s
 		name := filepath.Base(s)
 		m.byName[name] = append(m.byName[name], s)
 	}
@@ -130,11 +130,11 @@ func newMatcher(sources []string) *matcher {
 
 func (m *matcher) match(path, base string) string {
 	path = filepath.FromSlash(strings.TrimPrefix(path, "file://"))
-	if filepath.IsAbs(path) && m.sources[filepath.Clean(path)] {
-		return filepath.Clean(path)
+	if s, ok := m.sources[filepath.Clean(path)]; ok && filepath.IsAbs(path) {
+		return s
 	}
-	if joined := filepath.Join(base, path); m.sources[joined] {
-		return joined
+	if s, ok := m.sources[filepath.Join(base, path)]; ok {
+		return s
 	}
 	want := components(path)
 	best, bestLen, tied := "", 0, false
