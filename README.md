@@ -28,6 +28,19 @@ The ideas come from Robert C. Martin's
 implementation in Go around one shared core, so every tool understands every
 language the same way.
 
+## Install
+
+Download your platform's archive from the
+[latest release](https://github.com/donvargax/itos-cc/releases/latest):
+Linux (static) and macOS on amd64 and arm64, and Windows on amd64. Check it
+against `checksums.txt` and put `itos-cc` on your `PATH`:
+
+```bash
+sha256sum --ignore-missing -c checksums.txt
+tar -xzf itos-cc-<version>-linux-amd64.tar.gz itos-cc
+itos-cc version
+```
+
 ## Build
 
 Parsing uses tree-sitter, which needs cgo and a C compiler:
@@ -37,7 +50,9 @@ go build -o itos-cc ./cmd/itos-cc
 go test ./...
 ```
 
-Linux and Windows release binaries cross-compile from Linux with
+Releases are built by CI (`.github/workflows/ci.yml`) on each platform's own
+runner when a `vX.Y.Z` tag is pushed, after the tests pass on Linux, macOS,
+and Windows. To cross-compile Linux and Windows binaries locally instead, use
 [zig](https://ziglang.org) as the C compiler:
 
 ```bash

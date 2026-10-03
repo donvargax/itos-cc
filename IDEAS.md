@@ -142,9 +142,6 @@ reads `.metrics/`. Only itos's config wires them together.
 
 ## Release and packaging
 
-- **CI releases.** Linux (static, amd64/arm64) and Windows cross-compile
-  from Linux with `zig cc`; macOS needs a macOS runner (Go's macOS link asks
-  for `libresolv`, which zig does not ship).
 - **Name.** `itos-cc` is a placeholder module path.
 - **itos integration.** As an itos extension: `itos cc …` runs `itos-cc …`
   from the `PATH`, a subprocess, not imported Go packages, so neither side

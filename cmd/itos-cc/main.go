@@ -15,11 +15,15 @@ commands:
   scrap   test-code structure: which tests to leave, table-drive, refactor, or split
   serve   live architecture graph and metrics over HTTP, for the viewer
   units   list the functions and methods every tool measures
+  version print the version
 
 Paths are files, directories, or fragments of a path under the working
 directory. Without paths the working directory is analyzed. Run
 'itos-cc <command> -h' for a command's options.
 `
+
+// version is set at release time with -ldflags '-X main.version=…'.
+var version = "dev"
 
 var commands = map[string]func(args []string) int{
 	"crap":   runCrap,
@@ -38,6 +42,8 @@ func main() {
 	switch name := os.Args[1]; name {
 	case "-h", "--help", "help":
 		fmt.Print(usage)
+	case "version", "--version":
+		fmt.Println("itos-cc", version)
 	default:
 		run, ok := commands[name]
 		if !ok {

@@ -1,0 +1,128 @@
+name: CI
+
+# Tests on Linux, macOS and Windows for every push and pull request. A pushed
+# vX.Y.Z tag also builds each platform on its own runner, uploads the archives
+# to a draft release, and publishes the release with checksums.txt once every
+# archive is there. A run that fails leaves a draft, which a rerun reuses.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      # Pinned to commits, the same versions as itos's workflows.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - run: go vet ./...
+      - run: go test ./...
+
+  draft:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - run: |
+          gh release view "$TAG" >/dev/null 2>&1 ||
+            gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes \
+              "Experimental: commands, output, file formats, and exit codes may change in any release. Check a download with \`sha256sum --ignore-missing -c checksums.txt\`."
+
+  build:
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, goos: linux, goarch: amd64 }
+          - { os: ubuntu-24.04-arm, goos: linux, goarch: arm64 }
+          - { os: macos-latest, goos: darwin, goarch: arm64 }
+          - { os: macos-latest, goos: darwin, goarch: amd64, cc: "clang -arch x86_64" }
+          - { os: windows-latest, goos: windows, goarch: amd64 }
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+      CGO_ENABLED: "1" # tree-sitter is C
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Build
+        env:
+          MATRIX_CC: ${{ matrix.cc }}
+        run: |
+          [ -n "$MATRIX_CC" ] && export CC="$MATRIX_CC"
+          flags="-s -w -X main.version=${TAG#v}"
+          tags=""
+          # Linux and Windows link statically, so the binary needs no libc or
+          # MinGW DLLs; netgo and osusergo keep glibc's NSS out of a static link.
+          case "$GOOS" in
+            linux) tags="netgo,osusergo"; flags="$flags -linkmode=external -extldflags=-static" ;;
+            windows) flags="$flags -linkmode=external -extldflags=-static" ;;
+          esac
+          exe=itos-cc; [ "$GOOS" = windows ] && exe=itos-cc.exe
+          mkdir -p dist/pkg
+          go build -trimpath -tags "$tags" -ldflags "$flags" -o "dist/pkg/$exe" ./cmd/itos-cc
+          cp LICENSE README.md dist/pkg/
+      - name: Check
+        if: matrix.cc == ''
+        run: dist/pkg/itos-cc version
+      - name: Upload
+        run: |
+          name="itos-cc-${TAG#v}-$GOOS-$GOARCH"
+          cd dist/pkg
+          if [ "$GOOS" = windows ]; then
+            7z a -tzip "../$name.zip" * >/dev/null
+            archive="../$name.zip"
+          else
+            tar -czf "../$name.tar.gz" *
+            archive="../$name.tar.gz"
+          fi
+          gh release upload "$TAG" "$archive" --clobber
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - run: |
+          mkdir assets && cd assets
+          gh release download "$TAG" --pattern 'itos-cc-*'
+          sha256sum itos-cc-* > checksums.txt
+          cat checksums.txt
+          gh release upload "$TAG" checksums.txt --clobber
+          gh release edit "$TAG" --draft=false --latest
