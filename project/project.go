@@ -82,29 +82,30 @@ func Discover(roots []string) (Files, error) {
 	return files, nil
 }
 
-// Changed returns the supported files git reports as added or modified,
-// staged or not, plus untracked files, as paths relative to the working
-// directory.
+// Changed returns the supported files under the working directory that git
+// reports as added or modified, staged or not, plus untracked files, as paths
+// relative to the working directory. Git lists them NUL-terminated, so a name
+// with spaces or non-ASCII letters arrives unquoted.
 func Changed() ([]string, error) {
 	var paths []string
 	for _, args := range [][]string{
-		{"diff", "--name-only", "--diff-filter=AMR", "HEAD"},
-		{"ls-files", "--others", "--exclude-standard"},
+		{"diff", "--name-only", "-z", "--relative", "--diff-filter=AMR", "HEAD"},
+		{"ls-files", "-z", "--others", "--exclude-standard"},
 	} {
 		out, err := exec.Command("git", args...).Output()
 		if err != nil {
 			// A repository without commits has no HEAD; fall back to the index.
 			if args[0] == "diff" {
-				out, err = exec.Command("git", "diff", "--name-only", "--cached").Output()
+				out, err = exec.Command("git", "diff", "--name-only", "-z", "--relative", "--cached").Output()
 			}
 			if err != nil {
 				return nil, err
 			}
 		}
-		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-			if line != "" && lang.Detect(line) != nil {
-				if _, err := os.Stat(line); err == nil {
-					paths = append(paths, line)
+		for _, name := range strings.Split(string(out), "\x00") {
+			if name != "" && lang.Detect(name) != nil {
+				if _, err := os.Stat(name); err == nil {
+					paths = append(paths, name)
 				}
 			}
 		}

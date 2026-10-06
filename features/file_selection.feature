@@ -25,6 +25,13 @@ Feature: Choosing which files a command looks at
     Then src/a.ts, src/b.py, and src/c.go are selected
     And src/d.kt is not selected
 
+  Scenario: --changed from a subdirectory selects the changes under it
+    Given git reports src/a.ts and lib/b.ts as modified
+    And src/año nuevo.ts as untracked
+    When I run "itos-cc crap --changed" in src
+    Then a.ts and año nuevo.ts are selected
+    And lib/b.ts is not selected
+
   Scenario: --changed works before the first commit
     Given a git repository with staged files and no commits
     When I run a command with --changed
