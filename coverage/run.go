@@ -126,7 +126,7 @@ func pythonPlan(dir, out string) Plan {
 	if exec.Command(py, "-c", "import pytest").Run() == nil {
 		runner = []string{"-m", "pytest", "-q"}
 	}
-	run := append([]string{py, "-m", "coverage", "run", "--data-file=" + data, "--source=" + dir}, runner...)
+	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
 	return Plan{
 		Language: "python",
 		Dir:      dir,

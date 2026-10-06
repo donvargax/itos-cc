@@ -8,9 +8,9 @@ import (
 
 func approx(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
 
-func fraction(t *testing.T, r *Report, file string, start, end int) float64 {
+func fraction(t *testing.T, r *Report, file string, start, end int, skip ...[2]int) float64 {
 	t.Helper()
-	f, ok := r.Fraction(file, start, end)
+	f, ok := r.Fraction(file, start, end, skip...)
 	if !ok {
 		t.Fatalf("no coverage for %s %d-%d", file, start, end)
 	}
@@ -44,6 +44,77 @@ end_of_record
 	}
 }
 
+// pick runs once with x > 0, so one of its two branches is taken; never is
+// not called. Both reports are trimmed from real runs.
+func TestLCOVBranchesScoreFunctionsThatHaveThem(t *testing.T) {
+	coveragePy := `SF:lib.py
+DA:1,1
+DA:2,1
+DA:3,1
+DA:4,1
+DA:6,0
+DA:7,1
+DA:9,1
+DA:10,0
+DA:11,0
+DA:12,0
+BRDA:3,0,jump to line 4,1
+BRDA:3,0,jump to line 6,0
+BRDA:10,0,jump to line 11,-
+BRDA:10,0,jump to line 12,-
+end_of_record
+`
+	entries, err := ParseLCOV(strings.NewReader(coveragePy))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := Build([]string{"/p/lib.py"}, "/p", entries)
+	if got := fraction(t, r, "/p/lib.py", 2, 7); !approx(got, 0.5) {
+		t.Errorf("pick = %v, want 1/2 of its branches", got)
+	}
+	if got := fraction(t, r, "/p/lib.py", 10, 12); got != 0 {
+		t.Errorf("never = %v, want 0", got)
+	}
+	if got := fraction(t, r, "/p/lib.py", 4, 4); !approx(got, 1) {
+		t.Errorf("a range without branches = %v, want its line coverage, 1", got)
+	}
+	if got := fraction(t, r, "/p/lib.py", 2, 7, [2]int{3, 3}); !approx(got, 3.0/4) {
+		t.Errorf("pick without its decision = %v, want 3/4 of its lines", got)
+	}
+}
+
+// Node's test runner, c8, and Vitest's v8 provider before AST-aware
+// remapping turn V8 blocks into one-branch blocks: the function body is one,
+// and the arm that ran is missing. They are not decisions, so lines decide.
+func TestLCOVOneBranchBlocksAreNotDecisions(t *testing.T) {
+	v8 := `SF:lib.mjs
+BRDA:1,0,0,1
+BRDA:1,1,0,1
+BRDA:5,2,0,0
+DA:1,1
+DA:2,1
+DA:3,1
+DA:4,1
+DA:5,1
+DA:6,0
+DA:7,0
+DA:8,1
+DA:9,1
+end_of_record
+`
+	entries, err := ParseLCOV(strings.NewReader(v8))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries[0].Branches) != 0 {
+		t.Errorf("branches %+v, want none", entries[0].Branches)
+	}
+	r := Build([]string{"/p/lib.mjs"}, "/p", entries)
+	if got := fraction(t, r, "/p/lib.mjs", 1, 9); !approx(got, 7.0/9) {
+		t.Errorf("pick = %v, want 7/9 of its lines", got)
+	}
+}
+
 func TestGoBlocksAreWeightedByStatements(t *testing.T) {
 	entries, err := ParseGo(strings.NewReader(`mode: set
 example.com/demo/board/board.go:5.24,7.2 1 1
@@ -70,6 +141,8 @@ func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
     <sourcefile name="Board.kt">
       <line nr="15" mi="0" ci="6" mb="0" cb="0"/>
       <line nr="17" mi="2" ci="0" mb="0" cb="0"/>
+      <line nr="21" mi="0" ci="4" mb="0" cb="0"/>
+      <line nr="22" mi="1" ci="3" mb="3" cb="1"/>
     </sourcefile>
   </package>
 </report>`))
@@ -80,6 +153,9 @@ func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
 	r := Build([]string{src}, "/k", entries)
 	if got := fraction(t, r, src, 15, 17); !approx(got, 6.0/8) {
 		t.Errorf("Board = %v, want 6/8", got)
+	}
+	if got := fraction(t, r, src, 21, 22); !approx(got, 1.0/4) {
+		t.Errorf("a function with branches = %v, want 1/4 of them", got)
 	}
 }
 

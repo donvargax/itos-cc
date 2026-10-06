@@ -33,17 +33,23 @@ func Load(file string) ([]Entry, error) {
 	}
 }
 
-// ParseLCOV reads SF/DA records. Each measured line is a segment of weight
-// one.
+// ParseLCOV reads SF/DA records, where each measured line is a segment of
+// weight one, and BRDA records, where each block with two or more branches is
+// a decision. A block with one branch is not a choice: c8, Node, and Vitest's
+// v8 provider before its AST-aware remapping write one for every V8 block
+// whose count differs from the code around it, function bodies included, and
+// leave out the arm that ran as often as its parent.
 func ParseLCOV(r io.Reader) ([]Entry, error) {
 	var entries []Entry
 	var cur *Entry
+	var blocks lcovBlocks
 	s := bufio.NewScanner(r)
 	s.Buffer(make([]byte, 1<<20), 1<<20)
 	for s.Scan() {
 		line := strings.TrimSpace(s.Text())
 		switch {
 		case strings.HasPrefix(line, "SF:"):
+			blocks.flush(cur)
 			entries = append(entries, Entry{Path: strings.TrimPrefix(line, "SF:")})
 			cur = &entries[len(entries)-1]
 		case strings.HasPrefix(line, "DA:") && cur != nil:
@@ -57,11 +63,65 @@ func ParseLCOV(r io.Reader) ([]Entry, error) {
 				return nil, fmt.Errorf("lcov: bad line %q", line)
 			}
 			cur.Segments = append(cur.Segments, Segment{Start: n, End: n, Total: 1, Covered: boolWeight(hits > 0, 1)})
+		case strings.HasPrefix(line, "BRDA:") && cur != nil:
+			if err := blocks.add(strings.TrimPrefix(line, "BRDA:")); err != nil {
+				return nil, err
+			}
 		case line == "end_of_record":
+			blocks.flush(cur)
 			cur = nil
 		}
 	}
+	blocks.flush(cur)
 	return entries, s.Err()
+}
+
+// lcovBlocks gathers one file's BRDA records by line and block, in order.
+type lcovBlocks struct {
+	order []Segment
+	index map[[2]string]int
+}
+
+// add reads "line,block,branch,taken". taken is "-" when the line never
+// ran. coverage.py describes the branch in words, so only the first two
+// fields and the last are read.
+func (b *lcovBlocks) add(record string) error {
+	first := strings.Index(record, ",")
+	last := strings.LastIndex(record, ",")
+	if first < 0 {
+		return fmt.Errorf("lcov: bad branch %q", record)
+	}
+	ln, err := strconv.Atoi(record[:first])
+	block, _, _ := strings.Cut(record[first+1:], ",")
+	if err != nil || last <= first {
+		return fmt.Errorf("lcov: bad branch %q", record)
+	}
+	taken, _ := strconv.ParseFloat(record[last+1:], 64)
+	key := [2]string{record[:first], block}
+	if b.index == nil {
+		b.index = map[[2]string]int{}
+	}
+	i, ok := b.index[key]
+	if !ok {
+		i = len(b.order)
+		b.index[key] = i
+		b.order = append(b.order, Segment{Start: ln, End: ln})
+	}
+	b.order[i].Total++
+	b.order[i].Covered += boolWeight(taken > 0, 1)
+	return nil
+}
+
+// flush gives cur the decisions gathered so far and starts over.
+func (b *lcovBlocks) flush(cur *Entry) {
+	if cur != nil {
+		for _, s := range b.order {
+			if s.Total >= 2 {
+				cur.Branches = append(cur.Branches, s)
+			}
+		}
+	}
+	*b = lcovBlocks{}
 }
 
 // ParseGo reads a `go test -coverprofile` file. Each block is a segment
@@ -113,7 +173,8 @@ func goSpan(span string) (start, end int, ok bool) {
 }
 
 // ParseJaCoCo reads JaCoCo XML, which Kover also writes. Each line is a
-// segment weighted by its instructions, the counter JaCoCo is built around.
+// segment weighted by its instructions, the counter JaCoCo is built around,
+// and a line with branches is also a decision weighted by them.
 func ParseJaCoCo(r io.Reader) ([]Entry, error) {
 	var report struct {
 		Packages []struct {
@@ -124,6 +185,8 @@ func ParseJaCoCo(r io.Reader) ([]Entry, error) {
 					Nr int     `xml:"nr,attr"`
 					Mi float64 `xml:"mi,attr"`
 					Ci float64 `xml:"ci,attr"`
+					Mb float64 `xml:"mb,attr"`
+					Cb float64 `xml:"cb,attr"`
 				} `xml:"line"`
 			} `xml:"sourcefile"`
 		} `xml:"package"`
@@ -140,6 +203,9 @@ func ParseJaCoCo(r io.Reader) ([]Entry, error) {
 			e := Entry{Path: path.Join(p.Name, f.Name)}
 			for _, l := range f.Lines {
 				e.Segments = append(e.Segments, Segment{Start: l.Nr, End: l.Nr, Total: l.Mi + l.Ci, Covered: l.Ci})
+				if l.Mb+l.Cb > 0 {
+					e.Branches = append(e.Branches, Segment{Start: l.Nr, End: l.Nr, Total: l.Mb + l.Cb, Covered: l.Cb})
+				}
 			}
 			entries = append(entries, e)
 		}

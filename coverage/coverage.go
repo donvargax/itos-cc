@@ -1,5 +1,7 @@
 // Package coverage loads coverage reports in the formats each language's
-// tools write and answers how much of a line range the tests executed.
+// tools write and answers how much of a line range the tests executed: how
+// many of its branches were taken where the report counts branches, and how
+// many of its lines or statements ran otherwise.
 package coverage
 
 import (
@@ -9,7 +11,8 @@ import (
 
 // Segment is a run of lines that a report measures as one piece: one LCOV
 // line, one Go statement block, or one JaCoCo line. Total and Covered are in
-// the report's own unit (lines, statements, or instructions).
+// the report's own unit (lines, statements, or instructions). A branch
+// segment is one decision, and counts its branches.
 type Segment struct {
 	Start, End     int
 	Total, Covered float64
@@ -20,17 +23,20 @@ type Segment struct {
 type Entry struct {
 	Path     string
 	Segments []Segment
+	Branches []Segment
 }
 
 // Report is coverage keyed by absolute source path.
 type Report struct {
-	files map[string][]Segment
+	files    map[string][]Segment
+	branches map[string][]Segment
 }
 
-// Fraction returns the covered share of the segments that start inside
-// [start, end] of file, but not inside any of the skip ranges, and false when
-// the report has nothing to say about those lines: the file is missing or no
-// measured segment starts there.
+// Fraction returns the covered share of [start, end] of file, leaving out
+// the skip ranges: the share of branches taken when the report counts
+// branches there, and of lines or statements run otherwise. It returns false
+// when the report has nothing to say about those lines: the file is missing
+// or no measured segment starts there.
 func (r *Report) Fraction(file string, start, end int, skip ...[2]int) (float64, bool) {
 	if r == nil {
 		return 0, false
@@ -39,6 +45,15 @@ func (r *Report) Fraction(file string, start, end int, skip ...[2]int) (float64,
 	if !ok {
 		return 0, false
 	}
+	if f, ok := share(r.branches[file], start, end, skip); ok {
+		return f, true
+	}
+	return share(segs, start, end, skip)
+}
+
+// share is the covered share of the segments that start inside [start, end]
+// but not inside any of the skip ranges.
+func share(segs []Segment, start, end int, skip [][2]int) (float64, bool) {
 	var total, covered float64
 	for _, s := range segs {
 		if s.Start >= start && s.Start <= end && !inAny(s.Start, skip) {
@@ -93,11 +108,12 @@ func (r *Report) LineCovered(file string, line int) (covered, measured bool) {
 // generated code.
 func Build(sources []string, base string, entries ...[]Entry) *Report {
 	m := newMatcher(sources)
-	r := &Report{files: map[string][]Segment{}}
+	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}}
 	for _, list := range entries {
 		for _, e := range list {
 			if file := m.match(e.Path, base); file != "" {
 				r.files[file] = append(r.files[file], e.Segments...)
+				r.branches[file] = append(r.branches[file], e.Branches...)
 			}
 		}
 	}
@@ -106,13 +122,16 @@ func Build(sources []string, base string, entries ...[]Entry) *Report {
 
 // Merge combines reports for different languages into one.
 func Merge(reports ...*Report) *Report {
-	out := &Report{files: map[string][]Segment{}}
+	out := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}}
 	for _, r := range reports {
 		if r == nil {
 			continue
 		}
 		for f, segs := range r.files {
 			out.files[f] = append(out.files[f], segs...)
+		}
+		for f, segs := range r.branches {
+			out.branches[f] = append(out.branches[f], segs...)
 		}
 	}
 	return out

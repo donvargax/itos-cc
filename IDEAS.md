@@ -170,13 +170,14 @@ review starts after them:
 | uml-viewer | 650abbc | 2026-10-02 |
 
 Taken from that review: JavaScript files, `?.` as a decision and a mutant,
-`??` as a mutant, Express route callbacks as units, and NUL-separated git
-output. Not taken, yet:
+`??` as a mutant, Express route callbacks as units, NUL-separated git
+output, and branch coverage first (extended to coverage.py and JaCoCo; LCOV
+blocks with one branch are V8 blocks, not decisions, and are ignored).
+Not taken, yet:
 
-- **LCOV branch records.** crapper scores a function by its `BRDA` branch
-  hits when it has any, and by line hits otherwise. Branch coverage fits
-  CRAP better, but it changes every TypeScript score; Go's profiles and
-  coverage.py's LCOV would need the same to stay comparable.
+- **Vitest 3.x branches.** Its v8 provider writes V8 blocks unless
+  `coverage.experimentalAstAwareRemapping` is on, so those projects are
+  scored by lines. Passing the flag for Vitest 3.2+ would give them branches.
 - **A failed coverage run scores 0%.** crapper now does; we keep N/A for a
   language with no report at all, so a broken test setup is not mistaken
   for untested code. A gate (see "Gating and debt") may want Bob's choice.

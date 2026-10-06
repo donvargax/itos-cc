@@ -1,5 +1,5 @@
 Feature: Coverage
-  crap and mutate need to know which lines the tests execute. itos-cc runs
+  crap and mutate need to know which lines and branches the tests execute. itos-cc runs
   each language's own coverage tools per build root, or reads reports the
   user already has, and matches each report entry to a source file on disk.
 
@@ -18,8 +18,8 @@ Feature: Coverage
         | TypeScript | package.json     | vitest as a dependency                       | npx vitest run with the v8 coverage provider writing LCOV         |
         | TypeScript | package.json     | jest as a dependency                         | npx jest --coverage writing LCOV                                  |
         | TypeScript | package.json     | neither vitest nor jest                      | npx c8 around npm test, writing LCOV                              |
-        | Python     | pyproject.toml   | pytest importable                            | coverage run -m pytest, then coverage lcov                        |
-        | Python     | setup.py         | pytest not importable                        | coverage run -m unittest discover, then coverage lcov             |
+        | Python     | pyproject.toml   | pytest importable                            | coverage run --branch -m pytest, then coverage lcov               |
+        | Python     | setup.py         | pytest not importable                        | coverage run --branch -m unittest discover, then coverage lcov    |
         | Kotlin     | build.gradle.kts | the build mentions kover                     | gradle koverXmlReport                                             |
         | Kotlin     | build.gradle     | the build does not mention kover             | gradle test jacocoTestReport                                      |
         | Kotlin     | pom.xml          | nothing else                                 | mvn with the jacoco-maven-plugin prepare-agent, test, and report  |
@@ -108,6 +108,44 @@ Feature: Coverage
         | LCOV              | one per line                  |
         | Go cover profile  | the block's statement count   |
         | JaCoCo/Kover XML  | the line's instruction count  |
+
+  Rule: A function with branches is scored by the branches it took
+
+    Scenario: Branch coverage comes first
+      Given a coverage.py LCOV report for:
+        """
+        def pick(x):
+            r = 0
+            if x > 0:
+                r = 1
+            else:
+                r = 2
+            return r
+        """
+      And the tests call pick(1) once
+      When the covered share of pick is computed
+      Then it is 50%, one of its two branches
+      # by lines it would be 5 of 6
+
+    Scenario Outline: Where branches come from
+      Given a <format> report
+      Then a decision is <decision>
+
+      Examples:
+        | format            | decision                                                 |
+        | LCOV              | a BRDA block with two or more branches                   |
+        | JaCoCo/Kover XML  | a line with branch counters, weighted by its branches    |
+        | Go cover profile  | never: Go has no branch data, so statements decide       |
+
+    Scenario: A function without branches is scored by its lines
+      Given a function whose lines hold no decision in the report
+      Then its coverage is the share of its lines or statements that ran
+
+    Scenario: One-branch LCOV blocks are not decisions
+      Given an LCOV report from c8, Node's test runner, or Vitest's v8 provider before AST-aware remapping
+      And it lists the function body as a block and leaves out the arm that ran
+      When the covered share of a function is computed
+      Then those one-branch blocks are ignored and its lines decide
 
   Rule: Report paths are matched to source files
 
