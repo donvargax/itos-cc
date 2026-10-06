@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -27,7 +28,16 @@ type Plan struct {
 	// Existing are report locations to read with --use-existing-coverage,
 	// in order of preference. Reports come first.
 	Existing []string
+	// Unsupported says why the commands cannot measure this project, such as
+	// a test runner older than the one supported. Run reports it and runs
+	// nothing; existing reports are still read.
+	Unsupported string
 }
+
+// minVitest is the oldest Vitest major whose coverage is measured: the
+// current one. Its v8 provider maps coverage onto the syntax tree, so its
+// LCOV names both arms of every branch; older ones write V8 blocks.
+const minVitest = 5
 
 var markers = map[string][]string{
 	"go":         {"go.mod"},
@@ -98,6 +108,9 @@ func typescriptPlan(dir, out string) Plan {
 		// is coverage/lcov.info.
 		plan.Commands = [][]string{{"npm", "run", "coverage"}}
 		plan.Reports = []string{filepath.Join(dir, "coverage", "lcov.info")}
+	case pkg.has("vitest") && vitestTooOld(installedVersion(dir, "vitest")):
+		plan.Unsupported = fmt.Sprintf("Vitest %s is not supported; upgrade to Vitest %d or later to measure coverage",
+			installedVersion(dir, "vitest"), minVitest)
 	case pkg.has("vitest"):
 		if !exists(filepath.Join(dir, "node_modules", "@vitest", "coverage-v8")) {
 			// Without the provider Vitest stops to ask; install the version
@@ -167,6 +180,10 @@ func kotlinPlan(dir string) Plan {
 func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
+		if p.Unsupported != "" {
+			fmt.Fprintf(log, "coverage: %s: %s\n", p.Dir, p.Unsupported)
+			continue
+		}
 		for _, r := range p.Reports {
 			os.Remove(r)
 		}
@@ -246,6 +263,14 @@ func readPackageJSON(dir string) packageJSON {
 		json.Unmarshal(data, &pkg)
 	}
 	return pkg
+}
+
+// vitestTooOld reports whether version, as installed, is a major before
+// minVitest. An unknown version is not too old: running it will tell.
+func vitestTooOld(version string) bool {
+	major, _, _ := strings.Cut(version, ".")
+	n, err := strconv.Atoi(major)
+	return err == nil && n < minVitest
 }
 
 func installedVersion(dir, dep string) string {

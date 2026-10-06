@@ -172,12 +172,13 @@ review starts after them:
 Taken from that review: JavaScript files, `?.` as a decision and a mutant,
 `??` as a mutant, Express route callbacks as units, NUL-separated git
 output, and branch coverage first (extended to coverage.py and JaCoCo; LCOV
-blocks with one branch are V8 blocks, not decisions, and are ignored).
+blocks with one branch are V8 blocks, not decisions, and are ignored). We
+target current test runners rather than work around old ones: only the
+current Vitest major (5) is measured, since older ones write V8 blocks, so
+raise `minVitest` in `coverage/run.go` with each major.
+
 Not taken, yet:
 
-- **Vitest 3.x branches.** Its v8 provider writes V8 blocks unless
-  `coverage.experimentalAstAwareRemapping` is on, so those projects are
-  scored by lines. Passing the flag for Vitest 3.2+ would give them branches.
 - **A failed coverage run scores 0%.** crapper now does; we keep N/A for a
   language with no report at all, so a broken test setup is not mistaken
   for untested code. A gate (see "Gating and debt") may want Bob's choice.

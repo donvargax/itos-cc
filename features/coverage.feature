@@ -15,7 +15,7 @@ Feature: Coverage
         | language   | marker           | setup                                        | command                                                           |
         | Go         | go.mod           | nothing else                                 | go test ./... -covermode=set -coverpkg=./... -coverprofile=...    |
         | TypeScript | package.json     | a "coverage" script                          | npm run coverage, read from coverage/lcov.info                    |
-        | TypeScript | package.json     | vitest as a dependency                       | npx vitest run with the v8 coverage provider writing LCOV         |
+        | TypeScript | package.json     | vitest 5 or later as a dependency            | npx vitest run with the v8 coverage provider writing LCOV         |
         | TypeScript | package.json     | jest as a dependency                         | npx jest --coverage writing LCOV                                  |
         | TypeScript | package.json     | neither vitest nor jest                      | npx c8 around npm test, writing LCOV                              |
         | Python     | pyproject.toml   | pytest importable                            | coverage run --branch -m pytest, then coverage lcov               |
@@ -25,10 +25,18 @@ Feature: Coverage
         | Kotlin     | pom.xml          | nothing else                                 | mvn with the jacoco-maven-plugin prepare-agent, test, and report  |
 
     Scenario: Vitest without its coverage provider
-      Given a TypeScript project using vitest 3.2.4 without @vitest/coverage-v8 installed
+      Given a TypeScript project using vitest 5.0.2 without @vitest/coverage-v8 installed
       When coverage is run for it
-      Then "npm install --no-save @vitest/coverage-v8@3.2.4" runs first
+      Then "npm install --no-save @vitest/coverage-v8@5.0.2" runs first
       And package.json is not modified
+
+    Scenario: Only the current Vitest major is supported
+      Given a TypeScript project using vitest 4.1.11
+      When coverage is run for it
+      Then nothing runs for it
+      And stderr says "Vitest 4.1.11 is not supported; upgrade to Vitest 5 or later to measure coverage"
+      And only complexity is reported for it
+      # older Vitest writes V8 blocks, not branches; Jest's istanbul branches are the same in every version
 
     Scenario: Python uses the project's own virtualenv
       Given a Python project with a .venv directory
@@ -142,7 +150,7 @@ Feature: Coverage
       Then its coverage is the share of its lines or statements that ran
 
     Scenario: One-branch LCOV blocks are not decisions
-      Given an LCOV report from c8, Node's test runner, or Vitest's v8 provider before AST-aware remapping
+      Given an LCOV report from c8, Node's test runner, or a Vitest older than 5
       And it lists the function body as a block and leaves out the arm that ran
       When the covered share of a function is computed
       Then those one-branch blocks are ignored and its lines decide
