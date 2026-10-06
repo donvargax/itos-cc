@@ -1,0 +1,161 @@
+Feature: Units: the functions and methods every tool measures
+  Every tool works on the same units, named by namespace and function name,
+  so results from crap, dry, mutate, and the graph join on the same key.
+
+  Scenario: Listing production units as JSON
+    When I run "itos-cc units"
+    Then stdout is a JSON array of units
+    And each unit has file, language, namespace, name, kind, private, start_line, and end_line
+
+  Scenario: Listing test code instead
+    When I run "itos-cc units --tests"
+    Then only units from test files are listed
+
+  Scenario: No units is an empty list
+    Given the selection holds no supported files
+    When I run "itos-cc units"
+    Then stdout is "[]"
+
+  Scenario: TypeScript units
+    Given the file "src/demo/board.ts":
+      """
+      import { x } from "./x";
+
+      export function place(b: Board): void {
+        const inner = () => 1;
+        [1, 2].forEach((n) => n + 1);
+      }
+
+      export const score = (b: Board): number => b.cells.length;
+      const helper = function () { return 1; };
+
+      describe("board", () => {
+        const notAUnit = () => 2;
+      });
+
+      export abstract class Board {
+        cells: number[] = [];
+        abstract draw(): void;
+        constructor() {}
+        public place(n: number) { this.cells.push(n); }
+        private clear() { this.cells = []; }
+        #reset() {}
+        onClick = () => this.clear();
+      }
+      """
+    When its units are listed
+    Then the units are:
+      | kind     | namespace        | name        | lines | private |
+      | function | demo.board       | place       | 3-6   | no      |
+      | function | demo.board       | score       | 8-8   | no      |
+      | function | demo.board       | helper      | 9-9   | no      |
+      | method   | demo.board.Board | constructor | 18-18 | no      |
+      | method   | demo.board.Board | place       | 19-19 | no      |
+      | method   | demo.board.Board | clear       | 20-20 | yes     |
+      | method   | demo.board.Board | #reset      | 21-21 | yes     |
+      | method   | demo.board.Board | onClick     | 22-22 | no      |
+    And nested arrow functions, callbacks, and abstract methods are not units
+
+  Scenario: TSX files are parsed with the TSX grammar
+    Given the file "src/ui/cell.tsx" with a component that returns JSX
+    When its units are listed
+    Then the component "ui.cell#Cell" is a unit
+
+  Scenario: Python units
+    Given the file "src/demo/board.py":
+      """
+      import os
+
+      def place(board, n):
+          def inner():
+              return n
+          return inner()
+
+      @cache
+      def _hidden():
+          pass
+
+      class Board:
+          def __init__(self):
+              self.cells = []
+
+          @property
+          def size(self):
+              return len(self.cells)
+
+          def _clear(self):
+              self.cells = []
+
+          class Cell:
+              def value(self):
+                  return 0
+      """
+    When its units are listed
+    Then the units are:
+      | kind     | namespace             | name     | lines | private |
+      | function | demo.board            | place    | 3-6   | no      |
+      | function | demo.board            | _hidden  | 9-10  | yes     |
+      | method   | demo.board.Board      | __init__ | 13-14 | no      |
+      | method   | demo.board.Board      | size     | 17-18 | no      |
+      | method   | demo.board.Board      | _clear   | 20-21 | yes     |
+      | method   | demo.board.Board.Cell | value    | 24-25 | no      |
+
+  Scenario: A Python package's __init__ is named after the package
+    Given the file "src/demo/__init__.py" defining "main"
+    When its units are listed
+    Then the unit is "demo#main"
+
+  Scenario: Kotlin units
+    Given the file "src/main/kotlin/demo/game/Board.kt":
+      """
+      package demo.game
+
+      import kotlin.math.max
+
+      fun place(board: Board, n: Int) {
+          fun inner() = n
+          listOf(1).forEach { it + 1 }
+      }
+
+      private fun hidden() = 1
+
+      class Board {
+          private val cells = mutableListOf<Int>()
+
+          fun place(n: Int) { cells.add(n) }
+
+          private fun clear() { cells.clear() }
+
+          companion object {
+              fun empty() = Board()
+          }
+      }
+
+      object Rules {
+          internal fun max() = 9
+      }
+      """
+    When its units are listed
+    Then the units are:
+      | kind     | namespace                 | name   | lines | private |
+      | function | demo.game                 | place  | 5-8   | no      |
+      | function | demo.game                 | hidden | 10-10 | yes     |
+      | method   | demo.game.Board           | place  | 15-15 | no      |
+      | method   | demo.game.Board           | clear  | 17-17 | yes     |
+      | method   | demo.game.Board.Companion | empty  | 20-20 | no      |
+      | method   | demo.game.Rules           | max    | 25-25 | no      |
+
+  Scenario: A Kotlin class with several annotations keeps its methods
+    Given a Kotlin class annotated with both @Configuration and @EnableWebSecurity
+    When its units are listed
+    Then its method is a unit of that class
+
+  Scenario: Go units are namespaced by module import path
+    Given the Go module "example.com/demo" with package "board"
+    When the units of board/board.go are listed
+    Then the units are:
+      | kind     | namespace                    | name   | private |
+      | function | example.com/demo/board       | New    | no      |
+      | method   | example.com/demo/board.Board | Place  | no      |
+      | method   | example.com/demo/board.Board | size   | yes     |
+      | function | example.com/demo/board       | helper | yes     |
