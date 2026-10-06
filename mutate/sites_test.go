@@ -34,6 +34,22 @@ func assertSites(t *testing.T, path, src string, want []string) {
 	}
 }
 
+func TestNullishAndOptionalChainingSites(t *testing.T) {
+	src := `export function place(a, b) {
+  return a ?? b?.c ?? b?.[0] ?? b?.();
+}
+export function text() {
+  return "a ?? b?.c";
+}
+`
+	// The TypeScript and JavaScript grammars spell ?. differently.
+	for _, path := range []string{"x.ts", "x.js"} {
+		assertSites(t, path, src, []string{
+			"2:??>||", "2:?.>.", "2:??>||", "2:?.>", "2:0>1", "2:??>||", "2:?.>",
+		})
+	}
+}
+
 func TestTypeScriptSites(t *testing.T) {
 	assertSites(t, "x.ts", `const LIMIT = 1 + 2;
 function f(xs: Array<number>, a: number): boolean {

@@ -69,12 +69,14 @@ func ktName(n *sitter.Node, src []byte) string {
 	return ""
 }
 
+// ktDecision counts the safe call ?. like the elvis ?:, since a?.b is null
+// when a is.
 func ktDecision(n *sitter.Node, src []byte) bool {
 	if n.Kind() == "when_entry" {
 		return !strings.HasPrefix(n.Utf8Text(src), "else")
 	}
 	return kindIn(n, "if_expression", "for_statement", "while_statement", "do_while_statement",
-		"catch_block", "conjunction_expression", "disjunction_expression", "elvis_expression")
+		"catch_block", "conjunction_expression", "disjunction_expression", "elvis_expression", "?.")
 }
 
 // ktIsTest covers Gradle and Maven's src/test/ through its test directory.

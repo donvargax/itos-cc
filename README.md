@@ -1,7 +1,7 @@
 # itos-cc
 
-Code-quality measurements for TypeScript, Python, Kotlin, and Go, in one
-binary, with output meant for both people and coding agents.
+Code-quality measurements for TypeScript (and JavaScript), Python, Kotlin,
+and Go, in one binary, with output meant for both people and coding agents.
 
 > **Experimental.** This is a proof of concept: commands, output, file
 > formats, and exit codes may change in any release.

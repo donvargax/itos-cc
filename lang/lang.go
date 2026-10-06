@@ -112,6 +112,10 @@ type Mutations struct {
 	// LiteralKinds: true and false, 0 and 1.
 	Literals     map[string]string
 	LiteralKinds map[string]bool
+	// Other returns the replacement for a leaf whose mutant depends on more
+	// than its text and parent, such as TypeScript's ?., and false for every
+	// other leaf. Nil when the language has none.
+	Other func(leaf *sitter.Node) (string, bool)
 }
 
 // swaps returns the shared operator swaps plus extra.
@@ -250,7 +254,8 @@ func register(s *Spec) {
 
 // Detect returns the spec for path, or nil when the language is unsupported.
 func Detect(path string) *Spec {
-	if strings.HasSuffix(path, ".d.ts") {
+	// Declarations and minified bundles are not code anyone wrote here.
+	if strings.HasSuffix(path, ".d.ts") || strings.HasSuffix(path, ".min.js") {
 		return nil
 	}
 	return specs[filepath.Ext(path)]

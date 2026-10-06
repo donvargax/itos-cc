@@ -33,6 +33,19 @@ Feature: Cyclomatic complexity
     Then it is 13
     # if, &&, else-if, ||, for, while, catch, ?:, ??, callback if, 2 cases
 
+  Scenario: Optional chaining is a decision
+    Given the TypeScript function:
+      """
+      export function choose(a, b, c) {
+        return a ?? b?.c ?? c?.(1) ?? c?.[0];
+      }
+      """
+    When its complexity is measured
+    Then it is 7
+    # 3 ??, and ?. on a property, a call, and an index
+    And it is 7 in a .js file too
+    And a Kotlin safe call a?.b counts like the elvis ?:
+
   Scenario: Python decisions
     Given the Python function:
       """

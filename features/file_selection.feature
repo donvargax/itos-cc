@@ -66,10 +66,15 @@ Feature: Choosing which files a command looks at
     When I run "itos-cc units testdata/board.go"
     Then testdata/board.go is analyzed
 
-  Scenario: TypeScript declaration files are not source
-    Given a file src/types.d.ts
+  Scenario: JavaScript files are TypeScript to every tool
+    Given the files src/a.js, src/b.jsx, src/c.mjs, and src/d.cjs
     When the project's files are discovered
-    Then src/types.d.ts is not selected
+    Then each is selected as TypeScript and parsed with the JavaScript grammar
+
+  Scenario: TypeScript declaration files and minified bundles are not source
+    Given the files src/types.d.ts and public/vendor.min.js
+    When the project's files are discovered
+    Then neither is selected
 
   Scenario Outline: Telling test code from production code
     When the file "<path>" is discovered
@@ -81,6 +86,9 @@ Feature: Choosing which files a command looks at
       | src/board.test.ts                    | test       |
       | src/board.spec.tsx                   | test       |
       | src/__tests__/board.ts               | test       |
+      | src/board.js                         | production |
+      | src/board.test.mjs                   | test       |
+      | src/board.spec.cjs                   | test       |
       | pkg/board.py                         | production |
       | pkg/test_board.py                    | test       |
       | pkg/board_test.py                    | test       |

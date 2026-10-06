@@ -58,7 +58,11 @@ func Sites(f *lang.File) []Site {
 			parent := n.Parent()
 			var replacement string
 			var ok bool
+			if m.Other != nil {
+				replacement, ok = m.Other(n)
+			}
 			switch {
+			case ok:
 			case m.LiteralKinds[n.Kind()]:
 				replacement, ok = m.Literals[text]
 			case parent == nil || n.IsNamed():

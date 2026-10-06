@@ -32,6 +32,24 @@ Feature: Mutation testing
         | 6    | true     | false       |
       And code outside functions, comments, strings, and type arguments hold no sites
 
+    Scenario: Nullish coalescing and optional chaining
+      Given the file "x.ts":
+        """
+        export function place(a, b) {
+          return a ?? b?.c ?? b?.[0];
+        }
+        """
+      When I run "itos-cc mutate --scan x.ts"
+      Then the sites are:
+        | line | original | replacement |
+        | 2    | ??       | \|\|        |
+        | 2    | ?.       | .           |
+        | 2    | ??       | \|\|        |
+        | 2    | ?.       | (deleted)   |
+        | 2    | 0        | 1           |
+      And a?.() becomes a(), as a?.[0] becomes a[0]
+      And .js, .jsx, .mjs, and .cjs files have the same sites
+
     Scenario: Python sites
       Given the file "x.py":
         ```

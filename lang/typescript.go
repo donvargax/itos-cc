@@ -6,20 +6,26 @@ import (
 	"unsafe"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
+	javascript "github.com/tree-sitter/tree-sitter-javascript/bindings/go"
 	typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
 )
 
 // TypeScript units are top-level functions, class methods, and top-level
 // arrow or function expressions bound to a name. Callbacks stay inside the
-// function that encloses them.
+// function that encloses them. JavaScript files are TypeScript to every tool:
+// they parse with the JavaScript grammar, whose node kinds TypeScript's
+// grammar extends.
 func init() {
 	register(&Spec{
 		Name:       "typescript",
-		Extensions: []string{".ts", ".tsx", ".mts", ".cts"},
+		Extensions: []string{".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"},
 		Separator:  ".",
 		Grammar: func(path string) unsafe.Pointer {
-			if filepath.Ext(path) == ".tsx" {
+			switch filepath.Ext(path) {
+			case ".tsx":
 				return typescript.LanguageTSX()
+			case ".js", ".jsx", ".mjs", ".cjs":
+				return javascript.Language()
 			}
 			return typescript.LanguageTypescript()
 		},
@@ -38,12 +44,13 @@ func init() {
 			Literals: set("string", "template_string", "number", "regex", "true", "false", "null", "undefined"),
 		},
 		Mutations: Mutations{
-			Swaps:         swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&"}),
+			Swaps:         swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&", "??": "||"}),
 			SwapParents:   set("binary_expression"),
 			Deletions:     set("!", "-"),
 			DeleteParents: set("unary_expression"),
 			Literals:      cLikeLiterals,
 			LiteralKinds:  set("true", "false", "number"),
+			Other:         tsOptionalChain,
 		},
 		Comment:  "//",
 		Imports:  tsImports,
@@ -82,8 +89,39 @@ func tsDecision(n *sitter.Node, src []byte) bool {
 	if n.Kind() == "binary_expression" {
 		return operatorIn(n, src, "&&", "||", "??")
 	}
+	if isOptionalChain(n) {
+		return true
+	}
 	return kindIn(n, "if_statement", "for_statement", "for_in_statement", "while_statement",
 		"do_statement", "catch_clause", "ternary_expression", "switch_case")
+}
+
+// isOptionalChain is true for the ?. token of a?.b, a?.(), and a?.[0]. The
+// TypeScript grammar wraps it in an optional_chain node, or leaves it bare in
+// a call; the JavaScript grammar's optional_chain is the token itself.
+func isOptionalChain(n *sitter.Node) bool {
+	return n.ChildCount() == 0 && (n.Kind() == "?." || n.Kind() == "optional_chain")
+}
+
+// tsOptionalChain mutates a?.b to a.b, and drops the ?. of a call or an
+// index: a?.() becomes a(), a?.[0] becomes a[0].
+func tsOptionalChain(n *sitter.Node) (string, bool) {
+	if !isOptionalChain(n) {
+		return "", false
+	}
+	host := n.Parent()
+	if host != nil && host.Kind() == "optional_chain" {
+		host = host.Parent()
+	}
+	switch {
+	case host == nil:
+		return "", false
+	case host.Kind() == "member_expression":
+		return ".", true
+	case host.Kind() == "call_expression" || host.Kind() == "subscript_expression":
+		return "", true
+	}
+	return "", false
 }
 
 // tsBodyLine skips the declaration line: loading a module runs

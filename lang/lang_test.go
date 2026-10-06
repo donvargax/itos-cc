@@ -98,9 +98,30 @@ func TestTSXUsesTheTSXGrammar(t *testing.T) {
 	})
 }
 
+func TestJavaScriptIsReadAsTypeScript(t *testing.T) {
+	src := `export function Cell({ v }) {
+  return <td>{v > 0 && <b>{v}</b>}</td>;
+}
+const total = (xs) => xs.length;
+`
+	for _, path := range []string{"testdata/ts/src/ui/cell.js", "testdata/ts/src/ui/cell.jsx",
+		"testdata/ts/src/ui/cell.mjs", "testdata/ts/src/ui/cell.cjs"} {
+		if got := Detect(path).Name; got != "typescript" {
+			t.Errorf("%s is %s", path, got)
+		}
+		assertUnits(t, unitsOf(t, path, src), []string{
+			"function ui.cell#Cell 1-3",
+			"function ui.cell#total 4-4",
+		})
+	}
+}
+
 func TestDeclarationFilesAreSkipped(t *testing.T) {
 	if Detect("src/types.d.ts") != nil {
 		t.Error("a .d.ts file has no bodies to measure")
+	}
+	if Detect("public/vendor.min.js") != nil {
+		t.Error("a minified bundle is not source")
 	}
 }
 
@@ -235,6 +256,20 @@ function branches(a: number, b?: string) {
 	})
 }
 
+func TestOptionalChainingIsADecision(t *testing.T) {
+	src := `export function choose(a, b, c) {
+  return a ?? b?.c ?? c?.(1) ?? c?.[0];
+}
+export function text() {
+  return "a ?? b?.c";
+}
+`
+	// 3 ??, 3 ?.; the TypeScript and JavaScript grammars spell ?. differently.
+	for _, path := range []string{"testdata/ts/src/c.ts", "testdata/ts/src/c.js"} {
+		assertComplexities(t, complexities(t, path, src), map[string]int{"choose": 7, "text": 1})
+	}
+}
+
 func TestPythonComplexity(t *testing.T) {
 	src := `def straight():
     return 1
@@ -322,6 +357,8 @@ fun branches(a: Int, b: String?) {
 		// if, &&, ||, for, while, do-while, catch, ?:, 2 when entries, lambda if
 		"straight": 1, "branches": 12,
 	})
+	assertComplexities(t, complexities(t, "testdata/c.kt", "fun safe(a: A?) = a?.b?.c(1)\n"),
+		map[string]int{"safe": 3})
 }
 
 func TestTestFiles(t *testing.T) {
@@ -329,6 +366,10 @@ func TestTestFiles(t *testing.T) {
 		"src/board.ts":                      false,
 		"src/board.test.ts":                 true,
 		"src/board.spec.tsx":                true,
+		"src/board.js":                      false,
+		"src/board.test.mjs":                true,
+		"src/board.spec.cjs":                true,
+		"src/board.test.cts":                true,
 		"src/__tests__/board.ts":            true,
 		"pkg/board.py":                      false,
 		"pkg/test_board.py":                 true,
