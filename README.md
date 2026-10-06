@@ -77,6 +77,11 @@ Run from a project root. Paths are files, directories, or fragments of a
 path (`itos-cc crap billing`); `--changed` selects what git reports as added
 or modified. Every command takes `-h`.
 
+Every tool works on the same units: functions and methods, plus inline
+Express-style route callbacks (`app.get("/users", (req, res) => …)` is the
+unit `GET /users`), which are measured apart from the function that mounts
+them.
+
 ```bash
 itos-cc crap --top 20             # runs the tests with coverage first
 itos-cc crap --use-existing-coverage

@@ -11,8 +11,10 @@ import (
 )
 
 // TypeScript units are top-level functions, class methods, and top-level
-// arrow or function expressions bound to a name. Callbacks stay inside the
-// function that encloses them. JavaScript files are TypeScript to every tool:
+// arrow or function expressions bound to a name. An inline route callback
+// (Express, and routers shaped like it) is a unit of its own, wherever it
+// is. Other callbacks stay inside the function that encloses them.
+// JavaScript files are TypeScript to every tool:
 // they parse with the JavaScript grammar, whose node kinds TypeScript's
 // grammar extends.
 func init() {
@@ -33,6 +35,7 @@ func init() {
 			return modulePath(path, "package.json", "tsconfig.json")
 		},
 		Unit:      tsUnit,
+		Inline:    tsRoute,
 		Container: tsContainer,
 		Private:   tsPrivate,
 		Syntax: Syntax{
@@ -156,6 +159,73 @@ func tsUnit(n *sitter.Node, src []byte) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+var routeMethods = set("get", "post", "put", "patch", "delete", "head", "options", "all", "use")
+
+// tsRoute names an inline route callback by its method and path:
+// app.get("/users", (req, res) => …) is GET /users. The same methods on any
+// object count, including use and all, and router.route("/users").get(…)
+// takes its path from route. A call without a path is just the method.
+func tsRoute(n *sitter.Node, src []byte) (string, bool) {
+	if !isFunctionValue(n) {
+		return "", false
+	}
+	args := n.Parent()
+	for args != nil && args.Kind() == "parenthesized_expression" {
+		args = args.Parent()
+	}
+	if args == nil || args.Kind() != "arguments" {
+		return "", false
+	}
+	call := args.Parent()
+	if call == nil || call.Kind() != "call_expression" {
+		return "", false
+	}
+	fn := call.ChildByFieldName("function")
+	if fn == nil || fn.Kind() != "member_expression" {
+		return "", false
+	}
+	method := fieldText(fn, "property", src)
+	if !routeMethods[method] {
+		return "", false
+	}
+	label := strings.ToUpper(method)
+	if path := tsRoutePath(call, src); path != "" {
+		label += " " + path
+	}
+	return label, true
+}
+
+// tsRoutePath is the literal path a route call starts with, or the one a
+// .route(path) earlier in its chain gives it.
+func tsRoutePath(call *sitter.Node, src []byte) string {
+	for n := call; n != nil; {
+		switch n.Kind() {
+		case "call_expression":
+			fn := n.ChildByFieldName("function")
+			if fn == nil || fn.Kind() != "member_expression" {
+				return ""
+			}
+			property := fieldText(fn, "property", src)
+			if n == call || property == "route" {
+				if args := n.ChildByFieldName("arguments"); args != nil && args.NamedChildCount() > 0 {
+					if first := args.NamedChild(0); kindIn(first, "string", "template_string") {
+						return unquote(first.Utf8Text(src))
+					}
+				}
+				if property == "route" {
+					return ""
+				}
+			}
+			n = fn
+		case "member_expression":
+			n = n.ChildByFieldName("object")
+		default:
+			return ""
+		}
+	}
+	return ""
 }
 
 func isFunctionValue(v *sitter.Node) bool {

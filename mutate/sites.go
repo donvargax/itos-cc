@@ -50,7 +50,7 @@ func Sites(f *lang.File) []Site {
 	var sites []Site
 	for i, u := range f.Units {
 		unitStart := u.Node.StartByte()
-		lang.Walk(u.Node, func(n *sitter.Node) bool {
+		f.WalkOwn(u, func(n *sitter.Node) bool {
 			if n.ChildCount() > 0 {
 				return true
 			}
@@ -90,9 +90,16 @@ func Sites(f *lang.File) []Site {
 	return sites
 }
 
-// UnitHash fingerprints a unit's source text. Changing anything inside the
-// unit, including whitespace and comments, changes it.
+// UnitHash fingerprints a unit's source text, without its inline units.
+// Changing anything else inside the unit, including whitespace and comments,
+// changes it.
 func UnitHash(f *lang.File, u lang.Unit) string {
-	h := sha256.Sum256(f.Src[u.Node.StartByte():u.Node.EndByte()])
-	return hex.EncodeToString(h[:8])
+	h := sha256.New()
+	at := u.Node.StartByte()
+	for _, inner := range f.InnerNodes(u) {
+		h.Write(f.Src[at:inner.StartByte()])
+		at = inner.EndByte()
+	}
+	h.Write(f.Src[at:u.Node.EndByte()])
+	return hex.EncodeToString(h.Sum(nil)[:8])
 }

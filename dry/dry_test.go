@@ -30,6 +30,35 @@ func prints(t *testing.T, ext, src string) []uint64 {
 	return p
 }
 
+// Routes are units of their own, so two functions that mount different
+// routes the same way are duplicates, whatever the routes do.
+func TestRoutesAreNotPartOfTheFunctionAroundThem(t *testing.T) {
+	a := `export function mount(app, db) {
+  const prefix = config.prefix;
+  app.get("/a", (req, res) => { if (req.q) { res.json(db.all()); } else { res.sendStatus(404); } });
+  app.post("/a", (req, res) => res.json(db.add(req.body)));
+  return app;
+}`
+	b := `export function mount(app, db) {
+  const prefix = config.prefix;
+  app.get("/b", (req, res) => res.send(1));
+  app.post("/b", (req, res) => { for (const x of req.body) { db.put(x); } res.sendStatus(201); });
+  return app;
+}`
+	got := [2][]uint64{}
+	for i, src := range []string{a, b} {
+		f, err := lang.Parse(lang.Detect("x.ts"), "x.ts", []byte(src))
+		if err != nil {
+			t.Fatal(err)
+		}
+		got[i], _ = Fingerprint(f, f.Units[0].Node, f.InnerNodes(f.Units[0])...)
+		f.Close()
+	}
+	if s := Jaccard(got[0], got[1]); s != 1 {
+		t.Errorf("score = %v, want 1", s)
+	}
+}
+
 // Names, locals, predicates, and literals differ; the shape and the called
 // functions do not.
 func TestRenamedCodeScoresOne(t *testing.T) {

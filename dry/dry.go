@@ -70,7 +70,7 @@ func Forms(files []string, opt Options) ([]Form, error) {
 			if u.EndLine-u.StartLine+1 < opt.MinLines {
 				continue
 			}
-			prints, nodes := Fingerprint(f, u.Node)
+			prints, nodes := Fingerprint(f, u.Node, f.InnerNodes(u)...)
 			if nodes < opt.MinNodes {
 				continue
 			}
@@ -168,10 +168,14 @@ func Jaccard(a, b []uint64) float64 {
 // change with it.
 const depth = 2
 
-// Fingerprint normalizes the tree under n and returns its fingerprint set
-// and the number of nodes that survived normalization.
-func Fingerprint(f *lang.File, n *sitter.Node) ([]uint64, int) {
-	fp := fingerprinter{syntax: f.Spec.Syntax, src: f.Src, seen: map[uint64]bool{}}
+// Fingerprint normalizes the tree under n, without the subtrees in skip, and
+// returns its fingerprint set and the number of nodes that survived
+// normalization.
+func Fingerprint(f *lang.File, n *sitter.Node, skip ...*sitter.Node) ([]uint64, int) {
+	fp := fingerprinter{syntax: f.Spec.Syntax, src: f.Src, seen: map[uint64]bool{}, skip: map[uintptr]bool{}}
+	for _, s := range skip {
+		fp.skip[s.Id()] = true
+	}
 	fp.visit(n)
 	prints := make([]uint64, 0, len(fp.seen))
 	for h := range fp.seen {
@@ -185,6 +189,7 @@ type fingerprinter struct {
 	syntax lang.Syntax
 	src    []byte
 	seen   map[uint64]bool
+	skip   map[uintptr]bool // node IDs left out
 	nodes  int
 }
 
@@ -226,7 +231,7 @@ func (fp *fingerprinter) visit(n *sitter.Node) ([depth + 1]uint64, bool) {
 func (fp *fingerprinter) label(n *sitter.Node) (label string, leaf, keep bool) {
 	kind := n.Kind()
 	switch {
-	case kind == "comment" || n.IsExtra():
+	case kind == "comment" || n.IsExtra() || fp.skip[n.Id()]:
 		return "", false, false
 	case fp.syntax.Literals[kind]:
 		return "lit", true, true

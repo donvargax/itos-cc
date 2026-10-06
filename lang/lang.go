@@ -30,6 +30,11 @@ type Unit struct {
 
 	// Node is the unit's syntax tree. It is valid until its File is closed.
 	Node *sitter.Node `json:"-"`
+
+	// Inner indexes the inline units directly inside this one in its File's
+	// Units. Their code is theirs: it adds nothing to this unit's
+	// complexity, mutation sites, fingerprint, coverage, or hash.
+	Inner []int `json:"-"`
 }
 
 // Spec describes one language to the generic walker.
@@ -44,6 +49,13 @@ type Spec struct {
 	// Unit returns the unit's name when n is a function or method, and false
 	// otherwise. The walker does not descend into a unit.
 	Unit func(n *sitter.Node, src []byte) (string, bool)
+
+	// Inline returns the name of a unit that can sit anywhere, even inside
+	// another unit, such as an Express route callback, and false otherwise.
+	// Inline units are named under the file's namespace, and a repeated name
+	// gets #2, #3, … in source order. Test files have none. Nil when the
+	// language has no inline units.
+	Inline func(n *sitter.Node, src []byte) (string, bool)
 
 	// Container returns the class-like name n adds to the namespace of the
 	// units inside it, and false when n is not a container.
@@ -304,7 +316,11 @@ func Parse(spec *Spec, path string, src []byte) (*File, error) {
 	}
 	root := tree.RootNode()
 	ns := spec.Namespace(path, root, src)
-	w := walker{spec: spec, path: path, src: src}
+	w := walker{spec: spec, path: path, src: src, ns: ns, inline: spec.Inline,
+		names: map[string]int{}}
+	if spec.IsTest(path) {
+		w.inline = nil
+	}
 	w.walk(root, ns, false)
 	return &File{Path: path, Spec: spec, Src: src, Units: w.units, Root: root, Namespace: ns, tree: tree}, nil
 }
@@ -338,15 +354,24 @@ func UnitsInFile(path string) ([]Unit, error) {
 }
 
 type walker struct {
-	spec  *Spec
-	path  string
-	src   []byte
-	units []Unit
+	spec   *Spec
+	path   string
+	src    []byte
+	ns     string // the file's namespace, which inline units are named under
+	inline func(n *sitter.Node, src []byte) (string, bool)
+	names  map[string]int // inline names so far, to number repeats
+	units  []Unit
 }
 
 func (w *walker) walk(n *sitter.Node, ns string, inClass bool) {
+	if name, ok := w.inlineName(n); ok {
+		w.units = append(w.units, w.unit(n, w.ns, name, false))
+		w.walkInner(n, len(w.units)-1)
+		return
+	}
 	if name, ok := w.spec.Unit(n, w.src); ok {
 		w.units = append(w.units, w.unit(n, ns, name, inClass))
+		w.walkInner(n, len(w.units)-1)
 		return
 	}
 	if name, ok := w.spec.Container(n, w.src); ok {
@@ -356,6 +381,39 @@ func (w *walker) walk(n *sitter.Node, ns string, inClass bool) {
 	for i := uint(0); i < n.NamedChildCount(); i++ {
 		w.walk(n.NamedChild(i), ns, inClass)
 	}
+}
+
+// walkInner finds the inline units below n, which is inside the unit at
+// index outer, and records the outermost of them as outer's Inner.
+func (w *walker) walkInner(n *sitter.Node, outer int) {
+	if w.inline == nil {
+		return
+	}
+	for i := uint(0); i < n.NamedChildCount(); i++ {
+		c := n.NamedChild(i)
+		if name, ok := w.inlineName(c); ok {
+			w.units = append(w.units, w.unit(c, w.ns, name, false))
+			w.units[outer].Inner = append(w.units[outer].Inner, len(w.units)-1)
+			w.walkInner(c, len(w.units)-1)
+			continue
+		}
+		w.walkInner(c, outer)
+	}
+}
+
+func (w *walker) inlineName(n *sitter.Node) (string, bool) {
+	if w.inline == nil {
+		return "", false
+	}
+	name, ok := w.inline(n, w.src)
+	if !ok {
+		return "", false
+	}
+	w.names[name]++
+	if k := w.names[name]; k > 1 {
+		name = fmt.Sprintf("%s#%d", name, k)
+	}
+	return name, true
 }
 
 func (w *walker) unit(n *sitter.Node, ns, name string, inClass bool) Unit {
@@ -391,16 +449,39 @@ func (w *walker) unit(n *sitter.Node, ns, name string, inClass bool) Unit {
 }
 
 // Complexity is the cyclomatic complexity of u: one plus each decision inside
-// it, including decisions in callbacks and closures it contains.
+// it, including decisions in callbacks and closures it contains, but not in
+// its inline units.
 func (f *File) Complexity(u Unit) int {
 	cc := 1
-	Walk(u.Node, func(n *sitter.Node) bool {
+	f.WalkOwn(u, func(n *sitter.Node) bool {
 		if n != u.Node && f.Spec.Decision(n, f.Src) {
 			cc++
 		}
 		return true
 	})
 	return cc
+}
+
+// WalkOwn walks u's own code like Walk, skipping its inline units.
+func (f *File) WalkOwn(u Unit, visit func(*sitter.Node) bool) {
+	inner := f.InnerNodes(u)
+	Walk(u.Node, func(n *sitter.Node) bool {
+		for _, c := range inner {
+			if sameNode(n, c) {
+				return false
+			}
+		}
+		return visit(n)
+	})
+}
+
+// InnerNodes are the syntax trees of u's inline units, in source order.
+func (f *File) InnerNodes(u Unit) []*sitter.Node {
+	out := make([]*sitter.Node, len(u.Inner))
+	for i, j := range u.Inner {
+		out[i] = f.Units[j].Node
+	}
+	return out
 }
 
 // Walk visits n and its descendants depth-first, in source order. Returning

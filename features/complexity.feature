@@ -1,7 +1,8 @@
 Feature: Cyclomatic complexity
   A unit's complexity is 1 plus every decision it makes: each branch, loop,
   catch, case, and short-circuit operator, including those inside nested
-  callbacks and closures.
+  callbacks and closures, but not inside a route callback, which is a unit of
+  its own.
 
   Scenario Outline: Straight-line code has complexity 1
     Given a <language> function with no branches

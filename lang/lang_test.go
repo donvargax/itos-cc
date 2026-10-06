@@ -98,6 +98,54 @@ func TestTSXUsesTheTSXGrammar(t *testing.T) {
 	})
 }
 
+const expressRoutes = `import express from "express";
+
+const app = express();
+app.use((req, res, next) => next());
+app.get("/users", (req, res) => {
+  if (req.query.all) { res.json([]); }
+});
+
+export function mount(router) {
+  router.post("/users", function (req, res) {
+    return req.body ?? res.sendStatus(400);
+  });
+  router.route("/items").get((req, res) => res.json([])).delete(async (req, res) => {
+    if (!req.params.id) return;
+  });
+  router.get("/users", (req, res) => res.json(req.user && req.user.name));
+  return router;
+}
+`
+
+func TestExpressRoutesAreUnits(t *testing.T) {
+	assertUnits(t, unitsOf(t, "testdata/ts/src/api/routes.js", expressRoutes), []string{
+		"function api.routes#USE 4-4",
+		"function api.routes#GET /users 5-7",
+		"function api.routes#mount 9-18",
+		"function api.routes#POST /users 10-12",
+		"function api.routes#GET /items 13-13",
+		"function api.routes#DELETE /items 13-15",
+		"function api.routes#GET /users#2 16-16",
+	})
+	// Each route's decisions are its own, not mount's.
+	assertComplexities(t, complexities(t, "testdata/ts/src/api/routes.ts", expressRoutes), map[string]int{
+		"USE": 1, "GET /users": 2, "mount": 1, "POST /users": 2, "GET /items": 1,
+		"DELETE /items": 2, "GET /users#2": 2,
+	})
+}
+
+func TestTestFilesHaveNoRouteUnits(t *testing.T) {
+	src := `describe("api", () => {
+  it("serves", () => { app.get("/x", (req, res) => res.send(1)); });
+});
+function helper() { app.get("/y", (req, res) => res.send(2)); }
+`
+	assertUnits(t, unitsOf(t, "testdata/ts/src/api.test.ts", src), []string{
+		"function api.test#helper 4-4",
+	})
+}
+
 func TestJavaScriptIsReadAsTypeScript(t *testing.T) {
 	src := `export function Cell({ v }) {
   return <td>{v > 0 && <b>{v}</b>}</td>;

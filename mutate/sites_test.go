@@ -3,6 +3,7 @@ package mutate
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -47,6 +48,31 @@ export function text() {
 		assertSites(t, path, src, []string{
 			"2:??>||", "2:?.>.", "2:??>||", "2:?.>", "2:0>1", "2:??>||", "2:?.>",
 		})
+	}
+}
+
+// A route's sites are its own, and editing a route leaves the hash of the
+// function around it alone, so that function's results stay valid.
+func TestRouteSitesBelongToTheRoute(t *testing.T) {
+	src := `export function mount(app) {
+  const limit = 1;
+  app.get("/x", (req, res) => res.json(req.q > 0));
+}
+`
+	f := parse(t, "x.ts", src)
+	var got []string
+	for _, s := range Sites(f) {
+		got = append(got, fmt.Sprintf("%s %s>%s", f.Units[s.Unit].Name, s.Original, s.Replacement))
+	}
+	if want := []string{"mount 1>0", "GET /x >>>=","GET /x 0>1"}; !slices.Equal(got, want) {
+		t.Errorf("sites:\n got  %q\n want %q", got, want)
+	}
+	edited := parse(t, "x.ts", strings.Replace(src, "req.q > 0", "req.q < 1", 1))
+	if UnitHash(f, f.Units[0]) != UnitHash(edited, edited.Units[0]) {
+		t.Error("editing a route changed the hash of the function around it")
+	}
+	if UnitHash(f, f.Units[1]) == UnitHash(edited, edited.Units[1]) {
+		t.Error("editing a route left its own hash unchanged")
 	}
 }
 

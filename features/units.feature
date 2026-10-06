@@ -56,6 +56,41 @@ Feature: Units: the functions and methods every tool measures
       | method   | demo.board.Board | onClick     | 22-22 | no      |
     And nested arrow functions, callbacks, and abstract methods are not units
 
+  Scenario: Inline route callbacks are units of their own
+    Given the file "src/api/routes.js":
+      """
+      const app = express();
+      app.use((req, res, next) => next());
+      app.get("/users", (req, res) => {
+        if (req.query.all) { res.json([]); }
+      });
+
+      export function mount(router) {
+        router.post("/users", function (req, res) {
+          return req.body ?? res.sendStatus(400);
+        });
+        router.route("/items").get((req, res) => res.json([])).delete(async (req, res) => {
+          if (!req.params.id) return;
+        });
+        router.get("/users", (req, res) => res.json(req.user));
+        return router;
+      }
+      """
+    When its units are listed
+    Then the units are:
+      | kind     | namespace  | name           | lines | private |
+      | function | api.routes | USE            | 2-2   | no      |
+      | function | api.routes | GET /users     | 3-5   | no      |
+      | function | api.routes | mount          | 7-16  | no      |
+      | function | api.routes | POST /users    | 8-10  | no      |
+      | function | api.routes | GET /items     | 11-11 | no      |
+      | function | api.routes | DELETE /items  | 11-13 | no      |
+      | function | api.routes | GET /users#2   | 14-14 | no      |
+    And get, post, put, patch, delete, head, options, all, and use on any object are routes
+    And a route's complexity, mutation sites, duplication, coverage, and hash are its own, not mount's
+    And the line a route starts on is mount's, since mounting runs it
+    But test files have no route units
+
   Scenario: TSX files are parsed with the TSX grammar
     Given the file "src/ui/cell.tsx" with a component that returns JSX
     When its units are listed

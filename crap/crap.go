@@ -60,7 +60,7 @@ func Analyze(files []string, report *coverage.Report) ([]Entry, error) {
 				EndLine:    u.EndLine,
 				Complexity: f.Complexity(u),
 			}
-			if cov, ok := unitCoverage(report, measured, path, u); ok {
+			if cov, ok := unitCoverage(report, measured, f, u); ok {
 				pct := round(cov*100, 1)
 				score := round(Score(e.Complexity, cov), 1)
 				e.Coverage, e.CRAP = &pct, &score
@@ -72,14 +72,25 @@ func Analyze(files []string, report *coverage.Report) ([]Entry, error) {
 	return entries, nil
 }
 
-func unitCoverage(r *coverage.Report, measured map[string]bool, path string, u lang.Unit) (float64, bool) {
+func unitCoverage(r *coverage.Report, measured map[string]bool, f *lang.File, u lang.Unit) (float64, bool) {
 	if r == nil {
 		return 0, false
 	}
-	if !r.Has(path) {
+	if !r.Has(f.Path) {
 		return 0, measured[u.Language]
 	}
-	return r.Fraction(path, u.BodyLine, u.EndLine)
+	return r.Fraction(f.Path, u.BodyLine, u.EndLine, innerLines(f, u)...)
+}
+
+// innerLines are the lines of u's inline units, which their own entries
+// measure. The line an inline unit starts on stays u's: it runs when u does.
+func innerLines(f *lang.File, u lang.Unit) [][2]int {
+	var out [][2]int
+	for _, i := range u.Inner {
+		in := f.Units[i]
+		out = append(out, [2]int{max(in.BodyLine, in.StartLine+1), in.EndLine})
+	}
+	return out
 }
 
 // Worst sorts entries by CRAP, highest first; unscored entries sort last by

@@ -28,9 +28,10 @@ type Report struct {
 }
 
 // Fraction returns the covered share of the segments that start inside
-// [start, end] of file, and false when the report has nothing to say about
-// those lines: the file is missing or no measured segment starts there.
-func (r *Report) Fraction(file string, start, end int) (float64, bool) {
+// [start, end] of file, but not inside any of the skip ranges, and false when
+// the report has nothing to say about those lines: the file is missing or no
+// measured segment starts there.
+func (r *Report) Fraction(file string, start, end int, skip ...[2]int) (float64, bool) {
 	if r == nil {
 		return 0, false
 	}
@@ -40,7 +41,7 @@ func (r *Report) Fraction(file string, start, end int) (float64, bool) {
 	}
 	var total, covered float64
 	for _, s := range segs {
-		if s.Start >= start && s.Start <= end {
+		if s.Start >= start && s.Start <= end && !inAny(s.Start, skip) {
 			total += s.Total
 			covered += s.Covered
 		}
@@ -49,6 +50,15 @@ func (r *Report) Fraction(file string, start, end int) (float64, bool) {
 		return 0, false
 	}
 	return covered / total, true
+}
+
+func inAny(line int, ranges [][2]int) bool {
+	for _, r := range ranges {
+		if line >= r[0] && line <= r[1] {
+			return true
+		}
+	}
+	return false
 }
 
 // Has reports whether the report measured file at all.
