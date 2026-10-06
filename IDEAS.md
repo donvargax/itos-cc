@@ -148,12 +148,38 @@ reads `.metrics/`. Only itos's config wires them together.
   from the `PATH`, a subprocess, not imported Go packages, so neither side
   depends on the other's code. See "With itos" above.
 - **Licensing.** The ideas come from Robert C. Martin's crapper, mutator,
-  dryer, scrap, and uml-viewer, which have no license file. This is a
-  separate implementation; credit him, and ask him to add a license if we
-  ever reuse his code directly.
+  dryer, scrap, and uml-viewer. crapper, mutator, and dryer are 0BSD since
+  2026-10-03, so their code may be reused freely; scrap and uml-viewer still
+  have no license file. This is a separate implementation; credit him, and
+  ask for a license before reusing code from the last two.
 - **Kotlin grammar** is fwcd's, pinned to a commit because it has no tagged
   release with Go bindings. The tree-sitter-grammars one drops classes with
   several annotations and no constructor.
+
+## Upstream
+
+Bob's tools keep changing. Reviewed through these commits, so the next
+review starts after them:
+
+| Repository | Commit | Date |
+| --- | --- | --- |
+| crapper | 9f1bead | 2026-10-03 |
+| mutator | c57f038 | 2026-10-03 |
+| dryer | 66ff6d2 | 2026-10-03 |
+| scrap | (none since 2026-10-01) | |
+| uml-viewer | 650abbc | 2026-10-02 |
+
+Taken from that review: JavaScript files, `?.` as a decision and a mutant,
+`??` as a mutant, Express route callbacks as units, and NUL-separated git
+output. Not taken, yet:
+
+- **LCOV branch records.** crapper scores a function by its `BRDA` branch
+  hits when it has any, and by line hits otherwise. Branch coverage fits
+  CRAP better, but it changes every TypeScript score; Go's profiles and
+  coverage.py's LCOV would need the same to stay comparable.
+- **A failed coverage run scores 0%.** crapper now does; we keep N/A for a
+  language with no report at all, so a broken test setup is not mistaken
+  for untested code. A gate (see "Gating and debt") may want Bob's choice.
 
 ## Notes
 
