@@ -128,12 +128,14 @@ func (m Mutant) key() string {
 	return Site{Offset: m.Offset, Original: m.Original, Replacement: m.Replacement}.Key()
 }
 
-// SnapshotName is where path's snapshot lives under .metrics.
+// SnapshotName is where the snapshot of the file at rel, its path from the
+// project root (project.FromRoot), lives under .metrics.
 func SnapshotName(rel string) string {
 	return filepath.Join("mutate", filepath.ToSlash(rel)+".json")
 }
 
-// LoadSnapshot reads rel's snapshot, or returns nil when there is none.
+// LoadSnapshot reads the snapshot of the file at rel, its path from the
+// project root, or returns nil when there is none.
 func LoadSnapshot(rel string) (*Snapshot, error) {
 	var s Snapshot
 	ok, err := metrics.Read(SnapshotName(rel), &s)
@@ -145,14 +147,14 @@ func LoadSnapshot(rel string) (*Snapshot, error) {
 
 // TestHashes is what a snapshot records of the test files tests: the
 // SHA-256 of each one's content, by its slash-separated path from the
-// working directory, the project root.
+// project root (project.FromRoot).
 func TestHashes(tests []string) (map[string]string, error) {
-	return testHashes(tests, project.Rel)
+	return testHashes(tests, project.FromRoot)
 }
 
 // TestHashesUnder is TestHashes for the project at root, which need not be
-// the working directory: each test file by its slash-separated path from
-// root, as a run from root records it.
+// the working directory's: each test file by its slash-separated path from
+// root, as a run in that project records it.
 func TestHashesUnder(root string, tests []string) (map[string]string, error) {
 	return testHashes(tests, func(path string) string {
 		if rel, err := filepath.Rel(root, path); err == nil && !strings.HasPrefix(rel, "..") {

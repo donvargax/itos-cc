@@ -84,8 +84,9 @@ func runDry(in *invocation) (any, error) {
 		result.Candidates = c
 	}
 	result.Groups = dry.Groups(result.Candidates)
+	candidates, groups := dryFromRoot(result.Candidates, result.Groups)
 	if err := metrics.Write("dry.json", drySnapshot{Version: metrics.Version, Threshold: opt.Threshold,
-		Candidates: result.Candidates, Groups: result.Groups}); err != nil {
+		Candidates: candidates, Groups: groups}); err != nil {
 		return result, err
 	}
 	if in.json {
@@ -118,4 +119,34 @@ func union(a, b []string) []string {
 		}
 	}
 	return out
+}
+
+// dryFromRoot is candidates and groups as dry.json records them: each file
+// from the project root, while output names it from the working directory.
+func dryFromRoot(candidates []dry.Candidate, groups []dry.Group) ([]dry.Candidate, []dry.Group) {
+	side := func(s dry.Side) dry.Side {
+		s.File = project.FromRoot(s.File)
+		return s
+	}
+	var cs []dry.Candidate
+	if candidates != nil {
+		cs = []dry.Candidate{}
+	}
+	for _, c := range candidates {
+		c.Left, c.Right = side(c.Left), side(c.Right)
+		cs = append(cs, c)
+	}
+	var gs []dry.Group
+	if groups != nil {
+		gs = []dry.Group{}
+	}
+	for _, g := range groups {
+		members := make([]dry.Side, 0, len(g.Members))
+		for _, m := range g.Members {
+			members = append(members, side(m))
+		}
+		g.Members = members
+		gs = append(gs, g)
+	}
+	return cs, gs
 }

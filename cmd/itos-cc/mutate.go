@@ -239,18 +239,16 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 }
 
 // importingTests lists the test files that import each source, as the graph
-// of the project under the working directory resolves imports, whatever
-// command runs the mutants: what a snapshot records the hashes of.
+// of the project under the project root resolves imports, whatever command
+// runs the mutants and wherever it runs: what a snapshot records the hashes
+// of.
 func importingTests() (func(path string) []string, error) {
-	all, err := project.Discover([]string{"."})
+	root := project.Root()
+	all, err := project.Discover([]string{root})
 	if err != nil {
 		return nil, err
 	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	tests, err := graph.TestsImporting(wd, all)
+	tests, err := graph.TestsImporting(root, all)
 	if err != nil {
 		return nil, err
 	}

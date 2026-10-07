@@ -70,6 +70,8 @@ func runScrap(in *invocation) (any, error) {
 	if _, err := metrics.Read("scrap.json", &previous); err != nil {
 		fmt.Fprintln(os.Stderr, "itos-cc: ignoring unreadable .metrics/scrap.json:", err)
 	}
+	// scrap.json names each file from the project root, while output names
+	// it from the working directory.
 	byFile := map[string]scrap.FileReport{}
 	for _, r := range previous.Files {
 		byFile[r.File] = r
@@ -86,11 +88,14 @@ func runScrap(in *invocation) (any, error) {
 		if r.Examples == 0 {
 			continue
 		}
-		if prev, ok := byFile[r.File]; ok {
+		key := project.FromRoot(path)
+		if prev, ok := byFile[key]; ok {
 			prev.Compare = nil
 			r.CompareTo(prev)
 		}
-		byFile[r.File] = r
+		recorded := r
+		recorded.File = key
+		byFile[key] = recorded
 		reports = append(reports, r)
 	}
 

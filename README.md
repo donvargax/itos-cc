@@ -74,7 +74,8 @@ for a system library zig does not ship.
 
 ## Use
 
-Run from a project root. Paths are files, directories, or fragments of a
+Run anywhere in a project: `.metrics/` and `itos-cc.yaml` are at its root
+(see [.metrics](#metrics)). Paths are files, directories, or fragments of a
 path (`itos-cc crap billing`); `--changed` selects what git reports as added
 or modified. Every command takes `-h` and `--json`.
 
@@ -374,7 +375,11 @@ The server listens on localhost only.
 ## .metrics
 
 Every command writes a JSON snapshot under `.metrics/`: `crap.json`,
-`dry.json`, `scrap.json`, and `mutate/`. Commit them: a clone then has the
+`dry.json`, `scrap.json`, and `mutate/`. `.metrics/` sits at the project
+root, the git top level of the working directory (outside a git repository,
+the working directory), wherever a command runs, and every path a snapshot
+records is relative to that root and slash-separated; paths on the command
+line and in output stay relative to the working directory. Commit them: a clone then has the
 numbers without rerunning, and mutation results are shared, so nobody reruns
 mutants that are already killed. Snapshots carry no timestamps and are
 sorted, so an unchanged result is an unchanged file. Raw coverage reports go

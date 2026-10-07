@@ -19,7 +19,8 @@ const (
 
 // FileCheck is one source file's functions checked against its snapshot.
 type FileCheck struct {
-	Rel       string
+	Rel       string // the file's path as output names it, from the working directory
+	key       string // the file's path as its snapshot names it, from the project root
 	Functions []FunctionCheck
 	// StaleExceptions is each exception of the functions checked that no
 	// longer holds: those whose function changed or whose site is gone,
@@ -139,11 +140,11 @@ func checkFile(path string, judge func(path, function, hash string) bool, tests 
 // (judged), so mutation sample and mutation except, which read only the
 // mutants an entry records, judge it as before; checkFile drops them.
 func checkParsed(f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
-	rel := project.Rel(path)
-	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
-	snap, err := LoadSnapshot(rel)
+	key := project.FromRoot(path)
+	result := FileCheck{Rel: project.Rel(path), key: key, Functions: []FunctionCheck{}}
+	snap, err := LoadSnapshot(key)
 	if err != nil {
-		return result, fmt.Errorf("%s: %w", SnapshotName(rel), err)
+		return result, fmt.Errorf("%s: %w", SnapshotName(key), err)
 	}
 	var paths []string
 	if tests != nil {
@@ -199,7 +200,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 	if judge != nil {
 		judgeFunction = func(function string) bool { return names[function] }
 	}
-	x := applyExceptions(exceptions, rel, f, all, judgeFunction)
+	x := applyExceptions(exceptions, key, f, all, judgeFunction)
 	result.StaleExceptions = x.stale
 	at := map[string]int{}
 	for i, s := range all {

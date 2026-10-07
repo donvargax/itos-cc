@@ -9,14 +9,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
-// File is the settings file, relative to the working directory, the
-// project root.
+// File is the settings file's name, at the project root.
 const File = "itos-cc.yaml"
+
+// Path is where the settings file is: at the project root (project.Root),
+// wherever a command runs.
+func Path() string {
+	return filepath.Join(project.Root(), File)
+}
 
 // Exception is one excepted mutant: a survivor no test can kill because it
 // changes no behaviour. It is found by its function, the function's hash
@@ -70,10 +78,10 @@ type raw struct {
 	} `yaml:"mutation"`
 }
 
-// Load reads itos-cc.yaml in the working directory. A missing file is an
+// Load reads itos-cc.yaml at the project root. A missing file is an
 // empty config; one that cannot be read as a config is an *InvalidError.
 func Load() (*Config, error) {
-	data, err := os.ReadFile(File)
+	data, err := os.ReadFile(Path())
 	if errors.Is(err, os.ErrNotExist) {
 		return &Config{}, nil
 	}
@@ -123,13 +131,13 @@ func parse(data []byte) (*Config, error) {
 	return c, nil
 }
 
-// Except writes e into itos-cc.yaml in the working directory, under
+// Except writes e into itos-cc.yaml at the project root, under
 // mutation.exceptions, in place of an entry for the same site or after the
 // others, and reports whether it replaced one. The file's other keys and
 // its comments are kept; the file is made when there is none. It refuses,
 // with an *InvalidError, to write over a file it cannot read.
 func Except(e Exception) (replaced bool, err error) {
-	data, err := os.ReadFile(File)
+	data, err := os.ReadFile(Path())
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return false, err
 	}
@@ -198,8 +206,8 @@ func write(doc *yaml.Node) error {
 		return err
 	}
 	mode := os.FileMode(0o644)
-	if info, err := os.Stat(File); err == nil {
+	if info, err := os.Stat(Path()); err == nil {
 		mode = info.Mode().Perm()
 	}
-	return os.WriteFile(File, buf.Bytes(), mode)
+	return os.WriteFile(Path(), buf.Bytes(), mode)
 }

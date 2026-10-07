@@ -26,12 +26,12 @@ func TestWritesAtTheSameTimeLeaveOneWholeSnapshot(t *testing.T) {
 	if ok, err := Read("x.json", &got); !ok || err != nil || len(got["text"]) != 1<<16 {
 		t.Fatalf("read %v %v, %d bytes: want one whole snapshot", ok, err, len(got["text"]))
 	}
-	if left, _ := filepath.Glob(filepath.Join(Dir, "*.tmp")); len(left) > 0 {
+	if left, _ := filepath.Glob(filepath.Join(Dir(), "*.tmp")); len(left) > 0 {
 		t.Errorf("staging files left behind: %v", left)
 	}
 	// Windows has no Unix permission bits: Go reports 0666 for a writable file.
 	if runtime.GOOS != "windows" {
-		if info, _ := os.Stat(filepath.Join(Dir, "x.json")); info.Mode().Perm() != 0o644 {
+		if info, _ := os.Stat(filepath.Join(Dir(), "x.json")); info.Mode().Perm() != 0o644 {
 			t.Errorf("mode %v, want 0644", info.Mode().Perm())
 		}
 	}

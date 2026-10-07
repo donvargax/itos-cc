@@ -8,10 +8,19 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
-// Dir is where snapshots live, relative to the working directory.
-const Dir = ".metrics"
+// Name is the directory snapshots live in, at the project root.
+const Name = ".metrics"
+
+// Dir is where snapshots live: .metrics at the project root
+// (project.Root), wherever a command runs, so every command reads and
+// writes the same snapshots.
+func Dir() string {
+	return filepath.Join(project.Root(), Name)
+}
 
 // Version is the snapshot format version every snapshot records.
 const Version = 1
@@ -21,7 +30,7 @@ const Version = 1
 // runs at the same time never rename each other's half-written one; on
 // Windows the rename retries for a moment while another one holds the file.
 func Write(name string, v any) error {
-	path := filepath.Join(Dir, name)
+	path := filepath.Join(Dir(), name)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -52,7 +61,7 @@ func Write(name string, v any) error {
 
 // Remove deletes .metrics/name; one that is not there is no error.
 func Remove(name string) error {
-	if err := os.Remove(filepath.Join(Dir, name)); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(filepath.Join(Dir(), name)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
@@ -60,7 +69,7 @@ func Remove(name string) error {
 
 // Read loads .metrics/name into v and reports whether the file existed.
 func Read(name string, v any) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(Dir, name))
+	data, err := os.ReadFile(filepath.Join(Dir(), name))
 	if os.IsNotExist(err) {
 		return false, nil
 	}

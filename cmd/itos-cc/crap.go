@@ -8,6 +8,7 @@ import (
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/crap"
 	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 type crapSnapshot struct {
@@ -82,7 +83,14 @@ func runCrap(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	if err := metrics.Write("crap.json", crapSnapshot{Version: metrics.Version, Entries: entries}); err != nil {
+	// crap.json names each file from the project root, while output names
+	// it from the working directory.
+	var recorded []crap.Entry
+	for _, e := range entries {
+		e.File = project.FromRoot(e.File)
+		recorded = append(recorded, e)
+	}
+	if err := metrics.Write("crap.json", crapSnapshot{Version: metrics.Version, Entries: recorded}); err != nil {
 		return result, err
 	}
 

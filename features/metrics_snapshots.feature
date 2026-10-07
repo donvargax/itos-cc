@@ -65,7 +65,7 @@ Feature: Snapshots under .metrics
   # the command line, file selection (ID-MUT-41) and the paths stdout and
   # --json print stay relative to the working directory. A .metrics/ left
   # in a subdirectory by an earlier version is no longer read or written.
-  @wip @snapshots-at-root @ID-SNAP-08
+  @snapshots-at-root @ID-SNAP-08
   Scenario: Snapshots live at the project root, wherever a command runs
     Given a git repository with src/board.go and its tests
     When I run "itos-cc mutation run board.go" from src/
@@ -84,21 +84,21 @@ Feature: Snapshots under .metrics
       | dry     | .metrics/dry.json  |
       | scrap   | .metrics/scrap.json |
 
-  @wip @snapshots-at-root @ID-SNAP-10
+  @snapshots-at-root @ID-SNAP-10
   Scenario: A command finds the same results from any directory
     Given a run from the repository's root recorded every mutant of src/board.go killed
     When I run "itos-cc mutation check board.go" from src/
     Then the exit code is 0
     And "itos-cc mutation check src/board.go" from the root exits 0 too
 
-  @wip @snapshots-at-root @ID-SNAP-11
+  @snapshots-at-root @ID-SNAP-11
   Scenario: Paths on the command line and in output stay relative to the working directory
     Given a git repository with src/board.go and its tests
     When I run "itos-cc mutation run --json board.go" from src/
     Then stdout's summary names the file "board.go"
     And the file in "files" is "board.go"
 
-  @wip @snapshots-at-root @ID-SNAP-12
+  @snapshots-at-root @ID-SNAP-12
   Scenario: Outside a git repository the working directory is the root
     Given a directory with board.go that is in no git repository
     When I run "itos-cc crap" there

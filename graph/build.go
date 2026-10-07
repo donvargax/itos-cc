@@ -19,6 +19,7 @@ import (
 // changed since the last build.
 type Builder struct {
 	roots     []string // absolute
+	projects  []string // the project root of each root, whose .metrics it reads (project.RootOf)
 	names     []string
 	cache     map[string]cached
 	signature string
@@ -45,20 +46,22 @@ func NewBuilder(roots []string) (*Builder, error) {
 			name = fmt.Sprintf("%s-%d", name, seen[name])
 		}
 		b.roots = append(b.roots, abs)
+		b.projects = append(b.projects, project.RootOf(abs))
 		b.names = append(b.names, name)
 	}
 	return b, nil
 }
 
 // Build returns the current graph and whether it changed since the last
-// call. Sources, tests, and the snapshots under each repository's .metrics
-// are all watched: a mutation snapshot holds while the tests that import its
-// file are as it recorded them.
+// call. Sources, tests, and the snapshots under the .metrics of each
+// repository's project root, where every command keeps them, are all
+// watched: a mutation snapshot holds while the tests that import its file
+// are as it recorded them.
 func (b *Builder) Build() (*Graph, bool, error) {
 	var stamps []string
 	type repo struct {
-		name, root string
-		files      project.Files
+		name, root, top string
+		files           project.Files
 	}
 	var repos []repo
 	for i, root := range b.roots {
@@ -66,11 +69,11 @@ func (b *Builder) Build() (*Graph, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
-		repos = append(repos, repo{b.names[i], root, files})
+		repos = append(repos, repo{b.names[i], root, b.projects[i], files})
 		for _, f := range append(files.Sources, files.Tests...) {
 			stamps = append(stamps, f+"\x00"+stamp(f))
 		}
-		stamps = append(stamps, metricStamps(root)...)
+		stamps = append(stamps, metricStamps(b.projects[i])...)
 	}
 	sort.Strings(stamps)
 	signature := strings.Join(stamps, "\n")
@@ -82,7 +85,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 	live := map[string]bool{}
 	var built []*repoGraph
 	for _, r := range repos {
-		overlay := loadOverlay(r.root)
+		overlay := loadOverlay(r.top)
 		var infos, tests []*fileInfo
 		for _, path := range r.files.Sources {
 			live[path] = true
@@ -101,7 +104,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 			tests = append(tests, info)
 		}
 		importing := importingTests(r.root, infos, tests)
-		hashes := testHashes(r.root)
+		hashes := testHashes(r.top)
 		for i, info := range infos {
 			now, err := hashes(importing[info.abs])
 			if err != nil {
@@ -144,8 +147,8 @@ func stamp(path string) string {
 }
 
 // testHashes returns what a snapshot records of some test files of the
-// repository at root, as mutation check computes it, hashing each file once
-// however many sources its tests import.
+// project whose root is root, as mutation check computes it, hashing each
+// file once however many sources its tests import.
 func testHashes(root string) func(tests []string) (map[string]string, error) {
 	seen := map[string]map[string]string{}
 	return func(tests []string) (map[string]string, error) {

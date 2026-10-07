@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -94,7 +93,8 @@ const minTimeout = 2 * time.Second
 
 type fileState struct {
 	file     *lang.File
-	rel      string
+	rel      string // the file's path as output names it, from the working directory
+	key      string // the file's path as its snapshot names it, from the project root
 	sites    []Site
 	outcomes []string // "" while pending
 	reused   []bool   // the outcome came from the previous snapshot
@@ -106,8 +106,8 @@ type fileState struct {
 	tests    map[string]string // the tests that import the file, as the snapshot records them
 	judged   map[int]bool      // by the index of the unit, or nil when every function is
 	excepted fileExceptions    // the exceptions of the functions judged
-	moved    string            // the path the file had before a rename, whose snapshot moves to rel
-	moving   *Snapshot         // that snapshot, under rel, when rel had none of its own
+	moved    string            // the path from the root the file had before a rename, whose snapshot moves to key
+	moving   *Snapshot         // that snapshot, under key, when key had none of its own
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -144,7 +144,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	for _, s := range states {
 		if !s.result.BaselineFailed {
 			s.result.Mutants = s.decided()
-			s.result.Snapshot = buildScoped(s.file, s.rel, s.tests, s.sites, s.outcomes, s.scopes)
+			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes)
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			}
@@ -154,7 +154,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 				// file is left as it was: no new results, no comment. A
 				// renamed file's snapshot still moves, as it was.
 				if s.moving != nil {
-					if err := metrics.Write(SnapshotName(s.rel), s.moving); err != nil {
+					if err := metrics.Write(SnapshotName(s.key), s.moving); err != nil {
 						return nil, err
 					}
 				}
@@ -164,7 +164,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 				results = append(results, *s.result)
 				continue
 			}
-			if err := metrics.Write(SnapshotName(s.rel), s.result.Snapshot); err != nil {
+			if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
 				return nil, err
 			}
 			if err := s.removeMoved(); err != nil {
@@ -195,7 +195,7 @@ func (s *fileState) follow(opt Options, path string, snap **Snapshot) error {
 	if _, err := os.Stat(old); !os.IsNotExist(err) {
 		return nil
 	}
-	s.moved = project.Rel(old)
+	s.moved = project.FromRoot(old)
 	if *snap != nil {
 		return nil
 	}
@@ -204,7 +204,7 @@ func (s *fileState) follow(opt Options, path string, snap **Snapshot) error {
 		return fmt.Errorf("%s: %w", SnapshotName(s.moved), err)
 	}
 	if moving != nil {
-		moving.File = filepath.ToSlash(s.rel)
+		moving.File = s.key
 		*snap, s.moving = moving, moving
 	}
 	return nil
@@ -228,13 +228,13 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if err != nil {
 			return states, err
 		}
-		rel := project.Rel(path)
-		s := &fileState{file: f, rel: rel, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests),
+		rel, key := project.Rel(path), project.FromRoot(path)
+		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests),
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
-		snap, err := LoadSnapshot(rel)
+		snap, err := LoadSnapshot(key)
 		if err != nil {
-			return states, fmt.Errorf("%s: %w", SnapshotName(rel), err)
+			return states, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}
 		if err := s.follow(opt, path, &snap); err != nil {
 			return states, err
@@ -263,7 +263,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			// function of that name is judged.
 			judge = func(function string) bool { return names[function] }
 		}
-		s.excepted = applyExceptions(opt.Exceptions, rel, f, s.sites, judge)
+		s.excepted = applyExceptions(opt.Exceptions, key, f, s.sites, judge)
 		s.result.StaleExceptions = s.excepted.stale
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))

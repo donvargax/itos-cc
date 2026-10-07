@@ -93,7 +93,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		if err != nil {
 			return Sampled{}, err
 		}
-		s.rel, s.result = c.Rel, &FileResult{Rel: c.Rel}
+		s.rel, s.key, s.result = c.Rel, c.key, &FileResult{Rel: c.Rel}
 		at := map[int]map[string]int{}
 		for i, site := range s.sites {
 			if at[site.Unit] == nil {
@@ -115,7 +115,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 					scope = RunScope(opt.TestCommand, opt.AllTests)
 				}
 				candidates = append(candidates, candidate{state: s, site: i, function: fn.Function, recorded: m.Outcome,
-					scope: scope, rank: rank(seed, s.rel, fn.Function, m.key())})
+					scope: scope, rank: rank(seed, s.key, fn.Function, m.key())})
 			}
 		}
 	}
@@ -139,7 +139,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		r := runs[k]
 		if r == nil {
 			s := c.state
-			r = &fileState{file: s.file, rel: s.rel, sites: s.sites, command: scopeCommand(s.file.Path, c.scope),
+			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(s.file.Path, c.scope),
 				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites))}
 			runs[k] = r
 			order = append(order, r)
@@ -185,8 +185,9 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 }
 
 // rank orders a candidate in the draw of seed: the SHA-256 of the seed, the
-// file's slash-separated path, the function, and the site's key, which stay
-// the same while the function is unchanged, on every platform.
+// file's slash-separated path from the project root, the function, and the
+// site's key, which stay the same while the function is unchanged, on every
+// platform and from every directory.
 func rank(seed, rel, function, key string) string {
 	sum := sha256.Sum256([]byte(seed + "\x00" + filepath.ToSlash(rel) + "\x00" + function + "\x00" + key))
 	return hex.EncodeToString(sum[:])

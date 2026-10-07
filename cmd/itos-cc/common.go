@@ -117,7 +117,7 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 	case len(reports) > 0:
 		return coverage.Files(reports, sources, log), nil
 	}
-	out := absOrSame(filepath.Join(metrics.Dir, "coverage"))
+	out := filepath.Join(metrics.Dir(), "coverage")
 	if in.set("all-tests") {
 		scope = coverage.AllTests
 	}
