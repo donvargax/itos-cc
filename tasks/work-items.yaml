@@ -209,14 +209,15 @@ items:
       the mutants after it and leaving the worker copy undeletable. A Job object with
       JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE would kill the tree, as Setpgid does on Unix. Found writing
       ID-MUT-53, whose fixture sleeps rather than spins for this reason.
-  - id: mutate-test-hash
-    title: "mutate: results go stale when the tests that ran against a function change"
+  - id: mutation-test-hash
+    title: "mutation results go stale when the tests that import their file change"
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-check]
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-test-hash.
       Issue #8 part 2, and IDEAS.md "Killed mutants must notice test changes": a kept kill survives
       the deletion of the test that killed it, since only the function's hash keys it. Record a hash
       of the test files that ran (or that import its module, from the graph) and treat a change as
