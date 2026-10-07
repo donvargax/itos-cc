@@ -55,18 +55,20 @@ type FunctionCheck struct {
 
 // Check compares each function of files that has a mutation site with its
 // file's snapshot, running nothing and writing nothing. judge, when set,
-// says which functions of the file at path to check, by namespace#name.
-// tests, when set, lists the test files that import the file at path, as
-// Options.Tests does for a run. A function is fresh while one entry under
-// its name has its hash, so a function that only moved is fresh, as it is
-// for reuse, and while the snapshot records the tests that import its file
-// as they are now. exceptions are the survivors itos-cc.yaml excepts, judged
+// says which functions of the file at path to check, by namespace#name and
+// hash, as Options.Judge does. tests, when set, lists the test files that
+// import the file at path, as Options.Tests does for a run. Each function
+// is paired with an entry of its name by hash, functions sharing a name
+// each with their own (PairByHash), and is fresh while that entry has its
+// hash, so a function that only moved is fresh, as it is for reuse, and
+// while the snapshot records the tests that import its file as they are
+// now. exceptions are the survivors itos-cc.yaml excepts, judged
 // as a run judges them: a fresh entry's survivor that one excepts fails
 // nothing, and one that no longer holds is stale. An entry whose hash and
 // tests match but which lacks a site the function has now is stale too,
 // naming those sites in Unrecorded: no run judged them, and a run runs only
 // them.
-func Check(files []string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) ([]FileCheck, error) {
+func Check(files []string, judge func(path, function, hash string) bool, tests func(path string) []string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
 		c, err := checkFile(path, judge, tests, exceptions)
@@ -78,7 +80,7 @@ func Check(files []string, judge func(path, function string) bool, tests func(pa
 	return out, nil
 }
 
-func checkFile(path string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
+func checkFile(path string, judge func(path, function, hash string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	f, err := lang.ParseFile(path)
 	if err != nil {
 		return FileCheck{}, err
@@ -98,7 +100,7 @@ func checkFile(path string, judge func(path, function string) bool, tests func(p
 // its Unrecorded sites, so mutation sample and mutation except, which read
 // only the mutants an entry records, judge those as before; checkFile makes
 // it Stale.
-func checkParsed(f *lang.File, path string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
+func checkParsed(f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	rel := project.Rel(path)
 	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
 	snap, err := LoadSnapshot(rel)
@@ -117,49 +119,52 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 	if snap != nil {
 		changed = snap.TestsChanged(now)
 	}
-	recorded := map[string][]UnitResult{}
+	var entries []UnitResult
 	if snap != nil {
-		for _, u := range snap.Units {
-			id := unitID(u.Namespace, u.Name)
-			recorded[id] = append(recorded[id], u)
-		}
+		entries = snap.Units
 	}
+	ids, hashes := fileKeys(f)
+	pair := entriesOf(ids, hashes, entries)
 	all := Sites(f)
 	sites := map[int][]Site{}
 	for _, s := range all {
 		sites[s.Unit] = append(sites[s.Unit], s)
 	}
+	// An exception names its function, so it counts when any function of
+	// that name is judged.
+	names := map[string]bool{}
 	for i, u := range f.Units {
-		id := unitID(u.Namespace, u.Name)
-		if len(sites[i]) == 0 || (judge != nil && !judge(path, id)) {
+		id := ids[i]
+		if judge != nil && !judge(path, id, hashes[i]) {
 			continue
 		}
-		c := FunctionCheck{Function: id, StartLine: u.StartLine, State: Missing, unit: i}
-		entries := recorded[id]
-		if len(entries) > 0 {
-			c.State, c.Entry = Stale, entries[0]
+		names[id] = true
+		if len(sites[i]) == 0 {
+			continue
 		}
-		hash := UnitHash(f, u)
-		for _, e := range entries {
-			if e.Hash == hash && changed != nil {
+		// The function's entry is the one of its name with its hash, so
+		// functions sharing a name are told apart; one paired with an entry
+		// of another hash changed since.
+		c := FunctionCheck{Function: id, StartLine: u.StartLine, State: Missing, unit: i}
+		if pair[i] >= 0 {
+			e := entries[pair[i]]
+			switch {
+			case e.Hash != hashes[i]:
+				c.State, c.Entry = Stale, e
+			case changed != nil:
 				c.State, c.Entry, c.Tests = Stale, e, changed
-				break
-			}
-			if e.Hash == hash && e.Stale {
+			case e.Stale:
 				c.State, c.Entry, c.Marked = Stale, e, true
-				break
-			}
-			if e.Hash == hash {
+			default:
 				c.State, c.Entry, c.Mutants = Fresh, e, placed(e.Mutants, sites[i])
 				c.Unrecorded = unrecorded(e.Mutants, sites[i])
-				break
 			}
 		}
 		result.Functions = append(result.Functions, c)
 	}
 	var judgeFunction func(function string) bool
 	if judge != nil {
-		judgeFunction = func(function string) bool { return judge(path, function) }
+		judgeFunction = func(function string) bool { return names[function] }
 	}
 	x := applyExceptions(exceptions, rel, f, all, judgeFunction)
 	result.StaleExceptions = x.stale

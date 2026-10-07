@@ -258,7 +258,7 @@ Feature: Architecture graph
     # The graph matches a function's mutation entry by name and hash, as
     # mutation check and mutation run do (see "Functions sharing a name" in
     # mutate.feature).
-    @wip @same-name-units @ID-GRAPH-35
+    @same-name-units @ID-GRAPH-35
     Scenario: The graph and mutation check agree on functions sharing a name
       Given a Go file with two init functions whose results a previous run recorded
       And the second has changed since

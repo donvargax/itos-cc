@@ -42,8 +42,9 @@ func Head() (string, error) {
 // renamed unchanged has none. Functions are found in HEAD's version of the
 // file, so an uncommitted edit neither adds one nor moves its lines. renamed
 // maps each file the range renamed, by its absolute path, to the absolute
-// path it had at ref.
-func ChangedSince(ref string) (changed map[string]map[string]bool, renamed map[string]string, err error) {
+// path it had at ref. hash, when set, fingerprints a function's text, so
+// functions sharing a name are told apart (see ChangedFunctions).
+func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
 	if out, err := exec.Command("git", "rev-parse", "--git-dir").CombinedOutput(); err != nil {
 		return nil, nil, &NoGitError{gitError(out, err)}
 	}
@@ -58,7 +59,7 @@ func ChangedSince(ref string) (changed map[string]map[string]bool, renamed map[s
 		return nil, nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
 	}
 	files, renames := diffLines(string(out))
-	changed, renamed = map[string]map[string]bool{}, map[string]string{}
+	changed, renamed = map[string]ChangedFunctions{}, map[string]string{}
 	for name, lines := range files {
 		spec := lang.Detect(name)
 		if spec == nil {
@@ -83,16 +84,49 @@ func ChangedSince(ref string) (changed map[string]map[string]bool, renamed map[s
 		if err != nil {
 			return nil, nil, err
 		}
-		functions := map[string]bool{}
+		c := ChangedFunctions{Functions: map[string]bool{}}
+		named := map[string]int{}
 		for _, u := range f.Units {
+			named[u.Namespace+"#"+u.Name]++
 			if overlaps(lines, u.StartLine, u.EndLine) {
-				functions[u.Namespace+"#"+u.Name] = true
+				c.Functions[u.Namespace+"#"+u.Name] = true
 			}
 		}
+		for _, u := range f.Units {
+			id := u.Namespace + "#" + u.Name
+			if hash == nil || named[id] < 2 || !c.Functions[id] || overlaps(lines, u.StartLine, u.EndLine) {
+				continue
+			}
+			if c.Kept == nil {
+				c.Kept = map[string]map[string]bool{}
+			}
+			if c.Kept[id] == nil {
+				c.Kept[id] = map[string]bool{}
+			}
+			c.Kept[id][hash(f, u)] = true
+		}
 		f.Close()
-		changed[abs] = functions
+		changed[abs] = c
 	}
 	return changed, renamed, nil
+}
+
+// ChangedFunctions is what a range of commits changed in one file.
+type ChangedFunctions struct {
+	// Functions holds the namespace#name of each function whose lines the
+	// range touched.
+	Functions map[string]bool
+	// Kept holds, for a name in Functions that several functions of the
+	// file share, the hash of each of them the range left alone, as HEAD
+	// has it.
+	Kept map[string]map[string]bool
+}
+
+// Judges reports whether the function named function, whose text has hash,
+// is one the range changed: by its name, and among functions sharing it, by
+// its hash, so of several init functions only those the range touched are.
+func (c ChangedFunctions) Judges(function, hash string) bool {
+	return c.Functions[function] && !c.Kept[function][hash]
 }
 
 // lines is a range of line numbers, both ends included.

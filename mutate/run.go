@@ -28,9 +28,10 @@ type Options struct {
 	// to run every mutant regardless of coverage.
 	Coverage func(sources []string) *coverage.Report
 	// Judge, when set, says which functions of the file at path to judge,
-	// by namespace#name. The others never run: they keep what their
-	// snapshot records.
-	Judge func(path, function string) bool
+	// by namespace#name and, to tell apart functions sharing a name, hash
+	// (UnitHash). The others never run: they keep what their snapshot
+	// records.
+	Judge func(path, function, hash string) bool
 	// Renamed, when set, is the path the file at path had before a rename,
 	// or "": its snapshot moves to the new path, and the old one is removed.
 	Renamed func(path string) string
@@ -103,7 +104,7 @@ type fileState struct {
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
 	stored   *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
 	tests    map[string]string // the tests that import the file, as the snapshot records them
-	judged   map[string]bool   // by namespace#name, or nil when every function is
+	judged   map[int]bool      // by the index of the unit, or nil when every function is
 	excepted fileExceptions    // the exceptions of the functions judged
 	moved    string            // the path the file had before a rename, whose snapshot moves to rel
 	moving   *Snapshot         // that snapshot, under rel, when rel had none of its own
@@ -248,18 +249,19 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev, prevScopes := rememberedWithScopes(s.previous, f)
 		s.result.Functions = len(f.Units)
+		var judge func(function string) bool
 		if opt.Judge != nil {
-			s.judged, s.result.Judged = map[string]bool{}, []string{}
-			for _, u := range f.Units {
-				if id := unitID(u.Namespace, u.Name); opt.Judge(path, id) {
-					s.judged[id] = true
+			s.judged, s.result.Judged = map[int]bool{}, []string{}
+			names := map[string]bool{}
+			for i, u := range f.Units {
+				if id := unitID(u.Namespace, u.Name); opt.Judge(path, id, UnitHash(f, u)) {
+					s.judged[i], names[id] = true, true
 					s.result.Judged = append(s.result.Judged, id)
 				}
 			}
-		}
-		var judge func(function string) bool
-		if s.judged != nil {
-			judge = func(function string) bool { return s.judged[function] }
+			// An exception names its function, so it counts when any
+			// function of that name is judged.
+			judge = func(function string) bool { return names[function] }
 		}
 		s.excepted = applyExceptions(opt.Exceptions, rel, f, s.sites, judge)
 		s.result.StaleExceptions = s.excepted.stale
@@ -268,22 +270,20 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.scopes = make([]string, len(s.sites))
 		scope := RunScope(opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
-			u := f.Units[site.Unit]
-			id := unitID(u.Namespace, u.Name)
 			// A kept outcome keeps the scope it was decided with.
 			s.scopes[i] = scope
-			if s.judged != nil && !s.judged[id] {
+			if s.judged != nil && !s.judged[site.Unit] {
 				// Not judged: it never runs, and keeps the outcome its
 				// snapshot records for its unchanged function, if any.
 				s.outcomes[i] = skipped
-				if outcome := prev[id][site.Key()]; outcome != "" {
-					s.outcomes[i], s.scopes[i] = outcome, prevScopes[id][site.Key()]
+				if outcome := prev[site.Unit][site.Key()]; outcome != "" {
+					s.outcomes[i], s.scopes[i] = outcome, prevScopes[site.Unit][site.Key()]
 				}
 				continue
 			}
 			_, excepted := s.excepted.held[i]
 			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll {
-				s.outcomes[i], s.scopes[i] = outcome, prevScopes[id][site.Key()]
+				s.outcomes[i], s.scopes[i] = outcome, prevScopes[site.Unit][site.Key()]
 				s.reused[i] = true
 				s.result.Reused++
 			}
@@ -302,7 +302,7 @@ func (s *fileState) decided() []MutantResult {
 	for i, site := range s.sites {
 		u := s.file.Units[site.Unit]
 		id := unitID(u.Namespace, u.Name)
-		if s.judged != nil && !s.judged[id] {
+		if s.judged != nil && !s.judged[site.Unit] {
 			continue
 		}
 		reason, stale := s.excepted.judge(i, site, s.outcomes[i])

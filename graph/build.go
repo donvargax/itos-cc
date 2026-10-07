@@ -243,11 +243,45 @@ func (f *fileInfo) clone() *fileInfo {
 // overlay is what the snapshots in .metrics know about each function.
 // Functions are matched by file, namespace, name, and which same-named
 // function of the file they are: a Go package has an init per file, and
-// overloads share a name.
+// overloads share a name. Coverage tells same-named functions apart by
+// their order, mutation entries by their hash (mutationEntries).
 type overlay struct {
 	coverage   keyed[float64]
 	mutation   keyed[recorded]
 	duplicates map[string]int // file#line → candidate pairs it is in
+}
+
+// mutationEntries is the mutation entry of each of info's units, nil for
+// none: those of its file and name, paired with the functions sharing the
+// name by hash.
+func (o overlay) mutationEntries(info *fileInfo) []*recorded {
+	named := map[string][]int{}
+	for i, u := range info.units {
+		k := u.Namespace + "#" + u.Name
+		named[k] = append(named[k], i)
+	}
+	out := make([]*recorded, len(info.units))
+	for _, units := range named {
+		first := info.units[units[0]]
+		var rs []recorded
+		var was, now []string
+		for n := 0; ; n++ {
+			r, ok := o.mutation.get(first.File, first.Namespace, first.Name, n)
+			if !ok {
+				break
+			}
+			rs, was = append(rs, r), append(was, r.unit.Hash)
+		}
+		for _, i := range units {
+			now = append(now, info.units[i].hash)
+		}
+		for k, j := range mutate.PairByHash(now, was) {
+			if j >= 0 {
+				out[units[k]] = &rs[j]
+			}
+		}
+	}
+	return out
 }
 
 // recorded is one function's entry in a mutation snapshot, with the
@@ -338,8 +372,12 @@ func loadOverlay(root string) overlay {
 // live complexity and the last measured coverage, so it moves as you edit.
 // Mutation results are stale as mutation check calls them: the function's
 // source changed since, or tests, the hashes of the test files that import
-// its file now, differ from those its snapshot recorded.
+// its file now, differ from those its snapshot recorded. A function's
+// mutation entry is paired as mutation check pairs it, by name and hash
+// (mutate.PairByHash), so of functions sharing a name, reordering them
+// changes nothing and editing one makes only that one stale.
 func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
+	entries := o.mutationEntries(info)
 	occurrence := map[string]int{}
 	for i := range info.units {
 		u := &info.units[i]
@@ -351,7 +389,7 @@ func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
 			score := float64(int(crap.Score(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
-		if r, ok := o.mutation.get(u.File, u.Namespace, u.Name, n); ok {
+		if r := entries[i]; r != nil {
 			m := r.unit
 			u.Mutated = true
 			u.Stale = m.Hash != u.hash || r.snapshot.TestsChanged(tests) != nil

@@ -212,8 +212,8 @@ type mutateSite struct {
 // renamed, with judge saying which of their functions it changed and renamed
 // the path each renamed file had at the ref, "" for the others. judge and
 // renamed are nil without --since.
-func mutationSelection(in *invocation) (sources []string, judge func(path, function string) bool, renamed func(path string) string, err error) {
-	var since map[string]map[string]bool
+func mutationSelection(in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, err error) {
+	var since map[string]project.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
 		if since, moves, err = changedSince(in); err != nil {
@@ -234,7 +234,7 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 			sources = append(sources, f)
 		}
 	}
-	return sources, func(path, function string) bool { return since[path][function] },
+	return sources, func(path, function, hash string) bool { return since[path].Judges(function, hash) },
 		func(path string) string { return moves[path] }, nil
 }
 
@@ -433,13 +433,13 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
-func changedSince(in *invocation) (map[string]map[string]bool, map[string]string, error) {
+func changedSince(in *invocation) (map[string]project.ChangedFunctions, map[string]string, error) {
 	if in.set("changed") {
 		return nil, nil, fail(kindUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
 			"Drop --changed; commit the work to judge it with --since.").with("flag", "--changed")
 	}
 	ref := in.str("since")
-	changed, renamed, err := project.ChangedSince(ref)
+	changed, renamed, err := project.ChangedSince(ref, mutate.UnitHash)
 	var noGit *project.NoGitError
 	switch {
 	case errors.Is(err, project.ErrBadRef):

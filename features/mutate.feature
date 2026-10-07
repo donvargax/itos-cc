@@ -397,14 +397,14 @@ Feature: Mutation testing
   # the same name and the same hash pair with their entries in file order.
   Rule: Functions sharing a name
 
-    @wip @same-name-units @ID-MUT-114
+    @same-name-units @ID-MUT-114
     Scenario: Functions sharing a name each reuse their own results
       Given src/setup.go declares two init functions with different bodies, each with a mutant the tests kill
       And a previous run recorded both
       When I run "itos-cc mutation run src/setup.go" with nothing changed
       Then the mutants of both init functions are reused, and none runs
 
-    @wip @same-name-units @ID-MUT-115
+    @same-name-units @ID-MUT-115
     Scenario: Editing one of two functions sharing a name reruns only it
       Given a previous run recorded both init functions of src/setup.go, all killed
       And the second init function has changed since
@@ -412,7 +412,7 @@ Feature: Mutation testing
       Then the only problem is "mutation.stale", for the second init function
       And "itos-cc mutation run src/setup.go" runs only the second init function's mutants
 
-    @wip @same-name-units @ID-MUT-116
+    @same-name-units @ID-MUT-116
     Scenario: Reordering functions sharing a name changes nothing
       Given a previous run recorded both init functions of src/setup.go, all killed
       And the two have swapped places since, unchanged

@@ -36,7 +36,7 @@ func TestDecidedMutantsAreInLineOrder(t *testing.T) {
 
 	// Only the functions judged are listed: here f, not the callback.
 	outer := all[len(all)-1].Function
-	s.judged = map[string]bool{outer: true}
+	s.judged = map[int]bool{all[len(all)-1].Unit: true}
 	for _, m := range s.decided() {
 		if m.Function != outer {
 			t.Errorf("%+v listed, want only the mutants of %s, the function judged", m, outer)

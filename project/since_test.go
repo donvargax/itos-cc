@@ -9,6 +9,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/lang"
 )
 
 func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
@@ -86,7 +88,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	write(t, name, "import os\n\n\ndef a(x):\n    return x * 2\n\n\ndef b(x):\n    return x + 1\n")
 
 	t.Chdir(filepath.Join(repo, "sub"))
-	got, _, err := ChangedSince("base")
+	got, _, err := ChangedSince("base", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,14 +97,14 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 		t.Fatalf("files %q, want only %q: top.py is not under sub", keys, abs)
 	}
 	var functions []string
-	for f := range got[abs] {
+	for f := range got[abs].Functions {
 		functions = append(functions, f[strings.Index(f, "#")+1:])
 	}
 	if !slices.Equal(functions, []string{"b"}) {
 		t.Errorf("functions %q, want [b]", functions)
 	}
 
-	if _, _, err := ChangedSince("--output=x"); err != ErrBadRef {
+	if _, _, err := ChangedSince("--output=x", nil); err != ErrBadRef {
 		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
 	}
 }
@@ -131,5 +133,45 @@ func TestHeadIsTheHEADCommitsId(t *testing.T) {
 	}
 	if id, err := Head(); err != nil || id != strings.TrimSpace(string(out)) {
 		t.Errorf("Head() = %q, %v, want %q", id, err, strings.TrimSpace(string(out)))
+	}
+}
+
+func TestChangedSinceTellsFunctionsSharingANameApartByHash(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	repo := t.TempDir()
+	git(t, repo, "init", "-q")
+	name := filepath.Join(repo, "x.py")
+	write(t, name, "def a(x):\n    return x\n\n\ndef a(x):\n    return x\n\n\ndef b(x):\n    return x\n")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "base")
+	git(t, repo, "tag", "base")
+	write(t, name, "def a(x):\n    return x\n\n\ndef a(x):\n    return x + 1\n\n\ndef b(x):\n    return x\n")
+	git(t, repo, "commit", "-qam", "change the second a")
+
+	t.Chdir(repo)
+	text := func(f *lang.File, u lang.Unit) string { return string(f.Src[u.Node.StartByte():u.Node.EndByte()]) }
+	got, _, err := ChangedSince("base", text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	abs, _ := filepath.Abs("x.py")
+	c := got[abs]
+	var id string
+	for f := range c.Functions {
+		id = f
+	}
+	if len(c.Functions) != 1 || !strings.HasSuffix(id, "#a") {
+		t.Fatalf("functions %v, want only a", c.Functions)
+	}
+	if c.Judges(id, "def a(x):\n    return x") {
+		t.Errorf("the first a, unchanged, is judged")
+	}
+	if !c.Judges(id, "def a(x):\n    return x + 1") {
+		t.Errorf("the second a, changed, is not judged")
+	}
+	if c.Judges(strings.TrimSuffix(id, "a")+"b", "def b(x):\n    return x") {
+		t.Errorf("b, unchanged, is judged")
 	}
 }
