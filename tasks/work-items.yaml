@@ -247,16 +247,9 @@ items:
     title: A source outside any project root is namespaced from the working directory
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was namespace-without-root.
-      Found writing the test of ID-CLI-14: mutation list x.ts (and mutate --scan before it) in a
-      directory with no package.json, go.mod or .git names the function .tmp.<…>.scan.x#place, the
-      directory's absolute path dotted, where a package.json beside it gives x#place. Function IDs,
-      and so the cache and the debt IDs, then depend on where the checkout lives. The working
-      directory could stand in for a root.
   - id: check-unrecorded-sites
     title: "mutation check: a site the entry never recorded makes its function stale"
     phase: 1
