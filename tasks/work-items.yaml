@@ -180,3 +180,20 @@ items:
       build- and test-time dependency only; npm audit fix says a fixed version is available. Raising
       it in the lockfile, in a build commit, and checking vitest run and vite build still pass would
       clear it.
+  - id: mutate-unloaded-file-alone
+    title: "mutate: a never-loaded file run alone counts as unmeasured, not uncovered"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      markUncovered counts a language as measured only from the files of the run, and coverage.Build
+      drops report entries that match no source, so a file the report never mentions, mutated alone
+      (mutate src/unused.ts, or with --since when it is the only file changed), prints 'no coverage;
+      running every mutant' instead of being uncovered, though the report measured other files of
+      its language (MUT-19, MUT-48). Go fixtures do not show it, since go test reports a package
+      without tests at 0%. With --fail-uncovered its mutants then run and fail as survivors rather
+      than as uncovered; seen while building slice-2, not reproduced with a TypeScript or LCOV
+      fixture.
+    refs: ["#9"]
