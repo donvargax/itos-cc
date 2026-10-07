@@ -500,7 +500,7 @@ items:
     title: The graph finds a file's mutation snapshot where mutation check does
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [snapshots-at-root]
     kind: slice
     why: >
