@@ -168,8 +168,8 @@ func Merge(reports ...*Report) *Report {
 // components it shares with exactly one source. Report tools disagree on
 // where paths start (module paths, package directories, the working
 // directory), but the tail of the path is always the file. A path that names
-// a file on disk is that file, so when only some files are scored, a/b/x.go
-// never lends its coverage to b/x.go.
+// a file on disk, as written or by a tail under base, is that file, so when
+// only some files are scored, a/b/x.go never lends its coverage to b/x.go.
 type matcher struct {
 	sources map[string]string // cleaned path → the path as the caller gave it
 	byName  map[string][]string
@@ -191,13 +191,22 @@ func (m *matcher) match(path, base string) string {
 	if filepath.IsAbs(path) {
 		exact = filepath.Clean(path)
 	}
-	if s, ok := m.sources[exact]; ok {
-		return s
-	}
-	if info, err := os.Stat(exact); err == nil {
-		return m.sameFile(info)
-	}
 	want := components(path)
+	// The path, then each shorter tail of it under base: a module path or
+	// another machine's checkout names the project file its longest tail
+	// finds.
+	for i := range want {
+		candidate := exact
+		if i > 0 {
+			candidate = filepath.Join(append([]string{base}, want[i:]...)...)
+		}
+		if s, ok := m.sources[candidate]; ok {
+			return s
+		}
+		if info, err := os.Stat(candidate); err == nil && info.Mode().IsRegular() {
+			return m.sameFile(info)
+		}
+	}
 	best, bestLen, tied := "", 0, false
 	for _, candidate := range m.byName[filepath.Base(path)] {
 		n := sharedTail(want, components(candidate))

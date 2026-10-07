@@ -220,6 +220,24 @@ func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
 	}
 }
 
+func TestModulePathsNameTheProjectFileTheirTailFinds(t *testing.T) {
+	root := t.TempDir()
+	src := filepath.Join(root, "metrics", "metrics.go")
+	for _, f := range []string{src, filepath.Join(root, "graph", "metrics.go")} {
+		os.MkdirAll(filepath.Dir(f), 0o755)
+		os.WriteFile(f, nil, 0o644)
+	}
+	entry := func(path string) []Entry {
+		return []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+	}
+	if r := Build([]string{src}, root, entry("example.com/m/graph/metrics.go")); r.Has(src) {
+		t.Error("graph/metrics.go lent its coverage to metrics/metrics.go")
+	}
+	if r := Build([]string{src}, root, entry("example.com/m/metrics/metrics.go")); !r.Has(src) {
+		t.Error("the module path of metrics/metrics.go did not match it")
+	}
+}
+
 func TestMatchingFollowsSymlinkedDirectories(t *testing.T) {
 	real := t.TempDir()
 	link := filepath.Join(t.TempDir(), "link")

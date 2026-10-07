@@ -198,6 +198,13 @@ Feature: Coverage
       Then it matches neither source
       # the tail "b/main.go" would lend another file's coverage to b/main.go
 
+    Scenario: A module path names the file its tail finds under the project
+      Given sources "metrics/metrics.go" only, and a project file "graph/metrics.go"
+      And a Go profile entry "example.com/m/graph/metrics.go"
+      When it is matched to sources
+      Then it matches neither source
+      # its longest tail that exists, graph/metrics.go, is not a source
+
     Scenario: A symlinked directory still matches
       Given a source reached through a symlinked directory
       And a report entry that names the same file by the symlink's target
