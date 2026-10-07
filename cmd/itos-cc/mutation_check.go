@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/donvargax/itos-cc/mutate"
 )
@@ -22,13 +23,17 @@ file's snapshot is compared with its source now. No entry is missing; an
 entry whose function has changed since is stale, while a function that only
 moved is fresh; and a fresh entry fails on each survivor it records, and
 with --fail-uncovered on each uncovered mutant it records. A function with no
-mutation site needs no entry.
+mutation site needs no entry. The snapshot also records the hash of each test
+file that imports its file: when one was added, changed, or removed since,
+every function of the file is stale, as it is when the snapshot predates
+recording tests.
 
 It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
 REF...HEAD), as mutation run judges them.
 
-Plain output is a line per file, "<file>: N fresh, N stale, N missing", then
+Plain output is a line per file, "<file>: N fresh, N stale, N missing",
+which names the test files that changed when they made functions stale, then
 each problem, a line each:
   missing <file>:<line> in <namespace#name>
   stale <file>:<line> in <namespace#name>
@@ -44,7 +49,7 @@ counts their entry records, zero when missing.`,
    "state": "fresh"|"stale"|"missing", "killed", "survived", "uncovered"}]}]`,
 	rules: []string{
 		"mutation.missing          a function with a mutation site has no results: file, line, function",
-		"mutation.stale            a function changed since its results: file, line, function",
+		"mutation.stale            a function, or a test that imports its file, changed since its results: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
 		"since.bad-ref             --since names no commit: ref",
@@ -92,7 +97,11 @@ func runMutationCheck(in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to check")
 		return result, nil
 	}
-	checks, err := mutate.Check(sources, judge)
+	tests, err := importingTests()
+	if err != nil {
+		return result, err
+	}
+	checks, err := mutate.Check(sources, judge, tests)
 	if err != nil {
 		return result, err
 	}
@@ -107,20 +116,62 @@ func runMutationCheck(in *invocation) (any, error) {
 		}
 		result.Files = append(result.Files, f)
 		if !in.json {
-			fmt.Printf("%s: %d fresh, %d stale, %d missing\n", c.Rel, count[mutate.Fresh], count[mutate.Stale], count[mutate.Missing])
+			fmt.Printf("%s: %d fresh, %d stale, %d missing%s\n", c.Rel, count[mutate.Fresh], count[mutate.Stale], count[mutate.Missing],
+				testsNote(c.Functions))
 		}
 		for _, fn := range c.Functions {
 			switch fn.State {
 			case mutate.Missing:
 				reportFunction(in, c.Rel, fn, "mutation.missing", "has no mutation results")
 			case mutate.Stale:
-				reportFunction(in, c.Rel, fn, "mutation.stale", "changed since its mutation results")
+				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn.Tests))
 			default:
 				reportFailed(in, c.Rel, fn.Function, fn.Mutants, failUncovered)
 			}
 		}
 	}
 	return result, nil
+}
+
+// staleBecause says why a stale function's results no longer hold: the
+// function changed, or the tests that import its file did, named.
+func staleBecause(tests *mutate.TestChange) string {
+	switch {
+	case tests == nil:
+		return "changed since its mutation results"
+	case tests.Unrecorded:
+		return "has mutation results from before snapshots recorded the tests that import its file"
+	}
+	return "has mutation results from before the tests that import its file changed: " + testChanges(tests)
+}
+
+// testChanges names the test files changed, added, and removed, as
+// "changed a, b; added c".
+func testChanges(tests *mutate.TestChange) string {
+	var changes []string
+	for _, c := range []struct {
+		what  string
+		paths []string
+	}{{"changed", tests.Changed}, {"added", tests.Added}, {"removed", tests.Removed}} {
+		if len(c.paths) > 0 {
+			changes = append(changes, c.what+" "+strings.Join(c.paths, ", "))
+		}
+	}
+	return strings.Join(changes, "; ")
+}
+
+// testsNote ends a file's summary line when its tests made functions stale.
+func testsNote(functions []mutate.FunctionCheck) string {
+	for _, fn := range functions {
+		switch {
+		case fn.Tests == nil:
+		case fn.Tests.Unrecorded:
+			return " (its results predate snapshots recording tests)"
+		default:
+			return " (the tests that import it: " + testChanges(fn.Tests) + ")"
+		}
+	}
+	return ""
 }
 
 // reportFunction lists function fn of file rel on stdout, as "<what>

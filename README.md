@@ -155,8 +155,10 @@ time, inside functions only, and runs the tests against each change.
 `mutation list` lists those changes, the mutation sites, without running any
 test. What keeps `mutation run` fast:
 
-- **Differential runs.** Each function's source is hashed. Killed mutants of
-  unchanged functions stay killed; survivors and changed functions rerun.
+- **Differential runs.** Each function's source is hashed, and so is each
+  test file that imports the function's file. Killed mutants of unchanged
+  functions stay killed while those tests are unchanged too; survivors,
+  changed functions, and every function of a file whose tests changed rerun.
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
@@ -188,7 +190,9 @@ work, so a gate judges a task by what it committed. A deleted line counts as
 a change of the function around it, and paths narrow the range. The other
 functions neither run nor change in the snapshot, and only those judged count
 in the summary, the problems, and the exit code; `--json` names them in each
-file's `judged`.
+file's `judged`. The exception is a file whose tests changed since its
+snapshot: its results no longer hold, so the functions not judged lose their
+entries, and a later run or check finds them missing.
 
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a
@@ -203,14 +207,25 @@ alone, running no test and no coverage command and writing nothing. Run
 `itos-cc mutation check --since <base> --fail-uncovered`: each function the
 commits changed needs results for its code as committed. A function with no
 entry in `.metrics/mutate/` is `mutation.missing`, one changed since its
-entry is `mutation.stale` (a move is not a change), and a fresh entry fails
+entry is `mutation.stale` (a move is not a change), as is every function of
+a file whose tests changed (below), and a fresh entry fails
 on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
 exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
-runs reuse the night's kills for code that has not changed. Commit that
+runs reuse the night's kills for code that has not changed. Each file's
+snapshot also records, under `tests`, the SHA-256 of every test file that
+imports the file directly, by its path from the project root: in Go, the
+test files of its package and of the packages that import it. That set is
+the same whichever command ran the mutants (its own tests, `--all-tests`, or
+`--test-command`). When a test file is added to it, changed, or removed, the
+kills it may have made no longer hold: the file's mutants all run again, and
+`mutation check` calls its functions stale and names the test files. A
+snapshot written before snapshots recorded tests is stale too. A test that
+reaches the file only through another module, or that runs the built binary,
+is not in the set, so changing it leaves the results as they were. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),

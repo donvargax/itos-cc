@@ -15,7 +15,7 @@ func TestBuildCountsEveryUnit(t *testing.T) {
 	for i := range sites {
 		outcomes[i] = []string{Killed, Survived, Uncovered, Timeout}[i%4]
 	}
-	snap := build(f, "x.py", sites, outcomes)
+	snap := build(f, "x.py", nil, sites, outcomes)
 	total := 0
 	for _, u := range snap.Units {
 		total += u.Killed + u.Survived + u.Uncovered
@@ -31,7 +31,7 @@ func TestBuildCountsEveryUnit(t *testing.T) {
 func TestRememberedKeepsOnlyKilledMutantsOfUnchangedUnits(t *testing.T) {
 	before := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x < 1\n")
 	sites := Sites(before)
-	snap := build(before, "x.py", sites, []string{Killed, Killed, Survived, Killed})
+	snap := build(before, "x.py", nil, sites, []string{Killed, Killed, Survived, Killed})
 
 	// b changes; a only moves down.
 	after := parse(t, "x.py", "import os\n\ndef a(x):\n    return x > 0\n\ndef b(x):\n    return x <= 1\n")
@@ -51,7 +51,7 @@ func TestRememberedKeepsOnlyKilledMutantsOfUnchangedUnits(t *testing.T) {
 
 func TestSurvivorsAreAlwaysRetried(t *testing.T) {
 	f := parse(t, "x.py", "def a(x):\n    return x > 0\n")
-	snap := build(f, "x.py", Sites(f), []string{Survived, Killed})
+	snap := build(f, "x.py", nil, Sites(f), []string{Survived, Killed})
 	prev := remembered(&snap, f)
 	if _, ok := prev.kept(f, Sites(f)[0]); ok {
 		t.Error("a survivor was kept instead of retried")
@@ -60,7 +60,7 @@ func TestSurvivorsAreAlwaysRetried(t *testing.T) {
 
 func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 	before := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x < 1\n\ndef c(x):\n    return x == 1\n")
-	snap := build(before, "x.py", Sites(before), byUnit(before, map[string]string{"a": Killed, "b": Survived, "c": Killed}))
+	snap := build(before, "x.py", nil, Sites(before), byUnit(before, map[string]string{"a": Killed, "b": Survived, "c": Killed}))
 	recorded := map[string]UnitResult{}
 	for _, u := range snap.Units {
 		recorded[u.Name] = u
@@ -70,7 +70,7 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 	// a is judged; b moves down unchanged; c changes, but the snapshot has
 	// no record of it; d is new and has none either.
 	after := parse(t, "x.py", "import os\n\ndef a(x):\n    return x > 0\n\ndef b(x):\n    return x < 1\n\ndef c(x):\n    return x != 1\n\ndef d(x):\n    return x\n")
-	built := build(after, "x.py", Sites(after), byUnit(after, map[string]string{"a": Killed}))
+	built := build(after, "x.py", nil, Sites(after), byUnit(after, map[string]string{"a": Killed}))
 	for _, u := range built.Units {
 		if u.Sites != len(u.Mutants) {
 			t.Errorf("%s: %d sites but %d mutants: a skipped site was counted", u.Name, u.Sites, len(u.Mutants))
@@ -90,7 +90,7 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 
 	// b changes too: its record is kept as it was, old hash and all.
 	changed := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x <= 1\n")
-	built = build(changed, "x.py", Sites(changed), byUnit(changed, map[string]string{"a": Killed}))
+	built = build(changed, "x.py", nil, Sites(changed), byUnit(changed, map[string]string{"a": Killed}))
 	units = keepUnjudged(built.Units, map[string]bool{changed.Units[0].Namespace + "#a": true}, &snap)
 	if len(units) != 2 || !reflect.DeepEqual(units[1], recorded["b"]) {
 		t.Errorf("b: %+v, want it as recorded: %+v", units[1], recorded["b"])
@@ -109,4 +109,32 @@ func byUnit(f *lang.File, outcome map[string]string) []string {
 		out = append(out, o)
 	}
 	return out
+}
+
+func TestResultsHoldOnlyWhileTheirTestsDo(t *testing.T) {
+	f := parse(t, "x.py", "def a(x):\n    return x > 0\n")
+	tests := map[string]string{"test_x.py": "1", "test_y.py": "2"}
+	snap := build(f, "x.py", tests, Sites(f), []string{Killed, Killed})
+	if usable(&snap, map[string]string{"test_x.py": "1", "test_y.py": "2"}) == nil {
+		t.Error("the same tests: want the snapshot usable")
+	}
+	now := map[string]string{"test_x.py": "1b", "test_z.py": "3"}
+	if usable(&snap, now) != nil {
+		t.Error("other tests: want the snapshot unusable")
+	}
+	want := &TestChange{Added: []string{"test_z.py"}, Removed: []string{"test_y.py"}, Changed: []string{"test_x.py"}}
+	if got := compareTests(snap.Tests, now); !reflect.DeepEqual(got, want) {
+		t.Errorf("changes %+v, want %+v", got, want)
+	}
+
+	snap.Tests = nil
+	if usable(&snap, map[string]string{}) != nil {
+		t.Error("a snapshot that records no tests: want it unusable, even for a file no test imports")
+	}
+	if c := compareTests(nil, map[string]string{}); !c.Unrecorded {
+		t.Errorf("changes %+v, want unrecorded", c)
+	}
+	if empty := build(f, "x.py", nil, Sites(f), []string{Killed, Killed}); empty.Tests == nil {
+		t.Error("a file no test imports records nil tests, want an empty map: nil reads as written before tests were recorded")
+	}
 }

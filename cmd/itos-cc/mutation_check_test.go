@@ -124,14 +124,19 @@ func wantProblem(t *testing.T, p map[string]any, want map[string]any, stdout str
 // @ID-MUT-57
 func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	dir := boardRepo(t, killedTests)
-	if o := mutateRun(t, boardSource); o.code != 0 {
-		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	// Any test or coverage run of package board would write the marker.
+	// Any test or coverage run of package board writes the marker. It is
+	// in place before the run, since a test changed after it would make
+	// its results stale.
 	marker := filepath.Join(dir, "tests-ran")
 	appendTo(t, filepath.FromSlash("src/board_test.go"),
 		fmt.Sprintf("\nfunc init() { os.WriteFile(%s, nil, 0o644) }\n", strconv.Quote(filepath.ToSlash(marker))))
 	edit(t, filepath.FromSlash("src/board_test.go"), `import "testing"`, "import (\n\t\"os\"\n\t\"testing\"\n)")
+	if o := mutateRun(t, boardSource); o.code != 0 {
+		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	if err := os.Remove(marker); err != nil {
+		t.Fatalf("the run's tests wrote no marker: %v", err)
+	}
 	before, err := os.ReadFile(filepath.Join(".metrics", "mutate", "src", "board.go.json"))
 	if err != nil {
 		t.Fatal(err)

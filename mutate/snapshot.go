@@ -1,11 +1,16 @@
 package mutate
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"maps"
+	"os"
 	"path/filepath"
 	"sort"
 
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Outcomes of a mutant.
@@ -19,10 +24,15 @@ const (
 // Snapshot is one source file's results, stored at
 // .metrics/mutate/<path>.json and meant to be committed with the code.
 type Snapshot struct {
-	Version  int          `json:"version"`
-	File     string       `json:"file"`
-	Language string       `json:"language"`
-	Units    []UnitResult `json:"units"`
+	Version  int    `json:"version"`
+	File     string `json:"file"`
+	Language string `json:"language"`
+	// Tests is the SHA-256 of each test file that imports the file, by its
+	// slash-separated path from the project root: the results hold while
+	// they are the same. A snapshot written before snapshots recorded tests
+	// has none, nil, which matches no tests.
+	Tests map[string]string `json:"tests"`
+	Units []UnitResult      `json:"units"`
 }
 
 // UnitResult is one function's mutants. Hash is the function's source hash:
@@ -69,13 +79,65 @@ func LoadSnapshot(rel string) (*Snapshot, error) {
 	return &s, nil
 }
 
+// TestHashes is what a snapshot records of the test files tests: the
+// SHA-256 of each one's content, by its slash-separated path from the
+// working directory, the project root.
+func TestHashes(tests []string) (map[string]string, error) {
+	out := map[string]string{}
+	for _, path := range tests {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		sum := sha256.Sum256(data)
+		out[filepath.ToSlash(project.Rel(path))] = hex.EncodeToString(sum[:])
+	}
+	return out, nil
+}
+
+// testsMatch reports whether s recorded exactly tests, the same paths with
+// the same hashes. A snapshot that records no tests matches none.
+func testsMatch(s *Snapshot, tests map[string]string) bool {
+	return s.Tests != nil && maps.Equal(s.Tests, tests)
+}
+
+// TestChange is how the tests that import a file differ from those its
+// snapshot recorded, each list sorted. Unrecorded is true when the
+// snapshot records no tests at all.
+type TestChange struct {
+	Unrecorded              bool
+	Added, Removed, Changed []string
+}
+
+func compareTests(recorded, now map[string]string) *TestChange {
+	c := &TestChange{Unrecorded: recorded == nil}
+	for path, hash := range now {
+		switch was, ok := recorded[path]; {
+		case !ok:
+			c.Added = append(c.Added, path)
+		case was != hash:
+			c.Changed = append(c.Changed, path)
+		}
+	}
+	for path := range recorded {
+		if _, ok := now[path]; !ok {
+			c.Removed = append(c.Removed, path)
+		}
+	}
+	sort.Strings(c.Added)
+	sort.Strings(c.Removed)
+	sort.Strings(c.Changed)
+	return c
+}
+
 // Previous outcomes of one file, by unit identity and site key.
 type previous map[string]map[string]string
 
 func unitID(namespace, name string) string { return namespace + "#" + name }
 
 // remembered returns the outcomes a run may keep: those of units whose hash
-// is unchanged.
+// is unchanged. s holds only while the tests that import f are those it
+// recorded; see usable.
 func remembered(s *Snapshot, f *lang.File) previous {
 	prev := previous{}
 	if s == nil {
@@ -99,6 +161,16 @@ func remembered(s *Snapshot, f *lang.File) previous {
 	return prev
 }
 
+// usable is s when its results still hold for the tests that import its
+// file now, tests, and nil otherwise: results the tests may no longer earn
+// count for nothing, neither reused nor kept for a function not judged.
+func usable(s *Snapshot, tests map[string]string) *Snapshot {
+	if s == nil || !testsMatch(s, tests) {
+		return nil
+	}
+	return s
+}
+
 // kept reports the previous outcome of site when it can be reused without
 // running: a killed or timed-out mutant in an unchanged unit. Survivors are
 // always retried, since new tests may kill them.
@@ -108,10 +180,13 @@ func (p previous) kept(f *lang.File, s Site) (string, bool) {
 	return outcome, outcome == Killed || outcome == Timeout
 }
 
-// build assembles a snapshot from every site's outcome. A skipped site is
-// left out.
-func build(f *lang.File, rel string, sites []Site, outcomes []string) Snapshot {
-	snap := Snapshot{Version: metrics.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Units: []UnitResult{}}
+// build assembles a snapshot from every site's outcome, against tests, the
+// tests that import the file. A skipped site is left out.
+func build(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes []string) Snapshot {
+	if tests == nil {
+		tests = map[string]string{}
+	}
+	snap := Snapshot{Version: metrics.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Tests: tests, Units: []UnitResult{}}
 	for _, u := range f.Units {
 		snap.Units = append(snap.Units, UnitResult{
 			Namespace: u.Namespace, Name: u.Name, Hash: UnitHash(f, u),

@@ -510,28 +510,28 @@ Feature: Mutation testing
   # that does not import the file leaves its results as they were.
   Rule: Results go stale when their tests change
 
-    @wip @mutation-test-hash @ID-MUT-65
+    @mutation-test-hash @ID-MUT-65
     Scenario: The snapshot records the tests that import the file
       Given src/board.test.ts imports src/board.ts and src/other.test.ts does not
       When I run "itos-cc mutation run src/board.ts"
       Then .metrics/mutate/src/board.ts.json records the hash of src/board.test.ts
       And not of src/other.test.ts
 
-    @wip @mutation-test-hash @ID-MUT-66
+    @mutation-test-hash @ID-MUT-66
     Scenario: Changing a test that imports the file reruns its kills
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since, but src/board.test.ts has
       When I run "itos-cc mutation run src/board.ts"
       Then every mutant of "Board#place" runs again
 
-    @wip @mutation-test-hash @ID-MUT-67
+    @mutation-test-hash @ID-MUT-67
     Scenario: Deleting a test that imports the file reruns its kills
       Given a previous run killed every mutant of "Board#place"
       And src/board.test.ts was deleted since
       When I run "itos-cc mutation run src/board.ts"
       Then no mutant of "Board#place" is reused
 
-    @wip @mutation-test-hash @ID-MUT-68
+    @mutation-test-hash @ID-MUT-68
     Scenario: mutation check calls results stale when their tests changed
       Given fresh results for every function of src/board.ts, all killed
       And src/board.test.ts changed since they were recorded
@@ -539,7 +539,7 @@ Feature: Mutation testing
       Then each function of src/board.ts is a "mutation.stale" problem whose message names src/board.test.ts
       And the exit code is 1
 
-    @wip @mutation-test-hash @ID-MUT-69
+    @mutation-test-hash @ID-MUT-69
     Scenario: A snapshot that records no tests is stale
       Given .metrics/mutate/src/board.ts.json was written before snapshots recorded tests
       And no function of src/board.ts has changed since
@@ -547,7 +547,7 @@ Feature: Mutation testing
       Then each function of src/board.ts is a "mutation.stale" problem
       And "itos-cc mutation run src/board.ts" reuses none of its kills
 
-    @wip @mutation-test-hash @ID-MUT-70
+    @mutation-test-hash @ID-MUT-70
     Scenario: A Go file's tests are its package's and those of packages that import it
       Given src/board.go is in package board, tested by src/board_test.go
       And package app imports board and is tested by app/app_test.go

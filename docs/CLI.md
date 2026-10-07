@@ -13,7 +13,9 @@ Scripts can rely on three things only, as with itos (its decision 35):
 - The exit code.
 - The `--json` output, less every key named `message` or `fix`. These keys
   hold the same sentences as the plain output.
-- The files that itos-cc writes under `.metrics/`.
+- The files that itos-cc writes under `.metrics/`. A release adds keys to
+  them without changing their `version`, as `tests` was added to the
+  snapshots under `.metrics/mutate/`.
 
 All plain output is for people and can change in any release. A change to the
 contract is a breaking change, made in a major release with the others that

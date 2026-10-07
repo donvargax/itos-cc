@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -51,8 +53,11 @@ binary, which coverage does not see.
 
 Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions and retry
-only survivors and changed functions. A summary comment is kept at the end of
-each source file.
+only survivors and changed functions. Each snapshot also records the SHA-256
+of every test file that imports its file (in Go, its package's tests and
+those of the packages that import it); when one of them is added, changed,
+or removed, every mutant of the file runs again. A summary comment is kept at
+the end of each source file.
 
 --since REF judges only the functions the commits since REF changed, as a
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
@@ -188,6 +193,30 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 	return sources, func(path, function string) bool { return since[path][function] }, nil
 }
 
+// importingTests lists the test files that import each source, as the graph
+// of the project under the working directory resolves imports, whatever
+// command runs the mutants: what a snapshot records the hashes of.
+func importingTests() (func(path string) []string, error) {
+	all, err := project.Discover([]string{"."})
+	if err != nil {
+		return nil, err
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	tests, err := graph.TestsImporting(wd, all)
+	if err != nil {
+		return nil, err
+	}
+	return func(path string) []string {
+		if abs, err := filepath.Abs(path); err == nil {
+			path = abs
+		}
+		return tests[path]
+	}, nil
+}
+
 func runMutate(in *invocation) (any, error) {
 	result := mutateResult{Files: []mutateFile{}}
 	sources, judge, err := mutationSelection(in)
@@ -198,7 +227,12 @@ func runMutate(in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		return result, nil
 	}
+	tests, err := importingTests()
+	if err != nil {
+		return result, err
+	}
 	opt := mutate.Options{
+		Tests:         tests,
 		Workers:       in.integer("workers"),
 		MutateAll:     in.set("mutate-all"),
 		TimeoutFactor: in.float("timeout-factor"),

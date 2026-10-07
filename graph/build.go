@@ -153,12 +153,8 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 		return nil, err
 	}
 	defer f.Close()
-	info := &fileInfo{rel: rel(root, path), abs: path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports()}
+	info := dependencies(root, f)
 	info.serves, info.calls = f.Endpoints()
-	if f.Spec.Name == "kotlin" {
-		info.topLevel = lang.TopLevelNames(f)
-		info.refs = lang.ReferencedNames(f)
-	}
 	for _, u := range f.Units {
 		info.units = append(info.units, Unit{
 			Name: u.Name, Namespace: u.Namespace, File: info.rel, Line: u.StartLine, EndLine: u.EndLine,
@@ -167,6 +163,17 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 	}
 	b.cache[path] = cached{st, info}
 	return info.clone(), nil
+}
+
+// dependencies is what the graph needs of a parsed file to resolve what it
+// imports, and what imports it.
+func dependencies(root string, f *lang.File) *fileInfo {
+	info := &fileInfo{rel: rel(root, f.Path), abs: f.Path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports()}
+	if f.Spec.Name == "kotlin" {
+		info.topLevel = lang.TopLevelNames(f)
+		info.refs = lang.ReferencedNames(f)
+	}
+	return info
 }
 
 func (f *fileInfo) clone() *fileInfo {

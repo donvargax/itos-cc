@@ -29,6 +29,10 @@ type Options struct {
 	// by namespace#name. The others never run: they keep what their
 	// snapshot records.
 	Judge func(path, function string) bool
+	// Tests, when set, lists the test files that import the file at path,
+	// whose hashes its snapshot records: a kill is reused only while they
+	// are those recorded. Unset, a file has none.
+	Tests func(path string) []string
 	Log   io.Writer
 }
 
@@ -74,8 +78,9 @@ type fileState struct {
 	reused   []bool   // the outcome came from the previous snapshot
 	command  Command
 	result   *FileResult
-	previous *Snapshot       // the snapshot before this run, or nil
-	judged   map[string]bool // by namespace#name, or nil when every function is
+	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
+	tests    map[string]string // the tests that import the file, as the snapshot records them
+	judged   map[string]bool   // by namespace#name, or nil when every function is
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -112,7 +117,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	for _, s := range states {
 		if !s.result.BaselineFailed {
 			s.result.Mutants = s.decided()
-			s.result.Snapshot = build(s.file, s.rel, s.sites, s.outcomes)
+			s.result.Snapshot = build(s.file, s.rel, s.tests, s.sites, s.outcomes)
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
 			}
@@ -147,8 +152,15 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(rel), err)
 		}
-		s.previous = snap
-		prev := remembered(snap, f)
+		var tests []string
+		if opt.Tests != nil {
+			tests = opt.Tests(path)
+		}
+		if s.tests, err = TestHashes(tests); err != nil {
+			return states, err
+		}
+		s.previous = usable(snap, s.tests)
+		prev := remembered(s.previous, f)
 		s.result.Functions = len(f.Units)
 		if opt.Judge != nil {
 			s.judged, s.result.Judged = map[string]bool{}, []string{}

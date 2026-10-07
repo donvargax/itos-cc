@@ -54,11 +54,6 @@ The tools measure, but nothing stops a commit from making code worse where
 debt already exists: `crap --threshold` and `mutate`'s survivor exit are
 all-or-nothing. Planned, in this order:
 
-- **Killed mutants must notice test changes.** `mutate` keeps a killed
-  mutant while its function's hash is unchanged (`remembered` in
-  `mutate/snapshot.go`), so deleting the test that killed it changes
-  nothing. Key the result by the function's hash and the hashes of the test
-  files that import its module; the graph knows them.
 - **A debt file and `check`.** `itos-cc-debt.yaml`, at the project root
   and committed, holds limits per function, by ID:
   `crap:<file>#<namespace.name>` with a `max`, `mutation:…` with a `min`.
