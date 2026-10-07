@@ -411,3 +411,18 @@ items:
       could count excepted survivors apart, only where there is one as the summary line does, and
       list each with its reason.
     refs: ["#10"]
+  - id: mutation-exceptions-deleted-file
+    title: an exception for a file that is gone never goes stale
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found building mutation-exceptions (#10). mutation run and mutation check judge the exceptions
+      of the files they select, so an entry in itos-cc.yaml whose function or site is gone in a file
+      that is still there fails as mutation.exception-stale (why gone), but one whose whole file was
+      deleted or renamed is never selected and stays in itos-cc.yaml unnoticed. A run or check of
+      the whole project (no paths, no --changed, no --since) could fail each entry whose file is no
+      longer a source it selects, as gone.
+    refs: ["#10"]
