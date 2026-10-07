@@ -547,7 +547,7 @@ items:
     title: A kill made by listed tests goes stale when its tests' files or the step code change
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [listed-tests]
     kind: slice
     why: >
