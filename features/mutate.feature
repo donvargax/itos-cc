@@ -259,6 +259,52 @@ Feature: Mutation testing
       Then no coverage or test command runs
       And stderr says "mutate: no mutations to test"
 
+  # Issue #9, part 2: mutants on lines no test executes are not run, so a
+  # changed function with no test passes. A gate passes --fail-uncovered
+  # (with --since for a task's commits) to make each uncovered mutant a
+  # failure. An explicit flag, not implied by --since, so a gate mode (#8)
+  # can turn it on later and plain runs keep today's output. Uncovered
+  # mutants are never reused from a snapshot, so each run decides them
+  # afresh from coverage. With --no-coverage, or where coverage measured
+  # nothing for the language, every mutant runs and none is uncovered.
+  Rule: Uncovered mutants as failures
+
+    @wip @slice-2 @ID-MUT-47
+    Scenario: An uncovered mutant fails the run
+      Given coverage shows line 12 of src/board.ts is never executed
+      And every mutant on the lines the tests execute is killed
+      When I run "itos-cc mutate --fail-uncovered src/board.ts"
+      Then each mutant on line 12 is listed as "uncovered src/board.ts:12:9 `>` → `>=` in board#place"
+      And the exit code is 1
+
+    @wip @slice-2 @ID-MUT-48
+    Scenario: A file the tests never load fails whole
+      Given coverage measured other TypeScript files but never src/unused.ts
+      When I run "itos-cc mutate --fail-uncovered src/unused.ts"
+      Then every mutant in src/unused.ts is listed as uncovered
+      And the exit code is 1
+
+    @wip @slice-2 @ID-MUT-49
+    Scenario: With --since only the judged functions' uncovered mutants fail
+      Given a commit after "base" changed "Board#place", which no test executes
+      And "Board#clear", unchanged, is not executed by any test either
+      When I run "itos-cc mutate --since base --fail-uncovered"
+      Then the mutants of "Board#place" are listed as uncovered
+      And none of "Board#clear" is
+      And the exit code is 1
+
+    @wip @slice-2 @ID-MUT-50
+    Scenario: Uncovered mutants as JSON
+      When I run "itos-cc mutate --fail-uncovered --json src/board.ts"
+      Then each uncovered mutant is a "mutate.uncovered" problem with file, line, column, function, original, and replacement
+      And "ok" is false
+
+    @wip @slice-2 @ID-MUT-51
+    Scenario: Nothing is uncovered when coverage is skipped
+      When I run "itos-cc mutate --no-coverage --fail-uncovered src/board.ts"
+      Then every mutant runs
+      And no mutant is uncovered, so none fails as uncovered
+
   Rule: Differential runs
 
     @ID-MUT-23
