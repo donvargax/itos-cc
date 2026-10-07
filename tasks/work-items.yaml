@@ -234,7 +234,7 @@ items:
     title: "Functions sharing a name are matched to their results by name and hash, in run, check and the graph"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
