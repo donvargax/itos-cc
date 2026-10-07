@@ -14,6 +14,7 @@ type drySnapshot struct {
 	Version    int             `json:"version"`
 	Threshold  float64         `json:"threshold"`
 	Candidates []dry.Candidate `json:"candidates"`
+	Groups     []dry.Group     `json:"groups"`
 }
 
 func runDry(args []string) int {
@@ -21,8 +22,8 @@ func runDry(args []string) int {
 	fs.Usage = func() {
 		fmt.Fprint(fs.Output(), `usage: itos-cc dry [options] [path ...]
 
-Finds pairs of functions in the same language whose normalized structure is
-similar enough to review as duplicates. Local names, field names, and literals
+Finds functions in the same language whose normalized structure is similar
+enough to review as duplicates, grouping those linked by similar pairs. Local names, field names, and literals
 do not count; called functions, operators, and the shape of the code do.
 
 With paths or --changed, those files are compared against every source under
@@ -74,6 +75,7 @@ Writes .metrics/dry.json.
 	if snapshot.Candidates == nil {
 		snapshot.Candidates = []dry.Candidate{}
 	}
+	snapshot.Groups = dry.Groups(snapshot.Candidates)
 	if err := metrics.Write("dry.json", snapshot); err != nil {
 		fmt.Fprintln(os.Stderr, "itos-cc:", err)
 		return exitUsage
@@ -82,9 +84,13 @@ Writes .metrics/dry.json.
 		printJSON(snapshot)
 		return exitOK
 	}
-	for _, c := range snapshot.Candidates {
-		fmt.Printf("DUPLICATE score=%.2f %s\n", c.Score, c.Language)
-		for _, s := range []dry.Side{c.Left, c.Right} {
+	for _, g := range snapshot.Groups {
+		score := fmt.Sprintf("%.2f", g.MaxScore)
+		if g.MinScore != g.MaxScore {
+			score = fmt.Sprintf("%.2f–%.2f", g.MinScore, g.MaxScore)
+		}
+		fmt.Printf("DUPLICATE score=%s %s\n", score, g.Language)
+		for _, s := range g.Members {
 			fmt.Printf("  %s:%d-%d  %s#%s\n", s.File, s.StartLine, s.EndLine, s.Namespace, s.Name)
 		}
 	}

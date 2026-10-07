@@ -50,6 +50,74 @@ type Candidate struct {
 	Right    Side    `json:"right"`
 }
 
+// Group is functions linked by candidate pairs: each is similar to at least
+// one other member. MinScore and MaxScore bound the pairs that link them.
+type Group struct {
+	Language string  `json:"language"`
+	MinScore float64 `json:"min_score"`
+	MaxScore float64 `json:"max_score"`
+	Members  []Side  `json:"members"`
+}
+
+// Groups joins candidates that share a function, so four copies of one
+// helper read as one group of four rather than six pairs. Groups come best
+// first, and members in file and line order.
+func Groups(candidates []Candidate) []Group {
+	parent := map[string]string{}
+	var find func(k string) string
+	find = func(k string) string {
+		if parent[k] != k {
+			parent[k] = find(parent[k])
+		}
+		return parent[k]
+	}
+	sides := map[string]Side{}
+	for _, c := range candidates {
+		for _, s := range []Side{c.Left, c.Right} {
+			if _, ok := parent[key(s)]; !ok {
+				parent[key(s)], sides[key(s)] = key(s), s
+			}
+		}
+		parent[find(key(c.Left))] = find(key(c.Right))
+	}
+	byRoot := map[string]*Group{}
+	var out []*Group
+	for _, c := range candidates {
+		root := find(key(c.Left))
+		g, ok := byRoot[root]
+		if !ok {
+			g = &Group{Language: c.Language, MinScore: c.Score, MaxScore: c.Score}
+			byRoot[root] = g
+			out = append(out, g)
+		}
+		g.MinScore, g.MaxScore = min(g.MinScore, c.Score), max(g.MaxScore, c.Score)
+	}
+	keys := make([]string, 0, len(sides))
+	for k := range sides {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		g := byRoot[find(k)]
+		g.Members = append(g.Members, sides[k])
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if a.MaxScore != b.MaxScore {
+			return a.MaxScore > b.MaxScore
+		}
+		if len(a.Members) != len(b.Members) {
+			return len(a.Members) > len(b.Members)
+		}
+		return key(a.Members[0]) < key(b.Members[0])
+	})
+	groups := make([]Group, len(out))
+	for i, g := range out {
+		groups[i] = *g
+	}
+	return groups
+}
+
 // Form is one function ready for comparison.
 type Form struct {
 	Side

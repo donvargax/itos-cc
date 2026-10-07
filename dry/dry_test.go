@@ -3,6 +3,7 @@ package dry
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -191,5 +192,30 @@ func TestSmallFunctionsAreNotCandidates(t *testing.T) {
 	}
 	if len(forms) != 0 {
 		t.Errorf("a two-line function became a candidate: %+v", forms)
+	}
+}
+
+func TestCopiesOfOneFunctionAreOneGroup(t *testing.T) {
+	side := func(file string) Side { return Side{File: file, StartLine: 1, EndLine: 9, Name: "f"} }
+	pair := func(a, b string, score float64) Candidate {
+		return Candidate{Score: score, Language: "go", Left: side(a), Right: side(b)}
+	}
+	groups := Groups([]Candidate{
+		pair("a.go", "b.go", 1), pair("a.go", "c.go", 0.9), pair("a.go", "d.go", 0.95),
+		pair("b.go", "c.go", 0.9), pair("b.go", "d.go", 0.95), pair("c.go", "d.go", 0.92),
+		pair("x.go", "y.go", 0.85),
+	})
+	if len(groups) != 2 {
+		t.Fatalf("groups %+v, want the four copies and the pair", groups)
+	}
+	var files []string
+	for _, m := range groups[0].Members {
+		files = append(files, m.File)
+	}
+	if strings.Join(files, " ") != "a.go b.go c.go d.go" || groups[0].MinScore != 0.9 || groups[0].MaxScore != 1 {
+		t.Errorf("first group %v %v–%v, want a b c d at 0.9–1", files, groups[0].MinScore, groups[0].MaxScore)
+	}
+	if len(groups[1].Members) != 2 || groups[1].MinScore != 0.85 {
+		t.Errorf("second group %+v, want the pair at 0.85", groups[1])
 	}
 }

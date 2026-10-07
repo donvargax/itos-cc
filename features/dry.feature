@@ -94,6 +94,20 @@ Feature: Duplicate functions
       """
     And pairs are listed best first
 
+  Scenario: Copies of one function are one group
+    Given four copies of one helper, every pair of them scoring between 0.90 and 1.00
+    When I run "itos-cc dry"
+    Then stdout shows one entry, not six pairs:
+      """
+      DUPLICATE score=0.90–1.00 go
+        a.go:1-9  a#f
+        b.go:1-9  b#f
+        c.go:1-9  c#f
+        d.go:1-9  d#f
+      """
+    And a group holds every function linked to another member by a pair at or above the threshold
+    And groups are listed best first, then largest first
+
   Scenario: Checking a change against the whole project
     Given src/new.ts duplicates a function in src/old.ts
     And src/x.ts and src/y.ts duplicate each other
@@ -112,13 +126,14 @@ Feature: Duplicate functions
 
   Scenario: Snapshot and JSON
     When I run "itos-cc dry --json"
-    Then stdout and .metrics/dry.json hold the version, the threshold, and the candidates
+    Then stdout and .metrics/dry.json hold the version, the threshold, the candidates, and the groups
     And each candidate has score, language, and left and right sides with file, lines, namespace, name, and nodes
+    And each group has language, min_score, max_score, and its members
 
   Scenario: No duplicates is an empty list
     Given no pair reaches the threshold
     When I run "itos-cc dry --json"
-    Then "candidates" is an empty list, not null
+    Then "candidates" and "groups" are empty lists, not null
 
   Scenario: A focus with no source files
     When I run "itos-cc dry docs"
