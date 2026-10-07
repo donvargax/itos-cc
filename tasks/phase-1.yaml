@@ -85,3 +85,26 @@
   done_when:
     - run: GOOS=windows go vet ./metrics/
     - run: go test -count=1 ./metrics/
+- id: T-5
+  type: ci
+  title: The nightly installs the viewer's packages, so its TypeScript is mutated too
+  why: >
+    The first nightly (run 37564055070) said "viewer: Vitest is not installed;
+    run npm install" and then "baseline tests fail; snapshot not updated" for
+    every file under viewer/src: the workflow never installs the viewer's
+    packages, so the TypeScript half of the project is never mutated. Before
+    the Mutate step, nightly.yml sets up Node with actions/setup-node pinned
+    to a commit SHA (with its version in a comment, as the other actions are),
+    node-version set to the current LTS major as a number, npm caching keyed
+    on viewer/package-lock.json, and runs npm ci in viewer/. If itos-cc's
+    Vitest coverage needs a package the viewer does not have (such as
+    @vitest/coverage-v8 at the Vitest major), add it to viewer's
+    devDependencies at an exact version, in its own build commit. The proof
+    is a nightly run with viewer files reporting killed and survived mutants
+    instead of a failing baseline; the coordinator starts that run, not the
+    agent. Nothing about the Go half changes.
+  done_when:
+    - run: actionlint .github/workflows/nightly.yml
+    - run: grep -q 'actions/setup-node@[0-9a-f]\{40\}' .github/workflows/nightly.yml
+    - run: grep -q 'npm ci' .github/workflows/nightly.yml
+    - run: cd viewer && npm ci --ignore-scripts >/dev/null && npx vitest run
