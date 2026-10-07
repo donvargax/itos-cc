@@ -569,7 +569,7 @@ items:
     title: Each selection of listed tests has its own baseline and timeout
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [listed-tests]
     kind: slice
     why: >
