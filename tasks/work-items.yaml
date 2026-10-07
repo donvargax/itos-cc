@@ -213,8 +213,8 @@ items:
   - id: mutation-test-hash
     title: "mutation results go stale when the tests that import their file change"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [mutation-check]
     kind: slice
     why: >
