@@ -92,3 +92,6 @@ questions:
     item: "test-attribution"
     question: "test-attribution: when is a kill made by listed tests still fresh, without itos-cc reading the tests' format? (a, recommended) While the set of tests covering its line and the hashes of the files those tests name are unchanged (per-file granularity). (b) The list command prints a content hash per test, computed by the project."
     answer: "(a) The covering tests' set and the hashes of the files they name."
+  - id: q-20
+    item: "test-attribution"
+    question: "test-attribution: what does a mutant run once per-test coverage exists? (a, recommended) Its file's own tests first; only if it survives, the listed tests whose coverage reaches its line, as one selection run; uncovered only when neither covers its line. (b) Only the covering tests, with its own tests in the same pass."
