@@ -259,6 +259,20 @@ Feature: Mutation testing
       Then no coverage or test command runs
       And stderr says "mutate: no mutations to test"
 
+    # The lines the mutation commands write to stderr themselves (the
+    # baseline, coverage, each mutant's outcome) began "mutate:", a command
+    # that is gone since the mutation group. They begin "itos-cc:", as every
+    # other line itos-cc writes to stderr does (the coordinator's call,
+    # 2026-10-07). The output of the test and coverage commands themselves is
+    # passed on as it is. ID-MUT-20 and ID-MUT-22 say the old text and change
+    # with the fix.
+    @wip @mutation-progress-prefix @ID-MUT-100
+    Scenario: Progress lines begin itos-cc:
+      Given src/board.ts has a mutant that is killed and one on a line no test executes
+      When I run "itos-cc mutation run src/board.ts"
+      Then the lines itos-cc writes to stderr about the baseline and each mutant begin "itos-cc: "
+      And no line of stderr begins "mutate: "
+
   # Issue #9, part 2: mutants on lines no test executes are not run, so a
   # changed function with no test passes. A gate passes --fail-uncovered
   # (with --since for a task's commits) to make each uncovered mutant a
