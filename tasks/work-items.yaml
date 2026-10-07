@@ -18,11 +18,9 @@ items:
     title: Nightly mutation job that commits its results back even when it fails
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Spec in the ledger, tasks/phase-1.yaml.
   - id: T-2
     title: Tag every scenario with an ID and require the Scenarios footer
     phase: 1
