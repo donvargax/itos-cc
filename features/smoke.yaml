@@ -1,0 +1,4 @@
+# The smoke set: one live scenario of each feature file, which a push's CI can
+# run in place of every one; itos tests smoke check scenario holds it to that.
+# itos init picked each file's first: pick a fast one, central to its file.
+[]

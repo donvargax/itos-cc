@@ -1,0 +1,58 @@
+# itos.yaml, written by itos init: this repository's rules for its commits,
+# kept small to grow. itos config check validates it; itos config check
+# --print-defaults prints every key it leaves to its default.
+version: 1
+
+# The itos release this repository runs: a global itos fetches it, checks it
+# against these checksums and runs it. itos pin moves it to the newest.
+pin:
+  version: "6.0.0"
+  checksums: "21ce0a35742b8293f1f46abe8e12f60eb55b644b195d185a1c3897fe702a9648" # the SHA-256 of the release's checksums.txt
+
+# The tasks: every commit but a feat, a fix or a docs names one in its Task
+# footer (itos commit --task T-1), and itos task T-1 runs its checks.
+ledger:
+  files: "tasks/phase-{group}.yaml" # one file per phase: tasks/phase-1.yaml, …
+  id: "T-\\d+"
+
+commits:
+  # The Conventional Commits types, held to commitlint's config-conventional
+  # rules by itos's own lint.
+  types: [feat, fix, refactor, perf, test, build, ci, chore, docs, style, revert]
+  header_lint: { use: builtin }
+  footers:
+    Task:
+      source: ledger
+      required_for: [refactor, perf, test, build, ci, chore, style, revert]
+      validate_for: all # a task named must be in the ledger
+      read_at: commit # judged against the ledger the commit carries
+    # The scenarios a feat or a fix turns green, by their ID tags
+    # (itos commit --scenarios '@ID-PAGE-01'); a @wip one is not live. No
+    # scenario carries an ID tag yet, so no commit needs the footer: tag one
+    # (@ID-PAGE-01 on the line above its Scenario:), then set required_for
+    # to [feat, fix].
+    Scenarios:
+      source: { tests: scenario }
+      strip_prefix: "@"
+      required_for: []
+      validate_for: [feat, fix]
+      must_be_live: true
+      read_at: commit
+  # Where verification starts: this commit and the ones before it, written
+  # before itos, are never judged.
+  since: "313ea4a7b6fc7d289130df5bd0aa5fa495c28924"
+  # Which paths each type may touch. docs needs no Task footer, so it may
+  # touch only Markdown, docs/ and itos's data in tasks/; the rest, anything.
+  scopes:
+    docs: { only: ["**/*.md", "docs/**", "tasks/**"] }
+
+# The named tests: the scenarios of the feature files under features/, each
+# with an ID tag such as @ID-PAGE-01, and a smoke set naming one of each file.
+tests:
+  scenario:
+    root: features
+    id: "ID-[A-Z]+-\\d+"
+    smoke: { file: features/smoke.yaml }
+
+hooks:
+  bin: itos # the hooks call the global itos, which runs the release pinned

@@ -1,0 +1,18 @@
+# The ledger's phase 1: the tasks that drive every commit but a feat, a fix or
+# a docs, each named in its commit's Task footer (itos commit --task T-2).
+# A task:
+#
+#   - id: T-2
+#     type: chore # one of commits.types
+#     title: What it is
+#     why: Why it is worth doing. # optional
+#     done_when: # the checks that prove it, which itos task T-2 runs
+#       - run: a command that exits 0 once it is done
+- id: T-1
+  type: chore
+  title: Adopt itos
+  why: >
+    The commit that adds itos.yaml, this ledger and the work registry names it:
+    itos commit --task T-1.
+  done_when:
+    - run: itos config check
