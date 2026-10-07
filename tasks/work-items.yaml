@@ -578,3 +578,18 @@ items:
       listed tests (about 30 minutes for a hanging mutant on itos), and only proved them passing
       together.
     refs: ["#14"]
+  - id: listed-selection-baseline-cost
+    title: The baselines of listed selections cost fewer runs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      listed-selection-baseline runs each distinct selection of listed tests once without a mutant.
+      In a suite tested end to end, nearly every line is reached by its own set of scenarios, so
+      there are about as many selections as mutated lines, and a run pays one more run of listed
+      tests per line, a quarter to a half more than the mutant runs alone. Whether a selection could
+      reuse the time of a superset already run, or of its tests measured one by one, to set its
+      timeout, and only prove alone the selections that kill a mutant, is to be decided.
+    refs: ["#14"]
