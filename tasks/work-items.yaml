@@ -247,7 +247,7 @@ items:
     title: A source outside any project root is namespaced from the working directory
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
