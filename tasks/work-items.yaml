@@ -193,7 +193,7 @@ items:
     title: mutation list lists sites in line order, as mutation run --json does
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
