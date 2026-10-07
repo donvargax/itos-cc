@@ -180,14 +180,15 @@ items:
       than as uncovered; seen while building slice-2, not reproduced with a TypeScript or LCOV
       fixture.
     refs: ["#9"]
-  - id: mutate-scan-line-order
-    title: mutation list lists sites function by function, mutation run --json in line order
+  - id: mutation-list-line-order
+    title: mutation list lists sites in line order, as mutation run --json does
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-scan-line-order.
       --scan lists sites unit by unit, so the sites of an inline callback (app.get("/u", (req, res)
       => ...)) come after every site of the function around it, not in line order. slice-3 sorts
       --json's "mutants" by line and column, so the two lists now differ in order where a function
