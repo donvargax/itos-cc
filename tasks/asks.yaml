@@ -48,3 +48,4 @@ questions:
   - id: q-12
     item: "mutation-exceptions"
     question: "Can an exception cover an uncovered mutant under --fail-uncovered? (a, recommended) No, survivors only: an uncovered mutant needs a test, not a reason. (b) Yes, both."
+    answer: "(a) No, survivors only."
