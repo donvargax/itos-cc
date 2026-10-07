@@ -28,7 +28,9 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
       - run: go vet ./...
-      - run: go test ./...
+      # 20 minutes, not go test's default 10: cmd/itos-cc's tests take about
+      # 10 on windows-latest (T-6). The limit only guards against a hang.
+      - run: go test -timeout 20m ./...
 
   draft:
     needs: test
