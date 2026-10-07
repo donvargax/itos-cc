@@ -314,3 +314,15 @@ items:
       The graph overlay (graph/build.go, apply) sets Unit.Stale from the function hash alone, while
       mutation run and mutation check now also treat a change to the tests recorded in the snapshot
       (mutation-test-hash) as stale. The viewer can show a kill as current that check calls stale.
+  - id: flaky-kills
+    title: "mutation: report a mutant whose outcome changes between runs with nothing changed"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Tests with random inputs and no fixed seed can kill a mutant in one run and not the next, so a
+      cached kill flips with no code or test change and mutation check and the planned sample mode
+      cannot trust it. A run that re-runs a cached kill with the same function and tests hashes and
+      gets another outcome reports it as flaky rather than trusting either outcome.
