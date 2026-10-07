@@ -116,7 +116,7 @@ items:
     title: "mutation except: equivalent mutants excepted in itos-cc.yaml, each with a reason"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
