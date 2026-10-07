@@ -199,6 +199,9 @@ snapshot: its results no longer hold, so the functions not judged lose their
 entries, and a later run or check finds them missing. A file the range
 changed only outside its functions, such as its imports, has none judged and
 is left as it was: neither its snapshot nor its summary comment is written.
+`--since` follows renames: a move is no change, so a renamed file judges only
+the functions the range edited, and its snapshot moves to the new path, even
+when none is judged. Paths narrow the range by the path a file has now.
 
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a

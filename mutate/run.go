@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -30,6 +31,9 @@ type Options struct {
 	// by namespace#name. The others never run: they keep what their
 	// snapshot records.
 	Judge func(path, function string) bool
+	// Renamed, when set, is the path the file at path had before a rename,
+	// or "": its snapshot moves to the new path, and the old one is removed.
+	Renamed func(path string) string
 	// Tests, when set, lists the test files that import the file at path,
 	// whose hashes its snapshot records: a kill is reused only while they
 	// are those recorded. Unset, a file has none.
@@ -96,6 +100,8 @@ type fileState struct {
 	tests    map[string]string // the tests that import the file, as the snapshot records them
 	judged   map[string]bool   // by namespace#name, or nil when every function is
 	excepted fileExceptions    // the exceptions of the functions judged
+	moved    string            // the path the file had before a rename, whose snapshot moves to rel
+	moving   *Snapshot         // that snapshot, under rel, when rel had none of its own
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -139,11 +145,23 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 			if s.judged != nil && len(s.judged) == 0 {
 				// Nothing in the file was judged, so nothing ran and the
-				// file is left as it was: no snapshot, no comment.
+				// file is left as it was: no new results, no comment. A
+				// renamed file's snapshot still moves, as it was.
+				if s.moving != nil {
+					if err := metrics.Write(SnapshotName(s.rel), s.moving); err != nil {
+						return nil, err
+					}
+				}
+				if err := s.removeMoved(); err != nil {
+					return nil, err
+				}
 				results = append(results, *s.result)
 				continue
 			}
 			if err := metrics.Write(SnapshotName(s.rel), s.result.Snapshot); err != nil {
+				return nil, err
+			}
+			if err := s.removeMoved(); err != nil {
 				return nil, err
 			}
 			if opt.Annotate {
@@ -155,6 +173,44 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 		results = append(results, *s.result)
 	}
 	return results, nil
+}
+
+// follow takes the snapshot of a file renamed from a path that holds no
+// file now: as the file's own when it has none yet, as *snap. The old
+// snapshot is removed once the new one is written.
+func (s *fileState) follow(opt Options, path string, snap **Snapshot) error {
+	if opt.Renamed == nil {
+		return nil
+	}
+	old := opt.Renamed(path)
+	if old == "" {
+		return nil
+	}
+	if _, err := os.Stat(old); !os.IsNotExist(err) {
+		return nil
+	}
+	s.moved = project.Rel(old)
+	if *snap != nil {
+		return nil
+	}
+	moving, err := LoadSnapshot(s.moved)
+	if err != nil {
+		return fmt.Errorf("%s: %w", SnapshotName(s.moved), err)
+	}
+	if moving != nil {
+		moving.File = filepath.ToSlash(s.rel)
+		*snap, s.moving = moving, moving
+	}
+	return nil
+}
+
+// removeMoved removes the snapshot of the path the file had before a
+// rename, if any.
+func (s *fileState) removeMoved() error {
+	if s.moved == "" {
+		return nil
+	}
+	return metrics.Remove(SnapshotName(s.moved))
 }
 
 // plan parses each file, finds its sites, and keeps the outcomes the
@@ -173,6 +229,9 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		snap, err := LoadSnapshot(rel)
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(rel), err)
+		}
+		if err := s.follow(opt, path, &snap); err != nil {
+			return states, err
 		}
 		var tests []string
 		if opt.Tests != nil {

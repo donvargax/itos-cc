@@ -105,7 +105,7 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, err := mutationSelection(in)
+	sources, judge, _, err := mutationSelection(in)
 	if err != nil {
 		return result, err
 	}

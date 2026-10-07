@@ -50,6 +50,14 @@ func Write(name string, v any) error {
 	return rename(tmp.Name(), path)
 }
 
+// Remove deletes .metrics/name; one that is not there is no error.
+func Remove(name string) error {
+	if err := os.Remove(filepath.Join(Dir, name)); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
 // Read loads .metrics/name into v and reports whether the file existed.
 func Read(name string, v any) (bool, error) {
 	data, err := os.ReadFile(filepath.Join(Dir, name))

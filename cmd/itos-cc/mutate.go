@@ -75,7 +75,8 @@ gate on a branch's own work: git diff REF...HEAD, committed changes only.
 Paths narrow it to the files under them. Functions not judged neither run nor
 change in the snapshot, and only those judged count in the summary, the
 problems, and the exit code. A file with no function judged is left as it
-was: neither its snapshot nor its summary comment is written.
+was: neither its snapshot nor its summary comment is written. Renames are
+followed: a move is no change, and a renamed file's snapshot moves with it.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor, so a gate fails a change no test executes. With --since, only the
@@ -200,30 +201,34 @@ type mutateSite struct {
 }
 
 // mutationSelection is the sources mutation run, check, and sample take:
-// the paths and --changed, and with --since the files the range changed,
-// with judge saying which of their functions it changed. judge is nil
-// without --since.
-func mutationSelection(in *invocation) (sources []string, judge func(path, function string) bool, err error) {
+// the paths and --changed, and with --since the files the range changed or
+// renamed, with judge saying which of their functions it changed and renamed
+// the path each renamed file had at the ref, "" for the others. judge and
+// renamed are nil without --since.
+func mutationSelection(in *invocation) (sources []string, judge func(path, function string) bool, renamed func(path string) string, err error) {
 	var since map[string]map[string]bool
+	var moves map[string]string
 	if in.set("since") {
-		if since, err = changedSince(in); err != nil {
-			return nil, nil, err
+		if since, moves, err = changedSince(in); err != nil {
+			return nil, nil, nil, err
 		}
 	}
 	files, err := files(in)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if since == nil {
-		return files.Sources, nil, nil
+		return files.Sources, nil, nil, nil
 	}
-	// The range selects the files; paths only narrow it.
+	// The range selects the files; paths only narrow it, by the path a
+	// renamed file has now.
 	for _, f := range files.Sources {
 		if _, ok := since[f]; ok {
 			sources = append(sources, f)
 		}
 	}
-	return sources, func(path, function string) bool { return since[path][function] }, nil
+	return sources, func(path, function string) bool { return since[path][function] },
+		func(path string) string { return moves[path] }, nil
 }
 
 // importingTests lists the test files that import each source, as the graph
@@ -256,7 +261,7 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, err := mutationSelection(in)
+	sources, judge, renamed, err := mutationSelection(in)
 	if err != nil {
 		return result, err
 	}
@@ -278,6 +283,7 @@ func runMutate(in *invocation) (any, error) {
 		Annotate:      !in.set("no-annotate"),
 		Log:           os.Stderr,
 		Judge:         judge,
+		Renamed:       renamed,
 		Exceptions:    exceptions,
 	}
 	if !in.set("no-coverage") {
@@ -420,23 +426,23 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
-func changedSince(in *invocation) (map[string]map[string]bool, error) {
+func changedSince(in *invocation) (map[string]map[string]bool, map[string]string, error) {
 	if in.set("changed") {
-		return nil, fail(kindUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
+		return nil, nil, fail(kindUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
 			"Drop --changed; commit the work to judge it with --since.").with("flag", "--changed")
 	}
 	ref := in.str("since")
-	changed, err := project.ChangedSince(ref)
+	changed, renamed, err := project.ChangedSince(ref)
 	var noGit *project.NoGitError
 	switch {
 	case errors.Is(err, project.ErrBadRef):
-		return nil, fail(kindUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
+		return nil, nil, fail(kindUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
 			"Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").with("ref", ref)
 	case errors.As(err, &noGit):
-		return nil, fail(kindMissing, "since.no-git", "--since needs a git repository: "+noGit.Reason,
+		return nil, nil, fail(kindMissing, "since.no-git", "--since needs a git repository: "+noGit.Reason,
 			"Run it inside a git repository, or name the paths instead.")
 	}
-	return changed, err
+	return changed, renamed, err
 }
 
 type mutationListResult struct {

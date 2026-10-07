@@ -35,43 +35,53 @@ func Head() (string, error) {
 // ChangedSince returns the functions the commits since ref changed, by
 // file: git diff ref...HEAD, so a branch's own commits whatever the base did
 // since, and never the working tree. Each supported file under the working
-// directory that the range changed is a key, by absolute path, even when no
-// function of it changed; its value holds the namespace#name of each
-// function whose lines the range touched. A deleted line counts as a change
-// of the lines either side of it. Functions are found in HEAD's version of
-// the file, so an uncommitted edit neither adds one nor moves its lines.
-func ChangedSince(ref string) (map[string]map[string]bool, error) {
+// directory that the range changed or renamed is a key, by absolute path,
+// even when no function of it changed; its value holds the namespace#name of
+// each function whose lines the range touched. A deleted line counts as a
+// change of the lines either side of it, and a move is no change, so a file
+// renamed unchanged has none. Functions are found in HEAD's version of the
+// file, so an uncommitted edit neither adds one nor moves its lines. renamed
+// maps each file the range renamed, by its absolute path, to the absolute
+// path it had at ref.
+func ChangedSince(ref string) (changed map[string]map[string]bool, renamed map[string]string, err error) {
 	if out, err := exec.Command("git", "rev-parse", "--git-dir").CombinedOutput(); err != nil {
-		return nil, &NoGitError{gitError(out, err)}
+		return nil, nil, &NoGitError{gitError(out, err)}
 	}
 	// A ref is never read as an option of the git commands below.
 	if strings.HasPrefix(ref, "-") || exec.Command("git", "rev-parse", "--verify", "--quiet", ref+"^{commit}").Run() != nil {
-		return nil, ErrBadRef
+		return nil, nil, ErrBadRef
 	}
-	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "-U0", "--no-color", "--no-ext-diff",
+	// -M finds renames whatever diff.renames says.
+	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-color", "--no-ext-diff",
 		"--no-textconv", "--src-prefix=a/", "--dst-prefix=b/", "--relative", "--diff-filter=AMR", ref+"...HEAD").Output()
 	if err != nil {
-		return nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
+		return nil, nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
 	}
-	changed := map[string]map[string]bool{}
-	for name, lines := range diffLines(string(out)) {
+	files, renames := diffLines(string(out))
+	changed, renamed = map[string]map[string]bool{}, map[string]string{}
+	for name, lines := range files {
 		spec := lang.Detect(name)
 		if spec == nil {
 			continue
 		}
 		abs, err := filepath.Abs(filepath.FromSlash(name))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if old, ok := renames[name]; ok {
+			if renamed[abs], err = filepath.Abs(filepath.FromSlash(old)); err != nil {
+				return nil, nil, err
+			}
 		}
 		// ./ makes the path relative to the working directory, as --relative
 		// made name.
 		src, err := exec.Command("git", "cat-file", "blob", "HEAD:./"+name).Output()
 		if err != nil {
-			return nil, fmt.Errorf("git cat-file HEAD:./%s: %s", name, gitError(nil, err))
+			return nil, nil, fmt.Errorf("git cat-file HEAD:./%s: %s", name, gitError(nil, err))
 		}
 		f, err := lang.Parse(spec, abs, src)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		functions := map[string]bool{}
 		for _, u := range f.Units {
@@ -82,7 +92,7 @@ func ChangedSince(ref string) (map[string]map[string]bool, error) {
 		f.Close()
 		changed[abs] = functions
 	}
-	return changed, nil
+	return changed, renamed, nil
 }
 
 // lines is a range of line numbers, both ends included.
@@ -99,14 +109,22 @@ func overlaps(ranges []lines, start, end int) bool {
 
 // diffLines reads a git diff -U0 with the prefixes a/ and b/: the lines of
 // each file's new side that its hunks changed, by the file's name as git
-// prints it, unquoted.
-func diffLines(diff string) map[string][]lines {
-	out := map[string][]lines{}
-	file, header := "", false
+// prints it, unquoted, and the old name of each renamed file by its new
+// one. A file renamed without a change has no hunk, and no lines.
+func diffLines(diff string) (map[string][]lines, map[string]string) {
+	out, renames := map[string][]lines{}, map[string]string{}
+	file, from, header := "", "", false
 	for _, line := range strings.Split(diff, "\n") {
 		switch {
 		case strings.HasPrefix(line, "diff --git "):
-			file, header = "", true
+			file, from, header = "", "", true
+		case header && strings.HasPrefix(line, "rename from "):
+			from = quotedName(strings.TrimPrefix(line, "rename from "))
+		case header && strings.HasPrefix(line, "rename to "):
+			if to := quotedName(strings.TrimPrefix(line, "rename to ")); to != "" && from != "" {
+				renames[to] = from
+				out[to] = out[to]
+			}
 		case header && strings.HasPrefix(line, "+++ "):
 			// Only in a file's header: an added line "++ x" reads "+++ x".
 			file = diffName(strings.TrimPrefix(line, "+++ "))
@@ -117,7 +135,20 @@ func diffLines(diff string) map[string][]lines {
 			}
 		}
 	}
-	return out
+	return out, renames
+}
+
+// quotedName is a name in a "rename from" or "rename to" line: as is, or
+// in C quotes when it holds a quote, a backslash, or a control character.
+func quotedName(s string) string {
+	if strings.HasPrefix(s, `"`) {
+		unquoted, err := strconv.Unquote(s)
+		if err != nil {
+			return ""
+		}
+		return unquoted
+	}
+	return s
 }
 
 // diffName is the name in a "+++ " line: "b/name", followed by a tab when

@@ -527,7 +527,7 @@ Feature: Mutation testing
     # a move is no change (the coordinator's call, 2026-10-07). The scenarios
     # rename a Go file within its package, so no test's import changes and
     # the results stay fresh.
-    @wip @since-follows-renames @ID-MUT-103
+    @since-follows-renames @ID-MUT-103
     Scenario: A renamed file's results follow it
       Given fresh results for every function of src/board.go, all killed
       And a commit after "base" renamed src/board.go to src/grid.go without changing it
@@ -537,7 +537,7 @@ Feature: Mutation testing
       And .metrics/mutate/src/board.go.json is gone
       And "itos-cc mutation check src/grid.go" exits 0
 
-    @wip @since-follows-renames @ID-MUT-104
+    @since-follows-renames @ID-MUT-104
     Scenario: A renamed and edited file judges only what changed
       Given fresh results for every function of src/board.go, all killed
       And a commit after "base" renamed src/board.go to src/grid.go and changed "Board#Place"

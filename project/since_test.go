@@ -31,14 +31,38 @@ func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
 		"--- a/gone.py",
 		"+++ /dev/null",
 		"@@ -1 +0,0 @@",
+		// Renamed unchanged: no hunk, and still a file of the range.
+		"diff --git a/old.py b/new.py",
+		"similarity index 100%",
+		"rename from old.py",
+		"rename to new.py",
+		"diff --git a/was.py b/now.py",
+		"similarity index 90%",
+		"rename from was.py",
+		"rename to now.py",
+		"--- a/was.py",
+		"+++ b/now.py",
+		"@@ -2 +2 @@",
+		`diff --git "a/q\"old.py" "b/q\"new.py"`,
+		"similarity index 100%",
+		`rename from "q\"old.py"`,
+		`rename to "q\"new.py"`,
 	}, "\n")
 	want := map[string][]lines{
 		"plain.py":     {{3, 5}, {10, 11}},
 		"año nuevo.py": {{1, 1}},
 		`q"x.py`:       {{1, 2}},
+		"new.py":       nil,
+		"now.py":       {{2, 2}},
+		`q"new.py`:     nil,
 	}
-	if got := diffLines(diff); !reflect.DeepEqual(got, want) {
+	wantRenames := map[string]string{"new.py": "old.py", "now.py": "was.py", `q"new.py`: `q"old.py`}
+	got, renames := diffLines(diff)
+	if !reflect.DeepEqual(got, want) {
 		t.Errorf("diffLines = %v, want %v", got, want)
+	}
+	if !maps.Equal(renames, wantRenames) {
+		t.Errorf("renames = %v, want %v", renames, wantRenames)
 	}
 }
 
@@ -62,7 +86,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	write(t, name, "import os\n\n\ndef a(x):\n    return x * 2\n\n\ndef b(x):\n    return x + 1\n")
 
 	t.Chdir(filepath.Join(repo, "sub"))
-	got, err := ChangedSince("base")
+	got, _, err := ChangedSince("base")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +102,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 		t.Errorf("functions %q, want [b]", functions)
 	}
 
-	if _, err := ChangedSince("--output=x"); err != ErrBadRef {
+	if _, _, err := ChangedSince("--output=x"); err != ErrBadRef {
 		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
 	}
 }

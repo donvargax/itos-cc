@@ -560,3 +560,30 @@ func TestARenamedAndEditedFileJudgesOnlyWhatChanged(t *testing.T) {
 	}
 	noBoardSnapshot(t)
 }
+
+// Paths narrow the range by the path a renamed file has now: one renamed
+// out from under the paths given is not selected, one renamed into them is.
+func TestARenamedFileIsNarrowedByItsNewPath(t *testing.T) {
+	boardRepo(t, nil)
+	moved := filepath.FromSlash("lib/grid.go")
+	if err := os.MkdirAll("lib", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gitIn(t, ".", "mv", filepath.ToSlash(boardSource), filepath.ToSlash(moved))
+	gitIn(t, ".", "commit", "-qm", "move board.go to lib/grid.go")
+
+	files := func(path string) []string {
+		t.Helper()
+		var names []string
+		for name := range mutationCheck(t, "--json", "--since", "base", path).checkFunctions(t) {
+			names = append(names, name)
+		}
+		return names
+	}
+	if got := files("src"); len(got) != 0 {
+		t.Errorf("--since base src checks %q, want none: the file is now under lib", got)
+	}
+	if got := files("lib"); !slices.Equal(got, []string{moved}) {
+		t.Errorf("--since base lib checks %q, want [%s]", got, moved)
+	}
+}
