@@ -163,7 +163,10 @@ func TestMetricsMatchTheirOwnFile(t *testing.T) {
 	}
 }
 
-func TestSnapshotsFromAnotherDirectoryMatchBySuffix(t *testing.T) {
+// @ID-GRAPH-26
+// crap.json's coverage is matched by path suffix, which the keyed matcher
+// does; mutation results are looked up where mutation check looks them up.
+func TestCoverageFromAnotherDirectoryMatchesBySuffix(t *testing.T) {
 	k := newKeyed[int]()
 	k.add("repo/lang/kotlin.go", "p", "init", 7)
 	if v, ok := k.get("lang/kotlin.go", "p", "init", 0); !ok || v != 7 {

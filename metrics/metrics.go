@@ -19,7 +19,12 @@ const Name = ".metrics"
 // (project.Root), wherever a command runs, so every command reads and
 // writes the same snapshots.
 func Dir() string {
-	return filepath.Join(project.Root(), Name)
+	return DirOf(project.Root())
+}
+
+// DirOf is where the snapshots of the project whose root is root live.
+func DirOf(root string) string {
+	return filepath.Join(root, Name)
 }
 
 // Version is the snapshot format version every snapshot records.
@@ -69,7 +74,12 @@ func Remove(name string) error {
 
 // Read loads .metrics/name into v and reports whether the file existed.
 func Read(name string, v any) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(Dir(), name))
+	return ReadIn(Dir(), name, v)
+}
+
+// ReadIn is Read of the snapshots in dir, as DirOf names it.
+func ReadIn(dir, name string, v any) (bool, error) {
+	data, err := os.ReadFile(filepath.Join(dir, name))
 	if os.IsNotExist(err) {
 		return false, nil
 	}

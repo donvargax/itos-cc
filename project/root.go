@@ -48,11 +48,17 @@ func RootOf(dir string) string {
 // snapshot records it: relative to the project root and slash-separated.
 // A path outside the root stays absolute.
 func FromRoot(path string) string {
+	return FromRootOf(Root(), path)
+}
+
+// FromRootOf is FromRoot for the project whose root is root, which need not
+// be the working directory's.
+func FromRootOf(root, path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return filepath.ToSlash(path)
 	}
-	rel, err := filepath.Rel(Root(), abs)
+	rel, err := filepath.Rel(root, abs)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return filepath.ToSlash(abs)
 	}

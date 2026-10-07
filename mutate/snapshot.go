@@ -137,9 +137,19 @@ func SnapshotName(rel string) string {
 // LoadSnapshot reads the snapshot of the file at rel, its path from the
 // project root, or returns nil when there is none.
 func LoadSnapshot(rel string) (*Snapshot, error) {
+	return LoadSnapshotOf(project.Root(), rel)
+}
+
+// LoadSnapshotOf is LoadSnapshot for the project whose root is root, which
+// need not be the working directory's: the snapshot at SnapshotName(rel)
+// under its .metrics, which holds while it names the file rel. One that
+// names another file is none, so the file's functions are missing. Every
+// reader looks a file's snapshot up here, mutation check and the
+// architecture graph alike.
+func LoadSnapshotOf(root, rel string) (*Snapshot, error) {
 	var s Snapshot
-	ok, err := metrics.Read(SnapshotName(rel), &s)
-	if err != nil || !ok {
+	ok, err := metrics.ReadIn(metrics.DirOf(root), SnapshotName(rel), &s)
+	if err != nil || !ok || s.File != filepath.ToSlash(rel) {
 		return nil, err
 	}
 	return &s, nil
@@ -270,11 +280,11 @@ func fileKeys(f *lang.File) (ids, hashes []string) {
 	return ids, hashes
 }
 
-// entriesOf pairs each function of a file, by its namespace#name in ids
+// EntriesOf pairs each function of a file, by its namespace#name in ids
 // and its hash in hashes, with its entry among entries, as PairByHash pairs
 // those sharing a name. It returns the index into entries of each one's
 // entry, -1 for none.
-func entriesOf(ids, hashes []string, entries []UnitResult) []int {
+func EntriesOf(ids, hashes []string, entries []UnitResult) []int {
 	recorded := map[string][]int{}
 	for j, e := range entries {
 		id := unitID(e.Namespace, e.Name)
@@ -319,7 +329,7 @@ func rememberedWithScopes(s *Snapshot, f *lang.File) (previous, previousScopes) 
 		return prev, scopes
 	}
 	ids, hashes := fileKeys(f)
-	for i, j := range entriesOf(ids, hashes, s.Units) {
+	for i, j := range EntriesOf(ids, hashes, s.Units) {
 		if j < 0 {
 			continue
 		}
@@ -433,7 +443,7 @@ func buildScoped(f *lang.File, rel string, tests map[string]string, sites []Site
 
 // keepUnjudged keeps the functions of units, a file's in order, whose index
 // judged holds and puts in place of each other one what previous records
-// for it, its entry paired by name and hash (entriesOf), so a function not
+// for it, its entry paired by name and hash (EntriesOf), so a function not
 // judged does not change in the snapshot. Unchanged, it keeps its outcomes
 // at its current lines; changed since, it keeps its entry as recorded, old
 // hash included, so a later run still sees the change; and one previous
@@ -450,7 +460,7 @@ func keepUnjudged(units []UnitResult, judged map[int]bool, previous *Snapshot, t
 	for _, u := range units {
 		ids, hashes = append(ids, unitID(u.Namespace, u.Name)), append(hashes, u.Hash)
 	}
-	pair := entriesOf(ids, hashes, entries)
+	pair := EntriesOf(ids, hashes, entries)
 	out := []UnitResult{}
 	for i, u := range units {
 		var was UnitResult

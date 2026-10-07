@@ -11,6 +11,7 @@ import (
 
 	"github.com/donvargax/itos-cc/crap"
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -22,6 +23,7 @@ type Builder struct {
 	projects  []string // the project root of each root, whose .metrics it reads (project.RootOf)
 	names     []string
 	cache     map[string]cached
+	snapshots map[string]cachedSnapshot // by the snapshot's path
 	signature string
 	version   int
 	graph     *Graph
@@ -32,9 +34,14 @@ type cached struct {
 	info  *fileInfo
 }
 
+type cachedSnapshot struct {
+	stamp    string
+	snapshot *mutate.Snapshot
+}
+
 // NewBuilder prepares a builder for repository roots.
 func NewBuilder(roots []string) (*Builder, error) {
-	b := &Builder{cache: map[string]cached{}}
+	b := &Builder{cache: map[string]cached{}, snapshots: map[string]cachedSnapshot{}}
 	seen := map[string]int{}
 	for _, r := range roots {
 		abs, err := filepath.Abs(r)
@@ -110,7 +117,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 			if err != nil {
 				return nil, false, err
 			}
-			infos[i] = overlay.apply(info, now)
+			infos[i] = overlay.apply(info, now, b.snapshot(r.top, info.abs, live))
 		}
 		rg := newRepoGraph(r.name, r.root, infos)
 		rg.summarize()
@@ -121,6 +128,11 @@ func (b *Builder) Build() (*Graph, bool, error) {
 	for path := range b.cache {
 		if !live[path] {
 			delete(b.cache, path)
+		}
+	}
+	for path := range b.snapshots {
+		if !live[path] {
+			delete(b.snapshots, path)
 		}
 	}
 	b.version++
@@ -171,7 +183,7 @@ func testHashes(root string) func(tests []string) (map[string]string, error) {
 // metricStamps watches the snapshots the overlay reads.
 func metricStamps(root string) []string {
 	var out []string
-	dir := filepath.Join(root, ".metrics")
+	dir := metrics.DirOf(root)
 	for _, name := range []string{"crap.json", "dry.json"} {
 		p := filepath.Join(dir, name)
 		out = append(out, p+"\x00"+stamp(p))
@@ -230,6 +242,27 @@ func (b *Builder) parseTest(root, path string) (*fileInfo, error) {
 	return info, nil
 }
 
+// snapshot is the mutation snapshot of the source file at path, in the
+// project whose root is top, looked up where mutation check looks it up
+// (mutate.LoadSnapshotOf), or nil when there is none. One that cannot be
+// read is none too, so the graph still builds. It is read again only when
+// its file changed since the last build. Its path is marked live.
+func (b *Builder) snapshot(top, path string, live map[string]bool) *mutate.Snapshot {
+	rel := project.FromRootOf(top, path)
+	at := filepath.Join(metrics.DirOf(top), mutate.SnapshotName(rel))
+	live[at] = true
+	st := stamp(at)
+	if c, ok := b.snapshots[at]; ok && c.stamp == st {
+		return c.snapshot
+	}
+	var snap *mutate.Snapshot
+	if st != "" {
+		snap, _ = mutate.LoadSnapshotOf(top, rel)
+	}
+	b.snapshots[at] = cachedSnapshot{st, snap}
+	return snap
+}
+
 // dependencies is what the graph needs of a parsed file to resolve what it
 // imports, and what imports it.
 func dependencies(root string, f *lang.File) *fileInfo {
@@ -247,55 +280,34 @@ func (f *fileInfo) clone() *fileInfo {
 	return &c
 }
 
-// overlay is what the snapshots in .metrics know about each function.
-// Functions are matched by file, namespace, name, and which same-named
-// function of the file they are: a Go package has an init per file, and
-// overloads share a name. Coverage tells same-named functions apart by
-// their order, mutation entries by their hash (mutationEntries).
+// overlay is what the snapshots in .metrics know about each function,
+// coverage and duplicates; a function's mutation results come from its
+// file's own snapshot (Builder.snapshot). Coverage is matched by file,
+// namespace, name, and which same-named function of the file it is: a Go
+// package has an init per file, and overloads share a name.
 type overlay struct {
 	coverage   keyed[float64]
-	mutation   keyed[recorded]
 	duplicates map[string]int // file#line → candidate pairs it is in
 }
 
-// mutationEntries is the mutation entry of each of info's units, nil for
-// none: those of its file and name, paired with the functions sharing the
-// name by hash.
-func (o overlay) mutationEntries(info *fileInfo) []*recorded {
-	named := map[string][]int{}
-	for i, u := range info.units {
-		k := u.Namespace + "#" + u.Name
-		named[k] = append(named[k], i)
+// mutationEntries is the entry of snap, info's file's snapshot, of each of
+// info's units, nil for none: paired as mutation check pairs them, by name
+// and hash (mutate.EntriesOf).
+func mutationEntries(info *fileInfo, snap *mutate.Snapshot) []*mutate.UnitResult {
+	out := make([]*mutate.UnitResult, len(info.units))
+	if snap == nil {
+		return out
 	}
-	out := make([]*recorded, len(info.units))
-	for _, units := range named {
-		first := info.units[units[0]]
-		var rs []recorded
-		var was, now []string
-		for n := 0; ; n++ {
-			r, ok := o.mutation.get(first.File, first.Namespace, first.Name, n)
-			if !ok {
-				break
-			}
-			rs, was = append(rs, r), append(was, r.unit.Hash)
-		}
-		for _, i := range units {
-			now = append(now, info.units[i].hash)
-		}
-		for k, j := range mutate.PairByHash(now, was) {
-			if j >= 0 {
-				out[units[k]] = &rs[j]
-			}
+	ids, hashes := make([]string, len(info.units)), make([]string, len(info.units))
+	for i, u := range info.units {
+		ids[i], hashes[i] = u.Namespace+"#"+u.Name, u.hash
+	}
+	for i, j := range mutate.EntriesOf(ids, hashes, snap.Units) {
+		if j >= 0 {
+			out[i] = &snap.Units[j]
 		}
 	}
 	return out
-}
-
-// recorded is one function's entry in a mutation snapshot, with the
-// snapshot that holds it.
-type recorded struct {
-	unit     *mutate.UnitResult
-	snapshot *mutate.Snapshot
 }
 
 type keyed[T any] struct {
@@ -334,8 +346,8 @@ func (k keyed[T]) get(file, namespace, name string, occurrence int) (T, bool) {
 }
 
 func loadOverlay(root string) overlay {
-	o := overlay{coverage: newKeyed[float64](), mutation: newKeyed[recorded](), duplicates: map[string]int{}}
-	dir := filepath.Join(root, ".metrics")
+	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
+	dir := metrics.DirOf(root)
 	var crapSnap struct {
 		Entries []crap.Entry `json:"entries"`
 	}
@@ -348,16 +360,6 @@ func loadOverlay(root string) overlay {
 			o.coverage.add(filepath.ToSlash(e.File), e.Namespace, e.Name, cov)
 		}
 	}
-	filepath.WalkDir(filepath.Join(dir, "mutate"), func(p string, d os.DirEntry, err error) error {
-		var snap mutate.Snapshot
-		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".json") && readJSON(p, &snap) {
-			for i := range snap.Units {
-				u := &snap.Units[i]
-				o.mutation.add(snap.File, u.Namespace, u.Name, recorded{u, &snap})
-			}
-		}
-		return nil
-	})
 	var drySnap struct {
 		Candidates []struct {
 			Left, Right struct {
@@ -375,17 +377,18 @@ func loadOverlay(root string) overlay {
 	return o
 }
 
-// apply joins the snapshots onto a file's units. CRAP is recomputed from the
-// live complexity and the last measured coverage, so it moves as you edit.
-// A function's mutation entry is paired as mutation check pairs it, by name
-// and hash (mutate.PairByHash), so of functions sharing a name, reordering
-// them changes nothing and editing one makes only that one stale. Its
-// results are stale exactly when mutation check calls them stale, by
-// check's own rule (mutate.FreshnessOf), tests being the hashes of the test
-// files that import its file now; a function with no entry, which check
-// calls missing, carries none.
-func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
-	entries := o.mutationEntries(info)
+// apply joins the snapshots onto a file's units, snap being its mutation
+// snapshot, nil for none. CRAP is recomputed from the live complexity and
+// the last measured coverage, so it moves as you edit. A function's
+// mutation entry is paired as mutation check pairs it, by name and hash
+// (mutate.EntriesOf), so of functions sharing a name, reordering them
+// changes nothing and editing one makes only that one stale. Its results
+// are stale exactly when mutation check calls them stale, by check's own
+// rule (mutate.FreshnessOf), tests being the hashes of the test files that
+// import its file now; a function with no entry, which check calls
+// missing, carries none.
+func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot) *fileInfo {
+	entries := mutationEntries(info, snap)
 	occurrence := map[string]int{}
 	for i := range info.units {
 		u := &info.units[i]
@@ -397,10 +400,9 @@ func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
 			score := float64(int(crap.Score(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
-		if r := entries[i]; r != nil {
-			m := r.unit
+		if m := entries[i]; m != nil {
 			u.Mutated = true
-			u.Stale = mutate.FreshnessOf(m, u.hash, r.snapshot.TestsChanged(tests), u.sites).State == mutate.Stale
+			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), u.sites).State == mutate.Stale
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered
 		}
 		u.Duplicates = o.duplicates[fmt.Sprintf("%s#%d", u.File, u.Line)]

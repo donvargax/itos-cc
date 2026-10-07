@@ -163,7 +163,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 		entries = snap.Units
 	}
 	ids, hashes := fileKeys(f)
-	pair := entriesOf(ids, hashes, entries)
+	pair := EntriesOf(ids, hashes, entries)
 	all := Sites(f)
 	sites := map[int][]Site{}
 	for _, s := range all {

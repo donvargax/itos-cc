@@ -307,13 +307,13 @@ Feature: Architecture graph
     # named the same, and snapshots-at-root makes every command write it
     # there. ID-GRAPH-26 then holds only for crap.json's coverage: the fix
     # narrows its wording to say so.
-    @wip @graph-snapshot-lookup @ID-GRAPH-39
+    @graph-snapshot-lookup @ID-GRAPH-39
     Scenario: The graph finds a file's mutation snapshot where check does
       Given .metrics/mutate/lang/kotlin.go.json records the function init of lang/kotlin.go
       When the graph is built
       Then the function init in lang/kotlin.go carries its mutation results
 
-    @wip @graph-snapshot-lookup @ID-GRAPH-40
+    @graph-snapshot-lookup @ID-GRAPH-40
     Scenario: A mutation snapshot naming another path does not match
       Given .metrics/mutate/repo/lang/kotlin.go.json names the file "repo/lang/kotlin.go"
       And no snapshot is at .metrics/mutate/lang/kotlin.go.json
@@ -322,9 +322,9 @@ Feature: Architecture graph
       And "itos-cc mutation check lang/kotlin.go" calls it missing
 
     @ID-GRAPH-26
-    Scenario: Snapshots written from another directory still match
-      Given a snapshot names "repo/lang/kotlin.go"
-      Then it matches the function in "lang/kotlin.go"
+    Scenario: Coverage written from another directory still matches
+      Given crap.json names "repo/lang/kotlin.go"
+      Then its coverage matches the function in "lang/kotlin.go"
       But not the function of the same name in "lang/golang.go"
 
     @ID-GRAPH-27
