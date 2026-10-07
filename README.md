@@ -80,13 +80,14 @@ or modified. Every command takes `-h` and `--json`.
 
 Scripts rely on three things only, as with itos ([docs/CLI.md](docs/CLI.md)):
 the exit code, the `--json` object less its `message` and `fix` keys, and the
-files under `.metrics/`. Plain output is for people.
+files itos-cc writes: those under `.metrics/`, and `itos-cc.yaml`. Plain
+output is for people.
 
 | Code | Meaning |
 | --- | --- |
 | 0 | Success. |
 | 1 | A check said no: a mutant survived, a function is over `--threshold`. |
-| 2 | A usage or config error: a bad flag, path, or report. |
+| 2 | A usage or config error: a bad flag, path, or report, or an `itos-cc.yaml` that cannot be read. |
 | 3 | The environment lacks something: a tool, a report, a git repository. |
 | 70 | An internal error itos-cc could not classify; please report it. |
 | 75 | A temporary failure: the same command may pass when run again. |
@@ -157,8 +158,9 @@ test. What keeps `mutation run` fast:
 
 - **Differential runs.** Each function's source is hashed, and so is each
   test file that imports the function's file. Killed mutants of unchanged
-  functions stay killed while those tests are unchanged too; survivors,
-  changed functions, and every function of a file whose tests changed rerun.
+  functions stay killed while those tests are unchanged too, as do the
+  survivors `itos-cc.yaml` excepts; other survivors, changed functions, and
+  every function of a file whose tests changed rerun.
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
@@ -183,6 +185,7 @@ itos-cc mutation run --all-tests --no-coverage               # nightly, with end
 itos-cc mutation list src/billing                            # the mutation sites, without running tests
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 itos-cc mutation sample                                      # in CI: do 20 cached results still hold?
+itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
 ```
 
 `--since <ref>` judges only the functions the commits since `<ref>`
@@ -228,6 +231,43 @@ another run's. It writes nothing, and takes `mutation check`'s paths,
 `--changed`, and `--since`. Give it the `--all-tests` or `--test-command` the
 results were recorded with: a kill only the whole suite makes reads as a
 survivor to the file's own tests.
+
+An equivalent mutant changes no behaviour (a `0` set again before it is
+ever read, say), so no test can kill it, and it would fail every run. `mutation except <file>:<line>:<column> --reason '…'` excepts it in
+`itos-cc.yaml` at the project root, itos-cc's project settings, to commit
+and review like the code. The site must be a survivor its fresh snapshot
+records. The entry, under `mutation.exceptions`, holds the file, the
+function, the function's hash, the site's `line_in_function` (counted from
+the function's first line, so a move keeps it) and `column`, the `original`,
+the `replacement`, and the `reason`; excepting a site again replaces it, and
+the file's other keys and comments are kept:
+
+```yaml
+mutation:
+  exceptions:
+    - file: src/board.ts
+      function: board.Board#count
+      hash: 9c1f0e2a7b3d4c5e
+      line_in_function: 2
+      column: 13
+      original: "0"
+      replacement: "1"
+      reason: c is set again before it is read
+```
+
+An excepted survivor fails nothing in `mutation run` and `mutation check`: it
+is counted `excepted`, not `survived` (the summary shows `N excepted` only
+where there is one; `--json` gives each file `excepted` and the mutant its
+reason, its `outcome` still `survived`). It is reused without running, as a
+kill is, while its function and the tests that import its file are
+unchanged; `--mutate-all` runs it too. The entry no longer holds, and fails
+as `mutation.exception-stale` (exit 1) with its `why`, when the mutant, run
+again after its tests changed, is now `killed`; when its function `changed`,
+and the mutant is judged as if it had no entry; or when its function or its
+site is `gone`. With `--since`, only the judged functions' entries count. An
+entry never excuses an uncovered mutant: that needs a test, not a reason. An
+`itos-cc.yaml` that cannot be read, or an entry with no reason, is
+`config.invalid`, exit 2.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's

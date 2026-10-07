@@ -28,6 +28,12 @@ file that imports its file: when one was added, changed, or removed since,
 every function of the file is stale, as it is when the snapshot predates
 recording tests.
 
+A survivor that itos-cc.yaml excepts (see mutation except) fails nothing.
+An exception that no longer holds fails as mutation.exception-stale, as in
+mutation run: its function changed, its function or site is gone, or a fresh
+entry records its mutant killed. An itos-cc.yaml that cannot be read is
+config.invalid.
+
 It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
 REF...HEAD), as mutation run judges them.
@@ -39,27 +45,32 @@ each problem, a line each:
   stale <file>:<line> in <namespace#name>
   survived <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
   uncovered <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
+  exception-stale <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
 The line of a missing or stale function is where it starts now. With --json,
 "functions" holds the functions checked, in the file's order, with the
-counts their entry records, zero when missing.`,
+counts their entry records, zero when missing; an excepted survivor counts
+in "excepted", not "survived".`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on each recorded uncovered mutant, as on a survivor")),
 	json: `"files": [{"file", "functions": [{"function",
-   "state": "fresh"|"stale"|"missing", "killed", "survived", "uncovered"}]}]`,
+   "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
+   "uncovered"}]}]`,
 	rules: []string{
 		"mutation.missing          a function with a mutation site has no results: file, line, function",
 		"mutation.stale            a function, or a test that imports its file, changed since its results: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
+		"config.invalid            itos-cc.yaml cannot be read: file",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 	},
 	exits: []exitDoc{
 		{0, "every function checked has fresh results, and none records a survivor"},
-		{1, "a function's results are missing or stale, or record a survivor, or an uncovered mutant with --fail-uncovered"},
-		{2, "a usage error: a bad flag or path, a --since ref that is no commit, or --since with --changed"},
+		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant with --fail-uncovered; or an exception is stale"},
+		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
 	examples: []string{
@@ -79,6 +90,7 @@ type checkFunction struct {
 	State     string `json:"state"`
 	Killed    int    `json:"killed"`
 	Survived  int    `json:"survived"`
+	Excepted  int    `json:"excepted"`
 	Uncovered int    `json:"uncovered"`
 }
 
@@ -89,6 +101,10 @@ type checkResult struct {
 // runMutationCheck checks the chosen functions' cached results.
 func runMutationCheck(in *invocation) (any, error) {
 	result := checkResult{Files: []checkFile{}}
+	exceptions, err := loadExceptions()
+	if err != nil {
+		return result, err
+	}
 	sources, judge, err := mutationSelection(in)
 	if err != nil {
 		return result, err
@@ -101,7 +117,7 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.Check(sources, judge, tests)
+	checks, err := mutate.Check(sources, judge, tests, exceptions)
 	if err != nil {
 		return result, err
 	}
@@ -111,8 +127,9 @@ func runMutationCheck(in *invocation) (any, error) {
 		count := map[string]int{}
 		for _, fn := range c.Functions {
 			count[fn.State]++
+			excepted := exceptedIn(fn.Mutants)
 			f.Functions = append(f.Functions, checkFunction{Function: fn.Function, State: fn.State,
-				Killed: fn.Entry.Killed, Survived: fn.Entry.Survived, Uncovered: fn.Entry.Uncovered})
+				Killed: fn.Entry.Killed, Survived: fn.Entry.Survived - excepted, Excepted: excepted, Uncovered: fn.Entry.Uncovered})
 		}
 		result.Files = append(result.Files, f)
 		if !in.json {
@@ -129,6 +146,7 @@ func runMutationCheck(in *invocation) (any, error) {
 				reportFailed(in, c.Rel, fn.Function, fn.Mutants, failUncovered)
 			}
 		}
+		reportStaleExceptions(in, c.Rel, c.StaleExceptions)
 	}
 	return result, nil
 }

@@ -38,7 +38,7 @@ func TestRememberedKeepsOnlyKilledMutantsOfUnchangedUnits(t *testing.T) {
 	prev := remembered(&snap, after)
 	var kept []bool
 	for _, s := range Sites(after) {
-		_, ok := prev.kept(after, s)
+		_, ok := prev.kept(after, s, false)
 		kept = append(kept, ok)
 	}
 	want := []bool{true, true, false, false}
@@ -53,8 +53,12 @@ func TestSurvivorsAreAlwaysRetried(t *testing.T) {
 	f := parse(t, "x.py", "def a(x):\n    return x > 0\n")
 	snap := build(f, "x.py", nil, Sites(f), []string{Survived, Killed})
 	prev := remembered(&snap, f)
-	if _, ok := prev.kept(f, Sites(f)[0]); ok {
+	if _, ok := prev.kept(f, Sites(f)[0], false); ok {
 		t.Error("a survivor was kept instead of retried")
+	}
+	// An excepted survivor is the one exception: it is reused as a kill is.
+	if outcome, ok := prev.kept(f, Sites(f)[0], true); !ok || outcome != Survived {
+		t.Errorf("an excepted survivor: kept %v as %q, want it reused as survived", ok, outcome)
 	}
 }
 

@@ -457,3 +457,41 @@ func TestExceptedMutantsAsJSON(t *testing.T) {
 		t.Errorf("ok %v, exit %d, want ok and exit 0", m.OK, o.code)
 	}
 }
+
+func TestASiteIsFileLineAndColumn(t *testing.T) {
+	for arg, want := range map[string]struct {
+		path         string
+		line, column int
+		ok           bool
+	}{
+		"src/board.go:11:11":   {"src/board.go", 11, 11, true},
+		`C:\src\board.go:7:19`: {`C:\src\board.go`, 7, 19, true},
+		"src/board.go:11":      {},
+		"src/board.go":         {},
+		":1:1":                 {},
+		"src/board.go:0:1":     {},
+		"src/board.go:1:x":     {},
+	} {
+		path, line, column, ok := parseSite(arg)
+		if path != want.path || line != want.line || column != want.column || ok != want.ok {
+			t.Errorf("%q: %q %d %d %v, want %+v", arg, path, line, column, ok, want)
+		}
+	}
+}
+
+func TestMutationExceptTakesOneSite(t *testing.T) {
+	inEmptyDir(t)
+	for _, c := range []struct {
+		args []string
+		rule string
+	}{
+		{nil, "args.missing"},
+		{[]string{"a.go:1:1", "b.go:1:1"}, "args.unexpected"},
+		{[]string{"a.go"}, "args.invalid"},
+	} {
+		o := mutationExcept(t, append(c.args, "--reason", "r", "--json")...)
+		if p := o.json(t).problem(c.rule); p == nil || o.code != 2 {
+			t.Errorf("%q: exit %d, stdout:\n%s\nwant %s and exit 2", c.args, o.code, o.stdout, c.rule)
+		}
+	}
+}

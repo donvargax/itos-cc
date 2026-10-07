@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -19,6 +20,10 @@ const (
 type FileCheck struct {
 	Rel       string
 	Functions []FunctionCheck
+	// StaleExceptions is each exception of the functions checked that no
+	// longer holds: those whose function changed or whose site is gone,
+	// then those whose mutant a fresh entry records killed.
+	StaleExceptions []StaleException
 }
 
 // FunctionCheck is one function's cached results.
@@ -32,7 +37,8 @@ type FunctionCheck struct {
 	// snapshot, when that alone makes the function Stale; nil otherwise.
 	Tests *TestChange
 	// Mutants is what Entry records when Fresh, in site order, each at its
-	// site's line and column now; nil otherwise.
+	// site's line and column now, a survivor itos-cc.yaml excepts with its
+	// reason; nil otherwise.
 	Mutants []Mutant
 	unit    int // the function's index in its file's units
 }
@@ -44,11 +50,13 @@ type FunctionCheck struct {
 // Options.Tests does for a run. A function is fresh while one entry under
 // its name has its hash, so a function that only moved is fresh, as it is
 // for reuse, and while the snapshot records the tests that import its file
-// as they are now.
-func Check(files []string, judge func(path, function string) bool, tests func(path string) []string) ([]FileCheck, error) {
+// as they are now. exceptions are the survivors itos-cc.yaml excepts, judged
+// as a run judges them: a fresh entry's survivor that one excepts fails
+// nothing, and one that no longer holds is stale.
+func Check(files []string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
-		c, err := checkFile(path, judge, tests)
+		c, err := checkFile(path, judge, tests, exceptions)
 		if err != nil {
 			return out, err
 		}
@@ -57,17 +65,17 @@ func Check(files []string, judge func(path, function string) bool, tests func(pa
 	return out, nil
 }
 
-func checkFile(path string, judge func(path, function string) bool, tests func(path string) []string) (FileCheck, error) {
+func checkFile(path string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	f, err := lang.ParseFile(path)
 	if err != nil {
 		return FileCheck{}, err
 	}
 	defer f.Close()
-	return checkParsed(f, path, judge, tests)
+	return checkParsed(f, path, judge, tests, exceptions)
 }
 
 // checkParsed is checkFile of f, the file at path, parsed.
-func checkParsed(f *lang.File, path string, judge func(path, function string) bool, tests func(path string) []string) (FileCheck, error) {
+func checkParsed(f *lang.File, path string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	rel := project.Rel(path)
 	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
 	snap, err := LoadSnapshot(rel)
@@ -93,8 +101,9 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 			recorded[id] = append(recorded[id], u)
 		}
 	}
+	all := Sites(f)
 	sites := map[int][]Site{}
-	for _, s := range Sites(f) {
+	for _, s := range all {
 		sites[s.Unit] = append(sites[s.Unit], s)
 	}
 	for i, u := range f.Units {
@@ -119,6 +128,30 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 			}
 		}
 		result.Functions = append(result.Functions, c)
+	}
+	var judgeFunction func(function string) bool
+	if judge != nil {
+		judgeFunction = func(function string) bool { return judge(path, function) }
+	}
+	x := applyExceptions(exceptions, rel, f, all, judgeFunction)
+	result.StaleExceptions = x.stale
+	at := map[string]int{}
+	for i, s := range all {
+		at[fmt.Sprint(s.Unit, "\x00", s.Key())] = i
+	}
+	for _, fn := range result.Functions {
+		for j := range fn.Mutants {
+			m := &fn.Mutants[j]
+			i, ok := at[fmt.Sprint(fn.unit, "\x00", m.key())]
+			if !ok {
+				continue
+			}
+			reason, stale := x.judge(i, all[i], m.Outcome)
+			m.Excepted = reason
+			if stale != nil {
+				result.StaleExceptions = append(result.StaleExceptions, *stale)
+			}
+		}
 	}
 	return result, nil
 }

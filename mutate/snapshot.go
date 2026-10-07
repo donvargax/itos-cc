@@ -58,6 +58,10 @@ type Mutant struct {
 	Original    string `json:"original"`
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
+	// Excepted is the reason itos-cc.yaml gives for a survivor it excepts,
+	// as a run or a check judged it; never written to the snapshot, which
+	// records the survivor as it is.
+	Excepted string `json:"-"`
 }
 
 func (m Mutant) key() string {
@@ -172,12 +176,33 @@ func usable(s *Snapshot, tests map[string]string) *Snapshot {
 }
 
 // kept reports the previous outcome of site when it can be reused without
-// running: a killed or timed-out mutant in an unchanged unit. Survivors are
-// always retried, since new tests may kill them.
-func (p previous) kept(f *lang.File, s Site) (string, bool) {
+// running: a killed or timed-out mutant in an unchanged unit, or a survivor
+// there that excepted says itos-cc.yaml excepts. Other survivors are always
+// retried, since new tests may kill them.
+func (p previous) kept(f *lang.File, s Site, excepted bool) (string, bool) {
 	u := f.Units[s.Unit]
 	outcome := p[unitID(u.Namespace, u.Name)][s.Key()]
-	return outcome, outcome == Killed || outcome == Timeout
+	return outcome, outcome == Killed || outcome == Timeout || excepted && outcome == Survived
+}
+
+// markExcepted sets Excepted on each mutant of units that mutants, the
+// mutants decided, says is excepted.
+func markExcepted(units []UnitResult, mutants []MutantResult) {
+	reasons := map[string]string{}
+	for _, m := range mutants {
+		if m.Excepted != "" {
+			reasons[m.Function+"\x00"+m.Key()] = m.Excepted
+		}
+	}
+	if len(reasons) == 0 {
+		return
+	}
+	for i := range units {
+		u := &units[i]
+		for j := range u.Mutants {
+			u.Mutants[j].Excepted = reasons[unitID(u.Namespace, u.Name)+"\x00"+u.Mutants[j].key()]
+		}
+	}
 }
 
 // build assembles a snapshot from every site's outcome, against tests, the

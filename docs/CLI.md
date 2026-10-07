@@ -13,9 +13,11 @@ Scripts can rely on three things only, as with itos (its decision 35):
 - The exit code.
 - The `--json` output, less every key named `message` or `fix`. These keys
   hold the same sentences as the plain output.
-- The files that itos-cc writes under `.metrics/`. A release adds keys to
-  them without changing their `version`, as `tests` was added to the
-  snapshots under `.metrics/mutate/`.
+- The files that itos-cc writes: those under `.metrics/`, and the keys of
+  `itos-cc.yaml`, the project's settings, which `mutation except` writes
+  and a person may write too. A release only adds keys to them, as `tests`
+  was added to the snapshots under `.metrics/mutate/` without changing
+  their `version`.
 
 All plain output is for people and can change in any release. A change to the
 contract is a breaking change, made in a major release with the others that
@@ -27,8 +29,8 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing. |
-| 2    | A usage or config error: a bad flag, path, argument, or report.                        |
+| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing. |
+| 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
@@ -70,7 +72,11 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `flags.conflict`             | 2    | mutation run, mutation check, mutation sample | `flag`                                        |
 | `command.unknown`            | 2    | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 2    | itos-cc --json, mutation --json | none                                       |
-| `args.unexpected`            | 2    | version, help  | `argument`                                                  |
+| `args.unexpected`            | 2    | version, help, mutation except | `argument`                                  |
+| `args.missing`               | 2    | mutation except | none                                                       |
+| `args.invalid`               | 2    | mutation except | `argument`                                                 |
+| `config.invalid`             | 2    | mutation run, mutation check, mutation except | `file`                         |
+| `exception.no-survivor`      | 2    | mutation except | `file`, `line`, `column`                                   |
 | `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
 | `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
 | `since.bad-ref`              | 2    | mutation run, mutation check, mutation sample | `ref`                                         |
@@ -84,6 +90,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
 | `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function is gone), `column`, `original`, `replacement`, `why` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |
@@ -100,21 +107,21 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |
 | 2 | Lowercase subcommands with dashes | Follows. |
-| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`, `mutation sample`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
+| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`, `mutation sample`, `mutation except`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
 | 5 | No two commands with similar names | Does not follow: `crap` and `scrap`. |
 | 6 | No everyday verb that points at another command | Follows. |
 | 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone and `itos-cc mutation` alone print help; an unknown command names the one meant. |
 | 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position; for the group, `mutation`, `mutation -h`, `help mutation run`, `mutation run --help`. |
 | 10 | Help gives the `--json` shape and exit codes | Follows, with each command's problem rules. |
 | 11 | `--version` and `version` print `itos-cc <version>` first | Follows. |
-| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run`, `list`, `check`, and `sample`. |
-| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, and `sample`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
+| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run`, `list`, `check`, `sample`, and `except`. |
+| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, `sample`, and `except`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
 | 14 | Help ends with examples and the issues address | Follows. |
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
 | 18 | A flag changes an action, never selects another | Follows. |
 | 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows: every command reads its flags from one declared spec (`cmd/itos-cc/cli.go`). |
-| 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin or writes a file. |
+| 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin, and the one file a command writes outside `.metrics/` is `itos-cc.yaml`, which `mutation except` edits in place. |
 | 24 | Flags in any position | Follows. |
 | 25 | Each argument checked; a bad one exits 2 | Follows: a path that is no file and no fragment of one exits 2. |
 | 26 | Main output on stdout, the rest on stderr | Follows. |
@@ -125,10 +132,10 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
-| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables or config of its own. |
+| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables. Its one project setting, `mutation.exceptions` in `itos-cc.yaml`, has no flag or variable to set it instead: an exception belongs with the code it excuses, so it is read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | None yet; the mutation exceptions of issue #10 would be one. |
+| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the working directory. Its one setting so far is `mutation.exceptions`: the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, and `reason`, which `mutation except` writes, keeping the file's other keys and comments. A file that cannot be read is `config.invalid`, exit 2. |
 | 39–41 | Entry points for other programs | None. |
 | 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/metrics"
@@ -33,7 +34,11 @@ type Options struct {
 	// whose hashes its snapshot records: a kill is reused only while they
 	// are those recorded. Unset, a file has none.
 	Tests func(path string) []string
-	Log   io.Writer
+	// Exceptions are the survivors itos-cc.yaml excepts: each one of a
+	// function judged that still survives is excepted, and one that no
+	// longer holds is stale.
+	Exceptions []config.Exception
+	Log        io.Writer
 }
 
 // FileResult is the outcome for one source file.
@@ -51,6 +56,10 @@ type FileResult struct {
 	// Mutants is every mutant of the functions judged, in site order (line,
 	// then column), with its outcome; empty when the baseline failed.
 	Mutants []MutantResult
+	// StaleExceptions is each exception of the functions judged that no
+	// longer holds: those whose function changed or whose site is gone,
+	// then those whose mutant the tests now kill.
+	StaleExceptions []StaleException
 }
 
 // MutantResult is how one mutant was decided in this run.
@@ -61,6 +70,9 @@ type MutantResult struct {
 	// Reused is true when the outcome came from the snapshot without
 	// running.
 	Reused bool
+	// Excepted is the reason itos-cc.yaml gives when it excepts the mutant
+	// and the mutant survived; empty otherwise.
+	Excepted string
 }
 
 // skipped marks a site of a function not judged that has no outcome to keep:
@@ -81,6 +93,7 @@ type fileState struct {
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
 	tests    map[string]string // the tests that import the file, as the snapshot records them
 	judged   map[string]bool   // by namespace#name, or nil when every function is
+	excepted fileExceptions    // the exceptions of the functions judged
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -121,6 +134,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
 			}
+			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 			if err := metrics.Write(SnapshotName(s.rel), s.result.Snapshot); err != nil {
 				return nil, err
 			}
@@ -171,6 +185,12 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 				}
 			}
 		}
+		var judge func(function string) bool
+		if s.judged != nil {
+			judge = func(function string) bool { return s.judged[function] }
+		}
+		s.excepted = applyExceptions(opt.Exceptions, rel, f, s.sites, judge)
+		s.result.StaleExceptions = s.excepted.stale
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))
 		for i, site := range s.sites {
@@ -184,7 +204,8 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 				}
 				continue
 			}
-			if outcome, ok := prev.kept(f, site); ok && !opt.MutateAll {
+			_, excepted := s.excepted.held[i]
+			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll {
 				s.outcomes[i] = outcome
 				s.reused[i] = true
 				s.result.Reused++
@@ -195,8 +216,10 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 }
 
 // decided lists the mutants of the functions judged with their outcomes, in
-// site order. A function not judged was not decided in this run, whatever
-// its snapshot keeps for it.
+// site order, each excepted survivor with its reason. A function not judged
+// was not decided in this run, whatever its snapshot keeps for it. An
+// exception whose mutant the tests noticed is added to the result's stale
+// ones.
 func (s *fileState) decided() []MutantResult {
 	out := []MutantResult{}
 	for i, site := range s.sites {
@@ -205,7 +228,11 @@ func (s *fileState) decided() []MutantResult {
 		if s.judged != nil && !s.judged[id] {
 			continue
 		}
-		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i]})
+		reason, stale := s.excepted.judge(i, site, s.outcomes[i])
+		if stale != nil {
+			s.result.StaleExceptions = append(s.result.StaleExceptions, *stale)
+		}
+		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Excepted: reason})
 	}
 	// Sites come unit by unit, which is not line order where a unit holds
 	// an inline one.

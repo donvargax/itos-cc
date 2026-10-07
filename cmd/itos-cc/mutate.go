@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/lang"
@@ -17,8 +18,9 @@ import (
 
 // mutationGroup is mutation testing: mutation run mutates and runs the
 // tests, mutation list lists the sites without running any, mutation check
-// reads the cached results without running any, and mutation sample runs a
-// few cached mutants again to see that their results hold.
+// reads the cached results without running any, mutation sample runs a few
+// cached mutants again to see that their results hold, and mutation except
+// excepts an equivalent mutant in itos-cc.yaml.
 var mutationGroup = &command{
 	name:    "mutation",
 	summary: "mutation testing: do the tests notice small changes?",
@@ -27,16 +29,19 @@ Mutation testing: would the tests notice if this code were wrong? mutation run
 changes one operator, boolean, or 0/1 at a time inside each function and runs
 the tests; mutation list lists those changes, the mutation sites, without
 running any test; mutation check says whether the results mutation run
-cached are there, fresh, and passing, without running any test either; and
+cached are there, fresh, and passing, without running any test either;
 mutation sample runs a few of the cached mutants again and fails when an
-outcome differs from the one recorded.`,
+outcome differs from the one recorded; and mutation except excepts an
+equivalent mutant, a survivor no test can kill, in itos-cc.yaml, with the
+reason no test can.`,
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation list src/billing/invoice.ts",
 		"itos-cc mutation check --since origin/main --fail-uncovered",
 		"itos-cc mutation sample --count 20",
+		"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",
 	},
-	subs: []*command{mutationRunCommand, mutationListCommand, mutationCheckCommand, mutationSampleCommand},
+	subs: []*command{mutationRunCommand, mutationListCommand, mutationCheckCommand, mutationSampleCommand, mutationExceptCommand},
 }
 
 var mutationRunCommand = &command{
@@ -56,8 +61,9 @@ nightly. Add --no-coverage for end-to-end tests that only run the built
 binary, which coverage does not see.
 
 Results are cached in .metrics/mutate/<file>.json, which is meant to be
-committed: later runs reuse killed mutants of unchanged functions and retry
-only survivors and changed functions. Each snapshot also records the SHA-256
+committed: later runs reuse killed mutants of unchanged functions, and the
+survivors itos-cc.yaml excepts, and retry only other survivors and changed
+functions. Each snapshot also records the SHA-256
 of every test file that imports its file (in Go, its package's tests and
 those of the packages that import it); when one of them is added, changed,
 or removed, every mutant of the file runs again. A summary comment is kept at
@@ -73,7 +79,18 @@ problems, and the exit code.
 survivor, so a gate fails a change no test executes. With --since, only the
 judged functions' uncovered mutants count. With --no-coverage, or where
 coverage measured nothing for the language, every mutant runs and none is
-uncovered.`,
+uncovered.
+
+A survivor that itos-cc.yaml excepts (see mutation except) fails nothing: it
+is counted excepted, not survived, and is reused without running, as a kill
+is, while its function and the tests that import its file are unchanged.
+An exception no longer holds, and fails as mutation.exception-stale, when
+its function changed (its mutant is then judged as if it had none), when
+its function or its site is gone, or when the mutant, run again after its
+tests changed, is killed. An exception never excuses an uncovered mutant.
+With --since, only the judged functions' exceptions count. --mutate-all
+runs excepted mutants too. An itos-cc.yaml that cannot be read is
+config.invalid, and nothing runs.`,
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("workers", intFlag, "N", fmt.Sprint(max(1, runtime.NumCPU()/2)), "mutants run at the same time"),
 		sw("mutate-all", "rerun killed mutants of unchanged functions too"),
@@ -82,22 +99,26 @@ uncovered.`,
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on each uncovered mutant, as on a survivor")),
-	json: `"files": [{"file", "killed", "survived", "uncovered", "ran", "reused",
-   "baseline": "passed"|"failed", "mutants": [{"line", "column", "function",
-   "original", "replacement", "outcome": "killed"|"survived"|"timeout"|"uncovered",
-   "reused"}], and with --since "judged": ["namespace#name"]}]`,
+	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
+   "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
+   "function", "original", "replacement",
+   "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused", and for an
+   excepted survivor "excepted": "its reason"}], and with --since
+   "judged": ["namespace#name"]}]`,
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
+		"config.invalid            itos-cc.yaml cannot be read: file",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, or a file's tests fail before any mutant"},
-		{2, "a usage error: a bad flag or path, a --since ref that is no commit, or --since with --changed"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, or a file's tests fail before any mutant"},
+		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
 	examples: []string{
@@ -131,9 +152,11 @@ mutation run makes one at a time, without running any test, as
 }
 
 type mutateFile struct {
-	File      string `json:"file"`
-	Killed    int    `json:"killed"`
-	Survived  int    `json:"survived"`
+	File     string `json:"file"`
+	Killed   int    `json:"killed"`
+	Survived int    `json:"survived"`
+	// Excepted is the survivors itos-cc.yaml excepts, not in Survived.
+	Excepted  int    `json:"excepted"`
 	Uncovered int    `json:"uncovered"`
 	Ran       int    `json:"ran"`
 	Reused    int    `json:"reused"`
@@ -155,6 +178,9 @@ type mutateMutant struct {
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
 	Reused      bool   `json:"reused"`
+	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
+	// only; its outcome stays survived.
+	Excepted string `json:"excepted,omitempty"`
 }
 
 type mutateResult struct {
@@ -223,6 +249,10 @@ func importingTests() (func(path string) []string, error) {
 
 func runMutate(in *invocation) (any, error) {
 	result := mutateResult{Files: []mutateFile{}}
+	exceptions, err := loadExceptions()
+	if err != nil {
+		return result, err
+	}
 	sources, judge, err := mutationSelection(in)
 	if err != nil {
 		return result, err
@@ -245,6 +275,7 @@ func runMutate(in *invocation) (any, error) {
 		Annotate:      !in.set("no-annotate"),
 		Log:           os.Stderr,
 		Judge:         judge,
+		Exceptions:    exceptions,
 	}
 	if !in.set("no-coverage") {
 		opt.Coverage = func(sources []string) *coverage.Report {
@@ -274,12 +305,13 @@ func runMutate(in *invocation) (any, error) {
 			}
 			in.report(fail(kindNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
 				"Make its tests pass, then run mutation run again.").with("file", r.Rel))
+			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 			continue
 		}
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
 		for _, m := range r.Mutants {
 			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused})
+				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Excepted: m.Excepted})
 		}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
@@ -294,14 +326,21 @@ func runMutate(in *invocation) (any, error) {
 			}
 		}
 		for _, u := range units {
+			excepted := exceptedIn(u.Mutants)
 			f.Killed += u.Killed
-			f.Survived += u.Survived
+			f.Survived += u.Survived - excepted
+			f.Excepted += excepted
 			f.Uncovered += u.Uncovered
 		}
 		result.Files = append(result.Files, f)
 		if !in.json {
-			line := fmt.Sprintf("%s: %d killed, %d survived, %d uncovered (ran %d, reused %d)",
-				r.Rel, f.Killed, f.Survived, f.Uncovered, f.Ran, f.Reused)
+			// "excepted" only where there is one, so a project with no
+			// exceptions reads as it always did.
+			counts := fmt.Sprintf("%d killed, %d survived, %d uncovered", f.Killed, f.Survived, f.Uncovered)
+			if f.Excepted > 0 {
+				counts = fmt.Sprintf("%d killed, %d survived, %d excepted, %d uncovered", f.Killed, f.Survived, f.Excepted, f.Uncovered)
+			}
+			line := fmt.Sprintf("%s: %s (ran %d, reused %d)", r.Rel, counts, f.Ran, f.Reused)
 			if r.Judged != nil {
 				line += fmt.Sprintf(" (judged %d of %d functions)", len(r.Judged), r.Functions)
 			}
@@ -310,18 +349,47 @@ func runMutate(in *invocation) (any, error) {
 		for _, u := range units {
 			reportFailed(in, r.Rel, u.Namespace+"#"+u.Name, u.Mutants, failUncovered)
 		}
+		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
 	return result, nil
 }
 
-// reportFailed reports each mutant of function that fails: a survivor, and
-// with failUncovered an uncovered mutant.
+// exceptedIn counts the survivors of mutants that itos-cc.yaml excepts.
+func exceptedIn(mutants []mutate.Mutant) int {
+	n := 0
+	for _, m := range mutants {
+		if m.Excepted != "" {
+			n++
+		}
+	}
+	return n
+}
+
+// loadExceptions is the survivors itos-cc.yaml excepts. A file that cannot
+// be read is a config error.
+func loadExceptions() ([]config.Exception, error) {
+	c, err := config.Load()
+	var invalid *config.InvalidError
+	if errors.As(err, &invalid) {
+		return nil, fail(kindUsage, "config.invalid", invalid.Error(),
+			"Fix it: each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason; 'itos-cc mutation except' writes one.").
+			with("file", config.File)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return c.Exceptions, nil
+}
+
+// reportFailed reports each mutant of function that fails: a survivor that
+// itos-cc.yaml does not except, and with failUncovered an uncovered mutant.
 func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant, failUncovered bool) {
 	for _, m := range mutants {
 		switch {
-		case m.Outcome == mutate.Survived:
+		case m.Outcome == mutate.Survived && m.Excepted == "":
 			reportMutant(in, rel, function, m, "mutation.survived", "survived", "survived",
-				"Add a test that fails with this change.")
+				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except %s:%d:%d --reason …'.",
+					rel, m.Line, m.Column))
 		case m.Outcome == mutate.Uncovered && failUncovered:
 			reportMutant(in, rel, function, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change.")
@@ -416,4 +484,44 @@ func tail(s string, lines int) string {
 		parts = parts[len(parts)-lines:]
 	}
 	return strings.Join(parts, "\n")
+}
+
+// reportStaleExceptions lists each exception of file rel that no longer
+// holds on stdout, as "exception-stale <file>:<line>:<column> <original> →
+// <replacement> in <function> (<why>)", the place left out when its
+// function is gone, and reports it as mutation.exception-stale.
+func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleException) {
+	for _, e := range stale {
+		at := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column)
+		if e.Line == 0 {
+			at = rel
+		}
+		change := fmt.Sprintf("%s → %s in %s", quote(e.Original), quote(e.Replacement), e.Function)
+		if !in.json {
+			fmt.Printf("  exception-stale %s %s (%s)\n", at, change, e.Why)
+		}
+		var message, fix string
+		switch e.Why {
+		case mutate.ExceptionKilled:
+			message = fmt.Sprintf("%s: %s is excepted in %s, but the tests now kill it", at, change, config.File)
+			fix = "Remove its entry from " + config.File + ": the tests show that the mutant changes behaviour."
+		case mutate.ExceptionChanged:
+			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, config.File, change)
+			fix = fmt.Sprintf("If the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …' after mutation run; otherwise remove its entry from %s.", at, config.File)
+		case mutate.ExceptionGone:
+			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, config.File, change)
+			if e.Line == 0 {
+				message = fmt.Sprintf("%s: the entry in %s for %s names a function the file no longer has", at, config.File, change)
+			}
+			fix = "Remove its entry from " + config.File + "."
+		}
+		p := fail(kindNo, "mutation.exception-stale", message, fix).
+			with("file", rel).with("function", e.Function).with("column", e.Column).
+			with("original", e.Original).with("replacement", e.Replacement).with("why", e.Why)
+		if e.Line != 0 {
+			p.with("line", e.Line)
+		}
+		p.shown = true
+		in.report(p)
+	}
 }
