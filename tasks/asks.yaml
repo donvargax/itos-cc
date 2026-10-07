@@ -3,6 +3,7 @@ questions:
   - id: q-1
     item: "mutate-check-sample"
     question: "How is the check mode spelled? (a, recommended) A command of its own that runs nothing, such as itos-cc mutants (name open), taking the same selection flags: it follows CLI rule 18 (a flag changes an action, never selects another), which the repository just adopted. (b) mutate --check, as issue #8 sketches it: one more rule-18 exception beside mutate --scan, listed in docs/CLI.md. Note IDEAS.md keeps the name check for the debt file."
+    answer: "(a): a command of its own that runs nothing, following rule 18. Its name, and whether it also takes over mutate --scan, is q-3."
   - id: q-2
     item: "mutate-check-sample"
     question: "What does the check mode fail on? (a, recommended) Missing or stale results, and also cached survivors (and cached uncovered mutants with --fail-uncovered) in the selected functions, so it gives the verdict a full run would give, from the cache: a gate that passes on fresh results showing survivors proves nothing. (b) Missing or stale results only, as issue #8 sketches it, leaving survivors to the run that wrote them."
