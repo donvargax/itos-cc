@@ -52,3 +52,4 @@ questions:
   - id: q-13
     item: "mutation-check-unrecorded-sites"
     question: "mutation check passes a function whose entry lacks sites a newer operator adds. What does check say? (a, recommended) The function is stale: its results predate the operator; check reports mutation.stale naming the unrecorded sites, and mutation run runs only those sites. (b) The function is missing, and every mutant runs again."
+    answer: "(a) The function is stale, naming the unrecorded sites; mutation run runs only those sites."
