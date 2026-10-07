@@ -96,6 +96,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
 | `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
+| `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
 | `serve.repo-unreadable`      | 2    | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
 | `internal`                   | 70   | every          | none                                                        |

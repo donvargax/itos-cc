@@ -525,7 +525,7 @@ Feature: Mutation testing
   # sample follows the same rule.
   Rule: Each selection of listed tests has its own baseline
 
-    @wip @listed-selection-baseline @ID-MUT-135
+    @listed-selection-baseline @ID-MUT-135
     Scenario: A selection's timeout comes from its own run
       Given listed tests ID-A-01, which runs in about a second alone, and ID-A-02, which takes about ten
       And a mutant only ID-A-01 reaches makes the binary hang
@@ -534,13 +534,13 @@ Feature: Mutation testing
       And the mutant times out after three times that run, at least 2 seconds, not after three times both tests' time
       And its outcome is "timeout", counted killed
 
-    @wip @listed-selection-baseline @ID-MUT-136
+    @listed-selection-baseline @ID-MUT-136
     Scenario: A selection is run without a mutant once per run
       Given two mutants whose lines only ID-A-02 reaches, both surviving their own tests
       When I run "itos-cc mutation run"
       Then ID-A-02 runs alone without a mutant exactly once
 
-    @wip @listed-selection-baseline @ID-MUT-137
+    @listed-selection-baseline @ID-MUT-137
     Scenario: A selection that fails without a mutant decides none of its mutants
       Given ID-A-02 fails when it runs alone without a mutant, though the listed tests pass together
       When I run "itos-cc mutation run"

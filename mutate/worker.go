@@ -109,6 +109,7 @@ type result struct {
 	timedOut bool
 	elapsed  time.Duration
 	output   string
+	exitCode int // -1 when the command gave none
 }
 
 // run executes c inside the worker's copy of c.Root. A zero timeout waits
@@ -149,13 +150,14 @@ func (w *worker) run(c Command, timeout time.Duration) (result, error) {
 	killGroup(cmd)
 	start := time.Now()
 	err = cmd.Run()
-	r := result{elapsed: time.Since(start), output: out.String()}
+	r := result{elapsed: time.Since(start), output: out.String(), exitCode: -1}
 	switch {
 	case ctx.Err() == context.DeadlineExceeded:
 		r.timedOut = true
 	case err == nil:
-		r.passed = true
+		r.passed, r.exitCode = true, 0
 	case isExit(err):
+		r.exitCode = err.(*exec.ExitError).ExitCode()
 	default:
 		return r, err
 	}

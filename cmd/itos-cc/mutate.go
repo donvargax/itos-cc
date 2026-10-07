@@ -121,7 +121,14 @@ run; otherwise each test runs alone, with a GOCOVERDIR of its own. A
 mutant runs its file's own tests first and, only if it survives them, the
 listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
-uncovered. Such an outcome holds while the files its tests are defined
+uncovered. The first time a mutant needs a selection of listed tests,
+that selection runs once without any mutant, in the mutant's worker's
+copy: its time, times --timeout-factor and at least 2s, is the timeout of
+every mutant run of it. A selection that fails without a mutant is
+tests.selection-failed: no mutant that would run it is judged, and the
+files holding them keep their snapshots, as with a failing baseline
+("baseline": "failed" in --json). Such
+an outcome holds while the files its tests are defined
 in, and the support files, are as it recorded them; mutation check calls
 its function stale when one changed. A list command that fails is
 tests.list-failed: nothing is
@@ -153,13 +160,14 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
+		"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, or the list command of mutation.tests failed"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, or a selection of listed tests fails without any mutant"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
@@ -207,7 +215,8 @@ type mutateFile struct {
 	// Judged is there only with --since, empty when no function changed.
 	Judged []string `json:"judged,omitzero"`
 	// Mutants is every mutant of the functions judged, in site order;
-	// empty, never null, when the baseline failed.
+	// empty, never null, when the baseline or a selection of listed tests
+	// failed.
 	Mutants []mutateMutant `json:"mutants"`
 }
 
@@ -378,7 +387,19 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	reported := map[string]bool{}
 	for _, r := range results {
+		if len(r.FailedSelections) > 0 && !r.BaselineFailed {
+			// A mutant the file holds needed listed tests that fail
+			// without it: it is not decided, so neither is the file.
+			result.Files = append(result.Files, mutateFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []mutateMutant{}})
+			if !in.json {
+				fmt.Printf("%s: listed tests its mutants run fail without any mutant; snapshot not updated\n", r.Rel)
+			}
+			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
+			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+			continue
+		}
 		if r.BaselineFailed {
 			result.Files = append(result.Files, mutateFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []mutateMutant{}})
 			if !in.json {
@@ -434,6 +455,28 @@ func runMutate(in *invocation) (any, error) {
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
 	return result, nil
+}
+
+// reportFailedSelections reports each selection of listed tests in failed
+// that reported does not hold yet as tests.selection-failed, showing its
+// output in plain output, and adds it to reported. cmd is the command to
+// run again.
+func reportFailedSelections(in *invocation, failed []mutate.FailedSelection, reported map[string]bool, cmd string) {
+	for _, f := range failed {
+		key := strings.Join(slices.Sorted(slices.Values(f.IDs)), " ")
+		if reported[key] {
+			continue
+		}
+		reported[key] = true
+		ids := strings.Join(f.IDs, " ")
+		if !in.json {
+			fmt.Printf("listed tests %s fail without any mutant\n%s\n", ids, tail(f.Output, 20))
+		}
+		in.report(fail(kindNo, "tests.selection-failed",
+			fmt.Sprintf("the listed tests %s fail without any mutant, so no mutant that would run them was judged: %s", ids, f.Command),
+			fmt.Sprintf("Make them pass when they run alone, as that command runs them, then run %s again.", cmd)).
+			with("ids", f.IDs).with("command", f.Command).with("exit_code", f.ExitCode))
+	}
 }
 
 // exceptedIn counts the survivors of mutants that itos-cc.yaml excepts.

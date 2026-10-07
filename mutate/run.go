@@ -53,10 +53,6 @@ type Options struct {
 	// longer holds is stale.
 	Exceptions []config.Exception
 	Log        io.Writer
-
-	// listedTimeout is how long a run of listed tests may take, or 0 while
-	// no run of them has been timed.
-	listedTimeout time.Duration
 }
 
 // Listed is how to run a selection of the tests a project lists in
@@ -81,6 +77,11 @@ type FileResult struct {
 	Ran, Reused    int
 	BaselineFailed bool
 	BaselineOutput string
+	// FailedSelections is each selection of listed tests that a mutant of
+	// the file needed and that failed without any mutant: such a mutant is
+	// not decided, so the snapshot is not written, as when the baseline
+	// failed.
+	FailedSelections []FailedSelection
 	// Judged holds the namespace#name of each function judged, in the
 	// file's order, or is nil when every function was. Functions is how
 	// many the file has.
@@ -172,7 +173,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 		}
 	}
 	if pending > 0 {
-		if err := markUncovered(states, &opt); err != nil {
+		if err := markUncovered(states, opt); err != nil {
 			return nil, err
 		}
 		if err := execute(states, opt); err != nil {
@@ -184,7 +185,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 
 	var results []FileResult
 	for _, s := range states {
-		if !s.result.BaselineFailed {
+		if !s.result.BaselineFailed && len(s.result.FailedSelections) == 0 {
 			s.result.Mutants = s.decided()
 			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes, s.ran)
 			if s.judged != nil {
@@ -385,9 +386,8 @@ func (s *fileState) decided() []MutantResult {
 // measured its language: a coverage command for it succeeded, even with a
 // report that names no file of the run, or the report measured other files
 // of the run in it. The tests ran and never loaded it. A line a listed test
-// executes is never uncovered. It times the listed tests' runs from their
-// coverage run.
-func markUncovered(states []*fileState, opt *Options) error {
+// executes is never uncovered.
+func markUncovered(states []*fileState, opt Options) error {
 	if opt.Coverage == nil {
 		return nil
 	}
@@ -398,9 +398,6 @@ func markUncovered(states []*fileState, opt *Options) error {
 	report, err := opt.Coverage(sources)
 	if err != nil || report == nil {
 		return err
-	}
-	if elapsed := report.TestsElapsed(); elapsed > 0 {
-		opt.listedTimeout = max(minTimeout, time.Duration(float64(elapsed)*opt.TimeoutFactor))
 	}
 	measured := map[string]bool{}
 	for _, s := range states {
@@ -439,7 +436,8 @@ type job struct {
 }
 
 // execute runs each command's baseline, then every pending mutant across
-// the workers.
+// the workers, each selection of listed tests' baseline the first time a
+// mutant needs it.
 func execute(states []*fileState, opt Options) error {
 	base, err := os.MkdirTemp("", "itos-cc-mutate-")
 	if err != nil {
@@ -471,7 +469,7 @@ func execute(states []*fileState, opt Options) error {
 				if !r.passed {
 					failed[key] = r.output
 				} else {
-					timeouts[key] = max(minTimeout, time.Duration(float64(r.elapsed)*opt.TimeoutFactor))
+					timeouts[key] = timeoutOf(r.elapsed, opt.TimeoutFactor)
 				}
 			}
 			if out, bad := failed[key]; bad {
@@ -482,9 +480,11 @@ func execute(states []*fileState, opt Options) error {
 		}
 	}
 
-	jobs, err = listedBaseline(workers[0], jobs, &opt)
-	if err != nil {
-		return err
+	// Each selection of listed tests runs without a mutant the first time
+	// a mutant needs it, in that mutant's worker.
+	var sels *selections
+	if opt.Listed != nil {
+		sels = newSelections(opt.Listed, opt.TimeoutFactor, opt.Log)
 	}
 
 	queue := make(chan job)
@@ -497,22 +497,31 @@ func execute(states []*fileState, opt Options) error {
 		go func(w *worker) {
 			defer wg.Done()
 			for j := range queue {
-				outcome, elapsed, ran, err := runMutant(w, j, timeouts[j.state.command.Key()], opt)
+				r, err := runMutant(w, j, timeouts[j.state.command.Key()], sels)
 				mu.Lock()
 				if err != nil && firstErr == nil {
 					firstErr = err
 				}
-				j.state.outcomes[j.site] = outcome
-				said := outcome
-				if ran != nil {
-					j.state.scopes[j.site], j.state.ran[j.site] = ScopeListed, ran
-					said = fmt.Sprintf("survived its own tests, then %s with %s", outcome, strings.Join(ran, " "))
+				said, took := r.outcome, fmt.Sprintf("%.1fs", r.elapsed.Seconds())
+				switch {
+				case r.failed != nil:
+					// Undecided: its outcome stays pending, and its file
+					// is not written.
+					j.state.result.addFailed(r.failed)
+					said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(r.ids, " "))
+				case r.ids != nil:
+					j.state.outcomes[j.site] = r.outcome
+					j.state.scopes[j.site], j.state.ran[j.site] = ScopeListed, r.ids
+					said = fmt.Sprintf("survived its own tests, then %s with %s", r.outcome, strings.Join(r.ids, " "))
+					took += fmt.Sprintf(", the listed tests %.1fs", r.listed.Seconds())
+				default:
+					j.state.outcomes[j.site] = r.outcome
 				}
 				j.state.result.Ran++
 				done++
 				site := j.state.sites[j.site]
-				fmt.Fprintf(opt.Log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", done, len(jobs),
-					j.state.rel, site.Line, show(site.Original), show(site.Replacement), said, elapsed.Seconds())
+				fmt.Fprintf(opt.Log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", done, len(jobs),
+					j.state.rel, site.Line, show(site.Original), show(site.Replacement), said, took)
 				mu.Unlock()
 			}
 		}(w)
@@ -525,24 +534,45 @@ func execute(states []*fileState, opt Options) error {
 	return firstErr
 }
 
+// mutantRun is how a mutant's runs went.
+type mutantRun struct {
+	outcome string
+	elapsed time.Duration // its runs' time in all
+	listed  time.Duration // the listed tests' time
+	// ids is the listed tests it ran once its own tests survived it, or
+	// nil when it ran none.
+	ids []string
+	// failed, when set, is the selection ids, which fails without any
+	// mutant: the mutant is not decided.
+	failed *FailedSelection
+}
+
 // runMutant runs the file's own tests on the mutant, then, when it survives
-// them, the listed tests that reach its line, whose IDs it returns.
-func runMutant(w *worker, j job, timeout time.Duration, opt Options) (string, time.Duration, []string, error) {
+// them, the listed tests that reach its line, after their selection's
+// baseline the first time any mutant needs it.
+func runMutant(w *worker, j job, timeout time.Duration, sels *selections) (mutantRun, error) {
 	s := j.state
 	site := s.sites[j.site]
 	mutated := site.Apply(s.file.Src)
 	r, err := w.withMutant(s.command.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
 		return w.run(s.command, timeout)
 	})
-	outcome := judged(r)
-	if err != nil || outcome != Survived || opt.Listed == nil || s.reach == nil || len(s.reach[j.site]) == 0 {
-		return outcome, r.elapsed, nil, err
+	run := mutantRun{outcome: judged(r), elapsed: r.elapsed}
+	if err != nil || run.outcome != Survived || sels == nil || s.reach == nil || len(s.reach[j.site]) == 0 {
+		return run, err
 	}
-	ids := s.reach[j.site]
-	listed, err := w.withMutant(opt.Listed.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
-		return w.run(opt.Listed.command(ids), opt.listedTimeout)
+	run.ids = s.reach[j.site]
+	sel := sels.baseline(w, run.ids)
+	if sel.err != nil || sel.failed != nil {
+		run.failed = sel.failed
+		return run, sel.err
+	}
+	listed, err := w.withMutant(sels.listed.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
+		return w.run(sels.listed.command(run.ids), sel.timeout)
 	})
-	return judged(listed), r.elapsed + listed.elapsed, ids, err
+	run.outcome, run.listed = judged(listed), listed.elapsed
+	run.elapsed += listed.elapsed
+	return run, err
 }
 
 // judged is the outcome of a test run on a mutant.
@@ -559,49 +589,6 @@ func judged(r result) string {
 // command runs the listed tests ids.
 func (l *Listed) command(ids []string) Command {
 	return Command{Root: l.Root, Dir: l.Root, Shell: l.Select(ids)}
-}
-
-// listedBaseline runs, unless coverage timed them already, the listed tests
-// any job may run, with no mutant, in w's copy: passing proves they hold,
-// and their time sets the timeout. When they fail, the files whose mutants
-// would run them are not judged, as with a failing baseline, and their jobs
-// are dropped.
-func listedBaseline(w *worker, jobs []job, opt *Options) ([]job, error) {
-	if opt.Listed == nil || opt.listedTimeout > 0 {
-		return jobs, nil
-	}
-	var ids []string
-	for _, j := range jobs {
-		if j.state.reach != nil {
-			for _, id := range j.state.reach[j.site] {
-				if !slices.Contains(ids, id) {
-					ids = append(ids, id)
-				}
-			}
-		}
-	}
-	if len(ids) == 0 {
-		return jobs, nil
-	}
-	c := opt.Listed.command(ids)
-	fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
-	r, err := w.run(c, 0)
-	if err != nil {
-		return nil, err
-	}
-	if r.passed {
-		opt.listedTimeout = max(minTimeout, time.Duration(float64(r.elapsed)*opt.TimeoutFactor))
-		return jobs, nil
-	}
-	var kept []job
-	for _, j := range jobs {
-		if j.state.reach == nil || len(j.state.reach[j.site]) == 0 {
-			kept = append(kept, j)
-			continue
-		}
-		j.state.result.BaselineFailed, j.state.result.BaselineOutput = true, r.output
-	}
-	return kept, nil
 }
 
 // show renders an empty replacement, a deleted operator, visibly.

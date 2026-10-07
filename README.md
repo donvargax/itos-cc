@@ -230,9 +230,16 @@ the coverage by test in one run (`go test` passes that variable on to its
 test binaries, as it does not `GOCOVERDIR`); otherwise each test runs alone,
 with a `GOCOVERDIR` of its own. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
-run. That outcome has scope `"listed"` and records their IDs under `tests`,
-in the snapshot and in `--json`, and `mutation sample` runs it again the
-same way. A line a listed test reaches is never uncovered. Such a kill
+run. The first time a mutant needs a selection of listed tests, that
+selection runs once without any mutant in the mutant's worker's copy: its
+time, times `--timeout-factor` and at least 2 seconds, is the timeout of
+every mutant run of it, so a mutant that hangs one quick scenario waits for
+that scenario's time, not the whole suite's. A selection that fails without
+a mutant is `tests.selection-failed`, exit 1, with its `ids`: no mutant that
+would run it is judged, and the files holding them keep their snapshots, as
+with a failing baseline. That outcome has scope `"listed"` and records their
+IDs under `tests`, in the snapshot and in `--json`, and `mutation sample`
+runs it again the same way, after its selection's own baseline. A line a listed test reaches is never uncovered. Such a kill
 rests on files no import names: the snapshot records the hash of the file
 each of its tests is defined in, and of every file the `support` globs
 match, such as the step code the tests run, and the kill holds while they

@@ -47,8 +47,11 @@ Each mutant runs with the scope of the tests its outcome was recorded with:
 the file's own tests, the whole suite (--all-tests), the --test-command
 line, or "listed", the file's own tests then, if the mutant survives them,
 the listed tests its outcome records (see mutation run), one baseline per
-scope's command, so a kill only the whole suite makes is not read as a
-survivor. An outcome recorded before scopes were is the file's own tests'.
+scope's command and per selection of listed tests, so a kill only the
+whole suite makes is not read as a survivor. A selection's baseline sets
+the timeout of its runs, and one that fails without a mutant is
+tests.selection-failed: none of its file's sampled mutants is judged. An
+outcome recorded before scopes were is the file's own tests'.
 --all-tests or --test-command given to mutation sample runs every sampled
 mutant with it instead.
 
@@ -56,7 +59,8 @@ Plain output is the seed and how many of the cached mutants were sampled,
 then a line per file, "<file>: N sampled, N mismatched", then each mismatch:
   mismatch <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>: recorded <outcome>, now <outcome>
 With --json, each file's "mutants" holds the mutants sampled, in site order;
-it is empty when the file's baseline failed.`,
+it is empty, and "baseline" is "failed", when the file's baseline or a
+selection of listed tests failed.`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "sample only the functions the commits since REF changed (git diff REF...HEAD)"),
 		opt("count", intFlag, "N", "20", "how many mutants to run, at least 1"),
@@ -72,6 +76,7 @@ it is empty when the file's baseline failed.`,
 	rules: []string{
 		"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
+		"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"sample.no-git             no --seed outside a git repository",
 		"since.bad-ref             --since names no commit: ref",
@@ -80,7 +85,7 @@ it is empty when the file's baseline failed.`,
 	},
 	exits: []exitDoc{
 		{0, "every sampled mutant's outcome agrees with the one recorded, or there was nothing to sample"},
-		{1, "a sampled mutant's outcome differs from the one recorded, or a file's tests fail before any mutant"},
+		{1, "a sampled mutant's outcome differs from the one recorded, a file's tests fail before any mutant, or a selection of listed tests fails without any mutant"},
 		{2, "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "outside a git repository: with no --seed, or with --changed or --since"},
 	},
@@ -172,7 +177,16 @@ func runMutationSample(in *invocation) (any, error) {
 	if !in.json {
 		fmt.Printf("seed %s: sampled %d of %d cached mutants\n", result.Seed, min(count, sampled.Cached), sampled.Cached)
 	}
+	reported := map[string]bool{}
 	for _, f := range sampled.Files {
+		if len(f.FailedSelections) > 0 && !f.BaselineFailed {
+			result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
+			if !in.json {
+				fmt.Printf("%s: listed tests its sampled mutants run fail without any mutant; no sampled mutant is judged\n", f.Rel)
+			}
+			reportFailedSelections(in, f.FailedSelections, reported, "mutation sample")
+			continue
+		}
 		if f.BaselineFailed {
 			result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 			if !in.json {

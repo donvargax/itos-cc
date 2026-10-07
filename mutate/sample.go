@@ -27,8 +27,14 @@ type SampledFile struct {
 	// mutants run in failed, with that baseline's output.
 	BaselineFailed bool
 	BaselineOutput string
+	// FailedSelections is each selection of listed tests a sampled mutant
+	// of the file needed that failed without any mutant: that mutant is
+	// not decided, so none of the file's is reported, as when a baseline
+	// failed.
+	FailedSelections []FailedSelection
 	// Mutants is each sampled mutant, in site order, with what its snapshot
-	// records and what it did now; empty when a baseline failed.
+	// records and what it did now; empty when a baseline or a selection
+	// failed.
 	Mutants []SampledMutant
 }
 
@@ -64,8 +70,8 @@ func (m SampledMutant) Agrees() bool {
 // in the scope its snapshot records, one baseline per scope's command,
 // unless opt's TestCommand or AllTests is set, which then sets every
 // mutant's. A mutant of ScopeListed runs, once its own tests survive it,
-// the listed tests its outcome records, through opt's Listed, after their
-// baseline. opt's Workers, TimeoutFactor, Judge, Tests, Listed, and Log
+// the listed tests its outcome records, through opt's Listed, after the
+// baseline of that selection, which sets its timeout, as in Run. opt's Workers, TimeoutFactor, Judge, Tests, Listed, and Log
 // apply as in Run; the rest is not used.
 func Sample(files []string, count int, seed string, opt Options) (Sampled, error) {
 	var states []*fileState
@@ -165,12 +171,18 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 			continue
 		}
 		f := SampledFile{Rel: s.rel, Mutants: []SampledMutant{}}
+		failed := &FileResult{}
 		for _, c := range drawn[s] {
-			if r := runs[scoped{s, c.scope}]; r.result.BaselineFailed && !f.BaselineFailed {
+			r := runs[scoped{s, c.scope}]
+			if r.result.BaselineFailed && !f.BaselineFailed {
 				f.BaselineFailed, f.BaselineOutput = true, r.result.BaselineOutput
 			}
+			for _, sel := range r.result.FailedSelections {
+				failed.addFailed(&sel)
+			}
 		}
-		if f.BaselineFailed {
+		f.FailedSelections = failed.FailedSelections
+		if f.BaselineFailed || len(f.FailedSelections) > 0 {
 			result.Files = append(result.Files, f)
 			continue
 		}

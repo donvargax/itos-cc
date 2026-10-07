@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // Coverage per listed test: which of the tests a project lists in
@@ -44,12 +43,10 @@ type PerTest struct {
 	Select func(ids []string) string
 }
 
-// TestCoverage is each listed test's coverage, and how long running them
-// took.
+// TestCoverage is each listed test's coverage.
 type TestCoverage struct {
 	ids     []string // those measured, in the list's order
 	reports map[string]*Report
-	elapsed time.Duration
 }
 
 // MeasureTests runs p's tests for coverage of sources, with dir, which it
@@ -67,12 +64,10 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 	for _, t := range p.Tests {
 		ids = append(ids, t.ID)
 	}
-	elapsed, err := runShell(p.All, p.Root, []string{TestCoverDirEnv + "=" + dir}, log)
-	if err != nil {
+	if err := runShell(p.All, p.Root, []string{TestCoverDirEnv + "=" + dir}, log); err != nil {
 		fmt.Fprintf(log, "coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
 		return nil
 	}
-	tc.elapsed = elapsed
 	written := map[string]string{}
 	for _, id := range ids {
 		if d := filepath.Join(dir, id); hasCoverData(d) {
@@ -82,19 +77,16 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 	if len(written) == 0 {
 		// The harness did not split the run: each test alone, with a
 		// GOCOVERDIR of its own.
-		tc.elapsed = 0
 		for i, id := range ids {
 			d := filepath.Join(dir, ".each", strconv.Itoa(i))
 			if err := os.MkdirAll(d, 0o755); err != nil {
 				fmt.Fprintf(log, "coverage: %v\n", err)
 				return nil
 			}
-			elapsed, err := runShell(p.Select([]string{id}), p.Root, eachTestEnv(d), log)
-			if err != nil {
+			if err := runShell(p.Select([]string{id}), p.Root, eachTestEnv(d), log); err != nil {
 				fmt.Fprintf(log, "coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
 				return nil
 			}
-			tc.elapsed += elapsed
 			if hasCoverData(d) {
 				written[id] = d
 			}
@@ -143,9 +135,8 @@ func hasCoverData(dir string) bool {
 }
 
 // runShell runs line through the platform shell in dir, with env added to
-// the environment and its output written to log, and returns how long it
-// took.
-func runShell(line, dir string, env []string, log io.Writer) (time.Duration, error) {
+// the environment and its output written to log.
+func runShell(line, dir string, env []string, log io.Writer) error {
 	fmt.Fprintf(log, "coverage: %s$ %s\n", dir, line)
 	name, flag := "sh", "-c"
 	if runtime.GOOS == "windows" {
@@ -156,11 +147,9 @@ func runShell(line, dir string, env []string, log io.Writer) (time.Duration, err
 	cmd.Env = append(os.Environ(), env...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
-	start := time.Now()
 	err := cmd.Run()
-	elapsed := time.Since(start)
 	log.Write(out.Bytes())
-	return elapsed, err
+	return err
 }
 
 // SetTests gives r the coverage of each listed test.
@@ -183,13 +172,4 @@ func (r *Report) LineTests(file string, line int) []string {
 		}
 	}
 	return out
-}
-
-// TestsElapsed is how long running the listed tests for coverage took, 0
-// when they were not.
-func (r *Report) TestsElapsed() time.Duration {
-	if r == nil || r.tests == nil {
-		return 0
-	}
-	return r.tests.elapsed
 }
