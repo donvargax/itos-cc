@@ -161,16 +161,21 @@ func captured(t *testing.T, fn func()) (string, string) {
 }
 
 type mutateJSON struct {
-	OK    bool `json:"ok"`
-	Files []struct {
-		File      string    `json:"file"`
-		Killed    int       `json:"killed"`
-		Survived  int       `json:"survived"`
-		Uncovered int       `json:"uncovered"`
-		Ran       int       `json:"ran"`
-		Judged    *[]string `json:"judged"`
-	} `json:"files"`
+	OK       bool             `json:"ok"`
+	Files    []fileJSON       `json:"files"`
 	Problems []map[string]any `json:"problems"`
+}
+
+type fileJSON struct {
+	File      string    `json:"file"`
+	Killed    int       `json:"killed"`
+	Survived  int       `json:"survived"`
+	Uncovered int       `json:"uncovered"`
+	Ran       int       `json:"ran"`
+	Baseline  string    `json:"baseline"`
+	Judged    *[]string `json:"judged"`
+	// Mutants is nil when the key is missing or null.
+	Mutants *[]mutantJSON `json:"mutants"`
 }
 
 func (o outcome) json(t *testing.T) mutateJSON {
@@ -196,13 +201,19 @@ func (m mutateJSON) problem(rule string) map[string]any {
 // none.
 func (m mutateJSON) judged(t *testing.T, file string) *[]string {
 	t.Helper()
+	return m.file(t, file).Judged
+}
+
+// file is the entry of file in "files".
+func (m mutateJSON) file(t *testing.T, file string) fileJSON {
+	t.Helper()
 	for _, f := range m.Files {
 		if f.File == file {
-			return f.Judged
+			return f
 		}
 	}
 	t.Fatalf("no file %s in %+v", file, m.Files)
-	return nil
+	return fileJSON{}
 }
 
 // boardUnits is the snapshot of src/board.go, by namespace#name.
