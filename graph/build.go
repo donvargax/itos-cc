@@ -196,10 +196,14 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 	defer f.Close()
 	info := dependencies(root, f)
 	info.serves, info.calls = f.Endpoints()
-	for _, u := range f.Units {
+	sites := map[int][]mutate.Site{}
+	for _, s := range mutate.Sites(f) {
+		sites[s.Unit] = append(sites[s.Unit], s)
+	}
+	for i, u := range f.Units {
 		info.units = append(info.units, Unit{
 			Name: u.Name, Namespace: u.Namespace, File: info.rel, Line: u.StartLine, EndLine: u.EndLine,
-			Complexity: f.Complexity(u), hash: mutate.UnitHash(f, u),
+			Complexity: f.Complexity(u), hash: mutate.UnitHash(f, u), sites: sites[i],
 		})
 	}
 	b.cache[path] = cached{st, info}
@@ -370,12 +374,13 @@ func loadOverlay(root string) overlay {
 
 // apply joins the snapshots onto a file's units. CRAP is recomputed from the
 // live complexity and the last measured coverage, so it moves as you edit.
-// Mutation results are stale as mutation check calls them: the function's
-// source changed since, or tests, the hashes of the test files that import
-// its file now, differ from those its snapshot recorded. A function's
-// mutation entry is paired as mutation check pairs it, by name and hash
-// (mutate.PairByHash), so of functions sharing a name, reordering them
-// changes nothing and editing one makes only that one stale.
+// A function's mutation entry is paired as mutation check pairs it, by name
+// and hash (mutate.PairByHash), so of functions sharing a name, reordering
+// them changes nothing and editing one makes only that one stale. Its
+// results are stale exactly when mutation check calls them stale, by
+// check's own rule (mutate.FreshnessOf), tests being the hashes of the test
+// files that import its file now; a function with no entry, which check
+// calls missing, carries none.
 func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
 	entries := o.mutationEntries(info)
 	occurrence := map[string]int{}
@@ -392,7 +397,7 @@ func (o overlay) apply(info *fileInfo, tests map[string]string) *fileInfo {
 		if r := entries[i]; r != nil {
 			m := r.unit
 			u.Mutated = true
-			u.Stale = m.Hash != u.hash || r.snapshot.TestsChanged(tests) != nil
+			u.Stale = mutate.FreshnessOf(m, u.hash, r.snapshot.TestsChanged(tests), u.sites).State == mutate.Stale
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered
 		}
 		u.Duplicates = o.duplicates[fmt.Sprintf("%s#%d", u.File, u.Line)]

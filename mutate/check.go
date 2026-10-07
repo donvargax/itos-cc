@@ -31,26 +31,65 @@ type FileCheck struct {
 type FunctionCheck struct {
 	Function  string // namespace#name
 	StartLine int    // where it starts now
-	State     string // Fresh, Stale, or Missing
+	Freshness
 	// Entry is the snapshot's entry for the function, zero when Missing.
 	Entry UnitResult
-	// Tests is how the tests that import the file changed since the
-	// snapshot, when that alone makes the function Stale; nil otherwise.
-	Tests *TestChange
-	// Marked is true when the function is Stale because Entry is marked
-	// Stale: a run that did not judge it kept it after the tests that
-	// import the file changed.
-	Marked bool
 	// Mutants is what Entry records when Fresh, in site order, each at its
 	// site's line and column now, a survivor itos-cc.yaml excepts with its
 	// reason; nil otherwise.
 	Mutants []Mutant
-	// Unrecorded is each site the function has now that Entry does not
+	unit    int // the function's index in its file's units
+}
+
+// Freshness is how a function's cached results hold against the function
+// as it is now, as mutation check calls them.
+type Freshness struct {
+	State string // Fresh, Stale, or Missing
+	// Tests is how the tests that import the file changed since the
+	// snapshot, when that alone makes the function Stale; nil otherwise.
+	Tests *TestChange
+	// Marked is true when the function is Stale because its entry is marked
+	// Stale: a run that did not judge it kept it after the tests that
+	// import the file changed.
+	Marked bool
+	// Unrecorded is each site the function has now that its entry does not
 	// record although its hash and tests match, in line order, as when a
 	// newer itos-cc adds a mutation operator; such a function is Stale. nil
 	// otherwise.
 	Unrecorded []Site
-	unit       int // the function's index in its file's units
+}
+
+// FreshnessOf is the freshness of entry, the snapshot's entry paired with a
+// function by name and hash (PairByHash), nil for none, against the
+// function as it is now: its hash, its sites, and tests, how the tests that
+// import its file changed since the snapshot (Snapshot.TestsChanged). It is
+// mutation check's verdict, which the architecture graph shows too, so the
+// two cannot drift. The entry holds while it has the function's hash, so a
+// function that only moved is fresh, the tests are those it recorded, no
+// run kept it marked stale, and it records every site the function has.
+func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, sites []Site) Freshness {
+	switch {
+	case entry == nil:
+		return Freshness{State: Missing}
+	case entry.Hash != hash:
+		return Freshness{State: Stale}
+	case tests != nil:
+		return Freshness{State: Stale, Tests: tests}
+	case entry.Stale:
+		return Freshness{State: Stale, Marked: true}
+	}
+	if u := unrecorded(entry.Mutants, sites); len(u) > 0 {
+		return Freshness{State: Stale, Unrecorded: u}
+	}
+	return Freshness{State: Fresh}
+}
+
+// judged is true while Entry's mutants hold for the sites it records: the
+// function is Fresh, or Stale only for sites Entry never recorded. Mutation
+// sample and mutation except read only those mutants, so they judge such a
+// function as they did before check called it stale.
+func (c FunctionCheck) judged() bool {
+	return c.State == Fresh || len(c.Unrecorded) > 0
 }
 
 // Check compares each function of files that has a mutation site with its
@@ -88,18 +127,17 @@ func checkFile(path string, judge func(path, function, hash string) bool, tests 
 	defer f.Close()
 	c, err := checkParsed(f, path, judge, tests, exceptions)
 	for i := range c.Functions {
-		if fn := &c.Functions[i]; fn.State == Fresh && len(fn.Unrecorded) > 0 {
-			fn.State, fn.Mutants = Stale, nil
+		if fn := &c.Functions[i]; fn.State != Fresh {
+			fn.Mutants = nil
 		}
 	}
 	return c, err
 }
 
-// checkParsed is checkFile of f, the file at path, parsed. It leaves a
-// function whose entry lacks some of its sites Fresh, with its Mutants and
-// its Unrecorded sites, so mutation sample and mutation except, which read
-// only the mutants an entry records, judge those as before; checkFile makes
-// it Stale.
+// checkParsed is checkFile of f, the file at path, parsed. It leaves the
+// Mutants of a function Stale only for sites its entry never recorded
+// (judged), so mutation sample and mutation except, which read only the
+// mutants an entry records, judge it as before; checkFile drops them.
 func checkParsed(f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	rel := project.Rel(path)
 	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
@@ -145,20 +183,15 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 		// The function's entry is the one of its name with its hash, so
 		// functions sharing a name are told apart; one paired with an entry
 		// of another hash changed since.
-		c := FunctionCheck{Function: id, StartLine: u.StartLine, State: Missing, unit: i}
+		c := FunctionCheck{Function: id, StartLine: u.StartLine, unit: i}
+		var e *UnitResult
 		if pair[i] >= 0 {
-			e := entries[pair[i]]
-			switch {
-			case e.Hash != hashes[i]:
-				c.State, c.Entry = Stale, e
-			case changed != nil:
-				c.State, c.Entry, c.Tests = Stale, e, changed
-			case e.Stale:
-				c.State, c.Entry, c.Marked = Stale, e, true
-			default:
-				c.State, c.Entry, c.Mutants = Fresh, e, placed(e.Mutants, sites[i])
-				c.Unrecorded = unrecorded(e.Mutants, sites[i])
-			}
+			e = &entries[pair[i]]
+			c.Entry = *e
+		}
+		c.Freshness = FreshnessOf(e, hashes[i], changed, sites[i])
+		if c.judged() {
+			c.Mutants = placed(e.Mutants, sites[i])
 		}
 		result.Functions = append(result.Functions, c)
 	}

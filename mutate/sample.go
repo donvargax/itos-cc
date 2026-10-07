@@ -55,10 +55,12 @@ func (m SampledMutant) Agrees() bool {
 // Sample runs again count mutants drawn by seed from those the fresh
 // entries of files' snapshots record as killed, timeout, or survived, all
 // of them when there are fewer, after each test command's baseline, in a
-// worker's copy as Run does. Fresh is as Check judges it. It runs no
-// coverage and writes nothing. The draw depends only on the seed and on
-// each candidate's file, function, and site, so one seed draws the same
-// mutants from the same snapshots wherever the code moved. Each mutant runs
+// worker's copy as Run does. Fresh is as Check judges it, save that an
+// entry Stale only for sites it never recorded offers the mutants it
+// records. It runs no coverage and writes nothing. The draw depends only
+// on the seed and on each candidate's file, function, and site, so one
+// seed draws the same mutants from the same snapshots wherever the code
+// moved. Each mutant runs
 // in the scope its snapshot records, one baseline per scope's command,
 // unless opt's TestCommand or AllTests is set, which then sets every
 // mutant's. opt's Workers, TimeoutFactor, Judge, Tests, and Log apply as in
@@ -100,7 +102,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 			at[site.Unit][site.Key()] = i
 		}
 		for _, fn := range c.Functions {
-			if fn.State != Fresh {
+			if !fn.judged() {
 				continue
 			}
 			for _, m := range fn.Mutants {

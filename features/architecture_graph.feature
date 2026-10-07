@@ -275,7 +275,7 @@ Feature: Architecture graph
     # choice, 2026-10-07, folding graph-stale-unrecorded-sites and
     # graph-stale-marked-entries). Fresh, stale and missing mean in the
     # graph what they mean in check.
-    @wip @graph-check-freshness @ID-GRAPH-36
+    @graph-check-freshness @ID-GRAPH-36
     Scenario: A function whose entry lacks one of its sites is stale
       Given a function's mutation entry matches its hash and tests
       But it does not record one of the function's sites
@@ -283,14 +283,14 @@ Feature: Architecture graph
       Then the function is marked stale
       And its module counts one stale function
 
-    @wip @graph-check-freshness @ID-GRAPH-37
+    @graph-check-freshness @ID-GRAPH-37
     Scenario: An entry kept marked stale is stale
       Given a function's mutation entry matches its hash
       But a mutation run --since kept it marked stale
       When the graph is built
       Then the function is marked stale
 
-    @wip @graph-check-freshness @ID-GRAPH-38
+    @graph-check-freshness @ID-GRAPH-38
     Scenario: The graph and mutation check agree on every function
       Given snapshots holding fresh, stale and missing functions, for each reason check knows
       When the graph is built

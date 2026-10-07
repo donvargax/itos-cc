@@ -117,10 +117,10 @@ func (e *NoSurvivorError) Error() string { return e.Reason }
 
 // Survivor is the exception, less its reason, for the survivor that the
 // fresh entry of the snapshot of the file at path records at line and
-// column, fresh as Check judges it with tests. A site with no such
-// survivor, whether its mutant is recorded killed or uncovered, its
-// function's results are stale or missing, or there is no site there, is a
-// *NoSurvivorError.
+// column, fresh as Check judges it with tests, or stale only for sites it
+// never recorded. A site with no such survivor, whether its mutant is
+// recorded killed or uncovered, its function's results are stale or
+// missing, or there is no site there, is a *NoSurvivorError.
 func Survivor(path string, line, column int, tests func(path string) []string) (config.Exception, error) {
 	if lang.Detect(path) == nil {
 		return config.Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
@@ -146,10 +146,10 @@ func Survivor(path string, line, column int, tests func(path string) []string) (
 			if fn.unit != s.Unit {
 				continue
 			}
-			switch fn.State {
-			case Missing:
+			switch {
+			case fn.State == Missing:
 				return config.Exception{}, &NoSurvivorError{fn.Function + " has no mutation results"}
-			case Stale:
+			case !fn.judged():
 				return config.Exception{}, &NoSurvivorError{fn.Function + " changed since its mutation results, or the tests that import its file did"}
 			}
 			for _, m := range fn.Mutants {

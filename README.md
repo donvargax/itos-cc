@@ -360,9 +360,10 @@ cd viewer && npm install && npm run dev # viewer on http://localhost:5173
 - Saving a file updates complexity, dependencies, and CRAP (live complexity
   with the last measured coverage) within a second. Rerunning `crap`,
   `mutation run`, or `dry` updates their numbers. A function's mutation
-  results are marked stale as `mutation check` calls them: when the function
-  was edited, or a test file that imports its file changed, since its last
-  mutation run.
+  results are marked stale exactly when `mutation check` calls them stale,
+  by check's own rule: the function was edited, or a test file that imports
+  its file changed, since its last mutation run; they lack one of its
+  sites; or a `mutation run --since` kept them marked stale.
 - Click a box for its functions, a function for its source, an arrow for the
   imports behind it. Double-click or Enter opens a box; Esc goes up.
 

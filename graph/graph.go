@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // Node is one box: a repository, a directory, or a module.
@@ -45,10 +46,11 @@ type Unit struct {
 	Survived   int      `json:"survived"`
 	Uncovered  int      `json:"uncovered"`
 	Mutated    bool     `json:"mutated"`
-	Stale      bool     `json:"stale"` // the function, or the tests that import its file, changed since it was mutated
+	Stale      bool     `json:"stale"` // its mutation results are stale, as mutation check calls them
 	Duplicates int      `json:"duplicates"`
 
-	hash string
+	hash  string
+	sites []mutate.Site // its mutation sites, which a fresh entry records
 }
 
 // Edge is a dependency between modules. An import edge counts From's import
