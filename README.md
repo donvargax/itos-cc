@@ -3,8 +3,9 @@
 Code-quality measurements for TypeScript (and JavaScript), Python, Kotlin,
 and Go, in one binary, with output meant for both people and coding agents.
 
-> **Experimental.** This is a proof of concept: commands, output, file
-> formats, and exit codes may change in any release.
+> **Experimental.** This is a proof of concept. Its contract with scripts
+> (exit codes, `--json`, and `.metrics/`) changes only in a major release;
+> plain output may change in any release.
 
 The aim is for coding agents to use it through
 [itos](https://github.com/donvargax/itos), to find out where code is risky
@@ -75,7 +76,25 @@ for a system library zig does not ship.
 
 Run from a project root. Paths are files, directories, or fragments of a
 path (`itos-cc crap billing`); `--changed` selects what git reports as added
-or modified. Every command takes `-h`.
+or modified. Every command takes `-h` and `--json`.
+
+Scripts rely on three things only, as with itos ([docs/CLI.md](docs/CLI.md)):
+the exit code, the `--json` object less its `message` and `fix` keys, and the
+files under `.metrics/`. Plain output is for people.
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | A check said no: a mutant survived, a function is over `--threshold`. |
+| 2 | A usage or config error: a bad flag, path, or report. |
+| 3 | The environment lacks something: a tool, a report, a git repository. |
+| 70 | An internal error itos-cc could not classify; please report it. |
+| 75 | A temporary failure: the same command may pass when run again. |
+
+`--json` prints one object, `{"schema": 1, "ok": true|false, …}`, and for a
+failure, usage errors included, `"problems": [{"rule", "message", "fix", …}]`
+with a stable rule id and the problem's subject (file, line, function, …)
+as keys. Each command's `--help` gives its keys, rules, and exit codes.
 
 Every tool works on the same units: functions and methods, plus inline
 Express-style route callbacks (`app.get("/users", (req, res) => …)` is the
@@ -107,9 +126,9 @@ suite does; `--all-tests` runs the whole suite anyway.
 
 A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
-stderr. With `--threshold`, crap exits 2 when a function scores above it and
-4 when coverage could not be measured, so a broken test setup never passes
-the gate.
+stderr. With `--threshold`, a function above it exits 1, and so does a
+coverage run that measured nothing, such as tests that do not compile; a
+missing tool or report exits 3. A broken test setup never passes the gate.
 
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
@@ -165,8 +184,8 @@ checkout, and without it every night is a first run. Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
-the end of each source file (`--no-annotate` turns it off). Exit codes: 0 all
-killed, 2 a baseline failed, 3 a mutant survived.
+the end of each source file (`--no-annotate` turns it off). A surviving
+mutant, or tests that fail before any mutant, exits 1.
 
 ### scrap
 

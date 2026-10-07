@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -16,67 +14,20 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
-// Exit codes shared by every command.
-const (
-	exitOK         = 0
-	exitUsage      = 1
-	exitThreshold  = 2
-	exitNoCoverage = 4 // a threshold cannot be checked without coverage
-)
-
-// parse parses flags anywhere among the arguments, so
-// `itos-cc crap src --json` works as well as `itos-cc crap --json src`.
-// Asked for help, it prints the command's usage to stdout and returns
-// flag.ErrHelp.
-func parse(fs *flag.FlagSet, args []string) ([]string, error) {
-	for _, a := range args {
-		if a == "--" {
-			break
-		}
-		if a == "-h" || a == "-help" || a == "--help" {
-			fs.SetOutput(os.Stdout)
-		}
-	}
-	var positional []string
-	for {
-		if err := fs.Parse(args); err != nil {
-			return nil, err
-		}
-		args = fs.Args()
-		if len(args) == 0 {
-			return positional, nil
-		}
-		positional = append(positional, args[0])
-		args = args[1:]
-	}
-}
-
-// parseExit is the exit code for a parse error: help was asked for and
-// given, or the arguments were misused.
-func parseExit(err error) int {
-	if errors.Is(err, flag.ErrHelp) {
-		return exitOK
-	}
-	return exitUsage
-}
-
-// selection is how a command chooses its files.
-type selection struct {
-	changed bool
-}
-
-func (s *selection) register(fs *flag.FlagSet) {
-	fs.BoolVar(&s.changed, "changed", false, "only files git reports as added or modified")
-}
+// selectionFlags choose a command's files.
+var selectionFlags = []flagSpec{sw("changed", "only files git reports as added or modified")}
 
 // files resolves the command's paths. A path that does not exist is a
-// fragment: every source under the working directory whose path contains it
-// is selected, so `itos-cc crap billing` finds src/billing/*.
-func (s *selection) files(paths []string) (project.Files, error) {
-	if s.changed {
+// fragment: every file under the working directory whose path contains it
+// is selected, so `itos-cc crap billing` finds src/billing/*. An argument
+// that is neither a path nor a fragment of one is refused.
+func files(in *invocation) (project.Files, error) {
+	paths := in.args
+	if in.set("changed") {
 		changed, err := project.Changed()
 		if err != nil {
-			return project.Files{}, fmt.Errorf("--changed needs a git repository: %w", err)
+			return project.Files{}, fail(kindMissing, "changed.no-git", "--changed needs a git repository: "+err.Error(),
+				"Run it inside a git repository, or name the paths instead.")
 		}
 		if len(changed) == 0 {
 			return project.Files{}, nil
@@ -102,12 +53,14 @@ func (s *selection) files(paths []string) (project.Files, error) {
 	if err != nil {
 		return files, err
 	}
+	matched := map[string]bool{}
 	keep := func(list []string) []string {
 		var out []string
 		for _, f := range list {
 			for _, frag := range fragments {
 				if strings.Contains(filepath.ToSlash(f), frag) {
 					out = append(out, f)
+					matched[frag] = true
 					break
 				}
 			}
@@ -116,52 +69,59 @@ func (s *selection) files(paths []string) (project.Files, error) {
 	}
 	files.Sources = append(files.Sources, keep(all.Sources)...)
 	files.Tests = append(files.Tests, keep(all.Tests)...)
+	for _, frag := range fragments {
+		if !matched[frag] {
+			return files, fail(kindUsage, "paths.unmatched", fmt.Sprintf("%q is no file, and no file's path under the working directory contains it", frag),
+				"Name a file, a directory, or a fragment of a source's path.").with("argument", frag)
+		}
+	}
 	return files, nil
 }
 
-// coverageOptions is how a command gets coverage.
-type coverageOptions struct {
-	none     bool
-	existing bool
-	allTests bool
-	command  string
-	reports  stringList
-	// scope is the tests that run when --all-tests is not given.
-	scope coverage.Scope
+// coverageFlags say how a command gets coverage.
+var coverageFlags = []flagSpec{
+	sw("no-coverage", "skip coverage; complexity only"),
+	sw("use-existing-coverage", "read reports already on disk instead of running tests"),
+	sw("all-tests", "run the whole test suite, integration and end-to-end tests included"),
+	opt("coverage-command", stringFlag, "CMD", "", "run this shell command instead of the per-language commands (with --coverage-report)"),
+	{name: "coverage-report", typ: stringFlag, arg: "FILE", repeat: true, help: "read this LCOV, Go cover profile, or JaCoCo XML report"},
 }
 
-func (c *coverageOptions) register(fs *flag.FlagSet) {
-	fs.BoolVar(&c.none, "no-coverage", false, "skip coverage; complexity only")
-	fs.BoolVar(&c.existing, "use-existing-coverage", false, "read reports already on disk instead of running tests")
-	fs.BoolVar(&c.allTests, "all-tests", false, "run the whole test suite, integration and end-to-end tests included")
-	fs.StringVar(&c.command, "coverage-command", "", "run this shell command instead of the default per-language commands (use with --coverage-report)")
-	fs.Var(&c.reports, "coverage-report", "read this LCOV, Go cover profile, or JaCoCo XML report (repeatable)")
-}
-
-// load produces coverage for sources, or nil with --no-coverage. Progress and
-// test output go to log so stdout stays the report.
-func (c *coverageOptions) load(sources []string, log io.Writer) (*coverage.Report, error) {
+// loadCoverage produces coverage for sources, or nil with --no-coverage.
+// scope is the tests that run without --all-tests. Progress and test output
+// go to log so stdout stays the report.
+func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer) (*coverage.Report, error) {
+	command, reports := in.str("coverage-command"), in.strs("coverage-report")
 	switch {
-	case c.none:
+	case in.set("no-coverage"):
 		return nil, nil
-	case c.command != "":
-		if len(c.reports) == 0 {
-			return nil, fmt.Errorf("--coverage-command needs --coverage-report to say where the report lands")
+	case command != "":
+		if len(reports) == 0 {
+			return nil, fail(kindUsage, "coverage.command-needs-report", "--coverage-command needs --coverage-report to say where its report lands",
+				"Add --coverage-report FILE.")
 		}
-		fmt.Fprintf(log, "coverage: $ %s\n", c.command)
-		if err := shell(c.command, log); err != nil {
+		fmt.Fprintf(log, "coverage: $ %s\n", command)
+		if err := shell(command, log); err != nil {
 			fmt.Fprintf(log, "coverage: %v\n", err)
 		}
-		return coverage.Files(c.reports, sources, log), nil
-	case len(c.reports) > 0:
-		return coverage.Files(c.reports, sources, log), nil
+		report := coverage.Files(reports, sources, log)
+		// The command was to write the report, so a report it did not
+		// write means it measured nothing.
+		missing := report.Missing()
+		for i := range missing {
+			if missing[i].Cause == coverage.Unreadable {
+				missing[i].Cause, missing[i].Reason = coverage.MeasuredNothing, "--coverage-command wrote no readable report: "+missing[i].Reason
+			}
+		}
+		return report, nil
+	case len(reports) > 0:
+		return coverage.Files(reports, sources, log), nil
 	}
 	out := absOrSame(filepath.Join(metrics.Dir, "coverage"))
-	scope := c.scope
-	if c.allTests {
+	if in.set("all-tests") {
 		scope = coverage.AllTests
 	}
-	if c.existing {
+	if in.set("use-existing-coverage") {
 		return coverage.Existing(coverage.Plans(sources, out, scope), sources, log), nil
 	}
 	if err := coverage.IgnoreDir(out); err != nil {
@@ -179,6 +139,50 @@ func (c *coverageOptions) load(sources []string, log io.Writer) (*coverage.Repor
 	report := coverage.Run(coverage.Plans(sources, run, scope), sources, log)
 	keepLatest(run, out)
 	return report, nil
+}
+
+// unmeasured is a problem for each build root or report coverage did not
+// measure: a missing tool or report is the environment, tests that measured
+// nothing say no, and an unreadable --coverage-report is a usage error.
+func unmeasured(report *coverage.Report) []*problem {
+	var out []*problem
+	for _, m := range relativeUnmeasured(report) {
+		var p *problem
+		switch m.Cause {
+		case coverage.ToolMissing:
+			p = fail(kindMissing, "coverage.tool-missing", "no coverage for "+m.String(), "Install what it names, or measure with --coverage-command.")
+		case coverage.MeasuredNothing:
+			p = fail(kindNo, "coverage.measured-nothing", "no coverage for "+m.String(), "Run the tests and fix them, then run itos-cc again.")
+		case coverage.NoReport:
+			p = fail(kindMissing, "coverage.no-report", "no coverage for "+m.String(), "Run without --use-existing-coverage, or write the report first.")
+		default:
+			p = fail(kindUsage, "coverage.report-unreadable", "no coverage for "+m.String(), "Check the --coverage-report path and its format.")
+		}
+		if m.Dir != "" {
+			p.with("dir", m.Dir)
+		}
+		if m.Language != "" {
+			p.with("language", m.Language)
+		}
+		if m.Report != "" {
+			p.with("report", m.Report)
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+// relativeUnmeasured is report's Missing with directories relative to the
+// working directory, as every other path itos-cc prints is.
+func relativeUnmeasured(report *coverage.Report) []coverage.Unmeasured {
+	out := []coverage.Unmeasured{}
+	for _, m := range report.Missing() {
+		if m.Dir != "" {
+			m.Dir = project.Rel(m.Dir)
+		}
+		out = append(out, m)
+	}
+	return out
 }
 
 // removeAbandoned deletes run directories a killed run left behind: any a
@@ -202,11 +206,6 @@ func keepLatest(run, out string) {
 		os.Rename(filepath.Join(run, e.Name()), target)
 	}
 }
-
-type stringList []string
-
-func (s *stringList) String() string     { return strings.Join(*s, ",") }
-func (s *stringList) Set(v string) error { *s = append(*s, v); return nil }
 
 func printJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)

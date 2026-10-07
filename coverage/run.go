@@ -323,7 +323,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	for _, p := range plans {
 		if p.Unsupported != "" {
 			fmt.Fprintf(log, "coverage: %s: %s\n", p.Dir, p.Unsupported)
-			reports = append(reports, &Report{missing: []string{p.Dir + ": " + p.Unsupported}})
+			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
 			continue
 		}
 		for _, r := range p.Reports {
@@ -342,7 +342,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		reports = append(reports, p.measured(load(p.Reports, p.Dir, sources, log), "its coverage run measured none of its files"+failed))
+		reports = append(reports, p.measured(load(p.Reports, p.Dir, sources, log), MeasuredNothing, "its coverage run measured none of its files"+failed))
 	}
 	return Merge(reports...)
 }
@@ -350,7 +350,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 // measured is r, Missing p when r measured none of p's files: the run
 // failed, wrote an empty report, or loaded none of them. A report that
 // measured some of them leaves the rest untested, not missing.
-func (p Plan) measured(r *Report, why string) *Report {
+func (p Plan) measured(r *Report, cause Cause, why string) *Report {
 	for _, s := range p.Sources {
 		if r.Has(s) {
 			r.missing = nil
@@ -358,7 +358,7 @@ func (p Plan) measured(r *Report, why string) *Report {
 		}
 	}
 	if len(p.Sources) > 0 {
-		r.missing = []string{fmt.Sprintf("%s (%s): %s", p.Dir, p.Language, why)}
+		r.missing = []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why}}
 	}
 	return r
 }
@@ -384,7 +384,7 @@ func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 				break
 			}
 		}
-		reports = append(reports, p.measured(r, "no report on disk measures its files"))
+		reports = append(reports, p.measured(r, NoReport, "no report on disk measures its files"))
 	}
 	return Merge(reports...)
 }
@@ -399,12 +399,12 @@ func Files(paths []string, sources []string, log io.Writer) *Report {
 // load reads the reports at paths; each that cannot be read is Missing.
 func load(paths []string, base string, sources []string, log io.Writer) *Report {
 	var all [][]Entry
-	var missing []string
+	var missing []Unmeasured
 	for _, path := range paths {
 		entries, err := Load(path)
 		if err != nil {
 			fmt.Fprintf(log, "coverage: %v\n", err)
-			missing = append(missing, err.Error())
+			missing = append(missing, Unmeasured{Report: path, Cause: Unreadable, Reason: err.Error()})
 			continue
 		}
 		all = append(all, entries)

@@ -202,7 +202,8 @@ Feature: Mutation testing
       Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
       And the last 20 lines of the test output follow
       And the snapshot of src/board.py is not changed
-      And the exit code is 2
+      And the problem is "mutate.baseline-failed", with file
+      And the exit code is 1
 
     Scenario: Parallel workers
       When I run "itos-cc mutate --workers 4"
@@ -278,8 +279,13 @@ Feature: Mutation testing
       Examples:
         | situation                     | code |
         | every covered mutant is killed | 0    |
-        | a baseline fails              | 2    |
-        | a mutant survives             | 3    |
+        | a baseline fails              | 1    |
+        | a mutant survives             | 1    |
+
+    Scenario: Survivors as JSON
+      When I run "itos-cc mutate --json src/board.ts"
+      Then stdout is one object with "schema": 1, "ok", and "files", each with file, killed, survived, uncovered, ran, reused, and baseline
+      And each survivor is a "mutate.survived" problem with file, line, column, function, original, and replacement
 
     Scenario: Results are cached per file
       When I run "itos-cc mutate src/billing/invoice.ts"

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"sort"
@@ -17,11 +16,11 @@ type scrapSnapshot struct {
 	Files   []scrap.FileReport `json:"files"`
 }
 
-func runScrap(args []string) int {
-	fs := flag.NewFlagSet("scrap", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), `usage: itos-cc scrap [options] [path ...]
-
+var scrapCommand = &command{
+	name:     "scrap",
+	summary:  "test-code structure: which tests to leave, table-drive, refactor, or split",
+	synopsis: "[options] [path ...]",
+	about: `
 Measures test code: examples that are too large, branch or loop, mock heavily,
 assert nothing or too much, or repeat each other. Each file gets an action
 for an assistant:
@@ -34,27 +33,37 @@ for an assistant:
 
 Recommendations are decision support, not orders: check each against what
 the test is for before changing it. Each run is compared with the previous
-.metrics/scrap.json, so rerun after a refactor to see whether it helped.
+.metrics/scrap.json, so rerun after a refactor to see whether it helped.`,
+	flags: append(append([]flagSpec{}, selectionFlags...),
+		sw("verbose", "print every example's measurements")),
+	json: `"files": [{"file", "language", "examples", "action", "pressure",
+   "average_score", "max_score", "recommendations", "clusters", "details",
+   "compare"}]`,
+	exits: []exitDoc{
+		{0, "success, whatever the actions"},
+		{2, "a usage error: a bad flag or path"},
+		{3, "--changed outside a git repository"},
+	},
+	examples: []string{
+		"itos-cc scrap",
+		"itos-cc scrap --changed --verbose",
+	},
+	run: runScrap,
+}
 
-`)
-		fs.PrintDefaults()
-	}
-	var sel selection
-	sel.register(fs)
-	asJSON := fs.Bool("json", false, "print the reports as JSON instead of text")
-	verbose := fs.Bool("verbose", false, "print every example's measurements")
-	paths, err := parse(fs, args)
+type scrapResult struct {
+	Files []scrap.FileReport `json:"files"`
+}
+
+func runScrap(in *invocation) (any, error) {
+	result := scrapResult{Files: []scrap.FileReport{}}
+	files, err := files(in)
 	if err != nil {
-		return parseExit(err)
-	}
-	files, err := sel.files(paths)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 	if len(files.Tests) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no test files to measure")
-		return exitOK
+		return result, nil
 	}
 
 	var previous scrapSnapshot
@@ -66,12 +75,11 @@ the test is for before changing it. Each run is compared with the previous
 		byFile[r.File] = r
 	}
 
-	var reports []scrap.FileReport
+	reports := []scrap.FileReport{}
 	for _, path := range files.Tests {
 		f, err := lang.ParseFile(path)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "itos-cc:", err)
-			return exitUsage
+			return result, err
 		}
 		r := scrap.Analyze(f, project.Rel(path))
 		f.Close()
@@ -93,19 +101,17 @@ the test is for before changing it. Each run is compared with the previous
 	}
 	sort.Slice(snapshot.Files, func(i, j int) bool { return snapshot.Files[i].File < snapshot.Files[j].File })
 	if err := metrics.Write("scrap.json", snapshot); err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 
 	sort.SliceStable(reports, func(i, j int) bool { return reports[i].Pressure > reports[j].Pressure })
-	if *asJSON {
-		printJSON(scrapSnapshot{Version: metrics.Version, Files: reports})
-		return exitOK
+	result.Files = reports
+	if !in.json {
+		for _, r := range reports {
+			printScrap(r, in.set("verbose"))
+		}
 	}
-	for _, r := range reports {
-		printScrap(r, *verbose)
-	}
-	return exitOK
+	return result, nil
 }
 
 func printScrap(r scrap.FileReport, verbose bool) {

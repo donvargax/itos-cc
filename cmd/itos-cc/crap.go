@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -16,83 +15,108 @@ type crapSnapshot struct {
 	Entries []crap.Entry `json:"entries"`
 }
 
-func runCrap(args []string) int {
-	fs := flag.NewFlagSet("crap", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), `usage: itos-cc crap [options] [path ...]
-
+var crapCommand = &command{
+	name:     "crap",
+	summary:  "CRAP score per function: complexity × untested risk",
+	synopsis: "[options] [path ...]",
+	about: `
 Scores each function: CRAP = CC² × (1 − coverage)³ + CC. 1–5 is low risk,
 5–30 is worth a look, 30+ is complex and under-tested. Runs each language's
 tests with coverage unless told otherwise, prints the worst first, and writes
 .metrics/crap.json.
 
-`)
-		fs.PrintDefaults()
-	}
-	var sel selection
-	var cov coverageOptions
-	sel.register(fs)
-	cov.register(fs)
-	threshold := fs.Float64("threshold", 0, "exit 2 when any CRAP score is above this, and 4 when coverage could not be measured (0 disables)")
-	asJSON := fs.Bool("json", false, "print the snapshot as JSON instead of a table")
-	top := fs.Int("top", 0, "print only the N worst functions (0 prints all)")
-	paths, err := parse(fs, args)
-	if err != nil {
-		return parseExit(err)
-	}
-	if len(paths) > 0 || sel.changed {
-		cov.scope = coverage.RelatedTests
-	}
+With paths or --changed, Go and TypeScript coverage runs only the tests that
+load those files. A build root whose coverage could not be measured shows
+N/A, not 0%: a warning, and with --threshold a problem, since the threshold
+cannot be checked for it.`,
+	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
+		opt("threshold", floatFlag, "N", "", "say no (exit 1) when a function scores above N"),
+		opt("top", intFlag, "N", "", "print only the N worst functions")),
+	json: `"entries": [{"namespace", "name", "language", "file", "start_line",
+   "end_line", "complexity", "coverage", "crap"}], "unmeasured": [{"dir",
+   "language", "report", "cause", "reason"}]`,
+	rules: []string{
+		"crap.threshold             a function scores above --threshold",
+		"coverage.measured-nothing  with --threshold, a coverage run measured none of its files",
+		"coverage.tool-missing      with --threshold, a tool coverage needs is not installed",
+		"coverage.no-report         with --threshold and --use-existing-coverage, no report measures the files",
+		"coverage.report-unreadable with --threshold, a --coverage-report cannot be read",
+	},
+	exits: []exitDoc{
+		{0, "success"},
+		{1, "a function scores above --threshold, or with --threshold, the tests measured nothing"},
+		{2, "a usage error: a bad flag, path, or --coverage-report"},
+		{3, "with --threshold, a coverage tool or report is missing; --changed outside git"},
+	},
+	examples: []string{
+		"itos-cc crap --top 20",
+		"itos-cc crap --changed --threshold 30 --json",
+	},
+	run: runCrap,
+}
 
-	files, err := sel.files(paths)
+type crapResult struct {
+	Entries    []crap.Entry          `json:"entries"`
+	Unmeasured []coverage.Unmeasured `json:"unmeasured"`
+}
+
+func runCrap(in *invocation) (any, error) {
+	result := crapResult{Entries: []crap.Entry{}, Unmeasured: []coverage.Unmeasured{}}
+	files, err := files(in)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 	if len(files.Sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to score")
-		return exitOK
+		return result, nil
 	}
-	report, err := cov.load(files.Sources, os.Stderr)
+	scope := coverage.AllTests
+	if len(in.args) > 0 || in.set("changed") {
+		scope = coverage.RelatedTests
+	}
+	report, err := loadCoverage(in, files.Sources, scope, os.Stderr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 	entries, err := crap.Analyze(files.Sources, report)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
-	snapshot := crapSnapshot{Version: metrics.Version, Entries: entries}
-	if err := metrics.Write("crap.json", snapshot); err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+	if err := metrics.Write("crap.json", crapSnapshot{Version: metrics.Version, Entries: entries}); err != nil {
+		return result, err
 	}
 
 	worst := crap.Worst(entries)
-	if *top > 0 && *top < len(worst) {
-		worst = worst[:*top]
+	if n := in.integer("top"); n > 0 && n < len(worst) {
+		worst = worst[:n]
 	}
-	if *asJSON {
-		printJSON(crapSnapshot{Version: metrics.Version, Entries: worst})
-	} else {
+	result.Entries = worst
+	result.Unmeasured = relativeUnmeasured(report)
+	if !in.json {
 		printCrapTable(worst)
 	}
-	for _, m := range report.Missing() {
-		fmt.Fprintf(os.Stderr, "itos-cc: no coverage for %s\n", m)
-	}
-	if *threshold > 0 && len(report.Missing()) > 0 {
-		fmt.Fprintf(os.Stderr, "itos-cc: the threshold %.1f cannot be checked for code without coverage; fix the coverage run\n", *threshold)
-		return exitNoCoverage
-	}
-	if *threshold > 0 && len(entries) > 0 {
-		if w := crap.Worst(entries)[0]; w.CRAP != nil && *w.CRAP > *threshold {
-			fmt.Fprintf(os.Stderr, "itos-cc: %s#%s scores %.1f, above the threshold %.1f\n",
-				w.Namespace, w.Name, *w.CRAP, *threshold)
-			return exitThreshold
+	threshold := in.float("threshold")
+	if !in.set("threshold") {
+		for _, m := range result.Unmeasured {
+			fmt.Fprintf(os.Stderr, "itos-cc: no coverage for %s\n", m)
 		}
+		return result, nil
 	}
-	return exitOK
+	// A threshold cannot be checked for code coverage did not measure.
+	for _, p := range unmeasured(report) {
+		in.report(p)
+	}
+	for _, e := range crap.Worst(entries) {
+		if e.CRAP == nil || *e.CRAP <= threshold {
+			continue
+		}
+		in.report(fail(kindNo, "crap.threshold",
+			fmt.Sprintf("%s#%s scores %.1f, above the threshold %.1f", e.Namespace, e.Name, *e.CRAP, threshold),
+			"Cover it with tests or split it.").
+			with("file", e.File).with("line", e.StartLine).with("function", e.Namespace+"#"+e.Name).
+			with("crap", *e.CRAP).with("threshold", threshold))
+	}
+	return result, nil
 }
 
 func printCrapTable(entries []crap.Entry) {

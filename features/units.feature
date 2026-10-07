@@ -2,9 +2,13 @@ Feature: Units: the functions and methods every tool measures
   Every tool works on the same units, named by namespace and function name,
   so results from crap, dry, mutate, and the graph join on the same key.
 
-  Scenario: Listing production units as JSON
+  Scenario: Listing production units
     When I run "itos-cc units"
-    Then stdout is a JSON array of units
+    Then stdout lists each unit as "file:start-end  namespace#name  kind"
+
+  Scenario: Listing production units as JSON
+    When I run "itos-cc units --json"
+    Then stdout is one object with "schema": 1, "ok", and "units"
     And each unit has file, language, namespace, name, kind, private, start_line, and end_line
 
   Scenario: Listing test code instead
@@ -13,8 +17,8 @@ Feature: Units: the functions and methods every tool measures
 
   Scenario: No units is an empty list
     Given the selection holds no supported files
-    When I run "itos-cc units"
-    Then stdout is "[]"
+    When I run "itos-cc units --json"
+    Then "units" is an empty list
 
   Scenario: TypeScript units
     Given the file "src/demo/board.ts":

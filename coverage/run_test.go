@@ -193,19 +193,19 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 	unsupported := Plan{Language: "typescript", Dir: dir, Unsupported: "Vitest is not installed"}
 	var log bytes.Buffer
 	missing := Run([]Plan{failing, unsupported}, []string{src}, &log).Missing()
-	if len(missing) != 2 || !strings.Contains(missing[0], "(go): its coverage run measured none of its files; go: exit status") ||
-		!strings.Contains(missing[1], "Vitest is not installed") {
+	if len(missing) != 2 || missing[0].Cause != MeasuredNothing || !strings.Contains(missing[0].String(), "(go): its coverage run measured none of its files; go: exit status") ||
+		missing[1].Cause != ToolMissing || !strings.Contains(missing[1].Reason, "Vitest is not installed") {
 		t.Errorf("missing %q, want the failed run and the missing tool", missing)
 	}
-	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 {
-		t.Errorf("existing: missing %q, want the plan with no report on disk", missing)
+	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != NoReport {
+		t.Errorf("existing: missing %v, want the plan with no report on disk", missing)
 	}
 	os.MkdirAll(filepath.Join(dir, "out"), 0o755)
 	os.WriteFile(failing.Reports[0], []byte("mode: set\n"), 0o644)
-	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 {
-		t.Errorf("existing: missing %q, want the plan whose report measures none of its files", missing)
+	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != NoReport {
+		t.Errorf("existing: missing %v, want the plan whose report measures none of its files", missing)
 	}
-	if missing := Files([]string{filepath.Join(dir, "nope.info")}, []string{src}, &log).Missing(); len(missing) != 1 {
-		t.Errorf("files: missing %q, want the unreadable report", missing)
+	if missing := Files([]string{filepath.Join(dir, "nope.info")}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != Unreadable {
+		t.Errorf("files: missing %v, want the unreadable report", missing)
 	}
 }

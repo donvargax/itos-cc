@@ -126,7 +126,8 @@ Feature: Duplicate functions
 
   Scenario: Snapshot and JSON
     When I run "itos-cc dry --json"
-    Then stdout and .metrics/dry.json hold the version, the threshold, the candidates, and the groups
+    Then stdout is one object with "schema": 1, "ok", "threshold", "candidates", and "groups"
+    And .metrics/dry.json holds the version, the threshold, the candidates, and the groups
     And each candidate has score, language, and left and right sides with file, lines, namespace, name, and nodes
     And each group has language, min_score, max_score, and its members
 
@@ -136,7 +137,7 @@ Feature: Duplicate functions
     Then "candidates" and "groups" are empty lists, not null
 
   Scenario: A focus with no source files
+    Given docs is a directory holding no source files
     When I run "itos-cc dry docs"
-    And no source path contains "docs"
     Then stderr says "itos-cc: no source files to check"
     And the exit code is 0

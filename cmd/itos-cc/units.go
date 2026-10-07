@@ -1,48 +1,63 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"os"
 
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
 
-func runUnits(args []string) int {
-	fs := flag.NewFlagSet("units", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), "usage: itos-cc units [options] [path ...]\n\nPrints the functions and methods of production code as JSON.\n\n")
-		fs.PrintDefaults()
-	}
-	var sel selection
-	sel.register(fs)
-	tests := fs.Bool("tests", false, "list test code instead of production code")
-	paths, err := parse(fs, args)
+var unitsCommand = &command{
+	name:     "units",
+	summary:  "list the functions and methods every tool measures",
+	synopsis: "[options] [path ...]",
+	about: `
+Lists the functions and methods of production code, or of test code with
+--tests: the units crap, dry, and mutate measure.`,
+	flags: append(append([]flagSpec{}, selectionFlags...),
+		sw("tests", "list test code instead of production code")),
+	json: `"units": [{"file", "language", "namespace", "name", "kind", "private",
+   "start_line", "end_line"}]`,
+	exits: []exitDoc{
+		{0, "success"},
+		{2, "a usage error: a bad flag or path"},
+		{3, "--changed outside a git repository"},
+	},
+	examples: []string{
+		"itos-cc units src/billing",
+		"itos-cc units --tests --json",
+	},
+	run: runUnits,
+}
+
+type unitsResult struct {
+	Units []lang.Unit `json:"units"`
+}
+
+func runUnits(in *invocation) (any, error) {
+	result := unitsResult{Units: []lang.Unit{}}
+	files, err := files(in)
 	if err != nil {
-		return parseExit(err)
-	}
-	files, err := sel.files(paths)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 	list := files.Sources
-	if *tests {
+	if in.set("tests") {
 		list = files.Tests
 	}
-	units := []lang.Unit{}
 	for _, path := range list {
 		found, err := lang.UnitsInFile(path)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "itos-cc:", err)
-			return exitUsage
+			return result, err
 		}
 		for i := range found {
 			found[i].File = project.Rel(found[i].File)
 		}
-		units = append(units, found...)
+		result.Units = append(result.Units, found...)
 	}
-	printJSON(units)
-	return exitOK
+	if !in.json {
+		for _, u := range result.Units {
+			fmt.Printf("%s:%d-%d  %s#%s  %s\n", u.File, u.StartLine, u.EndLine, u.Namespace, u.Name, u.Kind)
+		}
+	}
+	return result, nil
 }

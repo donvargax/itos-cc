@@ -248,7 +248,8 @@ Feature: Test-code structure
 
     Scenario: JSON output
       When I run "itos-cc scrap --json"
-      Then stdout lists each file's report with action, pressure, examples, recommendations, clusters, and details
+      Then stdout is one object with "schema": 1, "ok", and "files"
+      And each file's report has action, pressure, examples, recommendations, clusters, and details
 
     Scenario Outline: Comparing with the previous run
       Given .metrics/scrap.json recorded a pressure of <before> for a file

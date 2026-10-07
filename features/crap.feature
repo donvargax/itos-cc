@@ -48,8 +48,9 @@ Feature: CRAP scores
 
   Scenario: JSON output
     When I run "itos-cc crap --json"
-    Then stdout is a snapshot with "version" and "entries"
+    Then stdout is one object with "schema": 1, "ok", "entries", and "unmeasured"
     And each entry has namespace, name, language, file, start_line, end_line, complexity, coverage, and crap
+    And each unmeasured build root has dir, language, cause, and reason
 
   Scenario: Every run writes a snapshot
     When I run "itos-cc crap"
@@ -58,8 +59,9 @@ Feature: CRAP scores
   Scenario: Failing a build on a threshold
     Given a function scores 42.0
     When I run "itos-cc crap --threshold 30"
-    Then stderr names the worst function and says it scores 42.0, above the threshold 30.0
-    And the exit code is 2
+    Then stderr says "itos-cc: board#place scores 42.0, above the threshold 30.0. Cover it with tests or split it."
+    And it says so for every function above the threshold, each a "crap.threshold" problem with file, line, function, crap, and threshold
+    And the exit code is 1
 
   Scenario: Staying under the threshold
     Given every function scores 30 or less
@@ -67,20 +69,20 @@ Feature: CRAP scores
     Then the exit code is 0
 
   Scenario Outline: A threshold is not passed by code coverage could not measure
-    Given a Go project whose <problem>
+    Given a project whose <problem>
     When I run "itos-cc crap --threshold 30"
     Then its functions show "N/A"
-    And stderr says "itos-cc: no coverage for <dir> (go): <why>"
-    And stderr says the threshold cannot be checked for code without coverage
-    And the exit code is 4
+    And the problem is "<rule>", with dir and language
+    And the exit code is <code>
 
     Examples:
-      | problem                                         | why                                                              |
-      | tests do not compile                            | its coverage run measured none of its files; go: exit status 1   |
-      | report is missing, with --use-existing-coverage | no report on disk measures its files                             |
-    # also a missing tool, such as Vitest that is not installed, and a
-    # --coverage-report that cannot be read; N/A is not 0%: a broken test
-    # setup is not untested code, but it must not pass the gate
+      | problem                                         | rule                       | code |
+      | tests do not compile                            | coverage.measured-nothing  | 1    |
+      | coverage tool is not installed                  | coverage.tool-missing      | 3    |
+      | report is missing, with --use-existing-coverage | coverage.no-report         | 3    |
+      | --coverage-report cannot be read                | coverage.report-unreadable | 2    |
+    # N/A is not 0%: a broken test setup is not untested code, but it must
+    # not pass the gate
 
   Scenario: Without a threshold, coverage that could not be measured is a warning
     Given a Go project whose tests do not compile

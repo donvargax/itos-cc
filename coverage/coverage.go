@@ -5,6 +5,7 @@
 package coverage
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,14 +37,46 @@ type Entry struct {
 type Report struct {
 	files    map[string][]Segment
 	branches map[string][]Segment
-	missing  []string
+	missing  []Unmeasured
 }
 
-// Missing says, one line each, what was meant to be measured and was not: a
-// build root whose coverage run wrote no report or whose tool is missing, or
-// a report that could not be read. Its functions have no coverage, which is
-// not the same as untested.
-func (r *Report) Missing() []string {
+// Cause is why coverage that was meant to be measured was not.
+type Cause string
+
+const (
+	// ToolMissing: the project lacks a tool coverage needs, such as Vitest.
+	ToolMissing Cause = "tool-missing"
+	// MeasuredNothing: the coverage run ran and measured none of the files,
+	// as when the tests do not compile.
+	MeasuredNothing Cause = "measured-nothing"
+	// NoReport: --use-existing-coverage found no report measuring the files.
+	NoReport Cause = "no-report"
+	// Unreadable: a report named on the command line cannot be read.
+	Unreadable Cause = "unreadable"
+)
+
+// Unmeasured is a build root or report whose coverage was not measured.
+type Unmeasured struct {
+	Dir      string `json:"dir,omitempty"`
+	Language string `json:"language,omitempty"`
+	Report   string `json:"report,omitempty"`
+	Cause    Cause  `json:"cause"`
+	Reason   string `json:"reason"`
+}
+
+func (u Unmeasured) String() string {
+	switch {
+	case u.Report != "":
+		return u.Report + ": " + u.Reason
+	case u.Language != "":
+		return fmt.Sprintf("%s (%s): %s", u.Dir, u.Language, u.Reason)
+	}
+	return u.Dir + ": " + u.Reason
+}
+
+// Missing is what was meant to be measured and was not. Its functions have
+// no coverage, which is not the same as untested.
+func (r *Report) Missing() []Unmeasured {
 	if r == nil {
 		return nil
 	}

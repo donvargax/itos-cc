@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -15,11 +14,11 @@ import (
 	"github.com/donvargax/itos-cc/server"
 )
 
-func runServe(args []string) int {
-	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), `usage: itos-cc serve [options] [repo ...]
-
+var serveCommand = &command{
+	name:     "serve",
+	summary:  "live architecture graph and metrics over HTTP, for the viewer",
+	synopsis: "[options] [repo ...]",
+	about: `
 Serves the architecture of one or more repositories for the viewer:
 
   GET /api/graph    repositories, directories, modules, functions, and
@@ -29,33 +28,50 @@ Serves the architecture of one or more repositories for the viewer:
 
 Sources and .metrics snapshots are watched: saving a file updates
 complexity and dependencies at once, and rerunning crap, mutate, or dry
-updates their numbers. Listens on localhost only.
+updates their numbers. Listens on localhost only, until interrupted.`,
+	flags: []flagSpec{
+		opt("port", intFlag, "N", "7070", "port to listen on"),
+		opt("ui", stringFlag, "DIR", "", "directory of a built viewer to serve at /, such as viewer/dist"),
+		opt("interval", durationFlag, "D", "500ms", "how often to check for changes"),
+	},
+	json: `"address" once it stops`,
+	rules: []string{
+		"serve.port-in-use      the port is taken: port",
+		"serve.repo-unreadable  a repository cannot be read",
+	},
+	exits: []exitDoc{
+		{0, "interrupted"},
+		{2, "a usage error: a bad flag, or a repository that cannot be read"},
+		{75, "the port is in use; it may be free later"},
+	},
+	examples: []string{
+		"itos-cc serve --ui viewer/dist .",
+		"itos-cc serve --port 8080 ../api ../web",
+	},
+	run: runServe,
+}
 
-`)
-		fs.PrintDefaults()
-	}
-	port := fs.Int("port", 7070, "port to listen on")
-	ui := fs.String("ui", "", "directory of a built viewer to serve at / (e.g. viewer/dist)")
-	interval := fs.Duration("interval", 500*time.Millisecond, "how often to check for changes")
-	roots, err := parse(fs, args)
-	if err != nil {
-		return parseExit(err)
-	}
+func runServe(in *invocation) (any, error) {
+	roots := in.args
 	if len(roots) == 0 {
 		roots = []string{"."}
 	}
 	logger := log.New(os.Stderr, "itos-cc: ", 0)
-	srv, err := server.New(roots, *ui, logger)
+	srv, err := server.New(roots, in.str("ui"), logger)
 	if err != nil {
-		logger.Println(err)
-		return exitUsage
+		return nil, fail(kindUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	go srv.Watch(ctx, *interval)
+	go srv.Watch(ctx, in.duration("interval"))
 
-	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(*port))
-	httpServer := &http.Server{Addr: addr, Handler: srv.Handler()}
+	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(in.integer("port")))
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, fail(kindTemporary, "serve.port-in-use", fmt.Sprintf("cannot listen on %s: %v", addr, err),
+			"Stop what uses the port, or choose another with --port.").with("port", in.integer("port"))
+	}
+	httpServer := &http.Server{Handler: srv.Handler()}
 	go func() {
 		<-ctx.Done()
 		shutdown, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -63,9 +79,10 @@ updates their numbers. Listens on localhost only.
 		httpServer.Shutdown(shutdown)
 	}()
 	logger.Printf("serving %v on http://%s", roots, addr)
-	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Println(err)
-		return exitUsage
+	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+		return nil, err
 	}
-	return exitOK
+	return struct {
+		Address string `json:"address"`
+	}{addr}, nil
 }

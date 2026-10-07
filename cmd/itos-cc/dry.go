@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -17,74 +16,82 @@ type drySnapshot struct {
 	Groups     []dry.Group     `json:"groups"`
 }
 
-func runDry(args []string) int {
-	fs := flag.NewFlagSet("dry", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprint(fs.Output(), `usage: itos-cc dry [options] [path ...]
-
+var dryCommand = &command{
+	name:     "dry",
+	summary:  "functions similar enough to be duplicates",
+	synopsis: "[options] [path ...]",
+	about: `
 Finds functions in the same language whose normalized structure is similar
-enough to review as duplicates, grouping those linked by similar pairs. Local names, field names, and literals
-do not count; called functions, operators, and the shape of the code do.
+enough to review as duplicates, grouping those linked by similar pairs.
+Local names, field names, and literals do not count; called functions,
+operators, and the shape of the code do.
 
 With paths or --changed, those files are compared against every source under
 the working directory, so a change is checked against the whole project.
-Writes .metrics/dry.json.
+Writes .metrics/dry.json.`,
+	flags: append(append([]flagSpec{}, selectionFlags...),
+		opt("threshold", floatFlag, "N", fmt.Sprint(dry.Defaults.Threshold), "minimum similarity, 0–1"),
+		opt("min-lines", intFlag, "N", fmt.Sprint(dry.Defaults.MinLines), "skip functions shorter than N lines"),
+		opt("min-nodes", intFlag, "N", fmt.Sprint(dry.Defaults.MinNodes), "skip functions with fewer than N normalized syntax nodes")),
+	json: `"threshold", "candidates": [{"score", "language", "left", "right"}],
+   "groups": [{"language", "min_score", "max_score", "members": [{"file",
+   "start_line", "end_line", "namespace", "name", "nodes"}]}]`,
+	exits: []exitDoc{
+		{0, "success, duplicates or not"},
+		{2, "a usage error: a bad flag or path"},
+		{3, "--changed outside a git repository"},
+	},
+	examples: []string{
+		"itos-cc dry",
+		"itos-cc dry --changed --json",
+	},
+	run: runDry,
+}
 
-`)
-		fs.PrintDefaults()
-	}
-	var sel selection
-	sel.register(fs)
-	opt := dry.Defaults
-	fs.Float64Var(&opt.Threshold, "threshold", opt.Threshold, "minimum similarity, 0–1")
-	fs.IntVar(&opt.MinLines, "min-lines", opt.MinLines, "skip functions shorter than this many lines")
-	fs.IntVar(&opt.MinNodes, "min-nodes", opt.MinNodes, "skip functions with fewer normalized syntax nodes")
-	asJSON := fs.Bool("json", false, "print the snapshot as JSON instead of text")
-	paths, err := parse(fs, args)
-	if err != nil {
-		return parseExit(err)
-	}
+type dryResult struct {
+	Threshold  float64         `json:"threshold"`
+	Candidates []dry.Candidate `json:"candidates"`
+	Groups     []dry.Group     `json:"groups"`
+}
 
-	focusFiles, err := sel.files(paths)
+func runDry(in *invocation) (any, error) {
+	opt := dry.Options{Threshold: in.float("threshold"), MinLines: in.integer("min-lines"), MinNodes: in.integer("min-nodes")}
+	result := dryResult{Threshold: opt.Threshold, Candidates: []dry.Candidate{}, Groups: []dry.Group{}}
+	focusFiles, err := files(in)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
 	all := focusFiles
 	focus := map[string]bool{}
-	if len(paths) > 0 || sel.changed {
+	if len(in.args) > 0 || in.set("changed") {
 		for _, f := range focusFiles.Sources {
 			focus[f] = true
 		}
 		if len(focus) == 0 {
 			fmt.Fprintln(os.Stderr, "itos-cc: no source files to check")
-			return exitOK
+			return result, nil
 		}
 		if all, err = project.Discover([]string{"."}); err != nil {
-			fmt.Fprintln(os.Stderr, "itos-cc:", err)
-			return exitUsage
+			return result, err
 		}
 		all.Sources = union(all.Sources, focusFiles.Sources)
 	}
 	forms, err := dry.Forms(all.Sources, opt)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+		return result, err
 	}
-	snapshot := drySnapshot{Version: metrics.Version, Threshold: opt.Threshold, Candidates: dry.Compare(forms, focus, opt)}
-	if snapshot.Candidates == nil {
-		snapshot.Candidates = []dry.Candidate{}
+	if c := dry.Compare(forms, focus, opt); c != nil {
+		result.Candidates = c
 	}
-	snapshot.Groups = dry.Groups(snapshot.Candidates)
-	if err := metrics.Write("dry.json", snapshot); err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc:", err)
-		return exitUsage
+	result.Groups = dry.Groups(result.Candidates)
+	if err := metrics.Write("dry.json", drySnapshot{Version: metrics.Version, Threshold: opt.Threshold,
+		Candidates: result.Candidates, Groups: result.Groups}); err != nil {
+		return result, err
 	}
-	if *asJSON {
-		printJSON(snapshot)
-		return exitOK
+	if in.json {
+		return result, nil
 	}
-	for _, g := range snapshot.Groups {
+	for _, g := range result.Groups {
 		score := fmt.Sprintf("%.2f", g.MaxScore)
 		if g.MinScore != g.MaxScore {
 			score = fmt.Sprintf("%.2f–%.2f", g.MinScore, g.MaxScore)
@@ -94,7 +101,7 @@ Writes .metrics/dry.json.
 			fmt.Printf("  %s:%d-%d  %s#%s\n", s.File, s.StartLine, s.EndLine, s.Namespace, s.Name)
 		}
 	}
-	return exitOK
+	return result, nil
 }
 
 // union merges sorted path lists without duplicates; paths named outside the

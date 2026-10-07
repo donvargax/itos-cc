@@ -80,13 +80,11 @@ all-or-nothing. Planned, in this order:
   tests. No file means no debt. Measuring stays in `check`, so the list can
   lag behind a fix until `check` asks for the stale entry's removal; a host
   then waits on debt already paid, the safe way to be wrong.
-- **Exit codes and JSON as itos extensions use them.** 0 pass, 1 policy
-  failure (a threshold, a survivor), 2 usage, 3 environment (a baseline that
-  fails). Today usage is 1, threshold and baseline 2, survivor 3. `--json`
-  prints one object with `"schema": 1`, and each problem carries a sentence
-  and a rule ID (`cc/mutant-survived`, `cc/crap-above-limit`,
-  `cc/baseline-failed`). Detail goes in rule IDs, which any extension can
-  add; exit codes only say what the caller should do.
+- **Exit codes and JSON as itos extensions use them.** Done (issues #12 and
+  #13): itos's contract and CLI rules, in [docs/CLI.md](docs/CLI.md). A
+  baseline that fails is 1, not 3: the code is broken, not the machine.
+  Detail goes in rule IDs (`mutate.survived`, `crap.threshold`), which any
+  extension can add; exit codes only say what the caller should do.
 - **One finding shape and SARIF**, once there is a gate:
   `{tool, rule, file, symbol, range, value, introduced}`, where `introduced`
   means new against the base commit. SARIF for GitHub annotations.

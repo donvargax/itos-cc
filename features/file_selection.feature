@@ -37,11 +37,19 @@ Feature: Choosing which files a command looks at
     When I run a command with --changed
     Then the staged files are selected
 
-  Scenario: --changed outside a git repository is a usage error
+  Scenario: --changed outside a git repository is a missing environment
     Given the working directory is not a git repository
     When I run "itos-cc crap --changed"
-    Then stderr says "--changed needs a git repository"
-    And the exit code is 1
+    Then stderr says "itos-cc: --changed needs a git repository: …"
+    And the problem is "changed.no-git"
+    And the exit code is 3
+
+  Scenario: An argument that names nothing is a usage error
+    Given no file's path under the working directory contains "nosuch"
+    When I run "itos-cc crap nosuch"
+    Then the problem is "paths.unmatched", with argument "nosuch"
+    And the exit code is 2
+    # a fragment that matches only test files still selects them
 
   Scenario: --changed with nothing changed selects nothing
     Given git reports no changes
