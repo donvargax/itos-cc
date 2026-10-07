@@ -371,3 +371,18 @@ items:
       changes. Coverage measured per test file, binary-running tests included, maps which tests
       execute each function, and the hash can cover exactly those. Costs a coverage run per test
       file when some mutant has to run.
+  - id: mutation-sample-scope
+    title: "mutation sample: rerun each mutant with the test command that recorded it"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A snapshot does not record which tests decided its outcomes: the file's own, --all-tests, or a
+      --test-command. mutation sample runs the file's own tests unless told otherwise, so over this
+      repository's nightly snapshots (mutation run --all-tests) a kill only an end-to-end test makes
+      reads as a survivor, a mutation.mismatch that is no cache error. The help and README say to
+      pass the same flags; recording the scope in the snapshot would let sample take it from there,
+      and let mutation run refuse to reuse kills made under another scope.
+    refs: ["#8"]
