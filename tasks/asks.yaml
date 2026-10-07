@@ -15,3 +15,6 @@ questions:
   - id: q-4
     item: "mutate-test-hash"
     question: "Which tests' hash keys a mutation result? (a, recommended) The test files the graph finds importing the function's file (for Go, its package's test files and the test files of packages that import it), whatever command ran the mutants: one rule for every mode and language, cheap, as IDEAS.md planned. A kill made only by an end-to-end test that runs the binary (--all-tests) is not made stale when that test changes. (b) The test files of the command that ran: the package's for Go, vitest related's set, every test file with --all-tests. Exact, but under --all-tests any test edit makes every result stale, so the next nightly reruns everything."
+  - id: q-5
+    item: "mutate-test-hash"
+    question: "Snapshots written before this hold no tests' hash. (a, recommended) Treat them as stale: the first run after the change reruns them (the nightly does it once), and mutation check fails on them until then, so a gate never trusts a result it cannot verify. (b) Treat them as fresh until their function changes: no rerun, but those kills stay unverified against test changes."
