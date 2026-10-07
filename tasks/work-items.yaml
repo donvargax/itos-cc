@@ -114,13 +114,10 @@ items:
     title: "Mutation testing for gates: mutate CI workflows and policy YAML against their self-tests"
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     deferred: "Parked after itos's experiment (issue #11 comment, 2026-10-07): kills came from string tests, survivors were mostly policy noise. Revisit only with the conditions listed there."
     depends_on: []
     kind: idea
-    why: >
-      Issue #11. Needs a deep design session before it is specified; the person will hold it with a
-      different model. Do not specify it or hand it to an agent until that session has happened.
     refs: ["#11"]
   - id: T-5
     title: The nightly installs the viewer's packages, so its TypeScript is mutated too
