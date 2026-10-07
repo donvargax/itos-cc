@@ -470,16 +470,9 @@ items:
     title: The graph marks stale an entry a --since run kept marked stale
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Since since-keeps-stale-entries, mutation run --since keeps the entries of functions it does
-      not judge, when the tests that import their file changed, with "stale": true, and mutation
-      check calls them stale. The graph does not follow: graph/build.go calls a function stale from
-      its hash and Snapshot.TestsChanged, the code shared since graph-stale-tests, and the snapshot
-      it reads records the new tests, so a marked entry whose function did not change shows as
-      current. The mark is UnitResult.Stale; the graph reads the UnitResult but not the mark.
   - id: mismatch-fix-names-scope
     title: A mutation.mismatch says to re-run in the scope the outcome was recorded with
     phase: 1
