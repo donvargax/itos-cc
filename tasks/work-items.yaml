@@ -10,4 +10,13 @@
 #     depends_on: []
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
-items: []
+items:
+  - id: T-3
+    title: Nightly mutation job that commits its results back even when it fails
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Spec in the ledger, tasks/phase-1.yaml.
