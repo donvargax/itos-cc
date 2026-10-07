@@ -59,6 +59,7 @@ questions:
     item: "mutation-exceptions"
     question: "Can an exception cover an uncovered mutant under --fail-uncovered? (a, recommended) No, survivors only: an uncovered mutant needs a test, not a reason. (b) Yes, both."
     answer: "(a) No, survivors only."
+    decision: none
   - id: q-13
     item: "mutation-check-unrecorded-sites"
     question: "mutation check passes a function whose entry lacks sites a newer operator adds. What does check say? (a, recommended) The function is stale: its results predate the operator; check reports mutation.stale naming the unrecorded sites, and mutation run runs only those sites. (b) The function is missing, and every mutant runs again."
