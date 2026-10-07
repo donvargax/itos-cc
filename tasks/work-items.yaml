@@ -314,17 +314,9 @@ items:
     title: "Each outcome records the scope of its tests, and mutation sample re-runs with it"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-sample-scope.
-      A snapshot does not record which tests decided its outcomes: the file's own, --all-tests, or a
-      --test-command. mutation sample runs the file's own tests unless told otherwise, so over this
-      repository's nightly snapshots (mutation run --all-tests) a kill only an end-to-end test makes
-      reads as a survivor, a mutation.mismatch that is no cache error. The help and README say to
-      pass the same flags; recording the scope in the snapshot would let sample take it from there,
-      and let mutation run refuse to reuse kills made under another scope.
     refs: ["#8"]
   - id: nightly-runner-kill
     title: "nightly: a mutant of cmd/itos-cc kills the CI runner, so no results are ever committed"
