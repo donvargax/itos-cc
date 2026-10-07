@@ -40,3 +40,4 @@ questions:
   - id: q-10
     item: "mutation-exceptions"
     question: "How is an entry written? It must hold the function's hash to tell when the function changed. (a, recommended) A command, itos-cc mutation except <file>:<line>:<column> --reason '…', which finds the survivor in the snapshot and writes the file, function, hash, the site's place within the function, original, replacement and reason. (b) By hand only, the hash copied from the snapshot."
+    answer: "(a) A command, itos-cc mutation except <file>:<line>:<column> --reason '…'."
