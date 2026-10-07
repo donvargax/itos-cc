@@ -137,6 +137,18 @@ Feature: Mutation testing
       And no tests are run
       And the exit code is 0
 
+    # mutation list listed sites function by function, so the sites of an
+    # inline callback (app.get("/u", (req, res) => …)) came after every site
+    # of the function around it, while mutation run --json lists a file's
+    # mutants by line and column (ID-MUT-52). Both list in line and column
+    # order (the coordinator's call, 2026-10-07).
+    @wip @mutation-list-line-order @ID-MUT-101
+    Scenario: Sites are listed in line order, inline callbacks included
+      Given src/app.ts has a function with a site before, inside and after an inline callback
+      When I run "itos-cc mutation list src/app.ts"
+      Then its sites are listed in line and column order
+      And in the order "itos-cc mutation run --json src/app.ts" lists the file's "mutants"
+
   Rule: Running mutants
 
     @ID-MUT-07
