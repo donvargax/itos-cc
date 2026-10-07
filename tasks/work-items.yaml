@@ -112,14 +112,15 @@ items:
     depends_on: [mutation-group]
     kind: slice
     refs: ["#8"]
-  - id: mutate-exceptions
-    title: "mutate: equivalent mutants excepted in a committed file, each with a reason"
+  - id: mutation-exceptions
+    title: "mutation except: equivalent mutants excepted in itos-cc.yaml, each with a reason"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-exceptions.
       Issue #10: an equivalent mutant (one no test can kill because it changes no behaviour)
       survives forever. A committed file names each one with a reason, so it stops failing runs
       while staying visible; docs/CLI.md rule 38 names it as the first project setting.
