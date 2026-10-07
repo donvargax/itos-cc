@@ -502,3 +502,18 @@ items:
       makes turns into a survivor. The fix could name --all-tests or --test-command '<line>' from
       the mismatched mutant's scope, and the mismatch could carry the scope as a key. Read from
       cmd/itos-cc/mutation_sample.go while building sample-recorded-scope, not reproduced.
+  - id: graph-coverage-same-name
+    title: The graph pairs coverage with functions sharing a name by more than their order
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since same-name-units the graph pairs a function's mutation entry by name and hash, but still
+      pairs crap.json's coverage with functions sharing a namespace#name in one file (several Go
+      init functions, overloads) by their order alone. crap.json entries carry no hash, so when such
+      functions are reordered and crap.json is not rewritten, each shows the other's coverage and
+      CRAP until it is. The entries record start and end lines and complexity, which could pair
+      them, or crap.json could record each function's hash as the mutation snapshots do. Read from
+      graph/build.go while building same-name-units, not reproduced.
