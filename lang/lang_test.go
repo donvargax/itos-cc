@@ -3,6 +3,8 @@ package lang
 import (
 	"fmt"
 	"maps"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -558,5 +560,36 @@ func TestKotlinReferencedNames(t *testing.T) {
 	f := parse(t, "testdata/x.kt", "package a.b\nimport c.D\n\nclass Invoice(val total: Money) {\n    fun show() = fmt(total)\n}\n")
 	if got := ReferencedNames(f); !slices.Equal(got, []string{"Invoice", "total", "Money", "show", "fmt"}) {
 		t.Errorf("names %v", got)
+	}
+}
+
+func TestModulePathOutsideAnyRootIsFromTheWorkingDirectory(t *testing.T) {
+	base := t.TempDir()
+	wd := filepath.Join(base, "work")
+	if root := FindUp(filepath.Join(wd, "x.ts"), "package.json", "tsconfig.json"); root != "" {
+		t.Skipf("%s holds a project marker", root)
+	}
+	if err := os.MkdirAll(wd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(wd)
+	for path, want := range map[string]string{
+		"x.ts":                                  "x",
+		filepath.Join(wd, "x.ts"):               "x",
+		filepath.FromSlash("src/demo/board.ts"): "demo.board",
+		filepath.FromSlash("../other/y.ts"):     "other.y",
+		filepath.Join(base, "other", "y.ts"):    "other.y",
+	} {
+		if got := modulePath(path, "package.json", "tsconfig.json"); got != want {
+			t.Errorf("modulePath(%q) = %q, want %q", path, got, want)
+		}
+	}
+
+	// Under a root the working directory plays no part.
+	if err := os.WriteFile(filepath.Join(base, "package.json"), []byte("{}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := modulePath(filepath.Join(wd, "src", "x.ts"), "package.json"); got != "work.src.x" {
+		t.Errorf("under package.json: %q, want work.src.x", got)
 	}
 }

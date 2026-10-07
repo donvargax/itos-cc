@@ -558,7 +558,10 @@ func kindIn(n *sitter.Node, kinds ...string) bool {
 
 // modulePath names a module by its path from the nearest directory holding
 // one of markers, without a leading src/ or lib/: src/demo/board.ts under
-// package.json is demo.board. Without a marker the path is used as given.
+// package.json is demo.board. Without a marker the working directory stands
+// in for that directory, so the name never depends on where the checkout
+// lives; a file above the working directory drops the ../ of its path, and
+// one the working directory has no path to is named by its file name.
 func modulePath(path string, markers ...string) string {
 	rel := path
 	if root := FindUp(path, markers...); root != "" {
@@ -567,8 +570,18 @@ func modulePath(path string, markers ...string) string {
 				rel = r
 			}
 		}
+	} else if abs, err := filepath.Abs(path); err == nil {
+		rel = filepath.Base(path)
+		if wd, err := os.Getwd(); err == nil {
+			if r, err := filepath.Rel(wd, abs); err == nil {
+				rel = r
+			}
+		}
 	}
 	p := filepath.ToSlash(strings.TrimSuffix(rel, filepath.Ext(rel)))
+	for strings.HasPrefix(p, "../") {
+		p = strings.TrimPrefix(p, "../")
+	}
 	p = strings.TrimPrefix(p, "./")
 	for _, dir := range []string{"src/", "lib/"} {
 		p = strings.TrimPrefix(p, dir)

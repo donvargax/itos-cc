@@ -217,7 +217,7 @@ Feature: Units: the functions and methods every tool measures
   # and debt keyed by them, depended on where the checkout lives. The
   # working directory stands in for the root (the coordinator's call,
   # 2026-10-07, as the idea proposed).
-  @wip @namespace-working-dir @ID-UNIT-13
+  @namespace-working-dir @ID-UNIT-13
   Scenario: A file outside any project root is named from the working directory
     Given x.ts declares function place, in a directory with no package.json, go.mod or .git in it or above it
     When I run "itos-cc units x.ts" from that directory
