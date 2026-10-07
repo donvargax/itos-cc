@@ -243,3 +243,13 @@ items:
       functions', and fails when an outcome differs from the snapshot, so a committed cache written
       by hand or against other code is caught without a full run.
     refs: ["#8"]
+  - id: mutation-group
+    title: "mutation group: mutate becomes mutation run, --scan becomes mutation list"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Spec in features/cli.feature, Rule: The mutation group.
+    refs: ["#8"]
