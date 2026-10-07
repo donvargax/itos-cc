@@ -277,7 +277,7 @@ items:
     title: "Coverage from tests that run the built binary, through Go's GOCOVERDIR"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
