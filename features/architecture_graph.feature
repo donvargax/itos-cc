@@ -266,6 +266,37 @@ Feature: Architecture graph
       Then only the second init function is marked stale
       And with the two swapped instead, unchanged, neither is marked stale
 
+    # The graph decided staleness with its own copy of mutation check's rule
+    # (hash, tests, pairing), so each new rule of check left it behind: an
+    # entry that lacks a site the function has now (check-unrecorded-sites)
+    # and an entry --since kept marked stale (since-keeps-stale-entries)
+    # both showed as current. The graph takes each function's state from
+    # mutation check's own code, so the two cannot drift (the person's
+    # choice, 2026-10-07, folding graph-stale-unrecorded-sites and
+    # graph-stale-marked-entries). Fresh, stale and missing mean in the
+    # graph what they mean in check.
+    @wip @graph-check-freshness @ID-GRAPH-36
+    Scenario: A function whose entry lacks one of its sites is stale
+      Given a function's mutation entry matches its hash and tests
+      But it does not record one of the function's sites
+      When the graph is built
+      Then the function is marked stale
+      And its module counts one stale function
+
+    @wip @graph-check-freshness @ID-GRAPH-37
+    Scenario: An entry kept marked stale is stale
+      Given a function's mutation entry matches its hash
+      But a mutation run --since kept it marked stale
+      When the graph is built
+      Then the function is marked stale
+
+    @wip @graph-check-freshness @ID-GRAPH-38
+    Scenario: The graph and mutation check agree on every function
+      Given snapshots holding fresh, stale and missing functions, for each reason check knows
+      When the graph is built
+      Then each function is marked stale exactly when "itos-cc mutation check" calls it stale
+      And a function check calls missing carries no mutation results, as today
+
     @ID-GRAPH-26
     Scenario: Snapshots written from another directory still match
       Given a snapshot names "repo/lang/kotlin.go"
