@@ -11,5 +11,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0004: Project settings live in itos-cc.yaml at the project root](0004-project-settings-live-in-itos-cc-yaml-at-the-project-root.md)
 - [ADR-0005: An excepted survivor is reused as a kill is, and its entry goes stale with its function or its tests](0005-an-excepted-survivor-is-reused-as-a-kill-is-and-its-entry-goes-stale-with-its-function-or-its-tests.md)
 - [ADR-0006: A site a snapshot never recorded makes its function stale](0006-a-site-a-snapshot-never-recorded-makes-its-function-stale.md)
+- [ADR-0007: Each recorded outcome keeps the scope of the tests that decided it](0007-each-recorded-outcome-keeps-the-scope-of-the-tests-that-decided-it.md)
 
 <!-- itos:decisions:end -->
