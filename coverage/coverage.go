@@ -38,6 +38,9 @@ type Report struct {
 	files    map[string][]Segment
 	branches map[string][]Segment
 	missing  []Unmeasured
+	// languages are those a coverage command measured: every command of its
+	// plan exited 0 and every report it was to write was written and read.
+	languages map[string]bool
 }
 
 // Cause is why coverage that was meant to be measured was not.
@@ -127,6 +130,15 @@ func inAny(line int, ranges [][2]int) bool {
 	return false
 }
 
+// Measures reports whether a coverage command ran successfully for language:
+// every command exited 0 and wrote its report. A file of that language the
+// report never names was then loaded by no test, even when the report names
+// no file at all, as Vitest's is when no test imports the files it was given.
+// A failed command, or one that wrote no report, measures nothing.
+func (r *Report) Measures(language string) bool {
+	return r != nil && r.languages[language]
+}
+
 // Has reports whether the report measured file at all.
 func (r *Report) Has(file string) bool {
 	if r == nil {
@@ -199,6 +211,12 @@ func Merge(reports ...*Report) *Report {
 			continue
 		}
 		out.missing = append(out.missing, r.missing...)
+		for l := range r.languages {
+			if out.languages == nil {
+				out.languages = map[string]bool{}
+			}
+			out.languages[l] = true
+		}
 		for f, segs := range r.files {
 			out.files[f] = append(out.files[f], segs...)
 		}

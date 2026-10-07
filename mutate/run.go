@@ -306,8 +306,10 @@ func (s *fileState) decided() []MutantResult {
 }
 
 // markUncovered settles pending sites on lines no test executes. A file the
-// report never mentions is uncovered when the report measured other files
-// of its language: the tests ran and never loaded it.
+// report never mentions is uncovered when coverage measured its language:
+// a coverage command for it succeeded, even with a report that names no file
+// of the run, or the report measured other files of the run in it. The tests
+// ran and never loaded it.
 func markUncovered(states []*fileState, opt Options) {
 	if opt.Coverage == nil {
 		return
@@ -322,7 +324,7 @@ func markUncovered(states []*fileState, opt Options) {
 	}
 	measured := map[string]bool{}
 	for _, s := range states {
-		if report.Has(s.file.Path) {
+		if report.Has(s.file.Path) || report.Measures(s.file.Spec.Name) {
 			measured[s.file.Spec.Name] = true
 		}
 	}

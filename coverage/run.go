@@ -316,8 +316,9 @@ func kotlinPlan(dir string) Plan {
 
 // Run executes each plan and returns the coverage of sources. A plan whose
 // commands fail still contributes any report it wrote, because failing tests
-// still measure the code they ran; one that wrote none is Missing. Problems
-// are written to log.
+// still measure the code they ran; one that wrote none is Missing. A plan
+// whose commands all succeed and write their reports Measures its language.
+// Problems are written to log.
 func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
@@ -342,7 +343,14 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		reports = append(reports, p.measured(load(p.Reports, p.Dir, sources, log), MeasuredNothing, "its coverage run measured none of its files"+failed))
+		r := load(p.Reports, p.Dir, sources, log)
+		// Told by exit status and the report alone, never by what the
+		// runner prints: a run that succeeded and wrote its report measured
+		// its language, whichever files the report names.
+		if failed == "" && len(r.missing) == 0 {
+			r.languages = map[string]bool{p.Language: true}
+		}
+		reports = append(reports, p.measured(r, MeasuredNothing, "its coverage run measured none of its files"+failed))
 	}
 	return Merge(reports...)
 }

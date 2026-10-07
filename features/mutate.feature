@@ -263,7 +263,7 @@ Feature: Mutation testing
     # file's language measures that language, even when its report names no
     # file of the run (the coordinator's call, 2026-10-07). Go fixtures do
     # not show it, since go test reports a package without tests at 0%.
-    @wip @unloaded-file-uncovered @ID-MUT-105
+    @unloaded-file-uncovered @ID-MUT-105
     Scenario: A file no test loads, mutated alone, is entirely uncovered
       Given a TypeScript project whose tests import src/board.ts but never src/unused.ts
       When I run "itos-cc mutation run src/unused.ts"

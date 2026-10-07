@@ -209,3 +209,49 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 		t.Errorf("files: missing %v, want the unreadable report", missing)
 	}
 }
+
+// TestHelperCoverageCommand is the coverage command of
+// TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage, run as this test
+// binary: it writes an empty report where HELPER_COVERAGE_REPORT says, unless
+// that is "-", and exits 1 when HELPER_COVERAGE_FAIL is set.
+func TestHelperCoverageCommand(t *testing.T) {
+	report := os.Getenv("HELPER_COVERAGE_REPORT")
+	if report == "" {
+		return
+	}
+	if report != "-" {
+		os.WriteFile(report, nil, 0o644)
+	}
+	if os.Getenv("HELPER_COVERAGE_FAIL") != "" {
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
+func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src", "unused.ts")
+	report := filepath.Join(dir, "out", "lcov.info")
+	plan := Plan{Language: "typescript", Dir: dir, Sources: []string{src},
+		Commands: [][]string{{os.Args[0], "-test.run=^TestHelperCoverageCommand$"}}, Reports: []string{report}}
+	for _, c := range []struct {
+		name, report, fail string
+		measures           bool
+	}{
+		{"succeeds and writes an empty report", report, "", true},
+		{"succeeds and writes no report", "-", "", false},
+		{"fails and writes an empty report", report, "1", false},
+	} {
+		t.Setenv("HELPER_COVERAGE_REPORT", c.report)
+		t.Setenv("HELPER_COVERAGE_FAIL", c.fail)
+		var log bytes.Buffer
+		r := Run([]Plan{plan}, []string{src}, &log)
+		if r.Measures("typescript") != c.measures || r.Measures("go") || r.Has(src) {
+			t.Errorf("%s: measures typescript %v, go %v, has %s %v; want %v, false, false\nlog:\n%s",
+				c.name, r.Measures("typescript"), r.Measures("go"), src, r.Has(src), c.measures, &log)
+		}
+		if m := r.Missing(); len(m) != 1 || m[0].Cause != MeasuredNothing {
+			t.Errorf("%s: missing %v, want the run that measured none of its files", c.name, m)
+		}
+	}
+}
