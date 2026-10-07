@@ -56,3 +56,9 @@ tests:
 
 hooks:
   bin: itos # the hooks call the global itos, which runs the release pinned
+
+ci:
+  # itos ci watch, and the CI check of itos work done, read the push's run of
+  # ci.yml on GitHub.
+  watch:
+    provider: github
