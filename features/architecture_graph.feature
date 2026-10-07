@@ -235,6 +235,19 @@ Feature: Architecture graph
       Then the function is marked stale
       And its module counts one stale function
 
+    # Since mutation-test-hash, mutation run and mutation check also call a
+    # function's results stale when a test file its snapshot records has
+    # changed, while the graph decided from the function's hash alone, so the
+    # viewer showed as current a kill that check calls stale. The graph
+    # follows check (the coordinator's call, 2026-10-07).
+    @wip @graph-stale-tests @ID-GRAPH-34
+    Scenario: Mutation results whose tests changed are stale
+      Given a function's mutation snapshot hash still matches its source
+      But a test file the snapshot records has changed since
+      When the graph is built
+      Then the function is marked stale
+      And its module counts one stale function
+
     @ID-GRAPH-25
     Scenario: Results match their own file
       Given a Go package with an init function in both a.go and b.go
