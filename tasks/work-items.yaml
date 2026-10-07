@@ -58,7 +58,7 @@ items:
     kind: slice
     refs: ["#9"]
   - id: mutate-since-scan
-    title: mutate --scan --since lists every site of the changed files
+    title: mutation list takes no --since, so it cannot list only the judged functions' sites
     phase: 1
     owner: null
     status: todo
