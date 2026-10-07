@@ -295,7 +295,7 @@ items:
     title: The graph marks a function stale when its tests changed, as mutation check does
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
