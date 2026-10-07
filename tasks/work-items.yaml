@@ -495,14 +495,15 @@ items:
       CRAP until it is. The entries record start and end lines and complexity, which could pair
       them, or crap.json could record each function's hash as the mutation snapshots do. Read from
       graph/build.go while building same-name-units, not reproduced.
-  - id: graph-check-snapshot-lookup
-    title: The graph finds a function's snapshot as mutation check does
+  - id: graph-snapshot-lookup
+    title: The graph finds a file's mutation snapshot where mutation check does
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was graph-check-snapshot-lookup.
       Since graph-check-freshness the graph takes a paired entry's state from mutation check's own
       rule (mutate.FreshnessOf), but it still finds the entries its own way: graph/build.go reads
       every snapshot under .metrics/mutate by the file it names, matched by path suffix so one
