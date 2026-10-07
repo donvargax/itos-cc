@@ -452,3 +452,18 @@ items:
       that became mutation run. Found with mutation-progress-prefix, which changed only stderr. The
       marker is how a later run finds the comment to replace, so a new text must still recognise the
       old one, or the files already annotated keep two comments; a decision of its own.
+  - id: namespace-above-working-dir
+    title: Files outside any project root and above the working directory can share a namespace
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With namespace-working-dir, a file outside any project root is named by its path from the
+      working directory, and one above it drops the ../ of that path, so ../a/x.ts and a/x.ts are
+      both a.x, and a file on another Windows drive is named by its file name alone. Their function
+      IDs, and the snapshots, debt and graph nodes keyed by them, can then collide. Absolute paths
+      would not collide but depend on where the checkout lives, which namespace-working-dir set out
+      to end; whether to keep the ../ in the name (as ..a.x), refuse such a file, or accept the
+      collision is a decision of its own.
