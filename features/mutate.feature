@@ -581,6 +581,30 @@ Feature: Mutation testing
       Then each file in "files" has "functions", each with function and state "fresh", "stale" or "missing"
       And the problems are those the plain output prints
 
+    # A fresh entry was judged only by the mutants it records, so when a
+    # newer itos-cc adds a mutation operator, a function whose text did not
+    # change has sites its entry never recorded, and mutation check passed
+    # it although no run judged them. Decided with the person on 2026-10-07
+    # (q-13): such a function is stale, and the problem names the sites; a
+    # mutation run runs only those sites and reuses the recorded outcomes.
+    # The fixtures stand for a new operator by removing a mutant from the
+    # entry.
+    @wip @check-unrecorded-sites @ID-MUT-106
+    Scenario: A site the entry never recorded makes the function stale
+      Given fresh results for every function of src/board.ts, all killed
+      But the entry of "Board#place" does not record one of its sites, as when a newer itos-cc adds an operator
+      When I run "itos-cc mutation check src/board.ts"
+      Then the problem is "mutation.stale", with file and function "Board#place", and its message names that site's line, column, original and replacement
+      And the exit code is 1
+
+    @wip @check-unrecorded-sites @ID-MUT-107
+    Scenario: mutation run runs only the sites the entry never recorded
+      Given the entry of "Board#place" does not record one of its sites, and records every other one killed
+      When I run "itos-cc mutation run src/board.ts"
+      Then only that site's mutant runs
+      And the other mutants of "Board#place" are reused
+      And afterwards "itos-cc mutation check src/board.ts" exits 0
+
   # Issue #8, part 2, and IDEAS.md "Killed mutants must notice test
   # changes": a result was keyed by its function's hash alone, which covers
   # the function's own source, so deleting the test that killed a mutant
