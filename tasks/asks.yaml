@@ -91,3 +91,4 @@ questions:
   - id: q-19
     item: "test-attribution"
     question: "test-attribution: when is a kill made by listed tests still fresh, without itos-cc reading the tests' format? (a, recommended) While the set of tests covering its line and the hashes of the files those tests name are unchanged (per-file granularity). (b) The list command prints a content hash per test, computed by the project."
+    answer: "(a) The covering tests' set and the hashes of the files they name."
