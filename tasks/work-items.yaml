@@ -53,8 +53,8 @@ items:
   - id: slice-3
     title: mutate --json lists every mutant of each function
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
