@@ -16,3 +16,53 @@
     itos commit --task T-1.
   done_when:
     - run: itos config check
+- id: T-2
+  type: test
+  title: Tag every scenario with an ID and require the Scenarios footer
+  why: >
+    No scenario carries an ID tag, so a feat or a fix cannot name the
+    scenarios it turns green and the Scenarios footer is off. Tag each
+    Scenario and Scenario Outline of features/*.feature on the line above it,
+    numbered from 01 in file order, with its file's prefix: architecture_graph
+    GRAPH, cli CLI, complexity CPLX, coverage COV, crap CRAP, dry DRY,
+    file_selection SEL, metrics_snapshots SNAP, mutate MUT, scrap SCRAP,
+    serve SERVE, units UNIT, viewer VIEW (so @ID-MUT-01). Change no step and
+    no scenario's name. Fill features/smoke.yaml with one live scenario of
+    each file, a fast one central to it. Then set
+    commits.footers.Scenarios.required_for to [feat, fix] in itos.yaml, in
+    the same commit as the tags, so no feat or fix lands between them
+    unchecked.
+  done_when:
+    - run: >-
+        awk 'FNR==1{prev=""} /^[[:space:]]*Scenario( Outline)?:/ && prev !~ /@ID-[A-Z]+-[0-9]+/
+        {print FILENAME":"FNR": no ID tag"; bad=1} NF{prev=$0} END{exit bad}' features/*.feature
+    - run: itos tests smoke check scenario
+    - run: grep -Eq 'required_for:[[:space:]]*\[feat, fix\]' itos.yaml
+    - run: itos config check
+- id: T-3
+  type: ci
+  title: Nightly mutation job that commits its results back even when it fails
+  why: >
+    Mutation testing of the whole suite is too slow for every push, so it runs
+    nightly, and .metrics/mutate/ must be committed back or every night is a
+    first run. itos-cc mutate exits 1 when any mutant survives, which on this
+    codebase is every night, so a job that commits only on success never
+    stores anything. Add .github/workflows/nightly.yml: on a schedule at
+    09:00 UTC (2am Pacific) and on workflow_dispatch; one ubuntu-latest job
+    with contents: write and a concurrency group so two runs never overlap;
+    actions pinned to the same commits as ci.yml; build itos-cc from the
+    checked-out source and run "itos-cc mutate --all-tests --no-annotate"
+    over the project (--no-annotate because no committed source carries the
+    summary comment, and the job must not rewrite the sources). The mutate
+    step fails the job as it exits; a later step that runs whenever the job
+    was not cancelled commits .metrics/mutate/ alone, only when it changed,
+    as github-actions[bot] with the header "chore: record the nightly
+    mutation results" and the footer "Task: T-3" (the commit rules need a
+    Task footer for chore), then rebases onto origin/main and pushes,
+    retrying a few times if main moved. Its success never turns the job
+    green. Update README's nightly paragraph to point at the workflow.
+  done_when:
+    - run: actionlint .github/workflows/nightly.yml
+    - run: grep -q -- '--all-tests --no-annotate' .github/workflows/nightly.yml
+    - run: "grep -q 'Task: T-3' .github/workflows/nightly.yml"
+    - run: grep -q 'workflow_dispatch' .github/workflows/nightly.yml
