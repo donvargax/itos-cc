@@ -527,3 +527,17 @@ items:
       and snapshots name files from there, so where a command runs decides where its results land
       and what they are called; the graph's path-suffix match papers over it.
     refs: ["#9"]
+  - id: graph-testdata-own-root
+    title: Graph tests on testdata run from a project root of their own
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since snapshots-at-root the graph reads the .metrics of each repository's project root, the
+      git top level. The graph tests that build graph/testdata/shop sit inside this repository, so
+      their project root is this repository and they read its own .metrics: they pass only because
+      none of its results match a file of shop. Such tests should run from a root of their own, such
+      as a temporary git repository holding a copy of the fixture, so this repository's results
+      never leak into them.
