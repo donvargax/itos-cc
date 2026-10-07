@@ -111,14 +111,19 @@ func runMutationExcept(in *invocation) (any, error) {
 			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").with("argument", in.args[0])
 	}
 	// An unreadable file is refused before any work.
-	if _, err := loadExceptions(); err != nil {
+	cfg, err := loadConfig()
+	if err != nil {
+		return result, err
+	}
+	support, err := supportNow(cfg)
+	if err != nil {
 		return result, err
 	}
 	tests, err := importingTests()
 	if err != nil {
 		return result, err
 	}
-	e, err := mutate.Survivor(path, line, column, tests)
+	e, err := mutate.Survivor(path, line, column, tests, support)
 	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))

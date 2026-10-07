@@ -75,6 +75,10 @@ type Tests struct {
 	// Whole, optional, runs every listed test; without it, Run selects them
 	// all.
 	Whole string
+	// Support are globs, from the project root, of the files every listed
+	// test depends on, such as the step code its checks run: a kill by
+	// listed tests holds while they are unchanged.
+	Support []string
 }
 
 // Select is the command that runs the tests ids.
@@ -128,13 +132,20 @@ type rawTests struct {
 		Each *string `yaml:"each"`
 		Sep  *string `yaml:"sep"`
 	} `yaml:"join"`
-	Whole *string `yaml:"whole"`
+	Whole   *string  `yaml:"whole"`
+	Support []string `yaml:"support"`
 }
 
 // Load reads itos-cc.yaml at the project root. A missing file is an
 // empty config; one that cannot be read as a config is an *InvalidError.
 func Load() (*Config, error) {
-	data, err := os.ReadFile(Path())
+	return LoadFrom(project.Root())
+}
+
+// LoadFrom is Load for the project whose root is root, which need not be
+// the working directory's.
+func LoadFrom(root string) (*Config, error) {
+	data, err := os.ReadFile(filepath.Join(root, File))
 	if errors.Is(err, os.ErrNotExist) {
 		return &Config{}, nil
 	}
@@ -225,6 +236,13 @@ func (r *rawTests) parse() (*Tests, error) {
 	}
 	if r.Whole != nil {
 		t.Whole = text("whole", r.Whole, "")
+	}
+	for _, glob := range r.Support {
+		if _, err := filepath.Match(glob, ""); err != nil || strings.TrimSpace(glob) == "" {
+			wrong = append(wrong, fmt.Sprintf("has a support glob %q that is no pattern", glob))
+			continue
+		}
+		t.Support = append(t.Support, glob)
 	}
 	if len(wrong) > 0 {
 		return nil, &InvalidError{"mutation.tests " + strings.Join(wrong, ", ")}

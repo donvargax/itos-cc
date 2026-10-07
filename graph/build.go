@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/crap"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/metrics"
@@ -69,6 +70,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 	type repo struct {
 		name, root, top string
 		files           project.Files
+		support         map[string]string // the hashes of its listed tests' support files
 	}
 	var repos []repo
 	for i, root := range b.roots {
@@ -76,9 +78,13 @@ func (b *Builder) Build() (*Graph, bool, error) {
 		if err != nil {
 			return nil, false, err
 		}
-		repos = append(repos, repo{b.names[i], root, b.projects[i], files})
+		support := supportHashes(b.projects[i])
+		repos = append(repos, repo{b.names[i], root, b.projects[i], files, support})
 		for _, f := range append(files.Sources, files.Tests...) {
 			stamps = append(stamps, f+"\x00"+stamp(f))
+		}
+		for f, hash := range support {
+			stamps = append(stamps, f+"\x00"+hash)
 		}
 		stamps = append(stamps, metricStamps(b.projects[i])...)
 	}
@@ -117,7 +123,8 @@ func (b *Builder) Build() (*Graph, bool, error) {
 			if err != nil {
 				return nil, false, err
 			}
-			infos[i] = overlay.apply(info, now, b.snapshot(r.top, info.abs, live))
+			snap := b.snapshot(r.top, info.abs, live)
+			infos[i] = overlay.apply(info, now, snap, snap.ListedChanged(r.top, r.support))
 		}
 		rg := newRepoGraph(r.name, r.root, infos)
 		rg.summarize()
@@ -385,9 +392,10 @@ func loadOverlay(root string) overlay {
 // changes nothing and editing one makes only that one stale. Its results
 // are stale exactly when mutation check calls them stale, by check's own
 // rule (mutate.FreshnessOf), tests being the hashes of the test files that
-// import its file now; a function with no entry, which check calls
-// missing, carries none.
-func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot) *fileInfo {
+// import its file now, and listed how the files its listed outcomes rest
+// on changed; a function with no entry, which check calls missing, carries
+// none.
+func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange) *fileInfo {
 	entries := mutationEntries(info, snap)
 	occurrence := map[string]int{}
 	for i := range info.units {
@@ -402,12 +410,27 @@ func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Sna
 		}
 		if m := entries[i]; m != nil {
 			u.Mutated = true
-			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), u.sites).State == mutate.Stale
+			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), listed, u.sites).State == mutate.Stale
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered
 		}
 		u.Duplicates = o.duplicates[fmt.Sprintf("%s#%d", u.File, u.Line)]
 	}
 	return info
+}
+
+// supportHashes is the hashes of the support files of the tests the
+// itos-cc.yaml at root lists, hashed as a snapshot records them; nil when
+// it lists none or cannot be read.
+func supportHashes(root string) map[string]string {
+	cfg, err := config.LoadFrom(root)
+	if err != nil || cfg.Tests == nil {
+		return nil
+	}
+	support, err := mutate.SupportHashes(root, cfg.Tests.Support)
+	if err != nil {
+		return nil
+	}
+	return support
 }
 
 func readJSON(path string, v any) bool {

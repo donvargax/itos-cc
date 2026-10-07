@@ -121,7 +121,7 @@ func (e *NoSurvivorError) Error() string { return e.Reason }
 // never recorded. A site with no such survivor, whether its mutant is
 // recorded killed or uncovered, its function's results are stale or
 // missing, or there is no site there, is a *NoSurvivorError.
-func Survivor(path string, line, column int, tests func(path string) []string) (config.Exception, error) {
+func Survivor(path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
 	if lang.Detect(path) == nil {
 		return config.Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
 	}
@@ -133,7 +133,7 @@ func Survivor(path string, line, column int, tests func(path string) []string) (
 		return config.Exception{}, err
 	}
 	defer f.Close()
-	c, err := checkParsed(f, path, nil, tests, nil)
+	c, err := checkParsed(f, path, nil, tests, support, nil)
 	if err != nil {
 		return config.Exception{}, err
 	}

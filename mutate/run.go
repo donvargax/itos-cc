@@ -28,6 +28,10 @@ type Options struct {
 	// to run every mutant regardless of coverage, and an error to stop the
 	// run before any mutant runs or any snapshot is written.
 	Coverage func(sources []string) (*coverage.Report, error)
+	// Support is the hashes of the support files of the listed tests now
+	// (SupportHashes): what a listed outcome records, and holds while they
+	// are unchanged.
+	Support map[string]string
 	// Listed, when set, runs the listed tests whose coverage reaches a
 	// mutant's line (coverage.Report.LineTests) once the file's own tests
 	// survived it.
@@ -132,15 +136,18 @@ type fileState struct {
 	coverage [][]string // the sources of coverage that executed each site's line, or nil
 	reach    [][]string // the listed tests that execute each site's line, or nil
 	ran      [][]string // the listed tests that decided each outcome of ScopeListed
-	command  Command
-	result   *FileResult
-	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
-	stored   *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
-	tests    map[string]string // the tests that import the file, as the snapshot records them
-	judged   map[int]bool      // by the index of the unit, or nil when every function is
-	excepted fileExceptions    // the exceptions of the functions judged
-	moved    string            // the path from the root the file had before a rename, whose snapshot moves to key
-	moving   *Snapshot         // that snapshot, under key, when key had none of its own
+	// listedChange is how the files the stored snapshot's listed outcomes
+	// rest on changed since, or nil.
+	listedChange *ListedChange
+	command      Command
+	result       *FileResult
+	previous     *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
+	stored       *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
+	tests        map[string]string // the tests that import the file, as the snapshot records them
+	judged       map[int]bool      // by the index of the unit, or nil when every function is
+	excepted     fileExceptions    // the exceptions of the functions judged
+	moved        string            // the path from the root the file had before a rename, whose snapshot moves to key
+	moving       *Snapshot         // that snapshot, under key, when key had none of its own
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -188,6 +195,8 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 				files = opt.Listed.Files
 			}
 			s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
+			s.markListedStale()
+			s.result.Snapshot.recordListed(project.Root(), opt.Support)
 			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 			if s.judged != nil && len(s.judged) == 0 {
 				// Nothing in the file was judged, so nothing ran and the
@@ -288,6 +297,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		}
 		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev, prevScopes := rememberedWithScopes(s.previous, f)
+		s.listedChange = s.stored.ListedChanged(project.Root(), opt.Support)
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {
@@ -324,8 +334,10 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 				continue
 			}
 			_, excepted := s.excepted.held[i]
-			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll {
-				d := prevScopes[site.Unit][site.Key()]
+			d := prevScopes[site.Unit][site.Key()]
+			// A listed outcome holds while the files it rests on do.
+			restsOnChange := len(s.listedChange.files([]Mutant{{Scope: d.scope, Tests: d.tests}})) > 0
+			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange {
 				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
 				s.reused[i] = true
 				s.result.Reused++

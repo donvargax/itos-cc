@@ -92,7 +92,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		}
 		s := &fileState{file: f, sites: Sites(f)}
 		states = append(states, s)
-		c, err := checkParsed(f, path, opt.Judge, opt.Tests, nil)
+		c, err := checkParsed(f, path, opt.Judge, opt.Tests, opt.Support, nil)
 		if err != nil {
 			return Sampled{}, err
 		}

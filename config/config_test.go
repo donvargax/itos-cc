@@ -140,6 +140,10 @@ func TestMutationTestsSelectTheirIDs(t *testing.T) {
 	if got := c.Tests.All([]string{"A"}); got != "go test ./e2e" {
 		t.Errorf("All(A) = %q, want whole", got)
 	}
+	c, err = parse([]byte(testsYAML + "    support: [\"features/*_test.go\"]\n"))
+	if err != nil || !slices.Equal(c.Tests.Support, []string{"features/*_test.go"}) {
+		t.Errorf("support %v, %v, want the glob", c, err)
+	}
 	if c, err := parse([]byte("mutation: {}\n")); err != nil || c.Tests != nil {
 		t.Errorf("without mutation.tests: %+v, %v, want no tests", c, err)
 	}
@@ -153,6 +157,7 @@ func TestMalformedMutationTestsAreInvalid(t *testing.T) {
 		{`      each: "{id}"`, `      each: "x"`, "has a join.each without {id}"},
 		{"      sep: \"|\"\n", "", "has no join.sep"},
 		{"    join:\n      each: \"{id}\"\n      sep: \"|\"\n", "", "has no join"},
+		{"    list: ./list\n", "    list: ./list\n    support: [\"features/[\"]\n", "has a support glob \"features/[\" that is no pattern"},
 	} {
 		_, err := parse([]byte(strings.Replace(testsYAML, c.from, c.to, 1)))
 		var invalid *InvalidError

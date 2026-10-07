@@ -105,7 +105,11 @@ type checkResult struct {
 // runMutationCheck checks the chosen functions' cached results.
 func runMutationCheck(in *invocation) (any, error) {
 	result := checkResult{Files: []checkFile{}}
-	exceptions, err := loadExceptions()
+	cfg, err := loadConfig()
+	if err != nil {
+		return result, err
+	}
+	support, err := supportNow(cfg)
 	if err != nil {
 		return result, err
 	}
@@ -121,7 +125,7 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.Check(sources, judge, tests, exceptions)
+	checks, err := mutate.Check(sources, judge, tests, support, cfg.Exceptions)
 	if err != nil {
 		return result, err
 	}
@@ -165,6 +169,8 @@ func staleBecause(fn mutate.FunctionCheck) string {
 	switch {
 	case fn.Marked:
 		return "has mutation results from before the tests that import its file changed, kept by a mutation run that did not judge it"
+	case len(fn.Listed) > 0:
+		return "has kills by listed tests made before files they rest on changed: " + strings.Join(fn.Listed, ", ")
 	case len(fn.Unrecorded) > 0:
 		var sites []string
 		for _, s := range fn.Unrecorded {

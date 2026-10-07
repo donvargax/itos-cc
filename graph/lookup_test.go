@@ -62,7 +62,7 @@ func TestAMutationSnapshotNamingAnotherPathDoesNotMatch(t *testing.T) {
 	}
 
 	t.Chdir(m.root)
-	checks, err := mutate.Check([]string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil)
+	checks, err := mutate.Check([]string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

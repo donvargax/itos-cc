@@ -111,6 +111,7 @@ mutation.tests, so each mutant runs only those that reach its line:
       ids_pattern: <the pattern, with {ids}>
       join: {each: <each ID, with {id}>, sep: <between them>}
       whole: <command running every test; optional, else run with every ID>
+      support: [<globs of files every test depends on, optional>]
 Commands run through the platform shell at the project root. When a mutant
 has to run, the list command runs once, then every listed test, for
 coverage, with ITOS_CC_TEST_COVERDIR set to a directory of the run's own:
@@ -120,7 +121,10 @@ run; otherwise each test runs alone, with a GOCOVERDIR of its own. A
 mutant runs its file's own tests first and, only if it survives them, the
 listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
-uncovered. A list command that fails is tests.list-failed: nothing is
+uncovered. Such an outcome holds while the files its tests are defined
+in, and the support files, are as it recorded them; mutation check calls
+its function stale when one changed. A list command that fails is
+tests.list-failed: nothing is
 judged and no snapshot is written. Listed tests are not run with
 --no-coverage, --all-tests, --test-command, --use-existing-coverage,
 --coverage-command, or --coverage-report.`,
@@ -316,7 +320,12 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	support, err := supportNow(cfg)
+	if err != nil {
+		return result, err
+	}
 	opt := mutate.Options{
+		Support:       support,
 		Tests:         tests,
 		Workers:       in.integer("workers"),
 		MutateAll:     in.set("mutate-all"),
@@ -459,6 +468,15 @@ func loadConfig() (*config.Config, error) {
 			with("file", config.File)
 	}
 	return c, err
+}
+
+// supportNow is the hashes of the support files of the tests cfg lists,
+// now: what a kill by listed tests rests on, with the files of its tests.
+func supportNow(cfg *config.Config) (map[string]string, error) {
+	if cfg.Tests == nil {
+		return nil, nil
+	}
+	return mutate.SupportHashes(project.Root(), cfg.Tests.Support)
 }
 
 // listedConfig is the tests itos-cc.yaml lists, when the mutants of this run

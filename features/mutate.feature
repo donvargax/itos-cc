@@ -471,7 +471,7 @@ Feature: Mutation testing
   # covering tests. Own-scope outcomes keep today's rule.
   Rule: A kill made by listed tests goes stale when its tests change
 
-    @wip @listed-kill-freshness @ID-MUT-130
+    @listed-kill-freshness @ID-MUT-130
     Scenario: A listed kill stays fresh while its tests' files and the support files are unchanged
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And nothing has changed since
@@ -479,7 +479,7 @@ Feature: Mutation testing
       Then the exit code is 0
       And "itos-cc mutation run" reuses that kill
 
-    @wip @listed-kill-freshness @ID-MUT-131
+    @listed-kill-freshness @ID-MUT-131
     Scenario: Editing the file of a covering test makes its kill stale
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And a.feature has changed since
@@ -487,14 +487,14 @@ Feature: Mutation testing
       Then the problem is "mutation.stale" for that mutant's function, and its message names a.feature
       And "itos-cc mutation run" runs that mutant again, its own tests first
 
-    @wip @listed-kill-freshness @ID-MUT-132
+    @listed-kill-freshness @ID-MUT-132
     Scenario: Editing a file no covering test names changes nothing
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And b.feature, which defines only tests that do not cover it, has changed since
       When I run "itos-cc mutation check"
       Then the exit code is 0
 
-    @wip @listed-kill-freshness @ID-MUT-133
+    @listed-kill-freshness @ID-MUT-133
     Scenario: Editing a support file makes every listed kill stale
       Given itos-cc.yaml lists features/*_test.go under mutation.tests.support
       And a run recorded listed kills and kills by own tests
@@ -503,7 +503,7 @@ Feature: Mutation testing
       Then each function holding a listed kill is "mutation.stale", its message naming features/steps_test.go
       And the functions whose kills were all by their own tests stay fresh
 
-    @wip @listed-kill-freshness @ID-MUT-134
+    @listed-kill-freshness @ID-MUT-134
     Scenario: The graph agrees
       Given a.feature has changed since a run recorded a kill by ID-A-02
       When the graph is built

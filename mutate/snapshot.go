@@ -39,6 +39,13 @@ type Snapshot struct {
 	// (Mutant.Tests), by its ID, as the list command names it, "" for none.
 	// Left out when no outcome records any.
 	Listed map[string]string `json:"listed,omitempty"`
+	// ListedFiles is the SHA-256 of each file Listed names, and Support of
+	// each support file (mutation.tests.support), by its slash-separated
+	// path from the project root, when the outcomes were recorded: listed
+	// outcomes hold while they are the same (ListedChanged). Left out when
+	// no outcome is listed.
+	ListedFiles map[string]string `json:"listed_files,omitempty"`
+	Support     map[string]string `json:"support,omitempty"`
 }
 
 // UnitResult is one function's mutants. Hash is the function's source hash:

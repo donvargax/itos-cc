@@ -217,6 +217,7 @@ mutation:
     ids_pattern: "{ids}"
     join: {each: "{id}", sep: ","}
     whole: go test ./features      # optional: every test; else run with every ID
+    support: ["features/*_test.go"] # optional: files every test depends on
 ```
 
 The commands run through the platform shell at the project root. When a
@@ -231,7 +232,14 @@ with a `GOCOVERDIR` of its own. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
 run. That outcome has scope `"listed"` and records their IDs under `tests`,
 in the snapshot and in `--json`, and `mutation sample` runs it again the
-same way. A line a listed test reaches is never uncovered. Only Go programs
+same way. A line a listed test reaches is never uncovered. Such a kill
+rests on files no import names: the snapshot records the hash of the file
+each of its tests is defined in, and of every file the `support` globs
+match, such as the step code the tests run, and the kill holds while they
+are unchanged. `mutation check`, `run`, `sample` and the graph call a
+function stale when one changed, naming it; a run then reruns its listed
+mutants, own tests first. No list command runs to judge it: deleting a
+test changes its file. Only Go programs
 report coverage per test so far, and listed tests are not run with
 `--no-coverage`, `--all-tests`, `--test-command`, or coverage read from
 reports.

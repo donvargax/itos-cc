@@ -143,7 +143,12 @@ func runMutationSample(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	support, err := supportNow(cfg)
+	if err != nil {
+		return result, err
+	}
 	opt := mutate.Options{
+		Support:       support,
 		Tests:         tests,
 		Judge:         judge,
 		Workers:       in.integer("workers"),
