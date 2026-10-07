@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/scrap.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "runScrap",
+      "hash": "d19069d42d766560",
+      "start_line": 58,
+      "end_line": 115,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 11,
+      "sites": 11,
+      "mutants": [
+        {
+          "line": 61,
+          "column": 9,
+          "offset": 130,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 64,
+          "column": 22,
+          "offset": 184,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 64,
+          "column": 25,
+          "offset": 187,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 70,
+          "column": 58,
+          "offset": 364,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 81,
+          "column": 10,
+          "offset": 673,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 86,
+          "column": 17,
+          "offset": 779,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 86,
+          "column": 20,
+          "offset": 782,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 102,
+          "column": 81,
+          "offset": 1199,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 103,
+          "column": 55,
+          "offset": 1281,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 107,
+          "column": 77,
+          "offset": 1391,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 109,
+          "column": 5,
+          "offset": 1444,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "printScrap",
+      "hash": "9f24eee2255c63b5",
+      "start_line": 117,
+      "end_line": 139,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 8,
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 119,
+          "column": 23,
+          "offset": 88,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 119,
+          "column": 30,
+          "offset": 95,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 119,
+          "column": 43,
+          "offset": 108,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 124,
+          "column": 23,
+          "offset": 376,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 124,
+          "column": 30,
+          "offset": 383,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 124,
+          "column": 43,
+          "offset": 396,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 128,
+          "column": 14,
+          "offset": 598,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 128,
+          "column": 34,
+          "offset": 618,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/dry.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "runDry",
+      "hash": "72ccd6076067de2e",
+      "start_line": 57,
+      "end_line": 105,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 12,
+      "sites": 12,
+      "mutants": [
+        {
+          "line": 61,
+          "column": 9,
+          "offset": 306,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 66,
+          "column": 18,
+          "offset": 403,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 66,
+          "column": 20,
+          "offset": 405,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 66,
+          "column": 22,
+          "offset": 407,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 68,
+          "column": 15,
+          "offset": 485,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 70,
+          "column": 17,
+          "offset": 510,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 70,
+          "column": 20,
+          "offset": 513,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 74,
+          "column": 54,
+          "offset": 660,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 80,
+          "column": 9,
+          "offset": 804,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 83,
+          "column": 44,
+          "offset": 880,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 88,
+          "column": 63,
+          "offset": 1126,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 96,
+          "column": 17,
+          "offset": 1291,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "union",
+      "hash": "571934e306cd0ea2",
+      "start_line": 109,
+      "end_line": 121,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 2,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 114,
+          "column": 7,
+          "offset": 156,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 115,
+          "column": 15,
+          "offset": 181,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

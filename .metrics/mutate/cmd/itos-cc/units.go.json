@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/units.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "runUnits",
+      "hash": "c7a6e2f6a36ccf69",
+      "start_line": 37,
+      "end_line": 63,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 3,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 40,
+          "column": 9,
+          "offset": 123,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 49,
+          "column": 10,
+          "offset": 302,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 57,
+          "column": 5,
+          "offset": 467,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

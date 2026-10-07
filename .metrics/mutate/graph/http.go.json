@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "file": "graph/http.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "httpEdges",
+      "hash": "2549ed53b52bb75e",
+      "start_line": 20,
+      "end_line": 62,
+      "killed": 3,
+      "survived": 1,
+      "uncovered": 3,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 37,
+          "column": 16,
+          "offset": 455,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 37,
+          "column": 28,
+          "offset": 467,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 37,
+          "column": 31,
+          "offset": 470,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 42,
+          "column": 7,
+          "offset": 587,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 56,
+          "column": 18,
+          "offset": 893,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 57,
+          "column": 23,
+          "offset": 932,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 59,
+          "column": 20,
+          "offset": 969,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

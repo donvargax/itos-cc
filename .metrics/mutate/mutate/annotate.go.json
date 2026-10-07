@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "file": "mutate/annotate.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "annotate",
+      "hash": "595e17069a25a5e8",
+      "start_line": 19,
+      "end_line": 38,
+      "killed": 6,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 21,
+          "column": 9,
+          "offset": 106,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 26,
+          "column": 43,
+          "offset": 266,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 26,
+          "column": 52,
+          "offset": 275,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 27,
+          "column": 11,
+          "offset": 293,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 28,
+          "column": 43,
+          "offset": 343,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 30,
+          "column": 13,
+          "offset": 365,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 34,
+          "column": 9,
+          "offset": 434,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "Annotation",
+      "hash": "8460afac6b2a9c7b",
+      "start_line": 42,
+      "end_line": 63,
+      "killed": 6,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 50,
+          "column": 17,
+          "offset": 270,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 56,
+          "column": 11,
+          "offset": 462,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 56,
+          "column": 20,
+          "offset": 471,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        },
+        {
+          "line": 56,
+          "column": 31,
+          "offset": 482,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 56,
+          "column": 34,
+          "offset": 485,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 31,
+          "offset": 704,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 35,
+          "offset": 708,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 62,
+          "column": 35,
+          "offset": 758,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "StripAnnotation",
+      "hash": "784bc61d95c5fab2",
+      "start_line": 66,
+      "end_line": 81,
+      "killed": 10,
+      "survived": 4,
+      "uncovered": 0,
+      "sites": 14,
+      "mutants": [
+        {
+          "line": 67,
+          "column": 41,
+          "offset": 91,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 67,
+          "column": 45,
+          "offset": 95,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 68,
+          "column": 11,
+          "offset": 123,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 68,
+          "column": 13,
+          "offset": 125,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 71,
+          "column": 43,
+          "offset": 187,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 71,
+          "column": 47,
+          "offset": 191,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 72,
+          "column": 9,
+          "offset": 215,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 72,
+          "column": 11,
+          "offset": 217,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 75,
+          "column": 36,
+          "offset": 272,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 75,
+          "column": 40,
+          "offset": 276,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 75,
+          "column": 52,
+          "offset": 288,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 75,
+          "column": 56,
+          "offset": 292,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 76,
+          "column": 29,
+          "offset": 347,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 80,
+          "column": 46,
+          "offset": 474,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}

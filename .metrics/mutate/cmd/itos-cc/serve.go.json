@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/serve.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "runServe",
+      "hash": "f71876f58982aa09",
+      "start_line": 54,
+      "end_line": 88,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 9,
+      "sites": 9,
+      "mutants": [
+        {
+          "line": 56,
+          "column": 16,
+          "offset": 78,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 56,
+          "column": 19,
+          "offset": 81,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 59,
+          "column": 44,
+          "offset": 155,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 61,
+          "column": 9,
+          "offset": 219,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 70,
+          "column": 9,
+          "offset": 585,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 77,
+          "column": 66,
+          "offset": 943,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 82,
+          "column": 44,
+          "offset": 1109,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 82,
+          "column": 51,
+          "offset": 1116,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 82,
+          "column": 58,
+          "offset": 1123,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

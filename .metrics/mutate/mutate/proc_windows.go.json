@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "file": "mutate/proc_windows.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "killGroup",
+      "hash": "3d9ab136c4d6cf71",
+      "start_line": 13,
+      "end_line": 15,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 14,
+          "column": 20,
+          "offset": 51,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "shellCommand",
+      "hash": "2c62793632ef1ac2",
+      "start_line": 17,
+      "end_line": 19,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/shell.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "shell",
+      "hash": "6f117e57c07a2f5f",
+      "start_line": 10,
+      "end_line": 19,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 12,
+          "column": 18,
+          "offset": 93,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

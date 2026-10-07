@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "file": "mutate/proc_unix.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "killGroup",
+      "hash": "06ee51af0bdae90d",
+      "start_line": 14,
+      "end_line": 18,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 3,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 15,
+          "column": 50,
+          "offset": 81,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 16,
+          "column": 50,
+          "offset": 136,
+          "original": "-",
+          "replacement": "",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 17,
+          "column": 20,
+          "offset": 192,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/mutate",
+      "name": "shellCommand",
+      "hash": "f59efb9be0553ddd",
+      "start_line": 20,
+      "end_line": 22,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    }
+  ]
+}

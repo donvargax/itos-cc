@@ -1,0 +1,325 @@
+{
+  "version": 1,
+  "file": "crap/crap.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "Score",
+      "hash": "4d9ae0527da1aed7",
+      "start_line": 31,
+      "end_line": 34,
+      "killed": 0,
+      "survived": 5,
+      "uncovered": 0,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 33,
+          "column": 10,
+          "offset": 74,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "survived"
+        },
+        {
+          "line": 33,
+          "column": 12,
+          "offset": 76,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "survived"
+        },
+        {
+          "line": 33,
+          "column": 22,
+          "offset": 86,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 33,
+          "column": 23,
+          "offset": 87,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived"
+        },
+        {
+          "line": 33,
+          "column": 37,
+          "offset": 101,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "Analyze",
+      "hash": "a2308e3393119b53",
+      "start_line": 40,
+      "end_line": 73,
+      "killed": 2,
+      "survived": 3,
+      "uncovered": 0,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 44,
+          "column": 36,
+          "offset": 187,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 50,
+          "column": 10,
+          "offset": 292,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 21,
+          "offset": 659,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 27,
+          "offset": 665,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 65,
+          "column": 46,
+          "offset": 713,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "unitCoverage",
+      "hash": "b9854c3d5d81859a",
+      "start_line": 75,
+      "end_line": 83,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 3,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 76,
+          "column": 7,
+          "offset": 115,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 10,
+          "offset": 133,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 77,
+          "column": 13,
+          "offset": 136,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 79,
+          "column": 5,
+          "offset": 149,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 80,
+          "column": 10,
+          "offset": 175,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "innerLines",
+      "hash": "924a84c27198b6b9",
+      "start_line": 87,
+      "end_line": 94,
+      "killed": 0,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 91,
+          "column": 57,
+          "offset": 176,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        },
+        {
+          "line": 91,
+          "column": 58,
+          "offset": 177,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "Worst",
+      "hash": "6ecbc24574206833",
+      "start_line": 98,
+      "end_line": 111,
+      "killed": 0,
+      "survived": 8,
+      "uncovered": 3,
+      "sites": 11,
+      "mutants": [
+        {
+          "line": 103,
+          "column": 15,
+          "offset": 174,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 103,
+          "column": 22,
+          "offset": 181,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 103,
+          "column": 32,
+          "offset": 191,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 103,
+          "column": 39,
+          "offset": 198,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 103,
+          "column": 50,
+          "offset": 209,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 104,
+          "column": 19,
+          "offset": 239,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 105,
+          "column": 16,
+          "offset": 264,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 105,
+          "column": 24,
+          "offset": 272,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 105,
+          "column": 35,
+          "offset": 283,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 106,
+          "column": 18,
+          "offset": 309,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 108,
+          "column": 23,
+          "offset": 342,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/crap",
+      "name": "round",
+      "hash": "806ba95327e5344e",
+      "start_line": 113,
+      "end_line": 116,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 115,
+          "column": 21,
+          "offset": 100,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 115,
+          "column": 25,
+          "offset": 104,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}

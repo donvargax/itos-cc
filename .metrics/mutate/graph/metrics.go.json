@@ -1,0 +1,546 @@
+{
+  "version": 1,
+  "file": "graph/metrics.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph.Bands",
+      "name": "add",
+      "hash": "d22edcf955892abb",
+      "start_line": 36,
+      "end_line": 47,
+      "killed": 1,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 38,
+          "column": 12,
+          "offset": 58,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 40,
+          "column": 13,
+          "offset": 92,
+          "original": "<=",
+          "replacement": "<",
+          "outcome": "survived"
+        },
+        {
+          "line": 42,
+          "column": 13,
+          "offset": 120,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph.Bands",
+      "name": "merge",
+      "hash": "03e840e96cfb5c27",
+      "start_line": 49,
+      "end_line": 54,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "bandGrade",
+      "hash": "58ffad60a15e334b",
+      "start_line": 59,
+      "end_line": 66,
+      "killed": 11,
+      "survived": 3,
+      "uncovered": 0,
+      "sites": 14,
+      "mutants": [
+        {
+          "line": 60,
+          "column": 20,
+          "offset": 61,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 60,
+          "column": 31,
+          "offset": 72,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 14,
+          "offset": 94,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 17,
+          "offset": 97,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 62,
+          "column": 10,
+          "offset": 110,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 62,
+          "column": 13,
+          "offset": 113,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 64,
+          "column": 27,
+          "offset": 148,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 32,
+          "offset": 153,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 52,
+          "offset": 173,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 19,
+          "offset": 211,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 22,
+          "offset": 214,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 32,
+          "offset": 224,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 36,
+          "offset": 228,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 45,
+          "offset": 237,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "crapGrade",
+      "hash": "89fc2c98ea6444f5",
+      "start_line": 70,
+      "end_line": 78,
+      "killed": 5,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 72,
+          "column": 13,
+          "offset": 62,
+          "original": "<=",
+          "replacement": "<",
+          "outcome": "survived"
+        },
+        {
+          "line": 74,
+          "column": 13,
+          "offset": 92,
+          "original": ">=",
+          "replacement": ">",
+          "outcome": "survived"
+        },
+        {
+          "line": 75,
+          "column": 10,
+          "offset": 108,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 19,
+          "offset": 131,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 22,
+          "offset": 134,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 29,
+          "offset": 141,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 32,
+          "offset": 144,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "mutationGrade",
+      "hash": "30f1e8eca62eae87",
+      "start_line": 81,
+      "end_line": 83,
+      "killed": 5,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 82,
+          "column": 16,
+          "offset": 66,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 18,
+          "offset": 68,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 21,
+          "offset": 71,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 37,
+          "offset": 87,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 52,
+          "offset": 102,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "round1",
+      "hash": "0ff830f6741d1809",
+      "start_line": 85,
+      "end_line": 85,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 85,
+          "column": 53,
+          "offset": 52,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed"
+        },
+        {
+          "line": 85,
+          "column": 58,
+          "offset": 57,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph.repoGraph",
+      "name": "summarize",
+      "hash": "33c6115d95563df0",
+      "start_line": 88,
+      "end_line": 90,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph.repoGraph",
+      "name": "metrics",
+      "hash": "27076615430a68ff",
+      "start_line": 94,
+      "end_line": 147,
+      "killed": 4,
+      "survived": 13,
+      "uncovered": 0,
+      "sites": 17,
+      "mutants": [
+        {
+          "line": 99,
+          "column": 13,
+          "offset": 144,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 126,
+          "column": 12,
+          "offset": 720,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 126,
+          "column": 24,
+          "offset": 732,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 126,
+          "column": 37,
+          "offset": 745,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 126,
+          "column": 44,
+          "offset": 752,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 126,
+          "column": 63,
+          "offset": 771,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 126,
+          "column": 66,
+          "offset": 774,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 132,
+          "column": 13,
+          "offset": 905,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        },
+        {
+          "line": 132,
+          "column": 25,
+          "offset": 917,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "survived"
+        },
+        {
+          "line": 132,
+          "column": 27,
+          "offset": 919,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 137,
+          "column": 19,
+          "offset": 1020,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 137,
+          "column": 26,
+          "offset": 1027,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 137,
+          "column": 45,
+          "offset": 1046,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 138,
+          "column": 29,
+          "offset": 1082,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        },
+        {
+          "line": 138,
+          "column": 49,
+          "offset": 1102,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "survived"
+        },
+        {
+          "line": 140,
+          "column": 19,
+          "offset": 1140,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 142,
+          "column": 23,
+          "offset": 1194,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/graph",
+      "name": "maxPtr",
+      "hash": "a46acb27fbb7d7e7",
+      "start_line": 149,
+      "end_line": 154,
+      "killed": 2,
+      "survived": 3,
+      "uncovered": 0,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 150,
+          "column": 7,
+          "offset": 44,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 150,
+          "column": 14,
+          "offset": 51,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 150,
+          "column": 20,
+          "offset": 57,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 150,
+          "column": 27,
+          "offset": 64,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 150,
+          "column": 33,
+          "offset": 70,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "survived"
+        }
+      ]
+    }
+  ]
+}

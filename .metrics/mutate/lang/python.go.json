@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "file": "lang/python.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/lang",
+      "name": "init",
+      "hash": "eebc331bbc149676",
+      "start_line": 14,
+      "end_line": 72,
+      "killed": 15,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 16,
+      "mutants": [
+        {
+          "line": 24,
+          "column": 16,
+          "offset": 424,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 25,
+          "column": 39,
+          "offset": 489,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 27,
+          "column": 15,
+          "offset": 513,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 30,
+          "column": 16,
+          "offset": 602,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 31,
+          "column": 39,
+          "offset": 664,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 33,
+          "column": 15,
+          "offset": 688,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 57,
+          "column": 48,
+          "offset": 1772,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 58,
+          "column": 42,
+          "offset": 1822,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 58,
+          "column": 44,
+          "offset": 1824,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 60,
+          "column": 11,
+          "offset": 1841,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 64,
+          "column": 16,
+          "offset": 1929,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 33,
+          "offset": 1946,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 69,
+          "offset": 1982,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 41,
+          "offset": 2025,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 69,
+          "column": 40,
+          "offset": 2245,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 69,
+          "column": 43,
+          "offset": 2248,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/lang",
+      "name": "pyImports",
+      "hash": "44ec6c37dd37a583",
+      "start_line": 76,
+      "end_line": 128,
+      "killed": 24,
+      "survived": 9,
+      "uncovered": 1,
+      "sites": 34,
+      "mutants": [
+        {
+          "line": 81,
+          "column": 18,
+          "offset": 179,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 81,
+          "column": 24,
+          "offset": 185,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed"
+        },
+        {
+          "line": 83,
+          "column": 17,
+          "offset": 255,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 86,
+          "column": 10,
+          "offset": 328,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 86,
+          "column": 17,
+          "offset": 335,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 86,
+          "column": 29,
+          "offset": 347,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 90,
+          "column": 11,
+          "offset": 456,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 96,
+          "column": 10,
+          "offset": 692,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 17,
+          "offset": 699,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 96,
+          "column": 25,
+          "offset": 707,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 32,
+          "offset": 714,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 58,
+          "offset": 740,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 61,
+          "offset": 743,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 63,
+          "offset": 745,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 82,
+          "offset": 764,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 92,
+          "offset": 774,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 97,
+          "column": 12,
+          "offset": 799,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 100,
+          "column": 12,
+          "offset": 848,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 100,
+          "column": 28,
+          "offset": 864,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 100,
+          "column": 36,
+          "offset": 872,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 100,
+          "column": 55,
+          "offset": 891,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 101,
+          "column": 65,
+          "offset": 1002,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 103,
+          "column": 11,
+          "offset": 1059,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 106,
+          "column": 14,
+          "offset": 1156,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 107,
+          "column": 12,
+          "offset": 1176,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 110,
+          "column": 18,
+          "offset": 1264,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 110,
+          "column": 24,
+          "offset": 1270,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed"
+        },
+        {
+          "line": 112,
+          "column": 15,
+          "offset": 1338,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 115,
+          "column": 17,
+          "offset": 1391,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 118,
+          "column": 10,
+          "offset": 1464,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 118,
+          "column": 17,
+          "offset": 1471,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 118,
+          "column": 29,
+          "offset": 1483,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 123,
+          "column": 11,
+          "offset": 1601,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 125,
+          "column": 10,
+          "offset": 1620,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}

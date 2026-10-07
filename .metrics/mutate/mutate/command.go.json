@@ -7,15 +7,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate.Command",
       "name": "Key",
       "hash": "d18aa739692fed8a",
-      "start_line": 30,
-      "end_line": 32,
+      "start_line": 29,
+      "end_line": 31,
       "killed": 0,
       "survived": 0,
       "uncovered": 5,
       "sites": 5,
       "mutants": [
         {
-          "line": 31,
+          "line": 30,
           "column": 16,
           "offset": 47,
           "original": "+",
@@ -23,7 +23,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 31,
+          "line": 30,
           "column": 25,
           "offset": 56,
           "original": "+",
@@ -31,7 +31,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 31,
+          "line": 30,
           "column": 33,
           "offset": 64,
           "original": "+",
@@ -39,7 +39,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 31,
+          "line": 30,
           "column": 42,
           "offset": 73,
           "original": "+",
@@ -47,7 +47,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 31,
+          "line": 30,
           "column": 73,
           "offset": 104,
           "original": "+",
@@ -60,15 +60,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate.Command",
       "name": "String",
       "hash": "038fd28795c36d91",
-      "start_line": 34,
-      "end_line": 39,
+      "start_line": 33,
+      "end_line": 38,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 35,
+          "line": 34,
           "column": 13,
           "offset": 47,
           "original": "!=",
@@ -81,15 +81,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "TestCommand",
       "hash": "3aadd178f2c2449f",
-      "start_line": 48,
-      "end_line": 65,
+      "start_line": 47,
+      "end_line": 64,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 61,
+          "line": 60,
           "column": 11,
           "offset": 315,
           "original": "!=",
@@ -101,45 +101,21 @@
     {
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "goCommand",
-      "hash": "1c94193408b6377b",
-      "start_line": 75,
-      "end_line": 88,
-      "killed": 3,
-      "survived": 1,
+      "hash": "b978dc13f7371646",
+      "start_line": 68,
+      "end_line": 76,
+      "killed": 1,
+      "survived": 0,
       "uncovered": 0,
-      "sites": 4,
+      "sites": 1,
       "mutants": [
         {
-          "line": 78,
-          "column": 5,
-          "offset": 132,
-          "original": "!",
-          "replacement": "",
-          "outcome": "timeout"
-        },
-        {
-          "line": 80,
-          "column": 30,
-          "offset": 196,
-          "original": "!",
-          "replacement": "",
-          "outcome": "timeout"
-        },
-        {
-          "line": 83,
-          "column": 25,
-          "offset": 291,
-          "original": ">",
-          "replacement": ">=",
-          "outcome": "survived"
-        },
-        {
-          "line": 83,
-          "column": 27,
-          "offset": 293,
-          "original": "0",
-          "replacement": "1",
-          "outcome": "timeout"
+          "line": 71,
+          "column": 17,
+          "offset": 164,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
         }
       ]
     },
@@ -147,15 +123,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "typescriptCommand",
       "hash": "70aa8110ec09904a",
-      "start_line": 90,
-      "end_line": 115,
+      "start_line": 78,
+      "end_line": 103,
       "killed": 5,
       "survived": 7,
       "uncovered": 0,
       "sites": 12,
       "mutants": [
         {
-          "line": 99,
+          "line": 87,
           "column": 22,
           "offset": 467,
           "original": "&&",
@@ -163,7 +139,7 @@
           "outcome": "killed"
         },
         {
-          "line": 99,
+          "line": 87,
           "column": 32,
           "offset": 477,
           "original": "!=",
@@ -171,7 +147,7 @@
           "outcome": "survived"
         },
         {
-          "line": 99,
+          "line": 87,
           "column": 38,
           "offset": 483,
           "original": "&&",
@@ -179,7 +155,7 @@
           "outcome": "killed"
         },
         {
-          "line": 101,
+          "line": 89,
           "column": 22,
           "offset": 559,
           "original": "&&",
@@ -187,7 +163,7 @@
           "outcome": "killed"
         },
         {
-          "line": 101,
+          "line": 89,
           "column": 32,
           "offset": 569,
           "original": "!=",
@@ -195,7 +171,7 @@
           "outcome": "killed"
         },
         {
-          "line": 103,
+          "line": 91,
           "column": 20,
           "offset": 678,
           "original": "&&",
@@ -203,7 +179,7 @@
           "outcome": "survived"
         },
         {
-          "line": 103,
+          "line": 91,
           "column": 28,
           "offset": 686,
           "original": "!=",
@@ -211,7 +187,7 @@
           "outcome": "survived"
         },
         {
-          "line": 103,
+          "line": 91,
           "column": 34,
           "offset": 692,
           "original": "&&",
@@ -219,7 +195,7 @@
           "outcome": "survived"
         },
         {
-          "line": 105,
+          "line": 93,
           "column": 20,
           "offset": 755,
           "original": "&&",
@@ -227,7 +203,7 @@
           "outcome": "survived"
         },
         {
-          "line": 105,
+          "line": 93,
           "column": 28,
           "offset": 763,
           "original": "!=",
@@ -235,7 +211,7 @@
           "outcome": "survived"
         },
         {
-          "line": 110,
+          "line": 98,
           "column": 13,
           "offset": 1000,
           "original": "0",
@@ -243,7 +219,7 @@
           "outcome": "survived"
         },
         {
-          "line": 110,
+          "line": 98,
           "column": 16,
           "offset": 1003,
           "original": "==",
@@ -256,15 +232,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "pythonCommand",
       "hash": "8fd4dbaff1403962",
-      "start_line": 117,
-      "end_line": 132,
+      "start_line": 105,
+      "end_line": 120,
       "killed": 0,
       "survived": 0,
       "uncovered": 1,
       "sites": 1,
       "mutants": [
         {
-          "line": 126,
+          "line": 114,
           "column": 51,
           "offset": 445,
           "original": "==",
@@ -277,8 +253,8 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "kotlinCommand",
       "hash": "34044a36fbe5bb14",
-      "start_line": 134,
-      "end_line": 150,
+      "start_line": 122,
+      "end_line": 138,
       "killed": 0,
       "survived": 0,
       "uncovered": 0,
@@ -289,15 +265,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "orDir",
       "hash": "60bbd020047bc27e",
-      "start_line": 152,
-      "end_line": 157,
+      "start_line": 140,
+      "end_line": 145,
       "killed": 1,
       "survived": 0,
       "uncovered": 0,
       "sites": 1,
       "mutants": [
         {
-          "line": 153,
+          "line": 141,
           "column": 9,
           "offset": 46,
           "original": "!=",
@@ -310,15 +286,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "packageDeps",
       "hash": "453e5b3c409ed3dd",
-      "start_line": 159,
-      "end_line": 174,
+      "start_line": 147,
+      "end_line": 162,
       "killed": 1,
       "survived": 0,
       "uncovered": 1,
       "sites": 2,
       "mutants": [
         {
-          "line": 168,
+          "line": 156,
           "column": 13,
           "offset": 349,
           "original": "true",
@@ -326,7 +302,7 @@
           "outcome": "uncovered"
         },
         {
-          "line": 171,
+          "line": 159,
           "column": 13,
           "offset": 407,
           "original": "true",
@@ -339,15 +315,15 @@
       "namespace": "github.com/donvargax/itos-cc/mutate",
       "name": "fileExists",
       "hash": "8ea06e4783c386bc",
-      "start_line": 176,
-      "end_line": 179,
+      "start_line": 164,
+      "end_line": 167,
       "killed": 0,
       "survived": 0,
       "uncovered": 1,
       "sites": 1,
       "mutants": [
         {
-          "line": 178,
+          "line": 166,
           "column": 13,
           "offset": 73,
           "original": "==",

@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "file": "cmd/itos-cc/crap.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "runCrap",
+      "hash": "7ef68cdb47c3c762",
+      "start_line": 63,
+      "end_line": 120,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 20,
+      "sites": 20,
+      "mutants": [
+        {
+          "line": 66,
+          "column": 9,
+          "offset": 161,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 69,
+          "column": 24,
+          "offset": 217,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 69,
+          "column": 27,
+          "offset": 220,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 74,
+          "column": 18,
+          "offset": 356,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 74,
+          "column": 20,
+          "offset": 358,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 74,
+          "column": 22,
+          "offset": 360,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 78,
+          "column": 9,
+          "offset": 492,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 82,
+          "column": 9,
+          "offset": 586,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 85,
+          "column": 102,
+          "offset": 720,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 90,
+          "column": 31,
+          "offset": 814,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 90,
+          "column": 33,
+          "offset": 816,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 90,
+          "column": 35,
+          "offset": 818,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 90,
+          "column": 40,
+          "offset": 823,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 95,
+          "column": 5,
+          "offset": 937,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 99,
+          "column": 5,
+          "offset": 1015,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 110,
+          "column": 13,
+          "offset": 1348,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 110,
+          "column": 20,
+          "offset": 1355,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 110,
+          "column": 31,
+          "offset": 1366,
+          "original": "<=",
+          "replacement": "<",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 116,
+          "column": 79,
+          "offset": 1662,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 116,
+          "column": 83,
+          "offset": 1666,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/cmd/itos-cc",
+      "name": "printCrapTable",
+      "hash": "7c04de71838514a7",
+      "start_line": 122,
+      "end_line": 134,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 3,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 123,
+          "column": 38,
+          "offset": 81,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 123,
+          "column": 41,
+          "offset": 84,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 127,
+          "column": 13,
+          "offset": 227,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}
