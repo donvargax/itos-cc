@@ -518,7 +518,7 @@ items:
     title: Snapshots live at the project root and name files from it, wherever a command runs
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
