@@ -146,3 +146,12 @@ items:
       Issue #11. Needs a deep design session before it is specified; the person will hold it with a
       different model. Do not specify it or hand it to an agent until that session has happened.
     refs: ["#11"]
+  - id: T-5
+    title: The nightly installs the viewer's packages, so its TypeScript is mutated too
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Spec in the ledger, tasks/phase-1.yaml.
