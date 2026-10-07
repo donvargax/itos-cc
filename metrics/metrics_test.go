@@ -3,6 +3,7 @@ package metrics
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -28,7 +29,10 @@ func TestWritesAtTheSameTimeLeaveOneWholeSnapshot(t *testing.T) {
 	if left, _ := filepath.Glob(filepath.Join(Dir, "*.tmp")); len(left) > 0 {
 		t.Errorf("staging files left behind: %v", left)
 	}
-	if info, _ := os.Stat(filepath.Join(Dir, "x.json")); info.Mode().Perm() != 0o644 {
-		t.Errorf("mode %v, want 0644", info.Mode().Perm())
+	// Windows has no Unix permission bits: Go reports 0666 for a writable file.
+	if runtime.GOOS != "windows" {
+		if info, _ := os.Stat(filepath.Join(Dir, "x.json")); info.Mode().Perm() != 0o644 {
+			t.Errorf("mode %v, want 0644", info.Mode().Perm())
+		}
 	}
 }

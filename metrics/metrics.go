@@ -18,7 +18,8 @@ const Version = 1
 
 // Write stores v as indented JSON at .metrics/name, replacing it atomically
 // so a reader never sees half a snapshot. Each write stages its own file, so
-// runs at the same time never rename each other's half-written one.
+// runs at the same time never rename each other's half-written one; on
+// Windows the rename retries for a moment while another one holds the file.
 func Write(name string, v any) error {
 	path := filepath.Join(Dir, name)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -46,7 +47,7 @@ func Write(name string, v any) error {
 	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), path)
+	return rename(tmp.Name(), path)
 }
 
 // Read loads .metrics/name into v and reports whether the file existed.
