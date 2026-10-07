@@ -163,10 +163,12 @@ func captured(t *testing.T, fn func()) (string, string) {
 type mutateJSON struct {
 	OK    bool `json:"ok"`
 	Files []struct {
-		File     string    `json:"file"`
-		Killed   int       `json:"killed"`
-		Survived int       `json:"survived"`
-		Judged   *[]string `json:"judged"`
+		File      string    `json:"file"`
+		Killed    int       `json:"killed"`
+		Survived  int       `json:"survived"`
+		Uncovered int       `json:"uncovered"`
+		Ran       int       `json:"ran"`
+		Judged    *[]string `json:"judged"`
 	} `json:"files"`
 	Problems []map[string]any `json:"problems"`
 }
