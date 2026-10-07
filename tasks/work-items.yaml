@@ -23,8 +23,8 @@ items:
   - id: T-2
     title: Tag every scenario with an ID and require the Scenarios footer
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
