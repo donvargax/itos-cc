@@ -78,7 +78,7 @@ items:
     title: "mutation run --since follows renames: a file's results move with it"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
