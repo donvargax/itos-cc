@@ -123,3 +123,15 @@ items:
       (--check), and CI a sample that spot-checks the cache (sample mode). #9 says itos would call
       mutate --check at work done, so this follows the #9 ideas.
     refs: ["#8"]
+  - id: mutate-exceptions
+    title: "mutate: equivalent mutants excepted in a committed file, each with a reason"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #10: an equivalent mutant (one no test can kill because it changes no behaviour)
+      survives forever. A committed file names each one with a reason, so it stops failing runs
+      while staying visible; docs/CLI.md rule 38 names it as the first project setting.
+    refs: ["#10"]
