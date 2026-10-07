@@ -172,10 +172,10 @@ add `--no-coverage` to let them reach code nothing else covers. It is slow;
 run it nightly rather than on every change:
 
 ```bash
-itos-cc mutate --changed                         # while working: own tests, fast
-itos-cc mutate --since origin/main               # a gate: the functions the branch's commits changed
-itos-cc mutate --all-tests                       # nightly, e.g. a scheduled CI job
-itos-cc mutate --all-tests --no-coverage         # nightly, with end-to-end tests that run the binary
+itos-cc mutate --changed                             # while working: own tests, fast
+itos-cc mutate --since origin/main --fail-uncovered  # a gate: the functions the branch's commits changed
+itos-cc mutate --all-tests                           # nightly, e.g. a scheduled CI job
+itos-cc mutate --all-tests --no-coverage             # nightly, with end-to-end tests that run the binary
 ```
 
 `--since <ref>` judges only the functions the commits since `<ref>`
@@ -185,6 +185,13 @@ a change of the function around it, and paths narrow the range. The other
 functions neither run nor change in the snapshot, and only those judged count
 in the summary, the problems, and the exit code; `--json` names them in each
 file's `judged`.
+
+Uncovered mutants never run, so a changed function no test executes passes.
+`--fail-uncovered` makes each one a failure: listed like a survivor, a
+`mutate.uncovered` problem in `--json`, and exit 1. With `--since`, only the
+judged functions' uncovered mutants count. With `--no-coverage`, or where
+coverage measured nothing for the language, every mutant runs and none is
+uncovered.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Commit that
@@ -198,7 +205,8 @@ fails; copy it as a starting point. Raw coverage under
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off). A surviving
-mutant, or tests that fail before any mutant, exits 1.
+mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
+any mutant, exits 1.
 
 ### scrap
 

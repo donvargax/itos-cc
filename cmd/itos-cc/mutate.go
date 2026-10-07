@@ -38,7 +38,13 @@ each source file.
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
 Paths narrow it to the files under them. Functions not judged neither run nor
 change in the snapshot, and only those judged count in the summary, the
-problems, and the exit code.`,
+problems, and the exit code.
+
+--fail-uncovered makes each uncovered mutant a failure, listed like a
+survivor, so a gate fails a change no test executes. With --since, only the
+judged functions' uncovered mutants count. With --no-coverage, or where
+coverage measured nothing for the language, every mutant runs and none is
+uncovered.`,
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("workers", intFlag, "N", fmt.Sprint(max(1, runtime.NumCPU()/2)), "mutants run at the same time"),
 		sw("mutate-all", "rerun killed mutants of unchanged functions too"),
@@ -46,13 +52,15 @@ problems, and the exit code.`,
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		sw("scan", "list mutation sites without running tests"),
-		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)")),
+		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
+		sw("fail-uncovered", "fail on each uncovered mutant, as on a survivor")),
 	json: `"files": [{"file", "killed", "survived", "uncovered", "ran", "reused",
    "baseline": "passed"|"failed", and with --since "judged": ["namespace#name"]}];
    with --scan, "sites": [{"file", "line", "column", "function", "original",
    "replacement"}]`,
 	rules: []string{
 		"mutate.survived         a mutant survived: file, line, column, function, original, replacement",
+		"mutate.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
 		"mutate.baseline-failed  the tests fail before any mutant: file",
 		"since.bad-ref           --since names no commit: ref",
 		"since.no-git            --since outside a git repository",
@@ -60,14 +68,14 @@ problems, and the exit code.`,
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, or a file's tests fail before any mutant"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, or a file's tests fail before any mutant"},
 		{2, "a usage error: a bad flag or path, a --since ref that is no commit, or --since with --changed"},
 		{3, "--changed or --since outside a git repository"},
 	},
 	examples: []string{
 		"itos-cc mutate --changed",
-		"itos-cc mutate --since origin/main       # a branch's own commits, as a gate",
-		"itos-cc mutate --all-tests --json        # nightly",
+		"itos-cc mutate --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
+		"itos-cc mutate --all-tests --json                    # nightly",
 	},
 	run: runMutate,
 }
@@ -152,6 +160,9 @@ func runMutate(in *invocation) (any, error) {
 		}
 	}
 
+	// Uncovered mutants never run, so without it a function no test
+	// executes passes.
+	failUncovered := in.set("fail-uncovered")
 	results, err := mutate.Run(files.Sources, opt)
 	if err != nil {
 		return result, err
@@ -195,25 +206,36 @@ func runMutate(in *invocation) (any, error) {
 		}
 		for _, u := range units {
 			for _, m := range u.Mutants {
-				if m.Outcome != mutate.Survived {
-					continue
+				switch {
+				case m.Outcome == mutate.Survived:
+					reportMutant(in, r.Rel, u, m, "mutate.survived", "survived", "survived",
+						"Add a test that fails with this change.")
+				case m.Outcome == mutate.Uncovered && failUncovered:
+					reportMutant(in, r.Rel, u, m, "mutate.uncovered", "uncovered", "is uncovered: no test executes its line",
+						"Add a test that executes this line and fails with this change.")
 				}
-				function := u.Namespace + "#" + u.Name
-				if !in.json {
-					fmt.Printf("  survived %s:%d:%d %s → %s in %s\n", r.Rel, m.Line, m.Column,
-						quote(m.Original), quote(m.Replacement), function)
-				}
-				p := fail(kindNo, "mutate.survived",
-					fmt.Sprintf("%s:%d:%d: %s → %s in %s survived", r.Rel, m.Line, m.Column, quote(m.Original), quote(m.Replacement), function),
-					"Add a test that fails with this change.").
-					with("file", r.Rel).with("line", m.Line).with("column", m.Column).with("function", function).
-					with("original", m.Original).with("replacement", m.Replacement)
-				p.shown = true
-				in.report(p)
 			}
 		}
 	}
 	return result, nil
+}
+
+// reportMutant lists mutant m of unit u in file rel on stdout, as "<what>
+// <file>:<line>:<column> <original> → <replacement> in <function>", and
+// reports it as a problem of rule whose message ends with verdict.
+func reportMutant(in *invocation, rel string, u mutate.UnitResult, m mutate.Mutant, rule, what, verdict, fix string) {
+	function := u.Namespace + "#" + u.Name
+	if !in.json {
+		fmt.Printf("  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
+			quote(m.Original), quote(m.Replacement), function)
+	}
+	p := fail(kindNo, rule,
+		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, quote(m.Original), quote(m.Replacement), function, verdict),
+		fix).
+		with("file", rel).with("line", m.Line).with("column", m.Column).with("function", function).
+		with("original", m.Original).with("replacement", m.Replacement)
+	p.shown = true
+	in.report(p)
 }
 
 // changedSince is the functions the commits since --since's ref changed, by

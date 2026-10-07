@@ -24,7 +24,7 @@ are ready (rules 42 and 43).
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, a function is over `--threshold`, tests that measure nothing. |
+| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, a function is over `--threshold`, tests that measure nothing. |
 | 2    | A usage or config error: a bad flag, path, argument, or report.                        |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -79,6 +79,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `coverage.report-unreadable` | 2    | crap --threshold | `report`                                                  |
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
 | `mutate.survived`            | 1    | mutate         | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutate.uncovered`           | 1    | mutate --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutate.baseline-failed`     | 1    | mutate         | `file`                                                      |
 | `serve.repo-unreadable`      | 2    | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |

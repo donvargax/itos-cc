@@ -269,7 +269,7 @@ Feature: Mutation testing
   # nothing for the language, every mutant runs and none is uncovered.
   Rule: Uncovered mutants as failures
 
-    @wip @slice-2 @ID-MUT-47
+    @slice-2 @ID-MUT-47
     Scenario: An uncovered mutant fails the run
       Given coverage shows line 12 of src/board.ts is never executed
       And every mutant on the lines the tests execute is killed
@@ -277,14 +277,14 @@ Feature: Mutation testing
       Then each mutant on line 12 is listed as "uncovered src/board.ts:12:9 `>` → `>=` in board#place"
       And the exit code is 1
 
-    @wip @slice-2 @ID-MUT-48
+    @slice-2 @ID-MUT-48
     Scenario: A file the tests never load fails whole
       Given coverage measured other TypeScript files but never src/unused.ts
       When I run "itos-cc mutate --fail-uncovered src/unused.ts"
       Then every mutant in src/unused.ts is listed as uncovered
       And the exit code is 1
 
-    @wip @slice-2 @ID-MUT-49
+    @slice-2 @ID-MUT-49
     Scenario: With --since only the judged functions' uncovered mutants fail
       Given a commit after "base" changed "Board#place", which no test executes
       And "Board#clear", unchanged, is not executed by any test either
@@ -293,13 +293,13 @@ Feature: Mutation testing
       And none of "Board#clear" is
       And the exit code is 1
 
-    @wip @slice-2 @ID-MUT-50
+    @slice-2 @ID-MUT-50
     Scenario: Uncovered mutants as JSON
       When I run "itos-cc mutate --fail-uncovered --json src/board.ts"
       Then each uncovered mutant is a "mutate.uncovered" problem with file, line, column, function, original, and replacement
       And "ok" is false
 
-    @wip @slice-2 @ID-MUT-51
+    @slice-2 @ID-MUT-51
     Scenario: Nothing is uncovered when coverage is skipped
       When I run "itos-cc mutate --no-coverage --fail-uncovered src/board.ts"
       Then every mutant runs
