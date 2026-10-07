@@ -275,7 +275,7 @@ Feature: Mutation testing
     Scenario: No coverage for the language at all
       Given coverage measured no Kotlin file
       When I run "itos-cc mutation run src/Board.kt"
-      Then stderr says "mutate: no coverage for src/Board.kt; running every mutant"
+      Then stderr says "itos-cc: no coverage for src/Board.kt; running every mutant"
 
     @ID-MUT-21
     Scenario: Skipping coverage
@@ -287,16 +287,16 @@ Feature: Mutation testing
       Given every mutant can be reused from the previous snapshot
       When I run "itos-cc mutation run"
       Then no coverage or test command runs
-      And stderr says "mutate: no mutations to test"
+      And stderr says "itos-cc: no mutations to test"
 
     # The lines the mutation commands write to stderr themselves (the
     # baseline, coverage, each mutant's outcome) began "mutate:", a command
     # that is gone since the mutation group. They begin "itos-cc:", as every
     # other line itos-cc writes to stderr does (the coordinator's call,
     # 2026-10-07). The output of the test and coverage commands themselves is
-    # passed on as it is. ID-MUT-20 and ID-MUT-22 say the old text and change
+    # passed on as it is. ID-MUT-20 and ID-MUT-22 said the old text and changed
     # with the fix.
-    @wip @mutation-progress-prefix @ID-MUT-100
+    @mutation-progress-prefix @ID-MUT-100
     Scenario: Progress lines begin itos-cc:
       Given src/board.ts has a mutant that is killed and one on a line no test executes
       When I run "itos-cc mutation run src/board.ts"

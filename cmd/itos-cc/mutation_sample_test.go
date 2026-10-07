@@ -136,7 +136,7 @@ func recorded(t *testing.T, function, original string) string {
 
 // mutantsRun counts the mutants a run says on stderr that it ran.
 func mutantsRun(stderr string) int {
-	return strings.Count(stderr, "mutate: [")
+	return strings.Count(stderr, "itos-cc: [")
 }
 
 // passing is a test command that always passes, on every platform.
@@ -261,7 +261,7 @@ func init() {
 			t.Errorf("the tests ran in %s, the real tree: want a worker's copy", wd)
 		}
 	}
-	baseline, first := strings.Index(o.stderr, "mutate: baseline"), strings.Index(o.stderr, "mutate: [1/")
+	baseline, first := strings.Index(o.stderr, "itos-cc: baseline"), strings.Index(o.stderr, "itos-cc: [1/")
 	if baseline < 0 || first < 0 || baseline > first {
 		t.Errorf("stderr:\n%s\nwant the baseline, then each sampled mutant", o.stderr)
 	}

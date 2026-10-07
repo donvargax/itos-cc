@@ -123,7 +123,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 			return nil, err
 		}
 	} else {
-		fmt.Fprintln(opt.Log, "mutate: no mutations to test")
+		fmt.Fprintln(opt.Log, "itos-cc: no mutations to test")
 	}
 
 	var results []FileResult
@@ -269,7 +269,7 @@ func markUncovered(states []*fileState, opt Options) {
 	for _, s := range states {
 		has := report.Has(s.file.Path)
 		if !has && !measured[s.file.Spec.Name] {
-			fmt.Fprintf(opt.Log, "mutate: no coverage for %s; running every mutant\n", s.rel)
+			fmt.Fprintf(opt.Log, "itos-cc: no coverage for %s; running every mutant\n", s.rel)
 			continue
 		}
 		for i, site := range s.sites {
@@ -314,7 +314,7 @@ func execute(states []*fileState, opt Options) error {
 			}
 			key := s.command.Key()
 			if _, done := timeouts[key]; !done && failed[key] == "" {
-				fmt.Fprintf(opt.Log, "mutate: baseline %s$ %s\n", project.Rel(s.command.Dir), s.command)
+				fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(s.command.Dir), s.command)
 				r, err := workers[0].run(s.command, 0)
 				if err != nil {
 					return err
@@ -352,7 +352,7 @@ func execute(states []*fileState, opt Options) error {
 				j.state.result.Ran++
 				done++
 				site := j.state.sites[j.site]
-				fmt.Fprintf(opt.Log, "mutate: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", done, len(jobs),
+				fmt.Fprintf(opt.Log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", done, len(jobs),
 					j.state.rel, site.Line, show(site.Original), show(site.Replacement), outcome, elapsed.Seconds())
 				mu.Unlock()
 			}
