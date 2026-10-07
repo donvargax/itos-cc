@@ -69,6 +69,7 @@ questions:
     item: "mutation-test-hash-since"
     question: "When a file's tests changed, mutation run --since drops the entries of the functions it does not judge, so check calls them missing and their survivors are lost. (a, recommended) Keep those entries, marked stale, so check calls them stale and their survivors are kept. (b) Record the tests' hashes per function instead of per file."
     answer: "(a) Keep them, marked stale."
+    decision: none
   - id: q-15
     item: "mutation-sample-scope"
     question: "Snapshots do not record which tests decided an outcome (the file's own, --all-tests, or a --test-command), so mutation sample over --all-tests results reports false mismatches. (a, recommended) Record the scope per mutant outcome; mutation sample re-runs each mutant with its recorded scope by default, a flag overriding it. (b) Record it per file. (c) Leave it to the flags and drop the idea."
