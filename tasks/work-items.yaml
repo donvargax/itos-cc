@@ -553,3 +553,15 @@ items:
       the command line wins. itos-cc could read GOFLAGS and the target's exec program and run the
       test binary through them in turn.
     refs: ["#14"]
+  - id: listed-tests-freshness
+    title: A kill made by listed tests goes stale when its covering tests change
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [listed-tests]
+    kind: idea
+    why: >
+      Issue #14 part 2, second half (q-19): a kill made by listed tests is fresh while the set of
+      tests covering its line and the files they name are unchanged. Open: whether step code
+      (features/*_test.go) joins what is hashed.
+    refs: ["#14"]
