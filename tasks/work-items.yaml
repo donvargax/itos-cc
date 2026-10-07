@@ -16,6 +16,7 @@ queue:
   - namespace-working-dir
   - graph-stale-tests
   - since-untouched-files
+  - since-follows-renames
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
