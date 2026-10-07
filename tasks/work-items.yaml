@@ -107,3 +107,15 @@ items:
       0 of N", and mutate still writes its snapshot and rewrites its summary comment though nothing
       in it ran. The comment also counts every function the snapshot holds, while stdout counts only
       those judged.
+  - id: windows-cross-vet
+    title: GOOS=windows go vet ./... cannot pass off Windows
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The tree-sitter bindings are cgo, and a cross-compiled vet turns cgo off, so every package
+      that imports lang fails with "build constraints exclude all Go files"; it failed before
+      slice-1 too (e1a44e4). It needs CGO_ENABLED=1 with a mingw-w64 compiler, or the vet of the
+      Windows CI job is the only check.
