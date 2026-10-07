@@ -7,6 +7,7 @@ Feature: Command line
 
   Rule: Help and version
 
+    @ID-CLI-01
     Scenario Outline: Asking for help prints it and succeeds
       When I run "itos-cc <args>"
       Then the usage text is printed to stdout
@@ -20,6 +21,7 @@ Feature: Command line
         | --help |
         | help   |
 
+    @ID-CLI-02
     Scenario Outline: Each command's help gives its contract
       When I run "itos-cc <args>"
       Then the command's usage, options, --json shape, problem rules, and exit codes are printed to stdout
@@ -34,6 +36,7 @@ Feature: Command line
         | mutate src/a.go -h    |
         | units --changed --help |
 
+    @ID-CLI-03
     Scenario Outline: Reporting the version
       Given the binary was built <how>
       When I run "itos-cc <command>"
@@ -45,6 +48,7 @@ Feature: Command line
         | by "go install ...@v1.2.3"                | version   | v1.2.3   |
         | from a local checkout with "go build"     | --version | dev      |
 
+    @ID-CLI-04
     Scenario Outline: An unknown command is a usage error
       When I run "itos-cc <args>"
       Then stderr says "itos-cc: there is no command \"<name>\"<guess> Run 'itos-cc --help' for the commands."
@@ -58,14 +62,17 @@ Feature: Command line
 
   Rule: Flags are read by one spec in every command
 
+    @ID-CLI-05
     Scenario: Long flags with two dashes, in any position
       When I run "itos-cc crap src --top=5 --threshold 30 billing"
       Then it is the same as "itos-cc crap --top 5 --threshold 30 src billing"
 
+    @ID-CLI-06
     Scenario: -- ends the options
       When I run "itos-cc units -- --tests"
       Then "--tests" is a path, not the flag
 
+    @ID-CLI-07
     Scenario Outline: A bad flag is a usage error
       When I run "itos-cc <args>"
       Then stderr says "itos-cc: <message>"
@@ -85,6 +92,7 @@ Feature: Command line
 
   Rule: One contract with scripts
 
+    @ID-CLI-08
     Scenario Outline: Exit codes by kind
       Given <situation>
       When the command ends
@@ -100,11 +108,13 @@ Feature: Command line
         | a temporary failure, such as serve's port being in use           | 75   |
       # with problems of several kinds: 2, then 70, 3, 75, and 1
 
+    @ID-CLI-09
     Scenario: --json prints one object
       When I run "itos-cc crap --json"
       Then stdout is one object with "schema": 1, "ok": true, and the command's own keys
       And progress and test output go to stderr
 
+    @ID-CLI-10
     Scenario: --json prints the object for a failure too
       When I run "itos-cc --json crapp"
       Then stdout is:
@@ -126,6 +136,7 @@ Feature: Command line
       # each problem carries a stable rule id and its subject as keys, such
       # as file, line, and function; scripts never read message or fix
 
+    @ID-CLI-11
     Scenario: Plain output prints each problem on stderr
       When a run has a problem
       Then stderr says "itos-cc: <message>. <fix>"

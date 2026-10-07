@@ -2,24 +2,29 @@ Feature: Units: the functions and methods every tool measures
   Every tool works on the same units, named by namespace and function name,
   so results from crap, dry, mutate, and the graph join on the same key.
 
+  @ID-UNIT-01
   Scenario: Listing production units
     When I run "itos-cc units"
     Then stdout lists each unit as "file:start-end  namespace#name  kind"
 
+  @ID-UNIT-02
   Scenario: Listing production units as JSON
     When I run "itos-cc units --json"
     Then stdout is one object with "schema": 1, "ok", and "units"
     And each unit has file, language, namespace, name, kind, private, start_line, and end_line
 
+  @ID-UNIT-03
   Scenario: Listing test code instead
     When I run "itos-cc units --tests"
     Then only units from test files are listed
 
+  @ID-UNIT-04
   Scenario: No units is an empty list
     Given the selection holds no supported files
     When I run "itos-cc units --json"
     Then "units" is an empty list
 
+  @ID-UNIT-05
   Scenario: TypeScript units
     Given the file "src/demo/board.ts":
       """
@@ -60,6 +65,7 @@ Feature: Units: the functions and methods every tool measures
       | method   | demo.board.Board | onClick     | 22-22 | no      |
     And nested arrow functions, callbacks, and abstract methods are not units
 
+  @ID-UNIT-06
   Scenario: Inline route callbacks are units of their own
     Given the file "src/api/routes.js":
       """
@@ -95,11 +101,13 @@ Feature: Units: the functions and methods every tool measures
     And the line a route starts on is mount's, since mounting runs it
     But test files have no route units
 
+  @ID-UNIT-07
   Scenario: TSX files are parsed with the TSX grammar
     Given the file "src/ui/cell.tsx" with a component that returns JSX
     When its units are listed
     Then the component "ui.cell#Cell" is a unit
 
+  @ID-UNIT-08
   Scenario: Python units
     Given the file "src/demo/board.py":
       """
@@ -139,11 +147,13 @@ Feature: Units: the functions and methods every tool measures
       | method   | demo.board.Board      | _clear   | 20-21 | yes     |
       | method   | demo.board.Board.Cell | value    | 24-25 | no      |
 
+  @ID-UNIT-09
   Scenario: A Python package's __init__ is named after the package
     Given the file "src/demo/__init__.py" defining "main"
     When its units are listed
     Then the unit is "demo#main"
 
+  @ID-UNIT-10
   Scenario: Kotlin units
     Given the file "src/main/kotlin/demo/game/Board.kt":
       """
@@ -184,11 +194,13 @@ Feature: Units: the functions and methods every tool measures
       | method   | demo.game.Board.Companion | empty  | 20-20 | no      |
       | method   | demo.game.Rules           | max    | 25-25 | no      |
 
+  @ID-UNIT-11
   Scenario: A Kotlin class with several annotations keeps its methods
     Given a Kotlin class annotated with both @Configuration and @EnableWebSecurity
     When its units are listed
     Then its method is a unit of that class
 
+  @ID-UNIT-12
   Scenario: Go units are namespaced by module import path
     Given the Go module "example.com/demo" with package "board"
     When the units of board/board.go are listed

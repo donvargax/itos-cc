@@ -4,6 +4,7 @@ Feature: Cyclomatic complexity
   callbacks and closures, but not inside a route callback, which is a unit of
   its own.
 
+  @ID-CPLX-01
   Scenario Outline: Straight-line code has complexity 1
     Given a <language> function with no branches
     When its complexity is measured
@@ -16,6 +17,7 @@ Feature: Cyclomatic complexity
       | Go         |
       | Kotlin     |
 
+  @ID-CPLX-02
   Scenario: TypeScript decisions
     Given the TypeScript function:
       """
@@ -34,6 +36,7 @@ Feature: Cyclomatic complexity
     Then it is 13
     # if, &&, else-if, ||, for, while, catch, ?:, ??, callback if, 2 cases
 
+  @ID-CPLX-03
   Scenario: Optional chaining is a decision
     Given the TypeScript function:
       """
@@ -47,6 +50,7 @@ Feature: Cyclomatic complexity
     And it is 7 in a .js file too
     And a Kotlin safe call a?.b counts like the elvis ?:
 
+  @ID-CPLX-04
   Scenario: Python decisions
     Given the Python function:
       """
@@ -75,6 +79,7 @@ Feature: Cyclomatic complexity
     Then it is 13
     # if, and, elif, or, for, while, except, if-else, comprehension for + if, 2 cases
 
+  @ID-CPLX-05
   Scenario: Go decisions
     Given the Go function:
       """
@@ -103,6 +108,7 @@ Feature: Cyclomatic complexity
     Then it is 10
     # if, &&, ||, for, 2 cases, type case, comm case, closure if
 
+  @ID-CPLX-06
   Scenario: Kotlin decisions
     Given the Kotlin function:
       """

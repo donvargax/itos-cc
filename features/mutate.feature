@@ -6,6 +6,7 @@ Feature: Mutation testing
 
   Rule: Mutation sites
 
+    @ID-MUT-01
     Scenario: TypeScript sites
       Given the file "x.ts":
         """
@@ -32,6 +33,7 @@ Feature: Mutation testing
         | 6    | true     | false       |
       And code outside functions, comments, strings, and type arguments hold no sites
 
+    @ID-MUT-02
     Scenario: Nullish coalescing and optional chaining
       Given the file "x.ts":
         """
@@ -50,6 +52,7 @@ Feature: Mutation testing
       And a?.() becomes a(), as a?.[0] becomes a[0]
       And .js, .jsx, .mjs, and .cjs files have the same sites
 
+    @ID-MUT-03
     Scenario: Python sites
       Given the file "x.py":
         ```
@@ -76,6 +79,7 @@ Feature: Mutation testing
         | 7    | or       | and         |
         | 7    | False    | True        |
 
+    @ID-MUT-04
     Scenario: Go sites
       Given the file "x.go":
         """
@@ -104,6 +108,7 @@ Feature: Mutation testing
         | 9    | >        | >=          |
         | 11   | true     | false       |
 
+    @ID-MUT-05
     Scenario: Kotlin sites
       Given the file "x.kt":
         """
@@ -125,6 +130,7 @@ Feature: Mutation testing
         | 5    | *        | /           |
         | 5    | >=       | >           |
 
+    @ID-MUT-06
     Scenario: Scanning prints sites without running tests
       When I run "itos-cc mutate --scan src/board.py"
       Then each site is printed as "file:line:column `original` → `replacement` in namespace#name"
@@ -133,6 +139,7 @@ Feature: Mutation testing
 
   Rule: Running mutants
 
+    @ID-MUT-07
     Scenario Outline: Each file runs its narrowest test command
       Given a source file in a <language> project with <setup>
       When its mutants run
@@ -149,6 +156,7 @@ Feature: Mutation testing
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
         | Kotlin     | Maven             | mvn -q test                                                      |
 
+    @ID-MUT-08
     Scenario: By default a file is measured and mutated by its own tests
       Given a/a.go is tested only by e2e/e2e_test.go, which imports package a
       When I run "itos-cc mutate a/a.go"
@@ -157,6 +165,7 @@ Feature: Mutation testing
       # coverage comes from the tests that kill mutants, so a line only
       # other tests reach is uncovered, never a false survivor
 
+    @ID-MUT-09
     Scenario: The whole suite, as a nightly job
       When I run "itos-cc mutate --all-tests a/a.go"
       Then coverage and every mutant run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
@@ -165,37 +174,44 @@ Feature: Mutation testing
       # --no-coverage too, every mutant runs and they can kill it
       And a later run without --all-tests reuses those kills for functions that have not changed
 
+    @ID-MUT-10
     Scenario: A custom test command
       When I run "itos-cc mutate --test-command 'make test' src/board.go"
       Then "make test" runs through the platform shell from the file's build root
 
+    @ID-MUT-11
     Scenario: The real tree is never modified while tests run
       When I run "itos-cc mutate src/board.ts"
       Then each worker runs mutants in its own private copy of the project
       And dependency directories such as node_modules and .venv are linked, not copied
       And the source files in the working tree are unchanged while tests run
 
+    @ID-MUT-12
     Scenario: Python tests import the worker's copy
       Given a Python project installed in editable mode
       When its mutants run
       Then PYTHONPATH puts the worker's copy of "." and "src" first
 
+    @ID-MUT-13
     Scenario: The baseline proves the copy works
       When mutants are about to run for a test command
       Then that command first runs unmutated inside a worker's copy
       And its duration sets the mutant timeout
 
+    @ID-MUT-14
     Scenario: Timeouts
       Given the baseline took 3 seconds
       When I run "itos-cc mutate --timeout-factor 10"
       Then a mutant times out after 30 seconds
       And a timed-out mutant counts as killed
 
+    @ID-MUT-15
     Scenario: Fast suites still get two seconds
       Given the baseline took 50 milliseconds
       When mutants run with the default timeout factor of 10
       Then a mutant times out after 2 seconds
 
+    @ID-MUT-16
     Scenario: A failing baseline
       Given the tests of src/board.py fail without any mutation
       When I run "itos-cc mutate src/board.py"
@@ -205,6 +221,7 @@ Feature: Mutation testing
       And the problem is "mutate.baseline-failed", with file
       And the exit code is 1
 
+    @ID-MUT-17
     Scenario: Parallel workers
       When I run "itos-cc mutate --workers 4"
       Then up to 4 mutants run at the same time
@@ -212,25 +229,30 @@ Feature: Mutation testing
 
   Rule: Coverage decides which mutants run
 
+    @ID-MUT-18
     Scenario: Mutants on lines no test executes are not run
       Given coverage shows line 12 of src/board.ts is never executed
       When I run "itos-cc mutate src/board.ts"
       Then the mutants on line 12 are reported as uncovered without running
 
+    @ID-MUT-19
     Scenario: A file the tests never load is entirely uncovered
       Given coverage measured other TypeScript files but never src/unused.ts
       When I run "itos-cc mutate src/unused.ts"
       Then every mutant in src/unused.ts is uncovered
 
+    @ID-MUT-20
     Scenario: No coverage for the language at all
       Given coverage measured no Kotlin file
       When I run "itos-cc mutate src/Board.kt"
       Then stderr says "mutate: no coverage for src/Board.kt; running every mutant"
 
+    @ID-MUT-21
     Scenario: Skipping coverage
       When I run "itos-cc mutate --no-coverage"
       Then every mutant runs regardless of coverage
 
+    @ID-MUT-22
     Scenario: Coverage is only measured when a mutant has to run
       Given every mutant can be reused from the previous snapshot
       When I run "itos-cc mutate"
@@ -239,38 +261,45 @@ Feature: Mutation testing
 
   Rule: Differential runs
 
+    @ID-MUT-23
     Scenario: Killed mutants of unchanged functions stay killed
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since
       When I run "itos-cc mutate"
       Then those mutants are reused without running
 
+    @ID-MUT-24
     Scenario: Changed functions rerun
       Given "Board#place" changed since the previous run
       When I run "itos-cc mutate"
       Then every mutant of "Board#place" runs again
 
+    @ID-MUT-25
     Scenario: Moving a function does not count as a change
       Given an import was added above "f" so it moved down the file
       When I run "itos-cc mutate"
       Then the killed mutants of "f" are still reused
 
+    @ID-MUT-26
     Scenario: Survivors are always retried
       Given a mutant of "Board#place" survived the previous run
       When I run "itos-cc mutate"
       Then it runs again, since new tests may kill it
 
+    @ID-MUT-27
     Scenario: Forcing a full rerun
       When I run "itos-cc mutate --mutate-all"
       Then killed mutants of unchanged functions run again too
 
   Rule: Results
 
+    @ID-MUT-28
     Scenario: Summary per file
       When I run "itos-cc mutate src/board.ts"
       Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
       And each survivor is listed as "survived src/board.ts:5:9 `>` → `>=` in board#place"
 
+    @ID-MUT-29
     Scenario Outline: Exit codes
       Given <situation>
       When I run "itos-cc mutate"
@@ -282,15 +311,18 @@ Feature: Mutation testing
         | a baseline fails              | 1    |
         | a mutant survives             | 1    |
 
+    @ID-MUT-30
     Scenario: Survivors as JSON
       When I run "itos-cc mutate --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", and "files", each with file, killed, survived, uncovered, ran, reused, and baseline
       And each survivor is a "mutate.survived" problem with file, line, column, function, original, and replacement
 
+    @ID-MUT-31
     Scenario: Results are cached per file
       When I run "itos-cc mutate src/billing/invoice.ts"
       Then .metrics/mutate/src/billing/invoice.ts.json records each function's hash and the outcome of every mutant
 
+    @ID-MUT-32
     Scenario: A summary comment at the end of each source file
       Given the file "x.py":
         """
@@ -305,21 +337,25 @@ Feature: Mutation testing
         # end itos-cc mutate
         """
 
+    @ID-MUT-33
     Scenario: The summary comment is replaced, not repeated
       Given a file that already ends with an itos-cc mutate comment
       When its mutants run again
       Then the file holds exactly one, updated summary comment
       And the file is only written when the summary changed
 
+    @ID-MUT-34
     Scenario: A comment block followed by code is not ours
       Given an itos-cc mutate comment block followed by more code
       When the summary is rewritten
       Then that block is left in place
 
+    @ID-MUT-35
     Scenario: Turning the summary comment off
       When I run "itos-cc mutate --no-annotate"
       Then no source file is modified
 
+    @ID-MUT-36
     Scenario: Nothing to mutate
       Given the selection holds no production source files
       When I run "itos-cc mutate"

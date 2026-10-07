@@ -15,8 +15,8 @@ A commit's type is one of `feat`, `fix`, `refactor`, `perf`, `test`, `build`, `c
 
 The footers each type needs:
 
-- `feat`: none.
-- `fix`: none.
+- `feat`: `Scenarios:`.
+- `fix`: `Scenarios:`.
 - `refactor`: `Task:`.
 - `perf`: `Task:`.
 - `test`: `Task:`.

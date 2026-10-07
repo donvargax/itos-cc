@@ -1,4 +1,55 @@
 # The smoke set: one live scenario of each feature file, which a push's CI can
 # run in place of every one; itos tests smoke check scenario holds it to that.
-# itos init picked each file's first: pick a fast one, central to its file.
-[]
+# Each is a fast one, central to its file.
+- file: architecture_graph.feature
+  scenarios:
+    - id: "@ID-GRAPH-07"
+      why: the import edges of all four languages resolved to modules, the graph's point
+- file: cli.feature
+  scenarios:
+    - id: "@ID-CLI-01"
+      why: help printed and exit 0, the entry point every command shares, with no project to scan
+- file: complexity.feature
+  scenarios:
+    - id: "@ID-CPLX-05"
+      why: every Go decision counted in one parsed function, from if and && to select and a closure
+- file: coverage.feature
+  scenarios:
+    - id: "@ID-COV-20"
+      why: a Go profile, LCOV and JaCoCo XML each loaded to its source, with no coverage tool run
+- file: crap.feature
+  scenarios:
+    - id: "@ID-CRAP-01"
+      why: the CRAP formula itself, the file's point, scored without running tests
+- file: dry.feature
+  scenarios:
+    - id: "@ID-DRY-02"
+      why: renamed code normalized to the same fingerprint in three languages, compared directly
+- file: file_selection.feature
+  scenarios:
+    - id: "@ID-SEL-15"
+      why: production code told from test code by each language's conventions, the split every command uses
+- file: metrics_snapshots.feature
+  scenarios:
+    - id: "@ID-SNAP-02"
+      why: a snapshot rewritten byte for byte the same, what lets projects commit .metrics
+- file: mutate.feature
+  scenarios:
+    - id: "@ID-MUT-04"
+      why: the mutation sites of a Go file, listed with --scan, which runs no mutant and no test
+- file: scrap.feature
+  scenarios:
+    - id: "@ID-SCRAP-11"
+      why: an example scored from its lines, branches, mocks and assertions, the measure every action rests on
+- file: serve.feature
+  scenarios:
+    - id: "@ID-SERVE-03"
+      why: GET /api/graph answered with the graph as JSON, what the viewer reads
+- file: units.feature
+  scenarios:
+    - id: "@ID-UNIT-01"
+      why: the production units listed as namespace#name, the key every tool joins on
+- file: viewer.feature
+  scenarios:
+    - id: "@ID-VIEW-04"
+      why: dependencies rolled up to the boxes of the current level, how the viewer draws every level

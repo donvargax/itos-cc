@@ -27,14 +27,13 @@ commits:
       validate_for: all # a task named must be in the ledger
       read_at: commit # judged against the ledger the commit carries
     # The scenarios a feat or a fix turns green, by their ID tags
-    # (itos commit --scenarios '@ID-PAGE-01'); a @wip one is not live. No
-    # scenario carries an ID tag yet, so no commit needs the footer: tag one
-    # (@ID-PAGE-01 on the line above its Scenario:), then set required_for
-    # to [feat, fix].
+    # (itos commit --scenarios '@ID-MUT-01'); a @wip one is not live. Every
+    # scenario carries one, on the line above its Scenario:, so every feat
+    # and fix names the scenarios it turns green.
     Scenarios:
       source: { tests: scenario }
       strip_prefix: "@"
-      required_for: []
+      required_for: [feat, fix]
       validate_for: [feat, fix]
       must_be_live: true
       read_at: commit

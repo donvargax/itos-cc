@@ -6,6 +6,7 @@ Feature: Test-code structure
 
   Rule: Finding examples
 
+    @ID-SCRAP-01
     Scenario Outline: Test frameworks
       Given a <language> test file using <framework>
       When I run "itos-cc scrap"
@@ -18,17 +19,20 @@ Feature: Test-code structure
         | Go         | testing               | parent test, for t.Run subtests   |
         | Kotlin     | JUnit and kotest      | test class, or kotest describe, context, feature, or given block |
 
+    @ID-SCRAP-02
     Scenario: Go subtests and table loops
       Given a Go test that loops over a table of cases and asserts in the loop body
       When it is measured
       Then it is marked as a table
       And the loop does not count as logic
 
+    @ID-SCRAP-03
     Scenario: Shared setup is counted separately
       Given a test file with beforeEach, fixtures, setUp, or @BeforeEach
       When it is measured
       Then those lines count as setup, not as any example's size
 
+    @ID-SCRAP-04
     Scenario: A Kotlin test class with several annotations
       Given the Kotlin test file "ApiTest.kt" with a class annotated @SpringBootTest and @AutoConfigureMockMvc
       And a @Test method "lists" with one assertEquals
@@ -37,6 +41,7 @@ Feature: Test-code structure
 
   Rule: Measuring examples
 
+    @ID-SCRAP-05
     Scenario: Assertion helpers count as assertions
       Given the Go test file "x_test.go":
         """
@@ -73,6 +78,7 @@ Feature: Test-code structure
         | TestCheckout | 0          | 0         | 0     | no    |
       # assertParsed asserts, so calling it is an assertion; checkout is not a helper
 
+    @ID-SCRAP-06
     Scenario: A setup helper that fails on its own errors is not an assertion
       Given a Go helper "write" whose only failure is if err := os.WriteFile(…); err != nil { t.Fatal(err) }
       And an example that calls write twice and an asserting helper once
@@ -80,6 +86,7 @@ Feature: Test-code structure
       Then it has 1 assertion
       # the guard checks the setup worked, not the behavior under test
 
+    @ID-SCRAP-07
     Scenario Outline: Assertions each language recognizes
       Given a <language> example containing <code>
       Then it counts as an assertion
@@ -95,6 +102,7 @@ Feature: Test-code structure
         | Kotlin     | x shouldBe 1                           |
         | Kotlin     | coVerify { repo.save(any()) }          |
 
+    @ID-SCRAP-08
     Scenario Outline: Helper names that read as assertions
       Given a test calls a helper named "<name>" defined outside the file
       Then the call <counts> as an assertion
@@ -108,11 +116,13 @@ Feature: Test-code structure
         | mustParse   | counts       |
         | checkout    | does not count |
 
+    @ID-SCRAP-09
     Scenario: Fixture text is not test size
       Given a pytest example whose body is a 40-line triple-quoted string and one assertion
       When it is measured
       Then it spans 44 raw lines but only 3 code lines
 
+    @ID-SCRAP-10
     Scenario Outline: A case table is not test size
       Given a test whose 44 cases are <table>
       When it is measured
@@ -126,6 +136,7 @@ Feature: Test-code structure
         | a TypeScript array it loops over with for…of, or it.each's argument    |
         | a Kotlin listOf it loops over, or a @CsvSource                         |
 
+    @ID-SCRAP-11
     Scenario Outline: Scoring an example
       Given an example with <lines> code lines, <decisions> branches or loops, <mocks> mocks, and <assertions> assertions
       When it is scored
@@ -139,6 +150,7 @@ Feature: Test-code structure
       # 1, plus (lines − 15) / 5, plus 2.5 per decision, plus 1.5 per mock beyond 2,
       # plus 6 with no assertions, plus (assertions − 10) / 2
 
+    @ID-SCRAP-12
     Scenario Outline: Smells
       Given an example with <measure>
       Then it has the smell "<smell>"
@@ -153,6 +165,7 @@ Feature: Test-code structure
 
   Rule: Choosing an action for the file
 
+    @ID-SCRAP-13
     Scenario: A clean file is left alone
       Given the Python test file "test_ok.py":
         """
@@ -167,6 +180,7 @@ Feature: Test-code structure
       And its pressure is 0
       And it has no recommendations
 
+    @ID-SCRAP-14
     Scenario: A coverage matrix should become a table
       Given the TypeScript test file "parse.test.ts":
         """
@@ -182,6 +196,7 @@ Feature: Test-code structure
       And it has one "table" cluster of 4 examples
       And the first recommendation says to fold them into "it.each / test.each"
 
+    @ID-SCRAP-15
     Scenario Outline: The table idiom matches the language
       Given a <language> test file whose small examples differ only in their data
       Then the recommendation names <idiom>
@@ -193,6 +208,7 @@ Feature: Test-code structure
         | Go         | a table of cases run with t.Run  |
         | Kotlin     | @ParameterizedTest               |
 
+    @ID-SCRAP-16
     Scenario: An example that asserts nothing asks for refactoring
       Given the Python test file "test_x.py":
         """
@@ -203,17 +219,20 @@ Feature: Test-code structure
       Then its action is AUTO_REFACTOR
       And its first recommendation is HIGH confidence: add an assertion
 
+    @ID-SCRAP-17
     Scenario: Repeated scaffolding asks for a helper
       Given several large examples whose bodies are at least 85% alike
       When I run "itos-cc scrap"
       Then the file's action is AUTO_REFACTOR
       And a MEDIUM recommendation says to extract a helper or fixture
 
+    @ID-SCRAP-18
     Scenario: A mock-heavy file needs review first
       Given a test file with 4 examples, 3 of which set up 3 or more mocks
       When I run "itos-cc scrap"
       Then its action is REVIEW_FIRST
 
+    @ID-SCRAP-19
     Scenario: A large, troubled file should be split first
       Given a test file with 25 examples
       And 5 examples scoring 6 or more, spread across 3 groups
@@ -221,6 +240,7 @@ Feature: Test-code structure
       Then its action is MANUAL_SPLIT
       And a recommendation says to split the file by responsibility, then rerun scrap on each part
 
+    @ID-SCRAP-20
     Scenario: Recommendations are ranked and capped
       Given a test file with many problems
       When I run "itos-cc scrap"
@@ -230,27 +250,32 @@ Feature: Test-code structure
 
   Rule: Output and progress over time
 
+    @ID-SCRAP-21
     Scenario: Text output
       When I run "itos-cc scrap"
       Then each file is printed as "file  ACTION  pressure=…  examples=…  avg=…  max=…"
       And files are listed from the highest pressure down
       And recommendations follow, indented, with their confidence
 
+    @ID-SCRAP-22
     Scenario: Files to leave alone stay quiet
       Given a file whose action is LEAVE_ALONE but has a LOW hint
       When I run "itos-cc scrap"
       Then the hint is not printed
       But it is printed with --verbose
 
+    @ID-SCRAP-23
     Scenario: Verbose output
       When I run "itos-cc scrap --verbose"
       Then every example is printed with its score, lines, assertions, decisions, mocks, and smells
 
+    @ID-SCRAP-24
     Scenario: JSON output
       When I run "itos-cc scrap --json"
       Then stdout is one object with "schema": 1, "ok", and "files"
       And each file's report has action, pressure, examples, recommendations, clusters, and details
 
+    @ID-SCRAP-25
     Scenario Outline: Comparing with the previous run
       Given .metrics/scrap.json recorded a pressure of <before> for a file
       When I run "itos-cc scrap" and its pressure is now <after>
@@ -262,23 +287,27 @@ Feature: Test-code structure
         | 3.2    | 3     | unchanged |
         | 3      | 4     | worse     |
 
+    @ID-SCRAP-26
     Scenario: A refactor that made things worse is called out
       Given a file's pressure rose since the previous run
       When I run "itos-cc scrap"
       Then its line ends with "worse from" and the previous pressure
       And a warning says to check new helpers and duplication before keeping the change
 
+    @ID-SCRAP-27
     Scenario: Snapshots keep files that were not part of this run
       Given .metrics/scrap.json holds reports for a.test.ts and b.test.ts
       When I run "itos-cc scrap a.test.ts"
       Then .metrics/scrap.json still holds b.test.ts's report
 
+    @ID-SCRAP-28
     Scenario: An unreadable previous snapshot is ignored
       Given .metrics/scrap.json is not valid JSON
       When I run "itos-cc scrap"
       Then stderr says it is ignoring the unreadable snapshot
       And the run completes
 
+    @ID-SCRAP-29
     Scenario: Nothing to measure
       Given the selection holds no test files
       When I run "itos-cc scrap"
