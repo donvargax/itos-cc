@@ -256,14 +256,15 @@ items:
       run them, as they have no kept outcome). Decide whether such a site makes the function stale
       or missing, or whether the snapshot should record the mutation rules it was made with.
     refs: ["#8"]
-  - id: mutate-same-name-units
-    title: "mutate: functions sharing a namespace#name share one snapshot key"
+  - id: same-name-units
+    title: "Functions sharing a name are matched to their results by name and hash, in run, check and the graph"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-same-name-units.
       remembered() maps each namespace#name to the hash of the last unit with that name, so of two
       units with one name in a file (several Go init functions, Kotlin or TypeScript overloads) only
       the last can reuse its outcomes; keepUnjudged and the --since judge also key by name alone.
