@@ -509,6 +509,45 @@ Feature: Mutation testing
       When the graph is built
       Then the function holding that kill is marked stale, as mutation check calls it
 
+  # listed-tests timed every run of listed tests from one run of all of
+  # them: the coverage run (or the sum of the per-test runs), times the
+  # timeout factor. For itos, about 3 minutes times 10, so a mutant that
+  # hangs a selection of one or two scenarios waited about 30 minutes, and
+  # the only proof that the listed tests pass without a mutant was all of
+  # them passing together. Found by a side agent before v0.5.0; the fix is
+  # the coordinator's call (2026-10-07): each selection of listed tests,
+  # the first time a mutant needs it, runs once without a mutant in the
+  # worker's copy. Its time, times the timeout factor and at least 2
+  # seconds, is that selection's timeout (as ID-MUT-14 and 15 for a file's
+  # tests), and a selection that fails without a mutant decides none of the
+  # mutants that would run it, as a failing baseline decides none of its
+  # file's. Selections are cached by their set of IDs for the run; mutation
+  # sample follows the same rule.
+  Rule: Each selection of listed tests has its own baseline
+
+    @wip @listed-selection-baseline @ID-MUT-135
+    Scenario: A selection's timeout comes from its own run
+      Given listed tests ID-A-01, which runs in about a second alone, and ID-A-02, which takes about ten
+      And a mutant only ID-A-01 reaches makes the binary hang
+      When I run "itos-cc mutation run --timeout-factor 3"
+      Then ID-A-01 runs once alone without a mutant before that mutant's run
+      And the mutant times out after three times that run, at least 2 seconds, not after three times both tests' time
+      And its outcome is "timeout", counted killed
+
+    @wip @listed-selection-baseline @ID-MUT-136
+    Scenario: A selection is run without a mutant once per run
+      Given two mutants whose lines only ID-A-02 reaches, both surviving their own tests
+      When I run "itos-cc mutation run"
+      Then ID-A-02 runs alone without a mutant exactly once
+
+    @wip @listed-selection-baseline @ID-MUT-137
+    Scenario: A selection that fails without a mutant decides none of its mutants
+      Given ID-A-02 fails when it runs alone without a mutant, though the listed tests pass together
+      When I run "itos-cc mutation run"
+      Then the problem is "tests.selection-failed", with the IDs of the selection
+      And no mutant that would run ID-A-02 is recorded killed, and its file's snapshot keeps what it held
+      And the exit code is 1
+
   # Issue #9, part 2: mutants on lines no test executes are not run, so a
   # changed function with no test passes. A gate passes --fail-uncovered
   # (with --since for a task's commits) to make each uncovered mutant a
