@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -38,9 +37,9 @@ func (c Command) String() string {
 	return strings.Join(c.Args, " ")
 }
 
-// TestCommand is the narrowest test run that covers path: the Go packages
-// whose tests link its package, the Vitest or Jest tests that import it, or
-// the whole suite where no narrower run exists. With all, it is the whole suite of path's build
+// TestCommand is the narrowest test run that covers path: its own Go
+// package, the Vitest or Jest tests that import it, or the whole suite where
+// no narrower run exists. With all, it is the whole suite of path's build
 // root, so integration and end-to-end tests anywhere in it can kill a
 // mutant. Every command stops at the first failure, since one failing test
 // is enough to kill a mutant. A non-empty shell overrides the command but not
@@ -64,27 +63,16 @@ func TestCommand(path, shell string, all bool) Command {
 	return c
 }
 
-// goScopes remembers each package directory's test scope; every file of a
-// package shares it.
-var goScopes = map[string][]string{}
-
-// goCommand runs the tests of every package whose test binary links path's
-// package, the same tests coverage measured it with, so an integration test
-// in another package can kill its mutants. With all, or when go list
-// fails, it runs the whole module.
+// goCommand runs the tests of path's own package, or with all the whole
+// module, integration and end-to-end tests included.
 func goCommand(path string, all bool) Command {
 	root := orDir(lang.FindUp(path, "go.mod"), path)
-	targets := []string{"./..."}
-	if !all {
-		dir := filepath.Dir(path)
-		if _, ok := goScopes[dir]; !ok {
-			_, goScopes[dir] = coverage.GoScope(root, []string{path})
-		}
-		if len(goScopes[dir]) > 0 {
-			targets = goScopes[dir]
-		}
+	pkg, _ := filepath.Rel(root, filepath.Dir(path))
+	target := "./" + filepath.ToSlash(pkg)
+	if all {
+		target = "./..."
 	}
-	return Command{Root: root, Dir: root, Args: append([]string{"go", "test", "-count=1", "-failfast"}, targets...)}
+	return Command{Root: root, Dir: root, Args: []string{"go", "test", "-count=1", "-failfast", target}}
 }
 
 func typescriptCommand(path string, all bool) Command {

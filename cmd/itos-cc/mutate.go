@@ -55,7 +55,9 @@ mutant survives.
 	if err != nil {
 		return parseExit(err)
 	}
-	cov.focused = len(paths) > 0 || sel.changed
+	// Coverage comes from the tests that kill mutants, so a line only other
+	// tests reach is uncovered rather than a survivor.
+	cov.scope = coverage.OwnTests
 	opt.Annotate = !*noAnnotate
 	opt.AllTests = cov.allTests
 

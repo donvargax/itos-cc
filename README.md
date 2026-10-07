@@ -132,15 +132,28 @@ functions only. What keeps it fast:
   unchanged functions stay killed; survivors and changed functions rerun.
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
-- **Narrow, fail-fast test runs.** The Go packages whose tests link the
-  file's package, integration tests included (`-failfast`), `vitest related`
-  / `jest --findRelatedTests`, `pytest -x`. Coverage of chosen files runs the
-  same tests. `--all-tests` runs the whole suite instead, so end-to-end tests
-  that never import the code, such as ones that run the built binary, can
-  kill mutants too.
+- **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
+  `vitest related` / `jest --findRelatedTests`, `pytest -x`. Coverage comes
+  from the same tests, so a line only integration or end-to-end tests reach
+  is uncovered, not a survivor.
 - **Parallel workers** in private copies of the project, so the real tree is
   never modified while tests run. The baseline runs inside a worker, which
   proves the copy works before any mutant does.
+
+`--all-tests` runs the whole suite for coverage and for every mutant, so
+integration and end-to-end tests anywhere in the build root can kill
+mutants. Tests that only run the built binary do not show up in coverage, so
+add `--no-coverage` to let them reach code nothing else covers. It is slow;
+run it nightly rather than on every change:
+
+```bash
+itos-cc mutate --changed                         # while working: own tests, fast
+itos-cc mutate --all-tests                       # nightly, e.g. a scheduled CI job
+itos-cc mutate --all-tests --no-coverage         # nightly, with end-to-end tests that run the binary
+```
+
+Killed mutants are kept per function, so the day's runs reuse the night's
+kills for code that has not changed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off). Exit codes: 0 all

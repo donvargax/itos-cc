@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/crap"
 	"github.com/donvargax/itos-cc/metrics"
 )
@@ -39,7 +40,9 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 	if err != nil {
 		return parseExit(err)
 	}
-	cov.focused = len(paths) > 0 || sel.changed
+	if len(paths) > 0 || sel.changed {
+		cov.scope = coverage.RelatedTests
+	}
 
 	files, err := sel.files(paths)
 	if err != nil {

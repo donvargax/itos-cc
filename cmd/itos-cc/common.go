@@ -124,15 +124,14 @@ type coverageOptions struct {
 	allTests bool
 	command  string
 	reports  stringList
-	// focused is set when paths or --changed chose the files, so only the
-	// tests that load them need to run.
-	focused bool
+	// scope is the tests that run when --all-tests is not given.
+	scope coverage.Scope
 }
 
 func (c *coverageOptions) register(fs *flag.FlagSet) {
 	fs.BoolVar(&c.none, "no-coverage", false, "skip coverage; complexity only")
 	fs.BoolVar(&c.existing, "use-existing-coverage", false, "read reports already on disk instead of running tests")
-	fs.BoolVar(&c.allTests, "all-tests", false, "run the whole test suite, not only the tests that load the chosen files")
+	fs.BoolVar(&c.allTests, "all-tests", false, "run the whole test suite, integration and end-to-end tests included")
 	fs.StringVar(&c.command, "coverage-command", "", "run this shell command instead of the default per-language commands (use with --coverage-report)")
 	fs.Var(&c.reports, "coverage-report", "read this LCOV, Go cover profile, or JaCoCo XML report (repeatable)")
 }
@@ -156,7 +155,11 @@ func (c *coverageOptions) load(sources []string, log io.Writer) (*coverage.Repor
 		return coverage.Files(c.reports, sources, log), nil
 	}
 	out := filepath.Join(metrics.Dir, "coverage")
-	plans := coverage.Plans(sources, absOrSame(out), c.allTests || !c.focused)
+	scope := c.scope
+	if c.allTests {
+		scope = coverage.AllTests
+	}
+	plans := coverage.Plans(sources, absOrSame(out), scope)
 	if c.existing {
 		return coverage.Existing(plans, sources, log), nil
 	}

@@ -17,6 +17,11 @@ Feature: Coverage
       When I run "itos-cc crap src/board.ts" in a Vitest or Jest project
       Then coverage runs vitest related --run src/board.ts, or jest --findRelatedTests src/board.ts
 
+    Scenario: mutate measures a Go file by its own package's tests
+      When I run "itos-cc mutate a/a.go"
+      Then coverage runs "go test ... -coverprofile=... example.com/m/a", without -coverpkg
+      # the tests mutate kills a/a.go's mutants with; see mutate
+
     Scenario Outline: The whole suite
       When I run "itos-cc <command>"
       Then coverage runs the whole suite of each build root

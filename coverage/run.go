@@ -47,12 +47,25 @@ var markers = map[string][]string{
 	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
 }
 
+// Scope is which tests measure the sources.
+type Scope int
+
+const (
+	// AllTests runs each build root's whole suite.
+	AllTests Scope = iota
+	// RelatedTests runs, in Go and TypeScript, only the tests that load the
+	// sources, which measures them the same as the whole suite: a test that
+	// does not load a file cannot cover it.
+	RelatedTests
+	// OwnTests measures each Go package by its own tests only, the tests
+	// mutate kills its mutants with; TypeScript runs the related tests.
+	OwnTests
+)
+
 // Plans groups sources by language and build root and returns one plan per
-// group, with reports written under outDir. With all, each plan runs the
-// whole test suite. Without it, Go and TypeScript run only the tests that
-// load the sources, which measures them the same: tests that do not load a
-// file cannot cover it. Python and Kotlin run the whole suite either way.
-func Plans(sources []string, outDir string, all bool) []Plan {
+// group, with reports written under outDir. Python and Kotlin run the whole
+// suite whatever the scope.
+func Plans(sources []string, outDir string, scope Scope) []Plan {
 	type key struct{ lang, dir string }
 	groups := map[key][]string{}
 	for _, s := range sources {
@@ -68,13 +81,13 @@ func Plans(sources []string, outDir string, all bool) []Plan {
 	}
 	var plans []Plan
 	for k, srcs := range groups {
-		if all {
+		if scope == AllTests {
 			srcs = nil
 		}
 		out := filepath.Join(outDir, k.lang+"-"+shortHash(k.dir))
 		switch k.lang {
 		case "go":
-			plans = append(plans, goPlan(k.dir, out, srcs))
+			plans = append(plans, goPlan(k.dir, out, srcs, scope == OwnTests))
 		case "typescript":
 			plans = append(plans, typescriptPlan(k.dir, out, srcs))
 		case "python":
@@ -91,14 +104,19 @@ func Plans(sources []string, outDir string, all bool) []Plan {
 
 // goPlan measures sources with the tests of every package whose test binary
 // links one of theirs, or the whole module when sources is empty or go list
-// cannot say.
-func goPlan(dir, out string, sources []string) Plan {
+// cannot say. With own, each package is measured by its own tests alone.
+func goPlan(dir, out string, sources []string, own bool) Plan {
 	report := filepath.Join(out, "coverage.out")
-	tests, cover := []string{"./..."}, "./..."
-	if pkgs, testing := GoScope(dir, sources); len(pkgs) > 0 {
-		tests, cover = testing, strings.Join(pkgs, ",")
+	args := []string{"go", "test", "-count=1", "-covermode=set", "-coverprofile=" + report}
+	switch pkgs, testing := GoScope(dir, sources); {
+	case len(pkgs) > 0 && own:
+		// Without -coverpkg each test binary measures its own package.
+		args = append(args, pkgs...)
+	case len(pkgs) > 0:
+		args = append(append(args, "-coverpkg="+strings.Join(pkgs, ",")), testing...)
+	default:
+		args = append(args, "-coverpkg=./...", "./...")
 	}
-	args := append([]string{"go", "test", "-count=1", "-covermode=set", "-coverpkg=" + cover, "-coverprofile=" + report}, tests...)
 	return Plan{
 		Language: "go",
 		Dir:      dir,

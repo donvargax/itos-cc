@@ -32,7 +32,7 @@ func TestTypeScriptTestsRunFromNodeModules(t *testing.T) {
 	}
 }
 
-func TestGoMutantsRunTheTestsThatLinkTheirPackage(t *testing.T) {
+func TestGoMutantsRunTheirOwnPackagesTestsOrTheWholeSuite(t *testing.T) {
 	dir := t.TempDir()
 	for name, text := range map[string]string{
 		"go.mod":            "module example.com/m\n\ngo 1.22\n",
@@ -45,10 +45,10 @@ func TestGoMutantsRunTheTestsThatLinkTheirPackage(t *testing.T) {
 		os.WriteFile(path, []byte(text), 0o644)
 	}
 	src := filepath.Join(dir, "a", "a.go")
-	if got := TestCommand(src, "", false).String(); got != "go test -count=1 -failfast example.com/m/a example.com/m/e2e" {
-		t.Errorf("default: %q, want a's tests and the e2e tests that import it", got)
+	if got := TestCommand(src, "", false).String(); got != "go test -count=1 -failfast ./a" {
+		t.Errorf("default: %q, want a's own tests", got)
 	}
 	if got := TestCommand(src, "", true).String(); got != "go test -count=1 -failfast ./..." {
-		t.Errorf("all tests: %q, want the whole module", got)
+		t.Errorf("all tests: %q, want the whole module, e2e tests included", got)
 	}
 }

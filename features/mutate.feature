@@ -140,7 +140,7 @@ Feature: Mutation testing
 
       Examples:
         | language   | setup             | command                                                          |
-        | Go         | go.mod            | go test -count=1 -failfast on every package whose tests link it  |
+        | Go         | go.mod            | go test -count=1 -failfast on the file's package                 |
         | TypeScript | vitest            | the installed vitest related --run --bail=1 on the file          |
         | TypeScript | jest              | the installed jest --bail --findRelatedTests on the file         |
         | TypeScript | neither installed | <pm> run test, the package manager the project declares          |
@@ -149,20 +149,21 @@ Feature: Mutation testing
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
         | Kotlin     | Maven             | mvn -q test                                                      |
 
-    Scenario: Integration and end-to-end tests that import the code kill its mutants
+    Scenario: By default a file is measured and mutated by its own tests
       Given a/a.go is tested only by e2e/e2e_test.go, which imports package a
-      And slow/slow_test.go never loads package a
       When I run "itos-cc mutate a/a.go"
-      Then its mutants run "go test -count=1 -failfast example.com/m/a example.com/m/e2e"
-      And the e2e test kills them
-      But slow's tests never run
-      # the same tests coverage measured the file with
+      Then coverage runs "go test -count=1 -covermode=set -coverprofile=... example.com/m/a"
+      And its mutants are uncovered and none runs
+      # coverage comes from the tests that kill mutants, so a line only
+      # other tests reach is uncovered, never a false survivor
 
-    Scenario: The whole suite kills mutants
+    Scenario: The whole suite, as a nightly job
       When I run "itos-cc mutate --all-tests a/a.go"
-      Then its mutants run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
-      And end-to-end tests that do not import the code, such as ones that build and run the binary, can kill them
-      And coverage is measured with the whole suite too
+      Then coverage and every mutant run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
+      And the e2e test kills them
+      # tests that only run the built binary are not in coverage; with
+      # --no-coverage too, every mutant runs and they can kill it
+      And a later run without --all-tests reuses those kills for functions that have not changed
 
     Scenario: A custom test command
       When I run "itos-cc mutate --test-command 'make test' src/board.go"
