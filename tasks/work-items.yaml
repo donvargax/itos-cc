@@ -556,3 +556,17 @@ items:
       tests covering its line and the files they name are unchanged. Open: whether step code
       (features/*_test.go) joins what is hashed.
     refs: ["#14"]
+  - id: graph-listed-files-stamp
+    title: "serve: rebuild the graph when a listed test's file changes"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The graph's builder rebuilds only when its signature changes: sources, tests, the snapshots
+      under .metrics, and since listed-kill-freshness the support files. A file a listed test is
+      defined in, such as a.feature, is in none of them, so serve keeps showing a listed kill fresh
+      after that file changes until something else changes. Stamping the files the snapshots' listed
+      maps name would fix it, at the cost of reading the snapshots on every poll.
+    refs: ["#14"]
