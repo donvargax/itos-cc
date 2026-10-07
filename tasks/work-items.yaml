@@ -128,6 +128,7 @@ items:
     phase: 1
     owner: null
     status: todo
+    deferred: "Parked after itos's experiment (issue #11 comment, 2026-10-07): kills came from string tests, survivors were mostly policy noise. Revisit only with the conditions listed there."
     depends_on: []
     kind: idea
     why: >
