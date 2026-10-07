@@ -469,3 +469,17 @@ items:
       (Report.Measures: every command exited 0 and wrote its report), so such a plan's files could
       score as untested at 0% instead. Read from coverage.Run and Plan.measured while fixing
       unloaded-file-uncovered, not reproduced.
+  - id: graph-stale-unrecorded-sites
+    title: The graph marks stale a function whose entry lacks one of its sites
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since check-unrecorded-sites, mutation check calls a function stale when its entry matches its
+      hash and tests but lacks a site the function has now, as when a newer itos-cc adds a mutation
+      operator. The graph does not follow: graph/build.go decides staleness itself, from the unit's
+      hash and Snapshot.TestsChanged, the code shared since graph-stale-tests, and never compares
+      the entry's mutants with the function's sites, so the viewer shows as current a function check
+      calls stale. The rule lives in mutate's checkParsed, which the graph does not call.
