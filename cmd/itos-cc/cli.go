@@ -505,8 +505,12 @@ func (c *command) subNames() []string {
 func (c *command) groupHelp() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "usage: itos-cc %s <subcommand> [options] [path ...]\n\n%s\n\nSubcommands:\n", c.name, strings.TrimSpace(c.about))
+	width := 0
 	for _, s := range c.subs {
-		fmt.Fprintf(&b, "  %-6s %s\n", s.verb(), s.summary)
+		width = max(width, len(s.verb()))
+	}
+	for _, s := range c.subs {
+		fmt.Fprintf(&b, "  %-*s  %s\n", width, s.verb(), s.summary)
 	}
 	fmt.Fprintf(&b, `
 Run 'itos-cc %[1]s <subcommand> --help', or 'itos-cc help %[1]s <subcommand>',

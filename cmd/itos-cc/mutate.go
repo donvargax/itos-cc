@@ -16,8 +16,9 @@ import (
 )
 
 // mutationGroup is mutation testing: mutation run mutates and runs the
-// tests, mutation list lists the sites without running any, and mutation
-// check reads the cached results without running any.
+// tests, mutation list lists the sites without running any, mutation check
+// reads the cached results without running any, and mutation sample runs a
+// few cached mutants again to see that their results hold.
 var mutationGroup = &command{
 	name:    "mutation",
 	summary: "mutation testing: do the tests notice small changes?",
@@ -26,13 +27,16 @@ Mutation testing: would the tests notice if this code were wrong? mutation run
 changes one operator, boolean, or 0/1 at a time inside each function and runs
 the tests; mutation list lists those changes, the mutation sites, without
 running any test; mutation check says whether the results mutation run
-cached are there, fresh, and passing, without running any test either.`,
+cached are there, fresh, and passing, without running any test either; and
+mutation sample runs a few of the cached mutants again and fails when an
+outcome differs from the one recorded.`,
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation list src/billing/invoice.ts",
 		"itos-cc mutation check --since origin/main --fail-uncovered",
+		"itos-cc mutation sample --count 20",
 	},
-	subs: []*command{mutationRunCommand, mutationListCommand, mutationCheckCommand},
+	subs: []*command{mutationRunCommand, mutationListCommand, mutationCheckCommand, mutationSampleCommand},
 }
 
 var mutationRunCommand = &command{
@@ -166,7 +170,7 @@ type mutateSite struct {
 	Replacement string `json:"replacement"`
 }
 
-// mutationSelection is the sources mutation run and mutation check take:
+// mutationSelection is the sources mutation run, check, and sample take:
 // the paths and --changed, and with --since the files the range changed,
 // with judge saying which of their functions it changed. judge is nil
 // without --since.

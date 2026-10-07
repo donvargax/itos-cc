@@ -574,7 +574,7 @@ Feature: Mutation testing
   # It takes the selection of mutation check: paths, --changed and --since.
   Rule: Re-running a sample of cached results
 
-    @wip @mutation-sample @ID-MUT-71
+    @mutation-sample @ID-MUT-71
     Scenario: A sample whose outcomes hold passes and writes nothing
       Given fresh results for every function of src/board.ts, with killed mutants and one survivor
       And the tests still kill and miss the same mutants
@@ -584,7 +584,7 @@ Feature: Mutation testing
       And .metrics/mutate/src/board.ts.json and src/board.ts are unchanged
       And the exit code is 0
 
-    @wip @mutation-sample @ID-MUT-72
+    @mutation-sample @ID-MUT-72
     Scenario: A recorded kill that now survives is a mismatch
       Given the snapshot records the mutant `>` → `>=` at src/board.ts:5:9 in "Board#place" as killed
       But the tests no longer kill it
@@ -592,7 +592,7 @@ Feature: Mutation testing
       Then the problem is "mutation.mismatch", with file, line, column, function, original, replacement, recorded "killed" and outcome "survived"
       And the exit code is 1
 
-    @wip @mutation-sample @ID-MUT-73
+    @mutation-sample @ID-MUT-73
     Scenario: A recorded survivor that is now killed is a mismatch too
       Given the snapshot records a mutant of "Board#place" as survived
       But the tests now kill it
@@ -600,7 +600,7 @@ Feature: Mutation testing
       Then the problem is "mutation.mismatch", with recorded "survived" and outcome "killed"
       And the exit code is 1
 
-    @wip @mutation-sample @ID-MUT-74
+    @mutation-sample @ID-MUT-74
     Scenario: Killed and timeout agree
       Given the snapshot records a mutant of "Board#place" as killed
       And it now runs past its timeout
@@ -609,7 +609,7 @@ Feature: Mutation testing
       And the exit code is 0
       # and a recorded timeout that is now killed agrees too
 
-    @wip @mutation-sample @ID-MUT-75
+    @mutation-sample @ID-MUT-75
     Scenario: Only fresh mutants that ran are sampled
       Given "Board#place" has fresh results, with one mutant recorded uncovered
       And "Board#clear" changed since its results, and "Board#reset" has none
@@ -618,7 +618,7 @@ Feature: Mutation testing
       And no problem names "Board#clear" or "Board#reset"
       And the exit code is 0
 
-    @wip @mutation-sample @ID-MUT-76
+    @mutation-sample @ID-MUT-76
     Scenario: --count says how many, 20 by default
       Given the selection holds 50 fresh mutants that ran, across several files
       When I run "itos-cc mutation sample"
@@ -626,21 +626,21 @@ Feature: Mutation testing
       And "itos-cc mutation sample --count 5" runs 5
       And "itos-cc mutation sample --count 80" runs all 50
 
-    @wip @mutation-sample @ID-MUT-77
+    @mutation-sample @ID-MUT-77
     Scenario: A rerun of one commit samples the same mutants
       Given the selection holds 50 fresh mutants that ran
       When I run "itos-cc mutation sample" twice at the same HEAD commit
       Then both runs sample the same mutants
       And stdout names the seed, the HEAD commit's id
 
-    @wip @mutation-sample @ID-MUT-78
+    @mutation-sample @ID-MUT-78
     Scenario: --seed reproduces a run
       Given a run printed the seed "4813e48"
       And HEAD has moved since, with the same snapshots
       When I run "itos-cc mutation sample --seed 4813e48"
       Then it samples the mutants that run sampled
 
-    @wip @mutation-sample @ID-MUT-79
+    @mutation-sample @ID-MUT-79
     Scenario: Outside a git repository the seed must be given
       Given the working directory is not a git repository
       When I run "itos-cc mutation sample"
@@ -648,20 +648,20 @@ Feature: Mutation testing
       And the exit code is 3
       But "itos-cc mutation sample --seed 1" runs
 
-    @wip @mutation-sample @ID-MUT-80
+    @mutation-sample @ID-MUT-80
     Scenario: A count below 1 is a usage error
       When I run "itos-cc mutation sample --count 0"
       Then the problem is "flags.value-invalid", with flag "--count" and value "0"
       And the exit code is 2
 
-    @wip @mutation-sample @ID-MUT-81
+    @mutation-sample @ID-MUT-81
     Scenario: With --since only the functions the range changed are sampled
       Given only "Board#place" changed since "base", and a run since recorded its results
       And "Board#clear", unchanged, has fresh results too
       When I run "itos-cc mutation sample --since base --count 100"
       Then only mutants of "Board#place" run
 
-    @wip @mutation-sample @ID-MUT-82
+    @mutation-sample @ID-MUT-82
     Scenario: Nothing to sample
       Given no fresh mutant that ran in the selection
       When I run "itos-cc mutation sample"
@@ -670,7 +670,7 @@ Feature: Mutation testing
       And the exit code is 0
       # stale or missing results are mutation check's to fail
 
-    @wip @mutation-sample @ID-MUT-83
+    @mutation-sample @ID-MUT-83
     Scenario: A failing baseline
       Given the tests of src/board.ts fail without any mutation
       When I run "itos-cc mutation sample src/board.ts"
@@ -678,7 +678,7 @@ Feature: Mutation testing
       And none of its mutants runs
       And the exit code is 1
 
-    @wip @mutation-sample @ID-MUT-84
+    @mutation-sample @ID-MUT-84
     Scenario: The sample as JSON
       When I run "itos-cc mutation sample --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", "seed", and "files"

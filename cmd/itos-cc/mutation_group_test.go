@@ -11,7 +11,7 @@ import (
 
 // The scenarios of "Rule: The mutation group" in features/cli.feature: the
 // group mutation, with mutation run, what mutate was, mutation list, what
-// mutate --scan was, and mutation check.
+// mutate --scan was, mutation check, and mutation sample.
 
 // cli runs itos-cc with args and returns what it printed.
 func cli(t *testing.T, args ...string) outcome {
@@ -34,7 +34,7 @@ func inEmptyDir(t *testing.T) string {
 func TestTheGroupAloneNamesItsSubcommands(t *testing.T) {
 	inEmptyDir(t)
 	o := cli(t, "mutation")
-	for _, sub := range []string{"usage: itos-cc mutation", "  run ", "  list ", "  check "} {
+	for _, sub := range []string{"usage: itos-cc mutation", "  run ", "  list ", "  check ", "  sample "} {
 		if !strings.Contains(o.stdout, sub) {
 			t.Errorf("stdout:\n%s\nwant it to contain %q", o.stdout, sub)
 		}
@@ -139,8 +139,8 @@ func TestAnUnknownSubcommandOfTheGroupIsAUsageError(t *testing.T) {
 		t.Errorf("--json: exit %d, want 2", o.code)
 	}
 	o = cli(t, "mutation", "nosuch")
-	if !strings.Contains(o.stderr, "run, list, and check") {
-		t.Errorf("stderr:\n%s\nwant it to name the subcommands run, list, and check", o.stderr)
+	if !strings.Contains(o.stderr, "run, list, check, and sample") {
+		t.Errorf("stderr:\n%s\nwant it to name the subcommands run, list, check, and sample", o.stderr)
 	}
 	if o.code != 2 {
 		t.Errorf("exit %d, want 2", o.code)

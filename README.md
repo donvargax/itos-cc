@@ -182,6 +182,7 @@ itos-cc mutation run --all-tests                             # nightly, e.g. a s
 itos-cc mutation run --all-tests --no-coverage               # nightly, with end-to-end tests that run the binary
 itos-cc mutation list src/billing                            # the mutation sites, without running tests
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
+itos-cc mutation sample                                      # in CI: do 20 cached results still hold?
 ```
 
 `--since <ref>` judges only the functions the commits since `<ref>`
@@ -213,6 +214,20 @@ on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
 exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
+
+`mutation check` trusts the snapshots, so a cache written by hand, or
+against other code, passes it. `mutation sample` runs a few cached mutants
+again, in CI say, and fails with `mutation.mismatch` when an outcome differs
+from the one recorded, whichever way: a kill that now survives, or a
+survivor now killed. Killed and timeout agree. It draws `--count` mutants (20
+by default) from the fresh entries of its selection, only those that ran
+(killed, timeout, or survived), so no coverage runs; stale and missing
+results are `mutation check`'s. The draw is seeded with the HEAD commit's
+id, so a rerun of one commit samples the same mutants; `--seed` reproduces
+another run's. It writes nothing, and takes `mutation check`'s paths,
+`--changed`, and `--since`. Give it the `--all-tests` or `--test-command` the
+results were recorded with: a kill only the whole suite makes reads as a
+survivor to the file's own tests.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's

@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"maps"
 	"os/exec"
 	"path/filepath"
@@ -79,5 +80,32 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 
 	if _, err := ChangedSince("--output=x"); err != ErrBadRef {
 		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
+	}
+}
+
+func TestHeadIsTheHEADCommitsId(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	repo := t.TempDir()
+	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(repo))
+	t.Chdir(repo)
+	var noGit *NoGitError
+	if _, err := Head(); !errors.As(err, &noGit) {
+		t.Errorf("outside a repository: %v, want a NoGitError", err)
+	}
+	git(t, repo, "init", "-q")
+	if _, err := Head(); !errors.As(err, &noGit) {
+		t.Errorf("in a repository with no commit: %v, want a NoGitError", err)
+	}
+	write(t, filepath.Join(repo, "a.py"), "def a(x):\n    return x\n")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "base")
+	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id, err := Head(); err != nil || id != strings.TrimSpace(string(out)) {
+		t.Errorf("Head() = %q, %v, want %q", id, err, strings.TrimSpace(string(out)))
 	}
 }

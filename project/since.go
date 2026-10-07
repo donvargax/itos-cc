@@ -21,6 +21,17 @@ type NoGitError struct{ Reason string }
 
 func (e *NoGitError) Error() string { return "not a git repository: " + e.Reason }
 
+// Head returns the id of the HEAD commit of the working directory's
+// repository, or a *NoGitError when it is in none or the repository has no
+// commit yet.
+func Head() (string, error) {
+	out, err := exec.Command("git", "rev-parse", "--verify", "HEAD^{commit}").Output()
+	if err != nil {
+		return "", &NoGitError{gitError(nil, err)}
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 // ChangedSince returns the functions the commits since ref changed, by
 // file: git diff ref...HEAD, so a branch's own commits whatever the base did
 // since, and never the working tree. Each supported file under the working

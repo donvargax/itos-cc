@@ -34,6 +34,7 @@ type FunctionCheck struct {
 	// Mutants is what Entry records when Fresh, in site order, each at its
 	// site's line and column now; nil otherwise.
 	Mutants []Mutant
+	unit    int // the function's index in its file's units
 }
 
 // Check compares each function of files that has a mutation site with its
@@ -62,6 +63,11 @@ func checkFile(path string, judge func(path, function string) bool, tests func(p
 		return FileCheck{}, err
 	}
 	defer f.Close()
+	return checkParsed(f, path, judge, tests)
+}
+
+// checkParsed is checkFile of f, the file at path, parsed.
+func checkParsed(f *lang.File, path string, judge func(path, function string) bool, tests func(path string) []string) (FileCheck, error) {
 	rel := project.Rel(path)
 	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
 	snap, err := LoadSnapshot(rel)
@@ -96,7 +102,7 @@ func checkFile(path string, judge func(path, function string) bool, tests func(p
 		if len(sites[i]) == 0 || (judge != nil && !judge(path, id)) {
 			continue
 		}
-		c := FunctionCheck{Function: id, StartLine: u.StartLine, State: Missing}
+		c := FunctionCheck{Function: id, StartLine: u.StartLine, State: Missing, unit: i}
 		entries := recorded[id]
 		if len(entries) > 0 {
 			c.State, c.Entry = Stale, entries[0]

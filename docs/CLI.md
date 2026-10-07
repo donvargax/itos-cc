@@ -27,7 +27,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, a function is over `--threshold`, tests that measure nothing. |
+| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing. |
 | 2    | A usage or config error: a bad flag, path, argument, or report.                        |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -67,14 +67,15 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `flags.value-invalid`        | 2    | every          | `flag`, `value`                                             |
 | `flags.switch-value`         | 2    | every          | `flag`                                                      |
 | `flags.repeated`             | 2    | every          | `flag`                                                      |
-| `flags.conflict`             | 2    | mutation run, mutation check | `flag`                                        |
+| `flags.conflict`             | 2    | mutation run, mutation check, mutation sample | `flag`                                        |
 | `command.unknown`            | 2    | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 2    | itos-cc --json, mutation --json | none                                       |
 | `args.unexpected`            | 2    | version, help  | `argument`                                                  |
-| `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, scrap, units | `argument` |
-| `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, scrap, units | none     |
-| `since.bad-ref`              | 2    | mutation run, mutation check | `ref`                                         |
-| `since.no-git`               | 3    | mutation run, mutation check | none                                          |
+| `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
+| `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
+| `since.bad-ref`              | 2    | mutation run, mutation check, mutation sample | `ref`                                         |
+| `since.no-git`               | 3    | mutation run, mutation check, mutation sample | none                                          |
+| `sample.no-git`              | 3    | mutation sample, without `--seed` | none                                     |
 | `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |
@@ -85,7 +86,8 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
-| `mutation.baseline-failed`   | 1    | mutation run   | `file`                                                      |
+| `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |
+| `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
 | `serve.repo-unreadable`      | 2    | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
 | `internal`                   | 70   | every          | none                                                        |
@@ -98,15 +100,15 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |
 | 2 | Lowercase subcommands with dashes | Follows. |
-| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
+| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`, `mutation check`, `mutation sample`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
 | 5 | No two commands with similar names | Does not follow: `crap` and `scrap`. |
 | 6 | No everyday verb that points at another command | Follows. |
 | 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone and `itos-cc mutation` alone print help; an unknown command names the one meant. |
 | 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position; for the group, `mutation`, `mutation -h`, `help mutation run`, `mutation run --help`. |
 | 10 | Help gives the `--json` shape and exit codes | Follows, with each command's problem rules. |
 | 11 | `--version` and `version` print `itos-cc <version>` first | Follows. |
-| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run`, `list`, and `check`. |
-| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, and `check`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
+| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run`, `list`, `check`, and `sample`. |
+| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, and `sample`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
 | 14 | Help ends with examples and the issues address | Follows. |
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
