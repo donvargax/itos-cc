@@ -49,14 +49,15 @@ items:
     depends_on: [slice-1]
     kind: slice
     refs: ["#9"]
-  - id: mutate-json-mutants
+  - id: slice-3
     title: mutate --json lists every mutant of each function
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-json-mutants.
       Issue #9 part 3: itos reads the result without parsing text or the cache, so --json carries
       each function's mutants (site, operator, outcome: killed, survived, uncovered, timed out).
       Exit codes are already the contract (docs/CLI.md).
