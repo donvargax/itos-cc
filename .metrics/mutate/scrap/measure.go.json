@@ -1,0 +1,1557 @@
+{
+  "version": 1,
+  "file": "scrap/measure.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap",
+      "name": "newMeasurer",
+      "hash": "12ee41ce8493d877",
+      "start_line": 31,
+      "end_line": 48,
+      "killed": 0,
+      "survived": 4,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 40,
+          "column": 10,
+          "offset": 308,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 40,
+          "column": 20,
+          "offset": 318,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 41,
+          "column": 26,
+          "offset": 365,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 43,
+          "column": 12,
+          "offset": 387,
+          "original": "!",
+          "replacement": "",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "measure",
+      "hash": "223db7fe2d4f25d0",
+      "start_line": 54,
+      "end_line": 81,
+      "killed": 9,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 10,
+      "mutants": [
+        {
+          "line": 55,
+          "column": 20,
+          "offset": 76,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 55,
+          "column": 35,
+          "offset": 91,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 55,
+          "column": 37,
+          "offset": 93,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 58,
+          "column": 11,
+          "offset": 167,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 63,
+          "column": 11,
+          "offset": 287,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 66,
+          "column": 11,
+          "offset": 412,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 12,
+          "offset": 489,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 71,
+          "column": 47,
+          "offset": 540,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 77,
+          "column": 10,
+          "offset": 655,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 79,
+          "column": 18,
+          "offset": 681,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "loopCases",
+      "hash": "5a7d5869880d1833",
+      "start_line": 85,
+      "end_line": 111,
+      "killed": 12,
+      "survived": 4,
+      "uncovered": 0,
+      "sites": 16,
+      "mutants": [
+        {
+          "line": 90,
+          "column": 16,
+          "offset": 184,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 17,
+          "offset": 352,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 96,
+          "column": 22,
+          "offset": 357,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 96,
+          "column": 23,
+          "offset": 358,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 96,
+          "column": 25,
+          "offset": 360,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 97,
+          "column": 28,
+          "offset": 414,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 98,
+          "column": 26,
+          "offset": 449,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 98,
+          "column": 28,
+          "offset": 451,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 104,
+          "column": 11,
+          "offset": 527,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 104,
+          "column": 18,
+          "offset": 534,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 104,
+          "column": 35,
+          "offset": 551,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 104,
+          "column": 51,
+          "offset": 567,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 104,
+          "column": 67,
+          "offset": 583,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 107,
+          "column": 11,
+          "offset": 676,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 107,
+          "column": 18,
+          "offset": 683,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 107,
+          "column": 47,
+          "offset": 712,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "binding",
+      "hash": "c23e7c7e75d12c6a",
+      "start_line": 115,
+      "end_line": 144,
+      "killed": 10,
+      "survived": 6,
+      "uncovered": 0,
+      "sites": 16,
+      "mutants": [
+        {
+          "line": 118,
+          "column": 12,
+          "offset": 148,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 119,
+          "column": 11,
+          "offset": 167,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 129,
+          "column": 17,
+          "offset": 544,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 133,
+          "column": 45,
+          "offset": 641,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 133,
+          "column": 47,
+          "offset": 643,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 135,
+          "column": 11,
+          "offset": 660,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 135,
+          "column": 18,
+          "offset": 667,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 135,
+          "column": 27,
+          "offset": 676,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 135,
+          "column": 34,
+          "offset": 683,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 135,
+          "column": 60,
+          "offset": 709,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 136,
+          "column": 20,
+          "offset": 738,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 136,
+          "column": 41,
+          "offset": 759,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 136,
+          "column": 68,
+          "offset": 786,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 136,
+          "column": 71,
+          "offset": 789,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 137,
+          "column": 30,
+          "offset": 822,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 141,
+          "column": 10,
+          "offset": 860,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "count",
+      "hash": "7eeb3b77fbb69fde",
+      "start_line": 146,
+      "end_line": 159,
+      "killed": 3,
+      "survived": 1,
+      "uncovered": 1,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 147,
+          "column": 7,
+          "offset": 84,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 148,
+          "column": 7,
+          "offset": 92,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 149,
+          "column": 10,
+          "offset": 110,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 154,
+          "column": 11,
+          "offset": 190,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 156,
+          "column": 10,
+          "offset": 209,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "fixtureLines",
+      "hash": "b065f0f3398ec624",
+      "start_line": 163,
+      "end_line": 175,
+      "killed": 7,
+      "survived": 3,
+      "uncovered": 0,
+      "sites": 10,
+      "mutants": [
+        {
+          "line": 164,
+          "column": 11,
+          "offset": 85,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 166,
+          "column": 41,
+          "offset": 169,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 167,
+          "column": 25,
+          "offset": 250,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 167,
+          "column": 42,
+          "offset": 267,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 167,
+          "column": 57,
+          "offset": 282,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 167,
+          "column": 72,
+          "offset": 297,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 167,
+          "column": 84,
+          "offset": 309,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 169,
+          "column": 37,
+          "offset": 364,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed"
+        },
+        {
+          "line": 170,
+          "column": 11,
+          "offset": 399,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 172,
+          "column": 10,
+          "offset": 418,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "callee",
+      "hash": "6d4cd5c786ce0018",
+      "start_line": 179,
+      "end_line": 185,
+      "killed": 0,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 181,
+          "column": 12,
+          "offset": 141,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap",
+      "name": "lastSegment",
+      "hash": "9e7862a32b24d096",
+      "start_line": 189,
+      "end_line": 194,
+      "killed": 0,
+      "survived": 8,
+      "uncovered": 0,
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 190,
+          "column": 43,
+          "offset": 78,
+          "original": ">=",
+          "replacement": ">",
+          "outcome": "survived"
+        },
+        {
+          "line": 190,
+          "column": 46,
+          "offset": 81,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 190,
+          "column": 48,
+          "offset": 83,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 190,
+          "column": 53,
+          "offset": 88,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 190,
+          "column": 61,
+          "offset": 96,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived"
+        },
+        {
+          "line": 190,
+          "column": 62,
+          "offset": 97,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 191,
+          "column": 13,
+          "offset": 113,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "survived"
+        },
+        {
+          "line": 191,
+          "column": 14,
+          "offset": 114,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap",
+      "name": "assertive",
+      "hash": "c2522e3e9293384d",
+      "start_line": 199,
+      "end_line": 214,
+      "killed": 9,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 11,
+      "mutants": [
+        {
+          "line": 202,
+          "column": 6,
+          "offset": 168,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 203,
+          "column": 63,
+          "offset": 236,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 203,
+          "column": 66,
+          "offset": 239,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 203,
+          "column": 74,
+          "offset": 247,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 205,
+          "column": 6,
+          "offset": 261,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 209,
+          "column": 11,
+          "offset": 333,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 209,
+          "column": 17,
+          "offset": 339,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 209,
+          "column": 22,
+          "offset": 344,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 209,
+          "column": 29,
+          "offset": 351,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 210,
+          "column": 11,
+          "offset": 385,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 213,
+          "column": 9,
+          "offset": 405,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "isAssertion",
+      "hash": "8705b638c8e33029",
+      "start_line": 218,
+      "end_line": 247,
+      "killed": 23,
+      "survived": 5,
+      "uncovered": 1,
+      "sites": 29,
+      "mutants": [
+        {
+          "line": 221,
+          "column": 15,
+          "offset": 108,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 222,
+          "column": 11,
+          "offset": 142,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 225,
+          "column": 15,
+          "offset": 181,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 225,
+          "column": 37,
+          "offset": 203,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 225,
+          "column": 60,
+          "offset": 226,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 226,
+          "column": 42,
+          "offset": 274,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 230,
+          "column": 5,
+          "offset": 350,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 231,
+          "column": 10,
+          "offset": 365,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 233,
+          "column": 12,
+          "offset": 385,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 233,
+          "column": 18,
+          "offset": 391,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 233,
+          "column": 38,
+          "offset": 411,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 234,
+          "column": 10,
+          "offset": 442,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 238,
+          "column": 17,
+          "offset": 510,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 238,
+          "column": 29,
+          "offset": 522,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 238,
+          "column": 39,
+          "offset": 532,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 240,
+          "column": 26,
+          "offset": 585,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 240,
+          "column": 37,
+          "offset": 596,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 240,
+          "column": 49,
+          "offset": 608,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 240,
+          "column": 58,
+          "offset": 617,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 240,
+          "column": 70,
+          "offset": 629,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 240,
+          "column": 78,
+          "offset": 637,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 242,
+          "column": 27,
+          "offset": 688,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 242,
+          "column": 37,
+          "offset": 698,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 242,
+          "column": 49,
+          "offset": 710,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 242,
+          "column": 59,
+          "offset": 720,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 244,
+          "column": 26,
+          "offset": 774,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 244,
+          "column": 34,
+          "offset": 782,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 244,
+          "column": 48,
+          "offset": 796,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 246,
+          "column": 9,
+          "offset": 844,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "isMock",
+      "hash": "45f7dddac1f27f9b",
+      "start_line": 259,
+      "end_line": 276,
+      "killed": 16,
+      "survived": 3,
+      "uncovered": 1,
+      "sites": 20,
+      "mutants": [
+        {
+          "line": 261,
+          "column": 5,
+          "offset": 86,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 262,
+          "column": 10,
+          "offset": 101,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 266,
+          "column": 19,
+          "offset": 172,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 266,
+          "column": 27,
+          "offset": 180,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 266,
+          "column": 37,
+          "offset": 190,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 266,
+          "column": 48,
+          "offset": 201,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 266,
+          "column": 70,
+          "offset": 223,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 267,
+          "column": 12,
+          "offset": 237,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 267,
+          "column": 18,
+          "offset": 243,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 24,
+          "offset": 318,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 34,
+          "offset": 328,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 45,
+          "offset": 339,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 55,
+          "offset": 349,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 67,
+          "offset": 361,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 269,
+          "column": 77,
+          "offset": 371,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 271,
+          "column": 15,
+          "offset": 414,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 271,
+          "column": 27,
+          "offset": 426,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 271,
+          "column": 35,
+          "offset": 434,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 271,
+          "column": 54,
+          "offset": 453,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 275,
+          "column": 9,
+          "offset": 541,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "isGuardAssertion",
+      "hash": "7ea177aef475d0d6",
+      "start_line": 281,
+      "end_line": 302,
+      "killed": 18,
+      "survived": 4,
+      "uncovered": 2,
+      "sites": 24,
+      "mutants": [
+        {
+          "line": 282,
+          "column": 14,
+          "offset": 72,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 282,
+          "column": 32,
+          "offset": 90,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 282,
+          "column": 69,
+          "offset": 127,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 283,
+          "column": 10,
+          "offset": 145,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 286,
+          "column": 11,
+          "offset": 208,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 287,
+          "column": 10,
+          "offset": 226,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 290,
+          "column": 16,
+          "offset": 276,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "survived"
+        },
+        {
+          "line": 290,
+          "column": 18,
+          "offset": 278,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 290,
+          "column": 20,
+          "offset": 280,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 290,
+          "column": 29,
+          "offset": 289,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 290,
+          "column": 39,
+          "offset": 299,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 291,
+          "column": 26,
+          "offset": 346,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 293,
+          "column": 16,
+          "offset": 368,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 293,
+          "column": 19,
+          "offset": 371,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 294,
+          "column": 10,
+          "offset": 384,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 297,
+          "column": 15,
+          "offset": 434,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 297,
+          "column": 41,
+          "offset": 460,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 297,
+          "column": 64,
+          "offset": 483,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 297,
+          "column": 67,
+          "offset": 486,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 297,
+          "column": 69,
+          "offset": 488,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 297,
+          "column": 72,
+          "offset": 491,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 297,
+          "column": 100,
+          "offset": 519,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 298,
+          "column": 11,
+          "offset": 535,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 301,
+          "column": 9,
+          "offset": 556,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap.measurer",
+      "name": "isTableLoop",
+      "hash": "c0be02e49c77ccf3",
+      "start_line": 309,
+      "end_line": 328,
+      "killed": 11,
+      "survived": 2,
+      "uncovered": 1,
+      "sites": 14,
+      "mutants": [
+        {
+          "line": 310,
+          "column": 5,
+          "offset": 58,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 311,
+          "column": 10,
+          "offset": 90,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 313,
+          "column": 19,
+          "offset": 117,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 313,
+          "column": 27,
+          "offset": 125,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 313,
+          "column": 30,
+          "offset": 128,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 314,
+          "column": 10,
+          "offset": 168,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 316,
+          "column": 11,
+          "offset": 187,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 319,
+          "column": 11,
+          "offset": 258,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 321,
+          "column": 37,
+          "offset": 304,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 321,
+          "column": 45,
+          "offset": 312,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 322,
+          "column": 12,
+          "offset": 334,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 324,
+          "column": 17,
+          "offset": 359,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 324,
+          "column": 37,
+          "offset": 379,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 325,
+          "column": 10,
+          "offset": 413,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/scrap",
+      "name": "hasChild",
+      "hash": "52c8ddfa5a2811fc",
+      "start_line": 330,
+      "end_line": 337,
+      "killed": 1,
+      "survived": 1,
+      "uncovered": 1,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 332,
+          "column": 15,
+          "offset": 97,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 333,
+          "column": 11,
+          "offset": 117,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 336,
+          "column": 9,
+          "offset": 137,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        }
+      ]
+    }
+  ]
+}

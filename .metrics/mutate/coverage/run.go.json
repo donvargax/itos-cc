@@ -1,0 +1,836 @@
+{
+  "version": 1,
+  "file": "coverage/run.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "Plans",
+      "hash": "78a90db41dab5338",
+      "start_line": 55,
+      "end_line": 90,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 3,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 60,
+          "column": 11,
+          "offset": 194,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 64,
+          "column": 10,
+          "offset": 275,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 38,
+          "offset": 501,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 74,
+          "column": 42,
+          "offset": 505,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 87,
+          "column": 27,
+          "offset": 887,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 87,
+          "column": 41,
+          "offset": 901,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 87,
+          "column": 60,
+          "offset": 920,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "goPlan",
+      "hash": "297992e5ae4b936a",
+      "start_line": 95,
+      "end_line": 109,
+      "killed": 3,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 98,
+          "column": 55,
+          "offset": 198,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "killed"
+        },
+        {
+          "line": 98,
+          "column": 57,
+          "offset": 200,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 101,
+          "column": 83,
+          "offset": 339,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 101,
+          "column": 109,
+          "offset": 365,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "GoScope",
+      "hash": "a9042f0e8b9fee1d",
+      "start_line": 116,
+      "end_line": 171,
+      "killed": 10,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 12,
+      "mutants": [
+        {
+          "line": 117,
+          "column": 18,
+          "offset": 87,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 117,
+          "column": 21,
+          "offset": 90,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 123,
+          "column": 9,
+          "offset": 278,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 128,
+          "column": 43,
+          "offset": 406,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 138,
+          "column": 18,
+          "offset": 660,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed"
+        },
+        {
+          "line": 141,
+          "column": 18,
+          "offset": 699,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 145,
+          "column": 8,
+          "offset": 861,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 145,
+          "column": 37,
+          "offset": 890,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 145,
+          "column": 67,
+          "offset": 920,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 146,
+          "column": 21,
+          "offset": 946,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 151,
+          "column": 15,
+          "offset": 1028,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 157,
+          "column": 22,
+          "offset": 1226,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "typescriptPlan",
+      "hash": "6942c98ba2d42dcf",
+      "start_line": 176,
+      "end_line": 237,
+      "killed": 7,
+      "survived": 2,
+      "uncovered": 4,
+      "sites": 13,
+      "mutants": [
+        {
+          "line": 192,
+          "column": 31,
+          "offset": 660,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 201,
+          "column": 15,
+          "offset": 1029,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 206,
+          "column": 55,
+          "offset": 1299,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 212,
+          "column": 20,
+          "offset": 1553,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "survived"
+        },
+        {
+          "line": 212,
+          "column": 22,
+          "offset": 1555,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 216,
+          "column": 63,
+          "offset": 1776,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 219,
+          "column": 49,
+          "offset": 1858,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 222,
+          "column": 92,
+          "offset": 2006,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 223,
+          "column": 20,
+          "offset": 2032,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 223,
+          "column": 22,
+          "offset": 2034,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 229,
+          "column": 43,
+          "offset": 2218,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 230,
+          "column": 92,
+          "offset": 2317,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 233,
+          "column": 72,
+          "offset": 2469,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "pythonPlan",
+      "hash": "76ed5f0548586f05",
+      "start_line": 239,
+      "end_line": 260,
+      "killed": 1,
+      "survived": 1,
+      "uncovered": 3,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 244,
+          "column": 51,
+          "offset": 246,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "survived"
+        },
+        {
+          "line": 253,
+          "column": 53,
+          "offset": 547,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 257,
+          "column": 81,
+          "offset": 783,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 257,
+          "column": 101,
+          "offset": 803,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 258,
+          "column": 80,
+          "offset": 901,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "kotlinPlan",
+      "hash": "573bc951fcdf906c",
+      "start_line": 262,
+      "end_line": 290,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 270,
+          "column": 6,
+          "offset": 547,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 279,
+          "column": 67,
+          "offset": 958,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "Run",
+      "hash": "7a1e5a76f53970b0",
+      "start_line": 295,
+      "end_line": 319,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 4,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 298,
+          "column": 20,
+          "offset": 135,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 305,
+          "column": 38,
+          "offset": 312,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 308,
+          "column": 29,
+          "offset": 462,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 308,
+          "column": 38,
+          "offset": 471,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 312,
+          "column": 29,
+          "offset": 566,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "IgnoreDir",
+      "hash": "9746e4bb28e2158e",
+      "start_line": 324,
+      "end_line": 329,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 325,
+          "column": 41,
+          "offset": 75,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "Existing",
+      "hash": "a573f0a1b12adcb8",
+      "start_line": 332,
+      "end_line": 343,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "Files",
+      "hash": "98e7405ec73a6805",
+      "start_line": 347,
+      "end_line": 350,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "load",
+      "hash": "c07f4d5319001379",
+      "start_line": 352,
+      "end_line": 363,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 356,
+          "column": 10,
+          "offset": 169,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage.packageJSON",
+      "name": "has",
+      "hash": "ceffddb7eedad8b4",
+      "start_line": 371,
+      "end_line": 373,
+      "killed": 3,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 372,
+          "column": 29,
+          "offset": 72,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 372,
+          "column": 35,
+          "offset": 78,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 372,
+          "column": 61,
+          "offset": 104,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "readPackageJSON",
+      "hash": "361425b18b304779",
+      "start_line": 375,
+      "end_line": 381,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 377,
+          "column": 71,
+          "offset": 138,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "vitestTooOld",
+      "hash": "d2d80c6288682d17",
+      "start_line": 385,
+      "end_line": 389,
+      "killed": 3,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 3,
+      "mutants": [
+        {
+          "line": 388,
+          "column": 13,
+          "offset": 126,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 388,
+          "column": 20,
+          "offset": 133,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 388,
+          "column": 25,
+          "offset": 138,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "installedVersion",
+      "hash": "5913dd2356502011",
+      "start_line": 391,
+      "end_line": 401,
+      "killed": 2,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 395,
+          "column": 52,
+          "offset": 154,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 396,
+          "column": 75,
+          "offset": 236,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "pythonFor",
+      "hash": "3abf2794ec010c89",
+      "start_line": 405,
+      "end_line": 413,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "buildMentions",
+      "hash": "cb067347b6e6b7a1",
+      "start_line": 415,
+      "end_line": 422,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 4,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 417,
+          "column": 62,
+          "offset": 174,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 417,
+          "column": 69,
+          "offset": 181,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 418,
+          "column": 11,
+          "offset": 233,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "uncovered"
+        },
+        {
+          "line": 421,
+          "column": 9,
+          "offset": 253,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "relativeTo",
+      "hash": "cc642741c773f5aa",
+      "start_line": 425,
+      "end_line": 435,
+      "killed": 0,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 429,
+          "column": 10,
+          "offset": 161,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "pomMentions",
+      "hash": "09e34b20eb451f8b",
+      "start_line": 439,
+      "end_line": 452,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 5,
+      "mutants": [
+        {
+          "line": 442,
+          "column": 10,
+          "offset": 146,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 443,
+          "column": 11,
+          "offset": 165,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 446,
+          "column": 11,
+          "offset": 229,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 448,
+          "column": 22,
+          "offset": 259,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 449,
+          "column": 11,
+          "offset": 276,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "exists",
+      "hash": "7aa981e6cde7745b",
+      "start_line": 454,
+      "end_line": 457,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 456,
+          "column": 13,
+          "offset": 69,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/coverage",
+      "name": "shortHash",
+      "hash": "616cfee15d5ce16d",
+      "start_line": 459,
+      "end_line": 462,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    }
+  ]
+}

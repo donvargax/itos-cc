@@ -1,3 +1,7 @@
 /itos-cc
 /dist/
-.metrics/
+# Mutation results are committed, so later runs reuse their kills; raw
+# coverage and the other snapshots are not.
+.metrics/*
+!.metrics/mutate/
+.metrics/mutate/**/*.tmp

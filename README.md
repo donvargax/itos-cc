@@ -158,8 +158,11 @@ itos-cc mutate --all-tests                       # nightly, e.g. a scheduled CI 
 itos-cc mutate --all-tests --no-coverage         # nightly, with end-to-end tests that run the binary
 ```
 
-Killed mutants are kept per function, so the day's runs reuse the night's
-kills for code that has not changed.
+Killed mutants are kept per function in `.metrics/mutate/`, so the day's
+runs reuse the night's kills for code that has not changed. Commit that
+directory, and have the nightly job commit it back: CI starts from a fresh
+checkout, and without it every night is a first run. Raw coverage under
+`.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off). Exit codes: 0 all

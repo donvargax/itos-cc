@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "file": "project/node.go",
+  "language": "go",
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/project",
+      "name": "PackageManager",
+      "hash": "744b7a570eb4afb6",
+      "start_line": 21,
+      "end_line": 41,
+      "killed": 4,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 4,
+      "mutants": [
+        {
+          "line": 26,
+          "column": 70,
+          "offset": 221,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "timeout"
+        },
+        {
+          "line": 29,
+          "column": 63,
+          "offset": 326,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "timeout"
+        },
+        {
+          "line": 33,
+          "column": 56,
+          "offset": 444,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "timeout"
+        },
+        {
+          "line": 37,
+          "column": 22,
+          "offset": 504,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/project",
+      "name": "NodeModule",
+      "hash": "b091ae1e16be6540",
+      "start_line": 45,
+      "end_line": 47,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/project",
+      "name": "NodeBin",
+      "hash": "dbf5b778f787fe60",
+      "start_line": 53,
+      "end_line": 58,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 54,
+          "column": 18,
+          "offset": 57,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/project",
+      "name": "findUp",
+      "hash": "b6a899a95c5c1a5d",
+      "start_line": 60,
+      "end_line": 69,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 65,
+          "column": 22,
+          "offset": 159,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/project",
+      "name": "exists",
+      "hash": "7aa981e6cde7745b",
+      "start_line": 71,
+      "end_line": 74,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 73,
+          "column": 13,
+          "offset": 69,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}
