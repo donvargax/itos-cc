@@ -618,4 +618,13 @@ items:
       it to 20). The package grew from 364s to 570s over three runs; t.Parallel where tests do not
       share state, lighter or shared fixtures (each builds a git repository and runs go test inside
       it), or splitting the package would bring it back down.
+
+      Measured on Linux on 2026-10-07 (go test -json, one run): cmd/itos-cc's 124 tests take 186s
+      and run strictly one after another, since none calls t.Parallel; the package time equals the
+      sum of its tests. 29 tests from #14's slices (integration coverage, listed tests, freshness,
+      selection baselines) take 132s of it (71%); the slowest is
+      TestASelectionsTimeoutComesFromItsOwnRun at 22.5s, by design (sleeps and hanging mutants).
+      Windows' roughly 3x (570s) is the same serial sum with costlier process starts. 11 test files
+      use os.Chdir, t.Chdir or t.Setenv, which rule out t.Parallel; running itos-cc through cmd.Dir
+      and an explicit environment instead would let the fixture tests run in parallel.
     refs: ["#14"]
