@@ -282,14 +282,15 @@ items:
       the last can reuse its outcomes; keepUnjudged and the --since judge also key by name alone.
       mutation check matches any entry of the name with the same hash, so it calls both fresh while
       run reruns the first. Key units by name and position, or by name and hash.
-  - id: mutation-test-hash-since
-    title: mutation run --since drops the entries of functions not judged when their file's tests changed
+  - id: since-keeps-stale-entries
+    title: mutation run --since keeps the entries it does not judge, marked stale, when their tests changed
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-test-hash-since.
       A snapshot records the tests that import its file once per file (mutation-test-hash, q-4), so
       when they changed, a run with --since cannot keep the old outcomes of the functions it does
       not judge without calling them fresh: it drops their entries, and a later check finds them
