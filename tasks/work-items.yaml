@@ -151,11 +151,9 @@ items:
     title: The nightly installs the viewer's packages, so its TypeScript is mutated too
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Spec in the ledger, tasks/phase-1.yaml.
   - id: viewer-ci-tests
     title: Push CI runs the viewer's tests and typecheck
     phase: 1
