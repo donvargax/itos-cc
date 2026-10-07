@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "itos": {
+      "source": {
+        "source": "github",
+        "repo": "donvargax/itos"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "itos@itos": true
+  }
+}
