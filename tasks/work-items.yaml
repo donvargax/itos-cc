@@ -286,6 +286,7 @@ items:
       coverage to GOCOVERDIR on each run, and go tool covdata textfmt turns it into a profile to
       merge with go test's; Node (NODE_V8_COVERAGE), coverage.py (subprocess) and JaCoCo (agent)
       have their own. Starts with Go.
+    refs: ["#14"]
   - id: test-attribution
     title: "mutation: key results by the tests that execute each function, measured per test file"
     phase: 1
