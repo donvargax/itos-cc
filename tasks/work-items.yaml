@@ -205,3 +205,17 @@ items:
       => ...)) come after every site of the function around it, not in line order. slice-3 sorts
       --json's "mutants" by line and column, so the two lists now differ in order where a function
       holds an inline unit.
+  - id: mutate-windows-kill-tree
+    title: A timed-out mutant on Windows kills the processes its tests started
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      On Windows killGroup only bounds WaitDelay: the timeout kills the test command (go test, npx,
+      gradle) but not the processes it started, such as go test's test binary. A mutant that turns a
+      loop infinite then keeps a core busy until the test binary's own timeout (10m for Go), slowing
+      the mutants after it and leaving the worker copy undeletable. A Job object with
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE would kill the tree, as Setpgid does on Unix. Found writing
+      ID-MUT-53, whose fixture sleeps rather than spins for this reason.
