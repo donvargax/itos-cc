@@ -165,14 +165,15 @@ items:
       build- and test-time dependency only; npm audit fix says a fixed version is available. Raising
       it in the lockfile, in a build commit, and checking vitest run and vite build still pass would
       clear it.
-  - id: mutate-unloaded-file-alone
-    title: "mutate: a never-loaded file run alone counts as unmeasured, not uncovered"
+  - id: unloaded-file-uncovered
+    title: "A file no test loads, mutated alone, is uncovered, not unmeasured"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-unloaded-file-alone.
       markUncovered counts a language as measured only from the files of the run, and coverage.Build
       drops report entries that match no source, so a file the report never mentions, mutated alone
       (mutate src/unused.ts, or with --since when it is the only file changed), prints 'no coverage;
