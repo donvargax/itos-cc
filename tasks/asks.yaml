@@ -23,3 +23,6 @@ questions:
   - id: q-6
     item: "mutate-sample"
     question: "How is the sample mode spelled? (a, recommended) A subcommand, itos-cc mutation sample: it re-runs a random sample of cached mutants, compares each outcome with the snapshot and writes nothing. sample is the imperative verb rule 3 asks for and stays clear of check (rule 5: verify would overlap it). (b) itos-cc mutation verify, as a word closer to what it proves, accepting the overlap with check."
+  - id: q-7
+    item: "mutate-sample"
+    question: "How many, and how random? (a, recommended) --count N, default 20, and the choice seeded from the HEAD commit, so a CI rerun of the same commit samples the same mutants and each new commit samples others; --seed overrides it to reproduce a run. (b) A fresh random seed every run, printed so it can be reproduced, so reruns of one commit sample differently."
