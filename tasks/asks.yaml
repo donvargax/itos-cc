@@ -7,3 +7,4 @@ questions:
   - id: q-2
     item: "mutate-check-sample"
     question: "What does the check mode fail on? (a, recommended) Missing or stale results, and also cached survivors (and cached uncovered mutants with --fail-uncovered) in the selected functions, so it gives the verdict a full run would give, from the cache: a gate that passes on fresh results showing survivors proves nothing. (b) Missing or stale results only, as issue #8 sketches it, leaving survivors to the run that wrote them."
+    answer: "(a): missing or stale results, and cached survivors (and cached uncovered mutants with --fail-uncovered) in the selected functions, so it gives the verdict a full run would give, from the cache."
