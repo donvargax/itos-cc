@@ -135,3 +135,14 @@ items:
       survives forever. A committed file names each one with a reason, so it stops failing runs
       while staying visible; docs/CLI.md rule 38 names it as the first project setting.
     refs: ["#10"]
+  - id: gate-mutation
+    title: "Mutation testing for gates: mutate CI workflows and policy YAML against their self-tests"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #11. Needs a deep design session before it is specified; the person will hold it with a
+      different model. Do not specify it or hand it to an agent until that session has happened.
+    refs: ["#11"]
