@@ -61,3 +61,6 @@ questions:
     item: "mutation-sample-scope"
     question: "Snapshots do not record which tests decided an outcome (the file's own, --all-tests, or a --test-command), so mutation sample over --all-tests results reports false mismatches. (a, recommended) Record the scope per mutant outcome; mutation sample re-runs each mutant with its recorded scope by default, a flag overriding it. (b) Record it per file. (c) Leave it to the flags and drop the idea."
     answer: "(a) Record the scope per mutant outcome; sample re-runs each with its recorded scope by default."
+  - id: q-16
+    item: "graph-snapshot-lookup"
+    question: "How should the graph find a file's mutation snapshot, given .metrics is relative to the working directory and the graph matches snapshots by path suffix (ID-GRAPH-26)? (1) The graph looks a file's snapshot up exactly as mutation check does, dropping the suffix match for mutation results. (2) Keep the leniency and document it. (3) Anchor .metrics to the project root for every command, snapshots naming files from the root, so the suffix match has no reason to exist."
