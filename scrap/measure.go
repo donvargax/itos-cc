@@ -24,7 +24,8 @@ type Metrics struct {
 type measurer struct {
 	f *lang.File
 	// helpers are functions of the file that assert: calling one is an
-	// assertion, however the helper is named.
+	// assertion, however the helper is named. A setup helper that only
+	// fails on its own errors, if err != nil { t.Fatal(err) }, is not one.
 	helpers map[string]bool
 }
 
@@ -37,6 +38,9 @@ func newMeasurer(f *lang.File) *measurer {
 				continue
 			}
 			lang.Walk(u.Node, func(n *sitter.Node) bool {
+				if m.isErrorGuard(n) {
+					return false
+				}
 				if n != u.Node && m.isAssertion(n) {
 					m.helpers[u.Name] = true
 				}
@@ -325,6 +329,17 @@ func (m *measurer) isTableLoop(n *sitter.Node) bool {
 		return true
 	})
 	return found
+}
+
+// isErrorGuard is a Go guard that fails when a call returned an error,
+// if err != nil { t.Fatal(err) }: it checks the setup worked, not behavior.
+func (m *measurer) isErrorGuard(n *sitter.Node) bool {
+	if m.f.Spec.Name != "go" || !m.isGuardAssertion(n) {
+		return false
+	}
+	cond := n.ChildByFieldName("condition")
+	return cond != nil && cond.Kind() == "binary_expression" &&
+		fieldText(cond, "operator", m.f.Src) == "!=" && fieldText(cond, "right", m.f.Src) == "nil"
 }
 
 func hasChild(n *sitter.Node, kind string) bool {

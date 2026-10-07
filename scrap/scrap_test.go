@@ -329,3 +329,27 @@ func TestKotlinMultiAnnotatedTestClass(t *testing.T) {
 	r := analyze(t, "ApiTest.kt", "package demo\n\n@SpringBootTest\n@AutoConfigureMockMvc\nclass ApiTest {\n    @Test\n    fun lists() { assertEquals(1, list().size) }\n}\n")
 	assertSummary(t, r, []string{"ApiTest/lists a=1 d=0 m=0"})
 }
+
+func TestSetupHelpersThatFailOnErrorsAreNotAssertions(t *testing.T) {
+	r := analyze(t, "a_test.go", `package a
+
+func write(t *testing.T, path string) {
+	if err := os.WriteFile(path, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func same(t *testing.T, got, want int) {
+	if got != want {
+		t.Errorf("got %d, want %d", got, want)
+	}
+}
+
+func TestParse(t *testing.T) {
+	write(t, "a")
+	write(t, "b")
+	same(t, parse("a"), 1)
+}
+`)
+	assertSummary(t, r, []string{"/TestParse a=1 d=0 m=0"})
+}

@@ -73,6 +73,13 @@ Feature: Test-code structure
         | TestCheckout | 0          | 0         | 0     | no    |
       # assertParsed asserts, so calling it is an assertion; checkout is not a helper
 
+    Scenario: A setup helper that fails on its own errors is not an assertion
+      Given a Go helper "write" whose only failure is if err := os.WriteFile(…); err != nil { t.Fatal(err) }
+      And an example that calls write twice and an asserting helper once
+      When it is measured
+      Then it has 1 assertion
+      # the guard checks the setup worked, not the behavior under test
+
     Scenario Outline: Assertions each language recognizes
       Given a <language> example containing <code>
       Then it counts as an assertion
