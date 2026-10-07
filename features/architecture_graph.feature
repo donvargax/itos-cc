@@ -297,6 +297,30 @@ Feature: Architecture graph
       Then each function is marked stale exactly when "itos-cc mutation check" calls it stale
       And a function check calls missing carries no mutation results, as today
 
+    # The graph read every mutation snapshot under .metrics/mutate and paired
+    # it by the file it names, falling back to a path-suffix match, while
+    # mutation check looks a file's snapshot up at one exact place. So a
+    # snapshot naming its file from another directory gave the graph results
+    # for a function check calls missing. Decided with the person on
+    # 2026-10-07 (q-16): the graph looks a file's mutation snapshot up where
+    # check does, .metrics/mutate/<file from the root>.json, with the file
+    # named the same, and snapshots-at-root makes every command write it
+    # there. ID-GRAPH-26 then holds only for crap.json's coverage: the fix
+    # narrows its wording to say so.
+    @wip @graph-snapshot-lookup @ID-GRAPH-39
+    Scenario: The graph finds a file's mutation snapshot where check does
+      Given .metrics/mutate/lang/kotlin.go.json records the function init of lang/kotlin.go
+      When the graph is built
+      Then the function init in lang/kotlin.go carries its mutation results
+
+    @wip @graph-snapshot-lookup @ID-GRAPH-40
+    Scenario: A mutation snapshot naming another path does not match
+      Given .metrics/mutate/repo/lang/kotlin.go.json names the file "repo/lang/kotlin.go"
+      And no snapshot is at .metrics/mutate/lang/kotlin.go.json
+      When the graph is built
+      Then the function init in lang/kotlin.go carries no mutation results
+      And "itos-cc mutation check lang/kotlin.go" calls it missing
+
     @ID-GRAPH-26
     Scenario: Snapshots written from another directory still match
       Given a snapshot names "repo/lang/kotlin.go"
