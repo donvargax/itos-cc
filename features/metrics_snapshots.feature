@@ -76,13 +76,13 @@ Feature: Snapshots under .metrics
   Scenario Outline: Every command's snapshot names files from the root
     Given a git repository with src/board.go and its tests
     When I run "itos-cc <command>" from src/
-    Then <snapshot> at the repository's root names src/board.go as "src/board.go"
+    Then <snapshot> at the repository's root names <file> as "<file>"
 
     Examples:
-      | command | snapshot           |
-      | crap    | .metrics/crap.json |
-      | dry     | .metrics/dry.json  |
-      | scrap   | .metrics/scrap.json |
+      | command | snapshot            | file              |
+      | crap    | .metrics/crap.json  | src/board.go      |
+      | dry     | .metrics/dry.json   | src/board.go      |
+      | scrap   | .metrics/scrap.json | src/board_test.go |
 
   @snapshots-at-root @ID-SNAP-10
   Scenario: A command finds the same results from any directory
