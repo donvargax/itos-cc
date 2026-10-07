@@ -457,7 +457,7 @@ Feature: Mutation testing
     # gate that trusts cached kills (#8) needs to tell apart. A new key, so
     # "schema" stays 1. With --since only the judged functions' mutants are
     # listed, as only they are counted.
-    @wip @slice-3 @ID-MUT-52
+    @slice-3 @ID-MUT-52
     Scenario: Every mutant as JSON
       Given src/board.ts has mutants that are killed, one that survives, and one on a line no test executes
       When I run "itos-cc mutate --json src/board.ts"
@@ -465,14 +465,14 @@ Feature: Mutation testing
       And each has line, column, function, original, replacement, outcome, and reused
       And their outcomes are "killed", "survived", and "uncovered" as each was decided
 
-    @wip @slice-3 @ID-MUT-53
+    @slice-3 @ID-MUT-53
     Scenario: A timed-out mutant's outcome is its own
       Given a mutant of src/board.ts runs past its timeout
       When I run "itos-cc mutate --json src/board.ts"
       Then its outcome is "timeout"
       And it is counted in "killed"
 
-    @wip @slice-3 @ID-MUT-54
+    @slice-3 @ID-MUT-54
     Scenario: Mutants taken from the snapshot say so
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since, while "Board#clear" has
@@ -480,13 +480,13 @@ Feature: Mutation testing
       Then the mutants of "Board#place" are "killed" with reused true
       And the mutants of "Board#clear" have reused false
 
-    @wip @slice-3 @ID-MUT-55
+    @slice-3 @ID-MUT-55
     Scenario: With --since only the judged functions' mutants are listed
       Given only "Board#place" changed since "base"
       When I run "itos-cc mutate --since base --json"
       Then the "mutants" of src/board.ts all have function "Board#place"
 
-    @wip @slice-3 @ID-MUT-56
+    @slice-3 @ID-MUT-56
     Scenario: A failing baseline lists no mutant
       Given the tests of src/board.ts fail without any mutation
       When I run "itos-cc mutate --json src/board.ts"

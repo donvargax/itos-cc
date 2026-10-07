@@ -206,7 +206,12 @@ fails; copy it as a starting point. Raw coverage under
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off). A surviving
 mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
-any mutant, exits 1.
+any mutant, exits 1. `--json` lists each file's `mutants` in site order,
+each with the keys `--scan` gives a site, its `outcome` (`killed`,
+`survived`, `timeout`, which counts as killed, or `uncovered`), and `reused`,
+true when the outcome came from the snapshot without running; with
+`--since`, only the judged functions' mutants, and none for a file whose
+baseline failed.
 
 ### scrap
 

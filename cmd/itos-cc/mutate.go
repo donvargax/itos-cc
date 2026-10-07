@@ -55,7 +55,9 @@ uncovered.`,
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on each uncovered mutant, as on a survivor")),
 	json: `"files": [{"file", "killed", "survived", "uncovered", "ran", "reused",
-   "baseline": "passed"|"failed", and with --since "judged": ["namespace#name"]}];
+   "baseline": "passed"|"failed", "mutants": [{"line", "column", "function",
+   "original", "replacement", "outcome": "killed"|"survived"|"timeout"|"uncovered",
+   "reused"}], and with --since "judged": ["namespace#name"]}];
    with --scan, "sites": [{"file", "line", "column", "function", "original",
    "replacement"}]`,
 	rules: []string{
@@ -90,6 +92,21 @@ type mutateFile struct {
 	Baseline  string `json:"baseline"`
 	// Judged is there only with --since, empty when no function changed.
 	Judged []string `json:"judged,omitzero"`
+	// Mutants is every mutant of the functions judged, in site order;
+	// empty, never null, when the baseline failed.
+	Mutants []mutateMutant `json:"mutants"`
+}
+
+// mutateMutant is a site, less its file, and how it was decided: a
+// timed-out mutant is "timeout" here and counts in "killed".
+type mutateMutant struct {
+	Line        int    `json:"line"`
+	Column      int    `json:"column"`
+	Function    string `json:"function"`
+	Original    string `json:"original"`
+	Replacement string `json:"replacement"`
+	Outcome     string `json:"outcome"`
+	Reused      bool   `json:"reused"`
 }
 
 type mutateResult struct {
@@ -169,7 +186,7 @@ func runMutate(in *invocation) (any, error) {
 	}
 	for _, r := range results {
 		if r.BaselineFailed {
-			result.Files = append(result.Files, mutateFile{File: r.Rel, Baseline: "failed", Judged: r.Judged})
+			result.Files = append(result.Files, mutateFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []mutateMutant{}})
 			if !in.json {
 				fmt.Printf("%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, tail(r.BaselineOutput, 20))
 			}
@@ -177,7 +194,11 @@ func runMutate(in *invocation) (any, error) {
 				"Make its tests pass, then run mutate again.").with("file", r.Rel))
 			continue
 		}
-		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged}
+		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
+		for _, m := range r.Mutants {
+			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
+				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused})
+		}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
 		judged := map[string]bool{}

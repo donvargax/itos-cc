@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -43,6 +44,19 @@ type FileResult struct {
 	// many the file has.
 	Judged    []string
 	Functions int
+	// Mutants is every mutant of the functions judged, in site order (line,
+	// then column), with its outcome; empty when the baseline failed.
+	Mutants []MutantResult
+}
+
+// MutantResult is how one mutant was decided in this run.
+type MutantResult struct {
+	Site
+	Function string // namespace#name
+	Outcome  string // Killed, Survived, Timeout, or Uncovered
+	// Reused is true when the outcome came from the snapshot without
+	// running.
+	Reused bool
 }
 
 // skipped marks a site of a function not judged that has no outcome to keep:
@@ -57,6 +71,7 @@ type fileState struct {
 	rel      string
 	sites    []Site
 	outcomes []string // "" while pending
+	reused   []bool   // the outcome came from the previous snapshot
 	command  Command
 	result   *FileResult
 	previous *Snapshot       // the snapshot before this run, or nil
@@ -96,6 +111,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	var results []FileResult
 	for _, s := range states {
 		if !s.result.BaselineFailed {
+			s.result.Mutants = s.decided()
 			s.result.Snapshot = build(s.file, s.rel, s.sites, s.outcomes)
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
@@ -144,6 +160,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			}
 		}
 		s.outcomes = make([]string, len(s.sites))
+		s.reused = make([]bool, len(s.sites))
 		for i, site := range s.sites {
 			u := f.Units[site.Unit]
 			if id := unitID(u.Namespace, u.Name); s.judged != nil && !s.judged[id] {
@@ -157,11 +174,36 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			}
 			if outcome, ok := prev.kept(f, site); ok && !opt.MutateAll {
 				s.outcomes[i] = outcome
+				s.reused[i] = true
 				s.result.Reused++
 			}
 		}
 	}
 	return states, nil
+}
+
+// decided lists the mutants of the functions judged with their outcomes, in
+// site order. A function not judged was not decided in this run, whatever
+// its snapshot keeps for it.
+func (s *fileState) decided() []MutantResult {
+	out := []MutantResult{}
+	for i, site := range s.sites {
+		u := s.file.Units[site.Unit]
+		id := unitID(u.Namespace, u.Name)
+		if s.judged != nil && !s.judged[id] {
+			continue
+		}
+		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i]})
+	}
+	// Sites come unit by unit, which is not line order where a unit holds
+	// an inline one.
+	sort.SliceStable(out, func(a, b int) bool {
+		if out[a].Line != out[b].Line {
+			return out[a].Line < out[b].Line
+		}
+		return out[a].Column < out[b].Column
+	})
+	return out
 }
 
 // markUncovered settles pending sites on lines no test executes. A file the
