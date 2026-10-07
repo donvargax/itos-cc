@@ -60,3 +60,15 @@ items:
       never run. A gate needs an uncovered mutant in a judged function to fail, reported as such
       (exit 1), behind a flag or the gate mode.
     refs: ["#9"]
+  - id: mutate-json-mutants
+    title: mutate --json lists every mutant of each function
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #9 part 3: itos reads the result without parsing text or the cache, so --json carries
+      each function's mutants (site, operator, outcome: killed, survived, uncovered, timed out).
+      Exit codes are already the contract (docs/CLI.md).
+    refs: ["#9"]
