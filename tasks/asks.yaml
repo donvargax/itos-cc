@@ -33,3 +33,6 @@ questions:
     item: "mutate-sample"
     question: "What is sampled, and what fails? (a, recommended) Only the fresh entries of the selection (stale and missing ones are mutation check's to report), and among them only mutants that ran (killed, timeout, survived: an uncovered one would need a coverage run). Any outcome that differs from the snapshot fails as mutation.mismatch, naming both outcomes, whichever way it went: the cache was wrong either way. (b) Fail only when a cached kill now survives, the direction that lets a gate pass wrongly, and print the other differences without failing."
     answer: "(a) Only fresh entries that ran (killed, timeout, survived); any outcome differing from the snapshot fails as mutation.mismatch, naming both, either direction."
+  - id: q-9
+    item: "mutation-exceptions"
+    question: "Where do the exceptions live? (a, recommended) itos-cc.yaml at the project root, under mutation.exceptions: itos-cc's first project setting (docs/CLI.md rule 38), reviewed like code. (b) .metrics/mutate/exceptions.yaml beside the snapshots, as the issue proposed, though .metrics holds what itos-cc writes."
