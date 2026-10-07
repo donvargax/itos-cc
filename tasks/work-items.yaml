@@ -459,3 +459,17 @@ items:
       would not collide but depend on where the checkout lives, which namespace-working-dir set out
       to end; whether to keep the ../ in the name (as ..a.x), refuse such a file, or accept the
       collision is a decision of its own.
+  - id: graph-stale-same-name
+    title: The graph and mutation check can disagree on a function that shares its name in one file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation check calls a function fresh when any entry under its namespace#name in the snapshot
+      has its hash; the graph matches the entry in the same position among the file's functions of
+      that name (Kotlin overloads, several Go init functions in one file) and compares that one
+      hash. When such functions are reordered, or one of them is edited, the two can differ on which
+      is stale. Found with graph-stale-tests, which made the graph follow check on the tests that
+      import the file but left the hash rule as ID-GRAPH-24 and ID-GRAPH-25 set it.
