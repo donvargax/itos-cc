@@ -47,15 +47,6 @@ items:
     title: Snapshot writes at the same time pass on Windows
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Was windows-metrics-write.
-      TestWritesAtTheSameTimeLeaveOneWholeSnapshot (metrics/metrics_test.go, from ceef519) fails on
-      windows-latest in every CI run since 88b2142 (runs 37563106445, 37563187387, 37563299759):
-      os.Rename of a staging .tmp file onto .metrics/x.json returns 'Access is denied' when another
-      goroutine renames onto the same file at the same moment, and the mode check wants 0644 where
-      Windows reports -rw-rw-rw-. Either retry the rename on Windows (or serialize writers with a
-      lock), and skip or relax the permission check there; until then main's CI is red on Windows
-      and no item can be closed with itos work done.
