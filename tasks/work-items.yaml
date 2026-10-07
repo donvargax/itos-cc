@@ -441,7 +441,7 @@ items:
     title: The graph takes each function's mutation state from mutation check's own code
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
