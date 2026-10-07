@@ -103,14 +103,15 @@ items:
       that imports lang fails with "build constraints exclude all Go files"; it failed before
       slice-1 too (e1a44e4). It needs CGO_ENABLED=1 with a mingw-w64 compiler, or the vet of the
       Windows CI job is the only check.
-  - id: mutate-check-sample
-    title: "mutate check mode: report functions whose cached results are missing or stale"
+  - id: mutation-check
+    title: "mutation check: report missing, stale or failing cached results without running anything"
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-group]
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-check-sample.
       Issue #8: a gate at itos work done needs to trust cached kills without re-running every mutant
       (--check), and CI a sample that spot-checks the cache (sample mode). #9 says itos would call
       mutate --check at work done, so this follows the #9 ideas.
@@ -223,7 +224,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [mutate-check-sample]
+    depends_on: [mutation-check]
     kind: idea
     why: >
       Issue #8 part 2, and IDEAS.md "Killed mutants must notice test changes": a kept kill survives
@@ -236,7 +237,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [mutate-check-sample]
+    depends_on: [mutation-check]
     kind: idea
     why: >
       Issue #8 part 3: CI re-runs N cached mutants chosen at random, or all of the changed
