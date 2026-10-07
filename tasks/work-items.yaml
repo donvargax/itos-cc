@@ -18,6 +18,7 @@ queue:
   - unloaded-file-uncovered
   - check-unrecorded-sites
   - since-keeps-stale-entries
+  - sample-recorded-scope
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
