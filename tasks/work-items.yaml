@@ -150,8 +150,8 @@ items:
   - id: T-5
     title: The nightly installs the viewer's packages, so its TypeScript is mutated too
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
