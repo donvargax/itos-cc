@@ -13,10 +13,15 @@ import (
 // Segment is a run of lines that a report measures as one piece: one LCOV
 // line, one Go statement block, or one JaCoCo line. Total and Covered are in
 // the report's own unit (lines, statements, or instructions). A branch
-// segment is one decision, and counts its branches.
+// segment is one decision, and counts its branches. Key names the piece
+// within its file, so Build counts a piece that several test binaries or
+// reports list once, as covered when any of them covered it. For a decision
+// that is its most-taken copy's branches: block counts cannot tell whether
+// two runs took the same branches or different ones.
 type Segment struct {
 	Start, End     int
 	Total, Covered float64
+	Key            string
 }
 
 // Entry is one file as a report names it, before it is matched to a source
@@ -104,21 +109,41 @@ func (r *Report) LineCovered(file string, line int) (covered, measured bool) {
 }
 
 // Build matches each entry to one of sources and merges entries that name the
-// same file. base is the directory the report's relative paths start from.
-// Entries that match no source are dropped: they are dependencies, tests, or
-// generated code.
+// same file, and segments that name the same piece of it. base is the
+// directory the report's relative paths start from. Entries that match no
+// source are dropped: they are dependencies, tests, or generated code.
 func Build(sources []string, base string, entries ...[]Entry) *Report {
 	m := newMatcher(sources)
 	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}}
+	seen := map[string]int{} // file, kind, and key → index into its segments
 	for _, list := range entries {
 		for _, e := range list {
 			if file := m.match(e.Path, base); file != "" {
-				r.files[file] = append(r.files[file], e.Segments...)
-				r.branches[file] = append(r.branches[file], e.Branches...)
+				r.files[file] = merged(r.files[file], e.Segments, file+"\x00lines", seen)
+				r.branches[file] = merged(r.branches[file], e.Branches, file+"\x00branches", seen)
 			}
 		}
 	}
 	return r
+}
+
+// merged appends more to segs, folding a segment whose key segs already
+// holds into that one.
+func merged(segs, more []Segment, prefix string, seen map[string]int) []Segment {
+	for _, s := range more {
+		if s.Key == "" {
+			segs = append(segs, s)
+			continue
+		}
+		key := prefix + "\x00" + s.Key
+		if i, ok := seen[key]; ok {
+			segs[i].Covered = max(segs[i].Covered, s.Covered)
+			continue
+		}
+		seen[key] = len(segs)
+		segs = append(segs, s)
+	}
+	return segs
 }
 
 // Merge combines reports for different languages into one.

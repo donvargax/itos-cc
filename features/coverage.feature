@@ -197,6 +197,22 @@ Feature: Coverage
       When the report is built
       Then that entry is ignored
 
+  Rule: A piece of code listed more than once counts once
+
+    Scenario: Go test binaries each list every block
+      Given a module with packages "a", "b", and "c", each fully covered by its own tests
+      And a profile from go test -coverpkg=./..., which lists every block once per test binary
+      When the covered share of a function in "a" is computed
+      Then it is 100%, as go tool cover -func says
+      # counting each copy would make it 33%
+
+    Scenario: Several reports of the same file are combined
+      Given two reports given with --coverage-report, such as unit and integration runs
+      And each covers a line of a file the other does not
+      When the covered share of the file is computed
+      Then a line or block is covered when any report covered it
+      And a decision counts the branches of the report that took the most
+
   Rule: A function's coverage starts where calling it starts
 
     Scenario: Python coverage starts at the body

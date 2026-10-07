@@ -135,6 +135,38 @@ example.com/demo/board/board.go:10.10,12.3 1 0
 	}
 }
 
+func TestGoBlocksRepeatedByEachTestBinaryAreOneBlock(t *testing.T) {
+	entries, err := ParseGo(strings.NewReader(`mode: set
+example.com/demo/board/board.go:9.30,10.10 3 0
+example.com/demo/board/board.go:10.10,12.3 1 0
+example.com/demo/board/board.go:9.30,10.10 3 1
+example.com/demo/board/board.go:10.10,12.3 1 0
+example.com/demo/board/board.go:9.30,10.10 3 0
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := Build([]string{"/w/gomod/board/board.go"}, "/w/gomod", entries)
+	if got := fraction(t, r, "/w/gomod/board/board.go", 9, 12); !approx(got, 3.0/4) {
+		t.Errorf("Place = %v, want 3/4: the block one binary ran is covered", got)
+	}
+}
+
+func TestReportsOfTheSameFileAreCombined(t *testing.T) {
+	unit, err := ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,1\nDA:2,0\nend_of_record\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	integration, err := ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,0\nDA:2,3\nend_of_record\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := Build([]string{"/p/src/a.ts"}, "/p", unit, integration)
+	if got := fraction(t, r, "/p/src/a.ts", 1, 2); !approx(got, 1) {
+		t.Errorf("covered share = %v, want 1: each line ran in one of the reports", got)
+	}
+}
+
 func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
 	entries, err := ParseJaCoCo(strings.NewReader(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">

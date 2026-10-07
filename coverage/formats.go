@@ -62,7 +62,7 @@ func ParseLCOV(r io.Reader) ([]Entry, error) {
 			if err1 != nil || err2 != nil {
 				return nil, fmt.Errorf("lcov: bad line %q", line)
 			}
-			cur.Segments = append(cur.Segments, Segment{Start: n, End: n, Total: 1, Covered: boolWeight(hits > 0, 1)})
+			cur.Segments = append(cur.Segments, Segment{Start: n, End: n, Total: 1, Covered: boolWeight(hits > 0, 1), Key: fields[0]})
 		case strings.HasPrefix(line, "BRDA:") && cur != nil:
 			if err := blocks.add(strings.TrimPrefix(line, "BRDA:")); err != nil {
 				return nil, err
@@ -105,7 +105,7 @@ func (b *lcovBlocks) add(record string) error {
 	if !ok {
 		i = len(b.order)
 		b.index[key] = i
-		b.order = append(b.order, Segment{Start: ln, End: ln})
+		b.order = append(b.order, Segment{Start: ln, End: ln, Key: key[0] + "," + key[1]})
 	}
 	b.order[i].Total++
 	b.order[i].Covered += boolWeight(taken > 0, 1)
@@ -125,7 +125,8 @@ func (b *lcovBlocks) flush(cur *Entry) {
 }
 
 // ParseGo reads a `go test -coverprofile` file. Each block is a segment
-// weighted by its statement count.
+// weighted by its statement count and keyed by its span. With -coverpkg,
+// every test binary lists every block; Build counts each block once.
 func ParseGo(r io.Reader) ([]Entry, error) {
 	byFile := map[string]int{}
 	var entries []Entry
@@ -155,7 +156,7 @@ func ParseGo(r io.Reader) ([]Entry, error) {
 			entries = append(entries, Entry{Path: file})
 		}
 		entries[i].Segments = append(entries[i].Segments,
-			Segment{Start: start, End: end, Total: stmts, Covered: boolWeight(count > 0, stmts)})
+			Segment{Start: start, End: end, Total: stmts, Covered: boolWeight(count > 0, stmts), Key: fields[0]})
 	}
 	return entries, s.Err()
 }
@@ -202,9 +203,9 @@ func ParseJaCoCo(r io.Reader) ([]Entry, error) {
 		for _, f := range p.Files {
 			e := Entry{Path: path.Join(p.Name, f.Name)}
 			for _, l := range f.Lines {
-				e.Segments = append(e.Segments, Segment{Start: l.Nr, End: l.Nr, Total: l.Mi + l.Ci, Covered: l.Ci})
+				e.Segments = append(e.Segments, Segment{Start: l.Nr, End: l.Nr, Total: l.Mi + l.Ci, Covered: l.Ci, Key: strconv.Itoa(l.Nr)})
 				if l.Mb+l.Cb > 0 {
-					e.Branches = append(e.Branches, Segment{Start: l.Nr, End: l.Nr, Total: l.Mb + l.Cb, Covered: l.Cb})
+					e.Branches = append(e.Branches, Segment{Start: l.Nr, End: l.Nr, Total: l.Mb + l.Cb, Covered: l.Cb, Key: strconv.Itoa(l.Nr)})
 				}
 			}
 			entries = append(entries, e)

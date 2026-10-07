@@ -95,7 +95,9 @@ itos-cc scrap --verbose
 `CRAP = CC² × (1 − coverage)³ + CC`. Coverage comes from each language's own
 tools, run per build root: `go test -coverprofile`, Vitest, Jest, or c8
 (LCOV), coverage.py (LCOV), and JaCoCo or Kover XML for Kotlin. Bring your own
-with `--coverage-command` and `--coverage-report`.
+with `--coverage-command` and `--coverage-report`; several reports are
+combined, and code that more than one report or Go test binary lists counts
+once, covered if any of them ran it.
 
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
