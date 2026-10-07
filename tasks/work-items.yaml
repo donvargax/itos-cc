@@ -73,3 +73,14 @@ items:
       each function's mutants (site, operator, outcome: killed, survived, uncovered, timed out).
       Exit codes are already the contract (docs/CLI.md).
     refs: ["#9"]
+  - id: mutate-since-scan
+    title: mutate --scan --since lists every site of the changed files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With --since, --scan takes its files from the range but lists every site in them, not only the
+      sites of the functions --since would judge. No scenario says which it should be; listing only
+      the judged functions would preview what a gate runs.
