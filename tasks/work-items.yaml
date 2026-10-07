@@ -54,14 +54,9 @@ items:
     title: mutate --json lists every mutant of each function
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-json-mutants.
-      Issue #9 part 3: itos reads the result without parsing text or the cache, so --json carries
-      each function's mutants (site, operator, outcome: killed, survived, uncovered, timed out).
-      Exit codes are already the contract (docs/CLI.md).
     refs: ["#9"]
   - id: mutate-since-scan
     title: mutate --scan --since lists every site of the changed files
