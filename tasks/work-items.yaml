@@ -24,11 +24,9 @@ items:
     title: Tag every scenario with an ID and require the Scenarios footer
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Spec in the ledger, tasks/phase-1.yaml.
   - id: mutate-since
     title: "mutate --since <ref>: judge only the functions changed since ref"
     phase: 1
