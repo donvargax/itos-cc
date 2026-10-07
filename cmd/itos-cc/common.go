@@ -88,9 +88,11 @@ var coverageFlags = []flagSpec{
 }
 
 // loadCoverage produces coverage for sources, or nil with --no-coverage.
-// scope is the tests that run without --all-tests. Progress and test output
-// go to log so stdout stays the report.
-func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer) (*coverage.Report, error) {
+// scope is the tests that run without --all-tests. With perTest, when the
+// coverage commands run, it also measures each listed test's coverage, in
+// the run's own directory. Progress and test output go to log so stdout
+// stays the report.
+func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer, perTest *coverage.PerTest) (*coverage.Report, error) {
 	command, reports := in.str("coverage-command"), in.strs("coverage-report")
 	switch {
 	case in.set("no-coverage"):
@@ -137,6 +139,9 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 	}
 	defer os.RemoveAll(run)
 	report := coverage.Run(coverage.Plans(sources, run, scope), sources, log)
+	if perTest != nil {
+		report.SetTests(coverage.MeasureTests(*perTest, filepath.Join(run, "tests"), sources, log))
+	}
 	keepLatest(run, out)
 	return report, nil
 }

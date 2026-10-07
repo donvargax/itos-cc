@@ -1,7 +1,8 @@
 // Package config reads and writes itos-cc.yaml, the project's settings,
 // kept at the project root under version control and reviewed like the
-// code. Its one setting so far is mutation.exceptions: the equivalent
-// mutants a person excepted, each with a reason.
+// code. It holds mutation.exceptions, the equivalent mutants a person
+// excepted, each with a reason, and mutation.tests, how to list the
+// project's tests and run a selection of them.
 package config
 
 import (
@@ -53,6 +54,45 @@ func (e Exception) SameSite(o Exception) bool {
 // Config is what itos-cc reads of itos-cc.yaml.
 type Config struct {
 	Exceptions []Exception
+	// Tests, when set, is how to list the project's tests and run a
+	// selection of them.
+	Tests *Tests
+}
+
+// Tests is mutation.tests: commands, run through the platform shell at the
+// project root, that list the project's tests and run a selection of them,
+// sharing only the tests' IDs and paths.
+type Tests struct {
+	// List prints one test per line: its ID and, after a tab, optionally
+	// the file that defines it.
+	List string
+	// Run runs the tests {pattern} selects.
+	Run string
+	// IDsPattern is the pattern of a selection, with {ids} the selected
+	// IDs, each written as Each, with {id} the ID, joined by Sep.
+	IDsPattern string
+	Each, Sep  string
+	// Whole, optional, runs every listed test; without it, Run selects them
+	// all.
+	Whole string
+}
+
+// Select is the command that runs the tests ids.
+func (t *Tests) Select(ids []string) string {
+	each := make([]string, len(ids))
+	for i, id := range ids {
+		each[i] = strings.ReplaceAll(t.Each, "{id}", id)
+	}
+	pattern := strings.ReplaceAll(t.IDsPattern, "{ids}", strings.Join(each, t.Sep))
+	return strings.ReplaceAll(t.Run, "{pattern}", pattern)
+}
+
+// All is the command that runs every test, ids.
+func (t *Tests) All(ids []string) string {
+	if t.Whole != "" {
+		return t.Whole
+	}
+	return t.Select(ids)
 }
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
@@ -75,7 +115,20 @@ type raw struct {
 			Replacement    *string `yaml:"replacement"`
 			Reason         *string `yaml:"reason"`
 		} `yaml:"exceptions"`
+		Tests *rawTests `yaml:"tests"`
 	} `yaml:"mutation"`
+}
+
+// rawTests is mutation.tests as decoded.
+type rawTests struct {
+	List       *string `yaml:"list"`
+	Run        *string `yaml:"run"`
+	IDsPattern *string `yaml:"ids_pattern"`
+	Join       *struct {
+		Each *string `yaml:"each"`
+		Sep  *string `yaml:"sep"`
+	} `yaml:"join"`
+	Whole *string `yaml:"whole"`
 }
 
 // Load reads itos-cc.yaml at the project root. A missing file is an
@@ -128,7 +181,55 @@ func parse(data []byte) (*Config, error) {
 		}
 		c.Exceptions = append(c.Exceptions, e)
 	}
+	if r.Mutation.Tests != nil {
+		t, err := r.Mutation.Tests.parse()
+		if err != nil {
+			return nil, err
+		}
+		c.Tests = t
+	}
 	return c, nil
+}
+
+// parse checks mutation.tests: list, run with {pattern}, ids_pattern with
+// {ids}, and join, each with {id} and sep, which may be empty; whole is
+// optional.
+func (r *rawTests) parse() (*Tests, error) {
+	var wrong []string
+	text := func(key string, v *string, placeholder string) string {
+		switch {
+		case v == nil || strings.TrimSpace(*v) == "":
+			wrong = append(wrong, "has no "+key)
+		case placeholder != "" && !strings.Contains(*v, placeholder):
+			article := "a"
+			if strings.HasPrefix(key, "i") {
+				article = "an"
+			}
+			wrong = append(wrong, fmt.Sprintf("has %s %s without %s", article, key, placeholder))
+		default:
+			return *v
+		}
+		return ""
+	}
+	t := &Tests{List: text("list", r.List, ""), Run: text("run", r.Run, "{pattern}"),
+		IDsPattern: text("ids_pattern", r.IDsPattern, "{ids}")}
+	if r.Join == nil {
+		wrong = append(wrong, "has no join")
+	} else {
+		t.Each = text("join.each", r.Join.Each, "{id}")
+		if r.Join.Sep == nil {
+			wrong = append(wrong, "has no join.sep")
+		} else {
+			t.Sep = *r.Join.Sep
+		}
+	}
+	if r.Whole != nil {
+		t.Whole = text("whole", r.Whole, "")
+	}
+	if len(wrong) > 0 {
+		return nil, &InvalidError{"mutation.tests " + strings.Join(wrong, ", ")}
+	}
+	return t, nil
 }
 
 // Except writes e into itos-cc.yaml at the project root, under

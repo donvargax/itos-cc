@@ -63,8 +63,10 @@ func (m SampledMutant) Agrees() bool {
 // moved. Each mutant runs
 // in the scope its snapshot records, one baseline per scope's command,
 // unless opt's TestCommand or AllTests is set, which then sets every
-// mutant's. opt's Workers, TimeoutFactor, Judge, Tests, and Log apply as in
-// Run; the rest is not used.
+// mutant's. A mutant of ScopeListed runs, once its own tests survive it,
+// the listed tests its outcome records, through opt's Listed, after their
+// baseline. opt's Workers, TimeoutFactor, Judge, Tests, Listed, and Log
+// apply as in Run; the rest is not used.
 func Sample(files []string, count int, seed string, opt Options) (Sampled, error) {
 	var states []*fileState
 	defer func() {
@@ -78,6 +80,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		function string
 		recorded string
 		scope    string
+		tests    []string // the listed tests it runs after its own, in ScopeListed
 		rank     string
 	}
 	override := opt.TestCommand != "" || opt.AllTests
@@ -110,12 +113,12 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 				if !ok || (m.Outcome != Killed && m.Outcome != Timeout && m.Outcome != Survived) {
 					continue
 				}
-				scope := m.TestScope()
+				scope, tests := m.TestScope(), m.Tests
 				if override {
-					scope = RunScope(opt.TestCommand, opt.AllTests)
+					scope, tests = RunScope(opt.TestCommand, opt.AllTests), nil
 				}
 				candidates = append(candidates, candidate{state: s, site: i, function: fn.Function, recorded: m.Outcome,
-					scope: scope, rank: rank(seed, s.key, fn.Function, m.key())})
+					scope: scope, tests: tests, rank: rank(seed, s.key, fn.Function, m.key())})
 			}
 		}
 	}
@@ -140,11 +143,18 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		if r == nil {
 			s := c.state
 			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(s.file.Path, c.scope),
-				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites))}
+				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites)),
+				scopes: make([]string, len(s.sites)), ran: make([][]string, len(s.sites))}
+			if c.scope == ScopeListed {
+				r.reach = make([][]string, len(s.sites))
+			}
 			runs[k] = r
 			order = append(order, r)
 		}
 		r.outcomes[c.site] = ""
+		if r.reach != nil {
+			r.reach[c.site] = c.tests
+		}
 		drawn[c.state] = append(drawn[c.state], c)
 	}
 	if err := execute(order, opt); err != nil {

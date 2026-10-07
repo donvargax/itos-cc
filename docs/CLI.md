@@ -29,7 +29,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing. |
+| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
 | 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -75,7 +75,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `args.unexpected`            | 2    | version, help, mutation except | `argument`                                  |
 | `args.missing`               | 2    | mutation except | none                                                       |
 | `args.invalid`               | 2    | mutation except | `argument`                                                 |
-| `config.invalid`             | 2    | mutation run, mutation check, mutation except | `file`                         |
+| `config.invalid`             | 2    | mutation run, mutation check, mutation sample, mutation except | `file`        |
 | `exception.no-survivor`      | 2    | mutation except | `file`, `line`, `column`                                   |
 | `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
 | `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
@@ -95,6 +95,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
+| `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
 | `serve.repo-unreadable`      | 2    | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
 | `internal`                   | 70   | every          | none                                                        |
@@ -132,10 +133,10 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
-| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables. Its one project setting, `mutation.exceptions` in `itos-cc.yaml`, has no flag or variable to set it instead: an exception belongs with the code it excuses, so it is read only from the file. |
+| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its one setting so far is `mutation.exceptions`: the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, and `reason`, which `mutation except` writes, keeping the file's other keys and comments. A file that cannot be read is `config.invalid`, exit 2. |
+| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, and `reason`, which `mutation except` writes, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, and `whole`). A file that cannot be read is `config.invalid`, exit 2. |
 | 39–41 | Entry points for other programs | None. |
 | 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 

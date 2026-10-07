@@ -44,11 +44,13 @@ samples only the functions the commits since REF changed (git diff
 REF...HEAD).
 
 Each mutant runs with the scope of the tests its outcome was recorded with:
-the file's own tests, the whole suite (--all-tests), or the --test-command
-line, one baseline per scope's command, so a kill only the whole suite makes
-is not read as a survivor. An outcome recorded before scopes were is the
-file's own tests'. --all-tests or --test-command given to mutation sample
-runs every sampled mutant with it instead.
+the file's own tests, the whole suite (--all-tests), the --test-command
+line, or "listed", the file's own tests then, if the mutant survives them,
+the listed tests its outcome records (see mutation run), one baseline per
+scope's command, so a kill only the whole suite makes is not read as a
+survivor. An outcome recorded before scopes were is the file's own tests'.
+--all-tests or --test-command given to mutation sample runs every sampled
+mutant with it instead.
 
 Plain output is the seed and how many of the cached mutants were sampled,
 then a line per file, "<file>: N sampled, N mismatched", then each mismatch:
@@ -66,10 +68,11 @@ it is empty when the file's baseline failed.`,
 	json: `"seed", "files": [{"file", "baseline": "passed"|"failed",
    "mutants": [{"line", "column", "function", "original", "replacement",
    "recorded", "outcome": "killed"|"survived"|"timeout",
-   "scope": "own"|"all-tests"|"<test command>"}]}]`,
+   "scope": "own"|"all-tests"|"listed"|"<test command>"}]}]`,
 	rules: []string{
 		"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
+		"config.invalid            itos-cc.yaml cannot be read: file",
 		"sample.no-git             no --seed outside a git repository",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
@@ -78,7 +81,7 @@ it is empty when the file's baseline failed.`,
 	exits: []exitDoc{
 		{0, "every sampled mutant's outcome agrees with the one recorded, or there was nothing to sample"},
 		{1, "a sampled mutant's outcome differs from the one recorded, or a file's tests fail before any mutant"},
-		{2, "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, or --since with --changed"},
+		{2, "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "outside a git repository: with no --seed, or with --changed or --since"},
 	},
 	examples: []string{
@@ -132,11 +135,15 @@ func runMutationSample(in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to sample")
 		return result, nil
 	}
+	cfg, err := loadConfig()
+	if err != nil {
+		return result, err
+	}
 	tests, err := importingTests()
 	if err != nil {
 		return result, err
 	}
-	sampled, err := mutate.Sample(sources, count, result.Seed, mutate.Options{
+	opt := mutate.Options{
 		Tests:         tests,
 		Judge:         judge,
 		Workers:       in.integer("workers"),
@@ -144,7 +151,12 @@ func runMutationSample(in *invocation) (any, error) {
 		TestCommand:   in.str("test-command"),
 		AllTests:      in.set("all-tests"),
 		Log:           os.Stderr,
-	})
+	}
+	// An outcome the listed tests decided runs them again, after its own.
+	if cfg.Tests != nil && !opt.AllTests && opt.TestCommand == "" {
+		opt.Listed = &mutate.Listed{Root: project.Root(), Select: cfg.Tests.Select}
+	}
+	sampled, err := mutate.Sample(sources, count, result.Seed, opt)
 	if err != nil {
 		return result, err
 	}

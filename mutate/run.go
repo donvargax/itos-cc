@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,8 +25,13 @@ type Options struct {
 	AllTests      bool    // kill mutants with the whole suite, integration and end-to-end tests included
 	Annotate      bool    // write a summary comment at the end of each file
 	// Coverage is called only when some mutant has to run. It returns nil
-	// to run every mutant regardless of coverage.
-	Coverage func(sources []string) *coverage.Report
+	// to run every mutant regardless of coverage, and an error to stop the
+	// run before any mutant runs or any snapshot is written.
+	Coverage func(sources []string) (*coverage.Report, error)
+	// Listed, when set, runs the listed tests whose coverage reaches a
+	// mutant's line (coverage.Report.LineTests) once the file's own tests
+	// survived it.
+	Listed *Listed
 	// Judge, when set, says which functions of the file at path to judge,
 	// by namespace#name and, to tell apart functions sharing a name, hash
 	// (UnitHash). The others never run: they keep what their snapshot
@@ -43,6 +49,23 @@ type Options struct {
 	// longer holds is stale.
 	Exceptions []config.Exception
 	Log        io.Writer
+
+	// listedTimeout is how long a run of listed tests may take, or 0 while
+	// no run of them has been timed.
+	listedTimeout time.Duration
+}
+
+// Listed is how to run a selection of the tests a project lists in
+// itos-cc.yaml (mutation.tests).
+type Listed struct {
+	// Root is where the commands run: the project root.
+	Root string
+	// Select is the shell command line that runs the tests ids.
+	Select func(ids []string) string
+	// Files is the file that defines each test, by its ID, as the list
+	// command names it, "" for none: what a snapshot records of the tests
+	// its outcomes name.
+	Files map[string]string
 }
 
 // FileResult is the outcome for one source file.
@@ -86,6 +109,9 @@ type MutantResult struct {
 	// mutant's line, "in-process", "integration", or both; empty when
 	// coverage was not measured or did not execute it.
 	Coverage []string
+	// Tests is, with Scope ScopeListed, the IDs of the listed tests that
+	// decided Outcome.
+	Tests []string
 }
 
 // skipped marks a site of a function not judged that has no outcome to keep:
@@ -104,6 +130,8 @@ type fileState struct {
 	reused   []bool     // the outcome came from the previous snapshot
 	scopes   []string   // the scope that decided each outcome, or decides it in this run
 	coverage [][]string // the sources of coverage that executed each site's line, or nil
+	reach    [][]string // the listed tests that execute each site's line, or nil
+	ran      [][]string // the listed tests that decided each outcome of ScopeListed
 	command  Command
 	result   *FileResult
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
@@ -137,7 +165,9 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 		}
 	}
 	if pending > 0 {
-		markUncovered(states, opt)
+		if err := markUncovered(states, &opt); err != nil {
+			return nil, err
+		}
 		if err := execute(states, opt); err != nil {
 			return nil, err
 		}
@@ -149,10 +179,15 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	for _, s := range states {
 		if !s.result.BaselineFailed {
 			s.result.Mutants = s.decided()
-			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes)
+			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes, s.ran)
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			}
+			var files map[string]string
+			if opt.Listed != nil {
+				files = opt.Listed.Files
+			}
+			s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
 			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 			if s.judged != nil && len(s.judged) == 0 {
 				// Nothing in the file was judged, so nothing ran and the
@@ -273,6 +308,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))
 		s.scopes = make([]string, len(s.sites))
+		s.ran = make([][]string, len(s.sites))
 		scope := RunScope(opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
@@ -282,13 +318,15 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 				// snapshot records for its unchanged function, if any.
 				s.outcomes[i] = skipped
 				if outcome := prev[site.Unit][site.Key()]; outcome != "" {
-					s.outcomes[i], s.scopes[i] = outcome, prevScopes[site.Unit][site.Key()]
+					d := prevScopes[site.Unit][site.Key()]
+					s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
 				}
 				continue
 			}
 			_, excepted := s.excepted.held[i]
 			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll {
-				s.outcomes[i], s.scopes[i] = outcome, prevScopes[site.Unit][site.Key()]
+				d := prevScopes[site.Unit][site.Key()]
+				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
 				s.reused[i] = true
 				s.result.Reused++
 			}
@@ -318,30 +356,39 @@ func (s *fileState) decided() []MutantResult {
 		if s.coverage != nil && s.outcomes[i] != Uncovered {
 			covered = s.coverage[i]
 		}
+		var ran []string
+		if s.scopes[i] == ScopeListed {
+			ran = s.ran[i]
+		}
 		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Scope: s.scopes[i],
-			Excepted: reason, Coverage: covered})
+			Excepted: reason, Coverage: covered, Tests: ran})
 	}
 	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })
 	return out
 }
 
 // markUncovered settles pending sites on lines no test executes, and records
-// which sources of coverage executed each site's line. A file the report
-// never mentions is uncovered when coverage measured its language: a
-// coverage command for it succeeded, even with a report that names no file
-// of the run, or the report measured other files of the run in it. The tests
-// ran and never loaded it.
-func markUncovered(states []*fileState, opt Options) {
+// which sources of coverage, and which listed tests, executed each site's
+// line. A file the report never mentions is uncovered when coverage
+// measured its language: a coverage command for it succeeded, even with a
+// report that names no file of the run, or the report measured other files
+// of the run in it. The tests ran and never loaded it. A line a listed test
+// executes is never uncovered. It times the listed tests' runs from their
+// coverage run.
+func markUncovered(states []*fileState, opt *Options) error {
 	if opt.Coverage == nil {
-		return
+		return nil
 	}
 	var sources []string
 	for _, s := range states {
 		sources = append(sources, s.file.Path)
 	}
-	report := opt.Coverage(sources)
-	if report == nil {
-		return
+	report, err := opt.Coverage(sources)
+	if err != nil || report == nil {
+		return err
+	}
+	if elapsed := report.TestsElapsed(); elapsed > 0 {
+		opt.listedTimeout = max(minTimeout, time.Duration(float64(elapsed)*opt.TimeoutFactor))
 	}
 	measured := map[string]bool{}
 	for _, s := range states {
@@ -356,9 +403,13 @@ func markUncovered(states []*fileState, opt Options) {
 			continue
 		}
 		s.coverage = make([][]string, len(s.sites))
+		s.reach = make([][]string, len(s.sites))
 		for i, site := range s.sites {
 			s.coverage[i] = report.LineSources(s.file.Path, site.Line)
-			if s.outcomes[i] != "" {
+			if opt.Listed != nil {
+				s.reach[i] = report.LineTests(s.file.Path, site.Line)
+			}
+			if s.outcomes[i] != "" || len(s.reach[i]) > 0 {
 				continue
 			}
 			covered, lineMeasured := report.LineCovered(s.file.Path, site.Line)
@@ -367,6 +418,7 @@ func markUncovered(states []*fileState, opt Options) {
 			}
 		}
 	}
+	return nil
 }
 
 type job struct {
@@ -418,6 +470,11 @@ func execute(states []*fileState, opt Options) error {
 		}
 	}
 
+	jobs, err = listedBaseline(workers[0], jobs, &opt)
+	if err != nil {
+		return err
+	}
+
 	queue := make(chan job)
 	var mu sync.Mutex
 	var firstErr error
@@ -428,17 +485,22 @@ func execute(states []*fileState, opt Options) error {
 		go func(w *worker) {
 			defer wg.Done()
 			for j := range queue {
-				outcome, elapsed, err := runMutant(w, j, timeouts[j.state.command.Key()])
+				outcome, elapsed, ran, err := runMutant(w, j, timeouts[j.state.command.Key()], opt)
 				mu.Lock()
 				if err != nil && firstErr == nil {
 					firstErr = err
 				}
 				j.state.outcomes[j.site] = outcome
+				said := outcome
+				if ran != nil {
+					j.state.scopes[j.site], j.state.ran[j.site] = ScopeListed, ran
+					said = fmt.Sprintf("survived its own tests, then %s with %s", outcome, strings.Join(ran, " "))
+				}
 				j.state.result.Ran++
 				done++
 				site := j.state.sites[j.site]
 				fmt.Fprintf(opt.Log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", done, len(jobs),
-					j.state.rel, site.Line, show(site.Original), show(site.Replacement), outcome, elapsed.Seconds())
+					j.state.rel, site.Line, show(site.Original), show(site.Replacement), said, elapsed.Seconds())
 				mu.Unlock()
 			}
 		}(w)
@@ -451,21 +513,83 @@ func execute(states []*fileState, opt Options) error {
 	return firstErr
 }
 
-func runMutant(w *worker, j job, timeout time.Duration) (string, time.Duration, error) {
+// runMutant runs the file's own tests on the mutant, then, when it survives
+// them, the listed tests that reach its line, whose IDs it returns.
+func runMutant(w *worker, j job, timeout time.Duration, opt Options) (string, time.Duration, []string, error) {
 	s := j.state
 	site := s.sites[j.site]
-	r, err := w.withMutant(s.command.Root, s.file.Path, s.file.Src, site.Apply(s.file.Src), func() (result, error) {
+	mutated := site.Apply(s.file.Src)
+	r, err := w.withMutant(s.command.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
 		return w.run(s.command, timeout)
 	})
-	switch {
-	case err != nil:
-		return "", r.elapsed, err
-	case r.timedOut:
-		return Timeout, r.elapsed, nil
-	case r.passed:
-		return Survived, r.elapsed, nil
+	outcome := judged(r)
+	if err != nil || outcome != Survived || opt.Listed == nil || s.reach == nil || len(s.reach[j.site]) == 0 {
+		return outcome, r.elapsed, nil, err
 	}
-	return Killed, r.elapsed, nil
+	ids := s.reach[j.site]
+	listed, err := w.withMutant(opt.Listed.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
+		return w.run(opt.Listed.command(ids), opt.listedTimeout)
+	})
+	return judged(listed), r.elapsed + listed.elapsed, ids, err
+}
+
+// judged is the outcome of a test run on a mutant.
+func judged(r result) string {
+	switch {
+	case r.timedOut:
+		return Timeout
+	case r.passed:
+		return Survived
+	}
+	return Killed
+}
+
+// command runs the listed tests ids.
+func (l *Listed) command(ids []string) Command {
+	return Command{Root: l.Root, Dir: l.Root, Shell: l.Select(ids)}
+}
+
+// listedBaseline runs, unless coverage timed them already, the listed tests
+// any job may run, with no mutant, in w's copy: passing proves they hold,
+// and their time sets the timeout. When they fail, the files whose mutants
+// would run them are not judged, as with a failing baseline, and their jobs
+// are dropped.
+func listedBaseline(w *worker, jobs []job, opt *Options) ([]job, error) {
+	if opt.Listed == nil || opt.listedTimeout > 0 {
+		return jobs, nil
+	}
+	var ids []string
+	for _, j := range jobs {
+		if j.state.reach != nil {
+			for _, id := range j.state.reach[j.site] {
+				if !slices.Contains(ids, id) {
+					ids = append(ids, id)
+				}
+			}
+		}
+	}
+	if len(ids) == 0 {
+		return jobs, nil
+	}
+	c := opt.Listed.command(ids)
+	fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
+	r, err := w.run(c, 0)
+	if err != nil {
+		return nil, err
+	}
+	if r.passed {
+		opt.listedTimeout = max(minTimeout, time.Duration(float64(r.elapsed)*opt.TimeoutFactor))
+		return jobs, nil
+	}
+	var kept []job
+	for _, j := range jobs {
+		if j.state.reach == nil || len(j.state.reach[j.site]) == 0 {
+			kept = append(kept, j)
+			continue
+		}
+		j.state.result.BaselineFailed, j.state.result.BaselineOutput = true, r.output
+	}
+	return kept, nil
 }
 
 // show renders an empty replacement, a deleted operator, visibly.

@@ -205,6 +205,37 @@ itos-cc mutation sample                                      # in CI: do 20 cach
 itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
 ```
 
+A suite that runs the built program, such as end-to-end scenarios that one
+test function runs, can be listed in `itos-cc.yaml`, so each mutant runs
+only the tests that reach its line rather than the whole suite:
+
+```yaml
+mutation:
+  tests:
+    list: go run ./features/list   # a test a line: its ID, then a tab and its file, or not
+    run: go test ./features -args -tests={pattern}
+    ids_pattern: "{ids}"
+    join: {each: "{id}", sep: ","}
+    whole: go test ./features      # optional: every test; else run with every ID
+```
+
+The commands run through the platform shell at the project root. When a
+mutant has to run, the list command runs once (one that fails is
+`tests.list-failed`, exit 1, and nothing is judged), then every listed test
+for coverage, with `ITOS_CC_TEST_COVERDIR` set to a directory of the run's
+own. A harness that builds the binary with `go build -cover` and gives the
+processes each test starts `GOCOVERDIR=<that directory>/<test ID>` splits
+the coverage by test in one run (`go test` passes that variable on to its
+test binaries, as it does not `GOCOVERDIR`); otherwise each test runs alone,
+with a `GOCOVERDIR` of its own. A mutant runs its file's own tests first
+and, only if it survives them, the listed tests that reach its line, in one
+run. That outcome has scope `"listed"` and records their IDs under `tests`,
+in the snapshot and in `--json`, and `mutation sample` runs it again the
+same way. A line a listed test reaches is never uncovered. Only Go programs
+report coverage per test so far, and listed tests are not run with
+`--no-coverage`, `--all-tests`, `--test-command`, or coverage read from
+reports.
+
 `--since <ref>` judges only the functions the commits since `<ref>`
 changed, `git diff <ref>...HEAD`: a branch's own commits, never uncommitted
 work, so a gate judges a task by what it committed. A deleted line counts as

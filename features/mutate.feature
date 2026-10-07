@@ -391,7 +391,7 @@ Feature: Mutation testing
   #   is judged (the coordinator's call, as a failing baseline is).
   Rule: Mutants run only the listed tests that reach them
 
-    @wip @listed-tests @ID-MUT-121
+    @listed-tests @ID-MUT-121
     Scenario: Listed tests come from itos-cc.yaml
       Given itos-cc.yaml names mutation.tests with list, run, ids_pattern and join
       And the list command prints "ID-A-01<tab>a.feature" and "ID-A-02"
@@ -399,7 +399,7 @@ Feature: Mutation testing
       Then the list command runs once
       And the listed tests are ID-A-01, defined in a.feature, and ID-A-02, with no file
 
-    @wip @listed-tests @ID-MUT-122
+    @listed-tests @ID-MUT-122
     Scenario: Per-test coverage takes one run when the harness splits it
       Given a Go module whose harness, when ITOS_CC_TEST_COVERDIR is set, gives each test's binary GOCOVERDIR=<dir>/<test-id>
       And its tests ID-A-01 and ID-A-02 reach different lines of the binary
@@ -407,49 +407,49 @@ Feature: Mutation testing
       Then the listed tests run once for coverage
       And each line the binary ran is covered by the IDs of the tests that reached it
 
-    @wip @listed-tests @ID-MUT-123
+    @listed-tests @ID-MUT-123
     Scenario: Without the harness's help, coverage takes one run per test
       Given the module of ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR
       When I run "itos-cc mutation run"
       Then the run command runs once per listed test for coverage, each selecting that test alone
       And each line is covered by the same IDs as in ID-MUT-122
 
-    @wip @listed-tests @ID-MUT-124
+    @listed-tests @ID-MUT-124
     Scenario: A mutant runs its own tests first, and the covering tests only if it survives
       Given a mutant its file's own tests kill, and one only ID-A-02 kills
       When I run "itos-cc mutation run"
       Then the first is killed without any listed test running for it
       And the second runs its own tests, survives them, then runs the run command selecting ID-A-02 alone, and is killed
 
-    @wip @listed-tests @ID-MUT-125
+    @listed-tests @ID-MUT-125
     Scenario: Uncovered means neither the own tests nor a listed test reach the line
       Given a line only ID-A-01 reaches, and a line no test reaches
       When I run "itos-cc mutation run --fail-uncovered"
       Then the first line's mutants run and are not uncovered
       And only the second line's mutants are uncovered
 
-    @wip @listed-tests @ID-MUT-126
+    @listed-tests @ID-MUT-126
     Scenario: An outcome decided by listed tests records them
       Given a mutant only ID-A-02 kills
       When I run "itos-cc mutation run --json"
       Then its snapshot entry records scope "listed" and tests ["ID-A-02"]
       And its mutant in --json has "tests": ["ID-A-02"]
 
-    @wip @listed-tests @ID-MUT-127
+    @listed-tests @ID-MUT-127
     Scenario: mutation sample re-runs a listed outcome with its tests
       Given a fresh outcome recorded with scope "listed" and tests ["ID-A-02"]
       When I run "itos-cc mutation sample --count 100"
       Then that mutant runs the run command selecting ID-A-02, after its own tests survive it
       And no "mutation.mismatch" is reported
 
-    @wip @listed-tests @ID-MUT-128
+    @listed-tests @ID-MUT-128
     Scenario: Without mutation.tests nothing changes
       Given itos-cc.yaml has no mutation.tests
       When I run "itos-cc mutation run"
       Then no list command runs, and ITOS_CC_TEST_COVERDIR is not set
       And the outcomes and the snapshot are as before
 
-    @wip @listed-tests @ID-MUT-129
+    @listed-tests @ID-MUT-129
     Scenario: A list command that fails judges nothing
       Given the list command exits 1
       When I run "itos-cc mutation run"

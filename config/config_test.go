@@ -108,3 +108,56 @@ func TestAnInvalidFileIsAnInvalidError(t *testing.T) {
 		}
 	}
 }
+
+const testsYAML = `mutation:
+  tests:
+    list: ./list
+    run: go test ./e2e -run '{pattern}'
+    ids_pattern: "^Test({ids})$"
+    join:
+      each: "{id}"
+      sep: "|"
+`
+
+func TestMutationTestsSelectTheirIDs(t *testing.T) {
+	c, err := parse([]byte(testsYAML))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Tests == nil || c.Tests.List != "./list" {
+		t.Fatalf("tests %+v, want those mutation.tests names", c.Tests)
+	}
+	if got, want := c.Tests.Select([]string{"A", "B"}), "go test ./e2e -run '^Test(A|B)$'"; got != want {
+		t.Errorf("Select(A, B) = %q, want %q", got, want)
+	}
+	if got, want := c.Tests.All([]string{"A"}), "go test ./e2e -run '^Test(A)$'"; got != want {
+		t.Errorf("All(A) = %q, want %q: run with every ID, without whole", got, want)
+	}
+	c, err = parse([]byte(testsYAML + "    whole: go test ./e2e\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := c.Tests.All([]string{"A"}); got != "go test ./e2e" {
+		t.Errorf("All(A) = %q, want whole", got)
+	}
+	if c, err := parse([]byte("mutation: {}\n")); err != nil || c.Tests != nil {
+		t.Errorf("without mutation.tests: %+v, %v, want no tests", c, err)
+	}
+}
+
+func TestMalformedMutationTestsAreInvalid(t *testing.T) {
+	for _, c := range []struct{ from, to, says string }{
+		{"    list: ./list\n", "", "has no list"},
+		{"'{pattern}'", "x", "has a run without {pattern}"},
+		{"({ids})", "(x)", "has an ids_pattern without {ids}"},
+		{`      each: "{id}"`, `      each: "x"`, "has a join.each without {id}"},
+		{"      sep: \"|\"\n", "", "has no join.sep"},
+		{"    join:\n      each: \"{id}\"\n      sep: \"|\"\n", "", "has no join"},
+	} {
+		_, err := parse([]byte(strings.Replace(testsYAML, c.from, c.to, 1)))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) || !strings.Contains(err.Error(), c.says) {
+			t.Errorf("without %q: error %v, want an *InvalidError that says %q", c.from, err, c.says)
+		}
+	}
+}

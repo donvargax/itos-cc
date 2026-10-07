@@ -61,6 +61,8 @@ type Report struct {
 	// languages are those a coverage command measured: every command of its
 	// plan exited 0 and every report it was to write was written and read.
 	languages map[string]bool
+	// tests is the coverage of each listed test, or nil.
+	tests *TestCoverage
 }
 
 // Cause is why coverage that was meant to be measured was not.
@@ -258,6 +260,9 @@ func Merge(reports ...*Report) *Report {
 			continue
 		}
 		out.missing = append(out.missing, r.missing...)
+		if out.tests == nil {
+			out.tests = r.tests
+		}
 		for l := range r.languages {
 			if out.languages == nil {
 				out.languages = map[string]bool{}

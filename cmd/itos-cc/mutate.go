@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -98,7 +99,31 @@ its function or its site is gone, or when the mutant, run again after its
 tests changed, is killed. An exception never excuses an uncovered mutant.
 With --since, only the judged functions' exceptions count. --mutate-all
 runs excepted mutants too. An itos-cc.yaml that cannot be read is
-config.invalid, and nothing runs.`,
+config.invalid, and nothing runs.
+
+Tests that only run the built program, such as an end-to-end suite that a
+single test function runs, can be listed in itos-cc.yaml under
+mutation.tests, so each mutant runs only those that reach its line:
+  mutation:
+    tests:
+      list: <command printing a test a line: its ID, then a tab and its file, or not>
+      run: <command running the tests {pattern} selects>
+      ids_pattern: <the pattern, with {ids}>
+      join: {each: <each ID, with {id}>, sep: <between them>}
+      whole: <command running every test; optional, else run with every ID>
+Commands run through the platform shell at the project root. When a mutant
+has to run, the list command runs once, then every listed test, for
+coverage, with ITOS_CC_TEST_COVERDIR set to a directory of the run's own:
+a harness that gives the processes each test starts
+GOCOVERDIR=<that directory>/<test ID> splits the coverage by test in one
+run; otherwise each test runs alone, with a GOCOVERDIR of its own. A
+mutant runs its file's own tests first and, only if it survives them, the
+listed tests that reach its line, in one run: its outcome then has scope
+"listed" and records their IDs. A line a listed test reaches is never
+uncovered. A list command that fails is tests.list-failed: nothing is
+judged and no snapshot is written. Listed tests are not run with
+--no-coverage, --all-tests, --test-command, --use-existing-coverage,
+--coverage-command, or --coverage-report.`,
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("workers", intFlag, "N", fmt.Sprint(max(1, runtime.NumCPU()/2)), "mutants run at the same time"),
 		sw("mutate-all", "rerun killed mutants of unchanged functions too"),
@@ -111,10 +136,11 @@ config.invalid, and nothing runs.`,
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
    "function", "original", "replacement",
    "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
-   "scope": "own"|"all-tests"|"<test command>", for an excepted
-   survivor "excepted": "its reason", and where this run's coverage
+   "scope": "own"|"all-tests"|"listed"|"<test command>", for an
+   excepted survivor "excepted": "its reason", where this run's coverage
    executed its line "coverage": ["in-process", "integration"], either or
-   both}], and with --since
+   both, and with scope "listed" "tests": ["<test ID>"]}], and with
+   --since
    "judged": ["namespace#name"]}]`,
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
@@ -122,13 +148,14 @@ config.invalid, and nothing runs.`,
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
+		"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, or a file's tests fail before any mutant"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, or the list command of mutation.tests failed"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
@@ -200,6 +227,9 @@ type mutateMutant struct {
 	// "in-process", "integration", or both; there only when this run's
 	// coverage executed it.
 	Coverage []string `json:"coverage,omitempty"`
+	// Tests is, with scope "listed", the IDs of the listed tests that
+	// decided the outcome.
+	Tests []string `json:"tests,omitempty"`
 }
 
 type mutateResult struct {
@@ -270,7 +300,7 @@ func importingTests() (func(path string) []string, error) {
 
 func runMutate(in *invocation) (any, error) {
 	result := mutateResult{Files: []mutateFile{}}
-	exceptions, err := loadExceptions()
+	cfg, err := loadConfig()
 	if err != nil {
 		return result, err
 	}
@@ -297,18 +327,38 @@ func runMutate(in *invocation) (any, error) {
 		Log:           os.Stderr,
 		Judge:         judge,
 		Renamed:       renamed,
-		Exceptions:    exceptions,
+		Exceptions:    cfg.Exceptions,
+	}
+	suite := listedConfig(in, cfg)
+	if suite != nil {
+		opt.Listed = &mutate.Listed{Root: project.Root(), Select: suite.Select}
 	}
 	if !in.set("no-coverage") {
-		opt.Coverage = func(sources []string) *coverage.Report {
+		opt.Coverage = func(sources []string) (*coverage.Report, error) {
+			var perTest *coverage.PerTest
+			if suite != nil {
+				listed, err := listTests(suite)
+				if err != nil {
+					return nil, err
+				}
+				perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+				var ids []string
+				opt.Listed.Files = map[string]string{}
+				for _, t := range listed {
+					ids = append(ids, t.ID)
+					opt.Listed.Files[t.ID] = t.File
+				}
+				perTest.All = suite.All(ids)
+			}
 			// Coverage comes from the tests that kill mutants, so a line only
-			// other tests reach is uncovered rather than a survivor.
-			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr)
+			// other tests reach is uncovered rather than a survivor, unless
+			// a listed test reaches it.
+			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr, perTest)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "itos-cc: coverage:", err)
-				return nil
+				return nil, nil
 			}
-			return report
+			return report, nil
 		}
 	}
 
@@ -334,7 +384,7 @@ func runMutate(in *invocation) (any, error) {
 		for _, m := range r.Mutants {
 			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
 				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
-				Coverage: m.Coverage})
+				Coverage: m.Coverage, Tests: m.Tests})
 		}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
@@ -391,17 +441,69 @@ func exceptedIn(mutants []mutate.Mutant) int {
 // loadExceptions is the survivors itos-cc.yaml excepts. A file that cannot
 // be read is a config error.
 func loadExceptions() ([]config.Exception, error) {
-	c, err := config.Load()
-	var invalid *config.InvalidError
-	if errors.As(err, &invalid) {
-		return nil, fail(kindUsage, "config.invalid", invalid.Error(),
-			"Fix it: each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason; 'itos-cc mutation except' writes one.").
-			with("file", config.File)
-	}
+	c, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}
 	return c.Exceptions, nil
+}
+
+// loadConfig reads itos-cc.yaml. A file that cannot be read is a config
+// error.
+func loadConfig() (*config.Config, error) {
+	c, err := config.Load()
+	var invalid *config.InvalidError
+	if errors.As(err, &invalid) {
+		return nil, fail(kindUsage, "config.invalid", invalid.Error(),
+			"Fix it: each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").
+			with("file", config.File)
+	}
+	return c, err
+}
+
+// listedConfig is the tests itos-cc.yaml lists, when the mutants of this run
+// are to run them: coverage is measured by running the per-language
+// commands, and the mutants run their own tests, not --all-tests or a
+// --test-command. Otherwise nil.
+func listedConfig(in *invocation, cfg *config.Config) *config.Tests {
+	if cfg.Tests == nil || in.set("no-coverage") || in.set("all-tests") || in.str("test-command") != "" ||
+		in.set("use-existing-coverage") || in.str("coverage-command") != "" || len(in.strs("coverage-report")) > 0 {
+		return nil
+	}
+	return cfg.Tests
+}
+
+// listTests runs the list command of tests at the project root, through the
+// platform shell, and reads the tests it prints: one a line, its ID, then,
+// after a tab, optionally its file. A command that fails is
+// tests.list-failed.
+func listTests(tests *config.Tests) ([]coverage.Test, error) {
+	root := project.Root()
+	fmt.Fprintf(os.Stderr, "itos-cc: tests %s$ %s\n", project.Rel(root), tests.List)
+	out, err := shellOutput(tests.List, root, os.Stderr)
+	if err != nil {
+		code := -1
+		var exit *exec.ExitError
+		if errors.As(err, &exit) {
+			code = exit.ExitCode()
+		}
+		return nil, fail(kindNo, "tests.list-failed",
+			fmt.Sprintf("the list command of mutation.tests in %s failed (%v), so no mutant was judged: %s", config.File, err, tests.List),
+			"Make the command print the tests, one a line, and exit 0, then run again.").
+			with("command", tests.List).with("exit_code", code)
+	}
+	var listed []coverage.Test
+	seen := map[string]bool{}
+	for _, line := range strings.Split(out, "\n") {
+		id, file, _ := strings.Cut(strings.TrimRight(line, "\r"), "\t")
+		id, file = strings.TrimSpace(id), filepath.ToSlash(strings.TrimSpace(file))
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		listed = append(listed, coverage.Test{ID: id, File: file})
+	}
+	return listed, nil
 }
 
 // reportFailed reports each mutant of function that fails: a survivor that
