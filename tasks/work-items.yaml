@@ -26,14 +26,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: mutate-since
+  - id: slice-1
     title: "mutate --since <ref>: judge only the functions changed since ref"
     phase: 1
     owner: null
     status: todo
     depends_on: [T-2]
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-since.
       Started and cut off before this session: git stash "WIP: mutate --since" holds
       mutate.Options.Judge, FileResult.Judged, the skipped outcome and
       project.ChangedSince/Overlaps. Unfinished: run.go has a truncated "conti" and does not
