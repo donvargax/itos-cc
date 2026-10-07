@@ -234,16 +234,9 @@ items:
     title: "Functions sharing a name are matched to their results by name and hash, in run, check and the graph"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-same-name-units.
-      remembered() maps each namespace#name to the hash of the last unit with that name, so of two
-      units with one name in a file (several Go init functions, Kotlin or TypeScript overloads) only
-      the last can reuse its outcomes; keepUnjudged and the --since judge also key by name alone.
-      mutation check matches any entry of the name with the same hash, so it calls both fresh while
-      run reruns the first. Key units by name and position, or by name and hash.
   - id: since-keeps-stale-entries
     title: mutation run --since keeps the entries it does not judge, marked stale, when their tests changed
     phase: 1
