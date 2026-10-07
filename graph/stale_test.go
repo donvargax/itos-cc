@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -93,5 +95,71 @@ func TestMutationResultsWhoseTestsChangedAreStale(t *testing.T) {
 	}
 	if n.Metrics == nil || n.Metrics.Stale != 1 {
 		t.Errorf("module %s metrics %+v, want one stale function", n.ID, n.Metrics)
+	}
+}
+
+// @ID-GRAPH-35
+func TestTheGraphAndMutationCheckAgreeOnFunctionsSharingAName(t *testing.T) {
+	root := t.TempDir()
+	write := func(rel, text string) {
+		p := filepath.Join(root, rel)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	first, second := "func init() {\n\ta = 1 + 1\n}\n", "func init() {\n\tb = 3 - 1\n}\n"
+	source := func(units ...string) string { return "package p\n\nvar a, b int\n\n" + strings.Join(units, "\n") }
+	write("go.mod", "module example.com/p\n\ngo 1.22\n")
+	write("a.go", source(first, second))
+
+	// The snapshot records both init functions as they are, in file order.
+	f, err := lang.ParseFile(filepath.Join(root, "a.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h1, h2 := mutate.UnitHash(f, f.Units[0]), mutate.UnitHash(f, f.Units[1])
+	f.Close()
+	write(".metrics/mutate/a.go.json", fmt.Sprintf(`{"version":1,"file":"a.go","language":"go","tests":{},"units":[
+		{"namespace":"example.com/p","name":"init","hash":%q,"killed":3,"survived":0,"uncovered":0,"sites":3,"mutants":[]},
+		{"namespace":"example.com/p","name":"init","hash":%q,"killed":2,"survived":0,"uncovered":0,"sites":2,"mutants":[]}]}`, h1, h2))
+
+	stale := func() []bool {
+		t.Helper()
+		b, err := NewBuilder([]string{root})
+		if err != nil {
+			t.Fatal(err)
+		}
+		g, _, err := b.Build()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out []bool
+		for _, n := range g.Nodes {
+			for _, u := range n.Units {
+				if u.Name == "init" {
+					if !u.Mutated {
+						t.Errorf("init on line %d has no results, want each matched to its entry", u.Line)
+					}
+					out = append(out, u.Stale)
+				}
+			}
+		}
+		return out
+	}
+	if got := stale(); !slices.Equal(got, []bool{false, false}) {
+		t.Fatalf("init functions stale %v as recorded, want neither", got)
+	}
+
+	write("a.go", source(first, strings.Replace(second, "3 - 1", "4 - 2", 1)))
+	if got := stale(); !slices.Equal(got, []bool{false, true}) {
+		t.Errorf("init functions stale %v with the second edited, want only the second", got)
+	}
+
+	write("a.go", source(second, first))
+	if got := stale(); !slices.Equal(got, []bool{false, false}) {
+		t.Errorf("init functions stale %v swapped, unchanged, want neither", got)
 	}
 }
