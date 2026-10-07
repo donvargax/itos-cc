@@ -280,14 +280,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#14"]
-  - id: test-attribution
-    title: "mutation: key results by the tests that execute each function, measured per test file"
+  - id: listed-tests
+    title: "Mutants run only the listed tests that reach them, from per-test coverage"
     phase: 1
     owner: null
     status: todo
     depends_on: [integration-coverage]
-    kind: idea
+    kind: slice
     why: >
+      Was test-attribution.
       The tests' hash (q-4) records the test files that import a file, so a kill made by an
       end-to-end test, or by a test more than one import away, does not go stale when that test
       changes. Coverage measured per test file, binary-running tests included, maps which tests
