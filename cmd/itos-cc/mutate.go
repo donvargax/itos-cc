@@ -74,7 +74,8 @@ the end of each source file.
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
 Paths narrow it to the files under them. Functions not judged neither run nor
 change in the snapshot, and only those judged count in the summary, the
-problems, and the exit code.
+problems, and the exit code. A file with no function judged is left as it
+was: neither its snapshot nor its summary comment is written.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor, so a gate fails a change no test executes. With --since, only the

@@ -43,7 +43,9 @@ type Options struct {
 
 // FileResult is the outcome for one source file.
 type FileResult struct {
-	Rel            string
+	Rel string
+	// Snapshot is what the run records of the file, written to .metrics
+	// unless the baseline failed or no function was judged.
 	Snapshot       Snapshot
 	Ran, Reused    int
 	BaselineFailed bool
@@ -135,6 +137,12 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
 			}
 			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
+			if s.judged != nil && len(s.judged) == 0 {
+				// Nothing in the file was judged, so nothing ran and the
+				// file is left as it was: no snapshot, no comment.
+				results = append(results, *s.result)
+				continue
+			}
 			if err := metrics.Write(SnapshotName(s.rel), s.result.Snapshot); err != nil {
 				return nil, err
 			}

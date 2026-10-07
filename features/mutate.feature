@@ -476,7 +476,7 @@ Feature: Mutation testing
     # coordinator's call, 2026-10-07). The summary comment counting the whole
     # snapshot while stdout counts what was judged is by design: the comment
     # is the file's state, stdout the run's.
-    @wip @since-untouched-files @ID-MUT-102
+    @since-untouched-files @ID-MUT-102
     Scenario: A file with nothing judged is left as it was
       Given a commit after "base" changed only the imports of src/board.ts
       When I run "itos-cc mutation run --since base"

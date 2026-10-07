@@ -196,7 +196,9 @@ functions neither run nor change in the snapshot, and only those judged count
 in the summary, the problems, and the exit code; `--json` names them in each
 file's `judged`. The exception is a file whose tests changed since its
 snapshot: its results no longer hold, so the functions not judged lose their
-entries, and a later run or check finds them missing.
+entries, and a later run or check finds them missing. A file the range
+changed only outside its functions, such as its imports, has none judged and
+is left as it was: neither its snapshot nor its summary comment is written.
 
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a
