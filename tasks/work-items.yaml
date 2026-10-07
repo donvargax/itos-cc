@@ -441,17 +441,9 @@ items:
     title: The graph takes each function's mutation state from mutation check's own code
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was graph-stale-unrecorded-sites.
-      Since check-unrecorded-sites, mutation check calls a function stale when its entry matches its
-      hash and tests but lacks a site the function has now, as when a newer itos-cc adds a mutation
-      operator. The graph does not follow: graph/build.go decides staleness itself, from the unit's
-      hash and Snapshot.TestsChanged, the code shared since graph-stale-tests, and never compares
-      the entry's mutants with the function's sites, so the viewer shows as current a function check
-      calls stale. The rule lives in mutate's checkParsed, which the graph does not call.
   - id: check-removed-operator-sites
     title: A recorded mutant whose site no longer exists, as when an operator is removed
     phase: 1
