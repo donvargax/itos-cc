@@ -36,3 +36,4 @@ questions:
   - id: q-9
     item: "mutation-exceptions"
     question: "Where do the exceptions live? (a, recommended) itos-cc.yaml at the project root, under mutation.exceptions: itos-cc's first project setting (docs/CLI.md rule 38), reviewed like code. (b) .metrics/mutate/exceptions.yaml beside the snapshots, as the issue proposed, though .metrics holds what itos-cc writes."
+    answer: "(a) itos-cc.yaml at the project root, under mutation.exceptions."
