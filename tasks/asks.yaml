@@ -1,0 +1,5 @@
+# The questions to the person the work is for, written by itos decision (itos help decision).
+questions:
+  - id: q-1
+    item: "mutate-check-sample"
+    question: "How is the check mode spelled? (a, recommended) A command of its own that runs nothing, such as itos-cc mutants (name open), taking the same selection flags: it follows CLI rule 18 (a flag changes an action, never selects another), which the repository just adopted. (b) mutate --check, as issue #8 sketches it: one more rule-18 exception beside mutate --scan, listed in docs/CLI.md. Note IDEAS.md keeps the name check for the debt file."
