@@ -29,3 +29,16 @@ items:
     kind: task
     why: >
       Spec in the ledger, tasks/phase-1.yaml.
+  - id: mutate-since
+    title: "mutate --since <ref>: judge only the functions changed since ref"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-2]
+    kind: idea
+    why: >
+      Started and cut off before this session: git stash "WIP: mutate --since" holds
+      mutate.Options.Judge, FileResult.Judged, the skipped outcome and
+      project.ChangedSince/Overlaps. Unfinished: run.go has a truncated "conti" and does not
+      compile, snapshot.build still counts skipped sites in Sites, and no command or scenario uses
+      it yet. Needs scenarios in mutate.feature before it is work.
