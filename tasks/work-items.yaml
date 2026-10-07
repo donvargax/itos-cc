@@ -16,6 +16,7 @@ queue:
   - since-untouched-files
   - since-follows-renames
   - unloaded-file-uncovered
+  - check-unrecorded-sites
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
