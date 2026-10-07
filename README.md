@@ -144,7 +144,7 @@ killed, 2 a baseline failed, 3 a mutant survived.
 
 Finds the test cases of Vitest/Jest, pytest/unittest, Go `testing`
 (including `t.Run` and table loops), and JUnit/kotest, and scores each one on
-size (fixture text excluded), logic, mocking, and assertions (helpers that
+size (fixture text and case tables excluded), logic, mocking, and assertions (helpers that
 assert count as assertions). Similar examples are clustered with dry's
 fingerprints. Each file gets one action: `LEAVE_ALONE`, `AUTO_TABLE_DRIVE`,
 `AUTO_REFACTOR`, `MANUAL_SPLIT`, or `REVIEW_FIRST`, plus ranked

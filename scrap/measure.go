@@ -1,6 +1,7 @@
 package scrap
 
 import (
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -48,10 +49,12 @@ func newMeasurer(f *lang.File) *measurer {
 
 // measure walks an example. An assertion is counted once and not looked
 // into, so `assert a and b` asserts rather than branches; a loop over cases
-// whose body asserts is a hand-written table, not logic.
+// whose body asserts is a hand-written table, not logic, and the cases it
+// loops over are data, not size.
 func (m *measurer) measure(ex Example) (Metrics, bool) {
 	raw := ex.EndLine - ex.StartLine + 1
-	met := Metrics{RawLines: raw, Lines: raw - m.fixtureLines(ex.Node)}
+	met := Metrics{RawLines: raw}
+	data := slices.Clone(ex.Data)
 	table := false
 	lang.Walk(ex.Node, func(n *sitter.Node) bool {
 		switch {
@@ -65,12 +68,79 @@ func (m *measurer) measure(ex Example) (Metrics, bool) {
 			met.Mocks++
 		case m.isTableLoop(n):
 			table = true
+			if cases := m.loopCases(ex.Node, n); cases != nil {
+				data = append(data, cases)
+			}
 		case m.f.Spec.Decision(n, m.f.Src):
 			met.Decisions++
 		}
 		return true
 	})
+	met.Lines = raw - m.fixtureLines(ex.Node, data)
 	return met, table
+}
+
+// loopCases is the literal a table loop iterates over: written in the loop,
+// or bound to the name it ranges over somewhere in the example.
+func (m *measurer) loopCases(example, loop *sitter.Node) *sitter.Node {
+	var cases *sitter.Node
+	switch m.f.Spec.Name {
+	case "go":
+		for _, c := range children(loop) {
+			if c.Kind() == "range_clause" {
+				cases = c.ChildByFieldName("right")
+			}
+		}
+	case "kotlin":
+		// for (case in cases) has no fields: the iterable follows "in".
+		for i := uint(0); i+1 < loop.ChildCount(); i++ {
+			if loop.Child(i).Kind() == "in" {
+				cases = loop.Child(i + 1)
+			}
+		}
+	default:
+		cases = loop.ChildByFieldName("right")
+	}
+	if cases != nil && (cases.Kind() == "identifier" || cases.Kind() == "simple_identifier") {
+		cases = m.binding(example, cases.Utf8Text(m.f.Src))
+	}
+	if cases == nil || cases.StartPosition().Row == cases.EndPosition().Row {
+		return nil
+	}
+	return cases
+}
+
+// binding is the value name is first given in n: Go's := and var, a Python
+// assignment, a TypeScript const or let, a Kotlin val or var.
+func (m *measurer) binding(n *sitter.Node, name string) *sitter.Node {
+	var value *sitter.Node
+	lang.Walk(n, func(x *sitter.Node) bool {
+		if value != nil {
+			return false
+		}
+		var left, right *sitter.Node
+		switch x.Kind() {
+		case "short_var_declaration", "assignment":
+			left, right = x.ChildByFieldName("left"), x.ChildByFieldName("right")
+		case "var_spec", "variable_declarator":
+			left, right = x.ChildByFieldName("name"), x.ChildByFieldName("value")
+		case "property_declaration":
+			for _, c := range children(x) {
+				if c.Kind() == "variable_declaration" {
+					left = c
+				}
+			}
+			right = x.NamedChild(x.NamedChildCount() - 1)
+		}
+		if left != nil && right != nil && left.Utf8Text(m.f.Src) == name {
+			if right.Kind() == "expression_list" && right.NamedChildCount() == 1 {
+				right = right.NamedChild(0)
+			}
+			value = right
+		}
+		return true
+	})
+	return value
 }
 
 func (m *measurer) count(n *sitter.Node, match func(*sitter.Node) bool) int {
@@ -88,12 +158,14 @@ func (m *measurer) count(n *sitter.Node, match func(*sitter.Node) bool) int {
 	return c
 }
 
-// fixtureLines are lines inside multi-line string literals: test data, not
-// test code.
-func (m *measurer) fixtureLines(n *sitter.Node) int {
+// fixtureLines are lines inside multi-line string literals and case
+// tables: test data, not test code.
+func (m *measurer) fixtureLines(n *sitter.Node, data []*sitter.Node) int {
 	lines := 0
 	lang.Walk(n, func(x *sitter.Node) bool {
-		if m.f.Spec.Syntax.Literals[x.Kind()] {
+		if m.f.Spec.Syntax.Literals[x.Kind()] || slices.ContainsFunc(data, func(d *sitter.Node) bool {
+			return d.StartByte() == x.StartByte() && d.EndByte() == x.EndByte() && d.Kind() == x.Kind()
+		}) {
 			lines += int(x.EndPosition().Row - x.StartPosition().Row)
 			return false
 		}

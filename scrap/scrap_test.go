@@ -231,6 +231,40 @@ func TestFixtureTextIsNotTestSize(t *testing.T) {
 	}
 }
 
+// rows repeats row n times, one case per line.
+func rows(row string, n int) string {
+	return strings.Repeat(row+"\n", n)
+}
+
+func TestCaseTablesAreNotTestSize(t *testing.T) {
+	for name, tc := range map[string]struct{ path, src string }{
+		"go inline": {"a_test.go", "package a\n\nfunc TestInc(t *testing.T) {\n\tfor _, c := range []struct{ in, want int }{\n" +
+			rows("\t\t{1, 2},", 44) + "\t} {\n\t\tif got := inc(c.in); got != c.want {\n\t\t\tt.Errorf(\"inc(%d) = %d\", c.in, got)\n\t\t}\n\t}\n}\n"},
+		"go named, t.Run": {"a_test.go", "package a\n\nfunc TestInc(t *testing.T) {\n\ttests := []struct {\n\t\tin, want int\n\t}{\n" +
+			rows("\t\t{1, 2},", 44) + "\t}\n\tfor _, tt := range tests {\n\t\tt.Run(\"\", func(t *testing.T) {\n\t\t\tif inc(tt.in) != tt.want {\n\t\t\t\tt.Fail()\n\t\t\t}\n\t\t})\n\t}\n}\n"},
+		"python loop":        {"test_a.py", "def test_inc():\n    cases = [\n" + rows("        (1, 2),", 44) + "    ]\n    for a, b in cases:\n        assert inc(a) == b\n"},
+		"python parametrize": {"test_a.py", "@pytest.mark.parametrize(\"a,b\", [\n" + rows("    (1, 2),", 44) + "])\ndef test_inc(a, b):\n    assert inc(a) == b\n"},
+		"typescript loop":    {"a.test.ts", "it(\"incs\", () => {\n  const cases = [\n" + rows("    [1, 2],", 44) + "  ];\n  for (const [a, b] of cases) {\n    expect(inc(a)).toBe(b);\n  }\n});\n"},
+		"typescript each":    {"a.test.ts", "it.each([\n" + rows("  [1, 2],", 44) + "])(\"incs %i\", (a, b) => {\n  expect(inc(a)).toBe(b);\n});\n"},
+		"kotlin loop":        {"ATest.kt", "class ATest {\n  @Test fun inc() {\n    val cases = listOf(\n" + rows("      1 to 2,", 44) + "    )\n    for ((a, b) in cases) { assertEquals(b, inc(a)) }\n  }\n}\n"},
+		"kotlin csv":         {"ATest.kt", "class ATest {\n  @ParameterizedTest\n  @CsvSource(\n" + rows("    \"1, 2\",", 44) + "  )\n  fun inc(a: Int, b: Int) { assertEquals(b, inc(a)) }\n}\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r := analyze(t, tc.path, tc.src)
+			if len(r.Details) != 1 {
+				t.Fatalf("examples %q, want one", summary(r))
+			}
+			e := r.Details[0]
+			if !e.Table || e.Lines > 12 || e.RawLines < 44 || slices.Contains(e.Smells, "large") {
+				t.Errorf("table %v, %d code lines of %d, smells %v: want a table of a few code lines", e.Table, e.Lines, e.RawLines, e.Smells)
+			}
+			if r.Action != LeaveAlone {
+				t.Errorf("action %s, recommendations %+v: a table-driven test is the shape scrap asks for", r.Action, r.Recommendations)
+			}
+		})
+	}
+}
+
 func TestScore(t *testing.T) {
 	if s := Score(Metrics{Lines: 8, Assertions: 2}); s != 1 {
 		t.Errorf("a small asserted example scores %v, want 1", s)

@@ -21,7 +21,11 @@ type Example struct {
 	StartLine int
 	EndLine   int
 	Table     bool // already table-driven: it.each, parametrize, a t.Run loop
-	Node      *sitter.Node
+	// Data are the case tables written beside the example: it.each's
+	// arguments, a parametrize decorator, a @CsvSource. They are fixtures,
+	// not test code.
+	Data []*sitter.Node
+	Node *sitter.Node
 	// Body is the code the example runs, without its name and decorators.
 	Body *sitter.Node
 }
@@ -51,13 +55,14 @@ type extractor struct {
 
 func (x *extractor) text(n *sitter.Node) string { return n.Utf8Text(x.f.Src) }
 
-func (x *extractor) add(name string, groups []string, n, body *sitter.Node, table bool) {
+func (x *extractor) add(name string, groups []string, n, body *sitter.Node, table bool, data ...*sitter.Node) {
 	x.examples = append(x.examples, Example{
 		Name:      name,
 		Group:     strings.Join(groups, " › "),
 		StartLine: int(n.StartPosition().Row) + 1,
 		EndLine:   int(n.EndPosition().Row) + 1,
-		Table:     table,
+		Table:     table || len(data) > 0,
+		Data:      data,
 		Node:      n,
 		Body:      body,
 	})
@@ -85,15 +90,18 @@ var (
 
 func (x *extractor) typescript(n *sitter.Node, groups []string) {
 	if n.Kind() == "call_expression" {
-		base, table := tsCallee(n.ChildByFieldName("function"), x.f.Src)
+		base, cases := tsCallee(n.ChildByFieldName("function"), x.f.Src)
 		args := n.ChildByFieldName("arguments")
 		body := lastFunctionArg(args)
 		switch {
 		case tsGroups[base] && body != nil:
 			x.typescript(body, append(groups, firstStringArg(args, x.f.Src)))
 			return
+		case tsExamples[base] && body != nil && cases != nil:
+			x.add(firstStringArg(args, x.f.Src), groups, n, body, true, cases)
+			return
 		case tsExamples[base] && body != nil:
-			x.add(firstStringArg(args, x.f.Src), groups, n, body, table)
+			x.add(firstStringArg(args, x.f.Src), groups, n, body, false)
 			return
 		case tsSetup[base]:
 			x.setup += lines(n)
@@ -106,25 +114,26 @@ func (x *extractor) typescript(n *sitter.Node, groups []string) {
 }
 
 // tsCallee names the test function a call invokes: it for it(...),
-// it.only(...), and it.each(table)(...), reporting whether .each made it a
-// table.
-func tsCallee(fn *sitter.Node, src []byte) (base string, table bool) {
+// it.only(...), and it.each(table)(...), returning the cases .each was given
+// when there is one.
+func tsCallee(fn *sitter.Node, src []byte) (base string, cases *sitter.Node) {
+	var call *sitter.Node
 	for fn != nil {
 		switch fn.Kind() {
 		case "identifier":
-			return fn.Utf8Text(src), table
+			return fn.Utf8Text(src), cases
 		case "member_expression":
-			if fieldText(fn, "property", src) == "each" {
-				table = true
+			if fieldText(fn, "property", src) == "each" && call != nil {
+				cases = call.ChildByFieldName("arguments")
 			}
 			fn = fn.ChildByFieldName("object")
 		case "call_expression":
-			fn = fn.ChildByFieldName("function")
+			call, fn = fn, fn.ChildByFieldName("function")
 		default:
-			return "", false
+			return "", nil
 		}
 	}
-	return "", false
+	return "", nil
 }
 
 func lastFunctionArg(args *sitter.Node) *sitter.Node {
@@ -159,11 +168,15 @@ func fieldText(n *sitter.Node, field string, src []byte) string {
 func (x *extractor) python(n *sitter.Node, groups []string) {
 	for _, c := range children(n) {
 		def, decorators := c, ""
+		var cases []*sitter.Node
 		if c.Kind() == "decorated_definition" {
 			def = c.ChildByFieldName("definition")
 			for _, d := range children(c) {
 				if d.Kind() == "decorator" {
 					decorators += x.text(d) + "\n"
+					if strings.Contains(x.text(d), "parametrize") {
+						cases = append(cases, d)
+					}
 				}
 			}
 		}
@@ -176,7 +189,7 @@ func (x *extractor) python(n *sitter.Node, groups []string) {
 			x.python(def.ChildByFieldName("body"), append(groups, name))
 		case def.Kind() != "function_definition":
 		case strings.HasPrefix(name, "test"):
-			x.add(name, groups, c, def.ChildByFieldName("body"), strings.Contains(decorators, "parametrize"))
+			x.add(name, groups, c, def.ChildByFieldName("body"), false, cases...)
 		case strings.Contains(decorators, "fixture") || pySetup[name]:
 			x.setup += lines(c)
 		}
@@ -268,7 +281,7 @@ func (x *extractor) kotlin(n *sitter.Node, groups []string) {
 		case annotations["Test"] || annotations["RepeatedTest"] || annotations["TestFactory"]:
 			x.add(ktName(n, x.f.Src), groups, n, ktBody(n), false)
 		case annotations["ParameterizedTest"]:
-			x.add(ktName(n, x.f.Src), groups, n, ktBody(n), true)
+			x.add(ktName(n, x.f.Src), groups, n, ktBody(n), true, x.ktSources(n)...)
 		default:
 			for a := range annotations {
 				if ktSetupAnnotations[a] {
@@ -308,6 +321,24 @@ func (x *extractor) ktAnnotations(fn *sitter.Node) map[string]bool {
 					name = name[:i]
 				}
 				out[name[strings.LastIndex(name, ".")+1:]] = true
+			}
+		}
+	}
+	return out
+}
+
+// ktSources are a parameterized test's argument sources, @CsvSource,
+// @ValueSource, and the like: its case table.
+func (x *extractor) ktSources(fn *sitter.Node) []*sitter.Node {
+	var out []*sitter.Node
+	for _, c := range children(fn) {
+		if c.Kind() != "modifiers" {
+			continue
+		}
+		for _, a := range children(c) {
+			name, _, _ := strings.Cut(strings.TrimPrefix(x.text(a), "@"), "(")
+			if a.Kind() == "annotation" && strings.HasSuffix(strings.TrimSpace(name), "Source") {
+				out = append(out, a)
 			}
 		}
 	}

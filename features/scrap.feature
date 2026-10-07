@@ -106,6 +106,19 @@ Feature: Test-code structure
       When it is measured
       Then it spans 44 raw lines but only 3 code lines
 
+    Scenario Outline: A case table is not test size
+      Given a test whose 44 cases are <table>
+      When it is measured
+      Then it is a table of a few code lines, not a large example
+      And scrap does not ask to split it
+
+      Examples:
+        | table                                                                  |
+        | a Go []struct literal it ranges over, inline or named, with or without t.Run |
+        | a Python list it loops over, or a parametrize decorator                |
+        | a TypeScript array it loops over with for…of, or it.each's argument    |
+        | a Kotlin listOf it loops over, or a @CsvSource                         |
+
     Scenario Outline: Scoring an example
       Given an example with <lines> code lines, <decisions> branches or loops, <mocks> mocks, and <assertions> assertions
       When it is scored
