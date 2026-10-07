@@ -606,3 +606,16 @@ items:
       test failed. On the person's word (2026-10-07) the limit goes to 20 minutes now; making those
       tests faster on Windows is the idea windows-test-speed. Every test still runs; only the hang
       guard moves.
+  - id: windows-test-speed
+    title: cmd/itos-cc's tests take about 10 minutes on windows-latest
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found when listed-selection-baseline passed go test's 10-minute default on Windows (T-6 raised
+      it to 20). The package grew from 364s to 570s over three runs; t.Parallel where tests do not
+      share state, lighter or shared fixtures (each builds a git repository and runs go test inside
+      it), or splitting the package would bring it back down.
+    refs: ["#14"]
