@@ -500,19 +500,9 @@ items:
     title: The graph finds a file's mutation snapshot where mutation check does
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [snapshots-at-root]
     kind: slice
-    why: >
-      Was graph-check-snapshot-lookup.
-      Since graph-check-freshness the graph takes a paired entry's state from mutation check's own
-      rule (mutate.FreshnessOf), but it still finds the entries its own way: graph/build.go reads
-      every snapshot under .metrics/mutate by the file it names, matched by path suffix so one
-      written from another directory still matches (ID-GRAPH-26), while check loads the snapshot at
-      the path of the file relative to where it runs (mutate.LoadSnapshot). A snapshot that names
-      its file from another directory, or sits at another path than its file's, gives the graph
-      results for a function check calls missing. Whether the graph should follow check here too, or
-      ID-GRAPH-26 is a reason to keep the difference, is for the person to decide.
   - id: snapshots-at-root
     title: Snapshots live at the project root and name files from it, wherever a command runs
     phase: 1
