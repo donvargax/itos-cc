@@ -72,7 +72,7 @@ Feature: Snapshots under .metrics
     Then the snapshot is .metrics/mutate/src/board.go.json at the repository's root, and it names the file "src/board.go"
     And no .metrics directory is created under src/
 
-  @wip @snapshots-at-root @ID-SNAP-09
+  @snapshots-at-root @ID-SNAP-09
   Scenario Outline: Every command's snapshot names files from the root
     Given a git repository with src/board.go and its tests
     When I run "itos-cc <command>" from src/
@@ -94,9 +94,9 @@ Feature: Snapshots under .metrics
   @snapshots-at-root @ID-SNAP-11
   Scenario: Paths on the command line and in output stay relative to the working directory
     Given a git repository with src/board.go and its tests
-    When I run "itos-cc mutation run --json board.go" from src/
+    When I run "itos-cc mutation run board.go" from src/
     Then stdout's summary names the file "board.go"
-    And the file in "files" is "board.go"
+    And with --json, the file in "files" is "board.go"
 
   @snapshots-at-root @ID-SNAP-12
   Scenario: Outside a git repository the working directory is the root
