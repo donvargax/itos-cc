@@ -116,14 +116,9 @@ items:
     title: "mutation except: equivalent mutants excepted in itos-cc.yaml, each with a reason"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-exceptions.
-      Issue #10: an equivalent mutant (one no test can kill because it changes no behaviour)
-      survives forever. A committed file names each one with a reason, so it stops failing runs
-      while staying visible; docs/CLI.md rule 38 names it as the first project setting.
     refs: ["#10"]
   - id: gate-mutation
     title: "Mutation testing for gates: mutate CI workflows and policy YAML against their self-tests"
