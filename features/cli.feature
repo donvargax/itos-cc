@@ -140,3 +140,51 @@ Feature: Command line
     Scenario: Plain output prints each problem on stderr
       When a run has a problem
       Then stderr says "itos-cc: <message>. <fix>"
+
+  # Decided with the person on 2026-10-06 (q-1, q-3): mutation testing is one
+  # group, mutation, following itos's CLI rules 3, 4, 7 and 13. mutate and
+  # mutate --scan go with no alias: itos-cc is before 1.0, so a breaking
+  # change needs only a minor release. The problem rules move with the
+  # command (mutate.survived becomes mutation.survived, and so on); the
+  # cache folder .metrics/mutate/ and the "itos-cc mutate:" marker of the
+  # summary comment stay, since renaming them would rewrite every committed
+  # cache and duplicate every annotation. mutation check, the check mode,
+  # is its own item.
+  Rule: The mutation group
+
+    @wip @mutation-group @ID-CLI-12
+    Scenario: The group alone names its subcommands
+      When I run "itos-cc mutation"
+      Then stdout names the subcommands run and list
+      And the exit code is 0
+
+    @wip @mutation-group @ID-CLI-13
+    Scenario: mutation run mutates
+      When I run "itos-cc mutation run src/board.ts"
+      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
+      And each survivor is a "mutation.survived" problem
+
+    @wip @mutation-group @ID-CLI-14
+    Scenario: mutation list lists the sites without running tests
+      When I run "itos-cc mutation list x.ts"
+      Then stdout lists each mutation site of x.ts with its line, column, function, original, and replacement
+      And no test command runs
+
+    @wip @mutation-group @ID-CLI-15
+    Scenario: mutate is no longer a command
+      When I run "itos-cc mutate src/board.ts"
+      Then stderr says "itos-cc: there is no command \"mutate\". Did you mean 'mutation'? Run 'itos-cc --help' for the commands."
+      And the exit code is 2
+
+    @wip @mutation-group @ID-CLI-16
+    Scenario: An unknown subcommand of the group is a usage error
+      When I run "itos-cc mutation nosuch"
+      Then the problem is "command.unknown"
+      And stderr names the subcommands run and list
+      And the exit code is 2
+
+    @wip @mutation-group @ID-CLI-17
+    Scenario: --scan is not a flag of mutation run
+      When I run "itos-cc mutation run --scan x.ts"
+      Then the problem is "flags.unknown", with flag "--scan"
+      And the exit code is 2
