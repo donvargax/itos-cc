@@ -210,3 +210,16 @@ Feature: Units: the functions and methods every tool measures
       | method   | example.com/demo/board.Board | Place  | no      |
       | method   | example.com/demo/board.Board | size   | yes     |
       | function | example.com/demo/board       | helper | yes     |
+
+  # A source file outside any project root (no package.json, go.mod or .git
+  # in its directory or above it) was namespaced by its directory's absolute
+  # path, dotted (.tmp.….x#place), so function IDs, and the mutation results
+  # and debt keyed by them, depended on where the checkout lives. The
+  # working directory stands in for the root (the coordinator's call,
+  # 2026-10-07, as the idea proposed).
+  @wip @namespace-working-dir @ID-UNIT-13
+  Scenario: A file outside any project root is named from the working directory
+    Given x.ts declares function place, in a directory with no package.json, go.mod or .git in it or above it
+    When I run "itos-cc units x.ts" from that directory
+    Then the unit is "x#place"
+    And it is "x#place" from a copy of that directory at another path
