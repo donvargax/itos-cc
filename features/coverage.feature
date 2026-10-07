@@ -168,6 +168,19 @@ Feature: Coverage
       When it is matched to sources
       Then it matches that source by its trailing path components
 
+    Scenario: A path that names a file on disk is that file
+      Given sources "/p/b/main.go" only, as when --changed selects it
+      And a report entry "a/b/main.go" or "/p/a/b/main.go", a file that exists
+      When it is matched to sources
+      Then it matches neither source
+      # the tail "b/main.go" would lend another file's coverage to b/main.go
+
+    Scenario: A symlinked directory still matches
+      Given a source reached through a symlinked directory
+      And a report entry that names the same file by the symlink's target
+      When it is matched to sources
+      Then it matches that source
+
     Scenario: An ambiguous tail is not guessed
       Given sources "/p/a/util.py" and "/p/b/util.py"
       And a report entry "util.py" from a base directory that holds neither

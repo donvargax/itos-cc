@@ -177,6 +177,13 @@ target current test runners rather than work around old ones: only the
 current Vitest major (5) is measured, since older ones write V8 blocks, so
 raise `minVitest` in `coverage/run.go` with each major.
 
+Their issues and pull requests were reviewed on 2026-10-06. From crapper
+#1 we took exact path matching: a report path that names a file on disk is
+that file, so its coverage never goes to a source that shares its tail.
+dryer #1 is what we already do. mutator #1 (cold builds timing out and
+counting as kills) is Rust-only, and our baseline already runs in a cold
+copy.
+
 Not taken, yet:
 
 - **A failed coverage run scores 0%.** crapper now does; we keep N/A for a

@@ -2,6 +2,8 @@ package coverage
 
 import (
 	"math"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -168,6 +170,35 @@ func TestMatchingRefusesAmbiguousTails(t *testing.T) {
 	r = Build([]string{"/p/a/util.py", "/p/b/util.py"}, "/p/a", entries)
 	if !r.Has("/p/a/util.py") {
 		t.Error("a path relative to base resolves exactly")
+	}
+}
+
+func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
+	root := t.TempDir()
+	src, other := filepath.Join(root, "b", "main.go"), filepath.Join(root, "a", "b", "main.go")
+	for _, f := range []string{src, other} {
+		os.MkdirAll(filepath.Dir(f), 0o755)
+		os.WriteFile(f, nil, 0o644)
+	}
+	for _, path := range []string{"a/b/main.go", other} {
+		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+		if r := Build([]string{src}, root, entries); r.Has(src) {
+			t.Errorf("%s is another file in the project, not b/main.go", path)
+		}
+	}
+}
+
+func TestMatchingFollowsSymlinkedDirectories(t *testing.T) {
+	real := t.TempDir()
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	os.WriteFile(filepath.Join(real, "lib.py"), nil, 0o644)
+	src := filepath.Join(link, "lib.py")
+	entries := []Entry{{Path: filepath.Join(real, "lib.py"), Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+	if r := Build([]string{src}, link, entries); !r.Has(src) {
+		t.Error("a report that resolved the symlink still names the source")
 	}
 }
 

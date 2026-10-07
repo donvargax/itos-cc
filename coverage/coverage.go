@@ -5,6 +5,7 @@
 package coverage
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -141,7 +142,9 @@ func Merge(reports ...*Report) *Report {
 // absolute or relative to base, otherwise by the longest run of trailing path
 // components it shares with exactly one source. Report tools disagree on
 // where paths start (module paths, package directories, the working
-// directory), but the tail of the path is always the file.
+// directory), but the tail of the path is always the file. A path that names
+// a file on disk is that file, so when only some files are scored, a/b/x.go
+// never lends its coverage to b/x.go.
 type matcher struct {
 	sources map[string]string // cleaned path → the path as the caller gave it
 	byName  map[string][]string
@@ -159,11 +162,15 @@ func newMatcher(sources []string) *matcher {
 
 func (m *matcher) match(path, base string) string {
 	path = filepath.FromSlash(strings.TrimPrefix(path, "file://"))
-	if s, ok := m.sources[filepath.Clean(path)]; ok && filepath.IsAbs(path) {
+	exact := filepath.Join(base, path)
+	if filepath.IsAbs(path) {
+		exact = filepath.Clean(path)
+	}
+	if s, ok := m.sources[exact]; ok {
 		return s
 	}
-	if s, ok := m.sources[filepath.Join(base, path)]; ok {
-		return s
+	if info, err := os.Stat(exact); err == nil {
+		return m.sameFile(info)
 	}
 	want := components(path)
 	best, bestLen, tied := "", 0, false
@@ -180,6 +187,17 @@ func (m *matcher) match(path, base string) string {
 		return ""
 	}
 	return best
+}
+
+// sameFile is the source that info describes, reached through another path
+// such as a symlinked directory's target, or "" when it is not a source.
+func (m *matcher) sameFile(info os.FileInfo) string {
+	for _, candidate := range m.byName[info.Name()] {
+		if other, err := os.Stat(candidate); err == nil && os.SameFile(info, other) {
+			return candidate
+		}
+	}
+	return ""
 }
 
 func components(path string) []string {
