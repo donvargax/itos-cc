@@ -314,7 +314,7 @@ items:
     title: "Each outcome records the scope of its tests, and mutation sample re-runs with it"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
