@@ -103,7 +103,7 @@ func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
 	out := stdout(t, func() {
 		emit(true, struct {
 			Files []string `json:"files"`
-		}{[]string{"a.go"}}, []*problem{fail(kindNo, "mutate.survived", "it survived", "Add a test.").with("line", 3)})
+		}{[]string{"a.go"}}, []*problem{fail(kindNo, "mutation.survived", "it survived", "Add a test.").with("line", 3)})
 	})
 	var got map[string]any
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
@@ -113,7 +113,7 @@ func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
 	if got["schema"] != 1.0 || got["ok"] != false || len(problems) != 1 || got["files"] == nil {
 		t.Fatalf("object %v", got)
 	}
-	if p := problems[0].(map[string]any); p["rule"] != "mutate.survived" || p["line"] != 3.0 || p["fix"] != "Add a test." {
+	if p := problems[0].(map[string]any); p["rule"] != "mutation.survived" || p["line"] != 3.0 || p["fix"] != "Add a test." {
 		t.Errorf("problem %v, want its rule, sentences, and subject keys", p)
 	}
 }
@@ -132,6 +132,19 @@ func TestDispatch(t *testing.T) {
 		{[]string{"--json", "crapp"}, 2, `"Did you mean 'crap'?`},
 		{[]string{"--json", "version"}, 0, `"version"`},
 		{[]string{"version", "extra"}, 2, ""},
+		{nil, 0, "mutation run "},
+		{[]string{"mutation", "-h"}, 0, "Subcommands:"},
+		{[]string{"mutation", "--help"}, 0, "Subcommands:"},
+		{[]string{"help", "mutation"}, 0, "Subcommands:"},
+		{[]string{"mutation", "run", "--help"}, 0, "usage: itos-cc mutation run"},
+		{[]string{"mutation", "list", "-h"}, 0, "usage: itos-cc mutation list"},
+		{[]string{"help", "mutation", "run"}, 0, "usage: itos-cc mutation run"},
+		{[]string{"help", "mutation", "nosuch"}, 2, ""},
+		{[]string{"help", "crap", "run"}, 2, ""},
+		{[]string{"--json", "mutation"}, 2, `"command.missing"`},
+		{[]string{"mutation", "--json"}, 2, `"command.missing"`},
+		{[]string{"--json", "mutation", "rn"}, 2, `"Did you mean 'mutation run'?`},
+		{[]string{"--json", "mutation", "--changed", "run"}, 2, `"flags.unknown"`},
 	} {
 		var code int
 		out := stdout(t, func() { code = run(c.args) })
@@ -142,9 +155,20 @@ func TestDispatch(t *testing.T) {
 }
 
 func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
-	for name, c := range commands {
+	for _, c := range leaves() {
 		h := c.help()
-		for _, part := range []string{"usage: itos-cc " + name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", issues} {
+		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", issues} {
+			if !strings.Contains(h, part) {
+				t.Errorf("%s --help lacks %q", c.name, part)
+			}
+		}
+	}
+	for name, g := range commands {
+		if g.subs == nil {
+			continue
+		}
+		h := g.groupHelp()
+		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}

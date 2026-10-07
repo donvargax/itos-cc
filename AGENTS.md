@@ -51,6 +51,6 @@ The pre-push hook, `itos hook pre-push`, runs these on every push:
 ## Notes for agents
 
 - Do not run mutation testing on this repository's own code while you work:
-  no `itos-cc mutate` over its sources, locally or in a push's CI. The
+  no `itos-cc mutation run` over its sources, locally or in a push's CI. The
   nightly workflow runs it and commits `.metrics/mutate/` back. The Go tests
   of the mutate package are fine: they mutate fixtures, not this code.

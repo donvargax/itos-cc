@@ -36,7 +36,7 @@
 - file: mutate.feature
   scenarios:
     - id: "@ID-MUT-04"
-      why: the mutation sites of a Go file, listed with --scan, which runs no mutant and no test
+      why: the mutation sites of a Go file, listed by mutation list, which runs no mutant and no test
 - file: scrap.feature
   scenarios:
     - id: "@ID-SCRAP-11"

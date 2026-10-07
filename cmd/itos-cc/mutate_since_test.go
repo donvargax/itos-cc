@@ -124,13 +124,13 @@ type outcome struct {
 	stdout, stderr string
 }
 
-// mutateRun runs itos-cc mutate with args, every mutant run whatever
+// mutateRun runs itos-cc mutation run with args, every mutant run whatever
 // coverage says and no source file annotated, and returns what it printed.
 func mutateRun(t *testing.T, args ...string) outcome {
 	t.Helper()
 	var o outcome
 	o.stdout, o.stderr = captured(t, func() {
-		o.code = run(append([]string{"mutate", "--no-coverage", "--no-annotate", "--workers", "1"}, args...))
+		o.code = run(append([]string{"mutation", "run", "--no-coverage", "--no-annotate", "--workers", "1"}, args...))
 	})
 	return o
 }

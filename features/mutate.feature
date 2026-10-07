@@ -18,7 +18,7 @@ Feature: Mutation testing
           return -a <= 10 || true;
         }
         """
-      When I run "itos-cc mutate --scan x.ts"
+      When I run "itos-cc mutation list x.ts"
       Then the sites are:
         | line | original | replacement |
         | 5    | >        | >=          |
@@ -41,7 +41,7 @@ Feature: Mutation testing
           return a ?? b?.c ?? b?.[0];
         }
         """
-      When I run "itos-cc mutate --scan x.ts"
+      When I run "itos-cc mutation list x.ts"
       Then the sites are:
         | line | original | replacement |
         | 2    | ??       | \|\|        |
@@ -64,7 +64,7 @@ Feature: Mutation testing
                 return a * 2 == 1
             return -a < b or False
         ```
-      When I run "itos-cc mutate --scan x.py"
+      When I run "itos-cc mutation list x.py"
       Then the sites are:
         | line | original | replacement |
         | 5    | >=       | >           |
@@ -96,7 +96,7 @@ Feature: Mutation testing
         	return true
         }
         """
-      When I run "itos-cc mutate --scan x.go"
+      When I run "itos-cc mutation list x.go"
       Then the sites are:
         | line | original | replacement |
         | 8    | !=       | ==          |
@@ -119,7 +119,7 @@ Feature: Mutation testing
             return a * 2 >= xs.size
         }
         """
-      When I run "itos-cc mutate --scan x.kt"
+      When I run "itos-cc mutation list x.kt"
       Then the sites are:
         | line | original | replacement |
         | 4    | ==       | !=          |
@@ -132,7 +132,7 @@ Feature: Mutation testing
 
     @ID-MUT-06
     Scenario: Scanning prints sites without running tests
-      When I run "itos-cc mutate --scan src/board.py"
+      When I run "itos-cc mutation list src/board.py"
       Then each site is printed as "file:line:column `original` → `replacement` in namespace#name"
       And no tests are run
       And the exit code is 0
@@ -159,7 +159,7 @@ Feature: Mutation testing
     @ID-MUT-08
     Scenario: By default a file is measured and mutated by its own tests
       Given a/a.go is tested only by e2e/e2e_test.go, which imports package a
-      When I run "itos-cc mutate a/a.go"
+      When I run "itos-cc mutation run a/a.go"
       Then coverage runs "go test -count=1 -covermode=set -coverprofile=... example.com/m/a"
       And its mutants are uncovered and none runs
       # coverage comes from the tests that kill mutants, so a line only
@@ -167,7 +167,7 @@ Feature: Mutation testing
 
     @ID-MUT-09
     Scenario: The whole suite, as a nightly job
-      When I run "itos-cc mutate --all-tests a/a.go"
+      When I run "itos-cc mutation run --all-tests a/a.go"
       Then coverage and every mutant run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
       And the e2e test kills them
       # tests that only run the built binary are not in coverage; with
@@ -176,12 +176,12 @@ Feature: Mutation testing
 
     @ID-MUT-10
     Scenario: A custom test command
-      When I run "itos-cc mutate --test-command 'make test' src/board.go"
+      When I run "itos-cc mutation run --test-command 'make test' src/board.go"
       Then "make test" runs through the platform shell from the file's build root
 
     @ID-MUT-11
     Scenario: The real tree is never modified while tests run
-      When I run "itos-cc mutate src/board.ts"
+      When I run "itos-cc mutation run src/board.ts"
       Then each worker runs mutants in its own private copy of the project
       And dependency directories such as node_modules and .venv are linked, not copied
       And the source files in the working tree are unchanged while tests run
@@ -201,7 +201,7 @@ Feature: Mutation testing
     @ID-MUT-14
     Scenario: Timeouts
       Given the baseline took 3 seconds
-      When I run "itos-cc mutate --timeout-factor 10"
+      When I run "itos-cc mutation run --timeout-factor 10"
       Then a mutant times out after 30 seconds
       And a timed-out mutant counts as killed
 
@@ -214,16 +214,16 @@ Feature: Mutation testing
     @ID-MUT-16
     Scenario: A failing baseline
       Given the tests of src/board.py fail without any mutation
-      When I run "itos-cc mutate src/board.py"
+      When I run "itos-cc mutation run src/board.py"
       Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
       And the last 20 lines of the test output follow
       And the snapshot of src/board.py is not changed
-      And the problem is "mutate.baseline-failed", with file
+      And the problem is "mutation.baseline-failed", with file
       And the exit code is 1
 
     @ID-MUT-17
     Scenario: Parallel workers
-      When I run "itos-cc mutate --workers 4"
+      When I run "itos-cc mutation run --workers 4"
       Then up to 4 mutants run at the same time
       And the default is half the CPUs, at least 1
 
@@ -232,30 +232,30 @@ Feature: Mutation testing
     @ID-MUT-18
     Scenario: Mutants on lines no test executes are not run
       Given coverage shows line 12 of src/board.ts is never executed
-      When I run "itos-cc mutate src/board.ts"
+      When I run "itos-cc mutation run src/board.ts"
       Then the mutants on line 12 are reported as uncovered without running
 
     @ID-MUT-19
     Scenario: A file the tests never load is entirely uncovered
       Given coverage measured other TypeScript files but never src/unused.ts
-      When I run "itos-cc mutate src/unused.ts"
+      When I run "itos-cc mutation run src/unused.ts"
       Then every mutant in src/unused.ts is uncovered
 
     @ID-MUT-20
     Scenario: No coverage for the language at all
       Given coverage measured no Kotlin file
-      When I run "itos-cc mutate src/Board.kt"
+      When I run "itos-cc mutation run src/Board.kt"
       Then stderr says "mutate: no coverage for src/Board.kt; running every mutant"
 
     @ID-MUT-21
     Scenario: Skipping coverage
-      When I run "itos-cc mutate --no-coverage"
+      When I run "itos-cc mutation run --no-coverage"
       Then every mutant runs regardless of coverage
 
     @ID-MUT-22
     Scenario: Coverage is only measured when a mutant has to run
       Given every mutant can be reused from the previous snapshot
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then no coverage or test command runs
       And stderr says "mutate: no mutations to test"
 
@@ -273,14 +273,14 @@ Feature: Mutation testing
     Scenario: An uncovered mutant fails the run
       Given coverage shows line 12 of src/board.ts is never executed
       And every mutant on the lines the tests execute is killed
-      When I run "itos-cc mutate --fail-uncovered src/board.ts"
+      When I run "itos-cc mutation run --fail-uncovered src/board.ts"
       Then each mutant on line 12 is listed as "uncovered src/board.ts:12:9 `>` → `>=` in board#place"
       And the exit code is 1
 
     @slice-2 @ID-MUT-48
     Scenario: A file the tests never load fails whole
       Given coverage measured other TypeScript files but never src/unused.ts
-      When I run "itos-cc mutate --fail-uncovered src/unused.ts"
+      When I run "itos-cc mutation run --fail-uncovered src/unused.ts"
       Then every mutant in src/unused.ts is listed as uncovered
       And the exit code is 1
 
@@ -288,20 +288,20 @@ Feature: Mutation testing
     Scenario: With --since only the judged functions' uncovered mutants fail
       Given a commit after "base" changed "Board#place", which no test executes
       And "Board#clear", unchanged, is not executed by any test either
-      When I run "itos-cc mutate --since base --fail-uncovered"
+      When I run "itos-cc mutation run --since base --fail-uncovered"
       Then the mutants of "Board#place" are listed as uncovered
       And none of "Board#clear" is
       And the exit code is 1
 
     @slice-2 @ID-MUT-50
     Scenario: Uncovered mutants as JSON
-      When I run "itos-cc mutate --fail-uncovered --json src/board.ts"
-      Then each uncovered mutant is a "mutate.uncovered" problem with file, line, column, function, original, and replacement
+      When I run "itos-cc mutation run --fail-uncovered --json src/board.ts"
+      Then each uncovered mutant is a "mutation.uncovered" problem with file, line, column, function, original, and replacement
       And "ok" is false
 
     @slice-2 @ID-MUT-51
     Scenario: Nothing is uncovered when coverage is skipped
-      When I run "itos-cc mutate --no-coverage --fail-uncovered src/board.ts"
+      When I run "itos-cc mutation run --no-coverage --fail-uncovered src/board.ts"
       Then every mutant runs
       And no mutant is uncovered, so none fails as uncovered
 
@@ -311,30 +311,30 @@ Feature: Mutation testing
     Scenario: Killed mutants of unchanged functions stay killed
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then those mutants are reused without running
 
     @ID-MUT-24
     Scenario: Changed functions rerun
       Given "Board#place" changed since the previous run
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then every mutant of "Board#place" runs again
 
     @ID-MUT-25
     Scenario: Moving a function does not count as a change
       Given an import was added above "f" so it moved down the file
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then the killed mutants of "f" are still reused
 
     @ID-MUT-26
     Scenario: Survivors are always retried
       Given a mutant of "Board#place" survived the previous run
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then it runs again, since new tests may kill it
 
     @ID-MUT-27
     Scenario: Forcing a full rerun
-      When I run "itos-cc mutate --mutate-all"
+      When I run "itos-cc mutation run --mutate-all"
       Then killed mutants of unchanged functions run again too
 
   # Issue #9, part 1: a gate judges a task's commits, not the working tree,
@@ -354,7 +354,7 @@ Feature: Mutation testing
     Scenario: Only the functions the commits since a ref changed are judged
       Given a commit after "base" changed lines of "Board#place" in src/board.ts
       And "Board#clear" in the same file did not change
-      When I run "itos-cc mutate --since base"
+      When I run "itos-cc mutation run --since base"
       Then the mutants of "Board#place" run
       And no mutant of "Board#clear" runs
       And stdout says "src/board.ts: … (judged 1 of 2 functions)"
@@ -363,7 +363,7 @@ Feature: Mutation testing
     Scenario: Functions not judged keep what their snapshot holds
       Given a previous run recorded a survivor in "Board#clear"
       And only "Board#place" changed since "base"
-      When I run "itos-cc mutate --since base"
+      When I run "itos-cc mutation run --since base"
       Then the snapshot of src/board.ts still records that survivor in "Board#clear"
       And it is not reported, and the exit code is 0 when every mutant of "Board#place" is killed
       # a function never judged before gets no entry: it neither ran nor has an outcome to keep
@@ -372,32 +372,32 @@ Feature: Mutation testing
     Scenario: Uncommitted changes are not in the range
       Given "Board#place" changed since "base" in a commit
       And "Board#clear" has an uncommitted change
-      When I run "itos-cc mutate --since base"
+      When I run "itos-cc mutation run --since base"
       Then "Board#place" is judged
       And "Board#clear" is not
 
     @slice-1 @ID-MUT-40
     Scenario: Deleting lines changes the function around them
       Given a commit after "base" only deleted a line inside "Board#place"
-      When I run "itos-cc mutate --since base"
+      When I run "itos-cc mutation run --since base"
       Then "Board#place" is judged
 
     @slice-1 @ID-MUT-41
     Scenario: Paths narrow the range
       Given commits after "base" changed src/board.ts and lib/util.ts
-      When I run "itos-cc mutate --since base src"
+      When I run "itos-cc mutation run --since base src"
       Then only src/board.ts is mutated
 
     @slice-1 @ID-MUT-42
     Scenario: Nothing changed since the ref
       Given no commit after "base" changed a source file
-      When I run "itos-cc mutate --since base"
+      When I run "itos-cc mutation run --since base"
       Then stderr says "itos-cc: no source files to mutate"
       And the exit code is 0
 
     @slice-1 @ID-MUT-43
     Scenario: A ref git cannot resolve is a usage error
-      When I run "itos-cc mutate --since nosuch"
+      When I run "itos-cc mutation run --since nosuch"
       Then stderr says "itos-cc: --since nosuch: not a commit in this repository"
       And the problem is "since.bad-ref", with ref "nosuch"
       And the exit code is 2
@@ -405,13 +405,13 @@ Feature: Mutation testing
     @slice-1 @ID-MUT-44
     Scenario: --since outside a git repository is a missing environment
       Given the working directory is not a git repository
-      When I run "itos-cc mutate --since main"
+      When I run "itos-cc mutation run --since main"
       Then the problem is "since.no-git"
       And the exit code is 3
 
     @slice-1 @ID-MUT-45
     Scenario: --since and --changed are not combined
-      When I run "itos-cc mutate --since main --changed"
+      When I run "itos-cc mutation run --since main --changed"
       Then the problem is "flags.conflict", with flag "--changed"
       And the exit code is 2
       # --changed judges whole files of the working tree, --since functions of
@@ -419,7 +419,7 @@ Feature: Mutation testing
 
     @slice-1 @ID-MUT-46
     Scenario: The functions judged, as JSON
-      When I run "itos-cc mutate --since base --json"
+      When I run "itos-cc mutation run --since base --json"
       Then each file in "files" has "judged", the namespace#name of each function judged
       And without --since no file has "judged"
 
@@ -427,14 +427,14 @@ Feature: Mutation testing
 
     @ID-MUT-28
     Scenario: Summary per file
-      When I run "itos-cc mutate src/board.ts"
+      When I run "itos-cc mutation run src/board.ts"
       Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
       And each survivor is listed as "survived src/board.ts:5:9 `>` → `>=` in board#place"
 
     @ID-MUT-29
     Scenario Outline: Exit codes
       Given <situation>
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then the exit code is <code>
 
       Examples:
@@ -445,13 +445,13 @@ Feature: Mutation testing
 
     @ID-MUT-30
     Scenario: Survivors as JSON
-      When I run "itos-cc mutate --json src/board.ts"
+      When I run "itos-cc mutation run --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", and "files", each with file, killed, survived, uncovered, ran, reused, and baseline
-      And each survivor is a "mutate.survived" problem with file, line, column, function, original, and replacement
+      And each survivor is a "mutation.survived" problem with file, line, column, function, original, and replacement
 
-    # Issue #9, part 3: a gate reads mutate's result without parsing text or
+    # Issue #9, part 3: a gate reads mutation run's result without parsing text or
     # the cache files, so --json lists every mutant it decided. Each file's
-    # "mutants" are in site order, with the keys --scan gives a site less
+    # "mutants" are in site order, with the keys mutation list gives a site less
     # "file" (its file holds them), plus "outcome" and "reused": "reused" is
     # true for an outcome taken from the snapshot without running, which a
     # gate that trusts cached kills (#8) needs to tell apart. A new key, so
@@ -460,7 +460,7 @@ Feature: Mutation testing
     @slice-3 @ID-MUT-52
     Scenario: Every mutant as JSON
       Given src/board.ts has mutants that are killed, one that survives, and one on a line no test executes
-      When I run "itos-cc mutate --json src/board.ts"
+      When I run "itos-cc mutation run --json src/board.ts"
       Then its file in "files" has "mutants", one for each site in site order
       And each has line, column, function, original, replacement, outcome, and reused
       And their outcomes are "killed", "survived", and "uncovered" as each was decided
@@ -468,7 +468,7 @@ Feature: Mutation testing
     @slice-3 @ID-MUT-53
     Scenario: A timed-out mutant's outcome is its own
       Given a mutant of src/board.ts runs past its timeout
-      When I run "itos-cc mutate --json src/board.ts"
+      When I run "itos-cc mutation run --json src/board.ts"
       Then its outcome is "timeout"
       And it is counted in "killed"
 
@@ -476,25 +476,25 @@ Feature: Mutation testing
     Scenario: Mutants taken from the snapshot say so
       Given a previous run killed every mutant of "Board#place"
       And "Board#place" has not changed since, while "Board#clear" has
-      When I run "itos-cc mutate --json src/board.ts"
+      When I run "itos-cc mutation run --json src/board.ts"
       Then the mutants of "Board#place" are "killed" with reused true
       And the mutants of "Board#clear" have reused false
 
     @slice-3 @ID-MUT-55
     Scenario: With --since only the judged functions' mutants are listed
       Given only "Board#place" changed since "base"
-      When I run "itos-cc mutate --since base --json"
+      When I run "itos-cc mutation run --since base --json"
       Then the "mutants" of src/board.ts all have function "Board#place"
 
     @slice-3 @ID-MUT-56
     Scenario: A failing baseline lists no mutant
       Given the tests of src/board.ts fail without any mutation
-      When I run "itos-cc mutate --json src/board.ts"
+      When I run "itos-cc mutation run --json src/board.ts"
       Then its file has "baseline": "failed" and "mutants": []
 
     @ID-MUT-31
     Scenario: Results are cached per file
-      When I run "itos-cc mutate src/billing/invoice.ts"
+      When I run "itos-cc mutation run src/billing/invoice.ts"
       Then .metrics/mutate/src/billing/invoice.ts.json records each function's hash and the outcome of every mutant
 
     @ID-MUT-32
@@ -527,12 +527,12 @@ Feature: Mutation testing
 
     @ID-MUT-35
     Scenario: Turning the summary comment off
-      When I run "itos-cc mutate --no-annotate"
+      When I run "itos-cc mutation run --no-annotate"
       Then no source file is modified
 
     @ID-MUT-36
     Scenario: Nothing to mutate
       Given the selection holds no production source files
-      When I run "itos-cc mutate"
+      When I run "itos-cc mutation run"
       Then stderr says "itos-cc: no source files to mutate"
       And the exit code is 0

@@ -25,7 +25,7 @@ type mutantJSON struct {
 	Reused      bool   `json:"reused"`
 }
 
-// mutantKeys are the keys of each mutant: those of a --scan site less
+// mutantKeys are the keys of each mutant: those of a mutation list site less
 // "file", plus "outcome" and "reused".
 var mutantKeys = []string{"column", "function", "line", "original", "outcome", "replacement", "reused"}
 
@@ -50,13 +50,13 @@ func (o outcome) rawFiles(t *testing.T) []map[string]any {
 	return out.Files
 }
 
-// scanned is the sites --scan lists in file.
+// scanned is the sites mutation list lists in file.
 func scanned(t *testing.T, file string) []mutateSite {
 	t.Helper()
 	var scan struct {
 		Sites []mutateSite `json:"sites"`
 	}
-	o := mutateRun(t, "--scan", "--json", file)
+	o := cli(t, "mutation", "list", "--json", file)
 	if err := json.Unmarshal([]byte(o.stdout), &scan); err != nil {
 		t.Fatalf("sites of %s: %v\n%s", file, err, o.stdout)
 	}

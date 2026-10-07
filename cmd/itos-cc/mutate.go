@@ -13,9 +13,26 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
-var mutateCommand = &command{
-	name:     "mutate",
-	summary:  "mutation testing: do the tests notice small changes?",
+// mutationGroup is mutation testing: mutation run mutates and runs the
+// tests, mutation list lists the sites without running any.
+var mutationGroup = &command{
+	name:    "mutation",
+	summary: "mutation testing: do the tests notice small changes?",
+	about: `
+Mutation testing: would the tests notice if this code were wrong? mutation run
+changes one operator, boolean, or 0/1 at a time inside each function and runs
+the tests; mutation list lists those changes, the mutation sites, without
+running any test.`,
+	examples: []string{
+		"itos-cc mutation run --changed",
+		"itos-cc mutation list src/billing/invoice.ts",
+	},
+	subs: []*command{mutationRunCommand, mutationListCommand},
+}
+
+var mutationRunCommand = &command{
+	name:     "mutation run",
+	summary:  "mutate each function and run its tests: are the mutants killed?",
 	synopsis: "[options] [path ...]",
 	about: `
 Changes one operator, boolean, or 0/1 at a time inside each function and runs
@@ -51,22 +68,19 @@ uncovered.`,
 		opt("timeout-factor", floatFlag, "N", "10", "a mutant times out after N times the baseline duration, and at least 2s"),
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
-		sw("scan", "list mutation sites without running tests"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on each uncovered mutant, as on a survivor")),
 	json: `"files": [{"file", "killed", "survived", "uncovered", "ran", "reused",
    "baseline": "passed"|"failed", "mutants": [{"line", "column", "function",
    "original", "replacement", "outcome": "killed"|"survived"|"timeout"|"uncovered",
-   "reused"}], and with --since "judged": ["namespace#name"]}];
-   with --scan, "sites": [{"file", "line", "column", "function", "original",
-   "replacement"}]`,
+   "reused"}], and with --since "judged": ["namespace#name"]}]`,
 	rules: []string{
-		"mutate.survived         a mutant survived: file, line, column, function, original, replacement",
-		"mutate.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-		"mutate.baseline-failed  the tests fail before any mutant: file",
-		"since.bad-ref           --since names no commit: ref",
-		"since.no-git            --since outside a git repository",
-		"flags.conflict          --since with --changed: flag",
+		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
+		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
+		"mutation.baseline-failed  the tests fail before any mutant: file",
+		"since.bad-ref             --since names no commit: ref",
+		"since.no-git              --since outside a git repository",
+		"flags.conflict            --since with --changed: flag",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
@@ -75,11 +89,33 @@ uncovered.`,
 		{3, "--changed or --since outside a git repository"},
 	},
 	examples: []string{
-		"itos-cc mutate --changed",
-		"itos-cc mutate --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
-		"itos-cc mutate --all-tests --json                    # nightly",
+		"itos-cc mutation run --changed",
+		"itos-cc mutation run --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
+		"itos-cc mutation run --all-tests --json                    # nightly",
 	},
 	run: runMutate,
+}
+
+var mutationListCommand = &command{
+	name:     "mutation list",
+	summary:  "list the mutation sites without running tests",
+	synopsis: "[options] [path ...]",
+	about: `
+Lists each mutation site of the production sources chosen, the changes
+mutation run makes one at a time, without running any test, as
+"file:line:column ` + "`original` → `replacement`" + ` in namespace#name".`,
+	flags: append([]flagSpec{}, selectionFlags...),
+	json:  `"sites": [{"file", "line", "column", "function", "original", "replacement"}]`,
+	exits: []exitDoc{
+		{0, "success"},
+		{2, "a usage error: a bad flag or path"},
+		{3, "--changed outside a git repository"},
+	},
+	examples: []string{
+		"itos-cc mutation list src/billing/invoice.ts",
+		"itos-cc mutation list --changed --json",
+	},
+	run: runMutationList,
 }
 
 type mutateFile struct {
@@ -149,9 +185,6 @@ func runMutate(in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		return result, nil
 	}
-	if in.set("scan") {
-		return scanSites(in, files.Sources)
-	}
 	opt := mutate.Options{
 		Workers:       in.integer("workers"),
 		MutateAll:     in.set("mutate-all"),
@@ -190,8 +223,8 @@ func runMutate(in *invocation) (any, error) {
 			if !in.json {
 				fmt.Printf("%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, tail(r.BaselineOutput, 20))
 			}
-			in.report(fail(kindNo, "mutate.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
-				"Make its tests pass, then run mutate again.").with("file", r.Rel))
+			in.report(fail(kindNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
+				"Make its tests pass, then run mutation run again.").with("file", r.Rel))
 			continue
 		}
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
@@ -229,10 +262,10 @@ func runMutate(in *invocation) (any, error) {
 			for _, m := range u.Mutants {
 				switch {
 				case m.Outcome == mutate.Survived:
-					reportMutant(in, r.Rel, u, m, "mutate.survived", "survived", "survived",
+					reportMutant(in, r.Rel, u, m, "mutation.survived", "survived", "survived",
 						"Add a test that fails with this change.")
 				case m.Outcome == mutate.Uncovered && failUncovered:
-					reportMutant(in, r.Rel, u, m, "mutate.uncovered", "uncovered", "is uncovered: no test executes its line",
+					reportMutant(in, r.Rel, u, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
 						"Add a test that executes this line and fails with this change.")
 				}
 			}
@@ -281,18 +314,31 @@ func changedSince(in *invocation) (map[string]map[string]bool, error) {
 	return changed, err
 }
 
-func scanSites(in *invocation, sources []string) (any, error) {
-	sites := []mutateSite{}
-	for _, path := range sources {
+type mutationListResult struct {
+	Sites []mutateSite `json:"sites"`
+}
+
+// runMutationList lists the mutation sites of the chosen sources.
+func runMutationList(in *invocation) (any, error) {
+	result := mutationListResult{Sites: []mutateSite{}}
+	files, err := files(in)
+	if err != nil {
+		return result, err
+	}
+	if len(files.Sources) == 0 {
+		fmt.Fprintln(os.Stderr, "itos-cc: no source files to list")
+		return result, nil
+	}
+	for _, path := range files.Sources {
 		f, err := lang.ParseFile(path)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		for _, s := range mutate.Sites(f) {
 			u := f.Units[s.Unit]
 			site := mutateSite{File: project.Rel(path), Line: s.Line, Column: s.Column,
 				Function: u.Namespace + "#" + u.Name, Original: s.Original, Replacement: s.Replacement}
-			sites = append(sites, site)
+			result.Sites = append(result.Sites, site)
 			if !in.json {
 				fmt.Printf("%s:%d:%d %s → %s in %s\n", site.File, site.Line, site.Column,
 					quote(site.Original), quote(site.Replacement), site.Function)
@@ -300,9 +346,7 @@ func scanSites(in *invocation, sources []string) (any, error) {
 		}
 		f.Close()
 	}
-	return struct {
-		Sites []mutateSite `json:"sites"`
-	}{sites}, nil
+	return result, nil
 }
 
 func quote(s string) string {

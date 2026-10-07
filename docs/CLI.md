@@ -17,7 +17,8 @@ Scripts can rely on three things only, as with itos (its decision 35):
 
 All plain output is for people and can change in any release. A change to the
 contract is a breaking change, made in a major release with the others that
-are ready (rules 42 and 43).
+are ready (rules 42 and 43). Before 1.0 a breaking change is made in a minor
+release instead: itos-cc is at 0.x.
 
 ### Exit codes
 
@@ -46,7 +47,7 @@ included, prints the object too, with `"ok": false` and its problems:
 
 ```json
 {"schema": 1, "ok": false, "problems": [
-  {"rule": "mutate.survived", "message": "…", "fix": "…",
+  {"rule": "mutation.survived", "message": "…", "fix": "…",
    "file": "src/a.go", "line": 12, "column": 9, "function": "example.com/m/a#Pos",
    "original": ">", "replacement": ">="}
 ]}
@@ -64,23 +65,23 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `flags.value-invalid`        | 2    | every          | `flag`, `value`                                             |
 | `flags.switch-value`         | 2    | every          | `flag`                                                      |
 | `flags.repeated`             | 2    | every          | `flag`                                                      |
-| `flags.conflict`             | 2    | mutate         | `flag`                                                      |
-| `command.unknown`            | 2    | itos-cc        | `command`                                                   |
-| `command.missing`            | 2    | itos-cc --json | none                                                        |
+| `flags.conflict`             | 2    | mutation run   | `flag`                                                      |
+| `command.unknown`            | 2    | itos-cc, mutation | `command`                                                |
+| `command.missing`            | 2    | itos-cc --json, mutation --json | none                                       |
 | `args.unexpected`            | 2    | version, help  | `argument`                                                  |
-| `paths.unmatched`            | 2    | crap, dry, mutate, scrap, units | `argument`                                 |
-| `changed.no-git`             | 3    | crap, dry, mutate, scrap, units | none                                       |
-| `since.bad-ref`              | 2    | mutate         | `ref`                                                       |
-| `since.no-git`               | 3    | mutate         | none                                                        |
-| `coverage.command-needs-report` | 2 | crap, mutate   | none                                                        |
+| `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, scrap, units | `argument`            |
+| `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, scrap, units | none                  |
+| `since.bad-ref`              | 2    | mutation run   | `ref`                                                       |
+| `since.no-git`               | 3    | mutation run   | none                                                        |
+| `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |
 | `coverage.no-report`         | 3    | crap --threshold | `dir`, `language`                                         |
 | `coverage.report-unreadable` | 2    | crap --threshold | `report`                                                  |
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
-| `mutate.survived`            | 1    | mutate         | `file`, `line`, `column`, `function`, `original`, `replacement` |
-| `mutate.uncovered`           | 1    | mutate --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
-| `mutate.baseline-failed`     | 1    | mutate         | `file`                                                      |
+| `mutation.survived`          | 1    | mutation run   | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutation.uncovered`         | 1    | mutation run --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutation.baseline-failed`   | 1    | mutation run   | `file`                                                      |
 | `serve.repo-unreadable`      | 2    | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
 | `internal`                   | 70   | every          | none                                                        |
@@ -93,19 +94,19 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |
 | 2 | Lowercase subcommands with dashes | Follows. |
-| 3, 4 | Groups are singular nouns, actions imperative verbs | No groups: each command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`mutate`, `serve`). |
+| 3, 4 | Groups are singular nouns, actions imperative verbs | Follows. One group, `mutation`, a singular noun whose actions are verbs: `mutation run`, `mutation list`. Every other command is named for what it measures (`crap`, `dry`, `scrap`, `units`) or does (`serve`). |
 | 5 | No two commands with similar names | Does not follow: `crap` and `scrap`. |
 | 6 | No everyday verb that points at another command | Follows. |
-| 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone prints help; an unknown command names the one meant. |
-| 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position. |
+| 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone and `itos-cc mutation` alone print help; an unknown command names the one meant. |
+| 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position; for the group, `mutation`, `mutation -h`, `help mutation run`, `mutation run --help`. |
 | 10 | Help gives the `--json` shape and exit codes | Follows, with each command's problem rules. |
 | 11 | `--version` and `version` print `itos-cc <version>` first | Follows. |
-| 12 | Unknown command exits 2 and names a guess | Follows. |
-| 13 | A group with no subcommand names them | No groups. |
+| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run` and `list`. |
+| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run` and `list`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
 | 14 | Help ends with examples and the issues address | Follows. |
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
-| 18 | A flag changes an action, never selects another | Does not follow: `mutate --scan`. |
+| 18 | A flag changes an action, never selects another | Follows. |
 | 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows: every command reads its flags from one declared spec (`cmd/itos-cc/cli.go`). |
 | 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin or writes a file. |
 | 24 | Flags in any position | Follows. |
@@ -121,9 +122,9 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables or config of its own. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | None yet; the mutate exceptions of issue #10 would be one. |
+| 38 | Project settings in a file under version control | None yet; the mutation exceptions of issue #10 would be one. |
 | 39–41 | Entry points for other programs | None. |
-| 42, 43 | Breaking changes together in a major release, no compatibility code | Follows. |
+| 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 
 ## Where itos-cc does not follow these rules yet
 
@@ -131,5 +132,4 @@ Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 | ---- | --------------------- | ------- |
 | 5 | Two commands with names a letter apart. | `crap`, `scrap` |
 | 17 | `--threshold` is a CRAP score in `crap` and a similarity in `dry`. | `crap --threshold 30`, `dry --threshold 0.9` |
-| 18 | A flag selects a different action: list the sites instead of mutating. | `mutate --scan` |
 | 32 | An internal error's message is Go's error text. | a source file that cannot be read |

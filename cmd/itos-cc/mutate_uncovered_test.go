@@ -17,13 +17,13 @@ import (
 // The one mutant of Board#clear: `<` → `<=` at src/board.go:11:11.
 const clearLine, clearColumn = 11, 11
 
-// mutateCovered runs itos-cc mutate with args and coverage measured, no
+// mutateCovered runs itos-cc mutation run with args and coverage measured, no
 // source file annotated, and returns what it printed.
 func mutateCovered(t *testing.T, args ...string) outcome {
 	t.Helper()
 	var o outcome
 	o.stdout, o.stderr = captured(t, func() {
-		o.code = run(append([]string{"mutate", "--no-annotate", "--workers", "1"}, args...))
+		o.code = run(append([]string{"mutation", "run", "--no-annotate", "--workers", "1"}, args...))
 	})
 	return o
 }
@@ -62,7 +62,7 @@ func TestAFileTheTestsNeverLoadFailsWhole(t *testing.T) {
 	boardRepo(t, map[string]string{
 		"src/unused/unused.go": "package unused\n\nfunc Half(i int) bool {\n\treturn i > 2\n}\n\nfunc Zero(i int) bool {\n\treturn i == 0\n}\n",
 	})
-	sites := mutateRun(t, "--scan", "--json", unused).stdout
+	sites := cli(t, "mutation", "list", "--json", unused).stdout
 	var scan struct {
 		Sites []mutateSite `json:"sites"`
 	}
@@ -119,11 +119,11 @@ func TestUncoveredMutantsAsJSON(t *testing.T) {
 
 	o := mutateCovered(t, "--fail-uncovered", "--json", boardSource)
 	m := o.json(t)
-	p := m.problem("mutate.uncovered")
+	p := m.problem("mutation.uncovered")
 	want := map[string]any{"file": boardSource, "line": float64(clearLine), "column": float64(clearColumn),
 		"function": clearID, "original": "<", "replacement": "<="}
 	if p == nil {
-		t.Fatalf("no mutate.uncovered problem in:\n%s", o.stdout)
+		t.Fatalf("no mutation.uncovered problem in:\n%s", o.stdout)
 	}
 	for k, v := range want {
 		if p[k] != v {
@@ -144,10 +144,10 @@ func TestNothingIsUncoveredWhenCoverageIsSkipped(t *testing.T) {
 	if len(m.Files) != 1 || m.Files[0].Ran != 2 || m.Files[0].Uncovered != 0 {
 		t.Errorf("files %+v, want both mutants run and none uncovered\n%s", m.Files, o.stdout)
 	}
-	if p := m.problem("mutate.uncovered"); p != nil {
+	if p := m.problem("mutation.uncovered"); p != nil {
 		t.Errorf("problem %v, want none uncovered with --no-coverage", p)
 	}
-	if p := m.problem("mutate.survived"); p == nil || p["function"] != clearID {
+	if p := m.problem("mutation.survived"); p == nil || p["function"] != clearID {
 		t.Errorf("problems %v, want clear's mutant run and survived", m.Problems)
 	}
 }

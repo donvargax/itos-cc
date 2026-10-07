@@ -3,9 +3,9 @@ name: Nightly
 # Mutation testing over the whole suite, too slow for every push. Killed
 # mutants are cached in .metrics/mutate/, which is committed back to main so
 # the next night, and everyone's local runs, reuse the kills of unchanged
-# functions instead of starting over. itos-cc mutate exits 1 when any mutant
-# survives, which is most nights: the job then ends red, and the results are
-# committed anyway.
+# functions instead of starting over. itos-cc mutation run exits 1 when any
+# mutant survives, which is most nights: the job then ends red, and the
+# results are committed anyway.
 on:
   schedule:
     - cron: "0 9 * * *" # 09:00 UTC, 2am Pacific
@@ -53,7 +53,7 @@ jobs:
       # Fails the job as it exits. --no-annotate: no committed source carries
       # the summary comment, and the job must not rewrite the sources.
       - name: Mutate
-        run: '"$RUNNER_TEMP/itos-cc" mutate --all-tests --no-annotate'
+        run: '"$RUNNER_TEMP/itos-cc" mutation run --all-tests --no-annotate'
 
       # Runs whether Mutate passed or failed, so a night with survivors still
       # stores its kills. Its own success never turns the job green.
@@ -76,7 +76,7 @@ jobs:
           cat > "$RUNNER_TEMP/message" <<EOF
           chore: record the nightly mutation results
 
-          The nightly run of itos-cc mutate --all-tests updated .metrics/mutate/.
+          The nightly run of itos-cc mutation run --all-tests updated .metrics/mutate/.
           Committing it lets the next run, and local runs, reuse the kills of
           functions that have not changed instead of starting over. It is
           committed whether or not mutants survived; the run says which:

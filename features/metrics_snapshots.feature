@@ -9,11 +9,11 @@ Feature: Snapshots under .metrics
     Then <snapshot> is written
 
     Examples:
-      | command | snapshot                         |
-      | crap    | .metrics/crap.json               |
-      | dry     | .metrics/dry.json                |
-      | scrap   | .metrics/scrap.json              |
-      | mutate  | .metrics/mutate/SOURCE_PATH.json |
+      | command      | snapshot                         |
+      | crap         | .metrics/crap.json               |
+      | dry          | .metrics/dry.json                |
+      | scrap        | .metrics/scrap.json              |
+      | mutation run | .metrics/mutate/SOURCE_PATH.json |
 
   @ID-SNAP-02
   Scenario: An unchanged result is an unchanged file
@@ -40,7 +40,7 @@ Feature: Snapshots under .metrics
 
   @ID-SNAP-06
   Scenario: Runs at the same time keep their coverage apart
-    Given an agent runs "itos-cc mutate" while a commit hook runs "itos-cc crap"
+    Given an agent runs "itos-cc mutation run" while a commit hook runs "itos-cc crap"
     When both run coverage
     Then each writes its reports to a run-* directory of its own under .metrics/coverage/
     And each reads only its own

@@ -1,6 +1,6 @@
 Feature: Units: the functions and methods every tool measures
   Every tool works on the same units, named by namespace and function name,
-  so results from crap, dry, mutate, and the graph join on the same key.
+  so results from crap, dry, mutation run, and the graph join on the same key.
 
   @ID-UNIT-01
   Scenario: Listing production units

@@ -1,5 +1,5 @@
 Feature: Coverage
-  crap and mutate need to know which lines and branches the tests execute. itos-cc runs
+  crap and mutation run need to know which lines and branches the tests execute. itos-cc runs
   each language's own coverage tools per build root, or reads reports the
   user already has, and matches each report entry to a source file on disk.
 
@@ -20,10 +20,10 @@ Feature: Coverage
       Then coverage runs vitest related --run src/board.ts, or jest --findRelatedTests src/board.ts
 
     @ID-COV-03
-    Scenario: mutate measures a Go file by its own package's tests
-      When I run "itos-cc mutate a/a.go"
+    Scenario: mutation run measures a Go file by its own package's tests
+      When I run "itos-cc mutation run a/a.go"
       Then coverage runs "go test ... -coverprofile=... example.com/m/a", without -coverpkg
-      # the tests mutate kills a/a.go's mutants with; see mutate
+      # the tests mutation run kills a/a.go's mutants with; see mutate.feature
 
     @ID-COV-04
     Scenario Outline: The whole suite
@@ -31,10 +31,10 @@ Feature: Coverage
       Then coverage runs the whole suite of each build root
 
       Examples:
-        | command                    |
-        | crap                       |
-        | crap --all-tests a/a.go    |
-        | mutate --all-tests a/a.go  |
+        | command                         |
+        | crap                            |
+        | crap --all-tests a/a.go         |
+        | mutation run --all-tests a/a.go |
       # Python, Kotlin, a coverage script, and c8 always run the whole suite
 
   Rule: Each build root gets the language's own coverage command

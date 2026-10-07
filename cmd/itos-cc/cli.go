@@ -115,6 +115,10 @@ type command struct {
 	rules    []string  // the problem rules it reports, "rule: meaning"
 	examples []string
 	run      func(*invocation) (any, error)
+	// subs makes the command a group, a noun whose subcommands are the
+	// actions: mutation run, mutation list. A group has no run of its own;
+	// alone it prints its help.
+	subs []*command
 }
 
 type exitDoc struct {
@@ -405,7 +409,9 @@ func writeFlags(w io.Writer, flags []flagSpec) {
 }
 
 // closest is the candidate nearest to word, or "" when none is near enough
-// to be what was meant.
+// to be what was meant. A word that only ends differently, such as mutate
+// for mutation, is near: all but its last letter, four letters at least,
+// begin exactly one candidate.
 func closest(word string, candidates []string) string {
 	best, bestDist := "", 3
 	for _, c := range candidates {
@@ -413,7 +419,32 @@ func closest(word string, candidates []string) string {
 			best, bestDist = c, d
 		}
 	}
+	if best != "" || len(word) < 5 {
+		return best
+	}
+	stem := word[:len(word)-1]
+	for _, c := range candidates {
+		if strings.HasPrefix(c, stem) {
+			if best != "" {
+				return ""
+			}
+			best = c
+		}
+	}
 	return best
+}
+
+// andList joins words as "a", "a and b", or "a, b, and c".
+func andList(words []string) string {
+	switch len(words) {
+	case 0:
+		return ""
+	case 1:
+		return words[0]
+	case 2:
+		return words[0] + " and " + words[1]
+	}
+	return strings.Join(words[:len(words)-1], ", ") + ", and " + words[len(words)-1]
 }
 
 // distance is the Levenshtein distance between a and b.
@@ -444,4 +475,58 @@ func sortedNames(m map[string]*command) []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+// sub is the group's subcommand named name, or nil.
+func (c *command) sub(name string) *command {
+	for _, s := range c.subs {
+		if s.verb() == name {
+			return s
+		}
+	}
+	return nil
+}
+
+// verb is a subcommand's own name: run for "mutation run".
+func (c *command) verb() string {
+	return c.name[strings.LastIndex(c.name, " ")+1:]
+}
+
+func (c *command) subNames() []string {
+	var names []string
+	for _, s := range c.subs {
+		names = append(names, s.verb())
+	}
+	return names
+}
+
+// groupHelp is a group's help: its usage, what it is for, its subcommands,
+// and where each one's contract is.
+func (c *command) groupHelp() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "usage: itos-cc %s <subcommand> [options] [path ...]\n\n%s\n\nSubcommands:\n", c.name, strings.TrimSpace(c.about))
+	for _, s := range c.subs {
+		fmt.Fprintf(&b, "  %-6s %s\n", s.verb(), s.summary)
+	}
+	fmt.Fprintf(&b, `
+Run 'itos-cc %[1]s <subcommand> --help', or 'itos-cc help %[1]s <subcommand>',
+for a subcommand's options, --json output, problem rules, and exit codes.
+
+Output with --json and no subcommand, one object on stdout:
+  {"schema": 1, "ok": false, "problems": [{"rule": "command.missing", …}]}
+
+Problem rules:
+  command.unknown  no subcommand by that name: command
+  command.missing  --json with no subcommand
+
+Exit codes:
+  0   help printed
+  2   a usage error: an unknown subcommand or flag, or --json with no subcommand
+`, c.name)
+	b.WriteString("\nExamples:\n")
+	for _, e := range c.examples {
+		fmt.Fprintf(&b, "  %s\n", e)
+	}
+	fmt.Fprintf(&b, "\nReport issues at %s\n", issues)
+	return b.String()
 }

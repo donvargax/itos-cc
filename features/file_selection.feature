@@ -88,7 +88,7 @@ Feature: Choosing which files a command looks at
     When the project's files are discovered
     Then its files are <selected>
     # build, dist, target, out, and coverage are build output names, and
-    # also ordinary package names; mutate copies the same directories
+    # also ordinary package names; mutation run copies the same directories
 
     Examples:
       | directory                                   | selected     |

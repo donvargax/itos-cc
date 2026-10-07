@@ -16,7 +16,7 @@ and what has not been verified.
 | --- | --- |
 | `itos-cc crap` | Which functions are complex *and* under-tested? |
 | `itos-cc dry` | Which functions are the same code with the names changed? |
-| `itos-cc mutate` | Would the tests notice if this code were wrong? |
+| `itos-cc mutation run` | Would the tests notice if this code were wrong? |
 | `itos-cc scrap` | Which test files should an agent leave alone, table-drive, refactor, or split? |
 | `itos-cc units` | What functions and methods do the tools see? |
 | `itos-cc serve` | Live architecture graph for the viewer: what depends on what, and where is it risky? |
@@ -105,7 +105,7 @@ them.
 itos-cc crap --top 20             # runs the tests with coverage first
 itos-cc crap --use-existing-coverage
 itos-cc dry --changed             # changed files against the whole project
-itos-cc mutate src/billing/invoice.ts
+itos-cc mutation run src/billing/invoice.ts
 itos-cc scrap --verbose
 ```
 
@@ -147,11 +147,13 @@ names, operators, and the tree's shape stay. Functions are compared by the
 Jaccard similarity of their subtree fingerprints. The default threshold is
 0.82.
 
-### mutate
+### mutation
 
-Swaps operators (`<`/`<=`, `==`/`!=`, `&&`/`||`, `+`/`-`, …), deletes `!` and
-unary `-`, and flips `true`/`false` and `0`/`1`, one at a time, inside
-functions only. What keeps it fast:
+`mutation run` swaps operators (`<`/`<=`, `==`/`!=`, `&&`/`||`, `+`/`-`, …),
+deletes `!` and unary `-`, and flips `true`/`false` and `0`/`1`, one at a
+time, inside functions only, and runs the tests against each change.
+`mutation list` lists those changes, the mutation sites, without running any
+test. What keeps `mutation run` fast:
 
 - **Differential runs.** Each function's source is hashed. Killed mutants of
   unchanged functions stay killed; survivors and changed functions rerun.
@@ -172,10 +174,11 @@ add `--no-coverage` to let them reach code nothing else covers. It is slow;
 run it nightly rather than on every change:
 
 ```bash
-itos-cc mutate --changed                             # while working: own tests, fast
-itos-cc mutate --since origin/main --fail-uncovered  # a gate: the functions the branch's commits changed
-itos-cc mutate --all-tests                           # nightly, e.g. a scheduled CI job
-itos-cc mutate --all-tests --no-coverage             # nightly, with end-to-end tests that run the binary
+itos-cc mutation run --changed                             # while working: own tests, fast
+itos-cc mutation run --since origin/main --fail-uncovered  # a gate: the functions the branch's commits changed
+itos-cc mutation run --all-tests                           # nightly, e.g. a scheduled CI job
+itos-cc mutation run --all-tests --no-coverage             # nightly, with end-to-end tests that run the binary
+itos-cc mutation list src/billing                          # the mutation sites, without running tests
 ```
 
 `--since <ref>` judges only the functions the commits since `<ref>`
@@ -188,7 +191,7 @@ file's `judged`.
 
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a
-`mutate.uncovered` problem in `--json`, and exit 1. With `--since`, only the
+`mutation.uncovered` problem in `--json`, and exit 1. With `--since`, only the
 judged functions' uncovered mutants count. With `--no-coverage`, or where
 coverage measured nothing for the language, every mutant runs and none is
 uncovered.
@@ -198,7 +201,7 @@ runs reuse the night's kills for code that has not changed. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),
-runs `itos-cc mutate --all-tests --no-annotate` at 09:00 UTC and commits
+runs `itos-cc mutation run --all-tests --no-annotate` at 09:00 UTC and commits
 `.metrics/mutate/` back even on nights when a mutant survives and the job
 fails; copy it as a starting point. Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
@@ -207,7 +210,7 @@ Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
 the end of each source file (`--no-annotate` turns it off). A surviving
 mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
 any mutant, exits 1. `--json` lists each file's `mutants` in site order,
-each with the keys `--scan` gives a site, its `outcome` (`killed`,
+each with the keys `mutation list` gives a site, its `outcome` (`killed`,
 `survived`, `timeout`, which counts as killed, or `uncovered`), and `reused`,
 true when the outcome came from the snapshot without running; with
 `--since`, only the judged functions' mutants, and none for a file whose
@@ -265,7 +268,7 @@ cd viewer && npm install && npm run dev # viewer on http://localhost:5173
   `extends`, and Vite-style `references`) resolve to project files.
 - Saving a file updates complexity, dependencies, and CRAP (live complexity
   with the last measured coverage) within a second. Rerunning `crap`,
-  `mutate`, or `dry` updates their numbers. Functions edited since their last
+  `mutation run`, or `dry` updates their numbers. Functions edited since their last
   mutation run are marked stale.
 - Click a box for its functions, a function for its source, an arrow for the
   imports behind it. Double-click or Enter opens a box; Esc goes up.

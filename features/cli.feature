@@ -11,7 +11,7 @@ Feature: Command line
     Scenario Outline: Asking for help prints it and succeeds
       When I run "itos-cc <args>"
       Then the usage text is printed to stdout
-      And it lists the commands crap, dry, mutate, scrap, serve, units, and version
+      And it lists the commands crap, dry, mutation, scrap, serve, units, and version
       And the exit code is 0
 
       Examples:
@@ -29,12 +29,12 @@ Feature: Command line
       And the exit code is 0
 
       Examples:
-        | args                  |
-        | crap -h               |
-        | crap --help           |
-        | help crap             |
-        | mutate src/a.go -h    |
-        | units --changed --help |
+        | args                     |
+        | crap -h                  |
+        | crap --help              |
+        | help crap                |
+        | mutation run src/a.go -h |
+        | units --changed --help   |
 
     @ID-CLI-03
     Scenario Outline: Reporting the version
@@ -152,38 +152,38 @@ Feature: Command line
   # is its own item.
   Rule: The mutation group
 
-    @wip @mutation-group @ID-CLI-12
+    @mutation-group @ID-CLI-12
     Scenario: The group alone names its subcommands
       When I run "itos-cc mutation"
       Then stdout names the subcommands run and list
       And the exit code is 0
 
-    @wip @mutation-group @ID-CLI-13
+    @mutation-group @ID-CLI-13
     Scenario: mutation run mutates
       When I run "itos-cc mutation run src/board.ts"
       Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
       And each survivor is a "mutation.survived" problem
 
-    @wip @mutation-group @ID-CLI-14
+    @mutation-group @ID-CLI-14
     Scenario: mutation list lists the sites without running tests
       When I run "itos-cc mutation list x.ts"
       Then stdout lists each mutation site of x.ts with its line, column, function, original, and replacement
       And no test command runs
 
-    @wip @mutation-group @ID-CLI-15
+    @mutation-group @ID-CLI-15
     Scenario: mutate is no longer a command
       When I run "itos-cc mutate src/board.ts"
       Then stderr says "itos-cc: there is no command \"mutate\". Did you mean 'mutation'? Run 'itos-cc --help' for the commands."
       And the exit code is 2
 
-    @wip @mutation-group @ID-CLI-16
+    @mutation-group @ID-CLI-16
     Scenario: An unknown subcommand of the group is a usage error
       When I run "itos-cc mutation nosuch"
       Then the problem is "command.unknown"
       And stderr names the subcommands run and list
       And the exit code is 2
 
-    @wip @mutation-group @ID-CLI-17
+    @mutation-group @ID-CLI-17
     Scenario: --scan is not a flag of mutation run
       When I run "itos-cc mutation run --scan x.ts"
       Then the problem is "flags.unknown", with flag "--scan"

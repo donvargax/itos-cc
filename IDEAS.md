@@ -83,7 +83,7 @@ all-or-nothing. Planned, in this order:
 - **Exit codes and JSON as itos extensions use them.** Done (issues #12 and
   #13): itos's contract and CLI rules, in [docs/CLI.md](docs/CLI.md). A
   baseline that fails is 1, not 3: the code is broken, not the machine.
-  Detail goes in rule IDs (`mutate.survived`, `crap.threshold`), which any
+  Detail goes in rule IDs (`mutation.survived`, `crap.threshold`), which any
   extension can add; exit codes only say what the caller should do.
 - **One finding shape and SARIF**, once there is a gate:
   `{tool, rule, file, symbol, range, value, introduced}`, where `introduced`
