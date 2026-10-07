@@ -298,7 +298,7 @@ Feature: Mutation testing
   # change of the lines either side of it. Paths are relative to the working
   # directory, so from a subdirectory only the changes under it count.
   # Uncovered mutants failing (#9 part 2) and each mutant in --json (#9
-  # part 3) are separate items. Decided with the person on 2026-10-07:
+  # part 3) are separate items. Decided with the person on 2026-10-06:
   # --since refuses --changed, paths narrow the range, and the functions
   # judged are counted in the summary and named in --json. The started code
   # (mutate.Options.Judge, project.ChangedSince) follows these already.
