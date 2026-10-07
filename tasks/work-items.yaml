@@ -193,7 +193,7 @@ items:
       fixture.
     refs: ["#9"]
   - id: mutate-scan-line-order
-    title: mutate --scan lists sites in line order
+    title: mutation list lists sites function by function, mutation run --json in line order
     phase: 1
     owner: null
     status: todo
