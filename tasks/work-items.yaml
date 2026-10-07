@@ -163,7 +163,7 @@ items:
     title: "A file no test loads, mutated alone, is uncovered, not unmeasured"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
