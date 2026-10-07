@@ -569,14 +569,9 @@ items:
     title: Each selection of listed tests has its own baseline and timeout
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [listed-tests]
     kind: slice
-    why: >
-      Was listed-timeout.
-      Found by a side agent before v0.5.0: listed-tests timed every listed run from one run of all
-      listed tests (about 30 minutes for a hanging mutant on itos), and only proved them passing
-      together.
     refs: ["#14"]
   - id: listed-selection-baseline-cost
     title: The baselines of listed selections cost fewer runs
