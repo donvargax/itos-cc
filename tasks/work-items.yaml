@@ -326,3 +326,16 @@ items:
       cached kill flips with no code or test change and mutation check and the planned sample mode
       cannot trust it. A run that re-runs a cached kill with the same function and tests hashes and
       gets another outcome reports it as flaky rather than trusting either outcome.
+  - id: property-tests
+    title: Seeded property-based tests where only the whole suite kills mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A property test imports the code it tests, so its kills are tracked by the tests' hash, unlike
+      an end-to-end test's, and random inputs hit the boundaries mutants live on (> against >=, off
+      by one). The first nightly left four survivors in crap.Score on *, 1 and -. Seeds are fixed so
+      outcomes are reproducible under mutation (fast-check, Hypothesis and rapid take a seed; go
+      test runs only a fuzz target's committed corpus).
