@@ -52,3 +52,54 @@ Feature: Snapshots under .metrics
     Given a run-* directory left by a run that was killed a day or more ago
     When coverage is run
     Then that directory is deleted
+
+  # .metrics/ was relative to the working directory, and each snapshot named
+  # its files from there, so where a command ran decided where its results
+  # landed and what they were called: a run from src/ wrote src/.metrics/,
+  # which check from the root never read, and the graph matched snapshots by
+  # path suffix to paper over it (ID-GRAPH-26). Decided with the person on
+  # 2026-10-07 (q-16): every command keeps .metrics/ at the project root,
+  # and every path a snapshot records is relative to the root. The root is
+  # the git top level of the working directory; outside a git repository it
+  # is the working directory, as before (the coordinator's call). Paths on
+  # the command line, file selection (ID-MUT-41) and the paths stdout and
+  # --json print stay relative to the working directory. A .metrics/ left
+  # in a subdirectory by an earlier version is no longer read or written.
+  @wip @snapshots-at-root @ID-SNAP-08
+  Scenario: Snapshots live at the project root, wherever a command runs
+    Given a git repository with src/board.go and its tests
+    When I run "itos-cc mutation run board.go" from src/
+    Then the snapshot is .metrics/mutate/src/board.go.json at the repository's root, and it names the file "src/board.go"
+    And no .metrics directory is created under src/
+
+  @wip @snapshots-at-root @ID-SNAP-09
+  Scenario Outline: Every command's snapshot names files from the root
+    Given a git repository with src/board.go and its tests
+    When I run "itos-cc <command>" from src/
+    Then <snapshot> at the repository's root names src/board.go as "src/board.go"
+
+    Examples:
+      | command | snapshot           |
+      | crap    | .metrics/crap.json |
+      | dry     | .metrics/dry.json  |
+      | scrap   | .metrics/scrap.json |
+
+  @wip @snapshots-at-root @ID-SNAP-10
+  Scenario: A command finds the same results from any directory
+    Given a run from the repository's root recorded every mutant of src/board.go killed
+    When I run "itos-cc mutation check board.go" from src/
+    Then the exit code is 0
+    And "itos-cc mutation check src/board.go" from the root exits 0 too
+
+  @wip @snapshots-at-root @ID-SNAP-11
+  Scenario: Paths on the command line and in output stay relative to the working directory
+    Given a git repository with src/board.go and its tests
+    When I run "itos-cc mutation run --json board.go" from src/
+    Then stdout's summary names the file "board.go"
+    And the file in "files" is "board.go"
+
+  @wip @snapshots-at-root @ID-SNAP-12
+  Scenario: Outside a git repository the working directory is the root
+    Given a directory with board.go that is in no git repository
+    When I run "itos-cc crap" there
+    Then .metrics/crap.json is written in that directory, naming the file "board.go"
