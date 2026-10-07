@@ -708,7 +708,7 @@ Feature: Mutation testing
     # recorded was lost. Decided with the person on 2026-10-07 (q-14): it
     # keeps those entries, marked stale, so check calls them stale and their
     # outcomes are kept until a run judges them again.
-    @wip @since-keeps-stale-entries @ID-MUT-108
+    @since-keeps-stale-entries @ID-MUT-108
     Scenario: --since keeps the entries it does not judge, marked stale, when their tests changed
       Given fresh results for "Board#place" and "Board#clear", with a survivor recorded in "Board#clear"
       And a commit after "base" changed "Board#place" and src/board.test.ts

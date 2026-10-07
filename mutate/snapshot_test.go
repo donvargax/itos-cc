@@ -80,7 +80,7 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 			t.Errorf("%s: %d sites but %d mutants: a skipped site was counted", u.Name, u.Sites, len(u.Mutants))
 		}
 	}
-	units := keepUnjudged(built.Units, map[string]bool{after.Units[0].Namespace + "#a": true}, &snap)
+	units := keepUnjudged(built.Units, map[string]bool{after.Units[0].Namespace + "#a": true}, &snap, true)
 	var names []string
 	for _, u := range units {
 		names = append(names, u.Name)
@@ -95,7 +95,7 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 	// b changes too: its record is kept as it was, old hash and all.
 	changed := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x <= 1\n")
 	built = build(changed, "x.py", nil, Sites(changed), byUnit(changed, map[string]string{"a": Killed}))
-	units = keepUnjudged(built.Units, map[string]bool{changed.Units[0].Namespace + "#a": true}, &snap)
+	units = keepUnjudged(built.Units, map[string]bool{changed.Units[0].Namespace + "#a": true}, &snap, true)
 	if len(units) != 2 || !reflect.DeepEqual(units[1], recorded["b"]) {
 		t.Errorf("b: %+v, want it as recorded: %+v", units[1], recorded["b"])
 	}
@@ -140,5 +140,31 @@ func TestResultsHoldOnlyWhileTheirTestsDo(t *testing.T) {
 	}
 	if empty := build(f, "x.py", nil, Sites(f), []string{Killed, Killed}); empty.Tests == nil {
 		t.Error("a file no test imports records nil tests, want an empty map: nil reads as written before tests were recorded")
+	}
+}
+
+func TestAnEntryKeptUnderOtherTestsIsMarkedStaleAndNeverReused(t *testing.T) {
+	f := parse(t, "x.py", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x < 1\n")
+	snap := build(f, "x.py", nil, Sites(f), byUnit(f, map[string]string{"a": Killed, "b": Killed}))
+	judged := map[string]bool{f.Units[0].Namespace + "#a": true}
+	built := build(f, "x.py", nil, Sites(f), byUnit(f, map[string]string{"a": Killed}))
+
+	// The tests changed: b, not judged, keeps its entry, marked.
+	units := keepUnjudged(built.Units, judged, &snap, false)
+	if len(units) != 2 || units[0].Stale || !units[1].Stale || units[1].Killed == 0 {
+		t.Fatalf("units %+v, want a as judged and b as recorded, marked stale", units)
+	}
+	// A marked entry is not reused, and stays marked while not judged.
+	snap.Units = units
+	if prev := remembered(&snap, f); len(prev[f.Units[1].Namespace+"#b"]) != 0 || len(prev[f.Units[0].Namespace+"#a"]) == 0 {
+		t.Errorf("remembered %v, want a's kill and nothing of b", prev)
+	}
+	if units := keepUnjudged(built.Units, judged, &snap, true); len(units) != 2 || !units[1].Stale {
+		t.Errorf("units %+v, want b still marked stale", units)
+	}
+	// The tests held: b is kept as it is, unmarked.
+	snap = build(f, "x.py", nil, Sites(f), byUnit(f, map[string]string{"a": Killed, "b": Killed}))
+	if units := keepUnjudged(built.Units, judged, &snap, true); len(units) != 2 || units[1].Stale {
+		t.Errorf("units %+v, want b unmarked: its tests did not change", units)
 	}
 }

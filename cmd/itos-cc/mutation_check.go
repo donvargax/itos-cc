@@ -28,7 +28,9 @@ with --fail-uncovered on each uncovered mutant it records. A function with no
 mutation site needs no entry. The snapshot also records the hash of each test
 file that imports its file: when one was added, changed, or removed since,
 every function of the file is stale, as it is when the snapshot predates
-recording tests.
+recording tests. A run with --since that finds them changed keeps the
+entries of the functions it does not judge marked stale, until a run judges
+them again.
 
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing.
 An exception that no longer holds fails as mutation.exception-stale, as in
@@ -154,12 +156,15 @@ func runMutationCheck(in *invocation) (any, error) {
 }
 
 // staleBecause says why a stale function's results no longer hold: the
-// function changed, or the tests that import its file did, named, or it has
+// function changed, or the tests that import its file did, named, or did
+// before a run that did not judge it kept its entry marked stale, or it has
 // sites they never recorded, each named as "<line>:<column> `original` →
 // `replacement`".
 func staleBecause(fn mutate.FunctionCheck) string {
 	tests := fn.Tests
 	switch {
+	case fn.Marked:
+		return "has mutation results from before the tests that import its file changed, kept by a mutation run that did not judge it"
 	case len(fn.Unrecorded) > 0:
 		var sites []string
 		for _, s := range fn.Unrecorded {

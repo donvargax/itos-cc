@@ -97,6 +97,7 @@ type fileState struct {
 	command  Command
 	result   *FileResult
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
+	stored   *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
 	tests    map[string]string // the tests that import the file, as the snapshot records them
 	judged   map[string]bool   // by namespace#name, or nil when every function is
 	excepted fileExceptions    // the exceptions of the functions judged
@@ -140,7 +141,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 			s.result.Mutants = s.decided()
 			s.result.Snapshot = build(s.file, s.rel, s.tests, s.sites, s.outcomes)
 			if s.judged != nil {
-				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
+				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			}
 			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 			if s.judged != nil && len(s.judged) == 0 {
@@ -240,7 +241,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if s.tests, err = TestHashes(tests); err != nil {
 			return states, err
 		}
-		s.previous = usable(snap, s.tests)
+		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev := remembered(s.previous, f)
 		s.result.Functions = len(f.Units)
 		if opt.Judge != nil {

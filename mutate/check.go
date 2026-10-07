@@ -37,6 +37,10 @@ type FunctionCheck struct {
 	// Tests is how the tests that import the file changed since the
 	// snapshot, when that alone makes the function Stale; nil otherwise.
 	Tests *TestChange
+	// Marked is true when the function is Stale because Entry is marked
+	// Stale: a run that did not judge it kept it after the tests that
+	// import the file changed.
+	Marked bool
 	// Mutants is what Entry records when Fresh, in site order, each at its
 	// site's line and column now, a survivor itos-cc.yaml excepts with its
 	// reason; nil otherwise.
@@ -139,6 +143,10 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 		for _, e := range entries {
 			if e.Hash == hash && changed != nil {
 				c.State, c.Entry, c.Tests = Stale, e, changed
+				break
+			}
+			if e.Hash == hash && e.Stale {
+				c.State, c.Entry, c.Marked = Stale, e, true
 				break
 			}
 			if e.Hash == hash {

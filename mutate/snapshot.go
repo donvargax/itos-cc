@@ -49,6 +49,13 @@ type UnitResult struct {
 	Uncovered int      `json:"uncovered"`
 	Sites     int      `json:"sites"`
 	Mutants   []Mutant `json:"mutants"`
+	// Stale marks an entry decided under tests other than those the
+	// snapshot records: a run that did not judge the function kept it,
+	// outcomes and survivors included, after the tests that import the file
+	// changed. It is never reused, and mutation check calls it stale, until
+	// a run judges the function again. Left out of the file when false, so
+	// every snapshot without such an entry reads and is written as before.
+	Stale bool `json:"stale,omitempty"`
 }
 
 // Mutant is one site's outcome.
@@ -168,8 +175,8 @@ type previous map[string]map[string]string
 func unitID(namespace, name string) string { return namespace + "#" + name }
 
 // remembered returns the outcomes a run may keep: those of units whose hash
-// is unchanged. s holds only while the tests that import f are those it
-// recorded; see usable.
+// is unchanged and whose entry is not marked Stale. s holds only while the
+// tests that import f are those it recorded; see usable.
 func remembered(s *Snapshot, f *lang.File) previous {
 	prev := previous{}
 	if s == nil {
@@ -181,7 +188,7 @@ func remembered(s *Snapshot, f *lang.File) previous {
 	}
 	for _, u := range s.Units {
 		id := unitID(u.Namespace, u.Name)
-		if hashes[id] != u.Hash {
+		if hashes[id] != u.Hash || u.Stale {
 			continue
 		}
 		outcomes := map[string]string{}
@@ -282,8 +289,11 @@ func build(f *lang.File, rel string, tests map[string]string, sites []Site, outc
 // judged does not change in the snapshot. Unchanged, it keeps its outcomes
 // at its current lines; changed since, it keeps its entry as recorded, old
 // hash included, so a later run still sees the change; and one previous
-// does not record gets no entry.
-func keepUnjudged(units []UnitResult, judged map[string]bool, previous *Snapshot) []UnitResult {
+// does not record gets no entry. testsHold says whether previous recorded
+// the tests that import the file as they are now: when not, the snapshot
+// written records the new ones, so each entry kept is marked Stale, as one
+// already marked stays.
+func keepUnjudged(units []UnitResult, judged map[string]bool, previous *Snapshot, testsHold bool) []UnitResult {
 	recorded := map[string]UnitResult{}
 	if previous != nil {
 		for _, u := range previous.Units {
@@ -295,9 +305,15 @@ func keepUnjudged(units []UnitResult, judged map[string]bool, previous *Snapshot
 		id := unitID(u.Namespace, u.Name)
 		was, ok := recorded[id]
 		switch {
-		case judged[id], ok && was.Hash == u.Hash:
+		case judged[id]:
 			out = append(out, u)
-		case ok:
+		case !ok:
+		case !testsHold || was.Stale:
+			was.Stale = true
+			out = append(out, was)
+		case was.Hash == u.Hash:
+			out = append(out, u)
+		default:
 			out = append(out, was)
 		}
 	}
