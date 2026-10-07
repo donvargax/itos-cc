@@ -23,6 +23,9 @@ type mutantJSON struct {
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
 	Reused      bool   `json:"reused"`
+	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
+	// only.
+	Excepted string `json:"excepted"`
 }
 
 // mutantKeys are the keys of each mutant: those of a mutation list site less

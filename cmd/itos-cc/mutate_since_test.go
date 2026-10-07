@@ -167,13 +167,15 @@ type mutateJSON struct {
 }
 
 type fileJSON struct {
-	File      string    `json:"file"`
-	Killed    int       `json:"killed"`
-	Survived  int       `json:"survived"`
-	Uncovered int       `json:"uncovered"`
-	Ran       int       `json:"ran"`
-	Baseline  string    `json:"baseline"`
-	Judged    *[]string `json:"judged"`
+	File      string `json:"file"`
+	Killed    int    `json:"killed"`
+	Survived  int    `json:"survived"`
+	Uncovered int    `json:"uncovered"`
+	// Excepted is nil when the key is missing.
+	Excepted *int      `json:"excepted"`
+	Ran      int       `json:"ran"`
+	Baseline string    `json:"baseline"`
+	Judged   *[]string `json:"judged"`
 	// Mutants is nil when the key is missing or null.
 	Mutants *[]mutantJSON `json:"mutants"`
 }
