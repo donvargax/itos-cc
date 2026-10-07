@@ -245,16 +245,9 @@ items:
     title: "mutation: progress lines on stderr begin itos-cc:, not mutate:"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-log-prefix.
-      The mutate package logs 'mutate: baseline …', 'mutate: no coverage for …; running every
-      mutant' and 'mutate: no mutations to test' on stderr, and ID-MUT-20 and ID-MUT-22 check two of
-      them. Since mutation-group the command is mutation run, so the prefix names a command that no
-      longer exists. Plain output, not the contract; changing it means deciding the new text of
-      those two scenarios.
   - id: namespace-working-dir
     title: A source outside any project root is namespaced from the working directory
     phase: 1
