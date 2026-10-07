@@ -277,16 +277,9 @@ items:
     title: "Coverage from tests that run the built binary, through Go's GOCOVERDIR"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was e2e-coverage.
-      Under --all-tests, code reached only by tests that run the built binary counts as uncovered:
-      the first nightly had every mutant of cmd/itos-cc/crap.go uncovered. go build -cover writes
-      coverage to GOCOVERDIR on each run, and go tool covdata textfmt turns it into a profile to
-      merge with go test's; Node (NODE_V8_COVERAGE), coverage.py (subprocess) and JaCoCo (agent)
-      have their own. Starts with Go.
     refs: ["#14"]
   - id: test-attribution
     title: "mutation: key results by the tests that execute each function, measured per test file"
