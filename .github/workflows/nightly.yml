@@ -38,6 +38,18 @@ jobs:
       - name: Build itos-cc
         run: go build -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc
 
+      # The viewer's packages, so Mutate can run its Vitest tests and measure
+      # their coverage: without node_modules every viewer/src file reports a
+      # failing baseline and none of its mutants is judged.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        working-directory: viewer
+        run: npm ci
+
       # Fails the job as it exits. --no-annotate: no committed source carries
       # the summary comment, and the job must not rewrite the sources.
       - name: Mutate
