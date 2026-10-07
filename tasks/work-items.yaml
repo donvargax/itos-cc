@@ -231,3 +231,15 @@ items:
       of the test files that ran (or that import its module, from the graph) and treat a change as
       stale, in reuse and in the check mode alike.
     refs: ["#8"]
+  - id: mutate-sample
+    title: "mutate sample mode: re-run cached mutants in CI and fail on a mismatch"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutate-check-sample]
+    kind: idea
+    why: >
+      Issue #8 part 3: CI re-runs N cached mutants chosen at random, or all of the changed
+      functions', and fails when an outcome differs from the snapshot, so a committed cache written
+      by hand or against other code is caught without a full run.
+    refs: ["#8"]
