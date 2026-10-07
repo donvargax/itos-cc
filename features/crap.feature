@@ -66,6 +66,28 @@ Feature: CRAP scores
     When I run "itos-cc crap --threshold 30"
     Then the exit code is 0
 
+  Scenario Outline: A threshold is not passed by code coverage could not measure
+    Given a Go project whose <problem>
+    When I run "itos-cc crap --threshold 30"
+    Then its functions show "N/A"
+    And stderr says "itos-cc: no coverage for <dir> (go): <why>"
+    And stderr says the threshold cannot be checked for code without coverage
+    And the exit code is 4
+
+    Examples:
+      | problem                                         | why                                                              |
+      | tests do not compile                            | its coverage run measured none of its files; go: exit status 1   |
+      | report is missing, with --use-existing-coverage | no report on disk measures its files                             |
+    # also a missing tool, such as Vitest that is not installed, and a
+    # --coverage-report that cannot be read; N/A is not 0%: a broken test
+    # setup is not untested code, but it must not pass the gate
+
+  Scenario: Without a threshold, coverage that could not be measured is a warning
+    Given a Go project whose tests do not compile
+    When I run "itos-cc crap"
+    Then stderr says "itos-cc: no coverage for <dir> (go): ..."
+    And the exit code is 0
+
   Scenario: Nothing to score
     Given the selection holds no production source files
     When I run "itos-cc crap"

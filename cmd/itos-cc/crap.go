@@ -33,7 +33,7 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 	var cov coverageOptions
 	sel.register(fs)
 	cov.register(fs)
-	threshold := fs.Float64("threshold", 0, "exit 2 when any CRAP score is above this (0 disables)")
+	threshold := fs.Float64("threshold", 0, "exit 2 when any CRAP score is above this, and 4 when coverage could not be measured (0 disables)")
 	asJSON := fs.Bool("json", false, "print the snapshot as JSON instead of a table")
 	top := fs.Int("top", 0, "print only the N worst functions (0 prints all)")
 	paths, err := parse(fs, args)
@@ -77,6 +77,13 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 		printJSON(crapSnapshot{Version: metrics.Version, Entries: worst})
 	} else {
 		printCrapTable(worst)
+	}
+	for _, m := range report.Missing() {
+		fmt.Fprintf(os.Stderr, "itos-cc: no coverage for %s\n", m)
+	}
+	if *threshold > 0 && len(report.Missing()) > 0 {
+		fmt.Fprintf(os.Stderr, "itos-cc: the threshold %.1f cannot be checked for code without coverage; fix the coverage run\n", *threshold)
+		return exitNoCoverage
 	}
 	if *threshold > 0 && len(entries) > 0 {
 		if w := crap.Worst(entries)[0]; w.CRAP != nil && *w.CRAP > *threshold {

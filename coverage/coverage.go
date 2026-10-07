@@ -36,6 +36,18 @@ type Entry struct {
 type Report struct {
 	files    map[string][]Segment
 	branches map[string][]Segment
+	missing  []string
+}
+
+// Missing says, one line each, what was meant to be measured and was not: a
+// build root whose coverage run wrote no report or whose tool is missing, or
+// a report that could not be read. Its functions have no coverage, which is
+// not the same as untested.
+func (r *Report) Missing() []string {
+	if r == nil {
+		return nil
+	}
+	return r.missing
 }
 
 // Fraction returns the covered share of [start, end] of file, leaving out
@@ -153,6 +165,7 @@ func Merge(reports ...*Report) *Report {
 		if r == nil {
 			continue
 		}
+		out.missing = append(out.missing, r.missing...)
 		for f, segs := range r.files {
 			out.files[f] = append(out.files[f], segs...)
 		}

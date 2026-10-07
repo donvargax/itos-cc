@@ -24,6 +24,7 @@ import (
 type Plan struct {
 	Language string
 	Dir      string
+	Sources  []string // the files it measures
 	Commands [][]string
 	Reports  []string // absolute
 	// Existing are report locations to read with --use-existing-coverage,
@@ -80,21 +81,27 @@ func Plans(sources []string, outDir string, scope Scope) []Plan {
 		groups[key{spec.Name, dir}] = append(groups[key{spec.Name, dir}], s)
 	}
 	var plans []Plan
-	for k, srcs := range groups {
+	for k, sources := range groups {
+		srcs := sources
 		if scope == AllTests {
 			srcs = nil
 		}
 		out := filepath.Join(outDir, k.lang+"-"+shortHash(k.dir))
+		var p Plan
 		switch k.lang {
 		case "go":
-			plans = append(plans, goPlan(k.dir, out, srcs, scope == OwnTests))
+			p = goPlan(k.dir, out, srcs, scope == OwnTests)
 		case "typescript":
-			plans = append(plans, typescriptPlan(k.dir, out, srcs))
+			p = typescriptPlan(k.dir, out, srcs)
 		case "python":
-			plans = append(plans, pythonPlan(k.dir, out))
+			p = pythonPlan(k.dir, out)
 		case "kotlin":
-			plans = append(plans, kotlinPlan(k.dir))
+			p = kotlinPlan(k.dir)
+		default:
+			continue
 		}
+		p.Sources = sources
+		plans = append(plans, p)
 	}
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].Language+plans[i].Dir < plans[j].Language+plans[j].Dir
@@ -309,18 +316,21 @@ func kotlinPlan(dir string) Plan {
 
 // Run executes each plan and returns the coverage of sources. A plan whose
 // commands fail still contributes any report it wrote, because failing tests
-// still measure the code they ran. Problems are written to log.
+// still measure the code they ran; one that wrote none is Missing. Problems
+// are written to log.
 func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
 		if p.Unsupported != "" {
 			fmt.Fprintf(log, "coverage: %s: %s\n", p.Dir, p.Unsupported)
+			reports = append(reports, &Report{missing: []string{p.Dir + ": " + p.Unsupported}})
 			continue
 		}
 		for _, r := range p.Reports {
 			os.Remove(r)
 		}
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
+		failed := ""
 		for _, args := range p.Commands {
 			fmt.Fprintf(log, "coverage: %s$ %s\n", p.Dir, strings.Join(args, " "))
 			cmd := exec.Command(args[0], args[1:]...)
@@ -329,11 +339,28 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 			cmd.Stderr = log
 			if err := cmd.Run(); err != nil {
 				fmt.Fprintf(log, "coverage: %s: %v\n", p.Language, err)
+				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		reports = append(reports, load(p.Reports, p.Dir, sources, log))
+		reports = append(reports, p.measured(load(p.Reports, p.Dir, sources, log), "its coverage run measured none of its files"+failed))
 	}
 	return Merge(reports...)
+}
+
+// measured is r, Missing p when r measured none of p's files: the run
+// failed, wrote an empty report, or loaded none of them. A report that
+// measured some of them leaves the rest untested, not missing.
+func (p Plan) measured(r *Report, why string) *Report {
+	for _, s := range p.Sources {
+		if r.Has(s) {
+			r.missing = nil
+			return r
+		}
+	}
+	if len(p.Sources) > 0 {
+		r.missing = []string{fmt.Sprintf("%s (%s): %s", p.Dir, p.Language, why)}
+	}
+	return r
 }
 
 // IgnoreDir creates dir with a .gitignore that ignores everything in it, so
@@ -350,12 +377,14 @@ func IgnoreDir(dir string) error {
 func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
-		for _, r := range p.Existing {
-			if exists(r) {
-				reports = append(reports, load([]string{r}, p.Dir, sources, log))
+		r := &Report{}
+		for _, path := range p.Existing {
+			if exists(path) {
+				r = load([]string{path}, p.Dir, sources, log)
 				break
 			}
 		}
+		reports = append(reports, p.measured(r, "no report on disk measures its files"))
 	}
 	return Merge(reports...)
 }
@@ -367,17 +396,22 @@ func Files(paths []string, sources []string, log io.Writer) *Report {
 	return load(paths, wd, sources, log)
 }
 
+// load reads the reports at paths; each that cannot be read is Missing.
 func load(paths []string, base string, sources []string, log io.Writer) *Report {
 	var all [][]Entry
+	var missing []string
 	for _, path := range paths {
 		entries, err := Load(path)
 		if err != nil {
 			fmt.Fprintf(log, "coverage: %v\n", err)
+			missing = append(missing, err.Error())
 			continue
 		}
 		all = append(all, entries)
 	}
-	return Build(sources, base, all...)
+	r := Build(sources, base, all...)
+	r.missing = missing
+	return r
 }
 
 type packageJSON struct {

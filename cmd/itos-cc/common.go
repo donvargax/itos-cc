@@ -18,9 +18,10 @@ import (
 
 // Exit codes shared by every command.
 const (
-	exitOK        = 0
-	exitUsage     = 1
-	exitThreshold = 2
+	exitOK         = 0
+	exitUsage      = 1
+	exitThreshold  = 2
+	exitNoCoverage = 4 // a threshold cannot be checked without coverage
 )
 
 // parse parses flags anywhere among the arguments, so

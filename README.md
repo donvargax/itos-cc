@@ -105,6 +105,12 @@ it. With paths or `--changed`, Go and TypeScript coverage runs only the
 tests that load those files, which measures them the same as the whole
 suite does; `--all-tests` runs the whole suite anyway.
 
+A build root whose coverage could not be measured (tests that do not
+compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
+stderr. With `--threshold`, crap exits 2 when a function scores above it and
+4 when coverage could not be measured, so a broken test setup never passes
+the gate.
+
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
 coverage.py with `--branch`); one without is scored by its lines. Go

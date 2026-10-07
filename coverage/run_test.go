@@ -184,3 +184,28 @@ func TestGoMeasuresWithTheTestsThatLoadTheChosenPackagesOrTheirOwn(t *testing.T)
 		t.Errorf("with no sources: %s, want the whole module", whole)
 	}
 }
+
+func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "a.go")
+	failing := Plan{Language: "go", Dir: dir, Sources: []string{src}, Commands: [][]string{{"go", "no-such-command"}},
+		Reports: []string{filepath.Join(dir, "out", "coverage.out")}}
+	unsupported := Plan{Language: "typescript", Dir: dir, Unsupported: "Vitest is not installed"}
+	var log bytes.Buffer
+	missing := Run([]Plan{failing, unsupported}, []string{src}, &log).Missing()
+	if len(missing) != 2 || !strings.Contains(missing[0], "(go): its coverage run measured none of its files; go: exit status") ||
+		!strings.Contains(missing[1], "Vitest is not installed") {
+		t.Errorf("missing %q, want the failed run and the missing tool", missing)
+	}
+	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 {
+		t.Errorf("existing: missing %q, want the plan with no report on disk", missing)
+	}
+	os.MkdirAll(filepath.Join(dir, "out"), 0o755)
+	os.WriteFile(failing.Reports[0], []byte("mode: set\n"), 0o644)
+	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 {
+		t.Errorf("existing: missing %q, want the plan whose report measures none of its files", missing)
+	}
+	if missing := Files([]string{filepath.Join(dir, "nope.info")}, []string{src}, &log).Missing(); len(missing) != 1 {
+		t.Errorf("files: missing %q, want the unreadable report", missing)
+	}
+}
