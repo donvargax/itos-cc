@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Command runs the tests that should kill a file's mutants. Root is the tree a
@@ -71,14 +72,21 @@ func typescriptCommand(path string) Command {
 	root := orDir(lang.FindUp(path, "package.json"), path)
 	rel, _ := filepath.Rel(root, path)
 	c := Command{Root: root, Dir: root}
+	// Tools run from node_modules, never through npx, which would download
+	// whatever version the registry has when the project installed none.
 	deps := packageDeps(root)
+	vitest, jest := project.NodeBin(root, "vitest"), project.NodeBin(root, "jest")
 	switch {
-	case deps["vitest"]:
-		c.Args = []string{"npx", "vitest", "related", "--run", "--bail=1", filepath.ToSlash(rel)}
-	case deps["jest"]:
-		c.Args = []string{"npx", "jest", "--bail", "--findRelatedTests", filepath.ToSlash(rel)}
+	case deps["vitest"] && vitest != "":
+		c.Args = []string{vitest, "related", "--run", "--bail=1", filepath.ToSlash(rel)}
+	case deps["jest"] && jest != "":
+		c.Args = []string{jest, "--bail", "--findRelatedTests", filepath.ToSlash(rel)}
 	default:
-		c.Args = []string{"npm", "test", "--silent"}
+		// bun test is Bun's own runner, so run the script by name.
+		c.Args = []string{project.PackageManager(root), "run", "test"}
+		if c.Args[0] == "npm" {
+			c.Args = append(c.Args, "--silent")
+		}
 	}
 	return c
 }

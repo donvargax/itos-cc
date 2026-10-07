@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Plan is how to measure one project: the directory to run in, the commands
@@ -102,31 +103,48 @@ func typescriptPlan(dir, out string) Plan {
 		Existing: []string{report, filepath.Join(dir, "coverage", "lcov.info")},
 	}
 	pkg := readPackageJSON(dir)
+	pm := project.PackageManager(dir)
+	// Tools run from node_modules: a tool the project did not install is
+	// never downloaded, since that would run code no lockfile pins.
+	missing := func(what string) string {
+		return fmt.Sprintf("%s is not installed; run %s install, or measure with --coverage-command", what, pm)
+	}
 	switch {
 	case pkg.Scripts["coverage"] != "":
 		// The project's own script decides where it writes; the usual place
 		// is coverage/lcov.info.
-		plan.Commands = [][]string{{"npm", "run", "coverage"}}
+		plan.Commands = [][]string{{pm, "run", "coverage"}}
 		plan.Reports = []string{filepath.Join(dir, "coverage", "lcov.info")}
-	case pkg.has("vitest") && vitestTooOld(installedVersion(dir, "vitest")):
-		plan.Unsupported = fmt.Sprintf("Vitest %s is not supported; upgrade to Vitest %d or later to measure coverage",
-			installedVersion(dir, "vitest"), minVitest)
 	case pkg.has("vitest"):
-		if !exists(filepath.Join(dir, "node_modules", "@vitest", "coverage-v8")) {
-			// Without the provider Vitest stops to ask; install the version
-			// that matches Vitest, without touching package.json.
-			provider := "@vitest/coverage-v8"
-			if v := installedVersion(dir, "vitest"); v != "" {
-				provider += "@" + v
-			}
-			plan.Commands = append(plan.Commands, []string{"npm", "install", "--no-save", provider})
+		version := installedVersion(dir, "vitest")
+		vitest := project.NodeBin(dir, "vitest")
+		switch {
+		case vitest == "":
+			plan.Unsupported = missing("Vitest")
+		case vitestTooOld(version):
+			plan.Unsupported = fmt.Sprintf("Vitest %s is not supported; upgrade to Vitest %d or later to measure coverage",
+				version, minVitest)
+		case project.NodeModule(dir, "@vitest/coverage-v8") == "":
+			// Without the provider Vitest stops to ask.
+			plan.Unsupported = fmt.Sprintf("@vitest/coverage-v8 is not installed; add @vitest/coverage-v8@%s to devDependencies",
+				version)
+		default:
+			plan.Commands = [][]string{{vitest, "run", "--coverage.enabled",
+				"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out}}
 		}
-		plan.Commands = append(plan.Commands, []string{"npx", "vitest", "run", "--coverage.enabled",
-			"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out})
 	case pkg.has("jest"):
-		plan.Commands = [][]string{{"npx", "jest", "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out}}
+		if jest := project.NodeBin(dir, "jest"); jest == "" {
+			plan.Unsupported = missing("Jest")
+		} else {
+			plan.Commands = [][]string{{jest, "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out}}
+		}
 	default:
-		plan.Commands = [][]string{{"npx", "--yes", "c8", "--reporter=lcov", "--reports-dir=" + out, "npm", "test"}}
+		if c8 := project.NodeBin(dir, "c8"); c8 == "" {
+			plan.Unsupported = "the project has neither Vitest nor Jest, and c8 is not installed; " +
+				"add c8 to devDependencies, or measure with --coverage-command"
+		} else {
+			plan.Commands = [][]string{{c8, "--reporter=lcov", "--reports-dir=" + out, pm, "run", "test"}}
+		}
 	}
 	return plan
 }
@@ -139,14 +157,19 @@ func pythonPlan(dir, out string) Plan {
 	if exec.Command(py, "-c", "import pytest").Run() == nil {
 		runner = []string{"-m", "pytest", "-q"}
 	}
-	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
-	return Plan{
+	plan := Plan{
 		Language: "python",
 		Dir:      dir,
-		Commands: [][]string{run, {py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report}},
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
 	}
+	if exec.Command(py, "-c", "import coverage").Run() != nil {
+		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
+		return plan
+	}
+	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
+	plan.Commands = [][]string{run, {py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report}}
+	return plan
 }
 
 func kotlinPlan(dir string) Plan {
@@ -155,8 +178,13 @@ func kotlinPlan(dir string) Plan {
 	maven := filepath.Join(dir, "target", "site", "jacoco", "jacoco.xml")
 	plan := Plan{Language: "kotlin", Dir: dir, Existing: []string{kover, jacoco, maven}}
 	if exists(filepath.Join(dir, "pom.xml")) {
-		const jacocoPlugin = "org.jacoco:jacoco-maven-plugin:0.8.12:"
-		plan.Commands = [][]string{{"mvn", "-q", jacocoPlugin + "prepare-agent", "test", jacocoPlugin + "report"}}
+		// The project's own JaCoCo, at the version it declares: naming the
+		// plugin here would have Maven download one the project never chose.
+		if !pomMentions(dir, "jacoco-maven-plugin") {
+			plan.Unsupported = "jacoco-maven-plugin is not in pom.xml or a parent's; add it, or measure with --coverage-command"
+			return plan
+		}
+		plan.Commands = [][]string{{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}}
 		plan.Reports = []string{maven}
 		return plan
 	}
@@ -277,9 +305,10 @@ func installedVersion(dir, dep string) string {
 	var pkg struct {
 		Version string `json:"version"`
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "node_modules", dep, "package.json"))
-	if err == nil {
-		json.Unmarshal(data, &pkg)
+	if module := project.NodeModule(dir, dep); module != "" {
+		if data, err := os.ReadFile(filepath.Join(module, "package.json")); err == nil {
+			json.Unmarshal(data, &pkg)
+		}
 	}
 	return pkg.Version
 }
@@ -303,6 +332,23 @@ func buildMentions(dir, word string) bool {
 		}
 	}
 	return false
+}
+
+// pomMentions reports whether the pom.xml in dir, or one in a directory
+// above it, such as a parent's, mentions word.
+func pomMentions(dir, word string) bool {
+	for d := dir; ; d = filepath.Dir(d) {
+		data, err := os.ReadFile(filepath.Join(d, "pom.xml"))
+		if err != nil {
+			return false
+		}
+		if strings.Contains(string(data), word) {
+			return true
+		}
+		if filepath.Dir(d) == d {
+			return false
+		}
+	}
 }
 
 func exists(path string) bool {

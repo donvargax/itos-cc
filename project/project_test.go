@@ -98,3 +98,28 @@ func TestBuildOutputNamesAreSkippedOnlyWhenTheyAreBuildOutput(t *testing.T) {
 		t.Errorf("sources = %q, want %q", got, want)
 	}
 }
+
+func TestPackageManagerIsTheOneTheProjectDeclares(t *testing.T) {
+	for file, want := range map[string]string{
+		"":                  "npm",
+		"package-lock.json": "npm",
+		"pnpm-lock.yaml":    "pnpm",
+		"yarn.lock":         "yarn",
+		"bun.lock":          "bun",
+	} {
+		root := t.TempDir()
+		write(t, filepath.Join(root, "app", "package.json"), "{}")
+		if file != "" {
+			write(t, filepath.Join(root, file), "")
+		}
+		if got := PackageManager(filepath.Join(root, "app")); got != want {
+			t.Errorf("with %q at the workspace root: %s, want %s", file, got, want)
+		}
+	}
+	root := t.TempDir()
+	write(t, filepath.Join(root, "package.json"), `{"packageManager": "yarn@4.5.0"}`)
+	write(t, filepath.Join(root, "package-lock.json"), "")
+	if got := PackageManager(root); got != "yarn" {
+		t.Errorf("packageManager yarn@4.5.0 beside package-lock.json: %s, want yarn", got)
+	}
+}

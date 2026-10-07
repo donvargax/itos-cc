@@ -14,21 +14,44 @@ Feature: Coverage
       Examples:
         | language   | marker           | setup                                        | command                                                           |
         | Go         | go.mod           | nothing else                                 | go test ./... -covermode=set -coverpkg=./... -coverprofile=...    |
-        | TypeScript | package.json     | a "coverage" script                          | npm run coverage, read from coverage/lcov.info                    |
-        | TypeScript | package.json     | vitest 5 or later as a dependency            | npx vitest run with the v8 coverage provider writing LCOV         |
-        | TypeScript | package.json     | jest as a dependency                         | npx jest --coverage writing LCOV                                  |
-        | TypeScript | package.json     | neither vitest nor jest                      | npx c8 around npm test, writing LCOV                              |
+        | TypeScript | package.json     | a "coverage" script                          | <pm> run coverage, read from coverage/lcov.info                   |
+        | TypeScript | package.json     | vitest 5 or later as a dependency            | the installed vitest run with the v8 provider writing LCOV        |
+        | TypeScript | package.json     | jest as a dependency                         | the installed jest --coverage writing LCOV                        |
+        | TypeScript | package.json     | neither vitest nor jest                      | the installed c8 around <pm> run test, writing LCOV               |
         | Python     | pyproject.toml   | pytest importable                            | coverage run --branch -m pytest, then coverage lcov               |
         | Python     | setup.py         | pytest not importable                        | coverage run --branch -m unittest discover, then coverage lcov    |
         | Kotlin     | build.gradle.kts | the build mentions kover                     | gradle koverXmlReport                                             |
         | Kotlin     | build.gradle     | the build does not mention kover             | gradle test jacocoTestReport                                      |
-        | Kotlin     | pom.xml          | nothing else                                 | mvn with the jacoco-maven-plugin prepare-agent, test, and report  |
+        | Kotlin     | pom.xml          | it or a parent declares jacoco-maven-plugin  | mvn -q jacoco:prepare-agent test jacoco:report                    |
 
-    Scenario: Vitest without its coverage provider
-      Given a TypeScript project using vitest 5.0.2 without @vitest/coverage-v8 installed
+    Scenario: The project's own package manager runs its scripts
+      Given a TypeScript project in a workspace whose root declares "packageManager": "pnpm@9.12.0"
       When coverage is run for it
-      Then "npm install --no-save @vitest/coverage-v8@5.0.2" runs first
-      And package.json is not modified
+      Then <pm> is pnpm
+      # otherwise the nearest lockfile decides (pnpm, yarn, bun, npm), and npm when there is none
+
+    Scenario: Node tools come from node_modules, never from the registry
+      Given a TypeScript project in a workspace, with its tools installed at the workspace root
+      When coverage is run for it
+      Then vitest, jest, or c8 runs from the nearest node_modules/.bin
+      And npx is never used, so nothing that the project's lockfile does not pin is downloaded
+
+    Scenario Outline: A tool that is not installed is not fetched
+      Given a <language> project <missing>
+      When coverage is run for it
+      Then nothing runs for it
+      And stderr says what to install, or to use --coverage-command
+      And only complexity is reported for it
+
+      Examples:
+        | language   | missing                                                      |
+        | TypeScript | using vitest that is not installed                           |
+        | TypeScript | using vitest 5.0.2 without @vitest/coverage-v8 installed     |
+        | TypeScript | using jest that is not installed                             |
+        | TypeScript | using neither vitest nor jest, without c8 installed          |
+        | Python     | whose python cannot import coverage                          |
+        | Kotlin     | built by Maven, with no pom.xml declaring jacoco-maven-plugin |
+      # the user makes the tool available; itos-cc never installs or downloads it
 
     Scenario: Only the current Vitest major is supported
       Given a TypeScript project using vitest 4.1.11

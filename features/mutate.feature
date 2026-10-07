@@ -141,9 +141,9 @@ Feature: Mutation testing
       Examples:
         | language   | setup             | command                                                          |
         | Go         | go.mod            | go test -count=1 -failfast on the file's package                 |
-        | TypeScript | vitest            | npx vitest related --run --bail=1 on the file                    |
-        | TypeScript | jest              | npx jest --bail --findRelatedTests on the file                   |
-        | TypeScript | neither           | npm test --silent                                                |
+        | TypeScript | vitest            | the installed vitest related --run --bail=1 on the file          |
+        | TypeScript | jest              | the installed jest --bail --findRelatedTests on the file         |
+        | TypeScript | neither installed | <pm> run test, the package manager the project declares          |
         | Python     | pytest importable | python -m pytest -q -x -p no:cacheprovider                       |
         | Python     | no pytest         | python -m unittest discover -f                                   |
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
