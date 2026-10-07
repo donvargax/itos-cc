@@ -500,7 +500,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [snapshots-at-root]
     kind: slice
     why: >
       Was graph-check-snapshot-lookup.
