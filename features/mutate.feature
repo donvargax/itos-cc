@@ -465,6 +465,32 @@ Feature: Mutation testing
       Then stdout says "src/board.ts: … (judged 0 of 2 functions)"
       And neither .metrics/mutate/src/board.ts.json nor src/board.ts is written
 
+    # git diff -U0 prints no hunk for a file renamed without a change, so
+    # none of its functions was judged and its snapshot stayed at the old
+    # path while the new one had none: mutation check then called every
+    # function missing. --since follows renames: a renamed file's snapshot
+    # moves with it, and only the functions the range changed are judged, as
+    # a move is no change (the coordinator's call, 2026-10-07). The scenarios
+    # rename a Go file within its package, so no test's import changes and
+    # the results stay fresh.
+    @wip @since-follows-renames @ID-MUT-103
+    Scenario: A renamed file's results follow it
+      Given fresh results for every function of src/board.go, all killed
+      And a commit after "base" renamed src/board.go to src/grid.go without changing it
+      When I run "itos-cc mutation run --since base"
+      Then no function is judged
+      And .metrics/mutate/src/grid.go.json holds the results .metrics/mutate/src/board.go.json held, under its new path
+      And .metrics/mutate/src/board.go.json is gone
+      And "itos-cc mutation check src/grid.go" exits 0
+
+    @wip @since-follows-renames @ID-MUT-104
+    Scenario: A renamed and edited file judges only what changed
+      Given fresh results for every function of src/board.go, all killed
+      And a commit after "base" renamed src/board.go to src/grid.go and changed "Board#Place"
+      When I run "itos-cc mutation run --since base"
+      Then only "Board#Place" is judged
+      And the other functions' results are kept in .metrics/mutate/src/grid.go.json
+
   # Issue #8, part 1: a gate (a commit hook) proves that results exist for
   # exactly the code being committed, without running anything. Decided with
   # the person on 2026-10-06 (q-1 to q-3): it is a subcommand of the group,
