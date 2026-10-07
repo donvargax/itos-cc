@@ -438,7 +438,7 @@ Feature: Mutation testing
   # are their own items.
   Rule: Checking cached results without running
 
-    @wip @mutation-check @ID-MUT-57
+    @mutation-check @ID-MUT-57
     Scenario: Fresh results with every mutant killed pass
       Given a run recorded every mutant of src/board.ts killed
       And no function of src/board.ts has changed since
@@ -446,14 +446,14 @@ Feature: Mutation testing
       Then no coverage or test command runs
       And the exit code is 0
 
-    @wip @mutation-check @ID-MUT-58
+    @mutation-check @ID-MUT-58
     Scenario: A function changed since its results is stale
       Given "Board#place" changed since the run that recorded it
       When I run "itos-cc mutation check src/board.ts"
       Then the problem is "mutation.stale", with file "src/board.ts" and function "Board#place"
       And the exit code is 1
 
-    @wip @mutation-check @ID-MUT-59
+    @mutation-check @ID-MUT-59
     Scenario: A function with no results is missing
       Given "Board#reset" was added after the last run
       When I run "itos-cc mutation check src/board.ts"
@@ -461,35 +461,35 @@ Feature: Mutation testing
       And the exit code is 1
       # a file with no snapshot at all has every function with a site missing
 
-    @wip @mutation-check @ID-MUT-60
+    @mutation-check @ID-MUT-60
     Scenario: A recorded survivor fails the check
       Given a fresh run recorded a survivor in "Board#place"
       When I run "itos-cc mutation check src/board.ts"
       Then the problem is "mutation.survived", with its file, line, column, function, original, and replacement
       And the exit code is 1
 
-    @wip @mutation-check @ID-MUT-61
+    @mutation-check @ID-MUT-61
     Scenario: A recorded uncovered mutant fails only with --fail-uncovered
       Given a fresh run recorded every covered mutant of src/board.ts killed and one uncovered
       When I run "itos-cc mutation check src/board.ts"
       Then the exit code is 0
       But "itos-cc mutation check --fail-uncovered src/board.ts" reports it as "mutation.uncovered" and exits 1
 
-    @wip @mutation-check @ID-MUT-62
+    @mutation-check @ID-MUT-62
     Scenario: With --since only the functions the range changed are checked
       Given only "Board#place" changed since "base", and its fresh results are all killed
       And "Board#clear", unchanged, has a recorded survivor
       When I run "itos-cc mutation check --since base"
       Then the exit code is 0
 
-    @wip @mutation-check @ID-MUT-63
+    @mutation-check @ID-MUT-63
     Scenario: A function with no mutation site needs no results
       Given "Board#size" has no mutation site and no entry in the snapshot
       And every other function of src/board.ts has fresh results, all killed
       When I run "itos-cc mutation check src/board.ts"
       Then the exit code is 0
 
-    @wip @mutation-check @ID-MUT-64
+    @mutation-check @ID-MUT-64
     Scenario: Each function's state as JSON
       When I run "itos-cc mutation check --json src/board.ts"
       Then each file in "files" has "functions", each with function and state "fresh", "stale" or "missing"

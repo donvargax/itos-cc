@@ -174,11 +174,12 @@ add `--no-coverage` to let them reach code nothing else covers. It is slow;
 run it nightly rather than on every change:
 
 ```bash
-itos-cc mutation run --changed                             # while working: own tests, fast
-itos-cc mutation run --since origin/main --fail-uncovered  # a gate: the functions the branch's commits changed
-itos-cc mutation run --all-tests                           # nightly, e.g. a scheduled CI job
-itos-cc mutation run --all-tests --no-coverage             # nightly, with end-to-end tests that run the binary
-itos-cc mutation list src/billing                          # the mutation sites, without running tests
+itos-cc mutation run --changed                               # while working: own tests, fast
+itos-cc mutation run --since origin/main --fail-uncovered    # a gate: the functions the branch's commits changed
+itos-cc mutation run --all-tests                             # nightly, e.g. a scheduled CI job
+itos-cc mutation run --all-tests --no-coverage               # nightly, with end-to-end tests that run the binary
+itos-cc mutation list src/billing                            # the mutation sites, without running tests
+itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 ```
 
 `--since <ref>` judges only the functions the commits since `<ref>`
@@ -195,6 +196,18 @@ Uncovered mutants never run, so a changed function no test executes passes.
 judged functions' uncovered mutants count. With `--no-coverage`, or where
 coverage measured nothing for the language, every mutant runs and none is
 uncovered.
+
+`mutation check` gives the verdict a run would give from the cached results
+alone, running no test and no coverage command and writing nothing. Run
+`mutation run` while working, and check in a commit hook,
+`itos-cc mutation check --since <base> --fail-uncovered`: each function the
+commits changed needs results for its code as committed. A function with no
+entry in `.metrics/mutate/` is `mutation.missing`, one changed since its
+entry is `mutation.stale` (a move is not a change), and a fresh entry fails
+on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
+exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
+`--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
+or `missing`.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Commit that

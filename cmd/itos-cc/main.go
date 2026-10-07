@@ -61,10 +61,10 @@ func usage() string {
 	for _, name := range sortedNames(commands) {
 		c := commands[name]
 		if c.subs == nil {
-			fmt.Fprintf(&b, "  %-14s %s\n", name, c.summary)
+			fmt.Fprintf(&b, "  %-15s %s\n", name, c.summary)
 		}
 		for _, sub := range c.subs {
-			fmt.Fprintf(&b, "  %-14s %s\n", sub.name, sub.summary)
+			fmt.Fprintf(&b, "  %-15s %s\n", sub.name, sub.summary)
 		}
 	}
 	b.WriteString(`

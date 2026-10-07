@@ -14,7 +14,8 @@ import (
 )
 
 // mutationGroup is mutation testing: mutation run mutates and runs the
-// tests, mutation list lists the sites without running any.
+// tests, mutation list lists the sites without running any, and mutation
+// check reads the cached results without running any.
 var mutationGroup = &command{
 	name:    "mutation",
 	summary: "mutation testing: do the tests notice small changes?",
@@ -22,12 +23,14 @@ var mutationGroup = &command{
 Mutation testing: would the tests notice if this code were wrong? mutation run
 changes one operator, boolean, or 0/1 at a time inside each function and runs
 the tests; mutation list lists those changes, the mutation sites, without
-running any test.`,
+running any test; mutation check says whether the results mutation run
+cached are there, fresh, and passing, without running any test either.`,
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation list src/billing/invoice.ts",
+		"itos-cc mutation check --since origin/main --fail-uncovered",
 	},
-	subs: []*command{mutationRunCommand, mutationListCommand},
+	subs: []*command{mutationRunCommand, mutationListCommand, mutationCheckCommand},
 }
 
 var mutationRunCommand = &command{
@@ -158,30 +161,40 @@ type mutateSite struct {
 	Replacement string `json:"replacement"`
 }
 
-func runMutate(in *invocation) (any, error) {
-	result := mutateResult{Files: []mutateFile{}}
+// mutationSelection is the sources mutation run and mutation check take:
+// the paths and --changed, and with --since the files the range changed,
+// with judge saying which of their functions it changed. judge is nil
+// without --since.
+func mutationSelection(in *invocation) (sources []string, judge func(path, function string) bool, err error) {
 	var since map[string]map[string]bool
 	if in.set("since") {
-		var err error
 		if since, err = changedSince(in); err != nil {
-			return result, err
+			return nil, nil, err
 		}
 	}
 	files, err := files(in)
 	if err != nil {
+		return nil, nil, err
+	}
+	if since == nil {
+		return files.Sources, nil, nil
+	}
+	// The range selects the files; paths only narrow it.
+	for _, f := range files.Sources {
+		if _, ok := since[f]; ok {
+			sources = append(sources, f)
+		}
+	}
+	return sources, func(path, function string) bool { return since[path][function] }, nil
+}
+
+func runMutate(in *invocation) (any, error) {
+	result := mutateResult{Files: []mutateFile{}}
+	sources, judge, err := mutationSelection(in)
+	if err != nil {
 		return result, err
 	}
-	if since != nil {
-		// The range selects the files; paths only narrow it.
-		var changed []string
-		for _, f := range files.Sources {
-			if _, ok := since[f]; ok {
-				changed = append(changed, f)
-			}
-		}
-		files.Sources = changed
-	}
-	if len(files.Sources) == 0 {
+	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		return result, nil
 	}
@@ -193,9 +206,7 @@ func runMutate(in *invocation) (any, error) {
 		AllTests:      in.set("all-tests"),
 		Annotate:      !in.set("no-annotate"),
 		Log:           os.Stderr,
-	}
-	if since != nil {
-		opt.Judge = func(path, function string) bool { return since[path][function] }
+		Judge:         judge,
 	}
 	if !in.set("no-coverage") {
 		opt.Coverage = func(sources []string) *coverage.Report {
@@ -213,7 +224,7 @@ func runMutate(in *invocation) (any, error) {
 	// Uncovered mutants never run, so without it a function no test
 	// executes passes.
 	failUncovered := in.set("fail-uncovered")
-	results, err := mutate.Run(files.Sources, opt)
+	results, err := mutate.Run(sources, opt)
 	if err != nil {
 		return result, err
 	}
@@ -259,26 +270,31 @@ func runMutate(in *invocation) (any, error) {
 			fmt.Println(line)
 		}
 		for _, u := range units {
-			for _, m := range u.Mutants {
-				switch {
-				case m.Outcome == mutate.Survived:
-					reportMutant(in, r.Rel, u, m, "mutation.survived", "survived", "survived",
-						"Add a test that fails with this change.")
-				case m.Outcome == mutate.Uncovered && failUncovered:
-					reportMutant(in, r.Rel, u, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
-						"Add a test that executes this line and fails with this change.")
-				}
-			}
+			reportFailed(in, r.Rel, u.Namespace+"#"+u.Name, u.Mutants, failUncovered)
 		}
 	}
 	return result, nil
 }
 
-// reportMutant lists mutant m of unit u in file rel on stdout, as "<what>
+// reportFailed reports each mutant of function that fails: a survivor, and
+// with failUncovered an uncovered mutant.
+func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant, failUncovered bool) {
+	for _, m := range mutants {
+		switch {
+		case m.Outcome == mutate.Survived:
+			reportMutant(in, rel, function, m, "mutation.survived", "survived", "survived",
+				"Add a test that fails with this change.")
+		case m.Outcome == mutate.Uncovered && failUncovered:
+			reportMutant(in, rel, function, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
+				"Add a test that executes this line and fails with this change.")
+		}
+	}
+}
+
+// reportMutant lists mutant m of function in file rel on stdout, as "<what>
 // <file>:<line>:<column> <original> → <replacement> in <function>", and
 // reports it as a problem of rule whose message ends with verdict.
-func reportMutant(in *invocation, rel string, u mutate.UnitResult, m mutate.Mutant, rule, what, verdict, fix string) {
-	function := u.Namespace + "#" + u.Name
+func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, what, verdict, fix string) {
 	if !in.json {
 		fmt.Printf("  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), function)
