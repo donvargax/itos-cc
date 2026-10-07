@@ -95,3 +95,15 @@ items:
       git diff -U0 prints no hunk for a file renamed without a content change, so none of its
       functions is judged, and its snapshot stays at the old path under .metrics/mutate while the
       new path has none.
+  - id: mutate-since-annotate
+    title: mutate --since writes the summary comment of files with nothing judged
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A file the range changed only outside functions, such as its imports, is selected with "judged
+      0 of N", and mutate still writes its snapshot and rewrites its summary comment though nothing
+      in it ran. The comment also counts every function the snapshot holds, while stdout counts only
+      those judged.
