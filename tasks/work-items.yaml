@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - mutate-sample
+  - mutation-sample
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
@@ -219,14 +219,15 @@ items:
     depends_on: [mutation-check]
     kind: slice
     refs: ["#8"]
-  - id: mutate-sample
-    title: "mutate sample mode: re-run cached mutants in CI and fail on a mismatch"
+  - id: mutation-sample
+    title: "mutation sample: re-run a sample of cached mutants in CI and fail on a mismatch"
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-check]
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-sample.
       Issue #8 part 3: CI re-runs N cached mutants chosen at random, or all of the changed
       functions', and fails when an outcome differs from the snapshot, so a committed cache written
       by hand or against other code is caught without a full run.
