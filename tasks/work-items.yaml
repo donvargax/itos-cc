@@ -250,16 +250,9 @@ items:
     title: mutation run --since keeps the entries it does not judge, marked stale, when their tests changed
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-test-hash-since.
-      A snapshot records the tests that import its file once per file (mutation-test-hash, q-4), so
-      when they changed, a run with --since cannot keep the old outcomes of the functions it does
-      not judge without calling them fresh: it drops their entries, and a later check finds them
-      missing rather than stale, and loses any survivor they recorded. Recording the tests per
-      function, or keeping the old entries marked stale, would keep them as stale.
   - id: graph-stale-tests
     title: The graph marks a function stale when its tests changed, as mutation check does
     phase: 1
