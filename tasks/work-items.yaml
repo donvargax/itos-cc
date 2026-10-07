@@ -156,3 +156,13 @@ items:
     kind: task
     why: >
       Spec in the ledger, tasks/phase-1.yaml.
+  - id: viewer-ci-tests
+    title: Push CI runs the viewer's tests and typecheck
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      ci.yml runs go vet and go test only, so a change that breaks viewer/ (vitest run, tsc
+      --noEmit) passes CI and is first seen by the nightly, if at all.
