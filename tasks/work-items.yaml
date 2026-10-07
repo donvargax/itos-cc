@@ -245,7 +245,7 @@ items:
     title: "mutation: progress lines on stderr begin itos-cc:, not mutate:"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
