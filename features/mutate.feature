@@ -303,6 +303,61 @@ Feature: Mutation testing
       Then the lines itos-cc writes to stderr about the baseline and each mutant begin "itos-cc: "
       And no line of stderr begins "mutate: "
 
+  # Issue #14: Go records coverage only for code that runs inside the test
+  # process, so a project tested end to end, by tests that run its built
+  # binary, had every line those tests reach uncovered, and --fail-uncovered
+  # failed nearly everything (itos, whose specification runs the built itos,
+  # is that project). Go has had integration coverage since 1.20: a binary
+  # built with go build -cover writes its coverage into the directory
+  # GOCOVERDIR names, and go tool covdata textfmt turns it into an ordinary
+  # profile. Decided with the person on 2026-10-07 (the issue's part 1; its
+  # part 2, coverage per test, stays the idea test-attribution):
+  # - When itos-cc runs a Go coverage command, it sets GOCOVERDIR to a fresh
+  #   directory of the run's own under .metrics/coverage/, and after the run
+  #   merges whatever data was written there into the coverage, beside go
+  #   test's profile. A project opts in by having its test harness build the
+  #   binary under test with -cover when GOCOVERDIR is set; itos-cc knows
+  #   nothing of the harness. A project that writes nothing there behaves as
+  #   before.
+  # - Which tests run is unchanged: by default a file's own tests
+  #   (ID-MUT-08), so an end-to-end test in another package counts under
+  #   --all-tests, as its kills already do (ID-MUT-09).
+  # - --json says which coverage reached each covered mutant: "coverage",
+  #   the sources whose data covers its line, "in-process", "integration"
+  #   or both (the coordinator's call: per mutant, the finest the issue
+  #   allows, so a gate can tell).
+  # - Coverage is shared, so crap's coverage counts integration data too.
+  Rule: Coverage from tests that run the built binary
+
+    @wip @integration-coverage @ID-MUT-117
+    Scenario: Lines a test reaches through the built binary are covered
+      Given a Go module whose only test builds its binary with go build -cover when GOCOVERDIR is set, and runs it
+      And the test checks one branch of the binary's output and not another
+      When I run "itos-cc mutation run --all-tests --fail-uncovered"
+      Then the lines the binary ran are covered, and their mutants run
+      And a mutant the test notices is killed, and one it does not notice survives
+      And only the mutants on lines the binary never ran are uncovered
+
+    @wip @integration-coverage @ID-MUT-118
+    Scenario: A project whose binary writes no coverage behaves as before
+      Given a Go module whose only test builds its binary without -cover and runs it
+      When I run "itos-cc mutation run --all-tests --fail-uncovered"
+      Then every mutant the binary's code holds is uncovered, as before
+      And the exit code is 1
+
+    @wip @integration-coverage @ID-MUT-119
+    Scenario: Which coverage reached each mutant, as JSON
+      Given the module of ID-MUT-117, with one function also called by an in-process test
+      When I run "itos-cc mutation run --all-tests --json"
+      Then each covered mutant has "coverage", listing "in-process", "integration" or both, as the data that covers its line
+      And an uncovered mutant has no "coverage"
+
+    @wip @integration-coverage @ID-MUT-120
+    Scenario: The binary's coverage data stays with the run
+      When the coverage of ID-MUT-117 runs
+      Then GOCOVERDIR names a directory under the run's own run-* directory in .metrics/coverage/
+      And nothing of it is left once the run ends
+
   # Issue #9, part 2: mutants on lines no test executes are not run, so a
   # changed function with no test passes. A gate passes --fail-uncovered
   # (with --since for a task's commits) to make each uncovered mutant a
