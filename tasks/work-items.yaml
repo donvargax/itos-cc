@@ -229,7 +229,7 @@ items:
     title: "mutation check: a site the entry never recorded makes its function stale"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
