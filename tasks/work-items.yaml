@@ -591,15 +591,9 @@ items:
     title: CI gives go test 20 minutes, so Windows fits cmd/itos-cc's tests
     phase: 1
     owner: null
-    status: todo
+    status: done
     depends_on: []
     kind: task
-    why: >
-      On windows-latest, cmd/itos-cc's tests grew from 364s to 570s over three runs and passed go
-      test's default 10-minute limit with listed-selection-baseline (run 37696128627), though no
-      test failed. On the person's word (2026-10-07) the limit goes to 20 minutes now; making those
-      tests faster on Windows is the idea windows-test-speed. Every test still runs; only the hang
-      guard moves.
   - id: windows-test-speed
     title: cmd/itos-cc's tests take about 10 minutes on windows-latest
     phase: 1
