@@ -285,7 +285,7 @@ items:
     title: "Mutants run only the listed tests that reach them, from per-test coverage"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [integration-coverage]
     kind: slice
     why: >
