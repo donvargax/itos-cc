@@ -300,6 +300,10 @@ items:
       changes. Coverage measured per test file, binary-running tests included, maps which tests
       execute each function, and the hash can cover exactly those. Costs a coverage run per test
       file when some mutant has to run.
+
+      Issue #14 part 2 (2026-10-07): coverage per test, so a mutant runs only the tests that reach
+      its line, e2e tests included; for a godog-style suite it needs a command to list the e2e tests
+      and one to run a selection, each with a fresh GOCOVERDIR.
   - id: sample-recorded-scope
     title: "Each outcome records the scope of its tests, and mutation sample re-runs with it"
     phase: 1
