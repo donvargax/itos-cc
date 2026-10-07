@@ -31,8 +31,8 @@ type mutantJSON struct {
 }
 
 // mutantKeys are the keys of each mutant: those of a mutation list site less
-// "file", plus "outcome" and "reused".
-var mutantKeys = []string{"column", "function", "line", "original", "outcome", "replacement", "reused"}
+// "file", plus "outcome", "reused", and "scope".
+var mutantKeys = []string{"column", "function", "line", "original", "outcome", "replacement", "reused", "scope"}
 
 // mutants is the "mutants" of f, which must be there.
 func (f fileJSON) mutants(t *testing.T) []mutantJSON {
@@ -118,7 +118,7 @@ func TestFull(t *testing.T) {
 	var want []mutantJSON
 	for _, s := range sites {
 		want = append(want, mutantJSON{Line: s.Line, Column: s.Column, Function: s.Function,
-			Original: s.Original, Replacement: s.Replacement, Outcome: outcomes[s.Function]})
+			Original: s.Original, Replacement: s.Replacement, Outcome: outcomes[s.Function], Scope: "own"})
 	}
 
 	o := mutateCovered(t, "--json", boardSource)

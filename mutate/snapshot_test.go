@@ -168,3 +168,31 @@ func TestAnEntryKeptUnderOtherTestsIsMarkedStaleAndNeverReused(t *testing.T) {
 		t.Errorf("units %+v, want b unmarked: its tests did not change", units)
 	}
 }
+
+func TestEachOutcomeKeepsTheScopeThatDecidedIt(t *testing.T) {
+	f := parse(t, "x.py", "def a(x):\n    return x > 0\n")
+	sites := Sites(f)
+	scopes := []string{ScopeAllTests, ScopeOwn}
+	snap := buildScoped(f, "x.py", nil, sites, []string{Killed, Killed}, scopes)
+	got := map[string]string{}
+	for _, m := range snap.Units[0].Mutants {
+		got[m.key()] = m.Scope
+	}
+	if got[sites[0].Key()] != ScopeAllTests || got[sites[1].Key()] != "" {
+		t.Errorf("scopes %v, want %q, and none for %q", got, ScopeAllTests, ScopeOwn)
+	}
+	_, prev := rememberedWithScopes(&snap, f)
+	id := unitID(f.Units[0].Namespace, f.Units[0].Name)
+	if prev[id][sites[0].Key()] != ScopeAllTests || prev[id][sites[1].Key()] != ScopeOwn {
+		t.Errorf("remembered scopes %v, want %q and %q: none recorded reads as %q", prev, ScopeAllTests, ScopeOwn, ScopeOwn)
+	}
+	for _, c := range []struct {
+		shell string
+		all   bool
+		want  string
+	}{{"", false, ScopeOwn}, {"", true, ScopeAllTests}, {"make test", false, "make test"}, {"make test", true, "make test"}} {
+		if got := RunScope(c.shell, c.all); got != c.want {
+			t.Errorf("RunScope(%q, %v) = %q, want %q", c.shell, c.all, got, c.want)
+		}
+	}
+}

@@ -41,8 +41,14 @@ survives is no failure here: failing on survivors is mutation check's.
 
 It chooses as mutation check does: paths, --changed, and --since REF, which
 samples only the functions the commits since REF changed (git diff
-REF...HEAD). Run it with the --all-tests and --test-command the results were
-recorded with, or kills made by other tests read as survivors.
+REF...HEAD).
+
+Each mutant runs with the scope of the tests its outcome was recorded with:
+the file's own tests, the whole suite (--all-tests), or the --test-command
+line, one baseline per scope's command, so a kill only the whole suite makes
+is not read as a survivor. An outcome recorded before scopes were is the
+file's own tests'. --all-tests or --test-command given to mutation sample
+runs every sampled mutant with it instead.
 
 Plain output is the seed and how many of the cached mutants were sampled,
 then a line per file, "<file>: N sampled, N mismatched", then each mismatch:
@@ -55,11 +61,12 @@ it is empty when the file's baseline failed.`,
 		opt("seed", stringFlag, "TEXT", "", "seed the draw with TEXT instead of the HEAD commit's id"),
 		opt("workers", intFlag, "N", fmt.Sprint(max(1, runtime.NumCPU()/2)), "mutants run at the same time"),
 		opt("timeout-factor", floatFlag, "N", "10", "a mutant times out after N times the baseline duration, and at least 2s"),
-		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
-		sw("all-tests", "run the whole test suite for every mutant, integration and end-to-end tests included")),
+		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests for every mutant, instead of its recorded scope"),
+		sw("all-tests", "run the whole test suite for every mutant, instead of its recorded scope")),
 	json: `"seed", "files": [{"file", "baseline": "passed"|"failed",
    "mutants": [{"line", "column", "function", "original", "replacement",
-   "recorded", "outcome": "killed"|"survived"|"timeout"}]}]`,
+   "recorded", "outcome": "killed"|"survived"|"timeout",
+   "scope": "own"|"all-tests"|"<test command>"}]}]`,
 	rules: []string{
 		"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
@@ -96,6 +103,8 @@ type sampledMutant struct {
 	Replacement string `json:"replacement"`
 	Recorded    string `json:"recorded"`
 	Outcome     string `json:"outcome"`
+	// Scope is the scope of the tests it ran with now.
+	Scope string `json:"scope"`
 }
 
 type sampleResult struct {
@@ -160,7 +169,7 @@ func runMutationSample(in *invocation) (any, error) {
 		var differ []mutate.SampledMutant
 		for _, m := range f.Mutants {
 			out.Mutants = append(out.Mutants, sampledMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome})
+				Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Scope: m.Scope})
 			if !m.Agrees() {
 				differ = append(differ, m)
 			}

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -21,12 +22,13 @@ type Sampled struct {
 
 // SampledFile is one file's sampled mutants.
 type SampledFile struct {
-	Rel            string
+	Rel string
+	// BaselineFailed is true when the baseline of a scope its sampled
+	// mutants run in failed, with that baseline's output.
 	BaselineFailed bool
 	BaselineOutput string
 	// Mutants is each sampled mutant, in site order, with what its snapshot
-	// records and what it did now; empty when the baseline failed, since
-	// none ran.
+	// records and what it did now; empty when a baseline failed.
 	Mutants []SampledMutant
 }
 
@@ -37,6 +39,9 @@ type SampledMutant struct {
 	Function string // namespace#name
 	Recorded string
 	Outcome  string
+	// Scope is the scope of the tests it ran with now: the one its
+	// snapshot records, unless the sample was given one.
+	Scope string
 }
 
 // Agrees reports whether the mutant's outcome now is the one recorded.
@@ -53,8 +58,10 @@ func (m SampledMutant) Agrees() bool {
 // worker's copy as Run does. Fresh is as Check judges it. It runs no
 // coverage and writes nothing. The draw depends only on the seed and on
 // each candidate's file, function, and site, so one seed draws the same
-// mutants from the same snapshots wherever the code moved. opt's Workers,
-// TimeoutFactor, TestCommand, AllTests, Judge, Tests, and Log apply as in
+// mutants from the same snapshots wherever the code moved. Each mutant runs
+// in the scope its snapshot records, one baseline per scope's command,
+// unless opt's TestCommand or AllTests is set, which then sets every
+// mutant's. opt's Workers, TimeoutFactor, Judge, Tests, and Log apply as in
 // Run; the rest is not used.
 func Sample(files []string, count int, seed string, opt Options) (Sampled, error) {
 	var states []*fileState
@@ -68,26 +75,25 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		site     int
 		function string
 		recorded string
+		scope    string
 		rank     string
 	}
+	override := opt.TestCommand != "" || opt.AllTests
 	var candidates []candidate
 	for _, path := range files {
 		f, err := lang.ParseFile(path)
 		if err != nil {
 			return Sampled{}, err
 		}
-		s := &fileState{file: f, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests)}
+		s := &fileState{file: f, sites: Sites(f)}
 		states = append(states, s)
 		c, err := checkParsed(f, path, opt.Judge, opt.Tests, nil)
 		if err != nil {
 			return Sampled{}, err
 		}
 		s.rel, s.result = c.Rel, &FileResult{Rel: c.Rel}
-		// Every site is left alone but those drawn.
-		s.outcomes = make([]string, len(s.sites))
 		at := map[int]map[string]int{}
 		for i, site := range s.sites {
-			s.outcomes[i] = skipped
 			if at[site.Unit] == nil {
 				at[site.Unit] = map[string]int{}
 			}
@@ -102,8 +108,12 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 				if !ok || (m.Outcome != Killed && m.Outcome != Timeout && m.Outcome != Survived) {
 					continue
 				}
+				scope := m.TestScope()
+				if override {
+					scope = RunScope(opt.TestCommand, opt.AllTests)
+				}
 				candidates = append(candidates, candidate{state: s, site: i, function: fn.Function, recorded: m.Outcome,
-					rank: rank(seed, s.rel, fn.Function, m.key())})
+					scope: scope, rank: rank(seed, s.rel, fn.Function, m.key())})
 			}
 		}
 	}
@@ -113,15 +123,29 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 	if len(candidates) == 0 {
 		return result, nil
 	}
-	drawn := map[*fileState]map[int]candidate{}
-	for _, c := range candidates {
-		if drawn[c.state] == nil {
-			drawn[c.state] = map[int]candidate{}
-		}
-		drawn[c.state][c.site] = c
-		c.state.outcomes[c.site] = ""
+	// Each file's drawn mutants run in one state per scope, with that
+	// scope's command, so execute runs each command's baseline once.
+	type scoped struct {
+		state *fileState
+		scope string
 	}
-	if err := execute(states, opt); err != nil {
+	runs := map[scoped]*fileState{}
+	var order []*fileState
+	drawn := map[*fileState][]candidate{}
+	for _, c := range candidates {
+		k := scoped{c.state, c.scope}
+		r := runs[k]
+		if r == nil {
+			s := c.state
+			r = &fileState{file: s.file, rel: s.rel, sites: s.sites, command: scopeCommand(s.file.Path, c.scope),
+				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites))}
+			runs[k] = r
+			order = append(order, r)
+		}
+		r.outcomes[c.site] = ""
+		drawn[c.state] = append(drawn[c.state], c)
+	}
+	if err := execute(order, opt); err != nil {
 		return result, err
 	}
 	for _, s := range states {
@@ -129,13 +153,19 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 			continue
 		}
 		f := SampledFile{Rel: s.rel, Mutants: []SampledMutant{}}
-		if s.result.BaselineFailed {
-			f.BaselineFailed, f.BaselineOutput = true, s.result.BaselineOutput
+		for _, c := range drawn[s] {
+			if r := runs[scoped{s, c.scope}]; r.result.BaselineFailed && !f.BaselineFailed {
+				f.BaselineFailed, f.BaselineOutput = true, r.result.BaselineOutput
+			}
+		}
+		if f.BaselineFailed {
 			result.Files = append(result.Files, f)
 			continue
 		}
-		for i, c := range drawn[s] {
-			f.Mutants = append(f.Mutants, SampledMutant{Site: s.sites[i], Function: c.function, Recorded: c.recorded, Outcome: s.outcomes[i]})
+		for _, c := range drawn[s] {
+			outcome := runs[scoped{s, c.scope}].outcomes[c.site]
+			f.Mutants = append(f.Mutants, SampledMutant{Site: s.sites[c.site], Function: c.function, Recorded: c.recorded,
+				Outcome: outcome, Scope: c.scope})
 		}
 		sort.Slice(f.Mutants, func(a, b int) bool {
 			ma, mb := f.Mutants[a], f.Mutants[b]

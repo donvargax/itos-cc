@@ -841,11 +841,13 @@ Feature: Mutation testing
       And none of its mutants runs
       And the exit code is 1
 
+    # Since q-15 each sampled mutant also has "scope", the scope of the
+    # tests it ran with, a key added with sample-recorded-scope.
     @mutation-sample @ID-MUT-84
     Scenario: The sample as JSON
       When I run "itos-cc mutation sample --json src/board.ts"
       Then stdout is one object with "schema": 1, "ok", "seed", and "files"
-      And each file has "mutants", each sampled one with line, column, function, original, replacement, recorded, and outcome
+      And each file has "mutants", each sampled one with line, column, function, original, replacement, recorded, outcome, and scope
       And the problems are those the plain output prints
 
     # A snapshot did not record which tests decided its outcomes, so
@@ -860,33 +862,33 @@ Feature: Mutation testing
     # every mutant. An outcome with no recorded scope, written before this,
     # is taken as "own" (the coordinator's call: it is what a run without
     # those flags used).
-    @wip @sample-recorded-scope @ID-MUT-109
+    @sample-recorded-scope @ID-MUT-109
     Scenario: Each recorded outcome keeps the scope of the tests that decided it
       When I run "itos-cc mutation run --all-tests src/board.ts"
       Then each mutant in .metrics/mutate/src/board.ts.json records scope "all-tests"
       And with --test-command 'make test' each records "make test", and with neither each records "own"
 
-    @wip @sample-recorded-scope @ID-MUT-110
+    @sample-recorded-scope @ID-MUT-110
     Scenario: A reused outcome keeps its scope
       Given a run with --all-tests killed every mutant of "Board#place"
       And nothing has changed since
       When I run "itos-cc mutation run src/board.ts"
       Then the mutants of "Board#place" are reused and still record scope "all-tests"
 
-    @wip @sample-recorded-scope @ID-MUT-111
+    @sample-recorded-scope @ID-MUT-111
     Scenario: mutation sample re-runs each mutant with its recorded scope
       Given a run with --all-tests recorded a kill in src/board.ts that only an end-to-end test makes
       When I run "itos-cc mutation sample --count 100 src/board.ts"
       Then that mutant runs the whole suite and is killed
       And no "mutation.mismatch" is reported
 
-    @wip @sample-recorded-scope @ID-MUT-112
+    @sample-recorded-scope @ID-MUT-112
     Scenario: A scope given to mutation sample overrides the recorded one
       Given outcomes of src/board.ts recorded with scope "all-tests"
       When I run "itos-cc mutation sample --test-command 'make test' src/board.ts"
       Then every sampled mutant runs "make test"
 
-    @wip @sample-recorded-scope @ID-MUT-113
+    @sample-recorded-scope @ID-MUT-113
     Scenario: An outcome with no recorded scope was decided by the file's own tests
       Given fresh results for src/board.ts written before outcomes recorded their scope
       When I run "itos-cc mutation sample src/board.ts"
@@ -925,13 +927,15 @@ Feature: Mutation testing
     # true for an outcome taken from the snapshot without running, which a
     # gate that trusts cached kills (#8) needs to tell apart. A new key, so
     # "schema" stays 1. With --since only the judged functions' mutants are
-    # listed, as only they are counted.
+    # listed, as only they are counted. Since q-15 each mutant also has
+    # "scope", the scope of the tests that decided it, a key added with
+    # sample-recorded-scope.
     @slice-3 @ID-MUT-52
     Scenario: Every mutant as JSON
       Given src/board.ts has mutants that are killed, one that survives, and one on a line no test executes
       When I run "itos-cc mutation run --json src/board.ts"
       Then its file in "files" has "mutants", one for each site in site order
-      And each has line, column, function, original, replacement, outcome, and reused
+      And each has line, column, function, original, replacement, outcome, reused, and scope
       And their outcomes are "killed", "survived", and "uncovered" as each was decided
 
     @slice-3 @ID-MUT-53

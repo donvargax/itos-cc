@@ -67,7 +67,10 @@ survivors itos-cc.yaml excepts, and retry only other survivors and changed
 functions. Each snapshot also records the SHA-256
 of every test file that imports its file (in Go, its package's tests and
 those of the packages that import it); when one of them is added, changed,
-or removed, every mutant of the file runs again. A summary comment is kept at
+or removed, every mutant of the file runs again. Each outcome records the
+scope of the tests that decided it: "own" (the file's own tests, left out of
+the file), "all-tests", or the --test-command line; a reused outcome keeps
+the scope it was decided with, and mutation sample re-runs it there. A summary comment is kept at
 the end of each source file.
 
 --since REF judges only the functions the commits since REF changed, as a
@@ -105,7 +108,8 @@ config.invalid, and nothing runs.`,
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
    "function", "original", "replacement",
-   "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused", and for an
+   "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
+   "scope": "own"|"all-tests"|"<test command>", and for an
    excepted survivor "excepted": "its reason"}], and with --since
    "judged": ["namespace#name"]}]`,
 	rules: []string{
@@ -182,6 +186,9 @@ type mutateMutant struct {
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
 	Reused      bool   `json:"reused"`
+	// Scope is the scope of the tests that decided the outcome: "own",
+	// "all-tests", or the --test-command line.
+	Scope string `json:"scope"`
 	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
 	// only; its outcome stays survived.
 	Excepted string `json:"excepted,omitempty"`
@@ -320,7 +327,7 @@ func runMutate(in *invocation) (any, error) {
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
 		for _, m := range r.Mutants {
 			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Excepted: m.Excepted})
+				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted})
 		}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.

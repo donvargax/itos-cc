@@ -66,10 +66,61 @@ type Mutant struct {
 	Original    string `json:"original"`
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
+	// Scope is the scope of the tests that decided Outcome: ScopeAllTests,
+	// a --test-command line, or "" for ScopeOwn, which is also how an
+	// outcome recorded before scopes reads. See TestScope.
+	Scope string `json:"scope,omitempty"`
 	// Excepted is the reason itos-cc.yaml gives for a survivor it excepts,
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string `json:"-"`
+}
+
+// Scopes of the tests that decide an outcome. Any other scope is the
+// --test-command line that decided it.
+const (
+	ScopeOwn      = "own"       // the file's own tests, the default
+	ScopeAllTests = "all-tests" // the whole suite of its build root, --all-tests
+)
+
+// RunScope is the scope of a run with the --test-command shell and
+// --all-tests all, as TestCommand picks its command: shell wins over all.
+func RunScope(shell string, all bool) string {
+	switch {
+	case shell != "":
+		return shell
+	case all:
+		return ScopeAllTests
+	}
+	return ScopeOwn
+}
+
+// TestScope is the scope that decided the mutant's outcome, ScopeOwn when
+// it records none.
+func (m Mutant) TestScope() string {
+	if m.Scope == "" {
+		return ScopeOwn
+	}
+	return m.Scope
+}
+
+// recordedScope is scope as a snapshot records it: ScopeOwn left out.
+func recordedScope(scope string) string {
+	if scope == ScopeOwn {
+		return ""
+	}
+	return scope
+}
+
+// scopeCommand is the command that runs path's tests in scope.
+func scopeCommand(path, scope string) Command {
+	switch scope {
+	case ScopeOwn, "":
+		return TestCommand(path, "", false)
+	case ScopeAllTests:
+		return TestCommand(path, "", true)
+	}
+	return TestCommand(path, scope, false)
 }
 
 func (m Mutant) key() string {
@@ -172,15 +223,25 @@ func compareTests(recorded, now map[string]string) *TestChange {
 // Previous outcomes of one file, by unit identity and site key.
 type previous map[string]map[string]string
 
+// previousScopes are the scopes of previous outcomes, keyed as they are.
+type previousScopes map[string]map[string]string
+
 func unitID(namespace, name string) string { return namespace + "#" + name }
 
 // remembered returns the outcomes a run may keep: those of units whose hash
 // is unchanged and whose entry is not marked Stale. s holds only while the
 // tests that import f are those it recorded; see usable.
 func remembered(s *Snapshot, f *lang.File) previous {
-	prev := previous{}
+	prev, _ := rememberedWithScopes(s, f)
+	return prev
+}
+
+// rememberedWithScopes is remembered, and the scope each of its outcomes
+// was decided with.
+func rememberedWithScopes(s *Snapshot, f *lang.File) (previous, previousScopes) {
+	prev, scopes := previous{}, previousScopes{}
 	if s == nil {
-		return prev
+		return prev, scopes
 	}
 	hashes := map[string]string{}
 	for _, u := range f.Units {
@@ -191,13 +252,14 @@ func remembered(s *Snapshot, f *lang.File) previous {
 		if hashes[id] != u.Hash || u.Stale {
 			continue
 		}
-		outcomes := map[string]string{}
+		outcomes, decided := map[string]string{}, map[string]string{}
 		for _, m := range u.Mutants {
 			outcomes[m.key()] = m.Outcome
+			decided[m.key()] = m.TestScope()
 		}
-		prev[id] = outcomes
+		prev[id], scopes[id] = outcomes, decided
 	}
-	return prev
+	return prev, scopes
 }
 
 // usable is s when its results still hold for the tests that import its
@@ -241,8 +303,15 @@ func markExcepted(units []UnitResult, mutants []MutantResult) {
 }
 
 // build assembles a snapshot from every site's outcome, against tests, the
-// tests that import the file. A skipped site is left out.
+// tests that import the file. A skipped site is left out. Every outcome
+// records ScopeOwn; see buildScoped.
 func build(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes []string) Snapshot {
+	return buildScoped(f, rel, tests, sites, outcomes, nil)
+}
+
+// buildScoped is build with the scope each outcome was decided with, by
+// site, or ScopeOwn for every one when scopes is nil.
+func buildScoped(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes, scopes []string) Snapshot {
 	if tests == nil {
 		tests = map[string]string{}
 	}
@@ -267,10 +336,14 @@ func build(f *lang.File, rel string, tests map[string]string, sites []Site, outc
 		case Uncovered:
 			r.Uncovered++
 		}
-		r.Mutants = append(r.Mutants, Mutant{
+		m := Mutant{
 			Line: s.Line, Column: s.Column, Offset: s.Offset,
 			Original: s.Original, Replacement: s.Replacement, Outcome: outcomes[i],
-		})
+		}
+		if scopes != nil {
+			m.Scope = recordedScope(scopes[i])
+		}
+		r.Mutants = append(r.Mutants, m)
 	}
 	for i := range snap.Units {
 		sort.Slice(snap.Units[i].Mutants, func(a, b int) bool {

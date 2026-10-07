@@ -18,15 +18,16 @@ func TestDecidedMutantsAreInLineOrder(t *testing.T) {
 	s := &fileState{file: f, sites: Sites(f)}
 	s.outcomes = make([]string, len(s.sites))
 	s.reused = make([]bool, len(s.sites))
+	s.scopes = make([]string, len(s.sites))
 	for i := range s.sites {
-		s.outcomes[i], s.reused[i] = Killed, i%2 == 0
+		s.outcomes[i], s.reused[i], s.scopes[i] = Killed, i%2 == 0, []string{ScopeOwn, ScopeAllTests}[i%2]
 	}
 	all := s.decided()
 	var got []string
 	for i, m := range all {
 		got = append(got, describe([]Site{m.Site})[0])
-		if j := slices.IndexFunc(s.sites, func(x Site) bool { return x == m.Site }); m.Reused != s.reused[j] || m.Outcome != Killed {
-			t.Errorf("mutant %d: %+v, want the outcome and reuse of its site", i, m)
+		if j := slices.IndexFunc(s.sites, func(x Site) bool { return x == m.Site }); m.Reused != s.reused[j] || m.Scope != s.scopes[j] || m.Outcome != Killed {
+			t.Errorf("mutant %d: %+v, want the outcome, reuse and scope of its site", i, m)
 		}
 	}
 	if want := []string{"3:>>>=", "3:1>0", "5:<><=", "5:0>1"}; !slices.Equal(got, want) {

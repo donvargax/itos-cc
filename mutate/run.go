@@ -76,6 +76,9 @@ type MutantResult struct {
 	// Reused is true when the outcome came from the snapshot without
 	// running.
 	Reused bool
+	// Scope is the scope of the tests that decided Outcome: this run's,
+	// or, reused, the one its snapshot records. See RunScope.
+	Scope string
 	// Excepted is the reason itos-cc.yaml gives when it excepts the mutant
 	// and the mutant survived; empty otherwise.
 	Excepted string
@@ -94,6 +97,7 @@ type fileState struct {
 	sites    []Site
 	outcomes []string // "" while pending
 	reused   []bool   // the outcome came from the previous snapshot
+	scopes   []string // the scope that decided each outcome, or decides it in this run
 	command  Command
 	result   *FileResult
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
@@ -139,7 +143,7 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	for _, s := range states {
 		if !s.result.BaselineFailed {
 			s.result.Mutants = s.decided()
-			s.result.Snapshot = build(s.file, s.rel, s.tests, s.sites, s.outcomes)
+			s.result.Snapshot = buildScoped(s.file, s.rel, s.tests, s.sites, s.outcomes, s.scopes)
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			}
@@ -242,7 +246,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			return states, err
 		}
 		s.stored, s.previous = snap, usable(snap, s.tests)
-		prev := remembered(s.previous, f)
+		prev, prevScopes := rememberedWithScopes(s.previous, f)
 		s.result.Functions = len(f.Units)
 		if opt.Judge != nil {
 			s.judged, s.result.Judged = map[string]bool{}, []string{}
@@ -261,20 +265,25 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.result.StaleExceptions = s.excepted.stale
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))
+		s.scopes = make([]string, len(s.sites))
+		scope := RunScope(opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
 			u := f.Units[site.Unit]
-			if id := unitID(u.Namespace, u.Name); s.judged != nil && !s.judged[id] {
+			id := unitID(u.Namespace, u.Name)
+			// A kept outcome keeps the scope it was decided with.
+			s.scopes[i] = scope
+			if s.judged != nil && !s.judged[id] {
 				// Not judged: it never runs, and keeps the outcome its
 				// snapshot records for its unchanged function, if any.
 				s.outcomes[i] = skipped
 				if outcome := prev[id][site.Key()]; outcome != "" {
-					s.outcomes[i] = outcome
+					s.outcomes[i], s.scopes[i] = outcome, prevScopes[id][site.Key()]
 				}
 				continue
 			}
 			_, excepted := s.excepted.held[i]
 			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll {
-				s.outcomes[i] = outcome
+				s.outcomes[i], s.scopes[i] = outcome, prevScopes[id][site.Key()]
 				s.reused[i] = true
 				s.result.Reused++
 			}
@@ -300,7 +309,7 @@ func (s *fileState) decided() []MutantResult {
 		if stale != nil {
 			s.result.StaleExceptions = append(s.result.StaleExceptions, *stale)
 		}
-		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Excepted: reason})
+		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Scope: s.scopes[i], Excepted: reason})
 	}
 	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })
 	return out

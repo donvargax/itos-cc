@@ -233,9 +233,12 @@ by default) from the fresh entries of its selection, only those that ran
 results are `mutation check`'s. The draw is seeded with the HEAD commit's
 id, so a rerun of one commit samples the same mutants; `--seed` reproduces
 another run's. It writes nothing, and takes `mutation check`'s paths,
-`--changed`, and `--since`. Give it the `--all-tests` or `--test-command` the
-results were recorded with: a kill only the whole suite makes reads as a
-survivor to the file's own tests.
+`--changed`, and `--since`. Each outcome in a snapshot records the scope of
+the tests that decided it, the file's own tests, `--all-tests`, or the
+`--test-command` line, and keeps it when a later run reuses it, so `mutation
+sample` re-runs each mutant in its own scope and a kill only the whole suite
+makes is not read as a survivor. `--all-tests` or `--test-command` given to
+it overrides the scope of every mutant.
 
 An equivalent mutant changes no behaviour (a `0` set again before it is
 ever read, say), so no test can kill it, and it would fail every run. `mutation except <file>:<line>:<column> --reason '…'` excepts it in

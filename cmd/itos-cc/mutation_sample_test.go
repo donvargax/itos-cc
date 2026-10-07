@@ -43,7 +43,7 @@ type sampledJSON struct {
 }
 
 // sampledKeys are the keys of each sampled mutant.
-var sampledKeys = []string{"column", "function", "line", "original", "outcome", "recorded", "replacement"}
+var sampledKeys = []string{"column", "function", "line", "original", "outcome", "recorded", "replacement", "scope"}
 
 type sampleJSON struct {
 	OK    bool    `json:"ok"`
