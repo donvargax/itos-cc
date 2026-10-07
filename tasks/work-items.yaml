@@ -111,3 +111,15 @@ items:
       that imports lang fails with "build constraints exclude all Go files"; it failed before
       slice-1 too (e1a44e4). It needs CGO_ENABLED=1 with a mingw-w64 compiler, or the vet of the
       Windows CI job is the only check.
+  - id: mutate-check-sample
+    title: "mutate: a check mode and a sample mode, so a gate can trust cached results"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #8: a gate at itos work done needs to trust cached kills without re-running every mutant
+      (--check), and CI a sample that spot-checks the cache (sample mode). #9 says itos would call
+      mutate --check at work done, so this follows the #9 ideas.
+    refs: ["#8"]
