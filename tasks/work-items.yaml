@@ -496,3 +496,18 @@ items:
       its hash and Snapshot.TestsChanged, the code shared since graph-stale-tests, and the snapshot
       it reads records the new tests, so a marked entry whose function did not change shows as
       current. The mark is UnitResult.Stale; the graph reads the UnitResult but not the mark.
+  - id: mismatch-fix-names-scope
+    title: A mutation.mismatch says to re-run in the scope the outcome was recorded with
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since sample-recorded-scope each outcome records its scope, own, all-tests or a --test-command
+      line, and mutation sample re-runs it there. The fix a mutation.mismatch gives is still
+      'itos-cc mutation run --mutate-all <file>', with neither flag, so following it on an
+      --all-tests outcome re-records it under the file's own tests, and a kill only the whole suite
+      makes turns into a survivor. The fix could name --all-tests or --test-command '<line>' from
+      the mismatched mutant's scope, and the mismatch could carry the scope as a key. Read from
+      cmd/itos-cc/mutation_sample.go while building sample-recorded-scope, not reproduced.
