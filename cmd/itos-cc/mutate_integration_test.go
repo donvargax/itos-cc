@@ -124,6 +124,13 @@ func greetRepo(t *testing.T, cover, inProcess bool) string {
 		files["main_test.go"] = "package main\n\nimport \"testing\"\n\nfunc TestMany(t *testing.T) {\n" +
 			"\tif got := greet(3); got != \"2 more\" {\n\t\tt.Fatalf(\"greet(3) = %q\", got)\n\t}\n}\n"
 	}
+	return moduleRepo(t, files)
+}
+
+// moduleRepo writes files in a git repository and makes it the working
+// directory.
+func moduleRepo(t *testing.T, files map[string]string) string {
+	t.Helper()
 	for _, tool := range []string{"git", "go"} {
 		if _, err := exec.LookPath(tool); err != nil {
 			t.Skip(tool + " is not installed")
