@@ -88,3 +88,6 @@ questions:
     item: "test-attribution"
     question: "test-attribution: how is coverage measured per test (itos has about 505 scenarios)? (a, recommended) One suite run: itos-cc sets a per-test coverage base and the harness gives each test's child processes GOCOVERDIR=<base>/<test-id>; itos-cc falls back to one run per test when the harness writes nothing there. (b) One run per test, with no harness cooperation."
     answer: "(a) One run, split by the harness into <base>/<test-id>; one run per test as the fallback."
+  - id: q-19
+    item: "test-attribution"
+    question: "test-attribution: when is a kill made by listed tests still fresh, without itos-cc reading the tests' format? (a, recommended) While the set of tests covering its line and the hashes of the files those tests name are unchanged (per-file granularity). (b) The list command prints a content hash per test, computed by the project."
