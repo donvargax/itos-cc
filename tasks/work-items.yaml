@@ -254,3 +254,16 @@ items:
     why: >
       Spec in features/cli.feature, Rule: The mutation group.
     refs: ["#8"]
+  - id: mutation-log-prefix
+    title: "mutation run's progress lines on stderr still begin mutate:"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The mutate package logs 'mutate: baseline …', 'mutate: no coverage for …; running every
+      mutant' and 'mutate: no mutations to test' on stderr, and ID-MUT-20 and ID-MUT-22 check two of
+      them. Since mutation-group the command is mutation run, so the prefix names a command that no
+      longer exists. Plain output, not the contract; changing it means deciding the new text of
+      those two scenarios.
