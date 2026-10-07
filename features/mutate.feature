@@ -449,6 +449,49 @@ Feature: Mutation testing
       Then stdout is one object with "schema": 1, "ok", and "files", each with file, killed, survived, uncovered, ran, reused, and baseline
       And each survivor is a "mutate.survived" problem with file, line, column, function, original, and replacement
 
+    # Issue #9, part 3: a gate reads mutate's result without parsing text or
+    # the cache files, so --json lists every mutant it decided. Each file's
+    # "mutants" are in site order, with the keys --scan gives a site less
+    # "file" (its file holds them), plus "outcome" and "reused": "reused" is
+    # true for an outcome taken from the snapshot without running, which a
+    # gate that trusts cached kills (#8) needs to tell apart. A new key, so
+    # "schema" stays 1. With --since only the judged functions' mutants are
+    # listed, as only they are counted.
+    @wip @slice-3 @ID-MUT-52
+    Scenario: Every mutant as JSON
+      Given src/board.ts has mutants that are killed, one that survives, and one on a line no test executes
+      When I run "itos-cc mutate --json src/board.ts"
+      Then its file in "files" has "mutants", one for each site in site order
+      And each has line, column, function, original, replacement, outcome, and reused
+      And their outcomes are "killed", "survived", and "uncovered" as each was decided
+
+    @wip @slice-3 @ID-MUT-53
+    Scenario: A timed-out mutant's outcome is its own
+      Given a mutant of src/board.ts runs past its timeout
+      When I run "itos-cc mutate --json src/board.ts"
+      Then its outcome is "timeout"
+      And it is counted in "killed"
+
+    @wip @slice-3 @ID-MUT-54
+    Scenario: Mutants taken from the snapshot say so
+      Given a previous run killed every mutant of "Board#place"
+      And "Board#place" has not changed since, while "Board#clear" has
+      When I run "itos-cc mutate --json src/board.ts"
+      Then the mutants of "Board#place" are "killed" with reused true
+      And the mutants of "Board#clear" have reused false
+
+    @wip @slice-3 @ID-MUT-55
+    Scenario: With --since only the judged functions' mutants are listed
+      Given only "Board#place" changed since "base"
+      When I run "itos-cc mutate --since base --json"
+      Then the "mutants" of src/board.ts all have function "Board#place"
+
+    @wip @slice-3 @ID-MUT-56
+    Scenario: A failing baseline lists no mutant
+      Given the tests of src/board.ts fail without any mutation
+      When I run "itos-cc mutate --json src/board.ts"
+      Then its file has "baseline": "failed" and "mutants": []
+
     @ID-MUT-31
     Scenario: Results are cached per file
       When I run "itos-cc mutate src/billing/invoice.ts"
