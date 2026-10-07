@@ -250,7 +250,7 @@ items:
     title: mutation run --since keeps the entries it does not judge, marked stale, when their tests changed
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
