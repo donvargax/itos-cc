@@ -664,6 +664,23 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src/board.go"
       Then .metrics/mutate/src/board.go.json records the hashes of src/board_test.go and app/app_test.go
 
+    # A snapshot records the tests that import its file once per file, so
+    # when they changed, mutation run --since, which rewrites the file's
+    # snapshot with the new tests' hashes, could not keep the old outcomes of
+    # the functions it did not judge without calling them fresh: it dropped
+    # their entries, check then called them missing, and any survivor they
+    # recorded was lost. Decided with the person on 2026-10-07 (q-14): it
+    # keeps those entries, marked stale, so check calls them stale and their
+    # outcomes are kept until a run judges them again.
+    @wip @since-keeps-stale-entries @ID-MUT-108
+    Scenario: --since keeps the entries it does not judge, marked stale, when their tests changed
+      Given fresh results for "Board#place" and "Board#clear", with a survivor recorded in "Board#clear"
+      And a commit after "base" changed "Board#place" and src/board.test.ts
+      When I run "itos-cc mutation run --since base"
+      Then .metrics/mutate/src/board.ts.json still holds the entry of "Board#clear" and its survivor, marked stale
+      And "itos-cc mutation check src/board.ts" reports "Board#clear" as "mutation.stale", not "mutation.missing"
+      And a later "itos-cc mutation run src/board.ts" runs the mutants of "Board#clear" again
+
   # Issue #8, part 3: mutation check trusts the snapshots, so a cache written
   # by hand, or against other code, passes it. CI re-runs a few cached
   # mutants and compares. Decided with the person on 2026-10-07 (q-6 to
