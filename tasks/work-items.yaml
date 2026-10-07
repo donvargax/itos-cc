@@ -41,14 +41,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: mutate-fail-uncovered
-    title: "mutate: uncovered mutants of judged functions fail"
+  - id: slice-2
+    title: "mutate --fail-uncovered: an uncovered mutant fails the run"
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-1]
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-fail-uncovered.
       Issue #9 part 2: a changed function no test executes passes today, since uncovered mutants
       never run. A gate needs an uncovered mutant in a judged function to fail, reported as such
       (exit 1), behind a flag or the gate mode.
