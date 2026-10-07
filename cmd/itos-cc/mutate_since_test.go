@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -457,4 +459,104 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 		t.Errorf("exit %d, judged %v, want exit 0 and judged []\n%s", o.code, j, o.stdout)
 	}
 	untouched("mutation run --since base --json")
+}
+
+var gridSource = filepath.FromSlash("src/grid.go")
+
+// renamedBoard records fresh results for every function of src/board.go,
+// all killed, then renames it to src/grid.go in a commit after "base",
+// edited by edit when it is set. It returns the snapshot of src/board.go.
+func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
+	t.Helper()
+	boardRepo(t, map[string]string{
+		"src/board_test.go": boardFiles["src/board_test.go"] +
+			"\nfunc TestClear(t *testing.T) {\n\tvar b Board\n\tif !b.clear(2) || b.clear(3) {\n\t\tt.Fatal(\"clear\")\n\t}\n}\n",
+	})
+	if o := mutateRun(t); o.code != 0 {
+		t.Fatalf("the first run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	before, err := mutate.LoadSnapshot(boardSource)
+	if err != nil || before == nil {
+		t.Fatalf("no snapshot of %s: %v", boardSource, err)
+	}
+	for _, u := range before.Units {
+		if u.Killed != u.Sites || u.Sites == 0 {
+			t.Fatalf("%s#%s in the snapshot: %+v, want every mutant killed", u.Namespace, u.Name, u)
+		}
+	}
+	gitIn(t, ".", "mv", filepath.ToSlash(boardSource), filepath.ToSlash(gridSource))
+	if edit != nil {
+		edit()
+	}
+	gitIn(t, ".", "commit", "-qam", "rename board.go to grid.go")
+	return before
+}
+
+// gridUnits is the snapshot of src/grid.go, which must be there, by
+// namespace#name.
+func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
+	t.Helper()
+	snap, err := mutate.LoadSnapshot(gridSource)
+	if err != nil || snap == nil {
+		t.Fatalf("no snapshot of %s: %v", gridSource, err)
+	}
+	units := map[string]mutate.UnitResult{}
+	for _, u := range snap.Units {
+		units[u.Namespace+"#"+u.Name] = u
+	}
+	return snap, units
+}
+
+// noBoardSnapshot fails t when the snapshot of src/board.go is still there.
+func noBoardSnapshot(t *testing.T) {
+	t.Helper()
+	if snap, err := mutate.LoadSnapshot(boardSource); err != nil || snap != nil {
+		t.Errorf("the snapshot of %s is still there (%v), want it moved", boardSource, err)
+	}
+}
+
+// @ID-MUT-103
+func TestARenamedFilesResultsFollowIt(t *testing.T) {
+	before := renamedBoard(t, nil)
+
+	m := mutateRun(t, "--json", "--since", "base").json(t)
+	if j := m.judged(t, gridSource); j == nil || len(*j) != 0 {
+		t.Errorf("%s judged %v, want no function judged: a move is no change", gridSource, j)
+	}
+	for _, f := range m.Files {
+		if f.Judged != nil && len(*f.Judged) != 0 {
+			t.Errorf("%s judged %v, want none", f.File, *f.Judged)
+		}
+	}
+	snap, _ := gridUnits(t)
+	if snap.File != filepath.ToSlash(gridSource) {
+		t.Errorf("the snapshot of %s names %q, want its new path", gridSource, snap.File)
+	}
+	if !reflect.DeepEqual(snap.Units, before.Units) || !maps.Equal(snap.Tests, before.Tests) {
+		t.Errorf("the snapshot of %s:\n%+v\nwant what %s's held:\n%+v", gridSource, snap, boardSource, before)
+	}
+	noBoardSnapshot(t)
+	if o := mutationCheck(t, gridSource); o.code != 0 {
+		t.Errorf("mutation check %s: exit %d, want 0\n%s%s", gridSource, o.code, o.stdout, o.stderr)
+	}
+}
+
+// @ID-MUT-104
+func TestARenamedAndEditedFileJudgesOnlyWhatChanged(t *testing.T) {
+	renamedBoard(t, func() {
+		edit(t, gridSource, "// past five\n", "// past five, and not at five\n")
+	})
+
+	m := mutateRun(t, "--json", "--since", "base").json(t)
+	if j := m.judged(t, gridSource); j == nil || !slices.Equal(*j, []string{placeID}) {
+		t.Errorf("%s judged %v, want only %s", gridSource, j, placeID)
+	}
+	_, units := gridUnits(t)
+	if u, ok := units[clearID]; !ok || u.Killed != 1 || u.Sites != 1 {
+		t.Errorf("clear in the snapshot of %s: %+v, want the kill recorded before the rename", gridSource, u)
+	}
+	if u, ok := units[placeID]; !ok || u.Killed != 1 {
+		t.Errorf("place in the snapshot of %s: %+v, want its mutant run and killed", gridSource, u)
+	}
+	noBoardSnapshot(t)
 }
