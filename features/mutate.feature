@@ -495,6 +495,65 @@ Feature: Mutation testing
       Then each file in "files" has "functions", each with function and state "fresh", "stale" or "missing"
       And the problems are those the plain output prints
 
+  # Issue #8, part 2, and IDEAS.md "Killed mutants must notice test
+  # changes": a result was keyed by its function's hash alone, which covers
+  # the function's own source, so deleting the test that killed a mutant
+  # changed nothing and its kill was reused. Decided with the person on
+  # 2026-10-06 (q-4, q-5): each file's snapshot also records the hash of
+  # every test file the graph finds importing it (for Go, its package's test
+  # files and the test files of packages that import it), whatever command
+  # ran the mutants. A kill is reused, and a function is fresh for mutation
+  # check, only while both its own hash and those tests' hashes match. A kill
+  # made only by a test that reaches the file indirectly, or that runs the
+  # built binary, is not made stale when that test changes. A snapshot
+  # written before this records no tests and is stale. A change to a test
+  # that does not import the file leaves its results as they were.
+  Rule: Results go stale when their tests change
+
+    @wip @mutation-test-hash @ID-MUT-65
+    Scenario: The snapshot records the tests that import the file
+      Given src/board.test.ts imports src/board.ts and src/other.test.ts does not
+      When I run "itos-cc mutation run src/board.ts"
+      Then .metrics/mutate/src/board.ts.json records the hash of src/board.test.ts
+      And not of src/other.test.ts
+
+    @wip @mutation-test-hash @ID-MUT-66
+    Scenario: Changing a test that imports the file reruns its kills
+      Given a previous run killed every mutant of "Board#place"
+      And "Board#place" has not changed since, but src/board.test.ts has
+      When I run "itos-cc mutation run src/board.ts"
+      Then every mutant of "Board#place" runs again
+
+    @wip @mutation-test-hash @ID-MUT-67
+    Scenario: Deleting a test that imports the file reruns its kills
+      Given a previous run killed every mutant of "Board#place"
+      And src/board.test.ts was deleted since
+      When I run "itos-cc mutation run src/board.ts"
+      Then no mutant of "Board#place" is reused
+
+    @wip @mutation-test-hash @ID-MUT-68
+    Scenario: mutation check calls results stale when their tests changed
+      Given fresh results for every function of src/board.ts, all killed
+      And src/board.test.ts changed since they were recorded
+      When I run "itos-cc mutation check src/board.ts"
+      Then each function of src/board.ts is a "mutation.stale" problem whose message names src/board.test.ts
+      And the exit code is 1
+
+    @wip @mutation-test-hash @ID-MUT-69
+    Scenario: A snapshot that records no tests is stale
+      Given .metrics/mutate/src/board.ts.json was written before snapshots recorded tests
+      And no function of src/board.ts has changed since
+      When I run "itos-cc mutation check src/board.ts"
+      Then each function of src/board.ts is a "mutation.stale" problem
+      And "itos-cc mutation run src/board.ts" reuses none of its kills
+
+    @wip @mutation-test-hash @ID-MUT-70
+    Scenario: A Go file's tests are its package's and those of packages that import it
+      Given src/board.go is in package board, tested by src/board_test.go
+      And package app imports board and is tested by app/app_test.go
+      When I run "itos-cc mutation run src/board.go"
+      Then .metrics/mutate/src/board.go.json records the hashes of src/board_test.go and app/app_test.go
+
   Rule: Results
 
     @ID-MUT-28
