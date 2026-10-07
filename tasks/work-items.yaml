@@ -379,3 +379,19 @@ items:
       pass the same flags; recording the scope in the snapshot would let sample take it from there,
       and let mutation run refuse to reuse kills made under another scope.
     refs: ["#8"]
+  - id: nightly-runner-kill
+    title: "nightly: a mutant of cmd/itos-cc kills the CI runner, so no results are ever committed"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Nightly runs 37600315790 and 37627544105 (2026-10-07) both died with a runner shutdown signal
+      at mutant 161 of 2213, right after cmd/itos-cc/main.go:133, and the commit step was skipped.
+      Likely a mutant in or near cmd/itos-cc main.go run/runGroup whose tests fork without end, eat
+      memory, or signal every process. The same mutant could take down a developer's machine, so on
+      the person's word (2026-10-07) the investigation waits for a way to run mutation testing of
+      this repository inside a container. Then: find the mutant, cap each mutant's resources, and
+      save results as the run goes, so a killed run keeps what it finished.
+    refs: ["#8"]
