@@ -395,3 +395,19 @@ items:
       this repository inside a container. Then: find the mutant, cap each mutant's resources, and
       save results as the run goes, so a killed run keeps what it finished.
     refs: ["#8"]
+  - id: mutation-annotate-excepted
+    title: mutation run's summary comment lists an excepted survivor as survived
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found building mutation-exceptions (#10). The summary comment mutation run keeps at the end of
+      each source file is built from the snapshot alone, which records an excepted survivor as
+      survived (so mutation sample needs nothing new). So the comment still says '1 survived' and
+      lists the excepted mutant, while mutation run's summary counts it excepted and fails nothing:
+      a reader of the file sees a survivor to kill that itos-cc.yaml already explains. The comment
+      could count excepted survivors apart, only where there is one as the summary line does, and
+      list each with its reason.
+    refs: ["#10"]
