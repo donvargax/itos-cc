@@ -16,6 +16,7 @@ queue:
   - check-unrecorded-sites
   - since-keeps-stale-entries
   - sample-recorded-scope
+  - same-name-units
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
