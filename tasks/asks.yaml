@@ -24,6 +24,7 @@ questions:
     item: "mutate-test-hash"
     question: "Snapshots written before this hold no tests' hash. (a, recommended) Treat them as stale: the first run after the change reruns them (the nightly does it once), and mutation check fails on them until then, so a gate never trusts a result it cannot verify. (b) Treat them as fresh until their function changes: no rerun, but those kills stay unverified against test changes."
     answer: "(a): snapshots without a tests' hash are stale; the next run reruns them and mutation check fails on them until then."
+    decision: none
   - id: q-6
     item: "mutate-sample"
     question: "How is the sample mode spelled? (a, recommended) A subcommand, itos-cc mutation sample: it re-runs a random sample of cached mutants, compares each outcome with the snapshot and writes nothing. sample is the imperative verb rule 3 asks for and stays clear of check (rule 5: verify would overlap it). (b) itos-cc mutation verify, as a word closer to what it proves, accepting the overlap with check."
