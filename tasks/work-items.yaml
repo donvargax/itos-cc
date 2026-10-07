@@ -518,14 +518,9 @@ items:
     title: Snapshots live at the project root and name files from it, wherever a command runs
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was metrics-at-root.
-      Found discussing graph-check-snapshot-lookup: .metrics is relative to the working directory
-      and snapshots name files from there, so where a command runs decides where its results land
-      and what they are called; the graph's path-suffix match papers over it.
     refs: ["#9"]
   - id: graph-testdata-own-root
     title: Graph tests on testdata run from a project root of their own
