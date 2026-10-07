@@ -78,14 +78,9 @@ items:
     title: "mutation run --since follows renames: a file's results move with it"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-since-rename.
-      git diff -U0 prints no hunk for a file renamed without a content change, so none of its
-      functions is judged, and its snapshot stays at the old path under .metrics/mutate while the
-      new path has none.
   - id: since-untouched-files
     title: mutation run --since leaves a file with nothing judged as it was
     phase: 1
