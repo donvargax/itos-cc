@@ -13,6 +13,7 @@ phases:
 queue:
   - mutation-progress-prefix
   - mutation-list-line-order
+  - namespace-working-dir
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
