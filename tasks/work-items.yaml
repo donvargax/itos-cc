@@ -279,3 +279,17 @@ items:
       directory's absolute path dotted, where a package.json beside it gives x#place. Function IDs,
       and so the cache and the debt IDs, then depend on where the checkout lives. The working
       directory could stand in for a root.
+  - id: mutation-check-unrecorded-sites
+    title: "mutation check: a fresh entry that lacks a site is not fully checked"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation check calls an entry fresh when its hash matches, and judges only the mutants it
+      records. When a later itos-cc adds a mutation operator, a function whose text did not change
+      has sites its entry never recorded, and check passes it although no run judged them (run would
+      run them, as they have no kept outcome). Decide whether such a site makes the function stale
+      or missing, or whether the snapshot should record the mutation rules it was made with.
+    refs: ["#8"]
