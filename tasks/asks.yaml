@@ -56,3 +56,4 @@ questions:
   - id: q-14
     item: "mutation-test-hash-since"
     question: "When a file's tests changed, mutation run --since drops the entries of the functions it does not judge, so check calls them missing and their survivors are lost. (a, recommended) Keep those entries, marked stale, so check calls them stale and their survivors are kept. (b) Record the tests' hashes per function instead of per file."
+    answer: "(a) Keep them, marked stale."
