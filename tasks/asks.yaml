@@ -39,6 +39,7 @@ questions:
     item: "mutation-exceptions"
     question: "Where do the exceptions live? (a, recommended) itos-cc.yaml at the project root, under mutation.exceptions: itos-cc's first project setting (docs/CLI.md rule 38), reviewed like code. (b) .metrics/mutate/exceptions.yaml beside the snapshots, as the issue proposed, though .metrics holds what itos-cc writes."
     answer: "(a) itos-cc.yaml at the project root, under mutation.exceptions."
+    decision: 4
   - id: q-10
     item: "mutation-exceptions"
     question: "How is an entry written? It must hold the function's hash to tell when the function changed. (a, recommended) A command, itos-cc mutation except <file>:<line>:<column> --reason '…', which finds the survivor in the snapshot and writes the file, function, hash, the site's place within the function, original, replacement and reason. (b) By hand only, the hash copied from the snapshot."
