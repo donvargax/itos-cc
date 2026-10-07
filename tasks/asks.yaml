@@ -71,3 +71,4 @@ questions:
     item: "graph-snapshot-lookup"
     question: "How should the graph find a file's mutation snapshot, given .metrics is relative to the working directory and the graph matches snapshots by path suffix (ID-GRAPH-26)? (1) The graph looks a file's snapshot up exactly as mutation check does, dropping the suffix match for mutation results. (2) Keep the leniency and document it. (3) Anchor .metrics to the project root for every command, snapshots naming files from the root, so the suffix match has no reason to exist."
     answer: "(1) and (3) together: anchor .metrics at the project root for every command (snapshots-at-root, first), and the graph looks snapshots up as mutation check does (graph-snapshot-lookup)."
+    decision: 8
