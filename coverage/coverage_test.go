@@ -4,6 +4,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -264,6 +265,60 @@ func TestLoadDetectsTheFormat(t *testing.T) {
 		}
 		if len(entries) != 1 || entries[0].Path != want {
 			t.Errorf("%s: entries %+v, want one for %s", name, entries, want)
+		}
+	}
+}
+
+func TestIntegrationBlocksFoldIntoTheTestsOwnAndSayWhichCoveredThem(t *testing.T) {
+	parse := func(profile string, src Source) []Entry {
+		t.Helper()
+		entries, err := ParseGo(strings.NewReader(profile))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := range entries {
+			entries[i].Source = src
+		}
+		return entries
+	}
+	inProcess := parse(`mode: set
+example.com/demo/main.go:5.2,6.10 1 1
+example.com/demo/main.go:7.2,8.10 1 0
+example.com/demo/main.go:9.2,10.10 1 1
+example.com/demo/main.go:11.2,12.10 1 0
+`, InProcess)
+	integration := parse(`mode: set
+example.com/demo/main.go:5.2,6.10 1 1
+example.com/demo/main.go:7.2,8.10 1 1
+example.com/demo/main.go:9.2,10.10 1 0
+example.com/demo/main.go:11.2,12.10 1 0
+`, Integration)
+	file := "/w/demo/main.go"
+	r := Build([]string{file}, "/w/demo", inProcess, integration)
+	if got := fraction(t, r, file, 5, 12); !approx(got, 3.0/4) {
+		t.Errorf("fraction %v, want 3/4: a block either covers is covered, and counted once", got)
+	}
+	for line, want := range map[int][]string{
+		5: {"in-process", "integration"}, 7: {"integration"}, 9: {"in-process"}, 11: nil,
+	} {
+		if got := r.LineSources(file, line); !slices.Equal(got, want) {
+			t.Errorf("line %d sources %q, want %q", line, got, want)
+		}
+	}
+}
+
+func TestExecFlagQuotesTheExecutable(t *testing.T) {
+	saved := Executable
+	defer func() { Executable = saved }()
+	for exe, want := range map[string]string{
+		"":                      "",
+		`C:\Program Files\itos`: `"C:\Program Files\itos" ` + ExecArg,
+		`/opt/it"s/itos-cc`:     `'/opt/it"s/itos-cc' ` + ExecArg,
+		`/opt/"it's"/itos-cc`:   "",
+	} {
+		Executable = exe
+		if got := execFlag(); got != want {
+			t.Errorf("execFlag() with %q = %q, want %q", exe, got, want)
 		}
 	}
 }

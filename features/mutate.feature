@@ -327,9 +327,14 @@ Feature: Mutation testing
   #   or both (the coordinator's call: per mutant, the finest the issue
   #   allows, so a gate can tell).
   # - Coverage is shared, so crap's coverage counts integration data too.
+  # - Found while building it: go test -cover sets each test binary's
+  #   GOCOVERDIR to a directory of its own, and reads only the test binary's
+  #   own data there, so a binary a test builds wrote where nothing read it.
+  #   itos-cc runs each test binary itself (go test -exec), with GOCOVERDIR
+  #   the run's directory; go test's own profile is unchanged.
   Rule: Coverage from tests that run the built binary
 
-    @wip @integration-coverage @ID-MUT-117
+    @integration-coverage @ID-MUT-117
     Scenario: Lines a test reaches through the built binary are covered
       Given a Go module whose only test builds its binary with go build -cover when GOCOVERDIR is set, and runs it
       And the test checks one branch of the binary's output and not another
@@ -338,21 +343,21 @@ Feature: Mutation testing
       And a mutant the test notices is killed, and one it does not notice survives
       And only the mutants on lines the binary never ran are uncovered
 
-    @wip @integration-coverage @ID-MUT-118
+    @integration-coverage @ID-MUT-118
     Scenario: A project whose binary writes no coverage behaves as before
       Given a Go module whose only test builds its binary without -cover and runs it
       When I run "itos-cc mutation run --all-tests --fail-uncovered"
       Then every mutant the binary's code holds is uncovered, as before
       And the exit code is 1
 
-    @wip @integration-coverage @ID-MUT-119
+    @integration-coverage @ID-MUT-119
     Scenario: Which coverage reached each mutant, as JSON
       Given the module of ID-MUT-117, with one function also called by an in-process test
       When I run "itos-cc mutation run --all-tests --json"
       Then each covered mutant has "coverage", listing "in-process", "integration" or both, as the data that covers its line
       And an uncovered mutant has no "coverage"
 
-    @wip @integration-coverage @ID-MUT-120
+    @integration-coverage @ID-MUT-120
     Scenario: The binary's coverage data stays with the run
       When the coverage of ID-MUT-117 runs
       Then GOCOVERDIR names a directory under the run's own run-* directory in .metrics/coverage/

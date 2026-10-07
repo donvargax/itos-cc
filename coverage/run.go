@@ -34,6 +34,12 @@ type Plan struct {
 	// a test runner older than the one supported. Run reports it and runs
 	// nothing; existing reports are still read.
 	Unsupported string
+	// CoverDir, when set, is the GOCOVERDIR the binaries the tests build
+	// with go build -cover write to while the commands run. Run turns what
+	// they wrote into the profile Integration names, read beside Reports,
+	// and removes the directory.
+	CoverDir    string
+	Integration string
 }
 
 // minVitest is the oldest Vitest major whose coverage is measured: the
@@ -115,6 +121,15 @@ func Plans(sources []string, outDir string, scope Scope) []Plan {
 func goPlan(dir, out string, sources []string, own bool) Plan {
 	report := filepath.Join(out, "coverage.out")
 	args := []string{"go", "test", "-count=1", "-covermode=set", "-coverprofile=" + report}
+	coverDir := ""
+	if wrapper := execFlag(); wrapper != "" {
+		// go test sets each test binary's GOCOVERDIR to a directory of its
+		// own, and reads only the test binary's data from it, so a binary
+		// a test builds with -cover would write where nothing reads it.
+		// itos-cc runs each test binary itself, with GOCOVERDIR its own.
+		coverDir = filepath.Join(out, "gocoverdir")
+		args = append(args, "-exec", wrapper)
+	}
 	switch pkgs, testing := GoScope(dir, sources); {
 	case len(pkgs) > 0 && own:
 		// Without -coverpkg each test binary measures its own package.
@@ -130,6 +145,9 @@ func goPlan(dir, out string, sources []string, own bool) Plan {
 		Commands: [][]string{args},
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "coverage.out"), filepath.Join(dir, "cover.out")},
+		CoverDir: coverDir,
+		// Kept beside the report, so --use-existing-coverage reads it too.
+		Integration: filepath.Join(out, "integration.out"),
 	}
 }
 
@@ -327,15 +345,20 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
 			continue
 		}
-		for _, r := range p.Reports {
+		for _, r := range append(p.Reports, p.Integration) {
 			os.Remove(r)
 		}
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
+		var env []string
+		if p.CoverDir != "" && os.MkdirAll(p.CoverDir, 0o755) == nil {
+			env = append(os.Environ(), coverDirEnv+"="+p.CoverDir)
+		}
 		failed := ""
 		for _, args := range p.Commands {
 			fmt.Fprintf(log, "coverage: %s$ %s\n", p.Dir, strings.Join(args, " "))
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Dir = p.Dir
+			cmd.Env = env
 			cmd.Stdout = log
 			cmd.Stderr = log
 			if err := cmd.Run(); err != nil {
@@ -343,7 +366,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		r := load(p.Reports, p.Dir, sources, log)
+		r := load(p.Reports, p.integrate(log), p.Dir, sources, log)
 		// Told by exit status and the report alone, never by what the
 		// runner prints: a run that succeeded and wrote its report measured
 		// its language, whichever files the report names.
@@ -388,7 +411,12 @@ func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 		r := &Report{}
 		for _, path := range p.Existing {
 			if exists(path) {
-				r = load([]string{path}, p.Dir, sources, log)
+				// A run's integration profile goes with its report.
+				integration := ""
+				if path == p.Reports[0] && p.Integration != "" && exists(p.Integration) {
+					integration = p.Integration
+				}
+				r = load([]string{path}, integration, p.Dir, sources, log)
 				break
 			}
 		}
@@ -401,11 +429,13 @@ func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 // directory.
 func Files(paths []string, sources []string, log io.Writer) *Report {
 	wd, _ := os.Getwd()
-	return load(paths, wd, sources, log)
+	return load(paths, "", wd, sources, log)
 }
 
-// load reads the reports at paths; each that cannot be read is Missing.
-func load(paths []string, base string, sources []string, log io.Writer) *Report {
+// load reads the reports at paths; each that cannot be read is Missing. The
+// profile at integration, unless it is "", is read beside them as
+// Integration data; one that cannot be read is only logged.
+func load(paths []string, integration, base string, sources []string, log io.Writer) *Report {
 	var all [][]Entry
 	var missing []Unmeasured
 	for _, path := range paths {
@@ -414,6 +444,16 @@ func load(paths []string, base string, sources []string, log io.Writer) *Report 
 			fmt.Fprintf(log, "coverage: %v\n", err)
 			missing = append(missing, Unmeasured{Report: path, Cause: Unreadable, Reason: err.Error()})
 			continue
+		}
+		all = append(all, entries)
+	}
+	if integration != "" {
+		entries, err := Load(integration)
+		if err != nil {
+			fmt.Fprintf(log, "coverage: %v\n", err)
+		}
+		for i := range entries {
+			entries[i].Source = Integration
 		}
 		all = append(all, entries)
 	}

@@ -126,6 +126,17 @@ it. With paths or `--changed`, Go and TypeScript coverage runs only the
 tests that load those files, which measures them the same as the whole
 suite does; `--all-tests` runs the whole suite anyway.
 
+Go code that tests reach by running the built binary counts too, through
+Go's integration coverage: while `go test` runs, itos-cc points `GOCOVERDIR`
+at a directory of the run's own under `.metrics/coverage/`, then turns
+whatever was written there into a profile (`go tool covdata textfmt`) and
+merges it with `go test`'s, a line covered if either covers it. A project
+opts in by having its test harness build the binary with `go build -cover`
+when `GOCOVERDIR` is set; one that does not measures as before. `go test`
+replaces `GOCOVERDIR` in each test binary's environment with a directory of
+its own, so itos-cc runs each test binary itself (`go test -exec`), with
+`GOCOVERDIR` set to the run's directory.
+
 A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
@@ -174,15 +185,20 @@ test. What keeps `mutation run` fast:
 
 `--all-tests` runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests anywhere in the build root can kill
-mutants. Tests that only run the built binary do not show up in coverage, so
-add `--no-coverage` to let them reach code nothing else covers. It is slow;
-run it nightly rather than on every change:
+mutants. In Go, tests that run the built binary show up in coverage when
+the binary is built with `go build -cover` under `GOCOVERDIR` (see
+[crap](#crap)), and each mutant's run rebuilds it from the mutated copy, so
+their kills count. `--json` says, for each mutant whose line is covered,
+which coverage covered it: `"in-process"`, `"integration"`, or both. In
+other languages such tests do not show up in coverage, so add
+`--no-coverage` to let them reach code nothing else covers. It is slow; run
+it nightly rather than on every change:
 
 ```bash
 itos-cc mutation run --changed                               # while working: own tests, fast
 itos-cc mutation run --since origin/main --fail-uncovered    # a gate: the functions the branch's commits changed
 itos-cc mutation run --all-tests                             # nightly, e.g. a scheduled CI job
-itos-cc mutation run --all-tests --no-coverage               # nightly, with end-to-end tests that run the binary
+itos-cc mutation run --all-tests --no-coverage               # nightly, with end-to-end tests that run a binary without coverage
 itos-cc mutation list src/billing                            # the mutation sites, without running tests
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 itos-cc mutation sample                                      # in CI: do 20 cached results still hold?

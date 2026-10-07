@@ -6,6 +6,8 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
+
+	"github.com/donvargax/itos-cc/coverage"
 )
 
 // version is set at release time with -ldflags '-X main.version=…'. A binary
@@ -99,6 +101,17 @@ Report issues at ` + issues + "\n")
 
 func main() {
 	os.Exit(run(os.Args[1:]))
+}
+
+// init makes this executable the one go test runs each test binary through
+// for Go coverage, and runs a test binary when go test does. An init rather
+// than main, so the test binary of this package does the same and its tests
+// run coverage as itos-cc does.
+func init() {
+	if len(os.Args) > 1 && os.Args[1] == coverage.ExecArg {
+		os.Exit(coverage.ExecTest(os.Args[2:]))
+	}
+	coverage.Executable, _ = os.Executable()
 }
 
 // run dispatches args to a command. --json, -h, --help, and --version may

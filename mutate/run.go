@@ -82,6 +82,10 @@ type MutantResult struct {
 	// Excepted is the reason itos-cc.yaml gives when it excepts the mutant
 	// and the mutant survived; empty otherwise.
 	Excepted string
+	// Coverage names the sources of this run's coverage that executed the
+	// mutant's line, "in-process", "integration", or both; empty when
+	// coverage was not measured or did not execute it.
+	Coverage []string
 }
 
 // skipped marks a site of a function not judged that has no outcome to keep:
@@ -96,9 +100,10 @@ type fileState struct {
 	rel      string // the file's path as output names it, from the working directory
 	key      string // the file's path as its snapshot names it, from the project root
 	sites    []Site
-	outcomes []string // "" while pending
-	reused   []bool   // the outcome came from the previous snapshot
-	scopes   []string // the scope that decided each outcome, or decides it in this run
+	outcomes []string   // "" while pending
+	reused   []bool     // the outcome came from the previous snapshot
+	scopes   []string   // the scope that decided each outcome, or decides it in this run
+	coverage [][]string // the sources of coverage that executed each site's line, or nil
 	command  Command
 	result   *FileResult
 	previous *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
@@ -309,15 +314,21 @@ func (s *fileState) decided() []MutantResult {
 		if stale != nil {
 			s.result.StaleExceptions = append(s.result.StaleExceptions, *stale)
 		}
-		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Scope: s.scopes[i], Excepted: reason})
+		var covered []string
+		if s.coverage != nil && s.outcomes[i] != Uncovered {
+			covered = s.coverage[i]
+		}
+		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Scope: s.scopes[i],
+			Excepted: reason, Coverage: covered})
 	}
 	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })
 	return out
 }
 
-// markUncovered settles pending sites on lines no test executes. A file the
-// report never mentions is uncovered when coverage measured its language:
-// a coverage command for it succeeded, even with a report that names no file
+// markUncovered settles pending sites on lines no test executes, and records
+// which sources of coverage executed each site's line. A file the report
+// never mentions is uncovered when coverage measured its language: a
+// coverage command for it succeeded, even with a report that names no file
 // of the run, or the report measured other files of the run in it. The tests
 // ran and never loaded it.
 func markUncovered(states []*fileState, opt Options) {
@@ -344,7 +355,9 @@ func markUncovered(states []*fileState, opt Options) {
 			fmt.Fprintf(opt.Log, "itos-cc: no coverage for %s; running every mutant\n", s.rel)
 			continue
 		}
+		s.coverage = make([][]string, len(s.sites))
 		for i, site := range s.sites {
+			s.coverage[i] = report.LineSources(s.file.Path, site.Line)
 			if s.outcomes[i] != "" {
 				continue
 			}

@@ -23,6 +23,8 @@ type Segment struct {
 	Start, End     int
 	Total, Covered float64
 	Key            string
+	// from holds a bit for each Source whose data covered the segment.
+	from uint8
 }
 
 // Entry is one file as a report names it, before it is matched to a source
@@ -31,7 +33,25 @@ type Entry struct {
 	Path     string
 	Segments []Segment
 	Branches []Segment
+	// Source is where the report's data came from.
+	Source Source
 }
+
+// Source is where coverage data came from.
+type Source int
+
+const (
+	// InProcess is a report's own data: what the tests executed in their own
+	// processes, or whatever a report named with --coverage-report holds.
+	InProcess Source = iota
+	// Integration is what Go binaries built with go build -cover wrote to
+	// GOCOVERDIR while the tests ran them.
+	Integration
+)
+
+var sourceNames = []string{"in-process", "integration"}
+
+func (s Source) String() string { return sourceNames[s] }
 
 // Report is coverage keyed by absolute source path.
 type Report struct {
@@ -165,6 +185,28 @@ func (r *Report) LineCovered(file string, line int) (covered, measured bool) {
 	return false, measured
 }
 
+// LineSources names the sources whose data executed a segment covering
+// line, in the order of Source: "in-process", "integration", or both. It is
+// empty when no segment covering line was executed.
+func (r *Report) LineSources(file string, line int) []string {
+	if r == nil {
+		return nil
+	}
+	var from uint8
+	for _, s := range r.files[file] {
+		if line >= s.Start && line <= s.End && s.Covered > 0 {
+			from |= s.from
+		}
+	}
+	var out []string
+	for i, name := range sourceNames {
+		if from&(1<<i) != 0 {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
 // Build matches each entry to one of sources and merges entries that name the
 // same file, and segments that name the same piece of it. base is the
 // directory the report's relative paths start from. Entries that match no
@@ -176,18 +218,22 @@ func Build(sources []string, base string, entries ...[]Entry) *Report {
 	for _, list := range entries {
 		for _, e := range list {
 			if file := m.match(e.Path, base); file != "" {
-				r.files[file] = merged(r.files[file], e.Segments, file+"\x00lines", seen)
-				r.branches[file] = merged(r.branches[file], e.Branches, file+"\x00branches", seen)
+				r.files[file] = merged(r.files[file], e.Segments, e.Source, file+"\x00lines", seen)
+				r.branches[file] = merged(r.branches[file], e.Branches, e.Source, file+"\x00branches", seen)
 			}
 		}
 	}
 	return r
 }
 
-// merged appends more to segs, folding a segment whose key segs already
-// holds into that one.
-func merged(segs, more []Segment, prefix string, seen map[string]int) []Segment {
+// merged appends more, from src, to segs, folding a segment whose key segs
+// already holds into that one: covered when either is, by the sources of
+// both.
+func merged(segs, more []Segment, src Source, prefix string, seen map[string]int) []Segment {
 	for _, s := range more {
+		if s.Covered > 0 {
+			s.from |= 1 << src
+		}
 		if s.Key == "" {
 			segs = append(segs, s)
 			continue
@@ -195,6 +241,7 @@ func merged(segs, more []Segment, prefix string, seen map[string]int) []Segment 
 		key := prefix + "\x00" + s.Key
 		if i, ok := seen[key]; ok {
 			segs[i].Covered = max(segs[i].Covered, s.Covered)
+			segs[i].from |= s.from
 			continue
 		}
 		seen[key] = len(segs)

@@ -58,8 +58,10 @@ tests never execute are uncovered and are not run.
 
 --all-tests runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests can kill mutants too. It is slow: run it
-nightly. Add --no-coverage for end-to-end tests that only run the built
-binary, which coverage does not see.
+nightly. In Go, a test that runs the built binary shows up in coverage when
+it builds the binary with go build -cover while GOCOVERDIR is set: itos-cc
+sets it, and merges what the binary wrote with go test's own coverage.
+Elsewhere coverage does not see such tests: add --no-coverage for them.
 
 Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions, and the
@@ -109,8 +111,10 @@ config.invalid, and nothing runs.`,
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
    "function", "original", "replacement",
    "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
-   "scope": "own"|"all-tests"|"<test command>", and for an
-   excepted survivor "excepted": "its reason"}], and with --since
+   "scope": "own"|"all-tests"|"<test command>", for an excepted
+   survivor "excepted": "its reason", and where this run's coverage
+   executed its line "coverage": ["in-process", "integration"], either or
+   both}], and with --since
    "judged": ["namespace#name"]}]`,
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
@@ -192,6 +196,10 @@ type mutateMutant struct {
 	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
 	// only; its outcome stays survived.
 	Excepted string `json:"excepted,omitempty"`
+	// Coverage names the coverage that executed the mutant's line,
+	// "in-process", "integration", or both; there only when this run's
+	// coverage executed it.
+	Coverage []string `json:"coverage,omitempty"`
 }
 
 type mutateResult struct {
@@ -325,7 +333,8 @@ func runMutate(in *invocation) (any, error) {
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
 		for _, m := range r.Mutants {
 			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted})
+				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
+				Coverage: m.Coverage})
 		}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.

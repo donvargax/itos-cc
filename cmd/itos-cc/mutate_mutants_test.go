@@ -129,8 +129,14 @@ func TestFull(t *testing.T) {
 	for _, f := range o.rawFiles(t) {
 		list, _ := f["mutants"].([]any)
 		for _, m := range list {
-			if keys := slices.Sorted(maps.Keys(m.(map[string]any))); !slices.Equal(keys, mutantKeys) {
-				t.Errorf("mutant keys %q, want %q", keys, mutantKeys)
+			// A mutant the tests executed also says which coverage did
+			// (ID-MUT-119).
+			want := mutantKeys
+			if m.(map[string]any)["outcome"] != "uncovered" {
+				want = slices.Sorted(slices.Values(append([]string{"coverage"}, mutantKeys...)))
+			}
+			if keys := slices.Sorted(maps.Keys(m.(map[string]any))); !slices.Equal(keys, want) {
+				t.Errorf("mutant keys %q, want %q", keys, want)
 			}
 		}
 	}
