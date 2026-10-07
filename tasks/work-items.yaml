@@ -229,16 +229,9 @@ items:
     title: "mutation check: a site the entry never recorded makes its function stale"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-check-unrecorded-sites.
-      mutation check calls an entry fresh when its hash matches, and judges only the mutants it
-      records. When a later itos-cc adds a mutation operator, a function whose text did not change
-      has sites its entry never recorded, and check passes it although no run judged them (run would
-      run them, as they have no kept outcome). Decide whether such a site makes the function stale
-      or missing, or whether the snapshot should record the mutation rules it was made with.
     refs: ["#8"]
   - id: same-name-units
     title: "Functions sharing a name are matched to their results by name and hash, in run, check and the graph"
