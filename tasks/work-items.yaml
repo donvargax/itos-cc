@@ -224,17 +224,9 @@ items:
     title: "mutation sample: re-run a sample of cached mutants in CI and fail on a mismatch"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [mutation-check]
     kind: slice
-    why: >
-      Was mutate-sample.
-      Issue #8 part 3: CI re-runs N cached mutants chosen at random, or all of the changed
-      functions', and fails when an outcome differs from the snapshot, so a committed cache written
-      by hand or against other code is caught without a full run.
-
-      On hold at the person's word (2026-10-07): the first thing of the next session is to answer
-      q-6 to q-8 (spelling, count and seed, what is sampled and what fails), then specify it.
     refs: ["#8"]
   - id: mutation-group
     title: "mutation group: mutate becomes mutation run, --scan becomes mutation list"
