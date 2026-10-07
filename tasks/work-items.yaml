@@ -10,8 +10,7 @@
 #     depends_on: []
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
-queue:
-  - slice-3
+queue: []
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
