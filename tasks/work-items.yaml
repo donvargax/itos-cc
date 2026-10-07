@@ -285,20 +285,9 @@ items:
     title: "Mutants run only the listed tests that reach them, from per-test coverage"
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [integration-coverage]
     kind: slice
-    why: >
-      Was test-attribution.
-      The tests' hash (q-4) records the test files that import a file, so a kill made by an
-      end-to-end test, or by a test more than one import away, does not go stale when that test
-      changes. Coverage measured per test file, binary-running tests included, maps which tests
-      execute each function, and the hash can cover exactly those. Costs a coverage run per test
-      file when some mutant has to run.
-
-      Issue #14 part 2 (2026-10-07): coverage per test, so a mutant runs only the tests that reach
-      its line, e2e tests included; for a godog-style suite it needs a command to list the e2e tests
-      and one to run a selection, each with a fresh GOCOVERDIR.
   - id: sample-recorded-scope
     title: "Each outcome records the scope of its tests, and mutation sample re-runs with it"
     phase: 1
