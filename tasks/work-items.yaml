@@ -248,11 +248,9 @@ items:
     title: "mutation group: mutate becomes mutation run, --scan becomes mutation list"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Spec in features/cli.feature, Rule: The mutation group.
     refs: ["#8"]
   - id: mutation-log-prefix
     title: "mutation run's progress lines on stderr still begin mutate:"
