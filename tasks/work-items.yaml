@@ -108,19 +108,9 @@ items:
     title: "mutation check: report missing, stale or failing cached results without running anything"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [mutation-group]
     kind: slice
-    why: >
-      Was mutate-check-sample.
-      Issue #8: a gate at itos work done needs to trust cached kills without re-running every mutant
-      (--check), and CI a sample that spot-checks the cache (sample mode). #9 says itos would call
-      mutate --check at work done, so this follows the #9 ideas.
-
-      Issue #8 part 1: a gate (a commit hook) proves results exist for exactly the code being
-      committed without running anything: for each selected function compare its current hash with
-      the snapshot, and report the missing or stale ones. Parts 2 (tests' hash) and 3 (sample mode)
-      are mutate-test-hash and mutate-sample.
     refs: ["#8"]
   - id: mutate-exceptions
     title: "mutate: equivalent mutants excepted in a committed file, each with a reason"
