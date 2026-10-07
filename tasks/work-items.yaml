@@ -455,3 +455,18 @@ items:
     status: dropped
     depends_on: []
     kind: idea
+  - id: renamed-snapshot-left-behind
+    title: A renamed file's snapshot stays at its old path when no run selects the new one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With since-follows-renames, mutation run --since moves a renamed file's snapshot only when it
+      selects the file by its new path. A run whose paths cover only the old path, or any run
+      without --since, leaves the old snapshot under .metrics/mutate for a file that is gone, and
+      nothing removes it later; mutation check on the new path calls the functions missing until a
+      --since run over it. The snapshot also stays when a new file now sits at the old path, since
+      it is that file's path again. Whether a run without --since should find such orphans, and
+      whether the old snapshot should be dropped or kept there, needs a decision.
