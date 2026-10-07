@@ -295,14 +295,9 @@ items:
     title: The graph marks a function stale when its tests changed, as mutation check does
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was viewer-stale-tests.
-      The graph overlay (graph/build.go, apply) sets Unit.Stale from the function hash alone, while
-      mutation run and mutation check now also treat a change to the tests recorded in the snapshot
-      (mutation-test-hash) as stale. The viewer can show a kill as current that check calls stale.
   - id: flaky-kills
     title: "mutation: report a mutant whose outcome changes between runs with nothing changed"
     phase: 1
