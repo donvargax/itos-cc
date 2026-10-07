@@ -812,6 +812,50 @@ Feature: Mutation testing
       And each file has "mutants", each sampled one with line, column, function, original, replacement, recorded, and outcome
       And the problems are those the plain output prints
 
+    # A snapshot did not record which tests decided its outcomes, so
+    # mutation sample, re-running with the file's own tests unless told
+    # otherwise, read a kill only an end-to-end test makes under --all-tests
+    # as a survivor: a mutation.mismatch that was no cache error. Decided
+    # with the person on 2026-10-07 (q-15): each recorded outcome keeps its
+    # scope, "own" (the file's own tests), "all-tests", or the
+    # --test-command line, and a reused outcome keeps the scope it was
+    # decided with. mutation sample re-runs each mutant with its recorded
+    # scope; --all-tests or --test-command given to sample override it for
+    # every mutant. An outcome with no recorded scope, written before this,
+    # is taken as "own" (the coordinator's call: it is what a run without
+    # those flags used).
+    @wip @sample-recorded-scope @ID-MUT-109
+    Scenario: Each recorded outcome keeps the scope of the tests that decided it
+      When I run "itos-cc mutation run --all-tests src/board.ts"
+      Then each mutant in .metrics/mutate/src/board.ts.json records scope "all-tests"
+      And with --test-command 'make test' each records "make test", and with neither each records "own"
+
+    @wip @sample-recorded-scope @ID-MUT-110
+    Scenario: A reused outcome keeps its scope
+      Given a run with --all-tests killed every mutant of "Board#place"
+      And nothing has changed since
+      When I run "itos-cc mutation run src/board.ts"
+      Then the mutants of "Board#place" are reused and still record scope "all-tests"
+
+    @wip @sample-recorded-scope @ID-MUT-111
+    Scenario: mutation sample re-runs each mutant with its recorded scope
+      Given a run with --all-tests recorded a kill in src/board.ts that only an end-to-end test makes
+      When I run "itos-cc mutation sample --count 100 src/board.ts"
+      Then that mutant runs the whole suite and is killed
+      And no "mutation.mismatch" is reported
+
+    @wip @sample-recorded-scope @ID-MUT-112
+    Scenario: A scope given to mutation sample overrides the recorded one
+      Given outcomes of src/board.ts recorded with scope "all-tests"
+      When I run "itos-cc mutation sample --test-command 'make test' src/board.ts"
+      Then every sampled mutant runs "make test"
+
+    @wip @sample-recorded-scope @ID-MUT-113
+    Scenario: An outcome with no recorded scope was decided by the file's own tests
+      Given fresh results for src/board.ts written before outcomes recorded their scope
+      When I run "itos-cc mutation sample src/board.ts"
+      Then each sampled mutant runs the file's own tests
+
   Rule: Results
 
     @ID-MUT-28
