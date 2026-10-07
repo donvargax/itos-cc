@@ -9,6 +9,7 @@
 package mutate
 
 import (
+	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -42,7 +43,8 @@ func (s Site) Apply(src []byte) []byte {
 	return append(out, src[s.End:]...)
 }
 
-// Sites returns every mutation in the file's units, in source order.
+// Sites returns every mutation in the file's units, unit by unit, each
+// unit's in source order; LineOrder puts them in the file's line order.
 // Strings and comments hold no sites because only operator, boolean, and
 // number tokens are ever changed.
 func Sites(f *lang.File) []Site {
@@ -88,6 +90,16 @@ func Sites(f *lang.File) []Site {
 		})
 	}
 	return sites
+}
+
+// LineOrder compares sites by line, then column: the order a file's sites
+// are listed in. Sites come unit by unit, which is not line order where a
+// unit holds an inline one.
+func LineOrder(a, b Site) int {
+	if a.Line != b.Line {
+		return cmp.Compare(a.Line, b.Line)
+	}
+	return cmp.Compare(a.Column, b.Column)
 }
 
 // UnitHash fingerprints a unit's source text, without its inline units.

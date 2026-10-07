@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
@@ -136,7 +137,8 @@ var mutationListCommand = &command{
 	about: `
 Lists each mutation site of the production sources chosen, the changes
 mutation run makes one at a time, without running any test, as
-"file:line:column ` + "`original` → `replacement`" + ` in namespace#name".`,
+"file:line:column ` + "`original` → `replacement`" + ` in namespace#name",
+each file's sites in line and column order.`,
 	flags: append([]flagSpec{}, selectionFlags...),
 	json:  `"sites": [{"file", "line", "column", "function", "original", "replacement"}]`,
 	exits: []exitDoc{
@@ -456,7 +458,7 @@ func runMutationList(in *invocation) (any, error) {
 		if err != nil {
 			return result, err
 		}
-		for _, s := range mutate.Sites(f) {
+		for _, s := range slices.SortedStableFunc(slices.Values(mutate.Sites(f)), mutate.LineOrder) {
 			u := f.Units[s.Unit]
 			site := mutateSite{File: project.Rel(path), Line: s.Line, Column: s.Column,
 				Function: u.Namespace + "#" + u.Name, Original: s.Original, Replacement: s.Replacement}

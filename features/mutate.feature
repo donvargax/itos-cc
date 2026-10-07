@@ -142,7 +142,7 @@ Feature: Mutation testing
     # of the function around it, while mutation run --json lists a file's
     # mutants by line and column (ID-MUT-52). Both list in line and column
     # order (the coordinator's call, 2026-10-07).
-    @wip @mutation-list-line-order @ID-MUT-101
+    @mutation-list-line-order @ID-MUT-101
     Scenario: Sites are listed in line order, inline callbacks included
       Given src/app.ts has a function with a site before, inside and after an inline callback
       When I run "itos-cc mutation list src/app.ts"

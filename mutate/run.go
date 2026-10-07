@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -234,14 +234,7 @@ func (s *fileState) decided() []MutantResult {
 		}
 		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Excepted: reason})
 	}
-	// Sites come unit by unit, which is not line order where a unit holds
-	// an inline one.
-	sort.SliceStable(out, func(a, b int) bool {
-		if out[a].Line != out[b].Line {
-			return out[a].Line < out[b].Line
-		}
-		return out[a].Column < out[b].Column
-	})
+	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })
 	return out
 }
 
