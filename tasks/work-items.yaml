@@ -528,3 +528,20 @@ items:
       none of its results match a file of shop. Such tests should run from a root of their own, such
       as a temporary git repository holding a copy of the fixture, so this repository's results
       never leak into them.
+  - id: integration-coverage-other-languages
+    title: Coverage from tests that run the built program, in TypeScript, Python and Kotlin
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      integration-coverage reads what Go binaries built with -cover write to GOCOVERDIR. The other
+      languages have their own way to measure a program the tests start as another process: Node
+      writes V8 coverage for every process to NODE_V8_COVERAGE, which c8 report turns into LCOV;
+      coverage.py measures subprocesses once COVERAGE_PROCESS_START names its config (coverage
+      combine merges the data files); JaCoCo's agent (-javaagent, or JAVA_TOOL_OPTIONS) writes an
+      exec file per JVM, merged by jacoco:merge. One idea: let each plan name an environment for its
+      commands and a step that turns what was written into a report, merged as integration data as
+      Go's is, so --json's coverage says integration there too.
+    refs: ["#14"]
