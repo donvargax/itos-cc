@@ -26,3 +26,6 @@ questions:
   - id: q-7
     item: "mutate-sample"
     question: "How many, and how random? (a, recommended) --count N, default 20, and the choice seeded from the HEAD commit, so a CI rerun of the same commit samples the same mutants and each new commit samples others; --seed overrides it to reproduce a run. (b) A fresh random seed every run, printed so it can be reproduced, so reruns of one commit sample differently."
+  - id: q-8
+    item: "mutate-sample"
+    question: "What is sampled, and what fails? (a, recommended) Only the fresh entries of the selection (stale and missing ones are mutation check's to report), and among them only mutants that ran (killed, timeout, survived: an uncovered one would need a coverage run). Any outcome that differs from the snapshot fails as mutation.mismatch, naming both outcomes, whichever way it went: the cache was wrong either way. (b) Fail only when a cached kill now survives, the direction that lets a gate pass wrongly, and print the other differences without failing."
