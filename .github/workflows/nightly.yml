@@ -1,0 +1,92 @@
+name: Nightly
+
+# Mutation testing over the whole suite, too slow for every push. Killed
+# mutants are cached in .metrics/mutate/, which is committed back to main so
+# the next night, and everyone's local runs, reuse the kills of unchanged
+# functions instead of starting over. itos-cc mutate exits 1 when any mutant
+# survives, which is most nights: the job then ends red, and the results are
+# committed anyway.
+on:
+  schedule:
+    - cron: "0 9 * * *" # 09:00 UTC, 2am Pacific
+  workflow_dispatch:
+
+# Two runs never overlap: the second waits for the first, so it starts from
+# the results the first committed.
+concurrency:
+  group: nightly-mutate
+  cancel-in-progress: false
+
+jobs:
+  mutate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Pinned to the same commits as ci.yml. Full history, so the commit
+      # step can rebase onto a main that moved during the run.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      # Outside the work tree, so the binary is neither mutated nor copied
+      # into the workers' private copies of the project.
+      - name: Build itos-cc
+        run: go build -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc
+
+      # Fails the job as it exits. --no-annotate: no committed source carries
+      # the summary comment, and the job must not rewrite the sources.
+      - name: Mutate
+        run: '"$RUNNER_TEMP/itos-cc" mutate --all-tests --no-annotate'
+
+      # Runs whether Mutate passed or failed, so a night with survivors still
+      # stores its kills. Its own success never turns the job green.
+      - name: Commit .metrics/mutate/
+        if: ${{ !cancelled() }}
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "Not on main ($GITHUB_REF): the results are not committed."
+            exit 0
+          fi
+          git add -- .metrics/mutate/
+          if git diff --cached --quiet; then
+            echo "No change under .metrics/mutate/."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          cat > "$RUNNER_TEMP/message" <<EOF
+          chore: record the nightly mutation results
+
+          The nightly run of itos-cc mutate --all-tests updated .metrics/mutate/.
+          Committing it lets the next run, and local runs, reuse the kills of
+          functions that have not changed instead of starting over. It is
+          committed whether or not mutants survived; the run says which:
+          $RUN_URL
+
+          Task: T-3
+          EOF
+          git commit --quiet -F "$RUNNER_TEMP/message"
+          git log -1 --stat
+          # Main may have moved during the run: rebase onto it and push, and
+          # try again if it moved once more in between.
+          for attempt in 1 2 3; do
+            if ! git pull --rebase --autostash origin main; then
+              git rebase --abort || true
+              echo "::error::Rebasing the results onto origin/main failed."
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push attempt $attempt failed; retrying."
+            sleep $((attempt * 5))
+          done
+          echo "::error::Could not push the results after 3 attempts."
+          exit 1
