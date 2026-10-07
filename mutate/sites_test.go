@@ -64,7 +64,7 @@ func TestRouteSitesBelongToTheRoute(t *testing.T) {
 	for _, s := range Sites(f) {
 		got = append(got, fmt.Sprintf("%s %s>%s", f.Units[s.Unit].Name, s.Original, s.Replacement))
 	}
-	if want := []string{"mount 1>0", "GET /x >>>=","GET /x 0>1"}; !slices.Equal(got, want) {
+	if want := []string{"mount 1>0", "GET /x >>>=", "GET /x 0>1"}; !slices.Equal(got, want) {
 		t.Errorf("sites:\n got  %q\n want %q", got, want)
 	}
 	edited := parse(t, "x.ts", strings.Replace(src, "req.q > 0", "req.q < 1", 1))
