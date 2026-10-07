@@ -352,3 +352,16 @@ items:
       coverage to GOCOVERDIR on each run, and go tool covdata textfmt turns it into a profile to
       merge with go test's; Node (NODE_V8_COVERAGE), coverage.py (subprocess) and JaCoCo (agent)
       have their own. Starts with Go.
+  - id: test-attribution
+    title: "mutation: key results by the tests that execute each function, measured per test file"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [e2e-coverage]
+    kind: idea
+    why: >
+      The tests' hash (q-4) records the test files that import a file, so a kill made by an
+      end-to-end test, or by a test more than one import away, does not go stale when that test
+      changes. Coverage measured per test file, binary-running tests included, maps which tests
+      execute each function, and the hash can cover exactly those. Costs a coverage run per test
+      file when some mutant has to run.
