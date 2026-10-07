@@ -42,14 +42,15 @@ items:
       project.ChangedSince/Overlaps. Unfinished: run.go has a truncated "conti" and does not
       compile, snapshot.build still counts skipped sites in Sites, and no command or scenario uses
       it yet. Needs scenarios in mutate.feature before it is work.
-  - id: windows-metrics-write
-    title: metrics.Write loses concurrent writes on Windows, so CI is red there
+  - id: T-4
+    title: Snapshot writes at the same time pass on Windows
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: task
     why: >
+      Was windows-metrics-write.
       TestWritesAtTheSameTimeLeaveOneWholeSnapshot (metrics/metrics_test.go, from ceef519) fails on
       windows-latest in every CI run since 88b2142 (runs 37563106445, 37563187387, 37563299759):
       os.Rename of a staging .tmp file onto .metrics/x.json returns 'Access is denied' when another
