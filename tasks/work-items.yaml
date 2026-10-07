@@ -90,15 +90,9 @@ items:
     title: mutation run --since leaves a file with nothing judged as it was
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-since-annotate.
-      A file the range changed only outside functions, such as its imports, is selected with "judged
-      0 of N", and mutate still writes its snapshot and rewrites its summary comment though nothing
-      in it ran. The comment also counts every function the snapshot holds, while stdout counts only
-      those judged.
   - id: windows-cross-vet
     title: GOOS=windows go vet ./... cannot pass off Windows
     phase: 1
