@@ -384,6 +384,42 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --mutate-all"
       Then killed mutants of unchanged functions run again too
 
+  # Units sharing a namespace#name in one file (several Go init functions,
+  # Kotlin or TypeScript overloads) were told apart three ways: mutation run
+  # kept only the last one's hash, so only it reused its outcomes, and the
+  # --since judge and the entries it keeps keyed by name alone; mutation
+  # check matched any entry of the name with the same hash; the graph paired
+  # them by position. All of them match an entry by name and hash, as check
+  # did (the coordinator's call, 2026-10-07, on the person's go-ahead to fix
+  # mutate-same-name-units and graph-stale-same-name together). A unit is
+  # fresh when an entry of its name has its hash, so reordering such units
+  # changes nothing and editing one makes only that one stale; units with
+  # the same name and the same hash pair with their entries in file order.
+  Rule: Functions sharing a name
+
+    @wip @same-name-units @ID-MUT-114
+    Scenario: Functions sharing a name each reuse their own results
+      Given src/setup.go declares two init functions with different bodies, each with a mutant the tests kill
+      And a previous run recorded both
+      When I run "itos-cc mutation run src/setup.go" with nothing changed
+      Then the mutants of both init functions are reused, and none runs
+
+    @wip @same-name-units @ID-MUT-115
+    Scenario: Editing one of two functions sharing a name reruns only it
+      Given a previous run recorded both init functions of src/setup.go, all killed
+      And the second init function has changed since
+      When I run "itos-cc mutation check src/setup.go"
+      Then the only problem is "mutation.stale", for the second init function
+      And "itos-cc mutation run src/setup.go" runs only the second init function's mutants
+
+    @wip @same-name-units @ID-MUT-116
+    Scenario: Reordering functions sharing a name changes nothing
+      Given a previous run recorded both init functions of src/setup.go, all killed
+      And the two have swapped places since, unchanged
+      When I run "itos-cc mutation check src/setup.go"
+      Then the exit code is 0
+      And "itos-cc mutation run src/setup.go" reuses every mutant
+
   # Issue #9, part 1: a gate judges a task's commits, not the working tree,
   # so --since <ref> picks the functions the commits since <ref> changed.
   # The range is git diff <ref>...HEAD: the branch's own commits whatever its

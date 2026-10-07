@@ -255,6 +255,17 @@ Feature: Architecture graph
       When the graph is built
       Then only a.go's init carries a.go's results
 
+    # The graph matches a function's mutation entry by name and hash, as
+    # mutation check and mutation run do (see "Functions sharing a name" in
+    # mutate.feature).
+    @wip @same-name-units @ID-GRAPH-35
+    Scenario: The graph and mutation check agree on functions sharing a name
+      Given a Go file with two init functions whose results a previous run recorded
+      And the second has changed since
+      When the graph is built
+      Then only the second init function is marked stale
+      And with the two swapped instead, unchanged, neither is marked stale
+
     @ID-GRAPH-26
     Scenario: Snapshots written from another directory still match
       Given a snapshot names "repo/lang/kotlin.go"
