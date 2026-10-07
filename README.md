@@ -173,9 +173,18 @@ run it nightly rather than on every change:
 
 ```bash
 itos-cc mutate --changed                         # while working: own tests, fast
+itos-cc mutate --since origin/main               # a gate: the functions the branch's commits changed
 itos-cc mutate --all-tests                       # nightly, e.g. a scheduled CI job
 itos-cc mutate --all-tests --no-coverage         # nightly, with end-to-end tests that run the binary
 ```
+
+`--since <ref>` judges only the functions the commits since `<ref>`
+changed, `git diff <ref>...HEAD`: a branch's own commits, never uncommitted
+work, so a gate judges a task by what it committed. A deleted line counts as
+a change of the function around it, and paths narrow the range. The other
+functions neither run nor change in the snapshot, and only those judged count
+in the summary, the problems, and the exit code; `--json` names them in each
+file's `judged`.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Commit that

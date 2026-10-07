@@ -108,7 +108,8 @@ func (p previous) kept(f *lang.File, s Site) (string, bool) {
 	return outcome, outcome == Killed || outcome == Timeout
 }
 
-// build assembles a snapshot from every site's outcome.
+// build assembles a snapshot from every site's outcome. A skipped site is
+// left out.
 func build(f *lang.File, rel string, sites []Site, outcomes []string) Snapshot {
 	snap := Snapshot{Version: metrics.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Units: []UnitResult{}}
 	for _, u := range f.Units {
@@ -118,6 +119,9 @@ func build(f *lang.File, rel string, sites []Site, outcomes []string) Snapshot {
 		})
 	}
 	for i, s := range sites {
+		if outcomes[i] == skipped {
+			continue
+		}
 		r := &snap.Units[s.Unit]
 		r.Sites++
 		switch outcomes[i] {
@@ -143,4 +147,31 @@ func build(f *lang.File, rel string, sites []Site, outcomes []string) Snapshot {
 		})
 	}
 	return snap
+}
+
+// keepUnjudged keeps the functions of units that judged holds and puts in
+// place of each other one what previous records for it, so a function not
+// judged does not change in the snapshot. Unchanged, it keeps its outcomes
+// at its current lines; changed since, it keeps its entry as recorded, old
+// hash included, so a later run still sees the change; and one previous
+// does not record gets no entry.
+func keepUnjudged(units []UnitResult, judged map[string]bool, previous *Snapshot) []UnitResult {
+	recorded := map[string]UnitResult{}
+	if previous != nil {
+		for _, u := range previous.Units {
+			recorded[unitID(u.Namespace, u.Name)] = u
+		}
+	}
+	out := []UnitResult{}
+	for _, u := range units {
+		id := unitID(u.Namespace, u.Name)
+		was, ok := recorded[id]
+		switch {
+		case judged[id], ok && was.Hash == u.Hash:
+			out = append(out, u)
+		case ok:
+			out = append(out, was)
+		}
+	}
+	return out
 }

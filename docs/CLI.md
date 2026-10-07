@@ -64,11 +64,14 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `flags.value-invalid`        | 2    | every          | `flag`, `value`                                             |
 | `flags.switch-value`         | 2    | every          | `flag`                                                      |
 | `flags.repeated`             | 2    | every          | `flag`                                                      |
+| `flags.conflict`             | 2    | mutate         | `flag`                                                      |
 | `command.unknown`            | 2    | itos-cc        | `command`                                                   |
 | `command.missing`            | 2    | itos-cc --json | none                                                        |
 | `args.unexpected`            | 2    | version, help  | `argument`                                                  |
 | `paths.unmatched`            | 2    | crap, dry, mutate, scrap, units | `argument`                                 |
 | `changed.no-git`             | 3    | crap, dry, mutate, scrap, units | none                                       |
+| `since.bad-ref`              | 2    | mutate         | `ref`                                                       |
+| `since.no-git`               | 3    | mutate         | none                                                        |
 | `coverage.command-needs-report` | 2 | crap, mutate   | none                                                        |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |

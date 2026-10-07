@@ -1,0 +1,83 @@
+package project
+
+import (
+	"maps"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"slices"
+	"strings"
+	"testing"
+)
+
+func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
+	diff := strings.Join([]string{
+		"diff --git a/plain.py b/plain.py",
+		"--- a/plain.py",
+		"+++ b/plain.py",
+		"@@ -3,2 +3,3 @@ def f():",
+		"+++ an added line that reads like a header",
+		"@@ -9 +10,0 @@",
+		"diff --git a/año nuevo.py b/año nuevo.py",
+		"--- a/año nuevo.py\t",
+		"+++ b/año nuevo.py\t",
+		"@@ -1 +1 @@",
+		`diff --git "a/q\"x.py" "b/q\"x.py"`,
+		`--- "a/q\"x.py"`,
+		`+++ "b/q\"x.py"`,
+		"@@ -0,0 +1,2 @@",
+		"diff --git a/gone.py b/gone.py",
+		"--- a/gone.py",
+		"+++ /dev/null",
+		"@@ -1 +0,0 @@",
+	}, "\n")
+	want := map[string][]lines{
+		"plain.py":     {{3, 5}, {10, 11}},
+		"año nuevo.py": {{1, 1}},
+		`q"x.py`:       {{1, 2}},
+	}
+	if got := diffLines(diff); !reflect.DeepEqual(got, want) {
+		t.Errorf("diffLines = %v, want %v", got, want)
+	}
+}
+
+func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	repo := t.TempDir()
+	git(t, repo, "init", "-q")
+	name := filepath.Join(repo, "sub", "año nuevo.py")
+	write(t, name, "def a(x):\n    return x\n\n\ndef b(x):\n    return x\n")
+	write(t, filepath.Join(repo, "top.py"), "def c(x):\n    return x\n")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "base")
+	git(t, repo, "tag", "base")
+	write(t, name, "def a(x):\n    return x\n\n\ndef b(x):\n    return x + 1\n")
+	write(t, filepath.Join(repo, "top.py"), "def c(x):\n    return x + 1\n")
+	git(t, repo, "commit", "-qam", "change b and c")
+	// Uncommitted: b moves down onto the lines of a's HEAD version, and a
+	// changes. Neither is in the range.
+	write(t, name, "import os\n\n\ndef a(x):\n    return x * 2\n\n\ndef b(x):\n    return x + 1\n")
+
+	t.Chdir(filepath.Join(repo, "sub"))
+	got, err := ChangedSince("base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	abs, _ := filepath.Abs("año nuevo.py")
+	if keys := slices.Collect(maps.Keys(got)); !slices.Equal(keys, []string{abs}) {
+		t.Fatalf("files %q, want only %q: top.py is not under sub", keys, abs)
+	}
+	var functions []string
+	for f := range got[abs] {
+		functions = append(functions, f[strings.Index(f, "#")+1:])
+	}
+	if !slices.Equal(functions, []string{"b"}) {
+		t.Errorf("functions %q, want [b]", functions)
+	}
+
+	if _, err := ChangedSince("--output=x"); err != ErrBadRef {
+		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
+	}
+}

@@ -24,7 +24,11 @@ type Options struct {
 	// Coverage is called only when some mutant has to run. It returns nil
 	// to run every mutant regardless of coverage.
 	Coverage func(sources []string) *coverage.Report
-	Log      io.Writer
+	// Judge, when set, says which functions of the file at path to judge,
+	// by namespace#name. The others never run: they keep what their
+	// snapshot records.
+	Judge func(path, function string) bool
+	Log   io.Writer
 }
 
 // FileResult is the outcome for one source file.
@@ -34,7 +38,16 @@ type FileResult struct {
 	Ran, Reused    int
 	BaselineFailed bool
 	BaselineOutput string
+	// Judged holds the namespace#name of each function judged, in the
+	// file's order, or is nil when every function was. Functions is how
+	// many the file has.
+	Judged    []string
+	Functions int
 }
+
+// skipped marks a site of a function not judged that has no outcome to keep:
+// it neither runs nor goes into the snapshot.
+const skipped = "skipped"
 
 // minTimeout keeps fast suites from timing out on scheduling noise.
 const minTimeout = 2 * time.Second
@@ -46,6 +59,8 @@ type fileState struct {
 	outcomes []string // "" while pending
 	command  Command
 	result   *FileResult
+	previous *Snapshot       // the snapshot before this run, or nil
+	judged   map[string]bool // by namespace#name, or nil when every function is
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -82,6 +97,9 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	for _, s := range states {
 		if !s.result.BaselineFailed {
 			s.result.Snapshot = build(s.file, s.rel, s.sites, s.outcomes)
+			if s.judged != nil {
+				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.previous)
+			}
 			if err := metrics.Write(SnapshotName(s.rel), s.result.Snapshot); err != nil {
 				return nil, err
 			}
@@ -113,9 +131,30 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(rel), err)
 		}
+		s.previous = snap
 		prev := remembered(snap, f)
+		s.result.Functions = len(f.Units)
+		if opt.Judge != nil {
+			s.judged, s.result.Judged = map[string]bool{}, []string{}
+			for _, u := range f.Units {
+				if id := unitID(u.Namespace, u.Name); opt.Judge(path, id) {
+					s.judged[id] = true
+					s.result.Judged = append(s.result.Judged, id)
+				}
+			}
+		}
 		s.outcomes = make([]string, len(s.sites))
 		for i, site := range s.sites {
+			u := f.Units[site.Unit]
+			if id := unitID(u.Namespace, u.Name); s.judged != nil && !s.judged[id] {
+				// Not judged: it never runs, and keeps the outcome its
+				// snapshot records for its unchanged function, if any.
+				s.outcomes[i] = skipped
+				if outcome := prev[id][site.Key()]; outcome != "" {
+					s.outcomes[i] = outcome
+				}
+				continue
+			}
 			if outcome, ok := prev.kept(f, site); ok && !opt.MutateAll {
 				s.outcomes[i] = outcome
 				s.result.Reused++
