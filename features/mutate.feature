@@ -452,6 +452,19 @@ Feature: Mutation testing
       Then each file in "files" has "judged", the namespace#name of each function judged
       And without --since no file has "judged"
 
+    # A file the range changed only outside its functions (its imports) is
+    # selected with "judged 0 of N", and its snapshot and summary comment
+    # were written though nothing in it ran. Nothing is written for it (the
+    # coordinator's call, 2026-10-07). The summary comment counting the whole
+    # snapshot while stdout counts what was judged is by design: the comment
+    # is the file's state, stdout the run's.
+    @wip @since-untouched-files @ID-MUT-102
+    Scenario: A file with nothing judged is left as it was
+      Given a commit after "base" changed only the imports of src/board.ts
+      When I run "itos-cc mutation run --since base"
+      Then stdout says "src/board.ts: … (judged 0 of 2 functions)"
+      And neither .metrics/mutate/src/board.ts.json nor src/board.ts is written
+
   # Issue #8, part 1: a gate (a commit hook) proves that results exist for
   # exactly the code being committed, without running anything. Decided with
   # the person on 2026-10-06 (q-1 to q-3): it is a subcommand of the group,
