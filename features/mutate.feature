@@ -798,3 +798,147 @@ Feature: Mutation testing
       When I run "itos-cc mutation run"
       Then stderr says "itos-cc: no source files to mutate"
       And the exit code is 0
+
+  # Issue #10: an equivalent mutant, one that changes no behaviour (`<` to
+  # `!=` on a loop that only counts up, a `0` never read), survives every
+  # run, so a gate on survivors blocks forever, and the next change contorts
+  # the code or tests an implementation detail to kill it. Decided with the
+  # person on 2026-10-07 (q-9 to q-12):
+  # - The exceptions live in itos-cc.yaml at the project root, under
+  #   mutation.exceptions: itos-cc's first project setting (docs/CLI.md
+  #   rule 38), reviewed like any change to the code.
+  # - itos-cc mutation except <file>:<line>:<column> --reason '…' writes an
+  #   entry for a survivor its fresh snapshot records: the file, the
+  #   function, the function's hash, the site's place within the function
+  #   (its line counted from the function's first, so a move keeps it), the
+  #   original, the replacement and the reason. Excepting a site again
+  #   replaces its entry; the file's other keys and comments are kept.
+  # - An excepted survivor fails nothing: it is counted "excepted", not
+  #   "survived". It is reused without running, as a kill is, while its
+  #   function and the tests that import its file are unchanged; when its
+  #   tests change it runs again, and if it is now killed its entry is
+  #   stale. An entry whose function changed, or whose site is gone, is
+  #   stale without running anything, and its mutant is judged as if it
+  #   had no entry. A stale entry fails as mutation.exception-stale until
+  #   it is removed or the site excepted again. --mutate-all runs excepted
+  #   mutants too.
+  # - Only survivors: an uncovered mutant needs a test, not a reason.
+  # mutation check gives the same verdict from the snapshots. mutation
+  # sample needs nothing new: an excepted survivor still survives, which
+  # matches what its snapshot records.
+  Rule: Equivalent mutants excepted, each with a reason
+
+    @wip @mutation-exceptions @ID-MUT-85
+    Scenario: Excepting a survivor records it with its reason
+      Given a fresh run recorded the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count"
+      When I run "itos-cc mutation except src/board.ts:7:19 --reason 'the loop only counts up'"
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And it records src/board.ts, "Board#count", the function's hash, the site's line within the function, its column, `<`, `!=`, and the reason
+      And the exit code is 0
+
+    @wip @mutation-exceptions @ID-MUT-86
+    Scenario: Only a recorded survivor can be excepted
+      Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
+      When I run "itos-cc mutation except src/board.ts:5:9 --reason 'x'"
+      Then the problem is "exception.no-survivor", with file, line and column
+      And the exit code is 2
+      And excepting src/board.ts:9:3 is refused the same way
+
+    @wip @mutation-exceptions @ID-MUT-87
+    Scenario: A reason is required
+      When I run "itos-cc mutation except src/board.ts:7:19"
+      Then the problem is "flags.value-missing", with flag "--reason"
+      And the exit code is 2
+      And "--reason ''" is "flags.value-invalid", exit 2
+
+    @wip @mutation-exceptions @ID-MUT-88
+    Scenario: The rest of itos-cc.yaml is kept
+      Given itos-cc.yaml holds a comment, another key, and an entry for src/board.ts:7:19
+      When I run "itos-cc mutation except src/board.ts:7:19 --reason 'reworded'"
+      Then the entry's reason is "reworded", and it is still the only one for that site
+      And the comment and the other key are unchanged
+
+    @wip @mutation-exceptions @ID-MUT-89
+    Scenario: An excepted survivor fails nothing
+      Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
+      When I run "itos-cc mutation run src/board.ts"
+      Then stdout says "src/board.ts: 14 killed, 0 survived, 1 excepted, 0 uncovered (ran 15, reused 0)"
+      And the exit code is 0
+
+    @wip @mutation-exceptions @ID-MUT-90
+    Scenario: An excepted survivor is reused while nothing changed
+      Given a run recorded the excepted survivor of "Board#count"
+      And neither "Board#count" nor the tests that import src/board.ts have changed since
+      When I run "itos-cc mutation run src/board.ts"
+      Then the excepted mutant does not run
+      And it is counted "excepted"
+      But "itos-cc mutation run --mutate-all src/board.ts" runs it
+
+    @wip @mutation-exceptions @ID-MUT-91
+    Scenario: After its tests change, an excepted mutant that still survives stays excepted
+      Given a run recorded the excepted survivor of "Board#count"
+      And src/board.test.ts changed since, and still does not kill it
+      When I run "itos-cc mutation run src/board.ts"
+      Then the excepted mutant runs
+      And it is counted "excepted"
+      And the exit code is 0
+
+    @wip @mutation-exceptions @ID-MUT-92
+    Scenario: An excepted mutant that is now killed makes its entry stale
+      Given a run recorded the excepted survivor of "Board#count"
+      And src/board.test.ts changed since, and now kills it
+      When I run "itos-cc mutation run src/board.ts"
+      Then the problem is "mutation.exception-stale", with file, function, line, column, original, replacement and why "killed"
+      And the exit code is 1
+
+    @wip @mutation-exceptions @ID-MUT-93
+    Scenario: An entry whose function changed is stale
+      Given itos-cc.yaml excepts a survivor of "Board#count"
+      And "Board#count" changed since the entry was written
+      When I run "itos-cc mutation run src/board.ts"
+      Then the problem is "mutation.exception-stale", with why "changed"
+      And the mutant at its site, if it survives, is a "mutation.survived" problem too
+      And the exit code is 1
+      # moving the function is not a change, as for reuse
+
+    @wip @mutation-exceptions @ID-MUT-94
+    Scenario: An entry whose site is gone is stale
+      Given itos-cc.yaml excepts a survivor in "Board#count"
+      And "Board#count" was deleted, or no longer has that site
+      When I run "itos-cc mutation run src/board.ts"
+      Then the problem is "mutation.exception-stale", with why "gone"
+      And the exit code is 1
+
+    @wip @mutation-exceptions @ID-MUT-95
+    Scenario: An entry does not excuse an uncovered mutant
+      Given itos-cc.yaml holds an entry for a site whose mutant is uncovered
+      When I run "itos-cc mutation run --fail-uncovered src/board.ts"
+      Then the problem is "mutation.uncovered" for that site
+      And the exit code is 1
+
+    @wip @mutation-exceptions @ID-MUT-96
+    Scenario: mutation check passes an excepted survivor and fails a stale entry
+      Given fresh results for src/board.ts with one survivor, which itos-cc.yaml excepts
+      When I run "itos-cc mutation check src/board.ts"
+      Then the exit code is 0
+      But after "Board#count" changes, mutation check reports "mutation.exception-stale" and exits 1
+
+    @wip @mutation-exceptions @ID-MUT-97
+    Scenario: With --since only the judged functions' entries are checked
+      Given only "Board#place" changed since "base"
+      And itos-cc.yaml holds an entry for "Board#count" that would be stale
+      When I run "itos-cc mutation run --since base"
+      Then no "mutation.exception-stale" problem is reported
+
+    @wip @mutation-exceptions @ID-MUT-98
+    Scenario: An invalid itos-cc.yaml is a config error
+      Given itos-cc.yaml holds an entry with no reason
+      When I run "itos-cc mutation run src/board.ts"
+      Then the problem is "config.invalid", with file "itos-cc.yaml"
+      And the exit code is 2
+
+    @wip @mutation-exceptions @ID-MUT-99
+    Scenario: Excepted mutants as JSON
+      When I run "itos-cc mutation run --json src/board.ts" with one excepted survivor
+      Then its file has "excepted": 1 beside "killed", "survived" and "uncovered"
+      And that mutant has outcome "survived" and "excepted", the entry's reason
