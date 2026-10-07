@@ -247,8 +247,8 @@ items:
   - id: mutation-group
     title: "mutation group: mutate becomes mutation run, --scan becomes mutation list"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
