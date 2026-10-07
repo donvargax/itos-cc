@@ -108,7 +108,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [mutation-group]
     kind: idea
     why: >
       Issue #8: a gate at itos work done needs to trust cached kills without re-running every mutant
