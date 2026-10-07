@@ -291,6 +291,92 @@ Feature: Mutation testing
       When I run "itos-cc mutate --mutate-all"
       Then killed mutants of unchanged functions run again too
 
+  # Issue #9, part 1: a gate judges a task's commits, not the working tree,
+  # so --since <ref> picks the functions the commits since <ref> changed.
+  # The range is git diff <ref>...HEAD: the branch's own commits whatever its
+  # base did since, never uncommitted changes. A deleted line counts as a
+  # change of the lines either side of it. Paths are relative to the working
+  # directory, so from a subdirectory only the changes under it count.
+  # Uncovered mutants failing (#9 part 2) and each mutant in --json (#9
+  # part 3) are separate items. Decided with the person on 2026-10-07:
+  # --since refuses --changed, paths narrow the range, and the functions
+  # judged are counted in the summary and named in --json. The started code
+  # (mutate.Options.Judge, project.ChangedSince) follows these already.
+  Rule: Judging the functions a range of commits changed
+
+    @wip @slice-1 @ID-MUT-37
+    Scenario: Only the functions the commits since a ref changed are judged
+      Given a commit after "base" changed lines of "Board#place" in src/board.ts
+      And "Board#clear" in the same file did not change
+      When I run "itos-cc mutate --since base"
+      Then the mutants of "Board#place" run
+      And no mutant of "Board#clear" runs
+      And stdout says "src/board.ts: … (judged 1 of 2 functions)"
+
+    @wip @slice-1 @ID-MUT-38
+    Scenario: Functions not judged keep what their snapshot holds
+      Given a previous run recorded a survivor in "Board#clear"
+      And only "Board#place" changed since "base"
+      When I run "itos-cc mutate --since base"
+      Then the snapshot of src/board.ts still records that survivor in "Board#clear"
+      And it is not reported, and the exit code is 0 when every mutant of "Board#place" is killed
+      # a function never judged before gets no entry: it neither ran nor has an outcome to keep
+
+    @wip @slice-1 @ID-MUT-39
+    Scenario: Uncommitted changes are not in the range
+      Given "Board#place" changed since "base" in a commit
+      And "Board#clear" has an uncommitted change
+      When I run "itos-cc mutate --since base"
+      Then "Board#place" is judged
+      And "Board#clear" is not
+
+    @wip @slice-1 @ID-MUT-40
+    Scenario: Deleting lines changes the function around them
+      Given a commit after "base" only deleted a line inside "Board#place"
+      When I run "itos-cc mutate --since base"
+      Then "Board#place" is judged
+
+    @wip @slice-1 @ID-MUT-41
+    Scenario: Paths narrow the range
+      Given commits after "base" changed src/board.ts and lib/util.ts
+      When I run "itos-cc mutate --since base src"
+      Then only src/board.ts is mutated
+
+    @wip @slice-1 @ID-MUT-42
+    Scenario: Nothing changed since the ref
+      Given no commit after "base" changed a source file
+      When I run "itos-cc mutate --since base"
+      Then stderr says "itos-cc: no source files to mutate"
+      And the exit code is 0
+
+    @wip @slice-1 @ID-MUT-43
+    Scenario: A ref git cannot resolve is a usage error
+      When I run "itos-cc mutate --since nosuch"
+      Then stderr says "itos-cc: --since nosuch: not a commit in this repository"
+      And the problem is "since.bad-ref", with ref "nosuch"
+      And the exit code is 2
+
+    @wip @slice-1 @ID-MUT-44
+    Scenario: --since outside a git repository is a missing environment
+      Given the working directory is not a git repository
+      When I run "itos-cc mutate --since main"
+      Then the problem is "since.no-git"
+      And the exit code is 3
+
+    @wip @slice-1 @ID-MUT-45
+    Scenario: --since and --changed are not combined
+      When I run "itos-cc mutate --since main --changed"
+      Then the problem is "flags.conflict", with flag "--changed"
+      And the exit code is 2
+      # --changed judges whole files of the working tree, --since functions of
+      # commits: together they would judge neither
+
+    @wip @slice-1 @ID-MUT-46
+    Scenario: The functions judged, as JSON
+      When I run "itos-cc mutate --since base --json"
+      Then each file in "files" has "judged", the namespace#name of each function judged
+      And without --since no file has "judged"
+
   Rule: Results
 
     @ID-MUT-28
