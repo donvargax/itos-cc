@@ -140,7 +140,7 @@ Feature: Mutation testing
 
       Examples:
         | language   | setup             | command                                                          |
-        | Go         | go.mod            | go test -count=1 -failfast on the file's package                 |
+        | Go         | go.mod            | go test -count=1 -failfast on every package whose tests link it  |
         | TypeScript | vitest            | the installed vitest related --run --bail=1 on the file          |
         | TypeScript | jest              | the installed jest --bail --findRelatedTests on the file         |
         | TypeScript | neither installed | <pm> run test, the package manager the project declares          |
@@ -148,6 +148,21 @@ Feature: Mutation testing
         | Python     | no pytest         | python -m unittest discover -f                                   |
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
         | Kotlin     | Maven             | mvn -q test                                                      |
+
+    Scenario: Integration and end-to-end tests that import the code kill its mutants
+      Given a/a.go is tested only by e2e/e2e_test.go, which imports package a
+      And slow/slow_test.go never loads package a
+      When I run "itos-cc mutate a/a.go"
+      Then its mutants run "go test -count=1 -failfast example.com/m/a example.com/m/e2e"
+      And the e2e test kills them
+      But slow's tests never run
+      # the same tests coverage measured the file with
+
+    Scenario: The whole suite kills mutants
+      When I run "itos-cc mutate --all-tests a/a.go"
+      Then its mutants run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
+      And end-to-end tests that do not import the code, such as ones that build and run the binary, can kill them
+      And coverage is measured with the whole suite too
 
     Scenario: A custom test command
       When I run "itos-cc mutate --test-command 'make test' src/board.go"

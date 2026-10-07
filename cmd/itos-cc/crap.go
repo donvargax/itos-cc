@@ -39,6 +39,7 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 	if err != nil {
 		return parseExit(err)
 	}
+	cov.focused = len(paths) > 0 || sel.changed
 
 	files, err := sel.files(paths)
 	if err != nil {

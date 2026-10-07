@@ -19,6 +19,7 @@ type Options struct {
 	MutateAll     bool    // rerun killed mutants of unchanged functions too
 	TimeoutFactor float64 // a mutant may run this many times the baseline
 	TestCommand   string  // shell command that replaces the per-language default
+	AllTests      bool    // kill mutants with the whole suite, integration and end-to-end tests included
 	Annotate      bool    // write a summary comment at the end of each file
 	// Coverage is called only when some mutant has to run. It returns nil
 	// to run every mutant regardless of coverage.
@@ -105,7 +106,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			return states, err
 		}
 		rel := project.Rel(path)
-		s := &fileState{file: f, rel: rel, sites: Sites(f), command: TestCommand(path, opt.TestCommand),
+		s := &fileState{file: f, rel: rel, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests),
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
 		snap, err := LoadSnapshot(rel)

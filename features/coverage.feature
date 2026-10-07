@@ -3,6 +3,31 @@ Feature: Coverage
   each language's own coverage tools per build root, or reads reports the
   user already has, and matches each report entry to a source file on disk.
 
+  Rule: Chosen files run only the tests that load them
+
+    Scenario: A Go file is measured by the tests that link its package
+      Given a/a.go, tested by its own package and by e2e/e2e_test.go, which imports package a
+      And slow/slow_test.go, which never loads package a
+      When I run "itos-cc crap a/a.go"
+      Then coverage runs "go test ... -coverpkg=example.com/m/a ... example.com/m/a example.com/m/e2e"
+      And its coverage is the same as with the whole module's tests
+      # a test binary that does not link a package cannot cover it
+
+    Scenario: A TypeScript file is measured by the tests that import it
+      When I run "itos-cc crap src/board.ts" in a Vitest or Jest project
+      Then coverage runs vitest related --run src/board.ts, or jest --findRelatedTests src/board.ts
+
+    Scenario Outline: The whole suite
+      When I run "itos-cc <command>"
+      Then coverage runs the whole suite of each build root
+
+      Examples:
+        | command                    |
+        | crap                       |
+        | crap --all-tests a/a.go    |
+        | mutate --all-tests a/a.go  |
+      # Python, Kotlin, a coverage script, and c8 always run the whole suite
+
   Rule: Each build root gets the language's own coverage command
 
     Scenario Outline: Choosing the coverage command

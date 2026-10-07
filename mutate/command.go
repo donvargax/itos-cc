@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -37,23 +38,25 @@ func (c Command) String() string {
 	return strings.Join(c.Args, " ")
 }
 
-// TestCommand is the narrowest test run that covers path: its own Go
-// package, the Vitest or Jest tests that import it, or the whole suite where
-// no narrower run exists. Every command stops at the first failure, since one
-// failing test is enough to kill a mutant. A non-empty shell overrides the
-// command but not where it runs.
-func TestCommand(path, shell string) Command {
+// TestCommand is the narrowest test run that covers path: the Go packages
+// whose tests link its package, the Vitest or Jest tests that import it, or
+// the whole suite where no narrower run exists. With all, it is the whole suite of path's build
+// root, so integration and end-to-end tests anywhere in it can kill a
+// mutant. Every command stops at the first failure, since one failing test
+// is enough to kill a mutant. A non-empty shell overrides the command but not
+// where it runs.
+func TestCommand(path, shell string, all bool) Command {
 	spec := lang.Detect(path)
 	var c Command
 	switch spec.Name {
 	case "go":
-		c = goCommand(path)
+		c = goCommand(path, all)
 	case "typescript":
-		c = typescriptCommand(path)
+		c = typescriptCommand(path, all)
 	case "python":
 		c = pythonCommand(path)
 	case "kotlin":
-		c = kotlinCommand(path)
+		c = kotlinCommand(path, all)
 	}
 	if shell != "" {
 		c.Args, c.Shell = nil, shell
@@ -61,14 +64,30 @@ func TestCommand(path, shell string) Command {
 	return c
 }
 
-func goCommand(path string) Command {
+// goScopes remembers each package directory's test scope; every file of a
+// package shares it.
+var goScopes = map[string][]string{}
+
+// goCommand runs the tests of every package whose test binary links path's
+// package, the same tests coverage measured it with, so an integration test
+// in another package can kill its mutants. With all, or when go list
+// fails, it runs the whole module.
+func goCommand(path string, all bool) Command {
 	root := orDir(lang.FindUp(path, "go.mod"), path)
-	pkg, _ := filepath.Rel(root, filepath.Dir(path))
-	return Command{Root: root, Dir: root,
-		Args: []string{"go", "test", "-count=1", "-failfast", "./" + filepath.ToSlash(pkg)}}
+	targets := []string{"./..."}
+	if !all {
+		dir := filepath.Dir(path)
+		if _, ok := goScopes[dir]; !ok {
+			_, goScopes[dir] = coverage.GoScope(root, []string{path})
+		}
+		if len(goScopes[dir]) > 0 {
+			targets = goScopes[dir]
+		}
+	}
+	return Command{Root: root, Dir: root, Args: append([]string{"go", "test", "-count=1", "-failfast"}, targets...)}
 }
 
-func typescriptCommand(path string) Command {
+func typescriptCommand(path string, all bool) Command {
 	root := orDir(lang.FindUp(path, "package.json"), path)
 	rel, _ := filepath.Rel(root, path)
 	c := Command{Root: root, Dir: root}
@@ -77,8 +96,12 @@ func typescriptCommand(path string) Command {
 	deps := packageDeps(root)
 	vitest, jest := project.NodeBin(root, "vitest"), project.NodeBin(root, "jest")
 	switch {
+	case deps["vitest"] && vitest != "" && all:
+		c.Args = []string{vitest, "run", "--bail=1"}
 	case deps["vitest"] && vitest != "":
 		c.Args = []string{vitest, "related", "--run", "--bail=1", filepath.ToSlash(rel)}
+	case deps["jest"] && jest != "" && all:
+		c.Args = []string{jest, "--bail"}
 	case deps["jest"] && jest != "":
 		c.Args = []string{jest, "--bail", "--findRelatedTests", filepath.ToSlash(rel)}
 	default:
@@ -108,7 +131,7 @@ func pythonCommand(path string) Command {
 	return c
 }
 
-func kotlinCommand(path string) Command {
+func kotlinCommand(path string, all bool) Command {
 	module := orDir(lang.FindUp(path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
 	if fileExists(filepath.Join(module, "pom.xml")) {
 		return Command{Root: module, Dir: module, Args: []string{"mvn", "-q", "test"}}
@@ -118,6 +141,9 @@ func kotlinCommand(path string) Command {
 	gradle := "gradle"
 	if fileExists(filepath.Join(root, "gradlew")) {
 		gradle = "./gradlew"
+	}
+	if all {
+		return Command{Root: root, Dir: root, Args: []string{gradle, "test", "--fail-fast"}}
 	}
 	rel, _ := filepath.Rel(root, module)
 	return Command{Root: root, Dir: root, Args: []string{gradle, "-p", filepath.ToSlash(rel), "test", "--fail-fast"}}

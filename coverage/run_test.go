@@ -48,7 +48,7 @@ func vitestProject(t *testing.T, version string) (dir, source string) {
 
 func onePlan(t *testing.T, dir, src string) Plan {
 	t.Helper()
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"))
+	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), false)
 	if len(plans) != 1 {
 		t.Fatalf("plans %+v, want one", plans)
 	}
@@ -57,7 +57,7 @@ func onePlan(t *testing.T, dir, src string) Plan {
 
 func TestVitestBeforeTheCurrentMajorIsNotRun(t *testing.T) {
 	dir, src := vitestProject(t, "4.1.11")
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"))
+	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), false)
 	if len(plans) != 1 || len(plans[0].Commands) != 0 || plans[0].Unsupported == "" {
 		t.Fatalf("plans %+v, want one unsupported plan with no commands", plans)
 	}
@@ -152,5 +152,31 @@ func TestPythonWithoutCoveragePyIsNotRun(t *testing.T) {
 	plan := onePlan(t, dir, filepath.Join(dir, "src", "a.py"))
 	if len(plan.Commands) != 0 || !strings.Contains(plan.Unsupported, "coverage.py is not installed") {
 		t.Errorf("plan %+v, want no commands and why", plan)
+	}
+}
+
+func TestGoMeasuresWithTheTestsThatLoadTheChosenPackages(t *testing.T) {
+	dir := t.TempDir()
+	writeFiles(t, dir, map[string]string{
+		"go.mod":               "module example.com/m\n\ngo 1.22\n",
+		"a/a.go":               "package a\n\nfunc A() int { return 1 }\n",
+		"a/a_test.go":          "package a\n\nimport \"testing\"\n\nfunc TestA(t *testing.T) { A() }\n",
+		"b/b.go":               "package b\n\nimport \"example.com/m/a\"\n\nfunc B() int { return a.A() }\n",
+		"b/b_test.go":          "package b\n\nimport \"testing\"\n\nfunc TestB(t *testing.T) { B() }\n",
+		"e2e/e2e_test.go":      "package e2e\n\nimport (\n\t\"testing\"\n\n\t\"example.com/m/b\"\n)\n\nfunc TestFlow(t *testing.T) { b.B() }\n",
+		"slow/slow.go":         "package slow\n",
+		"slow/slow_test.go":    "package slow\n\nimport \"testing\"\n\nfunc TestSlow(t *testing.T) {}\n",
+		"untested/untested.go": "package untested\n\nfunc U() {}\n",
+	})
+	plan := goPlan(dir, "/out", []string{filepath.Join(dir, "a", "a.go"), filepath.Join(dir, "untested", "untested.go")})
+	got := strings.Join(plan.Commands[0][2:], " ")
+	want := "-count=1 -covermode=set -coverpkg=example.com/m/a,example.com/m/untested -coverprofile=" +
+		filepath.Join("/out", "coverage.out") + " example.com/m/a example.com/m/b example.com/m/e2e example.com/m/untested"
+	if got != want {
+		t.Errorf("go test %s\nwant    %s", got, want)
+	}
+	whole := strings.Join(goPlan(dir, "/out", nil).Commands[0], " ")
+	if !strings.HasSuffix(whole, "-coverpkg=./... -coverprofile="+filepath.Join("/out", "coverage.out")+" ./...") {
+		t.Errorf("with no sources: %s, want the whole module", whole)
 	}
 }

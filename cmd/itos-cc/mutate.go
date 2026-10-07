@@ -55,7 +55,9 @@ mutant survives.
 	if err != nil {
 		return parseExit(err)
 	}
+	cov.focused = len(paths) > 0 || sel.changed
 	opt.Annotate = !*noAnnotate
+	opt.AllTests = cov.allTests
 
 	files, err := sel.files(paths)
 	if err != nil {

@@ -48,10 +48,13 @@ var markers = map[string][]string{
 }
 
 // Plans groups sources by language and build root and returns one plan per
-// group, with reports written under outDir.
-func Plans(sources []string, outDir string) []Plan {
+// group, with reports written under outDir. With all, each plan runs the
+// whole test suite. Without it, Go and TypeScript run only the tests that
+// load the sources, which measures them the same: tests that do not load a
+// file cannot cover it. Python and Kotlin run the whole suite either way.
+func Plans(sources []string, outDir string, all bool) []Plan {
 	type key struct{ lang, dir string }
-	groups := map[key]bool{}
+	groups := map[key][]string{}
 	for _, s := range sources {
 		spec := lang.Detect(s)
 		if spec == nil {
@@ -61,16 +64,19 @@ func Plans(sources []string, outDir string) []Plan {
 		if dir == "" {
 			dir = filepath.Dir(s)
 		}
-		groups[key{spec.Name, dir}] = true
+		groups[key{spec.Name, dir}] = append(groups[key{spec.Name, dir}], s)
 	}
 	var plans []Plan
-	for k := range groups {
+	for k, srcs := range groups {
+		if all {
+			srcs = nil
+		}
 		out := filepath.Join(outDir, k.lang+"-"+shortHash(k.dir))
 		switch k.lang {
 		case "go":
-			plans = append(plans, goPlan(k.dir, out))
+			plans = append(plans, goPlan(k.dir, out, srcs))
 		case "typescript":
-			plans = append(plans, typescriptPlan(k.dir, out))
+			plans = append(plans, typescriptPlan(k.dir, out, srcs))
 		case "python":
 			plans = append(plans, pythonPlan(k.dir, out))
 		case "kotlin":
@@ -83,18 +89,91 @@ func Plans(sources []string, outDir string) []Plan {
 	return plans
 }
 
-func goPlan(dir, out string) Plan {
+// goPlan measures sources with the tests of every package whose test binary
+// links one of theirs, or the whole module when sources is empty or go list
+// cannot say.
+func goPlan(dir, out string, sources []string) Plan {
 	report := filepath.Join(out, "coverage.out")
+	tests, cover := []string{"./..."}, "./..."
+	if pkgs, testing := GoScope(dir, sources); len(pkgs) > 0 {
+		tests, cover = testing, strings.Join(pkgs, ",")
+	}
+	args := append([]string{"go", "test", "-count=1", "-covermode=set", "-coverpkg=" + cover, "-coverprofile=" + report}, tests...)
 	return Plan{
 		Language: "go",
 		Dir:      dir,
-		Commands: [][]string{{"go", "test", "./...", "-count=1", "-covermode=set", "-coverpkg=./...", "-coverprofile=" + report}},
+		Commands: [][]string{args},
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "coverage.out"), filepath.Join(dir, "cover.out")},
 	}
 }
 
-func typescriptPlan(dir, out string) Plan {
+// GoScope is the packages of sources in the module at dir, and the packages
+// whose test binaries link any of them, their own included: integration
+// tests in another package that import the code count, and packages that
+// never load it are not run. Packages without tests are listed too, so they
+// measure as 0%. Both are empty when go list fails.
+func GoScope(dir string, sources []string) (pkgs, testing []string) {
+	if len(sources) == 0 {
+		return nil, nil
+	}
+	cmd := exec.Command("go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
+	cmd.Dir = dir
+	listing, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+	dirs := map[string]bool{}
+	for _, s := range sources {
+		dirs[filepath.Dir(filepath.Clean(s))] = true
+	}
+	type entry struct {
+		path string
+		deps []string
+	}
+	var binaries []entry
+	selected := map[string]bool{}
+	for _, line := range strings.Split(strings.TrimSpace(string(listing)), "\n") {
+		fields := strings.SplitN(line, "\t", 3)
+		if len(fields) < 3 {
+			continue
+		}
+		path := fields[0]
+		switch {
+		case strings.HasSuffix(path, ".test"):
+			binaries = append(binaries, entry{strings.TrimSuffix(path, ".test"), strings.Fields(fields[2])})
+		case !strings.Contains(path, " ") && dirs[filepath.Clean(fields[1])]:
+			selected[path] = true
+		}
+	}
+	tested := map[string]bool{}
+	for p := range selected {
+		tested[p] = true
+	}
+	for _, b := range binaries {
+		for _, d := range b.deps {
+			// A package recompiled for a test reads "p [q.test]".
+			if d, _, _ := strings.Cut(d, " "); selected[d] {
+				tested[b.path] = true
+				break
+			}
+		}
+	}
+	for p := range selected {
+		pkgs = append(pkgs, p)
+	}
+	for p := range tested {
+		testing = append(testing, p)
+	}
+	sort.Strings(pkgs)
+	sort.Strings(testing)
+	return pkgs, testing
+}
+
+// typescriptPlan measures sources with the tests that import them, through
+// Vitest's related or Jest's findRelatedTests, or with every test when
+// sources is empty. A coverage script or c8 runs the whole suite.
+func typescriptPlan(dir, out string, sources []string) Plan {
 	report := filepath.Join(out, "lcov.info")
 	plan := Plan{
 		Language: "typescript",
@@ -129,14 +208,22 @@ func typescriptPlan(dir, out string) Plan {
 			plan.Unsupported = fmt.Sprintf("@vitest/coverage-v8 is not installed; add @vitest/coverage-v8@%s to devDependencies",
 				version)
 		default:
-			plan.Commands = [][]string{{vitest, "run", "--coverage.enabled",
-				"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out}}
+			args := []string{vitest, "run"}
+			if len(sources) > 0 {
+				args = append([]string{vitest, "related", "--run"}, relativeTo(dir, sources)...)
+			}
+			plan.Commands = [][]string{append(args, "--coverage.enabled",
+				"--coverage.reporter=lcov", "--coverage.reportsDirectory="+out)}
 		}
 	case pkg.has("jest"):
 		if jest := project.NodeBin(dir, "jest"); jest == "" {
 			plan.Unsupported = missing("Jest")
 		} else {
-			plan.Commands = [][]string{{jest, "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out}}
+			args := []string{jest, "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out}
+			if len(sources) > 0 {
+				args = append(append(args, "--findRelatedTests"), relativeTo(dir, sources)...)
+			}
+			plan.Commands = [][]string{args}
 		}
 	default:
 		if c8 := project.NodeBin(dir, "c8"); c8 == "" {
@@ -332,6 +419,19 @@ func buildMentions(dir, word string) bool {
 		}
 	}
 	return false
+}
+
+// relativeTo is paths relative to dir, with forward slashes.
+func relativeTo(dir string, paths []string) []string {
+	out := make([]string, len(paths))
+	for i, p := range paths {
+		rel, err := filepath.Rel(dir, p)
+		if err != nil {
+			rel = p
+		}
+		out[i] = filepath.ToSlash(rel)
+	}
+	return out
 }
 
 // pomMentions reports whether the pom.xml in dir, or one in a directory

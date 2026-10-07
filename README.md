@@ -101,7 +101,9 @@ manager it declares, coverage.py from its virtualenv, and the JaCoCo its
 and never downloaded. Bring your own with `--coverage-command` and
 `--coverage-report`; several reports are combined, and code that more than
 one report or Go test binary lists counts once, covered if any of them ran
-it.
+it. With paths or `--changed`, Go and TypeScript coverage runs only the
+tests that load those files, which measures them the same as the whole
+suite does; `--all-tests` runs the whole suite anyway.
 
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
@@ -130,8 +132,12 @@ functions only. What keeps it fast:
   unchanged functions stay killed; survivors and changed functions rerun.
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
-- **Narrow, fail-fast test runs.** The file's own Go package
-  (`-failfast`), `vitest related` / `jest --findRelatedTests`, `pytest -x`.
+- **Narrow, fail-fast test runs.** The Go packages whose tests link the
+  file's package, integration tests included (`-failfast`), `vitest related`
+  / `jest --findRelatedTests`, `pytest -x`. Coverage of chosen files runs the
+  same tests. `--all-tests` runs the whole suite instead, so end-to-end tests
+  that never import the code, such as ones that run the built binary, can
+  kill mutants too.
 - **Parallel workers** in private copies of the project, so the real tree is
   never modified while tests run. The baseline runs inside a worker, which
   proves the copy works before any mutant does.
