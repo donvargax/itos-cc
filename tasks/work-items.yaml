@@ -46,8 +46,8 @@ items:
   - id: T-4
     title: Snapshot writes at the same time pass on Windows
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
