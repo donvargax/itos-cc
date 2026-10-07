@@ -90,7 +90,7 @@ items:
     title: mutation run --since leaves a file with nothing judged as it was
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
