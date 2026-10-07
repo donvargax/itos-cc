@@ -26,8 +26,22 @@ Feature: Snapshots under .metrics
 
   Scenario: Readers never see half a snapshot
     When a snapshot is written
-    Then it is written to a temporary file and renamed into place
+    Then it is written to a temporary file of its own and renamed into place
+    And two runs writing the same snapshot at once leave one whole snapshot
 
   Scenario: Raw coverage is not committed
     When coverage is run
     Then raw reports go to .metrics/coverage/, which holds a .gitignore of "*"
+
+  Scenario: Runs at the same time keep their coverage apart
+    Given an agent runs "itos-cc mutate" while a commit hook runs "itos-cc crap"
+    When both run coverage
+    Then each writes its reports to a run-* directory of its own under .metrics/coverage/
+    And each reads only its own
+    And the directory is deleted when the run ends, after its reports replace the previous run's
+    # so --use-existing-coverage reads the latest run, and nothing accumulates
+
+  Scenario: Directories of killed runs are cleaned up
+    Given a run-* directory left by a run that was killed a day or more ago
+    When coverage is run
+    Then that directory is deleted
