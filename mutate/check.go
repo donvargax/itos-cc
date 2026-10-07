@@ -2,6 +2,7 @@ package mutate
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/donvargax/itos-cc/config"
@@ -12,7 +13,7 @@ import (
 // States of a function's cached results against its source now.
 const (
 	Fresh   = "fresh"   // the snapshot records the function as it is
-	Stale   = "stale"   // the function, or the tests that import its file, changed since the snapshot recorded it
+	Stale   = "stale"   // the function, or the tests that import its file, changed since the snapshot recorded it, or it has a site the snapshot never recorded
 	Missing = "missing" // the snapshot does not record the function
 )
 
@@ -40,7 +41,12 @@ type FunctionCheck struct {
 	// site's line and column now, a survivor itos-cc.yaml excepts with its
 	// reason; nil otherwise.
 	Mutants []Mutant
-	unit    int // the function's index in its file's units
+	// Unrecorded is each site the function has now that Entry does not
+	// record although its hash and tests match, in line order, as when a
+	// newer itos-cc adds a mutation operator; such a function is Stale. nil
+	// otherwise.
+	Unrecorded []Site
+	unit       int // the function's index in its file's units
 }
 
 // Check compares each function of files that has a mutation site with its
@@ -52,7 +58,10 @@ type FunctionCheck struct {
 // for reuse, and while the snapshot records the tests that import its file
 // as they are now. exceptions are the survivors itos-cc.yaml excepts, judged
 // as a run judges them: a fresh entry's survivor that one excepts fails
-// nothing, and one that no longer holds is stale.
+// nothing, and one that no longer holds is stale. An entry whose hash and
+// tests match but which lacks a site the function has now is stale too,
+// naming those sites in Unrecorded: no run judged them, and a run runs only
+// them.
 func Check(files []string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
@@ -71,10 +80,20 @@ func checkFile(path string, judge func(path, function string) bool, tests func(p
 		return FileCheck{}, err
 	}
 	defer f.Close()
-	return checkParsed(f, path, judge, tests, exceptions)
+	c, err := checkParsed(f, path, judge, tests, exceptions)
+	for i := range c.Functions {
+		if fn := &c.Functions[i]; fn.State == Fresh && len(fn.Unrecorded) > 0 {
+			fn.State, fn.Mutants = Stale, nil
+		}
+	}
+	return c, err
 }
 
-// checkParsed is checkFile of f, the file at path, parsed.
+// checkParsed is checkFile of f, the file at path, parsed. It leaves a
+// function whose entry lacks some of its sites Fresh, with its Mutants and
+// its Unrecorded sites, so mutation sample and mutation except, which read
+// only the mutants an entry records, judge those as before; checkFile makes
+// it Stale.
 func checkParsed(f *lang.File, path string, judge func(path, function string) bool, tests func(path string) []string, exceptions []config.Exception) (FileCheck, error) {
 	rel := project.Rel(path)
 	result := FileCheck{Rel: rel, Functions: []FunctionCheck{}}
@@ -124,6 +143,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 			}
 			if e.Hash == hash {
 				c.State, c.Entry, c.Mutants = Fresh, e, placed(e.Mutants, sites[i])
+				c.Unrecorded = unrecorded(e.Mutants, sites[i])
 				break
 			}
 		}
@@ -154,6 +174,23 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 		}
 	}
 	return result, nil
+}
+
+// unrecorded is each of sites, in line order, that recorded has no mutant
+// for.
+func unrecorded(recorded []Mutant, sites []Site) []Site {
+	has := map[string]bool{}
+	for _, m := range recorded {
+		has[m.key()] = true
+	}
+	var out []Site
+	for _, s := range sites {
+		if !has[s.Key()] {
+			out = append(out, s)
+		}
+	}
+	slices.SortStableFunc(out, LineOrder)
+	return out
 }
 
 // placed is recorded at the line and column of its site now, which differ

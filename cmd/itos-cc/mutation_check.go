@@ -21,7 +21,9 @@ can prove mutation run was run on the code being committed.
 For each chosen function with at least one mutation site, its entry in its
 file's snapshot is compared with its source now. No entry is missing; an
 entry whose function has changed since is stale, while a function that only
-moved is fresh; and a fresh entry fails on each survivor it records, and
+moved is fresh; an entry that lacks a site the function has now, as when a
+newer itos-cc adds a mutation operator, is stale, naming each such site, and
+mutation run runs only those; and a fresh entry fails on each survivor it records, and
 with --fail-uncovered on each uncovered mutant it records. A function with no
 mutation site needs no entry. The snapshot also records the hash of each test
 file that imports its file: when one was added, changed, or removed since,
@@ -58,7 +60,7 @@ in "excepted", not "survived".`,
    "uncovered"}]}]`,
 	rules: []string{
 		"mutation.missing          a function with a mutation site has no results: file, line, function",
-		"mutation.stale            a function, or a test that imports its file, changed since its results: file, line, function",
+		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
@@ -141,7 +143,7 @@ func runMutationCheck(in *invocation) (any, error) {
 			case mutate.Missing:
 				reportFunction(in, c.Rel, fn, "mutation.missing", "has no mutation results")
 			case mutate.Stale:
-				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn.Tests))
+				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn))
 			default:
 				reportFailed(in, c.Rel, fn.Function, fn.Mutants, failUncovered)
 			}
@@ -152,9 +154,18 @@ func runMutationCheck(in *invocation) (any, error) {
 }
 
 // staleBecause says why a stale function's results no longer hold: the
-// function changed, or the tests that import its file did, named.
-func staleBecause(tests *mutate.TestChange) string {
+// function changed, or the tests that import its file did, named, or it has
+// sites they never recorded, each named as "<line>:<column> `original` →
+// `replacement`".
+func staleBecause(fn mutate.FunctionCheck) string {
+	tests := fn.Tests
 	switch {
+	case len(fn.Unrecorded) > 0:
+		var sites []string
+		for _, s := range fn.Unrecorded {
+			sites = append(sites, fmt.Sprintf("%d:%d `%s` → `%s`", s.Line, s.Column, s.Original, s.Replacement))
+		}
+		return "has sites its mutation results never recorded, as when a newer itos-cc adds a mutation operator: " + strings.Join(sites, ", ")
 	case tests == nil:
 		return "changed since its mutation results"
 	case tests.Unrecorded:

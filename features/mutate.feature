@@ -625,7 +625,7 @@ Feature: Mutation testing
     # mutation run runs only those sites and reuses the recorded outcomes.
     # The fixtures stand for a new operator by removing a mutant from the
     # entry.
-    @wip @check-unrecorded-sites @ID-MUT-106
+    @check-unrecorded-sites @ID-MUT-106
     Scenario: A site the entry never recorded makes the function stale
       Given fresh results for every function of src/board.ts, all killed
       But the entry of "Board#place" does not record one of its sites, as when a newer itos-cc adds an operator
@@ -633,7 +633,7 @@ Feature: Mutation testing
       Then the problem is "mutation.stale", with file and function "Board#place", and its message names that site's line, column, original and replacement
       And the exit code is 1
 
-    @wip @check-unrecorded-sites @ID-MUT-107
+    @check-unrecorded-sites @ID-MUT-107
     Scenario: mutation run runs only the sites the entry never recorded
       Given the entry of "Board#place" does not record one of its sites, and records every other one killed
       When I run "itos-cc mutation run src/board.ts"
