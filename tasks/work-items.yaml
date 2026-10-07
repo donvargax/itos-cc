@@ -30,8 +30,8 @@ items:
   - id: slice-1
     title: "mutate --since <ref>: judge only the functions changed since ref"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-2]
     kind: slice
     why: >
