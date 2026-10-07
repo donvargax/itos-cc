@@ -41,3 +41,6 @@ questions:
     item: "mutation-exceptions"
     question: "How is an entry written? It must hold the function's hash to tell when the function changed. (a, recommended) A command, itos-cc mutation except <file>:<line>:<column> --reason '…', which finds the survivor in the snapshot and writes the file, function, hash, the site's place within the function, original, replacement and reason. (b) By hand only, the hash copied from the snapshot."
     answer: "(a) A command, itos-cc mutation except <file>:<line>:<column> --reason '…'."
+  - id: q-11
+    item: "mutation-exceptions"
+    question: "What does an excepted survivor do, and when is its entry stale? (a, recommended) It fails nothing, counted excepted, and is reused without running, as a kill is, while its function and the tests that import its file are unchanged; when its tests change it runs again, and if now killed its entry is stale. A changed function or a site gone makes the entry stale without running. Stale fails as mutation.exception-stale, exit 1; --mutate-all runs them too. (b) Always run them. (c) Never run them."
