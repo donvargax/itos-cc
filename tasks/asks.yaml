@@ -8,3 +8,6 @@ questions:
     item: "mutate-check-sample"
     question: "What does the check mode fail on? (a, recommended) Missing or stale results, and also cached survivors (and cached uncovered mutants with --fail-uncovered) in the selected functions, so it gives the verdict a full run would give, from the cache: a gate that passes on fresh results showing survivors proves nothing. (b) Missing or stale results only, as issue #8 sketches it, leaving survivors to the run that wrote them."
     answer: "(a): missing or stale results, and cached survivors (and cached uncovered mutants with --fail-uncovered) in the selected functions, so it gives the verdict a full run would give, from the cache."
+  - id: q-3
+    item: "mutate-check-sample"
+    question: "Name the read-only command, and does it replace mutate --scan? (a, recommended) One command, itos-cc sites, that lists each selected function's mutation sites with their cached outcome, marks missing or stale ones, and exits 1 as q-2 says; mutate --scan goes, a breaking change made in the next major release with the others (rules 42, 43), which also clears the rule-18 row in docs/CLI.md. (b) Same, under another name you pick (not mutants: a letter from mutate breaks rule 5, as crap and scrap do). (c) A check-only command, keeping mutate --scan as a listed exception."
