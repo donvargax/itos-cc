@@ -45,7 +45,7 @@ type Unit struct {
 	Survived   int      `json:"survived"`
 	Uncovered  int      `json:"uncovered"`
 	Mutated    bool     `json:"mutated"`
-	Stale      bool     `json:"stale"` // the function changed since it was mutated
+	Stale      bool     `json:"stale"` // the function, or the tests that import its file, changed since it was mutated
 	Duplicates int      `json:"duplicates"`
 
 	hash string

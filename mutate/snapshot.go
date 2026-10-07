@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/metrics"
@@ -87,6 +88,22 @@ func LoadSnapshot(rel string) (*Snapshot, error) {
 // SHA-256 of each one's content, by its slash-separated path from the
 // working directory, the project root.
 func TestHashes(tests []string) (map[string]string, error) {
+	return testHashes(tests, project.Rel)
+}
+
+// TestHashesUnder is TestHashes for the project at root, which need not be
+// the working directory: each test file by its slash-separated path from
+// root, as a run from root records it.
+func TestHashesUnder(root string, tests []string) (map[string]string, error) {
+	return testHashes(tests, func(path string) string {
+		if rel, err := filepath.Rel(root, path); err == nil && !strings.HasPrefix(rel, "..") {
+			return rel
+		}
+		return path
+	})
+}
+
+func testHashes(tests []string, rel func(string) string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, path := range tests {
 		data, err := os.ReadFile(path)
@@ -94,7 +111,7 @@ func TestHashes(tests []string) (map[string]string, error) {
 			return nil, err
 		}
 		sum := sha256.Sum256(data)
-		out[filepath.ToSlash(project.Rel(path))] = hex.EncodeToString(sum[:])
+		out[filepath.ToSlash(rel(path))] = hex.EncodeToString(sum[:])
 	}
 	return out, nil
 }
@@ -103,6 +120,17 @@ func TestHashes(tests []string) (map[string]string, error) {
 // the same hashes. A snapshot that records no tests matches none.
 func testsMatch(s *Snapshot, tests map[string]string) bool {
 	return s.Tests != nil && maps.Equal(s.Tests, tests)
+}
+
+// TestsChanged is how now, the hashes of the test files that import the
+// snapshot's file as they are, differ from those it recorded, or nil while
+// they are the same: only then do the results of a function whose hash is
+// unchanged hold. A snapshot that records no tests has changed tests.
+func (s *Snapshot) TestsChanged(now map[string]string) *TestChange {
+	if testsMatch(s, now) {
+		return nil
+	}
+	return compareTests(s.Tests, now)
 }
 
 // TestChange is how the tests that import a file differ from those its

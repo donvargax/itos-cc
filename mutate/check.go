@@ -91,8 +91,8 @@ func checkParsed(f *lang.File, path string, judge func(path, function string) bo
 		return result, err
 	}
 	var changed *TestChange
-	if snap != nil && !testsMatch(snap, now) {
-		changed = compareTests(snap.Tests, now)
+	if snap != nil {
+		changed = snap.TestsChanged(now)
 	}
 	recorded := map[string][]UnitResult{}
 	if snap != nil {

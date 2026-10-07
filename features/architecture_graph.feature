@@ -240,7 +240,7 @@ Feature: Architecture graph
     # changed, while the graph decided from the function's hash alone, so the
     # viewer showed as current a kill that check calls stale. The graph
     # follows check (the coordinator's call, 2026-10-07).
-    @wip @graph-stale-tests @ID-GRAPH-34
+    @graph-stale-tests @ID-GRAPH-34
     Scenario: Mutation results whose tests changed are stale
       Given a function's mutation snapshot hash still matches its source
       But a test file the snapshot records has changed since

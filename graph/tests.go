@@ -23,6 +23,11 @@ func TestsImporting(root string, files project.Files) (map[string][]string, erro
 	if err != nil {
 		return nil, err
 	}
+	return importingTests(root, sources, tests), nil
+}
+
+// importingTests is TestsImporting of sources and tests already parsed.
+func importingTests(root string, sources, tests []*fileInfo) map[string][]string {
 	g := newRepoGraph("project", root, sources)
 	idx := g.index()
 	// importers are the Go packages whose sources import each module.
@@ -66,7 +71,7 @@ func TestsImporting(root string, files project.Files) (map[string][]string, erro
 		sort.Strings(list)
 		out[s.abs] = list
 	}
-	return out, nil
+	return out
 }
 
 func parseDependencies(root string, paths []string) ([]*fileInfo, error) {

@@ -96,7 +96,7 @@ function NodePanel({ idx, node, unit, onUnit }: { idx: Index; node: ViewNode; un
           {m.stale > 0 && (
             <>
               <dt>stale</dt>
-              <dd>{m.stale} functions changed since mutation testing</dd>
+              <dd>{m.stale} functions or their tests changed since mutation testing</dd>
             </>
           )}
           <dt>imports from outside</dt>

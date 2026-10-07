@@ -16,7 +16,7 @@ type Metrics struct {
 	Killed     int      `json:"killed"`
 	Survived   int      `json:"survived"`
 	Uncovered  int      `json:"uncovered"`
-	Stale      int      `json:"stale"` // functions whose mutation results predate their source
+	Stale      int      `json:"stale"` // functions whose mutation results predate their source or its tests
 	Duplicates int      `json:"duplicates"`
 	// Grades run from 1 (worst) to 10 (best); nil means not measured.
 	CRAPGrade     *float64 `json:"crap_grade,omitempty"`

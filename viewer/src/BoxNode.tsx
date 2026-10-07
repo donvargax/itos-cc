@@ -65,7 +65,7 @@ export function BoxNode({ data, selected }: NodeProps<BoxNodeType>) {
       {m && m.functions > 0 && <RiskBar bands={m.crap_bands} />}
       <div className="box-badges">
         {m && m.survived > 0 && <span className="badge warn">{m.survived} survived</span>}
-        {m && m.stale > 0 && <span className="badge muted" title="functions changed since mutation testing">{m.stale} stale</span>}
+        {m && m.stale > 0 && <span className="badge muted" title="functions or their tests changed since mutation testing">{m.stale} stale</span>}
         {m && m.duplicates > 0 && <span className="badge muted">{m.duplicates} dup</span>}
         {view.drillable && <span className="badge open">open ↵</span>}
       </div>
