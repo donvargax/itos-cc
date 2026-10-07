@@ -223,7 +223,7 @@ items:
     title: "mutation sample: re-run a sample of cached mutants in CI and fail on a mismatch"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [mutation-check]
     kind: slice
     why: >
