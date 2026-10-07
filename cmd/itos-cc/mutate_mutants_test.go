@@ -23,6 +23,8 @@ type mutantJSON struct {
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
 	Reused      bool   `json:"reused"`
+	// Scope is the scope of the tests that decided the outcome.
+	Scope string `json:"scope"`
 	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
 	// only.
 	Excepted string `json:"excepted"`
