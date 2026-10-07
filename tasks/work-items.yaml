@@ -11,6 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - T-4
   - T-2
 items:
   - id: T-3
