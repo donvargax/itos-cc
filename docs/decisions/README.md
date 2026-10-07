@@ -10,5 +10,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0003: Mutation results are keyed by the tests that import their file](0003-mutation-results-are-keyed-by-the-tests-that-import-their-file.md)
 - [ADR-0004: Project settings live in itos-cc.yaml at the project root](0004-project-settings-live-in-itos-cc-yaml-at-the-project-root.md)
 - [ADR-0005: An excepted survivor is reused as a kill is, and its entry goes stale with its function or its tests](0005-an-excepted-survivor-is-reused-as-a-kill-is-and-its-entry-goes-stale-with-its-function-or-its-tests.md)
+- [ADR-0006: A site a snapshot never recorded makes its function stale](0006-a-site-a-snapshot-never-recorded-makes-its-function-stale.md)
 
 <!-- itos:decisions:end -->
