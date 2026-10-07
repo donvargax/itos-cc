@@ -545,3 +545,18 @@ items:
       commands and a step that turns what was written into a report, merged as integration data as
       Go's is, so --json's coverage says integration there too.
     refs: ["#14"]
+  - id: go-coverage-own-exec
+    title: "Go coverage: keep a project's own go test -exec"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      To give binaries the tests build with -cover the run's GOCOVERDIR, the Go coverage command
+      runs each test binary through itos-cc with go test -exec, since go test replaces GOCOVERDIR in
+      a test binary's environment. A project that runs its tests through its own -exec (in GOFLAGS,
+      or a go_GOOS_GOARCH_exec when cross-compiling) loses it on the coverage run, as the flag on
+      the command line wins. itos-cc could read GOFLAGS and the target's exec program and run the
+      test binary through them in turn.
+    refs: ["#14"]
