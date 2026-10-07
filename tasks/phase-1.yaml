@@ -66,3 +66,22 @@
     - run: grep -q -- '--all-tests --no-annotate' .github/workflows/nightly.yml
     - run: "grep -q 'Task: T-3' .github/workflows/nightly.yml"
     - run: grep -q 'workflow_dispatch' .github/workflows/nightly.yml
+- id: T-4
+  type: fix
+  title: Snapshot writes at the same time pass on Windows
+  why: >
+    main has been red on windows-latest since ceef519 (run 37563106445):
+    TestWritesAtTheSameTimeLeaveOneWholeSnapshot in metrics/ gets "rename
+    .metrics\x.json.*.tmp .metrics\x.json: Access is denied." from 12 of 20
+    concurrent Writes, and "mode -rw-rw-rw-, want 0644". On Windows a rename
+    onto a file that another rename is replacing fails with
+    ERROR_ACCESS_DENIED or ERROR_SHARING_VIOLATION for a moment; Go's own
+    cmd/go retries those (cmd/go/internal/robustio). metrics.Write retries the
+    rename on those two errors for a bounded time (about a second, short
+    sleeps) on Windows only, and still returns the error after that. Windows
+    has no Unix permission bits (Go reports 0666 for a writable file), so the
+    test checks the mode only off Windows. Keep the test's concurrency as it
+    is: it is what proves the fix.
+  done_when:
+    - run: GOOS=windows go vet ./metrics/
+    - run: go test -count=1 ./metrics/
