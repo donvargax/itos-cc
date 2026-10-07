@@ -423,6 +423,78 @@ Feature: Mutation testing
       Then each file in "files" has "judged", the namespace#name of each function judged
       And without --since no file has "judged"
 
+  # Issue #8, part 1: a gate (a commit hook) proves that results exist for
+  # exactly the code being committed, without running anything. Decided with
+  # the person on 2026-10-06 (q-1 to q-3): it is a subcommand of the group,
+  # mutation check, and it gives the verdict a full run would give, from the
+  # snapshots alone. For each selected function it compares the function's
+  # hash with its entry in .metrics/mutate/: no entry is missing, another
+  # hash is stale (a move is not a change, as for reuse), and a fresh entry
+  # fails on a recorded survivor, or on a recorded uncovered mutant with
+  # --fail-uncovered. A function with no mutation site needs no entry. It
+  # takes the selection of mutation run: paths, --changed, and --since, which
+  # checks only the functions the range changed. Results going stale when
+  # the tests change (#8 part 2) and re-running a sample in CI (#8 part 3)
+  # are their own items.
+  Rule: Checking cached results without running
+
+    @wip @mutation-check @ID-MUT-57
+    Scenario: Fresh results with every mutant killed pass
+      Given a run recorded every mutant of src/board.ts killed
+      And no function of src/board.ts has changed since
+      When I run "itos-cc mutation check src/board.ts"
+      Then no coverage or test command runs
+      And the exit code is 0
+
+    @wip @mutation-check @ID-MUT-58
+    Scenario: A function changed since its results is stale
+      Given "Board#place" changed since the run that recorded it
+      When I run "itos-cc mutation check src/board.ts"
+      Then the problem is "mutation.stale", with file "src/board.ts" and function "Board#place"
+      And the exit code is 1
+
+    @wip @mutation-check @ID-MUT-59
+    Scenario: A function with no results is missing
+      Given "Board#reset" was added after the last run
+      When I run "itos-cc mutation check src/board.ts"
+      Then the problem is "mutation.missing", with file "src/board.ts" and function "Board#reset"
+      And the exit code is 1
+      # a file with no snapshot at all has every function with a site missing
+
+    @wip @mutation-check @ID-MUT-60
+    Scenario: A recorded survivor fails the check
+      Given a fresh run recorded a survivor in "Board#place"
+      When I run "itos-cc mutation check src/board.ts"
+      Then the problem is "mutation.survived", with its file, line, column, function, original, and replacement
+      And the exit code is 1
+
+    @wip @mutation-check @ID-MUT-61
+    Scenario: A recorded uncovered mutant fails only with --fail-uncovered
+      Given a fresh run recorded every covered mutant of src/board.ts killed and one uncovered
+      When I run "itos-cc mutation check src/board.ts"
+      Then the exit code is 0
+      But "itos-cc mutation check --fail-uncovered src/board.ts" reports it as "mutation.uncovered" and exits 1
+
+    @wip @mutation-check @ID-MUT-62
+    Scenario: With --since only the functions the range changed are checked
+      Given only "Board#place" changed since "base", and its fresh results are all killed
+      And "Board#clear", unchanged, has a recorded survivor
+      When I run "itos-cc mutation check --since base"
+      Then the exit code is 0
+
+    @wip @mutation-check @ID-MUT-63
+    Scenario: A function with no mutation site needs no results
+      Given "Board#size" has no mutation site and no entry in the snapshot
+      And every other function of src/board.ts has fresh results, all killed
+      When I run "itos-cc mutation check src/board.ts"
+      Then the exit code is 0
+
+    @wip @mutation-check @ID-MUT-64
+    Scenario: Each function's state as JSON
+      When I run "itos-cc mutation check --json src/board.ts"
+      Then each file in "files" has "functions", each with function and state "fresh", "stale" or "missing"
+      And the problems are those the plain output prints
+
   Rule: Results
 
     @ID-MUT-28
