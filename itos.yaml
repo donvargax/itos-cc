@@ -37,6 +37,15 @@ commits:
       validate_for: [feat, fix]
       must_be_live: true
       read_at: commit
+    # The work item a commit belongs to, for the commits no other footer ties
+    # to it: a slice's @wip scenarios and its steps committed red first, in a
+    # test commit, or a chore it needs. It stands in for Task in those types,
+    # since a slice has no task (itos commit --item slice-1).
+    Item:
+      source: registry
+      validate_for: all
+      read_at: commit
+      in_place_of: { Task: [test, docs, chore] }
   # Where verification starts: this commit and the ones before it, written
   # before itos, are never judged.
   since: "313ea4a7b6fc7d289130df5bd0aa5fa495c28924"

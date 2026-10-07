@@ -12,6 +12,7 @@ A commit's type is one of `feat`, `fix`, `refactor`, `perf`, `test`, `build`, `c
 
 - `Task:` names tasks of the ledger, `tasks/phase-{group}.yaml`.
 - `Scenarios:` names `scenario` tests by their IDs, live ones only (not `@wip`).
+- `Item:` names items of the work registry, `tasks/work-items.yaml`.
 
 The footers each type needs:
 
@@ -19,10 +20,10 @@ The footers each type needs:
 - `fix`: `Scenarios:`.
 - `refactor`: `Task:`.
 - `perf`: `Task:`.
-- `test`: `Task:`.
+- `test`: `Task:` or `Item:`.
 - `build`: `Task:`.
 - `ci`: `Task:`.
-- `chore`: `Task:`.
+- `chore`: `Task:` or `Item:`.
 - `docs`: none.
 - `style`: `Task:`.
 - `revert`: `Task:`.
