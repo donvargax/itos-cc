@@ -28,7 +28,8 @@ Feature: Command line
 
   Scenario Outline: Each command describes its own options
     When I run "itos-cc <command> -h"
-    Then the command's usage and options are printed
+    Then the command's usage and options are printed to stdout
+    And the exit code is 0
 
     Examples:
       | command |

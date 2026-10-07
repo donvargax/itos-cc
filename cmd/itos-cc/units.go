@@ -20,7 +20,7 @@ func runUnits(args []string) int {
 	tests := fs.Bool("tests", false, "list test code instead of production code")
 	paths, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 	files, err := sel.files(paths)
 	if err != nil {

@@ -39,7 +39,7 @@ updates their numbers. Listens on localhost only.
 	interval := fs.Duration("interval", 500*time.Millisecond, "how often to check for changes")
 	roots, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 	if len(roots) == 0 {
 		roots = []string{"."}

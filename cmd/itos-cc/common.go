@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -23,7 +24,17 @@ const (
 
 // parse parses flags anywhere among the arguments, so
 // `itos-cc crap src --json` works as well as `itos-cc crap --json src`.
+// Asked for help, it prints the command's usage to stdout and returns
+// flag.ErrHelp.
 func parse(fs *flag.FlagSet, args []string) ([]string, error) {
+	for _, a := range args {
+		if a == "--" {
+			break
+		}
+		if a == "-h" || a == "-help" || a == "--help" {
+			fs.SetOutput(os.Stdout)
+		}
+	}
 	var positional []string
 	for {
 		if err := fs.Parse(args); err != nil {
@@ -36,6 +47,15 @@ func parse(fs *flag.FlagSet, args []string) ([]string, error) {
 		positional = append(positional, args[0])
 		args = args[1:]
 	}
+}
+
+// parseExit is the exit code for a parse error: help was asked for and
+// given, or the arguments were misused.
+func parseExit(err error) int {
+	if errors.Is(err, flag.ErrHelp) {
+		return exitOK
+	}
+	return exitUsage
 }
 
 // selection is how a command chooses its files.

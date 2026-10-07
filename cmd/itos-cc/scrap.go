@@ -45,7 +45,7 @@ the test is for before changing it. Each run is compared with the previous
 	verbose := fs.Bool("verbose", false, "print every example's measurements")
 	paths, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 	files, err := sel.files(paths)
 	if err != nil {

@@ -37,7 +37,7 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 	top := fs.Int("top", 0, "print only the N worst functions (0 prints all)")
 	paths, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 
 	files, err := sel.files(paths)

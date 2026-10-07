@@ -53,7 +53,7 @@ mutant survives.
 	scan := fs.Bool("scan", false, "list mutation sites without running tests")
 	paths, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 	opt.Annotate = !*noAnnotate
 

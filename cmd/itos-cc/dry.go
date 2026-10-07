@@ -41,7 +41,7 @@ Writes .metrics/dry.json.
 	asJSON := fs.Bool("json", false, "print the snapshot as JSON instead of text")
 	paths, err := parse(fs, args)
 	if err != nil {
-		return exitUsage
+		return parseExit(err)
 	}
 
 	focusFiles, err := sel.files(paths)
