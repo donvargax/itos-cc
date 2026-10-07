@@ -49,16 +49,11 @@ Feature: Choosing which files a command looks at
     Then stderr says "itos-cc: no source files to score"
     And the exit code is 0
 
-  Scenario: Dependencies, build output, caches, and fixtures are never walked
+  Scenario: Dependencies, caches, and fixtures are never walked
     Given the project contains these directories, each holding source files:
       | directory     |
       | node_modules  |
       | vendor        |
-      | build         |
-      | dist          |
-      | target        |
-      | out           |
-      | coverage      |
       | .venv         |
       | venv          |
       | __pycache__   |
@@ -68,6 +63,22 @@ Feature: Choosing which files a command looks at
       | .any-hidden   |
     When the project's files are discovered
     Then nothing inside those directories is selected
+
+  Scenario Outline: Build output is skipped, a package with its name is not
+    Given a directory "<directory>" holding source files
+    When the project's files are discovered
+    Then its files are <selected>
+    # build, dist, target, out, and coverage are build output names, and
+    # also ordinary package names; mutate copies the same directories
+
+    Examples:
+      | directory                                   | selected     |
+      | web/dist, beside web/package.json           | not selected |
+      | target, beside pom.xml or Cargo.toml        | not selected |
+      | app/build, beside app/build.gradle.kts      | not selected |
+      | gen/out, which git ignores                  | not selected |
+      | internal/out, a Go package                  | selected     |
+      | out, beside go.mod only                     | selected     |
 
   Scenario: A file named directly is taken even inside a skipped directory
     When I run "itos-cc units testdata/board.go"

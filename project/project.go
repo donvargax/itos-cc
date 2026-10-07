@@ -12,14 +12,42 @@ import (
 	"github.com/donvargax/itos-cc/lang"
 )
 
-// skipDirs are never walked: dependencies, build output, caches, and
-// fixtures that are not part of the program.
+// skipDirs are never walked: dependencies, caches, and fixtures that are
+// not part of the program. Build output is skipped by IsBuildOutput.
 var skipDirs = map[string]bool{
 	".git": true, ".hg": true, ".svn": true, ".idea": true, ".vscode": true,
-	"node_modules": true, "vendor": true, "target": true, "build": true, "dist": true,
-	"out": true, "coverage": true, ".gradle": true, ".venv": true, "venv": true,
+	"node_modules": true, "vendor": true, ".gradle": true, ".venv": true, "venv": true,
 	"__pycache__": true, ".mypy_cache": true, ".pytest_cache": true, ".tox": true,
 	".metrics": true, "testdata": true,
+}
+
+// buildDirs are the names build and test tools write their output to. They
+// are also ordinary package names, such as Go's internal/out.
+var buildDirs = map[string]bool{"target": true, "build": true, "dist": true, "out": true, "coverage": true}
+
+// buildManifests mark a directory whose tool writes buildDirs beside them:
+// npm and its bundlers, Maven, Gradle, Cargo, and Python packaging. Go
+// writes no output into the module.
+var buildManifests = []string{
+	"package.json", "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle",
+	"settings.gradle.kts", "Cargo.toml", "pyproject.toml", "setup.py", "setup.cfg",
+}
+
+// IsBuildOutput reports whether dir is build or test output rather than
+// source: it has a build output name, and it sits beside a manifest of a
+// tool that writes there, or git ignores it.
+func IsBuildOutput(dir string) bool {
+	if !buildDirs[filepath.Base(dir)] {
+		return false
+	}
+	for _, m := range buildManifests {
+		if _, err := os.Stat(filepath.Join(filepath.Dir(dir), m)); err == nil {
+			return true
+		}
+	}
+	cmd := exec.Command("git", "check-ignore", "-q", dir)
+	cmd.Dir = filepath.Dir(dir)
+	return cmd.Run() == nil
 }
 
 // Files are the supported source files under some roots, split into
@@ -65,7 +93,7 @@ func Discover(roots []string) (Files, error) {
 				return err
 			}
 			if d.IsDir() {
-				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".")) {
+				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || IsBuildOutput(path)) {
 					return filepath.SkipDir
 				}
 				return nil

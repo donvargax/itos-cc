@@ -12,17 +12,19 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
 // linkDirs hold dependencies: a worker links them instead of copying.
 var linkDirs = map[string]bool{"node_modules": true, ".venv": true, "venv": true, "vendor": true}
 
-// skipDirs are history, build output, and caches a worker neither copies nor
-// shares; tools rebuild what they need inside the worker.
+// skipDirs are history and caches a worker neither copies nor shares, as
+// is build output (project.IsBuildOutput); tools rebuild what they need
+// inside the worker.
 var skipDirs = map[string]bool{
 	".git": true, ".hg": true, ".svn": true, ".metrics": true, ".idea": true, ".vscode": true,
-	"build": true, "target": true, "dist": true, "out": true, "coverage": true, ".gradle": true,
-	"__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".tox": true,
+	".gradle": true, "__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".tox": true,
 }
 
 // worker owns private copies of project trees, so mutants run in parallel
@@ -54,7 +56,7 @@ func copyTree(src, dst string) error {
 		rel, _ := filepath.Rel(src, path)
 		target := filepath.Join(dst, rel)
 		switch {
-		case d.IsDir() && path != src && skipDirs[d.Name()]:
+		case d.IsDir() && path != src && (skipDirs[d.Name()] || project.IsBuildOutput(path)):
 			return filepath.SkipDir
 		case d.IsDir() && path != src && linkDirs[d.Name()]:
 			return skipAfter(os.Symlink(path, target))

@@ -71,3 +71,30 @@ func TestChangedBeforeTheFirstCommit(t *testing.T) {
 		t.Errorf("Changed() = %q, want %q", got, want)
 	}
 }
+
+func TestBuildOutputNamesAreSkippedOnlyWhenTheyAreBuildOutput(t *testing.T) {
+	root := t.TempDir()
+	git(t, root, "init", "-q")
+	write(t, filepath.Join(root, ".gitignore"), "gen/out/\n")
+	write(t, filepath.Join(root, "go.mod"), "module example.com/r\n")
+	write(t, filepath.Join(root, "out", "out.go"), "package out\n")
+	write(t, filepath.Join(root, "internal", "build", "build.go"), "package build\n")
+	write(t, filepath.Join(root, "gen", "out", "gen.go"), "package out\n")
+	write(t, filepath.Join(root, "web", "package.json"), "{}\n")
+	write(t, filepath.Join(root, "web", "src", "app.ts"), "export const a = 1\n")
+	write(t, filepath.Join(root, "web", "dist", "app.js"), "export const a = 1\n")
+
+	files, err := Discover([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, f := range files.Sources {
+		rel, _ := filepath.Rel(root, f)
+		got = append(got, filepath.ToSlash(rel))
+	}
+	want := []string{"internal/build/build.go", "out/out.go", "web/src/app.ts"}
+	if !slices.Equal(got, want) {
+		t.Errorf("sources = %q, want %q", got, want)
+	}
+}
