@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/donvargax/itos-cc/mutate"
 )
@@ -398,4 +399,62 @@ func TestTheFunctionsJudgedAsJSON(t *testing.T) {
 			t.Errorf("%s: judged %v without --since, want no key", f.File, *f.Judged)
 		}
 	}
+}
+
+// @ID-MUT-102
+func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
+	boardRepo(t, nil)
+	// A first run writes the snapshot and the summary comment.
+	o := cli(t, "mutation", "run", "--no-coverage", "--workers", "1", boardSource)
+	if o.code != 1 {
+		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	edit(t, boardSource, "package board\n\ntype Board", "package board\n\nimport _ \"fmt\"\n\ntype Board")
+	commitAll(t, "import fmt")
+
+	// Dated in the past, so a write shows in the modification time.
+	snapshot := filepath.Join(".metrics", mutate.SnapshotName(boardSource))
+	past := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	before := map[string]string{}
+	for _, p := range []string{snapshot, boardSource} {
+		if err := os.Chtimes(p, past, past); err != nil {
+			t.Fatal(err)
+		}
+		data, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		before[p] = string(data)
+	}
+	untouched := func(run string) {
+		t.Helper()
+		for _, p := range []string{snapshot, boardSource} {
+			info, err := os.Stat(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, _ := os.ReadFile(p)
+			if !info.ModTime().Equal(past) || string(data) != before[p] {
+				t.Errorf("%s: %s was written, want it left as it was", run, p)
+			}
+		}
+	}
+
+	o = cli(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base")
+	line := ""
+	for _, l := range strings.Split(o.stdout, "\n") {
+		if strings.HasPrefix(l, boardSource+": ") {
+			line = l
+		}
+	}
+	if !strings.HasSuffix(line, " (judged 0 of 2 functions)") || o.code != 0 {
+		t.Errorf("exit %d, summary %q, want exit 0 and \"(judged 0 of 2 functions)\"; stdout:\n%s", o.code, line, o.stdout)
+	}
+	untouched("mutation run --since base")
+
+	o = cli(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base", "--json")
+	if j := o.json(t).judged(t, boardSource); j == nil || len(*j) != 0 || o.code != 0 {
+		t.Errorf("exit %d, judged %v, want exit 0 and judged []\n%s", o.code, j, o.stdout)
+	}
+	untouched("mutation run --since base --json")
 }
