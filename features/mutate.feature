@@ -253,6 +253,24 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src/unused.ts"
       Then every mutant in src/unused.ts is uncovered
 
+    # A language counted as measured only from the files of the run, and
+    # coverage drops report entries that match no source, so a file no test
+    # loads, mutated alone (or as the only file --since selects), printed
+    # "no coverage …; running every mutant" though coverage ran for its
+    # language; under --fail-uncovered its mutants then failed as survivors.
+    # Seen while building slice-2, not yet reproduced with a TypeScript or
+    # LCOV fixture: reproduce it first. A coverage command that ran for the
+    # file's language measures that language, even when its report names no
+    # file of the run (the coordinator's call, 2026-10-07). Go fixtures do
+    # not show it, since go test reports a package without tests at 0%.
+    @wip @unloaded-file-uncovered @ID-MUT-105
+    Scenario: A file no test loads, mutated alone, is entirely uncovered
+      Given a TypeScript project whose tests import src/board.ts but never src/unused.ts
+      When I run "itos-cc mutation run src/unused.ts"
+      Then every mutant in src/unused.ts is uncovered, and none runs
+      And stderr does not say "no coverage"
+      And "itos-cc mutation run --fail-uncovered src/unused.ts" lists them as uncovered and exits 1
+
     @ID-MUT-20
     Scenario: No coverage for the language at all
       Given coverage measured no Kotlin file
