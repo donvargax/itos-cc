@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -62,20 +60,12 @@ func TestHelpAnywhereButAfterDashDash(t *testing.T) {
 	}
 }
 
-// stdout runs fn and returns what it printed on stdout.
+// stdout runs fn and returns what it printed on stdout. The pipe is read
+// while fn writes, as a Windows pipe holds less than a long help.
 func stdout(t *testing.T, fn func()) string {
 	t.Helper()
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	saved := os.Stdout
-	os.Stdout = w
-	defer func() { os.Stdout = saved }()
-	fn()
-	w.Close()
-	out, _ := io.ReadAll(r)
-	return string(out)
+	out, _ := captured(t, fn)
+	return out
 }
 
 func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
