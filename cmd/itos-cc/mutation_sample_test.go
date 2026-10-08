@@ -691,3 +691,17 @@ func TestTheSampleAsJSON(t *testing.T) {
 		t.Errorf("exit %d plain, %d with --json, want 1 both", plain.code, o.code)
 	}
 }
+
+func TestAMismatchsFixRerunsInItsScope(t *testing.T) {
+	for scope, want := range map[string]string{
+		"own":          "itos-cc mutation run --mutate-all src/b.ts",
+		"listed":       "itos-cc mutation run --mutate-all src/b.ts",
+		"all-tests":    "itos-cc mutation run --mutate-all --all-tests src/b.ts",
+		"make test":    "itos-cc mutation run --mutate-all --test-command 'make test' src/b.ts",
+		"echo 'a b' x": `itos-cc mutation run --mutate-all --test-command 'echo '\''a b'\'' x' src/b.ts`,
+	} {
+		if got := rerunIn(scope, "src/b.ts"); got != want {
+			t.Errorf("scope %q: %q, want %q", scope, got, want)
+		}
+	}
+}

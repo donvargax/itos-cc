@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -74,7 +75,7 @@ selection of listed tests failed.`,
    "recorded", "outcome": "killed"|"survived"|"timeout",
    "scope": "own"|"all-tests"|"listed"|"<test command>"}]}]`,
 	rules: []string{
-		"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome",
+		"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome, scope",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 		"config.invalid            itos-cc.yaml cannot be read: file",
@@ -232,7 +233,8 @@ func sampleSeed(in *invocation) (string, error) {
 
 // reportMismatch lists sampled mutant m of file rel on stdout, as "mismatch
 // <file>:<line>:<column> <original> → <replacement> in <function>:
-// recorded <outcome>, now <outcome>", and reports it as mutation.mismatch.
+// recorded <outcome>, now <outcome>", and reports it as mutation.mismatch,
+// with the scope it ran with and a fix that re-runs it there.
 func reportMismatch(in *invocation, rel string, m mutate.SampledMutant) {
 	if !in.json {
 		fmt.Printf("  mismatch %s:%d:%d %s → %s in %s: recorded %s, now %s\n", rel, m.Line, m.Column,
@@ -241,10 +243,35 @@ func reportMismatch(in *invocation, rel string, m mutate.SampledMutant) {
 	p := fail(kindNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), m.Function, m.Recorded, m.Outcome),
-		fmt.Sprintf("The cached results are not what the tests do: run 'itos-cc mutation run --mutate-all %s', and commit .metrics/mutate/ with the code.", rel)).
+		fmt.Sprintf("The cached results are not what the tests do: run '%s', and commit .metrics/mutate/ with the code.", rerunIn(m.Scope, rel))).
 		with("file", rel).with("line", m.Line).with("column", m.Column).with("function", m.Function).
 		with("original", m.Original).with("replacement", m.Replacement).
-		with("recorded", m.Recorded).with("outcome", m.Outcome)
+		with("recorded", m.Recorded).with("outcome", m.Outcome).with("scope", m.Scope)
 	p.shown = true
 	in.report(p)
+}
+
+// rerunIn is the mutation run that re-records the mutants of file rel in
+// scope, the scope a sampled mutant ran with: following a mismatch's fix
+// in another scope would record its outcome under other tests, and a kill
+// only the whole suite makes would turn into a survivor. "own" and
+// "listed" need no flag, since a run without one uses the file's own tests,
+// then the listed tests; "all-tests" is --all-tests, and any other scope is
+// the --test-command line, single-quoted for a POSIX shell.
+func rerunIn(scope, rel string) string {
+	flags := ""
+	switch scope {
+	case mutate.ScopeOwn, mutate.ScopeListed, "":
+	case mutate.ScopeAllTests:
+		flags = "--all-tests "
+	default:
+		flags = "--test-command " + shellQuote(scope) + " "
+	}
+	return "itos-cc mutation run --mutate-all " + flags + rel
+}
+
+// shellQuote is s in single quotes, for a POSIX shell: each single quote
+// in it ends the quoting, is escaped with a backslash, and starts it again.
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }

@@ -1152,7 +1152,7 @@ Feature: Mutation testing
     #   --test-command with the line in single quotes, a quote in it written
     #   '\''.
     # - The problem carries the scope as "scope", as the sample's JSON does.
-    @mismatch-fix-scope @ID-MUT-147 @wip
+    @mismatch-fix-scope @ID-MUT-147
     Scenario Outline: A mismatch's fix re-runs the mutant in the scope it was sampled with
       Given a run <recorded with> recorded a kill in src/board.ts that those tests no longer make
       When I run "itos-cc mutation sample --count 100 src/board.ts"
@@ -1165,7 +1165,7 @@ Feature: Mutation testing
         | with --all-tests                | all-tests | itos-cc mutation run --mutate-all --all-tests src/board.ts              |
         | with --test-command 'make test' | make test | itos-cc mutation run --mutate-all --test-command 'make test' src/board.ts |
 
-    @mismatch-fix-scope @ID-MUT-148 @wip
+    @mismatch-fix-scope @ID-MUT-148
     Scenario: A scope given to sample is the one the fix names
       Given outcomes of src/board.ts recorded with scope "own", one of them a kill the whole suite no longer makes
       When I run "itos-cc mutation sample --all-tests --count 100 src/board.ts"

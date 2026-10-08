@@ -301,7 +301,10 @@ the tests that decided it, the file's own tests, `--all-tests`, or the
 `--test-command` line, and keeps it when a later run reuses it, so `mutation
 sample` re-runs each mutant in its own scope and a kill only the whole suite
 makes is not read as a survivor. `--all-tests` or `--test-command` given to
-it overrides the scope of every mutant.
+it overrides the scope of every mutant. A mismatch carries the `scope` its
+mutant ran with, and its fix re-runs the file in that scope: `itos-cc
+mutation run --mutate-all` with `--all-tests` or `--test-command '<line>'`
+where the scope was one of those.
 
 An equivalent mutant changes no behaviour (a `0` set again before it is
 ever read, say), so no test can kill it, and it would fail every run. `mutation except <file>:<line>:<column> --reason '…'` excepts it in

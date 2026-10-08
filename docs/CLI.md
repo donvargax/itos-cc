@@ -96,7 +96,7 @@ output of the commands it runs passes as it is.
 | `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function or its file is gone), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`), with `moved` `new_file` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
-| `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |
+| `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
 | `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
