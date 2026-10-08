@@ -136,14 +136,15 @@ items:
     why: >
       ci.yml runs go vet and go test only, so a change that breaks viewer/ (vitest run, tsc
       --noEmit) passes CI and is first seen by the nightly, if at all.
-  - id: viewer-source-map-js-advisory
-    title: Viewer's lockfile pins source-map-js 1.2.1, which npm audit flags as high
+  - id: T-7
+    title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: task
     why: >
+      Was viewer-source-map-js-advisory.
       npm audit in viewer/ reports GHSA-68fv-2mgg-jv7q (event-loop denial of service through indexed
       source-map section offsets) for source-map-js 1.0.0 - 1.2.1, which the lockfile pins at 1.2.1
       through vite 8.3.1's postcss and, since T-5, @vitest/coverage-v8's magicast. Found while
