@@ -52,7 +52,7 @@ Feature: CRAP scores
   # the report never names are untested, at 0%, as ID-CRAP-04 scores them
   # when other files are measured. A command that failed still measures
   # nothing (ID-CRAP-11).
-  @crap-unloaded-measured @ID-CRAP-14 @wip
+  @crap-unloaded-measured @ID-CRAP-14
   Scenario: A file no test loads, scored alone, is untested, not unmeasured
     Given a TypeScript project whose tests import src/board.ts but never src/unused.ts, whose functions are simple
     When I run "itos-cc crap --threshold 30 src/unused.ts"

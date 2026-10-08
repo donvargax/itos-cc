@@ -35,13 +35,17 @@ func Score(cc int, coverage float64) float64 {
 
 // Analyze scores every unit in files. With a nil report every coverage is
 // nil. A file the report never mentions counts as 0% covered when the report
-// measured other files of the same language, because the tests ran and never
-// loaded it; otherwise its coverage is unknown.
+// measured other files of the same language, or a coverage run for its
+// language succeeded and wrote its report (Report.Measures), because the
+// tests ran and never loaded it; otherwise its coverage is unknown.
 func Analyze(files []string, report *coverage.Report) ([]Entry, error) {
+	// A language is measured when the report names one of its files, or its
+	// coverage run succeeded and wrote its report though it names none:
+	// either way, a file of it the report never names is untested.
 	measured := map[string]bool{}
 	for _, f := range files {
-		if report.Has(f) {
-			measured[lang.Detect(f).Name] = true
+		if name := lang.Detect(f).Name; report.Has(f) || report.Measures(name) {
+			measured[name] = true
 		}
 	}
 	var entries []Entry

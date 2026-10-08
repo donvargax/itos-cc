@@ -250,7 +250,12 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 			t.Errorf("%s: measures typescript %v, go %v, has %s %v; want %v, false, false\nlog:\n%s",
 				c.name, r.Measures("typescript"), r.Measures("go"), src, r.Has(src), c.measures, &log)
 		}
-		if m := r.Missing(); len(m) != 1 || m[0].Cause != MeasuredNothing {
+		// A run that measured its language is not missing: its files the
+		// report never names are untested. One that failed or wrote no
+		// report measured nothing.
+		if m := r.Missing(); c.measures && len(m) != 0 {
+			t.Errorf("%s: missing %v, want none: the run measured its language", c.name, m)
+		} else if !c.measures && (len(m) != 1 || m[0].Cause != MeasuredNothing) {
 			t.Errorf("%s: missing %v, want the run that measured none of its files", c.name, m)
 		}
 	}

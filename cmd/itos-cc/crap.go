@@ -29,7 +29,8 @@ tests with coverage unless told otherwise, prints the worst first, and writes
 With paths or --changed, Go and TypeScript coverage runs only the tests that
 load those files. A build root whose coverage could not be measured shows
 N/A, not 0%: a warning, and with --threshold a problem, since the threshold
-cannot be checked for it.`,
+cannot be checked for it. A file no test loads is 0%, untested, when the
+coverage run for its language succeeded, even with paths that name it alone.`,
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("threshold", floatFlag, "N", "", "say no (exit 1) when a function scores above N"),
 		opt("top", intFlag, "N", "", "print only the N worst functions")),

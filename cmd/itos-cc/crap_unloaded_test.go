@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -65,5 +66,20 @@ func TestAFileNoTestLoadsScoredAloneIsUntestedNotUnmeasured(t *testing.T) {
 	}
 	if o.code != 0 {
 		t.Errorf("exit %d, want 0: with no branch, each function at 0%% scores 2\n%s%s", o.code, o.stdout, o.stderr)
+	}
+}
+
+// Without --threshold, the file scores 0% as with one, and stderr warns of
+// no missing coverage.
+func TestWithoutAThresholdAFileNoTestLoadsIsUntestedWithNoWarning(t *testing.T) {
+	vitestRepo(t)
+
+	o := cli(t, "crap", "--json", unusedSource)
+	wantUntested(t, crapOf(t, o), o)
+	if strings.Contains(o.stderr, "itos-cc: no coverage") {
+		t.Errorf("stderr warns of missing coverage:\n%s", o.stderr)
+	}
+	if o.code != 0 {
+		t.Errorf("exit %d, want 0", o.code)
 	}
 }

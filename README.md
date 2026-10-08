@@ -142,6 +142,9 @@ compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
 coverage run that measured nothing, such as tests that do not compile; a
 missing tool or report exits 3. A broken test setup never passes the gate.
+A file no test loads is untested, not unmeasured: when the coverage run for
+its language succeeded and wrote its report, its functions show 0%, even
+when it is scored alone and the run found no test for it.
 
 A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
