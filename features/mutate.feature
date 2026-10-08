@@ -909,13 +909,13 @@ Feature: Mutation testing
   # changed nothing and its kill was reused. Decided with the person on
   # 2026-10-06 (q-4, q-5): each file's snapshot also records the hash of
   # every test file the graph finds importing it (for Go, its package's test
-  # files and the test files of packages that import it), whatever command
-  # ran the mutants. A kill is reused, and a function is fresh for mutation
-  # check, only while both its own hash and those tests' hashes match. A kill
-  # made only by a test that reaches the file indirectly, or that runs the
-  # built binary, is not made stale when that test changes. A snapshot
-  # written before this records no tests and is stale. A change to a test
-  # that does not import the file leaves its results as they were.
+  # files and the test files of packages that import it). A kill is reused,
+  # and a function is fresh for mutation check, only while both its own
+  # hash and those tests' hashes match. A snapshot written before this
+  # records no tests and is stale. These are the baseline dependencies;
+  # listed outcomes also follow ADR-0013, and Go all-tests and test-command
+  # outcomes also follow ADR-0016 and the all-tests-freshness scenarios.
+  # A test that does not import the file leaves an own-scope outcome fresh.
   Rule: Results go stale when their tests change
 
     @mutation-test-hash @ID-MUT-65
@@ -1567,3 +1567,102 @@ Feature: Mutation testing
       When I run "itos-cc mutation run"
       Then the problem is "mutation.exception-stale", with why "moved" and new file "src/grid.ts"
       And there is no "mutation.survived" problem
+
+  # all-tests-freshness, issue #20, q-24 and ADR-0016 (2026-10-08):
+  # - Importer hashes remain every outcome's baseline dependency.
+  # - Each Go outcome recorded with scope all-tests or test-command also
+  #   depends on every _test.go file beneath its source's nearest Go module
+  #   root, excluding nested modules but including build-tagged tests.
+  #   Discovery must not silently omit a module's test files merely because
+  #   they live outside packages that import the source.
+  # - Both broad scopes also depend on project-root mutation.tests.support
+  #   matches, using the existing filepath.Glob semantics. Feature files and
+  #   other custom-command inputs require support globs; arbitrary external
+  #   inputs are not inferred. Own/listed scopes and other languages retain
+  #   their existing rules. No list command is needed to check freshness.
+  # - These dependencies apply to every broad-scope outcome, including
+  #   survivors and excepted survivors, not just kills. A changed, added or
+  #   deleted dependency invalidates the outcome; check names the file.
+  # - Freshness follows the recorded scope even when a later invocation
+  #   uses another scope. Reuse retains that scope and its evidence. Partial
+  #   runs never refresh evidence for outcomes they did not rerun.
+  # - Legacy broad-scope outcomes lacking this evidence are stale, even
+  #   when their source and importer hashes still match, and must rerun.
+  # - Run, check, sample and the graph share the same freshness verdict.
+  Rule: Go whole-suite outcomes notice changes to their test inputs
+
+    @wip @all-tests-freshness @ID-MUT-150
+    Scenario Outline: A binary-only test change makes a whole-suite kill stale
+      Given a Go module with a production function and a separate end-to-end _test.go file that runs its built binary without importing its package
+      And a mutation run with <scope> recorded a mutant killed only by that end-to-end test
+      And only that test file changed since, so it no longer kills the mutant
+      When I run "itos-cc mutation check --json" for the production file
+      Then its function is stale, the problem is "mutation.stale", and its message names the changed end-to-end test file
+      And the exit code is 1
+      When I run mutation run with <scope> for the production file
+      Then that mutant runs again rather than reusing its recorded kill
+      And it survives
+
+      Examples:
+        | scope                         |
+        | --all-tests                   |
+        | --test-command "go test ./..." |
+
+    @wip @all-tests-freshness @ID-MUT-151
+    Scenario Outline: Whole-suite outcomes notice support files added, changed or removed
+      Given a Go whole-suite outcome recorded with <scope> and support globs matching a feature file
+      And a support file was <change> since that outcome was recorded
+      When I run "itos-cc mutation check --json" for its production file
+      Then the function is stale and its "mutation.stale" message names the support file
+      And no test or list command runs
+      And the exit code is 1
+
+      Examples:
+        | scope        | change  |
+        | all-tests    | added   |
+        | all-tests    | changed |
+        | all-tests    | removed |
+        | test-command | added   |
+        | test-command | changed |
+        | test-command | removed |
+
+    @wip @all-tests-freshness @ID-MUT-152
+    Scenario: Unchanged broad-scope evidence permits a plain run to reuse a kill
+      Given Go kills recorded with all-tests and test-command scopes and current module-test and support hashes
+      And none of the source, importer tests, module tests or support files changed
+      When I run mutation run without --all-tests or --test-command
+      Then those kills are reused
+      And each retains its recorded scope and freshness evidence
+      And mutation check still reports them fresh
+
+    @wip @all-tests-freshness @ID-MUT-153
+    Scenario: Mixed scopes keep their own freshness dependencies
+      Given Go mutation outcomes recorded with own, listed, all-tests and test-command scopes
+      And importer tests, listed covering tests and listed support files are unchanged
+      And only a non-importing module _test.go file changed
+      When their freshness is checked
+      Then the own and listed outcomes remain usable
+      And every all-tests and test-command outcome is stale, including a survivor and an excepted survivor
+      And mutation check and the graph agree on each affected function's freshness
+
+    @wip @all-tests-freshness @ID-MUT-154
+    Scenario: A partial run cannot bless unjudged whole-suite outcomes
+      Given a Go file with two functions whose outcomes were recorded with whole-suite scopes
+      And a non-importing module test changed since both outcomes were recorded
+      And only one function changed since "base"
+      When I run "itos-cc mutation run --since base" for that file
+      Then the judged function's outcomes are rerun
+      And the unjudged function's outcomes remain stale
+      And mutation check reports the unjudged function stale
+      And mutation sample excludes its stale outcomes
+      And the graph marks the unjudged function stale too
+
+    @wip @all-tests-freshness @ID-MUT-155
+    Scenario: Module boundaries and legacy evidence are explicit
+      Given a Go broad-scope kill whose source and importer hashes match but whose snapshot records no whole-suite freshness evidence
+      When I run mutation check for its production file
+      Then its function is stale and mutation run must rerun that outcome before it can be reused
+      Given a fresh broad-scope outcome in the outer Go module
+      When a build-tagged _test.go file is added beneath that module
+      Then that outcome is stale
+      But adding a _test.go file only beneath a nested Go module leaves that outcome fresh
