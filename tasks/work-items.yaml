@@ -636,3 +636,18 @@ items:
       written; mutation run's help could also say the coverage run sets ITOS_CC_TEST_COVERDIR
       without GOCOVERDIR.
     refs: ["#15"]
+  - id: mutation-exclude
+    title: itos-cc.yaml can leave test-support code outside _test.go files out of what is mutated
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #16: Go test support often lives in a package of its own (fakes such as
+      internal/template/port/porttest), and mutation run mutates it like production code, so a gate
+      with --fail-uncovered asks for tests of the fakes, which an exception cannot excuse. Paths can
+      narrow a run but not leave a folder out. The issue proposes exclude globs in itos-cc.yaml,
+      applied before --since's selection so a gate's command stays the same, likely for crap and dry
+      too: which commands, and the key's name and place, are to be decided.
+    refs: ["#16"]
