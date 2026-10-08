@@ -182,6 +182,8 @@ func staleBecause(fn mutate.FunctionCheck) string {
 		return "has mutation results from before the tests that import its file changed, kept by a mutation run that did not judge it"
 	case len(fn.Listed) > 0:
 		return "has kills by listed tests made before files they rest on changed: " + strings.Join(fn.Listed, ", ")
+	case len(fn.Broad) > 0:
+		return "has Go whole-suite results made before inputs changed: " + strings.Join(fn.Broad, ", ")
 	case len(fn.Unrecorded) > 0:
 		var sites []string
 		for _, s := range fn.Unrecorded {

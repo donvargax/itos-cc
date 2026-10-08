@@ -124,7 +124,7 @@ func (b *Builder) Build() (*Graph, bool, error) {
 				return nil, false, err
 			}
 			snap := b.snapshot(r.top, info.abs, live)
-			infos[i] = overlay.apply(info, now, snap, snap.ListedChanged(r.top, r.support))
+			infos[i] = overlay.apply(info, now, snap, snap.ListedChanged(r.top, r.support), r.top, r.support)
 		}
 		rg := newRepoGraph(r.name, r.root, infos)
 		rg.summarize()
@@ -395,8 +395,12 @@ func loadOverlay(root string) overlay {
 // import its file now, and listed how the files its listed outcomes rest
 // on changed; a function with no entry, which check calls missing, carries
 // none.
-func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange) *fileInfo {
+func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange, root string, support map[string]string) *fileInfo {
 	entries := mutationEntries(info, snap)
+	var moduleTests map[string]string
+	if info.language == "go" {
+		moduleTests, _ = mutate.GoModuleTestHashes(info.abs, root)
+	}
 	occurrence := map[string]int{}
 	for i := range info.units {
 		u := &info.units[i]
@@ -410,7 +414,8 @@ func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Sna
 		}
 		if m := entries[i]; m != nil {
 			u.Mutated = true
-			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), listed, u.sites).State == mutate.Stale
+			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), listed,
+				mutate.BroadChangesForUnit(m.Mutants, moduleTests, support), u.sites).State == mutate.Stale
 			u.Killed, u.Survived, u.Uncovered = m.Killed, m.Survived, m.Uncovered
 		}
 		u.Duplicates = o.duplicates[fmt.Sprintf("%s#%d", u.File, u.Line)]

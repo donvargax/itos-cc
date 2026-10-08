@@ -136,16 +136,18 @@ type fileState struct {
 	ran      [][]string // the listed tests that decided each outcome of ScopeListed
 	// listedChange is how the files the stored snapshot's listed outcomes
 	// rest on changed since, or nil.
-	listedChange *ListedChange
-	command      Command
-	result       *FileResult
-	previous     *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
-	stored       *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
-	tests        map[string]string // the tests that import the file, as the snapshot records them
-	judged       map[int]bool      // by the index of the unit, or nil when every function is
-	excepted     fileExceptions    // the exceptions of the functions judged
-	moved        string            // the path from the root the file had before a rename, whose snapshot moves to key
-	moving       *Snapshot         // that snapshot, under key, when key had none of its own
+	listedChange   *ListedChange
+	command        Command
+	result         *FileResult
+	previous       *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
+	stored         *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
+	tests          map[string]string // the tests that import the file, as the snapshot records them
+	moduleTests    map[string]string // every test in a Go source's nearest module
+	currentSupport map[string]string
+	judged         map[int]bool   // by the index of the unit, or nil when every function is
+	excepted       fileExceptions // the exceptions of the functions judged
+	moved          string         // the path from the root the file had before a rename, whose snapshot moves to key
+	moving         *Snapshot      // that snapshot, under key, when key had none of its own
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -185,8 +187,12 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 		if !s.result.BaselineFailed && len(s.result.FailedSelections) == 0 {
 			s.result.Mutants = s.decided()
 			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes, s.ran)
+			if s.file.Spec.Name == "go" {
+				recordGoEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
+			}
 			if s.judged != nil {
 				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
+				s.markBroadStale()
 			}
 			var files map[string]string
 			if opt.Listed != nil {
@@ -279,7 +285,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			return states, err
 		}
 		rel, key := project.Rel(path), project.FromRoot(path)
-		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests),
+		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests), currentSupport: opt.Support,
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
 		snap, err := LoadSnapshot(key)
@@ -295,6 +301,11 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		}
 		if s.tests, err = TestHashes(tests); err != nil {
 			return states, err
+		}
+		if f.Spec.Name == "go" {
+			if s.moduleTests, err = GoModuleTestHashes(path, project.Root()); err != nil {
+				return states, err
+			}
 		}
 		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev, prevScopes := rememberedWithScopes(s.previous, f)
@@ -338,7 +349,8 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			d := prevScopes[site.Unit][site.Key()]
 			// A listed outcome holds while the files it rests on do.
 			restsOnChange := len(s.listedChange.files([]Mutant{{Scope: d.scope, Tests: d.tests}})) > 0
-			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange {
+			broadStale := len(BroadChanges(Mutant{Scope: d.scope, GoEvidence: d.evidence}, s.moduleTests, opt.Support)) > 0
+			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
 				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
 				s.reused[i] = true
 				s.result.Reused++

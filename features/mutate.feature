@@ -184,7 +184,7 @@ Feature: Mutation testing
       And the e2e test kills them
       # tests that only run the built binary are not in coverage; with
       # --no-coverage too, every mutant runs and they can kill it
-      And a later run without --all-tests reuses those kills for functions that have not changed
+      And a later run without --all-tests reuses those kills for functions that have not changed while the Go module tests and support files remain unchanged
 
     @ID-MUT-10
     Scenario: A custom test command
@@ -1591,7 +1591,7 @@ Feature: Mutation testing
   # - Run, check, sample and the graph share the same freshness verdict.
   Rule: Go whole-suite outcomes notice changes to their test inputs
 
-    @wip @all-tests-freshness @ID-MUT-150
+    @all-tests-freshness @ID-MUT-150
     Scenario Outline: A binary-only test change makes a whole-suite kill stale
       Given a Go module with a production function and a separate end-to-end _test.go file that runs its built binary without importing its package
       And a mutation run with <scope> recorded a mutant killed only by that end-to-end test
@@ -1606,9 +1606,9 @@ Feature: Mutation testing
       Examples:
         | scope                         |
         | --all-tests                   |
-        | --test-command "go test ./..." |
+        | --test-command "go test -count=1 ./..." |
 
-    @wip @all-tests-freshness @ID-MUT-151
+    @all-tests-freshness @ID-MUT-151
     Scenario Outline: Whole-suite outcomes notice support files added, changed or removed
       Given a Go whole-suite outcome recorded with <scope> and support globs matching a feature file
       And a support file was <change> since that outcome was recorded
@@ -1626,7 +1626,7 @@ Feature: Mutation testing
         | test-command | changed |
         | test-command | removed |
 
-    @wip @all-tests-freshness @ID-MUT-152
+    @all-tests-freshness @ID-MUT-152
     Scenario: Unchanged broad-scope evidence permits a plain run to reuse a kill
       Given Go kills recorded with all-tests and test-command scopes and current module-test and support hashes
       And none of the source, importer tests, module tests or support files changed
@@ -1635,7 +1635,7 @@ Feature: Mutation testing
       And each retains its recorded scope and freshness evidence
       And mutation check still reports them fresh
 
-    @wip @all-tests-freshness @ID-MUT-153
+    @all-tests-freshness @ID-MUT-153
     Scenario: Mixed scopes keep their own freshness dependencies
       Given Go mutation outcomes recorded with own, listed, all-tests and test-command scopes
       And importer tests, listed covering tests and listed support files are unchanged
@@ -1645,7 +1645,7 @@ Feature: Mutation testing
       And every all-tests and test-command outcome is stale, including a survivor and an excepted survivor
       And mutation check and the graph agree on each affected function's freshness
 
-    @wip @all-tests-freshness @ID-MUT-154
+    @all-tests-freshness @ID-MUT-154
     Scenario: A partial run cannot bless unjudged whole-suite outcomes
       Given a Go file with two functions whose outcomes were recorded with whole-suite scopes
       And a non-importing module test changed since both outcomes were recorded
@@ -1657,7 +1657,7 @@ Feature: Mutation testing
       And mutation sample excludes its stale outcomes
       And the graph marks the unjudged function stale too
 
-    @wip @all-tests-freshness @ID-MUT-155
+    @all-tests-freshness @ID-MUT-155
     Scenario: Module boundaries and legacy evidence are explicit
       Given a Go broad-scope kill whose source and importer hashes match but whose snapshot records no whole-suite freshness evidence
       When I run mutation check for its production file

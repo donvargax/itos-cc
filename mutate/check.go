@@ -58,6 +58,9 @@ type Freshness struct {
 	// Stale: a file that defines one of its tests, or a support file; nil
 	// otherwise.
 	Listed []string
+	// Broad is each module test or configured support input changed for a
+	// Go all-tests or test-command outcome.
+	Broad []string
 	// Unrecorded is each site the function has now that its entry does not
 	// record although its hash and tests match, in line order, as when a
 	// newer itos-cc adds a mutation operator; such a function is Stale. nil
@@ -76,7 +79,7 @@ type Freshness struct {
 // function that only moved is fresh, the tests are those it recorded, no
 // run kept it marked stale, the files its listed outcomes rest on are
 // unchanged, and it records every site the function has.
-func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *ListedChange, sites []Site) Freshness {
+func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *ListedChange, broad []string, sites []Site) Freshness {
 	switch {
 	case entry == nil:
 		return Freshness{State: Missing}
@@ -89,6 +92,9 @@ func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *List
 	}
 	if files := listed.files(entry.Mutants); len(files) > 0 {
 		return Freshness{State: Stale, Listed: files}
+	}
+	if len(broad) > 0 {
+		return Freshness{State: Stale, Broad: broad}
 	}
 	if u := unrecorded(entry.Mutants, sites); len(u) > 0 {
 		return Freshness{State: Stale, Unrecorded: u}
@@ -168,6 +174,13 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 		return result, err
 	}
 	var changed *TestChange
+	var moduleTests map[string]string
+	if f.Spec.Name == "go" {
+		moduleTests, err = GoModuleTestHashes(path, project.Root())
+		if err != nil {
+			return result, err
+		}
+	}
 	if snap != nil {
 		changed = snap.TestsChanged(now)
 	}
@@ -204,7 +217,14 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 			e = &entries[pair[i]]
 			c.Entry = *e
 		}
-		c.Freshness = FreshnessOf(e, hashes[i], changed, listed, sites[i])
+		var broad []string
+		if e != nil && f.Spec.Name == "go" {
+			for _, m := range e.Mutants {
+				broad = append(broad, BroadChanges(m, moduleTests, support)...)
+			}
+			broad = uniqueSorted(broad)
+		}
+		c.Freshness = FreshnessOf(e, hashes[i], changed, listed, broad, sites[i])
 		if c.judged() {
 			c.Mutants = placed(e.Mutants, sites[i])
 		}

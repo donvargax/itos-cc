@@ -108,6 +108,14 @@ output of the commands it runs passes as it is.
 
 Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 
+For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
+also depends on every `_test.go` file beneath the source's nearest `go.mod`
+(including build-tagged tests and excluding nested modules) and on the files
+matched by project-root `mutation.tests.support` globs. Feature files and
+other custom-command inputs must be named by those globs. Check, sample, run,
+and graph use the recorded scope's evidence; freshness checks run no tests or
+list command. Older Go broad-scope outcomes without evidence are stale.
+
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |

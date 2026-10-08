@@ -311,6 +311,17 @@ mutant ran with, and its fix re-runs the file in that scope: `itos-cc
 mutation run --mutate-all` with `--all-tests` or `--test-command '<line>'`
 where the scope was one of those.
 
+For Go outcomes recorded with `--all-tests` or `--test-command`, cached
+freshness also depends on every `_test.go` file under the source's nearest
+`go.mod` (including build-tagged tests, excluding nested modules) and on the
+files matched by `mutation.tests.support`. Add feature files and other custom
+command inputs to those support globs; arbitrary inputs are not inferred.
+`mutation check` and the graph compare saved hashes only and never run tests or
+the list command. A plain run retains the recorded scope and evidence when it
+reuses a broad-scope outcome; a partial run keeps stale evidence for functions
+it does not judge. Older Go broad-scope outcomes without this evidence rerun
+once.
+
 An equivalent mutant changes no behaviour (a `0` set again before it is
 ever read, say), so no test can kill it, and it would fail every run. `mutation except <file>:<line>:<column> --reason '…'` excepts it in
 `itos-cc.yaml` at the project root, itos-cc's project settings, to commit

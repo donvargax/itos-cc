@@ -86,10 +86,19 @@ type Mutant struct {
 	// that decided it after the file's own tests survived the mutant: those
 	// whose coverage reaches its line.
 	Tests []string `json:"tests,omitempty"`
+	// GoEvidence is the test and configured-support input of a Go
+	// broad-scope outcome. Nil means legacy evidence was not recorded.
+	GoEvidence *GoEvidence `json:"go_evidence,omitempty"`
 	// Excepted is the reason itos-cc.yaml gives for a survivor it excepts,
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string `json:"-"`
+}
+
+// GoEvidence is the complete freshness evidence of a Go broad-scope outcome.
+type GoEvidence struct {
+	Tests   map[string]string `json:"tests"`
+	Support map[string]string `json:"support"`
 }
 
 // Scopes of the tests that decide an outcome. Any other scope is the
@@ -260,8 +269,9 @@ type previousScopes map[int]map[string]decidedBy
 // decidedBy is the scope that decided an outcome, and with ScopeListed the
 // listed tests.
 type decidedBy struct {
-	scope string
-	tests []string
+	scope    string
+	tests    []string
+	evidence *GoEvidence
 }
 
 func unitID(namespace, name string) string { return namespace + "#" + name }
@@ -365,7 +375,7 @@ func rememberedWithScopes(s *Snapshot, f *lang.File) (previous, previousScopes) 
 		outcomes, decided := map[string]string{}, map[string]decidedBy{}
 		for _, m := range u.Mutants {
 			outcomes[m.key()] = m.Outcome
-			decided[m.key()] = decidedBy{m.TestScope(), m.Tests}
+			decided[m.key()] = decidedBy{scope: m.TestScope(), tests: m.Tests, evidence: m.GoEvidence}
 		}
 		prev[i], scopes[i] = outcomes, decided
 	}

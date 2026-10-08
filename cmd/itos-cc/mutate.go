@@ -77,6 +77,15 @@ the scope it was decided with, and mutation sample re-runs it there. A summary c
 the end of each source file; it lists each survivor, and each one itos-cc.yaml
 excepts apart, with its reason.
 
+For Go outcomes recorded with --all-tests or --test-command, freshness also
+depends on every _test.go file beneath the source's nearest go.mod (nested
+modules excluded, build-tagged tests included) and on files matched by
+mutation.tests.support. Name feature files and other command inputs there;
+inputs outside those files cannot be inferred. These checks use saved hashes
+and never run a test or list command. Reusing a broad-scope result keeps its
+scope and evidence; a partial run does not refresh evidence for functions it
+did not judge. Legacy broad-scope Go results without this evidence rerun once.
+
 --since REF judges only the functions the commits since REF changed, as a
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
 Paths narrow it to the files under them. Functions not judged neither run nor
