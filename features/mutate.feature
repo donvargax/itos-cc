@@ -223,6 +223,23 @@ Feature: Mutation testing
       When mutants run with the default timeout factor of 10
       Then a mutant times out after 2 seconds
 
+    # timeout-allowance: a mutant timed out after its baseline's time times
+    # the timeout factor, at least 2 seconds. A mutant's run builds the
+    # mutated code, which the baseline may have found built already, so on
+    # a slow runner (windows-latest, CI runs 37718895582 and 37721105456) a
+    # mutant that should survive timed out and counted as killed, hiding a
+    # survivor. Decided with the person on 2026-10-07 (q-23): a timeout is
+    # the baseline's time times the factor plus a fixed 5 seconds, as PIT and
+    # Stryker add a constant, and the 2-second minimum goes. It holds for a
+    # file's tests, a --test-command or --all-tests run, each selection of
+    # listed tests (ID-MUT-135) and mutation sample alike. ID-MUT-14, 15 and
+    # 135 said the old rule and change with the fix.
+    @timeout-allowance @ID-MUT-149 @wip
+    Scenario: A mutant's timeout leaves a fixed allowance beyond its baseline
+      Given the baseline took 50 milliseconds
+      When mutants run with the default timeout factor of 10
+      Then a mutant times out after 5.5 seconds: ten times the baseline, plus 5 seconds
+
     @ID-MUT-16
     Scenario: A failing baseline
       Given the tests of src/board.py fail without any mutation
