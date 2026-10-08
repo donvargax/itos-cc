@@ -311,14 +311,15 @@ items:
       this repository inside a container. Then: find the mutant, cap each mutant's resources, and
       save results as the run goes, so a killed run keeps what it finished.
     refs: ["#8"]
-  - id: mutation-annotate-excepted
+  - id: annotate-excepted
     title: mutation run's summary comment lists an excepted survivor as survived
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-annotate-excepted.
       Found building mutation-exceptions (#10). The summary comment mutation run keeps at the end of
       each source file is built from the snapshot alone, which records an excepted survivor as
       survived (so mutation sample needs nothing new). So the comment still says '1 survived' and
