@@ -620,3 +620,19 @@ items:
       in that test, or a check that tells a mutant timed out by its own tests from one that ran the
       listed tests, would keep it from failing on a slow runner.
     refs: ["#14"]
+  - id: listed-coverage-failed
+    title: A failing coverage run of the listed tests is a tests.* problem, not every mutant uncovered
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #15, found in itos-template on v0.5.0: when the listed tests' coverage run fails,
+      itos-cc prints one stderr line and judges every mutant uncovered, so under --fail-uncovered a
+      gate asks for tests of code the suite covers and --json never names the cause. Like
+      tests.list-failed and tests.selection-failed, it could be a problem of its own
+      (tests.coverage-failed, with the command and exit code), nothing judged and no snapshot
+      written; mutation run's help could also say the coverage run sets ITOS_CC_TEST_COVERDIR
+      without GOCOVERDIR.
+    refs: ["#15"]
