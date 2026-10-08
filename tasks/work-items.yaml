@@ -420,7 +420,7 @@ items:
     title: A mutation.mismatch says to re-run in the scope the outcome was recorded with
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
