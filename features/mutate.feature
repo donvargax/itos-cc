@@ -571,8 +571,10 @@ Feature: Mutation testing
   # failure. An explicit flag, not implied by --since, so a gate mode (#8)
   # can turn it on later and plain runs keep today's output. Uncovered
   # mutants are never reused from a snapshot, so each run decides them
-  # afresh from coverage. With --no-coverage, or where coverage measured
-  # nothing for the language, every mutant runs and none is uncovered.
+  # afresh from coverage. Without --fail-uncovered, --no-coverage still
+  # runs every mutant. ADR-0017 makes --no-coverage conflict with strict
+  # mode; strict Go also requires independent executable-block evidence,
+  # even where no mutation site exists (strict-go-coverage below).
   Rule: Uncovered mutants as failures
 
     @slice-2 @ID-MUT-47
@@ -605,11 +607,14 @@ Feature: Mutation testing
       Then each uncovered mutant is a "mutation.uncovered" problem with file, line, column, function, original, and replacement
       And "ok" is false
 
-    @slice-2 @ID-MUT-51
-    Scenario: Nothing is uncovered when coverage is skipped
+    # ADR-0017 deliberately replaces the former promise that combining
+    # --no-coverage with --fail-uncovered silently runs every mutant.
+    @wip @slice-2 @strict-go-coverage @ID-MUT-51
+    Scenario: Skipping coverage conflicts with strict mode
       When I run "itos-cc mutation run --no-coverage --fail-uncovered src/board.ts"
-      Then every mutant runs
-      And no mutant is uncovered, so none fails as uncovered
+      Then the problem is "flags.conflict", naming "--no-coverage"
+      And no coverage command or mutant runs
+      And the exit code is 2
 
   Rule: Differential runs
 
@@ -815,7 +820,8 @@ Feature: Mutation testing
   # hash with its entry in .metrics/mutate/: no entry is missing, another
   # hash is stale (a move is not a change, as for reuse), and a fresh entry
   # fails on a recorded survivor, or on a recorded uncovered mutant with
-  # --fail-uncovered. A function with no mutation site needs no entry. It
+  # --fail-uncovered. Without strict Go statement coverage, a function with
+  # no mutation site needs no entry. ADR-0017 adds strict Go obligations. It
   # takes the selection of mutation run: paths, --changed, and --since, which
   # checks only the functions the range changed. Results going stale when
   # the tests change (#8 part 2) and re-running a sample in CI (#8 part 3)
@@ -1666,3 +1672,151 @@ Feature: Mutation testing
       When a build-tagged _test.go file is added beneath that module
       Then that outcome is stale
       But adding a _test.go file only beneath a nested Go module leaves that outcome fresh
+
+  # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
+  # - --fail-uncovered judges positive-weight Go executable coverage blocks
+  #   in every selected, judged function, including functions with no sites.
+  #   Empty/comment-only bodies have no executable obligation; prove that
+  #   from source, not from the absence of a file's coverage records.
+  # - Different measured column spans on one line remain distinct. Matching
+  #   spans from successful built-in/integration/listed measurements are
+  #   covered if any measured copy executed them. Function literals belong
+  #   to their enclosing named Go function, as today's Go unit model does.
+  #   Comments, braces and zero-weight records add no separate obligations.
+  # - Persist a complete per-function block inventory and its independent
+  #   provenance, including a measured-complete inventory. Missing, null,
+  #   partial or legacy evidence is not proof of complete coverage.
+  # - Evidence belongs to its recorded coverage producer, not to mutant
+  #   scopes: --test-command alone does not change the coverage command.
+  #   Fingerprint producer/options, relevant Go build environment, module
+  #   .go source/test files (build-tagged files included, nested modules
+  #   excluded), go.mod/go.sum and project config/support matches. Compare
+  #   additions, removals and edits; ignore only the tool-owned annotation
+  #   block to avoid making a run's own summary stale its evidence.
+  # - Go raw-profile workflows (--coverage-report, --use-existing-coverage
+  #   and --coverage-command) conflict with strict mode in this slice. They
+  #   retain non-strict behavior. Do not attach today's fingerprints to an
+  #   old, failed or unrelated measurement. Opaque inputs require support
+  #   globs and are not inferred. No new attestation/sidecar format.
+  # - A fresh independent cache may avoid coverage measurement, including
+  #   evidence from a broader recorded suite. Missing/stale evidence makes
+  #   a strict run measure coverage even with no pending mutation sites.
+  #   Non-strict/no-coverage runs must not manufacture or refresh evidence.
+  # - check runs no tests/coverage/list command and writes nothing. Strict
+  #   check reports mutation.coverage-missing or mutation.coverage-stale
+  #   with file/function/line and exits 1 when it cannot trust the evidence.
+  #   The stale message names changed inputs. A run that cannot establish
+  #   complete evidence reports missing evidence, never invents covered or
+  #   uncovered blocks; actual measurement errors retain CLI exit categories.
+  # - Each uncovered span is mutation.uncovered-statement (exit 1), with
+  #   current file, function and line. Optional column precision must not be
+  #   lost internally. These findings have no original/replacement and do
+  #   not change mutant counts. Keep mutation.uncovered for actual mutants,
+  #   even when that also produces a statement finding. Survivor exceptions
+  #   do not excuse uncovered statements. No new coverage exceptions.
+  # - --since/paths keep today's judgment selection. Preserve original
+  #   evidence for unjudged functions, never bless it with newly measured
+  #   file-wide fingerprints. Pair by existing name/hash identity (including
+  #   repeated init functions); diagnose current positions after movement.
+  #   File/package moves that change measurement inputs stale coverage.
+  # - Non-strict zero-site/reuse behavior, mutant counts, ordinary graph and
+  #   sample freshness, survivor exceptions and other-language coverage
+  #   behavior remain unchanged. The --no-coverage/--fail-uncovered usage
+  #   conflict is universal, and is checked even for empty selections.
+  Rule: Strict Go checks prove executable coverage without mutation sites
+
+    @wip @strict-go-coverage @ID-MUT-156
+    Scenario: A killed mutant does not excuse an uncovered statement without a site
+      Given a Go function with a tested comparison whose mutants are killed and an unexecuted identifier-conditioned branch returning a string with no mutation site
+      When I run mutation run with --fail-uncovered --json for its source file
+      Then the problem is "mutation.uncovered-statement", with file, function and the unexecuted block's line
+      And no original or replacement is invented for that problem
+      And the function's mutant counts remain killed mutants only, with zero uncovered mutants
+      And the exit code is 1
+      When I run mutation check with --fail-uncovered --json for the file
+      Then it reports the same uncovered statement and exits 1 without running commands or writing files
+
+    @wip @strict-go-coverage @ID-MUT-157
+    Scenario: Executable zero-site functions need coverage while empty bodies do not
+      Given a Go function containing no mutation sites whose identifier-conditioned branch is never executed
+      And an executable zero-site function in a package no test loads
+      When I run mutation run with --fail-uncovered for each source
+      Then each unexecuted executable block is an uncovered-statement failure
+      But a strict run and cached check of a fully executed zero-site function both pass
+      And empty or comment-only function bodies add no coverage obligation
+      And a non-strict check of a zero-site function still needs no snapshot entry
+
+    @wip @strict-go-coverage @ID-MUT-158
+    Scenario: Covered blocks cannot hide unexecuted same-line or closure blocks
+      Given a Go function has covered and uncovered positive-weight blocks with distinct column spans on the same source line
+      And another named Go function contains a never-called function literal
+      When I run mutation run with --fail-uncovered
+      Then the same-line uncovered span fails despite the covered span on that line
+      And the literal's uncovered block is attributed to its enclosing named function
+      And comments, brace-only lines and zero-statement-weight blocks create no separate findings
+
+    @wip @strict-go-coverage @ID-MUT-159
+    Scenario: Reused mutants cannot bypass missing or stale coverage evidence
+      Given a non-strict no-coverage run recorded all mutants killed and no independent statement evidence
+      When I run mutation run with --fail-uncovered and fresh inputs
+      Then coverage is measured even though those mutants can be reused
+      And current independent evidence is recorded for every judged executable Go function
+      When I repeat the strict run and cached check without any input change
+      Then the fresh evidence can be reused without another coverage measurement
+      And cached check runs no test, list or coverage command and writes nothing
+      But stale independent evidence makes a strict run measure again even if its mutant outcomes remain reusable
+
+    @wip @strict-go-coverage @ID-MUT-160
+    Scenario Outline: Incomplete coverage evidence cannot pass strict check
+      Given a Go function's mutation outcomes are fresh but its independent coverage evidence is <evidence>
+      When I run mutation check with --fail-uncovered --json
+      Then its problem is "mutation.coverage-missing", with file, function and line
+      And the exit code is 1
+      And no test, list or coverage command runs and no file is written
+
+      Examples:
+        | evidence                                             |
+        | absent in a legacy snapshot                           |
+        | null                                                 |
+        | missing its executable function's block inventory     |
+        | supplied only by measurement of an unrelated Go module |
+
+    @wip @strict-go-coverage @ID-MUT-161
+    Scenario Outline: Coverage depends on source and measurement inputs independently of mutants
+      Given fresh strict coverage evidence for an unchanged Go function
+      And a <input> input was <change> without changing that function
+      When I run mutation check with --fail-uncovered --json for the function's file
+      Then its problem is "mutation.coverage-stale", naming the changed input
+      And the exit code is 1
+      And a later strict run cannot bless the old profile with new fingerprints
+
+      Examples:
+        | input                          | change  |
+        | module production helper       | changed |
+        | non-importing module test      | added   |
+        | configured support file        | removed |
+        | module go.mod                  | changed |
+        | recorded coverage build option | changed |
+
+    @wip @strict-go-coverage @ID-MUT-162
+    Scenario: Partial judgment and moved functions preserve coverage identity
+      Given two Go functions have fresh independent coverage evidence
+      And a module test changed since, making both inventories stale
+      And only one function changed in commits since "base"
+      When I run mutation run with --since base --fail-uncovered
+      Then only the changed function is judged and gets newly measured evidence
+      And the unjudged function keeps its original stale evidence
+      And strict check of the unjudged function cannot pass
+      And moving a function down within its file reports uncovered blocks at their current lines after current measurement
+      And repeated init functions retain the correct separate inventories when paired by name and hash
+
+    @wip @strict-go-coverage @ID-MUT-163
+    Scenario: Strict coverage validates flags and does not widen other modes
+      When I combine --fail-uncovered with --no-coverage, even for an empty selection
+      Then the problem is "flags.conflict" for "--no-coverage" and the exit code is 2
+      When strict Go run is combined with --coverage-report, --use-existing-coverage or --coverage-command
+      Then the problem is "flags.conflict" naming the incompatible report flag and the exit code is 2
+      And no report, coverage command or mutant is consumed to bless strict evidence
+      But non-strict explicit-report and no-coverage runs retain their current behavior
+      And other-language statement coverage, ordinary graph/sample freshness and survivor exceptions are unchanged
+      And a survivor exception cannot excuse a strict Go uncovered-statement finding
