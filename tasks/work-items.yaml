@@ -599,15 +599,9 @@ items:
     title: mutation run --since with paths never judges an entry whose file the range deleted
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found building exceptions-deleted-file. A --since run judges the entries in itos-cc.yaml whose
-      file its range deleted, but paths narrow the range by the path a file has now, and a deleted
-      file has none, so with paths such an entry is never judged; an entry whose file was renamed is
-      judged when its new path is selected. The paths could narrow deleted files by the path they
-      had, so mutation run --since base src/ would also fail an entry for a deleted src/board.ts.
     refs: ["#10"]
   - id: selection-timeout-flaky-windows
     title: ID-MUT-135's test can time out a mutant on its own tests on windows-latest
