@@ -678,3 +678,16 @@ items:
     status: done
     depends_on: []
     kind: slice
+  - id: whole-suite-freshness
+    title: Mutation outcomes from whole-suite tests go stale when their test inputs change
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #20 reports cached kills from --all-tests remaining fresh after binary-only end-to-end
+      tests change. ADR-0003 explicitly accepted importer-only freshness, so this work needs a new
+      decision before scenarios or implementation. Freshness must follow each recorded mutant scope,
+      including reused outcomes and partial runs, rather than the current command flags.
+    refs: ["#20"]
