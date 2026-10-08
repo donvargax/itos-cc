@@ -420,18 +420,9 @@ items:
     title: A mutation.mismatch says to re-run in the scope the outcome was recorded with
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mismatch-fix-names-scope.
-      Since sample-recorded-scope each outcome records its scope, own, all-tests or a --test-command
-      line, and mutation sample re-runs it there. The fix a mutation.mismatch gives is still
-      'itos-cc mutation run --mutate-all <file>', with neither flag, so following it on an
-      --all-tests outcome re-records it under the file's own tests, and a kill only the whole suite
-      makes turns into a survivor. The fix could name --all-tests or --test-command '<line>' from
-      the mismatched mutant's scope, and the mismatch could carry the scope as a key. Read from
-      cmd/itos-cc/mutation_sample.go while building sample-recorded-scope, not reproduced.
   - id: graph-coverage-same-name
     title: The graph pairs coverage with functions sharing a name by more than their order
     phase: 1
