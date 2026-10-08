@@ -374,19 +374,9 @@ items:
     title: A file no test loads, scored alone by crap, is untested, not unmeasured
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was crap-unloaded-file-measured.
-      coverage.Run counts a plan as Missing (measured-nothing) whenever its report names none of the
-      plan's files, so crap --threshold over a file no test loads, alone (crap --threshold 30
-      src/unused.ts in a Vitest project, where vitest related finds no test, exits 0 and writes an
-      empty lcov.info), fails as coverage.measured-nothing, 'Run the tests and fix them', though the
-      run succeeded. Since unloaded-file-uncovered the report knows the run measured its language
-      (Report.Measures: every command exited 0 and wrote its report), so such a plan's files could
-      score as untested at 0% instead. Read from coverage.Run and Plan.measured while fixing
-      unloaded-file-uncovered, not reproduced.
   - id: graph-check-freshness
     title: The graph takes each function's mutation state from mutation check's own code
     phase: 1
