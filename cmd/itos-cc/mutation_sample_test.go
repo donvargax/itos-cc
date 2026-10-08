@@ -366,7 +366,7 @@ func TestClear(t *testing.T) {
 }
 `,
 	})
-	// The timeout is then the baseline's duration, and at least 2s.
+	// The timeout is then the baseline's duration plus 5s.
 	if o := mutateRun(t, "--timeout-factor", "1", boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed or timed out\n%s%s", o.code, o.stdout, o.stderr)
 	}

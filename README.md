@@ -181,7 +181,9 @@ test. What keeps `mutation run` fast:
   is uncovered, not a survivor.
 - **Parallel workers** in private copies of the project, so the real tree is
   never modified while tests run. The baseline runs inside a worker, which
-  proves the copy works before any mutant does.
+  proves the copy works before any mutant does. A mutant times out after
+  the baseline's time times `--timeout-factor` (10 by default), plus 5
+  seconds for building the mutated code, and a timeout counts as killed.
 
 `--all-tests` runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests anywhere in the build root can kill
@@ -232,7 +234,7 @@ with a `GOCOVERDIR` of its own. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
 run. The first time a mutant needs a selection of listed tests, that
 selection runs once without any mutant in the mutant's worker's copy: its
-time, times `--timeout-factor` and at least 2 seconds, is the timeout of
+time, times `--timeout-factor`, plus 5 seconds, is the timeout of
 every mutant run of it, so a mutant that hangs one quick scenario waits for
 that scenario's time, not the whole suite's. A selection that fails without
 a mutant is `tests.selection-failed`, exit 1, with its `ids`: no mutant that

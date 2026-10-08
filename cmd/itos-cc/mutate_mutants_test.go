@@ -175,7 +175,7 @@ func TestSettle(t *testing.T) {
 		t.Fatalf("sites %+v, want the one ! of Settle", sites)
 	}
 
-	// The timeout is then the baseline's duration, and at least 2s.
+	// The timeout is then the baseline's duration plus 5s.
 	o := mutateRun(t, "--json", "--timeout-factor", "1", wait)
 	f := o.json(t).file(t, wait)
 	got := f.mutants(t)

@@ -91,10 +91,17 @@ func (s *selections) baseline(w *worker, ids []string) *selection {
 	return sel
 }
 
+// timeoutAllowance is added to every mutant's timeout. A mutant's run
+// builds the mutated code, which its baseline may have found built, so on
+// a slow machine a mutant timed from the baseline alone could time out
+// before its tests ran, and a survivor would count as killed. It also
+// keeps a fast suite from timing out on scheduling noise.
+const timeoutAllowance = 5 * time.Second
+
 // timeoutOf is how long a mutant run may take whose baseline took elapsed:
-// factor times it, and at least minTimeout.
+// factor times it, plus timeoutAllowance.
 func timeoutOf(elapsed time.Duration, factor float64) time.Duration {
-	return max(minTimeout, time.Duration(float64(elapsed)*factor))
+	return time.Duration(float64(elapsed)*factor) + timeoutAllowance
 }
 
 // addFailed records that f, a selection some mutant of the file needed,

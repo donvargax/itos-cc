@@ -31,8 +31,12 @@ const (
 )
 
 // selectionSleep is how long ID-A-02 takes once the binary passed it, in
-// the module of ID-MUT-135, where it is the slow test.
-const selectionSleep = 2 * time.Second
+// the module of ID-MUT-135, where it is the slow test. A selection's
+// timeout is three times its baseline plus 5 seconds there, and a Windows
+// kill may wait 3.5 seconds more, so the sleep must pass about 2.8 seconds
+// for a mutant timed from ID-A-01's run alone to stop well before three
+// times both tests' time: 5 seconds leaves 6.5 seconds between them.
+const selectionSleep = 5 * time.Second
 
 // selectionRepo makes the module of mutate_listed_test.go, with the harness
 // recording main.go's hash and each of changes made, the first of its
@@ -169,12 +173,12 @@ func TestASelectionsTimeoutComesFromItsOwnRun(t *testing.T) {
 		t.Fatalf("ID-A-01 ran alone without a mutant %d times, at %v, and with one first at %d: want once, before any mutant's run", n, at, mutated)
 	}
 
-	// Each mutant of the loop times out after three times that run, at
-	// least 2 seconds, not after three times both tests' time, which is at
-	// least ID-A-01's and ID-A-02's sleep.
+	// Each mutant of the loop times out after three times that run plus 5
+	// seconds, not after three times both tests' time, which is at least
+	// ID-A-01's and ID-A-02's sleep.
 	took, timeout := selectionBaseline(t, o.stderr, "ID-A-01")
-	if want := max(2*time.Second, 3*took); timeout < want-250*time.Millisecond || timeout > want+250*time.Millisecond {
-		t.Errorf("ID-A-01's baseline took %v and set a timeout of %v, want %v: three times it, at least 2s", took, timeout, want)
+	if want := 3*took + 5*time.Second; timeout < want-250*time.Millisecond || timeout > want+250*time.Millisecond {
+		t.Errorf("ID-A-01's baseline took %v and set a timeout of %v, want %v: three times it plus 5s", took, timeout, want)
 	}
 	both := 3 * (took + selectionSleep)
 	re := regexp.MustCompile(fmt.Sprintf(`(?m) %s:%d .* then timeout with ID-A-01 \(([0-9.]+)s, the listed tests ([0-9.]+)s\)$`,

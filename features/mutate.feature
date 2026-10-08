@@ -214,14 +214,14 @@ Feature: Mutation testing
     Scenario: Timeouts
       Given the baseline took 3 seconds
       When I run "itos-cc mutation run --timeout-factor 10"
-      Then a mutant times out after 30 seconds
+      Then a mutant times out after 35 seconds
       And a timed-out mutant counts as killed
 
     @ID-MUT-15
-    Scenario: Fast suites still get two seconds
+    Scenario: Fast suites still get the allowance
       Given the baseline took 50 milliseconds
       When mutants run with the default timeout factor of 10
-      Then a mutant times out after 2 seconds
+      Then a mutant times out after 5.5 seconds
 
     # timeout-allowance: a mutant timed out after its baseline's time times
     # the timeout factor, at least 2 seconds. A mutant's run builds the
@@ -234,7 +234,7 @@ Feature: Mutation testing
     # file's tests, a --test-command or --all-tests run, each selection of
     # listed tests (ID-MUT-135) and mutation sample alike. ID-MUT-14, 15 and
     # 135 said the old rule and change with the fix.
-    @timeout-allowance @ID-MUT-149 @wip
+    @timeout-allowance @ID-MUT-149
     Scenario: A mutant's timeout leaves a fixed allowance beyond its baseline
       Given the baseline took 50 milliseconds
       When mutants run with the default timeout factor of 10
@@ -534,9 +534,9 @@ Feature: Mutation testing
   # them passing together. Found by a side agent before v0.5.0; the fix is
   # the coordinator's call (2026-10-07): each selection of listed tests,
   # the first time a mutant needs it, runs once without a mutant in the
-  # worker's copy. Its time, times the timeout factor and at least 2
-  # seconds, is that selection's timeout (as ID-MUT-14 and 15 for a file's
-  # tests), and a selection that fails without a mutant decides none of the
+  # worker's copy. Its time, times the timeout factor plus 5 seconds
+  # (timeout-allowance, ID-MUT-149), is that selection's timeout (as
+  # ID-MUT-14 and 15 for a file's tests), and a selection that fails without a mutant decides none of the
   # mutants that would run it, as a failing baseline decides none of its
   # file's. Selections are cached by their set of IDs for the run; mutation
   # sample follows the same rule.
@@ -548,7 +548,7 @@ Feature: Mutation testing
       And a mutant only ID-A-01 reaches makes the binary hang
       When I run "itos-cc mutation run --timeout-factor 3"
       Then ID-A-01 runs once alone without a mutant before that mutant's run
-      And the mutant times out after three times that run, at least 2 seconds, not after three times both tests' time
+      And the mutant times out after three times that run plus 5 seconds, not after three times both tests' time
       And its outcome is "timeout", counted killed
 
     @listed-selection-baseline @ID-MUT-136

@@ -123,9 +123,6 @@ type MutantResult struct {
 // it neither runs nor goes into the snapshot.
 const skipped = "skipped"
 
-// minTimeout keeps fast suites from timing out on scheduling noise.
-const minTimeout = 2 * time.Second
-
 type fileState struct {
 	file     *lang.File
 	rel      string // the file's path as output names it, from the working directory

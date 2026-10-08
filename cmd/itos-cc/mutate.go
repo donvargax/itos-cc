@@ -132,7 +132,7 @@ listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
 uncovered. The first time a mutant needs a selection of listed tests,
 that selection runs once without any mutant, in the mutant's worker's
-copy: its time, times --timeout-factor and at least 2s, is the timeout of
+copy: its time, times --timeout-factor, plus 5s, is the timeout of
 every mutant run of it. A selection that fails without a mutant is
 tests.selection-failed: no mutant that would run it is judged, and the
 files holding them keep their snapshots, as with a failing baseline
@@ -147,7 +147,7 @@ judged and no snapshot is written. Listed tests are not run with
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("workers", intFlag, "N", fmt.Sprint(max(1, runtime.NumCPU()/2)), "mutants run at the same time"),
 		sw("mutate-all", "rerun killed mutants of unchanged functions too"),
-		opt("timeout-factor", floatFlag, "N", "10", "a mutant times out after N times the baseline duration, and at least 2s"),
+		opt("timeout-factor", floatFlag, "N", "10", "a mutant times out after N times the baseline duration, plus 5s"),
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
