@@ -715,3 +715,16 @@ items:
       reporting fix yet. Keep it pending until the person agrees how to scope the missing
       foundation. Do not silently build that subsystem during mutation fixes.
     refs: ["#25"]
+  - id: strict-go-multimodule
+    title: Strict Go coverage provenance for workspaces and local replacement modules
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [strict-go-coverage]
+    kind: idea
+    why: >
+      ADR-0019 deliberately refuses active workspaces and out-of-inventory local replacements in the
+      first strict Go coverage slice. Supporting those projects safely needs a separate provenance
+      design for go.work, dependency modules, local replacement trees and their build inputs;
+      nearest-module hashes must not silently bless them.
+    refs: ["#23"]
