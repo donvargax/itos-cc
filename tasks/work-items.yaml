@@ -617,3 +617,18 @@ items:
       use os.Chdir, t.Chdir or t.Setenv, which rule out t.Parallel; running itos-cc through cmd.Dir
       and an explicit environment instead would let the fixture tests run in parallel.
     refs: ["#14"]
+  - id: annotate-function-name
+    title: mutation run's summary comment names a method without its class
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found building annotate-excepted. The summary comment's survived and excepted lines name a
+      function by its bare name (u.Name): a method count of class Board reads 'in count', so two
+      classes' count methods read alike, while mutation run's output, itos-cc.yaml and the scenarios
+      name it Board#count (namespace#name). ID-MUT-138's comment writes 'in Board#count'; its test,
+      on the Go fixture, checks 'in clear', the name the survived lines give today. The comment
+      could name a method with its class, as the scenarios do, for both kinds of line at once.
+    refs: ["#10"]
