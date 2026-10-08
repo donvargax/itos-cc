@@ -315,7 +315,7 @@ items:
     title: mutation run's summary comment lists an excepted survivor as survived
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
