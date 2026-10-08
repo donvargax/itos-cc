@@ -110,3 +110,6 @@ questions:
     question: "exceptions-deleted-file: what happens to an exception whose file is renamed, and do --since runs judge such entries? (a, recommended) It follows the rename where exactly one selected source holds its function's name and hash, still excepting the mutant there, and fails as mutation.exception-stale with why moved, naming the new file; a --since run whose range deleted or renamed the file judges it too. (b) It fails as gone and the mutant at the new path is a survivor. (c) It follows silently. For --since: (a) keep, (b) whole-project runs only."
     answer: "(a) Follow the rename and fail as moved, naming the new file; --since runs judge entries whose file the range deleted or renamed."
     decision: 14
+  - id: q-23
+    item: "timeout-allowance"
+    question: "timeout-allowance: a mutant's timeout is its baseline's time times the factor, at least 2s, and on slow runners building the mutant can exceed it, so a survivor times out and counts as killed. (a, recommended) baseline times factor plus a fixed 5s, replacing the 2s minimum, as PIT and Stryker add a constant. (b) Rerun a timed-out mutant once with twice the timeout. (c) Give the flaky tests room and leave the product."
