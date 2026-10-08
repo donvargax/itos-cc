@@ -1139,6 +1139,39 @@ Feature: Mutation testing
       When I run "itos-cc mutation sample src/board.ts"
       Then each sampled mutant runs the file's own tests
 
+    # mismatch-fix-scope: since sample-recorded-scope each mutant is sampled
+    # in a scope, but a mutation.mismatch's fix still said "itos-cc mutation
+    # run --mutate-all <file>" with neither flag, so following it on an
+    # all-tests outcome re-recorded it under the file's own tests, and a kill
+    # only the whole suite makes became a survivor. Decided by the
+    # coordinator on 2026-10-07, the person agreeing to the item:
+    # - The fix names the scope the sampled mutant ran with (its recorded
+    #   one, or the one given to sample): "own" and "listed" add no flag, as
+    #   a run without one uses the file's own tests and then the listed
+    #   tests; "all-tests" adds --all-tests; a --test-command line adds
+    #   --test-command with the line in single quotes, a quote in it written
+    #   '\''.
+    # - The problem carries the scope as "scope", as the sample's JSON does.
+    @mismatch-fix-scope @ID-MUT-147 @wip
+    Scenario Outline: A mismatch's fix re-runs the mutant in the scope it was sampled with
+      Given a run <recorded with> recorded a kill in src/board.ts that those tests no longer make
+      When I run "itos-cc mutation sample --count 100 src/board.ts"
+      Then the problem is "mutation.mismatch", with scope "<scope>"
+      And its fix says to run "<fix>"
+
+      Examples:
+        | recorded with                   | scope     | fix                                                                     |
+        | without flags                   | own       | itos-cc mutation run --mutate-all src/board.ts                          |
+        | with --all-tests                | all-tests | itos-cc mutation run --mutate-all --all-tests src/board.ts              |
+        | with --test-command 'make test' | make test | itos-cc mutation run --mutate-all --test-command 'make test' src/board.ts |
+
+    @mismatch-fix-scope @ID-MUT-148 @wip
+    Scenario: A scope given to sample is the one the fix names
+      Given outcomes of src/board.ts recorded with scope "own", one of them a kill the whole suite no longer makes
+      When I run "itos-cc mutation sample --all-tests --count 100 src/board.ts"
+      Then the problem is "mutation.mismatch", with scope "all-tests"
+      And its fix says to run "itos-cc mutation run --mutate-all --all-tests src/board.ts"
+
   Rule: Results
 
     @ID-MUT-28
