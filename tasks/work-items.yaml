@@ -350,14 +350,15 @@ items:
       with mutation-progress-prefix, which changed only the mutate package's lines: these are the
       coverage package's and cmd/itos-cc/common.go's, shared with crap, so changing them is a
       decision of its own. No scenario quotes them.
-  - id: mutation-annotate-marker
+  - id: annotate-marker
     title: mutation run's summary comment still says 'itos-cc mutate:', a command gone since mutation-group
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-annotate-marker.
       The comment mutation run writes at the end of each source file opens '# itos-cc mutate: 1
       killed, …' and closes '# end itos-cc mutate' (ID-MUT-32, ID-MUT-33), naming the mutate command
       that became mutation run. Found with mutation-progress-prefix, which changed only stderr. The
