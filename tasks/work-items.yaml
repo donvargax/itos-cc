@@ -323,7 +323,7 @@ items:
     title: "crap and mutation run: their coverage lines on stderr begin coverage:, not itos-cc:"
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
