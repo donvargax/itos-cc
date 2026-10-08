@@ -1437,7 +1437,7 @@ Feature: Mutation testing
       Then src/board.ts ends with:
         """
         // itos-cc mutate: 14 killed, 0 survived, 1 excepted, 0 uncovered
-        // excepted: line 7 `<` → `!=` in Board#count: the loop only counts up
+        // excepted: line 7 `<` → `!=` in count: the loop only counts up
         // end itos-cc mutate
         """
 
@@ -1453,7 +1453,7 @@ Feature: Mutation testing
     Scenario: A reason over several lines is written on one comment line
       Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
       When I run "itos-cc mutation run src/board.ts"
-      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `!=` in Board#count: the loop only counts up"
+      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `!=` in count: the loop only counts up"
       And every line of the comment begins with "//"
 
     # exceptions-deleted-file: mutation run and mutation check judge the
