@@ -691,7 +691,7 @@ items:
     title: Strict mutation checks fail uncovered executable code even without mutation sites
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [all-tests-freshness]
     kind: slice
     why: >
