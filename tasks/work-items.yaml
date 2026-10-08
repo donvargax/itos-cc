@@ -683,7 +683,7 @@ items:
     title: Mutation outcomes from whole-suite tests go stale when their test inputs change
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
