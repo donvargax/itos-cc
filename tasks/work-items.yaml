@@ -680,7 +680,7 @@ items:
     title: A mutant's timeout leaves a fixed allowance beyond its baseline, so building it cannot time it out
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
