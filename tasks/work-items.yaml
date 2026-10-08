@@ -680,8 +680,6 @@ items:
     title: A mutant's timeout leaves a fixed allowance beyond its baseline, so building it cannot time it out
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Replaces T-8. Specified in features/mutate.feature above ID-MUT-149 (q-23).
