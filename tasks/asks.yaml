@@ -84,6 +84,7 @@ questions:
     item: "test-attribution"
     question: "test-attribution: how does itos-cc learn a project's tests and run a selection? (a, recommended) itos-cc.yaml names a list command printing one test per line, its ID and optionally the file defining it, and a run template with {ids} and how IDs join; itos and itos-cc share only IDs and paths. (b) itos-cc parses itos's own list JSON."
     answer: "(a) itos-cc.yaml commands: a list command printing one test per line (ID, optionally its file), and a run template with {ids} and the join; only IDs and paths are shared."
+    decision: 9
   - id: q-18
     item: "test-attribution"
     question: "test-attribution: how is coverage measured per test (itos has about 505 scenarios)? (a, recommended) One suite run: itos-cc sets a per-test coverage base and the harness gives each test's child processes GOCOVERDIR=<base>/<test-id>; itos-cc falls back to one run per test when the harness writes nothing there. (b) One run per test, with no harness cooperation."

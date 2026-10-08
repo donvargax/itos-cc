@@ -13,5 +13,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0006: A site a snapshot never recorded makes its function stale](0006-a-site-a-snapshot-never-recorded-makes-its-function-stale.md)
 - [ADR-0007: Each recorded outcome keeps the scope of the tests that decided it](0007-each-recorded-outcome-keeps-the-scope-of-the-tests-that-decided-it.md)
 - [ADR-0008: Snapshots live at the project root, and every reader finds them where mutation check does](0008-snapshots-live-at-the-project-root-and-every-reader-finds-them-where-mutation-check-does.md)
+- [ADR-0009: A project's tests are listed by its own command and run by its own template, sharing only IDs and paths](0009-a-project-s-tests-are-listed-by-its-own-command-and-run-by-its-own-template-sharing-only-ids-and-paths.md)
 
 <!-- itos:decisions:end -->
