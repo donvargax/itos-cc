@@ -334,3 +334,31 @@ Feature: Coverage
         """
       Then its coverage starts at line 3
       # loading a module executes every export const line
+
+  # coverage-prefix: the lines itos-cc writes to stderr itself while it
+  # measures coverage (the command it runs, why one failed) began
+  # "coverage:", a command that does not exist, where every other line
+  # itos-cc writes begins "itos-cc:" (mutation-progress-prefix changed the
+  # mutation commands' lines). Decided by the coordinator on 2026-10-07:
+  # - A line naming a command begins "itos-cc: coverage <dir>$ <command>",
+  #   as the baseline's "itos-cc: baseline <dir>$ <command>" does, and
+  #   "itos-cc: coverage $ <command>" for --coverage-command; any other line
+  #   begins "itos-cc: coverage: ". That holds for every such line, of crap
+  #   and of mutation run alike: the coverage command, go tool covdata, the
+  #   listed tests' coverage and a language that cannot be measured.
+  # - The output of the coverage commands themselves is passed on as it is.
+  Rule: What itos-cc says while it measures
+
+    @coverage-prefix @ID-COV-38 @wip
+    Scenario: The coverage command is announced as itos-cc's
+      When I run "itos-cc crap a/a.go"
+      Then stderr has a line "itos-cc: coverage <dir>$ go test …" naming the command coverage runs
+      And no line of stderr begins "coverage:"
+
+    @coverage-prefix @ID-COV-39 @wip
+    Scenario: A coverage command that fails is reported as itos-cc's
+      Given a test of a/a.go fails
+      When I run "itos-cc crap a/a.go"
+      Then stderr has a line beginning "itos-cc: coverage: go: " that gives the command's exit status
+      # go test passes on the failing binary's own "coverage: N% of
+      # statements" line, so this one does not ask that no line begins so
