@@ -18,5 +18,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0011: A kill by listed tests holds while its covering tests and the files defining them are unchanged](0011-a-kill-by-listed-tests-holds-while-its-covering-tests-and-the-files-defining-them-are-unchanged.md)
 - [ADR-0012: A mutant runs its file's own tests first, and the listed tests reaching its line only if it survives them](0012-a-mutant-runs-its-file-s-own-tests-first-and-the-listed-tests-reaching-its-line-only-if-it-survives-them.md)
 - [ADR-0013: The hashes of the files mutation.tests.support matches join every listed kill's freshness](0013-the-hashes-of-the-files-mutation-tests-support-matches-join-every-listed-kill-s-freshness.md)
+- [ADR-0014: An exception whose file is renamed follows it and fails once as moved](0014-an-exception-whose-file-is-renamed-follows-it-and-fails-once-as-moved.md)
 
 <!-- itos:decisions:end -->
