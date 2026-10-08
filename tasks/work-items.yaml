@@ -686,14 +686,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#20"]
-  - id: uncovered-statements
+  - id: strict-go-coverage
     title: Strict mutation checks fail uncovered executable code even without mutation sites
     phase: 1
     owner: null
     status: todo
     depends_on: [all-tests-freshness]
-    kind: idea
+    kind: slice
     why: >
+      Was uncovered-statements.
       Selected issue #23: --fail-uncovered currently sees mutation sites only. After
       all-tests-freshness lands, specify independent cached coverage evidence and settle zero-site
       functions, unavailable coverage, statement precision and reporting. Do not add return-value or
