@@ -54,3 +54,13 @@ The pre-push hook, `itos hook pre-push`, runs these on every push:
   no `itos-cc mutation run` over its sources, locally or in a push's CI. The
   nightly workflow runs it and commits `.metrics/mutate/` back. The Go tests
   of the mutate package are fine: they mutate fixtures, not this code.
+
+## Lessons
+
+- Red-first tests must compile against the pre-change product and fail at
+  the behavior assertion, not at missing new APIs. Use CLI fixtures and raw
+  snapshot JSON when the implementation will add types. Verify every new
+  behavioral failure before product changes; label checks of an older
+  revision performed later as retrospective, not evidence obtained earlier.
+  Guardrails may already pass and should be reported separately.
+  Recorded 2026-10-08; last seen 2026-10-08; exit: permanent (judgment).
