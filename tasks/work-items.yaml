@@ -370,14 +370,15 @@ items:
       --since run over it. The snapshot also stays when a new file now sits at the old path, since
       it is that file's path again. Whether a run without --since should find such orphans, and
       whether the old snapshot should be dropped or kept there, needs a decision.
-  - id: crap-unloaded-file-measured
+  - id: crap-unloaded-measured
     title: A file no test loads, scored alone by crap, is untested, not unmeasured
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was crap-unloaded-file-measured.
       coverage.Run counts a plan as Missing (measured-nothing) whenever its report names none of the
       plan's files, so crap --threshold over a file no test loads, alone (crap --threshold 30
       src/unused.ts in a Vitest project, where vitest related finds no test, exits 0 and writes an
