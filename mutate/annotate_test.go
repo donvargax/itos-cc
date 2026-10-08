@@ -21,8 +21,8 @@ func TestAnnotateReplacesItsOwnBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 	once, _ := os.ReadFile(path)
-	want := code + "\n# itos-cc mutate: 1 killed, 1 survived, 0 uncovered\n" +
-		"# survived: line 2 `>` → `>=` in a\n# end itos-cc mutate\n"
+	want := code + "\n# itos-cc mutation: 1 killed, 1 survived, 0 uncovered\n" +
+		"# survived: line 2 `>` → `>=` in a\n# end itos-cc mutation\n"
 	if string(once) != want {
 		t.Fatalf("annotated:\n%s\nwant:\n%s", once, want)
 	}
@@ -30,7 +30,7 @@ func TestAnnotateReplacesItsOwnBlock(t *testing.T) {
 	snap.Units[0].Killed, snap.Units[0].Survived, snap.Units[0].Mutants = 2, 0, nil
 	annotate(path, spec, snap, nil)
 	twice, _ := os.ReadFile(path)
-	if strings.Count(string(twice), "itos-cc mutate:") != 1 || !strings.Contains(string(twice), "2 killed, 0 survived") {
+	if strings.Count(string(twice), "itos-cc mutation:") != 1 || !strings.Contains(string(twice), "2 killed, 0 survived") {
 		t.Errorf("second run did not replace the block:\n%s", twice)
 	}
 	if StripAnnotation(string(twice), "#") != code {
@@ -39,9 +39,21 @@ func TestAnnotateReplacesItsOwnBlock(t *testing.T) {
 }
 
 func TestStripLeavesABlockFollowedByCode(t *testing.T) {
-	src := "// itos-cc mutate: 1 killed, 0 survived, 0 uncovered\n// end itos-cc mutate\nfunc f() {}\n"
-	if StripAnnotation(src, "//") != src {
-		t.Error("removed a block that code follows")
+	for _, m := range annotationMarkers {
+		src := "// " + m[0] + " 1 killed, 0 survived, 0 uncovered\n// " + m[1] + "\nfunc f() {}\n"
+		if StripAnnotation(src, "//") != src {
+			t.Errorf("removed a block with the markers %q that code follows", m)
+		}
+	}
+}
+
+func TestStripRemovesATrailingCommentWithEitherMarkers(t *testing.T) {
+	code := "func f() {}\n"
+	for _, m := range annotationMarkers {
+		src := code + "\n// " + m[0] + " 1 killed, 0 survived, 0 uncovered\n// " + m[1] + "\n"
+		if got := StripAnnotation(src, "//"); got != code {
+			t.Errorf("markers %q: stripping left %q, want %q", m, got, code)
+		}
 	}
 }
 
@@ -57,16 +69,16 @@ func TestAnnotationCountsExceptedSurvivorsApart(t *testing.T) {
 		// Another hash: an entry for another version of a excepts nothing.
 		at("h0", snap.Units[0].Mutants[0]): "stale",
 	}
-	want := "// itos-cc mutate: 1 killed, 1 survived, 1 excepted, 0 uncovered\n" +
+	want := "// itos-cc mutation: 1 killed, 1 survived, 1 excepted, 0 uncovered\n" +
 		"// survived: line 2 `>` → `>=` in a\n" +
 		"// excepted: line 3 `<` → `<=` in a: the loop only counts up\n" +
-		"// end itos-cc mutate\n"
+		"// end itos-cc mutation\n"
 	if got := Annotation(snap, "//", excepted); got != want {
 		t.Errorf("annotation:\n%s\nwant:\n%s", got, want)
 	}
 	// None excepted: the comment reads as it always did.
-	want = "// itos-cc mutate: 1 killed, 2 survived, 0 uncovered\n" +
-		"// survived: line 2 `>` → `>=` in a\n// survived: line 3 `<` → `<=` in a\n// end itos-cc mutate\n"
+	want = "// itos-cc mutation: 1 killed, 2 survived, 0 uncovered\n" +
+		"// survived: line 2 `>` → `>=` in a\n// survived: line 3 `<` → `<=` in a\n// end itos-cc mutation\n"
 	if got := Annotation(snap, "//", nil); got != want {
 		t.Errorf("annotation with none excepted:\n%s\nwant:\n%s", got, want)
 	}

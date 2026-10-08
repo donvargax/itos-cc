@@ -33,7 +33,7 @@ func summaryComment(t *testing.T) string {
 		t.Fatal(err)
 	}
 	src := string(data)
-	at := strings.LastIndex(src, "// itos-cc mutate:")
+	at := strings.LastIndex(src, "// itos-cc mutation:")
 	if at < 0 {
 		t.Fatalf("%s ends with no summary comment:\n%s", boardSource, src)
 	}
@@ -50,9 +50,9 @@ func TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason(t *testing.
 		t.Fatalf("exit %d, want 0: clear's survivor is excepted\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	data, _ := os.ReadFile(boardSource)
-	want := "}\n\n// itos-cc mutate: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
+	want := "}\n\n// itos-cc mutation: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
 		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
-		"// end itos-cc mutate\n"
+		"// end itos-cc mutation\n"
 	if !strings.HasSuffix(string(data), want) {
 		t.Errorf("%s:\n%s\nwant it to end with:\n%s", boardSource, data, want)
 	}
@@ -72,7 +72,7 @@ func TestAStaleEntrysSurvivorIsListedAsSurvived(t *testing.T) {
 	}
 	comment := summaryComment(t)
 	for _, want := range []string{
-		"// itos-cc mutate: 1 killed, 1 survived, 0 uncovered\n",
+		"// itos-cc mutation: 1 killed, 1 survived, 0 uncovered\n",
 		"\n// survived: line 11 `<` → `<=` in clear\n",
 	} {
 		if !strings.Contains(comment, want) {
@@ -120,9 +120,9 @@ func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *t
 	if j := o.json(t).judged(t, boardSource); j == nil || len(*j) != 1 || (*j)[0] != placeID {
 		t.Fatalf("judged %v, want place alone\n%s", j, o.stdout)
 	}
-	want := "// itos-cc mutate: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
+	want := "// itos-cc mutation: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
 		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
-		"// end itos-cc mutate\n"
+		"// end itos-cc mutation\n"
 	if comment := summaryComment(t); comment != want {
 		t.Errorf("the summary comment:\n%s\nwant:\n%s", comment, want)
 	}
@@ -134,9 +134,9 @@ func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *t
 	if o := annotatedRun(t, "--since", "base"); o.code != 0 {
 		t.Fatalf("with a stale entry for clear: exit %d, want 0: clear is not judged\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	want = "// itos-cc mutate: 1 killed, 1 survived, 0 uncovered\n" +
+	want = "// itos-cc mutation: 1 killed, 1 survived, 0 uncovered\n" +
 		"// survived: line 11 `<` → `<=` in clear\n" +
-		"// end itos-cc mutate\n"
+		"// end itos-cc mutation\n"
 	if comment := summaryComment(t); comment != want {
 		t.Errorf("with a stale entry for clear, the summary comment:\n%s\nwant:\n%s", comment, want)
 	}

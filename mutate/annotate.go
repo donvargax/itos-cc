@@ -9,9 +9,18 @@ import (
 )
 
 const (
-	annotationStart = "itos-cc mutate:"
-	annotationEnd   = "end itos-cc mutate"
+	annotationStart = "itos-cc mutation:"
+	annotationEnd   = "end itos-cc mutation"
 )
+
+// annotationMarkers are the opening and closing markers a summary comment
+// may have: the current ones, then those an earlier itos-cc wrote, named
+// after the mutate command that became mutation run, so a file annotated
+// then still gets one comment, never two.
+var annotationMarkers = [][2]string{
+	{annotationStart, annotationEnd},
+	{"itos-cc mutate:", "end itos-cc mutate"},
+}
 
 // annotate replaces the summary comment at the end of path with one for
 // snap, each survivor excepted by its reason in excepted, writing the file
@@ -85,17 +94,23 @@ func oneLine(text string) string {
 	return strings.Join(strings.Fields(text), " ")
 }
 
-// StripAnnotation removes a trailing summary comment, if any.
+// StripAnnotation removes a trailing summary comment, if any, whichever
+// markers it has (annotationMarkers).
 func StripAnnotation(src, comment string) string {
-	start := strings.LastIndex(src, comment+" "+annotationStart)
+	start, closing := -1, ""
+	for _, m := range annotationMarkers {
+		if at := strings.LastIndex(src, comment+" "+m[0]); at > start {
+			start, closing = at, comment+" "+m[1]
+		}
+	}
 	if start < 0 {
 		return src
 	}
-	end := strings.Index(src[start:], comment+" "+annotationEnd)
+	end := strings.Index(src[start:], closing)
 	if end < 0 {
 		return src
 	}
-	rest := strings.TrimLeft(src[start+end+len(comment+" "+annotationEnd):], "\r\n")
+	rest := strings.TrimLeft(src[start+end+len(closing):], "\r\n")
 	if strings.TrimSpace(rest) != "" {
 		// Code follows the block, so it is not ours to remove.
 		return src

@@ -1225,21 +1225,21 @@ Feature: Mutation testing
       When its mutants run and "> → >=" survives while one other mutant is killed
       Then the file ends with:
         """
-        # itos-cc mutate: 1 killed, 1 survived, 0 uncovered
+        # itos-cc mutation: 1 killed, 1 survived, 0 uncovered
         # survived: line 2 `>` → `>=` in a
-        # end itos-cc mutate
+        # end itos-cc mutation
         """
 
     @ID-MUT-33
     Scenario: The summary comment is replaced, not repeated
-      Given a file that already ends with an itos-cc mutate comment
+      Given a file that already ends with an itos-cc mutation comment
       When its mutants run again
       Then the file holds exactly one, updated summary comment
       And the file is only written when the summary changed
 
     @ID-MUT-34
     Scenario: A comment block followed by code is not ours
-      Given an itos-cc mutate comment block followed by more code
+      Given an itos-cc mutation comment block followed by more code
       When the summary is rewritten
       Then that block is left in place
 
@@ -1255,7 +1255,7 @@ Feature: Mutation testing
     # finds a comment with the old markers, so a file annotated before is
     # rewritten with one comment, never two. ID-MUT-32 and the scenarios of
     # annotate-excepted quote the old text and change with the fix.
-    @annotate-marker @ID-MUT-145 @wip
+    @annotate-marker @ID-MUT-145
     Scenario: A summary comment with the old markers is replaced by one with the new
       Given the file "x.py" ends with a summary comment opening "# itos-cc mutate:" and closing "# end itos-cc mutate"
       When its mutants run again
@@ -1436,9 +1436,9 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src/board.ts"
       Then src/board.ts ends with:
         """
-        // itos-cc mutate: 14 killed, 0 survived, 1 excepted, 0 uncovered
+        // itos-cc mutation: 14 killed, 0 survived, 1 excepted, 0 uncovered
         // excepted: line 7 `<` → `!=` in count: the loop only counts up
-        // end itos-cc mutate
+        // end itos-cc mutation
         """
 
     @annotate-excepted @ID-MUT-139

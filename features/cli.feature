@@ -149,7 +149,8 @@ Feature: Command line
   # cache folder .metrics/mutate/ and the "itos-cc mutate:" marker of the
   # summary comment stay, since renaming them would rewrite every committed
   # cache and duplicate every annotation. mutation check, the check mode,
-  # is its own item.
+  # is its own item. (annotate-marker later renamed the marker to
+  # "itos-cc mutation:", a run still replacing a comment with the old one.)
   Rule: The mutation group
 
     @mutation-group @ID-CLI-12
