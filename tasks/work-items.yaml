@@ -320,14 +320,15 @@ items:
     depends_on: []
     kind: slice
     refs: ["#10"]
-  - id: mutation-exceptions-deleted-file
+  - id: exceptions-deleted-file
     title: an exception for a file that is gone never goes stale
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-exceptions-deleted-file.
       Found building mutation-exceptions (#10). mutation run and mutation check judge the exceptions
       of the files they select, so an entry in itos-cc.yaml whose function or site is gone in a file
       that is still there fails as mutation.exception-stale (why gone), but one whose whole file was
