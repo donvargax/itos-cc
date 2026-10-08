@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/mutate"
@@ -35,8 +36,11 @@ them again.
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing.
 An exception that no longer holds fails as mutation.exception-stale, as in
 mutation run: its function changed, its function or site is gone, or a fresh
-entry records its mutant killed. An itos-cc.yaml that cannot be read is
-config.invalid.
+entry records its mutant killed. A check of the whole project, or with
+--since one whose range deleted or renamed an entry's file, judges the
+entries of files it does not select as mutation run does: moved, when one
+source checked holds the function unchanged, or gone. An itos-cc.yaml that
+cannot be read is config.invalid.
 
 It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
@@ -50,7 +54,8 @@ each problem, a line each:
   survived <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
   uncovered <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
   exception-stale <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
-The line of a missing or stale function is where it starts now. With --json,
+the place being the file alone when the function or the file is gone, and
+the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now. With --json,
 "functions" holds the functions checked, in the file's order, with the
 counts their entry records, zero when missing; an excepted survivor counts
 in "excepted", not "survived".`,
@@ -65,7 +70,7 @@ in "excepted", not "survived".`,
 		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
-		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
@@ -113,19 +118,24 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, _, err := mutationSelection(in)
+	sources, judge, renamed, err := mutationSelection(in)
+	if err != nil {
+		return result, err
+	}
+	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
 	if err != nil {
 		return result, err
 	}
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to check")
+		reportElsewhere(in, elsewhere)
 		return result, nil
 	}
 	tests, err := importingTests()
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.Check(sources, judge, tests, support, cfg.Exceptions)
+	checks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 	if err != nil {
 		return result, err
 	}
@@ -156,6 +166,7 @@ func runMutationCheck(in *invocation) (any, error) {
 		}
 		reportStaleExceptions(in, c.Rel, c.StaleExceptions)
 	}
+	reportElsewhere(in, elsewhere)
 	return result, nil
 }
 

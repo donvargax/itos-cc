@@ -1475,7 +1475,7 @@ Feature: Mutation testing
     # - Only mutation except writes itos-cc.yaml: a run never moves an entry.
     # - With paths or --changed, an entry for a file outside the selection
     #   is not judged, as now.
-    @exceptions-deleted-file @ID-MUT-141 @wip
+    @exceptions-deleted-file @ID-MUT-141
     Scenario: A run of the whole project fails an entry whose file is gone
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And src/board.ts and its tests were deleted
@@ -1483,7 +1483,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts", function "Board#count", no line, and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-142 @wip
+    @exceptions-deleted-file @ID-MUT-142
     Scenario: mutation check of the whole project fails it too
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And fresh results for every source file, src/board.ts having been deleted
@@ -1491,7 +1491,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-143 @wip
+    @exceptions-deleted-file @ID-MUT-143
     Scenario: With --since, an entry whose file the range deleted is gone
       Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
       And a commit after "base" deleted src/board.ts and its tests
@@ -1499,7 +1499,7 @@ Feature: Mutation testing
       Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-144 @wip
+    @exceptions-deleted-file @ID-MUT-144
     Scenario: An entry whose file was renamed has moved, and still excepts its mutant
       Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count"
       And a commit after "base" renamed src/board.ts to src/grid.ts, changing nothing else
@@ -1510,7 +1510,7 @@ Feature: Mutation testing
       And itos-cc.yaml still names src/board.ts
       And the exit code is 1
 
-    @exceptions-deleted-file @ID-MUT-146 @wip
+    @exceptions-deleted-file @ID-MUT-146
     Scenario: A run of the whole project finds a renamed file's entry moved
       Given itos-cc.yaml excepts the survivor of "Board#count" in src/board.ts
       And src/board.ts was renamed to src/grid.ts, changing nothing else

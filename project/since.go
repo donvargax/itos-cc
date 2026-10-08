@@ -111,6 +111,31 @@ func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed 
 	return changed, renamed, nil
 }
 
+// DeletedSince returns each supported file the commits since ref deleted,
+// by the absolute path it had, of those under the working directory, as
+// ChangedSince finds the files it changed: git diff ref...HEAD, committed
+// changes only. A file renamed is not deleted: ChangedSince maps it to the
+// path it had. ref must be one ChangedSince accepted.
+func DeletedSince(ref string) ([]string, error) {
+	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color",
+		"--relative", "--diff-filter=D", ref+"...HEAD").Output()
+	if err != nil {
+		return nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
+	}
+	var deleted []string
+	for _, name := range strings.Split(string(out), "\x00") {
+		if name == "" || lang.Detect(name) == nil {
+			continue
+		}
+		abs, err := filepath.Abs(filepath.FromSlash(name))
+		if err != nil {
+			return nil, err
+		}
+		deleted = append(deleted, abs)
+	}
+	return deleted, nil
+}
+
 // ChangedFunctions is what a range of commits changed in one file.
 type ChangedFunctions struct {
 	// Functions holds the namespace#name of each function whose lines the

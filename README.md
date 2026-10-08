@@ -335,7 +335,14 @@ unchanged; `--mutate-all` runs it too. The entry no longer holds, and fails
 as `mutation.exception-stale` (exit 1) with its `why`, when the mutant, run
 again after its tests changed, is now `killed`; when its function `changed`,
 and the mutant is judged as if it had no entry; or when its function or its
-site is `gone`. With `--since`, only the judged functions' entries count. An
+site is `gone`. With `--since`, only the judged functions' entries count. A
+run or check of the whole project (no paths, no `--changed`, no `--since`),
+and a `--since` run whose range deleted or renamed an entry's file, judge
+the entries of files they do not select: when exactly one source they
+select holds a function of the entry's name and hash, the entry has
+`moved`, still excepts the mutant at its site there, and fails with
+`new_file` naming the file to put in the entry; otherwise its file is
+`gone`. Only `mutation except` writes `itos-cc.yaml`. An
 entry never excuses an uncovered mutant: that needs a test, not a reason. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
 `config.invalid`, exit 2.

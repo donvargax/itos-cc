@@ -99,7 +99,15 @@ its function changed (its mutant is then judged as if it had none), when
 its function or its site is gone, or when the mutant, run again after its
 tests changed, is killed. An exception never excuses an uncovered mutant.
 With --since, only the judged functions' exceptions count. --mutate-all
-runs excepted mutants too. An itos-cc.yaml that cannot be read is
+runs excepted mutants too.
+
+An entry for a file the run does not select is judged too by a run of the
+whole project (no paths, no --changed, no --since), and by a --since run
+whose range deleted or renamed its file. When exactly one source selected
+holds a function of the entry's name and hash, the entry has moved: it
+still excepts the mutant at its site there, and fails as stale with why
+moved and new_file, the file to name in the entry. Otherwise it is gone.
+A run never writes itos-cc.yaml. An itos-cc.yaml that cannot be read is
 config.invalid, and nothing runs.
 
 Tests that only run the built program, such as an end-to-end suite that a
@@ -157,7 +165,7 @@ judged and no snapshot is written. Listed tests are not run with
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function is gone), column, original, replacement, why: killed|changed|gone",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
@@ -322,8 +330,13 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
+	if err != nil {
+		return result, err
+	}
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
+		reportElsewhere(in, elsewhere)
 		return result, nil
 	}
 	tests, err := importingTests()
@@ -346,7 +359,9 @@ func runMutate(in *invocation) (any, error) {
 		Log:           os.Stderr,
 		Judge:         judge,
 		Renamed:       renamed,
-		Exceptions:    cfg.Exceptions,
+		// An entry whose function moved to another file still excepts
+		// its mutant there.
+		Exceptions: append(slices.Clone(cfg.Exceptions), moved...),
 	}
 	suite := listedConfig(in, cfg)
 	if suite != nil {
@@ -455,7 +470,62 @@ func runMutate(in *invocation) (any, error) {
 		}
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
+	reportElsewhere(in, elsewhere)
 	return result, nil
+}
+
+// exceptionsElsewhere is each exception of itos-cc.yaml for a file that is
+// none of sources and that the command judges all the same, stale, and the
+// entries of those whose function moved to one of sources, as they read
+// there (mutate.Elsewhere). With no paths, no --changed, and no --since, it
+// judges every entry for a file under the working directory; with --since,
+// each whose file the range deleted, unless paths narrow it, or renamed to
+// one of sources, renamed giving the path each had at the ref; with paths
+// or --changed alone, none.
+func exceptionsElsewhere(in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutate.StaleException, []config.Exception, error) {
+	if len(exceptions) == 0 {
+		return nil, nil, nil
+	}
+	var judge func(file string) bool
+	switch {
+	case in.set("since"):
+		removed := map[string]bool{}
+		for _, path := range sources {
+			if old := renamed(path); old != "" {
+				removed[project.FromRoot(old)] = true
+			}
+		}
+		if len(in.args) == 0 {
+			deleted, err := project.DeletedSince(in.str("since"))
+			if err != nil {
+				return nil, nil, err
+			}
+			for _, path := range deleted {
+				removed[project.FromRoot(path)] = true
+			}
+		}
+		judge = func(file string) bool { return removed[file] }
+	case len(in.args) == 0 && !in.set("changed"):
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, nil, err
+		}
+		judge = func(file string) bool {
+			rel, err := filepath.Rel(wd, project.AtRoot(file))
+			return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+		}
+	default:
+		return nil, nil, nil
+	}
+	return mutate.Elsewhere(exceptions, sources, judge)
+}
+
+// reportElsewhere reports each exception of exceptionsElsewhere, each under
+// the file it names.
+func reportElsewhere(in *invocation, stale []mutate.StaleException) {
+	for _, e := range stale {
+		reportStaleExceptions(in, project.Rel(project.AtRoot(e.File)), []mutate.StaleException{e})
+	}
 }
 
 // reportFailedSelections reports each selection of listed tests in failed
@@ -676,7 +746,8 @@ func tail(s string, lines int) string {
 // reportStaleExceptions lists each exception of file rel that no longer
 // holds on stdout, as "exception-stale <file>:<line>:<column> <original> →
 // <replacement> in <function> (<why>)", the place left out when its
-// function is gone, and reports it as mutation.exception-stale.
+// function or its file is gone, and "(moved to <file>)" when its function
+// is in another file now, and reports it as mutation.exception-stale.
 func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleException) {
 	for _, e := range stale {
 		at := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column)
@@ -684,8 +755,16 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 			at = rel
 		}
 		change := fmt.Sprintf("%s → %s in %s", quote(e.Original), quote(e.Replacement), e.Function)
+		var newFile string
+		if e.Why == mutate.ExceptionMoved {
+			newFile = project.Rel(project.AtRoot(e.NewFile))
+		}
 		if !in.json {
-			fmt.Printf("  exception-stale %s %s (%s)\n", at, change, e.Why)
+			why := e.Why
+			if newFile != "" {
+				why += " to " + newFile
+			}
+			fmt.Printf("  exception-stale %s %s (%s)\n", at, change, why)
 		}
 		var message, fix string
 		switch e.Why {
@@ -699,14 +778,24 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, config.File, change)
 			if e.Line == 0 {
 				message = fmt.Sprintf("%s: the entry in %s for %s names a function the file no longer has", at, config.File, change)
+				if _, err := os.Stat(project.AtRoot(e.File)); err != nil {
+					message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone", at, config.File, change)
+				}
 			}
 			fix = "Remove its entry from " + config.File + "."
+		case mutate.ExceptionMoved:
+			message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone; its function is in %s now, where the entry still excepts the mutant",
+				at, config.File, change, newFile)
+			fix = fmt.Sprintf("Change the entry's file in %s from %s to %s, where its function is now.", config.File, e.File, e.NewFile)
 		}
 		p := fail(kindNo, "mutation.exception-stale", message, fix).
 			with("file", rel).with("function", e.Function).with("column", e.Column).
 			with("original", e.Original).with("replacement", e.Replacement).with("why", e.Why)
 		if e.Line != 0 {
 			p.with("line", e.Line)
+		}
+		if newFile != "" {
+			p.with("new_file", newFile)
 		}
 		p.shown = true
 		in.report(p)

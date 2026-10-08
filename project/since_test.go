@@ -175,3 +175,30 @@ func TestChangedSinceTellsFunctionsSharingANameApartByHash(t *testing.T) {
 		t.Errorf("b, unchanged, is judged")
 	}
 }
+
+func TestDeletedSinceListsTheSourcesTheRangeDeletedNotRenamed(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	repo := t.TempDir()
+	git(t, repo, "init", "-q")
+	for _, name := range []string{"sub/gone.py", "sub/moved.py", "sub/notes.txt", "top.py"} {
+		write(t, filepath.Join(repo, filepath.FromSlash(name)), "def "+strings.TrimSuffix(filepath.Base(name), ".py")+"(x):\n    return x\n")
+	}
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "base")
+	git(t, repo, "tag", "base")
+	git(t, repo, "rm", "-q", "sub/gone.py", "sub/notes.txt", "top.py")
+	git(t, repo, "mv", "sub/moved.py", "sub/here.py")
+	git(t, repo, "commit", "-qm", "delete and rename")
+
+	t.Chdir(filepath.Join(repo, "sub"))
+	got, err := DeletedSince("base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	abs, _ := filepath.Abs("gone.py")
+	if !slices.Equal(got, []string{abs}) {
+		t.Errorf("deleted %q, want only %q: notes.txt is no source, top.py is not under sub, and moved.py was renamed", got, abs)
+	}
+}

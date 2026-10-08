@@ -90,7 +90,7 @@ problem's subject. Progress and test output go to stderr, never stdout.
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
 | `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
-| `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function is gone), `column`, `original`, `replacement`, `why` |
+| `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function or its file is gone), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`), with `moved` `new_file` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome` |

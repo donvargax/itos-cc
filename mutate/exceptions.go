@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Why an exception in itos-cc.yaml no longer holds.
 const (
 	ExceptionKilled  = "killed"  // the tests now kill its mutant
 	ExceptionChanged = "changed" // its function changed since it was written
-	ExceptionGone    = "gone"    // its function, or its site in the function, is gone
+	ExceptionGone    = "gone"    // its function, or its site in the function, is gone, or its file is with no trace of it
+	ExceptionMoved   = "moved"   // its file is gone, and its function, unchanged, is in one other file now
 )
 
 // StaleException is an exception that no longer holds, and why.
@@ -21,8 +24,11 @@ type StaleException struct {
 	config.Exception
 	Why string // ExceptionKilled, ExceptionChanged, or ExceptionGone
 	// Line is where the site is in the file now, or would be within its
-	// function; 0 when the function is gone.
+	// function; 0 when the function or its file is gone.
 	Line int
+	// NewFile is, with ExceptionMoved, the file that holds the function
+	// now, from the project root, as an entry names its file.
+	NewFile string
 }
 
 // exceptionsOf is the entries of exceptions for the file rel.
@@ -65,6 +71,60 @@ func locate(e config.Exception, f *lang.File, sites []Site) (site int, why strin
 		}
 	}
 	return site, why, line
+}
+
+// Elsewhere judges the exceptions whose file is none of sources, of those
+// judge says to judge by the file they name. One whose function, by its
+// name less its namespace and by its hash, exactly one of sources holds
+// has moved there: it is stale, ExceptionMoved, naming that file, and
+// moved holds it as it reads there, so a run or a check still excepts its
+// mutant. The namespace is left out because a file's path can be part of
+// it, as in TypeScript. Any other is stale as ExceptionGone, with no line.
+// Neither changes itos-cc.yaml.
+func Elsewhere(exceptions []config.Exception, sources []string, judge func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
+	selected := map[string]bool{}
+	for _, path := range sources {
+		selected[project.FromRoot(path)] = true
+	}
+	var orphans []config.Exception
+	for _, e := range exceptions {
+		if !selected[e.File] && judge(e.File) {
+			orphans = append(orphans, e)
+		}
+	}
+	if len(orphans) == 0 {
+		return nil, nil, nil
+	}
+	// Where each orphan's function is now: one entry per file holding it.
+	found := make([][]config.Exception, len(orphans))
+	for _, path := range sources {
+		f, err := lang.ParseFile(path)
+		if err != nil {
+			return nil, nil, err
+		}
+		key := project.FromRoot(path)
+		for i, e := range orphans {
+			_, name, _ := strings.Cut(e.Function, "#")
+			for _, u := range f.Units {
+				if u.Name == name && UnitHash(f, u) == e.Hash {
+					there := e
+					there.File, there.Function = key, unitID(u.Namespace, u.Name)
+					found[i] = append(found[i], there)
+					break
+				}
+			}
+		}
+		f.Close()
+	}
+	for i, e := range orphans {
+		if len(found[i]) != 1 {
+			stale = append(stale, StaleException{Exception: e, Why: ExceptionGone})
+			continue
+		}
+		stale = append(stale, StaleException{Exception: e, Why: ExceptionMoved, NewFile: found[i][0].File})
+		moved = append(moved, found[i][0])
+	}
+	return stale, moved, nil
 }
 
 // fileExceptions is how the exceptions of one file apply to its sites now.

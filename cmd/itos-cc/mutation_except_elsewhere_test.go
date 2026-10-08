@@ -71,6 +71,12 @@ func TestMutationCheckOfTheWholeProjectFailsItToo(t *testing.T) {
 	}
 	writeExceptions(t, "", clearException(t, "clear is never called"))
 	deleteBoard(t)
+	// In Go, src/board_test.go is among the tests of src/count.go too, so
+	// its deletion makes count's results stale: a run of count alone,
+	// which judges no entry of another file, makes them fresh again.
+	if o := mutateRun(t, filepath.FromSlash("src/count.go")); o.code != 0 {
+		t.Fatalf("the run of src/count.go: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
+	}
 
 	o := mutationCheck(t, "--json")
 	m := o.json(t)
@@ -135,5 +141,53 @@ func TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved(t *testing.T) {
 	wantProblem(t, m.problem("mutation.exception-stale"), map[string]any{"why": "moved", "new_file": gridSource}, o.stdout)
 	if p := m.problem("mutation.survived"); p != nil {
 		t.Errorf("problem %v, want no survivor: the entry still excepts clear's mutant", p)
+	}
+}
+
+// A file renamed with its function changed holds no function of the
+// entry's name and hash: the entry is gone, and the mutant at the new path
+// is a survivor, as if it had no entry.
+func TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone(t *testing.T) {
+	boardRepo(t, nil)
+	survivorRun(t)
+	writeExceptions(t, "", clearException(t, "clear is never called"))
+	gitIn(t, ".", "mv", "src/board.go", "src/grid.go")
+	edit(t, gridSource, "i < 3", "i < 4")
+	commitAll(t, "rename board.go and change clear")
+
+	for _, args := range [][]string{{"--json"}, {"--json", "--since", "base"}} {
+		o := mutateRun(t, args...)
+		m := o.json(t)
+		p := m.problem("mutation.exception-stale")
+		wantProblem(t, p, map[string]any{"file": boardSource, "function": clearID, "why": "gone"}, o.stdout)
+		wantNoLine(t, p, o.stdout)
+		if _, ok := p["new_file"]; ok {
+			t.Errorf("%v: problem %v, want no new_file", args, p)
+		}
+		wantProblem(t, m.problem("mutation.survived"), map[string]any{"file": gridSource, "function": clearID}, o.stdout)
+		if o.code != 1 {
+			t.Errorf("%v: exit %d, want 1", args, o.code)
+		}
+	}
+}
+
+// With paths, an entry for a file outside them is not judged, even when
+// that file is gone.
+func TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged(t *testing.T) {
+	boardRepo(t, countFiles)
+	if o := mutateRun(t); o.code != 1 {
+		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	writeExceptions(t, "", clearException(t, "clear is never called"))
+	deleteBoard(t)
+
+	count := filepath.FromSlash("src/count.go")
+	o := mutateRun(t, "--json", count)
+	if p := o.json(t).problem("mutation.exception-stale"); p != nil || o.code != 0 {
+		t.Errorf("mutation run %s: exit %d, problem %v, want exit 0 and none", count, o.code, p)
+	}
+	o = mutationCheck(t, "--json", count)
+	if p := o.json(t).problem("mutation.exception-stale"); p != nil || o.code != 0 {
+		t.Errorf("mutation check %s: exit %d, problem %v, want exit 0 and none", count, o.code, p)
 	}
 }

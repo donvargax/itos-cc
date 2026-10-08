@@ -36,7 +36,8 @@ replacement, and the reason, so a function that only moves keeps it.
 Excepting a site again replaces its entry; the file's other keys and its
 comments are kept. An entry stops holding, and mutation run and mutation
 check fail it as mutation.exception-stale, when its function changes, when
-its function or site is gone, or when the tests now kill its mutant.
+its function or site is gone, when its file is deleted or renamed, or when
+the tests now kill its mutant. Only mutation except writes itos-cc.yaml.
 
 Plain output is one line, "excepted again" when it replaced an entry:
   excepted <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> in itos-cc.yaml`,
