@@ -627,3 +627,17 @@ items:
       on the Go fixture, checks 'in clear', the name the survived lines give today. The comment
       could name a method with its class, as the scenarios do, for both kinds of line at once.
     refs: ["#10"]
+  - id: since-paths-deleted-entries
+    title: mutation run --since with paths never judges an entry whose file the range deleted
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found building exceptions-deleted-file. A --since run judges the entries in itos-cc.yaml whose
+      file its range deleted, but paths narrow the range by the path a file has now, and a deleted
+      file has none, so with paths such an entry is never judged; an entry whose file was renamed is
+      judged when its new path is selected. The paths could narrow deleted files by the path they
+      had, so mutation run --since base src/ would also fail an entry for a deleted src/board.ts.
+    refs: ["#10"]
