@@ -140,7 +140,7 @@ items:
     title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
