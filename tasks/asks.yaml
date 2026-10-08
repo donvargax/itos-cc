@@ -113,3 +113,4 @@ questions:
   - id: q-23
     item: "timeout-allowance"
     question: "timeout-allowance: a mutant's timeout is its baseline's time times the factor, at least 2s, and on slow runners building the mutant can exceed it, so a survivor times out and counts as killed. (a, recommended) baseline times factor plus a fixed 5s, replacing the 2s minimum, as PIT and Stryker add a constant. (b) Rerun a timed-out mutant once with twice the timeout. (c) Give the flaky tests room and leave the product."
+    answer: "(a) Baseline times the factor plus a fixed 5 seconds, replacing the 2-second minimum, for every kind of run."
