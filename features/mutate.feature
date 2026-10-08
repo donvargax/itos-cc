@@ -1248,6 +1248,20 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --no-annotate"
       Then no source file is modified
 
+    # annotate-marker: the summary comment opened "itos-cc mutate:" and
+    # closed "end itos-cc mutate", naming the mutate command that became
+    # mutation run. Decided by the coordinator on 2026-10-07: it opens
+    # "itos-cc mutation:" and closes "end itos-cc mutation", and a run still
+    # finds a comment with the old markers, so a file annotated before is
+    # rewritten with one comment, never two. ID-MUT-32 and the scenarios of
+    # annotate-excepted quote the old text and change with the fix.
+    @annotate-marker @ID-MUT-145 @wip
+    Scenario: A summary comment with the old markers is replaced by one with the new
+      Given the file "x.py" ends with a summary comment opening "# itos-cc mutate:" and closing "# end itos-cc mutate"
+      When its mutants run again
+      Then the file holds exactly one summary comment
+      And it opens "# itos-cc mutation:" and closes "# end itos-cc mutation"
+
     @ID-MUT-36
     Scenario: Nothing to mutate
       Given the selection holds no production source files
