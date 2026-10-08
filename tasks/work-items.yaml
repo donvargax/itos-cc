@@ -324,7 +324,7 @@ items:
     title: an exception for a file that is gone never goes stale
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
