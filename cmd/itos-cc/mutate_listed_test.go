@@ -283,7 +283,7 @@ func snapshotMutants(snap map[string]any) []map[string]any {
 func coverageRuns(stderr string) []string {
 	var out []string
 	for _, l := range strings.Split(stderr, "\n") {
-		if strings.HasPrefix(l, "coverage: ") && strings.Contains(l, "-tests=") {
+		if strings.HasPrefix(l, "itos-cc: coverage ") && strings.Contains(l, "-tests=") {
 			out = append(out, l)
 		}
 	}

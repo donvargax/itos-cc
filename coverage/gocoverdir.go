@@ -87,13 +87,13 @@ func (p Plan) integrate(log io.Writer) string {
 		return ""
 	}
 	args := []string{"go", "tool", "covdata", "textfmt", "-i=" + p.CoverDir, "-o=" + p.Integration}
-	fmt.Fprintf(log, "coverage: %s$ %s\n", p.Dir, strings.Join(args, " "))
+	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Dir = p.Dir
 	cmd.Stdout = log
 	cmd.Stderr = log
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(log, "coverage: %s: %v\n", p.Language, err)
+		fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 		return ""
 	}
 	return p.Integration

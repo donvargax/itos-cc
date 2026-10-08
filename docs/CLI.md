@@ -58,7 +58,10 @@ included, prints the object too, with `"ok": false` and its problems:
 ```
 
 `rule` is a stable id; the other keys besides `message` and `fix` are the
-problem's subject. Progress and test output go to stderr, never stdout.
+problem's subject. Progress and test output go to stderr, never stdout:
+each line itos-cc writes there itself begins `itos-cc:`, such as
+`itos-cc: coverage <dir>$ <command>` before a coverage command runs, and the
+output of the commands it runs passes as it is.
 
 ### Problem rules
 

@@ -102,9 +102,9 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 			return nil, fail(kindUsage, "coverage.command-needs-report", "--coverage-command needs --coverage-report to say where its report lands",
 				"Add --coverage-report FILE.")
 		}
-		fmt.Fprintf(log, "coverage: $ %s\n", command)
+		fmt.Fprintf(log, "itos-cc: coverage $ %s\n", command)
 		if err := shell(command, log); err != nil {
-			fmt.Fprintf(log, "coverage: %v\n", err)
+			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		}
 		report := coverage.Files(reports, sources, log)
 		// The command was to write the report, so a report it did not

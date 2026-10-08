@@ -341,7 +341,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
 		if p.Unsupported != "" {
-			fmt.Fprintf(log, "coverage: %s: %s\n", p.Dir, p.Unsupported)
+			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Unsupported)
 			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
 			continue
 		}
@@ -355,14 +355,14 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		}
 		failed := ""
 		for _, args := range p.Commands {
-			fmt.Fprintf(log, "coverage: %s$ %s\n", p.Dir, strings.Join(args, " "))
+			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Dir = p.Dir
 			cmd.Env = env
 			cmd.Stdout = log
 			cmd.Stderr = log
 			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(log, "coverage: %s: %v\n", p.Language, err)
+				fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
@@ -441,7 +441,7 @@ func load(paths []string, integration, base string, sources []string, log io.Wri
 	for _, path := range paths {
 		entries, err := Load(path)
 		if err != nil {
-			fmt.Fprintf(log, "coverage: %v\n", err)
+			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 			missing = append(missing, Unmeasured{Report: path, Cause: Unreadable, Reason: err.Error()})
 			continue
 		}
@@ -450,7 +450,7 @@ func load(paths []string, integration, base string, sources []string, log io.Wri
 	if integration != "" {
 		entries, err := Load(integration)
 		if err != nil {
-			fmt.Fprintf(log, "coverage: %v\n", err)
+			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		}
 		for i := range entries {
 			entries[i].Source = Integration

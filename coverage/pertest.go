@@ -56,7 +56,7 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 	os.RemoveAll(dir)
 	defer os.RemoveAll(dir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		fmt.Fprintf(log, "coverage: %v\n", err)
+		fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		return nil
 	}
 	tc := &TestCoverage{reports: map[string]*Report{}}
@@ -65,7 +65,7 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 		ids = append(ids, t.ID)
 	}
 	if err := runShell(p.All, p.Root, []string{TestCoverDirEnv + "=" + dir}, log); err != nil {
-		fmt.Fprintf(log, "coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
+		fmt.Fprintf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
 		return nil
 	}
 	written := map[string]string{}
@@ -80,11 +80,11 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 		for i, id := range ids {
 			d := filepath.Join(dir, ".each", strconv.Itoa(i))
 			if err := os.MkdirAll(d, 0o755); err != nil {
-				fmt.Fprintf(log, "coverage: %v\n", err)
+				fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 				return nil
 			}
 			if err := runShell(p.Select([]string{id}), p.Root, eachTestEnv(d), log); err != nil {
-				fmt.Fprintf(log, "coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
+				fmt.Fprintf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
 				return nil
 			}
 			if hasCoverData(d) {
@@ -102,12 +102,12 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 		cmd := exec.Command("go", "tool", "covdata", "textfmt", "-i="+d, "-o="+profile)
 		cmd.Dir = p.Root
 		if out, err := cmd.CombinedOutput(); err != nil {
-			fmt.Fprintf(log, "coverage: %s: go tool covdata textfmt: %v\n%s", id, err, out)
+			fmt.Fprintf(log, "itos-cc: coverage: %s: go tool covdata textfmt: %v\n%s", id, err, out)
 			continue
 		}
 		entries, err := Load(profile)
 		if err != nil {
-			fmt.Fprintf(log, "coverage: %s: %v\n", id, err)
+			fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", id, err)
 			continue
 		}
 		tc.ids = append(tc.ids, id)
@@ -137,7 +137,7 @@ func hasCoverData(dir string) bool {
 // runShell runs line through the platform shell in dir, with env added to
 // the environment and its output written to log.
 func runShell(line, dir string, env []string, log io.Writer) error {
-	fmt.Fprintf(log, "coverage: %s$ %s\n", dir, line)
+	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", dir, line)
 	name, flag := "sh", "-c"
 	if runtime.GOOS == "windows" {
 		name, flag = "cmd", "/C"

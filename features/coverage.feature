@@ -349,13 +349,13 @@ Feature: Coverage
   # - The output of the coverage commands themselves is passed on as it is.
   Rule: What itos-cc says while it measures
 
-    @coverage-prefix @ID-COV-38 @wip
+    @coverage-prefix @ID-COV-38
     Scenario: The coverage command is announced as itos-cc's
       When I run "itos-cc crap a/a.go"
       Then stderr has a line "itos-cc: coverage <dir>$ go test …" naming the command coverage runs
       And no line of stderr begins "coverage:"
 
-    @coverage-prefix @ID-COV-39 @wip
+    @coverage-prefix @ID-COV-39
     Scenario: A coverage command that fails is reported as itos-cc's
       Given a test of a/a.go fails
       When I run "itos-cc crap a/a.go"
