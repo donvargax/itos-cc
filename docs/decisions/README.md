@@ -19,5 +19,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0012: A mutant runs its file's own tests first, and the listed tests reaching its line only if it survives them](0012-a-mutant-runs-its-file-s-own-tests-first-and-the-listed-tests-reaching-its-line-only-if-it-survives-them.md)
 - [ADR-0013: The hashes of the files mutation.tests.support matches join every listed kill's freshness](0013-the-hashes-of-the-files-mutation-tests-support-matches-join-every-listed-kill-s-freshness.md)
 - [ADR-0014: An exception whose file is renamed follows it and fails once as moved](0014-an-exception-whose-file-is-renamed-follows-it-and-fails-once-as-moved.md)
+- [ADR-0015: A mutant's timeout is its baseline's time times the factor plus a fixed 5 seconds](0015-a-mutant-s-timeout-is-its-baseline-s-time-times-the-factor-plus-a-fixed-5-seconds.md)
 
 <!-- itos:decisions:end -->
