@@ -1455,3 +1455,65 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src/board.ts"
       Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `!=` in Board#count: the loop only counts up"
       And every line of the comment begins with "//"
+
+    # exceptions-deleted-file: mutation run and mutation check judge the
+    # exceptions of the files they select, so an entry whose function or
+    # site is gone fails as stale, but one whose whole file was deleted or
+    # renamed is never selected and stays in itos-cc.yaml unnoticed.
+    # Decided with the person on 2026-10-07 (q-22):
+    # - A run or check of the whole project (no paths, no --changed, no
+    #   --since) judges each entry whose file is not a source it selects.
+    # - With --since, so does a run whose range deleted or renamed the
+    #   entry's file: a gate judges a task with --since, and the task that
+    #   removed the file is the one to fix its entries.
+    # - Such an entry has moved when exactly one selected source holds a
+    #   function of the entry's name and hash: it still excepts the mutant at
+    #   its site there, so that mutant is no survivor, and it fails as
+    #   mutation.exception-stale with why "moved" and the new file, the fix
+    #   saying to change the entry's file to it. Otherwise it fails as why
+    #   "gone", as an entry whose function is gone fails: no line.
+    # - Only mutation except writes itos-cc.yaml: a run never moves an entry.
+    # - With paths or --changed, an entry for a file outside the selection
+    #   is not judged, as now.
+    @exceptions-deleted-file @ID-MUT-141 @wip
+    Scenario: A run of the whole project fails an entry whose file is gone
+      Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
+      And src/board.ts and its tests were deleted
+      When I run "itos-cc mutation run"
+      Then the problem is "mutation.exception-stale", with file "src/board.ts", function "Board#count", no line, and why "gone"
+      And the exit code is 1
+
+    @exceptions-deleted-file @ID-MUT-142 @wip
+    Scenario: mutation check of the whole project fails it too
+      Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
+      And fresh results for every source file, src/board.ts having been deleted
+      When I run "itos-cc mutation check"
+      Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
+      And the exit code is 1
+
+    @exceptions-deleted-file @ID-MUT-143 @wip
+    Scenario: With --since, an entry whose file the range deleted is gone
+      Given itos-cc.yaml excepts a survivor of "Board#count" in src/board.ts
+      And a commit after "base" deleted src/board.ts and its tests
+      When I run "itos-cc mutation run --since base"
+      Then the problem is "mutation.exception-stale", with file "src/board.ts" and why "gone"
+      And the exit code is 1
+
+    @exceptions-deleted-file @ID-MUT-144 @wip
+    Scenario: An entry whose file was renamed has moved, and still excepts its mutant
+      Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count"
+      And a commit after "base" renamed src/board.ts to src/grid.ts, changing nothing else
+      When I run "itos-cc mutation run --since base"
+      Then the problem is "mutation.exception-stale", with file "src/board.ts", why "moved", and new file "src/grid.ts"
+      And its fix says to change the entry's file to src/grid.ts
+      And there is no "mutation.survived" problem
+      And itos-cc.yaml still names src/board.ts
+      And the exit code is 1
+
+    @exceptions-deleted-file @ID-MUT-146 @wip
+    Scenario: A run of the whole project finds a renamed file's entry moved
+      Given itos-cc.yaml excepts the survivor of "Board#count" in src/board.ts
+      And src/board.ts was renamed to src/grid.ts, changing nothing else
+      When I run "itos-cc mutation run"
+      Then the problem is "mutation.exception-stale", with why "moved" and new file "src/grid.ts"
+      And there is no "mutation.survived" problem
