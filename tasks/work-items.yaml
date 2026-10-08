@@ -665,3 +665,18 @@ items:
       take them from the tag's message or a file, so every release has them, with an upgrading
       section as itos's have.
     refs: ["#17"]
+  - id: other-os-code
+    title: Code only another OS builds or runs is not judged uncovered on this one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #18: a file a build constraint leaves out on the current GOOS/GOARCH (probe_windows.go
+      on Linux), or a runtime.GOOS branch, is uncovered wherever the gate runs on another system, so
+      an item changing Windows-only code can never pass --fail-uncovered on Linux. The issue offers
+      two directions: skip such a file here with a reason (mutation.not-built), or merge outcomes
+      recorded on each platform into .metrics/mutate/ so a check on Linux trusts Windows CI's. A
+      decision of its own.
+    refs: ["#18"]
