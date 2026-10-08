@@ -119,3 +119,22 @@
     moves.
   done_when:
     - run: grep -q -- 'go test -timeout 20m ./...' .github/workflows/ci.yml
+- id: T-7
+  type: build
+  title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
+  why: >
+    npm audit in viewer/ reports GHSA-68fv-2mgg-jv7q (an event-loop denial of service through
+    indexed source-map section offsets) for source-map-js 1.0.0 to 1.2.1, which the lockfile pins
+    at 1.2.1 through vite's postcss and @vitest/coverage-v8's magicast. It is a build- and
+    test-time dependency only. A build commit raises it in viewer/package-lock.json alone, with no
+    direct dependency of package.json changed and no override unless no parent allows a fixed
+    version; the viewer still builds and its tests pass. The check reads the lockfile rather than
+    running npm audit, so a later, unrelated advisory does not fail this task.
+  done_when:
+    - run: node -e "const l=require('./viewer/package-lock.json');const v=Object.entries(l.packages).filter(([k])=>k.endsWith('node_modules/source-map-js')).map(([,p])=>p.version);process.exit(v.length>0&&v.every(x=>!/^1\.[01]\.|^1\.2\.[01]$/.test(x))?0:1)"
+    - run: npm --prefix viewer ci
+      timeout: 600
+    - run: npm --prefix viewer test
+      timeout: 600
+    - run: npm --prefix viewer run build
+      timeout: 600
