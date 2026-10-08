@@ -335,14 +335,15 @@ items:
       the whole project (no paths, no --changed, no --since) could fail each entry whose file is no
       longer a source it selects, as gone.
     refs: ["#10"]
-  - id: coverage-progress-prefix
+  - id: coverage-prefix
     title: "crap and mutation run: their coverage lines on stderr begin coverage:, not itos-cc:"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was coverage-progress-prefix.
       The lines itos-cc writes itself while it measures coverage, the command it runs ('coverage:
       <dir>$ go test …') and why one failed ('coverage: <language>: …'), begin 'coverage:', a
       command that does not exist, where every other line itos-cc writes begins 'itos-cc:'. Found
