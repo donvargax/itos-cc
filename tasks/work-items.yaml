@@ -603,14 +603,15 @@ items:
     depends_on: []
     kind: idea
     refs: ["#10"]
-  - id: selection-timeout-flaky-windows
-    title: ID-MUT-135's test can time out a mutant on its own tests on windows-latest
+  - id: T-8
+    title: ID-MUT-135's test leaves its mutants' own tests room on a slow runner
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: task
     why: >
+      Was selection-timeout-flaky-windows.
       Found on coverage-prefix's push (CI run 37718895582, passed on rerun).
       TestASelectionsTimeoutComesFromItsOwnRun wants both mutants of main.go's looping line to
       survive their own tests and then time out with ID-A-01, but on windows-latest the mutant 1 to
