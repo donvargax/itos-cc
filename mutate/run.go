@@ -221,7 +221,10 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 				return nil, err
 			}
 			if opt.Annotate {
-				if err := annotate(s.file.Path, s.file.Spec, s.result.Snapshot); err != nil {
+				// The comment excepts the survivors of every function,
+				// judged or not, as a full run would.
+				excepted := heldReasons(opt.Exceptions, s.key, s.file, s.sites)
+				if err := annotate(s.file.Path, s.file.Spec, s.result.Snapshot, excepted); err != nil {
 					return nil, err
 				}
 			}

@@ -105,3 +105,39 @@ func TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine(t *testing.T) {
 		}
 	}
 }
+
+// Under --since, the functions not judged keep their outcomes, and the
+// summary comment excepts their survivors as a full run's does: an entry
+// holds by its function's hash and its site, which needs no run. A stale
+// entry for one excepts nothing there either.
+func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *testing.T) {
+	boardRepo(t, nil)
+	survivorRun(t)
+	writeExceptions(t, "", clearException(t, "clear is never called"))
+	changePlace(t)
+
+	o := annotatedRun(t, "--json", "--since", "base")
+	if j := o.json(t).judged(t, boardSource); j == nil || len(*j) != 1 || (*j)[0] != placeID {
+		t.Fatalf("judged %v, want place alone\n%s", j, o.stdout)
+	}
+	want := "// itos-cc mutate: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
+		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
+		"// end itos-cc mutate\n"
+	if comment := summaryComment(t); comment != want {
+		t.Errorf("the summary comment:\n%s\nwant:\n%s", comment, want)
+	}
+
+	// Written for another version of clear, the entry is stale.
+	stale := clearException(t, "clear is never called")
+	stale.Hash = "0000000000000000"
+	writeExceptions(t, "", stale)
+	if o := annotatedRun(t, "--since", "base"); o.code != 0 {
+		t.Fatalf("with a stale entry for clear: exit %d, want 0: clear is not judged\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	want = "// itos-cc mutate: 1 killed, 1 survived, 0 uncovered\n" +
+		"// survived: line 11 `<` → `<=` in clear\n" +
+		"// end itos-cc mutate\n"
+	if comment := summaryComment(t); comment != want {
+		t.Errorf("with a stale entry for clear, the summary comment:\n%s\nwant:\n%s", comment, want)
+	}
+}

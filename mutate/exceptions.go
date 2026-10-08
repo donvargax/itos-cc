@@ -92,6 +92,25 @@ func applyExceptions(exceptions []config.Exception, rel string, f *lang.File, si
 	return out
 }
 
+// exceptedKey names the mutant at the site whose Key is site in the
+// function with namespace#name function and hash hash.
+func exceptedKey(function, hash, site string) string {
+	return function + "\x00" + hash + "\x00" + site
+}
+
+// heldReasons is the reason of each exception of the file rel that holds
+// for f, with sites, as it is now, by the function, the hash and the site
+// it excepts (exceptedKey): an entry holds while its function has its hash
+// and its site, which needs no run, so it is the same whichever functions a
+// run judges. A stale entry is not there: it excepts nothing.
+func heldReasons(exceptions []config.Exception, rel string, f *lang.File, sites []Site) map[string]string {
+	out := map[string]string{}
+	for i, e := range applyExceptions(exceptions, rel, f, sites, nil).held {
+		out[exceptedKey(e.Function, e.Hash, sites[i].Key())] = e.Reason
+	}
+	return out
+}
+
 // judge is how an exception's outcome now bears on the mutant it excepts:
 // a survivor is excepted, with the entry's reason; a mutant the tests
 // noticed makes the entry stale; and an uncovered one is neither, since an

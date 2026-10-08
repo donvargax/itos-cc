@@ -361,7 +361,9 @@ fails; copy it as a starting point. Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
-the end of each source file (`--no-annotate` turns it off). A surviving
+the end of each source file (`--no-annotate` turns it off): its counts, each
+survivor, and each survivor `itos-cc.yaml` excepts, counted and listed apart
+with its reason, whichever functions the run judged. A surviving
 mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
 any mutant, exits 1. `--json` lists each file's `mutants` in site order,
 each with the keys `mutation list` gives a site, its `outcome` (`killed`,

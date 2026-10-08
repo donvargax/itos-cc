@@ -1416,7 +1416,7 @@ Feature: Mutation testing
     #   mutation-annotate-marker's.
     # - A reason is written on one line, each run of whitespace one space, so
     #   the comment never puts uncommented text in a source file.
-    @annotate-excepted @ID-MUT-138 @wip
+    @annotate-excepted @ID-MUT-138
     Scenario: The summary comment counts an excepted survivor apart, with its reason
       Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count" with reason "the loop only counts up", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
@@ -1427,7 +1427,7 @@ Feature: Mutation testing
         // end itos-cc mutate
         """
 
-    @annotate-excepted @ID-MUT-139 @wip
+    @annotate-excepted @ID-MUT-139
     Scenario: A stale entry's survivor is listed as survived
       Given itos-cc.yaml excepts a survivor of "Board#count"
       And "Board#count" changed since the entry was written, and the mutant at its site still survives
@@ -1435,7 +1435,7 @@ Feature: Mutation testing
       Then the summary comment of src/board.ts counts it as survived and lists it on a "survived:" line
       And the comment holds no "excepted" count and no "excepted:" line
 
-    @annotate-excepted @ID-MUT-140 @wip
+    @annotate-excepted @ID-MUT-140
     Scenario: A reason over several lines is written on one comment line
       Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
       When I run "itos-cc mutation run src/board.ts"
