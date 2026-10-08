@@ -415,14 +415,15 @@ items:
     status: dropped
     depends_on: []
     kind: idea
-  - id: mismatch-fix-names-scope
+  - id: mismatch-fix-scope
     title: A mutation.mismatch says to re-run in the scope the outcome was recorded with
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mismatch-fix-names-scope.
       Since sample-recorded-scope each outcome records its scope, own, all-tests or a --test-command
       line, and mutation sample re-runs it there. The fix a mutation.mismatch gives is still
       'itos-cc mutation run --mutate-all <file>', with neither flag, so following it on an
