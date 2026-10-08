@@ -138,3 +138,22 @@
       timeout: 600
     - run: npm --prefix viewer run build
       timeout: 600
+- id: T-8
+  type: test
+  title: ID-MUT-135's test leaves its mutants' own tests room on a slow runner
+  why: >
+    TestASelectionsTimeoutComesFromItsOwnRun failed once on windows-latest (CI run 37718895582,
+    passed on rerun): the mutant 1 to 0 of main.go's looping line hit its 2.0s timeout on its own
+    tests, where it should survive them and then time out with ID-A-01. The own tests' baseline is
+    quick, so their timeout is the 2s minimum, and building and running go test on a Windows runner
+    can take longer. The fix is in the test alone: give the own tests' runs room (a larger
+    --timeout-factor with the assertions derived from it, or a slower own-tests baseline in the
+    fixture), keeping everything it checks: ID-A-01 runs once alone without a mutant before any
+    mutant runs it; the selection's timeout is the factor times that run, at least 2s; each mutant
+    of the loop times out with ID-A-01 well before the factor times both tests' time; their outcome
+    is timeout, scope listed, tests ID-A-01. If instead the own tests' timeout turns out to come from
+    a baseline that did not build what a mutant's run builds (a cached build or test result), that is
+    a product bug: stop and report it as an idea rather than widening the test.
+  done_when:
+    - run: go test ./cmd/itos-cc -run '^TestASelectionsTimeoutComesFromItsOwnRun$' -count=1
+      timeout: 600
