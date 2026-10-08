@@ -338,16 +338,9 @@ items:
     title: mutation run's summary comment still says 'itos-cc mutate:', a command gone since mutation-group
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-annotate-marker.
-      The comment mutation run writes at the end of each source file opens '# itos-cc mutate: 1
-      killed, …' and closes '# end itos-cc mutate' (ID-MUT-32, ID-MUT-33), naming the mutate command
-      that became mutation run. Found with mutation-progress-prefix, which changed only stderr. The
-      marker is how a later run finds the comment to replace, so a new text must still recognise the
-      old one, or the files already annotated keep two comments; a decision of its own.
   - id: namespace-above-working-dir
     title: Files outside any project root and above the working directory can share a namespace
     phase: 1
