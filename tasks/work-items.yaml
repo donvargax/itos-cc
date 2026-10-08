@@ -324,17 +324,9 @@ items:
     title: an exception for a file that is gone never goes stale
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutation-exceptions-deleted-file.
-      Found building mutation-exceptions (#10). mutation run and mutation check judge the exceptions
-      of the files they select, so an entry in itos-cc.yaml whose function or site is gone in a file
-      that is still there fails as mutation.exception-stale (why gone), but one whose whole file was
-      deleted or renamed is never selected and stays in itos-cc.yaml unnoticed. A run or check of
-      the whole project (no paths, no --changed, no --since) could fail each entry whose file is no
-      longer a source it selects, as gone.
     refs: ["#10"]
   - id: coverage-prefix
     title: "crap and mutation run: their coverage lines on stderr begin coverage:, not itos-cc:"
