@@ -1398,3 +1398,46 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --json src/board.ts" with one excepted survivor
       Then its file has "excepted": 1 beside "killed", "survived" and "uncovered"
       And that mutant has outcome "survived" and "excepted", the entry's reason
+
+    # annotate-excepted: the summary comment at the end of a source
+    # file is built from the snapshot alone, which records an excepted
+    # survivor as survived, so the comment said "1 survived" and listed it
+    # while mutation run's summary counted it excepted and failed nothing.
+    # Decided on 2026-10-07:
+    # - The comment counts "excepted" apart, only where there is one, as the
+    #   summary line does, and lists each excepted survivor after the
+    #   survivors, with its reason.
+    # - A survivor is excepted in the comment when itos-cc.yaml holds an
+    #   entry for its site that holds: the same function hash, the same site.
+    #   That needs no run, so a --since run gives the functions it does not
+    #   judge the same comment as a full run. A stale entry excepts nothing:
+    #   its survivor is listed as survived.
+    # - The comment's text is otherwise unchanged; its marker is
+    #   mutation-annotate-marker's.
+    # - A reason is written on one line, each run of whitespace one space, so
+    #   the comment never puts uncommented text in a source file.
+    @annotate-excepted @ID-MUT-138 @wip
+    Scenario: The summary comment counts an excepted survivor apart, with its reason
+      Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count" with reason "the loop only counts up", and every other mutant of src/board.ts is killed
+      When I run "itos-cc mutation run src/board.ts"
+      Then src/board.ts ends with:
+        """
+        // itos-cc mutate: 14 killed, 0 survived, 1 excepted, 0 uncovered
+        // excepted: line 7 `<` → `!=` in Board#count: the loop only counts up
+        // end itos-cc mutate
+        """
+
+    @annotate-excepted @ID-MUT-139 @wip
+    Scenario: A stale entry's survivor is listed as survived
+      Given itos-cc.yaml excepts a survivor of "Board#count"
+      And "Board#count" changed since the entry was written, and the mutant at its site still survives
+      When I run "itos-cc mutation run src/board.ts"
+      Then the summary comment of src/board.ts counts it as survived and lists it on a "survived:" line
+      And the comment holds no "excepted" count and no "excepted:" line
+
+    @annotate-excepted @ID-MUT-140 @wip
+    Scenario: A reason over several lines is written on one comment line
+      Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
+      When I run "itos-cc mutation run src/board.ts"
+      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `!=` in Board#count: the loop only counts up"
+      And every line of the comment begins with "//"
