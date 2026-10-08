@@ -1698,6 +1698,15 @@ Feature: Mutation testing
   #   retain non-strict behavior. Do not attach today's fingerprints to an
   #   old, failed or unrelated measurement. Opaque inputs require support
   #   globs and are not inferred. No new attestation/sidecar format.
+  # - q-27/ADR-0019 refuse an active Go workspace and a local replacement
+  #   outside the actual inventoried source module in strict run/check.
+  #   An excluded nested module is outside that inventory even if its path
+  #   is lexically inside the source tree. Do not follow external trees to
+  #   make the scope look supported. Existing evidence cannot bypass the
+  #   refusal. GOWORK=off and inputs already in the inventory stay supported;
+  #   non-strict commands retain their existing behavior. Report refusal as
+  #   mutation.coverage-unsupported (exit 1), with file/function/line, naming
+  #   the workspace or replacement responsible in its message.
   # - A fresh independent cache may avoid coverage measurement, including
   #   evidence from a broader recorded suite. Missing/stale evidence makes
   #   a strict run measure coverage even with no pending mutation sites.
@@ -1820,3 +1829,17 @@ Feature: Mutation testing
       But non-strict explicit-report and no-coverage runs retain their current behavior
       And other-language statement coverage, ordinary graph/sample freshness and survivor exceptions are unchanged
       And a survivor exception cannot excuse a strict Go uncovered-statement finding
+
+    @wip @strict-go-coverage @ID-MUT-164
+    Scenario: Unsupported module scopes cannot reuse strict coverage evidence
+      Given a Go function has fresh strict coverage evidence
+      When an active go.work is introduced for its measurement environment
+      Then strict run and cached strict check fail with "mutation.coverage-unsupported", naming the workspace
+      And cached check does not run coverage or tests or refresh its evidence
+      But with GOWORK=off the same inventoried module remains supported
+      When its go.mod names a local replacement outside the inventoried module
+      Then strict run and cached strict check fail with "mutation.coverage-unsupported", naming the replacement
+      And a replacement beneath an excluded nested module is refused too
+      And no external dependency tree is followed or admitted as fresh coverage
+      But replacement inputs already inside the actual inventory remain supported
+      And non-strict commands retain their existing behavior
