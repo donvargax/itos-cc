@@ -706,3 +706,17 @@ items:
       functions, unavailable coverage, statement precision and reporting. Do not add return-value or
       call-removal operators from #24 as part of this fix.
     refs: ["#23"]
+  - id: debt-move-findings
+    title: Range and staged checks report old and new debt IDs for moves
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Selected issue #25 matters for hosts that claim debt by path-based entry ID, but IDEAS.md
+      marks the debt file, top-level check, range/staged checks and debt list as planned;
+      cmd/itos-cc/main.go registers none of them. This request cannot be implemented as a small
+      reporting fix yet. Keep it pending until the person agrees how to scope the missing
+      foundation. Do not silently build that subsystem during mutation fixes.
+    refs: ["#25"]
