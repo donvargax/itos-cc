@@ -14,5 +14,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0007: Each recorded outcome keeps the scope of the tests that decided it](0007-each-recorded-outcome-keeps-the-scope-of-the-tests-that-decided-it.md)
 - [ADR-0008: Snapshots live at the project root, and every reader finds them where mutation check does](0008-snapshots-live-at-the-project-root-and-every-reader-finds-them-where-mutation-check-does.md)
 - [ADR-0009: A project's tests are listed by its own command and run by its own template, sharing only IDs and paths](0009-a-project-s-tests-are-listed-by-its-own-command-and-run-by-its-own-template-sharing-only-ids-and-paths.md)
+- [ADR-0010: Coverage per test comes from one suite run the harness splits by test, one run per test the fallback](0010-coverage-per-test-comes-from-one-suite-run-the-harness-splits-by-test-one-run-per-test-the-fallback.md)
 
 <!-- itos:decisions:end -->
