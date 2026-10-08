@@ -104,3 +104,4 @@ questions:
     item: "listed-tests-freshness"
     question: "Step code: itos's scenario checks live in Go step code (features/*_test.go), while q-19 hashes only the files that define the covering tests, so weakening a step leaves old end-to-end kills trusted. (a, recommended) mutation.tests gains support globs (such as features/*_test.go); their hashes join every listed kill's freshness, so a step-code edit stales every listed kill, each rerun running only its covering tests. (b) Only catch it by sampling listed kills nightly. (c) Accept the gap."
     answer: "(a) A support glob list in mutation.tests whose hashes join every listed kill's freshness. Found by a side agent after q-19 was answered."
+    decision: 13
