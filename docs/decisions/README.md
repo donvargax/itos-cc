@@ -21,5 +21,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0015: A mutant's timeout is its baseline's time times the factor plus a fixed 5 seconds](0015-a-mutant-s-timeout-is-its-baseline-s-time-times-the-factor-plus-a-fixed-5-seconds.md)
 - [ADR-0016: Go whole-suite mutation outcomes depend on module tests and configured support files](0016-go-whole-suite-mutation-outcomes-depend-on-module-tests-and-configured-support-files.md)
 - [ADR-0017: Strict Go mutation checks require executable coverage independent of mutation sites](0017-strict-go-mutation-checks-require-executable-coverage-independent-of-mutation-sites.md)
+- [ADR-0018: Strict Go statement coverage admits measured built-in reports and fingerprinted cache evidence](0018-strict-go-statement-coverage-admits-measured-built-in-reports-and-fingerprinted-cache-evidence.md)
 
 <!-- itos:decisions:end -->
