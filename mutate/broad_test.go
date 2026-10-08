@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// @ID-MUT-153
 func TestBroadEvidenceAppliesToEveryBroadOutcomeAndNoNarrowOutcome(t *testing.T) {
 	oldTests := map[string]string{"app_test.go": "before"}
 	nowTests := map[string]string{"app_test.go": "after"}

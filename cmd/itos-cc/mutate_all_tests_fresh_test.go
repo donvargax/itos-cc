@@ -2,12 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/graph"
+	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // @ID-MUT-150
@@ -100,6 +106,7 @@ func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
 			if !initialFound || initial["outcome"] != "killed" {
 				t.Fatalf("initial run mutant: found=%v outcome=%v scope=%v", initialFound, initial["outcome"], initial["scope"])
 			}
+			beforeEvidence := broadEvidenceAt(t, ".metrics/mutate/main.go.json", greetIfLine)
 			plain := mutateCovered(t, "--no-coverage", "--json", greetSource)
 			mutant, found := runMutantsAt(t, plain, greetIfLine)
 			expected := scope.expectedScope
@@ -109,10 +116,177 @@ func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
 			if !found || mutant["outcome"] != "killed" || mutant["reused"] != true || mutant["scope"] != expected {
 				t.Fatalf("plain run mutant: found=%v outcome=%v reused=%v scope=%v, want reused kill with scope %s", found, mutant["outcome"], mutant["reused"], mutant["scope"], expected)
 			}
+			afterEvidence := broadEvidenceAt(t, ".metrics/mutate/main.go.json", greetIfLine)
+			if !reflect.DeepEqual(beforeEvidence, afterEvidence) {
+				t.Fatalf("plain run changed reused broad evidence: before=%+v after=%+v", beforeEvidence, afterEvidence)
+			}
 			if states, _, check := checked(t); states[greetID] != "fresh" {
 				t.Fatalf("mutation check after plain reuse: %q, want fresh\n%s", states[greetID], check.stdout)
 			}
 		})
+	}
+}
+
+func broadEvidenceAt(t *testing.T, path string, line int) *mutate.GoEvidence {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshot mutate.Snapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	for _, unit := range snapshot.Units {
+		for _, mutant := range unit.Mutants {
+			if mutant.Line == line && mutant.Replacement == ">=" {
+				if mutant.GoEvidence == nil {
+					t.Fatalf("broad mutant at line %d has no Go freshness evidence", line)
+				}
+				return mutant.GoEvidence
+			}
+		}
+	}
+	t.Fatalf("snapshot has no broad mutant at line %d", line)
+	return nil
+}
+
+// @ID-MUT-153
+func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) {
+	moduleRepo(t, map[string]string{
+		"go.mod":                  "module example.com/mixed\n\ngo 1.22\n",
+		"main.go":                 "package main\n\nfunc Own() bool { return true }\nfunc Listed() bool { return false }\nfunc AllTests() bool { return true }\nfunc TestCommand() bool { return false }\nfunc Survivor() bool { return true }\nfunc Excepted() bool { return false }\nfunc main() {}\n",
+		"main_test.go":            "package main\n\nimport \"testing\"\n\nfunc TestOwn(t *testing.T) { if !Own() { t.Fatal(\"Own\") } }\n",
+		"e2e/support_test.go":     "package e2e\n\nimport \"testing\"\n\nfunc TestSupport(t *testing.T) {}\n",
+		"features/listed.feature": "Feature: listed test definition\n",
+		"itos-cc.yaml": `mutation:
+  tests:
+    list: "touch list-ran"
+    run: "touch test-ran-{pattern}"
+    ids_pattern: "{ids}"
+    join:
+      each: "{id}"
+      sep: ","
+    support: ["features/*.feature"]
+`,
+	})
+	if result := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); result.code > 1 {
+		t.Fatalf("initial run: exit %d\n%s%s", result.code, result.stdout, result.stderr)
+	}
+	snapshotPath := ".metrics/mutate/main.go.json"
+	data, err := os.ReadFile(snapshotPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshot mutate.Snapshot
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]*mutate.Mutant{}
+	for i := range snapshot.Units {
+		unit := &snapshot.Units[i]
+		if len(unit.Mutants) == 0 {
+			continue
+		}
+		if len(unit.Mutants) != 1 {
+			t.Fatalf("%s has %d mutants, want one", unit.Name, len(unit.Mutants))
+		}
+		byName[unit.Name] = &unit.Mutants[0]
+	}
+	if len(byName) != 6 {
+		t.Fatalf("snapshot units %v, want six functions", byName)
+	}
+	excepted := byName["Excepted"]
+	if result := cli(t, "mutation", "except", fmt.Sprintf("main.go:%d:%d", excepted.Line, excepted.Column), "--reason", "equivalent"); result.code != 0 {
+		t.Fatalf("except broad survivor: exit %d\n%s%s", result.code, result.stdout, result.stderr)
+	}
+	byName["Own"].Scope = ""
+	byName["Own"].GoEvidence = nil
+	byName["Listed"].Scope = mutate.ScopeListed
+	byName["Listed"].Tests = []string{"ID-A-01"}
+	byName["Listed"].GoEvidence = nil
+	projectRoot := project.Root()
+	listedDefinition := filepath.Join(projectRoot, "features", "listed.feature")
+	listedFiles, err := mutate.TestHashesUnder(projectRoot, []string{listedDefinition})
+	if err != nil {
+		t.Fatal(err)
+	}
+	support, err := mutate.SupportHashes(projectRoot, []string{"features/*.feature"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshot.Listed = map[string]string{"ID-A-01": "features/listed.feature"}
+	snapshot.ListedFiles = listedFiles
+	snapshot.Support = support
+	byName["AllTests"].Scope = mutate.ScopeAllTests
+	byName["TestCommand"].Scope = "go test -count=1 ./..."
+	byName["Survivor"].Scope = mutate.ScopeAllTests
+	byName["Excepted"].Scope = "go test -count=1 ./..."
+	data, err = json.Marshal(snapshot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(snapshotPath, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, "e2e/support_test.go", "package e2e\n\nimport \"testing\"\n\nfunc TestSupport(t *testing.T) { t.Log(1) }\n")
+	check := cli(t, "mutation", "check", "--json", greetSource)
+	if check.code != 1 {
+		t.Fatalf("mutation check: exit %d, want stale broad outcomes\n%s%s", check.code, check.stdout, check.stderr)
+	}
+	var checked struct {
+		Files []struct {
+			Functions []struct {
+				Function string `json:"function"`
+				State    string `json:"state"`
+			} `json:"functions"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal([]byte(check.stdout), &checked); err != nil {
+		t.Fatal(err)
+	}
+	states := map[string]string{}
+	for _, file := range checked.Files {
+		for _, function := range file.Functions {
+			states[strings.TrimPrefix(function.Function, "example.com/mixed#")] = function.State
+		}
+	}
+	for _, name := range []string{"Own", "Listed"} {
+		if states[name] != "fresh" {
+			t.Errorf("%s scope is %q, want fresh: %s", name, states[name], check.stdout)
+		}
+	}
+	for _, name := range []string{"AllTests", "TestCommand", "Survivor", "Excepted"} {
+		if states[name] != "stale" {
+			t.Errorf("%s broad scope is %q, want stale: %s", name, states[name], check.stdout)
+		}
+	}
+	wd, _ := os.Getwd()
+	builder, err := graph.NewBuilder([]string{wd})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, _, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphStates := map[string]bool{}
+	for _, node := range g.Nodes {
+		for _, unit := range node.Units {
+			if unit.File == greetSource {
+				graphStates[unit.Name] = unit.Stale
+			}
+		}
+	}
+	for _, name := range []string{"Own", "Listed"} {
+		if graphStates[name] {
+			t.Errorf("graph marks %s stale while mutation check calls it fresh", name)
+		}
+	}
+	for _, name := range []string{"AllTests", "TestCommand", "Survivor", "Excepted"} {
+		if !graphStates[name] {
+			t.Errorf("graph marks %s fresh while mutation check calls it stale", name)
+		}
 	}
 }
 
@@ -125,6 +299,7 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 		t.Run(tc.scope+"/"+tc.change, func(t *testing.T) {
 			greetRepo(t, false, false)
 			config := strings.Replace(listedFiles["itos-cc.yaml"], "go run ./testdata/list.go", "touch list-ran", 1)
+			config = strings.Replace(config, "go test -count=1 ./e2e -args -tests={pattern}", "touch test-ran-{pattern}", 1)
 			writeFile(t, "itos-cc.yaml", config+"    support: [\"features/*.feature\"]\n")
 			if tc.change != "added" {
 				writeFile(t, "features/example.feature", "Feature: first\n")
@@ -152,6 +327,9 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 			}
 			if _, err := os.Stat("list-ran"); !os.IsNotExist(err) {
 				t.Fatalf("mutation check ran the list command (stat error %v)", err)
+			}
+			if matches, err := filepath.Glob("test-ran-*"); err != nil || len(matches) != 0 {
+				t.Fatalf("mutation check ran tests: %v (glob error %v)", matches, err)
 			}
 		})
 	}
@@ -238,6 +416,34 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 	partial := mutateCovered(t, "--all-tests", "--no-coverage", "--since", strings.TrimSpace(string(base)), "--json", greetSource)
 	if partial.code > 1 {
 		t.Fatalf("partial broad run: exit %d\n%s%s", partial.code, partial.stdout, partial.stderr)
+	}
+	var partialResult struct {
+		Files []struct {
+			Judged  []string `json:"judged"`
+			Mutants []struct {
+				Function string `json:"function"`
+				Reused   bool   `json:"reused"`
+			} `json:"mutants"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal([]byte(partial.stdout), &partialResult); err != nil {
+		t.Fatal(err)
+	}
+	mainID := "example.com/greet#main"
+	judgedMain, reranMain := false, false
+	for _, file := range partialResult.Files {
+		judgedMain = slices.Contains(file.Judged, mainID)
+		for _, mutant := range file.Mutants {
+			if mutant.Function == mainID && !mutant.Reused {
+				reranMain = true
+			}
+			if mutant.Function == mainID && mutant.Reused {
+				t.Errorf("judged main mutant was reused: %+v", mutant)
+			}
+		}
+	}
+	if !judgedMain || !reranMain {
+		t.Fatalf("partial run judged main=%v and reran main=%v, want both\n%s", judgedMain, reranMain, partial.stdout)
 	}
 	states, _, check := checked(t)
 	if states[greetID] != "stale" {
