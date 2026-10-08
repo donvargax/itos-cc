@@ -140,18 +140,9 @@ items:
     title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Was viewer-source-map-js-advisory.
-      npm audit in viewer/ reports GHSA-68fv-2mgg-jv7q (event-loop denial of service through indexed
-      source-map section offsets) for source-map-js 1.0.0 - 1.2.1, which the lockfile pins at 1.2.1
-      through vite 8.3.1's postcss and, since T-5, @vitest/coverage-v8's magicast. Found while
-      adding @vitest/coverage-v8 for T-5; the version was already in the lockfile before it. It is a
-      build- and test-time dependency only; npm audit fix says a fixed version is available. Raising
-      it in the lockfile, in a build commit, and checking vitest run and vite build still pass would
-      clear it.
   - id: unloaded-file-uncovered
     title: "A file no test loads, mutated alone, is uncovered, not unmeasured"
     phase: 1
