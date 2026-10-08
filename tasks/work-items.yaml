@@ -600,19 +600,9 @@ items:
     title: ID-MUT-135's test leaves its mutants' own tests room on a slow runner
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: task
-    why: >
-      Was selection-timeout-flaky-windows.
-      Found on coverage-prefix's push (CI run 37718895582, passed on rerun).
-      TestASelectionsTimeoutComesFromItsOwnRun wants both mutants of main.go's looping line to
-      survive their own tests and then time out with ID-A-01, but on windows-latest the mutant 1 to
-      0 hit its 2.0s timeout on its own tests: their baseline is quick, so the timeout is the 2s
-      minimum, and building and running go test on a Windows runner can take longer. The test passed
-      there on the pushes before and after. A larger --timeout-factor or minimum for the own tests
-      in that test, or a check that tells a mutant timed out by its own tests from one that ran the
-      listed tests, would keep it from failing on a slow runner.
     refs: ["#14"]
   - id: listed-coverage-failed
     title: A failing coverage run of the listed tests is a tests.* problem, not every mutant uncovered
