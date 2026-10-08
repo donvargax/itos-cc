@@ -136,6 +136,11 @@ items:
     why: >
       ci.yml runs go vet and go test only, so a change that breaks viewer/ (vitest run, tsc
       --noEmit) passes CI and is first seen by the nightly, if at all.
+
+      Also: three Go tests in cmd/itos-cc (ID-MUT-105's and ID-CRAP-14's, and crap's no-threshold
+      one) use the viewer's Vitest and skip without viewer/node_modules, which push CI never
+      installs, so they run only on a developer's machine (passed locally 2026-10-08). An npm ci of
+      viewer/ in the test job would make them run in CI too.
   - id: T-7
     title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
     phase: 1
