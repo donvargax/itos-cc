@@ -108,3 +108,4 @@ questions:
   - id: q-22
     item: "exceptions-deleted-file"
     question: "exceptions-deleted-file: what happens to an exception whose file is renamed, and do --since runs judge such entries? (a, recommended) It follows the rename where exactly one selected source holds its function's name and hash, still excepting the mutant there, and fails as mutation.exception-stale with why moved, naming the new file; a --since run whose range deleted or renamed the file judges it too. (b) It fails as gone and the mutant at the new path is a survivor. (c) It follows silently. For --since: (a) keep, (b) whole-project runs only."
+    answer: "(a) Follow the rename and fail as moved, naming the new file; --since runs judge entries whose file the range deleted or renamed."
