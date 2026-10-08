@@ -40,6 +40,27 @@ Feature: CRAP scores
     When I run "itos-cc crap"
     Then the functions of src/unused.py have 0% coverage
 
+  # crap-unloaded-measured: coverage counted a plan as measured-nothing
+  # whenever its report named none of the plan's files, so crap --threshold
+  # over a file no test loads, alone, failed as coverage.measured-nothing,
+  # "Run the tests and fix them", though the run succeeded; read from the
+  # code while building unloaded-file-uncovered, not yet reproduced:
+  # reproduce it first. Decided by the coordinator on 2026-10-07, as
+  # unloaded-file-uncovered decided for mutation run (ID-MUT-105): a coverage
+  # command that ran for the file's language (every command exited 0 and
+  # wrote its report, Report.Measures) measured that language, so its files
+  # the report never names are untested, at 0%, as ID-CRAP-04 scores them
+  # when other files are measured. A command that failed still measures
+  # nothing (ID-CRAP-11).
+  @crap-unloaded-measured @ID-CRAP-14 @wip
+  Scenario: A file no test loads, scored alone, is untested, not unmeasured
+    Given a TypeScript project whose tests import src/board.ts but never src/unused.ts, whose functions are simple
+    When I run "itos-cc crap --threshold 30 src/unused.ts"
+    Then the functions of src/unused.ts have 0% coverage
+    And no "coverage.measured-nothing" problem is reported
+    And the exit code is 0
+    # with no branch, a function at 0% scores 2, under the threshold
+
   @ID-CRAP-05
   Scenario: A language the tests did not measure is unknown, not uncovered
     Given the coverage report mentions no Kotlin file
