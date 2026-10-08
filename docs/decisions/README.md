@@ -16,5 +16,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0009: A project's tests are listed by its own command and run by its own template, sharing only IDs and paths](0009-a-project-s-tests-are-listed-by-its-own-command-and-run-by-its-own-template-sharing-only-ids-and-paths.md)
 - [ADR-0010: Coverage per test comes from one suite run the harness splits by test, one run per test the fallback](0010-coverage-per-test-comes-from-one-suite-run-the-harness-splits-by-test-one-run-per-test-the-fallback.md)
 - [ADR-0011: A kill by listed tests holds while its covering tests and the files defining them are unchanged](0011-a-kill-by-listed-tests-holds-while-its-covering-tests-and-the-files-defining-them-are-unchanged.md)
+- [ADR-0012: A mutant runs its file's own tests first, and the listed tests reaching its line only if it survives them](0012-a-mutant-runs-its-file-s-own-tests-first-and-the-listed-tests-reaching-its-line-only-if-it-survives-them.md)
 
 <!-- itos:decisions:end -->
