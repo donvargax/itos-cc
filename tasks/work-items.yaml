@@ -374,7 +374,7 @@ items:
     title: A file no test loads, scored alone by crap, is untested, not unmeasured
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
