@@ -71,3 +71,27 @@ func TestAnnotationCountsExceptedSurvivorsApart(t *testing.T) {
 		t.Errorf("annotation with none excepted:\n%s\nwant:\n%s", got, want)
 	}
 }
+
+// @ID-MUT-145
+func TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "x.py")
+	code := "def a(x):\n    return x > 0\n"
+	old := "\n# itos-cc mutate: 2 killed, 0 survived, 0 uncovered\n# end itos-cc mutate\n"
+	os.WriteFile(path, []byte(code+old), 0o644)
+	snap := Snapshot{Units: []UnitResult{{Name: "a", Killed: 1, Survived: 1, Mutants: []Mutant{
+		{Line: 2, Original: ">", Replacement: ">=", Outcome: Survived},
+	}}}}
+	if err := annotate(path, lang.Detect(path), snap, nil); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(path)
+	src := string(data)
+	if strings.Count(src, "\n# itos-cc mutat") != 1 || strings.Count(src, "\n# end itos-cc mutat") != 1 {
+		t.Fatalf("%s:\n%s\nwant exactly one summary comment", path, src)
+	}
+	opening := strings.Index(src, "# itos-cc mutat")
+	comment := src[opening:]
+	if !strings.HasPrefix(comment, "# itos-cc mutation:") || !strings.HasSuffix(comment, "\n# end itos-cc mutation\n") {
+		t.Errorf("the summary comment:\n%s\nwant it to open \"# itos-cc mutation:\" and close \"# end itos-cc mutation\"", comment)
+	}
+}
