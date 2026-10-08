@@ -3,6 +3,7 @@ package mutate
 import (
 	"slices"
 	"testing"
+	"time"
 )
 
 func TestDecidedMutantsAreInLineOrder(t *testing.T) {
@@ -44,5 +45,12 @@ func TestDecidedMutantsAreInLineOrder(t *testing.T) {
 	}
 	if n := len(s.decided()); n != 2 {
 		t.Errorf("%d mutants listed, want f's 2", n)
+	}
+}
+
+// @ID-MUT-149
+func TestAMutantsTimeoutLeavesAFixedAllowanceBeyondItsBaseline(t *testing.T) {
+	if got, want := timeoutOf(50*time.Millisecond, 10), 5500*time.Millisecond; got != want {
+		t.Errorf("a baseline of 50ms at the default factor of 10: a timeout of %v, want %v, ten times it plus 5s", got, want)
 	}
 }
