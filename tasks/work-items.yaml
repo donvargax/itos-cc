@@ -686,3 +686,12 @@ items:
       --test-command scope it reads run 'itos-cc mutation run --mutate-all --test-command 'go
       version' src/board.go', which a reader cannot paste. The fix could set the command off another
       way (a colon, or backticks) for every scope.
+  - id: timeout-allowance
+    title: A mutant's timeout leaves a fixed allowance beyond its baseline, so building it cannot time it out
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Replaces T-8. Specified in features/mutate.feature above ID-MUT-149 (q-23).
