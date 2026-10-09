@@ -269,12 +269,12 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	wrapperDir := t.TempDir()
 	wrapper := filepath.Join(wrapperDir, "git")
 	contents := []byte("#!/bin/sh\n" +
-		"\"$ITOS_FRESH_PLAN_REAL_GIT\" \"$@\"\n" +
+		"PATH=\"$ITOS_FRESH_PLAN_ORIGINAL_PATH\" \"$ITOS_FRESH_PLAN_REAL_GIT\" \"$@\"\n" +
 		"status=$?\n" +
 		"if [ \"$status\" -eq 0 ]; then\n" +
 		"  for arg do\n" +
 		"    if [ \"$arg\" = \"${ITOS_FRESH_PLAN_MOVE_REF}^{commit}\" ]; then\n" +
-		"      \"$ITOS_FRESH_PLAN_REAL_GIT\" update-ref \"$ITOS_FRESH_PLAN_MOVE_REF\" \"$ITOS_FRESH_PLAN_MOVE_TO\" || exit 125\n" +
+		"      PATH=\"$ITOS_FRESH_PLAN_ORIGINAL_PATH\" \"$ITOS_FRESH_PLAN_REAL_GIT\" update-ref \"$ITOS_FRESH_PLAN_MOVE_REF\" \"$ITOS_FRESH_PLAN_MOVE_TO\" || exit 125\n" +
 		"      break\n" +
 		"    fi\n" +
 		"  done\n" +
@@ -283,11 +283,13 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if err := os.WriteFile(wrapper, contents, 0700); err != nil {
 		t.Fatal(err)
 	}
+	originalPath := os.Getenv("PATH")
 	realGit := freshRealGit(t)
+	t.Setenv("ITOS_FRESH_PLAN_ORIGINAL_PATH", originalPath)
 	t.Setenv("ITOS_FRESH_PLAN_REAL_GIT", realGit)
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_REF", "refs/heads/since-base")
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
-	t.Setenv("PATH", wrapperDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("PATH", wrapperDir+string(os.PathListSeparator)+originalPath)
 
 	plan, err := PlanFresh(repo, nil, "refs/heads/since-base", 50, "pinned-base")
 	if err != nil {
@@ -337,7 +339,12 @@ func freshRealGit(t *testing.T) string {
 			return resolved
 		}
 	}
-	t.Fatalf("could not find a real git binary separate from %s", first)
+	// Most CI images expose only one Git path, and it is the real binary.
+	// Environments with an outer Git shim generally expose a second path above.
+	if first != "" {
+		return first
+	}
+	t.Fatal("could not find a Git binary")
 	return ""
 }
 
