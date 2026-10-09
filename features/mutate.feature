@@ -1989,3 +1989,204 @@ Feature: Mutation testing
       And ownership is established before the command can execute and spawn descendants
       And only captured owned handles can be targeted for cleanup
       And the same supervisor can be used by worker and preparation commands without changing their argument, environment or output contracts
+
+  # GitHub #27, now the person's priority, is fresh bounded execution, not
+  # cached mutation sample and not #26 fail-fast. Linux ownership is shared
+  # groundwork; T-11 supplies committed-input/static planning and T-12 supplies
+  # supervised, fail-closed preparation before this public integration slice.
+  # - Opt in with mutation run --count N; N is a positive integer and is ONE
+  #   budget across every file/function/worker. --seed TEXT requires --count;
+  #   its default is the resolved HEAD commit ID. Cached mutation sample stays
+  #   unchanged. The initial public bounded mode is Linux-only; other platforms
+  #   refuse it clearly before launching commands. Windows support is #29.
+  # - Resolve one Git repository and HEAD once. Counted execution uses frozen
+  #   version-controlled source/test/config/support inputs, not current dirty,
+  #   staged or untracked project code. --since selects committed changed
+  #   functions and explicit paths narrow that set; without --since, discover
+  #   the selected committed HEAD paths. No additional checkout or session move
+  #   is used. External tools/dependencies/environment remain a declared boundary,
+  #   not container-strength or hermetic-build assurance. Reject unsupported
+  #   repository/build scopes rather than silently executing live project code.
+  # - Enumerate static sites without result-cache admission. Rank globally using
+  #   SHA-256 and the TEXT seed, logical root-relative slash paths and identities
+  #   distinguishing same-name units/sites, with deterministic tie-breaking.
+  #   Report commit, seed and selection algorithm version. Select min(N, eligible)
+  #   sites before scheduling; coverage does not silently redraw that selection.
+  # - Selected covered sites run freshly even when a matching cached kill exists.
+  #   Reused outcomes never spend this budget. One trial is ONE selected mutant's
+  #   final judgment, including its own and applicable listed stages; baseline,
+  #   list, coverage and conversion commands are not mutant trials. Reapplying
+  #   that same mutant after a clean listed baseline is not a second trial.
+  # - Count is an upper bound on actual trials, not a latency or test-command
+  #   bound. Selected measured-uncovered sites remain selected and reported,
+  #   with zero execution for those sites and no redraw. Preserve valid exception,
+  #   own/listed, timeout and --fail-uncovered semantics. No applicable test
+  #   command or failed/missing/malformed measurement is not a site-free success.
+  #   Strict Go executable coverage, including zero-site functions, stays strict.
+  # - Prepare fresh required coverage/listed reach on the frozen inputs without
+  #   any local measurement/cache prerequisite. Every actual preparation command
+  #   must succeed; the presence of a report never hides command/conversion/provider
+  #   failures. Do not silently drop configured listed integration tests to save
+  #   discovery cost. Refuse incompatible raw/existing coverage inputs; explicit
+  #   no-coverage is permitted only where it does not bypass strict coverage or
+  #   configured applicable listed-test discovery. Complete-mode flags retain
+  #   their existing behavior. Persistent per-scenario coverage reuse is separate.
+  # - This first mode publishes NO mutation snapshots, source annotations or
+  #   persistent coverage cache. Completed outcomes live in the current report;
+  #   existing complete-cache files remain untouched. A sampled pass proves only
+  #   its actual judgments, never a new complete-cache proof. Existing genuine
+  #   complete proof is a separate fact, not invalidated just by a sampled run.
+  # - JSON remains one object. Add a sampling object with budget, eligible,
+  #   selected, executed and omitted site counts, seed/algorithm/commit provenance,
+  #   sampled assurance and actual completion/stop information. List selected
+  #   site identities and outcomes, judged and omitted subjects, and actual stage
+  #   states. Undecided/cancelled/blocked sites have no fabricated mutation outcome.
+  #   Preserve completed progress in output on interruption/infrastructure error.
+  #   Errors fail the command; genuine no-sites is explicitly not applicable.
+  # - Own all counted-mode worker and preparation process trees, and join them
+  #   before returning/removing private inputs. A run abort shares ONE five-second
+  #   cleanup deadline; normal command completion and a mutant's own timeout must
+  #   not start or consume that run-abort deadline. Ordinary aggregate counted
+  #   execution does not become #26 fail-fast on a survivor.
+  # - Local mutant trials stay sparse: none over this repository; at most one or
+  #   two tiny selected fixture trials per focused behavioral case where needed.
+  #   Static planning, raw snapshots and direct helper processes need no trials.
+  #   Broader concurrency/multi-mutant regressions run in CI, not on this machine.
+  #   Unknown-flag failures are CLI-admission red, not scheduler-red evidence.
+  Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
+
+    @wip @mutation-fresh-budget @ID-MUT-173
+    Scenario: Counted execution has explicit admission and platform boundaries
+      Given the complete mutation run and cached mutation sample commands are available
+      When mutation run is given a nonpositive or noninteger count, or seed without count
+      Then it fails with a usage error before any mutation trial
+      And counted mode requires one supported Git repository and a resolvable HEAD
+      And on an unsupported platform counted mode fails clearly before launching commands
+      But existing complete and cached-sample behavior remains unchanged
+
+    @wip @mutation-fresh-budget @ID-MUT-174
+    Scenario: Counted execution evaluates frozen committed inputs
+      Given a committed project has a source function, tests and measurement settings
+      And those files have different staged, unstaged or untracked working-tree versions
+      When a count-one run judges a committed selection
+      Then discovery, coverage, clean baselines and mutation tests use the resolved committed inputs
+      And its report names that commit and logical source paths
+      And the live working tree is not rewritten or mistaken for committed proof
+      And unsupported scopes fail rather than silently following live project inputs
+
+    @wip @mutation-fresh-budget @ID-MUT-175
+    Scenario: Fresh selection is reproducible across paths and same-name units
+      Given committed functions include same-name units and more eligible sites than the budget
+      When two count-one runs use the same TEXT seed and committed inputs
+      Then they select the same fully identified site regardless of discovery ordering
+      And a default seed is the resolved HEAD commit ID
+      And reports include the seed and deterministic selection algorithm version
+      And alternate-seed selection can be checked without executing mutation trials
+
+    @wip @mutation-fresh-budget @ID-MUT-176
+    Scenario: The global fresh budget holds even when every selected mutant is killed
+      Given several committed files and functions have eligible sites but no mutation cache
+      And the worker count exceeds the count-one budget
+      When a counted run successfully judges its selected covered mutant
+      Then exactly one distinct mutation trial executes across the entire selection
+      And omitted sites and subjects are reported rather than executed
+      And no full mutation prepass prepares the selection
+      And the same fresh discovery admits changed functions with missing or stale cache entries
+      And a matching prior cached kill never substitutes for the fresh trial
+
+    @wip @mutation-fresh-budget @ID-MUT-177
+    Scenario: Counted mode leaves complete and cached-sample contracts intact
+      Given complete-run and cached-sample fixtures have their existing results
+      When commands run without the count opt-in
+      Then complete scheduling, scope, cache publication and source annotation behavior are unchanged
+      And cached mutation sample still rechecks only its eligible recorded outcomes
+      And its existing nothing-to-sample behavior is not the counted-mode no-cache behavior
+
+    @wip @mutation-fresh-budget @ID-MUT-178
+    Scenario: Applicable listed integration tests finish a single fresh judgment
+      Given a selected committed mutant survives its file's own tests
+      And listed integration tests reach its line and kill it
+      When count-one execution judges it
+      Then own tests run before the applicable listed tests
+      And the listed selection baseline runs without the mutant before its mutation stage
+      And the final outcome is killed with the correct listed attribution
+      And the own and listed mutation stages consume one trial, not two
+      And no unselected site executes
+
+    @wip @mutation-fresh-budget @ID-MUT-179
+    Scenario: Fresh outcomes preserve survivor, exception and own-timeout meanings
+      Given a counted selection has one covered mutation site
+      When its complete applicable test sequence passes on the mutant
+      Then the run fails for that selected survivor unless its matching exception is valid
+      And an exception must not exclude the site from fresh selection or skip its trial
+      But a killed mutant or its own test deadline is a valid completed judgment
+      And stale exceptions fail without being trusted as successful outcomes
+      And counted mode does not silently become fail-fast scheduling
+
+    @wip @mutation-fresh-budget @ID-MUT-180
+    Scenario: Measured uncovered selection is explicit and is never redrawn
+      Given a seeded selected site is reached by neither own nor listed tests
+      When count-one preparation measures its coverage successfully
+      Then that site is reported uncovered with zero mutation trials executed
+      And selection remains unchanged rather than drawing another site
+      And the run is not described as a range with no eligible sites
+      And fail-uncovered fails that judgment
+      And strict Go still checks executable zero-site functions and exempts empty bodies
+
+    @wip @mutation-fresh-budget @ID-MUT-181
+    Scenario: Counted preparation never converts failed measurement into successful assurance
+      Given fresh counted preparation requires list, coverage or provider commands
+      When a required command fails, or its report is missing or malformed
+      Then the command fails and reports the actual failed stage
+      And a report produced by a failed command does not erase its failure
+      And per-test conversion and coverage failures are not silently ignored
+      And no mutation trial starts after failed preparation
+      And no preexisting local measurement or per-scenario coverage map is required for successful preparation
+      And raw or existing coverage overrides cannot silently bypass required fresh evidence or listed tests
+
+    @wip @mutation-fresh-budget @ID-MUT-182
+    Scenario: Clean baseline failure is not a mutation kill
+      Given one selected fresh mutant needs own or applicable listed baselines
+      When an unmutated required baseline fails
+      Then counted execution fails with its actual baseline problem
+      And that site has no invented killed, timeout or survived outcome
+      And later stages do not report a baseline as passed when it never ran
+      And already completed valid judgments remain visible in the current report
+
+    @wip @mutation-fresh-budget @ID-MUT-183
+    Scenario: Interruption reports partial work and cleans up owned commands
+      Given a count-two selection has one completed judgment and one active judgment
+      When the counted run is interrupted while the second judgment is active
+      Then the completed result remains visible
+      And the unfinished judgment is cancelled or undecided, not a killed or timed-out mutant
+      And no further command is admitted after the run abort
+      And all owned worker and preparation descendants and waiters finish before private input removal
+      And one shared five-second post-abort cleanup deadline applies without killing unrelated processes
+
+    @wip @mutation-fresh-budget @ID-MUT-184
+    Scenario: Machine and text output distinguish sampled work from population completeness
+      Given a counted selection omits some sites and may stop before all selected work completes
+      When its report is emitted
+      Then JSON is one object with budget, eligible, selected, executed and omitted counts
+      And it lists selected identities and actual outcomes with commit, seed and algorithm provenance
+      And judged and omitted subjects and real preparation or baseline stages are explicit
+      And cancelled, blocked and unattempted selected work has no fabricated mutation outcome
+      And a sampled pass is described as assurance about sampled judgments only
+      And count does not claim to bound discovery, baseline commands or total latency
+
+    @wip @mutation-fresh-budget @ID-MUT-185
+    Scenario: Sampled execution publishes no persistent complete proof
+      Given a multi-site committed function has no complete mutation results
+      When a count-one run completes successfully
+      Then no mutation snapshot, source annotation or persistent coverage cache is published
+      And complete mutation check still reports its missing or stale complete proof without running tests
+      And preexisting snapshot and annotated source bytes remain unchanged
+      And any genuinely valid complete cache remains a separate unchanged source of proof
+
+    @wip @mutation-fresh-budget @ID-MUT-186
+    Scenario: Only a genuinely site-free range is not applicable
+      Given a supported committed selection contains no eligible mutation sites
+      When counted execution completes its applicable admission and strict obligations
+      Then the report explicitly says not applicable with zero eligible and selected sites
+      And it does not run an avoidable mutation prepass
+      But absent cache, missing tests, unsupported input scope and failed coverage or baseline are not site-free success
