@@ -1790,7 +1790,7 @@ Feature: Mutation testing
         | missing its executable function's block inventory     |
         | supplied only by measurement of an unrelated Go module |
 
-    @wip @strict-go-coverage @ID-MUT-161
+    @strict-go-coverage @ID-MUT-161
     Scenario Outline: Coverage depends on source and measurement inputs independently of mutants
       Given fresh strict coverage evidence for an unchanged Go function
       And a <input> input was <change> without changing that function
