@@ -836,7 +836,7 @@ items:
     title: Prepare committed inputs and deterministic fresh mutation plans
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [mutation-command-ownership]
     kind: task
     why: >
