@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -277,8 +278,8 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 		t.Fatal(err)
 	}
 	name := "git"
-	if filepath.Ext(executable) != "" {
-		name += filepath.Ext(executable)
+	if runtime.GOOS == "windows" {
+		name = "git.exe"
 	}
 	wrapper := filepath.Join(wrapperDir, name)
 	contents, err := os.ReadFile(executable)
