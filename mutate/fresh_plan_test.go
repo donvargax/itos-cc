@@ -12,9 +12,16 @@ import (
 
 func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	repo := freshFixture(t, map[string]string{
-		"src/a.go":            "package a\nfunc Value(x int) int { return x + 1 }\n",
-		"testdata/fixture.go": "package fixture\nfunc TestValue(x int) int { return x - 1 }\n",
-		"itos-cc.yaml":        "mutation: {}\n",
+		"src/a.go":             "package a\nfunc Value(x int) int { return x + 1 }\n",
+		"src/a_test.go":        "package a\nfunc TestValue(x int) int { return x - 1 }\n",
+		"tests/test_sample.py": "def test_sample(x):\n    return x + 1\n",
+		"src/sample.test.ts":   "export function testSample(x: number): number { return x + 1 }\n",
+		"testdata/fixture.go":  "package fixture\nfunc Fixture(x int) int { return x + 1 }\n",
+		"vendor/dependency.go": "package dependency\nfunc Dependency(x int) int { return x + 1 }\n",
+		"build/generated.go":   "package generated\nfunc Generated(x int) int { return x + 1 }\n",
+		".hidden/hidden.go":    "package hidden\nfunc Hidden(x int) int { return x + 1 }\n",
+		"itos-cc.yaml":         "mutation: {}\n",
+		"support/setup.sh":     "#!/bin/sh\ntrue\n",
 	})
 	commit := freshGit(t, repo, "rev-parse", "HEAD")
 	writeFresh(t, filepath.Join(repo, "src/a.go"), "package a\nfunc Value(x int) int { return x * 1 }\n")
@@ -39,8 +46,8 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 		t.Fatal("expected static candidates")
 	}
 	for _, candidate := range plan.Eligible {
-		if candidate.Path == "src/untracked.go" || candidate.Path != "src/a.go" && candidate.Path != "testdata/fixture.go" {
-			t.Errorf("candidate escaped committed selected inputs: %+v", candidate)
+		if candidate.Path != "src/a.go" {
+			t.Errorf("non-production committed path became a mutation target: %+v", candidate)
 		}
 	}
 	frozenSource, err := os.ReadFile(filepath.Join(frozen, "src/a.go"))
@@ -53,6 +60,11 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(frozen, "src/untracked.go")); !os.IsNotExist(err) {
 		t.Fatalf("untracked source was exported: err=%v", err)
 	}
+	for _, rel := range []string{"src/a_test.go", "tests/test_sample.py", "src/sample.test.ts", "testdata/fixture.go", "vendor/dependency.go", "build/generated.go", "itos-cc.yaml", "support/setup.sh"} {
+		if _, err := os.Stat(filepath.Join(frozen, filepath.FromSlash(rel))); err != nil {
+			t.Errorf("committed execution/support input %q was not exported: %v", rel, err)
+		}
+	}
 	if _, err := os.Stat(cache); err != nil {
 		t.Fatalf("planner changed the raw mutation cache: %v", err)
 	}
@@ -61,6 +73,37 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	}
 	if _, err := os.Stat(frozen); !os.IsNotExist(err) {
 		t.Fatalf("private frozen tree was not cleaned up: err=%v", err)
+	}
+}
+
+func TestFreshPlanRootDirectorySelection(t *testing.T) {
+	repo := freshFixture(t, map[string]string{
+		"src/a.go":             "package a\nfunc A(x int) int { return x + 1 }\n",
+		"testdata/fixture.go":  "package fixture\nfunc Fixture(x int) int { return x + 1 }\n",
+		"vendor/dependency.go": "package dependency\nfunc Dependency(x int) int { return x + 1 }\n",
+	})
+	plan, err := PlanFresh(repo, []string{"."}, "", 20, "root-dot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer plan.Close()
+	if len(plan.Eligible) == 0 {
+		t.Fatal("root selection '.' must discover committed production sites")
+	}
+	for _, candidate := range plan.Eligible {
+		if candidate.Path != "src/a.go" {
+			t.Errorf("root directory selection included excluded target %q", candidate.Path)
+		}
+	}
+	// project.Discover intentionally takes an explicitly named file even
+	// inside a skipped directory; the mutation planner preserves that API.
+	explicit, err := PlanFresh(repo, []string{"vendor/dependency.go"}, "", 20, "explicit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer explicit.Close()
+	if len(explicit.Eligible) == 0 || explicit.Eligible[0].Path != "vendor/dependency.go" {
+		t.Fatalf("explicit tracked source file did not retain file-selection semantics: %v", identities(explicit.Eligible))
 	}
 }
 
@@ -94,16 +137,19 @@ func TestFreshPlanSelectsGloballyWithoutMutationCache(t *testing.T) {
 
 func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 	repo := freshFixture(t, map[string]string{
-		"a.go": "package a\nfunc Same(x int) int { return x + 1 }\nfunc Same(y int) int { return y + 2 }\n",
-		"b.go": "package b\nfunc Same(x int) int { return x + 1 }\n",
+		"a.go":                  "package a\nfunc Same(x int) int { return x + 1 }\nfunc Same(y int) int { return y + 2 }\n",
+		"b.go":                  "package b\nfunc Same(x int) int { return x + 1 }\n",
+		"src/python/mod.py":     "def duplicate(x):\n    return x + 1\n",
+		"src/typescript/mod.ts": "export function duplicate(x: number): number { return x + 1 }\n",
+		"src/kotlin/Mod.kt":     "fun duplicate(x: Int): Int = x + 1\n",
 	})
 	commit := freshGit(t, repo, "rev-parse", "HEAD")
-	first, err := PlanFresh(repo, []string{"b.go", "a.go"}, "", 100, "fixed text seed")
+	first, err := PlanFresh(repo, []string{"src/kotlin/Mod.kt", "src/typescript/mod.ts", "src/python/mod.py", "b.go", "a.go"}, "", 100, "fixed text seed")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first.Close()
-	second, err := PlanFresh(repo, []string{"a.go", "b.go"}, "", 100, "fixed text seed")
+	second, err := PlanFresh(repo, []string{"a.go", "b.go", "src/python/mod.py", "src/typescript/mod.ts", "src/kotlin/Mod.kt"}, "", 100, "fixed text seed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,6 +163,11 @@ func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 	}
 	if len(unitIDs) < 3 {
 		t.Fatalf("same-name units were not disambiguated: %v", unitIDs)
+	}
+	for _, want := range []string{"src/python/mod.py", "src/typescript/mod.ts", "src/kotlin/Mod.kt"} {
+		if !slices.ContainsFunc(first.Eligible, func(c FreshCandidate) bool { return c.Path == want }) {
+			t.Errorf("supported language source %q has no static candidate", want)
+		}
 	}
 	defaultSeed, err := PlanFresh(repo, nil, "", 100, "")
 	if err != nil {
