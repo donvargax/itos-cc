@@ -326,6 +326,92 @@ func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 	}
 }
 
+// @ID-MUT-161
+func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T) {
+	cases := []struct {
+		name string
+		edit func(t *testing.T, dir string)
+		want string
+	}{
+		{name: "added source", want: "extra.go", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "extra.go"), "package main\n\nvar Extra = 1\n")
+		}},
+		{name: "changed module source", want: "other.go", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "other.go"), "package main\n\nvar Other = 2\n")
+		}},
+		{name: "removed module source", want: "other.go", edit: func(t *testing.T, dir string) {
+			if err := os.Remove(filepath.Join(dir, "other.go")); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "added module test", want: "other_test.go", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "other_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestOther(t *testing.T) {}\n")
+		}},
+		{name: "module configuration", want: "go.mod", edit: func(t *testing.T, dir string) {
+			path := filepath.Join(dir, "go.mod")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, path, string(data)+"\n// coverage input changed\n")
+		}},
+		{name: "module checksum", want: "go.sum", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "go.sum"), "example.com/unused v1.0.0 h1:checksum\n")
+		}},
+		{name: "project configuration", want: "itos-cc.yaml", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "itos-cc.yaml"), strictFingerprintConfig+"# changed\n")
+		}},
+		{name: "support file", want: "support:support/dep.txt", edit: func(t *testing.T, dir string) {
+			writeFile(t, filepath.Join(dir, "support", "dep.txt"), "updated support input\n")
+		}},
+		{name: "Go build environment", want: "@go-env", edit: func(t *testing.T, _ string) {
+			t.Setenv("GOFLAGS", "-buildvcs=false")
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := moduleRepo(t, map[string]string{
+				"go.mod":          "module example.com/strictfingerprints\n\ngo 1.22\n",
+				"main.go":         "package main\n\nfunc Value(n int) int { return n + 1 }\nfunc main() {}\n",
+				"other.go":        "package main\n\nvar Other = 1\n",
+				"main_test.go":    "package main\n\nimport \"testing\"\n\nfunc TestValue(t *testing.T) { if Value(1) != 2 { t.Fatal(\"Value\") } }\n",
+				"itos-cc.yaml":    strictFingerprintConfig,
+				"list.sh":         "#!/bin/sh\nprintf 'TestValue\\tmain_test.go\\n'\n",
+				"support/dep.txt": "initial support input\n",
+			})
+			if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 0 {
+				t.Fatalf("setup strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+			}
+			tc.edit(t, dir)
+			check := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+			var stale map[string]any
+			for _, problem := range check.json(t).Problems {
+				if problem["rule"] == "mutation.coverage-stale" && problem["function"] == "example.com/strictfingerprints#Value" {
+					stale = problem
+					break
+				}
+			}
+			if stale == nil || !strings.Contains(stale["message"].(string), tc.want) {
+				t.Errorf("%s did not stale evidence with input %q: %v", tc.name, tc.want, check.json(t).Problems)
+			}
+			if check.code != 1 {
+				t.Errorf("%s strict check exit %d, want 1", tc.name, check.code)
+			}
+		})
+	}
+}
+
+const strictFingerprintConfig = `mutation:
+  tests:
+    list: sh list.sh
+    run: go test ./... -run '{pattern}'
+    ids_pattern: '^Test({ids})$'
+    join:
+      each: '{id}'
+      sep: '|'
+    support: ['support/**']
+`
+
 // @ID-MUT-160
 func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 	dir := moduleRepo(t, map[string]string{
