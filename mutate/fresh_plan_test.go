@@ -1,10 +1,8 @@
 package mutate
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,13 +12,6 @@ import (
 	"strings"
 	"testing"
 )
-
-func TestMain(m *testing.M) {
-	if os.Getenv("ITOS_FRESH_PLAN_GIT_WRAPPER") == "1" {
-		freshPlanGitWrapperMain()
-	}
-	os.Exit(m.Run())
-}
 
 func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	repo := freshFixture(t, map[string]string{
@@ -258,6 +249,9 @@ func TestFreshPlanSinceAndPathNarrowingUseCommittedHead(t *testing.T) {
 }
 
 func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the deterministic Git wrapper uses the Unix shell; planner remains covered on Windows")
+	}
 	repo := freshFixture(t, map[string]string{
 		"a.go": "package a\nfunc A(x int) int { return x + 1 }\n",
 		"b.go": "package b\nfunc B(x int) int { return x + 2 }\n",
@@ -273,19 +267,19 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	head := freshGit(t, repo, "rev-parse", "HEAD")
 
 	wrapperDir := t.TempDir()
-	executable, err := os.Executable()
-	if err != nil {
-		t.Fatal(err)
-	}
-	name := "git"
-	if runtime.GOOS == "windows" {
-		name = "git.exe"
-	}
-	wrapper := filepath.Join(wrapperDir, name)
-	contents, err := os.ReadFile(executable)
-	if err != nil {
-		t.Fatal(err)
-	}
+	wrapper := filepath.Join(wrapperDir, "git")
+	contents := []byte("#!/bin/sh\n" +
+		"\"$ITOS_FRESH_PLAN_REAL_GIT\" \"$@\"\n" +
+		"status=$?\n" +
+		"if [ \"$status\" -eq 0 ]; then\n" +
+		"  for arg do\n" +
+		"    if [ \"$arg\" = \"${ITOS_FRESH_PLAN_MOVE_REF}^{commit}\" ]; then\n" +
+		"      \"$ITOS_FRESH_PLAN_REAL_GIT\" update-ref \"$ITOS_FRESH_PLAN_MOVE_REF\" \"$ITOS_FRESH_PLAN_MOVE_TO\" || exit 125\n" +
+		"      break\n" +
+		"    fi\n" +
+		"  done\n" +
+		"fi\n" +
+		"exit \"$status\"\n")
 	if err := os.WriteFile(wrapper, contents, 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +287,6 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("ITOS_FRESH_PLAN_GIT_WRAPPER", "1")
 	t.Setenv("ITOS_FRESH_PLAN_REAL_GIT", realGit)
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_REF", "refs/heads/since-base")
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
@@ -304,6 +297,9 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer plan.Close()
+	if got := freshGit(t, repo, "rev-parse", "refs/heads/since-base"); got != head {
+		t.Fatalf("controlled Git wrapper did not move the ref after resolution: got %s want %s", got, head)
+	}
 	paths := map[string]bool{}
 	for _, candidate := range plan.Eligible {
 		paths[candidate.Path] = true
@@ -311,46 +307,6 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if !paths["a.go"] || !paths["b.go"] {
 		t.Fatalf("--since inventory followed the moved ref instead of its resolved base: candidates=%v", paths)
 	}
-}
-
-func freshPlanGitWrapperMain() {
-	realGit := os.Getenv("ITOS_FRESH_PLAN_REAL_GIT")
-	args := os.Args[1:]
-	cmd := exec.Command(realGit, args...)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err == nil && resolvesMovedRef(args) {
-		move := exec.Command(realGit, "update-ref", os.Getenv("ITOS_FRESH_PLAN_MOVE_REF"), os.Getenv("ITOS_FRESH_PLAN_MOVE_TO"))
-		if out, moveErr := move.CombinedOutput(); moveErr != nil {
-			_, _ = os.Stderr.Write(out)
-			os.Exit(125)
-		}
-	}
-	_, _ = os.Stdout.Write(stdout.Bytes())
-	_, _ = os.Stderr.Write(stderr.Bytes())
-	if err == nil {
-		os.Exit(0)
-	}
-	if exit, ok := err.(*exec.ExitError); ok {
-		os.Exit(exit.ExitCode())
-	}
-	_, _ = fmt.Fprintln(os.Stderr, err)
-	os.Exit(127)
-}
-
-func resolvesMovedRef(args []string) bool {
-	if len(args) == 0 || args[0] != "rev-parse" {
-		return false
-	}
-	want := os.Getenv("ITOS_FRESH_PLAN_MOVE_REF") + "^{commit}"
-	for _, arg := range args {
-		if arg == want {
-			return true
-		}
-	}
-	return false
 }
 
 func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
