@@ -32,6 +32,8 @@ type FreshPlan struct {
 	Root       string
 	FrozenRoot string
 	Commit     string
+	SinceRef   string // caller's --since spelling
+	SinceBase  string // once-resolved base commit used for every range diff
 	Seed       string
 	Algorithm  string
 	Eligible   []FreshCandidate
@@ -119,8 +121,9 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 		return nil, err
 	}
 	var changed map[string][]lineRange
+	var sinceBase string
 	if since != "" {
-		changed, err = changedAt(ctx, root, since, head)
+		changed, sinceBase, err = changedAt(ctx, root, since, head)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +143,8 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	if err != nil {
 		return nil, err
 	}
-	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, Seed: seed, Algorithm: FreshPlanVersion}
+	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: since, SinceBase: sinceBase,
+		Seed: seed, Algorithm: FreshPlanVersion}
 	cleanup := true
 	defer func() {
 		if cleanup {
@@ -532,17 +536,22 @@ func makePrivateDirs(root, target string) error {
 
 type lineRange struct{ start, end int }
 
-func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, error) {
+func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, string, error) {
 	if strings.HasPrefix(ref, "-") {
-		return nil, fmt.Errorf("invalid --since ref %q", ref)
+		return nil, "", fmt.Errorf("invalid --since ref %q", ref)
 	}
-	if _, err := gitAt(ctx, root, "rev-parse", "--verify", "--quiet", ref+"^{commit}"); err != nil {
-		return nil, fmt.Errorf("--since %s is not a commit", ref)
+	baseOut, err := gitAt(ctx, root, "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	if err != nil {
+		return nil, "", fmt.Errorf("--since %s is not a commit: %w", ref, err)
 	}
-	args := []string{"-c", "core.quotePath=false", "diff", "--name-status", "-z", "-M", "--no-ext-diff", "--no-textconv", ref + "..." + head}
+	base := strings.TrimSpace(string(baseOut))
+	if base == "" {
+		return nil, "", fmt.Errorf("--since %s resolved to an empty commit id", ref)
+	}
+	args := []string{"-c", "core.quotePath=false", "diff", "--name-status", "-z", "-M", "--no-ext-diff", "--no-textconv", base + "..." + head}
 	out, err := gitAt(ctx, root, args...)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	fields := strings.Split(strings.TrimSuffix(string(out), "\x00"), "\x00")
 	changed := make(map[string][]lineRange)
@@ -555,13 +564,13 @@ func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRa
 		var name, oldName string
 		if strings.HasPrefix(status, "R") || strings.HasPrefix(status, "C") {
 			if i+1 >= len(fields) {
-				return nil, errors.New("malformed git name-status rename record")
+				return nil, "", errors.New("malformed git name-status rename record")
 			}
 			oldName, name = fields[i], fields[i+1]
 			i += 2
 		} else {
 			if i >= len(fields) {
-				return nil, errors.New("malformed git name-status record")
+				return nil, "", errors.New("malformed git name-status record")
 			}
 			name = fields[i]
 			i++
@@ -572,18 +581,18 @@ func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRa
 		if lang.Detect(name) == nil {
 			continue
 		}
-		diffArgs := []string{"--literal-pathspecs", "-c", "core.quotePath=false", "diff", "-M", "--unified=0", "--no-color", "--no-ext-diff", "--no-textconv", ref + "..." + head, "--"}
+		diffArgs := []string{"--literal-pathspecs", "-c", "core.quotePath=false", "diff", "-M", "--unified=0", "--no-color", "--no-ext-diff", "--no-textconv", base + "..." + head, "--"}
 		if oldName != "" {
 			diffArgs = append(diffArgs, oldName)
 		}
 		diffArgs = append(diffArgs, name)
 		patch, err := gitAt(ctx, root, diffArgs...)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		changed[name] = hunkRanges(string(patch))
 	}
-	return changed, nil
+	return changed, base, nil
 }
 
 func hunkRanges(patch string) []lineRange {

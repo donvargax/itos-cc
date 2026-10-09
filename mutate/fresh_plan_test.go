@@ -297,6 +297,11 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if got := freshGit(t, repo, "rev-parse", "refs/heads/since-base"); got != head {
 		t.Fatalf("controlled Git wrapper did not move the ref after resolution: got %s want %s", got, head)
 	}
+	// New provenance-capability assertion, not part of the old-implementation
+	// red: the resolved base must be available to later preparation/reporting.
+	if plan.SinceRef != "refs/heads/since-base" || plan.SinceBase != base {
+		t.Fatalf("since provenance = ref %q base %q, want ref and pinned commit %q", plan.SinceRef, plan.SinceBase, base)
+	}
 	paths := map[string]bool{}
 	for _, candidate := range plan.Eligible {
 		paths[candidate.Path] = true
