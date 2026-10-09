@@ -859,7 +859,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-11]
     kind: task
     why: >
       GitHub #27 needs reliable preparation evidence before any selected mutant trial. Add an
@@ -880,3 +880,4 @@ items:
       trials; focused checks locally, broad existing fixture suites in CI. Clearly label new
       internal capability tests, not original-product red evidence. Linux ownership is a
       prerequisite and Windows mode integration remains #29.
+    refs: ["#27"]
