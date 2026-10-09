@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -380,6 +381,81 @@ func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+// @ID-MUT-162
+func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *testing.T) {
+	dir := moduleRepo(t, map[string]string{
+		"go.mod":       "module example.com/strictpartial\n\ngo 1.22\n",
+		"main.go":      "package main\n\nfunc Edited(n int) bool { return n > 0 }\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n",
+		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || Edited(0) || Stable(1) != 3 || Stable(0) != 4 { t.Fatal(\"functions\") } }\n",
+	})
+	if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 0 {
+		t.Fatalf("initial strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	gitIn(t, dir, "branch", "base")
+	path := filepath.Join(dir, ".metrics", "mutate", "main.go.json")
+	readUnits := func() []map[string]any {
+		t.Helper()
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var snapshot struct {
+			Units []map[string]any `json:"units"`
+		}
+		if err := json.Unmarshal(data, &snapshot); err != nil {
+			t.Fatal(err)
+		}
+		return snapshot.Units
+	}
+	before := readUnits()
+	var stableBefore any
+	for _, unit := range before {
+		if unit["name"] == "Stable" {
+			stableBefore = unit["go_coverage"]
+		}
+	}
+	if stableBefore == nil {
+		t.Fatal("Stable has no initial independent inventory")
+	}
+	writeFile(t, filepath.Join(dir, "main.go"), "package main\n\nfunc Edited(n int) bool { return n >= 0 }\n\n// Stable moves while its body stays the same.\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n")
+	writeFile(t, filepath.Join(dir, "main_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || !Edited(0) || Stable(1) != 3 || Stable(0) != 4 { t.Fatal(\"functions\") } }\n")
+	gitIn(t, dir, "add", "main.go", "main_test.go")
+	gitIn(t, dir, "commit", "-qm", "change selected function")
+	partial := mutateCovered(t, "--fail-uncovered", "--since", "base", "--json", "main.go")
+	if partial.code != 0 {
+		t.Fatalf("partial strict run: exit %d\n%s%s", partial.code, partial.stdout, partial.stderr)
+	}
+	var stableAfter any
+	for _, unit := range readUnits() {
+		if unit["name"] == "Stable" {
+			stableAfter = unit["go_coverage"]
+		}
+	}
+	if !reflect.DeepEqual(stableBefore, stableAfter) {
+		t.Errorf("unjudged Stable evidence was refreshed: before=%v after=%v", stableBefore, stableAfter)
+	}
+	full := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
+	if full.code != 0 {
+		t.Fatalf("full run after movement: exit %d\n%s%s", full.code, full.stdout, full.stderr)
+	}
+	var initHashes = map[string]bool{}
+	var initUnits int
+	for _, unit := range readUnits() {
+		if unit["name"] != "init" {
+			continue
+		}
+		initUnits++
+		evidence := unit["go_coverage"].(map[string]any)
+		if evidence["function_hash"] != unit["hash"] {
+			t.Errorf("repeated init evidence hash %v does not pair to unit hash %v", evidence["function_hash"], unit["hash"])
+		}
+		initHashes[unit["hash"].(string)] = true
+	}
+	if initUnits != 2 || len(initHashes) != 2 {
+		t.Errorf("repeated init inventories: %d units, %d identities; want two separately paired entries", initUnits, len(initHashes))
 	}
 }
 
