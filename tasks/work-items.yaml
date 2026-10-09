@@ -817,3 +817,20 @@ items:
       CLI/seed/committed-input/partial-publication decisions and small slices before implementation;
       no full mutation prepass or #26 scheduler scope.
     refs: ["#27"]
+  - id: mutation-windows-bounded
+    title: Native Windows integration and installation verification for fresh bounded mutation
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutation-fresh-budget, mutation-windows-ownership]
+    kind: idea
+    why: >
+      GitHub #29 is the separate Windows-support issue requested by the person. After Linux fresh
+      bounded execution and Windows owned-process guarantees land, integrate the bounded mode on
+      Windows and verify real count/seed/partial-results behavior with small native fixtures. Check
+      the distributed executable beyond version-only smoke and document/verify source cgo/compiler
+      requirements versus the prebuilt ZIP path. Current Go-only source-install report must be
+      diagnosed from actual environment, not treated as missing Job ownership. Native Windows work
+      is reserved for a Windows machine; no Linux cross-build support claim or unsafe fallback. Full
+      trial matrices belong in CI, local mutation trials remain sparse.
+    refs: ["#29"]
