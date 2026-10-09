@@ -32,6 +32,7 @@ var skipDirs = map[string]bool{
 type worker struct {
 	dir    string
 	copies map[string]string // real root → copy
+	runner commandRunner
 }
 
 // copyOf returns the worker's copy of root, creating it on first use.
@@ -147,21 +148,7 @@ func (w *worker) run(c Command, timeout time.Duration) (result, error) {
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
-	killGroup(cmd)
-	start := time.Now()
-	err = cmd.Run()
-	r := result{elapsed: time.Since(start), output: out.String(), exitCode: -1}
-	switch {
-	case ctx.Err() == context.DeadlineExceeded:
-		r.timedOut = true
-	case err == nil:
-		r.passed, r.exitCode = true, 0
-	case isExit(err):
-		r.exitCode = err.(*exec.ExitError).ExitCode()
-	default:
-		return r, err
-	}
-	return r, nil
+	return w.runner.run(ctx, cmd, &out)
 }
 
 // withMutant writes src to the worker's copy of path, runs fn, and restores
