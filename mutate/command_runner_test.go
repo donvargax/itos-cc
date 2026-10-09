@@ -43,8 +43,23 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	}
 	copyRoot := w.copies[root]
 	wantDir := filepath.Join(copyRoot, "pkg")
+	wantDir, err = filepath.EvalSymlinks(wantDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	wantPath := strings.Join([]string{filepath.Join(copyRoot, "bin"), "prior-path"}, string(os.PathListSeparator))
-	for _, want := range []string{"cwd=" + wantDir, "custom=inherited-value", "path=" + wantPath, "stderr-marker"} {
+	gotDir := ""
+	for _, line := range strings.Split(r.output, "\n") {
+		if strings.HasPrefix(line, "cwd=") {
+			gotDir = strings.TrimPrefix(line, "cwd=")
+			break
+		}
+	}
+	gotDir, err = filepath.EvalSymlinks(gotDir)
+	if err != nil || gotDir != wantDir {
+		t.Errorf("command cwd = %q, want resolved worker copy directory %q (resolve error %v)", gotDir, wantDir, err)
+	}
+	for _, want := range []string{"custom=inherited-value", "path=" + wantPath, "stderr-marker"} {
 		if !strings.Contains(r.output, want) {
 			t.Errorf("combined output %q does not contain %q", r.output, want)
 		}
