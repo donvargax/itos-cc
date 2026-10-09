@@ -779,6 +779,7 @@ items:
       equivalence with controlled fixture helpers on Linux, while shared code remains
       Windows-compatible. Later T-10 supplies explicit testability capabilities, and platform-scoped
       ownership slices implement safety behavior against those seams.
+    refs: ["#26"]
   - id: T-10
     title: Expose internal context and lifecycle seams for ownership tests
     phase: 1
