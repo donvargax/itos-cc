@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - mutation-fresh-budget
+  - mutation-counted-run
   - mutation-windows-ownership
   - mutation-fail-fast
 items:
@@ -789,14 +789,15 @@ items:
       The person explicitly reserved Windows ownership implementation and behavioral verification
       for a Windows machine. This Linux checkout should finish shared prerequisites and Linux
       ownership only; resume on Windows when the person is ready.
-  - id: mutation-fresh-budget
+  - id: mutation-counted-run
     title: Fresh bounded mutation trials without a prior complete cache
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-command-ownership]
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-fresh-budget.
       The person prioritized GitHub #27 to completion over #26. Add opt-in global fresh mutant-trial
       budget and reproducible selection, including changed code with missing or stale results;
       preserve unit/listed/coverage semantics and fail on provider or measurement errors. Truthful
@@ -813,7 +814,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [mutation-fresh-budget, mutation-windows-ownership]
+    depends_on: [mutation-counted-run, mutation-windows-ownership]
     kind: idea
     why: >
       GitHub #29 is the separate Windows-support issue requested by the person. After Linux fresh
