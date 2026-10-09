@@ -24,11 +24,19 @@ func linuxOutcomePrecedence() bool { return true }
 
 // Linux supervision owns ordinary descendants in the command's process group.
 // Commands that daemonize or escape their process group/session are unsupported.
-// cleanupBudget can be shared by command scopes so one abort has one cleanup
-// deadline, rather than granting every worker a fresh interval.
+// cleanupBudget is a run-abort-only deadline that callers may share across
+// command scopes. Normal completion and mutant-local timeouts use a local
+// cleanup budget and must not activate this shared run-abort deadline.
 type cleanupBudget struct {
 	mu       sync.Mutex
 	deadline time.Time
+}
+
+func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupBudget {
+	if shared != nil && ctx.Err() != nil && !errors.Is(context.Cause(ctx), errMutationTimeout) {
+		return shared
+	}
+	return &cleanupBudget{}
 }
 
 func (b *cleanupBudget) until() time.Time {
@@ -92,11 +100,11 @@ func runLinuxOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 	killGroup(cmd)
 	cmd.WaitDelay = 0
 
-	stopReader := make(chan struct{})
+	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
 		captures[i].done = make(chan outputResult, 1)
 		go func(capture *ownedOutputCapture) {
-			data, err := readOwnedCommandOutput(capture.reader, stopReader, budget)
+			data, err := readOwnedCommandOutput(capture.reader, stopReader)
 			capture.done <- outputResult{data: data, err: err}
 		}(&captures[i])
 	}
@@ -105,7 +113,7 @@ func runLinuxOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 		for _, capture := range captures {
 			_ = capture.writer.Close()
 		}
-		close(stopReader)
+		stopReader.activate((&cleanupBudget{}).until())
 		for _, capture := range captures {
 			read := <-capture.done
 			_ = capture.reader.Close()
@@ -120,9 +128,9 @@ func runLinuxOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 	}
 	waitErr := cmd.Wait()
 
+	deadline := cleanupBudgetForScope(ctx, budget).until()
 	cleanupErr := killOwnedProcessGroup(cmd.Process.Pid)
-	close(stopReader)
-	deadline := budget.until()
+	stopReader.activate(deadline)
 	if err := waitOwnedProcessGroup(cmd.Process.Pid, deadline); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
@@ -205,6 +213,16 @@ type outputResult struct {
 	err  error
 }
 
+type cleanupSignal struct {
+	done     chan struct{}
+	deadline time.Time
+}
+
+func (signal *cleanupSignal) activate(deadline time.Time) {
+	signal.deadline = deadline
+	close(signal.done)
+}
+
 type ownedOutputCapture struct {
 	reader *os.File
 	writer *os.File
@@ -223,7 +241,7 @@ func killOwnedProcessGroup(pgid int) error {
 	return nil
 }
 
-func readOwnedCommandOutput(reader *os.File, stop <-chan struct{}, budget *cleanupBudget) ([]byte, error) {
+func readOwnedCommandOutput(reader *os.File, stop *cleanupSignal) ([]byte, error) {
 	var output bytes.Buffer
 	var cleanupDeadline time.Time
 	buffer := make([]byte, 32*1024)
@@ -240,8 +258,8 @@ func readOwnedCommandOutput(reader *os.File, stop <-chan struct{}, budget *clean
 		}
 		if cleanupDeadline.IsZero() {
 			select {
-			case <-stop:
-				cleanupDeadline = budget.until()
+			case <-stop.done:
+				cleanupDeadline = stop.deadline
 			default:
 			}
 		}

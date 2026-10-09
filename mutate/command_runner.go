@@ -14,7 +14,7 @@ var errMutationTimeout = errors.New("mutation command timed out")
 // Its zero value selects the platform's default command ownership behavior.
 type commandRunner struct {
 	lifecycle     commandLifecycle
-	cleanupBudget *cleanupBudget
+	cleanupBudget *cleanupBudget // Shared run-abort budget; per-command cleanup never activates it.
 }
 
 // commandLifecycle can replace the start/wait boundary for one worker runner.
