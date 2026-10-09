@@ -853,3 +853,29 @@ items:
       claims. Tiny committed Git fixtures and raw snapshots suffice; run zero local mutant trials
       and no broad mutation-fixture suites. Windows public integration stays in #29. Planning writes
       no snapshots, source annotations or persistent coverage artifacts.
+  - id: T-12
+    title: Expose supervised and fail-closed measurement preparation for bounded execution
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      GitHub #27 needs reliable preparation evidence before any selected mutant trial. Add an
+      internal opt-in preparation path usable by the bounded runner, preserving complete-run
+      defaults. Route list, coverage, per-test coverage/conversion and required tool commands
+      through the reusable owned executor with parent cancellation; avoid an import cycle by using a
+      neutral boundary or instance-local injected execution rather than importing mutate into
+      coverage. Capture every actual command success or failure, report admission and measurement
+      stages explicitly, and never infer command success merely from a report existing or
+      Report.Missing being empty. Missing or malformed reports, per-test conversion errors, provider
+      failures, baseline failures and unsupported scope must fail this opt-in path; keep legacy
+      soft-error behavior unchanged for existing complete commands. Measure required own and
+      applicable listed reach from frozen committed inputs; no preexisting local coverage map is
+      required. A reusable per-scenario coverage cache is separate future work, and count N does not
+      bound list, coverage or baseline command costs. No persistent sampled coverage publication,
+      public count flag, mutant scheduler, fail-fast scheduling or Windows Job implementation in
+      this task. Tests use small controlled preparation helper commands and zero local mutant
+      trials; focused checks locally, broad existing fixture suites in CI. Clearly label new
+      internal capability tests, not original-product red evidence. Linux ownership is a
+      prerequisite and Windows mode integration remains #29.
