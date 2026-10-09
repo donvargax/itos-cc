@@ -784,7 +784,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-9]
     kind: task
     why: >
       After T-9, add the small explicit testability capabilities approved as option 2 of q-35: an
@@ -804,3 +804,4 @@ items:
       scheduler/snapshot/preparation integration. Against this prerequisite the Linux and Windows
       slices first commit compiling behavior tests and record real failures before implementing
       their guarantees.
+    refs: ["#26"]
