@@ -811,7 +811,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-10]
+    depends_on: [mutation-command-ownership]
     kind: slice
     why: >
       The person split issue #26 by platform: implement the shared testability prerequisites and
