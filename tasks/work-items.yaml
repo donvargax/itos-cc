@@ -793,3 +793,22 @@ items:
       The person explicitly reserved Windows ownership implementation and behavioral verification
       for a Windows machine. This Linux checkout should finish shared prerequisites and Linux
       ownership only; resume on Windows when the person is ready.
+  - id: mutation-fresh-budget
+    title: Fresh bounded mutation trials without a prior complete cache
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutation-command-ownership]
+    kind: idea
+    why: >
+      The person prioritized GitHub #27 to completion over #26. Add opt-in global fresh mutant-trial
+      budget and reproducible selection, including changed code with missing or stale results;
+      preserve unit/listed/coverage semantics and fail on provider or measurement errors. Truthful
+      sampled/incomplete reporting must not become complete-cache proof. Shared T-9/T-10 are done;
+      Linux owned cleanup remains a prerequisite. The person split Windows native support into #29,
+      implemented on a Windows machine later; no unsafe or unverified Windows new-mode path. Local
+      mutation execution must be sparse: no runs over this repository, minimal bounded fixture
+      trials only, broader trial matrices in CI. Specify
+      CLI/seed/committed-input/partial-publication decisions and small slices before implementation;
+      no full mutation prepass or #26 scheduler scope.
+    refs: ["#27"]
