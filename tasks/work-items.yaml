@@ -164,14 +164,15 @@ items:
     status: done
     depends_on: []
     kind: slice
-  - id: mutate-windows-kill-tree
-    title: A timed-out mutant on Windows kills the processes its tests started
+  - id: mutation-command-ownership
+    title: Mutation commands clean up their owned process trees
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutate-windows-kill-tree.
       On Windows killGroup only bounds WaitDelay: the timeout kills the test command (go test, npx,
       gradle) but not the processes it started, such as go test's test binary. A mutant that turns a
       loop infinite then keeps a core busy until the test binary's own timeout (10m for Go), slowing
