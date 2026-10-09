@@ -171,7 +171,7 @@ items:
     title: Linux mutation commands clean up their owned process trees
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-10]
     kind: slice
     why: >
