@@ -283,10 +283,7 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if err := os.WriteFile(wrapper, contents, 0700); err != nil {
 		t.Fatal(err)
 	}
-	realGit, err := exec.LookPath("git")
-	if err != nil {
-		t.Fatal(err)
-	}
+	realGit := freshRealGit(t)
 	t.Setenv("ITOS_FRESH_PLAN_REAL_GIT", realGit)
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_REF", "refs/heads/since-base")
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
@@ -307,6 +304,36 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	if !paths["a.go"] || !paths["b.go"] {
 		t.Fatalf("--since inventory followed the moved ref instead of its resolved base: candidates=%v", paths)
 	}
+}
+
+func freshRealGit(t *testing.T) string {
+	t.Helper()
+	first, err := exec.LookPath("git")
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, _ = filepath.EvalSymlinks(first)
+	dirs := filepath.SplitList(os.Getenv("PATH"))
+	for i := len(dirs) - 1; i >= 0; i-- {
+		candidate := filepath.Join(dirs[i], "git")
+		if runtime.GOOS == "windows" {
+			candidate += ".exe"
+		}
+		candidate, err = filepath.Abs(candidate)
+		if err != nil {
+			continue
+		}
+		resolved, resolveErr := filepath.EvalSymlinks(candidate)
+		if resolveErr != nil || resolved == first {
+			continue
+		}
+		info, statErr := os.Stat(resolved)
+		if statErr == nil && info.Mode().IsRegular() && (runtime.GOOS == "windows" || info.Mode().Perm()&0111 != 0) {
+			return resolved
+		}
+	}
+	t.Fatalf("could not find a real git binary separate from %s", first)
+	return ""
 }
 
 func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
