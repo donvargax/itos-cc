@@ -101,6 +101,7 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 	}
 }
 
+// @ID-MUT-162
 func TestUnjudgedFunctionsKeepTheirIndependentCoverageEvidence(t *testing.T) {
 	f := parse(t, "main.go", "package main\n\nfunc a(x int) int { return x > 0 }\nfunc b(x int) int { return x < 1 }\n")
 	defer f.Close()
