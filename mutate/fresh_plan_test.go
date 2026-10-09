@@ -289,7 +289,7 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
 	t.Setenv("PATH", wrapperDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	plan, err := PlanFresh(repo, nil, "since-base", 50, "pinned-base")
+	plan, err := PlanFresh(repo, nil, "refs/heads/since-base", 50, "pinned-base")
 	if err != nil {
 		t.Fatal(err)
 	}
