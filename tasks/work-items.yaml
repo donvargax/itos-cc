@@ -829,3 +829,27 @@ items:
       The person requested separate Windows issue #29 and reserved native Windows work for a Windows
       machine. Finish Linux issue #27 here; resume this idea only when native Windows work is
       authorized and available.
+  - id: T-11
+    title: Prepare committed inputs and deterministic fresh mutation plans
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      GitHub #27 requires fresh bounded selection without a mutation-result cache or full mutation
+      prepass. Introduce an internal planning capability: resolve HEAD once for one repository,
+      inventory selected committed paths/functions from frozen version-controlled inputs, and export
+      them to private temporary storage in this checkout while preserving logical root/path
+      provenance. Do not execute working-tree or untracked source/test/config edits as committed
+      proof; declare external dependency/tool/environment boundaries rather than claim hermetic
+      builds. Existing complete run and cached sample behavior remain unchanged. Static candidate
+      discovery must not use prior mutation outcomes for admission. Reuse SHA-256 ranking with TEXT
+      seed and HEAD default, stable root-relative slash paths and function/site identity that
+      distinguishes same-name units, deterministic tie-breaking and an algorithm version. Select
+      globally at most N sites before scheduling, with no per-file or worker budgets or mutation
+      execution. Later preparation resolves uncovered status without redrawing selection. This task
+      adds internal capabilities only, not a public count flag or original-product behavioral-red
+      claims. Tiny committed Git fixtures and raw snapshots suffice; run zero local mutant trials
+      and no broad mutation-fixture suites. Windows public integration stays in #29. Planning writes
+      no snapshots, source annotations or persistent coverage artifacts.
