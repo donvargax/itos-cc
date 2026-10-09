@@ -101,6 +101,22 @@ func TestFunctionsNotJudgedKeepTheirRecord(t *testing.T) {
 	}
 }
 
+func TestUnjudgedFunctionsKeepTheirIndependentCoverageEvidence(t *testing.T) {
+	f := parse(t, "main.go", "package main\n\nfunc a(x int) int { return x > 0 }\nfunc b(x int) int { return x < 1 }\n")
+	defer f.Close()
+	sites := Sites(f)
+	previous := build(f, "main.go", nil, sites, byUnit(f, map[string]string{"a": Killed, "b": Killed}))
+	old := &GoCoverageEvidence{Version: goCoverageEvidenceVersion, File: "main.go", Function: "main#b", Hash: "old-hash", Producer: "old producer", Inputs: map[string]string{"main.go": "old"}, Complete: true,
+		Blocks: []GoCoverageBlock{{Span: "4.20,4.30", Line: 4, Column: 20, Weight: 1, Covered: true}}}
+	previous.Units[1].Coverage = old
+	built := build(f, "main.go", nil, sites, byUnit(f, map[string]string{"a": Killed, "b": Killed}))
+	built.Units[1].Coverage = &GoCoverageEvidence{Version: goCoverageEvidenceVersion, File: "main.go", Function: "main#b", Hash: "new-hash", Producer: "new producer", Inputs: map[string]string{"main.go": "new"}, Complete: true}
+	units := keepUnjudged(built.Units, map[int]bool{0: true}, &previous, true)
+	if len(units) != 2 || !reflect.DeepEqual(units[1].Coverage, old) {
+		t.Errorf("unjudged coverage evidence %+v, want preserved original %+v", units[1].Coverage, old)
+	}
+}
+
 // byUnit gives each site of f the outcome of its function's name, and
 // skipped to those outcome does not name.
 func byUnit(f *lang.File, outcome map[string]string) []string {
