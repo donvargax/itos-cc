@@ -37,6 +37,18 @@ var buildManifests = []string{
 // source: it has a build output name, and it sits beside a manifest of a
 // tool that writes there, or git ignores it.
 func IsBuildOutput(dir string) bool {
+	return IsBuildOutputWithIgnore(dir, func(dir string) bool {
+		cmd := exec.Command("git", "check-ignore", "-q", dir)
+		cmd.Dir = filepath.Dir(dir)
+		return cmd.Run() == nil
+	})
+}
+
+// IsBuildOutputWithIgnore reports whether dir is a known build directory
+// with a nearby build manifest or whether ignored says it is ignored. The
+// callback lets committed-input callers evaluate ignore rules against a
+// frozen tree instead of the live checkout.
+func IsBuildOutputWithIgnore(dir string, ignored func(string) bool) bool {
 	if !buildDirs[filepath.Base(dir)] {
 		return false
 	}
@@ -45,9 +57,7 @@ func IsBuildOutput(dir string) bool {
 			return true
 		}
 	}
-	cmd := exec.Command("git", "check-ignore", "-q", dir)
-	cmd.Dir = filepath.Dir(dir)
-	return cmd.Run() == nil
+	return ignored != nil && ignored(dir)
 }
 
 // Files are the supported source files under some roots, split into
@@ -61,6 +71,16 @@ type Files struct {
 // supported language. A root that names a file is taken even if it would be
 // skipped while walking.
 func Discover(roots []string) (Files, error) {
+	return DiscoverWithBuildOutput(roots, IsBuildOutput)
+}
+
+// DiscoverWithBuildOutput is Discover with an explicit build-output
+// classifier. All other source/test, hidden-directory, fixture and dependency
+// rules remain the same.
+func DiscoverWithBuildOutput(roots []string, isBuildOutput func(string) bool) (Files, error) {
+	if isBuildOutput == nil {
+		isBuildOutput = IsBuildOutput
+	}
 	seen := map[string]bool{}
 	var files Files
 	add := func(path string) {
@@ -93,7 +113,7 @@ func Discover(roots []string) (Files, error) {
 				return err
 			}
 			if d.IsDir() {
-				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || IsBuildOutput(path)) {
+				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || isBuildOutput(path)) {
 					return filepath.SkipDir
 				}
 				return nil

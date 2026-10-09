@@ -2,6 +2,7 @@ package mutate
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -16,11 +17,12 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // FreshPlanVersion names the stable static selection algorithm. It changes
 // whenever the identity or ranking inputs change.
-const FreshPlanVersion = "fresh-plan-v1"
+const FreshPlanVersion = "fresh-plan-v2"
 
 // FreshPlan is a cache-independent selection of committed mutation sites.
 // FrozenRoot holds the repository's committed tracked inputs only; external
@@ -58,13 +60,26 @@ func (p *FreshPlan) Close() error {
 	return os.RemoveAll(root)
 }
 
-// PlanFresh inventories and globally selects static sites from committed
-// inputs. It does not inspect mutation snapshots, run commands, or mutate
-// source files. paths, when non-empty, narrow root-relative committed paths;
-// since, when non-empty, further restricts candidates to changed functions.
+// PlanFresh is the background-context adapter for PlanFreshContext.
 func PlanFresh(repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
+	return PlanFreshContext(context.Background(), repoRoot, paths, since, count, seed)
+}
+
+// PlanFreshContext inventories and globally selects static sites from
+// committed inputs. It runs Git metadata commands only: no mutation, test or
+// measurement commands. Cancellation owns those Git process trees and removes
+// the private export. paths, when non-empty, narrow root-relative committed
+// paths; since, when non-empty, further restricts candidates to changed
+// functions.
+func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
+	if ctx == nil {
+		return nil, errors.New("fresh plan context must not be nil")
+	}
 	if count <= 0 {
 		return nil, errors.New("fresh plan count must be positive")
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	if repoRoot == "" {
 		var err error
@@ -77,7 +92,7 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 	if err != nil {
 		return nil, err
 	}
-	rootOut, err := gitAt(root, "rev-parse", "--show-toplevel")
+	rootOut, err := gitAt(ctx, root, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return nil, fmt.Errorf("resolve repository root: %w", err)
 	}
@@ -88,7 +103,7 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 	if root, err = filepath.EvalSymlinks(root); err != nil {
 		return nil, fmt.Errorf("resolve physical repository root: %w", err)
 	}
-	headOut, err := gitAt(root, "rev-parse", "--verify", "HEAD^{commit}")
+	headOut, err := gitAt(ctx, root, "rev-parse", "--verify", "HEAD^{commit}")
 	if err != nil {
 		return nil, fmt.Errorf("resolve HEAD: %w", err)
 	}
@@ -99,18 +114,18 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 	if seed == "" {
 		seed = head
 	}
-	selectedPaths, err := canonicalPaths(root, paths)
+	selectedPaths, err := canonicalPaths(paths)
 	if err != nil {
 		return nil, err
 	}
 	var changed map[string][]lineRange
 	if since != "" {
-		changed, err = changedAt(root, since, head)
+		changed, err = changedAt(ctx, root, since, head)
 		if err != nil {
 			return nil, err
 		}
 	}
-	gitScratch, err := gitAt(root, "rev-parse", "--git-path", "itos")
+	gitScratch, err := gitAt(ctx, root, "rev-parse", "--git-path", "itos")
 	if err != nil {
 		return nil, fmt.Errorf("resolve private Git scratch path: %w", err)
 	}
@@ -132,14 +147,14 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 			_ = plan.Close()
 		}
 	}()
-	tracked, err := exportCommit(root, head, frozen)
+	tracked, err := exportCommit(ctx, root, head, frozen)
 	if err != nil {
 		return nil, err
 	}
 	for chosen := range selectedPaths {
 		found := false
 		for _, rel := range tracked {
-			if (rel == chosen || strings.HasPrefix(rel, strings.TrimSuffix(chosen, "/")+"/")) && lang.Detect(rel) != nil {
+			if selectedPath(rel, map[string]bool{chosen: true}) && lang.Detect(rel) != nil {
 				found = true
 				break
 			}
@@ -148,16 +163,60 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 			return nil, fmt.Errorf("fresh plan path %q selects no committed supported source", chosen)
 		}
 	}
-	var candidates []FreshCandidate
+	buildOutput, buildOutputErr, err := committedBuildOutput(ctx, frozen)
+	if err != nil {
+		return nil, err
+	}
+	var roots []string
+	if len(selectedPaths) == 0 {
+		roots = []string{frozen}
+	} else {
+		for chosen := range selectedPaths {
+			if chosen == "." {
+				roots = append(roots, frozen)
+			} else {
+				roots = append(roots, filepath.Join(frozen, filepath.FromSlash(chosen)))
+			}
+		}
+		sort.Strings(roots)
+	}
+	discovered, err := project.DiscoverWithBuildOutput(roots, buildOutput)
+	if err != nil {
+		return nil, fmt.Errorf("discover committed mutation targets: %w", err)
+	}
+	if err := buildOutputErr(); err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	committed := make(map[string]bool, len(tracked))
 	for _, rel := range tracked {
-		if lang.Detect(rel) == nil || !selectedPath(rel, selectedPaths) {
-			continue
+		committed[rel] = true
+	}
+	var candidates []FreshCandidate
+	for _, discoveredPath := range discovered.Sources {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		rel, err := filepath.Rel(frozen, discoveredPath)
+		if err != nil {
+			return nil, err
+		}
+		rel = filepath.ToSlash(rel)
+		if !committed[rel] {
+			return nil, fmt.Errorf("discovery escaped committed tree: %q", rel)
 		}
 		ranges, isChanged := changed[rel]
 		if changed != nil && !isChanged {
 			continue
 		}
-		file, err := lang.ParseFile(filepath.Join(frozen, filepath.FromSlash(rel)))
+		frozenPath := filepath.Join(frozen, filepath.FromSlash(rel))
+		source, err := os.ReadFile(frozenPath)
+		if err != nil {
+			return nil, fmt.Errorf("read committed %s: %w", rel, err)
+		}
+		file, err := lang.Parse(lang.Detect(rel), frozenPath, source)
 		if err != nil {
 			return nil, fmt.Errorf("parse committed %s: %w", rel, err)
 		}
@@ -167,7 +226,7 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 			if changed != nil && !overlapsRanges(ranges, unit.StartLine, unit.EndLine) {
 				continue
 			}
-			function := unit.Namespace + "#" + unit.Name
+			function := stableFunction(file, unit, rel, committed)
 			unitIdentity := fmt.Sprintf("%s@%d:%d:%s", function, unit.StartLine, unit.EndLine, UnitHash(file, unit))
 			identity := fmt.Sprintf("%s:%s:%s", rel, unitIdentity, site.Key())
 			rank := freshRank(seed, rel, identity)
@@ -175,6 +234,9 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 				UnitIdentity: unitIdentity, Site: site, Rank: rank})
 		}
 		file.Close()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	sortFreshCandidates(candidates)
 	plan.Eligible = slices.Clone(candidates)
@@ -185,23 +247,52 @@ func PlanFresh(repoRoot string, paths []string, since string, count int, seed st
 	return plan, nil
 }
 
-func gitAt(dir string, args ...string) ([]byte, error) {
-	cmd := exec.Command("git", args...)
+type gitCommandError struct {
+	Args     []string
+	ExitCode int
+	Detail   string
+}
+
+func (e *gitCommandError) Error() string {
+	return fmt.Sprintf("git %s exited %d: %s", strings.Join(e.Args, " "), e.ExitCode, e.Detail)
+}
+
+func gitAt(ctx context.Context, dir string, args ...string) ([]byte, error) {
+	return gitAtEnv(ctx, dir, nil, args...)
+}
+
+func gitAtEnv(ctx context.Context, dir string, env []string, args ...string) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dir
+	if env != nil {
+		cmd.Env = env
+	}
+	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	out, err := cmd.Output()
+	var runner commandRunner
+	result, err := runner.run(ctx, cmd, &stderr)
 	if err != nil {
 		detail := strings.TrimSpace(stderr.String())
 		if detail == "" {
 			detail = err.Error()
 		}
-		return nil, fmt.Errorf("git %s: %s", strings.Join(args, " "), detail)
+		return nil, fmt.Errorf("git %s: %s: %w", strings.Join(args, " "), detail, err)
 	}
-	return out, nil
+	if result.cancelled {
+		return nil, fmt.Errorf("git %s cancelled: %w", strings.Join(args, " "), ctx.Err())
+	}
+	if !result.passed {
+		return nil, &gitCommandError{Args: slices.Clone(args), ExitCode: result.exitCode, Detail: strings.TrimSpace(stderr.String())}
+	}
+	return stdout.Bytes(), nil
 }
 
-func canonicalPaths(root string, paths []string) (map[string]bool, error) {
+func canonicalPaths(paths []string) (map[string]bool, error) {
 	if len(paths) == 0 {
 		return nil, nil
 	}
@@ -211,7 +302,7 @@ func canonicalPaths(root string, paths []string) (map[string]bool, error) {
 			return nil, fmt.Errorf("fresh plan path must be root-relative: %q", raw)
 		}
 		rel := filepath.ToSlash(filepath.Clean(raw))
-		if rel == "." || rel == ".." || strings.HasPrefix(rel, "../") || strings.Contains(rel, "\\") {
+		if rel == ".." || strings.HasPrefix(rel, "../") || strings.Contains(rel, "\\") {
 			return nil, fmt.Errorf("fresh plan path escapes or ambiguously names the repository: %q", raw)
 		}
 		out[path.Clean(rel)] = true
@@ -224,19 +315,115 @@ func selectedPath(rel string, selected map[string]bool) bool {
 		return true
 	}
 	for chosen := range selected {
-		if rel == chosen || strings.HasPrefix(rel, strings.TrimSuffix(chosen, "/")+"/") {
+		if chosen == "." || rel == chosen || strings.HasPrefix(rel, strings.TrimSuffix(chosen, "/")+"/") {
 			return true
 		}
 	}
 	return false
 }
 
+func committedBuildOutput(ctx context.Context, frozen string) (func(string) bool, func() error, error) {
+	gitDir := filepath.Join(frozen, ".git")
+	emptyTemplate := filepath.Join(frozen, ".fresh-plan-empty-template")
+	if err := os.Mkdir(emptyTemplate, 0700); err != nil {
+		return nil, nil, err
+	}
+	emptyConfig := filepath.Join(frozen, ".fresh-plan-empty-config")
+	if err := os.WriteFile(emptyConfig, nil, 0600); err != nil {
+		return nil, nil, err
+	}
+	initEnv := cleanGitEnvironment(emptyConfig)
+	if _, err := gitAtEnv(ctx, frozen, initEnv, "init", "--quiet", "--bare", "--template", emptyTemplate, gitDir); err != nil {
+		return nil, nil, fmt.Errorf("initialize isolated committed-ignore metadata: %w", err)
+	}
+	emptyExcludes := filepath.Join(frozen, ".fresh-plan-empty-excludes")
+	if err := os.WriteFile(emptyExcludes, nil, 0600); err != nil {
+		return nil, nil, err
+	}
+	env := cleanGitEnvironment(emptyConfig)
+	env = append(env, "GIT_DIR="+gitDir, "GIT_WORK_TREE="+frozen)
+	var firstErr error
+	classify := func(dir string) bool {
+		rel, err := filepath.Rel(frozen, dir)
+		if err != nil {
+			firstErr = err
+			return false
+		}
+		rel = filepath.ToSlash(rel)
+		_, err = gitAtEnv(ctx, frozen, env, "-c", "core.excludesFile="+emptyExcludes,
+			"check-ignore", "--quiet", "--no-index", "--", rel)
+		if err == nil {
+			return true
+		}
+		var commandErr *gitCommandError
+		if errors.As(err, &commandErr) && commandErr.ExitCode == 1 {
+			return false
+		}
+		firstErr = err
+		return false
+	}
+	return func(dir string) bool {
+		return project.IsBuildOutputWithIgnore(dir, classify)
+	}, func() error { return firstErr }, nil
+}
+
+func cleanGitEnvironment(emptyConfig string) []string {
+	var env []string
+	for _, item := range os.Environ() {
+		key, _, _ := strings.Cut(item, "=")
+		if strings.HasPrefix(key, "GIT_") {
+			continue
+		}
+		env = append(env, item)
+	}
+	return append(env,
+		"GIT_CONFIG_NOSYSTEM=1",
+		"GIT_CONFIG_GLOBAL="+emptyConfig,
+	)
+}
+
+func stableFunction(file *lang.File, unit lang.Unit, rel string, committed map[string]bool) string {
+	namespace := unit.Namespace
+	switch file.Spec.Name {
+	case "python":
+		namespace = stableModuleNamespace(rel, committed, "pyproject.toml", "setup.py", "setup.cfg")
+		namespace = strings.TrimSuffix(namespace, ".__init__")
+	case "typescript":
+		namespace = stableModuleNamespace(rel, committed, "package.json", "tsconfig.json")
+	}
+	return namespace + "#" + unit.Name
+}
+
+func stableModuleNamespace(rel string, committed map[string]bool, markers ...string) string {
+	base := rel
+	for dir := path.Dir(rel); ; dir = path.Dir(dir) {
+		found := false
+		for _, marker := range markers {
+			if committed[path.Join(dir, marker)] {
+				base = strings.TrimPrefix(rel, dir+"/")
+				found = true
+				break
+			}
+		}
+		if found {
+			break
+		}
+		if dir == "." {
+			break
+		}
+	}
+	base = strings.TrimSuffix(base, path.Ext(base))
+	base = strings.TrimPrefix(base, "src/")
+	base = strings.TrimPrefix(base, "lib/")
+	return strings.ReplaceAll(base, "/", ".")
+}
+
 type treeEntry struct{ mode, kind, oid, name string }
 
 // exportCommit writes only Git blob contents to newly-created regular files.
 // Symlinks and gitlinks are rejected rather than followed or materialized.
-func exportCommit(root, commit, destination string) ([]string, error) {
-	out, err := gitAt(root, "ls-tree", "-rz", "-r", "--full-tree", "--full-name", commit)
+func exportCommit(ctx context.Context, root, commit, destination string) ([]string, error) {
+	out, err := gitAt(ctx, root, "ls-tree", "-rz", "-r", "--full-tree", "--full-name", commit)
 	if err != nil {
 		return nil, err
 	}
@@ -255,10 +442,10 @@ func exportCommit(root, commit, destination string) ([]string, error) {
 			return nil, fmt.Errorf("fresh plan does not support Git tree entry %q (mode %s, type %s)", entry.name, entry.mode, entry.kind)
 		}
 		clean := path.Clean(entry.name)
-		if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") || strings.HasPrefix(clean, "/") || strings.Contains(entry.name, "\\") {
+		if clean == "." || clean != entry.name || clean == ".." || strings.HasPrefix(clean, "../") || strings.HasPrefix(clean, "/") || strings.Contains(entry.name, "\\") {
 			return nil, fmt.Errorf("committed path escapes repository: %q", entry.name)
 		}
-		blob, err := gitAt(root, "cat-file", "blob", entry.oid)
+		blob, err := gitAt(ctx, root, "cat-file", "blob", entry.oid)
 		if err != nil {
 			return nil, fmt.Errorf("read committed blob %s (%s): %w", entry.name, entry.oid, err)
 		}
@@ -345,15 +532,15 @@ func makePrivateDirs(root, target string) error {
 
 type lineRange struct{ start, end int }
 
-func changedAt(root, ref, head string) (map[string][]lineRange, error) {
+func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, error) {
 	if strings.HasPrefix(ref, "-") {
 		return nil, fmt.Errorf("invalid --since ref %q", ref)
 	}
-	if _, err := gitAt(root, "rev-parse", "--verify", "--quiet", ref+"^{commit}"); err != nil {
+	if _, err := gitAt(ctx, root, "rev-parse", "--verify", "--quiet", ref+"^{commit}"); err != nil {
 		return nil, fmt.Errorf("--since %s is not a commit", ref)
 	}
 	args := []string{"-c", "core.quotePath=false", "diff", "--name-status", "-z", "-M", "--no-ext-diff", "--no-textconv", ref + "..." + head}
-	out, err := gitAt(root, args...)
+	out, err := gitAt(ctx, root, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +577,7 @@ func changedAt(root, ref, head string) (map[string][]lineRange, error) {
 			diffArgs = append(diffArgs, oldName)
 		}
 		diffArgs = append(diffArgs, name)
-		patch, err := gitAt(root, diffArgs...)
+		patch, err := gitAt(ctx, root, diffArgs...)
 		if err != nil {
 			return nil, err
 		}

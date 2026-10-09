@@ -1,6 +1,8 @@
 package mutate
 
 import (
+	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,10 +22,16 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 		"vendor/dependency.go": "package dependency\nfunc Dependency(x int) int { return x + 1 }\n",
 		"build/generated.go":   "package generated\nfunc Generated(x int) int { return x + 1 }\n",
 		".hidden/hidden.go":    "package hidden\nfunc Hidden(x int) int { return x + 1 }\n",
+		".gitignore":           "out/\n",
 		"itos-cc.yaml":         "mutation: {}\n",
+		"out/ignored.go":       "package ignored\nfunc Ignored(x int) int { return x + 1 }\n",
+		"package.json":         "{}\n",
 		"support/setup.sh":     "#!/bin/sh\ntrue\n",
 	})
+	freshGit(t, repo, "add", "-f", "out/ignored.go")
+	freshGit(t, repo, "commit", "-m", "force track ignored build output")
 	commit := freshGit(t, repo, "rev-parse", "HEAD")
+	writeFresh(t, filepath.Join(repo, ".gitignore"), "!out/ignored.go\n") // dirty ignore rules must not affect the plan
 	writeFresh(t, filepath.Join(repo, "src/a.go"), "package a\nfunc Value(x int) int { return x * 1 }\n")
 	freshGit(t, repo, "add", "src/a.go") // staged changes are also excluded
 	writeFresh(t, filepath.Join(repo, "src/untracked.go"), "package a\nfunc Untracked(x int) int { return x / 1 }\n")
@@ -60,7 +68,7 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(frozen, "src/untracked.go")); !os.IsNotExist(err) {
 		t.Fatalf("untracked source was exported: err=%v", err)
 	}
-	for _, rel := range []string{"src/a_test.go", "tests/test_sample.py", "src/sample.test.ts", "testdata/fixture.go", "vendor/dependency.go", "build/generated.go", "itos-cc.yaml", "support/setup.sh"} {
+	for _, rel := range []string{"src/a_test.go", "tests/test_sample.py", "src/sample.test.ts", "testdata/fixture.go", "vendor/dependency.go", "build/generated.go", "out/ignored.go", "itos-cc.yaml", "package.json", "support/setup.sh", ".gitignore"} {
 		if _, err := os.Stat(filepath.Join(frozen, filepath.FromSlash(rel))); err != nil {
 			t.Errorf("committed execution/support input %q was not exported: %v", rel, err)
 		}
@@ -81,6 +89,7 @@ func TestFreshPlanRootDirectorySelection(t *testing.T) {
 		"src/a.go":             "package a\nfunc A(x int) int { return x + 1 }\n",
 		"testdata/fixture.go":  "package fixture\nfunc Fixture(x int) int { return x + 1 }\n",
 		"vendor/dependency.go": "package dependency\nfunc Dependency(x int) int { return x + 1 }\n",
+		"package.json":         "{}\n",
 	})
 	plan, err := PlanFresh(repo, []string{"."}, "", 20, "root-dot")
 	if err != nil {
@@ -135,10 +144,21 @@ func TestFreshPlanSelectsGloballyWithoutMutationCache(t *testing.T) {
 	}
 }
 
+// This checks the new context-aware capability; it is not a failure claim
+// about the preexisting PlanFresh background adapter.
+func TestFreshPlanContextCapabilityStopsGitMetadata(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := PlanFreshContext(ctx, t.TempDir(), nil, "", 1, "context")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled context was not propagated from Git metadata: %v", err)
+	}
+}
+
 func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 	repo := freshFixture(t, map[string]string{
-		"a.go":                  "package a\nfunc Same(x int) int { return x + 1 }\nfunc Same(y int) int { return y + 2 }\n",
-		"b.go":                  "package b\nfunc Same(x int) int { return x + 1 }\n",
+		"a.go":                  "package a\nfunc init() { _ = 1 + 1 }\nfunc init() { _ = 1 + 1 }\n",
+		"b.go":                  "package b\nfunc init() { _ = 1 + 1 }\n",
 		"src/python/mod.py":     "def duplicate(x):\n    return x + 1\n",
 		"src/typescript/mod.ts": "export function duplicate(x: number): number { return x + 1 }\n",
 		"src/kotlin/Mod.kt":     "fun duplicate(x: Int): Int = x + 1\n",
