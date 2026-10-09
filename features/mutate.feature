@@ -1755,7 +1755,7 @@ Feature: Mutation testing
       And empty or comment-only function bodies add no coverage obligation
       And a non-strict check of a zero-site function still needs no snapshot entry
 
-    @wip @strict-go-coverage @ID-MUT-158
+    @strict-go-coverage @ID-MUT-158
     Scenario: Covered blocks cannot hide unexecuted same-line or closure blocks
       Given a Go function has covered and uncovered positive-weight blocks with distinct column spans on the same source line
       And another named Go function contains a never-called function literal
@@ -1764,7 +1764,7 @@ Feature: Mutation testing
       And the literal's uncovered block is attributed to its enclosing named function
       And comments, brace-only lines and zero-statement-weight blocks create no separate findings
 
-    @wip @strict-go-coverage @ID-MUT-159
+    @strict-go-coverage @ID-MUT-159
     Scenario: Reused mutants cannot bypass missing or stale coverage evidence
       Given a non-strict no-coverage run recorded all mutants killed and no independent statement evidence
       When I run mutation run with --fail-uncovered and fresh inputs
