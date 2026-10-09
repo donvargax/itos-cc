@@ -11,6 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - mutation-fresh-budget
   - mutation-command-ownership
   - mutation-windows-ownership
   - mutation-fail-fast
