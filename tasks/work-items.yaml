@@ -843,7 +843,7 @@ items:
     title: Expose supervised and fail-closed measurement preparation for bounded execution
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-11]
     kind: task
     why: >
