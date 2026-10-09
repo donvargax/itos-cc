@@ -739,3 +739,18 @@ items:
       reading unstaged metadata. Leave transition checks, writers, measurement gating and SARIF to
       separate slices.
     refs: ["#25"]
+  - id: mutation-fail-fast
+    title: Mutation run stops early on an actionable failure when --fail-fast is set
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #26 is the person’s highest priority now, ahead of the debt foundation. Opt-in fail-fast
+      should shorten local fix-and-retry mutation runs without changing aggregate defaults, treating
+      killed or valid excepted mutants as failures, stopping before applicable listed tests can kill
+      a survivor, leaving owned workers or descendants running, or trusting partial outcomes as
+      complete. Specify scheduling, bounded cleanup, truthful partial machine output and cache reuse
+      before implementation.
+    refs: ["#26"]
