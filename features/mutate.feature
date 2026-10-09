@@ -1843,3 +1843,72 @@ Feature: Mutation testing
       And no external dependency tree is followed or admitted as fresh coverage
       But replacement inputs already inside the actual inventory remain supported
       And non-strict commands retain their existing behavior
+
+  # mutation-command-ownership is the process-supervision prerequisite for
+  # issue #26, q-33 and ADR-0021. It promotes the existing
+  # mutate-windows-kill-tree gap rather than adding a second copy of it.
+  # - Supervised commands own ordinary, non-detaching child/grandchild
+  #   processes. Windows uses a kill-on-close Job Object with ownership
+  #   established before children can escape; Unix uses a process group.
+  #   Intentionally daemonizing/session-escaping Unix commands are outside
+  #   this contract, not a hidden promise of container-strength isolation.
+  # - A command scope closes on normal completion, mutant deadline, parent
+  #   cancellation or execution error. Terminate remaining owned processes
+  #   and join output/process waiters before returning or restoring/removing
+  #   its worker copy. Bound cleanup with one five-second deadline; later
+  #   fail-fast callers share that deadline across scopes, not per worker.
+  # - A mutant's own deadline still means timeout/killed. Parent/run abort
+  #   is distinct cancellation, never a successful kill/timeout judgment.
+  #   Actual completed exit status must not be replaced by a later abort.
+  # - Startup, containment or cleanup failures return explicit errors; do
+  #   not silently run unsupervised, record a kill or erase the error.
+  #   Target only captured owned handles/groups, never command-name matches
+  #   or unrelated orphaned processes. Ownership establishment must be
+  #   race-safe on Windows, not assignment after an unrestricted launch.
+  # - Provide reusable context-aware supervision for the next slice's
+  #   mutation, baseline, selection, list and coverage command paths. Worker
+  #   timeout/normal-return cleanup is verified here; fail-fast scheduling
+  #   and mode-specific preparation integration remain the next slice.
+  # - This slice exposes no public --fail-fast flag and changes no aggregate
+  #   scheduling, mutation scope, valid outcome/count, freshness or baseline
+  #   timeout policy. Ordinary worker execution must retain its valid results
+  #   while no longer leaving owned descendants behind. Sample's shared
+  #   execution path must retain its contract too.
+  Rule: Mutation commands return only after their owned process trees are cleaned up
+
+    @wip @mutation-command-ownership @ID-MUT-165
+    Scenario: A mutant deadline cleans up children and grandchildren
+      Given a test command starts ordinary owned child and grandchild processes that keep running and hold output open
+      When the mutant reaches its own timeout
+      Then all owned processes are terminated and output waiters are joined before the command returns
+      And the mutant is still counted killed by timeout
+      And cleanup is bounded and the worker copy can be restored and removed
+      And unrelated processes remain untouched
+
+    @wip @mutation-command-ownership @ID-MUT-166
+    Scenario: Normal command completion also closes owned descendants
+      Given a baseline or mutant test command starts an ordinary owned descendant and then exits successfully
+      And that descendant could continue work after the parent exits, even with its output streams closed
+      When the command scope returns
+      Then the descendant has stopped and cannot continue fixture work after return
+      And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
+      And all owned process/output waiters are joined before worker copy removal
+
+    @wip @mutation-command-ownership @ID-MUT-167
+    Scenario: Parent cancellation is not a mutant deadline
+      Given a supervised command and its owned child are running under a parent cancellation context
+      When the parent cancels without the mutant's own deadline expiring
+      Then command admission stops and the owned tree is terminated within the shared cleanup deadline
+      And process/output waiters are joined before return
+      And the result identifies cancellation, not a killed or timed-out mutant
+      But a judgment completed before the cancellation retains its actual result
+
+    @wip @mutation-command-ownership @ID-MUT-168
+    Scenario: Supervision failures do not permit an unsafe fallback
+      Given a supervised command cannot establish ownership, start or finish cleanup safely
+      When its execution is attempted
+      Then the corresponding error is returned rather than a passing or killed judgment
+      And no command runs unrestricted after an ownership-establishment failure
+      And only captured owned handles or groups can be targeted for cleanup
+      And the same supervisor can be used by worker and preparation commands without changing their argument, environment or output contracts
+      And intentionally detaching Unix commands are documented as unsupported, not claimed to be contained
