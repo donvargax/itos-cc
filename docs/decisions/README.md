@@ -25,5 +25,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0019: Strict Go coverage refuses workspace and out-of-inventory replacement scopes](0019-strict-go-coverage-refuses-workspace-and-out-of-inventory-replacement-scopes.md)
 - [ADR-0020: Mutation fail-fast cancels unfinished work at the first observed final failure](0020-mutation-fail-fast-cancels-unfinished-work-at-the-first-observed-final-failure.md)
 - [ADR-0021: Fail-fast owns ordinary test process trees with explicit Unix containment limits](0021-fail-fast-owns-ordinary-test-process-trees-with-explicit-unix-containment-limits.md)
+- [ADR-0022: Fail-fast preserves valid partial mutation evidence and reports incomplete work explicitly](0022-fail-fast-preserves-valid-partial-mutation-evidence-and-reports-incomplete-work-explicitly.md)
 
 <!-- itos:decisions:end -->
