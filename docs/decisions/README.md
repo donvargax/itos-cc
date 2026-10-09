@@ -23,5 +23,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0017: Strict Go mutation checks require executable coverage independent of mutation sites](0017-strict-go-mutation-checks-require-executable-coverage-independent-of-mutation-sites.md)
 - [ADR-0018: Strict Go statement coverage admits measured built-in reports and fingerprinted cache evidence](0018-strict-go-statement-coverage-admits-measured-built-in-reports-and-fingerprinted-cache-evidence.md)
 - [ADR-0019: Strict Go coverage refuses workspace and out-of-inventory replacement scopes](0019-strict-go-coverage-refuses-workspace-and-out-of-inventory-replacement-scopes.md)
+- [ADR-0020: Mutation fail-fast cancels unfinished work at the first observed final failure](0020-mutation-fail-fast-cancels-unfinished-work-at-the-first-observed-final-failure.md)
 
 <!-- itos:decisions:end -->
