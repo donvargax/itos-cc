@@ -133,6 +133,64 @@ func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.
 	}
 }
 
+// @ID-MUT-158
+func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing.T) {
+	dir := moduleRepo(t, map[string]string{
+		"go.mod":       "module example.com/strictspans\n\ngo 1.22\n",
+		"main.go":      "package main\n\nfunc Branch(call bool) int { if call { return 1 }; return 2 }\nfunc Outer(call bool) int { f := func() int { return 7 }; if call { return f() }; return 0 }\nfunc main() {}\n",
+		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestBranch(t *testing.T) { if Branch(true) != 1 { t.Fatal(\"Branch\") }; if Outer(false) != 0 { t.Fatal(\"Outer\") } }\n",
+	})
+	o := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
+	if o.code != 1 {
+		t.Fatalf("uncovered spans exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	var outerFinding bool
+	for _, problem := range o.json(t).Problems {
+		if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictspans#Outer" {
+			outerFinding = true
+		}
+	}
+	if !outerFinding {
+		t.Errorf("unexecuted function literal block was not attributed to Outer:\n%s", o.stdout)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", "main.go.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshot struct {
+		Units []struct {
+			Namespace string                     `json:"namespace"`
+			Name      string                     `json:"name"`
+			Coverage  *mutate.GoCoverageEvidence `json:"go_coverage"`
+		} `json:"units"`
+	}
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	var branch *mutate.GoCoverageEvidence
+	for i := range snapshot.Units {
+		if snapshot.Units[i].Name == "Branch" {
+			branch = snapshot.Units[i].Coverage
+		}
+	}
+	if branch == nil {
+		t.Fatal("Branch has no persisted coverage evidence")
+	}
+	var covered, uncovered int
+	spans := map[string]bool{}
+	for _, block := range branch.Blocks {
+		spans[block.Span] = true
+		if block.Covered {
+			covered++
+		} else {
+			uncovered++
+		}
+	}
+	if len(spans) < 2 || covered == 0 || uncovered == 0 {
+		t.Errorf("same-line block inventory has %d spans, %d covered, %d uncovered; want distinct covered and uncovered spans", len(spans), covered, uncovered)
+	}
+}
+
 // @ID-MUT-160
 func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing(t *testing.T) {
 	dir := moduleRepo(t, map[string]string{
@@ -203,6 +261,37 @@ func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing
 	}
 	if strings.Contains(o.stderr, "coverage ") || strings.Contains(o.stderr, "tests ") {
 		t.Errorf("cached check ran a coverage or list command:\n%s", o.stderr)
+	}
+}
+
+// @ID-MUT-159
+func TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable(t *testing.T) {
+	dir := moduleRepo(t, map[string]string{
+		"go.mod":       "module example.com/strictreuse\n\ngo 1.22\n",
+		"main.go":      "package main\n\nfunc Positive(n int) bool { return n > 0 }\nfunc main() {}\n",
+		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestPositive(t *testing.T) { if !Positive(1) || Positive(0) { t.Fatal(\"Positive\") } }\n",
+	})
+	if o := mutateRun(t, "--json", "main.go"); o.code != 0 {
+		t.Fatalf("initial non-strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	o := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
+	if o.code != 0 {
+		t.Fatalf("strict run from fresh reusable mutants: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	if !strings.Contains(o.stderr, "coverage ") || !strings.Contains(o.stderr, "no mutations to test") {
+		t.Errorf("strict run must measure missing coverage while reusing all mutants:\n%s", o.stderr)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", "main.go.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshot map[string]any
+	if err := json.Unmarshal(data, &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	units, _ := snapshot["units"].([]any)
+	if len(units) == 0 || units[0].(map[string]any)["go_coverage"] == nil {
+		t.Errorf("strict run failed to persist missing independent evidence:\n%s", data)
 	}
 }
 
