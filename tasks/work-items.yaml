@@ -699,7 +699,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [debt-inventory]
     kind: idea
     why: >
       Selected issue #25 matters for hosts that claim debt by path-based entry ID, but IDEAS.md
@@ -707,6 +707,10 @@ items:
       cmd/itos-cc/main.go registers none of them. This request cannot be implemented as a small
       reporting fix yet. Keep it pending until the person agrees how to scope the missing
       foundation. Do not silently build that subsystem during mutation fixes.
+
+      q-28 authorizes scoping a minimal foundation as separate slices. debt-inventory is the first
+      prerequisite; range and staged transition contracts still need decisions. No adopt/tighten,
+      full measurement gating, SARIF or host claim updates are included by default.
     refs: ["#25"]
   - id: strict-go-multimodule
     title: Strict Go coverage provenance for workspaces and local replacement modules
