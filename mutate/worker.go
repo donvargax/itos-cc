@@ -116,15 +116,22 @@ type result struct {
 // run executes c inside the worker's copy of c.Root. A zero timeout waits
 // as long as the tests take.
 func (w *worker) run(c Command, timeout time.Duration) (result, error) {
+	return w.runContext(context.Background(), c, timeout)
+}
+
+// runContext is the internal parent-context entrypoint. Command setup stays
+// here so both the legacy adapter and supervised callers use the same copy,
+// arguments, environment and streams.
+func (w *worker) runContext(parent context.Context, c Command, timeout time.Duration) (result, error) {
 	root, err := w.copyOf(c.Root)
 	if err != nil {
 		return result{}, err
 	}
 	dir := filepath.Join(root, strings.TrimPrefix(c.Dir, c.Root))
-	ctx := context.Background()
+	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
+		ctx, cancel = context.WithTimeout(parent, timeout)
 		defer cancel()
 	}
 	var cmd *exec.Cmd
