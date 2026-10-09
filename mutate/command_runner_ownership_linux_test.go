@@ -129,6 +129,8 @@ func TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment(t *testing.
 	t.Setenv(ownershipGrandEnv, grandchildPID)
 	t.Setenv(runnerStartedPathEnv, started)
 	w := newCommandRunnerWorker(t)
+	sharedBudget := &cleanupBudget{}
+	w.runner.cleanupBudget = sharedBudget
 	cleanupOwnershipFixture(t, childPID, grandchildPID)
 	parent, cancel := context.WithCancel(context.Background())
 	type runResult struct {
@@ -159,6 +161,42 @@ func TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment(t *testing.
 	}
 	if processCanRun(readPID(t, childPID)) || processCanRun(readPID(t, grandchildPID)) {
 		t.Fatal("owned process tree remained after parent cancellation")
+	}
+	if sharedBudget.deadline.IsZero() {
+		t.Fatal("parent abort did not activate the shared cleanup deadline")
+	}
+	if deadline := sharedBudget.until(); !deadline.Equal(sharedBudget.deadline) {
+		t.Fatalf("parent abort cleanup deadline changed across scopes: %v then %v", sharedBudget.deadline, deadline)
+	}
+}
+
+func TestLinuxSuccessDoesNotActivateRunAbortCleanupBudget(t *testing.T) {
+	t.Setenv(runnerFixtureMode, "success")
+	w := newCommandRunnerWorker(t)
+	sharedBudget := &cleanupBudget{}
+	w.runner.cleanupBudget = sharedBudget
+	root := t.TempDir()
+	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
+	if err != nil || !got.passed {
+		t.Fatalf("successful command = %+v, err = %v", got, err)
+	}
+	if !sharedBudget.deadline.IsZero() {
+		t.Fatalf("ordinary success consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
+	}
+}
+
+func TestLinuxOwnTimeoutDoesNotActivateRunAbortCleanupBudget(t *testing.T) {
+	t.Setenv(runnerFixtureMode, "loop")
+	w := newCommandRunnerWorker(t)
+	sharedBudget := &cleanupBudget{}
+	w.runner.cleanupBudget = sharedBudget
+	root := t.TempDir()
+	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
+	if err != nil || !got.timedOut || got.passed {
+		t.Fatalf("own timeout = %+v, err = %v; want own timeout judgment", got, err)
+	}
+	if !sharedBudget.deadline.IsZero() {
+		t.Fatalf("own mutant timeout consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
 	}
 }
 
