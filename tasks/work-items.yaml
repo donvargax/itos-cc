@@ -721,3 +721,17 @@ items:
       design for go.work, dependency modules, local replacement trees and their build inputs;
       nearest-module hashes must not silently bless them.
     refs: ["#23"]
+  - id: debt-inventory
+    title: List committed debt entries from immutable Git snapshots
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      First prerequisite slice for issue #25, authorized for scoping in q-28. The debt subsystem is
+      not implemented. Agree on a minimal committed schema, intrinsic ID serialization and
+      snapshot-source boundary, then add read-only debt list --at without executing project tools or
+      reading unstaged metadata. Leave transition checks, writers, measurement gating and SARIF to
+      separate slices.
+    refs: ["#25"]
