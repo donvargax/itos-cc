@@ -1,9 +1,12 @@
 package coverage
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -73,6 +76,20 @@ const (
 // group, with reports written under outDir. Python and Kotlin run the whole
 // suite whatever the scope.
 func Plans(sources []string, outDir string, scope Scope) []Plan {
+	plans, _, _ := buildPlans(context.Background(), sources, outDir, scope, nil)
+	return plans
+}
+
+// PlansSupervised builds coverage plans while routing executable probes
+// (Go package discovery and Python provider checks) through execute.
+func PlansSupervised(ctx context.Context, sources []string, outDir string, scope Scope, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
+	if ctx == nil || execute == nil {
+		return nil, nil, errors.New("supervised coverage planning needs a context and command executor")
+	}
+	return buildPlans(ctx, sources, outDir, scope, execute)
+}
+
+func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
 	type key struct{ lang, dir string }
 	groups := map[key][]string{}
 	for _, s := range sources {
@@ -87,7 +104,13 @@ func Plans(sources []string, outDir string, scope Scope) []Plan {
 		groups[key{spec.Name, dir}] = append(groups[key{spec.Name, dir}], s)
 	}
 	var plans []Plan
+	var executions []CommandExecution
+	var failures []error
 	for k, sources := range groups {
+		if err := ctx.Err(); err != nil {
+			failures = append(failures, err)
+			break
+		}
 		srcs := sources
 		if scope == AllTests {
 			srcs = nil
@@ -96,11 +119,33 @@ func Plans(sources []string, outDir string, scope Scope) []Plan {
 		var p Plan
 		switch k.lang {
 		case "go":
-			p = goPlan(k.dir, out, srcs, scope == OwnTests)
+			var pkgs, testing []string
+			if execute != nil {
+				var calls []CommandExecution
+				var err error
+				pkgs, testing, calls, err = goScopeSupervised(ctx, k.dir, srcs, execute)
+				executions = append(executions, calls...)
+				if err != nil {
+					failures = append(failures, err)
+				}
+			} else {
+				pkgs, testing = GoScope(k.dir, srcs)
+			}
+			p = goPlanWithScope(k.dir, out, srcs, scope == OwnTests, pkgs, testing)
 		case "typescript":
 			p = typescriptPlan(k.dir, out, srcs)
 		case "python":
-			p = pythonPlan(k.dir, out)
+			if execute == nil {
+				p = pythonPlan(k.dir, out)
+			} else {
+				var calls []CommandExecution
+				var err error
+				p, calls, err = pythonPlanSupervised(ctx, k.dir, out, execute)
+				executions = append(executions, calls...)
+				if err != nil {
+					failures = append(failures, err)
+				}
+			}
 		case "kotlin":
 			p = kotlinPlan(k.dir)
 		default:
@@ -112,13 +157,18 @@ func Plans(sources []string, outDir string, scope Scope) []Plan {
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].Language+plans[i].Dir < plans[j].Language+plans[j].Dir
 	})
-	return plans
+	return plans, executions, errors.Join(failures...)
 }
 
 // goPlan measures sources with the tests of every package whose test binary
 // links one of theirs, or the whole module when sources is empty or go list
 // cannot say. With own, each package is measured by its own tests alone.
 func goPlan(dir, out string, sources []string, own bool) Plan {
+	pkgs, testing := GoScope(dir, sources)
+	return goPlanWithScope(dir, out, sources, own, pkgs, testing)
+}
+
+func goPlanWithScope(dir, out string, sources []string, own bool, pkgs, testing []string) Plan {
 	report := filepath.Join(out, "coverage.out")
 	args := []string{"go", "test", "-count=1", "-covermode=set", "-coverprofile=" + report}
 	coverDir := ""
@@ -130,7 +180,7 @@ func goPlan(dir, out string, sources []string, own bool) Plan {
 		coverDir = filepath.Join(out, "gocoverdir")
 		args = append(args, "-exec", wrapper)
 	}
-	switch pkgs, testing := GoScope(dir, sources); {
+	switch {
 	case len(pkgs) > 0 && own:
 		// Without -coverpkg each test binary measures its own package.
 		args = append(args, pkgs...)
@@ -157,14 +207,35 @@ func goPlan(dir, out string, sources []string, own bool) Plan {
 // never load it are not run. Packages without tests are listed too, so they
 // measure as 0%. Both are empty when go list fails.
 func GoScope(dir string, sources []string) (pkgs, testing []string) {
+	pkgs, testing, _, _ = goScopeSupervised(context.Background(), dir, sources, nil)
+	return pkgs, testing
+}
+
+func goScopeSupervised(ctx context.Context, dir string, sources []string, execute CommandExecutor) (pkgs, testing []string, executions []CommandExecution, resultErr error) {
 	if len(sources) == 0 {
-		return nil, nil
+		return nil, nil, nil, nil
 	}
-	cmd := exec.Command("go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
+	cmd := exec.CommandContext(ctx, "go", "list", "-test", "-f", "{{.ImportPath}}\t{{.Dir}}\t{{join .Deps \" \"}}", "./...")
 	cmd.Dir = dir
-	listing, err := cmd.Output()
+	var listing bytes.Buffer
+	cmd.Stdout = &listing
+	cmd.Stderr = io.Discard
+	var err error
+	if execute == nil {
+		err = cmd.Run()
+	} else {
+		err = execute(ctx, cmd)
+		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
+	}
 	if err != nil {
-		return nil, nil
+		if execute != nil {
+			return nil, nil, executions, fmt.Errorf("go list coverage scope in %s: %w", dir, err)
+		}
+		return nil, nil, executions, nil
+	}
+	listingText := strings.TrimRight(listing.String(), "\r\n")
+	if execute != nil && strings.TrimSpace(listingText) == "" {
+		return nil, nil, executions, fmt.Errorf("go list returned an empty coverage scope in %s", dir)
 	}
 	dirs := map[string]bool{}
 	for _, s := range sources {
@@ -176,17 +247,43 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 	}
 	var binaries []entry
 	selected := map[string]bool{}
-	for _, line := range strings.Split(strings.TrimSpace(string(listing)), "\n") {
+	for _, line := range strings.Split(listingText, "\n") {
+		line = strings.TrimSuffix(line, "\r")
 		fields := strings.SplitN(line, "\t", 3)
 		if len(fields) < 3 {
+			if execute != nil && strings.TrimSpace(line) != "" {
+				return nil, nil, executions, fmt.Errorf("malformed go list coverage scope entry %q", line)
+			}
 			continue
 		}
 		path := fields[0]
+		if execute != nil && (path == "" || filepath.Clean(fields[1]) == ".") {
+			return nil, nil, executions, fmt.Errorf("malformed go list coverage scope entry %q", line)
+		}
 		switch {
 		case strings.HasSuffix(path, ".test"):
 			binaries = append(binaries, entry{strings.TrimSuffix(path, ".test"), strings.Fields(fields[2])})
 		case !strings.Contains(path, " ") && dirs[filepath.Clean(fields[1])]:
 			selected[path] = true
+		}
+	}
+	if execute != nil {
+		if len(selected) == 0 {
+			return nil, nil, executions, fmt.Errorf("go list did not identify any source package in %s", dir)
+		}
+		for sourceDir := range dirs {
+			found := false
+			for _, line := range strings.Split(listingText, "\n") {
+				line = strings.TrimSuffix(line, "\r")
+				fields := strings.SplitN(line, "\t", 3)
+				if len(fields) == 3 && filepath.Clean(fields[1]) == sourceDir && !strings.HasSuffix(fields[0], ".test") {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, nil, executions, fmt.Errorf("go list omitted admitted source directory %s", sourceDir)
+			}
 		}
 	}
 	tested := map[string]bool{}
@@ -210,7 +307,7 @@ func GoScope(dir string, sources []string) (pkgs, testing []string) {
 	}
 	sort.Strings(pkgs)
 	sort.Strings(testing)
-	return pkgs, testing
+	return pkgs, testing, executions, nil
 }
 
 // typescriptPlan measures sources with the tests that import them, through
@@ -300,6 +397,44 @@ func pythonPlan(dir, out string) Plan {
 	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
 	plan.Commands = [][]string{run, {py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report}}
 	return plan
+}
+
+func pythonPlanSupervised(ctx context.Context, dir, out string, execute CommandExecutor) (Plan, []CommandExecution, error) {
+	py := pythonFor(dir)
+	var executions []CommandExecution
+	probe := func(module string) error {
+		cmd := exec.CommandContext(ctx, py, "-c", "import "+module)
+		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, io.Discard, io.Discard
+		err := execute(ctx, cmd)
+		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
+		return err
+	}
+	runner := []string{"-m", "unittest", "discover"}
+	pytestErr := probe("pytest")
+	if pytestErr == nil {
+		runner = []string{"-m", "pytest", "-q"}
+	} else if ctx.Err() != nil {
+		return Plan{}, executions, ctx.Err()
+	}
+	data := filepath.Join(out, ".coverage")
+	report := filepath.Join(out, "lcov.info")
+	plan := Plan{
+		Language: "python", Dir: dir,
+		Reports:  []string{report},
+		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
+	}
+	if err := probe("coverage"); err != nil {
+		if ctx.Err() != nil {
+			return Plan{}, executions, ctx.Err()
+		}
+		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
+		return plan, executions, nil
+	}
+	plan.Commands = [][]string{
+		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
+		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
+	}
+	return plan, executions, nil
 }
 
 func kotlinPlan(dir string) Plan {
