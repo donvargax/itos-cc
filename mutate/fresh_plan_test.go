@@ -1,8 +1,10 @@
 package mutate
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +13,13 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	if os.Getenv("ITOS_FRESH_PLAN_GIT_WRAPPER") == "1" {
+		freshPlanGitWrapperMain()
+	}
+	os.Exit(m.Run())
+}
 
 func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	repo := freshFixture(t, map[string]string{
@@ -245,6 +254,102 @@ func TestFreshPlanSinceAndPathNarrowingUseCommittedHead(t *testing.T) {
 	if len(narrow.Eligible) != 0 {
 		t.Fatalf("explicit path narrowing failed, got %v", identities(narrow.Eligible))
 	}
+}
+
+func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
+	repo := freshFixture(t, map[string]string{
+		"a.go": "package a\nfunc A(x int) int { return x + 1 }\n",
+		"b.go": "package b\nfunc B(x int) int { return x + 2 }\n",
+	})
+	base := freshGit(t, repo, "rev-parse", "HEAD")
+	freshGit(t, repo, "branch", "since-base", base)
+	writeFresh(t, filepath.Join(repo, "a.go"), "package a\nfunc A(x int) int { return x * 1 }\n")
+	freshGit(t, repo, "add", "a.go")
+	freshGit(t, repo, "commit", "-m", "change A")
+	writeFresh(t, filepath.Join(repo, "b.go"), "package b\nfunc B(x int) int { return x - 2 }\n")
+	freshGit(t, repo, "add", "b.go")
+	freshGit(t, repo, "commit", "-m", "change B")
+	head := freshGit(t, repo, "rev-parse", "HEAD")
+
+	wrapperDir := t.TempDir()
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := "git"
+	if filepath.Ext(executable) != "" {
+		name += filepath.Ext(executable)
+	}
+	wrapper := filepath.Join(wrapperDir, name)
+	contents, err := os.ReadFile(executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(wrapper, contents, 0700); err != nil {
+		t.Fatal(err)
+	}
+	realGit, err := exec.LookPath("git")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("ITOS_FRESH_PLAN_GIT_WRAPPER", "1")
+	t.Setenv("ITOS_FRESH_PLAN_REAL_GIT", realGit)
+	t.Setenv("ITOS_FRESH_PLAN_MOVE_REF", "refs/heads/since-base")
+	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
+	t.Setenv("PATH", wrapperDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	plan, err := PlanFresh(repo, nil, "since-base", 50, "pinned-base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer plan.Close()
+	paths := map[string]bool{}
+	for _, candidate := range plan.Eligible {
+		paths[candidate.Path] = true
+	}
+	if !paths["a.go"] || !paths["b.go"] {
+		t.Fatalf("--since inventory followed the moved ref instead of its resolved base: candidates=%v", paths)
+	}
+}
+
+func freshPlanGitWrapperMain() {
+	realGit := os.Getenv("ITOS_FRESH_PLAN_REAL_GIT")
+	args := os.Args[1:]
+	cmd := exec.Command(realGit, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err == nil && resolvesMovedRef(args) {
+		move := exec.Command(realGit, "update-ref", os.Getenv("ITOS_FRESH_PLAN_MOVE_REF"), os.Getenv("ITOS_FRESH_PLAN_MOVE_TO"))
+		if out, moveErr := move.CombinedOutput(); moveErr != nil {
+			_, _ = os.Stderr.Write(out)
+			os.Exit(125)
+		}
+	}
+	_, _ = os.Stdout.Write(stdout.Bytes())
+	_, _ = os.Stderr.Write(stderr.Bytes())
+	if err == nil {
+		os.Exit(0)
+	}
+	if exit, ok := err.(*exec.ExitError); ok {
+		os.Exit(exit.ExitCode())
+	}
+	_, _ = fmt.Fprintln(os.Stderr, err)
+	os.Exit(127)
+}
+
+func resolvesMovedRef(args []string) bool {
+	if len(args) == 0 || args[0] != "rev-parse" {
+		return false
+	}
+	want := os.Getenv("ITOS_FRESH_PLAN_MOVE_REF") + "^{commit}"
+	for _, arg := range args {
+		if arg == want {
+			return true
+		}
+	}
+	return false
 }
 
 func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
