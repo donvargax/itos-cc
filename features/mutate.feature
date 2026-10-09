@@ -1851,6 +1851,14 @@ Feature: Mutation testing
   # machine later. ADR-0021 still requires both platforms before fail-fast.
   # This split keeps the original Windows gap, not a cross-platform completion
   # claim after Linux tests pass. Windows scenarios remain @wip until verified.
+  # The person now prioritizes fresh bounded execution in GitHub #27 over
+  # fail-fast #26. Linux ownership is shared groundwork for #27 too; it does
+  # not introduce #26's scheduler or flag. Windows work is tracked separately
+  # in #29 and stays deferred until a Windows machine is used.
+  # Local mutation execution must stay sparse: never mutate this repository's
+  # sources, and use only minimal targeted fixture trials on this machine.
+  # Exercise helper-process ownership directly where possible; broader mutant
+  # trial matrices and full mutation-fixture suites run in CI, not locally.
   # q-35 chose the separate prerequisite after a throwaway spike. Its new
   # internal capabilities are not original-product behavioral-red evidence.
   # Against T-10, each ownership assertion must compile and show an actual
