@@ -389,10 +389,20 @@ func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *t
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictpartial\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Edited(n int) bool { return n > 0 }\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || Edited(0) || Stable(1) != 3 || Stable(0) != 4 { t.Fatal(\"functions\") } }\n",
+		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || Edited(0) || Stable(1) != 3 { t.Fatal(\"functions\") } }\n",
 	})
-	if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 0 {
-		t.Fatalf("initial strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+	if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 1 {
+		t.Fatalf("initial strict run: exit %d, want uncovered Stable block\n%s%s", o.code, o.stdout, o.stderr)
+	} else {
+		var found bool
+		for _, problem := range o.json(t).Problems {
+			if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictpartial#Stable" {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("initial strict run did not report Stable's uncovered block:\n%s", o.stdout)
+		}
 	}
 	gitIn(t, dir, "branch", "base")
 	path := filepath.Join(dir, ".metrics", "mutate", "main.go.json")
@@ -421,7 +431,7 @@ func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *t
 		t.Fatal("Stable has no initial independent inventory")
 	}
 	writeFile(t, filepath.Join(dir, "main.go"), "package main\n\nfunc Edited(n int) bool { return n >= 0 }\n\n// Stable moves while its body stays the same.\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n")
-	writeFile(t, filepath.Join(dir, "main_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || !Edited(0) || Stable(1) != 3 || Stable(0) != 4 { t.Fatal(\"functions\") } }\n")
+	writeFile(t, filepath.Join(dir, "main_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || !Edited(0) || Stable(1) != 3 { t.Fatal(\"functions\") } }\n")
 	gitIn(t, dir, "add", "main.go", "main_test.go")
 	gitIn(t, dir, "commit", "-qm", "change selected function")
 	partial := mutateCovered(t, "--fail-uncovered", "--since", "base", "--json", "main.go")
@@ -438,8 +448,17 @@ func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *t
 		t.Errorf("unjudged Stable evidence was refreshed: before=%v after=%v", stableBefore, stableAfter)
 	}
 	full := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
-	if full.code != 0 {
-		t.Fatalf("full run after movement: exit %d\n%s%s", full.code, full.stdout, full.stderr)
+	if full.code != 1 {
+		t.Fatalf("full run after movement: exit %d, want uncovered Stable block\n%s%s", full.code, full.stdout, full.stderr)
+	}
+	var movedLine int
+	for _, problem := range full.json(t).Problems {
+		if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictpartial#Stable" {
+			movedLine = int(problem["line"].(float64))
+		}
+	}
+	if movedLine != 6 {
+		t.Errorf("moved Stable uncovered finding line %d, want current line 6\n%s", movedLine, full.stdout)
 	}
 	var initHashes = map[string]bool{}
 	var initUnits int
