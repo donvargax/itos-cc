@@ -793,7 +793,7 @@ items:
       Windows machine later. Windows scenarios will remain wip and explicitly platform-scoped until
       real execution verifies them. No unsafe Windows fail-fast path or cross-platform completion
       claim. See features/mutate.feature and ADR-0021 for the complete ownership contract.
-    refs: ["#26"]
+    refs: ["#29", "#27", "#26"]
     deferred: >
       The person explicitly reserved Windows ownership implementation and behavioral verification
       for a Windows machine. This Linux checkout should finish shared prerequisites and Linux
