@@ -179,6 +179,7 @@ items:
       the mutants after it and leaving the worker copy undeletable. A Job object with
       JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE would kill the tree, as Setpgid does on Unix. Found writing
       ID-MUT-53, whose fixture sleeps rather than spins for this reason.
+    refs: ["#26"]
   - id: mutation-test-hash
     title: "mutation results go stale when the tests that import their file change"
     phase: 1
