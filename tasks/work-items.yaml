@@ -772,7 +772,7 @@ items:
     title: Expose internal context and lifecycle seams for ownership tests
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-9]
     kind: task
     why: >
