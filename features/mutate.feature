@@ -2065,7 +2065,7 @@ Feature: Mutation testing
   #   Unknown-flag failures are CLI-admission red, not scheduler-red evidence.
   Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
 
-    @wip @mutation-fresh-budget @ID-MUT-173
+    @wip @mutation-counted-run @ID-MUT-173
     Scenario: Counted execution has explicit admission and platform boundaries
       Given the complete mutation run and cached mutation sample commands are available
       When mutation run is given a nonpositive or noninteger count, or seed without count
@@ -2074,7 +2074,7 @@ Feature: Mutation testing
       And on an unsupported platform counted mode fails clearly before launching commands
       But existing complete and cached-sample behavior remains unchanged
 
-    @wip @mutation-fresh-budget @ID-MUT-174
+    @wip @mutation-counted-run @ID-MUT-174
     Scenario: Counted execution evaluates frozen committed inputs
       Given a committed project has a source function, tests and measurement settings
       And those files have different staged, unstaged or untracked working-tree versions
@@ -2084,7 +2084,7 @@ Feature: Mutation testing
       And the live working tree is not rewritten or mistaken for committed proof
       And unsupported scopes fail rather than silently following live project inputs
 
-    @wip @mutation-fresh-budget @ID-MUT-175
+    @wip @mutation-counted-run @ID-MUT-175
     Scenario: Fresh selection is reproducible across paths and same-name units
       Given committed functions include same-name units and more eligible sites than the budget
       When two count-one runs use the same TEXT seed and committed inputs
@@ -2093,7 +2093,7 @@ Feature: Mutation testing
       And reports include the seed and deterministic selection algorithm version
       And alternate-seed selection can be checked without executing mutation trials
 
-    @wip @mutation-fresh-budget @ID-MUT-176
+    @wip @mutation-counted-run @ID-MUT-176
     Scenario: The global fresh budget holds even when every selected mutant is killed
       Given several committed files and functions have eligible sites but no mutation cache
       And the worker count exceeds the count-one budget
@@ -2104,7 +2104,7 @@ Feature: Mutation testing
       And the same fresh discovery admits changed functions with missing or stale cache entries
       And a matching prior cached kill never substitutes for the fresh trial
 
-    @wip @mutation-fresh-budget @ID-MUT-177
+    @wip @mutation-counted-run @ID-MUT-177
     Scenario: Counted mode leaves complete and cached-sample contracts intact
       Given complete-run and cached-sample fixtures have their existing results
       When commands run without the count opt-in
@@ -2112,7 +2112,7 @@ Feature: Mutation testing
       And cached mutation sample still rechecks only its eligible recorded outcomes
       And its existing nothing-to-sample behavior is not the counted-mode no-cache behavior
 
-    @wip @mutation-fresh-budget @ID-MUT-178
+    @wip @mutation-counted-run @ID-MUT-178
     Scenario: Applicable listed integration tests finish a single fresh judgment
       Given a selected committed mutant survives its file's own tests
       And listed integration tests reach its line and kill it
@@ -2123,7 +2123,7 @@ Feature: Mutation testing
       And the own and listed mutation stages consume one trial, not two
       And no unselected site executes
 
-    @wip @mutation-fresh-budget @ID-MUT-179
+    @wip @mutation-counted-run @ID-MUT-179
     Scenario: Fresh outcomes preserve survivor, exception and own-timeout meanings
       Given a counted selection has one covered mutation site
       When its complete applicable test sequence passes on the mutant
@@ -2133,7 +2133,7 @@ Feature: Mutation testing
       And stale exceptions fail without being trusted as successful outcomes
       And counted mode does not silently become fail-fast scheduling
 
-    @wip @mutation-fresh-budget @ID-MUT-180
+    @wip @mutation-counted-run @ID-MUT-180
     Scenario: Measured uncovered selection is explicit and is never redrawn
       Given a seeded selected site is reached by neither own nor listed tests
       When count-one preparation measures its coverage successfully
@@ -2143,7 +2143,7 @@ Feature: Mutation testing
       And fail-uncovered fails that judgment
       And strict Go still checks executable zero-site functions and exempts empty bodies
 
-    @wip @mutation-fresh-budget @ID-MUT-181
+    @wip @mutation-counted-run @ID-MUT-181
     Scenario: Counted preparation never converts failed measurement into successful assurance
       Given fresh counted preparation requires list, coverage or provider commands
       When a required command fails, or its report is missing or malformed
@@ -2154,7 +2154,7 @@ Feature: Mutation testing
       And no preexisting local measurement or per-scenario coverage map is required for successful preparation
       And raw or existing coverage overrides cannot silently bypass required fresh evidence or listed tests
 
-    @wip @mutation-fresh-budget @ID-MUT-182
+    @wip @mutation-counted-run @ID-MUT-182
     Scenario: Clean baseline failure is not a mutation kill
       Given one selected fresh mutant needs own or applicable listed baselines
       When an unmutated required baseline fails
@@ -2163,7 +2163,7 @@ Feature: Mutation testing
       And later stages do not report a baseline as passed when it never ran
       And already completed valid judgments remain visible in the current report
 
-    @wip @mutation-fresh-budget @ID-MUT-183
+    @wip @mutation-counted-run @ID-MUT-183
     Scenario: Interruption reports partial work and cleans up owned commands
       Given a count-two selection has one completed judgment and one active judgment
       When the counted run is interrupted while the second judgment is active
@@ -2173,7 +2173,7 @@ Feature: Mutation testing
       And all owned worker and preparation descendants and waiters finish before private input removal
       And one shared five-second post-abort cleanup deadline applies without killing unrelated processes
 
-    @wip @mutation-fresh-budget @ID-MUT-184
+    @wip @mutation-counted-run @ID-MUT-184
     Scenario: Machine and text output distinguish sampled work from population completeness
       Given a counted selection omits some sites and may stop before all selected work completes
       When its report is emitted
@@ -2184,7 +2184,7 @@ Feature: Mutation testing
       And a sampled pass is described as assurance about sampled judgments only
       And count does not claim to bound discovery, baseline commands or total latency
 
-    @wip @mutation-fresh-budget @ID-MUT-185
+    @wip @mutation-counted-run @ID-MUT-185
     Scenario: Sampled execution publishes no persistent complete proof
       Given a multi-site committed function has no complete mutation results
       When a count-one run completes successfully
@@ -2193,7 +2193,7 @@ Feature: Mutation testing
       And preexisting snapshot and annotated source bytes remain unchanged
       And any genuinely valid complete cache remains a separate unchanged source of proof
 
-    @wip @mutation-fresh-budget @ID-MUT-186
+    @wip @mutation-counted-run @ID-MUT-186
     Scenario: Only a genuinely site-free range is not applicable
       Given a supported committed selection contains no eligible mutation sites
       When counted execution completes its applicable admission and strict obligations
