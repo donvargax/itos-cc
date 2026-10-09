@@ -14,6 +14,7 @@ queue:
   - T-9
   - T-10
   - mutation-command-ownership
+  - mutation-windows-ownership
   - mutation-fail-fast
 items:
   - id: T-3
