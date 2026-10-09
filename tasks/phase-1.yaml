@@ -263,7 +263,16 @@
     malformed reports, per-test conversion errors, provider failures, baseline failures and
     unsupported scope must fail this opt-in path; keep legacy soft-error behavior unchanged for
     existing complete commands. Measure required own and applicable listed reach from frozen
-    committed inputs; no preexisting local coverage map is required. A reusable per-scenario
+    committed inputs; no preexisting local coverage map is required. Keep the admitted file and
+    function scope tied to the pinned source commit and resolved range base, including executable
+    functions with zero mutation sites. Do not recover that scope from selected sites alone or
+    rerun a live HEAD or mutable --since reference during preparation. Extend the plan's scope
+    provenance if necessary; strict Go coverage must still see admitted zero-site functions.
+    Planning's isolated bare Git metadata is for committed ignore classification, not a usable
+    runtime repository with an unborn HEAD. Ensure Git-aware and Go build tools operate on the
+    intended private committed inputs without leaking global Git-directory or working-tree
+    overrides into test-created repositories. Resolve external tool and dependency availability
+    explicitly, without silently reading dirty tracked inputs or installing packages. A reusable per-scenario
     coverage cache is separate future work, and count N does not bound list, coverage or baseline
     command costs. No persistent sampled coverage publication, public count flag, mutant scheduler,
     fail-fast scheduling or Windows Job implementation in this task. Tests use small controlled
