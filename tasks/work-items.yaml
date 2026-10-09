@@ -834,7 +834,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [mutation-command-ownership]
     kind: task
     why: >
       GitHub #27 requires fresh bounded selection without a mutation-result cache or full mutation
@@ -853,6 +853,7 @@ items:
       claims. Tiny committed Git fixtures and raw snapshots suffice; run zero local mutant trials
       and no broad mutation-fixture suites. Windows public integration stays in #29. Planning writes
       no snapshots, source annotations or persistent coverage artifacts.
+    refs: ["#27"]
   - id: T-12
     title: Expose supervised and fail-closed measurement preparation for bounded execution
     phase: 1
