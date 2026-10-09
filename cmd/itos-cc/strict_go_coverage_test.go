@@ -325,6 +325,64 @@ func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 	}
 }
 
+// @ID-MUT-160
+func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
+	dir := moduleRepo(t, map[string]string{
+		"go.mod":       "module example.com/strictownership\n\ngo 1.22\n",
+		"main.go":      "package main\n\nfunc First(n int) int { if n > 0 { return 1 }; return 2 }\nfunc Second(n int) int { if n > 0 { return 3 }; return 4 }\nfunc main() {}\n",
+		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if First(1) != 1 || First(0) != 2 || Second(1) != 3 || Second(0) != 4 { t.Fatal(\"functions\") } }\n",
+	})
+	if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 0 {
+		t.Fatalf("setup strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	path := filepath.Join(dir, ".metrics", "mutate", "main.go.json")
+	for _, mode := range []string{"null", "partial", "wrong-owner"} {
+		t.Run(mode, func(t *testing.T) {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var snapshot map[string]any
+			if err := json.Unmarshal(data, &snapshot); err != nil {
+				t.Fatal(err)
+			}
+			units := snapshot["units"].([]any)
+			first, second := units[0].(map[string]any), units[1].(map[string]any)
+			switch mode {
+			case "null":
+				second["go_coverage"] = nil
+			case "partial":
+				evidence := second["go_coverage"].(map[string]any)
+				evidence["complete"] = false
+				evidence["blocks"] = []any{}
+			case "wrong-owner":
+				second["go_coverage"] = first["go_coverage"]
+			}
+			updated, err := json.MarshalIndent(snapshot, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, append(updated, '\n'), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+			var missing bool
+			for _, problem := range o.json(t).Problems {
+				if problem["rule"] == "mutation.coverage-missing" && problem["function"] == "example.com/strictownership#Second" {
+					missing = true
+				}
+			}
+			if !missing || o.code != 1 {
+				t.Errorf("%s evidence was accepted: exit %d, problems %v", mode, o.code, o.json(t).Problems)
+			}
+			// Restore the fixture before the next case.
+			if err := os.WriteFile(path, data, 0o644); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 // @ID-MUT-163
 func TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection(t *testing.T) {
 	inEmptyDir(t)
