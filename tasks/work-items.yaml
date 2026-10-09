@@ -806,3 +806,17 @@ items:
       slices first commit compiling behavior tests and record real failures before implementing
       their guarantees.
     refs: ["#26"]
+  - id: mutation-windows-ownership
+    title: Windows mutation commands own and clean up their process trees
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-10]
+    kind: slice
+    why: >
+      The person split issue #26 by platform: implement the shared testability prerequisites and
+      Linux ownership here; implement and behaviorally verify race-safe Windows Job ownership on a
+      Windows machine later. Windows scenarios will remain wip and explicitly platform-scoped until
+      real execution verifies them. No unsafe Windows fail-fast path or cross-platform completion
+      claim. See features/mutate.feature and ADR-0021 for the complete ownership contract.
+    refs: ["#26"]
