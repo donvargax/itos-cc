@@ -125,7 +125,8 @@ func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.
 	}
 	var found bool
 	for _, problem := range o.json(t).Problems {
-		if problem["rule"] == "mutation.coverage-missing" && problem["file"] == "unused/unused.go" && problem["function"] == "example.com/strictunloaded/unused#Dormant" {
+		file, _ := problem["file"].(string)
+		if problem["rule"] == "mutation.coverage-missing" && filepath.ToSlash(file) == "unused/unused.go" && problem["function"] == "example.com/strictunloaded/unused#Dormant" {
 			found = true
 		}
 	}
