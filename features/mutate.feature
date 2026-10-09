@@ -1807,7 +1807,7 @@ Feature: Mutation testing
         | module go.mod                  | changed |
         | recorded coverage build option | changed |
 
-    @wip @strict-go-coverage @ID-MUT-162
+    @strict-go-coverage @ID-MUT-162
     Scenario: Partial judgment and moved functions preserve coverage identity
       Given two Go functions have fresh independent coverage evidence
       And a module test changed since, making both inventories stale

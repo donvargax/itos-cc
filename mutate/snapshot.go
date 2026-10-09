@@ -563,6 +563,10 @@ func keepUnjudged(units []UnitResult, judged map[int]bool, previous *Snapshot, t
 			was.Stale = true
 			out = append(out, was)
 		case was.Hash == u.Hash:
+			// The run may have measured file-wide statement coverage, but an
+			// unjudged function cannot inherit its new inventory or input
+			// fingerprints. Keep the independent evidence exactly as recorded.
+			u.Coverage = was.Coverage
 			out = append(out, u)
 		default:
 			out = append(out, was)
