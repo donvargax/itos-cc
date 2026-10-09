@@ -779,3 +779,28 @@ items:
       equivalence with controlled fixture helpers on Linux, while shared code remains
       Windows-compatible. Later T-10 supplies explicit testability capabilities, and platform-scoped
       ownership slices implement safety behavior against those seams.
+  - id: T-10
+    title: Expose internal context and lifecycle seams for ownership tests
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      After T-9, add the small explicit testability capabilities approved as option 2 of q-35: an
+      internal parent-context entrypoint, instance-local lifecycle/containment-operation injection,
+      and deterministic completion observation. The legacy worker.run adapter still supplies
+      context.Background and retains its command setup and current result behavior. Reuse the
+      configured command and streams rather than reconstructing argv/shell/env. These are new
+      internal capabilities, not behavioral reds against the original product; record that
+      distinction. This task only makes missing ownership behavior reachable: do not implement
+      correct cancellation-versus-timeout classification, completed-exit precedence,
+      cleanup-on-error, normal-return tree cleanup, fail-closed containment or Windows Job ownership
+      here. If exposing a seam cannot be separated from one of those behavior changes, stop and
+      specify that as platform ownership work rather than disguising a safety fix as refactor. Keep
+      dependencies per runner instance, with no test-only global hooks or general process framework.
+      Verify legacy background adapter, explicit parent-context acceptance, injected lifecycle
+      operations and unchanged preconfigured streams. No public fail-fast flag or
+      scheduler/snapshot/preparation integration. Against this prerequisite the Linux and Windows
+      slices first commit compiling behavior tests and record real failures before implementing
+      their guarantees.
