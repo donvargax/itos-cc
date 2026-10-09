@@ -131,7 +131,9 @@ language behavior is unchanged. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
 including excluded nested modules; `GOWORK=off` remains supported. The refusal
 is reported as `mutation.coverage-unsupported`, and cached evidence cannot
-bypass it.
+bypass it. Each cached inventory is bound to its file, function identity, and
+function hash; missing, incomplete, legacy, or misattributed inventories do
+not prove coverage.
 
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |

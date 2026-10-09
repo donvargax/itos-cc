@@ -99,7 +99,9 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 				continue
 			}
 			if pair[i] >= 0 {
-				if evidence := entries[pair[i]].Coverage; evidence != nil && evidence.Complete && evidence.Version == goCoverageEvidenceVersion {
+				if evidence := entries[pair[i]].Coverage; evidence != nil && evidence.Complete &&
+					evidence.Version == goCoverageEvidenceVersion && evidence.File == key &&
+					evidence.Function == ids[i] && evidence.Hash == hashes[i] {
 					check.Blocks = evidence.Blocks
 					check.Evidence = evidence
 					check.State = "fresh"

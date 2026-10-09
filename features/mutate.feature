@@ -1775,7 +1775,7 @@ Feature: Mutation testing
       And cached check runs no test, list or coverage command and writes nothing
       But stale independent evidence makes a strict run measure again even if its mutant outcomes remain reusable
 
-    @wip @strict-go-coverage @ID-MUT-160
+    @strict-go-coverage @ID-MUT-160
     Scenario Outline: Incomplete coverage evidence cannot pass strict check
       Given a Go function's mutation outcomes are fresh but its independent coverage evidence is <evidence>
       When I run mutation check with --fail-uncovered --json

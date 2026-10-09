@@ -5,14 +5,16 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 	sitter "github.com/tree-sitter/go-tree-sitter"
 )
 
-const goCoverageEvidenceVersion = 1
+const goCoverageEvidenceVersion = 2
 
 func goCoverageEvidence(file *lang.File, unit lang.Unit, blocks []coverage.GoBlock, producer string, inputs map[string]string) *GoCoverageEvidence {
 	evidence := &GoCoverageEvidence{
-		Version: goCoverageEvidenceVersion, Producer: producer,
+		Version: goCoverageEvidenceVersion, File: project.FromRoot(file.Path),
+		Function: unitID(unit.Namespace, unit.Name), Hash: UnitHash(file, unit), Producer: producer,
 		Inputs: cloneHashes(inputs), Blocks: []GoCoverageBlock{},
 	}
 	for _, block := range blocks {

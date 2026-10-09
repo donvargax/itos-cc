@@ -78,6 +78,9 @@ type UnitResult struct {
 // producer/input boundary that makes it reusable.
 type GoCoverageEvidence struct {
 	Version  int               `json:"version"`
+	File     string            `json:"file"`
+	Function string            `json:"function"`
+	Hash     string            `json:"function_hash"`
 	Producer string            `json:"producer"`
 	Inputs   map[string]string `json:"inputs"`
 	Complete bool              `json:"complete"`
