@@ -747,7 +747,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [mutation-command-ownership]
     kind: idea
     why: >
       Issue #26 is the person’s highest priority now, ahead of the debt foundation. Opt-in fail-fast
