@@ -765,7 +765,7 @@ items:
     title: Extract mutation command execution without changing legacy behavior
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
