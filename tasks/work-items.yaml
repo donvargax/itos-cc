@@ -758,3 +758,24 @@ items:
       complete. Specify scheduling, bounded cleanup, truthful partial machine output and cache reuse
       before implementation.
     refs: ["#26"]
+  - id: T-9
+    title: Extract mutation command execution without changing legacy behavior
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Option 2 of q-35, approved after the private spike, needs a separately verified execution
+      boundary before owned-process safety changes. Keep worker.run(Command, timeout) and its
+      callers unchanged. Leave worker-copy/root mapping, argv and shell selection,
+      environment/PathEnv, timeout creation, combined output, elapsed time and current result
+      classification equivalent. Extract execution of an already configured command into a small
+      instance-local runner with deterministic lifecycle observation; its default still installs
+      current killGroup behavior. Preserve Start/Wait errors and streams. This task adds no
+      parent-run cancellation policy, cleanup-on-normal-return fix, Windows Job backend, fail-fast
+      flag, scheduler or snapshot changes. Characterization tests come before extraction; passing
+      legacy guards are not behavioral reds. Tests cover setup and legacy result/lifecycle
+      equivalence with controlled fixture helpers on Linux, while shared code remains
+      Windows-compatible. Later T-10 supplies explicit testability capabilities, and platform-scoped
+      ownership slices implement safety behavior against those seams.
