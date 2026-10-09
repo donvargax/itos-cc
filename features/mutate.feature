@@ -1868,6 +1868,16 @@ Feature: Mutation testing
   # Real lifecycle tests cover cleanup on acquisition/start/wait errors, not
   # just the spike's successful post-Wait cleanup hook. The spike proves no
   # descendant containment, output-drain guarantee or Windows Job ownership.
+  # Delivery evidence: cab1f76 committed timeout, normal-return and startup
+  # checks before d30f99e. Only normal return demonstrated original behavioral
+  # red (WaitDelay expired before I/O complete); timeout/startup were passing
+  # guards. Cancellation, exit-precedence and cleanup-error tests arrived after
+  # implementation, despite q-35's requirement; do not claim full red-first
+  # chronology or relabel older-revision checks as original evidence.
+  # Coordinator review found that normal cleanup consumed the shared run-abort
+  # budget. 5fcd83c demonstrated actual new red for normal completion and own
+  # timeout against d30f99e; f779e4c reserves the shared deadline for parent
+  # aborts. All these local checks used helper processes, zero mutant trials.
   # - Supervised commands own ordinary, non-detaching child/grandchild
   #   processes. Windows uses a kill-on-close Job Object with ownership
   #   established before children can escape; Unix uses a process group.

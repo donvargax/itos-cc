@@ -63,4 +63,4 @@ The pre-push hook, `itos hook pre-push`, runs these on every push:
   behavioral failure before product changes; label checks of an older
   revision performed later as retrospective, not evidence obtained earlier.
   Guardrails may already pass and should be reported separately.
-  Recorded 2026-10-08; last seen 2026-10-08; exit: permanent (judgment).
+  Recorded 2026-10-08; last seen 2026-10-09; exit: permanent (judgment).
