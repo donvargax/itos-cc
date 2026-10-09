@@ -834,3 +834,7 @@ items:
       is reserved for a Windows machine; no Linux cross-build support claim or unsafe fallback. Full
       trial matrices belong in CI, local mutation trials remain sparse.
     refs: ["#29"]
+    deferred: >
+      The person requested separate Windows issue #29 and reserved native Windows work for a Windows
+      machine. Finish Linux issue #27 here; resume this idea only when native Windows work is
+      authorized and available.
