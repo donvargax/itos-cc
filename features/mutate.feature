@@ -609,7 +609,7 @@ Feature: Mutation testing
 
     # ADR-0017 deliberately replaces the former promise that combining
     # --no-coverage with --fail-uncovered silently runs every mutant.
-    @wip @slice-2 @strict-go-coverage @ID-MUT-51
+    @slice-2 @strict-go-coverage @ID-MUT-51
     Scenario: Skipping coverage conflicts with strict mode
       When I run "itos-cc mutation run --no-coverage --fail-uncovered src/board.ts"
       Then the problem is "flags.conflict", naming "--no-coverage"
@@ -1734,7 +1734,7 @@ Feature: Mutation testing
   #   conflict is universal, and is checked even for empty selections.
   Rule: Strict Go checks prove executable coverage without mutation sites
 
-    @wip @strict-go-coverage @ID-MUT-156
+    @strict-go-coverage @ID-MUT-156
     Scenario: A killed mutant does not excuse an uncovered statement without a site
       Given a Go function with a tested comparison whose mutants are killed and an unexecuted identifier-conditioned branch returning a string with no mutation site
       When I run mutation run with --fail-uncovered --json for its source file
@@ -1745,7 +1745,7 @@ Feature: Mutation testing
       When I run mutation check with --fail-uncovered --json for the file
       Then it reports the same uncovered statement and exits 1 without running commands or writing files
 
-    @wip @strict-go-coverage @ID-MUT-157
+    @strict-go-coverage @ID-MUT-157
     Scenario: Executable zero-site functions need coverage while empty bodies do not
       Given a Go function containing no mutation sites whose identifier-conditioned branch is never executed
       And an executable zero-site function in a package no test loads
@@ -1819,7 +1819,7 @@ Feature: Mutation testing
       And moving a function down within its file reports uncovered blocks at their current lines after current measurement
       And repeated init functions retain the correct separate inventories when paired by name and hash
 
-    @wip @strict-go-coverage @ID-MUT-163
+    @strict-go-coverage @ID-MUT-163
     Scenario: Strict coverage validates flags and does not widen other modes
       When I combine --fail-uncovered with --no-coverage, even for an empty selection
       Then the problem is "flags.conflict" for "--no-coverage" and the exit code is 2
@@ -1830,7 +1830,7 @@ Feature: Mutation testing
       And other-language statement coverage, ordinary graph/sample freshness and survivor exceptions are unchanged
       And a survivor exception cannot excuse a strict Go uncovered-statement finding
 
-    @wip @strict-go-coverage @ID-MUT-164
+    @strict-go-coverage @ID-MUT-164
     Scenario: Unsupported module scopes cannot reuse strict coverage evidence
       Given a Go function has fresh strict coverage evidence
       When an active go.work is introduced for its measurement environment

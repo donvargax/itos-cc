@@ -350,8 +350,13 @@ func TestAnEntryDoesNotExcuseAnUncoveredMutant(t *testing.T) {
 	m := o.json(t)
 	wantProblem(t, m.problem("mutation.uncovered"), map[string]any{"file": boardSource, "function": clearID,
 		"line": float64(clearLine), "column": float64(clearColumn)}, o.stdout)
-	if !slices.Equal(m.rules(), []string{"mutation.uncovered"}) {
-		t.Errorf("problems %v, want clear's uncovered mutant alone", m.Problems)
+	for _, rule := range m.rules() {
+		if rule != "mutation.uncovered" && rule != "mutation.uncovered-statement" {
+			t.Errorf("unexpected strict finding %q in %v", rule, m.Problems)
+		}
+	}
+	if !slices.Contains(m.rules(), "mutation.uncovered") {
+		t.Errorf("problems %v, want clear's uncovered mutant", m.Problems)
 	}
 	if f := m.file(t, boardSource); f.Excepted == nil || *f.Excepted != 0 || f.Uncovered != 1 {
 		t.Errorf("file %+v, want clear's mutant counted uncovered, and none excepted", f)

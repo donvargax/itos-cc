@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -25,6 +27,19 @@ type Segment struct {
 	Key            string
 	// from holds a bit for each Source whose data covered the segment.
 	from uint8
+}
+
+// GoBlock is one positive-weight executable block in a Go cover profile.
+// Span retains the complete measured line/column identity; Line is the
+// current source line used for diagnostics.
+type GoBlock struct {
+	Span      string
+	Line      int
+	Column    int
+	EndLine   int
+	EndColumn int
+	Weight    float64
+	Covered   bool
 }
 
 // Entry is one file as a report names it, before it is matched to a source
@@ -207,6 +222,92 @@ func (r *Report) LineSources(file string, line int) []string {
 		}
 	}
 	return out
+}
+
+// GoBlocks returns the union of measured Go statement spans for file across
+// the primary report and any separately-attached listed-test measurements.
+// A span is covered when any successful measurement covered that exact span.
+func (r *Report) GoBlocks(file string) []GoBlock {
+	if r == nil {
+		return nil
+	}
+	bySpan := map[string]GoBlock{}
+	add := func(report *Report) {
+		if report == nil {
+			return
+		}
+		for _, seg := range report.files[file] {
+			startLine, startColumn, endLine, endColumn, ok := goSpanColumns(seg.Key)
+			if !ok || seg.Total <= 0 {
+				continue
+			}
+			block := bySpan[seg.Key]
+			block.Span, block.Line, block.Column = seg.Key, startLine, startColumn
+			block.EndLine, block.EndColumn = endLine, endColumn
+			block.Weight = max(block.Weight, seg.Total)
+			block.Covered = block.Covered || seg.Covered > 0
+			bySpan[seg.Key] = block
+		}
+	}
+	add(r)
+	if r.tests != nil {
+		for _, id := range r.tests.ids {
+			add(r.tests.reports[id])
+		}
+	}
+	out := make([]GoBlock, 0, len(bySpan))
+	for _, block := range bySpan {
+		out = append(out, block)
+	}
+	slices.SortFunc(out, func(a, b GoBlock) int {
+		if a.Line != b.Line {
+			return a.Line - b.Line
+		}
+		if a.Column != b.Column {
+			return a.Column - b.Column
+		}
+		return strings.Compare(a.Span, b.Span)
+	})
+	return out
+}
+
+// FromGoBlocks makes a report from a previously complete Go block inventory.
+// It is used only to classify mutation sites when strict cached evidence is
+// fresh; it does not claim to be a newly measured producer.
+func FromGoBlocks(blocks map[string][]GoBlock) *Report {
+	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{"go": true}}
+	for file, entries := range blocks {
+		for _, block := range entries {
+			if block.Weight <= 0 {
+				continue
+			}
+			covered := 0.0
+			if block.Covered {
+				covered = block.Weight
+			}
+			r.files[file] = append(r.files[file], Segment{Start: block.Line, End: block.Line, Total: block.Weight, Covered: covered, Key: block.Span})
+		}
+	}
+	return r
+}
+
+func goSpanColumns(span string) (startLine, startColumn, endLine, endColumn int, ok bool) {
+	from, to, found := strings.Cut(span, ",")
+	if !found {
+		return 0, 0, 0, 0, false
+	}
+	parse := func(pos string) (int, int, bool) {
+		line, column, found := strings.Cut(pos, ".")
+		if !found {
+			return 0, 0, false
+		}
+		l, e1 := strconv.Atoi(line)
+		c, e2 := strconv.Atoi(column)
+		return l, c, e1 == nil && e2 == nil && l > 0 && c > 0
+	}
+	startLine, startColumn, ok1 := parse(from)
+	endLine, endColumn, ok2 := parse(to)
+	return startLine, startColumn, endLine, endColumn, ok1 && ok2
 }
 
 // Build matches each entry to one of sources and merges entries that name the

@@ -276,7 +276,15 @@ Uncovered mutants never run, so a changed function no test executes passes.
 `mutation.uncovered` problem in `--json`, and exit 1. With `--since`, only the
 judged functions' uncovered mutants count. With `--no-coverage`, or where
 coverage measured nothing for the language, every mutant runs and none is
-uncovered.
+uncovered for non-strict runs. Go `--fail-uncovered` is strict: it also
+requires fresh executable-block evidence for every judged Go function,
+including functions with no mutation sites, and fails uncovered blocks as
+`mutation.uncovered-statement` without changing mutant counts. Empty and
+comment-only bodies have no executable obligation. Strict Go coverage needs a
+successful built-in or listed measurement; `--coverage-report`,
+`--use-existing-coverage`, and `--coverage-command` are rejected. An active
+Go workspace or local replacement outside the inventoried module is refused;
+set `GOWORK=off` to disable workspace use.
 
 `mutation check` gives the verdict a run would give from the cached results
 alone, running no test and no coverage command and writing nothing. Run
@@ -291,8 +299,12 @@ exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 
-`mutation check` trusts the snapshots, so a cache written by hand, or
-against other code, passes it. `mutation sample` runs a few cached mutants
+For strict Go coverage, `mutation check` additionally rejects missing or
+stale per-function block evidence without running tests, coverage, or list
+commands. Its evidence fingerprints module Go sources and tests, module
+configuration, project config, configured support files, producer options,
+and relevant Go build settings; raw profiles cannot be stamped with current
+hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a
 survivor now killed. Killed and timeout agree. It draws `--count` mutants (20

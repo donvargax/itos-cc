@@ -29,7 +29,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant with `--fail-uncovered`, mutation results missing or stale, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant or executable Go coverage block with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
 | 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -93,6 +93,10 @@ output of the commands it runs passes as it is.
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
 | `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
+| `mutation.uncovered-statement` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
+| `mutation.coverage-missing`  | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
+| `mutation.coverage-stale`    | 1    | mutation check --fail-uncovered | `file`, `function`, `line` |
+| `mutation.coverage-unsupported` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function or its file is gone), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`), with `moved` `new_file` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
@@ -115,6 +119,19 @@ matched by project-root `mutation.tests.support` globs. Feature files and
 other custom-command inputs must be named by those globs. Check, sample, run,
 and graph use the recorded scope's evidence; freshness checks run no tests or
 list command. Older Go broad-scope outcomes without evidence are stale.
+
+Strict Go coverage is independent of mutant outcomes. `--fail-uncovered`
+requires a complete per-function executable block inventory from a successful
+built-in or listed measurement, including functions with no mutation sites.
+Empty/comment-only bodies have no executable obligation. Cached checks report
+missing or stale coverage evidence without running tests, coverage or list
+commands. Strict Go runs reject `--coverage-report`,
+`--use-existing-coverage`, and `--coverage-command`; non-strict and other
+language behavior is unchanged. Strict run and check refuse active Go
+workspaces and local replacements outside the inventoried nearest module,
+including excluded nested modules; `GOWORK=off` remains supported. The refusal
+is reported as `mutation.coverage-unsupported`, and cached evidence cannot
+bypass it.
 
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |

@@ -68,6 +68,7 @@ func requireUnsupportedCoverage(t *testing.T, o outcome, filename string) {
 	}
 }
 
+// @ID-MUT-164
 func TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
 	dir, _ := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")

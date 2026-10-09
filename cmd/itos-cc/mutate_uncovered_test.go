@@ -136,18 +136,11 @@ func TestUncoveredMutantsAsJSON(t *testing.T) {
 }
 
 // @ID-MUT-51
-func TestNothingIsUncoveredWhenCoverageIsSkipped(t *testing.T) {
+func TestStrictModeRejectsSkippedCoverage(t *testing.T) {
 	boardRepo(t, nil)
-
-	o := mutateRun(t, "--fail-uncovered", "--json", boardSource) // with --no-coverage
-	m := o.json(t)
-	if len(m.Files) != 1 || m.Files[0].Ran != 2 || m.Files[0].Uncovered != 0 {
-		t.Errorf("files %+v, want both mutants run and none uncovered\n%s", m.Files, o.stdout)
-	}
-	if p := m.problem("mutation.uncovered"); p != nil {
-		t.Errorf("problem %v, want none uncovered with --no-coverage", p)
-	}
-	if p := m.problem("mutation.survived"); p == nil || p["function"] != clearID {
-		t.Errorf("problems %v, want clear's mutant run and survived", m.Problems)
+	o := cli(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json", boardSource)
+	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)
+	if o.code != 2 {
+		t.Errorf("exit %d, want usage conflict 2\n%s%s", o.code, o.stdout, o.stderr)
 	}
 }

@@ -153,6 +153,30 @@ example.com/demo/board/board.go:9.30,10.10 3 0
 	}
 }
 
+func TestGoBlocksRetainColumnsAndUnionListedMeasurements(t *testing.T) {
+	path := "/w/gomod/board/board.go"
+	primary, err := ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.3,9.8 1 1\nexample.com/demo/board/board.go:9.12,9.17 1 0\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed, err := ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.12,9.17 1 1\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := Build([]string{path}, "/w/gomod", primary)
+	r.SetTests(&TestCoverage{ids: []string{"listed"}, reports: map[string]*Report{"listed": Build([]string{path}, "/w/gomod", listed)}})
+	blocks := r.GoBlocks(path)
+	if len(blocks) != 2 {
+		t.Fatalf("blocks %+v, want two distinct same-line spans", blocks)
+	}
+	if blocks[0].Span != "9.3,9.8" || !blocks[0].Covered {
+		t.Errorf("first block %+v, want first span covered", blocks[0])
+	}
+	if blocks[1].Span != "9.12,9.17" || !blocks[1].Covered {
+		t.Errorf("second block %+v, want separately listed-covered span", blocks[1])
+	}
+}
+
 func TestReportsOfTheSameFileAreCombined(t *testing.T) {
 	unit, err := ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,1\nDA:2,0\nend_of_record\n"))
 	if err != nil {

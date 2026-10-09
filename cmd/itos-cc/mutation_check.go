@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 var mutationCheckCommand = &command{
@@ -26,7 +27,11 @@ moved is fresh; an entry that lacks a site the function has now, as when a
 newer itos-cc adds a mutation operator, is stale, naming each such site, and
 mutation run runs only those; and a fresh entry fails on each survivor it records, and
 with --fail-uncovered on each uncovered mutant it records. A function with no
-mutation site needs no entry. The snapshot also records the hash of each test
+mutation site needs no mutation results, but with --fail-uncovered every
+judged Go function also needs fresh independent executable coverage evidence,
+including zero-site functions. Uncovered executable blocks and missing or
+stale evidence fail without running tests, coverage or list commands. The
+snapshot also records the hash of each test
 file that imports its file: when one was added, changed, or removed since,
 every function of the file is stale, as it is when the snapshot predates
 recording tests. A run with --since that finds them changed keeps the
@@ -61,7 +66,7 @@ counts their entry records, zero when missing; an excepted survivor counts
 in "excepted", not "survived".`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on each recorded uncovered mutant, as on a survivor")),
+		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks")),
 	json: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
    "uncovered"}]}]`,
@@ -70,6 +75,10 @@ in "excepted", not "survived".`,
 		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
+		"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go function lacks complete measured coverage evidence: file, function, line",
+		"mutation.coverage-stale    with --fail-uncovered, Go coverage inputs changed since measurement: file, function, line",
+		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"since.bad-ref             --since names no commit: ref",
@@ -78,7 +87,7 @@ in "excepted", not "survived".`,
 	},
 	exits: []exitDoc{
 		{0, "every function checked has fresh results, and none records a survivor"},
-		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant with --fail-uncovered; or an exception is stale"},
+		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block, or missing/stale Go coverage evidence with --fail-uncovered; or an exception is stale"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
@@ -140,6 +149,36 @@ func runMutationCheck(in *invocation) (any, error) {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
+	if failUncovered && hasGoSource(sources) {
+		producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
+		coverageChecks, err := mutate.CheckGoCoverage(sources, judge, func(path string) (string, map[string]string, error) {
+			inputs, err := mutate.GoCoverageInputs(path, project.Root(), producer, support)
+			return producer, inputs, err
+		})
+		if err != nil {
+			return result, err
+		}
+		for _, coverageCheck := range coverageChecks {
+			switch coverageCheck.State {
+			case "unsupported":
+				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-unsupported", "uses unsupported Go coverage scope "+strings.Join(coverageCheck.Changed, ", "))
+			case "missing":
+				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-missing", "has no complete fresh measured Go coverage inventory")
+			case "stale":
+				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-stale", "has Go coverage made before inputs changed: "+strings.Join(coverageCheck.Changed, ", "))
+			default:
+				for _, block := range coverageCheck.Blocks {
+					if !block.Covered {
+						reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, block.Line,
+							"mutation.uncovered-statement", "has an uncovered executable Go coverage block")
+					}
+				}
+			}
+		}
+	}
 	for _, c := range checks {
 		f := checkFile{File: c.Rel, Functions: []checkFunction{}}
 		count := map[string]int{}

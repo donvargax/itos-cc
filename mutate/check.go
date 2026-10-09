@@ -42,6 +42,116 @@ type FunctionCheck struct {
 	unit    int // the function's index in its file's units
 }
 
+// GoCoverageCheck is one current Go function's independent coverage verdict.
+type GoCoverageCheck struct {
+	File, Function string
+	Line           int
+	State          string // "missing", "stale", "fresh"
+	Changed        []string
+	Blocks         []GoCoverageBlock
+	Evidence       *GoCoverageEvidence
+}
+
+// CheckGoCoverage checks independent coverage evidence for every selected Go
+// function, including functions with no mutation sites. It runs and writes
+// nothing. current returns the current producer/input fingerprint per file.
+func CheckGoCoverage(files []string, judge func(path, function, hash string) bool, current func(path string) (string, map[string]string, error)) ([]GoCoverageCheck, error) {
+	var out []GoCoverageCheck
+	for _, path := range files {
+		f, err := lang.ParseFile(path)
+		if err != nil {
+			return out, err
+		}
+		unsupported := ""
+		if f.Spec != nil && f.Spec.Name == "go" {
+			unsupported, err = GoCoverageUnsupported(path)
+			if err != nil {
+				f.Close()
+				return out, err
+			}
+		}
+		key := project.FromRoot(path)
+		snap, err := LoadSnapshot(key)
+		if err != nil {
+			f.Close()
+			return out, fmt.Errorf("%s: %w", SnapshotName(key), err)
+		}
+		_, inputs, err := current(path)
+		if err != nil {
+			f.Close()
+			return out, err
+		}
+		var entries []UnitResult
+		if snap != nil {
+			entries = snap.Units
+		}
+		ids, hashes := fileKeys(f)
+		pair := EntriesOf(ids, hashes, entries)
+		for i, unit := range f.Units {
+			if judge != nil && !judge(path, ids[i], hashes[i]) {
+				continue
+			}
+			check := GoCoverageCheck{File: project.Rel(path), Function: ids[i], Line: unit.StartLine, State: "missing"}
+			if unsupported != "" {
+				check.State = "unsupported"
+				check.Changed = []string{unsupported}
+				out = append(out, check)
+				continue
+			}
+			if pair[i] >= 0 {
+				if evidence := entries[pair[i]].Coverage; evidence != nil && evidence.Complete && evidence.Version == goCoverageEvidenceVersion {
+					check.Blocks = evidence.Blocks
+					check.Evidence = evidence
+					check.State = "fresh"
+					before, now := cloneHashes(evidence.Inputs), cloneHashes(inputs)
+					delete(before, "@producer")
+					delete(now, "@producer")
+					check.Changed = GoCoverageChanges(before, now)
+					if !validGoCoverageProducer(evidence.Producer) {
+						check.Changed = append(check.Changed, "coverage producer/options")
+					}
+					if evidence.Producer == "" && len(check.Changed) == 0 {
+						check.Changed = []string{"coverage producer/options"}
+					}
+					if len(check.Changed) > 0 {
+						check.State = "stale"
+					}
+				}
+			}
+			out = append(out, check)
+		}
+		f.Close()
+	}
+	return out, nil
+}
+
+func validGoCoverageProducer(producer string) bool {
+	return producer == "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own" ||
+		producer == "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
+}
+
+// NeedsMutationCoverage reports whether Run must test at least one mutant.
+// Fresh kills, timeouts, uncovered outcomes and excepted survivors are
+// reusable; a changed/missing function or ordinary survivor is not.
+func NeedsMutationCoverage(checks []FileCheck, mutateAll bool) bool {
+	if mutateAll {
+		return true
+	}
+	for _, file := range checks {
+		for _, function := range file.Functions {
+			if function.State != Fresh {
+				return true
+			}
+			for _, mutant := range function.Mutants {
+				if mutant.Outcome == Survived && mutant.Excepted == "" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // Freshness is how a function's cached results hold against the function
 // as it is now, as mutation check calls them.
 type Freshness struct {

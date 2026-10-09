@@ -28,6 +28,13 @@ type Options struct {
 	// to run every mutant regardless of coverage, and an error to stop the
 	// run before any mutant runs or any snapshot is written.
 	Coverage func(sources []string) (*coverage.Report, error)
+	// StatementCoverage is a successful independently admitted Go coverage
+	// measurement for strict mode. It is attached per unit, including units
+	// with no mutation sites.
+	StatementCoverage *coverage.Report
+	CoverageProducer  string
+	CoverageInputs    func(source string) (string, map[string]string, error)
+	CachedCoverage    func(path, function, hash string) *GoCoverageEvidence
 	// Support is the hashes of the support files of the listed tests now
 	// (SupportHashes): what a listed outcome records, and holds while they
 	// are unchanged.
@@ -187,6 +194,28 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 		if !s.result.BaselineFailed && len(s.result.FailedSelections) == 0 {
 			s.result.Mutants = s.decided()
 			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes, s.ran)
+			if opt.StatementCoverage != nil && s.file.Spec.Name == "go" {
+				producer, inputs := opt.CoverageProducer, map[string]string{}
+				if opt.CoverageInputs != nil {
+					var err error
+					producer, inputs, err = opt.CoverageInputs(s.file.Path)
+					if err != nil {
+						return nil, err
+					}
+				}
+				for i, unit := range s.file.Units {
+					s.result.Snapshot.Units[i].Coverage = goCoverageEvidence(s.file, unit,
+						opt.StatementCoverage.GoBlocks(s.file.Path), producer, inputs)
+				}
+			}
+			if opt.CachedCoverage != nil && s.file.Spec.Name == "go" {
+				ids, hashes := fileKeys(s.file)
+				for i := range s.file.Units {
+					if evidence := opt.CachedCoverage(s.file.Path, ids[i], hashes[i]); evidence != nil {
+						s.result.Snapshot.Units[i].Coverage = evidence
+					}
+				}
+			}
 			if s.file.Spec.Name == "go" {
 				recordGoEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
 			}

@@ -95,10 +95,16 @@ was: neither its snapshot nor its summary comment is written. Renames are
 followed: a move is no change, and a renamed file's snapshot moves with it.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
-survivor, so a gate fails a change no test executes. With --since, only the
-judged functions' uncovered mutants count. With --no-coverage, or where
-coverage measured nothing for the language, every mutant runs and none is
-uncovered.
+survivor. For Go it also requires fresh measured executable coverage for
+every judged function, including functions with no mutation sites, and fails
+each uncovered positive-weight coverage block. Strict Go runs reject
+--no-coverage, --coverage-report, --use-existing-coverage, and
+--coverage-command. A matching independent cache can avoid remeasurement;
+otherwise built-in or listed coverage must measure successfully. Empty or
+comment-only function bodies have no executable coverage obligation. For
+other languages the existing uncovered-mutant behavior is unchanged. With
+--since, only the judged functions' uncovered mutants and executable blocks
+count.
 
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing: it
 is counted excepted, not survived, and is reused without running, as a kill
@@ -160,7 +166,7 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on each uncovered mutant, as on a survivor")),
+		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
    "function", "original", "replacement",
@@ -174,6 +180,9 @@ judged and no snapshot is written. Listed tests are not run with
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
+		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go function lacks complete measured coverage evidence: file, function, line",
+		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
@@ -182,6 +191,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
+		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go coverage with raw coverage flags: flag",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
@@ -331,6 +341,9 @@ func importingTests() (func(path string) []string, error) {
 
 func runMutate(in *invocation) (any, error) {
 	result := mutateResult{Files: []mutateFile{}}
+	if in.set("fail-uncovered") && in.set("no-coverage") {
+		return result, flagConflict("--no-coverage", "--no-coverage conflicts with --fail-uncovered, which requires measured Go executable coverage")
+	}
 	cfg, err := loadConfig()
 	if err != nil {
 		return result, err
@@ -347,6 +360,14 @@ func runMutate(in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		reportElsewhere(in, elsewhere)
 		return result, nil
+	}
+	strictGo := in.set("fail-uncovered") && hasGoSource(sources)
+	if strictGo {
+		for _, flag := range []string{"--coverage-report", "--use-existing-coverage", "--coverage-command"} {
+			if flagPresent(in, flag) {
+				return result, flagConflict(flag, flag+" is not admitted with strict Go coverage; use a fresh built-in or listed measurement")
+			}
+		}
 	}
 	tests, err := importingTests()
 	if err != nil {
@@ -376,7 +397,88 @@ func runMutate(in *invocation) (any, error) {
 	if suite != nil {
 		opt.Listed = &mutate.Listed{Root: project.Root(), Select: suite.Select}
 	}
-	if !in.set("no-coverage") {
+	if strictGo {
+		producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
+		fingerprint := func(source string) (string, map[string]string, error) {
+			inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
+			return producer, inputs, err
+		}
+		var cached []mutate.GoCoverageCheck
+		mutationChecks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+		if err != nil {
+			return result, err
+		}
+		cached, err = mutate.CheckGoCoverage(sources, judge, fingerprint)
+		if err != nil {
+			return result, err
+		}
+		unsupported := false
+		for _, check := range cached {
+			if check.State == "unsupported" {
+				unsupported = true
+				reportCoverageProblem(in, check.File, check.Function, check.Line,
+					"mutation.coverage-unsupported", "uses unsupported Go coverage scope "+strings.Join(check.Changed, ", "))
+			}
+		}
+		if unsupported {
+			return result, nil
+		}
+		canReuse := !mutate.NeedsMutationCoverage(mutationChecks, in.set("mutate-all"))
+		allFresh := canReuse
+		for _, check := range cached {
+			if check.State != "fresh" {
+				allFresh = false
+			}
+		}
+		if allFresh {
+			byFunction := map[string]*mutate.GoCoverageEvidence{}
+			byFile := map[string][]coverage.GoBlock{}
+			for _, check := range cached {
+				byFunction[check.File+"\x00"+check.Function] = check.Evidence
+				for _, block := range check.Blocks {
+					byFile[filepath.Join(project.Root(), filepath.FromSlash(check.File))] = append(byFile[filepath.Join(project.Root(), filepath.FromSlash(check.File))], coverage.GoBlock{
+						Span: block.Span, Line: block.Line, Column: block.Column, Weight: block.Weight, Covered: block.Covered,
+					})
+				}
+			}
+			opt.CachedCoverage = func(path, function, _ string) *mutate.GoCoverageEvidence {
+				return byFunction[project.Rel(path)+"\x00"+function]
+			}
+			report := coverage.FromGoBlocks(byFile)
+			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+		} else {
+			report, measuredProducer, currentInputs, listedFiles, err := strictGoCoverage(in, sources, suite, support)
+			if err != nil {
+				return result, err
+			}
+			if report == nil {
+				return result, fmt.Errorf("strict Go coverage measurement produced no report")
+			}
+			var missingGo bool
+			for _, missing := range report.Missing() {
+				missingGo = missingGo || missing.Language == "go"
+			}
+			if missingGo || !report.Measures("go") {
+				for _, p := range unmeasured(report) {
+					if p.subject["language"] == "go" {
+						in.report(p)
+					}
+				}
+				if !missingGo {
+					in.report(fail(kindMissing, "coverage.no-report", "Go coverage measurement did not produce executable coverage",
+						"Run the built-in Go coverage command successfully, then retry.").with("language", "go"))
+				}
+				return result, nil
+			}
+			opt.StatementCoverage = report
+			opt.CoverageProducer = measuredProducer
+			opt.CoverageInputs = currentInputs
+			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+			if opt.Listed != nil {
+				opt.Listed.Files = listedFiles
+			}
+		}
+	} else if !in.set("no-coverage") {
 		opt.Coverage = func(sources []string) (*coverage.Report, error) {
 			var perTest *coverage.PerTest
 			if suite != nil {
@@ -411,6 +513,9 @@ func runMutate(in *invocation) (any, error) {
 	results, err := mutate.Run(sources, opt)
 	if err != nil {
 		return result, err
+	}
+	if strictGo {
+		reportStrictGoCoverage(in, results)
 	}
 	reported := map[string]bool{}
 	for _, r := range results {
@@ -600,6 +705,105 @@ func supportNow(cfg *config.Config) (map[string]string, error) {
 		return nil, nil
 	}
 	return mutate.SupportHashes(project.Root(), cfg.Tests.Support)
+}
+
+func flagConflict(flag, message string) error {
+	return fail(kindUsage, "flags.conflict", message, "Drop the incompatible flag and run again.").with("flag", flag)
+}
+
+func flagPresent(in *invocation, flag string) bool {
+	switch flag {
+	case "--coverage-report":
+		return len(in.strs("coverage-report")) > 0
+	case "--coverage-command":
+		return in.set("coverage-command")
+	case "--use-existing-coverage":
+		return in.set("use-existing-coverage")
+	}
+	return false
+}
+
+func hasGoSource(sources []string) bool {
+	for _, source := range sources {
+		if spec := lang.Detect(source); spec != nil && spec.Name == "go" {
+			return true
+		}
+	}
+	return false
+}
+
+func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, support map[string]string) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
+	perTest := (*coverage.PerTest)(nil)
+	listedFiles := map[string]string{}
+	if suite != nil {
+		listed, err := listTests(suite)
+		if err != nil {
+			return nil, "", nil, nil, err
+		}
+		perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+		var ids []string
+		for _, test := range listed {
+			ids = append(ids, test.ID)
+			listedFiles[test.ID] = test.File
+		}
+		perTest.All = suite.All(ids)
+	}
+	scope := coverage.OwnTests
+	producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
+	if in.set("all-tests") {
+		scope = coverage.AllTests
+		producer = "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
+	}
+	report, err := loadCoverage(in, sources, scope, os.Stderr, perTest)
+	if err != nil {
+		return nil, "", nil, nil, err
+	}
+	fingerprint := func(source string) (string, map[string]string, error) {
+		inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
+		return producer, inputs, err
+	}
+	return report, producer, fingerprint, listedFiles, nil
+}
+
+func reportStrictGoCoverage(in *invocation, results []mutate.FileResult) {
+	for _, result := range results {
+		if result.Snapshot.Language != "go" {
+			continue
+		}
+		if result.BaselineFailed || len(result.FailedSelections) > 0 {
+			continue
+		}
+		judged := map[string]bool{}
+		for _, id := range result.Judged {
+			judged[id] = true
+		}
+		for _, unit := range result.Snapshot.Units {
+			id := unit.Namespace + "#" + unit.Name
+			if result.Judged != nil && !judged[id] {
+				continue
+			}
+			if unit.Coverage == nil || !unit.Coverage.Complete {
+				reportCoverageProblem(in, result.Rel, id, unit.StartLine, "mutation.coverage-missing", "has no complete measured Go coverage inventory")
+				continue
+			}
+			for _, block := range unit.Coverage.Blocks {
+				if !block.Covered {
+					reportCoverageProblem(in, result.Rel, id, block.Line, "mutation.uncovered-statement", "has an uncovered executable Go coverage block")
+				}
+			}
+		}
+	}
+}
+
+func reportCoverageProblem(in *invocation, file, function string, line int, rule, message string) {
+	if !in.json {
+		fmt.Printf("  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), file, line, function)
+	}
+	p := fail(kindNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message),
+		"Add a test that executes the uncovered Go code, then run mutation run again.").
+		with("file", file).with("function", function).with("line", line)
+	p.shown = true
+	in.report(p)
 }
 
 // listedConfig is the tests itos-cc.yaml lists, when the mutants of this run

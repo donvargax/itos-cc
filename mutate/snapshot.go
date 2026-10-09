@@ -61,6 +61,10 @@ type UnitResult struct {
 	Uncovered int      `json:"uncovered"`
 	Sites     int      `json:"sites"`
 	Mutants   []Mutant `json:"mutants"`
+	// Coverage is independent executable Go coverage for this function. Nil
+	// means the snapshot predates strict Go coverage or the function was not
+	// measured by an admitted producer.
+	Coverage *GoCoverageEvidence `json:"go_coverage,omitempty"`
 	// Stale marks an entry decided under tests other than those the
 	// snapshot records: a run that did not judge the function kept it,
 	// outcomes and survivors included, after the tests that import the file
@@ -68,6 +72,26 @@ type UnitResult struct {
 	// a run judges the function again. Left out of the file when false, so
 	// every snapshot without such an entry reads and is written as before.
 	Stale bool `json:"stale,omitempty"`
+}
+
+// GoCoverageEvidence is the complete measured block inventory and the
+// producer/input boundary that makes it reusable.
+type GoCoverageEvidence struct {
+	Version  int               `json:"version"`
+	Producer string            `json:"producer"`
+	Inputs   map[string]string `json:"inputs"`
+	Complete bool              `json:"complete"`
+	Blocks   []GoCoverageBlock `json:"blocks"`
+}
+
+// GoCoverageBlock is a positive-weight executable span at coverage-profile
+// precision. Span distinguishes blocks sharing a line.
+type GoCoverageBlock struct {
+	Span    string  `json:"span"`
+	Line    int     `json:"line"`
+	Column  int     `json:"column"`
+	Weight  float64 `json:"weight"`
+	Covered bool    `json:"covered"`
 }
 
 // Mutant is one site's outcome.
