@@ -106,11 +106,12 @@ func copyFile(src, dst string) error {
 
 // result of one test run.
 type result struct {
-	passed   bool
-	timedOut bool
-	elapsed  time.Duration
-	output   string
-	exitCode int // -1 when the command gave none
+	passed    bool
+	timedOut  bool
+	cancelled bool
+	elapsed   time.Duration
+	output    string
+	exitCode  int // -1 when the command gave none
 }
 
 // run executes c inside the worker's copy of c.Root. A zero timeout waits
@@ -131,7 +132,7 @@ func (w *worker) runContext(parent context.Context, c Command, timeout time.Dura
 	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(parent, timeout)
+		ctx, cancel = context.WithTimeoutCause(parent, timeout, errMutationTimeout)
 		defer cancel()
 	}
 	var cmd *exec.Cmd

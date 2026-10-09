@@ -1897,7 +1897,7 @@ Feature: Mutation testing
   #   execution path must retain its contract too.
   Rule: Linux mutation commands return only after their owned process trees are cleaned up
 
-    @wip @mutation-command-ownership @ID-MUT-165
+    @mutation-command-ownership @ID-MUT-165
     Scenario: A mutant deadline cleans up children and grandchildren
       Given mutation commands run on Linux
       And a test command starts ordinary owned child and grandchild processes that keep running and hold output open
@@ -1907,7 +1907,7 @@ Feature: Mutation testing
       And cleanup is bounded and the worker copy can be restored and removed
       And unrelated processes remain untouched
 
-    @wip @mutation-command-ownership @ID-MUT-166
+    @mutation-command-ownership @ID-MUT-166
     Scenario: Normal command completion also closes owned descendants
       Given mutation commands run on Linux
       And a baseline or mutant test command starts an ordinary owned descendant and then exits successfully
@@ -1917,7 +1917,7 @@ Feature: Mutation testing
       And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
       And all owned process/output waiters are joined before worker copy removal
 
-    @wip @mutation-command-ownership @ID-MUT-167
+    @mutation-command-ownership @ID-MUT-167
     Scenario: Parent cancellation is not a mutant deadline
       Given mutation commands run on Linux
       And a supervised command and its owned child are running under a parent cancellation context
@@ -1927,7 +1927,7 @@ Feature: Mutation testing
       And the result identifies cancellation, not a killed or timed-out mutant
       But a judgment completed before the cancellation retains its actual result
 
-    @wip @mutation-command-ownership @ID-MUT-168
+    @mutation-command-ownership @ID-MUT-168
     Scenario: Supervision failures do not permit an unsafe fallback
       Given mutation commands run on Linux
       And a supervised command cannot establish ownership, start or finish cleanup safely

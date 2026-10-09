@@ -3,14 +3,18 @@ package mutate
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os/exec"
 	"time"
 )
 
+var errMutationTimeout = errors.New("mutation command timed out")
+
 // commandRunner executes an already configured command for one worker.
-// Its zero value preserves the current platform killGroup behavior.
+// Its zero value selects the platform's default command ownership behavior.
 type commandRunner struct {
-	lifecycle commandLifecycle
+	lifecycle     commandLifecycle
+	cleanupBudget *cleanupBudget
 }
 
 // commandLifecycle can replace the start/wait boundary for one worker runner.
@@ -27,7 +31,12 @@ type commandLifecycle struct {
 func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer) (result, error) {
 	var started time.Time
 	var err error
-	if runner.lifecycle.start != nil {
+	waited := false
+	if runner.lifecycle.start == nil && runner.lifecycle.wait == nil {
+		started = time.Now()
+		err = runOwnedCommand(ctx, cmd, output, runner.cleanupBudget)
+		waited = true
+	} else if runner.lifecycle.start != nil {
 		started = time.Now()
 		err = runner.lifecycle.start(ctx, cmd)
 	} else {
@@ -35,7 +44,7 @@ func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *byt
 		started = time.Now()
 		err = cmd.Start()
 	}
-	if err == nil {
+	if err == nil && !waited {
 		if runner.lifecycle.wait != nil {
 			err = runner.lifecycle.wait(ctx, cmd)
 		} else {
@@ -47,9 +56,21 @@ func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *byt
 		runner.lifecycle.complete(ctx, cmd, err)
 	}
 	r := result{elapsed: elapsed, output: captured, exitCode: -1}
+	if linuxOutcomePrecedence() && err != nil && !isExit(err) {
+		return r, err
+	}
+	if linuxOutcomePrecedence() && cmd.ProcessState != nil && cmd.ProcessState.ExitCode() >= 0 {
+		r.exitCode = cmd.ProcessState.ExitCode()
+		r.passed = r.exitCode == 0
+		return r, nil
+	}
 	switch {
-	case ctx.Err() == context.DeadlineExceeded:
+	case linuxOutcomePrecedence() && errors.Is(context.Cause(ctx), errMutationTimeout):
 		r.timedOut = true
+	case !linuxOutcomePrecedence() && ctx.Err() == context.DeadlineExceeded:
+		r.timedOut = true
+	case linuxOutcomePrecedence() && ctx.Err() != nil:
+		r.cancelled = true
 	case err == nil:
 		r.passed, r.exitCode = true, 0
 	case isExit(err):
