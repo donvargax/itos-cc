@@ -1042,15 +1042,9 @@ items:
     title: TypeScript coverage measures the same related tests that judge the mutants
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [T-13]
     kind: slice
-    why: >
-      Language parity (the person, 2026-10-10), gap G2: with a coverage script, typescriptPlan runs
-      the whole suite (coverage/run.go typescriptPlan) while the mutants run vitest related or jest
-      --findRelatedTests (mutate/command.go typescriptCommand), so a line only an unrelated test
-      reaches counts as covered and survives falsely, which ID-MUT-08 rules out for Go. Decisions in
-      the comments above ID-MUT-208.
     refs: ["#14"]
   - id: counted-languages
     title: Counted mutation runs work for TypeScript, Python and Kotlin projects
