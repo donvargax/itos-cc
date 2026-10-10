@@ -2112,7 +2112,7 @@ Feature: Mutation testing
       And cached mutation sample still rechecks only its eligible recorded outcomes
       And its existing nothing-to-sample behavior is not the counted-mode no-cache behavior
 
-    @wip @mutation-counted-run @ID-MUT-178
+    @wip @mutation-counted-listed @ID-MUT-178
     Scenario: Applicable listed integration tests finish a single fresh judgment
       Given a selected committed mutant survives its file's own tests
       And listed integration tests reach its line and kill it
@@ -2123,7 +2123,7 @@ Feature: Mutation testing
       And the own and listed mutation stages consume one trial, not two
       And no unselected site executes
 
-    @wip @mutation-counted-run @ID-MUT-179
+    @wip @mutation-counted-listed @ID-MUT-179
     Scenario: Fresh outcomes preserve survivor, exception and own-timeout meanings
       Given a counted selection has one covered mutation site
       When its complete applicable test sequence passes on the mutant
@@ -2143,7 +2143,7 @@ Feature: Mutation testing
       And fail-uncovered fails that judgment
       And strict Go still checks executable zero-site functions and exempts empty bodies
 
-    @wip @mutation-counted-run @ID-MUT-181
+    @wip @mutation-counted-listed @ID-MUT-181
     Scenario: Counted preparation never converts failed measurement into successful assurance
       Given fresh counted preparation requires list, coverage or provider commands
       When a required command fails, or its report is missing or malformed
@@ -2154,7 +2154,7 @@ Feature: Mutation testing
       And no preexisting local measurement or per-scenario coverage map is required for successful preparation
       And raw or existing coverage overrides cannot silently bypass required fresh evidence or listed tests
 
-    @wip @mutation-counted-run @ID-MUT-182
+    @wip @mutation-counted-listed @ID-MUT-182
     Scenario: Clean baseline failure is not a mutation kill
       Given one selected fresh mutant needs own or applicable listed baselines
       When an unmutated required baseline fails
@@ -2163,7 +2163,7 @@ Feature: Mutation testing
       And later stages do not report a baseline as passed when it never ran
       And already completed valid judgments remain visible in the current report
 
-    @wip @mutation-counted-run @ID-MUT-183
+    @wip @mutation-counted-interrupt @ID-MUT-183
     Scenario: Interruption reports partial work and cleans up owned commands
       Given a count-two selection has one completed judgment and one active judgment
       When the counted run is interrupted while the second judgment is active
