@@ -993,7 +993,7 @@ items:
     title: Whole-suite outcomes of TypeScript, Python and Kotlin notice non-importing test changes
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [uncovered-fails-closed]
     kind: slice
     why: >
