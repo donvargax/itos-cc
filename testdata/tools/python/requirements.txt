@@ -1,0 +1,4 @@
+# The Python tools cmd/itos-cc's language smoke tests run, installed in CI
+# with pip install -r.
+coverage==7.16.2
+pytest==9.1.1

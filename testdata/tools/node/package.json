@@ -1,0 +1,10 @@
+{
+  "name": "itos-cc-test-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Node tools cmd/itos-cc's language smoke tests run, installed with npm ci; the viewer's Vitest pins.",
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.2",
+    "vitest": "5.0.2"
+  }
+}

@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -16,23 +15,11 @@ import (
 var unusedSource = filepath.FromSlash("src/unused.ts")
 
 // vitestRepo makes a TypeScript project whose one test imports
-// src/board.ts and never src/unused.ts, with the viewer's node_modules, and
-// makes it the working directory.
+// src/board.ts and never src/unused.ts, with the node_modules languageTools
+// finds, and makes it the working directory.
 func vitestRepo(t *testing.T) {
 	t.Helper()
-	modules, err := filepath.Abs(filepath.Join("..", "..", "viewer", "node_modules"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(modules, "vitest", "package.json")); err != nil {
-		t.Skip("vitest is not installed under viewer/node_modules")
-	}
-	if _, err := os.Stat(filepath.Join(modules, "@vitest", "coverage-v8", "package.json")); err != nil {
-		t.Skip("@vitest/coverage-v8 is not installed under viewer/node_modules")
-	}
-	if _, err := exec.LookPath("node"); err != nil {
-		t.Skip("node is not installed")
-	}
+	modules := languageTools(t, "typescript")
 	dir := t.TempDir()
 	if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
 		t.Skip("symlinks unavailable:", err)
