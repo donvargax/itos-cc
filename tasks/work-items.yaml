@@ -1135,17 +1135,9 @@ items:
     title: Take own-tests-python back off a red main
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      The first landing of own-tests-python, d1177a1 (the feature), turned main red in CI
-      38078607002 on all three OSes:
-      TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage expects a Python own
-      outcome whose fixture has no test file reaching it by name to be drawn and reused as fresh,
-      and the narrowed own command now judges it differently. The feature comes out alone; its
-      steps, 78ff116, skip outside the language-tools job and stay. The slice relands with that test
-      updated.
   - id: counted-unreached-listed
     title: A counted run fails an unreached Python file whose line listed tests reach
     phase: 1
