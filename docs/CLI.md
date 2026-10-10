@@ -123,10 +123,17 @@ A snapshot's `tests` are the test files that reach its file. In TypeScript,
 Python and Kotlin those are the test files whose imports reach its module
 transitively (Kotlin's same-package references included), as `vitest
 related` and `jest --findRelatedTests` select them; in Go, the test files of
-its package and of the packages that import it, one hop. A snapshot recorded
-when a TypeScript, Python or Kotlin file's tests were only those importing
-it directly reads stale once if a test reaches the file through another
-module, and is re-run as any stale result is.
+its package and of the packages that import it, one hop. A test reaches
+through the test-support files it imports too, files the language counts as
+test code that are not runnable tests (a Python helper under `tests/`, a
+TypeScript helper under `__tests__/`, a Kotlin helper in `src/test`): it
+reaches what they reach, transitively, and they are among the file's tests
+themselves. A Python test pytest runs, and a `conftest.py`, also reaches
+what every `conftest.py` in its directory and those above it, up to its
+build root, reaches. A snapshot recorded when a TypeScript, Python or Kotlin
+file's tests were only those importing it directly, or before tests reached
+through support files, reads stale once if a test reaches the file through
+another module or a support file, and is re-run as any stale result is.
 
 A Python file's own tests, the scope `own`, are those of its `tests` that
 pytest collects by name (`test_*.py`, `*_test.py`): `mutation run` runs them
@@ -135,8 +142,8 @@ unittest -f <modules>` without pytest, and measures the coverage that
 decides which of the file's mutants run from them too, one coverage run per
 distinct set of those files. A Python file none of whose tests is such a
 file runs no test: its mutants are `uncovered`. A test that executes code
-only through a subprocess, the CLI, a `conftest.py` fixture or a helper
-module reaches none of it, so those kills now need `--all-tests` or
+only through a subprocess or the CLI reaches none of it, so those kills
+need `--all-tests` or
 `--test-command`, which keep the whole suite and the given command. A
 Python outcome of scope `own` recorded before, which the whole suite
 decided, still reads fresh while its tests are unchanged; `mutation sample`

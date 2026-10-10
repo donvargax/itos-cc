@@ -59,9 +59,8 @@ pytest, or the whole suite where nothing narrower exists. A mutant is killed
 when the tests fail or time out and survives when they pass. Mutants on lines
 those tests never execute are uncovered and are not run, and every mutant of
 a Python file no test file reaches is uncovered, with no test run for it. A
-Python test that runs code only through a subprocess or the CLI, or through
-a conftest.py fixture or helper module, reaches nothing: run --all-tests or
---test-command for such code.
+Python test that runs code only through a subprocess or the CLI reaches
+nothing: run --all-tests or --test-command for such code.
 
 --all-tests runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests can kill mutants too. It is slow: run it
@@ -80,8 +79,11 @@ survivors itos-cc.yaml excepts, and retry only other survivors and changed
 functions. Each snapshot also records the SHA-256
 of every test file that reaches its file: in TypeScript, Python and Kotlin
 the tests whose imports reach it, directly or through other modules, as
-vitest related and jest --findRelatedTests select them; in Go its package's
-tests and those of the packages that import it, one hop. When one of them
+vitest related and jest --findRelatedTests select them, and through the
+test-support files they import (a helper under tests/ or __tests__, a Kotlin
+helper in src/test), which are among them too, and in Python through every
+conftest.py in a test's directory and those above it, up to its build root;
+in Go its package's tests and those of the packages that import it, one hop. When one of them
 is added, changed, or removed, every mutant of the file runs again. Each outcome records the
 scope of the tests that decided it: "own" (the file's own tests, left out of
 the file), "all-tests", or the --test-command line; a reused outcome keeps

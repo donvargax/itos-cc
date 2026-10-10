@@ -83,3 +83,66 @@ func TestTheTestsOfAFileAreThoseThatReachIt(t *testing.T) {
 		}
 	}
 }
+
+// A test reaches what the test-support files it uses reach: helpers it
+// imports, in a cycle or importing nothing of the sources, another test it
+// imports, and in Python the conftest.py files of its directory and those
+// above it, up to its build root.
+func TestATestReachesThroughTheTestSupportFilesItUses(t *testing.T) {
+	root := t.TempDir()
+	for name, text := range map[string]string{
+		"py/pyproject.toml":     "[project]\nname = \"m\"\n",
+		"py/a.py":               "def a():\n    return 1\n",
+		"py/b.py":               "def b():\n    return 1\n",
+		"py/c.py":               "def c():\n    return 1\n",
+		"py/conftest.py":        "from c import c\n",
+		"py/tests/conftest.py":  "from b import b\n",
+		"py/tests/one.py":       "from two import TWO\n\nfrom a import a\n",
+		"py/tests/two.py":       "from one import a\n\nTWO = 2\n",
+		"py/tests/empty.py":     "import os\n",
+		"py/tests/test_one.py":  "from one import a\nfrom empty import os\n",
+		"py/tests/test_more.py": "from tests.test_one import a\n",
+		"py/other/test_c.py":    "def test_c():\n    pass\n",
+		// Above the build root: it applies to none of its tests.
+		"conftest.py": "",
+
+		"web/package.json":            `{"name": "w"}` + "\n",
+		"web/src/total.ts":            "export const total = 1;\n",
+		"web/src/__tests__/make.ts":   "import { total } from \"../total\";\nexport const make = () => total;\n",
+		"web/src/__tests__/t.test.ts": "import { make } from \"./make\";\ntest(\"t\", () => make());\n",
+	} {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files, err := project.Discover([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests, err := TestsImporting(root, files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	of := func(name string) []string {
+		var out []string
+		for _, p := range tests[filepath.Join(root, filepath.FromSlash(name))] {
+			out = append(out, rel(root, p))
+		}
+		return out
+	}
+	for name, want := range map[string][]string{
+		"py/a.py": {"py/tests/one.py", "py/tests/test_more.py", "py/tests/test_one.py", "py/tests/two.py"},
+		// A conftest.py applies to the tests pytest runs, not to helpers.
+		"py/b.py":          {"py/tests/conftest.py", "py/tests/test_more.py", "py/tests/test_one.py"},
+		"py/c.py":          {"py/conftest.py", "py/other/test_c.py", "py/tests/conftest.py", "py/tests/test_more.py", "py/tests/test_one.py"},
+		"web/src/total.ts": {"web/src/__tests__/make.ts", "web/src/__tests__/t.test.ts"},
+	} {
+		if got := of(name); !slices.Equal(got, want) {
+			t.Errorf("tests of %s: %q, want %q", name, got, want)
+		}
+	}
+}

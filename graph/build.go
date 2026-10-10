@@ -273,7 +273,8 @@ func (b *Builder) snapshot(top, path string, live map[string]bool) *mutate.Snaps
 // dependencies is what the graph needs of a parsed file to resolve what it
 // imports, and what imports it.
 func dependencies(root string, f *lang.File) *fileInfo {
-	info := &fileInfo{rel: rel(root, f.Path), abs: f.Path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports()}
+	info := &fileInfo{rel: rel(root, f.Path), abs: f.Path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports(),
+		test: f.Spec.IsTest(f.Path)}
 	if f.Spec.Name == "kotlin" {
 		info.topLevel = lang.TopLevelNames(f)
 		info.refs = lang.ReferencedNames(f)

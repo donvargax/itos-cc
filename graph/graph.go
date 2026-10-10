@@ -83,6 +83,7 @@ type fileInfo struct {
 	units     []Unit
 	serves    []lang.Endpoint
 	calls     []lang.Endpoint
+	test      bool // test code, a runnable test or a test-support file
 }
 
 // repoGraph builds one repository's nodes and edges. Node ids are prefixed
@@ -315,11 +316,31 @@ func (idx *index) python(f *fileInfo, imp lang.Import) ([]string, string) {
 		}
 		module = strings.Join(parts, ".")
 	}
+	targets := idx.pythonModule(module, imp.Names)
+	if len(targets) == 0 && !strings.HasPrefix(imp.Path, ".") && f.test {
+		// pytest puts a test's directory on sys.path, so a test imports
+		// the modules beside it, such as a helper, by their bare names.
+		pkg := f.namespace
+		if !strings.HasSuffix(f.rel, "__init__.py") {
+			pkg = parentModule(pkg)
+		}
+		if pkg != "" {
+			targets = idx.pythonModule(join(pkg, module), imp.Names)
+		}
+	}
+	if len(targets) == 0 && !strings.HasPrefix(imp.Path, ".") {
+		return nil, strings.Split(module, ".")[0]
+	}
+	return targets, ""
+}
+
+// pythonModule is the modules from module import names depends on: a name
+// that is a submodule depends on it; otherwise the dependency is on module
+// itself, or the nearest package above it the index holds.
+func (idx *index) pythonModule(module string, names []string) []string {
 	var targets []string
-	// from pkg import mod, Name: a name that is a submodule depends on it;
-	// otherwise the dependency is on pkg itself.
-	onPackage := len(imp.Names) == 0
-	for _, name := range imp.Names {
+	onPackage := len(names) == 0
+	for _, name := range names {
 		if id, ok := idx.byDotted[join(module, name)]; ok {
 			targets = append(targets, id)
 		} else {
@@ -334,10 +355,7 @@ func (idx *index) python(f *fileInfo, imp lang.Import) ([]string, string) {
 			}
 		}
 	}
-	if len(targets) == 0 && !strings.HasPrefix(imp.Path, ".") {
-		return nil, strings.Split(module, ".")[0]
-	}
-	return targets, ""
+	return targets
 }
 
 // samePackage lists the modules of f's own Kotlin package that declare a

@@ -33,7 +33,9 @@ judged Go function also needs fresh independent executable coverage evidence,
 including zero-site functions. Uncovered executable blocks and missing or
 stale evidence fail without running tests, coverage or list commands. The
 snapshot also records the hash of each test file that reaches its file: in
-TypeScript, Python and Kotlin through its imports, transitively; in Go its
+TypeScript, Python and Kotlin through its imports, transitively, through the
+test-support files a test imports and, in Python, the conftest.py files
+above it; in Go its
 package's tests and those of the packages that import it. When one was
 added, changed, or removed since, every function of the file is stale, as
 it is when the snapshot predates recording tests. A run with --since that finds them changed keeps the

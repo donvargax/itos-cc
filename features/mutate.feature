@@ -1985,7 +1985,7 @@ Feature: Mutation testing
   # unchanged.
   Rule: Tests reach code through the test-support files they use
 
-    @wip @test-support-reach @ID-MUT-219
+    @test-support-reach @ID-MUT-219
     Scenario Outline: A <language> test reaches a file through <support>
       Given a <language> project whose test reaches module A only through <support>, which imports A
       And A's mutant has a recorded result
@@ -2000,7 +2000,7 @@ Feature: Mutation testing
         | typescript | a helper module under __tests__/ |
         | kotlin     | a helper class in src/test       |
 
-    @wip @test-support-reach @ID-MUT-220
+    @test-support-reach @ID-MUT-220
     Scenario: A Python mutant reached only through conftest.py is judged by the test that uses the fixture
       Given a Python project whose test_a.py uses a conftest.py fixture that imports a.py, and no test imports a.py
       When I run "itos-cc mutation run --json" for a.py

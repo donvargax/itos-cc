@@ -186,10 +186,11 @@ test. What keeps `mutation run` fast:
   end-to-end tests reach is uncovered, not a survivor; a TypeScript
   project's `coverage` script measures mutation run only with `--all-tests`.
   A Python file no test file reaches runs no test, and its mutants are
-  uncovered. A Python test that runs code only through a subprocess or the
-  CLI, or only through a `conftest.py` fixture or a helper module, reaches
-  none of it, so that code's mutants are uncovered too: judge them with
-  `--all-tests` or `--test-command`. Every command itos-cc
+  uncovered. A test reaches code through the helpers it imports and the
+  `conftest.py` files above it, but a Python test that runs code only
+  through a subprocess or the CLI reaches none of it, so that code's
+  mutants are uncovered too: judge them with `--all-tests` or
+  `--test-command`. Every command itos-cc
   composes runs with `PYTHONDONTWRITEBYTECODE=1`, and every pytest one with
   `-p no:cacheprovider`, so measuring and judging write no bytecode and no
   `.pytest_cache` into the project; a `--test-command` or
@@ -494,7 +495,11 @@ snapshot also records, under `tests`, the SHA-256 of every test file that
 reaches the file, by its path from the project root. In TypeScript, Python
 and Kotlin those are the test files whose imports reach its module, directly
 or through other modules of the project (Kotlin's same-package references
-included), as `vitest related` and `jest --findRelatedTests` select them. In
+included), as `vitest related` and `jest --findRelatedTests` select them.
+A test also reaches what the test-support files it imports reach, such as a
+helper under `tests/` or `__tests__/` or a Kotlin helper in `src/test`,
+which are in the set themselves, and a Python test what every `conftest.py`
+in its directory and those above it, up to its build root, reaches. In
 Go they are the test files of its package and of the packages that import
 it, one hop: a Go test that reaches the package only through another package
 is not in the set. That set is the same whichever command ran the mutants

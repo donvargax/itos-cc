@@ -487,8 +487,7 @@ func pythonRunner(pytest bool, tests []string) []string {
 func PythonTests(dir string, tests []string) []string {
 	out := []string{}
 	for _, test := range tests {
-		base := filepath.Base(test)
-		if !strings.HasSuffix(base, ".py") || !strings.HasPrefix(base, "test_") && !strings.HasSuffix(base, "_test.py") {
+		if !PythonTestFile(test) {
 			continue
 		}
 		rel, err := filepath.Rel(dir, test)
@@ -501,6 +500,14 @@ func PythonTests(dir string, tests []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// PythonTestFile says whether the file at path is named as pytest collects
+// test files by default, test_*.py or *_test.py: a runnable test, not a
+// conftest.py or a helper.
+func PythonTestFile(path string) bool {
+	base := filepath.Base(path)
+	return strings.HasSuffix(base, ".py") && (strings.HasPrefix(base, "test_") || strings.HasSuffix(base, "_test.py"))
 }
 
 // PythonModules is tests, test files relative to the directory the
