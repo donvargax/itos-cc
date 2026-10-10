@@ -63,10 +63,6 @@ nightly. In Go, a test that runs the built binary shows up in coverage when
 it builds the binary with go build -cover while GOCOVERDIR is set: itos-cc
 sets it, and merges what the binary wrote with go test's own coverage.
 Elsewhere coverage does not see such tests: add --no-coverage for them.
-Every test and coverage command itos-cc composes runs with
-PYTHONDONTWRITEBYTECODE=1, and every pytest one with -p no:cacheprovider,
-so neither bytecode nor a .pytest_cache is written into the project; a
---test-command or --coverage-command runs exactly as given.
 
 Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions, and the

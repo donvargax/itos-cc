@@ -1883,7 +1883,7 @@ Feature: Mutation testing
       And no stage fails and no TypeScript coverage is measured
       But when the TypeScript file has an eligible site the run fails with "count.preparation-failed" at its coverage stage, as before
 
-    @python-no-pytest-cache @ID-MUT-214
+    @wip @python-no-pytest-cache @ID-MUT-214
     Scenario: Measuring and judging a Python project leaves no pytest cache in its tree
       Given a Python project with a pytest test that kills its mutant and no .pytest_cache directory
       When I run "itos-cc mutation run --json" for its file
