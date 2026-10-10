@@ -398,8 +398,8 @@ func loadOverlay(root string) overlay {
 func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange, root string, support map[string]string) *fileInfo {
 	entries := mutationEntries(info, snap)
 	var moduleTests map[string]string
-	if info.language == "go" {
-		moduleTests, _ = mutate.GoModuleTestHashes(info.abs, root)
+	if snap != nil && mutate.HasBroadOutcome(snap.Units) {
+		moduleTests, _ = mutate.SuiteTestHashes(info.abs, root)
 	}
 	occurrence := map[string]int{}
 	for i := range info.units {

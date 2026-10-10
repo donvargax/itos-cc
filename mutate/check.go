@@ -291,9 +291,8 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 	}
 	var changed *TestChange
 	var moduleTests map[string]string
-	if f.Spec.Name == "go" {
-		moduleTests, err = GoModuleTestHashes(path, project.Root())
-		if err != nil {
+	if snap != nil && HasBroadOutcome(snap.Units) {
+		if moduleTests, err = SuiteTestHashes(path, project.Root()); err != nil {
 			return result, err
 		}
 	}
@@ -334,7 +333,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 			c.Entry = *e
 		}
 		var broad []string
-		if e != nil && f.Spec.Name == "go" {
+		if e != nil {
 			for _, m := range e.Mutants {
 				broad = append(broad, BroadChanges(m, moduleTests, support)...)
 			}
