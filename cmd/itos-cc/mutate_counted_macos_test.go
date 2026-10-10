@@ -31,6 +31,11 @@ func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T)
 		t.Fatal(err)
 	}
 
+	// An interrupted macOS counted run reports partial work and cleans up as
+	// on Linux. It runs first: it builds itos-cc in the package's directory,
+	// which the fixture repository below replaces as the working directory.
+	t.Run("interrupted", checkInterruptedCountedRun)
+
 	// Given a committed project with eligible mutation sites, when a
 	// count-one run judges it on macOS.
 	moduleRepo(t, compareFiles)
@@ -45,10 +50,6 @@ func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T)
 	if len(c.Selected) != 1 || c.Selected[0]["state"] != "judged" || c.Selected[0]["outcome"] != "killed" || c.number("executed") != 1 {
 		t.Errorf("selected = %+v, sampling = %+v; want Compare's one site judged killed by one trial", c.Selected, c.Sampling)
 	}
-
-	// An interrupted macOS counted run reports partial work and cleans up as
-	// on Linux.
-	t.Run("interrupted", checkInterruptedCountedRun)
 
 	// On Windows counted mode still fails clearly before launching commands,
 	// shown here with the platform pretended, as on Linux.
