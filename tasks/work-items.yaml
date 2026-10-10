@@ -1049,14 +1049,9 @@ items:
     title: Counted mutation runs work for TypeScript, Python and Kotlin projects
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [ts-coverage-scope]
     kind: slice
-    why: >
-      Language parity (the person, 2026-10-10), gap G9: counted mode is verified only on Go; its
-      frozen root is a git export without the untracked .venv, so Python preparation falls back to
-      the system python3 (coverage/run.go pythonFor, mutate/fresh_baseline.go freshPythonCommand),
-      and only Go commands are forced offline. Decisions in the comments above ID-MUT-209.
     refs: ["#27"]
   - id: pytest-cache-in-tree
     title: Python coverage in the project tree writes .pytest_cache and plugin files
