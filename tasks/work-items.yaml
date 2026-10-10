@@ -1282,3 +1282,16 @@ items:
       file over .metrics/x.json got Access is denied, which Windows returns while another rename or
       reader holds the target. A rerun passed. metrics.Write could retry a sharing-violation rename
       briefly, as atomic-write libraries do on Windows, or the test could accept it there.
+  - id: strict-lines-ts-jest-c8-inventory
+    title: TypeScript files no test loads get a static line inventory under Jest and c8 too
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      strict-lines-typescript lists the lines of a file no test loads only through Vitest's v8
+      provider run with no test. Under Jest (collectCoverageFrom with --passWithNoTests and a filter
+      matching no test) or c8 (--all --include over an empty program) such files stay unproven and
+      are coverage-missing, failing closed. Neither tool is installed in CI, so both need fixtures
+      before they can be trusted.
