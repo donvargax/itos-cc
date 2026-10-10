@@ -175,3 +175,4 @@ questions:
   - id: q-36
     item: "mutation-fail-fast"
     question: "ADR-0021 requires Windows Job ownership as well as Unix process groups before --fail-fast is exposed, and Windows (#29) is deferred until a Windows machine. Linux and macOS supervision has landed (mutation-command-ownership, macos-counted-run). Recommend shipping --fail-fast on Linux and macOS first, refusing it on Windows before launching commands (fail-fast.platform, exit 3) as counted mode does, with Windows fail-fast a follow-up under #29. Alternative: keep #26 waiting for Windows ownership."
+    answer: "Ship --fail-fast on Linux and macOS first; Windows refuses it with fail-fast.platform (exit 3) before launching commands, and Windows fail-fast follows under #29. The person agreed on 2026-10-10 (\"sure let's go with 26\", to that recommendation)."
