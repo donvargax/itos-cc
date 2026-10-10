@@ -1243,3 +1243,19 @@ items:
       file:/link:/workspace: and editable or path dependencies, Gradle includeBuild and Maven
       modules outside the root are mutation.coverage-unsupported.
     refs: ["#23"]
+  - id: strict-lines-counted
+    title: A counted strict run proves the executable lines of every admitted Python function
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      strict-lines-python proves Python lines in complete runs and checks only; a counted run
+      (--count) with --fail-uncovered still proves Go blocks alone (strict-go-inventory). Mirror it
+      for line-precision languages: measure every admitted Python file, list unloaded files' lines
+      with coverage.py's analysis through the owned executor, bind evidence to the frozen unit (a
+      FreshLineCoverageEvidence beside FreshGoCoverageEvidence) and report missing or uncovered
+      lines as complete mode does; TypeScript and Kotlin follow with their slices. Needs its own
+      scenario.
+    refs: ["#23"]
