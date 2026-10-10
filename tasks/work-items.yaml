@@ -1114,14 +1114,15 @@ items:
       q-38: a test script cannot be narrowed, so its outcomes carry whole-suite evidence and any
       test change stales them, as --test-command's do.
     refs: ["#14"]
-  - id: python-reach-through-test-helpers
-    title: Python tests reach code through conftest.py fixtures and test helper modules
+  - id: test-support-reach
+    title: Tests reach code through the test-support files they use
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was python-reach-through-test-helpers.
       graph.TestsImporting resolves a test's imports against source modules only, so a test that
       reaches a.py through conftest.py fixtures or a helper under tests/ (tests/helpers.py importing
       a) is not among a.py's tests. Since own-tests-python narrowed Python's own command and
