@@ -310,7 +310,10 @@ stages their trial ran, the judged and omitted `subjects`, and the `stages`
 that ran. A counted run writes no snapshot, comment or coverage
 cache, and its pass proves only its sampled judgments; `--count` bounds
 mutant trials, not discovery, baselines or total time. A range with no site
-is reported not applicable. It runs on Linux only for now.
+is reported not applicable. SIGINT or SIGTERM interrupts it: the active
+judgment is cancelled with no outcome, every process it started is stopped
+within five seconds, and the partial report exits 75 with
+`count.interrupted`. It runs on Linux only for now.
 
 `mutation check` gives the verdict a run would give from the cached results
 alone, running no test and no coverage command and writing nothing. Run

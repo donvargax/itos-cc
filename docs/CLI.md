@@ -90,6 +90,7 @@ output of the commands it runs passes as it is.
 | `count.unsupported-scope`    | 2    | mutation run --count | none                                                  |
 | `count.preparation-failed`   | 1, 3 (a tool missing) | mutation run --count | `stage`                             |
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
+| `count.interrupted`        | 75   | mutation run --count | none                                                  |
 | `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |

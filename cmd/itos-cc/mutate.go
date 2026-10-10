@@ -124,7 +124,12 @@ is not a pass of a range whose tests or measurement failed. --count runs
 on Linux only (Windows is #29); it refuses --changed, --no-coverage,
 existing or raw coverage, --test-command and --mutate-all, and --seed
 needs it. With --all-tests the own stage runs the whole suite, and a
-survivor still runs the listed tests that reach it.
+survivor still runs the listed tests that reach it. SIGINT or SIGTERM
+interrupts a counted run: no command starts after it, the judgment then
+running is cancelled with no outcome, every process the run started is
+stopped and joined within one shared five-second deadline before its
+private copies are removed, a second signal included, and the partial
+report, completion "interrupted", keeps the judgments completed before it.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor. For Go it also requires fresh measured executable coverage for
@@ -214,15 +219,16 @@ judged and no snapshot is written. Listed tests are not run with
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
    "seed", "algorithm", "commit", "since", "since_base",
    "assurance": "sampled"|"not-applicable",
-   "completion": "completed"|"stopped"|"not-applicable", "stop", "bounds"},
+   "completion": "completed"|"stopped"|"interrupted"|"not-applicable",
+   "stop", "bounds"},
    "selected": [{"identity", "file", "line", "column", "function",
    "original", "replacement",
-   "state": "judged"|"uncovered"|"blocked"|"failed"|"unattempted",
+   "state": "judged"|"uncovered"|"blocked"|"failed"|"cancelled"|"unattempted",
    "outcome" (judged and uncovered sites only), "scope", with scope
    "listed" "tests": ["<test ID>"], for an excepted survivor "excepted":
    "its reason", "reason", and the stages its trial ran, "stages":
    [{"name": "own"|"listed-baseline"|"listed",
-   "state": "complete"|"failed", "outcome", "tests", "error"}]}],
+   "state": "complete"|"failed"|"aborted", "outcome", "tests", "error"}]}],
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
 	rules: []string{
@@ -246,12 +252,14 @@ judged and no snapshot is written. Listed tests are not run with
 		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
 		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
 		"count.trial-failed        with --count, a selected mutant's trial could not run: file, line, column, function, original, replacement, identity",
+		"count.interrupted         with --count, SIGINT or SIGTERM interrupted the run, whose report is partial",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
 		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on a platform other than Linux, or with a required tool missing"},
+		{75, "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 	},
 	examples: []string{
 		"itos-cc mutation run --changed",

@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"sort"
 	"strings"
+	"syscall"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
@@ -143,9 +145,16 @@ func runCountedMutate(in *invocation) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx := context.Background()
+	ctx, stop := countedSignalContext()
+	defer stop()
 	plan, err := mutate.PlanFreshContext(ctx, root, paths, in.str("since"), count, in.str("seed"))
 	if err != nil {
+		if ctx.Err() != nil {
+			result.Sampling = countedSampling{Budget: count, Assurance: "sampled", Completion: "interrupted",
+				Stop: "interrupted while planning the selection", Bounds: countedBounds}
+			reportInterrupted(in, ctx, result)
+			return result, nil
+		}
 		return nil, countedPlanError(in, err)
 	}
 	defer plan.Close()
@@ -173,7 +182,10 @@ func runCountedMutate(in *invocation) (any, error) {
 	if in.set("all-tests") {
 		scope = coverage.AllTests
 	}
-	prep, err := prepareFreshContext(ctx, plan, freshPreparationOptions{Scope: scope, Log: os.Stderr})
+	// One owner, so preparation and trials share one run-abort cleanup
+	// deadline.
+	owner := &mutate.OwnedExecutor{}
+	prep, err := prepareFreshContext(ctx, plan, freshPreparationOptions{Scope: scope, Executor: owner.Run, Log: os.Stderr})
 	if prep != nil {
 		result.Stages = append(result.Stages, prep.Stages...)
 	}
@@ -181,6 +193,11 @@ func runCountedMutate(in *invocation) (any, error) {
 		failed := "preparation"
 		if prep != nil && len(prep.Stages) > 0 {
 			failed = prep.Stages[len(prep.Stages)-1].Name
+		}
+		if ctx.Err() != nil {
+			s.Completion, s.Stop = "interrupted", "interrupted during preparation, at "+failed
+			reportInterrupted(in, ctx, result)
+			return result, nil
 		}
 		if s.Completion != "not-applicable" {
 			s.Completion = "stopped"
@@ -231,7 +248,7 @@ func runCountedMutate(in *invocation) (any, error) {
 	} else {
 		results, err := mutate.RunFreshTrials(ctx, plan, trials, mutate.FreshTrialOptions{
 			Workers: in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutate.RunScope("", in.set("all-tests")),
-			Listed: listed, Prepare: countedCommandEnv, Log: os.Stderr})
+			Listed: listed, Prepare: countedCommandEnv, Owner: owner, Log: os.Stderr})
 		if err != nil {
 			return nil, err
 		}
@@ -253,6 +270,13 @@ func runCountedMutate(in *invocation) (any, error) {
 				}
 			}
 			switch {
+			case r.Err != nil && ctx.Err() != nil && len(r.Stages) == 0:
+				// Never started: nothing is admitted after the abort.
+				site.State = "unattempted"
+				continue
+			case r.Err != nil && ctx.Err() != nil:
+				site.State, site.Reason = "cancelled", "the run was interrupted while it was judged"
+				continue
 			case r.Err != nil:
 				site.State, site.Reason = "failed", r.Err.Error()
 			case r.FailedSelection != nil:
@@ -272,10 +296,17 @@ func runCountedMutate(in *invocation) (any, error) {
 				trialStage.State, trialStage.Error = "failed", site.Reason
 			}
 		}
+		if ctx.Err() != nil {
+			trialStage.State, trialStage.Error = "aborted", context.Cause(ctx).Error()
+		}
 		if selectionStage != nil {
 			result.Stages = append(result.Stages, *selectionStage)
 		}
 		result.Stages = append(result.Stages, trialStage)
+	}
+	interrupted := ctx.Err() != nil
+	if interrupted {
+		s.Completion, s.Stop = "interrupted", "interrupted while selected sites were judged"
 	}
 	for _, site := range result.Selected {
 		switch {
@@ -287,7 +318,10 @@ func runCountedMutate(in *invocation) (any, error) {
 		}
 	}
 	printCounted(in, result)
-	reportCounted(in, result, strict)
+	reportCounted(in, result, strict, interrupted)
+	if interrupted {
+		reportInterrupted(in, ctx, nil)
+	}
 	for _, e := range stale {
 		reportStaleExceptions(in, e.File, []mutate.StaleException{e})
 	}
@@ -295,6 +329,51 @@ func runCountedMutate(in *invocation) (any, error) {
 		reportCountedStrictGo(in, plan, prep)
 	}
 	return result, nil
+}
+
+// errCountedInterrupted is the cause of a counted run's context once
+// SIGINT or SIGTERM aborts it.
+var errCountedInterrupted = errors.New("interrupted")
+
+// countedSignalContext is the one context of a counted run: SIGINT or
+// SIGTERM cancels it, with errCountedInterrupted as its cause. Every later
+// signal is caught too, until stop, so a second one cannot end the process
+// before its owned commands are joined and its private inputs removed.
+func countedSignalContext() (context.Context, func()) {
+	ctx, cancel := context.WithCancelCause(context.Background())
+	signals := make(chan os.Signal, 4)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case sig := <-signals:
+				name := "SIGTERM"
+				if sig == os.Interrupt {
+					name = "SIGINT"
+				}
+				cancel(fmt.Errorf("%w by %s", errCountedInterrupted, name))
+			case <-done:
+				return
+			}
+		}
+	}()
+	return ctx, func() {
+		signal.Stop(signals)
+		close(done)
+		cancel(nil)
+	}
+}
+
+// reportInterrupted reports that a signal stopped the counted run, after
+// printing r, when given, as its partial report.
+func reportInterrupted(in *invocation, ctx context.Context, r *countedResult) {
+	if r != nil {
+		printCounted(in, r)
+	}
+	in.report(fail(kindTemporary, "count.interrupted",
+		fmt.Sprintf("the counted run was %v, so its report is partial: only the judgments it shows are proven", context.Cause(ctx)),
+		"Run it again to judge the selection in full."))
 }
 
 // countedRoot is the top of the Git repository holding the working
@@ -478,7 +557,7 @@ func printCounted(in *invocation, r *countedResult) {
 // no valid exception excepts, an uncovered site with --fail-uncovered, the
 // listed selection a blocked site needs, which fails without any mutant,
 // once, and a site whose trial could not run.
-func reportCounted(in *invocation, r *countedResult, failUncovered bool) {
+func reportCounted(in *invocation, r *countedResult, failUncovered, interrupted bool) {
 	selections := map[string]bool{}
 	for _, site := range r.Selected {
 		m := mutate.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
@@ -491,6 +570,8 @@ func reportCounted(in *invocation, r *countedResult, failUncovered bool) {
 				"Add a test that executes this line and fails with this change."))
 		case site.State == "blocked" && site.selection != nil:
 			reportFailedSelections(in, []mutate.FailedSelection{*site.selection}, selections, "mutation run --count")
+		case site.State == "cancelled" || (site.State == "unattempted" && interrupted):
+			// count.interrupted reports the interruption that stopped it.
 		case site.State == "failed" || site.State == "unattempted" || site.State == "blocked":
 			reason := site.Reason
 			if reason == "" {

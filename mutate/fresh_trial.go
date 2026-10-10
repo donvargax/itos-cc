@@ -46,7 +46,8 @@ type FreshTrialResult struct {
 // FreshStage is one stage of a fresh trial: "own", the mutant under its own
 // tests; "listed-baseline", the clean baseline of the listed selection it
 // needs, run once per run; and "listed", the mutant under that selection.
-// State is "complete" or "failed"; a stage that never ran is not listed.
+// State is "complete", "failed", or "aborted" when a run abort cut it off;
+// a stage that never ran is not listed.
 type FreshStage struct {
 	Name    string
 	State   string
@@ -66,7 +67,11 @@ type FreshTrialOptions struct {
 	Listed *Listed
 	// Prepare adjusts each command before it runs, such as its environment.
 	Prepare func(*exec.Cmd)
-	Log     io.Writer
+	// Owner, when set, is the executor whose run-abort cleanup deadline the
+	// trials share, so that preparation and trials have one deadline after
+	// a run abort; unset, the trials have one of their own.
+	Owner *OwnedExecutor
+	Log   io.Writer
 }
 
 // RunFreshTrials applies each selected mutant to a private worker copy of
@@ -98,6 +103,9 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	}
 	defer os.RemoveAll(base)
 	budget := &cleanupBudget{} // one run-abort deadline, shared by every worker
+	if opt.Owner != nil {
+		budget = &opt.Owner.cleanup
+	}
 	workers := make([]*worker, min(max(1, opt.Workers), len(trials)))
 	for i := range workers {
 		workers[i] = &worker{dir: filepath.Join(base, fmt.Sprintf("w%d", i)), copies: map[string]string{},
@@ -181,7 +189,7 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	})
 	out.Elapsed = r.elapsed
 	if out.Err = stageError(ctx, r, err); out.Err != nil {
-		out.Stages = append(out.Stages, FreshStage{Name: "own", State: "failed", Error: out.Err.Error()})
+		out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
 		return out
 	}
 	own := judged(r)
@@ -199,7 +207,7 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	switch {
 	case sel.err != nil:
 		out.Err = sel.err
-		out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "failed", Tests: ids, Error: sel.err.Error()})
+		out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: failedState(ctx), Tests: ids, Error: sel.err.Error()})
 		return out
 	case sel.failed != nil:
 		out.FailedSelection = sel.failed
@@ -213,7 +221,7 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	})
 	out.Elapsed += listed.elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {
-		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: "failed", Tests: ids, Error: out.Err.Error()})
+		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: failedState(ctx), Tests: ids, Error: out.Err.Error()})
 		return out
 	}
 	out.Outcome, out.Scope, out.Tests = judged(listed), ScopeListed, ids
@@ -231,4 +239,13 @@ func stageError(ctx context.Context, r result, err error) error {
 		return fmt.Errorf("cancelled: %w", context.Cause(ctx))
 	}
 	return nil
+}
+
+// failedState is the state of a stage that ended without an outcome:
+// "aborted" once ctx, the run's, is cancelled, "failed" otherwise.
+func failedState(ctx context.Context) string {
+	if ctx.Err() != nil {
+		return "aborted"
+	}
+	return "failed"
 }

@@ -2193,7 +2193,7 @@ Feature: Mutation testing
       And later stages do not report a baseline as passed when it never ran
       And already completed valid judgments remain visible in the current report
 
-    @wip @mutation-counted-interrupt @ID-MUT-183
+    @mutation-counted-interrupt @ID-MUT-183
     Scenario: Interruption reports partial work and cleans up owned commands
       Given a count-two selection has one completed judgment and one active judgment
       When the counted run is interrupted while the second judgment is active
