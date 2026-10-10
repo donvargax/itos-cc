@@ -1065,7 +1065,7 @@ items:
     title: Counted runs work in a linked git worktree
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
