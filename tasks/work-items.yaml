@@ -1190,3 +1190,16 @@ items:
       is uncovered and its mutants never run. An aggregated report (jacoco:report-aggregate, a
       JaCoCo report over several test tasks' execution data, Kover's merged reports) would measure
       them.
+  - id: gradle-project-paths
+    title: Name a Gradle module's test task by the project path its build declares
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by own-tests-kotlin (2026-10-10): when the test classes that reach a Kotlin file live in
+      several Gradle modules, its own command names each module's test task as :<dir>:<dir>:test,
+      the project path Gradle gives a module by default; a settings file that includes a project
+      under another name or moves its projectDir breaks that. Reading the paths from the build (a
+      settings parse or gradle projects, offline) would not.
