@@ -865,7 +865,7 @@ items:
     title: An interrupted counted run reports partial work and cleans up its owned commands
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [mutation-counted-listed]
     kind: slice
     why: >
