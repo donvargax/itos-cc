@@ -1065,3 +1065,16 @@ items:
       reaches counts as covered and survives falsely, which ID-MUT-08 rules out for Go. Decisions in
       the comments above ID-MUT-208.
     refs: ["#14"]
+  - id: counted-languages
+    title: Counted mutation runs work for TypeScript, Python and Kotlin projects
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [ts-coverage-scope]
+    kind: slice
+    why: >
+      Language parity (the person, 2026-10-10), gap G9: counted mode is verified only on Go; its
+      frozen root is a git export without the untracked .venv, so Python preparation falls back to
+      the system python3 (coverage/run.go pythonFor, mutate/fresh_baseline.go freshPythonCommand),
+      and only Go commands are forced offline. Decisions in the comments above ID-MUT-209.
+    refs: ["#27"]
