@@ -1093,3 +1093,14 @@ items:
       q-38 (a): pytest and unittest own commands and their coverage run the tests that reach the
       file, not the whole suite recorded as own.
     refs: ["#14"]
+  - id: own-tests-kotlin
+    title: A Kotlin file's own tests are the test classes that reach it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      q-38 (a): Gradle --tests and Maven -Dtest own commands and their coverage run the test classes
+      that reach the file.
+    refs: ["#14"]
