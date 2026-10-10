@@ -1079,7 +1079,7 @@ items:
     title: TypeScript, Python and Kotlin tests reach what they import transitively
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
