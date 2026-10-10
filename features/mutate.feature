@@ -1816,6 +1816,28 @@ Feature: Mutation testing
         | Python     | .venv at the project root         |
         | Kotlin     | the Gradle cache, run with --offline |
 
+  # python-fresh-bytecode, found by T-13's Python smoke test: a worker's
+  # baseline compiles the source into __pycache__, Python validates bytecode
+  # by the source's mtime in whole seconds and its size, and a same-size
+  # mutant (== to !=) written within that second runs the unmutated bytecode
+  # and survives falsely. Decisions (the coordinator's, as a correctness fix
+  # with one obvious remedy): every Python command itos-cc runs in a worker
+  # copy or a frozen copy (baselines, mutants, listed selections, coverage)
+  # runs with PYTHONDONTWRITEBYTECODE=1, and worker copies carry no
+  # __pycache__ directories from the live tree, so no stale bytecode can be
+  # read. The project's own tree is never touched. T-13's smoke test then
+  # requires the kill again.
+  Rule: A Python mutant always runs as mutated
+
+    @wip @python-fresh-bytecode @ID-MUT-210
+    Scenario: A same-size Python mutant written within the baseline's second is still killed
+      Given a Python project whose test kills a mutant that replaces "==" with "!="
+      And the baseline and the mutant are written within the same second
+      When I run "itos-cc mutation run --json" for its file
+      Then the mutant is killed, not survived
+      And no __pycache__ directory is written beside the worker copy's sources
+      And the project's own tree, its __pycache__ included, is left unchanged
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
