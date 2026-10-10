@@ -29,7 +29,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python or TypeScript line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
 | 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -200,21 +200,31 @@ other custom-command inputs must be named by those globs. Check, sample, run,
 and graph use the recorded scope's evidence; freshness checks run no tests or
 list command. Older Go broad-scope outcomes without evidence are stale.
 
-Strict Go and Python coverage is independent of mutant outcomes.
-`--fail-uncovered` requires a complete per-function executable inventory from
-a successful built-in or listed measurement, including functions with no
-mutation sites: Go's positive-weight cover-profile blocks, and the Python
-lines coverage.py's LCOV report names executable (DA lines) from a function's
-body to its end, its `def` line running at import. A Python file no test
-reaches has its executable lines listed by coverage.py's own analysis
-(`Coverage.analysis2`), running no test, all of them uncovered. Empty or
-comment-only Go bodies, and Python functions with no executable body line,
-have no executable obligation. Cached checks report missing or stale coverage
-evidence without running tests, coverage or list commands. Strict Go and
-Python runs reject `--coverage-report`, `--use-existing-coverage`, and
-`--coverage-command`; non-strict, counted (`--count`) Python, TypeScript and
-Kotlin behavior is unchanged. Python evidence is written under a unit's
-`line_coverage` key, with `"language": "python"`; Go evidence stays under
+Strict Go, Python and TypeScript coverage is independent of mutant
+outcomes. `--fail-uncovered` requires a complete per-function executable
+inventory from a successful built-in or listed measurement, including
+functions with no mutation sites: Go's positive-weight cover-profile blocks,
+and the lines a Python or TypeScript LCOV report names executable (DA
+lines) from a function's body's first statement to its end, a Python `def`
+line or a TypeScript arrow function's declaration running at import.
+Python's report is coverage.py's; TypeScript's is Vitest's v8 or Jest's over
+the related tests, or with `--all-tests` the whole suite, or c8's over the
+test script of a package with neither. A Python file no test reaches has
+its executable lines listed by coverage.py's own analysis
+(`Coverage.analysis2`), and a TypeScript file no test loads by Vitest's v8
+provider run with no test (`vitest run <no test> --passWithNoTests
+--coverage.include=<file>`), all of them uncovered; under Jest or c8 such a
+file has no evidence, nor does a file a project's own `coverage` script
+measured, and is `mutation.coverage-missing`. Empty or comment-only Go
+bodies, and Python or TypeScript functions with no executable body line,
+have no executable obligation. Cached checks report missing or stale
+coverage evidence without running tests, coverage or list commands. A
+strict run measures again only the languages whose evidence is not fresh or
+whose mutants need coverage. Strict Go, Python and TypeScript runs reject
+`--coverage-report`, `--use-existing-coverage`, and `--coverage-command`;
+non-strict and counted (`--count`) Python and TypeScript behavior, and
+Kotlin's, is unchanged. Python and TypeScript evidence is written under a
+unit's `line_coverage` key, with its `"language"`; Go evidence stays under
 `go_coverage`. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
 including excluded nested modules; `GOWORK=off` remains supported. The refusal

@@ -199,9 +199,8 @@ func TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 // In a mixed strict run, another language that measured nothing stops the
 // whole run before any mutant runs, as Go's missing coverage stops it, and
 // a file of that language with no mutation site needs no coverage for its
-// mutants, though its functions still need their line evidence.
-// Raw-report flags keep their behaviour for that language: the run falls
-// back to running every mutant.
+// mutants, though its functions still need their line evidence. Raw-report
+// flags are refused for it, as for Go.
 func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
@@ -237,11 +236,11 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 		t.Errorf("a site-free TypeScript file with no tool: exit %d, want 1 with its evidence missing and no tool failure\n%s%s", siteFreeRun.code, siteFreeRun.stdout, siteFreeRun.stderr)
 	}
 
+	// Strict TypeScript coverage has its own line evidence now
+	// (strict-lines-typescript), so a raw report is refused as Go's and
+	// Python's are, rather than falling back to running every mutant.
 	raw := failClosedRun(t, ts, "--fail-uncovered", "--coverage-report", "absent.info")
-	if !strings.Contains(raw.stderr, "no coverage for "+ts+"; running every mutant") || raw.json(t).problem("coverage.tool-missing") != nil {
-		t.Errorf("--coverage-report no longer falls back for TypeScript under --fail-uncovered:\n%s%s", raw.stdout, raw.stderr)
-	}
-	if f := raw.json(t).file(t, ts); f.Ran == 0 || f.Survived != f.Ran {
-		t.Errorf("--coverage-report run: ran %d survived %d, want every mutant run\n%s", f.Ran, f.Survived, raw.stdout)
+	if p := raw.json(t).problem("flags.conflict"); raw.code != 2 || p == nil || p["flag"] != "--coverage-report" {
+		t.Errorf("--coverage-report under --fail-uncovered for TypeScript: exit %d, want 2 with flags.conflict naming it\n%s%s", raw.code, raw.stdout, raw.stderr)
 	}
 }

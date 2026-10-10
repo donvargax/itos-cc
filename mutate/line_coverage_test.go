@@ -146,3 +146,70 @@ func sortedKeys(m map[string]string) []string {
 	slices.Sort(out)
 	return out
 }
+
+// TypeScript units take their lines from their body's first statement: an
+// arrow function bound to a name runs its declaration line at import, as
+// Vitest's v8 provider reports it, and a function declaration's own line is
+// no line v8 names at all.
+func TestTypeScriptLineEvidenceLeavesTheDeclarationLineOut(t *testing.T) {
+	f := parse(t, "calc.ts", "export function dormant(name: string): string {\n  const label = name.trim();\n  return label;\n}\n\n"+
+		"export const arrow = (n: number): number => {\n  return n * 2;\n};\n\nexport class Box {\n  open(x: number): number {\n    return x;\n  }\n}\n")
+	defer f.Close()
+	// The lines Vitest 5's v8 LCOV names for this file when a test imports
+	// it and calls nothing: the arrow's declaration line ran.
+	lines := []coverage.Line{{Line: 2}, {Line: 3}, {Line: 6, Covered: true}, {Line: 7}, {Line: 12}}
+	got := map[string][]int{}
+	for _, unit := range f.Units {
+		for _, b := range lineCoverageEvidence(f, unit, lines, true, "p", nil).Blocks {
+			if b.Covered {
+				t.Errorf("%s holds the covered line %d", unit.Name, b.Line)
+			}
+			got[unit.Name] = append(got[unit.Name], b.Line)
+		}
+	}
+	if want := map[string][]int{"dormant": {2, 3}, "arrow": {7}, "open": {12}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("lines %v, want %v", got, want)
+	}
+}
+
+// TypeScript evidence rests on every TypeScript and JavaScript file and the
+// configuration of the package root, and leaves out node_modules, hidden
+// directories, nested packages and the root's build outputs.
+func TestTypeScriptCoverageInputsFingerprintThePackageRoot(t *testing.T) {
+	dir := t.TempDir()
+	for name, text := range map[string]string{
+		"package.json":                "{}\n",
+		"package-lock.json":           "{}\n",
+		"tsconfig.build.json":         "{}\n",
+		"vitest.config.ts":            "export default {};\n",
+		"src/calc.ts":                 "export const a = 1;\n",
+		"src/calc.test.ts":            "",
+		"src/view.tsx":                "",
+		"scripts/run.mjs":             "",
+		"README.md":                   "",
+		"node_modules/x/index.js":     "",
+		".cache/y.js":                 "",
+		"dist/calc.js":                "",
+		"coverage/lcov-report/x.js":   "",
+		"packages/inner/package.json": "{}\n",
+		"packages/inner/z.ts":         "",
+		"src/dist/kept.ts":            "",
+	} {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	inputs, err := TypeScriptCoverageInputs(filepath.Join(dir, "src", "calc.ts"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"@node-env", "@producer", "itos-cc.yaml", "package-lock.json", "package.json", "scripts/run.mjs",
+		"src/calc.test.ts", "src/calc.ts", "src/dist/kept.ts", "src/view.tsx", "tsconfig.build.json", "vitest.config.ts"}
+	if got := sortedKeys(inputs); !reflect.DeepEqual(got, want) {
+		t.Errorf("inputs %v, want %v", got, want)
+	}
+}

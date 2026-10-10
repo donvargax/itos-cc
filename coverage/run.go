@@ -52,6 +52,11 @@ type Plan struct {
 	// Kotlin plan of the tests that reach them measures other files too,
 	// which plans of their own tests measure.
 	OwnSources bool
+	// Unattested marks a plan whose command is the project's own, such as
+	// a TypeScript coverage script: its report counts as any report does,
+	// but proves no file's executable lines (Report.Lines), as no built-in
+	// command made it.
+	Unattested bool
 }
 
 // Reach is the test files that reach a source, as graph.TestsImporting
@@ -200,6 +205,25 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		return plans[i].Sources[0] < plans[j].Sources[0]
 	})
 	return plans, executions, errors.Join(failures...)
+}
+
+// TypeScriptRunner is what measures the coverage of the TypeScript
+// package at dir, its sources measured by their related tests with own, or
+// by the whole suite: "script", the project's own coverage script, where
+// it has one and no related tests are run; "vitest" or "jest" where the
+// project uses it; "c8" over its test script otherwise.
+func TypeScriptRunner(dir string, own bool) string {
+	pkg := readPackageJSON(dir)
+	related := own && (pkg.has("vitest") || pkg.has("jest"))
+	switch {
+	case pkg.Scripts["coverage"] != "" && !related:
+		return "script"
+	case pkg.has("vitest"):
+		return "vitest"
+	case pkg.has("jest"):
+		return "jest"
+	}
+	return "c8"
 }
 
 // goPlan measures sources with the tests of every package whose test binary
@@ -412,21 +436,21 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "coverage", "lcov.info")},
 	}
-	pkg := readPackageJSON(dir)
 	pm := project.PackageManager(dir)
 	// Tools run from node_modules: a tool the project did not install is
 	// never downloaded, since that would run code no lockfile pins.
 	missing := func(what string) string {
 		return fmt.Sprintf("%s is not installed; run %s install, or measure with --coverage-command", what, pm)
 	}
-	related := own && (pkg.has("vitest") || pkg.has("jest"))
-	switch {
-	case pkg.Scripts["coverage"] != "" && !related:
+	switch TypeScriptRunner(dir, own) {
+	case "script":
 		// The project's own script decides where it writes; the usual place
-		// is coverage/lcov.info.
+		// is coverage/lcov.info. No built-in command attests what it
+		// measured, so its report proves no file's lines (Unattested).
 		plan.Commands = [][]string{{pm, "run", "coverage"}}
 		plan.Reports = []string{filepath.Join(dir, "coverage", "lcov.info")}
-	case pkg.has("vitest"):
+		plan.Unattested = true
+	case "vitest":
 		version := installedVersion(dir, "vitest")
 		vitest := project.NodeBin(dir, "vitest")
 		switch {
@@ -447,7 +471,7 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 			plan.Commands = [][]string{append(args, "--coverage.enabled",
 				"--coverage.reporter=lcov", "--coverage.reportsDirectory="+out)}
 		}
-	case pkg.has("jest"):
+	case "jest":
 		if jest := project.NodeBin(dir, "jest"); jest == "" {
 			plan.Unsupported = missing("Jest")
 		} else {
@@ -735,9 +759,13 @@ func (p Plan) unreached(log io.Writer) *Report {
 // prove records, of r, the report of p's commands that all succeeded and
 // wrote their reports, which of p's sources it lists completely, at its
 // format's line precision (Report.Lines), and which no test loaded, so it
-// names none of their lines (Report.Unloaded).
+// names none of their lines (Report.Unloaded): none of either for an
+// Unattested plan.
 func (p Plan) prove(r *Report) {
 	r.proven, r.unloaded = map[string]bool{}, map[string]Unloaded{}
+	if p.Unattested {
+		return
+	}
 	for _, s := range p.Sources {
 		if r.Has(s) {
 			r.proven[s] = true

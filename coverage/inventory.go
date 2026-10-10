@@ -16,12 +16,15 @@ import (
 )
 
 // inventories is, by language, the command that lists the executable lines
-// of files no test loaded without running a test, as an LCOV report on its
-// standard output, every line unexecuted, run in their build root dir. A
-// language without one leaves such files without proof (Report.Lines), so
-// strict coverage reports them missing rather than passing them.
-var inventories = map[string]func(dir string, files []string) []string{
-	"python": pythonInventory,
+// of files no test loaded without running a test, run in their build root
+// dir, and the LCOV report it writes in out, every line unexecuted, or ""
+// for one it writes on its standard output. No command, for a language or
+// a build root without one, leaves such files without proof
+// (Report.Lines), so strict coverage reports them missing rather than
+// passing them.
+var inventories = map[string]func(dir string, files []string, out string) (args []string, report string){
+	"python":     pythonInventory,
+	"typescript": typescriptInventory,
 }
 
 // pythonInventoryScript lists each file's statements as coverage.py's own
@@ -36,8 +39,31 @@ for path in sys.argv[1:]:
 
 // pythonInventory runs pythonInventoryScript over files with the
 // interpreter a coverage plan in dir runs.
-func pythonInventory(dir string, files []string) []string {
-	return append([]string{pythonFor(dir), "-c", pythonInventoryScript}, files...)
+func pythonInventory(dir string, files []string, _ string) ([]string, string) {
+	return append([]string{pythonFor(dir), "-c", pythonInventoryScript}, files...), ""
+}
+
+// typescriptNoTest is a test filter no test file's path holds, so Vitest
+// runs no test.
+const typescriptNoTest = "itos-cc-static-inventory-runs-no-test"
+
+// typescriptInventory has Vitest, where the package at dir measures with
+// it, run no test and report files, which coverage.include names, as its
+// v8 provider reports a file no test loaded: every line its syntax-aware
+// remapping finds executable, none executed, the same lines a run that
+// loads the file names. Jest and c8 have no such command here.
+func typescriptInventory(dir string, files []string, out string) ([]string, string) {
+	vitest := project.NodeBin(dir, "vitest")
+	if !readPackageJSON(dir).has("vitest") || vitest == "" || vitestTooOld(installedVersion(dir, "vitest")) ||
+		project.NodeModule(dir, "@vitest/coverage-v8") == "" {
+		return nil, ""
+	}
+	args := []string{vitest, "run", typescriptNoTest, "--passWithNoTests", "--coverage.enabled",
+		"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out}
+	for _, file := range relativeTo(dir, files) {
+		args = append(args, "--coverage.include="+file)
+	}
+	return args, filepath.Join(out, "lcov.info")
 }
 
 // Inventory lists, with language's static inventory command, the
@@ -68,42 +94,56 @@ func (r *Report) Inventory(ctx context.Context, language string, log io.Writer, 
 			break
 		}
 		files := byDir[dir]
-		abs := map[string]string{}
-		var args []string
+		var abs []string
 		for _, file := range files {
 			path, err := filepath.Abs(file)
 			if err != nil {
 				path = file
 			}
-			abs[path] = file
-			args = append(args, path)
+			abs = append(abs, path)
 		}
-		args = inventory(dir, args)
+		out, err := os.MkdirTemp("", "itos-cc-inventory-")
+		if err != nil {
+			failures = append(failures, err)
+			continue
+		}
+		args, report := inventory(dir, abs, out)
+		if len(args) == 0 {
+			os.RemoveAll(out)
+			continue
+		}
 		fmt.Fprintf(log, "itos-cc: coverage %s$ %s (static inventory, no test runs) %s\n", dir, args[0], strings.Join(relativeTo(dir, files), " "))
-		var out bytes.Buffer
+		var stdout bytes.Buffer
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 		cmd.Dir, cmd.Env = dir, project.NoBytecodeEnv(os.Environ())
-		cmd.Stdout, cmd.Stderr = &out, log
-		var err error
+		cmd.Stdout, cmd.Stderr = &stdout, log
+		if report != "" {
+			cmd.Stdout = log
+		}
 		if execute != nil {
 			err = execute(ctx, cmd)
 		} else {
 			err = cmd.Run()
 		}
 		executions = append(executions, CommandExecution{Args: slices.Clone(args), Dir: dir, Err: err})
+		var entries []Entry
+		switch {
+		case err != nil:
+		case report != "":
+			entries, err = Load(report)
+		default:
+			entries, err = ParseLCOV(&stdout)
+		}
+		os.RemoveAll(out)
 		if err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %s: static inventory: %v\n", language, err)
 			failures = append(failures, fmt.Errorf("%s static coverage inventory in %s: %w", language, dir, err))
 			continue
 		}
-		entries, err := ParseLCOV(&out)
-		if err != nil {
-			failures = append(failures, fmt.Errorf("%s static coverage inventory in %s: %w", language, dir, err))
-			continue
-		}
+		m := newMatcher(files)
 		for _, e := range entries {
-			file, ok := abs[e.Path]
-			if !ok {
+			file := m.match(e.Path, dir)
+			if file == "" {
 				continue
 			}
 			if r.inventory == nil {

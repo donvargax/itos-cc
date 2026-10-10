@@ -2048,7 +2048,7 @@ Feature: Mutation testing
       And a strict Python run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
-    @wip @strict-lines-typescript @ID-MUT-222
+    @strict-lines-typescript @ID-MUT-222
     Scenario: A strict TypeScript run proves every executable line of every judged function
       Given a TypeScript project tested with Vitest whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
       When I run "itos-cc mutation run --fail-uncovered --json" for the file

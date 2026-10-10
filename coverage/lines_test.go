@@ -66,3 +66,45 @@ func TestInventoryListsTheExecutableLinesOfUnloadedPythonFiles(t *testing.T) {
 		t.Errorf("unloaded after the inventory %v, want none", got)
 	}
 }
+
+// Vitest's v8 provider, made to run no test, lists the executable lines of
+// a file no test loaded, all of them unexecuted.
+func TestInventoryListsTheExecutableLinesOfUnloadedTypeScriptFiles(t *testing.T) {
+	modules, err := filepath.Abs(filepath.Join("..", "testdata", "tools", "node", "node_modules"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(modules, "@vitest", "coverage-v8")); err != nil {
+		t.Skip("Vitest with @vitest/coverage-v8 is not installed in testdata/tools/node")
+	}
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node is not installed")
+	}
+	dir := t.TempDir()
+	if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	files := map[string]string{
+		"package.json":  `{"name": "m", "type": "module", "devDependencies": {"vitest": "5.0.2", "@vitest/coverage-v8": "5.0.2"}}` + "\n",
+		"src/lonely.ts": "export function lonely(name: string): string {\n  const label = name.trim();\n  return label;\n}\n",
+	}
+	for name, text := range files {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	lonely := filepath.Join(dir, "src", "lonely.ts")
+	r := (Plan{Language: "typescript", Dir: dir, Sources: []string{lonely}}).unreached(io.Discard)
+	calls, err := r.Inventory(context.Background(), "typescript", io.Discard, nil)
+	if err != nil || len(calls) != 1 {
+		t.Fatalf("inventory: %v, calls %v", err, calls)
+	}
+	lines, ok := r.Lines(lonely)
+	if want := []Line{{Line: 2}, {Line: 3}}; !ok || !reflect.DeepEqual(lines, want) {
+		t.Errorf("lonely's lines %v %v, want %v proven", lines, ok, want)
+	}
+}

@@ -22,7 +22,7 @@ const lineCoverageEvidenceVersion = 1
 // strictLanguages are the languages whose functions strict coverage
 // (--fail-uncovered) proves executed: Go at cover-profile block precision,
 // the others at their format's line precision (coverage.Report.Lines).
-var strictLanguages = map[string]bool{"go": true, "python": true}
+var strictLanguages = map[string]bool{"go": true, "python": true, "typescript": true}
 
 // StrictCoverage says whether strict coverage proves the executable code of
 // language's functions: whether its functions need fresh measured evidence.
@@ -48,10 +48,48 @@ func CoverageProducer(language string, allTests bool) string {
 	return ""
 }
 
+// TypeScriptCoverageProducer is the built-in producer of TypeScript's
+// strict coverage evidence by runner (coverage.TypeScriptRunner): Vitest's
+// v8 or Jest's LCOV over the related tests, or with allTests the whole
+// suite, or c8's over the test script, which is the whole suite. A project's
+// own coverage script ("script") is none: its report is unattested.
+func TypeScriptCoverageProducer(runner string, allTests bool) string {
+	scope := "own"
+	if allTests {
+		scope = "all-tests"
+	}
+	switch runner {
+	case "vitest":
+		if allTests {
+			return "vitest run --coverage.enabled --coverage.reporter=lcov; scope=" + scope
+		}
+		return "vitest related --run <sources> --coverage.enabled --coverage.reporter=lcov; scope=" + scope
+	case "jest":
+		if allTests {
+			return "jest --coverage --coverageReporters=lcov; scope=" + scope
+		}
+		return "jest --coverage --coverageReporters=lcov --findRelatedTests <sources>; scope=" + scope
+	case "c8":
+		return "c8 --reporter=lcov <package manager> run test; scope=all-tests"
+	}
+	return ""
+}
+
 // validCoverageProducer says whether producer is a built-in producer of
 // language's strict coverage evidence.
 func validCoverageProducer(language, producer string) bool {
-	return producer != "" && (producer == CoverageProducer(language, false) || producer == CoverageProducer(language, true))
+	if producer == "" {
+		return false
+	}
+	if language == "typescript" {
+		for _, runner := range []string{"vitest", "jest", "c8"} {
+			if producer == TypeScriptCoverageProducer(runner, false) || producer == TypeScriptCoverageProducer(runner, true) {
+				return true
+			}
+		}
+		return false
+	}
+	return producer == CoverageProducer(language, false) || producer == CoverageProducer(language, true)
 }
 
 // evidenceKey is how CoverageEvidence.Language names language: "" for Go,

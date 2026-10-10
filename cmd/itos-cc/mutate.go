@@ -151,8 +151,8 @@ coverage, listing, baselines or total time. A counted run writes no
 snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
-for every admitted function; strict Python lines are not yet proven by a
-counted run. A range with no site is not applicable, which
+for every admitted function; strict Python and TypeScript lines are not
+yet proven by a counted run. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
@@ -168,8 +168,8 @@ report, completion "interrupted", keeps the judgments completed before it.
 --fail-fast stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop:
 an unexcepted survivor, once the listed tests that reach it failed to kill
-it too; with --fail-uncovered, an uncovered mutant or a strict Go or Python
-coverage finding; an exception that no longer holds; a file whose tests fail before
+it too; with --fail-uncovered, an uncovered mutant or a strict Go, Python
+or TypeScript coverage finding; an exception that no longer holds; a file whose tests fail before
 any mutant; or a selection of listed tests that fails without any mutant.
 It reports that failure under the rule a run without it reports, and exits
 as that rule says. Killed, timed-out, validly excepted and listed-killed
@@ -208,16 +208,22 @@ aggregate. Without it, scheduling, output, snapshots and comments are as
 they always were.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
-survivor. For Go and Python it also requires fresh measured executable
-coverage for every judged function, including functions with no mutation
-sites, and fails, as mutation.uncovered-statement, each uncovered
-positive-weight Go coverage block and each Python line coverage.py's LCOV
-report names executable that no reaching test executed: the lines from a
-function's body to its end, its def line running at import. A Python file
-no test reaches has its executable lines listed by coverage.py's own
-analysis, without running a test, all of them uncovered. Strict Go and
-Python runs reject --no-coverage, --coverage-report, --use-existing-coverage,
-and --coverage-command. A matching independent cache can avoid
+survivor. For Go, Python and TypeScript it also requires fresh measured
+executable coverage for every judged function, including functions with no
+mutation sites, and fails, as mutation.uncovered-statement, each uncovered
+positive-weight Go coverage block and each line a Python or TypeScript LCOV
+report names executable that no test executed: coverage.py's over the
+tests that reach the file, Vitest's v8 or Jest's over its related tests, or
+c8's over the test script of a package with neither. A function's lines run
+from its body's first statement to its end: a Python def line, or a
+TypeScript arrow function's declaration, runs at import. A Python file no
+test reaches has its executable lines listed by coverage.py's own analysis,
+and a TypeScript file no test loads by Vitest's v8 provider run with no
+test, all of them uncovered; under Jest or c8 such a file, and any file a
+project's own coverage script measured (--all-tests with one), has no
+evidence, which is mutation.coverage-missing. Strict Go, Python and
+TypeScript runs reject --no-coverage, --coverage-report,
+--use-existing-coverage, and --coverage-command. A matching independent cache can avoid
 remeasurement; otherwise built-in or listed coverage must measure
 successfully. Empty or comment-only function bodies have no executable
 coverage obligation. For the mutants of TypeScript, Python and Kotlin it
@@ -290,7 +296,7 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python lines"),
+		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python and TypeScript lines"),
 		sw("fail-fast", "stop at the first actionable failure, cancelling the work still running; Linux and macOS"),
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
@@ -330,8 +336,8 @@ judged and no snapshot is written. Listed tests are not run with
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python line is uncovered: file, function, line",
-		"mutation.coverage-missing  with --fail-uncovered, a Go or Python function lacks complete measured coverage evidence: file, function, line",
+		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python or TypeScript line is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go, Python or TypeScript function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
@@ -343,7 +349,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
-		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go or Python coverage with raw coverage flags: flag",
+		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python or TypeScript coverage with raw coverage flags: flag",
 		"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
@@ -692,7 +698,41 @@ func runMutate(in *invocation) (any, error) {
 			}
 			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
 		} else {
-			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(in, strictLanguages, sources, suite, support, reach)
+			// A strict language whose every judged function has fresh
+			// evidence and whose mutants all hold is not measured again:
+			// its cached evidence stands, as in a run with nothing to
+			// measure. Every other language is measured, as before.
+			measure := map[string]bool{}
+			for _, check := range cached {
+				if check.State != "fresh" {
+					measure[check.Language] = true
+				}
+			}
+			for i, source := range sources {
+				spec := lang.Detect(source)
+				if spec != nil && (!mutate.StrictCoverage(spec.Name) ||
+					i < len(mutationChecks) && mutate.NeedsMutationCoverage(mutationChecks[i:i+1], in.set("mutate-all"))) {
+					measure[spec.Name] = true
+				}
+			}
+			var measured []string
+			for _, source := range sources {
+				if spec := lang.Detect(source); spec == nil || measure[spec.Name] {
+					measured = append(measured, source)
+				}
+			}
+			kept := map[string]*mutate.CoverageEvidence{}
+			for _, check := range cached {
+				if !measure[check.Language] {
+					kept[check.File+"\x00"+check.Function] = check.Evidence
+				}
+			}
+			if len(kept) > 0 {
+				opt.CachedCoverage = func(path, function, _ string) *mutate.CoverageEvidence {
+					return kept[project.Rel(path)+"\x00"+function]
+				}
+			}
+			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(in, strictLanguages, measured, suite, support, reach)
 			if err != nil {
 				return result, err
 			}
@@ -706,7 +746,7 @@ func runMutate(in *invocation) (any, error) {
 			// Another language that measured nothing fails closed as Go
 			// does, and stops the run with it.
 			others := unmeasuredToJudge(report, sources, mutationChecks, in.set("mutate-all"))
-			if strictGo && (missingGo || !report.Measures("go")) {
+			if strictGo && measure["go"] && (missingGo || !report.Measures("go")) {
 				for _, p := range unmeasured(report) {
 					if p.subject["language"] == "go" {
 						in.report(p)
@@ -1309,6 +1349,19 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 		case "python":
 			out[language] = func(source string) (string, map[string]string, error) {
 				inputs, err := mutate.PythonCoverageInputs(source, project.Root(), producer, support)
+				return producer, inputs, err
+			}
+		case "typescript":
+			// Its producer is what measures the package: Vitest, Jest or
+			// c8 (coverage.TypeScriptRunner); --test-command changes
+			// nothing about it.
+			out[language] = func(source string) (string, map[string]string, error) {
+				dir := lang.FindUp(source, "package.json")
+				if dir == "" {
+					dir = filepath.Dir(source)
+				}
+				producer := mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(dir, !allTests), allTests)
+				inputs, err := mutate.TypeScriptCoverageInputs(source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		}
