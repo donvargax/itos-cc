@@ -2407,7 +2407,7 @@ Feature: Mutation testing
       Given a fail-fast run that completes one file and stops inside another
       When it returns
       Then the completed file's snapshot and annotation are written as without --fail-fast
-      And the stopped file's snapshot and annotated source bytes are unchanged
+      And the stopped file's annotated source bytes are unchanged, and its snapshot records no outcome for a site the stop left undecided
       And mutation check still reports the stopped file's missing or stale results without running tests
       And a later run reuses only outcomes whose inputs are still fresh
 
