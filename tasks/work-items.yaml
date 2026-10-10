@@ -1046,3 +1046,9 @@ items:
       strict-go-inventory stage (which already skips non-.go units). Whether a language with no
       eligible site needs a measurement at all, and how this meets uncovered-fails-closed, is
       undecided.
+
+      Correction: "with or without --fail-uncovered" is wrong for a range with no eligible site.
+      Without --fail-uncovered such a range is not-applicable and returns before preparation
+      (mutate_counted.go, the len(plan.Eligible) == 0 check), so only the strict run, which still
+      must inventory its Go functions, reaches the failing coverage stage. The without case was not
+      run for a range that has eligible sites.
