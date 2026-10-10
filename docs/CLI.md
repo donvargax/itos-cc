@@ -128,21 +128,6 @@ when a TypeScript, Python or Kotlin file's tests were only those importing
 it directly reads stale once if a test reaches the file through another
 module, and is re-run as any stale result is.
 
-A Python file's own tests, the scope `own`, are those of its `tests` that
-pytest collects by name (`test_*.py`, `*_test.py`): `mutation run` runs them
-as `python -m pytest -q -x -p no:cacheprovider <files>`, or `python -m
-unittest -f <modules>` without pytest, and measures the coverage that
-decides which of the file's mutants run from them too, one coverage run per
-distinct set of those files. A Python file none of whose tests is such a
-file runs no test: its mutants are `uncovered`. A test that executes code
-only through a subprocess, the CLI, a `conftest.py` fixture or a helper
-module reaches none of it, so those kills now need `--all-tests` or
-`--test-command`, which keep the whole suite and the given command. A
-Python outcome of scope `own` recorded before, which the whole suite
-decided, still reads fresh while its tests are unchanged; `mutation sample`
-re-runs it with the narrowed tests, so a kill only another test made is a
-`mutation.mismatch`, and `mutation run --mutate-all` judges it again.
-
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files

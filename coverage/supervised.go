@@ -48,10 +48,6 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			break
 		}
 		planFailed := false
-		if p.Unreached {
-			reports = append(reports, p.unreached(log))
-			continue
-		}
 		if p.Unsupported != "" {
 			err := fmt.Errorf("%s: unsupported coverage scope: %s", p.Dir, p.Unsupported)
 			failures = append(failures, err)
@@ -123,7 +119,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				planFailed = true
 			}
 		}
-		r := load(p.Reports, integration, p.Dir, p.measures(sources), log)
+		r := load(p.Reports, integration, p.Dir, sources, log)
 		if len(r.missing) > 0 {
 			for _, missing := range r.missing {
 				failures = append(failures, fmt.Errorf("coverage report: %s", missing.String()))

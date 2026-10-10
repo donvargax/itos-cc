@@ -48,7 +48,7 @@ func vitestProject(t *testing.T, version string) (dir, source string) {
 
 func onePlan(t *testing.T, dir, src string) Plan {
 	t.Helper()
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
+	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests)
 	if len(plans) != 1 {
 		t.Fatalf("plans %+v, want one", plans)
 	}
@@ -57,7 +57,7 @@ func onePlan(t *testing.T, dir, src string) Plan {
 
 func TestVitestBeforeTheCurrentMajorIsNotRun(t *testing.T) {
 	dir, src := vitestProject(t, "4.1.11")
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
+	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests)
 	if len(plans) != 1 || len(plans[0].Commands) != 0 || plans[0].Unsupported == "" {
 		t.Fatalf("plans %+v, want one unsupported plan with no commands", plans)
 	}
@@ -258,81 +258,5 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 		} else if !c.measures && (len(m) != 1 || m[0].Cause != MeasuredNothing) {
 			t.Errorf("%s: missing %v, want the run that measured none of its files", c.name, m)
 		}
-	}
-}
-
-func TestPythonOwnTestsAreTheTestFilesThatReachASource(t *testing.T) {
-	dir := t.TempDir()
-	at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
-	got := PythonTests(dir, []string{at("tests/test_b.py"), at("conftest.py"), at("tests/helpers.py"), at("tests/__init__.py"),
-		at("a_test.py"), at("src/pkg/tests/test_c.py"), filepath.Join(filepath.Dir(dir), "test_out.py"), at("tests/test_b.py")})
-	want := []string{"a_test.py", "src/pkg/tests/test_c.py", "tests/test_b.py"}
-	if strings.Join(got, " ") != strings.Join(want, " ") {
-		t.Errorf("PythonTests: %q, want %q: the collected test files inside the build root, once each", got, want)
-	}
-	modules := PythonModules(append(want, "my-tests/test_d.py"))
-	if want := []string{"a_test", "pkg.tests.test_c", "tests.test_b"}; strings.Join(modules, " ") != strings.Join(want, " ") {
-		t.Errorf("PythonModules: %q, want %q: from src beneath it, else from the build root, and none a module cannot spell", modules, want)
-	}
-}
-
-func TestPythonOwnCoverageIsPlannedPerSetOfReachingTests(t *testing.T) {
-	dir := t.TempDir()
-	writeFiles(t, dir, map[string]string{"pyproject.toml": "", "a.py": "", "b.py": "", "c.py": "", "u.py": "", "test_a.py": "", "conftest.py": ""})
-	at := func(name string) string { return filepath.Join(dir, name) }
-	reach := map[string][]string{
-		at("a.py"): {at("test_a.py")}, at("b.py"): {at("test_a.py"), at("conftest.py")},
-		at("c.py"): {at("conftest.py")},
-	}
-	sources := []string{at("a.py"), at("b.py"), at("c.py"), at("u.py")}
-	plans := Plans(sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
-	if len(plans) != 2 {
-		t.Fatalf("plans %+v, want two: test_a's, and one no test reaches", plans)
-	}
-	measured, unreached := plans[0], plans[1]
-	if measured.Unreached {
-		measured, unreached = unreached, measured
-	}
-	if strings.Join(measured.Sources, " ") != at("a.py")+" "+at("b.py") || !measured.OwnSources || measured.Unreached {
-		t.Errorf("test_a's plan: %+v, want a.py and b.py, measured for themselves alone", measured)
-	}
-	if strings.Join(unreached.Sources, " ") != at("c.py")+" "+at("u.py") || !unreached.Unreached || len(unreached.Commands) != 0 {
-		t.Errorf("the other plan: %+v, want c.py and u.py, Unreached, with no command", unreached)
-	}
-	if whole := Plans(sources, t.TempDir(), OwnTests, nil); len(whole) != 1 || whole[0].OwnSources || whole[0].Unreached {
-		t.Errorf("without reach: %+v, want one plan of the whole suite", whole)
-	}
-
-	var log bytes.Buffer
-	r := Run([]Plan{unreached}, sources, &log)
-	if !r.Measures("python") || r.Has(at("u.py")) || len(r.Missing()) != 0 {
-		t.Errorf("an Unreached plan's report: measures python %v, has u.py %v, missing %v; want python measured and u.py loaded by no test",
-			r.Measures("python"), r.Has(at("u.py")), r.Missing())
-	}
-	if strings.Contains(log.String(), "$ ") {
-		t.Errorf("an Unreached plan ran a command: %s", log.String())
-	}
-}
-
-func TestAPlanOfItsOwnSourcesLendsNoCoverageToOthers(t *testing.T) {
-	dir := t.TempDir()
-	at := func(name string) string { return filepath.Join(dir, name) }
-	// a.py's tests leave its line 2 unexecuted, and b.py's execute it.
-	writeFiles(t, dir, map[string]string{
-		"a.lcov": "SF:a.py\nDA:2,0\nend_of_record\nSF:b.py\nDA:2,0\nend_of_record\n",
-		"b.lcov": "SF:a.py\nDA:2,1\nend_of_record\nSF:b.py\nDA:2,1\nend_of_record\n",
-		"a.py":   "", "b.py": "",
-	})
-	sources := []string{at("a.py"), at("b.py")}
-	plans := []Plan{
-		{Language: "python", Dir: dir, Sources: sources[:1], OwnSources: true, Reports: []string{at("a.lcov")}, Existing: []string{at("a.lcov")}},
-		{Language: "python", Dir: dir, Sources: sources[1:], OwnSources: true, Reports: []string{at("b.lcov")}, Existing: []string{at("b.lcov")}},
-	}
-	r := Existing(plans, sources, &bytes.Buffer{})
-	if covered, measured := r.LineCovered(at("a.py"), 2); covered || !measured {
-		t.Errorf("a.py:2 covered %v, measured %v; want measured and not covered, as b.py's tests lend it nothing", covered, measured)
-	}
-	if covered, _ := r.LineCovered(at("b.py"), 2); !covered {
-		t.Errorf("b.py:2 not covered, want covered by its own tests")
 	}
 }

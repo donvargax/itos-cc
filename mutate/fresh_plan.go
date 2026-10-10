@@ -43,10 +43,6 @@ type FreshPlan struct {
 	// no mutation sites. Preparation must measure this scope without rebuilding
 	// it from Selected, which contains sites only.
 	Units []FreshUnit
-	// Files is every committed source and test file of the frozen tree,
-	// selected or not, as discovery classifies them: what the tests that
-	// reach a file are found among.
-	Files project.Files
 }
 
 // FreshUnit identifies one admitted committed function independently of its
@@ -215,12 +211,6 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	discovered, err := project.DiscoverWithBuildOutput(roots, buildOutput)
 	if err != nil {
 		return nil, fmt.Errorf("discover committed mutation targets: %w", err)
-	}
-	plan.Files = discovered
-	if len(roots) != 1 || roots[0] != frozen {
-		if plan.Files, err = project.DiscoverWithBuildOutput([]string{frozen}, buildOutput); err != nil {
-			return nil, fmt.Errorf("discover committed files: %w", err)
-		}
 	}
 	if err := buildOutputErr(); err != nil {
 		return nil, err

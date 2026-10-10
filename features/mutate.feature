@@ -1938,7 +1938,7 @@ Feature: Mutation testing
   #   outcome is: any test change makes them stale.
   Rule: A file's own tests are the tests that reach it, in every language
 
-    @own-tests-python @ID-MUT-216
+    @wip @own-tests-python @ID-MUT-216
     Scenario Outline: A Python file's own tests are the tests that reach it, with <runner>
       Given a Python project run with <runner> where test_a reaches a.py, test_b reaches only b.py, and test_b fails
       When I run "itos-cc mutation run --json" for a.py

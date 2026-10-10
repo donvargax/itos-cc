@@ -179,17 +179,10 @@ test. What keeps `mutation run` fast:
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
-  `vitest related` / `jest --findRelatedTests`, and in Python the test files
-  that reach the file (named `test_*.py` or `*_test.py`), as
-  `pytest -x <files>`, or `python -m unittest <modules>` without pytest.
-  Coverage comes from the same tests, so a line only integration or
-  end-to-end tests reach is uncovered, not a survivor; a TypeScript
-  project's `coverage` script measures mutation run only with `--all-tests`.
-  A Python file no test file reaches runs no test, and its mutants are
-  uncovered. A Python test that runs code only through a subprocess or the
-  CLI, or only through a `conftest.py` fixture or a helper module, reaches
-  none of it, so that code's mutants are uncovered too: judge them with
-  `--all-tests` or `--test-command`. Every command itos-cc
+  `vitest related` / `jest --findRelatedTests`, `pytest -x`. Coverage comes
+  from the same tests, so a line only integration or end-to-end tests reach
+  is uncovered, not a survivor; a TypeScript project's `coverage` script
+  measures mutation run only with `--all-tests`. Every command itos-cc
   composes runs with `PYTHONDONTWRITEBYTECODE=1`, and every pytest one with
   `-p no:cacheprovider`, so measuring and judging write no bytecode and no
   `.pytest_cache` into the project; a `--test-command` or

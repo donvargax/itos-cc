@@ -12,11 +12,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
@@ -45,18 +43,7 @@ type Plan struct {
 	// and removes the directory.
 	CoverDir    string
 	Integration string
-	// Unreached marks a plan of sources no test reaches (Reach): nothing
-	// runs, and its language is measured, so they are loaded by no test.
-	Unreached bool
-	// OwnSources says the report speaks only for Sources: a Python plan of
-	// the tests that reach them measures other files too, which plans of
-	// their own tests measure.
-	OwnSources bool
 }
-
-// Reach is the test files that reach a source, as graph.TestsImporting
-// finds them.
-type Reach func(source string) []string
 
 // minVitest is the oldest Vitest major whose coverage is measured: the
 // current one. Its v8 provider maps coverage onto the syntax tree, so its
@@ -81,37 +68,29 @@ const (
 	// does not load a file cannot cover it.
 	RelatedTests
 	// OwnTests measures each Go package by its own tests only, the tests
-	// mutate kills its mutants with; TypeScript runs the related tests, and
-	// Python, given the tests that reach each source, those tests.
+	// mutate kills its mutants with; TypeScript runs the related tests.
 	OwnTests
 )
 
 // Plans groups sources by language and build root and returns one plan per
-// group, with reports written under outDir. Kotlin runs the whole suite
-// whatever the scope, and so does Python, but in OwnTests with reach set:
-// each Python source is measured by the tests that reach it, one plan per
-// build root and distinct set of those tests, its report speaking for its
-// own sources alone (OwnSources), and sources no test reaches have an
-// Unreached plan.
-func Plans(sources []string, outDir string, scope Scope, reach Reach) []Plan {
-	plans, _, _ := buildPlans(context.Background(), sources, outDir, scope, reach, nil)
+// group, with reports written under outDir. Python and Kotlin run the whole
+// suite whatever the scope.
+func Plans(sources []string, outDir string, scope Scope) []Plan {
+	plans, _, _ := buildPlans(context.Background(), sources, outDir, scope, nil)
 	return plans
 }
 
 // PlansSupervised builds coverage plans while routing executable probes
 // (Go package discovery and Python provider checks) through execute.
-func PlansSupervised(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
+func PlansSupervised(ctx context.Context, sources []string, outDir string, scope Scope, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
 	if ctx == nil || execute == nil {
 		return nil, nil, errors.New("supervised coverage planning needs a context and command executor")
 	}
-	return buildPlans(ctx, sources, outDir, scope, reach, execute)
+	return buildPlans(ctx, sources, outDir, scope, execute)
 }
 
-func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
-	// tests is, for a Python source measured by the tests that reach it,
-	// those tests as PythonTests runs them, joined: a group of its own.
-	type key struct{ lang, dir, tests string }
-	narrow := scope == OwnTests && reach != nil
+func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
+	type key struct{ lang, dir string }
 	groups := map[key][]string{}
 	for _, s := range sources {
 		spec := lang.Detect(s)
@@ -122,11 +101,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		if dir == "" {
 			dir = filepath.Dir(s)
 		}
-		k := key{spec.Name, dir, ""}
-		if spec.Name == "python" && narrow {
-			k.tests = "\x00" + strings.Join(PythonTests(dir, reach(s)), "\x00")
-		}
-		groups[k] = append(groups[k], s)
+		groups[key{spec.Name, dir}] = append(groups[key{spec.Name, dir}], s)
 	}
 	var plans []Plan
 	var executions []CommandExecution
@@ -141,14 +116,6 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 			srcs = nil
 		}
 		out := filepath.Join(outDir, k.lang+"-"+shortHash(k.dir))
-		var tests []string
-		if k.tests != "" {
-			out += "-" + shortHash(k.tests)
-			if tests = strings.Split(k.tests, "\x00")[1:]; tests[0] == "" {
-				plans = append(plans, Plan{Language: k.lang, Dir: k.dir, Sources: sources, Unreached: true})
-				continue
-			}
-		}
 		var p Plan
 		switch k.lang {
 		case "go":
@@ -166,11 +133,11 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 			p = typescriptPlan(k.dir, out, srcs, scope == OwnTests)
 		case "python":
 			if execute == nil {
-				p = pythonPlan(k.dir, out, tests)
+				p = pythonPlan(k.dir, out)
 			} else {
 				var calls []CommandExecution
 				var err error
-				p, calls, err = pythonPlanSupervised(ctx, k.dir, out, tests, execute)
+				p, calls, err = pythonPlanSupervised(ctx, k.dir, out, execute)
 				executions = append(executions, calls...)
 				if err != nil {
 					failures = append(failures, err)
@@ -181,14 +148,11 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		default:
 			continue
 		}
-		p.Sources, p.OwnSources = sources, tests != nil
+		p.Sources = sources
 		plans = append(plans, p)
 	}
 	sort.Slice(plans, func(i, j int) bool {
-		if a, b := plans[i].Language+plans[i].Dir, plans[j].Language+plans[j].Dir; a != b {
-			return a < b
-		}
-		return plans[i].Sources[0] < plans[j].Sources[0]
+		return plans[i].Language+plans[i].Dir < plans[j].Language+plans[j].Dir
 	})
 	return plans, executions, errors.Join(failures...)
 }
@@ -465,82 +429,14 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 // project's.
 var pytestRunner = []string{"-m", "pytest", "-q", "-p", "no:cacheprovider"}
 
-// pythonRunner is the runner arguments of a Python coverage plan: pytest's
-// or unittest's, over tests, the test files PythonTests gives, or over the
-// whole suite when tests is nil.
-func pythonRunner(pytest bool, tests []string) []string {
-	switch {
-	case pytest:
-		return append(slices.Clone(pytestRunner), tests...)
-	case tests != nil:
-		return append([]string{"-m", "unittest"}, PythonModules(tests)...)
-	}
-	return []string{"-m", "unittest", "discover"}
-}
-
-// PythonTests is which of tests, the test files that reach a source, a
-// Python own-test run in dir passes its runner: those inside dir named as
-// pytest collects test files by default, test_*.py or *_test.py, relative
-// to dir with forward slashes, sorted. conftest.py, __init__.py and other
-// helpers are left out: pytest applies conftest.py files on its own, and a
-// file it collects no test from would fail a run of it alone.
-func PythonTests(dir string, tests []string) []string {
-	out := []string{}
-	for _, test := range tests {
-		base := filepath.Base(test)
-		if !strings.HasSuffix(base, ".py") || !strings.HasPrefix(base, "test_") && !strings.HasSuffix(base, "_test.py") {
-			continue
-		}
-		rel, err := filepath.Rel(dir, test)
-		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
-			continue
-		}
-		if rel = filepath.ToSlash(rel); !slices.Contains(out, rel) {
-			out = append(out, rel)
-		}
-	}
-	sort.Strings(out)
-	return out
-}
-
-// PythonModules is tests, test files relative to the directory the
-// command runs in as PythonTests gives them, as the dotted modules
-// python -m unittest imports: relative to src for one beneath it, which is
-// on PYTHONPATH as the project's own sources are, else relative to the
-// directory. A path no module name spells is left out.
-func PythonModules(tests []string) []string {
-	var out []string
-	for _, test := range tests {
-		name := strings.TrimSuffix(strings.TrimPrefix(test, "src/"), ".py")
-		parts := strings.Split(name, "/")
-		valid := true
-		for _, part := range parts {
-			valid = valid && pythonIdentifier(part)
-		}
-		if valid {
-			out = append(out, strings.Join(parts, "."))
-		}
-	}
-	return out
-}
-
-func pythonIdentifier(s string) bool {
-	for i, r := range s {
-		if r != '_' && !unicode.IsLetter(r) && (i == 0 || !unicode.IsDigit(r)) {
-			return false
-		}
-	}
-	return s != ""
-}
-
-// pythonPlan measures dir's Python sources with tests, the test files that
-// reach them as PythonTests gives them, or with the whole suite when tests
-// is nil.
-func pythonPlan(dir, out string, tests []string) Plan {
+func pythonPlan(dir, out string) Plan {
 	py := pythonFor(dir)
 	data := filepath.Join(out, ".coverage")
 	report := filepath.Join(out, "lcov.info")
-	runner := pythonRunner(exec.Command(py, "-c", "import pytest").Run() == nil, tests)
+	runner := []string{"-m", "unittest", "discover"}
+	if exec.Command(py, "-c", "import pytest").Run() == nil {
+		runner = pytestRunner
+	}
 	plan := Plan{
 		Language: "python",
 		Dir:      dir,
@@ -556,7 +452,7 @@ func pythonPlan(dir, out string, tests []string) Plan {
 	return plan
 }
 
-func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, execute CommandExecutor) (Plan, []CommandExecution, error) {
+func pythonPlanSupervised(ctx context.Context, dir, out string, execute CommandExecutor) (Plan, []CommandExecution, error) {
 	py := pythonFor(dir)
 	var executions []CommandExecution
 	probe := func(module string) error {
@@ -566,11 +462,13 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
 		return err
 	}
+	runner := []string{"-m", "unittest", "discover"}
 	pytestErr := probe("pytest")
-	if pytestErr != nil && ctx.Err() != nil {
+	if pytestErr == nil {
+		runner = pytestRunner
+	} else if ctx.Err() != nil {
 		return Plan{}, executions, ctx.Err()
 	}
-	runner := pythonRunner(pytestErr == nil, tests)
 	data := filepath.Join(out, ".coverage")
 	report := filepath.Join(out, "lcov.info")
 	plan := Plan{
@@ -632,10 +530,6 @@ func kotlinPlan(dir string) Plan {
 func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
-		if p.Unreached {
-			reports = append(reports, p.unreached(log))
-			continue
-		}
 		if p.Unsupported != "" {
 			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Unsupported)
 			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
@@ -662,7 +556,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		r := load(p.Reports, p.integrate(log), p.Dir, p.measures(sources), log)
+		r := load(p.Reports, p.integrate(log), p.Dir, sources, log)
 		// Told by exit status and the report alone, never by what the
 		// runner prints: a run that succeeded and wrote its report measured
 		// its language, whichever files the report names.
@@ -674,22 +568,6 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		reports = append(reports, p.measured(r, MeasuredNothing, "its coverage run measured none of its files"+failed))
 	}
 	return Merge(reports...)
-}
-
-// unreached is the report of an Unreached plan: its language measured, and
-// none of its sources loaded, as no test reaches them.
-func (p Plan) unreached(log io.Writer) *Report {
-	fmt.Fprintf(log, "itos-cc: coverage %s: no test reaches %s, so none runs\n", p.Dir, strings.Join(relativeTo(p.Dir, p.Sources), " "))
-	return &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{p.Language: true}}
-}
-
-// measures is the sources p's report speaks for, of sources: its own
-// Sources when it measures them alone (OwnSources).
-func (p Plan) measures(sources []string) []string {
-	if p.OwnSources {
-		return p.Sources
-	}
-	return sources
 }
 
 // measured is r, Missing p when r measured none of p's files: the run
@@ -722,10 +600,6 @@ func IgnoreDir(dir string) error {
 func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	for _, p := range plans {
-		if p.Unreached {
-			reports = append(reports, p.unreached(log))
-			continue
-		}
 		r := &Report{}
 		for _, path := range p.Existing {
 			if exists(path) {
@@ -734,7 +608,7 @@ func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 				if path == p.Reports[0] && p.Integration != "" && exists(p.Integration) {
 					integration = p.Integration
 				}
-				r = load([]string{path}, integration, p.Dir, p.measures(sources), log)
+				r = load([]string{path}, integration, p.Dir, sources, log)
 				break
 			}
 		}

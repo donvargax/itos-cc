@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -38,22 +37,14 @@ func (c Command) String() string {
 	return strings.Join(c.Args, " ")
 }
 
-// RunsNothing says whether c runs no command at all: the own tests of a
-// Python file no test reaches.
-func (c Command) RunsNothing() bool {
-	return len(c.Args) == 0 && c.Shell == ""
-}
-
 // TestCommand is the narrowest test run that covers path: its own Go
-// package, the Vitest or Jest tests that import it, in Python tests, the
-// test files that reach it (graph.TestsImporting), or the whole suite where
-// no narrower run exists. A Python file none of whose tests is a test file
-// pytest collects (coverage.PythonTests) runs nothing (RunsNothing). With
-// all, it is the whole suite of path's build root, so integration and
-// end-to-end tests anywhere in it can kill a mutant. Every command stops at
-// the first failure, since one failing test is enough to kill a mutant. A
-// non-empty shell overrides the command but not where it runs.
-func TestCommand(path, shell string, all bool, tests []string) Command {
+// package, the Vitest or Jest tests that import it, or the whole suite where
+// no narrower run exists. With all, it is the whole suite of path's build
+// root, so integration and end-to-end tests anywhere in it can kill a
+// mutant. Every command stops at the first failure, since one failing test
+// is enough to kill a mutant. A non-empty shell overrides the command but not
+// where it runs.
+func TestCommand(path, shell string, all bool) Command {
 	spec := lang.Detect(path)
 	var c Command
 	switch spec.Name {
@@ -62,12 +53,7 @@ func TestCommand(path, shell string, all bool, tests []string) Command {
 	case "typescript":
 		c = typescriptCommand(path, all)
 	case "python":
-		if shell != "" {
-			// Only where it runs: the probe of pytest is for nothing.
-			c = pythonBase(path)
-			break
-		}
-		c = pythonCommand(path, all, tests)
+		c = pythonCommand(path)
 	case "kotlin":
 		c = kotlinCommand(path, all)
 	}
@@ -116,52 +102,21 @@ func typescriptCommand(path string, all bool) Command {
 	return c
 }
 
-// pythonBase is where path's Python tests run, with no command yet.
-func pythonBase(path string) Command {
+func pythonCommand(path string) Command {
 	root := orDir(lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg"), path)
-	return Command{Root: root, Dir: root, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
-}
-
-// pythonInterpreter is the python that runs root's tests: its own
-// virtualenv's, else python3.
-func pythonInterpreter(root string) string {
 	py := "python3"
 	for _, venv := range []string{".venv", "venv"} {
 		if candidate := filepath.Join(root, venv, "bin", "python"); fileExists(candidate) {
 			py = candidate
 		}
 	}
-	return py
-}
-
-// pythonCommand runs the test files of tests that pytest collects, with
-// pytest, or as their modules with unittest when pytest is not installed;
-// with all, the whole suite. It runs nothing when none of tests is such a
-// file.
-func pythonCommand(path string, all bool, tests []string) Command {
-	c := pythonBase(path)
-	var run []string
-	if !all {
-		if run = coverage.PythonTests(c.Dir, tests); len(run) == 0 {
-			return c
-		}
+	c := Command{Root: root, Dir: root, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
+	if exec.Command(py, "-c", "import pytest").Run() == nil {
+		c.Args = []string{py, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"}
+	} else {
+		c.Args = []string{py, "-m", "unittest", "discover", "-f"}
 	}
-	py := pythonInterpreter(c.Root)
-	c.Args = pythonArgs(py, exec.Command(py, "-c", "import pytest").Run() == nil, run)
 	return c
-}
-
-// pythonArgs is the own-test command of python py: pytest, when installed,
-// else unittest, over run, test files relative to the directory it runs
-// in, or over the whole suite when run is nil.
-func pythonArgs(py string, pytest bool, run []string) []string {
-	switch {
-	case pytest:
-		return append([]string{py, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"}, run...)
-	case run != nil:
-		return append([]string{py, "-m", "unittest", "-f"}, coverage.PythonModules(run)...)
-	}
-	return []string{py, "-m", "unittest", "discover", "-f"}
 }
 
 func kotlinCommand(path string, all bool) Command {

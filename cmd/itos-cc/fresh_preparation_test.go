@@ -254,7 +254,7 @@ func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
 	// go list prints a package without dependencies last, its line ending in
 	// the tab before its empty dependency list.
 	whole := fmt.Sprintf("example.com/scope\t%s\tfmt\nexample.com/scope/unused\t%s\t\n", root, filepath.Join(root, "unused"))
-	plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, nil, listing(whole, nil))
+	plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, listing(whole, nil))
 	if err != nil || len(plans) != 1 || len(calls) != 1 || calls[0].Err != nil {
 		t.Fatalf("supervised Go plan: plans=%+v calls=%+v err=%v", plans, calls, err)
 	}
@@ -267,7 +267,7 @@ func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
 		"malformed": listing(fmt.Sprintf("example.com/scope\t%s\n", root), nil),
 		"omitted":   listing(fmt.Sprintf("example.com/scope\t%s\tfmt\n", root), nil),
 	} {
-		plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, nil, run)
+		plans, calls, err := coverage.PlansSupervised(context.Background(), sources, t.TempDir(), coverage.OwnTests, run)
 		if err == nil {
 			t.Errorf("%s go list was accepted: plans=%+v", name, plans)
 		}

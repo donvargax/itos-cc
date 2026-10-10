@@ -91,10 +91,8 @@ var coverageFlags = []flagSpec{
 // scope is the tests that run without --all-tests. With perTest, when the
 // coverage commands run, it also measures each listed test's coverage, in
 // the run's own directory. Progress and test output go to log so stdout
-// stays the report. reach, in OwnTests, is the test files that reach each
-// source, which measure Python's (coverage.Plans); nil measures Python's by
-// the whole suite.
-func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer, perTest *coverage.PerTest, reach coverage.Reach) (*coverage.Report, error) {
+// stays the report.
+func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer, perTest *coverage.PerTest) (*coverage.Report, error) {
 	command, reports := in.str("coverage-command"), in.strs("coverage-report")
 	switch {
 	case in.set("no-coverage"):
@@ -126,7 +124,7 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 		scope = coverage.AllTests
 	}
 	if in.set("use-existing-coverage") {
-		return coverage.Existing(coverage.Plans(sources, out, scope, reach), sources, log), nil
+		return coverage.Existing(coverage.Plans(sources, out, scope), sources, log), nil
 	}
 	if err := coverage.IgnoreDir(out); err != nil {
 		return nil, err
@@ -140,7 +138,7 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 		return nil, err
 	}
 	defer os.RemoveAll(run)
-	report := coverage.Run(coverage.Plans(sources, run, scope, reach), sources, log)
+	report := coverage.Run(coverage.Plans(sources, run, scope), sources, log)
 	if perTest != nil {
 		report.SetTests(coverage.MeasureTests(*perTest, filepath.Join(run, "tests"), sources, log))
 	}
