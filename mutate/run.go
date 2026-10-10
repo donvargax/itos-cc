@@ -174,7 +174,7 @@ type fileState struct {
 	previous       *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
 	stored         *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
 	tests          map[string]string // the tests that import the file, as the snapshot records them
-	moduleTests    map[string]string // every test beneath the source's build root (SuiteTestHashes)
+	moduleTests    map[string]string // every test in a Go source's nearest module
 	currentSupport map[string]string
 	judged         map[int]bool   // by the index of the unit, or nil when every function is
 	excepted       fileExceptions // the exceptions of the functions judged
@@ -307,7 +307,9 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 		if incomplete {
 			s.keepCoverage()
 		}
-		recordSuiteEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
+		if s.file.Spec.Name == "go" {
+			recordGoEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
+		}
 		if s.judged != nil {
 			s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			s.markBroadStale()
@@ -433,10 +435,8 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if s.tests, err = TestHashes(tests); err != nil {
 			return states, err
 		}
-		// Only a broad-scope outcome, judged now or recorded before,
-		// depends on the build root's tests.
-		if broadScope(RunScope(opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
-			if s.moduleTests, err = SuiteTestHashes(path, project.Root()); err != nil {
+		if f.Spec.Name == "go" {
+			if s.moduleTests, err = GoModuleTestHashes(path, project.Root()); err != nil {
 				return states, err
 			}
 		}
@@ -483,7 +483,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			d := prevScopes[site.Unit][site.Key()]
 			// A listed outcome holds while the files it rests on do.
 			restsOnChange := len(s.listedChange.files([]Mutant{{Scope: d.scope, Tests: d.tests}})) > 0
-			broadStale := len(BroadChanges(Mutant{Scope: d.scope, SuiteEvidence: d.evidence}, s.moduleTests, opt.Support)) > 0
+			broadStale := len(BroadChanges(Mutant{Scope: d.scope, GoEvidence: d.evidence}, s.moduleTests, opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
 				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.scope, tests: d.tests}
 			}

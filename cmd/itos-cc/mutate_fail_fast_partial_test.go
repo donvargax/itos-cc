@@ -131,7 +131,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		prior := cli(t, "mutation", "run", "--json", "--no-coverage", "--no-annotate", "--test-command", "sh prior.sh", "--since", "HEAD~1")
 		logOutcome(t, &prior)
 		done := ffRecorded(ffSnapshot(t, "main.go"), "Done")
-		if prior.code != 0 || len(done) != 1 || done[0]["outcome"] != "killed" || done[0]["scope"] != "sh prior.sh" || wholeSuiteEvidence(done[0]) == nil {
+		if prior.code != 0 || len(done) != 1 || done[0]["outcome"] != "killed" || done[0]["scope"] != "sh prior.sh" || done[0]["go_evidence"] == nil {
 			t.Fatalf("earlier run: exit %d, Done recorded %v: want 0 and Done's mutant killed by sh prior.sh, with its evidence", prior.code, done)
 		}
 		source := readText(t, "main.go")
@@ -161,8 +161,8 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 			if len(surv) != 1 {
 				return nil, false
 			}
-			e := wholeSuiteEvidence(surv[0])
-			return e, e != nil
+			e, ok := surv[0]["go_evidence"].(map[string]any)
+			return e, ok
 		}()
 		tests, _ := evidence["tests"].(map[string]any)
 		if len(surv) != 1 || surv[0]["outcome"] != "survived" || surv[0]["scope"] != "sh test.sh" || tests["main_test.go"] == nil {

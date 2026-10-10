@@ -5,68 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/donvargax/itos-cc/lang"
-	"github.com/donvargax/itos-cc/project"
 )
-
-// SuiteTestHashes returns every test file of source's language beneath its
-// build root, relative to projectRoot: what a whole-suite outcome of source
-// depends on besides its support files (ADR-0016). Go's is its nearest
-// module (GoModuleTestHashes). TypeScript's is the nearest package.json,
-// Python's the nearest pyproject.toml, setup.py or setup.cfg, and Kotlin's
-// the Gradle build root, which holds settings.gradle or settings.gradle.kts,
-// or else the Maven module, the nearest pom.xml. Tests are those project
-// discovery classifies as tests, so node_modules, .venv and the like are
-// never walked, and conftest.py counts; a test beneath a nested build root
-// of the language belongs to that root. A source with no build root has
-// none.
-func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
-	spec := lang.Detect(source)
-	if spec == nil {
-		return map[string]string{}, nil
-	}
-	if spec.Name == "go" {
-		return GoModuleTestHashes(source, projectRoot)
-	}
-	root := suiteRoot(spec.Name, source)
-	if root == "" {
-		return map[string]string{}, nil
-	}
-	files, err := project.Discover([]string{root})
-	if err != nil {
-		return nil, err
-	}
-	out := map[string]string{}
-	for _, test := range files.Tests {
-		if s := lang.Detect(test); s == nil || s.Name != spec.Name || suiteRoot(spec.Name, test) != root {
-			continue
-		}
-		rel, err := filepath.Rel(projectRoot, test)
-		if err != nil {
-			return nil, err
-		}
-		out[filepath.ToSlash(rel)] = fileHash(test)
-	}
-	return out, nil
-}
-
-// suiteRoot is the build root of path, a file of language, as
-// SuiteTestHashes names it; "" for none.
-func suiteRoot(language, path string) string {
-	switch language {
-	case "typescript":
-		return lang.FindUp(path, "package.json")
-	case "python":
-		return lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg")
-	case "kotlin":
-		if root := lang.FindUp(path, "settings.gradle.kts", "settings.gradle"); root != "" {
-			return root
-		}
-		return lang.FindUp(path, "pom.xml")
-	}
-	return ""
-}
 
 // GoModuleTestHashes returns every Go test file in source's nearest module,
 // relative to projectRoot. Nested modules are separate suites and are skipped.
@@ -126,24 +65,11 @@ func moduleTestsUnder(module, dir, projectRoot string) (map[string]string, error
 	return out, nil
 }
 
-// HasBroadOutcome says whether units record an outcome of a broad scope,
-// whose freshness needs SuiteTestHashes.
-func HasBroadOutcome(units []UnitResult) bool {
-	for _, u := range units {
-		for _, m := range u.Mutants {
-			if broadScope(m.TestScope()) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func broadScope(scope string) bool {
 	return scope == ScopeAllTests || scope != "" && scope != ScopeOwn && scope != ScopeListed
 }
 
-func recordSuiteEvidence(s *Snapshot, tests, support map[string]string) {
+func recordGoEvidence(s *Snapshot, tests, support map[string]string) {
 	if tests == nil {
 		tests = map[string]string{}
 	}
@@ -154,7 +80,7 @@ func recordSuiteEvidence(s *Snapshot, tests, support map[string]string) {
 		for j := range s.Units[i].Mutants {
 			m := &s.Units[i].Mutants[j]
 			if broadScope(m.TestScope()) {
-				m.SuiteEvidence = &SuiteEvidence{Tests: cloneHashes(tests), Support: cloneHashes(support)}
+				m.GoEvidence = &GoEvidence{Tests: cloneHashes(tests), Support: cloneHashes(support)}
 			}
 		}
 	}
@@ -187,17 +113,15 @@ func (s *fileState) markBroadStale() {
 	}
 }
 
-// BroadChanges is the changed evidence of a broad-scope outcome, of any
-// language: tests are SuiteTestHashes of its source now, support the
-// configured support files' hashes now.
+// BroadChanges is the changed evidence of a Go broad-scope outcome.
 func BroadChanges(m Mutant, tests, support map[string]string) []string {
 	if !broadScope(m.TestScope()) {
 		return nil
 	}
-	if m.SuiteEvidence == nil || m.SuiteEvidence.Tests == nil || m.SuiteEvidence.Support == nil {
+	if m.GoEvidence == nil || m.GoEvidence.Tests == nil || m.GoEvidence.Support == nil {
 		return []string{"whole-suite evidence"}
 	}
-	return changedFiles(m.SuiteEvidence.Tests, tests, m.SuiteEvidence.Support, support)
+	return changedFiles(m.GoEvidence.Tests, tests, m.GoEvidence.Support, support)
 }
 
 // BroadChangesForUnit returns the changed inputs of broad-scope outcomes in

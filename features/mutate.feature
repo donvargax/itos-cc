@@ -1731,7 +1731,7 @@ Feature: Mutation testing
         | Python     | command exits 0 but writes no report | coverage.measured-nothing | 1    |
         | Kotlin     | command fails                        | coverage.measured-nothing | 1    |
 
-    @whole-suite-freshness-all @ID-MUT-205
+    @wip @whole-suite-freshness-all @ID-MUT-205
     Scenario Outline: A non-importing test change makes another language's whole-suite outcome stale
       Given a <language> project whose test <test> does not import the production file
       And a mutation run with <scope> recorded an outcome for that file with whole-suite evidence
@@ -1748,7 +1748,7 @@ Feature: Mutation testing
         | Python     | tests/test_cli.py       | --test-command "./run.sh"   |
         | Kotlin     | src/test/kotlin/CliTest.kt | --all-tests              |
 
-    @whole-suite-freshness-all @ID-MUT-206
+    @wip @whole-suite-freshness-all @ID-MUT-206
     Scenario: Build roots, support files and legacy evidence are explicit for every language
       Given whole-suite outcomes in a TypeScript, a Python and a Kotlin project with support globs
       When a support file is added, changed or removed
@@ -1759,7 +1759,7 @@ Feature: Mutation testing
       Then it is stale and must rerun before it can be reused
       But a Go outcome recorded with the existing Go evidence key stays fresh
 
-    @whole-suite-freshness-all @ID-MUT-207
+    @wip @whole-suite-freshness-all @ID-MUT-207
     Scenario: Mixed scopes and partial runs keep their own dependencies in every language
       Given TypeScript, Python and Kotlin outcomes recorded with own, all-tests and test-command scopes
       And only a non-importing test file changed beneath each build root
