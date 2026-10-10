@@ -297,3 +297,24 @@
       timeout: 1200
     - run: go test -race -timeout 20m -count=1 ./cmd/itos-cc -run "^TestFreshPreparation"
       timeout: 1200
+- id: T-13
+  type: ci
+  title: CI runs the real TypeScript, Python and Kotlin tools on Linux
+  why: >
+    Language parity (the person, 2026-10-10) cannot be verified while CI installs no TypeScript,
+    Python or JVM tooling: the one Vitest test skips there and no Python or Kotlin pipeline ever
+    runs. Add to the ubuntu-latest test job only (macOS and Windows keep skipping; the coordinator
+    chose Linux to bound CI time): Node with a committed tools fixture package (vitest and
+    @vitest/coverage-v8 pinned by its lockfile, installed with npm ci), Python with pytest and
+    coverage pinned in a committed requirements file, and a JDK with Gradle for a committed Kotlin
+    fixture. Tests find these through one helper that skips with the tool named when it is absent,
+    so local and other-OS runs stay unchanged. Add one smoke test per language that runs mutation
+    run --json on a tiny committed fixture through the real tool (one or two trials, sparse) and
+    checks a judged outcome and measured coverage. No product change, no tool downloads by itos-cc
+    itself, and no change to what existing tests assert.
+  done_when:
+    - run: grep -q 'setup-python' .github/workflows/ci.yml
+    - run: grep -q 'setup-java' .github/workflows/ci.yml
+    - run: grep -q 'npm ci' .github/workflows/ci.yml
+    - run: go test -count=1 ./cmd/itos-cc -run '^TestLanguageToolSmoke'
+      timeout: 900
