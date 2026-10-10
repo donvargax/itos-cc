@@ -795,21 +795,9 @@ items:
     title: Fresh bounded mutation trials without a prior complete cache
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [T-12]
     kind: slice
-    why: >
-      Was mutation-fresh-budget.
-      The person prioritized GitHub #27 to completion over #26. Add opt-in global fresh mutant-trial
-      budget and reproducible selection, including changed code with missing or stale results;
-      preserve unit/listed/coverage semantics and fail on provider or measurement errors. Truthful
-      sampled/incomplete reporting must not become complete-cache proof. Shared T-9/T-10 are done;
-      Linux owned cleanup remains a prerequisite. The person split Windows native support into #29,
-      implemented on a Windows machine later; no unsafe or unverified Windows new-mode path. Local
-      mutation execution must be sparse: no runs over this repository, minimal bounded fixture
-      trials only, broader trial matrices in CI. Specify
-      CLI/seed/committed-input/partial-publication decisions and small slices before implementation;
-      no full mutation prepass or #26 scheduler scope.
     refs: ["#27"]
   - id: mutation-windows-bounded
     title: Native Windows integration and installation verification for fresh bounded mutation
