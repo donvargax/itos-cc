@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - counted-mixed-coverage
+  - counted-unjudged-language
   - pytest-cache-in-tree
   - mutation-windows-ownership
 items:
@@ -998,14 +998,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: counted-mixed-coverage
-    title: A counted run over a mixed range needs every language measured, even a site-free file
+  - id: counted-unjudged-language
+    title: A strict counted run needs no measurement of a language with nothing to judge
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was counted-mixed-coverage.
       Found in strict-mixed-languages (2026-10-10). mutation run --count over a Go module plus a
       TypeScript file with no mutation site fails count.preparation-failed at the coverage stage
       when no TypeScript coverage tool is installed, with or without --fail-uncovered, before the
