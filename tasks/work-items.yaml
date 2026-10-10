@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - mutation-macos-ownership
+  - macos-counted-run
   - mutation-windows-ownership
   - mutation-fail-fast
 items:
@@ -899,14 +899,15 @@ items:
       runs never runs. That fits sampled assurance, but a person may expect a counted run to report
       every statically stale entry, which needs no trial; decide whether it should.
     refs: ["#27"]
-  - id: mutation-macos-ownership
+  - id: macos-counted-run
     title: Owned process trees and counted mutation runs on macOS
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-counted-interrupt]
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-macos-ownership.
       Counted mode (#27) refuses every platform but Linux because owned process-group supervision
       (ADR-0021) exists only in mutate/proc_linux.go, which confirms an empty group by scanning
       /proc. macOS has process groups but no /proc, so it needs its own group-emptiness check (for
