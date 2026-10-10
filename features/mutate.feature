@@ -2584,6 +2584,20 @@ Feature: Mutation testing
       And on Windows it fails with fail-fast.platform before launching commands
       And the help, README and docs/CLI.md describe --fail-fast, its rule and its platforms
 
+  # fail-fast-counts: a fail-fast file's "ran" and "reused" count this run's
+  # trials and reuses of that file in every state, blocked included, and
+  # agree with its work counts; results only kept from before are counted
+  # in neither, as fail-fast-partial decided. Aggregate output is unchanged.
+  Rule: A fail-fast file's counts agree with its work
+
+    @wip @fail-fast-counts @ID-MUT-211
+    Scenario: A file blocked by a failing listed selection counts what it ran and reused
+      Given a fail-fast run that ran one mutant of a file and reused another before a failing listed selection blocked a third
+      When its report is emitted as JSON and as text
+      Then that file reports "ran" 1 and "reused" 1
+      And those agree with its completed work count
+      But a run without --fail-fast reports the same file as before
+
   # fail-fast-partial: ADR-0022 for the files fail-fast-run leaves unwritten.
   Rule: A fail-fast stop keeps the valid judgments of the files it cut short
 
