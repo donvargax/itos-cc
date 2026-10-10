@@ -12,6 +12,10 @@ import (
 	"syscall"
 )
 
+// groupKillDeniedForZombies is false: Linux signals a group of zombies
+// without error, so EPERM from the group kill is a real failure.
+const groupKillDeniedForZombies = false
+
 // ownedGroupGone reports whether the killed process group pgid has no member
 // left that can run. Linux counts zombies as gone by scanning /proc, since a
 // zombie whose parent does not reap it keeps kill(-pgid, 0) succeeding.

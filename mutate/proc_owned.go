@@ -191,6 +191,11 @@ func killOwnedProcessGroup(pgid int) error {
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}
+	if errors.Is(err, syscall.EPERM) && groupKillDeniedForZombies {
+		// The probe that follows still waits for the group to be gone, so a
+		// live member that refuses the signal fails cleanup at its deadline.
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("terminate owned process group %d: %w", pgid, err)
 	}
