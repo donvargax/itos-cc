@@ -1,6 +1,8 @@
 package mutate
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"slices"
 	"testing"
@@ -254,5 +256,37 @@ func TestFunctionsSharingANameMatchTheirEntriesByHash(t *testing.T) {
 	units := keepUnjudged(built.Units, map[int]bool{}, &snap, true)
 	if len(units) != 2 || units[0].Hash == units[1].Hash || units[0].Survived != 1 || units[1].Survived != 0 {
 		t.Errorf("units %+v, want each function's own entry, the survivor with the first", units)
+	}
+}
+
+func TestAnOwnOutcomeOfAWholeSuiteScriptReadsAsTheWholeSuites(t *testing.T) {
+	root := t.TempDir()
+	for name, text := range map[string]string{
+		"package.json": `{"scripts": {"test": "node --test"}}`,
+		"src/a.ts":     "export function a(i: number): boolean {\n  return i === 3;\n}\n",
+		".metrics/mutate/src/a.ts.json": `{"version": 1, "file": "src/a.ts", "language": "typescript", "units": [{"name": "a", "mutants": [` +
+			`{"outcome": "killed"}, {"outcome": "killed", "scope": "make check"}, {"outcome": "survived", "scope": "listed", "tests": ["t"]}]}]}`,
+	} {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	snap, err := LoadSnapshotOf(root, "src/a.ts")
+	if err != nil || snap == nil {
+		t.Fatalf("snapshot: %v, %v", snap, err)
+	}
+	var scopes []string
+	for _, m := range snap.Units[0].Mutants {
+		scopes = append(scopes, m.TestScope())
+	}
+	if want := []string{ScopeAllTests, "make check", ScopeListed}; !slices.Equal(scopes, want) {
+		t.Errorf("scopes %q, want %q: the own outcome the whole script decided reads as the whole suite's", scopes, want)
+	}
+	if !HasBroadOutcome(snap.Units) || snap.Units[0].Mutants[0].SuiteEvidence != nil {
+		t.Errorf("the own outcome recorded without evidence: %+v, want a broad outcome with none, stale once", snap.Units[0].Mutants[0])
 	}
 }

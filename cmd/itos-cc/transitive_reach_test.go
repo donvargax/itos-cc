@@ -30,12 +30,15 @@ type reachProject struct {
 var reachProjects = map[string]reachProject{
 	"typescript": {
 		files: map[string]string{
-			"package.json":      `{"name": "m"}` + "\n",
-			"src/b.ts":          "export function beta(i: number): boolean {\n  return i > 5;\n}\n",
-			"src/a.ts":          "import { beta } from \"./b\";\n\nexport function alpha(i: number): boolean {\n  return beta(i);\n}\n",
-			"src/a.test.ts":     "import { alpha } from \"./a\";\n\ntest(\"alpha\", () => {\n  expect(alpha(6)).toBe(true);\n});\n",
-			"src/other.ts":      "export function other(i: number): boolean {\n  return i < 3;\n}\n",
-			"src/other.test.ts": "import { other } from \"./other\";\n\ntest(\"other\", () => {\n  expect(other(2)).toBe(true);\n});\n",
+			"package.json": `{"name": "m", "devDependencies": {"vitest": "5.0.2"}}` + "\n",
+			// Vitest installed: its own tests are its related tests.
+			"node_modules/.bin/vitest":     "",
+			"node_modules/.bin/vitest.cmd": "",
+			"src/b.ts":                     "export function beta(i: number): boolean {\n  return i > 5;\n}\n",
+			"src/a.ts":                     "import { beta } from \"./b\";\n\nexport function alpha(i: number): boolean {\n  return beta(i);\n}\n",
+			"src/a.test.ts":                "import { alpha } from \"./a\";\n\ntest(\"alpha\", () => {\n  expect(alpha(6)).toBe(true);\n});\n",
+			"src/other.ts":                 "export function other(i: number): boolean {\n  return i < 3;\n}\n",
+			"src/other.test.ts":            "import { other } from \"./other\";\n\ntest(\"other\", () => {\n  expect(other(2)).toBe(true);\n});\n",
 		},
 		b: "src/b.ts", reaching: "src/a.test.ts", others: "src/other.test.ts",
 	},

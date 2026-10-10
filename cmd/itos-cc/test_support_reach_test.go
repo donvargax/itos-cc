@@ -40,12 +40,15 @@ var supportProjects = map[string]reachProject{
 	},
 	"typescript helper": {
 		files: map[string]string{
-			"package.json":             `{"name": "m"}` + "\n",
-			"src/a.ts":                 "export function alpha(i: number): boolean {\n  return i > 5;\n}\n",
-			"src/__tests__/helpers.ts": "import { alpha } from \"../a\";\n\nexport const make = () => alpha;\n",
-			"src/__tests__/a.test.ts":  "import { make } from \"./helpers\";\n\ntest(\"alpha\", () => {\n  expect(make()(6)).toBe(true);\n});\n",
-			"src/other.ts":             "export function other(i: number): boolean {\n  return i < 3;\n}\n",
-			"src/other.test.ts":        "import { other } from \"./other\";\n\ntest(\"other\", () => {\n  expect(other(2)).toBe(true);\n});\n",
+			"package.json": `{"name": "m", "devDependencies": {"vitest": "5.0.2"}}` + "\n",
+			// Vitest installed: its own tests are its related tests.
+			"node_modules/.bin/vitest":     "",
+			"node_modules/.bin/vitest.cmd": "",
+			"src/a.ts":                     "export function alpha(i: number): boolean {\n  return i > 5;\n}\n",
+			"src/__tests__/helpers.ts":     "import { alpha } from \"../a\";\n\nexport const make = () => alpha;\n",
+			"src/__tests__/a.test.ts":      "import { make } from \"./helpers\";\n\ntest(\"alpha\", () => {\n  expect(make()(6)).toBe(true);\n});\n",
+			"src/other.ts":                 "export function other(i: number): boolean {\n  return i < 3;\n}\n",
+			"src/other.test.ts":            "import { other } from \"./other\";\n\ntest(\"other\", () => {\n  expect(other(2)).toBe(true);\n});\n",
 		},
 		b: "src/a.ts", reaching: "src/__tests__/a.test.ts", others: "src/other.test.ts",
 	},

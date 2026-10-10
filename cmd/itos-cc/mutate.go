@@ -90,7 +90,12 @@ in Go its package's tests and those of the packages that import it, one hop. Whe
 is added, changed, or removed, every mutant of the file runs again. Each outcome records the
 scope of the tests that decided it: "own" (the file's own tests, left out of
 the file), "all-tests", or the --test-command line; a reused outcome keeps
-the scope it was decided with, and mutation sample re-runs it there. A summary comment is kept at
+the scope it was decided with, and mutation sample re-runs it there. A
+TypeScript file whose project runs its test script without Vitest or Jest
+installed has no narrower own tests than that script, the whole suite, so
+its outcomes are recorded as "all-tests", with the whole suite's evidence,
+and any test change makes them stale; one recorded before as "own" reads
+stale once. A summary comment is kept at
 the end of each source file; it lists each survivor, and each one itos-cc.yaml
 excepts apart, with its reason.
 

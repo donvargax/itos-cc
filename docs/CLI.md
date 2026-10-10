@@ -180,6 +180,18 @@ Python, a Kotlin outcome of scope `own` recorded before still reads fresh
 while its tests are unchanged, and `mutation sample` re-runs it with the
 narrowed tests.
 
+A TypeScript file whose project has neither Vitest nor Jest installed runs
+its project's test script, `<pm> run test`, which nothing can narrow to the
+tests that reach the file: its own tests are the whole suite. `mutation run`
+records their outcomes with scope `all-tests` and the whole suite's evidence
+(`suite_evidence`), as a `--test-command` outcome is recorded, so a change to
+any test beneath its `package.json` makes them stale in `mutation check`,
+`run`, `sample` and the graph, and `mutation sample` re-runs them with that
+script. Coverage is measured from the same script, by the project's
+`coverage` script or `c8`. An outcome of such a file recorded before as
+`own`, with no whole-suite evidence, reads stale once and is re-run. Projects
+with Vitest or Jest keep their related tests and scope `own`.
+
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files

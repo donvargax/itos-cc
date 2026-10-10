@@ -26,6 +26,9 @@ type Command struct {
 	// editable install that points at the real tree.
 	PathEnv  string
 	PathDirs []string
+	// Suite says the command runs the whole suite of its build root, as no
+	// narrower run exists: a TypeScript test script without Vitest or Jest.
+	Suite bool
 }
 
 // Key identifies a command for sharing one baseline between files.
@@ -116,8 +119,30 @@ func typescriptCommand(path string, all bool) Command {
 		if c.Args[0] == "npm" {
 			c.Args = append(c.Args, "--silent")
 		}
+		c.Suite = true
 	}
 	return c
+}
+
+// OwnScope is the scope of path's own tests: ScopeAllTests when they cannot
+// be narrowed and run the whole suite, as a TypeScript file's do when its
+// project's test script runs without Vitest or Jest installed, else
+// ScopeOwn. An outcome they decide rests on the whole suite, as a
+// --test-command outcome does, and is recorded with its evidence.
+func OwnScope(path string) string {
+	if spec := lang.Detect(path); spec != nil && spec.Name == "typescript" && typescriptCommand(path, false).Suite {
+		return ScopeAllTests
+	}
+	return ScopeOwn
+}
+
+// FileScope is RunScope for path: with neither shell nor all, its own
+// tests' scope (OwnScope).
+func FileScope(path, shell string, all bool) string {
+	if scope := RunScope(shell, all); scope != ScopeOwn {
+		return scope
+	}
+	return OwnScope(path)
 }
 
 // pythonBase is where path's Python tests run, with no command yet.

@@ -60,7 +60,8 @@ type FreshStage struct {
 type FreshTrialOptions struct {
 	Workers       int
 	TimeoutFactor float64
-	// Scope is the scope of the own-test command, RunScope's.
+	// Scope is the scope of the own-test command, RunScope's; a file whose
+	// own tests run the whole suite judges in OwnScope's.
 	Scope string
 	// Listed runs a selection of the listed tests at the frozen root; nil
 	// when the frozen config lists none.
@@ -196,6 +197,9 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	out.Stages = append(out.Stages, FreshStage{Name: "own", State: "complete", Outcome: own})
 	if own != Survived || len(trial.Reach) == 0 {
 		out.Outcome, out.Scope = own, opt.Scope
+		if opt.Scope == ScopeOwn {
+			out.Scope = OwnScope(path)
+		}
 		return out
 	}
 	if sels == nil {

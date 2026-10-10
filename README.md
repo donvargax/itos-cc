@@ -186,9 +186,13 @@ test. What keeps `mutation run` fast:
   declare, as `gradle -p <module> test --fail-fast --tests <class>…`, or
   `mvn -q test -Dtest=<classes> -Dsurefire.failIfNoSpecifiedTests=false`.
   Coverage comes from the same tests, so a line only integration or
-  end-to-end tests reach is uncovered, not a survivor; a TypeScript
+  end-to-end tests reach is uncovered, not a survivor; a Vitest or Jest
   project's `coverage` script measures mutation run only with `--all-tests`.
-  A Python or Kotlin file no such test reaches runs no test, and its
+  A TypeScript project with neither Vitest nor Jest installed runs its test
+  script, which cannot be narrowed: its outcomes are the whole suite's,
+  recorded with scope `all-tests` and the whole suite's evidence, so any
+  test change makes them stale, as a `--test-command` outcome. A Python or
+  Kotlin file no such test reaches runs no test, and its
   mutants are uncovered. A test reaches code through the helpers it imports
   and, in Python, the `conftest.py` files above it, but a Python or Kotlin
   test that runs code only through a subprocess, the CLI or reflection

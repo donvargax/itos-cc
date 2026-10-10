@@ -1963,7 +1963,7 @@ Feature: Mutation testing
         | gradle |
         | maven  |
 
-    @wip @own-tests-ts-fallback @ID-MUT-218
+    @own-tests-ts-fallback @ID-MUT-218
     Scenario: A TypeScript test script without Vitest or Jest records whole-suite outcomes
       Given a TypeScript project whose test script runs Node's own test runner, with neither Vitest nor Jest installed
       And a mutant of one of its files has a result from "itos-cc mutation run"

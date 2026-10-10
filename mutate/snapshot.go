@@ -224,11 +224,25 @@ func LoadSnapshot(rel string) (*Snapshot, error) {
 // names another file is none, so the file's functions are missing. Every
 // reader looks a file's snapshot up here, mutation check and the
 // architecture graph alike.
+//
+// An outcome it records as its file's own tests', where those run the whole
+// suite (OwnScope), reads as ScopeAllTests, the scope that decided it: one
+// recorded before that rule has no whole-suite evidence, so it reads stale
+// once.
 func LoadSnapshotOf(root, rel string) (*Snapshot, error) {
 	var s Snapshot
 	ok, err := metrics.ReadIn(metrics.DirOf(root), SnapshotName(rel), &s)
 	if err != nil || !ok || s.File != filepath.ToSlash(rel) {
 		return nil, err
+	}
+	if OwnScope(filepath.Join(root, filepath.FromSlash(rel))) == ScopeAllTests {
+		for i := range s.Units {
+			for j := range s.Units[i].Mutants {
+				if m := &s.Units[i].Mutants[j]; m.TestScope() == ScopeOwn {
+					m.Scope = ScopeAllTests
+				}
+			}
+		}
 	}
 	return &s, nil
 }

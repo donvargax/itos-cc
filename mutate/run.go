@@ -440,7 +440,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		}
 		// Only a broad-scope outcome, judged now or recorded before,
 		// depends on the build root's tests.
-		if broadScope(RunScope(opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
+		if broadScope(FileScope(path, opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
 			if s.moduleTests, err = SuiteTestHashes(path, project.Root()); err != nil {
 				return states, err
 			}
@@ -470,7 +470,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.scopes = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
 		s.fresh = make([]freshOutcome, len(s.sites))
-		scope := RunScope(opt.TestCommand, opt.AllTests)
+		scope := FileScope(path, opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
 			s.scopes[i] = scope

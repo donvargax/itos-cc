@@ -202,3 +202,34 @@ func TestKotlinTestClassesRunWithMavenThroughSurefire(t *testing.T) {
 		t.Errorf("all tests: %+v, want its module's whole suite", all)
 	}
 }
+
+func TestATypeScriptScriptWithoutVitestOrJestRunsTheWholeSuite(t *testing.T) {
+	dir := kotlinFiles(t, t.TempDir(), map[string]string{
+		"package.json":                    `{"scripts": {"test": "node --test"}}`,
+		"src/a.ts":                        "export const a = 1;\n",
+		"vitest/package.json":             `{"devDependencies": {"vitest": "*"}}`,
+		"vitest/a.ts":                     "export const a = 1;\n",
+		"vitest/node_modules/.bin/vitest": "",
+		"py/pyproject.toml":               "",
+		"py/a.py":                         "",
+	})
+	src := filepath.Join(dir, "src", "a.ts")
+	if c := TestCommand(src, "", false, nil); !c.Suite || !strings.HasSuffix(c.String(), " run test") && !strings.HasSuffix(c.String(), " run test --silent") {
+		t.Errorf("own tests: %+v, want the test script, marked as the whole suite", c)
+	}
+	if got := OwnScope(src); got != ScopeAllTests {
+		t.Errorf("OwnScope of a script without Vitest or Jest: %q, want %q", got, ScopeAllTests)
+	}
+	if got := FileScope(src, "make check", false); got != "make check" {
+		t.Errorf("FileScope with --test-command: %q, want the command", got)
+	}
+	vitest := filepath.Join(dir, "vitest", "a.ts")
+	if runtime.GOOS != "windows" {
+		if got := OwnScope(vitest); got != ScopeOwn || TestCommand(vitest, "", false, nil).Suite {
+			t.Errorf("OwnScope with Vitest installed: %q, want %q", got, ScopeOwn)
+		}
+	}
+	if got := OwnScope(filepath.Join(dir, "py", "a.py")); got != ScopeOwn {
+		t.Errorf("OwnScope of a Python file: %q, want %q", got, ScopeOwn)
+	}
+}
