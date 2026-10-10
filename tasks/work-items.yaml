@@ -843,28 +843,9 @@ items:
     title: Expose supervised and fail-closed measurement preparation for bounded execution
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [T-11]
     kind: task
-    why: >
-      GitHub #27 needs reliable preparation evidence before any selected mutant trial. Add an
-      internal opt-in preparation path usable by the bounded runner, preserving complete-run
-      defaults. Route list, coverage, per-test coverage/conversion and required tool commands
-      through the reusable owned executor with parent cancellation; avoid an import cycle by using a
-      neutral boundary or instance-local injected execution rather than importing mutate into
-      coverage. Capture every actual command success or failure, report admission and measurement
-      stages explicitly, and never infer command success merely from a report existing or
-      Report.Missing being empty. Missing or malformed reports, per-test conversion errors, provider
-      failures, baseline failures and unsupported scope must fail this opt-in path; keep legacy
-      soft-error behavior unchanged for existing complete commands. Measure required own and
-      applicable listed reach from frozen committed inputs; no preexisting local coverage map is
-      required. A reusable per-scenario coverage cache is separate future work, and count N does not
-      bound list, coverage or baseline command costs. No persistent sampled coverage publication,
-      public count flag, mutant scheduler, fail-fast scheduling or Windows Job implementation in
-      this task. Tests use small controlled preparation helper commands and zero local mutant
-      trials; focused checks locally, broad existing fixture suites in CI. Clearly label new
-      internal capability tests, not original-product red evidence. Linux ownership is a
-      prerequisite and Windows mode integration remains #29.
     refs: ["#27"]
   - id: go-scope-trailing-package
     title: Legacy GoScope drops a dependency-free package that go list prints last
