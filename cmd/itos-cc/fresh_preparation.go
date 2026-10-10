@@ -35,6 +35,9 @@ type FreshPreparation struct {
 	Report     *coverage.Report
 	Listed     []coverage.Test
 	GoCoverage map[string]*mutate.GoCoverageEvidence
+	// GoCoverageMissing is each admitted Go function with executable
+	// statements that the measurement has no complete inventory of.
+	GoCoverageMissing []mutate.FreshUnit
 	// Tools is every external executable the measurement and baseline
 	// commands need, resolved before any of them runs.
 	Tools []PreparationTool
@@ -50,9 +53,9 @@ type PreparationTool struct {
 }
 
 type PreparationStage struct {
-	Name  string
-	State string
-	Error string
+	Name  string `json:"name"`
+	State string `json:"state"`
+	Error string `json:"error,omitempty"`
 }
 
 // freshPreparationOptions are intentionally internal. No CLI flag or legacy
@@ -257,14 +260,18 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 			}
 			inputs["@fresh-preparation-go-network-policy"] = hashPreparationPolicy("GOTOOLCHAIN=local\x00GOPROXY=off\x00GOSUMDB=off")
 			evidence, err := mutate.FreshGoCoverageEvidence(root, unit, report.GoBlocks(path), producer, inputs)
-			if err != nil || !evidence.Complete {
-				if err == nil {
-					err = fmt.Errorf("no complete executable coverage inventory for %s %s", unit.Path, unit.Function)
-				}
+			if err != nil {
 				stage("strict-go-inventory", "failed", err)
 				return prep, err
 			}
+			// A function the successful measurement has no complete
+			// inventory of, such as one only another OS builds, is a
+			// finding about that function, as complete mode reports it,
+			// not a failed measurement.
 			prep.GoCoverage[unit.Identity] = evidence
+			if !evidence.Complete {
+				prep.GoCoverageMissing = append(prep.GoCoverageMissing, unit)
+			}
 		}
 		stage("strict-go-inventory", "complete", nil)
 	}

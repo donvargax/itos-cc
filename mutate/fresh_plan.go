@@ -53,6 +53,18 @@ type FreshUnit struct {
 	Hash                     string
 }
 
+// Errors a fresh plan wraps, so a caller can tell what refused it.
+var (
+	// ErrFreshRepository: no Git repository or no resolvable HEAD commit.
+	ErrFreshRepository = errors.New("no Git repository with a resolvable HEAD")
+	// ErrFreshSince: the --since reference names no commit.
+	ErrFreshSince = errors.New("bad --since reference")
+	// ErrFreshPath: a path that is not root-relative or selects nothing.
+	ErrFreshPath = errors.New("bad fresh plan path")
+	// ErrFreshUnsupported: committed content the plan does not support.
+	ErrFreshUnsupported = errors.New("unsupported committed scope")
+)
+
 // FreshCandidate identifies a static mutation site without relying on cached
 // outcomes or on the unit's display name alone.
 type FreshCandidate struct {
@@ -108,7 +120,7 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	}
 	rootOut, err := gitAt(ctx, root, "rev-parse", "--show-toplevel")
 	if err != nil {
-		return nil, fmt.Errorf("resolve repository root: %w", err)
+		return nil, fmt.Errorf("%w: resolve repository root: %w", ErrFreshRepository, err)
 	}
 	root, err = filepath.Abs(strings.TrimSpace(string(rootOut)))
 	if err != nil {
@@ -119,11 +131,11 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	}
 	headOut, err := gitAt(ctx, root, "rev-parse", "--verify", "HEAD^{commit}")
 	if err != nil {
-		return nil, fmt.Errorf("resolve HEAD: %w", err)
+		return nil, fmt.Errorf("%w: resolve HEAD: %w", ErrFreshRepository, err)
 	}
 	head := strings.TrimSpace(string(headOut))
 	if head == "" {
-		return nil, errors.New("resolve HEAD: empty commit id")
+		return nil, fmt.Errorf("%w: resolve HEAD: empty commit id", ErrFreshRepository)
 	}
 	if seed == "" {
 		seed = head
@@ -176,7 +188,7 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("fresh plan path %q selects no committed supported source", chosen)
+			return nil, fmt.Errorf("%w: %q selects no committed supported source", ErrFreshPath, chosen)
 		}
 	}
 	buildOutput, buildOutputErr, err := committedBuildOutput(ctx, frozen)
@@ -335,11 +347,11 @@ func canonicalPaths(paths []string) (map[string]bool, error) {
 	out := make(map[string]bool, len(paths))
 	for _, raw := range paths {
 		if filepath.IsAbs(raw) {
-			return nil, fmt.Errorf("fresh plan path must be root-relative: %q", raw)
+			return nil, fmt.Errorf("%w: must be root-relative: %q", ErrFreshPath, raw)
 		}
 		rel := filepath.ToSlash(filepath.Clean(raw))
 		if rel == ".." || strings.HasPrefix(rel, "../") || strings.Contains(rel, "\\") {
-			return nil, fmt.Errorf("fresh plan path escapes or ambiguously names the repository: %q", raw)
+			return nil, fmt.Errorf("%w: escapes or ambiguously names the repository: %q", ErrFreshPath, raw)
 		}
 		out[path.Clean(rel)] = true
 	}
@@ -471,15 +483,15 @@ func exportCommit(ctx context.Context, root, commit, destination string) ([]stri
 	for _, entry := range entries {
 		switch {
 		case entry.kind == "commit" || entry.mode == "160000":
-			return nil, fmt.Errorf("fresh plan does not support submodule %q", entry.name)
+			return nil, fmt.Errorf("%w: submodule %q", ErrFreshUnsupported, entry.name)
 		case entry.mode == "120000":
-			return nil, fmt.Errorf("fresh plan does not support committed symlink %q", entry.name)
+			return nil, fmt.Errorf("%w: committed symlink %q", ErrFreshUnsupported, entry.name)
 		case entry.kind != "blob" || (entry.mode != "100644" && entry.mode != "100755"):
-			return nil, fmt.Errorf("fresh plan does not support Git tree entry %q (mode %s, type %s)", entry.name, entry.mode, entry.kind)
+			return nil, fmt.Errorf("%w: Git tree entry %q (mode %s, type %s)", ErrFreshUnsupported, entry.name, entry.mode, entry.kind)
 		}
 		clean := path.Clean(entry.name)
 		if clean == "." || clean != entry.name || clean == ".." || strings.HasPrefix(clean, "../") || strings.HasPrefix(clean, "/") || strings.Contains(entry.name, "\\") {
-			return nil, fmt.Errorf("committed path escapes repository: %q", entry.name)
+			return nil, fmt.Errorf("%w: committed path escapes repository: %q", ErrFreshUnsupported, entry.name)
 		}
 		blob, err := gitAt(ctx, root, "cat-file", "blob", entry.oid)
 		if err != nil {
@@ -570,15 +582,15 @@ type lineRange struct{ start, end int }
 
 func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, string, error) {
 	if strings.HasPrefix(ref, "-") {
-		return nil, "", fmt.Errorf("invalid --since ref %q", ref)
+		return nil, "", fmt.Errorf("%w: invalid --since ref %q", ErrFreshSince, ref)
 	}
 	baseOut, err := gitAt(ctx, root, "rev-parse", "--verify", "--quiet", ref+"^{commit}")
 	if err != nil {
-		return nil, "", fmt.Errorf("--since %s is not a commit: %w", ref, err)
+		return nil, "", fmt.Errorf("%w: --since %s is not a commit: %w", ErrFreshSince, ref, err)
 	}
 	base := strings.TrimSpace(string(baseOut))
 	if base == "" {
-		return nil, "", fmt.Errorf("--since %s resolved to an empty commit id", ref)
+		return nil, "", fmt.Errorf("%w: --since %s resolved to an empty commit id", ErrFreshSince, ref)
 	}
 	args := []string{"-c", "core.quotePath=false", "diff", "--name-status", "-z", "-M", "--no-ext-diff", "--no-textconv", base + "..." + head}
 	out, err := gitAt(ctx, root, args...)

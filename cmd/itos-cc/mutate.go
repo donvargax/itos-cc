@@ -94,6 +94,32 @@ problems, and the exit code. A file with no function judged is left as it
 was: neither its snapshot nor its summary comment is written. Renames are
 followed: a move is no change, and a renamed file's snapshot moves with it.
 
+--count N judges at most N mutation sites freshly, as a bounded check
+that needs no cache: the cache neither saves a trial nor is written. It
+resolves the Git repository and its HEAD commit once and judges that
+commit's tracked files, frozen in a private copy, so staged, unstaged and
+untracked changes play no part; tools, dependencies and the environment are
+used as installed, and nothing is installed. The sites of the selection,
+paths and --since REF's changed functions, are ranked by SHA-256 over
+--seed TEXT (the HEAD commit's id unless given) and each site's identity,
+and the first N are selected across every file, function and worker.
+Coverage, listed reach and a clean baseline of each selected file's own
+tests are then measured on the frozen copy; any command failing fails the
+run before any mutant. A selected site no test reaches is reported
+uncovered, never run and never redrawn. Every other selected site runs its
+own tests once, even when the cache holds a kill for it; one that survives
+them and that listed tests reach is reported blocked, as counted mode does
+not run listed tests yet. --count bounds mutant trials only, not discovery,
+coverage, listing, baselines or total time. A counted run writes no
+snapshot, summary comment or coverage cache, and its pass proves only the
+judgments it reports, never a complete result: mutation check reports the
+cache as it was. --fail-uncovered keeps its meaning, strict Go included,
+for every admitted function. A range with no site is not applicable, which
+is not a pass of a range whose tests or measurement failed. --count runs
+on Linux only (Windows is #29); it refuses --changed, --no-coverage,
+existing or raw coverage, --test-command and --mutate-all, and --seed
+needs it.
+
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor. For Go it also requires fresh measured executable coverage for
 every judged function, including functions with no mutation sites, and fails
@@ -166,7 +192,9 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks")),
+		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks"),
+		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux only"),
+		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
    "function", "original", "replacement",
@@ -176,7 +204,17 @@ judged and no snapshot is written. Listed tests are not run with
    executed its line "coverage": ["in-process", "integration"], either or
    both, and with scope "listed" "tests": ["<test ID>"]}], and with
    --since
-   "judged": ["namespace#name"]}]`,
+   "judged": ["namespace#name"]}]; with --count, instead of "files":
+   "sampling": {"budget", "eligible", "selected", "executed", "omitted",
+   "seed", "algorithm", "commit", "since", "since_base",
+   "assurance": "sampled"|"not-applicable",
+   "completion": "completed"|"stopped"|"not-applicable", "stop", "bounds"},
+   "selected": [{"identity", "file", "line", "column", "function",
+   "original", "replacement",
+   "state": "judged"|"uncovered"|"blocked"|"failed"|"unattempted",
+   "outcome" (judged and uncovered sites only), "scope", "reason"}],
+   "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
+   "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
@@ -192,17 +230,25 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go coverage with raw coverage flags: flag",
+		"flags.conflict            --seed without --count, or --count with a flag it refuses: flag",
+		"count.platform            --count on a platform other than Linux: platform",
+		"count.no-git              --count outside a Git repository, or before its first commit",
+		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
+		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
+		"count.listed-unsupported  with --count, a selected mutant survived its own tests and only listed tests could judge it: file, line, column, function, original, replacement, identity",
+		"count.trial-failed        with --count, a selected mutant's trial could not run: file, line, column, function, original, replacement, identity",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, or a selection of listed tests fails without any mutant"},
-		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
-		{3, "--changed or --since outside a git repository"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is blocked or not judged"},
+		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
+		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on a platform other than Linux, or with a required tool missing"},
 	},
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation run --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
 		"itos-cc mutation run --all-tests --json                    # nightly",
+		"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux)",
 	},
 	run: runMutate,
 }
@@ -340,6 +386,9 @@ func importingTests() (func(path string) []string, error) {
 }
 
 func runMutate(in *invocation) (any, error) {
+	if in.set("count") || in.set("seed") {
+		return runCountedMutate(in)
+	}
 	result := mutateResult{Files: []mutateFile{}}
 	if in.set("fail-uncovered") && in.set("no-coverage") {
 		return result, flagConflict("--no-coverage", "--no-coverage conflicts with --fail-uncovered, which requires measured Go executable coverage")

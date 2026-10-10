@@ -193,7 +193,7 @@ func withFiles(base map[string]string, extra map[string]string) map[string]strin
 // @ID-MUT-173
 func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T) {
 	dir := moduleRepo(t, untestedFiles)
-	for _, args := range [][]string{{"--count", "0"}, {"--count", "-2"}, {"--count", "two"}} {
+	for _, args := range [][]string{{"--count", "0"}, {"--count=-2"}, {"--count", "two"}} {
 		o := countedRun(t, args...)
 		p := o.counted(t).problem("flags.value-invalid")
 		if o.code != 2 || p == nil || p["flag"] != "--count" {
@@ -217,6 +217,14 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 			t.Errorf("counted mode launched commands on %s:\n%s", runtime.GOOS, o.stderr)
 		}
 		return
+	}
+
+	// The same refusal on Linux, with the platform pretended away.
+	countedPlatform = "windows"
+	o = countedRun(t, "--count", "1")
+	countedPlatform = runtime.GOOS
+	if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil || strings.Contains(o.stderr, "itos-cc: coverage") {
+		t.Errorf("counted mode on an unsupported platform: exit %d, want count.platform before launching commands\n%s%s", o.code, o.stdout, o.stderr)
 	}
 
 	// Outside any Git repository, and in one whose HEAD is unborn.

@@ -207,6 +207,7 @@ itos-cc mutation run --all-tests --no-coverage               # nightly, with end
 itos-cc mutation list src/billing                            # the mutation sites, without running tests
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 itos-cc mutation sample                                      # in CI: do 20 cached results still hold?
+itos-cc mutation run --count 20 --since origin/main          # bounded and fresh: 20 committed sites, no cache (Linux)
 itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
 ```
 
@@ -285,6 +286,26 @@ successful built-in or listed measurement; `--coverage-report`,
 `--use-existing-coverage`, and `--coverage-command` are rejected. An active
 Go workspace or local replacement outside the inventoried module is refused;
 set `GOWORK=off` to disable workspace use.
+
+`--count N` judges at most N mutation sites freshly, without the cache, as
+a bounded check of committed work. It resolves the repository and HEAD once
+and judges that commit's tracked files in a private frozen copy, so
+uncommitted changes play no part; tools and dependencies are used as
+installed. Sites of the selection (paths, and `--since`) are ranked by
+SHA-256 over `--seed TEXT`, the HEAD commit's id by default, and the first N
+across every file and function are selected. Coverage, listed reach and
+each selected file's clean baseline are measured on the frozen copy, and any
+failing command fails the run before a mutant runs. A selected site no test
+reaches is uncovered and never redrawn; every other selected site runs its
+own tests once, even when the cache holds a kill, and one that survives them
+while listed tests reach it is reported blocked, since counted mode does not
+run listed tests yet. `--json` gives `sampling` (budget, eligible, selected,
+executed and omitted counts, seed, algorithm and commit), the `selected`
+sites with their `state` and outcome, the judged and omitted `subjects`, and
+the `stages` that ran. A counted run writes no snapshot, comment or coverage
+cache, and its pass proves only its sampled judgments; `--count` bounds
+mutant trials, not discovery, baselines or total time. A range with no site
+is reported not applicable. It runs on Linux only for now.
 
 `mutation check` gives the verdict a run would give from the cached results
 alone, running no test and no coverage command and writing nothing. Run
