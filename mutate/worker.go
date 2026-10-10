@@ -145,7 +145,7 @@ func (w *worker) runContext(parent context.Context, c Command, timeout time.Dura
 		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 	}
 	cmd.Dir = dir
-	cmd.Env = os.Environ()
+	cmd.Env = project.NoBytecodeEnv(os.Environ())
 	if c.PathEnv != "" {
 		var paths []string
 		for _, p := range c.PathDirs {

@@ -528,9 +528,9 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 			os.Remove(r)
 		}
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
-		var env []string
+		env := project.NoBytecodeEnv(os.Environ())
 		if p.CoverDir != "" && os.MkdirAll(p.CoverDir, 0o755) == nil {
-			env = append(os.Environ(), coverDirEnv+"="+p.CoverDir)
+			env = append(env, coverDirEnv+"="+p.CoverDir)
 		}
 		failed := ""
 		for _, args := range p.Commands {

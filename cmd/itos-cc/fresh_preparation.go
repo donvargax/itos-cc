@@ -18,6 +18,7 @@ import (
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // FreshPreparation is internal evidence collected before any bounded mutant
@@ -108,7 +109,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	baseExecute := execute
 	gitConfig := ""
 	execute = func(ctx context.Context, cmd *exec.Cmd) error {
-		cmd.Env = withoutGitOverrides(cmd.Env)
+		cmd.Env = project.NoBytecodeEnv(withoutGitOverrides(cmd.Env))
 		if gitConfig != "" {
 			cmd.Env = withGitConfigEnv(cmd.Env, gitConfig)
 		}

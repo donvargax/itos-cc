@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
 // CommandExecutor executes an already configured coverage command. The
@@ -74,13 +76,13 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			failures = append(failures, fmt.Errorf("prepare report directory for %s: %w", p.Language, err))
 			continue
 		}
-		var env []string
+		env := project.NoBytecodeEnv(os.Environ())
 		if p.CoverDir != "" {
 			if err := os.MkdirAll(p.CoverDir, 0o755); err != nil {
 				failures = append(failures, fmt.Errorf("prepare integration coverage directory: %w", err))
 				continue
 			}
-			env = append(os.Environ(), coverDirEnv+"="+p.CoverDir)
+			env = append(env, coverDirEnv+"="+p.CoverDir)
 		}
 		for _, args := range p.Commands {
 			if err := ctx.Err(); err != nil {
@@ -179,7 +181,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		cmd := exec.CommandContext(ctx, name, flag, line)
 		cmd.Dir = p.Root
-		cmd.Env = append(os.Environ(), env...)
+		cmd.Env = append(project.NoBytecodeEnv(os.Environ()), env...)
 		cmd.Stdout, cmd.Stderr = log, log
 		err := execute(ctx, cmd)
 		args := append([]string{name, flag, line}, env...)

@@ -1829,7 +1829,7 @@ Feature: Mutation testing
   # requires the kill again.
   Rule: A Python mutant always runs as mutated
 
-    @wip @python-fresh-bytecode @ID-MUT-210
+    @python-fresh-bytecode @ID-MUT-210
     Scenario: A same-size Python mutant written within the baseline's second is still killed
       Given a Python project whose test kills a mutant that replaces "==" with "!="
       And the baseline and the mutant are written within the same second

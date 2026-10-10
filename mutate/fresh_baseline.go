@@ -14,6 +14,7 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // FreshBaseline is one unmutated run, in a plan's frozen root, of the own
@@ -133,7 +134,7 @@ func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		}
 		cmd := exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 		cmd.Dir = c.Dir
-		cmd.Env = os.Environ()
+		cmd.Env = project.NoBytecodeEnv(os.Environ())
 		if c.PathEnv != "" {
 			var paths []string
 			for _, p := range c.PathDirs {

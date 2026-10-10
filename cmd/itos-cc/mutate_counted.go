@@ -17,6 +17,7 @@ import (
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // countedPlatform is the platform counted mode and --fail-fast check: both
@@ -512,7 +513,7 @@ func hasGoUnit(units []mutate.FreshUnit) bool {
 // get: no parent Git directory, work-tree or index override, and Go
 // commands offline with the local toolchain.
 func countedCommandEnv(cmd *exec.Cmd) {
-	cmd.Env = withoutGitOverrides(cmd.Env)
+	cmd.Env = project.NoBytecodeEnv(withoutGitOverrides(cmd.Env))
 	if strings.EqualFold(filepath.Base(cmd.Path), "go") {
 		cmd.Env = withEnvOverrides(cmd.Env, map[string]string{"GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off"})
 	}

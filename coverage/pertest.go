@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Coverage per listed test: which of the tests a project lists in
@@ -144,7 +146,7 @@ func runShell(line, dir string, env []string, log io.Writer) error {
 	}
 	cmd := exec.Command(name, flag, line)
 	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = append(project.NoBytecodeEnv(os.Environ()), env...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
 	err := cmd.Run()
