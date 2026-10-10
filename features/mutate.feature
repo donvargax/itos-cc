@@ -2422,7 +2422,7 @@ Feature: Mutation testing
   # fail-fast-partial: ADR-0022 for the files fail-fast-run leaves unwritten.
   Rule: A fail-fast stop keeps the valid judgments of the files it cut short
 
-    @wip @fail-fast-partial @ID-MUT-200
+    @fail-fast-partial @ID-MUT-200
     Scenario: Valid judgments in a stopped file are preserved, unfinished sites stay unjudged
       Given a fail-fast run judges some mutants of a file and the stop cancels or leaves the rest
       When it returns
@@ -2431,14 +2431,14 @@ Feature: Mutation testing
       And mutation check still fails the functions with missing valid site entries
       And the file's annotated source bytes are unchanged
 
-    @wip @fail-fast-partial @ID-MUT-201
+    @fail-fast-partial @ID-MUT-201
     Scenario: A cancelled forced rerun leaves a fresh prior cache usable
       Given a file with fresh complete mutation results
       When a fail-fast --mutate-all rerun of it is cancelled by a stop elsewhere
       Then its prior fresh results still satisfy mutation check
       And the run's report says its own work was incomplete, separately from the cache's completeness
 
-    @wip @fail-fast-partial @ID-MUT-202
+    @fail-fast-partial @ID-MUT-202
     Scenario: A later run finishes only what the stop left
       Given a stopped fail-fast run preserved some judgments of a file
       When the same run is repeated with unchanged inputs

@@ -148,15 +148,24 @@ judgment still running is cancelled, with no outcome (never killed or timed
 out), and every process the run started is stopped and joined within one
 shared five-second deadline from the stop, before its worker copies are
 removed. A file whose every selected mutant was decided is written as
-without --fail-fast; a file the stop cut short gets no snapshot and no
-summary comment, so mutation check still reports it, and a later run
-reuses only what was written. With --json, "stop" says whether the run
-stopped early and at which rule and subject, "work" counts the selected
-mutants completed (run, reused or measured uncovered), cancelled,
-unattempted and blocked, disjointly, and each file has its "state" and
-"work", its "baseline" as it ran ("not-run" when it never did), and every
-mutant of its functions judged with its "state", an outcome only when
-completed. --fail-fast runs on Linux and macOS, where every command it
+without --fail-fast. A file the stop cut short, or whose mutant a failing
+selection of listed tests blocked, gets no summary comment, its source
+left as it was, but its snapshot keeps every judgment the run completed or
+reused, with the scope and the freshness evidence that decided it; a
+cancelled, blocked or unattempted mutant gets no outcome, and keeps what
+the snapshot recorded for it that still holds, if anything, so a stopped
+--mutate-all rerun never drops a valid result. mutation check still fails
+a function with a mutant no valid result records, and a later run reuses
+what was kept while its inputs hold and runs only the rest. A file whose
+baseline failed, or which the run judged nothing anew in, is left as it
+was. With --json, "stop" says whether the run stopped early and at which
+rule and subject, "work" counts the selected mutants completed (run,
+reused or measured uncovered), cancelled, unattempted and blocked,
+disjointly, and each file has its "state" and "work", the run's own work
+on it, its "cache", whether its snapshot as the run leaves it holds a
+valid result for every mutant of its functions judged, its "baseline" as
+it ran ("not-run" when it never did), and every mutant of its functions
+judged with its "state", an outcome only when completed. --fail-fast runs on Linux and macOS, where every command it
 starts runs in a process group it owns (a command that detaches from its
 group or session is not followed); on Windows it is fail-fast.platform,
 before any command runs (#29). It refuses --count, whose runs stay
@@ -249,8 +258,9 @@ judged and no snapshot is written. Listed tests are not run with
    both, and with scope "listed" "tests": ["<test ID>"]}], and with
    --since
    "judged": ["namespace#name"], and with --fail-fast "state":
-   "completed"|"stopped"|"unattempted"|"blocked", "work", "baseline" also
-   "not-run", every mutant "state":
+   "completed"|"stopped"|"unattempted"|"blocked", "work",
+   "cache": "complete"|"incomplete", "baseline" also "not-run", every
+   mutant "state":
    "completed"|"cancelled"|"unattempted"|"blocked", and "outcome" and
    "scope" for completed ones only}]; with --fail-fast, "stop":
    {"stopped", "rule", "subject"}, the problem's rule and subject keys, and
@@ -357,6 +367,11 @@ type mutateFile struct {
 	// its mutants ended in each state.
 	State string      `json:"state,omitempty"`
 	Work  *mutateWork `json:"work,omitempty"`
+	// Cache is there with --fail-fast only: "complete" when the file's
+	// snapshot, as the run leaves it, holds a valid result for every
+	// mutant of its functions judged, else "incomplete". A stopped run's
+	// own work, State, can be incomplete while the cache is complete.
+	Cache string `json:"cache,omitempty"`
 }
 
 // mutateWork counts selected mutants by their fail-fast state, disjointly:
@@ -693,11 +708,14 @@ func runMutate(in *invocation) (any, error) {
 		// mutants, each with its state.
 		baseline := func(aggregate string) string { return aggregate }
 		var work *mutateWork
-		state := ""
+		state, cache := "", ""
 		if failFast {
 			work = workOf(r.Mutants)
 			result.Work.add(work)
-			state = failFastState(r, work)
+			state, cache = failFastState(r, work), "incomplete"
+			if r.Cached {
+				cache = "complete"
+			}
 			baseline = func(string) string {
 				if r.Baseline == "" {
 					return "not-run"
@@ -706,12 +724,12 @@ func runMutate(in *invocation) (any, error) {
 			}
 		}
 		if failFast && (r.BaselineFailed || len(r.FailedSelections) > 0) {
-			f := mutateFile{File: r.Rel, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants), State: state, Work: work}
+			f := mutateFile{File: r.Rel, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants), State: state, Work: work, Cache: cache}
 			countMutants(&f, r.Mutants)
 			result.Files = append(result.Files, f)
 			if !in.json {
-				fmt.Printf("%s: blocked, snapshot not updated: its tests, or the listed tests its mutants run, fail without any mutant (%d completed, %d cancelled, %d unattempted, %d blocked)\n",
-					r.Rel, work.Completed, work.Cancelled, work.Unattempted, work.Blocked)
+				fmt.Printf("%s: blocked, %s: its tests, or the listed tests its mutants run, fail without any mutant (%d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
+					r.Rel, snapshotKept(r), work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
 				if r.BaselineFailed {
 					fmt.Println(tail(r.BaselineOutput, 20))
 				}
@@ -750,7 +768,7 @@ func runMutate(in *invocation) (any, error) {
 			continue
 		}
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: baseline("passed"), Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
-			State: state, Work: work}
+			State: state, Work: work, Cache: cache}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
 		judged := map[string]bool{}
@@ -762,6 +780,13 @@ func runMutate(in *invocation) (any, error) {
 			if r.Judged == nil || judged[u.Namespace+"#"+u.Name] {
 				units = append(units, u)
 			}
+		}
+		if r.Incomplete {
+			// Only this run's judgments count and fail: the snapshot also
+			// keeps results of the snapshot before for sites the stop
+			// left undecided.
+			units = nil
+			countMutants(&f, r.Mutants)
 		}
 		for _, u := range units {
 			excepted := exceptedIn(u.Mutants)
@@ -783,13 +808,19 @@ func runMutate(in *invocation) (any, error) {
 				line += fmt.Sprintf(" (judged %d of %d functions)", len(r.Judged), r.Functions)
 			}
 			if r.Incomplete {
-				line = fmt.Sprintf("%s: stopped early, snapshot not updated: %s (ran %d, reused %d); %d cancelled, %d unattempted",
-					r.Rel, counts, f.Ran, f.Reused, work.Cancelled, work.Unattempted)
+				line = fmt.Sprintf("%s: stopped early, %s: %s (ran %d, reused %d); %d cancelled, %d unattempted; cache %s",
+					r.Rel, snapshotKept(r), counts, f.Ran, f.Reused, work.Cancelled, work.Unattempted, cache)
 			}
 			fmt.Println(line)
 		}
 		for _, u := range units {
 			reportFailed(in, r.Rel, u.Namespace+"#"+u.Name, u.Mutants, failUncovered)
+		}
+		if r.Incomplete {
+			for _, m := range r.Mutants {
+				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
+					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, failUncovered)
+			}
 		}
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
@@ -798,11 +829,20 @@ func runMutate(in *invocation) (any, error) {
 		result.Stop = &mutateStop{Stopped: true, Rule: stop.Rule, Subject: stopSubject(stop)}
 		if !in.json {
 			w := result.Work
-			fmt.Printf("stopped early at the first actionable failure, %s %s: %d completed, %d cancelled, %d unattempted, %d blocked; a file it cut short keeps its snapshot and source as they were\n",
+			fmt.Printf("stopped early at the first actionable failure, %s %s: %d completed, %d cancelled, %d unattempted, %d blocked; a file it cut short keeps its source as it was, and its snapshot only what was judged\n",
 				stop.Rule, describeStop(stop), w.Completed, w.Cancelled, w.Unattempted, w.Blocked)
 		}
 	}
 	return result, nil
+}
+
+// snapshotKept says, in plain output, what became of the snapshot of a file
+// a fail-fast stop left incomplete.
+func snapshotKept(r mutate.FileResult) string {
+	if r.Preserved {
+		return "snapshot keeps what was judged, source not annotated"
+	}
+	return "snapshot not updated"
 }
 
 // jsonMutants is the --json form of mutants.

@@ -19,8 +19,10 @@ import (
 // running, with no outcome, and kills and joins every process group the
 // run owns within one shared five-second deadline from the stop, before
 // the worker copies are removed. A file the stop left with an undecided
-// site of a function judged gets neither its snapshot nor its summary
-// comment, as an undecided file never does.
+// site of a function judged, cut short or blocked by a selection of listed
+// tests, gets no summary comment, and its snapshot keeps what the run
+// judged and nothing for the undecided sites (ADR-0022; see
+// FileResult.Preserved).
 type FailFast struct {
 	// FailUncovered makes an uncovered mutant, and a strict Go coverage
 	// finding, actionable: with --fail-uncovered.
@@ -233,4 +235,68 @@ func (s *fileState) incomplete() bool {
 		}
 	}
 	return false
+}
+
+// preserved is the outcomes, scopes and listed tests a fail-fast run
+// records of a file it left with undecided sites: this run's outcome of
+// each site, run, measured or reused, and for a site it left undecided the
+// outcome the snapshot before records that still holds, if any, with what
+// decided it, so a stop never overwrites a valid result with nothing, a
+// cancelled --mutate-all rerun's included. A site with neither stays
+// undecided, which leaves it out of the snapshot.
+func (s *fileState) preserved() (outcomes, scopes []string, ran [][]string) {
+	outcomes, scopes, ran = slices.Clone(s.outcomes), slices.Clone(s.scopes), slices.Clone(s.ran)
+	for i, o := range outcomes {
+		if f := s.fresh[i]; o == "" && f.outcome != "" {
+			outcomes[i], scopes[i], ran[i] = f.outcome, f.scope, f.tests
+		}
+	}
+	return outcomes, scopes, ran
+}
+
+// judgedAnew says whether the run decided a site of a function judged
+// itself, by running its mutant or measuring it uncovered, rather than
+// reusing its outcome: only then has a file it left incomplete anything new
+// to keep.
+func (s *fileState) judgedAnew() bool {
+	for i, o := range s.outcomes {
+		if o != "" && o != skipped && !s.reused[i] && (s.judged == nil || s.judged[s.sites[i].Unit]) {
+			return true
+		}
+	}
+	return false
+}
+
+// cacheComplete says whether the file's snapshot, as a fail-fast run leaves
+// it, holds a result that still holds for every site of its functions
+// judged: this run's outcome, when written says the run writes it, else
+// the one the snapshot before records that still holds.
+func (s *fileState) cacheComplete(written bool) bool {
+	for i, site := range s.sites {
+		if s.judged != nil && !s.judged[site.Unit] {
+			continue
+		}
+		if (written && s.outcomes[i] != "") || s.fresh[i].outcome != "" {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// keepCoverage gives each function of the snapshot of a file a fail-fast
+// stop left incomplete that this run measured no Go coverage for the
+// evidence the snapshot before records for it, while its hash is the same:
+// the stop never drops evidence, whose own inputs say whether it holds.
+func (s *fileState) keepCoverage() {
+	if s.stored == nil {
+		return
+	}
+	units := s.result.Snapshot.Units
+	ids, hashes := fileKeys(s.file)
+	for i, j := range EntriesOf(ids, hashes, s.stored.Units) {
+		if j >= 0 && units[i].Coverage == nil && s.stored.Units[j].Hash == hashes[i] {
+			units[i].Coverage = s.stored.Units[j].Coverage
+		}
+	}
 }

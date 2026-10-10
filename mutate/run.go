@@ -106,9 +106,22 @@ type FileResult struct {
 	// ran the file's own tests without any mutant, empty when it did not.
 	Baseline string
 	// Incomplete is set when a fail-fast stop left a site of a function
-	// judged undecided: neither the snapshot nor the summary comment is
-	// written, as when the baseline failed.
+	// judged undecided: the run's own work on the file is not complete. The
+	// summary comment is not written, and the snapshot only to keep what
+	// the run judged (Preserved).
 	Incomplete bool
+	// Preserved is set when the file is Incomplete and its snapshot was
+	// written all the same, as ADR-0022 says: it keeps every completed or
+	// reused judgment with the scope and freshness evidence that decided
+	// it, and for a site the stop left undecided what the snapshot before
+	// recorded that still holds, if anything; such a site gets no outcome
+	// of its own. A file the run judged nothing anew in is left as it was.
+	Preserved bool
+	// Cached is, in a fail-fast run, whether the file's snapshot, as the
+	// run leaves it, holds a result that still holds for every mutant of
+	// its functions judged: the cache's completeness, which a stopped run
+	// can leave complete, apart from the run's own (Incomplete).
+	Cached bool
 }
 
 // MutantResult is how one mutant was decided in this run.
@@ -172,6 +185,19 @@ type fileState struct {
 	// StateBlocked, or "" (see stateOf).
 	failFast  bool
 	undecided []string
+	// fresh is, by site of a function judged, the outcome the snapshot
+	// before this run records for it that still holds, whether or not this
+	// run reuses it, with what decided it; zero where none does. A
+	// fail-fast run keeps it for a site it left undecided (preserved).
+	fresh []freshOutcome
+}
+
+// freshOutcome is an outcome a snapshot records that still holds: the
+// function's hash, the tests that import its file and the files its listed
+// or broad evidence rests on are as they were.
+type freshOutcome struct {
+	outcome, scope string
+	tests          []string
 }
 
 // Run mutates files and writes their snapshots. It returns one result per
@@ -242,73 +268,101 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 
 	var results []FileResult
 	for _, s := range states {
-		if s.failFast && (s.result.BaselineFailed || len(s.result.FailedSelections) > 0) {
-			// Not written, as without fail-fast, but every mutant of the
-			// functions judged is listed with its state.
+		blocked := s.result.BaselineFailed || len(s.result.FailedSelections) > 0
+		if s.failFast || !blocked {
+			// In a fail-fast run every mutant of the functions judged is
+			// listed with its state, written or not.
 			s.result.Mutants = s.decided()
 		}
-		if !s.result.BaselineFailed && len(s.result.FailedSelections) == 0 {
-			s.result.Mutants = s.decided()
-			s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, s.outcomes, s.scopes, s.ran)
-			if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && s.file.Spec.Name == "go" {
-				evidence, err := s.goEvidence(opt)
-				if err != nil {
+		if s.failFast {
+			// A failing baseline leaves nothing judged to keep, so the
+			// snapshot stays as it was, and the cache holds what it held.
+			s.result.Cached = s.cacheComplete(!s.result.BaselineFailed)
+		}
+		if s.result.BaselineFailed || (blocked && !s.failFast) {
+			// Not written: a mutant is not decided.
+			results = append(results, *s.result)
+			continue
+		}
+		// A fail-fast stop that cut the file short, or a selection of
+		// listed tests that failed in a fail-fast run, leaves sites
+		// undecided: the file is still written, with what the run judged
+		// and what still holds of the snapshot before (ADR-0022), and
+		// without its summary comment.
+		incomplete := s.failFast && s.incomplete()
+		outcomes, scopes, ran := s.outcomes, s.scopes, s.ran
+		if incomplete {
+			outcomes, scopes, ran = s.preserved()
+		}
+		s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, outcomes, scopes, ran)
+		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && s.file.Spec.Name == "go" {
+			evidence, err := s.goEvidence(opt)
+			if err != nil {
+				return nil, nil, err
+			}
+			for i := range s.file.Units {
+				s.result.Snapshot.Units[i].Coverage = evidence[i]
+			}
+		}
+		if incomplete {
+			s.keepCoverage()
+		}
+		if s.file.Spec.Name == "go" {
+			recordGoEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
+		}
+		if s.judged != nil {
+			s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
+			s.markBroadStale()
+		}
+		var files map[string]string
+		if opt.Listed != nil {
+			files = opt.Listed.Files
+		}
+		s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
+		s.markListedStale()
+		s.result.Snapshot.recordListed(project.Root(), opt.Support)
+		markExcepted(s.result.Snapshot.Units, s.result.Mutants)
+		if incomplete {
+			s.result.Incomplete = true
+			if s.judgedAnew() {
+				if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
 					return nil, nil, err
-				}
-				for i := range s.file.Units {
-					s.result.Snapshot.Units[i].Coverage = evidence[i]
-				}
-			}
-			if s.file.Spec.Name == "go" {
-				recordGoEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
-			}
-			if s.judged != nil {
-				s.result.Snapshot.Units = keepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
-				s.markBroadStale()
-			}
-			var files map[string]string
-			if opt.Listed != nil {
-				files = opt.Listed.Files
-			}
-			s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
-			s.markListedStale()
-			s.result.Snapshot.recordListed(project.Root(), opt.Support)
-			markExcepted(s.result.Snapshot.Units, s.result.Mutants)
-			if s.failFast && s.incomplete() {
-				// The stop cut the file short: no snapshot write, no
-				// comment, as for an undecided file.
-				s.result.Incomplete = true
-				results = append(results, *s.result)
-				continue
-			}
-			if s.judged != nil && len(s.judged) == 0 {
-				// Nothing in the file was judged, so nothing ran and the
-				// file is left as it was: no new results, no comment. A
-				// renamed file's snapshot still moves, as it was.
-				if s.moving != nil {
-					if err := metrics.Write(SnapshotName(s.key), s.moving); err != nil {
-						return nil, nil, err
-					}
 				}
 				if err := s.removeMoved(); err != nil {
 					return nil, nil, err
 				}
-				results = append(results, *s.result)
-				continue
+				s.result.Preserved = true
 			}
-			if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
-				return nil, nil, err
+			results = append(results, *s.result)
+			continue
+		}
+		if s.judged != nil && len(s.judged) == 0 {
+			// Nothing in the file was judged, so nothing ran and the
+			// file is left as it was: no new results, no comment. A
+			// renamed file's snapshot still moves, as it was.
+			if s.moving != nil {
+				if err := metrics.Write(SnapshotName(s.key), s.moving); err != nil {
+					return nil, nil, err
+				}
 			}
 			if err := s.removeMoved(); err != nil {
 				return nil, nil, err
 			}
-			if opt.Annotate {
-				// The comment excepts the survivors of every function,
-				// judged or not, as a full run would.
-				excepted := heldReasons(opt.Exceptions, s.key, s.file, s.sites)
-				if err := annotate(s.file.Path, s.file.Spec, s.result.Snapshot, excepted); err != nil {
-					return nil, nil, err
-				}
+			results = append(results, *s.result)
+			continue
+		}
+		if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
+			return nil, nil, err
+		}
+		if err := s.removeMoved(); err != nil {
+			return nil, nil, err
+		}
+		if opt.Annotate {
+			// The comment excepts the survivors of every function,
+			// judged or not, as a full run would.
+			excepted := heldReasons(opt.Exceptions, s.key, s.file, s.sites)
+			if err := annotate(s.file.Path, s.file.Spec, s.result.Snapshot, excepted); err != nil {
+				return nil, nil, err
 			}
 		}
 		results = append(results, *s.result)
@@ -410,6 +464,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.reused = make([]bool, len(s.sites))
 		s.scopes = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
+		s.fresh = make([]freshOutcome, len(s.sites))
 		scope := RunScope(opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
@@ -429,6 +484,9 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			// A listed outcome holds while the files it rests on do.
 			restsOnChange := len(s.listedChange.files([]Mutant{{Scope: d.scope, Tests: d.tests}})) > 0
 			broadStale := len(BroadChanges(Mutant{Scope: d.scope, GoEvidence: d.evidence}, s.moduleTests, opt.Support)) > 0
+			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
+				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.scope, tests: d.tests}
+			}
 			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
 				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
 				s.reused[i] = true

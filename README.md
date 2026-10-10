@@ -333,14 +333,23 @@ no total time. At the stop no further command starts, each judgment still
 running is cancelled with no outcome, never killed or timed out, and every
 process the run started is stopped and joined within one shared five-second
 deadline from the stop, before its worker copies are removed. A file whose
-every selected mutant was decided is written as usual; a file the stop cut
-short gets no snapshot and no comment, so `mutation check` still reports it.
+every selected mutant was decided is written as usual. A file the stop cut
+short, or whose mutant a failing selection of listed tests blocked, gets no
+comment and keeps its source bytes, but its snapshot keeps every judgment
+the run completed or reused, with the scope and freshness evidence that
+decided it. A cancelled, blocked or unattempted mutant gets no outcome; it
+keeps what the snapshot recorded for it that still holds, if anything, so a
+stopped `--mutate-all` rerun never drops a valid result. `mutation check`
+still fails a function with a mutant no valid result records, and the next
+run reuses what was kept while its inputs hold and runs only the rest.
 `--json` adds `stop` (`stopped`, and the failure's `rule` and `subject`) and
 `work`, the selected mutants `completed` (run, reused or measured
 uncovered), `cancelled`, `unattempted` and `blocked`, disjointly; each file
-gets its `state` and `work` and its `baseline` as it ran (`not-run` when it
-never did), and each mutant its `state`, with an outcome only when
-completed. Plain output says the run stopped early and why. It runs on Linux
+gets its `state` and `work`, the run's own work on it, its `cache`
+(`complete` when its snapshot, as the run leaves it, holds a valid result
+for every mutant of its judged functions, else `incomplete`) and its
+`baseline` as it ran (`not-run` when it never did), and each mutant its
+`state`, with an outcome only when completed. Plain output says the run stopped early and why. It runs on Linux
 and macOS, where every command it starts runs in a process group it owns;
 on Windows it fails with `fail-fast.platform`, exit 3, before any command
 runs (#29). It refuses `--count`, which stays aggregate. Without it, runs

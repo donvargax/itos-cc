@@ -24,7 +24,8 @@ For each chosen function with at least one mutation site, its entry in its
 file's snapshot is compared with its source now. No entry is missing; an
 entry whose function has changed since is stale, while a function that only
 moved is fresh; an entry that lacks a site the function has now, as when a
-newer itos-cc adds a mutation operator, is stale, naming each such site, and
+newer itos-cc adds a mutation operator or a mutation run --fail-fast stop
+left the site undecided, is stale, naming each such site, and
 mutation run runs only those; and a fresh entry fails on each survivor it records, and
 with --fail-uncovered on each uncovered mutant it records. A function with no
 mutation site needs no mutation results, but with --fail-uncovered every
@@ -228,7 +229,7 @@ func staleBecause(fn mutate.FunctionCheck) string {
 		for _, s := range fn.Unrecorded {
 			sites = append(sites, fmt.Sprintf("%d:%d `%s` → `%s`", s.Line, s.Column, s.Original, s.Replacement))
 		}
-		return "has sites its mutation results never recorded, as when a newer itos-cc adds a mutation operator: " + strings.Join(sites, ", ")
+		return "has sites its mutation results never recorded, as when a newer itos-cc adds a mutation operator or a fail-fast stop left them undecided: " + strings.Join(sites, ", ")
 	case tests == nil:
 		return "changed since its mutation results"
 	case tests.Unrecorded:

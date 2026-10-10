@@ -211,7 +211,8 @@ func TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants(t *testing.T) {
 
 	// Without --fail-fast every mutant is judged and the survivor is
 	// reported among them: a guardrail of the aggregate run, after the
-	// fail-fast one, which wrote nothing of the file it cut short.
+	// fail-fast one, which kept of the file it cut short only Weak's
+	// survivor, which every run tries again.
 	all := shellRun(t, "--no-annotate", "--workers", "1")
 	logOutcome(t, &all)
 	agg := all.ff(t)
@@ -935,9 +936,11 @@ func TestAFileTheStopCutShortPublishesNoPartialProof(t *testing.T) {
 	if aWritten == "" || aAnnotated == aSource {
 		t.Errorf("a.go's snapshot %q and source: want both written, the source annotated", aWritten)
 	}
-	// The stopped file's snapshot and annotated source bytes are unchanged.
-	if _, err := os.Stat(bSnapshot); err == nil {
-		t.Errorf("b.go got a snapshot:\n%s", read(bSnapshot))
+	// The stopped file's annotated source bytes are unchanged. Its snapshot
+	// publishes no proof of the site the stop left: since fail-fast-partial
+	// (ADR-0022) it keeps B's completed judgment, and has no entry for C's.
+	if snap := ffSnapshot(t, "b.go"); len(ffRecorded(snap, "C")) != 0 {
+		t.Errorf("b.go's snapshot records C's unattempted mutant:\n%s", read(bSnapshot))
 	}
 	if read("b.go") != bSource {
 		t.Errorf("b.go was annotated:\n%s", read("b.go"))
@@ -951,19 +954,13 @@ func TestAFileTheStopCutShortPublishesNoPartialProof(t *testing.T) {
 			again.code, read(aSnapshot), read("a.go"), aWritten, aAnnotated)
 	}
 
-	// mutation check still reports the stopped file's missing results
-	// without running tests.
+	// mutation check still reports the stopped file's missing or stale
+	// results without running tests: C's, which no valid result records.
 	runs := runsIn(ff)
 	check := cli(t, "mutation", "check", "--json", "b.go")
 	logOutcome(t, &check)
-	missing := 0
-	for _, p := range check.ff(t).Problems {
-		if p["rule"] == "mutation.missing" && p["file"] == "b.go" {
-			missing++
-		}
-	}
-	if check.code != 1 || missing != 2 || runsIn(ff) != runs {
-		t.Errorf("mutation check b.go: exit %d, %d missing, %d runs: want 1, B and C missing, and no test run", check.code, missing, runsIn(ff)-runs)
+	if rules := ffCheckRules(t, check); check.code != 1 || !unjudgedRule(rules["C"]) || runsIn(ff) != runs {
+		t.Errorf("mutation check b.go: exit %d, rules %v, %d runs: want 1, C missing or stale, and no test run", check.code, rules, runsIn(ff)-runs)
 	}
 
 	// A later run reuses only outcomes whose inputs are still fresh: a.go's

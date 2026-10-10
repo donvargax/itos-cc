@@ -155,11 +155,15 @@ without it would. Its `--json` object stays one object and adds keys only:
 failure's problem subject keys; `"work": {"completed", "cancelled",
 "unattempted", "blocked"}`, disjoint counts of the selected mutants; and in
 each file `"state"` (`completed`, `stopped`, `unattempted` or `blocked`),
-`"work"`, `"baseline"` as it ran, `not-run` when it never did, and every
-mutant of its judged functions with its `"state"` (`completed`,
-`cancelled`, `unattempted` or `blocked`), `"outcome"` and `"scope"` only
-when completed. A file the stop cut short gets no snapshot and no summary
-comment. Like `--count`, it runs on Linux and macOS, where each command it
+`"work"`, `"cache"` (`complete` when its snapshot, as the run leaves it,
+holds a valid result for every mutant of its judged functions, else
+`incomplete`, apart from the run's own work in `"state"`), `"baseline"` as
+it ran, `not-run` when it never did, and every mutant of its judged
+functions with its `"state"` (`completed`, `cancelled`, `unattempted` or
+`blocked`), `"outcome"` and `"scope"` only when completed. A file the stop
+cut short gets no summary comment; its snapshot keeps the judgments
+completed or reused, with their original scope and freshness evidence, and
+no outcome for an undecided mutant (ADR-0022). Like `--count`, it runs on Linux and macOS, where each command it
 starts runs in an owned process group, and every one is stopped and joined
 within one shared five-second deadline from the stop; on Windows it fails
 with `fail-fast.platform`, exit 3, before launching any command (#29).

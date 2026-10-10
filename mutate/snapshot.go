@@ -449,7 +449,8 @@ func markExcepted(units []UnitResult, mutants []MutantResult) {
 }
 
 // build assembles a snapshot from every site's outcome, against tests, the
-// tests that import the file. A skipped site is left out. Every outcome
+// tests that import the file. A skipped site is left out, and so is one
+// with no outcome, which a fail-fast stop left undecided. Every outcome
 // records ScopeOwn; see buildScoped.
 func build(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes []string) Snapshot {
 	return buildScoped(f, rel, tests, sites, outcomes, nil, nil)
@@ -470,7 +471,7 @@ func buildScoped(f *lang.File, rel string, tests map[string]string, sites []Site
 		})
 	}
 	for i, s := range sites {
-		if outcomes[i] == skipped {
+		if outcomes[i] == skipped || outcomes[i] == "" {
 			continue
 		}
 		r := &snap.Units[s.Unit]
