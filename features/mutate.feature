@@ -1891,6 +1891,33 @@ Feature: Mutation testing
       And no .pytest_cache directory is written in the project's tree or beside the worker copy's sources
       But a run with --test-command runs that command exactly as given
 
+  # transitive-test-reach, q-39 (answered 2026-10-10): a TypeScript, Python
+  # or Kotlin test reaches every project module in the transitive closure of
+  # its imports (Kotlin's same-package references included), matching what
+  # vitest related and jest --findRelatedTests select. Those are the file's
+  # tests wherever itos-cc uses them: the tests a result records and whose
+  # changes make it stale (mutation check, run, sample, except and the
+  # graph), and, once q-38's own-tests narrowing lands, the tests a file's
+  # own command runs. Go keeps its rule: its own package and the packages it
+  # imports, one hop. A result recorded under the old direct-import reach
+  # may read stale once, and is re-run as any stale result is.
+  Rule: TypeScript, Python and Kotlin tests reach what they import transitively
+
+    @wip @transitive-test-reach @ID-MUT-215
+    Scenario Outline: A <language> test that reaches a file through another module is among its tests
+      Given a <language> project whose test imports module A, where A imports module B and no test imports B directly
+      And B's mutant has a recorded result
+      When that test changes
+      Then "itos-cc mutation check" reports B's result stale, naming the test
+      And a test that reaches neither A nor B changing leaves B's result fresh
+      But in a Go module a test still reaches only its own package and the packages it imports, not a package two imports away
+
+      Examples:
+        | language   |
+        | typescript |
+        | python     |
+        | kotlin     |
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
