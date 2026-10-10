@@ -1096,7 +1096,7 @@ items:
     title: A Kotlin file's own tests are the test classes that reach it
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
