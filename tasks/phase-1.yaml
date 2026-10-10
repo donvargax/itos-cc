@@ -318,3 +318,18 @@
     - run: grep -q 'npm ci' .github/workflows/ci.yml
     - run: go test -count=1 ./cmd/itos-cc -run '^TestLanguageToolSmoke'
       timeout: 900
+- id: T-14
+  type: revert
+  title: Take whole-suite-freshness-all back off a red main
+  why: >
+    The first landing of whole-suite-freshness-all, 9970945 (its steps) and 3e10f37 (the feature),
+    turned main red in CI 38040233677 on windows-latest alone. The steps of ID-MUT-206 and
+    ID-MUT-207 ran Python's runner through --test-command with its absolute path in double quotes,
+    which reaches cmd /C escaped so cmd cannot run it, so those outcomes were never recorded and
+    read missing. The cause is in the steps' fixture, not the product. Both commits come out
+    together, since the steps alone are red; the slice relands with a fixture both platform shells
+    run.
+  done_when:
+    - run: go vet ./...
+    - run: go test -count=1 ./mutate/...
+      timeout: 600
