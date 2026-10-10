@@ -1038,16 +1038,9 @@ items:
     title: Measuring and judging a Python project leaves no pytest cache in its tree
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was pytest-cache-in-tree.
-      Found by python-fresh-bytecode's agent: complete coverage runs python -m coverage run -m
-      pytest -q in the project's own tree without -p no:cacheprovider, so pytest writes
-      .pytest_cache there and installed plugins (pytest-benchmark writes .benchmarks/) may write
-      their own files. Bytecode is fixed (PYTHONDONTWRITEBYTECODE=1); decide whether coverage should
-      also pass -p no:cacheprovider, and whether plugin autoload should be left to the project.
     refs: ["#14"]
   - id: counted-worktree-run
     title: Counted runs work in a linked git worktree
