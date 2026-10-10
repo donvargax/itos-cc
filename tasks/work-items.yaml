@@ -1049,7 +1049,7 @@ items:
     title: Counted mutation runs work for TypeScript, Python and Kotlin projects
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [ts-coverage-scope]
     kind: slice
     why: >
