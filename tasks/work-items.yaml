@@ -1069,3 +1069,19 @@ items:
       nightly's own-test coverage of cmd/itos-cc fails while they do. Fixture commands get
       GOCOVERDIR only when itos-cc gives it, never from the outer run; the itos-cc subprocess itself
       keeps it, so its coverage still counts.
+  - id: coverage-line-stderr
+    title: go test -cover's summary of cmd/itos-cc reads a coverage command's error as its percentage
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Under go test -coverprofile, the ok line of cmd/itos-cc ends 'coverage: go: exec:
+      "legacy-helper": executable file not found in $PATH' instead of the percentage (found
+      2026-10-10 under T-17; the profile itself holds 82.1%).
+      TestFreshPreparationPreservesCompleteDefaults runs coverage.Run in process with os.Stderr,
+      which prints 'itos-cc: coverage: go: exec: ...', and go test takes the last line holding
+      'coverage: ' as the package's summary. A tool that reads the ok line, as the nightly might,
+      gets no number. Giving coverage.Run a buffer the test logs on failure, instead of os.Stderr,
+      would keep the summary line go test's own.
