@@ -39,18 +39,6 @@ type FreshPlan struct {
 	Eligible   []FreshCandidate
 	Selected   []FreshCandidate
 	Omitted    []FreshCandidate
-	// Units is the admitted committed function scope, including functions with
-	// no mutation sites. Preparation must measure this scope without rebuilding
-	// it from Selected, which contains sites only.
-	Units []FreshUnit
-}
-
-// FreshUnit identifies one admitted committed function independently of its
-// mutation sites.
-type FreshUnit struct {
-	Path, Function, Identity string
-	StartLine, EndLine       int
-	Hash                     string
 }
 
 // FreshCandidate identifies a static mutation site without relying on cached
@@ -211,7 +199,6 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 		committed[rel] = true
 	}
 	var candidates []FreshCandidate
-	var units []FreshUnit
 	for _, discoveredPath := range discovered.Sources {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -237,15 +224,6 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 		if err != nil {
 			return nil, fmt.Errorf("parse committed %s: %w", rel, err)
 		}
-		for _, unit := range file.Units {
-			if changed != nil && !overlapsRanges(ranges, unit.StartLine, unit.EndLine) {
-				continue
-			}
-			function := stableFunction(file, unit, rel, committed)
-			identity := fmt.Sprintf("%s@%d:%d:%s", function, unit.StartLine, unit.EndLine, UnitHash(file, unit))
-			units = append(units, FreshUnit{Path: rel, Function: function, Identity: identity,
-				StartLine: unit.StartLine, EndLine: unit.EndLine, Hash: UnitHash(file, unit)})
-		}
 		sites := Sites(file)
 		for _, site := range sites {
 			unit := file.Units[site.Unit]
@@ -266,16 +244,6 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	}
 	sortFreshCandidates(candidates)
 	plan.Eligible = slices.Clone(candidates)
-	sort.Slice(units, func(i, j int) bool {
-		if units[i].Path != units[j].Path {
-			return units[i].Path < units[j].Path
-		}
-		if units[i].StartLine != units[j].StartLine {
-			return units[i].StartLine < units[j].StartLine
-		}
-		return units[i].Identity < units[j].Identity
-	})
-	plan.Units = slices.Clone(units)
 	limit := min(count, len(candidates))
 	plan.Selected = slices.Clone(candidates[:limit])
 	plan.Omitted = slices.Clone(candidates[limit:])
