@@ -1,10 +1,11 @@
-//go:build linux
+//go:build !windows
 
 package main
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -109,16 +110,24 @@ func buildItosCc(t *testing.T) string {
 	return bin
 }
 
-// alive reports whether pid is a process that has not exited: one /proc
-// still lists, not a zombie.
+// alive reports whether pid is a process that has not exited: one the
+// kernel still lists that is no zombie. It works the same on Linux and
+// macOS, which has no /proc. A ps that cannot answer counts as alive, so a
+// broken probe fails a check rather than passing it.
 func alive(pid int) bool {
-	data, err := os.ReadFile(filepath.Join("/proc", strconv.Itoa(pid), "stat"))
-	if err != nil {
+	if err := syscall.Kill(pid, 0); errors.Is(err, syscall.ESRCH) {
 		return false
 	}
-	end := strings.LastIndexByte(string(data), ')')
-	fields := strings.Fields(string(data[end+1:]))
-	return len(fields) > 0 && fields[0] != "Z" && fields[0] != "X"
+	out, err := exec.Command("ps", "-o", "stat=", "-p", strconv.Itoa(pid)).Output()
+	state := strings.TrimSpace(string(out))
+	var exit *exec.ExitError
+	if errors.As(err, &exit) && state == "" {
+		return false // ps lists no such process
+	}
+	if err != nil {
+		return true
+	}
+	return !strings.HasPrefix(state, "Z") && !strings.HasPrefix(state, "X")
 }
 
 // waitFor polls until ok holds, failing t after limit or once exited closes.
@@ -146,6 +155,13 @@ func lineCount(path string) int {
 // @ID-MUT-183
 func TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands(t *testing.T) {
 	requireCountedPlatform(t)
+	checkInterruptedCountedRun(t)
+}
+
+// checkInterruptedCountedRun interrupts a counted run while its second
+// judgment is active and checks its partial report and owned cleanup.
+func checkInterruptedCountedRun(t *testing.T) {
+	t.Helper()
 	bin := buildItosCc(t)
 	dir := moduleRepo(t, gateFiles)
 	gate := t.TempDir()
