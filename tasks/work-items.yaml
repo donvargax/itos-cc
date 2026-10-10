@@ -1119,18 +1119,9 @@ items:
     title: Tests reach code through the test-support files they use
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was python-reach-through-test-helpers.
-      graph.TestsImporting resolves a test's imports against source modules only, so a test that
-      reaches a.py through conftest.py fixtures or a helper under tests/ (tests/helpers.py importing
-      a) is not among a.py's tests. Since own-tests-python narrowed Python's own command and
-      coverage to those tests, such code's mutants are uncovered rather than judged; a conftest.py
-      reaching a file could count the test files beneath its directory, and a test importing a
-      helper could reach what the helper imports, keeping freshness and the own command the same
-      list.
     refs: [q-38, own-tests-python]
   - id: python-own-tests-python-files
     title: Honour pytest's python_files when picking a Python file's own test files
