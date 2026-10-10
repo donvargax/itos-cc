@@ -24,7 +24,7 @@ import (
 // nil when there is none.
 func ffSnapshot(t *testing.T, name string) map[string]any {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(".metrics", "mutate", name+".json"))
+	data, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", name+".json")))
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -81,9 +81,11 @@ func unjudgedRule(rules []string) bool {
 	return false
 }
 
+// readText is the text of the file name, a relative one in the test's
+// directory.
 func readText(t *testing.T, name string) string {
 	t.Helper()
-	data, err := os.ReadFile(name)
+	data, err := os.ReadFile(inWD(t, name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +203,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		edit(t, "main.go", "func shown(n int) bool {\n", "func shown(n int) bool {\n\t// judged\n")
 		commitAll(t, "judge shown")
 		ff := t.TempDir()
-		t.Setenv("FF_DIR", ff)
+		useEnv(t, "FF_DIR", ff)
 		release(t, ff)
 		prior := cli(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
 		logOutcome(t, &prior)
@@ -222,8 +224,8 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		// measures idle's mutant uncovered and kills quick's; label's
 		// selection fails while wait's mutant runs, which is cancelled,
 		// and spare's never starts.
-		t.Setenv("FF_FAIL_ALONE", "1")
-		t.Setenv("FF_FAIL_AFTER", filepath.Join(ff, "started"))
+		useEnv(t, "FF_FAIL_ALONE", "1")
+		useEnv(t, "FF_FAIL_AFTER", filepath.Join(ff, "started"))
 		o := cli(t, "mutation", "run", "--json", "--since", "HEAD~2", "--workers", "2", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)

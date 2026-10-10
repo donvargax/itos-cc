@@ -61,7 +61,7 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 			t.Errorf("--fail-fast on Windows launched a command (%q):\n%s", launched, o.stderr)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(".metrics", "mutate", "main.go.json")); err == nil {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "mutate", "main.go.json"))); err == nil {
 		t.Error("--fail-fast on Windows wrote a snapshot")
 	}
 

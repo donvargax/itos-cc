@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -177,9 +176,9 @@ func TestEditingASupportFileMakesEveryListedKillStale(t *testing.T) {
 func TestTheGraphAgrees(t *testing.T) {
 	freshRepo(t)
 	writeFile(t, "a.feature", "Feature: a, edited\n")
-	wd, _ := os.Getwd()
+	root := wd(t)
 
-	b, err := graph.NewBuilder([]string{wd})
+	b, err := graph.NewBuilder([]string{root})
 	if err != nil {
 		t.Fatal(err)
 	}

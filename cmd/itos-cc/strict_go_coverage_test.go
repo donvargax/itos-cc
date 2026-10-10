@@ -36,7 +36,7 @@ func TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite(t *testing.
 	if o.code != 1 {
 		t.Errorf("strict uncovered executable block exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snapshotPath := filepath.Join(".metrics", "mutate", "main.go.json")
+	snapshotPath := inWD(t, filepath.Join(".metrics", "mutate", "main.go.json"))
 	before, err := os.ReadFile(snapshotPath)
 	if err != nil {
 		t.Fatal(err)
@@ -366,7 +366,7 @@ func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T
 			writeFile(t, filepath.Join(dir, "support", "dep.txt"), "updated support input\n")
 		}},
 		{name: "Go build environment", want: "@go-env", edit: func(t *testing.T, _ string) {
-			t.Setenv("GOFLAGS", "-buildvcs=false")
+			useEnv(t, "GOFLAGS", "-buildvcs=false")
 		}},
 	}
 	for _, tc := range cases {

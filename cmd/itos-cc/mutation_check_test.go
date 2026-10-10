@@ -56,7 +56,7 @@ func moveDown(t *testing.T) {
 
 func appendTo(t *testing.T, name, text string) {
 	t.Helper()
-	data, err := os.ReadFile(name)
+	data, err := os.ReadFile(inWD(t, name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	if err := os.Remove(marker); err != nil {
 		t.Fatalf("the run's tests wrote no marker: %v", err)
 	}
-	before, err := os.ReadFile(filepath.Join(".metrics", "mutate", "src", "board.go.json"))
+	before, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json")))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,10 +146,10 @@ func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	if _, err := os.Stat(marker); err == nil {
 		t.Errorf("a test command ran:\n%s", o.stderr)
 	}
-	if _, err := os.Stat(filepath.Join(".metrics", "coverage")); err == nil {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "coverage"))); err == nil {
 		t.Errorf(".metrics/coverage was written: want no coverage command run")
 	}
-	if after, _ := os.ReadFile(filepath.Join(".metrics", "mutate", "src", "board.go.json")); string(after) != string(before) {
+	if after, _ := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))); string(after) != string(before) {
 		t.Errorf("the snapshot changed: want mutation check to write nothing")
 	}
 	if want := boardSource + ": 2 fresh, 0 stale, 0 missing\n"; !strings.Contains(o.stdout, want) {

@@ -25,7 +25,7 @@ var countFiles = map[string]string{
 func deleteBoard(t *testing.T) {
 	t.Helper()
 	for _, name := range []string{boardSource, filepath.FromSlash("src/board_test.go")} {
-		if err := os.Remove(name); err != nil {
+		if err := os.Remove(inWD(t, name)); err != nil {
 			t.Fatal(err)
 		}
 	}

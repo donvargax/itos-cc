@@ -12,10 +12,10 @@ import (
 // Each runs in the module of mutate_since_test.go, whose git repository
 // holds src/board.go and its tests, from src/ or from the root.
 
-// inSrc makes the module's src/ the working directory.
+// inSrc makes the module's src/ the test's directory (useDir).
 func inSrc(t *testing.T, root string) {
 	t.Helper()
-	t.Chdir(filepath.Join(root, "src"))
+	useDir(t, filepath.Join(root, "src"))
 }
 
 // snapshotFiles is every "file" a snapshot at path records, at any depth.
@@ -116,7 +116,7 @@ func TestACommandFindsTheSameResultsFromAnyDirectory(t *testing.T) {
 	if o := mutationCheck(t, "board.go"); o.code != 0 {
 		t.Errorf("mutation check board.go from src/: exit %d, want 0; stdout:\n%s\nstderr:\n%s", o.code, o.stdout, o.stderr)
 	}
-	t.Chdir(root)
+	useDir(t, root)
 	if o := mutationCheck(t, boardSource); o.code != 0 {
 		t.Errorf("mutation check %s from the root: exit %d, want 0; stdout:\n%s\nstderr:\n%s", boardSource, o.code, o.stdout, o.stderr)
 	}

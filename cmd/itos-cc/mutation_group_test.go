@@ -19,12 +19,12 @@ func cli(t *testing.T, args ...string) outcome {
 	return itosCc(t, args...)
 }
 
-// inEmptyDir makes an empty temporary directory the working directory, so a
-// command that mutates finds nothing to change.
+// inEmptyDir makes an empty temporary directory the test's directory
+// (useDir), so a command that mutates finds nothing to change.
 func inEmptyDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	t.Chdir(dir)
+	useDir(t, dir)
 	return dir
 }
 

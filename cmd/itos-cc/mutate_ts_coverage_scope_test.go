@@ -25,8 +25,8 @@ const (
 )
 
 // tsScopeRepo makes the project, with the node_modules languageTools
-// finds, in a new directory and makes it the working directory, which it
-// returns.
+// finds, in a new directory and makes it the test's directory (useDir),
+// which it returns.
 func tsScopeRepo(t *testing.T, modules string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -49,7 +49,7 @@ func tsScopeRepo(t *testing.T, modules string) string {
 	} {
 		writeFile(t, filepath.Join(dir, name), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 	return dir
 }
 

@@ -85,7 +85,7 @@ func (o outcome) sampled(t *testing.T) []sampledJSON {
 // written by hand would be.
 func recordAs(t *testing.T, rel, function, original, outcome string) {
 	t.Helper()
-	snap, err := mutate.LoadSnapshot(rel)
+	snap, err := mutate.LoadSnapshotOf(wd(t), rel)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", rel, err)
 	}
@@ -143,7 +143,7 @@ func mutantsRun(stderr string) int {
 const passing = "go version"
 
 // sampleRepo writes five TypeScript files of ten functions, one mutation
-// site each, in a git repository whose working directory it becomes, and
+// site each, in a git repository it makes the test's directory (useDir), and
 // records every mutant survived with a test command that always passes.
 func sampleRepo(t *testing.T) {
 	t.Helper()
@@ -158,7 +158,7 @@ func sampleRepo(t *testing.T) {
 	gitIn(t, dir, "init", "-q", "-b", "main")
 	gitIn(t, dir, "add", "-A")
 	gitIn(t, dir, "commit", "-qm", "base")
-	t.Chdir(dir)
+	useDir(t, dir)
 	recordSurvivors(t, 50)
 }
 
@@ -174,7 +174,7 @@ func writeSampleFiles(t *testing.T, dir string) {
 	}
 }
 
-// recordSurvivors runs every mutant under the working directory with a test
+// recordSurvivors runs every mutant under the test's directory with a test
 // command that always passes and checks that want of them were recorded.
 func recordSurvivors(t *testing.T, want int) {
 	t.Helper()
@@ -188,14 +188,10 @@ func recordSurvivors(t *testing.T, want int) {
 	}
 }
 
-// head is the id of the working directory's HEAD commit.
+// head is the id of the test's directory's HEAD commit.
 func head(t *testing.T) string {
 	t.Helper()
-	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	return strings.TrimSpace(string(out))
+	return gitOut(t, wd(t), "rev-parse", "HEAD")
 }
 
 // ids names each sampled mutant by its file, function, and site.
@@ -231,12 +227,12 @@ func init() {
 	if err := os.Remove(marker); err != nil {
 		t.Fatalf("the run's tests wrote no marker: %v", err)
 	}
-	snapshot := filepath.Join(".metrics", "mutate", "src", "board.go.json")
+	snapshot := inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))
 	snapBefore, err := os.ReadFile(snapshot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	srcBefore, err := os.ReadFile(boardSource)
+	srcBefore, err := os.ReadFile(inWD(t, boardSource))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,13 +261,13 @@ func init() {
 	if baseline < 0 || first < 0 || baseline > first {
 		t.Errorf("stderr:\n%s\nwant the baseline, then each sampled mutant", o.stderr)
 	}
-	if _, err := os.Stat(filepath.Join(".metrics", "coverage")); err == nil {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "coverage"))); err == nil {
 		t.Errorf(".metrics/coverage was written: want no coverage command run")
 	}
 	if after, _ := os.ReadFile(snapshot); string(after) != string(snapBefore) {
 		t.Errorf("the snapshot changed: want mutation sample to write nothing")
 	}
-	if after, _ := os.ReadFile(boardSource); string(after) != string(srcBefore) {
+	if after, _ := os.ReadFile(inWD(t, boardSource)); string(after) != string(srcBefore) {
 		t.Errorf("%s changed: want no summary comment written", boardSource)
 	}
 	if o.code != 0 {
@@ -520,9 +516,9 @@ func TestOutsideAGitRepositoryTheSeedMustBeGiven(t *testing.T) {
 		t.Skip("go is not installed")
 	}
 	dir := t.TempDir()
-	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
+	useEnv(t, "GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
 	writeSampleFiles(t, dir)
-	t.Chdir(dir)
+	useDir(t, dir)
 	recordSurvivors(t, 50)
 
 	o := mutationSample(t, "--json", "--test-command", passing)
@@ -619,7 +615,7 @@ func TestPlace(t *testing.T) {
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	t.Setenv("BOARD_BROKEN", "1")
+	useEnv(t, "BOARD_BROKEN", "1")
 
 	o := mutationSample(t, "--json", boardSource)
 	wantProblem(t, o.json(t).problem("mutation.baseline-failed"), map[string]any{"file": boardSource}, o.stdout)

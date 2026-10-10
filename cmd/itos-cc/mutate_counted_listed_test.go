@@ -38,7 +38,7 @@ var ownRecorded = [3]string{"main_test.go", "import \"testing\"\n\nfunc TestHalf
 func countedListedRepo(t *testing.T, changes ...[3]string) (string, string) {
 	t.Helper()
 	record, main := selectionRepo(t, changes...)
-	dir, _ := os.Getwd()
+	dir := wd(t)
 	writeFile(t, filepath.Join(dir, "a.feature"), "Feature: one\n")
 	gitIn(t, dir, "add", "a.feature")
 	gitIn(t, dir, "commit", "-qm", "a.feature")
@@ -141,7 +141,7 @@ func logOnFailure(t *testing.T, o *outcome) {
 func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T) {
 	requireCountedPlatform(t)
 	record, main := countedListedRepo(t, ownRecorded)
-	dir, _ := os.Getwd()
+	dir := wd(t)
 	// Line 17's n-1 → n+1 survives the own test, and ID-A-02 alone reaches
 	// it and kills it.
 	var chosen []mutate.FreshCandidate
@@ -190,7 +190,7 @@ func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T
 func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.T) {
 	requireCountedPlatform(t)
 	countedListedRepo(t)
-	dir, _ := os.Getwd()
+	dir := wd(t)
 
 	// The complete sequence passes on line 11's n*2 → n/2: own test, then
 	// both listed tests. Line 27's mutant, drawn after it, is killed by the
@@ -241,7 +241,7 @@ func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.
 	// written for another version of its function, on an uncovered site
 	// that runs no trial.
 	countedListedRepo(t)
-	dir, _ = os.Getwd()
+	dir = wd(t)
 	var stale []mutate.FreshCandidate
 	seed = seedSelecting(t, dir, 2, selecting(&stale, at(listedHalfLine, ">"), at(listedTwiceLine, "*")))
 	commitExceptions(t, dir,
@@ -331,7 +331,7 @@ func TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance
 	// Raw or existing coverage cannot stand in for fresh evidence or listed
 	// tests: each is refused before anything runs.
 	countedListedRepo(t)
-	dir, _ := os.Getwd()
+	dir := wd(t)
 	for _, args := range [][]string{{"--coverage-report", "coverage.out"}, {"--use-existing-coverage"},
 		{"--coverage-command", "true"}, {"--no-coverage"}, {"--test-command", "true"}} {
 		o := countedRun(t, append([]string{"--count", "1"}, args...)...)
@@ -369,7 +369,7 @@ func TestCleanBaselineFailureIsNotAMutationKill(t *testing.T) {
 	// selection from a kill.
 	record, main := countedListedRepo(t, [3]string{"e2e/e2e_test.go", "\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")\n",
 		"\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")\n\tif split == \"\" && *selected != \"\" {\n\t\tt.Fatal(\"the selection fails outside coverage\")\n\t}\n"})
-	dir, _ := os.Getwd()
+	dir := wd(t)
 	// Line 17's mutant needs ID-A-02 once it survives the own test; line
 	// 27's, drawn after it, is killed by the own test.
 	var pair []mutate.FreshCandidate

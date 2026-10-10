@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,7 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snap, err := mutate.LoadSnapshot(filepath.ToSlash(boardSource))
+	snap, err := mutate.LoadSnapshotOf(wd(t), filepath.ToSlash(boardSource))
 	if err != nil || snap == nil {
 		t.Fatalf("the snapshot of %s: %v", boardSource, err)
 	}
@@ -44,9 +45,11 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 		u.Mutants = u.Mutants[:len(u.Mutants)-1]
 		u.Sites--
 		u.Killed--
-		if err := metrics.Write(mutate.SnapshotName(filepath.ToSlash(boardSource)), snap); err != nil {
+		data, err := json.MarshalIndent(snap, "", "  ")
+		if err != nil {
 			t.Fatal(err)
 		}
+		writeFile(t, filepath.Join(metrics.Name, mutate.SnapshotName(filepath.ToSlash(boardSource))), string(data)+"\n")
 		return gone
 	}
 	t.Fatalf("no entry of %s in %+v", placeID, snap.Units)

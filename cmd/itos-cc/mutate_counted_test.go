@@ -231,7 +231,7 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 	plain := t.TempDir()
 	writeFile(t, filepath.Join(plain, "go.mod"), "module example.com/plain\n\ngo 1.22\n")
 	writeFile(t, filepath.Join(plain, "main.go"), "package main\n\nfunc Half(i int) bool { return i > 2 }\n\nfunc main() {}\n")
-	t.Chdir(plain)
+	useDir(t, plain)
 	o = countedRun(t, "--count", "1")
 	if p := o.counted(t).problem("count.no-git"); o.code != 3 || p == nil {
 		t.Errorf("counted mode outside Git: exit %d, want count.no-git\n%s%s", o.code, o.stdout, o.stderr)
@@ -415,6 +415,7 @@ func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing
 
 // @ID-MUT-177
 func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
+	useDir(t, t.TempDir())
 	help := cli(t, "mutation", "run", "--help").stdout
 	for _, want := range []string{"--count N", "--seed TEXT", "--since REF", "--fail-uncovered", "--all-tests"} {
 		if !strings.Contains(help, want) {

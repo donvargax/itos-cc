@@ -121,11 +121,11 @@ func TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements(t *testing.T) 
 func TestStrictGoScopeGuardrailsRemainSupported(t *testing.T) {
 	dir, _ := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
-	t.Setenv("GOWORK", "off")
+	useEnv(t, "GOWORK", "off")
 	if o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("GOWORK=off should keep inventoried module supported: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	t.Setenv("GOWORK", "")
+	useEnv(t, "GOWORK", "")
 	if o := cli(t, "mutation", "check", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("non-strict check should retain workspace behavior: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
@@ -134,7 +134,7 @@ func TestStrictGoScopeGuardrailsRemainSupported(t *testing.T) {
 	if o := mutateCovered(t, "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
 		t.Fatalf("setup same-module replacement run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	t.Setenv("GOWORK", "off")
+	useEnv(t, "GOWORK", "off")
 	if o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("replacement target inside the actual module inventory should remain supported: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}

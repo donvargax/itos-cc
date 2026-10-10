@@ -17,7 +17,7 @@ import (
 // holds it, key by key.
 func rawUnit(t *testing.T, function string) map[string]any {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(".metrics", "mutate", "src", "board.go.json"))
+	data, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json")))
 	if err != nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}

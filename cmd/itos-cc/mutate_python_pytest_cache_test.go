@@ -17,7 +17,7 @@ import (
 // naming the missing one, without them; CI runs it on ubuntu-latest (T-13).
 
 // pytestCacheRepo makes the project in a new directory and makes it the
-// working directory. It returns the directory, its symlinks resolved, and
+// test's directory (useDir). It returns the directory, its symlinks resolved, and
 // the file conftest.py appends each run's directory and whether it left a
 // .pytest_cache to.
 func pytestCacheRepo(t *testing.T) (string, string) {
@@ -42,7 +42,7 @@ func pytestCacheRepo(t *testing.T) (string, string) {
 	} {
 		writeFile(t, filepath.Join(dir, name), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 	resolved, err := filepath.EvalSymlinks(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -83,7 +83,7 @@ func TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree(t *testin
 	languageTools(t, "python")
 	// pytest plugins installed beside pytest may write files of their own;
 	// the scenario is about pytest's cache, which is no plugin it autoloads.
-	t.Setenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
+	useEnv(t, "PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
 	// Given a Python project with a pytest test that kills its mutant and
 	// no .pytest_cache directory.
 	dir, runs := pytestCacheRepo(t)

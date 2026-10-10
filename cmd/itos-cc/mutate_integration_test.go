@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // The scenarios of "Rule: Coverage from tests that run the built binary" in
@@ -104,8 +105,8 @@ const (
 // greetMutants is how many mutants main.go holds.
 const greetMutants = 8
 
-// greetRepo makes the module in a git repository and makes it the working
-// directory. Without cover, its test builds the binary without -cover
+// greetRepo makes the module in a git repository and makes it the test's
+// directory (useDir). Without cover, its test builds the binary without -cover
 // whatever GOCOVERDIR says; inProcess adds a test in package main that calls
 // greet(3), so greet's other branch is covered in process.
 func greetRepo(t *testing.T, cover, inProcess bool) string {
@@ -127,8 +128,8 @@ func greetRepo(t *testing.T, cover, inProcess bool) string {
 	return moduleRepo(t, files)
 }
 
-// moduleRepo writes files in a git repository and makes it the working
-// directory.
+// moduleRepo writes files in a git repository and makes it the test's
+// directory (useDir).
 func moduleRepo(t *testing.T, files map[string]string) string {
 	t.Helper()
 	for _, tool := range []string{"git", "go"} {
@@ -143,7 +144,7 @@ func moduleRepo(t *testing.T, files map[string]string) string {
 	gitIn(t, dir, "init", "-q", "-b", "main")
 	gitIn(t, dir, "add", "-A")
 	gitIn(t, dir, "commit", "-qm", "base")
-	t.Chdir(dir)
+	useDir(t, dir)
 	return dir
 }
 
@@ -275,8 +276,8 @@ func TestWhichCoverageReachedEachMutantAsJSON(t *testing.T) {
 func TestTheBinarysCoverageDataStaysWithTheRun(t *testing.T) {
 	greetRepo(t, true, false)
 	record := filepath.Join(t.TempDir(), "gocoverdir")
-	t.Setenv("GREET_RECORD", record)
-	out := filepath.Join(metrics.Dir(), "coverage")
+	useEnv(t, "GREET_RECORD", record)
+	out := filepath.Join(metrics.DirOf(project.RootOf(wd(t))), "coverage")
 
 	o := mutateCovered(t, "--all-tests", "--fail-uncovered")
 	data, err := os.ReadFile(record)

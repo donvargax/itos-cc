@@ -32,8 +32,7 @@ func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T)
 	}
 
 	// An interrupted macOS counted run reports partial work and cleans up as
-	// on Linux. It runs first: it builds itos-cc in the package's directory,
-	// which the fixture repository below replaces as the working directory.
+	// on Linux.
 	t.Run("interrupted", checkInterruptedCountedRun)
 
 	// Given a committed project with eligible mutation sites, when a

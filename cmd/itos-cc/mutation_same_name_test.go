@@ -39,7 +39,7 @@ func setupRepo(t *testing.T) {
 // file order.
 func initLines(t *testing.T) []int {
 	t.Helper()
-	data, err := os.ReadFile(setupSource)
+	data, err := os.ReadFile(inWD(t, setupSource))
 	if err != nil {
 		t.Fatal(err)
 	}

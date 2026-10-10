@@ -197,7 +197,7 @@ func checkInterruptedCountedRun(t *testing.T) {
 	defer stderr.Close()
 	run := exec.Command(bin, "mutation", "run", "--json", "--count", "2", "--seed", seed, "--workers", "1", "--timeout-factor", "100")
 	run.Dir, run.Stdout, run.Stderr = dir, &stdout, stderr
-	run.Env = append(os.Environ(), "GATE_DIR="+gate)
+	run.Env = append(testEnv(t), "GATE_DIR="+gate)
 	if err := run.Start(); err != nil {
 		t.Fatal(err)
 	}

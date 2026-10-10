@@ -183,8 +183,8 @@ func main() {
 `,
 }
 
-// listedRepo makes the module in a git repository and makes it the working
-// directory, with each of change's replacements made in the file it names
+// listedRepo makes the module in a git repository and makes it the test's
+// directory (useDir), with each of change's replacements made in the file it names
 // first. It returns the file each run of the harness or the list command
 // records a line in.
 func listedRepo(t *testing.T, change map[string][2]string) string {
@@ -201,7 +201,7 @@ func listedRepo(t *testing.T, change map[string][2]string) string {
 	}
 	moduleRepo(t, files)
 	record := filepath.Join(t.TempDir(), "record")
-	t.Setenv("GREET_RECORD", record)
+	useEnv(t, "GREET_RECORD", record)
 	return record
 }
 
@@ -254,7 +254,7 @@ func listedTests(m map[string]any) []string {
 // rawSnapshot is the snapshot of main.go as plain maps.
 func rawSnapshot(t *testing.T) map[string]any {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(".metrics", "mutate", "main.go.json"))
+	data, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "main.go.json")))
 	if err != nil {
 		t.Fatalf("no snapshot of main.go: %v", err)
 	}
@@ -568,7 +568,7 @@ func TestAListCommandThatFailsJudgesNothing(t *testing.T) {
 	if strings.Contains(o.stderr, "itos-cc: [1/") || slices.ContainsFunc(harnessRuns(t, record), func(l string) bool { return strings.HasPrefix(l, "run ") }) {
 		t.Errorf("a mutant ran:\n%s", o.stderr)
 	}
-	if _, err := os.Stat(filepath.Join(".metrics", "mutate", "main.go.json")); !os.IsNotExist(err) {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "mutate", "main.go.json"))); !os.IsNotExist(err) {
 		t.Errorf("a snapshot of main.go was written (%v)", err)
 	}
 	if o.code != 1 {

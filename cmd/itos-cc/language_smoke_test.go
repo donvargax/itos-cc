@@ -25,8 +25,8 @@ type smokeMutant struct {
 }
 
 // smokeRepo copies testdata/smoke/<language> into a new directory, links
-// node_modules into it when modules is not empty, and makes it the working
-// directory.
+// node_modules into it when modules is not empty, and makes it the test's
+// directory (useDir).
 func smokeRepo(t *testing.T, language, modules string) {
 	t.Helper()
 	dir := t.TempDir()
@@ -38,7 +38,7 @@ func smokeRepo(t *testing.T, language, modules string) {
 			t.Skip("symlinks unavailable:", err)
 		}
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 }
 
 // smoke runs mutation run --json over source and checks that low's mutant

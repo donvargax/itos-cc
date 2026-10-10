@@ -22,7 +22,7 @@ import (
 // or nil when the snapshot has no such key.
 func recordedTests(t *testing.T, rel string) map[string]string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(".metrics", "mutate", filepath.FromSlash(rel)+".json"))
+	data, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", filepath.FromSlash(rel)+".json")))
 	if err != nil {
 		t.Fatalf("no snapshot of %s: %v", rel, err)
 	}
@@ -41,10 +41,10 @@ func recordedTests(t *testing.T, rel string) map[string]string {
 	return tests
 }
 
-// sha256Of is the hex SHA-256 of the working directory's file rel.
+// sha256Of is the hex SHA-256 of the test's directory's file rel.
 func sha256Of(t *testing.T, rel string) string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.FromSlash(rel))
+	data, err := os.ReadFile(inWD(t, filepath.FromSlash(rel)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,13 +114,13 @@ func TestTheSnapshotRecordsTheTestsThatImportTheFile(t *testing.T) {
 	} {
 		writeFile(t, filepath.Join(dir, name), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 
 	// No test runner is needed to see what the snapshot records: a command
 	// that always passes lets every mutant survive.
 	board := filepath.FromSlash("src/board.ts")
 	o := mutateRun(t, "--test-command", "go version", board)
-	if _, err := os.Stat(filepath.Join(".metrics", "mutate", "src", "board.ts.json")); err != nil {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.ts.json"))); err != nil {
 		t.Fatalf("no snapshot of %s: exit %d\n%s%s", board, o.code, o.stdout, o.stderr)
 	}
 	tests := recordedTests(t, "src/board.ts")
@@ -151,7 +151,7 @@ func TestChangingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
 func TestDeletingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
 	boardRepo(t, killedTests)
 	killedRun(t)
-	if err := os.Remove(filepath.FromSlash("src/board_test.go")); err != nil {
+	if err := os.Remove(inWD(t, filepath.FromSlash("src/board_test.go"))); err != nil {
 		t.Fatal(err)
 	}
 
@@ -198,7 +198,7 @@ func TestASnapshotThatRecordsNoTestsIsStale(t *testing.T) {
 	boardRepo(t, killedTests)
 	killedRun(t)
 	// As written before snapshots recorded tests.
-	name := filepath.Join(".metrics", "mutate", "src", "board.go.json")
+	name := inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))
 	data, err := os.ReadFile(name)
 	if err != nil {
 		t.Fatal(err)
@@ -235,7 +235,7 @@ func TestAGoFilesTestsAreItsPackagesAndThoseOfPackagesThatImportIt(t *testing.T)
 	})
 
 	o := mutateRun(t, boardSource)
-	if _, err := os.Stat(filepath.Join(".metrics", "mutate", "src", "board.go.json")); err != nil {
+	if _, err := os.Stat(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))); err != nil {
 		t.Fatalf("no snapshot of %s: exit %d\n%s%s", boardSource, o.code, o.stdout, o.stderr)
 	}
 	wantTests(t, "src/board.go", "src/board_test.go", "app/app_test.go")

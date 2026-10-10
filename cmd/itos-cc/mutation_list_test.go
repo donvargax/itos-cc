@@ -27,7 +27,7 @@ const appText = `export function routes(app, a) {
 `
 
 // appRepo makes a TypeScript project holding src/app.ts in a git repository,
-// and makes it the working directory.
+// and makes it the test's directory (useDir).
 func appRepo(t *testing.T) {
 	t.Helper()
 	for _, tool := range []string{"git", "go"} {
@@ -41,7 +41,7 @@ func appRepo(t *testing.T) {
 	gitIn(t, dir, "init", "-q", "-b", "main")
 	gitIn(t, dir, "add", "-A")
 	gitIn(t, dir, "commit", "-qm", "base")
-	t.Chdir(dir)
+	useDir(t, dir)
 }
 
 // siteLine is how plain mutation list prints a site.

@@ -60,7 +60,7 @@ var boardSource = filepath.FromSlash("src/board.go")
 
 // boardRepo makes the module in a git repository whose first commit is
 // tagged "base", with extra files added to boardFiles, and makes it the
-// working directory.
+// test's directory (useDir).
 func boardRepo(t *testing.T, extra map[string]string) string {
 	t.Helper()
 	for _, tool := range []string{"git", "go"} {
@@ -79,21 +79,24 @@ func boardRepo(t *testing.T, extra map[string]string) string {
 	gitIn(t, dir, "add", "-A")
 	gitIn(t, dir, "commit", "-qm", "base")
 	gitIn(t, dir, "tag", "base")
-	t.Chdir(dir)
+	useDir(t, dir)
 	return dir
 }
 
+// gitIn runs git with args in dir, a relative one in the test's directory.
 func gitIn(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@t", "-c", "core.autocrlf=false"}, args...)...)
-	cmd.Dir = dir
+	cmd.Dir = inWD(t, dir)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
 }
 
+// writeFile writes text to path, a relative one in the test's directory.
 func writeFile(t *testing.T, path, text string) {
 	t.Helper()
+	path = inWD(t, path)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -102,9 +105,11 @@ func writeFile(t *testing.T, path, text string) {
 	}
 }
 
-// edit replaces old with new in the working directory's file name.
+// edit replaces old with new in the file name, a relative one in the
+// test's directory.
 func edit(t *testing.T, name, old, new string) {
 	t.Helper()
+	name = inWD(t, name)
 	data, err := os.ReadFile(name)
 	if err != nil {
 		t.Fatal(err)
@@ -220,7 +225,7 @@ func (m mutateJSON) file(t *testing.T, file string) fileJSON {
 // boardUnits is the snapshot of src/board.go, by namespace#name.
 func boardUnits(t *testing.T) map[string]mutate.UnitResult {
 	t.Helper()
-	snap, err := mutate.LoadSnapshot(boardSource)
+	snap, err := mutate.LoadSnapshotOf(wd(t), boardSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -355,11 +360,11 @@ func TestSinceOutsideAGitRepositoryIsAMissingEnvironment(t *testing.T) {
 		t.Skip("git is not installed")
 	}
 	dir := t.TempDir()
-	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
+	useEnv(t, "GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
 	for name, text := range boardFiles {
 		writeFile(t, filepath.Join(dir, name), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 
 	o := mutateRun(t, "--json", "--since", "main")
 	if p := o.json(t).problem("since.no-git"); p == nil || o.code != 3 {
@@ -411,10 +416,11 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 	commitAll(t, "import fmt")
 
 	// Dated in the past, so a write shows in the modification time.
-	snapshot := filepath.Join(".metrics", mutate.SnapshotName(boardSource))
+	snapshot := inWD(t, filepath.Join(".metrics", mutate.SnapshotName(boardSource)))
+	source := inWD(t, boardSource)
 	past := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	before := map[string]string{}
-	for _, p := range []string{snapshot, boardSource} {
+	for _, p := range []string{snapshot, source} {
 		if err := os.Chtimes(p, past, past); err != nil {
 			t.Fatal(err)
 		}
@@ -426,7 +432,7 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 	}
 	untouched := func(run string) {
 		t.Helper()
-		for _, p := range []string{snapshot, boardSource} {
+		for _, p := range []string{snapshot, source} {
 			info, err := os.Stat(p)
 			if err != nil {
 				t.Fatal(err)
@@ -471,7 +477,7 @@ func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
 	if o := mutateRun(t); o.code != 0 {
 		t.Fatalf("the first run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	before, err := mutate.LoadSnapshot(boardSource)
+	before, err := mutate.LoadSnapshotOf(wd(t), boardSource)
 	if err != nil || before == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -492,7 +498,7 @@ func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
 // namespace#name.
 func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
 	t.Helper()
-	snap, err := mutate.LoadSnapshot(gridSource)
+	snap, err := mutate.LoadSnapshotOf(wd(t), gridSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", gridSource, err)
 	}
@@ -506,7 +512,7 @@ func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
 // noBoardSnapshot fails t when the snapshot of src/board.go is still there.
 func noBoardSnapshot(t *testing.T) {
 	t.Helper()
-	if snap, err := mutate.LoadSnapshot(boardSource); err != nil || snap != nil {
+	if snap, err := mutate.LoadSnapshotOf(wd(t), boardSource); err != nil || snap != nil {
 		t.Errorf("the snapshot of %s is still there (%v), want it moved", boardSource, err)
 	}
 }
@@ -562,7 +568,7 @@ func TestARenamedAndEditedFileJudgesOnlyWhatChanged(t *testing.T) {
 func TestARenamedFileIsNarrowedByItsNewPath(t *testing.T) {
 	boardRepo(t, nil)
 	moved := filepath.FromSlash("lib/grid.go")
-	if err := os.MkdirAll("lib", 0o755); err != nil {
+	if err := os.MkdirAll(inWD(t, "lib"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	gitIn(t, ".", "mv", filepath.ToSlash(boardSource), filepath.ToSlash(moved))

@@ -56,7 +56,7 @@ func TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection(t *testing.T) 
 	gitIn(t, main, "worktree", "add", "-q", "-b", "linked", linked)
 	writeFile(t, filepath.Join(linked, "main.go"), strings.Replace(worktreeFiles["main.go"], "func main() {}", "// The linked checkout's own commit.\nfunc main() {}", 1))
 	gitIn(t, linked, "commit", "-qam", "linked")
-	t.Chdir(linked)
+	useDir(t, linked)
 	head := gitOut(t, linked, "rev-parse", "HEAD")
 	gitDir := gitOut(t, linked, "rev-parse", "--absolute-git-dir")
 	physical, err := filepath.EvalSymlinks(gitDir)
@@ -69,7 +69,7 @@ func TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection(t *testing.T) 
 	}
 	mainTree, linkedTree := tree(t, main), tree(t, linked)
 	wt := t.TempDir()
-	t.Setenv("WT_DIR", wt)
+	useEnv(t, "WT_DIR", wt)
 
 	// When a count-one run judges it from the linked worktree.
 	o := countedRun(t, "--count", "1", "--workers", "1")

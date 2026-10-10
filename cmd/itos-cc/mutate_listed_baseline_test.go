@@ -60,7 +60,7 @@ func selectionRepo(t *testing.T, changes ...[3]string) (string, string) {
 	}
 	moduleRepo(t, files)
 	record := filepath.Join(t.TempDir(), "record")
-	t.Setenv("GREET_RECORD", record)
+	useEnv(t, "GREET_RECORD", record)
 	return record, files["main.go"]
 }
 
@@ -249,7 +249,7 @@ func TestASelectionThatFailsWithoutAMutantDecidesNoneOfItsMutants(t *testing.T) 
 	if o := mutationRun(t, "--workers", "1", "--json", greetSource); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for the survivor of line %d\n%s%s", o.code, listedStderrLine, o.stdout, o.stderr)
 	}
-	path := filepath.Join(".metrics", "mutate", "main.go.json")
+	path := inWD(t, filepath.Join(".metrics", "mutate", "main.go.json"))
 	snap := rawSnapshot(t)
 	many := 0
 	for _, m := range snapshotMutants(snap) {
@@ -270,7 +270,7 @@ func TestASelectionThatFailsWithoutAMutantDecidesNoneOfItsMutants(t *testing.T) 
 	}
 	held := string(data) + "\n"
 	writeFile(t, path, held)
-	t.Setenv("GREET_FAIL_ALONE", "1")
+	useEnv(t, "GREET_FAIL_ALONE", "1")
 
 	o := mutationRun(t, "--workers", "1", "--json", greetSource)
 	defer func() {

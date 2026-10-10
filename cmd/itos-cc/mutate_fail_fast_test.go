@@ -134,8 +134,8 @@ func ffScript(body ...string) string {
 	return "echo run >> \"$FF_DIR/runs\"\n" + strings.Join(body, "\n") + "\n"
 }
 
-// ffRepo writes files in a Git repository, makes it the working directory
-// and points FF_DIR at a fresh directory for test.sh's markers. It returns
+// ffRepo writes files in a Git repository, makes it the test's directory
+// (useDir) and points FF_DIR at a fresh directory for test.sh's markers. It returns
 // the repository and that directory.
 func ffRepo(t *testing.T, files map[string]string) (string, string) {
 	t.Helper()
@@ -144,7 +144,7 @@ func ffRepo(t *testing.T, files map[string]string) (string, string) {
 	}
 	dir := moduleRepo(t, files)
 	ff := t.TempDir()
-	t.Setenv("FF_DIR", ff)
+	useEnv(t, "FF_DIR", ff)
 	return dir, ff
 }
 
@@ -304,7 +304,7 @@ func TestInFlightJudgmentsAreCancelledAndTheirOwnedProcessesCleanedUp(t *testing
 	run := exec.Command(bin, "mutation", "run", "--json", "--fail-fast", "--no-coverage", "--no-annotate",
 		"--test-command", "sh test.sh", "--workers", "2", "--timeout-factor", "10000")
 	run.Dir, run.Stdout, run.Stderr = dir, &stdout, stderr
-	run.Env = append(os.Environ(), "TMPDIR="+tmp)
+	run.Env = append(testEnv(t), "TMPDIR="+tmp)
 	if err := run.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -553,8 +553,8 @@ func TestFeatures(t *testing.T) {
 `,
 }
 
-// ffListedRepo makes ffListedFiles a Git repository and the working
-// directory, then commits a comment inside each function of judged, so a
+// ffListedRepo makes ffListedFiles a Git repository and the test's
+// directory (useDir), then commits a comment inside each function of judged, so a
 // run with --since HEAD~1 judges those alone. FF_DIR points at a fresh
 // directory, which it returns.
 func ffListedRepo(t *testing.T, judged ...string) string {
@@ -566,7 +566,7 @@ func ffListedRepo(t *testing.T, judged ...string) string {
 	}
 	commitAll(t, "judge "+strings.Join(judged, " "))
 	ff := t.TempDir()
-	t.Setenv("FF_DIR", ff)
+	useEnv(t, "FF_DIR", ff)
 	return ff
 }
 
@@ -795,7 +795,7 @@ func TestAFailingBaselineStopsTheRunWithoutInventingOutcomes(t *testing.T) {
 		// label's mutant survives its own tests; the clean baseline of the
 		// listed tests that reach it fails.
 		ffListedRepo(t, "label")
-		t.Setenv("FF_FAIL_ALONE", "1")
+		useEnv(t, "FF_FAIL_ALONE", "1")
 		o := listedRun(t, "--workers", "1", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)
@@ -827,8 +827,8 @@ func TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork(t *test
 	// quick's, and its failing selection stops the run while wait's is
 	// still held; spare's is never started.
 	ff := ffListedRepo(t, "idle", "quick", "wait", "label", "spare")
-	t.Setenv("FF_FAIL_ALONE", "1")
-	t.Setenv("FF_FAIL_AFTER", filepath.Join(ff, "started"))
+	useEnv(t, "FF_FAIL_ALONE", "1")
+	useEnv(t, "FF_FAIL_AFTER", filepath.Join(ff, "started"))
 	t.Cleanup(func() { os.WriteFile(filepath.Join(ff, "release"), nil, 0o644) })
 
 	o := listedRun(t, "--workers", "2", "--fail-fast")
@@ -919,7 +919,7 @@ func TestAFileTheStopCutShortPublishesNoPartialProof(t *testing.T) {
 		"test.sh": ffScript("grep -q 'n > 5' a.go || exit 1", "grep -q 'n > 7' b.go || exit 1", "exit 0"),
 	})
 	read := func(name string) string {
-		data, _ := os.ReadFile(name)
+		data, _ := os.ReadFile(inWD(t, name))
 		return string(data)
 	}
 	aSnapshot, bSnapshot := filepath.Join(".metrics", "mutate", "a.go.json"), filepath.Join(".metrics", "mutate", "b.go.json")

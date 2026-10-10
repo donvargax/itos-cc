@@ -28,7 +28,7 @@ func annotatedRun(t *testing.T, args ...string) outcome {
 // first line to its last.
 func summaryComment(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile(boardSource)
+	data, err := os.ReadFile(inWD(t, boardSource))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason(t *testing.
 	if o := annotatedRun(t, boardSource); o.code != 0 {
 		t.Fatalf("exit %d, want 0: clear's survivor is excepted\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	data, _ := os.ReadFile(boardSource)
+	data, _ := os.ReadFile(inWD(t, boardSource))
 	want := "}\n\n// itos-cc mutation: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
 		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
 		"// end itos-cc mutation\n"

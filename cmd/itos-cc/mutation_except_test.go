@@ -74,7 +74,7 @@ func writeExceptions(t *testing.T, head string, entries ...exceptionYAML) {
 // which must be there.
 func readExceptions(t *testing.T) []exceptionYAML {
 	t.Helper()
-	data, err := os.ReadFile("itos-cc.yaml")
+	data, err := os.ReadFile(inWD(t, "itos-cc.yaml"))
 	if err != nil {
 		t.Fatalf("no itos-cc.yaml: %v", err)
 	}
@@ -116,7 +116,7 @@ func mutantOf(t *testing.T, o outcome, function string) mutantJSON {
 // noItosCcYAML fails t when itos-cc.yaml was written.
 func noItosCcYAML(t *testing.T) {
 	t.Helper()
-	if data, err := os.ReadFile("itos-cc.yaml"); err == nil {
+	if data, err := os.ReadFile(inWD(t, "itos-cc.yaml")); err == nil {
 		t.Errorf("itos-cc.yaml was written:\n%s", data)
 	}
 }
@@ -193,7 +193,7 @@ func TestTheRestOfItosCcYamlIsKept(t *testing.T) {
 	if got := readExceptions(t); !slices.Equal(got, want) {
 		t.Errorf("mutation.exceptions:\n%+v\nwant the one entry, reworded:\n%+v", got, want)
 	}
-	data, _ := os.ReadFile("itos-cc.yaml")
+	data, _ := os.ReadFile(inWD(t, "itos-cc.yaml"))
 	if !strings.HasPrefix(string(data), comment) {
 		t.Errorf("itos-cc.yaml:\n%s\nwant it to start with the comment %q", data, comment)
 	}
@@ -211,7 +211,7 @@ func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
 	// With no snapshot, every mutant runs.
-	if err := os.RemoveAll(filepath.Join(".metrics", "mutate")); err != nil {
+	if err := os.RemoveAll(inWD(t, filepath.Join(".metrics", "mutate"))); err != nil {
 		t.Fatal(err)
 	}
 

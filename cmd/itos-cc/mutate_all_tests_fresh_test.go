@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -37,12 +36,12 @@ func TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale(t *testing.T) {
 			if !found || initial["outcome"] != "killed" {
 				t.Fatalf("initial end-to-end outcome: found=%v outcome=%v scope=%v, want killed", found, initial["outcome"], initial["scope"])
 			}
-			snapshot, err := os.ReadFile(".metrics/mutate/main.go.json")
+			snapshot, err := os.ReadFile(inWD(t, ".metrics/mutate/main.go.json"))
 			if err != nil || !strings.Contains(string(snapshot), `"go_evidence"`) && !strings.Contains(string(snapshot), `"suite_evidence"`) {
 				t.Fatalf("initial broad snapshot lacks evidence: %v\n%s", err, snapshot)
 			}
 			path := "e2e/e2e_test.go"
-			contents, err := os.ReadFile(path)
+			contents, err := os.ReadFile(inWD(t, path))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -129,7 +128,7 @@ func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
 
 func broadEvidenceAt(t *testing.T, path string, line int) *mutate.SuiteEvidence {
 	t.Helper()
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(inWD(t, path))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +172,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	if result := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); result.code > 1 {
 		t.Fatalf("initial run: exit %d\n%s%s", result.code, result.stdout, result.stderr)
 	}
-	snapshotPath := ".metrics/mutate/main.go.json"
+	snapshotPath := inWD(t, ".metrics/mutate/main.go.json")
 	data, err := os.ReadFile(snapshotPath)
 	if err != nil {
 		t.Fatal(err)
@@ -205,7 +204,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	byName["Listed"].Scope = mutate.ScopeListed
 	byName["Listed"].Tests = []string{"ID-A-01"}
 	byName["Listed"].SuiteEvidence = nil
-	projectRoot := project.Root()
+	projectRoot := project.RootOf(wd(t))
 	listedDefinition := filepath.Join(projectRoot, "features", "listed.feature")
 	listedFiles, err := mutate.TestHashesUnder(projectRoot, []string{listedDefinition})
 	if err != nil {
@@ -261,8 +260,8 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 			t.Errorf("%s broad scope is %q, want stale: %s", name, states[name], check.stdout)
 		}
 	}
-	wd, _ := os.Getwd()
-	builder, err := graph.NewBuilder([]string{wd})
+	root := wd(t)
+	builder, err := graph.NewBuilder([]string{root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +316,7 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 			case "changed":
 				writeFile(t, "features/example.feature", "Feature: changed\n")
 			case "removed":
-				if err := os.Remove("features/example.feature"); err != nil {
+				if err := os.Remove(inWD(t, "features/example.feature")); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -325,10 +324,10 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 			if check.code != 1 || !strings.Contains(check.stdout, `"mutation.stale"`) || !strings.Contains(check.stdout, "features/example.feature") {
 				t.Fatalf("support %s: want stale naming features/example.feature, got exit %d\n%s%s", tc.change, check.code, check.stdout, check.stderr)
 			}
-			if _, err := os.Stat("list-ran"); !os.IsNotExist(err) {
+			if _, err := os.Stat(inWD(t, "list-ran")); !os.IsNotExist(err) {
 				t.Fatalf("mutation check ran the list command (stat error %v)", err)
 			}
-			if matches, err := filepath.Glob("test-ran-*"); err != nil || len(matches) != 0 {
+			if matches, err := filepath.Glob(inWD(t, "test-ran-*")); err != nil || len(matches) != 0 {
 				t.Fatalf("mutation check ran tests: %v (glob error %v)", matches, err)
 			}
 		})
@@ -341,7 +340,7 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 	if o := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); o.code > 1 {
 		t.Fatalf("initial run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	data, err := os.ReadFile(".metrics/mutate/main.go.json")
+	data, err := os.ReadFile(inWD(t, ".metrics/mutate/main.go.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +359,7 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(".metrics/mutate/main.go.json", data, 0o600); err != nil {
+	if err := os.WriteFile(inWD(t, ".metrics/mutate/main.go.json"), data, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	states, stale, check := checked(t)
@@ -393,17 +392,14 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 // @ID-MUT-154
 func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 	dir := greetRepo(t, false, false)
-	base, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		t.Fatal(err)
-	}
+	base := gitOut(t, dir, "rev-parse", "HEAD")
 	if result := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); result.code > 1 {
 		t.Fatalf("initial broad run: exit %d\n%s%s", result.code, result.stdout, result.stderr)
 	}
 	writeFile(t, "e2e/suite_test.go", "package e2e\n\nimport \"testing\"\n\nfunc TestSuiteSupport(t *testing.T) {}\n")
 	gitIn(t, dir, "add", "e2e/suite_test.go")
 	gitIn(t, dir, "commit", "-m", "change module tests")
-	source, err := os.ReadFile(greetSource)
+	source, err := os.ReadFile(inWD(t, greetSource))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -414,7 +410,7 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 	writeFile(t, greetSource, updated)
 	gitIn(t, dir, "add", greetSource)
 	gitIn(t, dir, "commit", "-m", "change main")
-	partial := mutateCovered(t, "--all-tests", "--no-coverage", "--since", strings.TrimSpace(string(base)), "--json", greetSource)
+	partial := mutateCovered(t, "--all-tests", "--no-coverage", "--since", base, "--json", greetSource)
 	if partial.code > 1 {
 		t.Fatalf("partial broad run: exit %d\n%s%s", partial.code, partial.stdout, partial.stderr)
 	}
@@ -450,8 +446,8 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 	if states[greetID] != "stale" {
 		t.Fatalf("unjudged greet is %q, want stale\n%s", states[greetID], check.stdout)
 	}
-	wd, _ := os.Getwd()
-	builder, err := graph.NewBuilder([]string{wd})
+	root := wd(t)
+	builder, err := graph.NewBuilder([]string{root})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -26,7 +26,7 @@ func TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused(t *testin
 	edit(t, "main.go", "func shown(n int) bool {\n", "func shown(n int) bool {\n\t// judged\n")
 	commitAll(t, "judge shown")
 	ff := t.TempDir()
-	t.Setenv("FF_DIR", ff)
+	useEnv(t, "FF_DIR", ff)
 	prior := cli(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
 	logOutcome(t, &prior)
 	if shown := ffRecorded(ffSnapshot(t, "main.go"), "shown"); prior.code != 0 || len(shown) != 1 || shown[0]["outcome"] != "killed" {
@@ -43,7 +43,7 @@ func TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused(t *testin
 	// Every run below starts from the earlier run's snapshot, and the
 	// listed tests fail whenever they run without coverage, as the clean
 	// baseline of a selection runs them.
-	t.Setenv("FF_FAIL_ALONE", "1")
+	useEnv(t, "FF_FAIL_ALONE", "1")
 	run := func(args ...string) outcome {
 		t.Helper()
 		writeFile(t, snapshot, recorded)

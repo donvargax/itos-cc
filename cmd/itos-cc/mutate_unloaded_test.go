@@ -16,7 +16,7 @@ var unusedSource = filepath.FromSlash("src/unused.ts")
 
 // vitestRepo makes a TypeScript project whose one test imports
 // src/board.ts and never src/unused.ts, with the node_modules languageTools
-// finds, and makes it the working directory.
+// finds, and makes it the test's directory (useDir).
 func vitestRepo(t *testing.T) {
 	t.Helper()
 	modules := languageTools(t, "typescript")
@@ -34,7 +34,7 @@ func vitestRepo(t *testing.T) {
 	} {
 		writeFile(t, filepath.Join(dir, name), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 }
 
 // @ID-MUT-105

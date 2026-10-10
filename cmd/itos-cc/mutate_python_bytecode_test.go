@@ -30,7 +30,7 @@ const pinnedSecond = 1700000000
 
 // pythonBytecodeRepo makes the project in a new directory, compiles its
 // sources into its own __pycache__, as a project that ran its tests has,
-// and makes it the working directory. It returns the file conftest.py
+// and makes it the test's directory (useDir). It returns the file conftest.py
 // appends each run's directory and whether it left a __pycache__ to.
 func pythonBytecodeRepo(t *testing.T) string {
 	t.Helper()
@@ -59,7 +59,7 @@ func pythonBytecodeRepo(t *testing.T) string {
 	if out, err := exec.Command("python3", "-m", "compileall", "-q", dir).CombinedOutput(); err != nil {
 		t.Fatalf("python3 -m compileall: %v\n%s", err, out)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 	return runs
 }
 
@@ -97,15 +97,11 @@ func TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled(t *te
 	languageTools(t, "python")
 	// pytest plugins installed beside pytest, such as pytest-benchmark, write
 	// their own files into the project; the scenario is about bytecode.
-	t.Setenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
+	useEnv(t, "PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
 	// Given a Python project whose test kills a mutant that replaces "=="
 	// with "!="
 	runs := pythonBytecodeRepo(t)
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	dir, err := filepath.EvalSymlinks(wd)
+	dir, err := filepath.EvalSymlinks(wd(t))
 	if err != nil {
 		t.Fatal(err)
 	}

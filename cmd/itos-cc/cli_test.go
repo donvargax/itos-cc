@@ -109,6 +109,7 @@ func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
 }
 
 func TestDispatch(t *testing.T) {
+	useDir(t, t.TempDir())
 	for _, c := range []struct {
 		args []string
 		code int

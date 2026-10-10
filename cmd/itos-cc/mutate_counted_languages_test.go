@@ -155,7 +155,7 @@ func TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline(
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Chdir(dir)
+			useDir(t, dir)
 			source := filepath.FromSlash(l.source)
 			if sites := scanned(t, source); len(sites) != 1 {
 				t.Fatalf("sites of %s: %+v, want the one == 3", source, sites)

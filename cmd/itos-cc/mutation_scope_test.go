@@ -40,7 +40,7 @@ func TestPlace(t *testing.T) {
 // by function, as the file holds it: "" where the key is left out.
 func recordedScopes(t *testing.T) map[string][]string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(".metrics", "mutate", "src", "board.go.json"))
+	data, err := os.ReadFile(inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json")))
 	if err != nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -98,7 +98,7 @@ func baselines(stderr string) []string {
 // mutant, as one written before outcomes recorded it.
 func stripScopes(t *testing.T) {
 	t.Helper()
-	name := filepath.Join(".metrics", "mutate", "src", "board.go.json")
+	name := inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))
 	data, err := os.ReadFile(name)
 	if err != nil {
 		t.Fatal(err)

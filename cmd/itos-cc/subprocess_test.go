@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -118,11 +119,17 @@ func inWD(t *testing.T, name string) string {
 	return filepath.Join(wd(t), name)
 }
 
-// testEnv is the process's environment with t's workspace's added.
+// testEnv is the environment a command runs with in t's directory: the
+// process's with t's workspace's added, and PWD set to the directory, as
+// t.Chdir sets it, so os.Getwd gives it in the form useDir named it.
 func testEnv(t *testing.T) []string {
 	t.Helper()
 	ws, _ := workspaceOf(t)
-	return append(os.Environ(), ws.env...)
+	env := append(os.Environ(), ws.env...)
+	if ws.dir != "" && runtime.GOOS != "windows" {
+		env = append(env, "PWD="+ws.dir)
+	}
+	return env
 }
 
 // itosCc runs itos-cc with args in t's directory and environment and
@@ -134,10 +141,7 @@ func itosCc(t *testing.T, args ...string) outcome {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(exe, append([]string{cliArg}, args...)...)
-	if ws, ok := workspaceOf(t); ok {
-		cmd.Dir = ws.dir
-	}
-	cmd.Env = testEnv(t)
+	cmd.Dir, cmd.Env = wd(t), testEnv(t)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err = cmd.Run()

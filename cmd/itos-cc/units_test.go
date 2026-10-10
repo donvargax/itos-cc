@@ -14,7 +14,7 @@ import (
 var rootMarkers = []string{"package.json", "tsconfig.json", "go.mod", ".git"}
 
 // unitIDs is the namespace#name of each unit itos-cc units --json lists for
-// args, run in the working directory.
+// args, run in the test's directory (useDir).
 func unitIDs(t *testing.T, args ...string) []string {
 	t.Helper()
 	o := cli(t, append([]string{"units", "--json"}, args...)...)
@@ -43,7 +43,7 @@ func TestAFileOutsideAnyProjectRootIsNamedFromTheWorkingDirectory(t *testing.T) 
 		if root := lang.FindUp(filepath.Join(dir, "x.ts"), rootMarkers...); root != "" {
 			t.Skipf("%s holds a project marker, so %s is not outside every project root", root, dir)
 		}
-		t.Chdir(dir)
+		useDir(t, dir)
 		if got := unitIDs(t, "x.ts"); len(got) != 1 || got[0] != "x#place" {
 			t.Errorf("directory %d, %s: units %q, want [x#place]", i+1, dir, got)
 		}

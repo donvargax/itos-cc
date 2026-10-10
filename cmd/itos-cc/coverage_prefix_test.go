@@ -12,8 +12,8 @@ import (
 // whose coverage runs go test, and reads what stderr says.
 
 // coverageModule makes a Go module whose package a holds a/a.go, with a
-// test that passes, or fails when failing is true, and makes it the working
-// directory.
+// test that passes, or fails when failing is true, and makes it the test's
+// directory (useDir).
 func coverageModule(t *testing.T, failing bool) {
 	t.Helper()
 	if _, err := exec.LookPath("go"); err != nil {
@@ -32,7 +32,7 @@ func coverageModule(t *testing.T, failing bool) {
 	} {
 		writeFile(t, filepath.Join(dir, filepath.FromSlash(name)), text)
 	}
-	t.Chdir(dir)
+	useDir(t, dir)
 }
 
 // stderrLines is each line of stderr.
