@@ -1134,3 +1134,16 @@ items:
       helper could reach what the helper imports, keeping freshness and the own command the same
       list.
     refs: [q-38, own-tests-python]
+  - id: python-own-tests-python-files
+    title: Honour pytest's python_files when picking a Python file's own test files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      own-tests-python runs, of the tests that reach a file, only those named test_*.py or
+      *_test.py, pytest's default python_files, so a project whose pytest config collects other
+      names (check_*.py) has those tests dropped from its own command and coverage; reading
+      python_files from pytest.ini, pyproject.toml, tox.ini or setup.cfg would keep them.
+    refs: [q-38, own-tests-python]
