@@ -866,3 +866,22 @@ items:
       internal capability tests, not original-product red evidence. Linux ownership is a
       prerequisite and Windows mode integration remains #29.
     refs: ["#27"]
+  - id: go-scope-trailing-package
+    title: Legacy GoScope drops a dependency-free package that go list prints last
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      coverage.GoScope trims all trailing whitespace from the go list -test listing, so the tab that
+      ends the line of a package with no dependencies disappears when that package is printed last,
+      and the package is neither measured nor tested; the same package elsewhere in the listing is
+      selected and measures at 0%. Strict complete runs therefore report coverage-missing or
+      uncovered-statement for the same unloaded code depending on listing order, and
+      TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing pins the coverage-missing
+      outcome. The supervised preparation of T-12 parses each line whole and measures such a package
+      at 0%, so bounded and complete runs can word the same strict failure differently. Decide which
+      outcome an unloaded executable function should get, then make GoScope order-independent and
+      align the test with that decision.
+    refs: ["#27"]
