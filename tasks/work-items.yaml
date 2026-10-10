@@ -1103,12 +1103,9 @@ items:
     title: A TypeScript test script without Vitest or Jest records whole-suite outcomes
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-38: a test script cannot be narrowed, so its outcomes carry whole-suite evidence and any
-      test change stales them, as --test-command's do.
     refs: ["#14"]
   - id: test-support-reach
     title: Tests reach code through the test-support files they use
