@@ -986,14 +986,9 @@ items:
     title: Strict --fail-uncovered fails closed when TypeScript, Python or Kotlin measured nothing
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [strict-mixed-languages]
     kind: slice
-    why: >
-      Language parity (the person, 2026-10-10): ADR-0017 makes Go fail closed on missing coverage,
-      while other languages fall back to running every mutant, so --fail-uncovered can pass on code
-      no test runs (cmd/itos-cc/mutate.go:672, mutate/run.go:597). Decisions in the comments above
-      ID-MUT-204.
     refs: ["#23"]
   - id: whole-suite-freshness-all
     title: Whole-suite outcomes of TypeScript, Python and Kotlin notice non-importing test changes
