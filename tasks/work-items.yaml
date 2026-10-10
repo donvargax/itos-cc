@@ -962,16 +962,9 @@ items:
     title: A blocked fail-fast file counts the mutants it ran and reused
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was fail-fast-blocked-counts.
-      With --fail-fast, a file whose mutant a failing selection of listed tests blocked reports
-      "ran": 0 and "reused": 0 in --json and plain output, although the run ran and reused mutants
-      of it before the stop, and since fail-fast-partial its snapshot keeps them. Its completed work
-      counts them, so only these two keys disagree; found while building fail-fast-partial (#26,
-      ADR-0022).
     refs: ["#26"]
   - id: strict-mixed-languages
     title: Strict Go coverage ignores the other languages of a mixed selection
