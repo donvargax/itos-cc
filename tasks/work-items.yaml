@@ -1089,7 +1089,7 @@ items:
     title: A Python file's own tests are the tests that reach it
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
