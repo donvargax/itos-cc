@@ -2308,3 +2308,139 @@ Feature: Mutation testing
       Then the report explicitly says not applicable with zero eligible and selected sites
       And it does not run an avoidable mutation prepass
       But absent cache, missing tests, unsupported input scope and failed coverage or baseline are not site-free success
+
+  # GitHub #26: opt-in fail-fast for the local fix-and-retry loop. ADR-0020
+  # (stop at the earliest observed final failure, cancel at once, one shared
+  # five-second cleanup deadline), ADR-0021 (owned process trees) and ADR-0022
+  # (preserve valid partial evidence, report incomplete work) hold, with q-36:
+  # Linux and macOS first, Windows refused (fail-fast.platform, exit 3) until
+  # #29. Decisions for both slices:
+  # - mutation run --fail-fast is opt-in; without it scheduling, output,
+  #   snapshots and annotations are exactly as before. It applies to complete
+  #   runs (paths, --changed, --since, --mutate-all, --all-tests,
+  #   --test-command); it conflicts with --count (flags.conflict), since
+  #   counted mode stays aggregate. Interrupt signals in complete mode stay as
+  #   they are.
+  # - A trigger is an actionable FINAL judgment: an unexcepted survivor once
+  #   its applicable listed tests have also failed to kill it, an uncovered
+  #   mutant with --fail-uncovered, a mutation.exception-stale, a failing file
+  #   baseline (mutation.baseline-failed) or listed selection baseline
+  #   (tests.selection-failed). Killed, timed-out, validly excepted and
+  #   listed-killed mutants never trigger. Failures known before any mutant
+  #   runs (stale exceptions, strict Go coverage findings, uncovered mutants
+  #   with --fail-uncovered) stop the run before mutant execution where the
+  #   planning already knows them; list and coverage preparation keep their
+  #   current scope, with no total-runtime promise.
+  # - The first observed trigger, in completion order rather than source
+  #   order, publishes one stop: no further command is admitted, in-flight
+  #   judgments are cancelled at once with no mutation outcome (never killed
+  #   or timed out), and every owned process group is killed and joined within
+  #   one shared five-second deadline from the stop, before worker copies are
+  #   removed. The run exits as its trigger's rule says (1 for every trigger
+  #   above), reporting that rule as it would without --fail-fast.
+  # - Output: JSON stays one object and gains a stop object (stopped, the
+  #   trigger's rule and subject) and disjoint counts of completed, cancelled,
+  #   unattempted and blocked work; every selected file is listed with its
+  #   state, and a baseline that never ran is not reported as passed. Plain
+  #   output says the run stopped early and why. Completed counts include
+  #   trusted reuse and measured coverage judgments, not only test runs.
+  # - fail-fast-run publishes a file only when every selected site of its
+  #   judged functions was decided; a file the stop cut short gets no snapshot
+  #   write and no annotation, as an undecided file today. fail-fast-partial
+  #   then preserves that file's valid judgments per ADR-0022.
+  # - Local mutant trials stay sparse: tiny fixtures, one or two trials per
+  #   focused case, no runs over this repository; broader matrices in CI.
+  Rule: mutation run --fail-fast stops at the first actionable failure
+
+    @wip @fail-fast-run @ID-MUT-192
+    Scenario: The first actionable survivor stops admission of later mutants
+      Given a run with several selected mutants and one worker
+      And the first judged mutant survives its own tests and has no applicable listed tests or valid exception
+      When mutation run --fail-fast judges them
+      Then it fails with mutation.survived for that mutant
+      And no later mutant is started, and each is reported unattempted with no outcome
+      But without --fail-fast every mutant is judged and the survivor is reported among them
+
+    @wip @fail-fast-run @ID-MUT-193
+    Scenario: In-flight judgments are cancelled and their owned processes cleaned up
+      Given two workers, one judging a mutant whose test command keeps owned descendants running
+      When the other worker's mutant becomes an actionable survivor
+      Then the running judgment is cancelled with no killed, timed-out or survived outcome
+      And its owned processes are terminated and joined within one shared five-second deadline from the stop
+      And worker copies are removed only after that join
+      And unrelated processes remain untouched
+
+    @wip @fail-fast-run @ID-MUT-194
+    Scenario: Non-actionable judgments never stop the run
+      Given selected mutants that are killed, time out, are validly excepted survivors, or survive their own tests but are killed by applicable listed tests
+      When mutation run --fail-fast judges them
+      Then every selected mutant is judged and the run succeeds
+      And a survivor waits for its applicable listed tests before it can stop the run
+
+    @wip @fail-fast-run @ID-MUT-195
+    Scenario: Known policy failures stop before avoidable mutant work
+      Given a selection with a stale exception, or with an uncovered mutant or a strict Go coverage finding under --fail-uncovered
+      When mutation run --fail-fast runs it
+      Then it fails with the same rule the aggregate run reports
+      And no mutant trial starts when planning already knew the failure
+      But an uncovered mutant without --fail-uncovered does not stop the run
+
+    @wip @fail-fast-run @ID-MUT-196
+    Scenario: A failing baseline stops the run without inventing outcomes
+      Given a selected file whose own baseline fails, or a survivor whose listed selection baseline fails without any mutant
+      When mutation run --fail-fast reaches it
+      Then it fails with mutation.baseline-failed or tests.selection-failed
+      And the affected mutants have no invented killed, timed-out or survived outcome
+      And no stage reports a baseline as passed that never ran
+
+    @wip @fail-fast-run @ID-MUT-197
+    Scenario: Output distinguishes completed work from cancelled and unattempted work
+      Given a fail-fast run that stops with completed, cancelled, unattempted and blocked work
+      When its report is emitted as JSON and as text
+      Then JSON is one object with a stop naming the trigger's rule and subject
+      And it gives disjoint completed, cancelled, unattempted and blocked counts and every selected file's state
+      And plain output says the run stopped early and why
+      But a run without --fail-fast keeps its existing output exactly
+
+    @wip @fail-fast-run @ID-MUT-198
+    Scenario: A file the stop cut short publishes no partial proof
+      Given a fail-fast run that completes one file and stops inside another
+      When it returns
+      Then the completed file's snapshot and annotation are written as without --fail-fast
+      And the stopped file's snapshot and annotated source bytes are unchanged
+      And mutation check still reports the stopped file's missing or stale results without running tests
+      And a later run reuses only outcomes whose inputs are still fresh
+
+    @wip @fail-fast-run @ID-MUT-199
+    Scenario: Fail-fast admission boundaries
+      Given the complete and counted mutation run commands
+      When --fail-fast is combined with --count, or used on Windows
+      Then --count with --fail-fast is a flags.conflict usage error
+      And on Windows it fails with fail-fast.platform before launching commands
+      And the help, README and docs/CLI.md describe --fail-fast, its rule and its platforms
+
+  # fail-fast-partial: ADR-0022 for the files fail-fast-run leaves unwritten.
+  Rule: A fail-fast stop keeps the valid judgments of the files it cut short
+
+    @wip @fail-fast-partial @ID-MUT-200
+    Scenario: Valid judgments in a stopped file are preserved, unfinished sites stay unjudged
+      Given a fail-fast run judges some mutants of a file and the stop cancels or leaves the rest
+      When it returns
+      Then the file's snapshot keeps each completed or reused judgment with its original scope and freshness evidence
+      And cancelled, blocked and unattempted sites get no outcome and no new freshness proof
+      And mutation check still fails the functions with missing valid site entries
+      And the file's annotated source bytes are unchanged
+
+    @wip @fail-fast-partial @ID-MUT-201
+    Scenario: A cancelled forced rerun leaves a fresh prior cache usable
+      Given a file with fresh complete mutation results
+      When a fail-fast --mutate-all rerun of it is cancelled by a stop elsewhere
+      Then its prior fresh results still satisfy mutation check
+      And the run's report says its own work was incomplete, separately from the cache's completeness
+
+    @wip @fail-fast-partial @ID-MUT-202
+    Scenario: A later run finishes only what the stop left
+      Given a stopped fail-fast run preserved some judgments of a file
+      When the same run is repeated with unchanged inputs
+      Then the preserved judgments are reused and only the unjudged sites run
+      But a preserved judgment whose source, tests or support inputs changed runs again
