@@ -884,3 +884,18 @@ items:
       deadline before private inputs are removed. The decisions are the comments above the scenarios
       in features/mutate.feature.
     refs: ["#27"]
+  - id: counted-coverage-reuse
+    title: Counted runs reuse a fingerprinted per-test coverage map instead of measuring from scratch
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutation-counted-interrupt]
+    kind: idea
+    why: >
+      A counted run measures own and listed coverage and runs each selected file's baseline fresh on
+      every push, so --count 1 can still cost a test run of the touched packages (about 5 minutes
+      when cmd/itos-cc is touched). #27 names reuse of a per-scenario coverage map as a separate
+      capability. Reuse only evidence whose input fingerprints match the frozen commit (as ADR-0018
+      does for strict Go), never weakening fail-closed preparation or dropping listed tests. Worth
+      doing if CI time per push becomes a problem after v0.7.0.
+    refs: ["#27"]
