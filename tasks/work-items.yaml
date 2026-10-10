@@ -1053,7 +1053,7 @@ items:
     title: cmd/itos-cc's fixtures ignore the GOCOVERDIR of a covered test run
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
