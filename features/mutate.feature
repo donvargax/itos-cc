@@ -1768,6 +1768,54 @@ Feature: Mutation testing
       And all four agree on each function's freshness
       And a --since run that judges one function never refreshes the evidence of an unjudged one
 
+  # Language parity, second batch: these need the real tools T-13 brings to
+  # CI (Linux only; other OSes skip them, naming the missing tool).
+  # - ts-coverage-scope: in mutation run, when Vitest or Jest judges the
+  #   mutants with related tests (no --all-tests), coverage is measured by
+  #   the same related selection into the run's own directory, never by the
+  #   project's coverage script, so a line only an unrelated test reaches is
+  #   uncovered, never a false survivor (ID-MUT-08's rule). If that related
+  #   measurement cannot run (Vitest too old, @vitest/coverage-v8 missing),
+  #   the plan is unsupported as today for that case: non-strict runs fall
+  #   back to running every mutant, strict runs fail closed (ID-MUT-204).
+  #   With --all-tests, and in crap, the coverage script keeps its role, and
+  #   a project with neither Vitest nor Jest keeps its current plan.
+  # - counted-languages: counted runs resolve each language's installed
+  #   dependencies from the live project root, never from the frozen export:
+  #   Python's .venv (or the interpreter VIRTUAL_ENV names), TypeScript's
+  #   node_modules, Gradle's and Maven's local caches. They install nothing
+  #   and download nothing: Gradle runs with --offline and Maven with -o, as
+  #   Go runs with GOPROXY=off, and a dependency missing offline is a
+  #   preparation failure naming the tool. The sources, tests and config
+  #   judged still come from the frozen commit. README's "dependencies as
+  #   installed" boundary names these per language.
+  Rule: Language parity with Go for TypeScript coverage scope and counted runs
+
+    @wip @ts-coverage-scope @ID-MUT-208
+    Scenario: TypeScript coverage comes from the related tests that judge the mutants
+      Given a Vitest project with a coverage script that runs the whole suite
+      And src/a.ts has a line that only an unrelated test, which does not import it, executes
+      When I run "itos-cc mutation run --json src/a.ts"
+      Then coverage runs vitest related for src/a.ts into the run's own directory, not the coverage script
+      And the mutant on that line is uncovered and none of its trials runs
+      But with --all-tests the coverage script measures the whole suite as before
+      And crap still measures with the coverage script
+
+    @wip @counted-languages @ID-MUT-209
+    Scenario Outline: A counted run judges a <language> project through its installed tools, offline
+      Given a committed <language> project with eligible mutation sites and its dependencies installed in <installed>
+      When a count-one run judges it
+      Then preparation measures coverage and runs the clean baseline with the project's installed tools
+      And exactly one selected mutant is judged with a real outcome
+      And no command downloads or installs anything
+      And the live working tree is left unchanged
+
+      Examples:
+        | language   | installed                         |
+        | TypeScript | node_modules at the project root  |
+        | Python     | .venv at the project root         |
+        | Kotlin     | the Gradle cache, run with --offline |
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
