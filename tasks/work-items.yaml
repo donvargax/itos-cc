@@ -13,6 +13,7 @@ phases:
 queue:
   - own-tests-python
   - own-tests-kotlin
+  - own-tests-ts-fallback
   - mutation-windows-ownership
 items:
   - id: T-3
