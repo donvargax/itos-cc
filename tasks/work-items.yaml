@@ -1038,7 +1038,7 @@ items:
     title: Measuring and judging a Python project leaves no pytest cache in its tree
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
