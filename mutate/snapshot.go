@@ -190,15 +190,16 @@ func recordedScope(scope string) string {
 	return scope
 }
 
-// scopeCommand is the command that runs path's tests in scope.
-func scopeCommand(path, scope string) Command {
+// scopeCommand is the command that runs path's tests in scope, tests the
+// test files that reach it.
+func scopeCommand(path, scope string, tests []string) Command {
 	switch scope {
 	case ScopeOwn, ScopeListed, "":
-		return TestCommand(path, "", false)
+		return TestCommand(path, "", false, tests)
 	case ScopeAllTests:
-		return TestCommand(path, "", true)
+		return TestCommand(path, "", true, nil)
 	}
-	return TestCommand(path, scope, false)
+	return TestCommand(path, scope, false, nil)
 }
 
 func (m Mutant) key() string {

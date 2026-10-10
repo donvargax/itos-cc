@@ -76,7 +76,7 @@ func runCrap(in *invocation) (any, error) {
 	if len(in.args) > 0 || in.set("changed") {
 		scope = coverage.RelatedTests
 	}
-	report, err := loadCoverage(in, files.Sources, scope, os.Stderr, nil)
+	report, err := loadCoverage(in, files.Sources, scope, os.Stderr, nil, nil)
 	if err != nil {
 		return result, err
 	}

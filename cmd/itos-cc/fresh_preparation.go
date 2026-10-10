@@ -17,6 +17,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -171,8 +172,19 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		stage("coverage-plan", "failed", err)
 		return prep, fmt.Errorf("prepare coverage plans: %w", err)
 	}
+	// A Python file's own tests, and the coverage that decides which of its
+	// mutants run, are the tests that reach it in the frozen tree.
+	var reach coverage.Reach
+	if options.Scope == coverage.OwnTests && hasPythonUnit(plan.Units) {
+		tests, err := graph.TestsImporting(root, plan.Files)
+		if err != nil {
+			stage("coverage-plan", "failed", err)
+			return prep, fmt.Errorf("find the tests that reach each frozen file: %w", err)
+		}
+		reach = func(path string) []string { return tests[path] }
+	}
 	private := filepath.Join(root, ".git", "itos-preparation")
-	plans, calls, err := coverage.PlansSupervised(ctx, sources, filepath.Join(private, "coverage"), options.Scope, execute)
+	plans, calls, err := coverage.PlansSupervised(ctx, sources, filepath.Join(private, "coverage"), options.Scope, reach, execute)
 	prep.Commands = append(prep.Commands, calls...)
 	if err != nil {
 		stage("coverage-plan", "failed", err)
@@ -185,7 +197,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	}
 	stage("coverage-plan", "complete", nil)
 
-	baselines, executions, err := mutate.FreshBaselineCommands(ctx, plan, options.Scope == coverage.AllTests, execute)
+	baselines, executions, err := mutate.FreshBaselineCommands(ctx, plan, options.Scope == coverage.AllTests, reach, execute)
 	prep.Commands = append(prep.Commands, executions...)
 	if err != nil {
 		stage("baseline-plan", "failed", err)
@@ -594,4 +606,14 @@ func withEnvOverrides(env []string, overrides map[string]string) []string {
 func hashPreparationPolicy(value string) string {
 	sum := sha256.Sum256([]byte(value))
 	return hex.EncodeToString(sum[:])
+}
+
+// hasPythonUnit says whether any admitted function is Python's.
+func hasPythonUnit(units []mutate.FreshUnit) bool {
+	for _, unit := range units {
+		if spec := lang.Detect(unit.Path); spec != nil && spec.Name == "python" {
+			return true
+		}
+	}
+	return false
 }

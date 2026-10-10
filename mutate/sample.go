@@ -148,7 +148,11 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		r := runs[k]
 		if r == nil {
 			s := c.state
-			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(s.file.Path, c.scope),
+			var tests []string
+			if opt.Tests != nil {
+				tests = opt.Tests(s.file.Path)
+			}
+			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(s.file.Path, c.scope, tests),
 				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites)),
 				scopes: make([]string, len(s.sites)), ran: make([][]string, len(s.sites))}
 			if c.scope == ScopeListed {

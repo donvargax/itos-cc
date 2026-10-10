@@ -26,10 +26,13 @@ type FreshBaseline struct {
 }
 
 // FreshBaselineCommands is the distinct own-test command of every file with a
-// selected site, resolved against the frozen root. It is TestCommand with the
-// one probe TestCommand runs itself, Python's pytest import, routed through
-// execute and recorded; a cancelled probe is an error.
-func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
+// selected site, resolved against the frozen root. It is TestCommand, given
+// tests, the test files that reach a file in the frozen root, with the one
+// probe TestCommand runs itself, Python's pytest import, routed through
+// execute and recorded; a cancelled probe is an error. A Python file whose
+// own tests run nothing has no baseline: no test reaches it, so its sites
+// are uncovered.
+func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests func(path string) []string, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
 	if ctx == nil || execute == nil {
 		return nil, nil, errors.New("fresh baselines need a context and command executor")
 	}
@@ -61,13 +64,20 @@ func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, execu
 		if spec.Name == "python" {
 			var calls []coverage.CommandExecution
 			var err error
-			c, calls, err = freshPythonCommand(ctx, path, execute)
+			var reaching []string
+			if tests != nil {
+				reaching = tests(path)
+			}
+			c, calls, err = freshPythonCommand(ctx, path, all, reaching, execute)
 			executions = append(executions, calls...)
 			if err != nil {
 				return nil, executions, err
 			}
+			if c.RunsNothing() {
+				continue
+			}
 		} else {
-			c = TestCommand(path, "", all)
+			c = TestCommand(path, "", all, nil)
 		}
 		if len(c.Args) == 0 {
 			return nil, executions, fmt.Errorf("selected file %s has no own-test command", rel)
@@ -87,27 +97,24 @@ func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, execu
 
 // freshPythonCommand is pythonCommand with its pytest probe supervised. A
 // probe that fails falls back to unittest exactly as pythonCommand does.
-func freshPythonCommand(ctx context.Context, path string, execute coverage.CommandExecutor) (Command, []coverage.CommandExecution, error) {
-	root := orDir(lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg"), path)
-	py := "python3"
-	for _, venv := range []string{".venv", "venv"} {
-		if candidate := filepath.Join(root, venv, "bin", "python"); fileExists(candidate) {
-			py = candidate
+func freshPythonCommand(ctx context.Context, path string, all bool, tests []string, execute coverage.CommandExecutor) (Command, []coverage.CommandExecution, error) {
+	c := pythonBase(path)
+	root := c.Root
+	var run []string
+	if !all {
+		if run = coverage.PythonTests(c.Dir, tests); len(run) == 0 {
+			return c, nil, nil
 		}
 	}
-	c := Command{Root: root, Dir: root, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
+	py := pythonInterpreter(root)
 	probe := exec.CommandContext(ctx, py, "-c", "import pytest")
 	probe.Dir, probe.Stdout, probe.Stderr = root, io.Discard, io.Discard
 	err := execute(ctx, probe)
 	calls := []coverage.CommandExecution{{Args: append([]string{}, probe.Args...), Dir: root, Err: err}}
-	switch {
-	case err == nil:
-		c.Args = []string{py, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"}
-	case ctx.Err() != nil:
+	if err != nil && ctx.Err() != nil {
 		return Command{}, calls, ctx.Err()
-	default:
-		c.Args = []string{py, "-m", "unittest", "discover", "-f"}
 	}
+	c.Args = pythonArgs(py, err == nil, run)
 	return c, calls, nil
 }
 

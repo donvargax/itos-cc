@@ -28,6 +28,10 @@ type countedLanguage struct {
 	// the run ends, so a command may name it in the copy, which lies
 	// within the live project, as long as the path ends there.
 	install func(t *testing.T, dir string) string
+	// tests, when set, is the test file each test runner command of
+	// preparation names, its coverage and baseline: the one test that
+	// reaches the source, as Python's own tests are.
+	tests string
 }
 
 var countedLanguages = []countedLanguage{
@@ -83,6 +87,7 @@ var countedLanguages = []countedLanguage{
 			// nothing; its tests passing through boardhelp do.
 			return ""
 		},
+		tests: "test_board.py",
 	},
 	{
 		name:   "Kotlin",
@@ -188,6 +193,23 @@ func TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline(
 						!strings.HasSuffix(executable, string(filepath.Separator)+tool) {
 						t.Errorf("%q runs %s, want the project's %s", line, executable, tool)
 					}
+				}
+			}
+
+			if l.tests != "" {
+				runners := map[string]int{}
+				for _, line := range ran {
+					if !strings.Contains(line, " -m pytest") {
+						continue
+					}
+					stage, _, _ := strings.Cut(strings.TrimPrefix(line, "itos-cc: "), " ")
+					runners[stage]++
+					if !strings.HasSuffix(line, " "+l.tests) {
+						t.Errorf("%q runs other tests than %s, the one that reaches %s", line, l.tests, source)
+					}
+				}
+				if runners["coverage"] == 0 || runners["baseline"] == 0 {
+					t.Errorf("pytest ran %v times by stage, want for coverage and for the baseline", runners)
 				}
 			}
 
