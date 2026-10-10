@@ -1002,23 +1002,9 @@ items:
     title: A strict counted run needs no measurement of a language with nothing to judge
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was counted-mixed-coverage.
-      Found in strict-mixed-languages (2026-10-10). mutation run --count over a Go module plus a
-      TypeScript file with no mutation site fails count.preparation-failed at the coverage stage
-      when no TypeScript coverage tool is installed, with or without --fail-uncovered, before the
-      strict-go-inventory stage (which already skips non-.go units). Whether a language with no
-      eligible site needs a measurement at all, and how this meets uncovered-fails-closed, is
-      undecided.
-
-      Correction: "with or without --fail-uncovered" is wrong for a range with no eligible site.
-      Without --fail-uncovered such a range is not-applicable and returns before preparation
-      (mutate_counted.go, the len(plan.Eligible) == 0 check), so only the strict run, which still
-      must inventory its Go functions, reaches the failing coverage stage. The without case was not
-      run for a range that has eligible sites.
   - id: T-14
     title: Take whole-suite-freshness-all back off a red main
     phase: 1
