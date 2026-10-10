@@ -99,7 +99,12 @@ that needs no cache: the cache neither saves a trial nor is written. It
 resolves the Git repository and its HEAD commit once and judges that
 commit's tracked files, frozen in a private copy, so staged, unstaged and
 untracked changes play no part; tools, dependencies and the environment are
-used as installed, and nothing is installed. The sites of the selection,
+used as installed, from the live project, and nothing is installed or
+downloaded: TypeScript's node_modules and Python's .venv or venv (else the
+virtualenv VIRTUAL_ENV names) at its build roots, and the Go module, Gradle
+and Maven caches, with Go commands offline (GOPROXY=off), Gradle --offline
+and Maven -o. A dependency missing offline fails the run, as
+count.preparation-failed naming the stage. The sites of the selection,
 paths and --since REF's changed functions, are ranked by SHA-256 over
 --seed TEXT (the HEAD commit's id unless given) and each site's identity,
 and the first N are selected across every file, function and worker.

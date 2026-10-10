@@ -1801,7 +1801,7 @@ Feature: Mutation testing
       But with --all-tests the coverage script measures the whole suite as before
       And crap still measures with the coverage script
 
-    @wip @counted-languages @ID-MUT-209
+    @counted-languages @ID-MUT-209
     Scenario Outline: A counted run judges a <language> project through its installed tools, offline
       Given a committed <language> project with eligible mutation sites and its dependencies installed in <installed>
       When a count-one run judges it

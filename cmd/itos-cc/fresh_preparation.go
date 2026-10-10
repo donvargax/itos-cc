@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
@@ -90,7 +91,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	}
 	prep := &FreshPreparation{Commit: plan.Commit, SinceBase: plan.SinceBase, SinceRef: plan.SinceRef,
 		Seed: plan.Seed, Algorithm: plan.Algorithm, Units: append([]mutate.FreshUnit{}, plan.Units...),
-		ExternalBoundary: "Tool executables, host environment, Go module cache, and non-Go installed dependencies are outside the frozen commit; missing requirements fail closed and preparation installs nothing. Go toolchain/module/checksum network access is disabled for Go commands."}
+		ExternalBoundary: "Tool executables, host environment and installed dependencies are outside the frozen commit, and come from the live project: TypeScript's node_modules and Python's .venv or venv (else VIRTUAL_ENV's) at its build roots, linked into the frozen copy, and the Go module, Gradle and Maven caches; missing requirements fail closed and preparation installs and downloads nothing. Go commands run with GOTOOLCHAIN=local, GOPROXY=off and GOSUMDB=off, Gradle with --offline and Maven with -o."}
 	stage := func(name, state string, err error) {
 		s := PreparationStage{Name: name, State: state}
 		if err != nil {
@@ -150,12 +151,23 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 			sources = append(sources, p)
 		}
 	}
+	// The dependencies the live project installed, which the commit never
+	// holds, before any plan looks for its tools among them.
+	if _, err := plan.LinkInstalledDependencies(); err != nil {
+		stage("coverage-plan", "failed", err)
+		return prep, fmt.Errorf("prepare coverage plans: %w", err)
+	}
 	private := filepath.Join(root, ".git", "itos-preparation")
 	plans, calls, err := coverage.PlansSupervised(ctx, sources, filepath.Join(private, "coverage"), options.Scope, execute)
 	prep.Commands = append(prep.Commands, calls...)
 	if err != nil {
 		stage("coverage-plan", "failed", err)
 		return prep, fmt.Errorf("prepare coverage plans: %w", err)
+	}
+	for i := range plans {
+		for j := range plans[i].Commands {
+			plans[i].Commands[j] = offlineArgs(plans[i].Commands[j])
+		}
 	}
 	stage("coverage-plan", "complete", nil)
 
@@ -164,6 +176,10 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	if err != nil {
 		stage("baseline-plan", "failed", err)
 		return prep, fmt.Errorf("plan frozen baselines: %w", err)
+	}
+	// Each trial runs its baseline's command, so it runs offline too.
+	for i := range baselines {
+		baselines[i].Command.Args = offlineArgs(baselines[i].Command.Args)
 	}
 	stage("baseline-plan", "complete", nil)
 
@@ -351,6 +367,33 @@ func resolvePreparationTools(plans []coverage.Plan, baselines []mutate.FreshBase
 		tools = append(tools, PreparationTool{Name: n.name, Path: path})
 	}
 	return tools, errors.Join(missing...)
+}
+
+// offlineArgs is args with Gradle told to run --offline and Maven -o, as Go
+// commands run with GOPROXY=off: a counted run uses the dependencies their
+// local caches hold and downloads none, and one missing offline fails the
+// command, and so its preparation stage.
+func offlineArgs(args []string) []string {
+	if len(args) == 0 || args[0] == "" {
+		return args
+	}
+	name := strings.ToLower(filepath.Base(args[0]))
+	for _, ext := range []string{".bat", ".cmd", ".exe"} {
+		name = strings.TrimSuffix(name, ext)
+	}
+	var flag string
+	switch name {
+	case "gradle", "gradlew":
+		flag = "--offline"
+	case "mvn", "mvnw":
+		flag = "-o"
+	default:
+		return args
+	}
+	if slices.Contains(args[1:], flag) {
+		return args
+	}
+	return append([]string{args[0], flag}, args[1:]...)
 }
 
 func hasGoUnits(units []mutate.FreshUnit) bool {
