@@ -1103,7 +1103,7 @@ items:
     title: A TypeScript test script without Vitest or Jest records whole-suite outcomes
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
