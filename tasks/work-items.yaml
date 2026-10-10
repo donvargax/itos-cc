@@ -1079,11 +1079,7 @@ items:
     title: TypeScript, Python and Kotlin tests reach what they import transitively
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-39: a test reaches the transitive closure of its imports, as vitest related and jest select;
-      today only direct imports count, so a test that kills a mutant of a file it reaches indirectly
-      is not recorded and its changes never stale that result.
     refs: ["#14"]
