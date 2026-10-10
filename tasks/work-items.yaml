@@ -1036,7 +1036,7 @@ items:
     title: A Python mutant always runs as mutated, never from stale bytecode
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
