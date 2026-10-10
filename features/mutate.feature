@@ -1706,7 +1706,7 @@ Feature: Mutation testing
   #   share the verdict. Own and listed scopes keep their rules.
   Rule: Language parity with Go for strict coverage and whole-suite freshness
 
-    @wip @strict-mixed-languages @ID-MUT-203
+    @strict-mixed-languages @ID-MUT-203
     Scenario: Strict Go coverage ignores the other languages of a mixed selection
       Given a project with a Go module and a TypeScript file that has no go.mod above it
       And the Go functions have fresh complete coverage evidence

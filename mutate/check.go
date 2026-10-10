@@ -55,6 +55,9 @@ type GoCoverageCheck struct {
 // CheckGoCoverage checks independent coverage evidence for every selected Go
 // function, including functions with no mutation sites. It runs and writes
 // nothing. current returns the current producer/input fingerprint per file.
+// A file of another language is outside the Go evidence inventory, beneath
+// a go.mod or not: it has no verdict here, and current is never asked
+// about it.
 func CheckGoCoverage(files []string, judge func(path, function, hash string) bool, current func(path string) (string, map[string]string, error)) ([]GoCoverageCheck, error) {
 	var out []GoCoverageCheck
 	for _, path := range files {
@@ -62,13 +65,14 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 		if err != nil {
 			return out, err
 		}
-		unsupported := ""
-		if f.Spec != nil && f.Spec.Name == "go" {
-			unsupported, err = GoCoverageUnsupported(path)
-			if err != nil {
-				f.Close()
-				return out, err
-			}
+		if f.Spec == nil || f.Spec.Name != "go" {
+			f.Close()
+			continue
+		}
+		unsupported, err := GoCoverageUnsupported(path)
+		if err != nil {
+			f.Close()
+			return out, err
 		}
 		key := project.FromRoot(path)
 		snap, err := LoadSnapshot(key)

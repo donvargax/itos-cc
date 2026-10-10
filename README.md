@@ -286,7 +286,10 @@ comment-only bodies have no executable obligation. Strict Go coverage needs a
 successful built-in or listed measurement; `--coverage-report`,
 `--use-existing-coverage`, and `--coverage-command` are rejected. An active
 Go workspace or local replacement outside the inventoried module is refused;
-set `GOWORK=off` to disable workspace use.
+set `GOWORK=off` to disable workspace use. Strict Go coverage judges Go files
+alone: a TypeScript, Python or Kotlin file of the same selection is outside
+its evidence, whether or not a `go.mod` sits above it, and keeps the
+uncovered-mutant rule of its language.
 
 `--count N` judges at most N mutation sites freshly, without the cache, as
 a bounded check of committed work. It resolves the repository and HEAD once
