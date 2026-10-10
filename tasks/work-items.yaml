@@ -1065,18 +1065,6 @@ items:
     title: Counted runs work in a linked git worktree
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was counted-worktree.
-      Found while writing ID-MUT-209's steps (counted-languages): in a checkout made with git
-      worktree add, itos-cc mutation run --json --count 1 src/board.ts exits 70 with rule internal
-      and the message 'create private Git scratch directory: scratch path escapes repository: export
-      path escapes private tree: "<main>/.git/worktrees/board/itos"', telling the user to report a
-      bug. git rev-parse --git-path itos names the worktree's private directory under the main
-      repository's .git, outside the worktree's top level, and makePrivateDirs refuses any scratch
-      path outside the repository root (mutate/fresh_plan.go:536-549, called from PlanFreshContext
-      near mutate/fresh_plan.go:160). A linked worktree is an ordinary way to work on a branch, so
-      it should either be supported, with the frozen export under the worktree's own Git directory,
-      or refused as a usage or environment problem with a fix, never as an internal error.
