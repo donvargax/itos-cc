@@ -2000,6 +2000,79 @@ Feature: Mutation testing
       And only captured owned handles can be targeted for cleanup
       And the same supervisor can be used by worker and preparation commands without changing their argument, environment or output contracts
 
+  # macOS is the next part of ADR-0021, after v0.7.0 shipped counted mode
+  # Linux-only (the person's choice, 2026-10-09). Decisions for the slice:
+  # - One Unix supervisor. The Linux owned-command code (process group, output
+  #   pipes, group kill, waiter joins, the run-abort-only shared five-second
+  #   deadline and local deadlines for normal returns and mutant timeouts) is
+  #   shared by Linux and macOS; only the probe that a killed group has no live
+  #   member stays per OS. Linux keeps its /proc scan unchanged. macOS waits
+  #   for kill(-pgid, 0) to report ESRCH, since launchd reaps orphaned zombies;
+  #   if CI shows zombies keeping a group alive past the deadline, use the
+  #   kern.proc.pgrp sysctl ignoring SZOMB entries, in the standard library if
+  #   possible, and stop to propose any new module dependency. Never parse ps
+  #   output or match processes by name.
+  # - Counted mode (ID-MUT-173..186) is admitted on darwin and refused only on
+  #   Windows (#29). Its live scenarios run on macos-latest as on ubuntu-latest,
+  #   with no macOS-only weakening of an assertion: lift the Linux-only skips
+  #   and build tags, using a portable process-liveness check in the steps.
+  # - Behaviour on Windows stays exactly as it is. Intentionally detaching or
+  #   session-escaping commands stay unsupported on macOS, as on Linux.
+  # - Evidence is from CI: this machine is Linux. Red is shown by the
+  #   red-first test commit's own CI run on macos-latest (a draft pull request
+  #   from a branch holding only that commit, closed once seen), never claimed
+  #   from Linux runs or cross-compilation.
+  Rule: macOS mutation commands return only after their owned process trees are cleaned up
+
+    @wip @macos-counted-run @ID-MUT-187
+    Scenario: A macOS mutant deadline cleans up children and grandchildren
+      Given mutation commands run on macOS
+      And a test command starts ordinary owned child and grandchild processes that keep running and hold output open
+      When the mutant reaches its own timeout
+      Then all owned processes are terminated and output waiters are joined before the command returns
+      And the mutant is still counted killed by timeout
+      And cleanup is bounded and the worker copy can be restored and removed
+      And unrelated processes remain untouched
+
+    @wip @macos-counted-run @ID-MUT-188
+    Scenario: Normal macOS command completion also closes owned descendants
+      Given mutation commands run on macOS
+      And a baseline or mutant test command starts an ordinary owned descendant and then exits successfully
+      And that descendant could continue work after the parent exits, even with its output streams closed
+      When the command scope returns
+      Then the descendant has stopped and cannot continue fixture work after return
+      And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
+      And all owned process/output waiters are joined before worker copy removal
+
+    @wip @macos-counted-run @ID-MUT-189
+    Scenario: macOS parent cancellation is not a mutant deadline
+      Given mutation commands run on macOS
+      And a supervised command and its owned child are running under a parent cancellation context
+      When the parent cancels without the mutant's own deadline expiring
+      Then command admission stops and the owned tree is terminated within the shared cleanup deadline
+      And process/output waiters are joined before return
+      And the result identifies cancellation, not a killed or timed-out mutant
+      But a judgment completed before the cancellation retains its actual result
+
+    @wip @macos-counted-run @ID-MUT-190
+    Scenario: macOS supervision failures do not permit an unsafe fallback
+      Given mutation commands run on macOS
+      And a supervised command cannot establish ownership, start or finish cleanup safely
+      When its execution is attempted
+      Then the corresponding error is returned rather than a passing or killed judgment
+      And no command runs unrestricted after an ownership-establishment failure
+      And only captured owned process groups can be targeted for cleanup
+      And Linux keeps its existing supervision unchanged
+
+    @wip @macos-counted-run @ID-MUT-191
+    Scenario: Counted execution is admitted on macOS and still refused on Windows
+      Given a committed project with eligible mutation sites
+      When a count-one run judges it on macOS
+      Then it runs under owned supervision and reports its sampled judgment without a platform refusal
+      And an interrupted macOS counted run reports partial work and cleans up as on Linux
+      But on Windows counted mode still fails clearly before launching commands
+      And the help, README and docs name Linux and macOS as the supported platforms
+
   # GitHub #27, now the person's priority, is fresh bounded execution, not
   # cached mutation sample and not #26 fail-fast. Linux ownership is shared
   # groundwork; T-11 supplies committed-input/static planning and T-12 supplies
