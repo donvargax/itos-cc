@@ -3,6 +3,7 @@ package mutate
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"maps"
 	"os"
 	"path/filepath"
@@ -113,19 +114,41 @@ type Mutant struct {
 	// that decided it after the file's own tests survived the mutant: those
 	// whose coverage reaches its line.
 	Tests []string `json:"tests,omitempty"`
-	// GoEvidence is the test and configured-support input of a Go
-	// broad-scope outcome. Nil means legacy evidence was not recorded.
-	GoEvidence *GoEvidence `json:"go_evidence,omitempty"`
+	// SuiteEvidence is the test and configured-support input of a
+	// broad-scope outcome, of any language. Nil means legacy evidence was
+	// not recorded. Go outcomes recorded it under go_evidence before every
+	// language did; that key reads as this one, and is never written.
+	SuiteEvidence *SuiteEvidence `json:"suite_evidence,omitempty"`
 	// Excepted is the reason itos-cc.yaml gives for a survivor it excepts,
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string `json:"-"`
 }
 
-// GoEvidence is the complete freshness evidence of a Go broad-scope outcome.
-type GoEvidence struct {
+// SuiteEvidence is the complete freshness evidence of a broad-scope
+// outcome: the hashes of every test file beneath its source's build root
+// (SuiteTestHashes) and of the configured support files.
+type SuiteEvidence struct {
 	Tests   map[string]string `json:"tests"`
 	Support map[string]string `json:"support"`
+}
+
+// UnmarshalJSON reads a mutant, its evidence under suite_evidence or, as Go
+// outcomes recorded it before, go_evidence.
+func (m *Mutant) UnmarshalJSON(data []byte) error {
+	type plain Mutant
+	var raw struct {
+		plain
+		GoEvidence *SuiteEvidence `json:"go_evidence"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*m = Mutant(raw.plain)
+	if m.SuiteEvidence == nil {
+		m.SuiteEvidence = raw.GoEvidence
+	}
+	return nil
 }
 
 // Scopes of the tests that decide an outcome. Any other scope is the
@@ -298,7 +321,7 @@ type previousScopes map[int]map[string]decidedBy
 type decidedBy struct {
 	scope    string
 	tests    []string
-	evidence *GoEvidence
+	evidence *SuiteEvidence
 }
 
 func unitID(namespace, name string) string { return namespace + "#" + name }
@@ -402,7 +425,7 @@ func rememberedWithScopes(s *Snapshot, f *lang.File) (previous, previousScopes) 
 		outcomes, decided := map[string]string{}, map[string]decidedBy{}
 		for _, m := range u.Mutants {
 			outcomes[m.key()] = m.Outcome
-			decided[m.key()] = decidedBy{scope: m.TestScope(), tests: m.Tests, evidence: m.GoEvidence}
+			decided[m.key()] = decidedBy{scope: m.TestScope(), tests: m.Tests, evidence: m.SuiteEvidence}
 		}
 		prev[i], scopes[i] = outcomes, decided
 	}

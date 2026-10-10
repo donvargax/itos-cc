@@ -127,7 +127,7 @@ func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
 	}
 }
 
-func broadEvidenceAt(t *testing.T, path string, line int) *mutate.GoEvidence {
+func broadEvidenceAt(t *testing.T, path string, line int) *mutate.SuiteEvidence {
 	t.Helper()
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -140,10 +140,10 @@ func broadEvidenceAt(t *testing.T, path string, line int) *mutate.GoEvidence {
 	for _, unit := range snapshot.Units {
 		for _, mutant := range unit.Mutants {
 			if mutant.Line == line && mutant.Replacement == ">=" {
-				if mutant.GoEvidence == nil {
+				if mutant.SuiteEvidence == nil {
 					t.Fatalf("broad mutant at line %d has no Go freshness evidence", line)
 				}
-				return mutant.GoEvidence
+				return mutant.SuiteEvidence
 			}
 		}
 	}
@@ -201,10 +201,10 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 		t.Fatalf("except broad survivor: exit %d\n%s%s", result.code, result.stdout, result.stderr)
 	}
 	byName["Own"].Scope = ""
-	byName["Own"].GoEvidence = nil
+	byName["Own"].SuiteEvidence = nil
 	byName["Listed"].Scope = mutate.ScopeListed
 	byName["Listed"].Tests = []string{"ID-A-01"}
-	byName["Listed"].GoEvidence = nil
+	byName["Listed"].SuiteEvidence = nil
 	projectRoot := project.Root()
 	listedDefinition := filepath.Join(projectRoot, "features", "listed.feature")
 	listedFiles, err := mutate.TestHashesUnder(projectRoot, []string{listedDefinition})

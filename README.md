@@ -401,16 +401,24 @@ mutant ran with, and its fix re-runs the file in that scope: `itos-cc
 mutation run --mutate-all` with `--all-tests` or `--test-command '<line>'`
 where the scope was one of those.
 
-For Go outcomes recorded with `--all-tests` or `--test-command`, cached
-freshness also depends on every `_test.go` file under the source's nearest
-`go.mod` (including build-tagged tests, excluding nested modules) and on the
-files matched by `mutation.tests.support`. Add feature files and other custom
-command inputs to those support globs; arbitrary inputs are not inferred.
-`mutation check` and the graph compare saved hashes only and never run tests or
-the list command. A plain run retains the recorded scope and evidence when it
-reuses a broad-scope outcome; a partial run keeps stale evidence for functions
-it does not judge. Older Go broad-scope outcomes without this evidence rerun
-once.
+For outcomes recorded with `--all-tests` or `--test-command`, in every
+language, cached freshness also depends on every test file beneath the
+source's build root and on the files matched by `mutation.tests.support`. The
+build root is Go's nearest `go.mod` (every `_test.go` file, build-tagged ones
+included); TypeScript's nearest `package.json`; Python's nearest
+`pyproject.toml`, `setup.py` or `setup.cfg`; and Kotlin's Gradle build root,
+which holds `settings.gradle` or `settings.gradle.kts`, or else its Maven
+module's `pom.xml`. Test files are those project discovery calls tests, so
+`node_modules` and `.venv` are never read and `conftest.py` counts, and a
+nested build root of the same language keeps its tests to itself. The
+evidence is saved under `suite_evidence`; Go's older `go_evidence` reads the
+same. Add feature files and other custom command inputs to those support
+globs; arbitrary inputs are not inferred. `mutation check` and the graph
+compare saved hashes only and never run tests or the list command. A plain
+run retains the recorded scope and evidence when it reuses a broad-scope
+outcome; a partial run keeps stale evidence for functions it does not judge.
+Older broad-scope outcomes without this evidence, Go's or another
+language's, rerun once.
 
 An equivalent mutant changes no behaviour (a `0` set again before it is
 ever read, say), so no test can kill it, and it would fail every run. `mutation except <file>:<line>:<column> --reason '…'` excepts it in
