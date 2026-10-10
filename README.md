@@ -201,6 +201,7 @@ it nightly rather than on every change:
 
 ```bash
 itos-cc mutation run --changed                               # while working: own tests, fast
+itos-cc mutation run --changed --fail-fast                   # while fixing: stop at the first survivor (Linux and macOS)
 itos-cc mutation run --since origin/main --fail-uncovered    # a gate: the functions the branch's commits changed
 itos-cc mutation run --all-tests                             # nightly, e.g. a scheduled CI job
 itos-cc mutation run --all-tests --no-coverage               # nightly, with end-to-end tests that run a binary without coverage
@@ -317,6 +318,33 @@ within five seconds, and the partial report exits 75 with
 starts runs in a process group it owns; a command that detaches from its
 process group or session is not followed. On Windows it fails with
 `count.platform` (#29).
+
+`--fail-fast` stops a complete run at the first actionable failure it
+observes, in the order judgments finish, for a quick fix-and-retry loop: an
+unexcepted survivor, once the listed tests that reach it failed to kill it
+too; with `--fail-uncovered`, an uncovered mutant or a strict Go coverage
+finding; a stale exception; a file whose tests fail before any mutant; or a
+selection of listed tests that fails without any mutant. It reports that
+failure under the rule a run without it reports, and exits as that rule
+says. Killed, timed-out, validly excepted and listed-killed mutants never
+stop it. A failure planning or coverage already shows stops it before any
+baseline or mutant runs; listing and coverage keep their scope, so it bounds
+no total time. At the stop no further command starts, each judgment still
+running is cancelled with no outcome, never killed or timed out, and every
+process the run started is stopped and joined within one shared five-second
+deadline from the stop, before its worker copies are removed. A file whose
+every selected mutant was decided is written as usual; a file the stop cut
+short gets no snapshot and no comment, so `mutation check` still reports it.
+`--json` adds `stop` (`stopped`, and the failure's `rule` and `subject`) and
+`work`, the selected mutants `completed` (run, reused or measured
+uncovered), `cancelled`, `unattempted` and `blocked`, disjointly; each file
+gets its `state` and `work` and its `baseline` as it ran (`not-run` when it
+never did), and each mutant its `state`, with an outcome only when
+completed. Plain output says the run stopped early and why. It runs on Linux
+and macOS, where every command it starts runs in a process group it owns;
+on Windows it fails with `fail-fast.platform`, exit 3, before any command
+runs (#29). It refuses `--count`, which stays aggregate. Without it, runs
+are exactly as before.
 
 `mutation check` gives the verdict a run would give from the cached results
 alone, running no test and no coverage command and writing nothing. Run

@@ -181,21 +181,6 @@ var threeFiles = map[string]string{
 func TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants(t *testing.T) {
 	_, ff := ffRepo(t, threeFiles)
 
-	// Without --fail-fast every mutant is judged and the survivor is
-	// reported among them: a guardrail of the aggregate run.
-	all := shellRun(t, "--no-annotate", "--workers", "1")
-	logOutcome(t, &all)
-	agg := all.ff(t)
-	if all.code != 1 || agg.problem("mutation.survived") == nil || runsIn(ff) != 4 {
-		t.Errorf("without --fail-fast: exit %d, rules %v, %d runs: want 1 for the survivor, the baseline and all three mutants run",
-			all.code, agg.rules(), runsIn(ff))
-	}
-	if m := agg.file("main.go"); m == nil || len(mutantsOf(m)) != 3 || ffMutant(m, "Weak")["outcome"] != "survived" ||
-		ffMutant(m, "Compare")["outcome"] != "killed" || ffMutant(m, "Other")["outcome"] != "killed" {
-		t.Errorf("without --fail-fast, main.go = %v: want Weak's mutant survived, the other two killed", m)
-	}
-	os.Remove(filepath.Join(ff, "runs"))
-
 	// With --fail-fast, one worker judges Weak's mutant first.
 	o := shellRun(t, "--no-annotate", "--workers", "1", "--fail-fast")
 	logOutcome(t, &o)
@@ -221,6 +206,22 @@ func TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants(t *testing.T) {
 	}
 	if got := ffMutant(m, "Weak"); got["outcome"] != "survived" || got["state"] != "completed" {
 		t.Errorf("Weak's mutant = %v: want it completed, survived", got)
+	}
+	os.Remove(filepath.Join(ff, "runs"))
+
+	// Without --fail-fast every mutant is judged and the survivor is
+	// reported among them: a guardrail of the aggregate run, after the
+	// fail-fast one, which wrote nothing of the file it cut short.
+	all := shellRun(t, "--no-annotate", "--workers", "1")
+	logOutcome(t, &all)
+	agg := all.ff(t)
+	if all.code != 1 || agg.problem("mutation.survived") == nil || runsIn(ff) != 4 {
+		t.Errorf("without --fail-fast: exit %d, rules %v, %d runs: want 1 for the survivor, the baseline and all three mutants run",
+			all.code, agg.rules(), runsIn(ff))
+	}
+	if m := agg.file("main.go"); m == nil || len(mutantsOf(m)) != 3 || ffMutant(m, "Weak")["outcome"] != "survived" ||
+		ffMutant(m, "Compare")["outcome"] != "killed" || ffMutant(m, "Other")["outcome"] != "killed" {
+		t.Errorf("without --fail-fast, main.go = %v: want Weak's mutant survived, the other two killed", m)
 	}
 }
 
@@ -674,13 +675,6 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 		})
 		writeFile(t, filepath.Join(dir, "itos-cc.yaml"), "mutation:\n  exceptions:\n"+ffException(t, dir, "Compare", "0000000000000000"))
 
-		all := shellRun(t, "--no-annotate", "--workers", "1")
-		logOutcome(t, &all)
-		if all.code != 1 || all.ff(t).problem("mutation.exception-stale") == nil {
-			t.Errorf("without --fail-fast: exit %d, want 1 with mutation.exception-stale", all.code)
-		}
-		os.Remove(filepath.Join(ff, "runs"))
-
 		o := shellRun(t, "--no-annotate", "--workers", "1", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)
@@ -697,6 +691,13 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 		if got := ffMutant(f.file("main.go"), "Compare"); !undecided(got, "unattempted") {
 			t.Errorf("Compare's mutant = %v: want it unattempted", got)
 		}
+
+		// The run without --fail-fast, after it, reports the same rule.
+		all := shellRun(t, "--no-annotate", "--workers", "1")
+		logOutcome(t, &all)
+		if all.code != 1 || all.ff(t).problem("mutation.exception-stale") == nil || runsIn(ff) == 0 {
+			t.Errorf("without --fail-fast: exit %d, %d runs: want 1 with mutation.exception-stale, its mutant run", all.code, runsIn(ff))
+		}
 	})
 
 	for _, c := range []struct {
@@ -708,16 +709,16 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 	} {
 		t.Run(c.name+" under --fail-uncovered", func(t *testing.T) {
 			moduleRepo(t, compareTwins(c.extra))
+			o := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", "--fail-fast")
+			logOutcome(t, &o)
+			f := o.ff(t)
+			// The run without --fail-fast, after it, judges Compare's mutant.
 			all := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered")
 			logOutcome(t, &all)
 			agg := all.ff(t)
 			if all.code != 1 || trialLines(all.stderr) != 1 {
 				t.Errorf("without --fail-fast: exit %d, %d trials: want 1, with Compare's mutant run", all.code, trialLines(all.stderr))
 			}
-
-			o := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", "--fail-fast")
-			logOutcome(t, &o)
-			f := o.ff(t)
 			// It fails with the same rule the aggregate run reports.
 			if o.code != 1 || !f.stopped() || !slices.Contains(c.rules, f.stopRule()) || !slices.Contains(agg.rules(), f.stopRule()) ||
 				f.problem(f.stopRule()) == nil {

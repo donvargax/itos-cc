@@ -12,6 +12,8 @@ type cleanupBudget struct{}
 
 func ownedOutcomePrecedence() bool { return false }
 
+func (*cleanupBudget) begin() {}
+
 // Platforms other than Linux and macOS retain their existing command
 // lifecycle. Windows Job ownership is a separate item (#29).
 func runOwnedCommand(_ context.Context, cmd *exec.Cmd, _ *bytes.Buffer, _ *cleanupBudget) error {

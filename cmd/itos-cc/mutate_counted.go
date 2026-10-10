@@ -19,8 +19,9 @@ import (
 	"github.com/donvargax/itos-cc/mutate"
 )
 
-// countedPlatform is the platform counted mode checks: it runs on Linux and
-// macOS, which own every process tree a trial starts (Windows is #29).
+// countedPlatform is the platform counted mode and --fail-fast check: both
+// run on Linux and macOS, which own every process tree a trial starts, so
+// an interruption or a stop can end it (Windows is #29).
 var countedPlatform = runtime.GOOS
 
 // countedBounds says what --count bounds, in the report and in plain output.
@@ -127,6 +128,7 @@ func runCountedMutate(in *invocation) (any, error) {
 		{"coverage-report", "--count measures coverage freshly from the committed inputs"},
 		{"test-command", "--count runs each mutant's own tests, the per-language default"},
 		{"mutate-all", "--count runs every selected site fresh already"},
+		{"fail-fast", "--count judges every selected site and stays aggregate; --fail-fast stops complete runs"},
 	} {
 		if in.set(flag.name) {
 			return nil, flagConflict("--"+flag.name, flag.why)

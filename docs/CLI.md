@@ -91,6 +91,7 @@ output of the commands it runs passes as it is.
 | `count.preparation-failed`   | 1, 3 (a tool missing) | mutation run --count | `stage`                             |
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
 | `count.interrupted`        | 75   | mutation run --count | none                                                  |
+| `fail-fast.platform`         | 3    | mutation run --fail-fast | `platform`                                        |
 | `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |
@@ -146,6 +147,23 @@ runs in a process group it owns, stopped and joined before the run returns.
 A command that detaches from its process group or session is not followed.
 On Windows it fails with `count.platform`, exit 3, before launching any
 command; native Windows support is #29.
+
+`mutation run --fail-fast` stops a complete run at the first actionable final
+judgment it observes, and reports it under the rule and exit code a run
+without it would. Its `--json` object stays one object and adds keys only:
+`"stop": {"stopped", "rule", "subject"}`, where `subject` holds the
+failure's problem subject keys; `"work": {"completed", "cancelled",
+"unattempted", "blocked"}`, disjoint counts of the selected mutants; and in
+each file `"state"` (`completed`, `stopped`, `unattempted` or `blocked`),
+`"work"`, `"baseline"` as it ran, `not-run` when it never did, and every
+mutant of its judged functions with its `"state"` (`completed`,
+`cancelled`, `unattempted` or `blocked`), `"outcome"` and `"scope"` only
+when completed. A file the stop cut short gets no snapshot and no summary
+comment. Like `--count`, it runs on Linux and macOS, where each command it
+starts runs in an owned process group, and every one is stopped and joined
+within one shared five-second deadline from the stop; on Windows it fails
+with `fail-fast.platform`, exit 3, before launching any command (#29).
+`--fail-fast` with `--count` is `flags.conflict`.
 
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |

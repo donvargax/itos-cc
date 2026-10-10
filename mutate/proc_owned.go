@@ -41,6 +41,11 @@ func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupB
 	return &cleanupBudget{}
 }
 
+// begin starts the shared deadline now, if nothing started it yet: a
+// fail-fast stop starts it when it is published, so every command it
+// cancels is killed and joined within five seconds of the stop.
+func (b *cleanupBudget) begin() { b.until() }
+
 func (b *cleanupBudget) until() time.Time {
 	b.mu.Lock()
 	defer b.mu.Unlock()

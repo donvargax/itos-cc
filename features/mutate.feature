@@ -2352,7 +2352,7 @@ Feature: Mutation testing
   #   focused case, no runs over this repository; broader matrices in CI.
   Rule: mutation run --fail-fast stops at the first actionable failure
 
-    @wip @fail-fast-run @ID-MUT-192
+    @fail-fast-run @ID-MUT-192
     Scenario: The first actionable survivor stops admission of later mutants
       Given a run with several selected mutants and one worker
       And the first judged mutant survives its own tests and has no applicable listed tests or valid exception
@@ -2361,7 +2361,7 @@ Feature: Mutation testing
       And no later mutant is started, and each is reported unattempted with no outcome
       But without --fail-fast every mutant is judged and the survivor is reported among them
 
-    @wip @fail-fast-run @ID-MUT-193
+    @fail-fast-run @ID-MUT-193
     Scenario: In-flight judgments are cancelled and their owned processes cleaned up
       Given two workers, one judging a mutant whose test command keeps owned descendants running
       When the other worker's mutant becomes an actionable survivor
@@ -2370,14 +2370,14 @@ Feature: Mutation testing
       And worker copies are removed only after that join
       And unrelated processes remain untouched
 
-    @wip @fail-fast-run @ID-MUT-194
+    @fail-fast-run @ID-MUT-194
     Scenario: Non-actionable judgments never stop the run
       Given selected mutants that are killed, time out, are validly excepted survivors, or survive their own tests but are killed by applicable listed tests
       When mutation run --fail-fast judges them
       Then every selected mutant is judged and the run succeeds
       And a survivor waits for its applicable listed tests before it can stop the run
 
-    @wip @fail-fast-run @ID-MUT-195
+    @fail-fast-run @ID-MUT-195
     Scenario: Known policy failures stop before avoidable mutant work
       Given a selection with a stale exception, or with an uncovered mutant or a strict Go coverage finding under --fail-uncovered
       When mutation run --fail-fast runs it
@@ -2385,7 +2385,7 @@ Feature: Mutation testing
       And no mutant trial starts when planning already knew the failure
       But an uncovered mutant without --fail-uncovered does not stop the run
 
-    @wip @fail-fast-run @ID-MUT-196
+    @fail-fast-run @ID-MUT-196
     Scenario: A failing baseline stops the run without inventing outcomes
       Given a selected file whose own baseline fails, or a survivor whose listed selection baseline fails without any mutant
       When mutation run --fail-fast reaches it
@@ -2393,7 +2393,7 @@ Feature: Mutation testing
       And the affected mutants have no invented killed, timed-out or survived outcome
       And no stage reports a baseline as passed that never ran
 
-    @wip @fail-fast-run @ID-MUT-197
+    @fail-fast-run @ID-MUT-197
     Scenario: Output distinguishes completed work from cancelled and unattempted work
       Given a fail-fast run that stops with completed, cancelled, unattempted and blocked work
       When its report is emitted as JSON and as text
@@ -2402,7 +2402,7 @@ Feature: Mutation testing
       And plain output says the run stopped early and why
       But a run without --fail-fast keeps its existing output exactly
 
-    @wip @fail-fast-run @ID-MUT-198
+    @fail-fast-run @ID-MUT-198
     Scenario: A file the stop cut short publishes no partial proof
       Given a fail-fast run that completes one file and stops inside another
       When it returns
@@ -2411,7 +2411,7 @@ Feature: Mutation testing
       And mutation check still reports the stopped file's missing or stale results without running tests
       And a later run reuses only outcomes whose inputs are still fresh
 
-    @wip @fail-fast-run @ID-MUT-199
+    @fail-fast-run @ID-MUT-199
     Scenario: Fail-fast admission boundaries
       Given the complete and counted mutation run commands
       When --fail-fast is combined with --count, or used on Windows

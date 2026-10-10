@@ -132,6 +132,37 @@ stopped and joined within one shared five-second deadline before its
 private copies are removed, a second signal included, and the partial
 report, completion "interrupted", keeps the judgments completed before it.
 
+--fail-fast stops a complete run at the first actionable failure it
+observes, in the order judgments finish, for a quick fix-and-retry loop:
+an unexcepted survivor, once the listed tests that reach it failed to kill
+it too; with --fail-uncovered, an uncovered mutant or a strict Go coverage
+finding; an exception that no longer holds; a file whose tests fail before
+any mutant; or a selection of listed tests that fails without any mutant.
+It reports that failure under the rule a run without it reports, and exits
+as that rule says. Killed, timed-out, validly excepted and listed-killed
+mutants never stop it. A failure planning or coverage already shows, such
+as a stale exception or an uncovered mutant with --fail-uncovered, stops it
+before any baseline or mutant runs; listing and coverage keep their scope,
+so it bounds no total time. At the stop no further command starts, each
+judgment still running is cancelled, with no outcome (never killed or timed
+out), and every process the run started is stopped and joined within one
+shared five-second deadline from the stop, before its worker copies are
+removed. A file whose every selected mutant was decided is written as
+without --fail-fast; a file the stop cut short gets no snapshot and no
+summary comment, so mutation check still reports it, and a later run
+reuses only what was written. With --json, "stop" says whether the run
+stopped early and at which rule and subject, "work" counts the selected
+mutants completed (run, reused or measured uncovered), cancelled,
+unattempted and blocked, disjointly, and each file has its "state" and
+"work", its "baseline" as it ran ("not-run" when it never did), and every
+mutant of its functions judged with its "state", an outcome only when
+completed. --fail-fast runs on Linux and macOS, where every command it
+starts runs in a process group it owns (a command that detaches from its
+group or session is not followed); on Windows it is fail-fast.platform,
+before any command runs (#29). It refuses --count, whose runs stay
+aggregate. Without it, scheduling, output, snapshots and comments are as
+they always were.
+
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor. For Go it also requires fresh measured executable coverage for
 every judged function, including functions with no mutation sites, and fails
@@ -205,6 +236,7 @@ judged and no snapshot is written. Listed tests are not run with
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks"),
+		sw("fail-fast", "stop at the first actionable failure, cancelling the work still running; Linux and macOS"),
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
@@ -216,7 +248,14 @@ judged and no snapshot is written. Listed tests are not run with
    executed its line "coverage": ["in-process", "integration"], either or
    both, and with scope "listed" "tests": ["<test ID>"]}], and with
    --since
-   "judged": ["namespace#name"]}]; with --count, instead of "files":
+   "judged": ["namespace#name"], and with --fail-fast "state":
+   "completed"|"stopped"|"unattempted"|"blocked", "work", "baseline" also
+   "not-run", every mutant "state":
+   "completed"|"cancelled"|"unattempted"|"blocked", and "outcome" and
+   "scope" for completed ones only}]; with --fail-fast, "stop":
+   {"stopped", "rule", "subject"}, the problem's rule and subject keys, and
+   "work": {"completed", "cancelled", "unattempted", "blocked"}; with
+   --count, instead of "files":
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
    "seed", "algorithm", "commit", "since", "since_base",
    "assurance": "sampled"|"not-applicable",
@@ -247,8 +286,9 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go coverage with raw coverage flags: flag",
-		"flags.conflict            --seed without --count, or --count with a flag it refuses: flag",
+		"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
+		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
 		"count.no-git              --count outside a Git repository, or before its first commit",
 		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
 		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
@@ -259,7 +299,7 @@ judged and no snapshot is written. Listed tests are not run with
 		{0, "every mutant that ran was killed"},
 		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
-		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on Windows, or with a required tool missing"},
+		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		{75, "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 	},
 	examples: []string{
@@ -267,6 +307,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"itos-cc mutation run --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
 		"itos-cc mutation run --all-tests --json                    # nightly",
 		"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux and macOS)",
+		"itos-cc mutation run --changed --fail-fast                 # stop at the first survivor while fixing (Linux and macOS)",
 	},
 	run: runMutate,
 }
@@ -308,8 +349,39 @@ type mutateFile struct {
 	Judged []string `json:"judged,omitzero"`
 	// Mutants is every mutant of the functions judged, in site order;
 	// empty, never null, when the baseline or a selection of listed tests
-	// failed.
+	// failed, except with --fail-fast, which lists them with their state.
 	Mutants []mutateMutant `json:"mutants"`
+	// State and Work are there with --fail-fast only: whether the run
+	// completed the file, stopped inside it, never started its work, or
+	// found it blocked by a failing baseline or selection, and how many of
+	// its mutants ended in each state.
+	State string      `json:"state,omitempty"`
+	Work  *mutateWork `json:"work,omitempty"`
+}
+
+// mutateWork counts selected mutants by their fail-fast state, disjointly:
+// completed (run, reused or measured uncovered, with an outcome),
+// cancelled, unattempted and blocked (with none).
+type mutateWork struct {
+	Completed   int `json:"completed"`
+	Cancelled   int `json:"cancelled"`
+	Unattempted int `json:"unattempted"`
+	Blocked     int `json:"blocked"`
+}
+
+func (w *mutateWork) add(o *mutateWork) {
+	w.Completed += o.Completed
+	w.Cancelled += o.Cancelled
+	w.Unattempted += o.Unattempted
+	w.Blocked += o.Blocked
+}
+
+// mutateStop is, with --fail-fast, whether the run stopped early, and at
+// which failure: the rule and subject of its problem.
+type mutateStop struct {
+	Stopped bool           `json:"stopped"`
+	Rule    string         `json:"rule,omitempty"`
+	Subject map[string]any `json:"subject,omitempty"`
 }
 
 // mutateMutant is a site, less its file, and how it was decided: a
@@ -320,11 +392,13 @@ type mutateMutant struct {
 	Function    string `json:"function"`
 	Original    string `json:"original"`
 	Replacement string `json:"replacement"`
-	Outcome     string `json:"outcome"`
-	Reused      bool   `json:"reused"`
+	// Outcome and Scope are there for every mutant but one a --fail-fast
+	// stop left undecided.
+	Outcome string `json:"outcome,omitempty"`
+	Reused  bool   `json:"reused"`
 	// Scope is the scope of the tests that decided the outcome: "own",
 	// "all-tests", or the --test-command line.
-	Scope string `json:"scope"`
+	Scope string `json:"scope,omitempty"`
 	// Excepted is the reason itos-cc.yaml gives, on an excepted survivor
 	// only; its outcome stays survived.
 	Excepted string `json:"excepted,omitempty"`
@@ -335,10 +409,16 @@ type mutateMutant struct {
 	// Tests is, with scope "listed", the IDs of the listed tests that
 	// decided the outcome.
 	Tests []string `json:"tests,omitempty"`
+	// State is there with --fail-fast only: "completed", "cancelled",
+	// "unattempted" or "blocked".
+	State string `json:"state,omitempty"`
 }
 
 type mutateResult struct {
 	Files []mutateFile `json:"files"`
+	// Stop and Work are there with --fail-fast only.
+	Stop *mutateStop `json:"stop,omitempty"`
+	Work *mutateWork `json:"work,omitempty"`
 }
 
 type mutateSite struct {
@@ -410,6 +490,15 @@ func runMutate(in *invocation) (any, error) {
 	result := mutateResult{Files: []mutateFile{}}
 	if in.set("fail-uncovered") && in.set("no-coverage") {
 		return result, flagConflict("--no-coverage", "--no-coverage conflicts with --fail-uncovered, which requires measured Go executable coverage")
+	}
+	failFast := in.set("fail-fast")
+	if failFast {
+		if countedPlatform != "linux" && countedPlatform != "darwin" {
+			return result, fail(kindMissing, "fail-fast.platform",
+				fmt.Sprintf("mutation run --fail-fast supports Linux and macOS, where every command's process tree is owned and a stop can end it; this is %s", countedPlatform),
+				"Run it on Linux or macOS, or run mutation run without --fail-fast; native Windows support is #29.").with("platform", countedPlatform)
+		}
+		result.Stop, result.Work = &mutateStop{}, &mutateWork{}
 	}
 	cfg, err := loadConfig()
 	if err != nil {
@@ -577,7 +666,20 @@ func runMutate(in *invocation) (any, error) {
 	// Uncovered mutants never run, so without it a function no test
 	// executes passes.
 	failUncovered := in.set("fail-uncovered")
-	results, err := mutate.Run(sources, opt)
+	var results []mutate.FileResult
+	var stop *mutate.Stop
+	if failFast {
+		ff := mutate.FailFast{FailUncovered: failUncovered}
+		if len(elsewhere) > 0 {
+			// Known before anything runs: an entry of a file the run does
+			// not select that no longer holds.
+			e := elsewhere[0]
+			ff.Known = &mutate.Stop{Rule: "mutation.exception-stale", File: project.Rel(project.AtRoot(e.File)), Exception: &e}
+		}
+		results, stop, err = mutate.RunFailFast(sources, opt, ff)
+	} else {
+		results, err = mutate.Run(sources, opt)
+	}
 	if err != nil {
 		return result, err
 	}
@@ -586,6 +688,46 @@ func runMutate(in *invocation) (any, error) {
 	}
 	reported := map[string]bool{}
 	for _, r := range results {
+		// With --fail-fast every file has its state, its work and the
+		// baseline it actually ran, and a file not written still lists its
+		// mutants, each with its state.
+		baseline := func(aggregate string) string { return aggregate }
+		var work *mutateWork
+		state := ""
+		if failFast {
+			work = workOf(r.Mutants)
+			result.Work.add(work)
+			state = failFastState(r, work)
+			baseline = func(string) string {
+				if r.Baseline == "" {
+					return "not-run"
+				}
+				return r.Baseline
+			}
+		}
+		if failFast && (r.BaselineFailed || len(r.FailedSelections) > 0) {
+			f := mutateFile{File: r.Rel, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants), State: state, Work: work}
+			countMutants(&f, r.Mutants)
+			result.Files = append(result.Files, f)
+			if !in.json {
+				fmt.Printf("%s: blocked, snapshot not updated: its tests, or the listed tests its mutants run, fail without any mutant (%d completed, %d cancelled, %d unattempted, %d blocked)\n",
+					r.Rel, work.Completed, work.Cancelled, work.Unattempted, work.Blocked)
+				if r.BaselineFailed {
+					fmt.Println(tail(r.BaselineOutput, 20))
+				}
+			}
+			if r.BaselineFailed {
+				in.report(fail(kindNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
+					"Make its tests pass, then run mutation run again.").with("file", r.Rel))
+			}
+			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
+			for _, m := range r.Mutants {
+				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
+					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, failUncovered)
+			}
+			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+			continue
+		}
 		if len(r.FailedSelections) > 0 && !r.BaselineFailed {
 			// A mutant the file holds needed listed tests that fail
 			// without it: it is not decided, so neither is the file.
@@ -607,12 +749,8 @@ func runMutate(in *invocation) (any, error) {
 			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 			continue
 		}
-		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: "passed", Judged: r.Judged, Mutants: []mutateMutant{}}
-		for _, m := range r.Mutants {
-			f.Mutants = append(f.Mutants, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-				Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
-				Coverage: m.Coverage, Tests: m.Tests})
-		}
+		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: baseline("passed"), Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
+			State: state, Work: work}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.
 		judged := map[string]bool{}
@@ -644,6 +782,10 @@ func runMutate(in *invocation) (any, error) {
 			if r.Judged != nil {
 				line += fmt.Sprintf(" (judged %d of %d functions)", len(r.Judged), r.Functions)
 			}
+			if r.Incomplete {
+				line = fmt.Sprintf("%s: stopped early, snapshot not updated: %s (ran %d, reused %d); %d cancelled, %d unattempted",
+					r.Rel, counts, f.Ran, f.Reused, work.Cancelled, work.Unattempted)
+			}
 			fmt.Println(line)
 		}
 		for _, u := range units {
@@ -652,7 +794,110 @@ func runMutate(in *invocation) (any, error) {
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
 	reportElsewhere(in, elsewhere)
+	if stop != nil {
+		result.Stop = &mutateStop{Stopped: true, Rule: stop.Rule, Subject: stopSubject(stop)}
+		if !in.json {
+			w := result.Work
+			fmt.Printf("stopped early at the first actionable failure, %s %s: %d completed, %d cancelled, %d unattempted, %d blocked; a file it cut short keeps its snapshot and source as they were\n",
+				stop.Rule, describeStop(stop), w.Completed, w.Cancelled, w.Unattempted, w.Blocked)
+		}
+	}
 	return result, nil
+}
+
+// jsonMutants is the --json form of mutants.
+func jsonMutants(mutants []mutate.MutantResult) []mutateMutant {
+	out := []mutateMutant{}
+	for _, m := range mutants {
+		out = append(out, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
+			Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
+			Coverage: m.Coverage, Tests: m.Tests, State: m.State})
+	}
+	return out
+}
+
+// countMutants counts the outcomes of mutants in f, as a file's units count
+// them: a timed-out mutant is killed, and an excepted survivor excepted.
+func countMutants(f *mutateFile, mutants []mutate.MutantResult) {
+	for _, m := range mutants {
+		switch {
+		case m.Outcome == mutate.Killed || m.Outcome == mutate.Timeout:
+			f.Killed++
+		case m.Outcome == mutate.Survived && m.Excepted != "":
+			f.Excepted++
+		case m.Outcome == mutate.Survived:
+			f.Survived++
+		case m.Outcome == mutate.Uncovered:
+			f.Uncovered++
+		}
+	}
+}
+
+// workOf counts mutants by their fail-fast state.
+func workOf(mutants []mutate.MutantResult) *mutateWork {
+	w := &mutateWork{}
+	for _, m := range mutants {
+		switch m.State {
+		case mutate.StateCompleted:
+			w.Completed++
+		case mutate.StateCancelled:
+			w.Cancelled++
+		case mutate.StateUnattempted:
+			w.Unattempted++
+		case mutate.StateBlocked:
+			w.Blocked++
+		}
+	}
+	return w
+}
+
+// failFastState is a file's state in a --fail-fast run: "blocked" when its
+// baseline or a selection of listed tests it needed failed, "completed"
+// when every selected mutant has its outcome, else "stopped" when the stop
+// came once its work began, and "unattempted" when it came before.
+func failFastState(r mutate.FileResult, w *mutateWork) string {
+	switch {
+	case r.BaselineFailed || len(r.FailedSelections) > 0:
+		return "blocked"
+	case w.Cancelled == 0 && w.Unattempted == 0:
+		return "completed"
+	case w.Cancelled > 0 || r.Ran > 0:
+		return "stopped"
+	}
+	return "unattempted"
+}
+
+// stopSubject is the subject of the problem the stop's failure reports.
+func stopSubject(s *mutate.Stop) map[string]any {
+	switch {
+	case s.Site != nil:
+		return map[string]any{"file": s.File, "line": s.Site.Line, "column": s.Site.Column, "function": s.Function,
+			"original": s.Site.Original, "replacement": s.Site.Replacement}
+	case s.Exception != nil:
+		return staleSubject(s.File, *s.Exception)
+	case s.Selection != nil:
+		return map[string]any{"ids": s.Selection.IDs, "command": s.Selection.Command, "exit_code": s.Selection.ExitCode}
+	case s.Function != "":
+		return map[string]any{"file": s.File, "function": s.Function, "line": s.Line}
+	}
+	return map[string]any{"file": s.File}
+}
+
+// describeStop names the stop's failure in plain output.
+func describeStop(s *mutate.Stop) string {
+	switch {
+	case s.Site != nil:
+		return fmt.Sprintf("%s:%d:%d %s → %s in %s", s.File, s.Site.Line, s.Site.Column, quote(s.Site.Original), quote(s.Site.Replacement), s.Function)
+	case s.Exception != nil && s.Exception.Line != 0:
+		return fmt.Sprintf("%s:%d:%d in %s (%s)", s.File, s.Exception.Line, s.Exception.Column, s.Exception.Function, s.Exception.Why)
+	case s.Exception != nil:
+		return fmt.Sprintf("%s in %s (%s)", s.File, s.Exception.Function, s.Exception.Why)
+	case s.Selection != nil:
+		return "of the listed tests " + strings.Join(s.Selection.IDs, " ")
+	case s.Function != "":
+		return fmt.Sprintf("%s:%d in %s", s.File, s.Line, s.Function)
+	}
+	return "in " + s.File
 }
 
 // exceptionsElsewhere is each exception of itos-cc.yaml for a file that is
@@ -1068,16 +1313,23 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 				at, config.File, change, newFile)
 			fix = fmt.Sprintf("Change the entry's file in %s from %s to %s, where its function is now.", config.File, e.File, e.NewFile)
 		}
-		p := fail(kindNo, "mutation.exception-stale", message, fix).
-			with("file", rel).with("function", e.Function).with("column", e.Column).
-			with("original", e.Original).with("replacement", e.Replacement).with("why", e.Why)
-		if e.Line != 0 {
-			p.with("line", e.Line)
-		}
-		if newFile != "" {
-			p.with("new_file", newFile)
-		}
+		p := fail(kindNo, "mutation.exception-stale", message, fix)
+		p.subject = staleSubject(rel, e)
 		p.shown = true
 		in.report(p)
 	}
+}
+
+// staleSubject is the subject of the mutation.exception-stale problem of e,
+// an exception of the file rel.
+func staleSubject(rel string, e mutate.StaleException) map[string]any {
+	subject := map[string]any{"file": rel, "function": e.Function, "column": e.Column,
+		"original": e.Original, "replacement": e.Replacement, "why": e.Why}
+	if e.Line != 0 {
+		subject["line"] = e.Line
+	}
+	if e.Why == mutate.ExceptionMoved {
+		subject["new_file"] = project.Rel(project.AtRoot(e.NewFile))
+	}
+	return subject
 }

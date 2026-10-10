@@ -163,7 +163,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		}
 		drawn[c.state] = append(drawn[c.state], c)
 	}
-	if err := execute(order, opt); err != nil {
+	if _, err := execute(order, opt, nil); err != nil {
 		return result, err
 	}
 	for _, s := range states {

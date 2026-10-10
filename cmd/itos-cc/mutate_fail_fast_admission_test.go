@@ -70,10 +70,14 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 	// its platforms.
 	help := cli(t, "mutation", "run", "--help").stdout
 	for name, text := range map[string]string{"mutation run --help": help, "README.md": string(readme), "docs/CLI.md": string(docs)} {
-		for _, want := range []string{"--fail-fast", "fail-fast.platform", "Linux and macOS", `"stop"`, "unattempted"} {
+		for _, want := range []string{"--fail-fast", "fail-fast.platform", "Linux and macOS", "unattempted"} {
 			if !strings.Contains(text, want) {
 				t.Errorf("%s does not describe %s", name, want)
 			}
+		}
+		// The stop object, its key quoted as JSON or as code.
+		if !strings.Contains(text, `"stop"`) && !strings.Contains(text, "`stop`") {
+			t.Errorf("%s does not describe the stop object", name)
 		}
 	}
 }
