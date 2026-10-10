@@ -38,7 +38,7 @@ func TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale(t *testing.T) {
 				t.Fatalf("initial end-to-end outcome: found=%v outcome=%v scope=%v, want killed", found, initial["outcome"], initial["scope"])
 			}
 			snapshot, err := os.ReadFile(".metrics/mutate/main.go.json")
-			if err != nil || !strings.Contains(string(snapshot), `"go_evidence"`) {
+			if err != nil || !strings.Contains(string(snapshot), `"go_evidence"`) && !strings.Contains(string(snapshot), `"suite_evidence"`) {
 				t.Fatalf("initial broad snapshot lacks evidence: %v\n%s", err, snapshot)
 			}
 			path := "e2e/e2e_test.go"
@@ -353,6 +353,7 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 		unit := rawUnit.(map[string]any)
 		for _, rawMutant := range unit["mutants"].([]any) {
 			delete(rawMutant.(map[string]any), "go_evidence")
+			delete(rawMutant.(map[string]any), "suite_evidence")
 		}
 	}
 	data, err = json.Marshal(legacy)
