@@ -1065,3 +1065,17 @@ items:
       the system python3 (coverage/run.go pythonFor, mutate/fresh_baseline.go freshPythonCommand),
       and only Go commands are forced offline. Decisions in the comments above ID-MUT-209.
     refs: ["#27"]
+  - id: pytest-cache-in-tree
+    title: Python coverage in the project tree writes .pytest_cache and plugin files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by python-fresh-bytecode's agent: complete coverage runs python -m coverage run -m
+      pytest -q in the project's own tree without -p no:cacheprovider, so pytest writes
+      .pytest_cache there and installed plugins (pytest-benchmark writes .benchmarks/) may write
+      their own files. Bytecode is fixed (PYTHONDONTWRITEBYTECODE=1); decide whether coverage should
+      also pass -p no:cacheprovider, and whether plugin autoload should be left to the project.
+    refs: ["#14"]
