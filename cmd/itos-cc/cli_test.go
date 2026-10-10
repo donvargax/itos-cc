@@ -151,8 +151,8 @@ func TestDispatch(t *testing.T) {
 		{[]string{"--json", "mutation", "rn"}, 2, `"Did you mean 'mutation run'?`},
 		{[]string{"--json", "mutation", "--changed", "run"}, 2, `"flags.unknown"`},
 	} {
-		var code int
-		out := stdout(t, func() { code = run(c.args) })
+		o := itosCc(t, c.args...)
+		code, out := o.code, o.stdout
 		if code != c.code || !strings.Contains(out, c.want) {
 			t.Errorf("itos-cc %q: exit %d, want %d; stdout %q, want it to contain %q", c.args, code, c.code, out, c.want)
 		}

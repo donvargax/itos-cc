@@ -131,11 +131,7 @@ type outcome struct {
 // coverage says and no source file annotated, and returns what it printed.
 func mutateRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	var o outcome
-	o.stdout, o.stderr = captured(t, func() {
-		o.code = run(append([]string{"mutation", "run", "--no-coverage", "--no-annotate", "--workers", "1"}, args...))
-	})
-	return o
+	return itosCc(t, append([]string{"mutation", "run", "--no-coverage", "--no-annotate", "--workers", "1"}, args...)...)
 }
 
 // captured runs fn and returns what it printed on stdout and on stderr.

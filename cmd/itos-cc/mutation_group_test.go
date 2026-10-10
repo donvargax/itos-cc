@@ -16,9 +16,7 @@ import (
 // cli runs itos-cc with args and returns what it printed.
 func cli(t *testing.T, args ...string) outcome {
 	t.Helper()
-	var o outcome
-	o.stdout, o.stderr = captured(t, func() { o.code = run(args) })
-	return o
+	return itosCc(t, args...)
 }
 
 // inEmptyDir makes an empty temporary directory the working directory, so a

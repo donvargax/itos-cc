@@ -53,9 +53,9 @@ func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T)
 
 	// On Windows counted mode still fails clearly before launching commands,
 	// shown here with the platform pretended, as on Linux.
-	countedPlatform = "windows"
+	useEnv(t, platformEnv, "windows")
 	o = countedRun(t, "--count", "1")
-	countedPlatform = runtime.GOOS
+	useEnv(t, platformEnv, "")
 	if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil || p["platform"] != "windows" ||
 		strings.Contains(o.stderr, "itos-cc: coverage") || strings.Contains(o.stderr, "itos-cc: baseline") {
 		t.Errorf("counted mode on Windows: exit %d, want count.platform before launching commands\n%s%s", o.code, o.stdout, o.stderr)

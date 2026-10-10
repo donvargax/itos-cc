@@ -49,11 +49,10 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 
 	// On Windows it fails with fail-fast.platform before launching commands.
 	if runtime.GOOS != "windows" {
-		countedPlatform = "windows"
-		defer func() { countedPlatform = runtime.GOOS }()
+		useEnv(t, platformEnv, "windows")
 	}
 	o = cli(t, "mutation", "run", "--json", "--fail-fast")
-	countedPlatform = runtime.GOOS
+	useEnv(t, platformEnv, "")
 	if p := problemOf(o, "fail-fast.platform"); o.code != 3 || p == nil || p["platform"] != "windows" {
 		t.Errorf("--fail-fast on Windows: exit %d, want 3 with fail-fast.platform for windows\n%s%s", o.code, o.stdout, o.stderr)
 	}

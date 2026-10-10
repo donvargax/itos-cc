@@ -220,9 +220,9 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 	}
 
 	// The same refusal on Linux and macOS, with the platform pretended away.
-	countedPlatform = "windows"
+	useEnv(t, platformEnv, "windows")
 	o = countedRun(t, "--count", "1")
-	countedPlatform = runtime.GOOS
+	useEnv(t, platformEnv, "")
 	if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil || strings.Contains(o.stderr, "itos-cc: coverage") {
 		t.Errorf("counted mode on an unsupported platform: exit %d, want count.platform before launching commands\n%s%s", o.code, o.stdout, o.stderr)
 	}

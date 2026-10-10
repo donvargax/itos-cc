@@ -21,11 +21,7 @@ const clearLine, clearColumn = 11, 11
 // source file annotated, and returns what it printed.
 func mutateCovered(t *testing.T, args ...string) outcome {
 	t.Helper()
-	var o outcome
-	o.stdout, o.stderr = captured(t, func() {
-		o.code = run(append([]string{"mutation", "run", "--no-annotate", "--workers", "1"}, args...))
-	})
-	return o
+	return itosCc(t, append([]string{"mutation", "run", "--no-annotate", "--workers", "1"}, args...)...)
 }
 
 // uncoveredLine is how plain output lists an uncovered mutant.
