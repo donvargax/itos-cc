@@ -966,3 +966,17 @@ items:
       failures reported, never downgraded; a dedicated problem rule printed beside the partial
       report would keep both facts.
     refs: ["#26"]
+  - id: fail-fast-blocked-counts
+    title: A blocked fail-fast file reports the mutants it ran and reused
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With --fail-fast, a file whose mutant a failing selection of listed tests blocked reports
+      "ran": 0 and "reused": 0 in --json and plain output, although the run ran and reused mutants
+      of it before the stop, and since fail-fast-partial its snapshot keeps them. Its completed work
+      counts them, so only these two keys disagree; found while building fail-fast-partial (#26,
+      ADR-0022).
+    refs: ["#26"]
