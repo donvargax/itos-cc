@@ -880,3 +880,18 @@ items:
       becomes assurance, and a clean baseline failure is not a kill. The decisions are the comments
       above the scenarios in features/mutate.feature.
     refs: ["#27"]
+  - id: mutation-counted-interrupt
+    title: An interrupted counted run reports partial work and cleans up its owned commands
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutation-counted-listed]
+    kind: slice
+    why: >
+      Split out of mutation-counted-run by the coordinator on 2026-10-09; #27 is released only after
+      all three counted slices land. This part holds ID-MUT-183: on interruption completed judgments
+      stay visible, the unfinished one is cancelled or undecided, nothing new is admitted, and every
+      owned worker and preparation descendant finishes within one shared five-second post-abort
+      deadline before private inputs are removed. The decisions are the comments above the scenarios
+      in features/mutate.feature.
+    refs: ["#27"]
