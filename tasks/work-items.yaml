@@ -1002,7 +1002,7 @@ items:
     title: A strict counted run needs no measurement of a language with nothing to judge
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
