@@ -1176,3 +1176,17 @@ items:
       fail-fast already reports "not-run" for a baseline that never ran; a complete run should say
       the same rather than claim a pass.
     refs: ["#14"]
+  - id: kotlin-cross-module-coverage
+    title: A Kotlin test class in another module kills a mutant but measures none of it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by own-tests-kotlin (2026-10-10): a Kotlin file's own command runs the reaching test
+      classes of every module of its build, but its coverage runs JaCoCo or Kover in its own module,
+      whose report measures that module's tests alone, so a line only another module's tests execute
+      is uncovered and its mutants never run. An aggregated report (jacoco:report-aggregate, a
+      JaCoCo report over several test tasks' execution data, Kover's merged reports) would measure
+      them.
