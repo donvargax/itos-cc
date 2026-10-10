@@ -1,0 +1,883 @@
+{
+  "version": 1,
+  "file": "viewer/src/layout.ts",
+  "language": "typescript",
+  "tests": {
+    "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+  },
+  "units": [
+    {
+      "namespace": "layout",
+      "name": "boxWidth",
+      "hash": "6eb2d30d228cbfaf",
+      "start_line": 13,
+      "end_line": 15,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 2,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 14,
+          "column": 51,
+          "offset": 93,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 14,
+          "column": 57,
+          "offset": 99,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "layout",
+      "name": "layout",
+      "hash": "8c22e427c07e449f",
+      "start_line": 33,
+      "end_line": 62,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 10,
+      "sites": 10,
+      "mutants": [
+        {
+          "line": 52,
+          "column": 35,
+          "offset": 853,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 53,
+          "column": 30,
+          "offset": 891,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 53,
+          "column": 33,
+          "offset": 894,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 53,
+          "column": 43,
+          "offset": 904,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 53,
+          "column": 46,
+          "offset": 907,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 53,
+          "column": 64,
+          "offset": 925,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 57,
+          "column": 33,
+          "offset": 1072,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 58,
+          "column": 25,
+          "offset": 1127,
+          "original": "?.",
+          "replacement": "",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 58,
+          "column": 28,
+          "offset": 1130,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 59,
+          "column": 61,
+          "offset": 1194,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "layout",
+      "name": "roundedPath",
+      "hash": "13973205888c6f5b",
+      "start_line": 65,
+      "end_line": 77,
+      "killed": 12,
+      "survived": 4,
+      "uncovered": 0,
+      "sites": 16,
+      "mutants": [
+        {
+          "line": 66,
+          "column": 21,
+          "offset": 81,
+          "original": "===",
+          "replacement": "!==",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 66,
+          "column": 25,
+          "offset": 85,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 23,
+          "offset": 121,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 38,
+          "offset": 136,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 16,
+          "offset": 159,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 21,
+          "offset": 164,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 37,
+          "offset": 180,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 39,
+          "offset": 182,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 33,
+          "offset": 224,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 35,
+          "offset": 226,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 59,
+          "offset": 250,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 61,
+          "offset": 252,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 70,
+          "column": 43,
+          "offset": 299,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 70,
+          "column": 59,
+          "offset": 315,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 75,
+          "column": 37,
+          "offset": 482,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 75,
+          "column": 39,
+          "offset": 484,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "layout",
+      "name": "midpoint",
+      "hash": "3dab7c3b43e64a6c",
+      "start_line": 80,
+      "end_line": 89,
+      "killed": 6,
+      "survived": 5,
+      "uncovered": 2,
+      "sites": 13,
+      "mutants": [
+        {
+          "line": 81,
+          "column": 30,
+          "offset": 73,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 81,
+          "column": 59,
+          "offset": 102,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 81,
+          "column": 81,
+          "offset": 124,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 82,
+          "column": 20,
+          "offset": 147,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 83,
+          "column": 16,
+          "offset": 167,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 83,
+          "column": 21,
+          "offset": 172,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 84,
+          "column": 29,
+          "offset": 224,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 84,
+          "column": 31,
+          "offset": 226,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 85,
+          "column": 14,
+          "offset": 255,
+          "original": "<=",
+          "replacement": "<",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 85,
+          "column": 43,
+          "offset": 284,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 85,
+          "column": 45,
+          "offset": 286,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 88,
+          "column": 31,
+          "offset": 357,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 88,
+          "column": 33,
+          "offset": 359,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "layout",
+      "name": "dist",
+      "hash": "96fada9015122516",
+      "start_line": 91,
+      "end_line": 93,
+      "killed": 1,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 92,
+          "column": 25,
+          "offset": 68,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 92,
+          "column": 36,
+          "offset": 79,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "layout",
+      "name": "toward",
+      "hash": "a3b5fcc38bfd9471",
+      "start_line": 95,
+      "end_line": 98,
+      "killed": 8,
+      "survived": 2,
+      "uncovered": 0,
+      "sites": 10,
+      "mutants": [
+        {
+          "line": 96,
+          "column": 28,
+          "offset": 92,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 96,
+          "column": 31,
+          "offset": 95,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 22,
+          "offset": 119,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 31,
+          "offset": 128,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "survived",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 41,
+          "offset": 138,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 51,
+          "offset": 148,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 66,
+          "offset": 163,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 75,
+          "offset": 172,
+          "original": "-",
+          "replacement": "+",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 85,
+          "offset": 182,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 97,
+          "column": 95,
+          "offset": 192,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "killed",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    }
+  ]
+}

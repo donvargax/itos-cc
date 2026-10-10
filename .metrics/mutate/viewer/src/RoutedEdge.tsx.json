@@ -1,0 +1,231 @@
+{
+  "version": 1,
+  "file": "viewer/src/RoutedEdge.tsx",
+  "language": "typescript",
+  "tests": {},
+  "units": [
+    {
+      "namespace": "RoutedEdge",
+      "name": "RoutedEdge",
+      "hash": "79eb542ad0fde5a9",
+      "start_line": 9,
+      "end_line": 39,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 14,
+      "sites": 14,
+      "mutants": [
+        {
+          "line": 11,
+          "column": 22,
+          "offset": 131,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 14,
+          "column": 14,
+          "offset": 194,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 14,
+          "column": 31,
+          "offset": 211,
+          "original": ">=",
+          "replacement": ">",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 22,
+          "column": 20,
+          "offset": 395,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 20,
+          "offset": 422,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 27,
+          "offset": 429,
+          "original": "===",
+          "replacement": "!==",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 52,
+          "offset": 454,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 54,
+          "offset": 456,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 98,
+          "offset": 500,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 112,
+          "offset": 514,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 23,
+          "column": 114,
+          "offset": 516,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 27,
+          "column": 13,
+          "offset": 664,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 30,
+          "column": 42,
+          "offset": 753,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 30,
+          "column": 49,
+          "offset": 760,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    }
+  ]
+}

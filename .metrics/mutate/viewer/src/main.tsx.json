@@ -2,5 +2,6 @@
   "version": 1,
   "file": "viewer/src/main.tsx",
   "language": "typescript",
+  "tests": {},
   "units": []
 }

@@ -1,0 +1,784 @@
+{
+  "version": 1,
+  "file": "viewer/src/BoxNode.tsx",
+  "language": "typescript",
+  "tests": {},
+  "units": [
+    {
+      "namespace": "BoxNode",
+      "name": "RiskBar",
+      "hash": "69cf5090324abde8",
+      "start_line": 8,
+      "end_line": 21,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 7,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 9,
+          "column": 27,
+          "offset": 74,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 9,
+          "column": 42,
+          "offset": 89,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 9,
+          "column": 55,
+          "offset": 102,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 18,
+          "column": 36,
+          "offset": 475,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 18,
+          "column": 38,
+          "offset": 477,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 18,
+          "column": 40,
+          "offset": 479,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 18,
+          "column": 109,
+          "offset": 548,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "BoxNode",
+      "name": "BoxNode",
+      "hash": "7c3d84b1fce75e3f",
+      "start_line": 28,
+      "end_line": 75,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 43,
+      "sites": 43,
+      "mutants": [
+        {
+          "line": 31,
+          "column": 25,
+          "offset": 167,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 35,
+          "column": 18,
+          "offset": 247,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 35,
+          "column": 21,
+          "offset": 250,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 39,
+          "column": 9,
+          "offset": 320,
+          "original": "===",
+          "replacement": "!==",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 42,
+          "column": 6,
+          "offset": 432,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 22,
+          "offset": 554,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 34,
+          "offset": 566,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 47,
+          "offset": 579,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 49,
+          "offset": 581,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 69,
+          "offset": 601,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 81,
+          "offset": 613,
+          "original": "/",
+          "replacement": "*",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 46,
+          "column": 93,
+          "offset": 625,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 55,
+          "column": 23,
+          "offset": 1224,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 58,
+          "column": 17,
+          "offset": 1369,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 58,
+          "column": 29,
+          "offset": 1381,
+          "original": "??",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 58,
+          "column": 32,
+          "offset": 1384,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 59,
+          "column": 47,
+          "offset": 1443,
+          "original": "?.",
+          "replacement": ".",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 59,
+          "column": 58,
+          "offset": 1454,
+          "original": "!==",
+          "replacement": "===",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 59,
+          "column": 93,
+          "offset": 1489,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 61,
+          "column": 25,
+          "offset": 1629,
+          "original": "!==",
+          "replacement": "===",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 14,
+          "offset": 1677,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 27,
+          "offset": 1690,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 29,
+          "offset": 1692,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 31,
+          "offset": 1694,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 44,
+          "offset": 1707,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 62,
+          "column": 58,
+          "offset": 1721,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 65,
+          "column": 10,
+          "offset": 1797,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 65,
+          "column": 25,
+          "offset": 1812,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 65,
+          "column": 27,
+          "offset": 1814,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 65,
+          "column": 29,
+          "offset": 1816,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 12,
+          "offset": 1899,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 26,
+          "offset": 1913,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 28,
+          "offset": 1915,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 67,
+          "column": 30,
+          "offset": 1917,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 12,
+          "offset": 1990,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 23,
+          "offset": 2001,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 25,
+          "offset": 2003,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 68,
+          "column": 27,
+          "offset": 2005,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 12,
+          "offset": 2137,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 28,
+          "offset": 2153,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 30,
+          "offset": 2155,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 69,
+          "column": 32,
+          "offset": 2157,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 70,
+          "column": 25,
+          "offset": 2241,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    }
+  ]
+}

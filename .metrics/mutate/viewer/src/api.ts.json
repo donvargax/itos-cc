@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "file": "viewer/src/api.ts",
+  "language": "typescript",
+  "tests": {
+    "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+  },
+  "units": [
+    {
+      "namespace": "api",
+      "name": "fetchGraph",
+      "hash": "5a69b6a3b5b22478",
+      "start_line": 76,
+      "end_line": 80,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 78,
+          "column": 7,
+          "offset": 93,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "api",
+      "name": "fetchSource",
+      "hash": "a726c30e3d3ccb83",
+      "start_line": 82,
+      "end_line": 86,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 84,
+          "column": 7,
+          "offset": 188,
+          "original": "!",
+          "replacement": "",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "api",
+      "name": "subscribe",
+      "hash": "ce0b3034030363a8",
+      "start_line": 91,
+      "end_line": 97,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 2,
+      "sites": 2,
+      "mutants": [
+        {
+          "line": 94,
+          "column": 34,
+          "offset": 272,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        },
+        {
+          "line": 95,
+          "column": 35,
+          "offset": 313,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    },
+    {
+      "namespace": "api",
+      "name": "repoOf",
+      "hash": "4bc9d39e4e3a16f6",
+      "start_line": 100,
+      "end_line": 102,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 1,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 101,
+          "column": 24,
+          "offset": 61,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "uncovered",
+          "scope": "all-tests",
+          "suite_evidence": {
+            "tests": {
+              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
+            },
+            "support": {}
+          }
+        }
+      ]
+    }
+  ]
+}
