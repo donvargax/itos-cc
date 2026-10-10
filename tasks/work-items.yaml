@@ -1060,7 +1060,7 @@ items:
     title: cmd/itos-cc's fixture tests run in parallel, bringing Windows CI back under 10 minutes
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
