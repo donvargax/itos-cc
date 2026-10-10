@@ -1031,14 +1031,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: python-stale-bytecode
-    title: A Python mutant the size of its source survives on stale __pycache__ bytecode
+  - id: python-fresh-bytecode
+    title: A Python mutant always runs as mutated, never from stale bytecode
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was python-stale-bytecode.
       In CI 38044467639 (ubuntu-latest, Python 3.14, pytest 9.1.1), go test -v -run
       '^TestLanguageToolSmokePython$' ./cmd/itos-cc ran itos-cc mutation run --json board.py over
       cmd/itos-cc/testdata/smoke/python and reported board.py:2:14 `==` → `!=` in board#low
