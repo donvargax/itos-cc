@@ -1051,3 +1051,17 @@ items:
       and mutate/command.go:105-120 (pythonCommand runs Python with bytecode writing on;
       PYTHONDONTWRITEBYTECODE=1 or a per-run PYTHONPYCACHEPREFIX would avoid it).
       TestLanguageToolSmokePython accepts either judgment of that mutant until this is fixed.
+  - id: ts-coverage-scope
+    title: TypeScript coverage measures the same related tests that judge the mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-13]
+    kind: slice
+    why: >
+      Language parity (the person, 2026-10-10), gap G2: with a coverage script, typescriptPlan runs
+      the whole suite (coverage/run.go typescriptPlan) while the mutants run vitest related or jest
+      --findRelatedTests (mutate/command.go typescriptCommand), so a line only an unrelated test
+      reaches counts as covered and survives falsely, which ID-MUT-08 rules out for Go. Decisions in
+      the comments above ID-MUT-208.
+    refs: ["#14"]
