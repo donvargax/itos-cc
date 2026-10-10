@@ -172,10 +172,11 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		stage("coverage-plan", "failed", err)
 		return prep, fmt.Errorf("prepare coverage plans: %w", err)
 	}
-	// A Python file's own tests, and the coverage that decides which of its
-	// mutants run, are the tests that reach it in the frozen tree.
+	// A Python or Kotlin file's own tests, and the coverage that decides
+	// which of its mutants run, are the tests that reach it in the frozen
+	// tree.
 	var reach coverage.Reach
-	if options.Scope == coverage.OwnTests && hasPythonUnit(plan.Units) {
+	if options.Scope == coverage.OwnTests && hasReachedUnit(plan.Units) {
 		tests, err := graph.TestsImporting(root, plan.Files)
 		if err != nil {
 			stage("coverage-plan", "failed", err)
@@ -608,10 +609,11 @@ func hashPreparationPolicy(value string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// hasPythonUnit says whether any admitted function is Python's.
-func hasPythonUnit(units []mutate.FreshUnit) bool {
+// hasReachedUnit says whether any admitted function is Python's or
+// Kotlin's, whose own tests are the tests that reach its file.
+func hasReachedUnit(units []mutate.FreshUnit) bool {
 	for _, unit := range units {
-		if spec := lang.Detect(unit.Path); spec != nil && spec.Name == "python" {
+		if spec := lang.Detect(unit.Path); spec != nil && (spec.Name == "python" || spec.Name == "kotlin") {
 			return true
 		}
 	}

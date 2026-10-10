@@ -55,12 +55,15 @@ Changes one operator, boolean, or 0/1 at a time inside each function and runs
 the file's own tests: its Go package, the Vitest or Jest tests that import it,
 in Python the test files that reach it (named test_*.py or *_test.py), run
 with python -m pytest -x <files>, or python -m unittest <modules> without
-pytest, or the whole suite where nothing narrower exists. A mutant is killed
-when the tests fail or time out and survives when they pass. Mutants on lines
-those tests never execute are uncovered and are not run, and every mutant of
-a Python file no test file reaches is uncovered, with no test run for it. A
-Python test that runs code only through a subprocess or the CLI reaches
-nothing: run --all-tests or --test-command for such code.
+pytest, in Kotlin the test classes the test files that reach it declare,
+run with gradle test --fail-fast --tests <class> per module, or mvn test
+-Dtest=<classes>, or the whole suite where nothing narrower exists. A
+mutant is killed when the tests fail or time out and survives when they
+pass. Mutants on lines those tests never execute are uncovered and are not
+run, and every mutant of a Python or Kotlin file no such test reaches is
+uncovered, with no test run for it. A Python or Kotlin test that runs code
+only through a subprocess, the CLI or reflection reaches nothing: run
+--all-tests or --test-command for such code.
 
 --all-tests runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests can kill mutants too. It is slow: run it
@@ -580,9 +583,9 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	// Python's own coverage is that of the tests that reach each file, as
-	// its own command runs them; --test-command and --all-tests keep the
-	// whole suite's.
+	// Python's and Kotlin's own coverage is that of the tests that reach
+	// each file, as its own command runs them; --test-command and
+	// --all-tests keep the whole suite's.
 	var reach coverage.Reach
 	if !in.set("test-command") && !in.set("all-tests") {
 		reach = tests

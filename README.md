@@ -179,18 +179,21 @@ test. What keeps `mutation run` fast:
 - **Coverage first.** Mutants on lines no test executes are reported as
   uncovered and never run.
 - **Narrow, fail-fast test runs.** The file's own Go package (`-failfast`),
-  `vitest related` / `jest --findRelatedTests`, and in Python the test files
+  `vitest related` / `jest --findRelatedTests`, in Python the test files
   that reach the file (named `test_*.py` or `*_test.py`), as
-  `pytest -x <files>`, or `python -m unittest <modules>` without pytest.
+  `pytest -x <files>`, or `python -m unittest <modules>` without pytest,
+  and in Kotlin the test classes the test files that reach the file
+  declare, as `gradle -p <module> test --fail-fast --tests <class>…`, or
+  `mvn -q test -Dtest=<classes> -Dsurefire.failIfNoSpecifiedTests=false`.
   Coverage comes from the same tests, so a line only integration or
   end-to-end tests reach is uncovered, not a survivor; a TypeScript
   project's `coverage` script measures mutation run only with `--all-tests`.
-  A Python file no test file reaches runs no test, and its mutants are
-  uncovered. A test reaches code through the helpers it imports and the
-  `conftest.py` files above it, but a Python test that runs code only
-  through a subprocess or the CLI reaches none of it, so that code's
-  mutants are uncovered too: judge them with `--all-tests` or
-  `--test-command`. Every command itos-cc
+  A Python or Kotlin file no such test reaches runs no test, and its
+  mutants are uncovered. A test reaches code through the helpers it imports
+  and, in Python, the `conftest.py` files above it, but a Python or Kotlin
+  test that runs code only through a subprocess, the CLI or reflection
+  reaches none of it, so that code's mutants are uncovered too: judge them
+  with `--all-tests` or `--test-command`. Every command itos-cc
   composes runs with `PYTHONDONTWRITEBYTECODE=1`, and every pytest one with
   `-p no:cacheprovider`, so measuring and judging write no bytecode and no
   `.pytest_cache` into the project; a `--test-command` or

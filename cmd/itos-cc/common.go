@@ -92,8 +92,8 @@ var coverageFlags = []flagSpec{
 // coverage commands run, it also measures each listed test's coverage, in
 // the run's own directory. Progress and test output go to log so stdout
 // stays the report. reach, in OwnTests, is the test files that reach each
-// source, which measure Python's (coverage.Plans); nil measures Python's by
-// the whole suite.
+// source, which measure Python's and Kotlin's (coverage.Plans); nil
+// measures them by the whole suite.
 func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io.Writer, perTest *coverage.PerTest, reach coverage.Reach) (*coverage.Report, error) {
 	command, reports := in.str("coverage-command"), in.strs("coverage-report")
 	switch {

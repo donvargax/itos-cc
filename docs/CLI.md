@@ -150,6 +150,36 @@ decided, still reads fresh while its tests are unchanged; `mutation sample`
 re-runs it with the narrowed tests, so a kill only another test made is a
 `mutation.mismatch`, and `mutation run --mutate-all` judges it again.
 
+A Kotlin file's own tests, the scope `own`, are the runnable test classes
+its `tests` declare, by fully qualified name: each top-level class, neither
+abstract nor an interface, with a function annotated `@Test` (or
+`@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`, `@TestTemplate`, any
+annotation whose name ends in `Test`), or in a class nested in it, a
+Kotest spec (a class whose supertype's name ends in `Spec`), or a class
+named `*Test` or `*Tests` that extends another, inheriting its tests. A
+test-support file, such as a helper in `src/test` that declares no test, is
+among the file's `tests` but runs as no class. `mutation run` runs them as
+`gradle -p <module> test --fail-fast --tests <class>…` when they are one
+Gradle module's, as `gradle :<module>:test --fail-fast --tests <class>… …`
+from the build root, each module's test task by the project path its
+directory names, when they are several modules', and as `mvn -q test
+-Dtest=<classes> -Dsurefire.failIfNoSpecifiedTests=false` in the file's
+Maven module, or from the top of its reactor with `-pl <modules> -am` when
+other modules hold some. The coverage that decides which of its mutants run
+is measured from the classes of its own module (`gradle -p <module> test
+--tests <class>… jacocoTestReport` or `koverXmlReport`, `mvn -q
+jacoco:prepare-agent test jacoco:report -Dtest=<classes>
+-Dsurefire.failIfNoSpecifiedTests=false`), one coverage run per distinct set
+of them: a module's report measures its own tests alone, so a class in
+another module can kill a mutant but measures none of it. A Kotlin file
+none of whose tests declares a class of its build runs no test: its mutants
+are `uncovered`. A test that executes code only through a subprocess, the
+CLI or reflection reaches none of it, so those kills need `--all-tests` or
+`--test-command`, which keep the whole suite and the given command. As in
+Python, a Kotlin outcome of scope `own` recorded before still reads fresh
+while its tests are unchanged, and `mutation sample` re-runs it with the
+narrowed tests.
+
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files

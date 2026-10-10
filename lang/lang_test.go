@@ -546,6 +546,62 @@ func TestKotlinTopLevelNames(t *testing.T) {
 	}
 }
 
+func TestKotlinTestClasses(t *testing.T) {
+	f := parse(t, "testdata/x.kt", `package own.x
+
+import org.junit.jupiter.api.Test as Case
+import kotlin.test.Test
+
+class ATest {
+    @Test fun a() {}
+}
+
+class Aliased {
+    @Case fun a() {}
+}
+
+class Qualified {
+    @org.junit.jupiter.api.Test
+    fun b() {}
+}
+
+class Parameterized {
+    @ParameterizedTest
+    @ValueSource(ints = [1])
+    fun c(i: Int) {}
+}
+
+class Outer {
+    @Nested
+    inner class Inner {
+        @RepeatedTest(2) fun d() {}
+    }
+}
+
+abstract class BaseTest {
+    @Test fun inherited() {}
+}
+
+class SubTest : BaseTest()
+
+class LowSpec : FunSpec({ test("low") {} })
+
+interface Contract { @Test fun e() }
+
+object Record { @Test fun f() {} }
+
+class Fixtures : Base() {
+    fun low() = 3
+}
+
+class NamedTest
+`)
+	want := []string{"own.x.ATest", "own.x.Aliased", "own.x.Qualified", "own.x.Parameterized", "own.x.Outer", "own.x.SubTest", "own.x.LowSpec"}
+	if got := TestClasses(f); !slices.Equal(got, want) {
+		t.Errorf("test classes %v, want %v: no abstract class, interface, object or helper", got, want)
+	}
+}
+
 // The grammar must keep a class with several annotations and no
 // constructor: Spring configuration classes look like this.
 func TestKotlinMultiAnnotatedClass(t *testing.T) {

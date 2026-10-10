@@ -48,9 +48,9 @@ type Plan struct {
 	// Unreached marks a plan of sources no test reaches (Reach): nothing
 	// runs, and its language is measured, so they are loaded by no test.
 	Unreached bool
-	// OwnSources says the report speaks only for Sources: a Python plan of
-	// the tests that reach them measures other files too, which plans of
-	// their own tests measure.
+	// OwnSources says the report speaks only for Sources: a Python or
+	// Kotlin plan of the tests that reach them measures other files too,
+	// which plans of their own tests measure.
 	OwnSources bool
 }
 
@@ -82,17 +82,21 @@ const (
 	RelatedTests
 	// OwnTests measures each Go package by its own tests only, the tests
 	// mutate kills its mutants with; TypeScript runs the related tests, and
-	// Python, given the tests that reach each source, those tests.
+	// Python and Kotlin, given the tests that reach each source, those
+	// tests.
 	OwnTests
 )
 
 // Plans groups sources by language and build root and returns one plan per
-// group, with reports written under outDir. Kotlin runs the whole suite
-// whatever the scope, and so does Python, but in OwnTests with reach set:
-// each Python source is measured by the tests that reach it, one plan per
-// build root and distinct set of those tests, its report speaking for its
-// own sources alone (OwnSources), and sources no test reaches have an
-// Unreached plan.
+// group, with reports written under outDir. Python and Kotlin run the whole
+// suite whatever the scope, but in OwnTests with reach set: each Python
+// source is measured by the test files that reach it (PythonTests), and each
+// Kotlin source by the test classes of its own build module those files
+// declare (KotlinTests), one plan per build root and distinct set of those
+// tests, its report speaking for its own sources alone (OwnSources), and
+// sources no such test reaches have an Unreached plan. A Kotlin module's
+// report measures its own tests alone, so a test class in another module
+// that reaches a source measures none of it.
 func Plans(sources []string, outDir string, scope Scope, reach Reach) []Plan {
 	plans, _, _ := buildPlans(context.Background(), sources, outDir, scope, reach, nil)
 	return plans
@@ -108,8 +112,10 @@ func PlansSupervised(ctx context.Context, sources []string, outDir string, scope
 }
 
 func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
-	// tests is, for a Python source measured by the tests that reach it,
-	// those tests as PythonTests runs them, joined: a group of its own.
+	// tests is, for a Python or Kotlin source measured by the tests that
+	// reach it, those tests as PythonTests runs them, or the test classes
+	// of its own module KotlinTests finds in them, joined: a group of its
+	// own.
 	type key struct{ lang, dir, tests string }
 	narrow := scope == OwnTests && reach != nil
 	groups := map[key][]string{}
@@ -123,8 +129,11 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 			dir = filepath.Dir(s)
 		}
 		k := key{spec.Name, dir, ""}
-		if spec.Name == "python" && narrow {
+		switch {
+		case spec.Name == "python" && narrow:
 			k.tests = "\x00" + strings.Join(PythonTests(dir, reach(s)), "\x00")
+		case spec.Name == "kotlin" && narrow:
+			k.tests = "\x00" + strings.Join(KotlinTests(reach(s))[dir], "\x00")
 		}
 		groups[k] = append(groups[k], s)
 	}
@@ -177,7 +186,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 				}
 			}
 		case "kotlin":
-			p = kotlinPlan(k.dir)
+			p = kotlinPlan(k.dir, tests)
 		default:
 			continue
 		}
@@ -599,7 +608,10 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 	return plan, executions, nil
 }
 
-func kotlinPlan(dir string) Plan {
+// kotlinPlan measures the Kotlin module at dir with its JaCoCo or Kover,
+// running classes, the test classes KotlinTests gives, or the whole suite
+// when classes is nil.
+func kotlinPlan(dir string, classes []string) Plan {
 	kover := filepath.Join(dir, "build", "reports", "kover", "report.xml")
 	jacoco := filepath.Join(dir, "build", "reports", "jacoco", "test", "jacocoTestReport.xml")
 	maven := filepath.Join(dir, "target", "site", "jacoco", "jacoco.xml")
@@ -611,7 +623,7 @@ func kotlinPlan(dir string) Plan {
 			plan.Unsupported = "jacoco-maven-plugin is not in pom.xml or a parent's; add it, or measure with --coverage-command"
 			return plan
 		}
-		plan.Commands = [][]string{{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}}
+		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, MavenTests(classes)...)}
 		plan.Reports = []string{maven}
 		return plan
 	}
@@ -619,14 +631,41 @@ func kotlinPlan(dir string) Plan {
 	if root := lang.FindUp(filepath.Join(dir, "x"), "gradlew"); root != "" {
 		gradle = filepath.Join(root, "gradlew")
 	}
+	// The report task runs the test task, which the filter then narrows.
+	task := "jacocoTestReport"
+	plan.Reports = []string{jacoco}
 	if buildMentions(dir, "kover") {
-		plan.Commands = [][]string{{gradle, "-p", dir, "koverXmlReport"}}
+		task = "koverXmlReport"
 		plan.Reports = []string{kover}
-	} else {
-		plan.Commands = [][]string{{gradle, "-p", dir, "test", "jacocoTestReport"}}
-		plan.Reports = []string{jacoco}
 	}
+	args := []string{gradle, "-p", dir}
+	if classes != nil {
+		args = append(append(args, "test"), GradleTests(classes)...)
+	} else if task == "jacocoTestReport" {
+		args = append(args, "test")
+	}
+	plan.Commands = [][]string{append(args, task)}
 	return plan
+}
+
+// GradleTests is the --tests filter of a Gradle test task that runs
+// classes, test classes by fully qualified name.
+func GradleTests(classes []string) []string {
+	var out []string
+	for _, class := range classes {
+		out = append(out, "--tests", class)
+	}
+	return out
+}
+
+// MavenTests is the properties that have Surefire run classes, test classes
+// by fully qualified name, in each module of a build that holds any of
+// them, and none in one that holds none; nothing when classes is nil.
+func MavenTests(classes []string) []string {
+	if classes == nil {
+		return nil
+	}
+	return []string{"-Dtest=" + strings.Join(classes, ","), "-Dsurefire.failIfNoSpecifiedTests=false"}
 }
 
 // Run executes each plan and returns the coverage of sources. A plan whose

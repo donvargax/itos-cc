@@ -29,9 +29,9 @@ type FreshBaseline struct {
 // selected site, resolved against the frozen root. It is TestCommand, given
 // tests, the test files that reach a file in the frozen root, with the one
 // probe TestCommand runs itself, Python's pytest import, routed through
-// execute and recorded; a cancelled probe is an error. A Python file whose
-// own tests run nothing has no baseline: no test reaches it, so its sites
-// are uncovered.
+// execute and recorded; a cancelled probe is an error. A Python or Kotlin
+// file whose own tests run nothing has no baseline: no test reaches it, so
+// its sites are uncovered.
 func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests func(path string) []string, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
 	if ctx == nil || execute == nil {
 		return nil, nil, errors.New("fresh baselines need a context and command executor")
@@ -61,23 +61,23 @@ func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests
 			return nil, executions, fmt.Errorf("selected file %s has no supported language", rel)
 		}
 		var c Command
+		var reaching []string
+		if tests != nil {
+			reaching = tests(path)
+		}
 		if spec.Name == "python" {
 			var calls []coverage.CommandExecution
 			var err error
-			var reaching []string
-			if tests != nil {
-				reaching = tests(path)
-			}
 			c, calls, err = freshPythonCommand(ctx, path, all, reaching, execute)
 			executions = append(executions, calls...)
 			if err != nil {
 				return nil, executions, err
 			}
-			if c.RunsNothing() {
-				continue
-			}
 		} else {
-			c = TestCommand(path, "", all, nil)
+			c = TestCommand(path, "", all, reaching)
+		}
+		if c.RunsNothing() && (spec.Name == "python" || spec.Name == "kotlin") {
+			continue
 		}
 		if len(c.Args) == 0 {
 			return nil, executions, fmt.Errorf("selected file %s has no own-test command", rel)

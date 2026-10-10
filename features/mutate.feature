@@ -1951,7 +1951,7 @@ Feature: Mutation testing
         | pytest   |
         | unittest |
 
-    @wip @own-tests-kotlin @ID-MUT-217
+    @own-tests-kotlin @ID-MUT-217
     Scenario Outline: A Kotlin file's own tests are the test classes that reach it, with <build>
       Given a Kotlin project built with <build> where ATest, in A.kt's package, uses A without importing it, BTest reaches only B.kt, and BTest fails
       When I run "itos-cc mutation run --json" for A.kt

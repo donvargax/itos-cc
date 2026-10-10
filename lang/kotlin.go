@@ -182,3 +182,142 @@ func ReferencedNames(f *File) []string {
 	})
 	return out
 }
+
+// TestClasses are the runnable test classes a Kotlin file declares, by fully
+// qualified name, in the order it declares them: each top-level class, not
+// abstract and not an interface, that a JUnit or Kotest runner would run,
+// which is one that
+//   - declares a function, in its body or a nested class's, annotated as a
+//     test: @Test, an annotation whose name ends in Test (@ParameterizedTest,
+//     @RepeatedTest) or names Test through an import alias, @TestFactory or
+//     @TestTemplate;
+//   - extends a Kotest spec, a supertype whose name ends in Spec; or
+//   - extends a supertype and is named as Gradle and Surefire name test
+//     classes, ending in Test or Tests: a subclass of an abstract test class
+//     inherits its tests and declares none.
+//
+// A test-support file, such as a helper object or class in src/test that
+// declares no test, has none.
+func TestClasses(f *File) []string {
+	// alias holds the names test annotations are imported as.
+	alias := map[string]bool{}
+	Walk(f.Root, func(n *sitter.Node) bool {
+		switch n.Kind() {
+		case "source_file", "import_list":
+			return true
+		case "import_header":
+			id, as := firstChildOfKind(n, "identifier"), firstChildOfKind(n, "import_alias")
+			if id == nil || as == nil {
+				return false
+			}
+			path := id.Utf8Text(f.Src)
+			if name := firstChildOfKind(as, "type_identifier"); name != nil && ktTestAnnotation(path[strings.LastIndex(path, ".")+1:]) {
+				alias[name.Utf8Text(f.Src)] = true
+			}
+		}
+		return false
+	})
+	prefix := ""
+	if f.Namespace != "" {
+		prefix = f.Namespace + "."
+	}
+	var out []string
+	for i := uint(0); i < f.Root.NamedChildCount(); i++ {
+		n := f.Root.NamedChild(i)
+		if n.Kind() != "class_declaration" || ktIsInterface(n) || ktHasModifier(n, "abstract", f.Src) {
+			continue
+		}
+		if name := ktName(n, f.Src); name != "" && (ktDeclaresTest(n, f.Src, alias) || ktRunnableBySupertype(n, name, f.Src)) {
+			out = append(out, prefix+name)
+		}
+	}
+	return out
+}
+
+// ktTestAnnotation says whether an annotation of this simple name marks a
+// test function.
+func ktTestAnnotation(name string) bool {
+	return strings.HasSuffix(name, "Test") || name == "TestFactory" || name == "TestTemplate"
+}
+
+// ktIsInterface says whether class_declaration n declares an interface.
+func ktIsInterface(n *sitter.Node) bool {
+	for i := uint(0); i < n.ChildCount(); i++ {
+		if n.Child(i).Kind() == "interface" {
+			return true
+		}
+	}
+	return false
+}
+
+// ktDeclaresTest says whether class n declares, in its body or a nested
+// class's, a function annotated as a test.
+func ktDeclaresTest(n *sitter.Node, src []byte, alias map[string]bool) bool {
+	found := false
+	Walk(n, func(c *sitter.Node) bool {
+		if found {
+			return false
+		}
+		switch c.Kind() {
+		case "class_declaration", "class_body":
+			return true
+		case "function_declaration":
+			found = ktTestAnnotated(c, src, alias)
+		}
+		return false
+	})
+	return found
+}
+
+// ktTestAnnotated says whether function n carries a test annotation.
+func ktTestAnnotated(n *sitter.Node, src []byte, alias map[string]bool) bool {
+	m := firstChildOfKind(n, "modifiers")
+	if m == nil {
+		return false
+	}
+	for i := uint(0); i < m.NamedChildCount(); i++ {
+		a := m.NamedChild(i)
+		if a.Kind() != "annotation" {
+			continue
+		}
+		t := firstChildOfKind(a, "user_type")
+		if t == nil {
+			if call := firstChildOfKind(a, "constructor_invocation"); call != nil {
+				t = firstChildOfKind(call, "user_type")
+			}
+		}
+		if t == nil || t.NamedChildCount() == 0 {
+			continue
+		}
+		if name := t.NamedChild(t.NamedChildCount() - 1).Utf8Text(src); ktTestAnnotation(name) || alias[name] {
+			return true
+		}
+	}
+	return false
+}
+
+// ktRunnableBySupertype says whether class n, named name, is a test by what
+// it extends: a Kotest spec, or any supertype when name ends in Test or
+// Tests.
+func ktRunnableBySupertype(n *sitter.Node, name string, src []byte) bool {
+	named := strings.HasSuffix(name, "Test") || strings.HasSuffix(name, "Tests")
+	for i := uint(0); i < n.NamedChildCount(); i++ {
+		d := n.NamedChild(i)
+		if d.Kind() != "delegation_specifier" {
+			continue
+		}
+		if named {
+			return true
+		}
+		t := firstChildOfKind(d, "user_type")
+		if t == nil {
+			if call := firstChildOfKind(d, "constructor_invocation"); call != nil {
+				t = firstChildOfKind(call, "user_type")
+			}
+		}
+		if t != nil && t.NamedChildCount() > 0 && strings.HasSuffix(t.NamedChild(t.NamedChildCount()-1).Utf8Text(src), "Spec") {
+			return true
+		}
+	}
+	return false
+}

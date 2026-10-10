@@ -2,9 +2,11 @@ package mutate
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
@@ -39,16 +41,18 @@ func (c Command) String() string {
 }
 
 // RunsNothing says whether c runs no command at all: the own tests of a
-// Python file no test reaches.
+// Python or Kotlin file no test reaches.
 func (c Command) RunsNothing() bool {
 	return len(c.Args) == 0 && c.Shell == ""
 }
 
 // TestCommand is the narrowest test run that covers path: its own Go
 // package, the Vitest or Jest tests that import it, in Python tests, the
-// test files that reach it (graph.TestsImporting), or the whole suite where
-// no narrower run exists. A Python file none of whose tests is a test file
-// pytest collects (coverage.PythonTests) runs nothing (RunsNothing). With
+// test files that reach it (graph.TestsImporting), in Kotlin the test
+// classes those files declare (coverage.KotlinTests), or the whole suite
+// where no narrower run exists. A Python file none of whose tests is a test
+// file pytest collects (coverage.PythonTests), or a Kotlin file none of
+// whose tests declares a test class, runs nothing (RunsNothing). With
 // all, it is the whole suite of path's build root, so integration and
 // end-to-end tests anywhere in it can kill a mutant. Every command stops at
 // the first failure, since one failing test is enough to kill a mutant. A
@@ -69,7 +73,7 @@ func TestCommand(path, shell string, all bool, tests []string) Command {
 		}
 		c = pythonCommand(path, all, tests)
 	case "kotlin":
-		c = kotlinCommand(path, all)
+		c = kotlinCommand(path, all, tests)
 	}
 	if shell != "" {
 		c.Args, c.Shell = nil, shell
@@ -164,10 +168,14 @@ func pythonArgs(py string, pytest bool, run []string) []string {
 	return []string{py, "-m", "unittest", "discover", "-f"}
 }
 
-func kotlinCommand(path string, all bool) Command {
+// kotlinCommand runs the test classes the files of tests declare
+// (coverage.KotlinTests), with Gradle or Maven, in the build of path's
+// module; with all, its build's whole suite. It runs nothing when they
+// declare none in that build.
+func kotlinCommand(path string, all bool, tests []string) Command {
 	module := orDir(lang.FindUp(path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
 	if fileExists(filepath.Join(module, "pom.xml")) {
-		return Command{Root: module, Dir: module, Args: []string{"mvn", "-q", "test"}}
+		return mavenCommand(module, all, tests)
 	}
 	// Gradle modules need the build root that holds settings and the wrapper.
 	root := orDir(lang.FindUp(path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
@@ -175,11 +183,89 @@ func kotlinCommand(path string, all bool) Command {
 	if fileExists(filepath.Join(root, "gradlew")) {
 		gradle = "./gradlew"
 	}
+	c := Command{Root: root, Dir: root}
 	if all {
-		return Command{Root: root, Dir: root, Args: []string{gradle, "test", "--fail-fast"}}
+		c.Args = []string{gradle, "test", "--fail-fast"}
+		return c
 	}
-	rel, _ := filepath.Rel(root, module)
-	return Command{Root: root, Dir: root, Args: []string{gradle, "-p", filepath.ToSlash(rel), "test", "--fail-fast"}}
+	classes := within(root, coverage.KotlinTests(tests))
+	switch len(classes) {
+	case 0:
+		return c
+	case 1:
+		// One module's: its test task, as the project at its directory.
+		for dir, names := range classes {
+			rel, _ := filepath.Rel(root, dir)
+			c.Args = append([]string{gradle, "-p", filepath.ToSlash(rel), "test", "--fail-fast"}, coverage.GradleTests(names)...)
+		}
+		return c
+	}
+	// Several modules': each one's test task by its project path, which
+	// Gradle names after its directory, so the first failure stops the
+	// build.
+	c.Args = []string{gradle}
+	for _, dir := range slices.Sorted(maps.Keys(classes)) {
+		rel, _ := filepath.Rel(root, dir)
+		task := ":test"
+		if rel != "." {
+			task = ":" + strings.ReplaceAll(filepath.ToSlash(rel), "/", ":") + task
+		}
+		c.Args = append(append(c.Args, task, "--fail-fast"), coverage.GradleTests(classes[dir])...)
+	}
+	return c
+}
+
+// mavenCommand runs, in the Maven module at module, the test classes the
+// files of tests declare; with all, its whole suite. Classes in other
+// modules of its reactor, the directories above it that hold a pom.xml,
+// run from the reactor's top with those modules and the ones they depend
+// on built, so they test module's sources and not an installed copy.
+func mavenCommand(module string, all bool, tests []string) Command {
+	c := Command{Root: module, Dir: module}
+	if all {
+		c.Args = []string{"mvn", "-q", "test"}
+		return c
+	}
+	top := module
+	for dir := filepath.Dir(module); dir != filepath.Dir(dir) && fileExists(filepath.Join(dir, "pom.xml")); dir = filepath.Dir(dir) {
+		top = dir
+	}
+	classes := within(top, coverage.KotlinTests(tests))
+	var names, others []string
+	for _, dir := range slices.Sorted(maps.Keys(classes)) {
+		names = append(names, classes[dir]...)
+		if dir != module {
+			rel, _ := filepath.Rel(top, dir)
+			others = append(others, filepath.ToSlash(rel))
+		}
+	}
+	if len(names) == 0 {
+		return c
+	}
+	slices.Sort(names)
+	c.Args = []string{"mvn", "-q", "test"}
+	if len(others) > 0 {
+		c.Root, c.Dir = top, top
+		var pl []string
+		if classes[module] != nil {
+			rel, _ := filepath.Rel(top, module)
+			pl = append(pl, filepath.ToSlash(rel))
+		}
+		c.Args = append(c.Args, "-pl", strings.Join(append(pl, others...), ","), "-am")
+	}
+	c.Args = append(c.Args, coverage.MavenTests(slices.Compact(names))...)
+	return c
+}
+
+// within is the modules of classes inside root, root's own included.
+func within(root string, classes map[string][]string) map[string][]string {
+	out := map[string][]string{}
+	for dir, names := range classes {
+		if rel, err := filepath.Rel(root, dir); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel) {
+			out[dir] = names
+		}
+	}
+	return out
 }
 
 func orDir(dir, path string) string {
