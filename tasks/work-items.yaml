@@ -1210,7 +1210,7 @@ items:
     title: A strict TypeScript run proves every executable line of every judged function
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
