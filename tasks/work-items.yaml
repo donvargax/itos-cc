@@ -858,7 +858,7 @@ items:
     title: Counted runs keep listed, exception, preparation and baseline meanings
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [mutation-counted-run]
     kind: slice
     why: >
