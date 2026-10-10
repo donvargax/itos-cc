@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -27,8 +29,9 @@ const (
 // node_modules that holds vitest and @vitest/coverage-v8: the one
 // ITOS_CC_NODE_MODULES names, else testdata/tools/node's, else the viewer's.
 // For "python" it needs python3 with pytest and coverage importable, for
-// "kotlin" java and gradle, and for "maven", Kotlin's other build, java and
-// mvn; it returns "" for each.
+// "kotlin" java and gradle, for "maven", Kotlin's other build, java and
+// mvn, and for "node" node and npm alone, a node that runs .ts files by
+// stripping their types (22.18 or later); it returns "" for each.
 //
 // A CI job that did not install the pinned tools skips: its runner's
 // preinstalled ones are whatever version its image has.
@@ -81,6 +84,25 @@ func languageTools(t *testing.T, language string) string {
 			if _, err := exec.LookPath(tool); err != nil {
 				missing(tool)
 			}
+		}
+	case "node":
+		for _, tool := range []string{"node", "npm"} {
+			if _, err := exec.LookPath(tool); err != nil {
+				missing(tool)
+			}
+		}
+		out, err := exec.Command("node", "--version").Output()
+		if err != nil {
+			missing("node")
+		}
+		parts := strings.Split(strings.TrimPrefix(strings.TrimSpace(string(out)), "v"), ".")
+		major, _ := strconv.Atoi(parts[0])
+		minor := 0
+		if len(parts) > 1 {
+			minor, _ = strconv.Atoi(parts[1])
+		}
+		if major < 22 || major == 22 && minor < 18 {
+			missing("a node that strips TypeScript types by default (22.18 or later; this is " + strings.TrimSpace(string(out)) + ")")
 		}
 	case "maven":
 		for _, tool := range []string{"java", "mvn"} {
