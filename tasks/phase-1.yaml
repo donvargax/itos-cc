@@ -279,7 +279,17 @@
     preparation helper commands and zero local mutant trials; focused checks locally, broad existing
     fixture suites in CI. Clearly label new internal capability tests, not original-product red
     evidence. Linux ownership is a prerequisite and Windows mode integration remains #29.
+    First attempt reverted (2026-10-09): 3352f9b (supervised coverage executor) and bbec7ad
+    (frozen-plan preparation) turned main red in CI 37985811436 on all three OSes;
+    TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing no longer found the unloaded
+    package's executable function reported as missing evidence, so a complete-run default changed.
+    The revert 020c72c takes both out. The test already fails at 3352f9b alone, so the regression
+    is in the coverage executor's change to the legacy path (coverage/run.go and its neighbours),
+    not in the frozen-plan preparation. The next attempt finds the cause in the product, keeps that
+    test unchanged and green, and may reuse the reverted commits' work.
   done_when:
+    - run: go test -timeout 20m -count=1 ./cmd/itos-cc -run "^TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing$"
+      timeout: 1200
     - run: grep -q 'func TestFreshPreparationReportsEveryCommandFailure(' cmd/itos-cc/fresh_preparation_test.go
     - run: grep -q 'func TestFreshPreparationOwnsCommandsAndPreservesListedReach(' cmd/itos-cc/fresh_preparation_test.go
     - run: grep -q 'func TestFreshPreparationPreservesCompleteDefaults(' cmd/itos-cc/fresh_preparation_test.go
