@@ -947,3 +947,15 @@ items:
       incomplete files untouched. The decisions are the comments above its scenarios in
       features/mutate.feature.
     refs: ["#26"]
+  - id: mutation-windows-fail-fast
+    title: mutation run --fail-fast on Windows
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [mutation-windows-ownership, fail-fast-partial]
+    kind: idea
+    why: >
+      q-36: --fail-fast ships on Linux and macOS first and Windows refuses it with
+      fail-fast.platform. Once Windows Job ownership (mutation-windows-ownership) lands on a Windows
+      machine, admit --fail-fast there with the same scenarios running on windows-latest.
+    refs: ["#29", "#26"]
