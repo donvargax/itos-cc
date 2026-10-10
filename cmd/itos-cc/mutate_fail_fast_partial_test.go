@@ -353,12 +353,12 @@ func TestACancelledForcedRerunLeavesAFreshPriorCacheUsable(t *testing.T) {
 // never comes, and Z's survives once Hold's started. With mutation.tests,
 // support/dep.txt is a support input of every outcome of sh test.sh.
 var laterFiles = map[string]string{
-	"go.mod":           "module example.com/ff\n\ngo 1.22\n",
-	"b.go":             "package main\n\nfunc K1(n int) bool { return n > 2 }\n\nfunc K2(n int) bool { return n > 3 }\n\nfunc Hold(n int) bool { return n > 4 }\n",
-	"z.go":             "package main\n\nfunc Z(n int) bool { return n > 9 }\n\nfunc main() {}\n",
-	"main_test.go":     "package main\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n",
-	"support/dep.txt":  "one\n",
-	"itos-cc.yaml":     "mutation:\n  tests:\n    list: \"touch list-ran\"\n    run: \"touch test-ran-{pattern}\"\n    ids_pattern: \"{ids}\"\n    join:\n      each: \"{id}\"\n      sep: \",\"\n    support: [\"support/*.txt\"]\n",
+	"go.mod":          "module example.com/ff\n\ngo 1.22\n",
+	"b.go":            "package main\n\nfunc K1(n int) bool { return n > 2 }\n\nfunc K2(n int) bool { return n > 3 }\n\nfunc Hold(n int) bool { return n > 4 }\n",
+	"z.go":            "package main\n\nfunc Z(n int) bool { return n > 9 }\n\nfunc main() {}\n",
+	"main_test.go":    "package main\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n",
+	"support/dep.txt": "one\n",
+	"itos-cc.yaml":    "mutation:\n  tests:\n    list: \"touch list-ran\"\n    run: \"touch test-ran-{pattern}\"\n    ids_pattern: \"{ids}\"\n    join:\n      each: \"{id}\"\n      sep: \",\"\n    support: [\"support/*.txt\"]\n",
 	"test.sh": ffScript(
 		"grep -q 'n > 2' b.go || exit 1",
 		"grep -q 'n > 3' b.go || exit 1",

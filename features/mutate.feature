@@ -2590,7 +2590,7 @@ Feature: Mutation testing
   # in neither, as fail-fast-partial decided. Aggregate output is unchanged.
   Rule: A fail-fast file's counts agree with its work
 
-    @wip @fail-fast-counts @ID-MUT-211
+    @fail-fast-counts @ID-MUT-211
     Scenario: A file blocked by a failing listed selection counts what it ran and reused
       Given a fail-fast run that ran one mutant of a file and reused another before a failing listed selection blocked a third
       When its report is emitted as JSON and as text

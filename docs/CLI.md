@@ -155,7 +155,9 @@ without it would. Its `--json` object stays one object and adds keys only:
 failure's problem subject keys; `"work": {"completed", "cancelled",
 "unattempted", "blocked"}`, disjoint counts of the selected mutants; and in
 each file `"state"` (`completed`, `stopped`, `unattempted` or `blocked`),
-`"work"`, `"cache"` (`complete` when its snapshot, as the run leaves it,
+`"work"`, `"ran"` and `"reused"` counting what the run ran and reused of
+the file in every state, blocked included (its completed work less any
+measured uncovered), `"cache"` (`complete` when its snapshot, as the run leaves it,
 holds a valid result for every mutant of its judged functions, else
 `incomplete`, apart from the run's own work in `"state"`), `"baseline"` as
 it ran, `not-run` when it never did, and every mutant of its judged

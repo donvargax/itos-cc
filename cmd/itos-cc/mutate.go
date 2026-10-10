@@ -167,7 +167,9 @@ was. With --json, "stop" says whether the run stopped early and at which
 rule and subject, "work" counts the selected mutants completed (run,
 reused or measured uncovered), cancelled, unattempted and blocked,
 disjointly, and each file has its "state" and "work", the run's own work
-on it, its "cache", whether its snapshot as the run leaves it holds a
+on it, with "ran" and "reused" counting the mutants it ran and reused of
+it in every state, blocked included, its completed work less any measured
+uncovered, its "cache", whether its snapshot as the run leaves it holds a
 valid result for every mutant of its functions judged, its "baseline" as
 it ran ("not-run" when it never did), and every mutant of its functions
 judged with its "state", an outcome only when completed. --fail-fast runs on Linux and macOS, where every command it
@@ -776,12 +778,15 @@ func runMutate(in *invocation) (any, error) {
 			}
 		}
 		if failFast && (r.BaselineFailed || len(r.FailedSelections) > 0) {
-			f := mutateFile{File: r.Rel, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants), State: state, Work: work, Cache: cache}
+			// It counts what it ran and reused before the stop, as its
+			// completed work does.
+			f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
+				State: state, Work: work, Cache: cache}
 			countMutants(&f, r.Mutants)
 			result.Files = append(result.Files, f)
 			if !in.json {
-				fmt.Printf("%s: blocked, %s: its tests, or the listed tests its mutants run, fail without any mutant (%d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
-					r.Rel, snapshotKept(r), work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
+				fmt.Printf("%s: blocked, %s: its tests, or the listed tests its mutants run, fail without any mutant (ran %d, reused %d; %d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
+					r.Rel, snapshotKept(r), f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
 				if r.BaselineFailed {
 					fmt.Println(tail(r.BaselineOutput, 20))
 				}

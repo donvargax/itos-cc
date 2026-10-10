@@ -360,7 +360,9 @@ run reuses what was kept while its inputs hold and runs only the rest.
 `--json` adds `stop` (`stopped`, and the failure's `rule` and `subject`) and
 `work`, the selected mutants `completed` (run, reused or measured
 uncovered), `cancelled`, `unattempted` and `blocked`, disjointly; each file
-gets its `state` and `work`, the run's own work on it, its `cache`
+gets its `state` and `work`, the run's own work on it, `ran` and `reused`
+counting what it ran and reused of the file in every state, blocked
+included (its completed work less any measured uncovered), its `cache`
 (`complete` when its snapshot, as the run leaves it, holds a valid result
 for every mutant of its judged functions, else `incomplete`) and its
 `baseline` as it ran (`not-run` when it never did), and each mutant its

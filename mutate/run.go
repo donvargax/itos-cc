@@ -81,7 +81,11 @@ type FileResult struct {
 	Rel string
 	// Snapshot is what the run records of the file, written to .metrics
 	// unless the baseline failed or no function was judged.
-	Snapshot       Snapshot
+	Snapshot Snapshot
+	// Ran is how many mutants of the functions judged this run decided by
+	// running them, and Reused how many it took from the snapshot: a
+	// mutant blocked by a failing selection of listed tests counts in
+	// neither, nor does a result only kept from before (Preserved).
 	Ran, Reused    int
 	BaselineFailed bool
 	BaselineOutput string
@@ -735,8 +739,9 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 				said, took := r.outcome, fmt.Sprintf("%.1fs", r.elapsed.Seconds())
 				switch {
 				case r.failed != nil:
-					// Undecided: its outcome stays pending, and its file
-					// is not written.
+					// Undecided: its outcome stays pending, it counts as no
+					// mutant run, and its file is not written, but in a
+					// fail-fast run, which keeps what else it judged.
 					j.state.result.addFailed(r.failed)
 					said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(r.ids, " "))
 					if st != nil {
@@ -750,7 +755,9 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 				default:
 					j.state.outcomes[j.site] = r.outcome
 				}
-				j.state.result.Ran++
+				if r.failed == nil {
+					j.state.result.Ran++
+				}
 				done++
 				fmt.Fprintf(opt.Log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", done, len(jobs),
 					j.state.rel, site.Line, show(site.Original), show(site.Replacement), said, took)
