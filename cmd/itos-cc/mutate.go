@@ -97,8 +97,9 @@ followed: a move is no change, and a renamed file's snapshot moves with it.
 --count N judges at most N mutation sites freshly, as a bounded check
 that needs no cache: the cache neither saves a trial nor is written. It
 resolves the Git repository and its HEAD commit once and judges that
-commit's tracked files, frozen in a private copy, so staged, unstaged and
-untracked changes play no part; tools, dependencies and the environment are
+commit's tracked files, frozen in a private copy under the checkout's git
+directory (git rev-parse --git-path itos, a linked worktree's own
+included), so staged, unstaged and untracked changes play no part; tools, dependencies and the environment are
 used as installed, from the live project, and nothing is installed or
 downloaded: TypeScript's node_modules and Python's .venv or venv (else the
 virtualenv VIRTUAL_ENV names) at its build roots, and the Go module, Gradle
@@ -315,7 +316,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
 		"count.no-git              --count outside a Git repository, or before its first commit",
 		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
-		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
+		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant, or the private scratch directory is unusable (stage scratch): stage",
 		"count.trial-failed        with --count, a selected mutant's trial could not run: file, line, column, function, original, replacement, identity",
 		"count.interrupted         with --count, SIGINT or SIGTERM interrupted the run, whose report is partial",
 	},

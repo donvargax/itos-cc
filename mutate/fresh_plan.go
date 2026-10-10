@@ -63,6 +63,10 @@ var (
 	ErrFreshPath = errors.New("bad fresh plan path")
 	// ErrFreshUnsupported: committed content the plan does not support.
 	ErrFreshUnsupported = errors.New("unsupported committed scope")
+	// ErrFreshScratch: the private scratch directory the frozen inputs go
+	// in is unusable: outside both the checkout and its git directory, or
+	// reached through a symlink or a file.
+	ErrFreshScratch = errors.New("unusable private scratch directory")
 )
 
 // FreshCandidate identifies a static mutation site without relying on cached
@@ -152,20 +156,16 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 			return nil, err
 		}
 	}
-	gitScratch, err := gitAt(ctx, root, "rev-parse", "--git-path", "itos")
+	scratchParent, scratchBase, err := privateScratch(ctx, root)
 	if err != nil {
-		return nil, fmt.Errorf("resolve private Git scratch path: %w", err)
+		return nil, err
 	}
-	scratchParent := strings.TrimSpace(string(gitScratch))
-	if !filepath.IsAbs(scratchParent) {
-		scratchParent = filepath.Join(root, scratchParent)
-	}
-	if err := makePrivateDirs(root, scratchParent); err != nil {
-		return nil, fmt.Errorf("create private Git scratch directory: %w", err)
+	if err := makePrivateDirs(scratchBase, scratchParent); err != nil {
+		return nil, fmt.Errorf("%w: create private Git scratch directory: %w", ErrFreshScratch, err)
 	}
 	frozen, err := os.MkdirTemp(scratchParent, "fresh-plan-")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrFreshScratch, err)
 	}
 	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: since, SinceBase: sinceBase,
 		Seed: seed, Algorithm: FreshPlanVersion}
@@ -542,6 +542,48 @@ func ensureInside(root, target string) error {
 		return fmt.Errorf("export path escapes private tree: %q", target)
 	}
 	return nil
+}
+
+// privateScratch is where a plan's frozen inputs go, the directory git
+// rev-parse --git-path itos names for the checkout at root, and the base it
+// lies under, below which makePrivateDirs creates it: root itself, which
+// holds .git/itos in a main checkout, or else the checkout's own git
+// directory, which a linked worktree keeps under the main repository's
+// .git/worktrees and which is as private as .git is. The scratch path is
+// returned under that base's physical path. A path outside both is
+// ErrFreshScratch.
+func privateScratch(ctx context.Context, root string) (target, base string, err error) {
+	out, err := gitAt(ctx, root, "rev-parse", "--git-path", "itos")
+	if err != nil {
+		return "", "", fmt.Errorf("resolve private Git scratch path: %w", err)
+	}
+	target = strings.TrimSpace(string(out))
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(root, target)
+	}
+	target = filepath.Clean(target)
+	if ensureInside(root, target) == nil {
+		return target, root, nil
+	}
+	out, err = gitAt(ctx, root, "rev-parse", "--absolute-git-dir")
+	if err != nil {
+		return "", "", fmt.Errorf("resolve the checkout's git directory: %w", err)
+	}
+	gitDir := filepath.Clean(strings.TrimSpace(string(out)))
+	physical, err := filepath.EvalSymlinks(gitDir)
+	if err != nil {
+		return "", "", fmt.Errorf("%w: resolve the checkout's git directory: %w", ErrFreshScratch, err)
+	}
+	for _, dir := range []string{gitDir, physical} {
+		if ensureInside(dir, target) == nil {
+			rel, err := filepath.Rel(dir, target)
+			if err != nil {
+				return "", "", err
+			}
+			return filepath.Join(physical, rel), physical, nil
+		}
+	}
+	return "", "", fmt.Errorf("%w: %q lies outside both the checkout %q and its git directory %q", ErrFreshScratch, target, root, physical)
 }
 
 func makePrivateDirs(root, target string) error {

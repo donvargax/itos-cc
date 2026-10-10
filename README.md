@@ -300,14 +300,16 @@ uncovered-mutant rule of its language.
 
 `--count N` judges at most N mutation sites freshly, without the cache, as
 a bounded check of committed work. It resolves the repository and HEAD once
-and judges that commit's tracked files in a private frozen copy, so
-uncommitted changes play no part; tools and dependencies are used as
+and judges that commit's tracked files in a private frozen copy under the
+checkout's git directory (`git rev-parse --git-path itos`; a linked
+worktree's own works too), so uncommitted changes play no part; tools and dependencies are used as
 installed, from the live project, and nothing is installed or downloaded:
 TypeScript's `node_modules` and Python's `.venv` or `venv` (else the
 virtualenv `VIRTUAL_ENV` names) at its build roots, and the Go module,
 Gradle and Maven caches, with Go commands run with `GOPROXY=off`, Gradle
 with `--offline` and Maven with `-o`. A dependency missing offline fails the
-run as `count.preparation-failed`, naming the stage. Sites of the selection (paths, and `--since`) are ranked by
+run as `count.preparation-failed`, naming the stage, and so does a scratch
+directory replaced by a symlink or a file (stage `scratch`). Sites of the selection (paths, and `--since`) are ranked by
 SHA-256 over `--seed TEXT`, the HEAD commit's id by default, and the first N
 across every file and function are selected. Coverage, listed reach and
 each selected file's clean baseline are measured on the frozen copy, and any

@@ -1848,7 +1848,7 @@ Feature: Mutation testing
   # fix, never an internal error. Complete runs are unchanged.
   Rule: Counted runs work in a linked git worktree
 
-    @wip @counted-worktree-run @ID-MUT-212
+    @counted-worktree-run @ID-MUT-212
     Scenario: A count-one run in a linked worktree judges its committed selection
       Given a committed Go project and a second checkout of it made with git worktree add
       When a count-one run judges it from the linked worktree

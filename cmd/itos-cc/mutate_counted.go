@@ -438,6 +438,10 @@ func countedPlanError(in *invocation, err error) error {
 			"Name a commit, branch, or tag that exists, such as origin/main.").with("ref", in.str("since"))
 	case errors.Is(err, mutate.ErrFreshPath):
 		return fail(kindUsage, "paths.unmatched", err.Error(), "Name committed source paths.")
+	case errors.Is(err, mutate.ErrFreshScratch):
+		return fail(kindNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+err.Error(),
+			"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
+			with("stage", "scratch")
 	case errors.Is(err, mutate.ErrFreshUnsupported):
 		return fail(kindUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+err.Error(),
 			"Judge paths without it, or run mutation run without --count.")
