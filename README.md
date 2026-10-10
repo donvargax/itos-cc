@@ -278,7 +278,13 @@ Uncovered mutants never run, so a changed function no test executes passes.
 `mutation.uncovered` problem in `--json`, and exit 1. With `--since`, only the
 judged functions' uncovered mutants count. With `--no-coverage`, or where
 coverage measured nothing for the language, every mutant runs and none is
-uncovered for non-strict runs. Go `--fail-uncovered` is strict: it also
+uncovered, without `--fail-uncovered`. With it, a TypeScript, Python or
+Kotlin build root with mutants to judge whose coverage tool is missing, or
+whose coverage command fails or writes no report, fails closed as Go does:
+`coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
+naming its language and directory, and the run stops before any mutant
+runs. Reports read with `--coverage-report`, `--use-existing-coverage` or
+`--coverage-command` keep the fallback. Go `--fail-uncovered` is strict: it also
 requires fresh executable-block evidence for every judged Go function,
 including functions with no mutation sites, and fails uncovered blocks as
 `mutation.uncovered-statement` without changing mutant counts. Empty and

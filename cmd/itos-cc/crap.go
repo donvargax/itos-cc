@@ -100,7 +100,7 @@ func runCrap(in *invocation) (any, error) {
 		worst = worst[:n]
 	}
 	result.Entries = worst
-	result.Unmeasured = relativeUnmeasured(report)
+	result.Unmeasured = relativeUnmeasured(report.Missing())
 	if !in.json {
 		printCrapTable(worst)
 	}

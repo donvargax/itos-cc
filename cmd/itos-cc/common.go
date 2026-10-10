@@ -150,8 +150,13 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 // measure: a missing tool or report is the environment, tests that measured
 // nothing say no, and an unreadable --coverage-report is a usage error.
 func unmeasured(report *coverage.Report) []*problem {
+	return unmeasuredProblems(relativeUnmeasured(report.Missing()))
+}
+
+// unmeasuredProblems is unmeasured of the build roots and reports ms.
+func unmeasuredProblems(ms []coverage.Unmeasured) []*problem {
 	var out []*problem
-	for _, m := range relativeUnmeasured(report) {
+	for _, m := range ms {
 		var p *problem
 		switch m.Cause {
 		case coverage.ToolMissing:
@@ -177,11 +182,11 @@ func unmeasured(report *coverage.Report) []*problem {
 	return out
 }
 
-// relativeUnmeasured is report's Missing with directories relative to the
-// working directory, as every other path itos-cc prints is.
-func relativeUnmeasured(report *coverage.Report) []coverage.Unmeasured {
+// relativeUnmeasured is ms, a report's Missing, with directories relative
+// to the working directory, as every other path itos-cc prints is.
+func relativeUnmeasured(ms []coverage.Unmeasured) []coverage.Unmeasured {
 	out := []coverage.Unmeasured{}
-	for _, m := range report.Missing() {
+	for _, m := range ms {
 		if m.Dir != "" {
 			m.Dir = project.Rel(m.Dir)
 		}

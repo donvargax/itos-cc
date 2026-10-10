@@ -1717,7 +1717,7 @@ Feature: Mutation testing
       Then it is still not judged for Go coverage evidence
       And a strict mutation run over a mixed selection can reuse fresh Go evidence instead of measuring every time
 
-    @wip @uncovered-fails-closed @ID-MUT-204
+    @uncovered-fails-closed @ID-MUT-204
     Scenario Outline: Strict runs fail closed when another language measured nothing
       Given a <language> project whose coverage <failure>
       When I run "itos-cc mutation run --fail-uncovered --json" for one of its files

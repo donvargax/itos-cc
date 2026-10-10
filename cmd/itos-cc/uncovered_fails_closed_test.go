@@ -193,3 +193,46 @@ func TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 		})
 	}
 }
+
+// In a mixed strict run, another language that measured nothing stops the
+// whole run before any mutant runs, as Go's missing coverage stops it, and
+// a file of that language with no mutation site needs no coverage at all.
+// Raw-report flags keep their behaviour for that language: the run falls
+// back to running every mutant.
+func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
+	dir := moduleRepo(t, map[string]string{
+		"gomod/go.mod":        "module example.com/mixed\n\ngo 1.22\n",
+		"gomod/entry.go":      "package mixed\n\nfunc Above(a, b int) bool { return a > b }\n",
+		"gomod/entry_test.go": "package mixed\n\nimport \"testing\"\n\nfunc TestAbove(t *testing.T) { if !Above(2, 1) || Above(1, 1) { t.Fatal(\"Above\") } }\n",
+		"app/package.json":    `{"name": "app"}` + "\n",
+		"app/src/calc.ts":     "export function above(a: number, b: number): boolean {\n  return a > b;\n}\n",
+		"app/src/label.ts":    "export function label(name: string): string {\n  return name;\n}\n",
+	})
+	goSource, ts, siteFree := filepath.FromSlash("gomod/entry.go"), filepath.FromSlash("app/src/calc.ts"), filepath.FromSlash("app/src/label.ts")
+
+	mixed := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, ts)
+	if p := mixed.json(t).problem("coverage.tool-missing"); p == nil || p["language"] != "typescript" || mixed.code != 3 {
+		t.Errorf("mixed strict run: exit %d, want 3 with TypeScript's coverage.tool-missing\n%s%s", mixed.code, mixed.stdout, mixed.stderr)
+	}
+	if files := mixed.rawFiles(t); len(files) != 0 {
+		t.Errorf("mixed strict run judged files %v, want the run stopped before any mutant", files)
+	}
+	for _, name := range []string{goSource, ts} {
+		if _, err := os.Stat(filepath.Join(dir, ".metrics", "mutate", name+".json")); err == nil {
+			t.Errorf("mixed strict run wrote %s's snapshot", name)
+		}
+	}
+
+	siteFreeRun := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, siteFree)
+	if siteFreeRun.code != 0 || siteFreeRun.json(t).problem("coverage.tool-missing") != nil {
+		t.Errorf("a site-free TypeScript file failed the strict run: exit %d\n%s%s", siteFreeRun.code, siteFreeRun.stdout, siteFreeRun.stderr)
+	}
+
+	raw := failClosedRun(t, ts, "--fail-uncovered", "--coverage-report", "absent.info")
+	if !strings.Contains(raw.stderr, "no coverage for "+ts+"; running every mutant") || raw.json(t).problem("coverage.tool-missing") != nil {
+		t.Errorf("--coverage-report no longer falls back for TypeScript under --fail-uncovered:\n%s%s", raw.stdout, raw.stderr)
+	}
+	if f := raw.json(t).file(t, ts); f.Ran == 0 || f.Survived != f.Ran {
+		t.Errorf("--coverage-report run: ran %d survived %d, want every mutant run\n%s", f.Ran, f.Survived, raw.stdout)
+	}
+}

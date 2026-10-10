@@ -180,9 +180,14 @@ each uncovered positive-weight coverage block. Strict Go runs reject
 --coverage-command. A matching independent cache can avoid remeasurement;
 otherwise built-in or listed coverage must measure successfully. Empty or
 comment-only function bodies have no executable coverage obligation. For
-other languages the existing uncovered-mutant behavior is unchanged. With
---since, only the judged functions' uncovered mutants and executable blocks
-count.
+TypeScript, Python and Kotlin it fails closed as Go does: a build root with
+mutants to judge whose coverage tool is missing, or whose coverage command
+fails or writes no report, is coverage.tool-missing or
+coverage.measured-nothing, naming its language and dir, and the run stops
+before any mutant runs. Without --fail-uncovered such a file runs every
+mutant, as it always did, and so it does with --coverage-report,
+--use-existing-coverage or --coverage-command. With --since, only the judged
+functions' uncovered mutants and executable blocks count.
 
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing: it
 is counted excepted, not survived, and is reused without running, as a kill
@@ -287,6 +292,8 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block is uncovered: file, function, line",
 		"mutation.coverage-missing  with --fail-uncovered, a Go function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
+		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
+		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
@@ -307,9 +314,9 @@ judged and no snapshot is written. Listed tests are not run with
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
-		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
+		{3, "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		{75, "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 	},
 	examples: []string{
@@ -629,6 +636,9 @@ func runMutate(in *invocation) (any, error) {
 			for _, missing := range report.Missing() {
 				missingGo = missingGo || missing.Language == "go"
 			}
+			// Another language that measured nothing fails closed as Go
+			// does, and stops the run with it.
+			others := unmeasuredToJudge(report, sources, mutationChecks, in.set("mutate-all"))
 			if missingGo || !report.Measures("go") {
 				for _, p := range unmeasured(report) {
 					if p.subject["language"] == "go" {
@@ -638,6 +648,15 @@ func runMutate(in *invocation) (any, error) {
 				if !missingGo {
 					in.report(fail(kindMissing, "coverage.no-report", "Go coverage measurement did not produce executable coverage",
 						"Run the built-in Go coverage command successfully, then retry.").with("language", "go"))
+				}
+				for _, p := range others {
+					in.report(p)
+				}
+				return result, nil
+			}
+			if len(others) > 0 {
+				for _, p := range others {
+					in.report(p)
 				}
 				return result, nil
 			}
@@ -650,7 +669,9 @@ func runMutate(in *invocation) (any, error) {
 			}
 		}
 	} else if !in.set("no-coverage") {
-		opt.Coverage = func(sources []string) (*coverage.Report, error) {
+		// measure measures sources; a strict run fails on a coverage error
+		// rather than going without coverage.
+		measure := func(sources []string, strict bool) (*coverage.Report, error) {
 			var perTest *coverage.PerTest
 			if suite != nil {
 				listed, err := listTests(suite)
@@ -671,10 +692,36 @@ func runMutate(in *invocation) (any, error) {
 			// a listed test reaches it.
 			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr, perTest)
 			if err != nil {
+				if strict {
+					return nil, err
+				}
 				fmt.Fprintln(os.Stderr, "itos-cc: coverage:", err)
 				return nil, nil
 			}
 			return report, nil
+		}
+		opt.Coverage = func(sources []string) (*coverage.Report, error) { return measure(sources, false) }
+		if in.set("fail-uncovered") && !rawCoverage(in) {
+			// Strict: a language the per-language commands measured
+			// nothing of fails closed, as Go does, instead of running
+			// every mutant, and stops the run before any mutant runs.
+			checks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+			if err != nil {
+				return result, err
+			}
+			if mutate.NeedsMutationCoverage(checks, in.set("mutate-all")) {
+				report, err := measure(sources, true)
+				if err != nil {
+					return result, err
+				}
+				if others := unmeasuredToJudge(report, sources, checks, in.set("mutate-all")); len(others) > 0 {
+					for _, p := range others {
+						in.report(p)
+					}
+					return result, nil
+				}
+				opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+			}
 		}
 	}
 
@@ -1073,6 +1120,58 @@ func flagPresent(in *invocation, flag string) bool {
 		return in.set("use-existing-coverage")
 	}
 	return false
+}
+
+// rawCoverage says whether coverage comes from reports the run is given or
+// told to read, not from the per-language commands: strict non-Go coverage
+// keeps their behaviour.
+func rawCoverage(in *invocation) bool {
+	return in.set("use-existing-coverage") || in.str("coverage-command") != "" || len(in.strs("coverage-report")) > 0
+}
+
+// unmeasuredToJudge is, under --fail-uncovered, a problem for each build
+// root of a language other than Go that coverage measured nothing of while
+// a file of it has mutants this run must judge: the files Run would
+// otherwise fall back on, running every mutant. Each fails closed with the
+// problem unmeasured gives it, as Go does (ADR-0017). A file of a language
+// measured elsewhere in the run is uncovered instead, as before, and a file
+// with nothing to judge needs no coverage.
+func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutate.FileCheck, mutateAll bool) []*problem {
+	var found []coverage.Unmeasured
+	seen := map[int]bool{}
+	for i, source := range sources {
+		spec := lang.Detect(source)
+		if spec == nil || spec.Name == "go" || i >= len(checks) {
+			continue
+		}
+		if !mutate.NeedsMutationCoverage(checks[i:i+1], mutateAll) || report.Has(source) || report.Measures(spec.Name) {
+			continue
+		}
+		abs, err := filepath.Abs(source)
+		if err != nil {
+			abs = source
+		}
+		matched := false
+		for j, m := range report.Missing() {
+			dir, err := filepath.Abs(m.Dir)
+			if m.Language != spec.Name || m.Dir == "" || err != nil {
+				continue
+			}
+			if rel, err := filepath.Rel(dir, abs); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+				continue
+			}
+			matched = true
+			if !seen[j] {
+				seen[j] = true
+				found = append(found, m)
+			}
+		}
+		if !matched {
+			found = append(found, coverage.Unmeasured{Dir: filepath.Dir(abs), Language: spec.Name, Cause: coverage.MeasuredNothing,
+				Reason: "its coverage run measured none of its files"})
+		}
+	}
+	return unmeasuredProblems(relativeUnmeasured(found))
 }
 
 func hasGoSource(sources []string) bool {
