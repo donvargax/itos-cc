@@ -26,14 +26,30 @@ const cliArg = "itos-cc.test-cli"
 // for --count and --fail-fast, as countedPlatform holds it.
 const platformEnv = "ITOS_CC_TEST_PLATFORM"
 
+// coverDir is the GOCOVERDIR go test gave this test binary when it measures
+// coverage, empty when it does not. TestMain takes it out of the
+// environment while the tests or itos-cc run, so a fixture's commands see
+// a GOCOVERDIR only when itos-cc gives them one, never the outer run's,
+// and puts it back before the binary exits, when a test binary writes its
+// coverage there. itosCc gives it to the itos-cc subprocess, which does
+// the same, so its coverage counts too.
+var coverDir = os.Getenv("GOCOVERDIR")
+
 func TestMain(m *testing.M) {
+	os.Unsetenv("GOCOVERDIR")
+	var code int
 	if len(os.Args) > 1 && os.Args[1] == cliArg {
 		if platform := os.Getenv(platformEnv); platform != "" {
 			countedPlatform = platform
 		}
-		os.Exit(run(os.Args[2:]))
+		code = run(os.Args[2:])
+	} else {
+		code = m.Run()
 	}
-	os.Exit(m.Run())
+	if coverDir != "" {
+		os.Setenv("GOCOVERDIR", coverDir)
+	}
+	os.Exit(code)
 }
 
 // workspace is the directory itos-cc runs in for a test, and what it adds
@@ -142,6 +158,9 @@ func itosCc(t *testing.T, args ...string) outcome {
 	}
 	cmd := exec.Command(exe, append([]string{cliArg}, args...)...)
 	cmd.Dir, cmd.Env = wd(t), testEnv(t)
+	if coverDir != "" {
+		cmd.Env = append(cmd.Env, "GOCOVERDIR="+coverDir)
+	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	err = cmd.Run()
