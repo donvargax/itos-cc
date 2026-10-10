@@ -32,6 +32,50 @@ jobs:
       # 10 on windows-latest (T-6). The limit only guards against a hang.
       - run: go test -timeout 20m ./...
 
+      # The real TypeScript, Python and Kotlin tools, so the language smoke
+      # tests and the Vitest test run through them instead of skipping
+      # (T-13). On ubuntu-latest alone, to bound CI time: elsewhere those
+      # tests skip. Installed after the suite above, which runs as before.
+      # Each tool is pinned: Node's by testdata/tools/node's lockfile,
+      # Python's by testdata/tools/python/requirements.txt, and the JDK and
+      # Gradle here; the Kotlin fixture pins its plugin.
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: testdata/tools/node/package-lock.json
+      - if: matrix.os == 'ubuntu-latest'
+        working-directory: testdata/tools/node
+        run: npm ci
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: testdata/tools/python/requirements.txt
+      - if: matrix.os == 'ubuntu-latest'
+        run: python3 -m pip install -r testdata/tools/python/requirements.txt
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+      # Puts Gradle on PATH and caches its downloads, the Kotlin plugin and
+      # JUnit, between runs; "basic" is the open-source cache.
+      - if: matrix.os == 'ubuntu-latest'
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: "9.8.1"
+          cache-provider: basic
+      # Verbose, so the log lists each test that ran. ITOS_CC_LANGUAGE_TOOLS
+      # makes a missing tool fail these tests instead of skipping them.
+      - if: matrix.os == 'ubuntu-latest'
+        env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered)$' ./cmd/itos-cc
+
   draft:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v')
