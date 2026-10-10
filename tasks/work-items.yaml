@@ -921,3 +921,18 @@ items:
       mode enabled on darwin. Unlike Windows (#29), the macos-latest CI runner can verify it. On
       2026-10-09 the person chose to release v0.7.0 Linux-only and do this right after it.
     refs: ["#27"]
+  - id: race-cleanup-timeout
+    title: TestLinuxCleanupFailureIsReturnedNotJudged fails under -race
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      go test -race ./mutate/... fails TestLinuxCleanupFailureIsReturnedNotJudged every time,
+      already at 7d46058: its re-executed helper is a race binary, and the race runtime sleeps a
+      second at exit by default (atexit_sleep_ms=1000), so the one-second mutant timeout the test
+      gives fires and the injected cleanup error is never returned. With GORACE=atexit_sleep_ms=0
+      every Owned, Fresh, Cleanup and Ownership test passes under -race. CI does not run -race, so
+      only local race checks see it; the test needs a timeout that does not race the exit sleep, or
+      the helper an environment without it.
