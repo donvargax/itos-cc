@@ -1203,12 +1203,9 @@ items:
     title: A strict Python run proves every executable line of every judged function
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-40: ADR-0017/0018 for Python, at coverage.py's LCOV line precision; per-function
-      fingerprinted evidence so mutation check matches the run.
     refs: ["#23"]
   - id: strict-lines-typescript
     title: A strict TypeScript run proves every executable line of every judged function
