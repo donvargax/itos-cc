@@ -1042,7 +1042,7 @@ items:
     title: TypeScript coverage measures the same related tests that judge the mutants
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-13]
     kind: slice
     why: >
