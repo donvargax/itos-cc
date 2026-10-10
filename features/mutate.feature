@@ -1874,7 +1874,7 @@ Feature: Mutation testing
   #   --test-command or --coverage-command is the user's and is unchanged.
   Rule: Counted and Python runs touch only what their judgments need
 
-    @wip @counted-unjudged-language @ID-MUT-213
+    @counted-unjudged-language @ID-MUT-213
     Scenario: A strict counted run needs no measurement of a language with nothing to judge
       Given a committed project with a Go module and a TypeScript file with no mutation site
       And no TypeScript coverage tool is installed

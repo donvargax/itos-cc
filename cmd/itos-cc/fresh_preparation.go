@@ -142,9 +142,23 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		return prep, err
 	}
 
+	// Only a language with something to judge is measured, as a complete
+	// run fails only over those (unmeasuredToJudge): one with an eligible
+	// site, which fails closed when it cannot be measured, and Go, whose
+	// every admitted function strict-go-inventory judges. A file of any
+	// other language, with no site, needs no tool.
+	judged := map[string]bool{"go": true}
+	for _, c := range plan.Eligible {
+		if spec := lang.Detect(c.Path); spec != nil {
+			judged[spec.Name] = true
+		}
+	}
 	var sources []string
 	seen := map[string]bool{}
 	for _, unit := range plan.Units {
+		if spec := lang.Detect(unit.Path); spec == nil || !judged[spec.Name] {
+			continue
+		}
 		p := filepath.Join(root, filepath.FromSlash(unit.Path))
 		if !seen[p] {
 			seen[p] = true

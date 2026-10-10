@@ -309,7 +309,10 @@ virtualenv `VIRTUAL_ENV` names) at its build roots, and the Go module,
 Gradle and Maven caches, with Go commands run with `GOPROXY=off`, Gradle
 with `--offline` and Maven with `-o`. A dependency missing offline fails the
 run as `count.preparation-failed`, naming the stage, and so does a scratch
-directory replaced by a symlink or a file (stage `scratch`). Sites of the selection (paths, and `--since`) are ranked by
+directory replaced by a symlink or a file (stage `scratch`). Only a
+language with something to judge is measured, one with an eligible site in
+the selection and Go, whose admitted functions strict Go coverage judges,
+so a file of another language with no site needs no tool. Sites of the selection (paths, and `--since`) are ranked by
 SHA-256 over `--seed TEXT`, the HEAD commit's id by default, and the first N
 across every file and function are selected. Coverage, listed reach and
 each selected file's clean baseline are measured on the frozen copy, and any
