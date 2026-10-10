@@ -87,7 +87,7 @@ func countedRun(t *testing.T, args ...string) outcome {
 // Linux-only until #29.
 func requireCountedPlatform(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS == "windows" {
 		t.Skip("counted mutation run is Linux-only; native Windows support is #29")
 	}
 }

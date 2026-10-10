@@ -39,7 +39,7 @@ const (
 // owned process trees: Linux only, until macos-counted-run builds macOS.
 func requireOwnedSupervision(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		t.Skip("owned process-tree supervision is Linux-only until macos-counted-run")
 	}
 }
