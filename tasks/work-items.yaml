@@ -960,3 +960,18 @@ items:
       fail-fast.platform. Once Windows Job ownership (mutation-windows-ownership) lands on a Windows
       machine, admit --fail-fast there with the same scenarios running on windows-latest.
     refs: ["#29", "#26"]
+  - id: fail-fast-cleanup-report
+    title: Report a fail-fast cleanup failure beside the partial report
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      In a complete mutation run --fail-fast, an owned process group still alive at the shared
+      five-second deadline after the stop is returned as an error: the run ends as internal (exit
+      70) and its partial report, with the stop and the judgments already completed, is lost.
+      Counted mode instead records such an error as a cancelled stage. ADR-0021 wants cleanup
+      failures reported, never downgraded; a dedicated problem rule printed beside the partial
+      report would keep both facts.
+    refs: ["#26"]
