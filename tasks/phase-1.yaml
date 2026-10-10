@@ -379,3 +379,17 @@
     - run: go vet ./...
     - run: go test -count=1 -coverprofile=$(mktemp) -run '^(TestAFailingBaselineStopsTheRunWithoutInventingOutcomes|TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork|TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged|TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused)$' ./cmd/itos-cc
       timeout: 600
+- id: T-18
+  type: revert
+  title: Take own-tests-python back off a red main
+  why: >
+    The first landing of own-tests-python, d1177a1 (the feature), turned main red in CI 38078607002
+    on all three OSes: TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage expects
+    a Python own outcome whose fixture has no test file reaching it by name to be drawn and reused
+    as fresh, and the narrowed own command now judges it differently. The feature comes out alone;
+    its steps, 78ff116, skip outside the language-tools job and stay. The slice relands with that
+    test updated.
+  done_when:
+    - run: go vet ./...
+    - run: go test -count=1 ./mutate/...
+      timeout: 600

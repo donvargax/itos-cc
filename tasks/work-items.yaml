@@ -1147,3 +1147,18 @@ items:
       names (check_*.py) has those tests dropped from its own command and coverage; reading
       python_files from pytest.ini, pyproject.toml, tox.ini or setup.cfg would keep them.
     refs: [q-38, own-tests-python]
+  - id: T-18
+    title: Take own-tests-python back off a red main
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The first landing of own-tests-python, d1177a1 (the feature), turned main red in CI
+      38078607002 on all three OSes:
+      TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage expects a Python own
+      outcome whose fixture has no test file reaching it by name to be drawn and reused as fresh,
+      and the narrowed own command now judges it differently. The feature comes out alone; its
+      steps, 78ff116, skip outside the language-tools job and stay. The slice relands with that test
+      updated.
