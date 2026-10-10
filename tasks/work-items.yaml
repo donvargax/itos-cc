@@ -1163,3 +1163,16 @@ items:
       since FreshBaselineCommands skips files whose own command runs nothing; a complete run judges
       it by the listed tests.
     refs: ["#27"]
+  - id: unreached-baseline-not-run
+    title: A file no test reaches reports its baseline as passed though none ran
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by test-support-reach (2026-10-10): since own-tests-python, a Python file no test
+      reaches runs no baseline, yet mutation run --json reports "baseline": "passed" for it.
+      fail-fast already reports "not-run" for a baseline that never ran; a complete run should say
+      the same rather than claim a pass.
+    refs: ["#14"]
