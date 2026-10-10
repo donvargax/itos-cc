@@ -971,3 +971,15 @@ items:
       counts them, so only these two keys disagree; found while building fail-fast-partial (#26,
       ADR-0022).
     refs: ["#26"]
+  - id: strict-mixed-languages
+    title: Strict Go coverage ignores the other languages of a mixed selection
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Language parity (the person, 2026-10-10). CheckGoCoverage parses every selected file, so a
+      TypeScript, Python or Kotlin file in a strict selection errors for lack of a go.mod or is
+      reported coverage-missing (mutate/check.go:58). Decisions in the comments above ID-MUT-203.
+    refs: ["#23"]
