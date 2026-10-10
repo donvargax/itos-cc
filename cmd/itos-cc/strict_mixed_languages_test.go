@@ -14,9 +14,11 @@ import (
 // whole-suite freshness" in features/mutate.feature that the
 // strict-mixed-languages slice holds. Its steps drive the CLI and read its
 // --json object and the snapshots under .metrics as raw JSON. The
-// TypeScript files are plain files next to a tiny Go module: their one
-// function has no mutation site, so no TypeScript tool is ever needed, and
-// strict Go coverage is the only thing that could judge them.
+// TypeScript files are plain files next to a tiny Go module, with no
+// TypeScript tool: their one function has no mutation site, so no mutant
+// needs one, and strict TypeScript line coverage, which nothing can
+// measure there, reports its evidence missing, while strict Go coverage
+// must never judge them.
 
 // The module lives in gomod/, beneath the repository root, which has no
 // go.mod: web/label.ts has none above it, gomod/web/label.ts has the
@@ -57,19 +59,34 @@ func mixedFindings(t *testing.T, o outcome, file string) []string {
 
 // requireTypeScriptUnjudged fails when o reports a problem about ts that
 // strict Go coverage makes, or any problem that is an error rather than a
-// verdict: an internal failure, as the lack of a go.mod above ts was.
+// verdict: an internal failure, as the lack of a go.mod above ts was. ts
+// is judged by TypeScript's own strict line coverage instead
+// (strict-lines-typescript): with no TypeScript tool there, its function
+// has no TypeScript line evidence, which is mutation.coverage-missing of
+// that evidence, never of Go's.
 func requireTypeScriptUnjudged(t *testing.T, o outcome, ts string) {
 	t.Helper()
+	missing := 0
 	for _, p := range o.json(t).Problems {
 		rule, _ := p["rule"].(string)
 		named, _ := p["file"].(string)
+		message, _ := p["message"].(string)
 		if rule == "internal" {
 			t.Errorf("%s in the selection is an error: %v\n%s", ts, p["message"], o.stdout)
 			continue
 		}
-		if filepath.ToSlash(named) == ts && (strings.HasPrefix(rule, "mutation.coverage-") || rule == "mutation.uncovered-statement") {
-			t.Errorf("%s is judged for Go coverage evidence: %s %v\n%s", ts, rule, p["message"], o.stdout)
+		if filepath.ToSlash(named) != ts {
+			continue
 		}
+		if strings.Contains(message, "Go ") || strings.Contains(fmt.Sprint(p["fix"]), "Go ") {
+			t.Errorf("%s is judged for Go coverage evidence: %s %v\n%s", ts, rule, message, o.stdout)
+		}
+		if rule == "mutation.coverage-missing" && strings.Contains(message, "TypeScript line coverage") {
+			missing++
+		}
+	}
+	if missing != 1 {
+		t.Errorf("%s: %d mutation.coverage-missing of TypeScript line evidence, want 1 for its function, as no TypeScript tool measures it\n%s", ts, missing, o.stdout)
 	}
 	if o.code == 70 || o.code == 3 {
 		t.Errorf("%s in the selection: exit %d\n%s%s", ts, o.code, o.stdout, o.stderr)
@@ -144,8 +161,9 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 	// When I run "itos-cc mutation check --fail-uncovered --json" over both
 	// files
 	mixed := cli(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo, mixedOutside)
-	// Then no TypeScript function is reported as mutation.coverage-missing
-	// or as an error
+	// Then the TypeScript function is reported as mutation.coverage-missing
+	// of TypeScript line evidence, never of Go evidence, and nothing is an
+	// error
 	requireTypeScriptUnjudged(t, mixed, mixedOutside)
 	// And the Go functions are judged as before
 	requireGoJudgedAsBefore(t, mixed, goOnly, "the mixed check")
@@ -158,7 +176,7 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 	requireGoJudgedAsBefore(t, beneath, goOnly, "the check with a TypeScript file beneath the module")
 
 	// And a strict mutation run over a mixed selection can reuse fresh Go
-	// evidence instead of measuring every time
+	// evidence instead of measuring Go every time
 	selection := []string{"--fail-uncovered", "--json", mixedGo, mixedOutside, mixedBeneath}
 	first := mutateCovered(t, selection...)
 	requireTypeScriptUnjudged(t, first, mixedOutside)
@@ -168,7 +186,7 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 	requireTypeScriptUnjudged(t, again, mixedOutside)
 	requireTypeScriptUnjudged(t, again, mixedBeneath)
 	requireGoJudgedAsBefore(t, again, goOnly, "the second mixed strict run")
-	if strings.Contains(again.stderr, mixedGoMeasuring) || strings.Contains(again.stderr, "itos-cc: coverage") {
+	if strings.Contains(again.stderr, mixedGoMeasuring) {
 		t.Errorf("the second mixed strict run measured coverage again instead of reusing fresh Go evidence:\n%s", again.stderr)
 	}
 	requireCompleteGoEvidence(t, dir)

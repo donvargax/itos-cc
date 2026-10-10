@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -197,7 +198,8 @@ func TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 
 // In a mixed strict run, another language that measured nothing stops the
 // whole run before any mutant runs, as Go's missing coverage stops it, and
-// a file of that language with no mutation site needs no coverage at all.
+// a file of that language with no mutation site needs no coverage for its
+// mutants, though its functions still need their line evidence.
 // Raw-report flags keep their behaviour for that language: the run falls
 // back to running every mutant.
 func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
@@ -225,9 +227,14 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 		}
 	}
 
+	// A site-free TypeScript file needs no coverage for its mutants, but its
+	// function needs TypeScript line evidence (strict-lines-typescript),
+	// which no tool measures here: it is missing, never a tool failure.
 	siteFreeRun := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, siteFree)
-	if siteFreeRun.code != 0 || siteFreeRun.json(t).problem("coverage.tool-missing") != nil {
-		t.Errorf("a site-free TypeScript file failed the strict run: exit %d\n%s%s", siteFreeRun.code, siteFreeRun.stdout, siteFreeRun.stderr)
+	missing := siteFreeRun.json(t).problem("mutation.coverage-missing")
+	if siteFreeRun.code != 1 || siteFreeRun.json(t).problem("coverage.tool-missing") != nil ||
+		missing == nil || filepath.ToSlash(fmt.Sprint(missing["file"])) != "app/src/label.ts" {
+		t.Errorf("a site-free TypeScript file with no tool: exit %d, want 1 with its evidence missing and no tool failure\n%s%s", siteFreeRun.code, siteFreeRun.stdout, siteFreeRun.stderr)
 	}
 
 	raw := failClosedRun(t, ts, "--fail-uncovered", "--coverage-report", "absent.info")

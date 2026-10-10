@@ -1679,8 +1679,10 @@ Feature: Mutation testing
   # missing tools or plain files. The Go precedent decides their substance.
   # - strict-mixed-languages: strict Go coverage judges Go files only. A
   #   TypeScript, Python or Kotlin file in the same selection is outside the
-  #   Go evidence inventory: it is neither "missing" nor an error for lack of
-  #   a go.mod, and keeps whatever non-Go --fail-uncovered rules apply.
+  #   Go evidence inventory: it is never "missing" Go evidence nor an error
+  #   for lack of a go.mod, and keeps whatever non-Go --fail-uncovered rules
+  #   apply. Since strict-lines-typescript (q-40), that is TypeScript's own
+  #   line evidence, missing where no TypeScript tool measures it.
   # - uncovered-fails-closed: under --fail-uncovered, a TypeScript, Python
   #   or Kotlin coverage plan that is unsupported (its tool missing), writes
   #   no report, or whose command fails is a measurement failure, reported
@@ -1708,14 +1710,14 @@ Feature: Mutation testing
 
     @strict-mixed-languages @ID-MUT-203
     Scenario: Strict Go coverage ignores the other languages of a mixed selection
-      Given a project with a Go module and a TypeScript file that has no go.mod above it
+      Given a project with a Go module and a TypeScript file that has no go.mod above it, and no TypeScript tool
       And the Go functions have fresh complete coverage evidence
       When I run "itos-cc mutation check --fail-uncovered --json" over both files
-      Then no TypeScript function is reported as mutation.coverage-missing or as an error
+      Then the TypeScript function is reported as mutation.coverage-missing of TypeScript line evidence, never of Go evidence, and nothing is an error
       And the Go functions are judged as before
       When a TypeScript file sits beneath the Go module's directory
       Then it is still not judged for Go coverage evidence
-      And a strict mutation run over a mixed selection can reuse fresh Go evidence instead of measuring every time
+      And a strict mutation run over a mixed selection can reuse fresh Go evidence instead of measuring Go every time
 
     @uncovered-fails-closed @ID-MUT-204
     Scenario Outline: Strict runs fail closed when another language measured nothing
@@ -2053,6 +2055,8 @@ Feature: Mutation testing
       Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, the mutant counts are unchanged, and the run fails
       And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
       And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+      And a strict TypeScript run refuses --coverage-report, --use-existing-coverage and --coverage-command
+      But without --fail-uncovered the run and the check report as before
 
     @wip @strict-lines-kotlin @ID-MUT-223
     Scenario: A strict Kotlin run proves every executable line of every judged function

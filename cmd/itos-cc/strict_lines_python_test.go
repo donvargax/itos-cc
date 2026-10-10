@@ -61,9 +61,9 @@ func strictLineFindings(t *testing.T, o outcome) []string {
 	return out
 }
 
-// strictPythonCounts is each file of a mutation run's --json output with
+// strictMutantCounts is each file of a mutation run's --json output with
 // its mutant counts, as "file killed/survived/uncovered".
-func strictPythonCounts(t *testing.T, o outcome) []string {
+func strictMutantCounts(t *testing.T, o outcome) []string {
 	t.Helper()
 	var out []string
 	for _, f := range o.json(t).Files {
@@ -89,7 +89,7 @@ func problemRules(t *testing.T, o outcome) []string {
 // command.
 func requireNoTestRun(t *testing.T, o outcome, what string) {
 	t.Helper()
-	for _, ran := range []string{"itos-cc: coverage", "itos-cc: baseline", "pytest"} {
+	for _, ran := range []string{"itos-cc: coverage", "itos-cc: baseline", "pytest", "vitest"} {
 		if strings.Contains(o.stderr, ran) {
 			t.Errorf("%s ran a command (%q):\n%s", what, ran, o.stderr)
 		}
@@ -134,7 +134,7 @@ func TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testi
 		}
 	}
 	// the mutant counts are unchanged
-	if got, want := strictPythonCounts(t, strict), strictPythonCounts(t, before); !slices.Equal(got, want) {
+	if got, want := strictMutantCounts(t, strict), strictMutantCounts(t, before); !slices.Equal(got, want) {
 		t.Errorf("the strict run counts mutants %q, want %q as without --fail-uncovered", got, want)
 	}
 	// and the run fails
@@ -209,7 +209,7 @@ func TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testi
 	if got := strictLineFindings(t, after); len(got) != 0 {
 		t.Errorf("the run without --fail-uncovered reports %q", got)
 	}
-	if got, want := strictPythonCounts(t, after), strictPythonCounts(t, before); !slices.Equal(got, want) {
+	if got, want := strictMutantCounts(t, after), strictMutantCounts(t, before); !slices.Equal(got, want) {
 		t.Errorf("the run without --fail-uncovered counts %q, want %q as before", got, want)
 	}
 	if got, want := problemRules(t, after), problemRules(t, before); after.code != before.code || !slices.Equal(got, want) {
