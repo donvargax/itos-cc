@@ -484,15 +484,21 @@ entry never excuses an uncovered mutant: that needs a test, not a reason. An
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's
 snapshot also records, under `tests`, the SHA-256 of every test file that
-imports the file directly, by its path from the project root: in Go, the
-test files of its package and of the packages that import it. That set is
-the same whichever command ran the mutants (its own tests, `--all-tests`, or
-`--test-command`). When a test file is added to it, changed, or removed, the
-kills it may have made no longer hold: the file's mutants all run again, and
-`mutation check` calls its functions stale and names the test files. A
-snapshot written before snapshots recorded tests is stale too. A test that
-reaches the file only through another module, or that runs the built binary,
-is not in the set, so changing it leaves the results as they were. Commit that
+reaches the file, by its path from the project root. In TypeScript, Python
+and Kotlin those are the test files whose imports reach its module, directly
+or through other modules of the project (Kotlin's same-package references
+included), as `vitest related` and `jest --findRelatedTests` select them. In
+Go they are the test files of its package and of the packages that import
+it, one hop: a Go test that reaches the package only through another package
+is not in the set. That set is the same whichever command ran the mutants
+(its own tests, `--all-tests`, or `--test-command`). When a test file is
+added to it, changed, or removed, the kills it may have made no longer hold:
+the file's mutants all run again, and `mutation check` calls its functions
+stale and names the test files. A snapshot written before snapshots recorded
+tests is stale too, and so, once, is one written when a TypeScript, Python or
+Kotlin file's set held only the tests that import it directly, if a test
+reaches it through another module. A test that runs the built binary is not
+in the set, so changing it leaves the results as they were. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),

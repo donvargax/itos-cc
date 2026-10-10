@@ -119,6 +119,15 @@ output of the commands it runs passes as it is.
 
 Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 
+A snapshot's `tests` are the test files that reach its file. In TypeScript,
+Python and Kotlin those are the test files whose imports reach its module
+transitively (Kotlin's same-package references included), as `vitest
+related` and `jest --findRelatedTests` select them; in Go, the test files of
+its package and of the packages that import it, one hop. A snapshot recorded
+when a TypeScript, Python or Kotlin file's tests were only those importing
+it directly reads stale once if a test reaches the file through another
+module, and is re-run as any stale result is.
+
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files

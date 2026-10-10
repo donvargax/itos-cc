@@ -7,13 +7,15 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
-// TestsImporting finds the tests of each source file of files: the test
-// files of files that import its module directly, as the graph resolves
-// imports. In Go, where a module is a package, they are also the test files
-// of its own package and of the packages whose sources import it. A test
-// that reaches a file only through another module is not among them. root
-// is the project root, which tsconfig aliases resolve against. Paths are
-// those of files, and each list is sorted.
+// TestsImporting finds the tests of each source file of files, as the graph
+// resolves imports. In TypeScript, Python and Kotlin they are the test files
+// that reach its module through the transitive closure of their imports
+// (Kotlin's same-package references included), as vitest related and jest
+// --findRelatedTests select them. In Go, where a module is a package, they
+// are the test files of its own package and of the packages whose sources
+// import it, one hop: a Go test that reaches a package only through another
+// is not among them. root is the project root, which tsconfig aliases
+// resolve against. Paths are those of files, and each list is sorted.
 func TestsImporting(root string, files project.Files) (map[string][]string, error) {
 	sources, err := parseDependencies(root, files.Sources)
 	if err != nil {
@@ -30,16 +32,20 @@ func TestsImporting(root string, files project.Files) (map[string][]string, erro
 func importingTests(root string, sources, tests []*fileInfo) map[string][]string {
 	g := newRepoGraph("project", root, sources)
 	idx := g.index()
-	// importers are the Go packages whose sources import each module.
+	// importers are the modules whose sources import each module, and
+	// imported the modules each module's sources import.
 	importers := map[string]map[string]bool{}
+	imported := map[string][]string{}
 	for e := range g.edges {
 		if importers[e[1]] == nil {
 			importers[e[1]] = map[string]bool{}
 		}
 		importers[e[1]][e[0]] = true
+		imported[e[0]] = append(imported[e[0]], e[1])
 	}
-	// reaches is each test's modules: those it imports, and for Go its own
-	// package and the packages that one imports.
+	// reaches is each test's modules: for Go its own package and the
+	// packages that one imports, elsewhere those it imports and every module
+	// they import in turn.
 	byModule := map[string][]string{}
 	for _, t := range tests {
 		reaches := map[string]bool{}
@@ -58,6 +64,21 @@ func importingTests(root string, sources, tests []*fileInfo) map[string][]string
 			for to, from := range importers {
 				if from[own] {
 					reaches[to] = true
+				}
+			}
+		} else {
+			var queue []string
+			for m := range reaches {
+				queue = append(queue, m)
+			}
+			for len(queue) > 0 {
+				m := queue[len(queue)-1]
+				queue = queue[:len(queue)-1]
+				for _, to := range imported[m] {
+					if !reaches[to] {
+						reaches[to] = true
+						queue = append(queue, to)
+					}
 				}
 			}
 		}

@@ -32,10 +32,11 @@ mutation site needs no mutation results, but with --fail-uncovered every
 judged Go function also needs fresh independent executable coverage evidence,
 including zero-site functions. Uncovered executable blocks and missing or
 stale evidence fail without running tests, coverage or list commands. The
-snapshot also records the hash of each test
-file that imports its file: when one was added, changed, or removed since,
-every function of the file is stale, as it is when the snapshot predates
-recording tests. A run with --since that finds them changed keeps the
+snapshot also records the hash of each test file that reaches its file: in
+TypeScript, Python and Kotlin through its imports, transitively; in Go its
+package's tests and those of the packages that import it. When one was
+added, changed, or removed since, every function of the file is stale, as
+it is when the snapshot predates recording tests. A run with --since that finds them changed keeps the
 entries of the functions it does not judge marked stale, until a run judges
 them again.
 

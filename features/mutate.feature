@@ -1903,7 +1903,7 @@ Feature: Mutation testing
   # may read stale once, and is re-run as any stale result is.
   Rule: TypeScript, Python and Kotlin tests reach what they import transitively
 
-    @wip @transitive-test-reach @ID-MUT-215
+    @transitive-test-reach @ID-MUT-215
     Scenario Outline: A <language> test that reaches a file through another module is among its tests
       Given a <language> project whose test imports module A, where A imports module B and no test imports B directly
       And B's mutant has a recorded result

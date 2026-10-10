@@ -72,9 +72,11 @@ Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions, and the
 survivors itos-cc.yaml excepts, and retry only other survivors and changed
 functions. Each snapshot also records the SHA-256
-of every test file that imports its file (in Go, its package's tests and
-those of the packages that import it); when one of them is added, changed,
-or removed, every mutant of the file runs again. Each outcome records the
+of every test file that reaches its file: in TypeScript, Python and Kotlin
+the tests whose imports reach it, directly or through other modules, as
+vitest related and jest --findRelatedTests select them; in Go its package's
+tests and those of the packages that import it, one hop. When one of them
+is added, changed, or removed, every mutant of the file runs again. Each outcome records the
 scope of the tests that decided it: "own" (the file's own tests, left out of
 the file), "all-tests", or the --test-command line; a reused outcome keeps
 the scope it was decided with, and mutation sample re-runs it there. A summary comment is kept at
@@ -498,10 +500,10 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 		func(path string) string { return moves[path] }, nil
 }
 
-// importingTests lists the test files that import each source, as the graph
-// of the project under the project root resolves imports, whatever command
-// runs the mutants and wherever it runs: what a snapshot records the hashes
-// of.
+// importingTests lists the test files that reach each source
+// (graph.TestsImporting), as the graph of the project under the project root
+// resolves imports, whatever command runs the mutants and wherever it runs:
+// what a snapshot records the hashes of.
 func importingTests() (func(path string) []string, error) {
 	root := project.Root()
 	all, err := project.Discover([]string{root})
