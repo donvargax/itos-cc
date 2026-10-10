@@ -1060,14 +1060,15 @@ items:
       their own files. Bytecode is fixed (PYTHONDONTWRITEBYTECODE=1); decide whether coverage should
       also pass -p no:cacheprovider, and whether plugin autoload should be left to the project.
     refs: ["#14"]
-  - id: counted-worktree
-    title: A counted run in a linked Git worktree fails as an internal error
+  - id: counted-worktree-run
+    title: Counted runs work in a linked git worktree
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was counted-worktree.
       Found while writing ID-MUT-209's steps (counted-languages): in a checkout made with git
       worktree add, itos-cc mutation run --json --count 1 src/board.ts exits 70 with rule internal
       and the message 'create private Git scratch directory: scratch path escapes repository: export
