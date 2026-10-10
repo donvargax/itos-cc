@@ -1857,6 +1857,40 @@ Feature: Mutation testing
       And neither checkout's working tree is changed
       But a scratch path that escapes both the checkout and its git directory is refused with a problem and a fix, not an internal error
 
+  # parity-batch-3 (coordinator's routine calls, 2026-10-10, from the
+  # complete run's precedent):
+  # - counted-unjudged-language: a complete strict run fails over a language
+  #   its per-language commands measured nothing of only when that
+  #   language has something to judge (unmeasuredToJudge). A counted run
+  #   follows it: a file with no eligible site, in a language with nothing
+  #   to judge, needs no measurement, so a tool missing for that language
+  #   stops nothing. Strict Go still inventories every judged Go function,
+  #   and a language with an eligible site still fails closed.
+  # - python-no-pytest-cache: every pytest command itos-cc composes runs with
+  #   -p no:cacheprovider, as every one already runs with
+  #   PYTHONDONTWRITEBYTECODE=1, so measuring and judging leave no
+  #   .pytest_cache in the project's tree. Plugin autoload stays the
+  #   project's: a project's plugins may be what its tests need. A
+  #   --test-command or --coverage-command is the user's and is unchanged.
+  Rule: Counted and Python runs touch only what their judgments need
+
+    @wip @counted-unjudged-language @ID-MUT-213
+    Scenario: A strict counted run needs no measurement of a language with nothing to judge
+      Given a committed project with a Go module and a TypeScript file with no mutation site
+      And no TypeScript coverage tool is installed
+      When a strict count-one run judges both files
+      Then its Go functions are judged for coverage evidence and one Go mutant is judged with a real outcome
+      And no stage fails and no TypeScript coverage is measured
+      But when the TypeScript file has an eligible site the run fails with "count.preparation-failed" at its coverage stage, as before
+
+    @wip @python-no-pytest-cache @ID-MUT-214
+    Scenario: Measuring and judging a Python project leaves no pytest cache in its tree
+      Given a Python project with a pytest test that kills its mutant and no .pytest_cache directory
+      When I run "itos-cc mutation run --json" for its file
+      Then the mutant is killed
+      And no .pytest_cache directory is written in the project's tree or beside the worker copy's sources
+      But a run with --test-command runs that command exactly as given
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
