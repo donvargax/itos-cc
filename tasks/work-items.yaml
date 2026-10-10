@@ -1060,14 +1060,6 @@ items:
     title: cmd/itos-cc's fixture tests run in parallel, bringing Windows CI back under 10 minutes
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      windows-test-speed, made urgent: cmd/itos-cc's tests took 1136s on windows-latest on
-      2026-10-10 and passed T-6's 20-minute limit once, so T-15 raised it to 30. Every CI run waits
-      about 19 minutes for Windows. None of the package's tests calls t.Parallel, and 24 of its 49
-      test files use os.Chdir, t.Chdir or t.Setenv, which rule it out. Running itos-cc through an
-      explicit working directory and environment instead lets the fixture tests, each its own git
-      repository, run in parallel. Tests only: no product behaviour changes, and a test that truly
-      needs process-wide state stays serial with a comment saying why.
