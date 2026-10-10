@@ -930,3 +930,16 @@ items:
       every Owned, Fresh, Cleanup and Ownership test passes under -race. CI does not run -race, so
       only local race checks see it; the test needs a timeout that does not race the exit sleep, or
       the helper an environment without it.
+  - id: ci-test-names
+    title: CI logs name the tests each platform ran
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      go test ./... without -v prints only per-package ok lines for passing packages, so a platform
+      job's log cannot show that a scenario's test ran rather than skipped. macos-counted-run had to
+      infer that macOS ran its counted and ownership tests from the previous red run of the same
+      tests and from package durations. A CI step that prints a per-test summary, from go test -json
+      for example, would make that evidence direct.
