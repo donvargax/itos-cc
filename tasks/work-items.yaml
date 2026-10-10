@@ -740,7 +740,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [mutation-command-ownership, mutation-windows-ownership]
+    depends_on: [mutation-command-ownership, macos-counted-run]
     kind: slice
     why: >
       Was mutation-fail-fast.
