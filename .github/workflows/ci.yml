@@ -33,8 +33,8 @@ jobs:
       - run: go test -timeout 20m ./...
 
       # The real TypeScript, Python and Kotlin tools, so the language smoke
-      # tests, the Vitest tests and the Python bytecode one (ID-MUT-208 and
-      # 210) run through them instead of skipping (T-13). On ubuntu-latest
+      # tests and the scenarios that need them (ID-MUT-105 and 208 to 210)
+      # run through them instead of skipping (T-13). On ubuntu-latest
       # alone, to bound CI time: elsewhere those tests skip. Installed after
       # the suite above, which runs as before.
       # Each tool is pinned: Node's by testdata/tools/node's lockfile,
@@ -75,7 +75,7 @@ jobs:
         env:
           ITOS_CC_LANGUAGE_TOOLS: "1"
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
-        run: go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants)$' ./cmd/itos-cc
+        run: go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline)$' ./cmd/itos-cc
 
   draft:
     needs: test
