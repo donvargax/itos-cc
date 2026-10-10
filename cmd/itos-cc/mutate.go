@@ -53,9 +53,15 @@ var mutationRunCommand = &command{
 	about: `
 Changes one operator, boolean, or 0/1 at a time inside each function and runs
 the file's own tests: its Go package, the Vitest or Jest tests that import it,
-or the whole suite where nothing narrower exists. A mutant is killed when the
-tests fail or time out and survives when they pass. Mutants on lines those
-tests never execute are uncovered and are not run.
+in Python the test files that reach it (named test_*.py or *_test.py), run
+with python -m pytest -x <files>, or python -m unittest <modules> without
+pytest, or the whole suite where nothing narrower exists. A mutant is killed
+when the tests fail or time out and survives when they pass. Mutants on lines
+those tests never execute are uncovered and are not run, and every mutant of
+a Python file no test file reaches is uncovered, with no test run for it. A
+Python test that runs code only through a subprocess or the CLI, or through
+a conftest.py fixture or helper module, reaches nothing: run --all-tests or
+--test-command for such code.
 
 --all-tests runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests can kill mutants too. It is slow: run it
@@ -572,6 +578,13 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	// Python's own coverage is that of the tests that reach each file, as
+	// its own command runs them; --test-command and --all-tests keep the
+	// whole suite's.
+	var reach coverage.Reach
+	if !in.set("test-command") && !in.set("all-tests") {
+		reach = tests
+	}
 	opt := mutate.Options{
 		Support:       support,
 		Tests:         tests,
@@ -642,7 +655,7 @@ func runMutate(in *invocation) (any, error) {
 			report := coverage.FromGoBlocks(byFile)
 			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
 		} else {
-			report, measuredProducer, currentInputs, listedFiles, err := strictGoCoverage(in, sources, suite, support)
+			report, measuredProducer, currentInputs, listedFiles, err := strictGoCoverage(in, sources, suite, support, reach)
 			if err != nil {
 				return result, err
 			}
@@ -707,7 +720,7 @@ func runMutate(in *invocation) (any, error) {
 			// Coverage comes from the tests that kill mutants, so a line only
 			// other tests reach is uncovered rather than a survivor, unless
 			// a listed test reaches it.
-			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr, perTest)
+			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr, perTest, reach)
 			if err != nil {
 				if strict {
 					return nil, err
@@ -1203,7 +1216,7 @@ func hasGoSource(sources []string) bool {
 	return false
 }
 
-func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, support map[string]string) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
+func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
@@ -1225,7 +1238,7 @@ func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, sup
 		scope = coverage.AllTests
 		producer = "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
 	}
-	report, err := loadCoverage(in, sources, scope, os.Stderr, perTest)
+	report, err := loadCoverage(in, sources, scope, os.Stderr, perTest, reach)
 	if err != nil {
 		return nil, "", nil, nil, err
 	}

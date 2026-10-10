@@ -52,9 +52,10 @@ type Options struct {
 	// Renamed, when set, is the path the file at path had before a rename,
 	// or "": its snapshot moves to the new path, and the old one is removed.
 	Renamed func(path string) string
-	// Tests, when set, lists the test files that import the file at path,
-	// whose hashes its snapshot records: a kill is reused only while they
-	// are those recorded. Unset, a file has none.
+	// Tests, when set, lists the test files that reach the file at path
+	// (graph.TestsImporting), whose hashes its snapshot records: a kill is
+	// reused only while they are those recorded. In Python they are also
+	// the tests its own command runs (TestCommand). Unset, a file has none.
 	Tests func(path string) []string
 	// Exceptions are the survivors itos-cc.yaml excepts: each one of a
 	// function judged that still survives is excepted, and one that no
@@ -420,7 +421,11 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 			return states, err
 		}
 		rel, key := project.Rel(path), project.FromRoot(path)
-		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests), currentSupport: opt.Support,
+		var tests []string
+		if opt.Tests != nil {
+			tests = opt.Tests(path)
+		}
+		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests, tests), currentSupport: opt.Support,
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
 		snap, err := LoadSnapshot(key)
@@ -429,10 +434,6 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		}
 		if err := s.follow(opt, path, &snap); err != nil {
 			return states, err
-		}
-		var tests []string
-		if opt.Tests != nil {
-			tests = opt.Tests(path)
 		}
 		if s.tests, err = TestHashes(tests); err != nil {
 			return states, err
@@ -664,6 +665,19 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 			if o != "" {
 				continue
 			}
+			if s.command.RunsNothing() {
+				// No test reaches the file: none runs, so its mutant is
+				// uncovered, unless listed tests reach its line, which then
+				// judge it alone.
+				if s.reach == nil || len(s.reach[i]) == 0 {
+					s.outcomes[i] = Uncovered
+					continue
+				}
+				if !st.stopped() {
+					jobs = append(jobs, job{s, i})
+				}
+				continue
+			}
 			key := s.command.Key()
 			if _, done := timeouts[key]; !done && failed[key] == "" && !st.stopped() {
 				fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(s.command.Dir), s.command)
@@ -816,12 +830,17 @@ func runMutant(ctx context.Context, w *worker, j job, timeout time.Duration, sel
 	s := j.state
 	site := s.sites[j.site]
 	mutated := site.Apply(s.file.Src)
-	r, err := w.withMutant(s.command.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
-		return w.runContext(ctx, s.command, timeout)
-	})
-	run := mutantRun{outcome: judged(r), elapsed: r.elapsed, started: true}
-	if r.cancelled || cancelledBy(ctx, err) {
-		return mutantRun{cancelled: true, started: true, elapsed: r.elapsed}, nil
+	// Own tests that run nothing survive every mutant without running.
+	run, err := mutantRun{outcome: Survived, started: true}, error(nil)
+	if !s.command.RunsNothing() {
+		var r result
+		r, err = w.withMutant(s.command.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
+			return w.runContext(ctx, s.command, timeout)
+		})
+		run = mutantRun{outcome: judged(r), elapsed: r.elapsed, started: true}
+		if r.cancelled || cancelledBy(ctx, err) {
+			return mutantRun{cancelled: true, started: true, elapsed: r.elapsed}, nil
+		}
 	}
 	if err != nil || run.outcome != Survived || sels == nil || s.reach == nil || len(s.reach[j.site]) == 0 {
 		return run, err

@@ -569,6 +569,9 @@ func TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage(t *tes
 			files[name] = text
 		}
 	}
+	// A Python file's own tests are the test files that reach it: own.py's
+	// is test_own.py, which no step changes.
+	files["py/tests/test_own.py"] = "from own import own\n\n\ndef test_own():\n    assert own(2, 1)\n"
 	dir := moduleRepo(t, files)
 	runner := suiteRunner(t)
 	for _, l := range suiteLanguages {
