@@ -740,17 +740,9 @@ items:
     title: mutation run --fail-fast stops at the first actionable failure on Linux and macOS
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [mutation-command-ownership, macos-counted-run]
     kind: slice
-    why: >
-      Was mutation-fail-fast.
-      Issue #26 is the person’s highest priority now, ahead of the debt foundation. Opt-in fail-fast
-      should shorten local fix-and-retry mutation runs without changing aggregate defaults, treating
-      killed or valid excepted mutants as failures, stopping before applicable listed tests can kill
-      a survivor, leaving owned workers or descendants running, or trusting partial outcomes as
-      complete. Specify scheduling, bounded cleanup, truthful partial machine output and cache reuse
-      before implementation.
     refs: ["#26"]
   - id: T-9
     title: Extract mutation command execution without changing legacy behavior
