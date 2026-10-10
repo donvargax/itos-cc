@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/mutate"
-	"github.com/donvargax/itos-cc/project"
 )
 
 var mutationCheckCommand = &command{
@@ -70,7 +69,7 @@ counts their entry records, zero when missing; an excepted survivor counts
 in "excepted", not "survived".`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks")),
+		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python lines")),
 	json: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
    "uncovered"}]}]`,
@@ -79,9 +78,9 @@ in "excepted", not "survived".`,
 		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 		"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
-		"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block is uncovered: file, function, line",
-		"mutation.coverage-missing  with --fail-uncovered, a Go function lacks complete measured coverage evidence: file, function, line",
-		"mutation.coverage-stale    with --fail-uncovered, Go coverage inputs changed since measurement: file, function, line",
+		"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block or Python line is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go or Python function lacks complete measured coverage evidence: file, function, line",
+		"mutation.coverage-stale    with --fail-uncovered, Go or Python coverage inputs changed since measurement: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"config.invalid            itos-cc.yaml cannot be read: file",
@@ -91,7 +90,7 @@ in "excepted", not "survived".`,
 	},
 	exits: []exitDoc{
 		{0, "every function checked has fresh results, and none records a survivor"},
-		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block, or missing/stale Go coverage evidence with --fail-uncovered; or an exception is stale"},
+		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python line, or missing/stale Go or Python coverage evidence with --fail-uncovered; or an exception is stale"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
@@ -153,31 +152,28 @@ func runMutationCheck(in *invocation) (any, error) {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
-	if failUncovered && hasGoSource(sources) {
-		producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
-		coverageChecks, err := mutate.CheckGoCoverage(sources, judge, func(path string) (string, map[string]string, error) {
-			inputs, err := mutate.GoCoverageInputs(path, project.Root(), producer, support)
-			return producer, inputs, err
-		})
+	if languages := strictLanguagesOf(sources); failUncovered && len(languages) > 0 {
+		coverageChecks, err := mutate.CheckCoverage(sources, judge, strictCoverageInputs(languages, false, false, support))
 		if err != nil {
 			return result, err
 		}
 		for _, coverageCheck := range coverageChecks {
+			language := coverageCheck.Language
 			switch coverageCheck.State {
 			case "unsupported":
-				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
-					"mutation.coverage-unsupported", "uses unsupported Go coverage scope "+strings.Join(coverageCheck.Changed, ", "))
+				reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-unsupported", "uses unsupported "+languageName(language)+" coverage scope "+strings.Join(coverageCheck.Changed, ", "))
 			case "missing":
-				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
-					"mutation.coverage-missing", "has no complete fresh measured Go coverage inventory")
+				reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-missing", "has no complete fresh measured "+coverageInventory(language))
 			case "stale":
-				reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
-					"mutation.coverage-stale", "has Go coverage made before inputs changed: "+strings.Join(coverageCheck.Changed, ", "))
+				reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
+					"mutation.coverage-stale", "has "+coverageEvidenceName(language)+" made before inputs changed: "+strings.Join(coverageCheck.Changed, ", "))
 			default:
 				for _, block := range coverageCheck.Blocks {
 					if !block.Covered {
-						reportCoverageProblem(in, coverageCheck.File, coverageCheck.Function, block.Line,
-							"mutation.uncovered-statement", "has an uncovered executable Go coverage block")
+						reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, block.Line,
+							"mutation.uncovered-statement", "has an uncovered "+executableUnit(language))
 					}
 				}
 			}

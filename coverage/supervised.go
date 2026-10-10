@@ -137,6 +137,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		}
 		if !planFailed {
 			r.languages = map[string]bool{p.Language: true}
+			p.prove(r)
 		}
 		reports = append(reports, r)
 		if aborted {

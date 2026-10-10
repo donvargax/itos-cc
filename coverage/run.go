@@ -714,6 +714,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		// its language, whichever files the report names.
 		if failed == "" && len(r.missing) == 0 {
 			r.languages = map[string]bool{p.Language: true}
+			p.prove(r)
 			reports = append(reports, r)
 			continue
 		}
@@ -726,7 +727,24 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 // none of its sources loaded, as no test reaches them.
 func (p Plan) unreached(log io.Writer) *Report {
 	fmt.Fprintf(log, "itos-cc: coverage %s: no test reaches %s, so none runs\n", p.Dir, strings.Join(relativeTo(p.Dir, p.Sources), " "))
-	return &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{p.Language: true}}
+	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{p.Language: true}}
+	p.prove(r)
+	return r
+}
+
+// prove records, of r, the report of p's commands that all succeeded and
+// wrote their reports, which of p's sources it lists completely, at its
+// format's line precision (Report.Lines), and which no test loaded, so it
+// names none of their lines (Report.Unloaded).
+func (p Plan) prove(r *Report) {
+	r.proven, r.unloaded = map[string]bool{}, map[string]Unloaded{}
+	for _, s := range p.Sources {
+		if r.Has(s) {
+			r.proven[s] = true
+		} else {
+			r.unloaded[s] = Unloaded{Language: p.Language, Dir: p.Dir}
+		}
+	}
 }
 
 // measures is the sources p's report speaks for, of sources: its own

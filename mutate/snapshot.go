@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -62,10 +63,13 @@ type UnitResult struct {
 	Uncovered int      `json:"uncovered"`
 	Sites     int      `json:"sites"`
 	Mutants   []Mutant `json:"mutants"`
-	// Coverage is independent executable Go coverage for this function. Nil
-	// means the snapshot predates strict Go coverage or the function was not
-	// measured by an admitted producer.
-	Coverage *GoCoverageEvidence `json:"go_coverage,omitempty"`
+	// Coverage is independent executable coverage for this function. Nil
+	// means the snapshot predates strict coverage of its language or the
+	// function was not measured by an admitted producer. Go evidence is
+	// written under go_coverage, as it always was; evidence of a
+	// line-precision language (CoverageEvidence.Language) under
+	// line_coverage (MarshalJSON).
+	Coverage *CoverageEvidence `json:"go_coverage,omitempty"`
 	// Stale marks an entry decided under tests other than those the
 	// snapshot records: a run that did not judge the function kept it,
 	// outcomes and survivors included, after the tests that import the file
@@ -75,28 +79,98 @@ type UnitResult struct {
 	Stale bool `json:"stale,omitempty"`
 }
 
-// GoCoverageEvidence is the complete measured block inventory and the
-// producer/input boundary that makes it reusable.
-type GoCoverageEvidence struct {
+// unitLines is UnitResult as a snapshot writes a unit whose coverage
+// evidence is of a line-precision language: under line_coverage rather
+// than go_coverage. Converting between the two keeps their fields the same.
+type unitLines struct {
+	Namespace string            `json:"namespace"`
+	Name      string            `json:"name"`
+	Hash      string            `json:"hash"`
+	StartLine int               `json:"start_line"`
+	EndLine   int               `json:"end_line"`
+	Killed    int               `json:"killed"`
+	Survived  int               `json:"survived"`
+	Uncovered int               `json:"uncovered"`
+	Sites     int               `json:"sites"`
+	Mutants   []Mutant          `json:"mutants"`
+	Coverage  *CoverageEvidence `json:"line_coverage,omitempty"`
+	Stale     bool              `json:"stale,omitempty"`
+}
+
+// MarshalJSON writes u with its coverage evidence under go_coverage, Go's
+// key, or under line_coverage for a line-precision language, so a Go
+// snapshot reads and is written as before.
+func (u UnitResult) MarshalJSON() ([]byte, error) {
+	type plain UnitResult
+	var v any = plain(u)
+	if u.Coverage != nil && u.Coverage.Language != "" {
+		v = unitLines(u)
+	}
+	// As metrics.Write writes a snapshot: the encoder that embeds this
+	// escapes what its own settings say.
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
+}
+
+// UnmarshalJSON reads a unit, its coverage evidence under go_coverage or
+// line_coverage.
+func (u *UnitResult) UnmarshalJSON(data []byte) error {
+	type plain UnitResult
+	var raw struct {
+		plain
+		Lines *CoverageEvidence `json:"line_coverage"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*u = UnitResult(raw.plain)
+	if u.Coverage == nil {
+		u.Coverage = raw.Lines
+	}
+	return nil
+}
+
+// CoverageEvidence is a function's complete measured executable coverage
+// inventory and the producer/input boundary that makes it reusable. Go
+// evidence, Language "", holds positive-weight blocks at cover-profile
+// precision; that of a line-precision language, such as Python's from
+// coverage.py's LCOV, holds a block per executable line of the function,
+// Span its line number, Weight 1 and Column 0.
+type CoverageEvidence struct {
 	Version  int               `json:"version"`
+	Language string            `json:"language,omitempty"`
 	File     string            `json:"file"`
 	Function string            `json:"function"`
 	Hash     string            `json:"function_hash"`
 	Producer string            `json:"producer"`
 	Inputs   map[string]string `json:"inputs"`
 	Complete bool              `json:"complete"`
-	Blocks   []GoCoverageBlock `json:"blocks"`
+	Blocks   []CoverageBlock   `json:"blocks"`
 }
 
-// GoCoverageBlock is a positive-weight executable span at coverage-profile
-// precision. Span distinguishes blocks sharing a line.
-type GoCoverageBlock struct {
+// GoCoverageEvidence is Go's CoverageEvidence, by the name it had before
+// other languages had any.
+type GoCoverageEvidence = CoverageEvidence
+
+// CoverageBlock is a positive-weight executable span at its format's
+// precision: a Go coverage-profile block, whose Span distinguishes blocks
+// sharing a line, or an executable line.
+type CoverageBlock struct {
 	Span    string  `json:"span"`
 	Line    int     `json:"line"`
 	Column  int     `json:"column"`
 	Weight  float64 `json:"weight"`
 	Covered bool    `json:"covered"`
 }
+
+// GoCoverageBlock is Go's CoverageBlock, by its name before other
+// languages had any.
+type GoCoverageBlock = CoverageBlock
 
 // Mutant is one site's outcome.
 type Mutant struct {

@@ -2036,7 +2036,7 @@ Feature: Mutation testing
   # Without --fail-uncovered nothing changes.
   Rule: Strict runs prove executable line coverage in every language
 
-    @wip @strict-lines-python @ID-MUT-221
+    @strict-lines-python @ID-MUT-221
     Scenario: A strict Python run proves every executable line of every judged function
       Given a Python project whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
       When I run "itos-cc mutation run --fail-uncovered --json" for the file

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -150,7 +151,8 @@ coverage, listing, baselines or total time. A counted run writes no
 snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
-for every admitted function. A range with no site is not applicable, which
+for every admitted function; strict Python lines are not yet proven by a
+counted run. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
@@ -166,8 +168,8 @@ report, completion "interrupted", keeps the judgments completed before it.
 --fail-fast stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop:
 an unexcepted survivor, once the listed tests that reach it failed to kill
-it too; with --fail-uncovered, an uncovered mutant or a strict Go coverage
-finding; an exception that no longer holds; a file whose tests fail before
+it too; with --fail-uncovered, an uncovered mutant or a strict Go or Python
+coverage finding; an exception that no longer holds; a file whose tests fail before
 any mutant; or a selection of listed tests that fails without any mutant.
 It reports that failure under the rule a run without it reports, and exits
 as that rule says. Killed, timed-out, validly excepted and listed-killed
@@ -206,14 +208,20 @@ aggregate. Without it, scheduling, output, snapshots and comments are as
 they always were.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
-survivor. For Go it also requires fresh measured executable coverage for
-every judged function, including functions with no mutation sites, and fails
-each uncovered positive-weight coverage block. Strict Go runs reject
---no-coverage, --coverage-report, --use-existing-coverage, and
---coverage-command. A matching independent cache can avoid remeasurement;
-otherwise built-in or listed coverage must measure successfully. Empty or
-comment-only function bodies have no executable coverage obligation. For
-TypeScript, Python and Kotlin it fails closed as Go does: a build root with
+survivor. For Go and Python it also requires fresh measured executable
+coverage for every judged function, including functions with no mutation
+sites, and fails, as mutation.uncovered-statement, each uncovered
+positive-weight Go coverage block and each Python line coverage.py's LCOV
+report names executable that no reaching test executed: the lines from a
+function's body to its end, its def line running at import. A Python file
+no test reaches has its executable lines listed by coverage.py's own
+analysis, without running a test, all of them uncovered. Strict Go and
+Python runs reject --no-coverage, --coverage-report, --use-existing-coverage,
+and --coverage-command. A matching independent cache can avoid
+remeasurement; otherwise built-in or listed coverage must measure
+successfully. Empty or comment-only function bodies have no executable
+coverage obligation. For the mutants of TypeScript, Python and Kotlin it
+fails closed as Go does: a build root with
 mutants to judge whose coverage tool is missing, or whose coverage command
 fails or writes no report, is coverage.tool-missing or
 coverage.measured-nothing, naming its language and dir, and the run stops
@@ -282,7 +290,7 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks"),
+		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python lines"),
 		sw("fail-fast", "stop at the first actionable failure, cancelling the work still running; Linux and macOS"),
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
@@ -322,8 +330,8 @@ judged and no snapshot is written. Listed tests are not run with
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block is uncovered: file, function, line",
-		"mutation.coverage-missing  with --fail-uncovered, a Go function lacks complete measured coverage evidence: file, function, line",
+		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python line is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go or Python function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
@@ -335,7 +343,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
-		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go coverage with raw coverage flags: flag",
+		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go or Python coverage with raw coverage flags: flag",
 		"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
@@ -572,11 +580,18 @@ func runMutate(in *invocation) (any, error) {
 		reportElsewhere(in, elsewhere)
 		return result, nil
 	}
-	strictGo := in.set("fail-uncovered") && hasGoSource(sources)
-	if strictGo {
+	// Strict coverage proves the functions of each strict language of the
+	// selection (mutate.StrictCoverage) executed.
+	var strictLanguages []string
+	if in.set("fail-uncovered") {
+		strictLanguages = strictLanguagesOf(sources)
+	}
+	strictGo := slices.Contains(strictLanguages, "go")
+	strict := len(strictLanguages) > 0
+	if strict {
 		for _, flag := range []string{"--coverage-report", "--use-existing-coverage", "--coverage-command"} {
 			if flagPresent(in, flag) {
-				return result, flagConflict(flag, flag+" is not admitted with strict Go coverage; use a fresh built-in or listed measurement")
+				return result, flagConflict(flag, flag+" is not admitted with strict "+languageName(strictLanguages[0])+" coverage; use a fresh built-in or listed measurement")
 			}
 		}
 	}
@@ -615,18 +630,13 @@ func runMutate(in *invocation) (any, error) {
 	if suite != nil {
 		opt.Listed = &mutate.Listed{Root: project.Root(), Select: suite.Select}
 	}
-	if strictGo {
-		producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
-		fingerprint := func(source string) (string, map[string]string, error) {
-			inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
-			return producer, inputs, err
-		}
-		var cached []mutate.GoCoverageCheck
+	if strict {
+		var cached []mutate.CoverageCheck
 		mutationChecks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 		if err != nil {
 			return result, err
 		}
-		cached, err = mutate.CheckGoCoverage(sources, judge, fingerprint)
+		cached, err = mutate.CheckCoverage(sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
 		if err != nil {
 			return result, err
 		}
@@ -649,28 +659,45 @@ func runMutate(in *invocation) (any, error) {
 			}
 		}
 		if allFresh {
-			byFunction := map[string]*mutate.GoCoverageEvidence{}
+			byFunction := map[string]*mutate.CoverageEvidence{}
 			byFile := map[string][]coverage.GoBlock{}
+			byLines := map[string]map[string][]coverage.Line{}
 			for _, check := range cached {
 				byFunction[check.File+"\x00"+check.Function] = check.Evidence
+				path := filepath.Join(project.Root(), filepath.FromSlash(check.File))
 				for _, block := range check.Blocks {
-					byFile[filepath.Join(project.Root(), filepath.FromSlash(check.File))] = append(byFile[filepath.Join(project.Root(), filepath.FromSlash(check.File))], coverage.GoBlock{
+					if check.Language != "go" {
+						if byLines[check.Language] == nil {
+							byLines[check.Language] = map[string][]coverage.Line{}
+						}
+						byLines[check.Language][path] = append(byLines[check.Language][path], coverage.Line{Line: block.Line, Covered: block.Covered})
+						continue
+					}
+					byFile[path] = append(byFile[path], coverage.GoBlock{
 						Span: block.Span, Line: block.Line, Column: block.Column, Weight: block.Weight, Covered: block.Covered,
 					})
 				}
 			}
-			opt.CachedCoverage = func(path, function, _ string) *mutate.GoCoverageEvidence {
+			opt.CachedCoverage = func(path, function, _ string) *mutate.CoverageEvidence {
 				return byFunction[project.Rel(path)+"\x00"+function]
 			}
-			report := coverage.FromGoBlocks(byFile)
+			var report *coverage.Report
+			if strictGo {
+				report = coverage.FromGoBlocks(byFile)
+			}
+			for _, language := range strictLanguages {
+				if language != "go" {
+					report = coverage.Merge(report, coverage.FromLines(language, byLines[language]))
+				}
+			}
 			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
 		} else {
-			report, measuredProducer, currentInputs, listedFiles, err := strictGoCoverage(in, sources, suite, support, reach)
+			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(in, strictLanguages, sources, suite, support, reach)
 			if err != nil {
 				return result, err
 			}
 			if report == nil {
-				return result, fmt.Errorf("strict Go coverage measurement produced no report")
+				return result, fmt.Errorf("strict coverage measurement produced no report")
 			}
 			var missingGo bool
 			for _, missing := range report.Missing() {
@@ -679,7 +706,7 @@ func runMutate(in *invocation) (any, error) {
 			// Another language that measured nothing fails closed as Go
 			// does, and stops the run with it.
 			others := unmeasuredToJudge(report, sources, mutationChecks, in.set("mutate-all"))
-			if missingGo || !report.Measures("go") {
+			if strictGo && (missingGo || !report.Measures("go")) {
 				for _, p := range unmeasured(report) {
 					if p.subject["language"] == "go" {
 						in.report(p)
@@ -785,8 +812,8 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	if strictGo {
-		reportStrictGoCoverage(in, results)
+	if strict {
+		reportStrictCoverage(in, results)
 	}
 	reported := map[string]bool{}
 	for _, r := range results {
@@ -1166,8 +1193,8 @@ func flagPresent(in *invocation, flag string) bool {
 }
 
 // rawCoverage says whether coverage comes from reports the run is given or
-// told to read, not from the per-language commands: strict non-Go coverage
-// keeps their behaviour.
+// told to read, not from the per-language commands: the strict coverage of
+// TypeScript and Kotlin mutants keeps their behaviour.
 func rawCoverage(in *invocation) bool {
 	return in.set("use-existing-coverage") || in.str("coverage-command") != "" || len(in.strs("coverage-report")) > 0
 }
@@ -1226,7 +1253,76 @@ func hasGoSource(sources []string) bool {
 	return false
 }
 
-func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
+// strictLanguagesOf is each language of sources whose functions strict
+// coverage proves executed (mutate.StrictCoverage), Go first, then in
+// name order.
+func strictLanguagesOf(sources []string) []string {
+	var out []string
+	for _, source := range sources {
+		if spec := lang.Detect(source); spec != nil && mutate.StrictCoverage(spec.Name) && !slices.Contains(out, spec.Name) {
+			out = append(out, spec.Name)
+		}
+	}
+	slices.SortFunc(out, func(a, b string) int {
+		switch {
+		case a == b:
+			return 0
+		case a == "go":
+			return -1
+		case b == "go":
+			return 1
+		}
+		return strings.Compare(a, b)
+	})
+	return out
+}
+
+// languageName is how messages name language.
+func languageName(language string) string {
+	switch language {
+	case "go":
+		return "Go"
+	case "typescript":
+		return "TypeScript"
+	}
+	if language == "" {
+		return language
+	}
+	return strings.ToUpper(language[:1]) + language[1:]
+}
+
+// strictCoverageInputs is, by each of languages, the producer and current
+// input fingerprint of a source's strict coverage evidence, measured with
+// the tests that reach it, or with allTests the whole suite. With
+// testCommand, Python's is the whole suite's too: its coverage plans then
+// run every test, as for --all-tests, while Go's own tests measure Go.
+func strictCoverageInputs(languages []string, allTests, testCommand bool, support map[string]string) map[string]mutate.CoverageInputs {
+	out := map[string]mutate.CoverageInputs{}
+	for _, language := range languages {
+		producer := mutate.CoverageProducer(language, allTests || testCommand && language != "go")
+		switch language {
+		case "go":
+			out[language] = func(source string) (string, map[string]string, error) {
+				inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
+				return producer, inputs, err
+			}
+		case "python":
+			out[language] = func(source string) (string, map[string]string, error) {
+				inputs, err := mutate.PythonCoverageInputs(source, project.Root(), producer, support)
+				return producer, inputs, err
+			}
+		}
+	}
+	return out
+}
+
+// strictCoverage measures sources for strict coverage, with the built-in
+// commands of each language, the listed tests' coverage beside it, and
+// lists the executable lines of each file of a line-precision language no
+// test loaded without running a test (coverage.Report.Inventory). It
+// returns the report, Go's producer, the producer and fingerprint of each
+// source's evidence by its language, and the file of each listed test.
+func strictCoverage(in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
@@ -1243,25 +1339,36 @@ func strictGoCoverage(in *invocation, sources []string, suite *config.Tests, sup
 		perTest.All = suite.All(ids)
 	}
 	scope := coverage.OwnTests
-	producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
 	if in.set("all-tests") {
 		scope = coverage.AllTests
-		producer = "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
 	}
+	producer := mutate.CoverageProducer("go", in.set("all-tests"))
 	report, err := loadCoverage(in, sources, scope, os.Stderr, perTest, reach)
 	if err != nil {
 		return nil, "", nil, nil, err
 	}
+	for _, language := range languages {
+		// A command that fails leaves its files without proof, which the
+		// run reports as missing evidence; it logged why.
+		_, _ = report.Inventory(context.Background(), language, os.Stderr, nil)
+	}
+	inputs := strictCoverageInputs(languages, in.set("all-tests"), in.set("test-command"), support)
 	fingerprint := func(source string) (string, map[string]string, error) {
-		inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
-		return producer, inputs, err
+		if spec := lang.Detect(source); spec != nil && inputs[spec.Name] != nil {
+			return inputs[spec.Name](source)
+		}
+		return "", nil, fmt.Errorf("%s: no strict coverage inputs for its language", source)
 	}
 	return report, producer, fingerprint, listedFiles, nil
 }
 
-func reportStrictGoCoverage(in *invocation, results []mutate.FileResult) {
+// reportStrictCoverage reports, for every judged function of a file of a
+// strict language a run decided, a function without complete evidence
+// and each uncovered executable block or line.
+func reportStrictCoverage(in *invocation, results []mutate.FileResult) {
 	for _, result := range results {
-		if result.Snapshot.Language != "go" {
+		language := result.Snapshot.Language
+		if !mutate.StrictCoverage(language) {
 			continue
 		}
 		if result.BaselineFailed || len(result.FailedSelections) > 0 {
@@ -1277,24 +1384,55 @@ func reportStrictGoCoverage(in *invocation, results []mutate.FileResult) {
 				continue
 			}
 			if unit.Coverage == nil || !unit.Coverage.Complete {
-				reportCoverageProblem(in, result.Rel, id, unit.StartLine, "mutation.coverage-missing", "has no complete measured Go coverage inventory")
+				reportLanguageCoverageProblem(in, language, result.Rel, id, unit.StartLine, "mutation.coverage-missing", "has no complete measured "+coverageInventory(language))
 				continue
 			}
 			for _, block := range unit.Coverage.Blocks {
 				if !block.Covered {
-					reportCoverageProblem(in, result.Rel, id, block.Line, "mutation.uncovered-statement", "has an uncovered executable Go coverage block")
+					reportLanguageCoverageProblem(in, language, result.Rel, id, block.Line, "mutation.uncovered-statement", "has an uncovered "+executableUnit(language))
 				}
 			}
 		}
 	}
 }
 
+// coverageInventory is what messages call language's evidence: Go's block
+// inventory, another language's line inventory.
+func coverageInventory(language string) string {
+	if language == "go" {
+		return "Go coverage inventory"
+	}
+	return languageName(language) + " line coverage inventory"
+}
+
+// executableUnit is what messages call the unit of language's evidence.
+func executableUnit(language string) string {
+	if language == "go" {
+		return "executable Go coverage block"
+	}
+	return "executable " + languageName(language) + " line"
+}
+
+// coverageEvidenceName is what messages call language's evidence.
+func coverageEvidenceName(language string) string {
+	if language == "go" {
+		return "Go coverage"
+	}
+	return languageName(language) + " line coverage"
+}
+
 func reportCoverageProblem(in *invocation, file, function string, line int, rule, message string) {
+	reportLanguageCoverageProblem(in, "go", file, function, line, rule, message)
+}
+
+// reportLanguageCoverageProblem reports a strict coverage problem of rule
+// about function of file, of language, at line.
+func reportLanguageCoverageProblem(in *invocation, language, file, function string, line int, rule, message string) {
 	if !in.json {
 		fmt.Printf("  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), file, line, function)
 	}
 	p := fail(kindNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message),
-		"Add a test that executes the uncovered Go code, then run mutation run again.").
+		"Add a test that executes the uncovered "+languageName(language)+" code, then run mutation run again.").
 		with("file", file).with("function", function).with("line", line)
 	p.shown = true
 	in.report(p)

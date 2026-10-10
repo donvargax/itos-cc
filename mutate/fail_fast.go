@@ -24,7 +24,7 @@ import (
 // judged and nothing for the undecided sites (ADR-0022; see
 // FileResult.Preserved).
 type FailFast struct {
-	// FailUncovered makes an uncovered mutant, and a strict Go coverage
+	// FailUncovered makes an uncovered mutant, and a strict coverage
 	// finding, actionable: with --fail-uncovered.
 	FailUncovered bool
 	// Known is a failure the caller knew before the run planned, such as an
@@ -140,9 +140,9 @@ func knownStop(states []*fileState) *Stop {
 
 // coverageStop is, with FailUncovered, the first failure coverage already
 // shows before any mutant runs, file by file: an uncovered mutant of a
-// function judged, in line order, then a function judged that strict Go
-// coverage finds without complete evidence or with an uncovered block, as
-// reportStrictGoCoverage would report it.
+// function judged, in line order, then a function judged that strict
+// coverage finds without complete evidence or with an uncovered block or
+// line, as reportStrictCoverage would report it.
 func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 	if !ff.FailUncovered {
 		return nil, nil
@@ -161,10 +161,10 @@ func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error)
 			u := s.file.Units[site.Unit]
 			return &Stop{Rule: "mutation.uncovered", File: s.rel, Function: unitID(u.Namespace, u.Name), Site: &site}, nil
 		}
-		if s.file.Spec.Name != "go" || (opt.StatementCoverage == nil && opt.CachedCoverage == nil) {
+		if !StrictCoverage(s.file.Spec.Name) || (opt.StatementCoverage == nil && opt.CachedCoverage == nil) {
 			continue
 		}
-		evidence, err := s.goEvidence(opt)
+		evidence, err := s.coverageEvidence(opt)
 		if err != nil {
 			return nil, err
 		}

@@ -304,18 +304,26 @@ whose coverage command fails or writes no report, fails closed as Go does:
 `coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
 runs. Reports read with `--coverage-report`, `--use-existing-coverage` or
-`--coverage-command` keep the fallback. Go `--fail-uncovered` is strict: it also
-requires fresh executable-block evidence for every judged Go function,
-including functions with no mutation sites, and fails uncovered blocks as
-`mutation.uncovered-statement` without changing mutant counts. Empty and
-comment-only bodies have no executable obligation. Strict Go coverage needs a
-successful built-in or listed measurement; `--coverage-report`,
-`--use-existing-coverage`, and `--coverage-command` are rejected. An active
-Go workspace or local replacement outside the inventoried module is refused;
-set `GOWORK=off` to disable workspace use. Strict Go coverage judges Go files
-alone: a TypeScript, Python or Kotlin file of the same selection is outside
-its evidence, whether or not a `go.mod` sits above it, and keeps the
-uncovered-mutant rule of its language.
+`--coverage-command` keep the fallback. Go and Python `--fail-uncovered` is
+strict: it also requires fresh measured evidence for every judged Go or
+Python function, including functions with no mutation sites, and fails each
+uncovered Go executable block, and each Python line coverage.py's LCOV report
+names executable that no reaching test executed, as
+`mutation.uncovered-statement` without changing mutant counts. A Python
+function's lines run from its body to its end: its `def` line runs when the
+module is imported, not when the function is called. A Python file no test
+reaches has its executable lines listed by coverage.py's own analysis,
+without running a test, and all of them are uncovered. Empty and
+comment-only Go bodies, and Python functions with no executable body line,
+have no executable obligation. Strict coverage needs a successful built-in or
+listed measurement; `--coverage-report`, `--use-existing-coverage`, and
+`--coverage-command` are rejected. An active Go workspace or local
+replacement outside the inventoried module is refused; set `GOWORK=off` to
+disable workspace use. Strict Go coverage judges Go files alone and strict
+Python coverage Python files alone: a TypeScript or Kotlin file of the same
+selection is outside their evidence, whether or not a `go.mod` sits above
+it, and keeps the uncovered-mutant rule of its language. A counted run
+(`--count`) does not yet prove Python lines.
 
 `--count N` judges at most N mutation sites freshly, without the cache, as
 a bounded check of committed work. It resolves the repository and HEAD once
@@ -361,8 +369,8 @@ process group or session is not followed. On Windows it fails with
 `--fail-fast` stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop: an
 unexcepted survivor, once the listed tests that reach it failed to kill it
-too; with `--fail-uncovered`, an uncovered mutant or a strict Go coverage
-finding; a stale exception; a file whose tests fail before any mutant; or a
+too; with `--fail-uncovered`, an uncovered mutant or a strict Go or Python
+coverage finding; a stale exception; a file whose tests fail before any mutant; or a
 selection of listed tests that fails without any mutant. It reports that
 failure under the rule a run without it reports, and exits as that rule
 says. Killed, timed-out, validly excepted and listed-killed mutants never
@@ -409,11 +417,17 @@ exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 
-For strict Go coverage, `mutation check` additionally rejects missing or
-stale per-function block evidence without running tests, coverage, or list
-commands. Its evidence fingerprints module Go sources and tests, module
-configuration, project config, configured support files, producer options,
-and relevant Go build settings; raw profiles cannot be stamped with current
+For strict Go and Python coverage, `mutation check` additionally rejects
+missing or stale per-function block or line evidence without running tests,
+coverage, or list commands. Go evidence fingerprints module Go sources and
+tests, module configuration, project config, configured support files,
+producer options, and relevant Go build settings. Python evidence
+fingerprints every Python file of the build root (the file's reaching tests,
+their helpers and `conftest.py` files, and the code they import included),
+its `pyproject.toml`, `setup.cfg`, `tox.ini`, `pytest.ini` and `.coveragerc`,
+project config, configured support files, the producer and the interpreter
+with its environment; a virtualenv, hidden directories and nested build roots
+are left out. Raw profiles and reports cannot be stamped with current
 hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a

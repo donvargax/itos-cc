@@ -78,6 +78,31 @@ type Report struct {
 	languages map[string]bool
 	// tests is the coverage of each listed test, or nil.
 	tests *TestCoverage
+	// proven is each file whose executable lines the report lists
+	// completely, at its format's line precision (Lines): a plan that
+	// measured its language named it, or a static inventory listed it.
+	proven map[string]bool
+	// unloaded is each source of a plan that measured its language which
+	// the report never names, as no test loaded it, with its plan's
+	// language and build root: what Inventory lists.
+	unloaded map[string]Unloaded
+	// inventory is the executable lines a static inventory listed of
+	// unloaded files, none of them executed.
+	inventory map[string][]Segment
+}
+
+// Unloaded is a source of a measured language no test loaded.
+type Unloaded struct {
+	Language, Dir string
+}
+
+// Line is one executable line of a file at a line-precision format's
+// precision: an LCOV DA line, a JaCoCo or Kover line. Covered is true when
+// any measured copy of it executed: a JaCoCo line with both missed and
+// covered instructions is covered.
+type Line struct {
+	Line    int
+	Covered bool
 }
 
 // Cause is why coverage that was meant to be measured was not.
@@ -271,6 +296,79 @@ func (r *Report) GoBlocks(file string) []GoBlock {
 	return out
 }
 
+// Lines is the complete executable line inventory of file at its format's
+// line precision, in line order, and whether the report proves it
+// complete: a coverage command of its plan succeeded and its report named
+// the file, or a static inventory listed the file no test loaded, every
+// line then uncovered. Lines of the listed tests' measurements count as
+// GoBlocks counts them. Without proof it returns false, whatever partial
+// lines a failed command left: those are not evidence of what is
+// executable.
+func (r *Report) Lines(file string) ([]Line, bool) {
+	if r == nil || !r.proven[file] {
+		return nil, false
+	}
+	covered := map[int]bool{}
+	add := func(segments []Segment) {
+		for _, seg := range segments {
+			if seg.Total <= 0 {
+				continue
+			}
+			for line := seg.Start; line <= seg.End; line++ {
+				covered[line] = covered[line] || seg.Covered > 0
+			}
+		}
+	}
+	add(r.files[file])
+	add(r.inventory[file])
+	if r.tests != nil {
+		for _, id := range r.tests.ids {
+			if report := r.tests.reports[id]; report != nil {
+				add(report.files[file])
+			}
+		}
+	}
+	out := make([]Line, 0, len(covered))
+	for line, c := range covered {
+		out = append(out, Line{Line: line, Covered: c})
+	}
+	slices.SortFunc(out, func(a, b Line) int { return a.Line - b.Line })
+	return out, true
+}
+
+// Unloaded is each source of a plan that measured language which no test
+// loaded, so the report names none of its lines, sorted: what Inventory
+// lists.
+func (r *Report) Unloaded(language string) []string {
+	if r == nil {
+		return nil
+	}
+	var out []string
+	for file, u := range r.unloaded {
+		if u.Language == language && !r.proven[file] {
+			out = append(out, file)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+// FromLines makes a report of language from previously complete line
+// inventories, as FromGoBlocks does of Go blocks: every file proven.
+func FromLines(language string, lines map[string][]Line) *Report {
+	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{language: true},
+		proven: map[string]bool{}}
+	for file, entries := range lines {
+		r.proven[file] = true
+		r.files[file] = []Segment{}
+		for _, line := range entries {
+			r.files[file] = append(r.files[file], Segment{Start: line.Line, End: line.Line, Total: 1,
+				Covered: boolWeight(line.Covered, 1), Key: strconv.Itoa(line.Line)})
+		}
+	}
+	return r
+}
+
 // FromGoBlocks makes a report from a previously complete Go block inventory.
 // It is used only to classify mutation sites when strict cached evidence is
 // fresh; it does not claim to be a newly measured producer.
@@ -375,6 +473,24 @@ func Merge(reports ...*Report) *Report {
 		}
 		for f, segs := range r.branches {
 			out.branches[f] = append(out.branches[f], segs...)
+		}
+		for f := range r.proven {
+			if out.proven == nil {
+				out.proven = map[string]bool{}
+			}
+			out.proven[f] = true
+		}
+		for f, u := range r.unloaded {
+			if out.unloaded == nil {
+				out.unloaded = map[string]Unloaded{}
+			}
+			out.unloaded[f] = u
+		}
+		for f, segs := range r.inventory {
+			if out.inventory == nil {
+				out.inventory = map[string][]Segment{}
+			}
+			out.inventory[f] = append(out.inventory[f], segs...)
 		}
 	}
 	return out

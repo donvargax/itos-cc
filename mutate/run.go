@@ -29,13 +29,16 @@ type Options struct {
 	// to run every mutant regardless of coverage, and an error to stop the
 	// run before any mutant runs or any snapshot is written.
 	Coverage func(sources []string) (*coverage.Report, error)
-	// StatementCoverage is a successful independently admitted Go coverage
-	// measurement for strict mode. It is attached per unit, including units
-	// with no mutation sites.
+	// StatementCoverage is a successful independently admitted coverage
+	// measurement for strict mode, of every strict language
+	// (StrictCoverage). It is attached per unit of a file of such a
+	// language, including units with no mutation sites.
 	StatementCoverage *coverage.Report
 	CoverageProducer  string
-	CoverageInputs    func(source string) (string, map[string]string, error)
-	CachedCoverage    func(path, function, hash string) *GoCoverageEvidence
+	// CoverageInputs is the producer and input fingerprint of the file at
+	// source's evidence, of its language.
+	CoverageInputs func(source string) (string, map[string]string, error)
+	CachedCoverage func(path, function, hash string) *CoverageEvidence
 	// Support is the hashes of the support files of the listed tests now
 	// (SupportHashes): what a listed outcome records, and holds while they
 	// are unchanged.
@@ -245,7 +248,7 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 	if pending > 0 {
 		// A failure known before any mutant runs stops a fail-fast run
 		// before the work it makes pointless: a stale exception before
-		// coverage, an uncovered mutant or strict Go finding before any
+		// coverage, an uncovered mutant or strict coverage finding before any
 		// baseline or mutant.
 		if ff != nil {
 			if stop = ff.Known; stop == nil {
@@ -300,8 +303,8 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 			outcomes, scopes, ran = s.preserved()
 		}
 		s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, outcomes, scopes, ran)
-		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && s.file.Spec.Name == "go" {
-			evidence, err := s.goEvidence(opt)
+		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && StrictCoverage(s.file.Spec.Name) {
+			evidence, err := s.coverageEvidence(opt)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -502,12 +505,13 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 	return states, nil
 }
 
-// goEvidence is the measured Go coverage evidence of each unit of the file,
-// as its snapshot records it: from the run's statement coverage, or from a
-// matching independent cache, which wins; nil where neither has any.
-func (s *fileState) goEvidence(opt Options) ([]*GoCoverageEvidence, error) {
-	out := make([]*GoCoverageEvidence, len(s.file.Units))
-	if s.file.Spec.Name != "go" {
+// coverageEvidence is the measured coverage evidence of each unit of the
+// file, of a strict language, as its snapshot records it: from the run's
+// statement coverage, or from a matching independent cache, which wins;
+// nil where neither has any.
+func (s *fileState) coverageEvidence(opt Options) ([]*CoverageEvidence, error) {
+	out := make([]*CoverageEvidence, len(s.file.Units))
+	if !StrictCoverage(s.file.Spec.Name) {
 		return out, nil
 	}
 	if opt.StatementCoverage != nil {
@@ -520,7 +524,7 @@ func (s *fileState) goEvidence(opt Options) ([]*GoCoverageEvidence, error) {
 			}
 		}
 		for i, unit := range s.file.Units {
-			out[i] = goCoverageEvidence(s.file, unit, opt.StatementCoverage.GoBlocks(s.file.Path), producer, inputs)
+			out[i] = coverageEvidence(s.file, unit, opt.StatementCoverage, producer, inputs)
 		}
 	}
 	if opt.CachedCoverage != nil {

@@ -29,7 +29,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant or executable Go coverage block with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
 | 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
@@ -200,14 +200,22 @@ other custom-command inputs must be named by those globs. Check, sample, run,
 and graph use the recorded scope's evidence; freshness checks run no tests or
 list command. Older Go broad-scope outcomes without evidence are stale.
 
-Strict Go coverage is independent of mutant outcomes. `--fail-uncovered`
-requires a complete per-function executable block inventory from a successful
-built-in or listed measurement, including functions with no mutation sites.
-Empty/comment-only bodies have no executable obligation. Cached checks report
-missing or stale coverage evidence without running tests, coverage or list
-commands. Strict Go runs reject `--coverage-report`,
-`--use-existing-coverage`, and `--coverage-command`; non-strict and other
-language behavior is unchanged. Strict run and check refuse active Go
+Strict Go and Python coverage is independent of mutant outcomes.
+`--fail-uncovered` requires a complete per-function executable inventory from
+a successful built-in or listed measurement, including functions with no
+mutation sites: Go's positive-weight cover-profile blocks, and the Python
+lines coverage.py's LCOV report names executable (DA lines) from a function's
+body to its end, its `def` line running at import. A Python file no test
+reaches has its executable lines listed by coverage.py's own analysis
+(`Coverage.analysis2`), running no test, all of them uncovered. Empty or
+comment-only Go bodies, and Python functions with no executable body line,
+have no executable obligation. Cached checks report missing or stale coverage
+evidence without running tests, coverage or list commands. Strict Go and
+Python runs reject `--coverage-report`, `--use-existing-coverage`, and
+`--coverage-command`; non-strict, counted (`--count`) Python, TypeScript and
+Kotlin behavior is unchanged. Python evidence is written under a unit's
+`line_coverage` key, with `"language": "python"`; Go evidence stays under
+`go_coverage`. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
 including excluded nested modules; `GOWORK=off` remains supported. The refusal
 is reported as `mutation.coverage-unsupported`, and cached evidence cannot

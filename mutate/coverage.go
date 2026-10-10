@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
@@ -13,6 +14,115 @@ import (
 )
 
 const goCoverageEvidenceVersion = 2
+
+// lineCoverageEvidenceVersion is the version of the evidence of a
+// line-precision language (CoverageEvidence.Language).
+const lineCoverageEvidenceVersion = 1
+
+// strictLanguages are the languages whose functions strict coverage
+// (--fail-uncovered) proves executed: Go at cover-profile block precision,
+// the others at their format's line precision (coverage.Report.Lines).
+var strictLanguages = map[string]bool{"go": true, "python": true}
+
+// StrictCoverage says whether strict coverage proves the executable code of
+// language's functions: whether its functions need fresh measured evidence.
+func StrictCoverage(language string) bool {
+	return strictLanguages[language]
+}
+
+// CoverageProducer is the built-in producer of language's strict coverage
+// evidence, measuring each file with the tests that reach it, or, with
+// allTests, the whole suite of its build root: what evidence records, and
+// what mutation check admits (validCoverageProducer).
+func CoverageProducer(language string, allTests bool) string {
+	switch {
+	case language == "go" && allTests:
+		return "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
+	case language == "go":
+		return "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
+	case language == "python" && allTests:
+		return "python -m coverage run --branch --source=<build root> <whole suite>; python -m coverage lcov; scope=all-tests"
+	case language == "python":
+		return "python -m coverage run --branch --source=<build root> <reaching tests>; python -m coverage lcov; scope=own"
+	}
+	return ""
+}
+
+// validCoverageProducer says whether producer is a built-in producer of
+// language's strict coverage evidence.
+func validCoverageProducer(language, producer string) bool {
+	return producer != "" && (producer == CoverageProducer(language, false) || producer == CoverageProducer(language, true))
+}
+
+// evidenceKey is how CoverageEvidence.Language names language: "" for Go,
+// whose evidence predates the field.
+func evidenceKey(language string) string {
+	if language == "go" {
+		return ""
+	}
+	return language
+}
+
+// evidenceVersion is the current version of language's evidence.
+func evidenceVersion(language string) int {
+	if language == "go" {
+		return goCoverageEvidenceVersion
+	}
+	return lineCoverageEvidenceVersion
+}
+
+// coverageEvidence binds report's measurement of file to unit, as its
+// language's evidence: Go's blocks, or another strict language's lines.
+func coverageEvidence(file *lang.File, unit lang.Unit, report *coverage.Report, producer string, inputs map[string]string) *CoverageEvidence {
+	if file.Spec.Name == "go" {
+		return goCoverageEvidence(file, unit, report.GoBlocks(file.Path), producer, inputs)
+	}
+	lines, proven := report.Lines(file.Path)
+	return lineCoverageEvidence(file, unit, lines, proven, producer, inputs)
+}
+
+// lineCoverageEvidence binds the executable lines of file, of a
+// line-precision format, to unit: those from its BodyLine through its
+// EndLine, outside the inline units inside it, which are theirs. A def or
+// signature line before BodyLine runs when the unit is defined, not when it
+// is called, so it is no line of the unit's to prove. The evidence is
+// complete when proven: the measurement lists every executable line of the
+// file (coverage.Report.Lines), so a unit with none has nothing to prove.
+func lineCoverageEvidence(file *lang.File, unit lang.Unit, lines []coverage.Line, proven bool, producer string, inputs map[string]string) *CoverageEvidence {
+	evidence := &CoverageEvidence{
+		Version: lineCoverageEvidenceVersion, Language: file.Spec.Name, File: project.FromRoot(file.Path),
+		Function: unitID(unit.Namespace, unit.Name), Hash: UnitHash(file, unit), Producer: producer,
+		Inputs: cloneHashes(inputs), Blocks: []CoverageBlock{}, Complete: proven,
+	}
+	if !proven {
+		return evidence
+	}
+	first := unit.BodyLine
+	if first <= 0 {
+		first = unit.StartLine
+	}
+	for _, line := range lines {
+		if line.Line < first || line.Line > unit.EndLine || inInner(file, unit, line.Line) {
+			continue
+		}
+		evidence.Blocks = append(evidence.Blocks, CoverageBlock{
+			Span: strconv.Itoa(line.Line), Line: line.Line, Weight: 1, Covered: line.Covered,
+		})
+	}
+	return evidence
+}
+
+// inInner says whether line belongs to an inline unit inside unit, from
+// the line after its start, as CRAP leaves inline units' lines out.
+func inInner(file *lang.File, unit lang.Unit, line int) bool {
+	for _, i := range unit.Inner {
+		in := file.Units[i]
+		if line >= max(in.BodyLine, in.StartLine+1) && line <= in.EndLine {
+			return true
+		}
+	}
+	return false
+}
 
 func goCoverageEvidence(file *lang.File, unit lang.Unit, blocks []coverage.GoBlock, producer string, inputs map[string]string) *GoCoverageEvidence {
 	evidence := &GoCoverageEvidence{

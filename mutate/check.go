@@ -42,37 +42,55 @@ type FunctionCheck struct {
 	unit    int // the function's index in its file's units
 }
 
-// GoCoverageCheck is one current Go function's independent coverage verdict.
-type GoCoverageCheck struct {
+// CoverageCheck is one current function's independent coverage verdict.
+type CoverageCheck struct {
 	File, Function string
-	Line           int
-	State          string // "missing", "stale", "fresh"
-	Changed        []string
-	Blocks         []GoCoverageBlock
-	Evidence       *GoCoverageEvidence
+	// Language is the function's language.
+	Language string
+	Line     int
+	State    string // "missing", "stale", "fresh", "unsupported"
+	Changed  []string
+	Blocks   []CoverageBlock
+	Evidence *CoverageEvidence
 }
 
-// CheckGoCoverage checks independent coverage evidence for every selected Go
-// function, including functions with no mutation sites. It runs and writes
-// nothing. current returns the current producer/input fingerprint per file.
-// A file of another language is outside the Go evidence inventory, beneath
-// a go.mod or not: it has no verdict here, and current is never asked
-// about it.
-func CheckGoCoverage(files []string, judge func(path, function, hash string) bool, current func(path string) (string, map[string]string, error)) ([]GoCoverageCheck, error) {
-	var out []GoCoverageCheck
+// GoCoverageCheck is CoverageCheck, by its name before other languages had
+// strict coverage.
+type GoCoverageCheck = CoverageCheck
+
+// CoverageInputs returns the current producer and input fingerprint of the
+// strict coverage evidence of the source at path.
+type CoverageInputs func(path string) (string, map[string]string, error)
+
+// CheckGoCoverage is CheckCoverage of Go files alone.
+func CheckGoCoverage(files []string, judge func(path, function, hash string) bool, current func(path string) (string, map[string]string, error)) ([]CoverageCheck, error) {
+	return CheckCoverage(files, judge, map[string]CoverageInputs{"go": current})
+}
+
+// CheckCoverage checks independent coverage evidence for every selected
+// function of a language current has inputs for, including functions with
+// no mutation sites. It runs and writes nothing. current returns, by
+// language, the current producer/input fingerprint per file. A file of
+// another language is outside every evidence inventory, beneath a go.mod or
+// not: it has no verdict here, and current is never asked about it.
+func CheckCoverage(files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs) ([]CoverageCheck, error) {
+	var out []CoverageCheck
 	for _, path := range files {
 		f, err := lang.ParseFile(path)
 		if err != nil {
 			return out, err
 		}
-		if f.Spec == nil || f.Spec.Name != "go" {
+		if f.Spec == nil || current[f.Spec.Name] == nil {
 			f.Close()
 			continue
 		}
-		unsupported, err := GoCoverageUnsupported(path)
-		if err != nil {
-			f.Close()
-			return out, err
+		language := f.Spec.Name
+		unsupported := ""
+		if language == "go" {
+			if unsupported, err = GoCoverageUnsupported(path); err != nil {
+				f.Close()
+				return out, err
+			}
 		}
 		key := project.FromRoot(path)
 		snap, err := LoadSnapshot(key)
@@ -80,7 +98,7 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 			f.Close()
 			return out, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}
-		_, inputs, err := current(path)
+		_, inputs, err := current[language](path)
 		if err != nil {
 			f.Close()
 			return out, err
@@ -95,7 +113,7 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 			if judge != nil && !judge(path, ids[i], hashes[i]) {
 				continue
 			}
-			check := GoCoverageCheck{File: project.Rel(path), Function: ids[i], Line: unit.StartLine, State: "missing"}
+			check := CoverageCheck{File: project.Rel(path), Function: ids[i], Language: language, Line: unit.StartLine, State: "missing"}
 			if unsupported != "" {
 				check.State = "unsupported"
 				check.Changed = []string{unsupported}
@@ -104,8 +122,8 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 			}
 			if pair[i] >= 0 {
 				if evidence := entries[pair[i]].Coverage; evidence != nil && evidence.Complete &&
-					evidence.Version == goCoverageEvidenceVersion && evidence.File == key &&
-					evidence.Function == ids[i] && evidence.Hash == hashes[i] {
+					evidence.Language == evidenceKey(language) && evidence.Version == evidenceVersion(language) &&
+					evidence.File == key && evidence.Function == ids[i] && evidence.Hash == hashes[i] {
 					check.Blocks = evidence.Blocks
 					check.Evidence = evidence
 					check.State = "fresh"
@@ -113,7 +131,7 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 					delete(before, "@producer")
 					delete(now, "@producer")
 					check.Changed = GoCoverageChanges(before, now)
-					if !validGoCoverageProducer(evidence.Producer) {
+					if !validCoverageProducer(language, evidence.Producer) {
 						check.Changed = append(check.Changed, "coverage producer/options")
 					}
 					if evidence.Producer == "" && len(check.Changed) == 0 {
@@ -129,11 +147,6 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 		f.Close()
 	}
 	return out, nil
-}
-
-func validGoCoverageProducer(producer string) bool {
-	return producer == "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own" ||
-		producer == "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
 }
 
 // NeedsMutationCoverage reports whether Run must test at least one mutant.
