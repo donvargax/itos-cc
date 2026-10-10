@@ -12,7 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - mutation-windows-ownership
-  - mutation-fail-fast
+  - fail-fast-run
 items:
   - id: T-3
     title: Nightly mutation job that commits its results back even when it fails
@@ -735,14 +735,15 @@ items:
       reading unstaged metadata. Leave transition checks, writers, measurement gating and SARIF to
       separate slices.
     refs: ["#25"]
-  - id: mutation-fail-fast
-    title: Mutation run stops early on an actionable failure when --fail-fast is set
+  - id: fail-fast-run
+    title: mutation run --fail-fast stops at the first actionable failure on Linux and macOS
     phase: 1
     owner: null
     status: todo
     depends_on: [mutation-command-ownership, mutation-windows-ownership]
-    kind: idea
+    kind: slice
     why: >
+      Was mutation-fail-fast.
       Issue #26 is the person’s highest priority now, ahead of the debt foundation. Opt-in fail-fast
       should shorten local fix-and-retry mutation runs without changing aggregate defaults, treating
       killed or valid excepted mutants as failures, stopping before applicable listed tests can kill
