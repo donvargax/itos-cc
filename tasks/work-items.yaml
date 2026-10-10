@@ -986,7 +986,7 @@ items:
     title: Strict --fail-uncovered fails closed when TypeScript, Python or Kotlin measured nothing
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [strict-mixed-languages]
     kind: slice
     why: >
