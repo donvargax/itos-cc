@@ -740,7 +740,7 @@ items:
     title: mutation run --fail-fast stops at the first actionable failure on Linux and macOS
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [mutation-command-ownership, macos-counted-run]
     kind: slice
     why: >
