@@ -1227,3 +1227,15 @@ items:
       q-40: ADR-0017/0018 for Kotlin, at JaCoCo or Kover XML line precision; a partly executed line
       is covered.
     refs: ["#23"]
+  - id: strict-scope-refusals
+    title: Strict coverage refuses workspace and out-of-root local dependency scopes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      q-40 (2): ADR-0019 for TypeScript, Python and Kotlin: npm/pnpm/yarn workspaces,
+      file:/link:/workspace: and editable or path dependencies, Gradle includeBuild and Maven
+      modules outside the root are mutation.coverage-unsupported.
+    refs: ["#23"]
