@@ -814,7 +814,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [mutation-counted-run, mutation-windows-ownership]
+    depends_on: [mutation-counted-interrupt, mutation-windows-ownership]
     kind: idea
     why: >
       GitHub #29 is the separate Windows-support issue requested by the person. After Linux fresh
