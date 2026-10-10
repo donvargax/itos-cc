@@ -359,3 +359,23 @@
     - run: go vet ./...
     - run: go test -count=1 ./cmd/itos-cc
       timeout: 1200
+- id: T-17
+  type: test
+  title: cmd/itos-cc's fixtures ignore the GOCOVERDIR of a covered test run
+  why: >
+    Under go test -coverprofile, as the nightly measures cmd/itos-cc's coverage, go test sets
+    GOCOVERDIR in the test process's environment and every fixture command inherits it. The
+    fail-fast fixture's listed tests treat GOCOVERDIR as itos-cc measuring them, so their failing
+    selection passes, and four tests fail only under coverage:
+    TestAFailingBaselineStopsTheRunWithoutInventingOutcomes,
+    TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork,
+    TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged and
+    TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused (found 2026-10-10, already
+    failing before T-16 at 44dfd0c; package coverage 81.5% before T-16, 81.8% after). The nightly's
+    own-test coverage of cmd/itos-cc fails while they do. Fixture commands get GOCOVERDIR only when
+    itos-cc gives it, never from the outer run; the itos-cc subprocess itself keeps it, so its
+    coverage still counts.
+  done_when:
+    - run: go vet ./...
+    - run: go test -count=1 -coverprofile=$(mktemp) -run '^(TestAFailingBaselineStopsTheRunWithoutInventingOutcomes|TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork|TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged|TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused)$' ./cmd/itos-cc
+      timeout: 600
