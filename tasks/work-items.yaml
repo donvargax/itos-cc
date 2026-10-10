@@ -13,6 +13,7 @@ phases:
 queue:
   - mutation-counted-run
   - mutation-counted-listed
+  - mutation-counted-interrupt
   - mutation-windows-ownership
   - mutation-fail-fast
 items:
