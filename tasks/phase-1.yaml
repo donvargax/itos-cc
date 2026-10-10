@@ -333,3 +333,14 @@
     - run: go vet ./...
     - run: go test -count=1 ./mutate/...
       timeout: 600
+- id: T-15
+  type: ci
+  title: CI gives go test 30 minutes while cmd/itos-cc's Windows tests near 20
+  why: >
+    cmd/itos-cc's tests on windows-latest took 1042s and 1104s in two green runs on 2026-10-10, then
+    passed T-6's 20-minute limit in CI 38054039543 (fail-fast-counts' first attempt, a timeout in a
+    test no change touched) and took 1136s on the rerun. Every slice adds tests to that package, so
+    main would go red on time alone. The limit only guards against a hang: 30 minutes keeps that
+    guard and the headroom while windows-test-speed brings the package's time down.
+  done_when:
+    - run: grep -q -- 'go test -timeout 30m ./...' .github/workflows/ci.yml
