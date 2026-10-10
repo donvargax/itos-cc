@@ -1259,3 +1259,17 @@ items:
       lines as complete mode does; TypeScript and Kotlin follow with their slices. Needs its own
       scenario.
     refs: ["#23"]
+  - id: python-coverage-import-closure
+    title: Python line evidence rests on the reaching tests' import closure, not the whole build root
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      strict-lines-python fingerprints every Python file of the build root, as Go fingerprints its
+      module, so any Python edit stales every strict Python function's evidence and the next strict
+      run remeasures them. graph already resolves imports: binding evidence to the file, its
+      reaching tests, their support and conftest files and what they import would keep unrelated
+      edits from staling it, at the cost of trusting the import graph for dynamic imports.
+    refs: ["#23"]
