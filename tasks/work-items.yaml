@@ -979,13 +979,9 @@ items:
     title: Strict Go coverage ignores the other languages of a mixed selection
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Language parity (the person, 2026-10-10). CheckGoCoverage parses every selected file, so a
-      TypeScript, Python or Kotlin file in a strict selection errors for lack of a go.mod or is
-      reported coverage-missing (mutate/check.go:58). Decisions in the comments above ID-MUT-203.
     refs: ["#23"]
   - id: uncovered-fails-closed
     title: Strict --fail-uncovered fails closed when TypeScript, Python or Kotlin measured nothing
