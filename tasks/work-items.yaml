@@ -1039,7 +1039,7 @@ items:
     title: Take whole-suite-freshness-all back off a red main
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
