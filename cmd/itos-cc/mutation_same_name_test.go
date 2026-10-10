@@ -67,6 +67,7 @@ func ranLines(t *testing.T, o outcome) []int {
 
 // @ID-MUT-114
 func TestFunctionsSharingANameEachReuseTheirOwnResults(t *testing.T) {
+	t.Parallel()
 	setupRepo(t)
 
 	o := mutateRun(t, "--json", setupSource)
@@ -80,6 +81,7 @@ func TestFunctionsSharingANameEachReuseTheirOwnResults(t *testing.T) {
 
 // @ID-MUT-115
 func TestEditingOneOfTwoFunctionsSharingANameRerunsOnlyIt(t *testing.T) {
+	t.Parallel()
 	setupRepo(t)
 	edit(t, setupSource, "b = 3 - 1", "b = 4 - 2")
 	lines := initLines(t)
@@ -105,6 +107,7 @@ func TestEditingOneOfTwoFunctionsSharingANameRerunsOnlyIt(t *testing.T) {
 
 // @ID-MUT-116
 func TestReorderingFunctionsSharingANameChangesNothing(t *testing.T) {
+	t.Parallel()
 	setupRepo(t)
 	edit(t, setupSource, firstInit+"\n"+secondInit, secondInit+"\n"+firstInit)
 

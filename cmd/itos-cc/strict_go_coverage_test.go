@@ -13,6 +13,7 @@ import (
 
 // @ID-MUT-156
 func TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite(t *testing.T) {
+	t.Parallel()
 	source := "main.go"
 	moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strict\n\ngo 1.22\n",
@@ -64,6 +65,7 @@ func TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite(t *testing.
 
 // @ID-MUT-157
 func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictzero\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Dormant(flag bool) string { if flag { return \"yes\" }; return \"no\" }\nfunc Empty() {}\nfunc CommentsOnly() { // no executable work\n}\nfunc main() {}\n",
@@ -114,6 +116,7 @@ func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
 }
 
 func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.T) {
+	t.Parallel()
 	moduleRepo(t, map[string]string{
 		"go.mod":           "module example.com/strictunloaded\n\ngo 1.22\n",
 		"main.go":          "package main\n\nfunc main() {}\n",
@@ -137,6 +140,7 @@ func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.
 
 // @ID-MUT-158
 func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictspans\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Branch(call bool) int { if call { return 1 }; return 2 }\nfunc Outer(call bool) int { f := func() int { return 7 }; if call { return f() }; return 0 }\nfunc main() {}\n",
@@ -195,6 +199,7 @@ func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing
 
 // @ID-MUT-160
 func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictcheck\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Compare(n int) bool { return n > 5 }\nfunc Choose(b bool) string { if b { return \"miss\" }; return \"hit\" }\nfunc main() {}\n",
@@ -268,6 +273,7 @@ func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing
 
 // @ID-MUT-159
 func TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictreuse\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Positive(n int) bool { return n > 0 }\nfunc main() {}\n",
@@ -299,6 +305,7 @@ func TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable(t *testing.T) 
 
 // @ID-MUT-161
 func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictinputs\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Value(flag bool) int { if flag { return 1 }; return 2 }\nfunc main() {}\n",
@@ -329,6 +336,7 @@ func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 
 // @ID-MUT-161
 func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		edit func(t *testing.T, dir string)
@@ -415,6 +423,7 @@ const strictFingerprintConfig = `mutation:
 
 // @ID-MUT-160
 func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictownership\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc First(n int) int { if n > 0 { return 1 }; return 2 }\nfunc Second(n int) int { if n > 0 { return 3 }; return 4 }\nfunc main() {}\n",
@@ -473,6 +482,7 @@ func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 
 // @ID-MUT-162
 func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":       "module example.com/strictpartial\n\ngo 1.22\n",
 		"main.go":      "package main\n\nfunc Edited(n int) bool { return n > 0 }\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n",
@@ -567,6 +577,7 @@ func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *t
 
 // @ID-MUT-163
 func TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	o := cli(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json")
 	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)
@@ -576,6 +587,7 @@ func TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection(t *testing.T) {
 }
 
 func TestStrictGoRejectsUnattestedRawCoverageFlags(t *testing.T) {
+	t.Parallel()
 	moduleRepo(t, map[string]string{
 		"go.mod":  "module example.com/strictflags\n\ngo 1.22\n",
 		"main.go": "package main\n\nfunc main() {}\n",

@@ -78,6 +78,7 @@ func tsMutantOf(t *testing.T, f fileJSON, function string) mutantJSON {
 
 // @ID-MUT-208
 func TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants(t *testing.T) {
+	t.Parallel()
 	modules := languageTools(t, "typescript")
 	source := filepath.FromSlash(tsScopeSource)
 

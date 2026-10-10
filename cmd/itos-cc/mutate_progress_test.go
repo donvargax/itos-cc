@@ -14,6 +14,7 @@ import (
 
 // @ID-MUT-100
 func TestProgressLinesBeginItosCc(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 
 	o := mutateCovered(t, boardSource)

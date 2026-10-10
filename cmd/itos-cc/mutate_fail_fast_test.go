@@ -179,6 +179,7 @@ var threeFiles = map[string]string{
 
 // @ID-MUT-192
 func TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants(t *testing.T) {
+	t.Parallel()
 	_, ff := ffRepo(t, threeFiles)
 
 	// With --fail-fast, one worker judges Weak's mutant first.
@@ -261,6 +262,7 @@ var holdFiles = map[string]string{
 
 // @ID-MUT-193
 func TestInFlightJudgmentsAreCancelledAndTheirOwnedProcessesCleanedUp(t *testing.T) {
+	t.Parallel()
 	bin := buildItosCc(t)
 	dir, ff := ffRepo(t, holdFiles)
 	tmp := t.TempDir()
@@ -600,6 +602,7 @@ func ffException(t *testing.T, dir, function, hash string) string {
 
 // @ID-MUT-194
 func TestNonActionableJudgmentsNeverStopTheRun(t *testing.T) {
+	t.Parallel()
 	t.Run("killed, timed out and excepted", func(t *testing.T) {
 		// Compare's mutant is killed, Slow's makes test.sh sleep past its
 		// timeout, and Same's survives, which itos-cc.yaml excepts.
@@ -666,6 +669,7 @@ const (
 
 // @ID-MUT-195
 func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
+	t.Parallel()
 	t.Run("stale exception", func(t *testing.T) {
 		// The entry for Compare's mutant names another hash: it is stale
 		// before anything runs.
@@ -756,6 +760,7 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 
 // @ID-MUT-196
 func TestAFailingBaselineStopsTheRunWithoutInventingOutcomes(t *testing.T) {
+	t.Parallel()
 	t.Run("own baseline", func(t *testing.T) {
 		// Two modules, so two baselines: a's test.sh fails on the source
 		// as it is, which marks itself broken; b's would kill its mutant.
@@ -821,6 +826,7 @@ func TestAFailingBaselineStopsTheRunWithoutInventingOutcomes(t *testing.T) {
 
 // @ID-MUT-197
 func TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork(t *testing.T) {
+	t.Parallel()
 	// Two workers judge idle (uncovered), quick (killed), wait (held),
 	// label (its selection fails, once wait's mutant started) and spare.
 	// quick's goes to one worker and wait's to the other; label's follows
@@ -910,6 +916,7 @@ func cmpOr(a, b string) string {
 
 // @ID-MUT-198
 func TestAFileTheStopCutShortPublishesNoPartialProof(t *testing.T) {
+	t.Parallel()
 	// One worker judges a.go's mutant, killed, then b.go's: B's survives,
 	// and C's is never started.
 	_, ff := ffRepo(t, map[string]string{

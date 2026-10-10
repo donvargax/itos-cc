@@ -49,6 +49,7 @@ func wantNoLine(t *testing.T, p map[string]any, stdout string) {
 
 // @ID-MUT-141
 func TestARunOfTheWholeProjectFailsAnEntryWhoseFileIsGone(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -65,6 +66,7 @@ func TestARunOfTheWholeProjectFailsAnEntryWhoseFileIsGone(t *testing.T) {
 
 // @ID-MUT-142
 func TestMutationCheckOfTheWholeProjectFailsItToo(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, countFiles)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -91,6 +93,7 @@ func TestMutationCheckOfTheWholeProjectFailsItToo(t *testing.T) {
 
 // @ID-MUT-143
 func TestWithSinceAnEntryWhoseFileTheRangeDeletedIsGone(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -106,6 +109,7 @@ func TestWithSinceAnEntryWhoseFileTheRangeDeletedIsGone(t *testing.T) {
 
 // @ID-MUT-144
 func TestAnEntryWhoseFileWasRenamedHasMovedAndStillExceptsItsMutant(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -131,6 +135,7 @@ func TestAnEntryWhoseFileWasRenamedHasMovedAndStillExceptsItsMutant(t *testing.T
 
 // @ID-MUT-146
 func TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -148,6 +153,7 @@ func TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved(t *testing.T) {
 // entry's name and hash: the entry is gone, and the mutant at the new path
 // is a survivor, as if it had no entry.
 func TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -174,6 +180,7 @@ func TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone(t *testing.T) {
 // With paths, an entry for a file outside them is not judged, even when
 // that file is gone.
 func TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, countFiles)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)

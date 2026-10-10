@@ -80,6 +80,7 @@ func pytestRuns(t *testing.T, runs string) [][2]string {
 
 // @ID-MUT-214
 func TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree(t *testing.T) {
+	t.Parallel()
 	languageTools(t, "python")
 	// pytest plugins installed beside pytest may write files of their own;
 	// the scenario is about pytest's cache, which is no plugin it autoloads.

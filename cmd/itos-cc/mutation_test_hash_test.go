@@ -102,6 +102,7 @@ func reusedOf(t *testing.T, o outcome, function string) (reused, listed int) {
 
 // @ID-MUT-65
 func TestTheSnapshotRecordsTheTestsThatImportTheFile(t *testing.T) {
+	t.Parallel()
 	if _, err := exec.LookPath("go"); err != nil {
 		t.Skip("go is not installed")
 	}
@@ -132,6 +133,7 @@ func TestTheSnapshotRecordsTheTestsThatImportTheFile(t *testing.T) {
 
 // @ID-MUT-66
 func TestChangingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	killedRun(t)
 	changeBoardTest(t)
@@ -149,6 +151,7 @@ func TestChangingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
 
 // @ID-MUT-67
 func TestDeletingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	killedRun(t)
 	if err := os.Remove(inWD(t, filepath.FromSlash("src/board_test.go"))); err != nil {
@@ -168,6 +171,7 @@ func TestDeletingATestThatImportsTheFileRerunsItsKills(t *testing.T) {
 
 // @ID-MUT-68
 func TestMutationCheckCallsResultsStaleWhenTheirTestsChanged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	killedRun(t)
 	changeBoardTest(t)
@@ -195,6 +199,7 @@ func TestMutationCheckCallsResultsStaleWhenTheirTestsChanged(t *testing.T) {
 
 // @ID-MUT-69
 func TestASnapshotThatRecordsNoTestsIsStale(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	killedRun(t)
 	// As written before snapshots recorded tests.
@@ -229,6 +234,7 @@ func TestASnapshotThatRecordsNoTestsIsStale(t *testing.T) {
 
 // @ID-MUT-70
 func TestAGoFilesTestsAreItsPackagesAndThoseOfPackagesThatImportIt(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, map[string]string{
 		"app/app.go":      "package app\n\nimport board \"example.com/m/src\"\n\n// New makes a board.\nfunc New() *board.Board {\n\treturn &board.Board{}\n}\n",
 		"app/app_test.go": "package app\n\nimport \"testing\"\n\nfunc TestNew(t *testing.T) {\n\tif New() == nil {\n\t\tt.Fatal(\"no board\")\n\t}\n}\n",

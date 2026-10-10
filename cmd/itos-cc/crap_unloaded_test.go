@@ -54,6 +54,7 @@ func wantUntested(t *testing.T, c crapJSON, o outcome) {
 
 // @ID-CRAP-14
 func TestAFileNoTestLoadsScoredAloneIsUntestedNotUnmeasured(t *testing.T) {
+	t.Parallel()
 	vitestRepo(t)
 
 	o := cli(t, "crap", "--json", "--threshold", "30", unusedSource)
@@ -72,6 +73,7 @@ func TestAFileNoTestLoadsScoredAloneIsUntestedNotUnmeasured(t *testing.T) {
 // Without --threshold, the file scores 0% as with one, and stderr warns of
 // no missing coverage.
 func TestWithoutAThresholdAFileNoTestLoadsIsUntestedWithNoWarning(t *testing.T) {
+	t.Parallel()
 	vitestRepo(t)
 
 	o := cli(t, "crap", "--json", unusedSource)

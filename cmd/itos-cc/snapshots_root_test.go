@@ -59,6 +59,7 @@ func noMetricsIn(t *testing.T, dir string) {
 
 // @ID-SNAP-08
 func TestSnapshotsLiveAtTheProjectRootWhereverACommandRuns(t *testing.T) {
+	t.Parallel()
 	root := boardRepo(t, nil)
 	inSrc(t, root)
 	if o := mutateRun(t, "board.go"); o.code != 1 {
@@ -73,6 +74,7 @@ func TestSnapshotsLiveAtTheProjectRootWhereverACommandRuns(t *testing.T) {
 
 // @ID-SNAP-09
 func TestEveryCommandsSnapshotNamesFilesFromTheRoot(t *testing.T) {
+	t.Parallel()
 	// scrap.json records test files alone, so it names src/board.go's test.
 	for _, c := range []struct {
 		args     []string
@@ -108,6 +110,7 @@ func TestEveryCommandsSnapshotNamesFilesFromTheRoot(t *testing.T) {
 
 // @ID-SNAP-10
 func TestACommandFindsTheSameResultsFromAnyDirectory(t *testing.T) {
+	t.Parallel()
 	root := boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("mutation run from the root: exit %d, want every mutant killed; stdout:\n%s\nstderr:\n%s", o.code, o.stdout, o.stderr)
@@ -124,6 +127,7 @@ func TestACommandFindsTheSameResultsFromAnyDirectory(t *testing.T) {
 
 // @ID-SNAP-11
 func TestPathsOnTheCommandLineAndInOutputStayRelativeToTheWorkingDirectory(t *testing.T) {
+	t.Parallel()
 	root := boardRepo(t, nil)
 	inSrc(t, root)
 	if o := mutateRun(t, "board.go"); !strings.HasPrefix(o.stdout, "board.go: ") {
@@ -137,6 +141,7 @@ func TestPathsOnTheCommandLineAndInOutputStayRelativeToTheWorkingDirectory(t *te
 
 // @ID-SNAP-12
 func TestOutsideAGitRepositoryTheWorkingDirectoryIsTheRoot(t *testing.T) {
+	t.Parallel()
 	dir := inEmptyDir(t)
 	writeFile(t, filepath.Join(dir, "go.mod"), "module example.com/m\n\ngo 1.22\n")
 	writeFile(t, filepath.Join(dir, "board.go"), boardFiles["src/board.go"])

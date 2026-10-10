@@ -37,6 +37,7 @@ func rawUnit(t *testing.T, function string) map[string]any {
 
 // @ID-MUT-108
 func TestSinceKeepsTheEntriesItDoesNotJudgeMarkedStaleWhenTheirTestsChanged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)

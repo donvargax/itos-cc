@@ -95,18 +95,21 @@ func smoke(t *testing.T, source string) {
 }
 
 func TestLanguageToolSmokeTypeScript(t *testing.T) {
+	t.Parallel()
 	modules := languageTools(t, "typescript")
 	smokeRepo(t, "typescript", modules)
 	smoke(t, "src/board.ts")
 }
 
 func TestLanguageToolSmokePython(t *testing.T) {
+	t.Parallel()
 	languageTools(t, "python")
 	smokeRepo(t, "python", "")
 	smoke(t, "board.py")
 }
 
 func TestLanguageToolSmokeKotlin(t *testing.T) {
+	t.Parallel()
 	languageTools(t, "kotlin")
 	smokeRepo(t, "kotlin", "")
 	smoke(t, "src/main/kotlin/smoke/Board.kt")

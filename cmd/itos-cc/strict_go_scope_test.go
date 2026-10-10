@@ -70,6 +70,7 @@ func requireUnsupportedCoverage(t *testing.T, o outcome, filename string) {
 
 // @ID-MUT-164
 func TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
+	t.Parallel()
 	dir, _ := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
 	o := mutateCovered(t, "--fail-uncovered", "--json", "entry.go")
@@ -77,6 +78,7 @@ func TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
 }
 
 func TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
+	t.Parallel()
 	dir, snapshot := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
 	o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go")
@@ -95,6 +97,7 @@ func TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
 }
 
 func TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements(t *testing.T) {
+	t.Parallel()
 	for _, scope := range []struct {
 		name        string
 		replacement string
@@ -119,6 +122,7 @@ func TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements(t *testing.T) 
 }
 
 func TestStrictGoScopeGuardrailsRemainSupported(t *testing.T) {
+	t.Parallel()
 	dir, _ := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
 	useEnv(t, "GOWORK", "off")

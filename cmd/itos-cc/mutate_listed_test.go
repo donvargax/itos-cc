@@ -317,6 +317,7 @@ func checkLineTests(t *testing.T, mutants []map[string]any) {
 
 // @ID-MUT-121
 func TestListedTestsComeFromItosCcYaml(t *testing.T) {
+	t.Parallel()
 	record := listedRepo(t, nil)
 
 	_, o := listedJSON(t)
@@ -337,6 +338,7 @@ func TestListedTestsComeFromItosCcYaml(t *testing.T) {
 
 // @ID-MUT-122
 func TestPerTestCoverageTakesOneRunWhenTheHarnessSplitsIt(t *testing.T) {
+	t.Parallel()
 	listedRepo(t, nil)
 
 	mutants, o := listedJSON(t)
@@ -352,6 +354,7 @@ func TestPerTestCoverageTakesOneRunWhenTheHarnessSplitsIt(t *testing.T) {
 
 // @ID-MUT-123
 func TestWithoutTheHarnesssHelpCoverageTakesOneRunPerTest(t *testing.T) {
+	t.Parallel()
 	listedRepo(t, map[string][2]string{
 		"e2e/e2e_test.go": {`split := os.Getenv("ITOS_CC_TEST_COVERDIR")`, `split := ""`},
 	})
@@ -377,6 +380,7 @@ func TestWithoutTheHarnesssHelpCoverageTakesOneRunPerTest(t *testing.T) {
 
 // @ID-MUT-124
 func TestAMutantRunsItsOwnTestsFirstAndTheCoveringTestsOnlyIfItSurvives(t *testing.T) {
+	t.Parallel()
 	record := listedRepo(t, nil)
 
 	mutants, o := listedJSON(t)
@@ -417,6 +421,7 @@ func TestAMutantRunsItsOwnTestsFirstAndTheCoveringTestsOnlyIfItSurvives(t *testi
 
 // @ID-MUT-125
 func TestUncoveredMeansNeitherTheOwnTestsNorAListedTestReachTheLine(t *testing.T) {
+	t.Parallel()
 	listedRepo(t, nil)
 
 	mutants, o := listedJSON(t, "--fail-uncovered")
@@ -440,6 +445,7 @@ func TestUncoveredMeansNeitherTheOwnTestsNorAListedTestReachTheLine(t *testing.T
 
 // @ID-MUT-126
 func TestAnOutcomeDecidedByListedTestsRecordsThem(t *testing.T) {
+	t.Parallel()
 	listedRepo(t, nil)
 
 	mutants, o := listedJSON(t)
@@ -465,6 +471,7 @@ func TestAnOutcomeDecidedByListedTestsRecordsThem(t *testing.T) {
 
 // @ID-MUT-127
 func TestMutationSampleRerunsAListedOutcomeWithItsTests(t *testing.T) {
+	t.Parallel()
 	record := listedRepo(t, nil)
 	listedJSON(t)
 	// What a run records of the mutants only ID-A-02 kills, as it is.
@@ -521,6 +528,7 @@ func TestMutationSampleRerunsAListedOutcomeWithItsTests(t *testing.T) {
 
 // @ID-MUT-128
 func TestWithoutMutationTestsNothingChanges(t *testing.T) {
+	t.Parallel()
 	record := listedRepo(t, map[string][2]string{"itos-cc.yaml": {listedFiles["itos-cc.yaml"], "{}\n"}})
 
 	mutants, o := listedJSON(t)
@@ -554,6 +562,7 @@ func TestWithoutMutationTestsNothingChanges(t *testing.T) {
 
 // @ID-MUT-129
 func TestAListCommandThatFailsJudgesNothing(t *testing.T) {
+	t.Parallel()
 	record := listedRepo(t, map[string][2]string{"itos-cc.yaml": {"list: go run ./testdata/list.go", "list: go run ./testdata/list.go fail"}})
 
 	o := mutateCovered(t, "--json", greetSource)

@@ -70,6 +70,7 @@ func scanned(t *testing.T, file string) []mutateSite {
 
 // @ID-MUT-52
 func TestEveryMutantAsJSON(t *testing.T) {
+	t.Parallel()
 	// Board#full is executed but its test cannot tell > from >=, so its
 	// mutant survives; Board#clear is never executed.
 	fullID := "example.com/m/src.Board#full"
@@ -144,6 +145,7 @@ func TestFull(t *testing.T) {
 
 // @ID-MUT-53
 func TestATimedOutMutantsOutcomeIsItsOwn(t *testing.T) {
+	t.Parallel()
 	// Deleting the ! makes Settle sleep an hour where its test expects it
 	// to return at once, so the mutant can only time out, on every
 	// platform. A sleep rather than a busy loop: Windows kills the test
@@ -189,6 +191,7 @@ func TestSettle(t *testing.T) {
 
 // @ID-MUT-54
 func TestMutantsTakenFromTheSnapshotSaySo(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -218,6 +221,7 @@ func TestMutantsTakenFromTheSnapshotSaySo(t *testing.T) {
 
 // @ID-MUT-55
 func TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	// A first run records clear's survivor, which a run not judging clear
 	// keeps in the snapshot but must not list.
@@ -240,6 +244,7 @@ func TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed(t *testing.T) {
 
 // @ID-MUT-56
 func TestAFailingBaselineListsNoMutant(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, map[string]string{
 		"src/board_test.go": "package board\n\nimport \"testing\"\n\nfunc TestBroken(t *testing.T) {\n\tt.Fatal(\"broken\")\n}\n",
 	})

@@ -17,6 +17,7 @@ import (
 
 // @ID-MUT-211
 func TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused(t *testing.T) {
+	t.Parallel()
 	// An earlier run judged shown alone: its mutant survived its own tests
 	// and the listed tests killed it. Then quick and label are judged too.
 	files := maps.Clone(ffListedFiles)

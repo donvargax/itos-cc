@@ -42,6 +42,7 @@ func summaryComment(t *testing.T) string {
 
 // @ID-MUT-138
 func TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -60,6 +61,7 @@ func TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason(t *testing.
 
 // @ID-MUT-139
 func TestAStaleEntrysSurvivorIsListedAsSurvived(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -86,6 +88,7 @@ func TestAStaleEntrysSurvivorIsListedAsSurvived(t *testing.T) {
 
 // @ID-MUT-140
 func TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is\n  never called"))
@@ -111,6 +114,7 @@ func TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine(t *testing.T) {
 // holds by its function's hash and its site, which needs no run. A stale
 // entry for one excepts nothing there either.
 func TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))

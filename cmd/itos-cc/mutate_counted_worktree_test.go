@@ -48,6 +48,7 @@ func TestCompare(t *testing.T) {
 
 // @ID-MUT-212
 func TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	// Given a committed Go project and a second checkout of it made with
 	// git worktree add, whose branch has a commit of its own.

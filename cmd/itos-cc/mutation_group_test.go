@@ -30,6 +30,7 @@ func inEmptyDir(t *testing.T) string {
 
 // @ID-CLI-12
 func TestTheGroupAloneNamesItsSubcommands(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	o := cli(t, "mutation")
 	for _, sub := range []string{"usage: itos-cc mutation", "  run ", "  list ", "  check ", "  sample ", "  except "} {
@@ -44,6 +45,7 @@ func TestTheGroupAloneNamesItsSubcommands(t *testing.T) {
 
 // @ID-CLI-13
 func TestMutationRunMutates(t *testing.T) {
+	t.Parallel()
 	// Board#place's one mutant is killed by TestPlace; Board#clear's one
 	// mutant survives, as no test calls it.
 	boardRepo(t, nil)
@@ -68,6 +70,7 @@ func TestMutationRunMutates(t *testing.T) {
 
 // @ID-CLI-14
 func TestMutationListListsTheSitesWithoutRunningTests(t *testing.T) {
+	t.Parallel()
 	dir := inEmptyDir(t)
 	// package.json makes the directory a project, so the namespace is x;
 	// its test script would fail any baseline.
@@ -115,6 +118,7 @@ func TestMutationListListsTheSitesWithoutRunningTests(t *testing.T) {
 
 // @ID-CLI-15
 func TestMutateIsNoLongerACommand(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	o := cli(t, "mutate", filepath.FromSlash("src/board.ts"))
 	want := "itos-cc: there is no command \"mutate\". Did you mean 'mutation'? Run 'itos-cc --help' for the commands.\n"
@@ -128,6 +132,7 @@ func TestMutateIsNoLongerACommand(t *testing.T) {
 
 // @ID-CLI-16
 func TestAnUnknownSubcommandOfTheGroupIsAUsageError(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	o := cli(t, "--json", "mutation", "nosuch")
 	if p := o.json(t).problem("command.unknown"); p == nil || !strings.Contains(p["command"].(string), "nosuch") {
@@ -147,6 +152,7 @@ func TestAnUnknownSubcommandOfTheGroupIsAUsageError(t *testing.T) {
 
 // @ID-CLI-17
 func TestScanIsNotAFlagOfMutationRun(t *testing.T) {
+	t.Parallel()
 	dir := inEmptyDir(t)
 	writeFile(t, filepath.Join(dir, "x.ts"), "export function place(a: number): boolean {\n  return a > 0;\n}\n")
 	o := cli(t, "--json", "mutation", "run", "--scan", "x.ts")

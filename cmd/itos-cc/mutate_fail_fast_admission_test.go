@@ -16,6 +16,7 @@ import (
 
 // @ID-MUT-199
 func TestFailFastAdmissionBoundaries(t *testing.T) {
+	t.Parallel()
 	readme, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
 	if err != nil {
 		t.Fatal(err)

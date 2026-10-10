@@ -18,6 +18,7 @@ var testCommand = &command{
 }
 
 func TestFlagsAreReadByTheirSpec(t *testing.T) {
+	t.Parallel()
 	in, err := parse(testCommand, []string{"a", "--top", "3", "--threshold=2.5", "b", "--report", "x", "--report=y", "--changed", "--", "--top"})
 	if err != nil {
 		t.Fatal(err)
@@ -29,6 +30,7 @@ func TestFlagsAreReadByTheirSpec(t *testing.T) {
 }
 
 func TestBadFlagsAreUsageErrors(t *testing.T) {
+	t.Parallel()
 	for args, rule := range map[string]string{
 		"--bogus":         "flags.unknown",
 		"-changed":        "flags.unknown",
@@ -52,6 +54,7 @@ func TestBadFlagsAreUsageErrors(t *testing.T) {
 }
 
 func TestHelpAnywhereButAfterDashDash(t *testing.T) {
+	t.Parallel()
 	if _, err := parse(testCommand, []string{"a", "--top", "1", "-h"}); err != errHelp {
 		t.Errorf("-h after other flags: %v, want help", err)
 	}
@@ -69,6 +72,7 @@ func stdout(t *testing.T, fn func()) string {
 }
 
 func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
+	// Serial: it swaps os.Stdout to read what emit prints.
 	no := fail(kindNo, "x.no", "", "")
 	missing := fail(kindMissing, "x.missing", "", "")
 	usage := fail(kindUsage, "x.usage", "", "")
@@ -90,6 +94,7 @@ func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
 }
 
 func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
+	// Serial: it swaps os.Stdout to read what emit prints.
 	out := stdout(t, func() {
 		emit(true, struct {
 			Files []string `json:"files"`
@@ -109,6 +114,7 @@ func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
 }
 
 func TestDispatch(t *testing.T) {
+	t.Parallel()
 	useDir(t, t.TempDir())
 	for _, c := range []struct {
 		args []string
@@ -161,6 +167,7 @@ func TestDispatch(t *testing.T) {
 }
 
 func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
+	t.Parallel()
 	for _, c := range leaves() {
 		h := c.help()
 		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", issues} {
@@ -183,6 +190,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 }
 
 func TestAPanicIsAnInternalError(t *testing.T) {
+	// Serial: it swaps os.Stdout to read what execute prints.
 	boom := &command{name: "boom", run: func(*invocation) (any, error) { panic("oops") }}
 	var code int
 	out := stdout(t, func() { code = execute(boom, []string{"--json"}) })

@@ -117,6 +117,7 @@ func requireCompleteGoEvidence(t *testing.T, dir string) {
 
 // @ID-MUT-203
 func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T) {
+	t.Parallel()
 	// Given a project with a Go module and a TypeScript file that has no
 	// go.mod above it
 	dir := moduleRepo(t, mixedFiles)

@@ -123,6 +123,7 @@ var partialFiles = map[string]string{
 
 // @ID-MUT-200
 func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *testing.T) {
+	t.Parallel()
 	t.Run("cut short by a survivor", func(t *testing.T) {
 		_, ff := ffRepo(t, partialFiles)
 		release(t, ff)
@@ -310,6 +311,7 @@ var cancelledRerunFiles = map[string]string{
 
 // @ID-MUT-201
 func TestACancelledForcedRerunLeavesAFreshPriorCacheUsable(t *testing.T) {
+	t.Parallel()
 	_, ff := ffRepo(t, cancelledRerunFiles)
 	release(t, ff)
 	// Given a file with fresh complete mutation results.
@@ -381,6 +383,7 @@ var laterFiles = map[string]string{
 
 // @ID-MUT-202
 func TestALaterRunFinishesOnlyWhatTheStopLeft(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name   string
 		change func(t *testing.T)

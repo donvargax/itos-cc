@@ -37,6 +37,7 @@ const (
 
 // @ID-MUT-213
 func TestAStrictCountedRunNeedsNoMeasurementOfALanguageWithNothingToJudge(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	// Given a committed project with a Go module and a TypeScript file with
 	// no mutation site, and no TypeScript coverage tool installed.

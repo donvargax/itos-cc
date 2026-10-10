@@ -121,6 +121,7 @@ func stripScopes(t *testing.T) {
 
 // @ID-MUT-109
 func TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
 		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -140,6 +141,7 @@ func TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt(t *testing.T) {
 
 // @ID-MUT-110
 func TestAReusedOutcomeKeepsItsScope(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
 		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -166,6 +168,7 @@ func TestAReusedOutcomeKeepsItsScope(t *testing.T) {
 
 // @ID-MUT-111
 func TestMutationSampleRerunsEachMutantWithItsRecordedScope(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, e2eFiles)
 	if o := mutateRun(t, "--all-tests", boardSource); o.code != 1 {
 		t.Fatalf("the --all-tests run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -200,6 +203,7 @@ func TestMutationSampleRerunsEachMutantWithItsRecordedScope(t *testing.T) {
 
 // @ID-MUT-112
 func TestAScopeGivenToMutationSampleOverridesTheRecordedOne(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
 		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -216,6 +220,7 @@ func TestAScopeGivenToMutationSampleOverridesTheRecordedOne(t *testing.T) {
 
 // @ID-MUT-113
 func TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
 		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)

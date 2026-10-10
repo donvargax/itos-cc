@@ -51,6 +51,7 @@ func siteLine(s mutateSite) string {
 
 // @ID-MUT-101
 func TestSitesAreListedInLineOrderInlineCallbacksIncluded(t *testing.T) {
+	t.Parallel()
 	appRepo(t)
 
 	sites := scanned(t, appSource)

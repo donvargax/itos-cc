@@ -139,6 +139,7 @@ func logOnFailure(t *testing.T, o *outcome) {
 
 // @ID-MUT-178
 func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	record, main := countedListedRepo(t, ownRecorded)
 	dir := wd(t)
@@ -188,6 +189,7 @@ func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T
 
 // @ID-MUT-179
 func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	countedListedRepo(t)
 	dir := wd(t)
@@ -286,6 +288,7 @@ type preparationFailure struct {
 
 // @ID-MUT-181
 func TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	harness := "e2e/e2e_test.go"
 	failures := []preparationFailure{
@@ -363,6 +366,7 @@ func TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance
 
 // @ID-MUT-182
 func TestCleanBaselineFailureIsNotAMutationKill(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	// The harness fails whenever it runs a selection outside coverage, with
 	// or without a mutant, so only its clean baseline tells a failing

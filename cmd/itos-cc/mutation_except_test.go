@@ -123,6 +123,7 @@ func noItosCcYAML(t *testing.T) {
 
 // @ID-MUT-85
 func TestExceptingASurvivorRecordsItWithItsReason(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 
@@ -138,6 +139,7 @@ func TestExceptingASurvivorRecordsItWithItsReason(t *testing.T) {
 
 // @ID-MUT-86
 func TestOnlyARecordedSurvivorCanBeExcepted(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	// With coverage, place's mutant is killed and clear's is uncovered.
 	if o := mutateCovered(t, boardSource); o.code != 0 {
@@ -162,6 +164,7 @@ func TestOnlyARecordedSurvivorCanBeExcepted(t *testing.T) {
 
 // @ID-MUT-87
 func TestAReasonIsRequired(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 
@@ -180,6 +183,7 @@ func TestAReasonIsRequired(t *testing.T) {
 
 // @ID-MUT-88
 func TestTheRestOfItosCcYamlIsKept(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	const comment = "# Equivalent mutants, each reviewed like code.\n"
@@ -207,6 +211,7 @@ func TestTheRestOfItosCcYamlIsKept(t *testing.T) {
 
 // @ID-MUT-89
 func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -229,6 +234,7 @@ func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
 
 // @ID-MUT-90
 func TestAnExceptedSurvivorIsReusedWhileNothingChanged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -258,6 +264,7 @@ func TestAnExceptedSurvivorIsReusedWhileNothingChanged(t *testing.T) {
 
 // @ID-MUT-91
 func TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -277,6 +284,7 @@ func TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted(t *te
 
 // @ID-MUT-92
 func TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -293,6 +301,7 @@ func TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale(t *testing.T) {
 
 // @ID-MUT-93
 func TestAnEntryWhoseFunctionChangedIsStale(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -316,6 +325,7 @@ func TestAnEntryWhoseFunctionChangedIsStale(t *testing.T) {
 
 // @ID-MUT-94
 func TestAnEntryWhoseSiteIsGoneIsStale(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -339,6 +349,7 @@ func TestAnEntryWhoseSiteIsGoneIsStale(t *testing.T) {
 
 // @ID-MUT-95
 func TestAnEntryDoesNotExcuseAnUncoveredMutant(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	// With coverage, clear's mutant is uncovered.
 	if o := mutateCovered(t, boardSource); o.code != 0 {
@@ -371,6 +382,7 @@ func TestAnEntryDoesNotExcuseAnUncoveredMutant(t *testing.T) {
 
 // @ID-MUT-96
 func TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -389,6 +401,7 @@ func TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry(t *testing.T) 
 
 // @ID-MUT-97
 func TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	// Written for another version of clear, the entry is stale.
@@ -413,6 +426,7 @@ func TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked(t *testing.T) {
 
 // @ID-MUT-98
 func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	writeExceptions(t, "", exceptionYAML{File: "src/board.go", Function: clearID, Hash: "0000000000000000",
 		LineInFunction: clearLineInFunction, Column: clearColumn, Original: "<", Replacement: "<="})
@@ -437,6 +451,7 @@ func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
 
 // @ID-MUT-99
 func TestExceptedMutantsAsJSON(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	survivorRun(t)
 	writeExceptions(t, "", clearException(t, "clear is never called"))
@@ -464,6 +479,7 @@ func TestExceptedMutantsAsJSON(t *testing.T) {
 }
 
 func TestASiteIsFileLineAndColumn(t *testing.T) {
+	t.Parallel()
 	for arg, want := range map[string]struct {
 		path         string
 		line, column int
@@ -485,6 +501,7 @@ func TestASiteIsFileLineAndColumn(t *testing.T) {
 }
 
 func TestMutationExceptTakesOneSite(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	for _, c := range []struct {
 		args []string

@@ -154,6 +154,7 @@ func lineCount(path string) int {
 
 // @ID-MUT-183
 func TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	checkInterruptedCountedRun(t)
 }

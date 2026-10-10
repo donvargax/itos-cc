@@ -71,6 +71,7 @@ func failClosedRun(t *testing.T, source string, args ...string) outcome {
 
 // @ID-MUT-204
 func TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing(t *testing.T) {
+	t.Parallel()
 	for _, example := range []struct {
 		language, failure string
 		files             map[string]string
@@ -200,6 +201,7 @@ func TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 // Raw-report flags keep their behaviour for that language: the run falls
 // back to running every mutant.
 func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
 		"gomod/go.mod":        "module example.com/mixed\n\ngo 1.22\n",
 		"gomod/entry.go":      "package mixed\n\nfunc Above(a, b int) bool { return a > b }\n",

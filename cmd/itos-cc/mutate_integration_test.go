@@ -183,6 +183,7 @@ func describe(m map[string]any) string {
 
 // @ID-MUT-117
 func TestLinesATestReachesThroughTheBuiltBinaryAreCovered(t *testing.T) {
+	t.Parallel()
 	greetRepo(t, true, false)
 
 	mutants, o := greetJSON(t, "--fail-uncovered")
@@ -219,6 +220,7 @@ func TestLinesATestReachesThroughTheBuiltBinaryAreCovered(t *testing.T) {
 
 // @ID-MUT-118
 func TestAProjectWhoseBinaryWritesNoCoverageBehavesAsBefore(t *testing.T) {
+	t.Parallel()
 	greetRepo(t, false, false)
 
 	mutants, o := greetJSON(t, "--fail-uncovered")
@@ -240,6 +242,7 @@ func TestAProjectWhoseBinaryWritesNoCoverageBehavesAsBefore(t *testing.T) {
 
 // @ID-MUT-119
 func TestWhichCoverageReachedEachMutantAsJSON(t *testing.T) {
+	t.Parallel()
 	greetRepo(t, true, true)
 
 	mutants, o := greetJSON(t)
@@ -274,6 +277,7 @@ func TestWhichCoverageReachedEachMutantAsJSON(t *testing.T) {
 
 // @ID-MUT-120
 func TestTheBinarysCoverageDataStaysWithTheRun(t *testing.T) {
+	t.Parallel()
 	greetRepo(t, true, false)
 	record := filepath.Join(t.TempDir(), "gocoverdir")
 	useEnv(t, "GREET_RECORD", record)

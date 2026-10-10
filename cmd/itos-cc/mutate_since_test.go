@@ -244,6 +244,7 @@ func changePlace(t *testing.T) {
 
 // @ID-MUT-37
 func TestOnlyTheFunctionsTheCommitsSinceARefChangedAreJudged(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	changePlace(t)
 
@@ -268,6 +269,7 @@ func TestOnlyTheFunctionsTheCommitsSinceARefChangedAreJudged(t *testing.T) {
 
 // @ID-MUT-38
 func TestFunctionsNotJudgedKeepWhatTheirSnapshotHolds(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -286,6 +288,7 @@ func TestFunctionsNotJudgedKeepWhatTheirSnapshotHolds(t *testing.T) {
 
 // @ID-MUT-39
 func TestUncommittedChangesAreNotInTheRange(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	changePlace(t)
 	edit(t, boardSource, "i < 3", "i < 4")
@@ -298,6 +301,7 @@ func TestUncommittedChangesAreNotInTheRange(t *testing.T) {
 
 // @ID-MUT-40
 func TestDeletingLinesChangesTheFunctionAroundThem(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	edit(t, boardSource, "\t// past five\n", "")
 	commitAll(t, "delete a comment in place")
@@ -310,6 +314,7 @@ func TestDeletingLinesChangesTheFunctionAroundThem(t *testing.T) {
 
 // @ID-MUT-41
 func TestPathsNarrowTheRange(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, map[string]string{
 		"src/rest.go": "package board\n\nfunc rest(i int) bool {\n\treturn i == 1\n}\n",
 		"lib/util.go": "package util\n\nfunc Half(i int) bool {\n\treturn i > 2\n}\n",
@@ -330,6 +335,7 @@ func TestPathsNarrowTheRange(t *testing.T) {
 
 // @ID-MUT-42
 func TestNothingChangedSinceTheRef(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	edit(t, "README.md", "# board\n", "# board\n\nA board.\n")
 	commitAll(t, "describe the board")
@@ -342,6 +348,7 @@ func TestNothingChangedSinceTheRef(t *testing.T) {
 
 // @ID-MUT-43
 func TestARefGitCannotResolveIsAUsageError(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 
 	o := mutateRun(t, "--since", "nosuch")
@@ -356,6 +363,7 @@ func TestARefGitCannotResolveIsAUsageError(t *testing.T) {
 
 // @ID-MUT-44
 func TestSinceOutsideAGitRepositoryIsAMissingEnvironment(t *testing.T) {
+	t.Parallel()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
@@ -374,6 +382,7 @@ func TestSinceOutsideAGitRepositoryIsAMissingEnvironment(t *testing.T) {
 
 // @ID-MUT-45
 func TestSinceAndChangedAreNotCombined(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 
 	o := mutateRun(t, "--json", "--since", "main", "--changed")
@@ -384,6 +393,7 @@ func TestSinceAndChangedAreNotCombined(t *testing.T) {
 
 // @ID-MUT-46
 func TestTheFunctionsJudgedAsJSON(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	changePlace(t)
 
@@ -406,6 +416,7 @@ func TestTheFunctionsJudgedAsJSON(t *testing.T) {
 
 // @ID-MUT-102
 func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	// A first run writes the snapshot and the summary comment.
 	o := cli(t, "mutation", "run", "--no-coverage", "--workers", "1", boardSource)
@@ -519,6 +530,7 @@ func noBoardSnapshot(t *testing.T) {
 
 // @ID-MUT-103
 func TestARenamedFilesResultsFollowIt(t *testing.T) {
+	t.Parallel()
 	before := renamedBoard(t, nil)
 
 	m := mutateRun(t, "--json", "--since", "base").json(t)
@@ -545,6 +557,7 @@ func TestARenamedFilesResultsFollowIt(t *testing.T) {
 
 // @ID-MUT-104
 func TestARenamedAndEditedFileJudgesOnlyWhatChanged(t *testing.T) {
+	t.Parallel()
 	renamedBoard(t, func() {
 		edit(t, gridSource, "// past five\n", "// past five, and not at five\n")
 	})
@@ -566,6 +579,7 @@ func TestARenamedAndEditedFileJudgesOnlyWhatChanged(t *testing.T) {
 // Paths narrow the range by the path a renamed file has now: one renamed
 // out from under the paths given is not selected, one renamed into them is.
 func TestARenamedFileIsNarrowedByItsNewPath(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	moved := filepath.FromSlash("lib/grid.go")
 	if err := os.MkdirAll(inWD(t, "lib"), 0o755); err != nil {

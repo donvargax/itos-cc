@@ -192,6 +192,7 @@ func withFiles(base map[string]string, extra map[string]string) map[string]strin
 
 // @ID-MUT-173
 func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T) {
+	t.Parallel()
 	dir := moduleRepo(t, untestedFiles)
 	for _, args := range [][]string{{"--count", "0"}, {"--count=-2"}, {"--count", "two"}} {
 		o := countedRun(t, args...)
@@ -248,6 +249,7 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 
 // @ID-MUT-174
 func TestCountedExecutionEvaluatesFrozenCommittedInputs(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	dir := moduleRepo(t, compareFiles)
 	head := gitOut(t, dir, "rev-parse", "HEAD")
@@ -319,6 +321,7 @@ func keys(m map[string]string) []string {
 
 // @ID-MUT-175
 func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":     "module example.com/same\n\ngo 1.22\n",
@@ -367,6 +370,7 @@ func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
 
 // @ID-MUT-176
 func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":      "module example.com/budget\n\ngo 1.22\n",
@@ -415,6 +419,7 @@ func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing
 
 // @ID-MUT-177
 func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
+	t.Parallel()
 	useDir(t, t.TempDir())
 	help := cli(t, "mutation", "run", "--help").stdout
 	for _, want := range []string{"--count N", "--seed TEXT", "--since REF", "--fail-uncovered", "--all-tests"} {
@@ -462,6 +467,7 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 
 // @ID-MUT-180
 func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	moduleRepo(t, untestedFiles)
 	o := countedRun(t, "--count", "1", "--seed", "fixed")
@@ -512,6 +518,7 @@ func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
 
 // @ID-MUT-184
 func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	dir := moduleRepo(t, withFiles(compareFiles, map[string]string{
 		"main.go": "package main\n\nfunc Compare(n int) bool { return n > 5 }\n\nfunc Half(i int) bool { return i > 2 }\n\nfunc Third(i int) int { return i / 3 }\n\nfunc main() {}\n",
@@ -577,6 +584,7 @@ func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t 
 
 // @ID-MUT-185
 func TestSampledExecutionPublishesNoPersistentCompleteProof(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	dir := moduleRepo(t, map[string]string{
 		"go.mod":      "module example.com/publish\n\ngo 1.22\n",
@@ -615,6 +623,7 @@ func TestSampledExecutionPublishesNoPersistentCompleteProof(t *testing.T) {
 
 // @ID-MUT-186
 func TestOnlyAGenuinelySiteFreeRangeIsNotApplicable(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	moduleRepo(t, map[string]string{
 		"go.mod":  "module example.com/sitefree\n\ngo 1.22\n",

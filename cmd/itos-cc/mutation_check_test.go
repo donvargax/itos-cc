@@ -123,6 +123,7 @@ func wantProblem(t *testing.T, p map[string]any, want map[string]any, stdout str
 
 // @ID-MUT-57
 func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
+	t.Parallel()
 	dir := boardRepo(t, killedTests)
 	// Any test or coverage run of package board writes the marker. It is
 	// in place before the run, since a test changed after it would make
@@ -162,6 +163,7 @@ func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 
 // @ID-MUT-58
 func TestAFunctionChangedSinceItsResultsIsStale(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -186,6 +188,7 @@ func TestAFunctionChangedSinceItsResultsIsStale(t *testing.T) {
 
 // @ID-MUT-59
 func TestAFunctionWithNoResultsIsMissing(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	// With no snapshot at all, every function with a site is missing.
 	o := mutationCheck(t, "--json", boardSource)
@@ -211,6 +214,7 @@ func TestAFunctionWithNoResultsIsMissing(t *testing.T) {
 
 // @ID-MUT-60
 func TestARecordedSurvivorFailsTheCheck(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -237,6 +241,7 @@ func TestARecordedSurvivorFailsTheCheck(t *testing.T) {
 
 // @ID-MUT-61
 func TestARecordedUncoveredMutantFailsOnlyWithFailUncovered(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateCovered(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
@@ -259,6 +264,7 @@ func TestARecordedUncoveredMutantFailsOnlyWithFailUncovered(t *testing.T) {
 
 // @ID-MUT-62
 func TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t); o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -283,6 +289,7 @@ func TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked(t *testing.T) {
 
 // @ID-MUT-63
 func TestAFunctionWithNoMutationSiteNeedsNoResults(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -305,6 +312,7 @@ func TestAFunctionWithNoMutationSiteNeedsNoResults(t *testing.T) {
 
 // @ID-MUT-64
 func TestEachFunctionsStateAsJSON(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)

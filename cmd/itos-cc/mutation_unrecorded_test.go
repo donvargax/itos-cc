@@ -58,6 +58,7 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 
 // @ID-MUT-106
 func TestASiteTheEntryNeverRecordedMakesTheFunctionStale(t *testing.T) {
+	t.Parallel()
 	gone := unrecordedRepo(t)
 
 	o := mutationCheck(t, "--json", boardSource)
@@ -78,6 +79,7 @@ func TestASiteTheEntryNeverRecordedMakesTheFunctionStale(t *testing.T) {
 
 // @ID-MUT-107
 func TestMutationRunRunsOnlyTheSitesTheEntryNeverRecorded(t *testing.T) {
+	t.Parallel()
 	gone := unrecordedRepo(t)
 
 	o := mutateRun(t, "--json", boardSource)

@@ -146,6 +146,7 @@ func selectionBaseline(t *testing.T, stderr, ids string) (time.Duration, time.Du
 
 // @ID-MUT-135
 func TestASelectionsTimeoutComesFromItsOwnRun(t *testing.T) {
+	t.Parallel()
 	record, main := selectionRepo(t,
 		// The branch ID-A-01 alone reaches holds a loop its mutants make
 		// endless: n > 1 never holds there.
@@ -212,6 +213,7 @@ func TestASelectionsTimeoutComesFromItsOwnRun(t *testing.T) {
 
 // @ID-MUT-136
 func TestASelectionIsRunWithoutAMutantOncePerRun(t *testing.T) {
+	t.Parallel()
 	record, main := selectionRepo(t)
 
 	// Two workers, so the two mutants of line 17 may need ID-A-02 at once.
@@ -240,6 +242,7 @@ func TestASelectionIsRunWithoutAMutantOncePerRun(t *testing.T) {
 
 // @ID-MUT-137
 func TestASelectionThatFailsWithoutAMutantDecidesNoneOfItsMutants(t *testing.T) {
+	t.Parallel()
 	selectionRepo(t, [3]string{"e2e/e2e_test.go", "\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")\n",
 		"\tif os.Getenv(\"GREET_FAIL_ALONE\") != \"\" && *selected == \"ID-A-02\" {\n\t\tt.Fatal(\"ID-A-02 fails when it runs alone\")\n\t}\n" +
 			"\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")\n"})

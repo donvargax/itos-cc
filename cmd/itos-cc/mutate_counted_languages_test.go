@@ -138,6 +138,7 @@ func liveStatus(t *testing.T, dir string) string {
 
 // @ID-MUT-209
 func TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	for _, l := range countedLanguages {
 		t.Run(l.name, func(t *testing.T) {

@@ -42,6 +42,7 @@ func stderrLines(stderr string) []string {
 
 // @ID-COV-38
 func TestTheCoverageCommandIsAnnouncedAsItosCcs(t *testing.T) {
+	t.Parallel()
 	coverageModule(t, false)
 
 	o := cli(t, "crap", filepath.FromSlash("a/a.go"))
@@ -68,6 +69,7 @@ func TestTheCoverageCommandIsAnnouncedAsItosCcs(t *testing.T) {
 
 // @ID-COV-39
 func TestACoverageCommandThatFailsIsReportedAsItosCcs(t *testing.T) {
+	t.Parallel()
 	coverageModule(t, true)
 
 	o := cli(t, "crap", filepath.FromSlash("a/a.go"))

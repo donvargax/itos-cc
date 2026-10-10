@@ -94,6 +94,7 @@ func projectTree(t *testing.T, dir string) map[string]string {
 
 // @ID-MUT-210
 func TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled(t *testing.T) {
+	t.Parallel()
 	languageTools(t, "python")
 	// pytest plugins installed beside pytest, such as pytest-benchmark, write
 	// their own files into the project; the scenario is about bytecode.

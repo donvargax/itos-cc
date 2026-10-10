@@ -36,6 +36,7 @@ func unitIDs(t *testing.T, args ...string) []string {
 
 // @ID-UNIT-13
 func TestAFileOutsideAnyProjectRootIsNamedFromTheWorkingDirectory(t *testing.T) {
+	t.Parallel()
 	// Two directories at different absolute paths, each with the same x.ts
 	// and nothing that makes it a project.
 	for i, dir := range []string{t.TempDir(), t.TempDir()} {

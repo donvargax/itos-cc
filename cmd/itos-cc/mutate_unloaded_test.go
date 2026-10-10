@@ -39,6 +39,7 @@ func vitestRepo(t *testing.T) {
 
 // @ID-MUT-105
 func TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered(t *testing.T) {
+	t.Parallel()
 	vitestRepo(t)
 	sites := scanned(t, unusedSource)
 	if len(sites) != 3 {

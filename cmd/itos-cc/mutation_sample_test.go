@@ -206,6 +206,7 @@ func ids(mutants []sampledJSON) []string {
 
 // @ID-MUT-71
 func TestASampleWhoseOutcomesHoldPassesAndWritesNothing(t *testing.T) {
+	t.Parallel()
 	// Board#place's one mutant is killed and Board#clear's survives.
 	dir := boardRepo(t, nil)
 	// Every test run of package board appends its working directory to the
@@ -277,6 +278,7 @@ func init() {
 
 // @ID-MUT-72
 func TestARecordedKillThatNowSurvivesIsAMismatch(t *testing.T) {
+	t.Parallel()
 	// TestPlace checks only place(6), so `>` → `>=` survives.
 	boardRepo(t, map[string]string{
 		"src/board_test.go": "package board\n\nimport \"testing\"\n\nfunc TestPlace(t *testing.T) {\n\tvar b Board\n\tif !b.place(6) {\n\t\tt.Fatal(\"place\")\n\t}\n}\n",
@@ -301,6 +303,7 @@ func TestARecordedKillThatNowSurvivesIsAMismatch(t *testing.T) {
 
 // @ID-MUT-73
 func TestARecordedSurvivorThatIsNowKilledIsAMismatchToo(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -321,6 +324,7 @@ func TestARecordedSurvivorThatIsNowKilledIsAMismatchToo(t *testing.T) {
 
 // @ID-MUT-74
 func TestKilledAndTimeoutAgree(t *testing.T) {
+	t.Parallel()
 	// Deleting the ! of place makes it sleep an hour where its test expects
 	// it to return at once, so that mutant can only time out, as in
 	// @ID-MUT-53; TestClear kills clear's one mutant.
@@ -394,6 +398,7 @@ func TestClear(t *testing.T) {
 
 // @ID-MUT-75
 func TestOnlyFreshMutantsThatRanAreSampled(t *testing.T) {
+	t.Parallel()
 	// Under coverage, place's `>` on line 6 survives, as no test tells 9
 	// from 10; its `false` on line 7 is uncovered; and its `>` on line 9 is
 	// killed. No test executes clear.
@@ -449,6 +454,7 @@ func (b *Board) clear(i int) bool {
 
 // @ID-MUT-76
 func TestCountSaysHowMany20ByDefault(t *testing.T) {
+	t.Parallel()
 	sampleRepo(t)
 	for _, c := range []struct {
 		args []string
@@ -470,6 +476,7 @@ func TestCountSaysHowMany20ByDefault(t *testing.T) {
 
 // @ID-MUT-77
 func TestARerunOfOneCommitSamplesTheSameMutants(t *testing.T) {
+	t.Parallel()
 	sampleRepo(t)
 
 	first := mutationSample(t, "--json", "--test-command", passing)
@@ -490,6 +497,7 @@ func TestARerunOfOneCommitSamplesTheSameMutants(t *testing.T) {
 
 // @ID-MUT-78
 func TestSeedReproducesARun(t *testing.T) {
+	t.Parallel()
 	sampleRepo(t)
 	first := mutationSample(t, "--json", "--test-command", passing)
 	seed := first.sample(t).Seed
@@ -512,6 +520,7 @@ func TestSeedReproducesARun(t *testing.T) {
 
 // @ID-MUT-79
 func TestOutsideAGitRepositoryTheSeedMustBeGiven(t *testing.T) {
+	t.Parallel()
 	if _, err := exec.LookPath("go"); err != nil {
 		t.Skip("go is not installed")
 	}
@@ -533,6 +542,7 @@ func TestOutsideAGitRepositoryTheSeedMustBeGiven(t *testing.T) {
 
 // @ID-MUT-80
 func TestACountBelow1IsAUsageError(t *testing.T) {
+	t.Parallel()
 	inEmptyDir(t)
 	o := mutationSample(t, "--json", "--count", "0")
 	wantProblem(t, o.json(t).problem("flags.value-invalid"), map[string]any{"flag": "--count", "value": "0"}, o.stdout)
@@ -543,6 +553,7 @@ func TestACountBelow1IsAUsageError(t *testing.T) {
 
 // @ID-MUT-81
 func TestWithSinceOnlyTheFunctionsTheRangeChangedAreSampled(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the first run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
@@ -574,6 +585,7 @@ func TestWithSinceOnlyTheFunctionsTheRangeChangedAreSampled(t *testing.T) {
 
 // @ID-MUT-82
 func TestNothingToSample(t *testing.T) {
+	t.Parallel()
 	// No run has recorded anything: every function is missing.
 	boardRepo(t, nil)
 
@@ -591,6 +603,7 @@ func TestNothingToSample(t *testing.T) {
 
 // @ID-MUT-83
 func TestAFailingBaselineInASample(t *testing.T) {
+	t.Parallel()
 	// The tests fail when BOARD_BROKEN is set, which changes no file whose
 	// hash the snapshot records, so its results stay fresh.
 	boardRepo(t, map[string]string{
@@ -632,6 +645,7 @@ func TestPlace(t *testing.T) {
 
 // @ID-MUT-84
 func TestTheSampleAsJSON(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
@@ -689,6 +703,7 @@ func TestTheSampleAsJSON(t *testing.T) {
 }
 
 func TestAMismatchsFixRerunsInItsScope(t *testing.T) {
+	t.Parallel()
 	for scope, want := range map[string]string{
 		"own":          "itos-cc mutation run --mutate-all src/b.ts",
 		"listed":       "itos-cc mutation run --mutate-all src/b.ts",

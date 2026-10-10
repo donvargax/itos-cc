@@ -31,6 +31,7 @@ func uncoveredLine(file string, line, column int, original, replacement, functio
 
 // @ID-MUT-47
 func TestAnUncoveredMutantFailsTheRun(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 
 	o := mutateCovered(t, "--fail-uncovered", boardSource)
@@ -52,6 +53,7 @@ func TestAnUncoveredMutantFailsTheRun(t *testing.T) {
 
 // @ID-MUT-48
 func TestAFileTheTestsNeverLoadFailsWhole(t *testing.T) {
+	t.Parallel()
 	// No test loads package unused: its coverage measures it, and never
 	// executes a line of it.
 	unused := filepath.FromSlash("src/unused/unused.go")
@@ -82,6 +84,7 @@ func TestAFileTheTestsNeverLoadFailsWhole(t *testing.T) {
 
 // @ID-MUT-49
 func TestWithSinceOnlyTheJudgedFunctionsUncoveredMutantsFail(t *testing.T) {
+	t.Parallel()
 	// No test executes either function.
 	boardRepo(t, map[string]string{
 		"src/board_test.go": "package board\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n",
@@ -111,6 +114,7 @@ func TestWithSinceOnlyTheJudgedFunctionsUncoveredMutantsFail(t *testing.T) {
 
 // @ID-MUT-50
 func TestUncoveredMutantsAsJSON(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 
 	o := mutateCovered(t, "--fail-uncovered", "--json", boardSource)
@@ -133,6 +137,7 @@ func TestUncoveredMutantsAsJSON(t *testing.T) {
 
 // @ID-MUT-51
 func TestStrictModeRejectsSkippedCoverage(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	o := cli(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json", boardSource)
 	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)

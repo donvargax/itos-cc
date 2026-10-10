@@ -371,6 +371,7 @@ func recordedEvidence(t *testing.T, dir, source string) []map[string]any {
 
 // @ID-MUT-205
 func TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale(t *testing.T) {
+	t.Parallel()
 	for _, example := range []struct {
 		language suiteLanguage
 		scope    []string
@@ -430,6 +431,7 @@ func TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale(t *t
 
 // @ID-MUT-206
 func TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage(t *testing.T) {
+	t.Parallel()
 	// Given whole-suite outcomes in a TypeScript, a Python and a Kotlin
 	// project with support globs
 	files := map[string]string{
@@ -558,6 +560,7 @@ func TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage(t *t
 
 // @ID-MUT-207
 func TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage(t *testing.T) {
+	t.Parallel()
 	// Given TypeScript, Python and Kotlin outcomes recorded with own,
 	// all-tests and test-command scopes
 	files := map[string]string{}

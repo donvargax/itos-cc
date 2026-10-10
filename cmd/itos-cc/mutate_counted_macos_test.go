@@ -18,6 +18,7 @@ import (
 
 // @ID-MUT-191
 func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T) {
+	t.Parallel()
 	requireCountedPlatform(t)
 	if runtime.GOOS != "darwin" {
 		t.Skip("ID-MUT-191 judges counted mode on macOS")

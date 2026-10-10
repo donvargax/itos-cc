@@ -106,6 +106,7 @@ func checked(t *testing.T) (map[string]string, map[string]string, outcome) {
 
 // @ID-MUT-130
 func TestAListedKillStaysFreshWhileItsTestsFilesAndTheSupportFilesAreUnchanged(t *testing.T) {
+	t.Parallel()
 	freshRepo(t)
 
 	if _, stale, o := checked(t); o.code != 0 {
@@ -121,6 +122,7 @@ func TestAListedKillStaysFreshWhileItsTestsFilesAndTheSupportFilesAreUnchanged(t
 
 // @ID-MUT-131
 func TestEditingTheFileOfACoveringTestMakesItsKillStale(t *testing.T) {
+	t.Parallel()
 	freshRepo(t)
 	writeFile(t, "a.feature", "Feature: a, edited\n")
 
@@ -145,6 +147,7 @@ func TestEditingTheFileOfACoveringTestMakesItsKillStale(t *testing.T) {
 
 // @ID-MUT-132
 func TestEditingAFileNoCoveringTestNamesChangesNothing(t *testing.T) {
+	t.Parallel()
 	freshRepo(t)
 	writeFile(t, "b.feature", "Feature: b, edited\n")
 
@@ -155,6 +158,7 @@ func TestEditingAFileNoCoveringTestNamesChangesNothing(t *testing.T) {
 
 // @ID-MUT-133
 func TestEditingASupportFileMakesEveryListedKillStale(t *testing.T) {
+	t.Parallel()
 	freshRepo(t)
 	writeFile(t, filepath.Join("features", "steps_test.go"), "package features\n\nimport \"testing\"\n\nfunc TestSteps(t *testing.T) { t.Log(1) }\n")
 
@@ -174,6 +178,7 @@ func TestEditingASupportFileMakesEveryListedKillStale(t *testing.T) {
 
 // @ID-MUT-134
 func TestTheGraphAgrees(t *testing.T) {
+	t.Parallel()
 	freshRepo(t)
 	writeFile(t, "a.feature", "Feature: a, edited\n")
 	root := wd(t)

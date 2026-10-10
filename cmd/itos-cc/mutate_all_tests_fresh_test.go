@@ -17,6 +17,7 @@ import (
 
 // @ID-MUT-150
 func TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale(t *testing.T) {
+	t.Parallel()
 	for _, scope := range []struct {
 		name          string
 		args          []string
@@ -86,6 +87,7 @@ func runMutantsAt(t *testing.T, result outcome, line int) (map[string]any, bool)
 
 // @ID-MUT-152
 func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
+	t.Parallel()
 	for _, scope := range []struct {
 		name          string
 		args          []string
@@ -152,6 +154,7 @@ func broadEvidenceAt(t *testing.T, path string, line int) *mutate.SuiteEvidence 
 
 // @ID-MUT-153
 func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) {
+	t.Parallel()
 	moduleRepo(t, map[string]string{
 		"go.mod":                  "module example.com/mixed\n\ngo 1.22\n",
 		"main.go":                 "package main\n\nfunc Own() bool { return true }\nfunc Listed() bool { return false }\nfunc AllTests() bool { return true }\nfunc TestCommand() bool { return false }\nfunc Survivor() bool { return true }\nfunc Excepted() bool { return false }\nfunc main() {}\n",
@@ -291,6 +294,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 
 // @ID-MUT-151
 func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ scope, change string }{
 		{"--all-tests", "added"}, {"--all-tests", "changed"}, {"--all-tests", "removed"},
 		{"--test-command", "added"}, {"--test-command", "changed"}, {"--test-command", "removed"},
@@ -336,6 +340,7 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 
 // @ID-MUT-155
 func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing.T) {
+	t.Parallel()
 	greetRepo(t, false, false)
 	if o := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); o.code > 1 {
 		t.Fatalf("initial run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
@@ -391,6 +396,7 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 
 // @ID-MUT-154
 func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
+	t.Parallel()
 	dir := greetRepo(t, false, false)
 	base := gitOut(t, dir, "rev-parse", "HEAD")
 	if result := mutateCovered(t, "--all-tests", "--no-coverage", "--json", greetSource); result.code > 1 {

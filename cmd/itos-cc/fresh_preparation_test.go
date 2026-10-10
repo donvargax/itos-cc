@@ -24,6 +24,7 @@ import (
 // reds against the original product. They run no mutant trials.
 
 func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	source := filepath.Join(root, "source.go")
 	if err := os.WriteFile(source, []byte("package source\nfunc Value() int { return 1 }\n"), 0o600); err != nil {
@@ -58,6 +59,7 @@ func TestFreshPreparationReportsEveryCommandFailure(t *testing.T) {
 }
 
 func TestFreshPreparationOwnsCommandsAndPreservesListedReach(t *testing.T) {
+	// Serial: it sets GIT_DIR, GIT_WORK_TREE and GIT_INDEX_FILE for prepareFreshContext in process.
 	if runtime.GOOS == "linux" {
 		testOwnedPreparationCleanup(t)
 	}
@@ -180,6 +182,7 @@ func TestFreshPreparationOwnsCommandsAndPreservesListedReach(t *testing.T) {
 }
 
 func TestFreshPreparationFailsClosedOnBaselineFailure(t *testing.T) {
+	t.Parallel()
 	repo := freshPreparationFixture(t)
 	plan, err := mutate.PlanFresh(repo, nil, "", 1, "prep-test")
 	if err != nil {
@@ -211,6 +214,7 @@ func TestFreshPreparationFailsClosedOnBaselineFailure(t *testing.T) {
 }
 
 func TestFreshPreparationRefusesMissingTools(t *testing.T) {
+	t.Parallel()
 	plans := []coverage.Plan{{Language: "go", Dir: t.TempDir(), Commands: [][]string{{"itos-cc-t12-no-such-tool", "test"}}}}
 	tools, err := resolvePreparationTools(plans, nil, false)
 	if err == nil || !strings.Contains(err.Error(), "itos-cc-t12-no-such-tool") {
@@ -219,6 +223,7 @@ func TestFreshPreparationRefusesMissingTools(t *testing.T) {
 }
 
 func TestFreshPreparationScopesGoPackagesFromWholeListing(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	for name, body := range map[string]string{
 		"go.mod":           "module example.com/scope\n\ngo 1.22\n",
@@ -449,6 +454,7 @@ func runningProcess(pid int) bool {
 }
 
 func TestFreshPreparationPreservesCompleteDefaults(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	source := filepath.Join(root, "source.go")
 	if err := os.WriteFile(source, []byte("package source\nfunc Value() int { return 1 }\n"), 0o600); err != nil {

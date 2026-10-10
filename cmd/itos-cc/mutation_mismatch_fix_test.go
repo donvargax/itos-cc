@@ -43,6 +43,7 @@ func wantFixRuns(t *testing.T, fix, command string) {
 
 // @ID-MUT-147
 func TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith(t *testing.T) {
+	t.Parallel()
 	for _, row := range []struct {
 		name  string
 		flags []string // what the run recorded with
@@ -68,6 +69,7 @@ func TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith(t *testing.T) {
 
 // @ID-MUT-148
 func TestAScopeGivenToSampleIsTheOneTheFixNames(t *testing.T) {
+	t.Parallel()
 	boardRepo(t, nil)
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
