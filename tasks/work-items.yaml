@@ -899,3 +899,18 @@ items:
       does for strict Go), never weakening fail-closed preparation or dropping listed tests. Worth
       doing if CI time per push becomes a problem after v0.7.0.
     refs: ["#27"]
+  - id: counted-exceptions-unselected
+    title: Counted runs judge exceptions only of functions with a selected site
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation-counted-listed applies itos-cc.yaml exceptions to a counted run as a --since run
+      does: only the entries of functions with a selected site count. An entry that is statically
+      stale (its function changed or is gone, or its file was renamed or deleted) for a function the
+      draw omitted passes a counted run unnoticed, and the whole-project Elsewhere check of complete
+      runs never runs. That fits sampled assurance, but a person may expect a counted run to report
+      every statically stale entry, which needs no trial; decide whether it should.
+    refs: ["#27"]
