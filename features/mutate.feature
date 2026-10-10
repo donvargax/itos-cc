@@ -2022,9 +2022,14 @@ Feature: Mutation testing
   #   red-first test commit's own CI run on macos-latest (a draft pull request
   #   from a branch holding only that commit, closed once seen), never claimed
   #   from Linux runs or cross-compilation.
+  # - Delivery evidence: 1c5f12b's steps, with only their macOS skips lifted
+  #   on a throwaway branch (draft PR #31, run 38023389204), failed on
+  #   macos-latest at 188's normal return, 189's cancellation result, 190's
+  #   captured-group cleanup and 191's platform refusal; 187's timeout, 189's
+  #   completed-first and 190's startup/cleanup errors already held (guards).
   Rule: macOS mutation commands return only after their owned process trees are cleaned up
 
-    @wip @macos-counted-run @ID-MUT-187
+    @macos-counted-run @ID-MUT-187
     Scenario: A macOS mutant deadline cleans up children and grandchildren
       Given mutation commands run on macOS
       And a test command starts ordinary owned child and grandchild processes that keep running and hold output open
@@ -2034,7 +2039,7 @@ Feature: Mutation testing
       And cleanup is bounded and the worker copy can be restored and removed
       And unrelated processes remain untouched
 
-    @wip @macos-counted-run @ID-MUT-188
+    @macos-counted-run @ID-MUT-188
     Scenario: Normal macOS command completion also closes owned descendants
       Given mutation commands run on macOS
       And a baseline or mutant test command starts an ordinary owned descendant and then exits successfully
@@ -2044,7 +2049,7 @@ Feature: Mutation testing
       And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
       And all owned process/output waiters are joined before worker copy removal
 
-    @wip @macos-counted-run @ID-MUT-189
+    @macos-counted-run @ID-MUT-189
     Scenario: macOS parent cancellation is not a mutant deadline
       Given mutation commands run on macOS
       And a supervised command and its owned child are running under a parent cancellation context
@@ -2054,7 +2059,7 @@ Feature: Mutation testing
       And the result identifies cancellation, not a killed or timed-out mutant
       But a judgment completed before the cancellation retains its actual result
 
-    @wip @macos-counted-run @ID-MUT-190
+    @macos-counted-run @ID-MUT-190
     Scenario: macOS supervision failures do not permit an unsafe fallback
       Given mutation commands run on macOS
       And a supervised command cannot establish ownership, start or finish cleanup safely
@@ -2064,7 +2069,7 @@ Feature: Mutation testing
       And only captured owned process groups can be targeted for cleanup
       And Linux keeps its existing supervision unchanged
 
-    @wip @macos-counted-run @ID-MUT-191
+    @macos-counted-run @ID-MUT-191
     Scenario: Counted execution is admitted on macOS and still refused on Windows
       Given a committed project with eligible mutation sites
       When a count-one run judges it on macOS

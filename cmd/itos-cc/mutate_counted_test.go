@@ -83,12 +83,12 @@ func countedRun(t *testing.T, args ...string) outcome {
 	return cli(t, append([]string{"mutation", "run", "--json"}, args...)...)
 }
 
-// requireCountedPlatform skips where counted mode refuses to run: it is
-// Linux-only until #29.
+// requireCountedPlatform skips where counted mode refuses to run: it runs
+// on Linux and macOS, and Windows is #29.
 func requireCountedPlatform(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "linux" {
-		t.Skip("counted mutation run is Linux-only; native Windows support is #29")
+	if runtime.GOOS == "windows" {
+		t.Skip("counted mutation run supports Linux and macOS; native Windows support is #29")
 	}
 }
 
@@ -208,7 +208,7 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 		t.Errorf("a refused counted run wrote .metrics: %v", err)
 	}
 
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS == "windows" {
 		o := countedRun(t, "--count", "1")
 		if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil {
 			t.Errorf("counted mode on %s: exit %d, want count.platform before launching commands\n%s%s", runtime.GOOS, o.code, o.stdout, o.stderr)
@@ -219,7 +219,7 @@ func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T)
 		return
 	}
 
-	// The same refusal on Linux, with the platform pretended away.
+	// The same refusal on Linux and macOS, with the platform pretended away.
 	countedPlatform = "windows"
 	o = countedRun(t, "--count", "1")
 	countedPlatform = runtime.GOOS
@@ -451,7 +451,7 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	if nothing.code != 0 || len(nothing.sample(t).Files) != 0 || !strings.Contains(nothing.stderr, "no cached mutant to sample") {
 		t.Errorf("sample without a cache: exit %d\n%s%s", nothing.code, nothing.stdout, nothing.stderr)
 	}
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS != "windows" {
 		c := countedRun(t, "--count", "1").counted(t)
 		if c.number("eligible") != 2 || c.number("selected") != 1 || c.Sampling["completion"] == "not-applicable" {
 			t.Errorf("counted mode without a cache: %+v, want 2 eligible committed sites, 1 selected", c.Sampling)

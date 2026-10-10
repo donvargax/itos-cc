@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -19,8 +18,7 @@ import (
 
 // The ownership checks Linux and macOS share. Each scenario's test, in the
 // Linux or the macOS file, runs the same check, so neither platform gets a
-// weaker assertion. They reach only what both products compile, so a check
-// of the shared run-abort deadline's internals stays in the Linux file.
+// weaker assertion.
 
 const (
 	ownershipModeEnv    = "ITOS_OWNERSHIP_MODE"
@@ -34,15 +32,6 @@ const (
 	// sharedCleanupLimit is ADR-0021's one five-second cleanup deadline.
 	sharedCleanupLimit = 5 * time.Second
 )
-
-// requireOwnedSupervision skips where mutation commands do not yet run as
-// owned process trees: Linux only, until macos-counted-run builds macOS.
-func requireOwnedSupervision(t *testing.T) {
-	t.Helper()
-	if runtime.GOOS != "linux" {
-		t.Skip("owned process-tree supervision is Linux-only until macos-counted-run")
-	}
-}
 
 // startUnrelatedProcess starts the ownership helper in a process group of
 // its own: the same executable as the owned processes, which cleanup must
@@ -277,6 +266,64 @@ func checkOnlyCapturedGroupIsTargeted(t *testing.T) {
 	}
 	if !processCanRun(unrelated.Process.Pid) {
 		t.Fatal("cleanup reached a process outside the captured group that runs the same executable")
+	}
+}
+
+// checkParentAbortSharesOneCleanupDeadline also checks that the parent's
+// abort starts the shared run-abort deadline, which later scopes keep.
+func checkParentAbortSharesOneCleanupDeadline(t *testing.T) {
+	t.Helper()
+	sharedBudget := &cleanupBudget{}
+	checkParentCancellationStopsOwnedTree(t, sharedBudget)
+	if sharedBudget.deadline.IsZero() {
+		t.Fatal("parent abort did not activate the shared cleanup deadline")
+	}
+	if deadline := sharedBudget.until(); !deadline.Equal(sharedBudget.deadline) {
+		t.Fatalf("parent abort cleanup deadline changed across scopes: %v then %v", sharedBudget.deadline, deadline)
+	}
+}
+
+func checkSuccessKeepsRunAbortBudget(t *testing.T) {
+	t.Helper()
+	t.Setenv(runnerFixtureMode, "success")
+	w := newCommandRunnerWorker(t)
+	sharedBudget := &cleanupBudget{}
+	w.runner.cleanupBudget = sharedBudget
+	root := t.TempDir()
+	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
+	if err != nil || !got.passed {
+		t.Fatalf("successful command = %+v, err = %v", got, err)
+	}
+	if !sharedBudget.deadline.IsZero() {
+		t.Fatalf("ordinary success consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
+	}
+}
+
+func checkOwnTimeoutKeepsRunAbortBudget(t *testing.T) {
+	t.Helper()
+	t.Setenv(runnerFixtureMode, "loop")
+	w := newCommandRunnerWorker(t)
+	sharedBudget := &cleanupBudget{}
+	w.runner.cleanupBudget = sharedBudget
+	root := t.TempDir()
+	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
+	if err != nil || !got.timedOut || got.passed {
+		t.Fatalf("own timeout = %+v, err = %v; want own timeout judgment", got, err)
+	}
+	if !sharedBudget.deadline.IsZero() {
+		t.Fatalf("own mutant timeout consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
+	}
+}
+
+func checkCleanupScopesShareOneDeadline(t *testing.T) {
+	t.Helper()
+	budget := &cleanupBudget{}
+	first, second := budget.until(), budget.until()
+	if !first.Equal(second) {
+		t.Fatalf("cleanup deadlines = %v and %v; want one shared deadline", first, second)
+	}
+	if limit := time.Until(first); limit > sharedCleanupLimit || commandCleanupLimit != sharedCleanupLimit {
+		t.Fatalf("cleanup deadline %v away, limit %v; want ADR-0021's five seconds", limit, commandCleanupLimit)
 	}
 }
 

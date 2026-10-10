@@ -33,44 +33,15 @@ func TestLinuxOwnershipStartupFailureDoesNotRunCommand(t *testing.T) {
 }
 
 func TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment(t *testing.T) {
-	sharedBudget := &cleanupBudget{}
-	checkParentCancellationStopsOwnedTree(t, sharedBudget)
-	if sharedBudget.deadline.IsZero() {
-		t.Fatal("parent abort did not activate the shared cleanup deadline")
-	}
-	if deadline := sharedBudget.until(); !deadline.Equal(sharedBudget.deadline) {
-		t.Fatalf("parent abort cleanup deadline changed across scopes: %v then %v", sharedBudget.deadline, deadline)
-	}
+	checkParentAbortSharesOneCleanupDeadline(t)
 }
 
 func TestLinuxSuccessDoesNotActivateRunAbortCleanupBudget(t *testing.T) {
-	t.Setenv(runnerFixtureMode, "success")
-	w := newCommandRunnerWorker(t)
-	sharedBudget := &cleanupBudget{}
-	w.runner.cleanupBudget = sharedBudget
-	root := t.TempDir()
-	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
-	if err != nil || !got.passed {
-		t.Fatalf("successful command = %+v, err = %v", got, err)
-	}
-	if !sharedBudget.deadline.IsZero() {
-		t.Fatalf("ordinary success consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
-	}
+	checkSuccessKeepsRunAbortBudget(t)
 }
 
 func TestLinuxOwnTimeoutDoesNotActivateRunAbortCleanupBudget(t *testing.T) {
-	t.Setenv(runnerFixtureMode, "loop")
-	w := newCommandRunnerWorker(t)
-	sharedBudget := &cleanupBudget{}
-	w.runner.cleanupBudget = sharedBudget
-	root := t.TempDir()
-	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
-	if err != nil || !got.timedOut || got.passed {
-		t.Fatalf("own timeout = %+v, err = %v; want own timeout judgment", got, err)
-	}
-	if !sharedBudget.deadline.IsZero() {
-		t.Fatalf("own mutant timeout consumed the shared run-abort cleanup budget: deadline %v", sharedBudget.deadline)
-	}
+	checkOwnTimeoutKeepsRunAbortBudget(t)
 }
 
 func TestLinuxCompletedExitPrecedesLaterCancellation(t *testing.T) {
@@ -82,14 +53,7 @@ func TestLinuxCleanupFailureIsReturnedNotJudged(t *testing.T) {
 }
 
 func TestLinuxCleanupScopesCanShareOneDeadline(t *testing.T) {
-	budget := &cleanupBudget{}
-	first, second := budget.until(), budget.until()
-	if !first.Equal(second) {
-		t.Fatalf("cleanup deadlines = %v and %v; want one shared deadline", first, second)
-	}
-	if limit := first.Sub(time.Now()); limit > sharedCleanupLimit || commandCleanupLimit != sharedCleanupLimit {
-		t.Fatalf("cleanup deadline %v away, limit %v; want ADR-0021's five seconds", limit, commandCleanupLimit)
-	}
+	checkCleanupScopesShareOneDeadline(t)
 }
 
 // The Linux step of ID-MUT-190: Linux keeps its supervision unchanged. Its

@@ -10,8 +10,8 @@ import (
 
 // OwnedExecutor supervises commands used by an opt-in preparation operation.
 // Its cleanup budget is instance-local and shared only after parent abort.
-// This does not change the legacy worker adapter or claim non-Linux tree
-// containment.
+// This does not change the legacy worker adapter or claim tree containment
+// beyond Linux and macOS.
 type OwnedExecutor struct {
 	cleanup cleanupBudget
 }

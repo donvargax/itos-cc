@@ -56,20 +56,20 @@ func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *byt
 		runner.lifecycle.complete(ctx, cmd, err)
 	}
 	r := result{elapsed: elapsed, output: captured, exitCode: -1}
-	if linuxOutcomePrecedence() && err != nil && !isExit(err) {
+	if ownedOutcomePrecedence() && err != nil && !isExit(err) {
 		return r, err
 	}
-	if linuxOutcomePrecedence() && cmd.ProcessState != nil && cmd.ProcessState.ExitCode() >= 0 {
+	if ownedOutcomePrecedence() && cmd.ProcessState != nil && cmd.ProcessState.ExitCode() >= 0 {
 		r.exitCode = cmd.ProcessState.ExitCode()
 		r.passed = r.exitCode == 0
 		return r, nil
 	}
 	switch {
-	case linuxOutcomePrecedence() && errors.Is(context.Cause(ctx), errMutationTimeout):
+	case ownedOutcomePrecedence() && errors.Is(context.Cause(ctx), errMutationTimeout):
 		r.timedOut = true
-	case !linuxOutcomePrecedence() && ctx.Err() == context.DeadlineExceeded:
+	case !ownedOutcomePrecedence() && ctx.Err() == context.DeadlineExceeded:
 		r.timedOut = true
-	case linuxOutcomePrecedence() && ctx.Err() != nil:
+	case ownedOutcomePrecedence() && ctx.Err() != nil:
 		r.cancelled = true
 	case err == nil:
 		r.passed, r.exitCode = true, 0

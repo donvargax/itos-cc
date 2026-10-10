@@ -67,7 +67,7 @@ type PreparationStage struct {
 // complete-run path enables them.
 type freshPreparationOptions struct {
 	Scope    coverage.Scope
-	Executor coverage.CommandExecutor // instance-local test seam; nil uses Linux supervision
+	Executor coverage.CommandExecutor // instance-local test seam; nil uses owned Linux or macOS supervision
 	Log      io.Writer
 }
 
@@ -100,8 +100,8 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	owned := &mutate.OwnedExecutor{}
 	execute := options.Executor
 	if execute == nil {
-		if runtime.GOOS != "linux" {
-			return prep, errors.New("fresh supervised preparation requires Linux process-tree ownership; native Windows support is deferred to #29")
+		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+			return prep, errors.New("fresh supervised preparation requires Linux or macOS process-tree ownership; native Windows support is deferred to #29")
 		}
 		execute = owned.Run
 	}

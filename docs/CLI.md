@@ -141,6 +141,12 @@ bypass it. Each cached inventory is bound to its file, function identity, and
 function hash; missing, incomplete, legacy, or misattributed inventories do
 not prove coverage.
 
+`mutation run --count` runs on Linux and macOS, where every command it starts
+runs in a process group it owns, stopped and joined before the run returns.
+A command that detaches from its process group or session is not followed.
+On Windows it fails with `count.platform`, exit 3, before launching any
+command; native Windows support is #29.
+
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |

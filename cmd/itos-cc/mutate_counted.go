@@ -19,8 +19,8 @@ import (
 	"github.com/donvargax/itos-cc/mutate"
 )
 
-// countedPlatform is the platform counted mode runs on: Linux only, since
-// only Linux owns every process tree a trial starts (Windows is #29).
+// countedPlatform is the platform counted mode checks: it runs on Linux and
+// macOS, which own every process tree a trial starts (Windows is #29).
 var countedPlatform = runtime.GOOS
 
 // countedBounds says what --count bounds, in the report and in plain output.
@@ -132,10 +132,10 @@ func runCountedMutate(in *invocation) (any, error) {
 			return nil, flagConflict("--"+flag.name, flag.why)
 		}
 	}
-	if countedPlatform != "linux" {
+	if countedPlatform != "linux" && countedPlatform != "darwin" {
 		return nil, fail(kindMissing, "count.platform",
-			fmt.Sprintf("mutation run --count supports Linux only, where every command's process tree is owned; this is %s", countedPlatform),
-			"Run it on Linux, or run mutation run without --count; native Windows support is #29.").with("platform", countedPlatform)
+			fmt.Sprintf("mutation run --count supports Linux and macOS, where every command's process tree is owned; this is %s", countedPlatform),
+			"Run it on Linux or macOS, or run mutation run without --count; native Windows support is #29.").with("platform", countedPlatform)
 	}
 	root, err := countedRoot()
 	if err != nil {

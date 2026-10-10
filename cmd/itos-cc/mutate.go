@@ -121,9 +121,10 @@ judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
 for every admitted function. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
-on Linux only (Windows is #29); it refuses --changed, --no-coverage,
-existing or raw coverage, --test-command and --mutate-all, and --seed
-needs it. With --all-tests the own stage runs the whole suite, and a
+on Linux and macOS, where every command it starts runs in a process group
+it owns (a command that detaches from its group or session is not
+followed); Windows is #29. It refuses --changed, --no-coverage, existing
+or raw coverage, --test-command and --mutate-all, and --seed needs it. With --all-tests the own stage runs the whole suite, and a
 survivor still runs the listed tests that reach it. SIGINT or SIGTERM
 interrupts a counted run: no command starts after it, the judgment then
 running is cancelled with no outcome, every process the run started is
@@ -204,7 +205,7 @@ judged and no snapshot is written. Listed tests are not run with
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
 		sw("fail-uncovered", "fail on uncovered mutants and executable Go coverage blocks"),
-		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux only"),
+		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
    "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
@@ -247,7 +248,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"flags.conflict            --since with --changed: flag",
 		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go coverage with raw coverage flags: flag",
 		"flags.conflict            --seed without --count, or --count with a flag it refuses: flag",
-		"count.platform            --count on a platform other than Linux: platform",
+		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 		"count.no-git              --count outside a Git repository, or before its first commit",
 		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
 		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
@@ -258,14 +259,14 @@ judged and no snapshot is written. Listed tests are not run with
 		{0, "every mutant that ran was killed"},
 		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
-		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on a platform other than Linux, or with a required tool missing"},
+		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on Windows, or with a required tool missing"},
 		{75, "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 	},
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation run --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
 		"itos-cc mutation run --all-tests --json                    # nightly",
-		"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux)",
+		"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux and macOS)",
 	},
 	run: runMutate,
 }

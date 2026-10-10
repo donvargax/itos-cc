@@ -207,7 +207,7 @@ itos-cc mutation run --all-tests --no-coverage               # nightly, with end
 itos-cc mutation list src/billing                            # the mutation sites, without running tests
 itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook: cached results, nothing run
 itos-cc mutation sample                                      # in CI: do 20 cached results still hold?
-itos-cc mutation run --count 20 --since origin/main          # bounded and fresh: 20 committed sites, no cache (Linux)
+itos-cc mutation run --count 20 --since origin/main          # bounded and fresh: 20 committed sites, no cache (Linux and macOS)
 itos-cc mutation except src/board.ts:3:13 --reason '…'       # an equivalent mutant: no test can kill it
 ```
 
@@ -313,7 +313,10 @@ mutant trials, not discovery, baselines or total time. A range with no site
 is reported not applicable. SIGINT or SIGTERM interrupts it: the active
 judgment is cancelled with no outcome, every process it started is stopped
 within five seconds, and the partial report exits 75 with
-`count.interrupted`. It runs on Linux only for now.
+`count.interrupted`. It runs on Linux and macOS, where every command it
+starts runs in a process group it owns; a command that detaches from its
+process group or session is not followed. On Windows it fails with
+`count.platform` (#29).
 
 `mutation check` gives the verdict a run would give from the cached results
 alone, running no test and no coverage command and writing nothing. Run
