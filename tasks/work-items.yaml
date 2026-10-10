@@ -979,7 +979,7 @@ items:
     title: Strict Go coverage ignores the other languages of a mixed selection
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
