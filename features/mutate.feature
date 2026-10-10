@@ -1838,6 +1838,25 @@ Feature: Mutation testing
       And no __pycache__ directory is written beside the worker copy's sources
       And the project's own tree, its __pycache__ included, is left unchanged
 
+  # counted-worktree-run: a linked worktree's private scratch directory is
+  # what git rev-parse --git-path itos names, under the main repository's
+  # .git/worktrees/<name>. Counted runs accept that directory as private,
+  # as they accept .git/itos in a main checkout: created with owner-only
+  # permissions, never a path a symlink redirects, and removed after the
+  # run. Anything else outside the checkout and its git directory is still
+  # refused, and an unusable scratch directory is a reported problem with a
+  # fix, never an internal error. Complete runs are unchanged.
+  Rule: Counted runs work in a linked git worktree
+
+    @wip @counted-worktree-run @ID-MUT-212
+    Scenario: A count-one run in a linked worktree judges its committed selection
+      Given a committed Go project and a second checkout of it made with git worktree add
+      When a count-one run judges it from the linked worktree
+      Then exactly one selected mutant is judged with a real outcome and the report names the worktree's HEAD commit
+      And its private scratch directory lies under the repository's git directory for that worktree and is removed afterwards
+      And neither checkout's working tree is changed
+      But a scratch path that escapes both the checkout and its git directory is refused with a problem and a fix, not an internal error
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
