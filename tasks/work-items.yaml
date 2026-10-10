@@ -962,7 +962,7 @@ items:
     title: A blocked fail-fast file counts the mutants it ran and reused
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
