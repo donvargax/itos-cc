@@ -11,7 +11,6 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - python-fresh-bytecode
   - ts-coverage-scope
   - counted-languages
   - mutation-windows-ownership
