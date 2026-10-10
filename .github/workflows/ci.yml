@@ -28,9 +28,10 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
       - run: go vet ./...
-      # 20 minutes, not go test's default 10: cmd/itos-cc's tests take about
-      # 10 on windows-latest (T-6). The limit only guards against a hang.
-      - run: go test -timeout 20m ./...
+      # 30 minutes, not go test's default 10: cmd/itos-cc's tests take about
+      # 19 on windows-latest (T-6, T-15). The limit only guards against a
+      # hang; windows-test-speed is what brings that time down.
+      - run: go test -timeout 30m ./...
 
       # The real TypeScript, Python and Kotlin tools, so the language smoke
       # tests and the scenarios that need them (ID-MUT-105 and 208 to 210)
