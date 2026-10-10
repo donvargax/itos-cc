@@ -1192,7 +1192,7 @@ items:
     title: Test fixtures never race git's background maintenance
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
