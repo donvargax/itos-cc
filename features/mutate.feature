@@ -2074,6 +2074,15 @@ Feature: Mutation testing
   #   not preparation. The slice is split: this one holds ID-MUT-173 to 177, 180
   #   and 184 to 186; mutation-counted-listed and mutation-counted-interrupt hold
   #   the rest, and #27 is released only after all three land.
+  # - mutation-counted-run landed (b487e3c) with an interim guard: a selected
+  #   survivor of its own tests that listed tests reach is reported blocked and
+  #   fails with count.listed-unsupported. mutation-counted-listed replaces that
+  #   guard with the real listed stages (the selection's clean listed baseline,
+  #   then the mutant under the listed tests, one trial in all) and removes the
+  #   rule from the help and docs/CLI.md. It also applies valid matching
+  #   exceptions to counted survivors as complete mode does (a stale one fails).
+  #   Counted mode keeps refusing --no-coverage outright: that stays within the
+  #   rule that it never bypasses strict coverage or listed discovery.
   Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
 
     @mutation-counted-run @ID-MUT-173
