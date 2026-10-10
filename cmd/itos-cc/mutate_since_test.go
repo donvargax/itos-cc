@@ -84,6 +84,8 @@ func boardRepo(t *testing.T, extra map[string]string) string {
 }
 
 // gitIn runs git with args in dir, a relative one in the test's directory.
+// A repository it initialises never runs git's automatic maintenance or
+// gc (noMaintenance), whichever git runs in it later.
 func gitIn(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@t", "-c", "core.autocrlf=false"}, args...)...)
@@ -91,7 +93,17 @@ func gitIn(t *testing.T, dir string, args ...string) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
+	if len(args) > 0 && args[0] == "init" {
+		for _, setting := range noMaintenance {
+			gitIn(t, dir, append([]string{"config"}, setting...)...)
+		}
+	}
 }
+
+// noMaintenance is the config that keeps git from maintaining a fixture
+// repository in the background: its lock files come and go while a test
+// copies or reads the tree.
+var noMaintenance = [][]string{{"maintenance.auto", "false"}, {"gc.auto", "0"}}
 
 // writeFile writes text to path, a relative one in the test's directory.
 func writeFile(t *testing.T, path, text string) {

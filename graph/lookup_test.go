@@ -21,10 +21,13 @@ func kotlinModule(t *testing.T) (module, []mutate.UnitResult) {
 	}
 	m := newModule(t)
 	m.write("lang/kotlin.go", "package lang\n\nvar n int\n\nfunc init() {\n\tn = 1 + 1\n}\n")
-	cmd := exec.Command("git", "init", "-q")
-	cmd.Dir = m.root
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, out)
+	// A fixture repository never runs git's automatic maintenance or gc.
+	for _, args := range [][]string{{"init", "-q"}, {"config", "maintenance.auto", "false"}, {"config", "gc.auto", "0"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = m.root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
 	}
 	return m, m.recorded("lang/kotlin.go")
 }

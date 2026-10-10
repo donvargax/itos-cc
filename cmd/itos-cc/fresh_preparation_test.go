@@ -491,7 +491,8 @@ func freshPreparationFixture(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
-	for _, args := range [][]string{{"init", "--quiet"}, {"add", "."}, {"-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"}} {
+	for _, args := range [][]string{{"init", "--quiet"}, {"config", "maintenance.auto", "false"}, {"config", "gc.auto", "0"}, {"add", "."},
+		{"-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "--quiet", "-m", "fixture"}} {
 		cmd := exec.Command("git", args...)
 		cmd.Dir = repo
 		if out, err := cmd.CombinedOutput(); err != nil {

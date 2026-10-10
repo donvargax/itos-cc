@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -117,10 +118,7 @@ var countedLanguages = []countedLanguage{
 		install: func(t *testing.T, dir string) string {
 			languageTools(t, "kotlin")
 			warm := t.TempDir()
-			if err := os.CopyFS(warm, os.DirFS(dir)); err != nil {
-				t.Fatal(err)
-			}
-			os.RemoveAll(filepath.Join(warm, ".git"))
+			copyWithoutGit(t, warm, dir)
 			if out, err := exec.Command("gradle", "-q", "-p", warm, "test", "jacocoTestReport").CombinedOutput(); err != nil {
 				t.Fatalf("warming the Gradle cache: %v\n%s", err, out)
 			}
@@ -134,6 +132,36 @@ var countedLanguages = []countedLanguage{
 				strings.Count(line, " --tests ") == 1 && strings.Contains(line+" ", " --tests board.BoardTest ")
 		},
 	},
+}
+
+// copyWithoutGit copies the tree at src into dst, all but its .git, which
+// git may be changing while the copy reads it.
+func copyWithoutGit(t *testing.T, dst, src string) {
+	t.Helper()
+	err := filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+		switch {
+		case d.IsDir() && d.Name() == ".git":
+			return filepath.SkipDir
+		case d.IsDir():
+			return os.MkdirAll(target, 0o755)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0o644)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 // commandLines are the lines of stderr that name a command preparation

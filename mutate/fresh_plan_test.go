@@ -450,6 +450,9 @@ func freshFixture(t *testing.T, files map[string]string) string {
 	return repo
 }
 
+// freshGit runs git with args in dir. A repository it initialises never
+// runs git's automatic maintenance or gc, whose lock files come and go
+// while a test reads the tree.
 func freshGit(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -457,6 +460,10 @@ func freshGit(t *testing.T, dir string, args ...string) string {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, output)
+	}
+	if len(args) > 0 && args[0] == "init" {
+		freshGit(t, dir, "config", "maintenance.auto", "false")
+		freshGit(t, dir, "config", "gc.auto", "0")
 	}
 	return strings.TrimSpace(string(output))
 }

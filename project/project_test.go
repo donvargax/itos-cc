@@ -15,6 +15,11 @@ func git(t *testing.T, dir string, args ...string) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
+	// A fixture repository never runs git's automatic maintenance or gc.
+	if len(args) > 0 && args[0] == "init" {
+		git(t, dir, "config", "maintenance.auto", "false")
+		git(t, dir, "config", "gc.auto", "0")
+	}
 }
 
 func write(t *testing.T, path, text string) {
