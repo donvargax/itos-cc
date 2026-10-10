@@ -1192,15 +1192,7 @@ items:
     title: Test fixtures never race git's background maintenance
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Was fixture-git-maintenance-race.
-      Release run 38083170991 (v0.9.0, e196f49) failed once on ubuntu:
-      TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline/Kotlin's os.CopyFS
-      of the fixture, .git included, hit 'open .git/objects/maintenance.lock: no such file or
-      directory' as git's automatic maintenance made and removed the lock; the same commit passed in
-      run 38075305971. Copy fixtures without .git, or make fixture repos with maintenance.auto=false
-      and gc.auto=0, so a parallel test run cannot catch a lock mid-flight.
     refs: [T-16]
