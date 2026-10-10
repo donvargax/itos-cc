@@ -1791,7 +1791,7 @@ Feature: Mutation testing
   #   installed" boundary names these per language.
   Rule: Language parity with Go for TypeScript coverage scope and counted runs
 
-    @wip @ts-coverage-scope @ID-MUT-208
+    @ts-coverage-scope @ID-MUT-208
     Scenario: TypeScript coverage comes from the related tests that judge the mutants
       Given a Vitest project with a coverage script that runs the whole suite
       And src/a.ts has a line that only an unrelated test, which does not import it, executes

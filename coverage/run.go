@@ -130,7 +130,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 				p = goPlanWithScope(k.dir, out, srcs, scope == OwnTests, pkgs, testing)
 			}
 		case "typescript":
-			p = typescriptPlan(k.dir, out, srcs)
+			p = typescriptPlan(k.dir, out, srcs, scope == OwnTests)
 		case "python":
 			if execute == nil {
 				p = pythonPlan(k.dir, out)
@@ -354,8 +354,12 @@ func goScopeSupervised(ctx context.Context, dir string, sources []string, execut
 
 // typescriptPlan measures sources with the tests that import them, through
 // Vitest's related or Jest's findRelatedTests, or with every test when
-// sources is empty. A coverage script or c8 runs the whole suite.
-func typescriptPlan(dir, out string, sources []string) Plan {
+// sources is empty. A coverage script or c8 runs the whole suite. With own,
+// the scope mutation run judges mutants in, a project with Vitest or Jest
+// is measured by the same related tests that judge its mutants, never by
+// its coverage script: a line only an unrelated test executes is then
+// uncovered, not a survivor no test it runs could kill.
+func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 	report := filepath.Join(out, "lcov.info")
 	plan := Plan{
 		Language: "typescript",
@@ -370,8 +374,9 @@ func typescriptPlan(dir, out string, sources []string) Plan {
 	missing := func(what string) string {
 		return fmt.Sprintf("%s is not installed; run %s install, or measure with --coverage-command", what, pm)
 	}
+	related := own && (pkg.has("vitest") || pkg.has("jest"))
 	switch {
-	case pkg.Scripts["coverage"] != "":
+	case pkg.Scripts["coverage"] != "" && !related:
 		// The project's own script decides where it writes; the usual place
 		// is coverage/lcov.info.
 		plan.Commands = [][]string{{pm, "run", "coverage"}}
