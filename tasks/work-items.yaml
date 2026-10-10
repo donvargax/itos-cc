@@ -750,10 +750,6 @@ items:
       complete. Specify scheduling, bounded cleanup, truthful partial machine output and cache reuse
       before implementation.
     refs: ["#26"]
-    deferred: >
-      The person explicitly prioritized #27 fresh bounded execution to completion for now. Keep #26
-      fail-fast separate and paused; shared Linux ownership groundwork can support both, but do not
-      implement fail-fast scheduling or its public flag while completing #27.
   - id: T-9
     title: Extract mutation command execution without changing legacy behavior
     phase: 1
