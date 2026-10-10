@@ -1918,6 +1918,58 @@ Feature: Mutation testing
         | python     |
         | kotlin     |
 
+  # own-tests-python, own-tests-kotlin and own-tests-ts-fallback, q-38
+  # (answered 2026-10-10): a file's own command, and the coverage that
+  # decides which of its mutants run, are the tests that reach it
+  # (transitive-test-reach), as Go runs its own package and TypeScript its
+  # Vitest or Jest related tests:
+  # - Python: python -m pytest -q -x -p no:cacheprovider <test files>, or
+  #   python -m unittest <test modules> when pytest is not installed.
+  # - Kotlin: gradle -p <module> test --fail-fast --tests <classes>, or
+  #   mvn -q test -Dtest=<classes> -Dsurefire.failIfNoSpecifiedTests=false,
+  #   the classes the reaching test files declare, per build module.
+  # Coordinator's routine calls, from the Go precedent:
+  # - A file no test reaches runs no test: its mutants are uncovered, as in
+  #   a Go package with no tests, never judged against the whole suite.
+  #   --all-tests and --test-command keep the whole suite.
+  # - A TypeScript test script without Vitest or Jest cannot be narrowed,
+  #   so its command stays the script, and its outcomes are recorded with
+  #   whole-suite evidence (ADR-0016, suite_evidence), as a --test-command
+  #   outcome is: any test change makes them stale.
+  Rule: A file's own tests are the tests that reach it, in every language
+
+    @wip @own-tests-python @ID-MUT-216
+    Scenario Outline: A Python file's own tests are the tests that reach it, with <runner>
+      Given a Python project run with <runner> where test_a reaches a.py, test_b reaches only b.py, and test_b fails
+      When I run "itos-cc mutation run --json" for a.py
+      Then a.py's baseline passes and its mutant is judged by test_a alone, with coverage measured from test_a alone
+      And test_b never runs
+      But a Python file no test reaches has its mutants reported uncovered, and no test command runs for it
+
+      Examples:
+        | runner   |
+        | pytest   |
+        | unittest |
+
+    @wip @own-tests-kotlin @ID-MUT-217
+    Scenario Outline: A Kotlin file's own tests are the test classes that reach it, with <build>
+      Given a Kotlin project built with <build> where ATest, in A.kt's package, uses A without importing it, BTest reaches only B.kt, and BTest fails
+      When I run "itos-cc mutation run --json" for A.kt
+      Then A.kt's baseline passes and its mutant is judged by ATest alone, with coverage measured from ATest alone
+      And BTest never runs
+
+      Examples:
+        | build  |
+        | gradle |
+        | maven  |
+
+    @wip @own-tests-ts-fallback @ID-MUT-218
+    Scenario: A TypeScript test script without Vitest or Jest records whole-suite outcomes
+      Given a TypeScript project whose test script runs Node's own test runner, with neither Vitest nor Jest installed
+      And a mutant of one of its files has a result from "itos-cc mutation run"
+      When a test that reaches no module of that file changes
+      Then "itos-cc mutation check" reports that result stale, as it reports a --test-command outcome
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
