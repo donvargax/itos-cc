@@ -1187,14 +1187,15 @@ items:
       the project path Gradle gives a module by default; a settings file that includes a project
       under another name or moves its projectDir breaks that. Reading the paths from the build (a
       settings parse or gradle projects, offline) would not.
-  - id: fixture-git-maintenance-race
-    title: Fixture copies race git's background maintenance lock
+  - id: T-19
+    title: Test fixtures never race git's background maintenance
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: task
     why: >
+      Was fixture-git-maintenance-race.
       Release run 38083170991 (v0.9.0, e196f49) failed once on ubuntu:
       TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline/Kotlin's os.CopyFS
       of the fixture, .git included, hit 'open .git/objects/maintenance.lock: no such file or
