@@ -2006,6 +2006,78 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --json" for a.py
       Then a.py's baseline runs test_a.py, its coverage is measured from test_a.py, and its mutant is killed, not reported uncovered
 
+  # strict-lines-python, strict-lines-typescript, strict-lines-kotlin and
+  # strict-scope-refusals, q-40 (answered 2026-10-10): ADR-0017, 0018 and
+  # 0019 extend to TypeScript, Python and Kotlin. With --fail-uncovered,
+  # every judged executable function of those languages, a function with no
+  # mutation site included, needs fresh measured line coverage evidence:
+  # - Precision is the format's: LCOV DA lines from coverage.py and from
+  #   Vitest's or Jest's v8 or istanbul reports, JaCoCo or Kover XML lines.
+  #   An executable line no reaching test executed is
+  #   mutation.uncovered-statement (file, function, line), separate from
+  #   mutant counts. A JaCoCo line with both missed and covered
+  #   instructions is covered; branches are out of scope, as Go has none.
+  # - Evidence comes only from the built-in per-language commands over the
+  #   file's reaching tests (own-tests-*), or --all-tests' whole suite, and
+  #   is stored per function, bound to its hash and to fingerprints of its
+  #   sources, reaching tests, configured support and the coverage
+  #   producer, so mutation check gives the run's verdict without running a
+  #   test. A function without complete evidence is
+  #   mutation.coverage-missing; evidence whose inputs changed is
+  #   mutation.coverage-stale. Strict runs of these languages refuse
+  #   --coverage-report, --use-existing-coverage and --coverage-command, as
+  #   strict Go runs do.
+  # - mutation.coverage-unsupported refuses scopes a root's fingerprints
+  #   cannot prove, even when an older cache looks fresh: npm, pnpm or yarn
+  #   workspaces and file:, link: or workspace: dependencies outside the
+  #   root; Python path or editable dependencies outside the root; Gradle
+  #   includeBuild and Maven parent relativePath or modules outside the
+  #   root. itos-cc never follows them.
+  # Without --fail-uncovered nothing changes.
+  Rule: Strict runs prove executable line coverage in every language
+
+    @wip @strict-lines-python @ID-MUT-221
+    Scenario: A strict Python run proves every executable line of every judged function
+      Given a Python project whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
+      When I run "itos-cc mutation run --fail-uncovered --json" for the file
+      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, the mutant counts are unchanged, and the run fails
+      And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
+      And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+      And a strict Python run refuses --coverage-report, --use-existing-coverage and --coverage-command
+      But without --fail-uncovered the run and the check report as before
+
+    @wip @strict-lines-typescript @ID-MUT-222
+    Scenario: A strict TypeScript run proves every executable line of every judged function
+      Given a TypeScript project tested with Vitest whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes
+      When I run "itos-cc mutation run --fail-uncovered --json" for the file
+      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, the mutant counts are unchanged, and the run fails
+      And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
+      And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+
+    @wip @strict-lines-kotlin @ID-MUT-223
+    Scenario: A strict Kotlin run proves every executable line of every judged function
+      Given a Kotlin project built with Gradle and JaCoCo whose judged file has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one branch of
+      When I run "itos-cc mutation run --fail-uncovered --json" for the file
+      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, and the partly executed line is not
+      And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
+      And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+
+    @wip @strict-scope-refusals @ID-MUT-224
+    Scenario Outline: Strict coverage refuses <scope>
+      Given a <language> project with <scope>, and fresh line coverage evidence for its judged functions
+      When I run "itos-cc mutation check --fail-uncovered --json" and "itos-cc mutation run --fail-uncovered --json"
+      Then both report "mutation.coverage-unsupported" for its judged functions, naming the scope, and fail
+      And itos-cc reads nothing outside the project root
+      But without --fail-uncovered both report as before
+
+      Examples:
+        | language   | scope                                              |
+        | typescript | an npm workspace                                   |
+        | typescript | a file: dependency outside the root                |
+        | python     | an editable dependency outside the root            |
+        | kotlin     | a Gradle includeBuild outside the root             |
+        | kotlin     | a Maven module outside the root                    |
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
