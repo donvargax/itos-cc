@@ -1210,11 +1210,9 @@ items:
     title: A strict TypeScript run proves every executable line of every judged function
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-40: ADR-0017/0018 for TypeScript, at the Vitest or Jest LCOV line precision.
     refs: ["#23"]
   - id: strict-lines-kotlin
     title: A strict Kotlin run proves every executable line of every judged function
