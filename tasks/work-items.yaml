@@ -943,6 +943,9 @@ items:
       failures reported, never downgraded; a dedicated problem rule printed beside the partial
       report would keep both facts.
     refs: ["#26"]
+    deferred: >
+      Waits for q-37's exit code, which the person will settle with a CLI-guidance template and an
+      exit-code review (2026-10-10).
   - id: fail-fast-counts
     title: A blocked fail-fast file counts the mutants it ran and reused
     phase: 1
