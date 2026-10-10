@@ -993,14 +993,9 @@ items:
     title: Whole-suite outcomes of TypeScript, Python and Kotlin notice non-importing test changes
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [uncovered-fails-closed]
     kind: slice
-    why: >
-      Language parity (the person, 2026-10-10): ADR-0016 records module-test and support hashes for
-      Go all-tests and test-command outcomes only (mutate/broad.go), so a non-importing test change
-      never stales another language's whole-suite kill, this repository's nightly viewer included.
-      Decisions in the comments above ID-MUT-205.
     refs: ["#20"]
   - id: T-13
     title: CI runs the real TypeScript, Python and Kotlin tools on Linux
