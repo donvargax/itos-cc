@@ -336,3 +336,62 @@ func TestAPlanOfItsOwnSourcesLendsNoCoverageToOthers(t *testing.T) {
 		t.Errorf("b.py:2 not covered, want covered by its own tests")
 	}
 }
+
+func TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses(t *testing.T) {
+	test := "import kotlin.test.Test\n\nclass %s {\n    @Test\n    fun t() {}\n}\n"
+	for _, build := range []struct {
+		name  string
+		files map[string]string
+		want  string
+	}{
+		{"jacoco", map[string]string{"build.gradle.kts": "plugins { jacoco }\n"}, "gradle -p %s test --tests own.ATest jacocoTestReport"},
+		{"kover", map[string]string{"build.gradle.kts": "plugins { id(\"org.jetbrains.kotlinx.kover\") }\n"}, "gradle -p %s test --tests own.ATest koverXmlReport"},
+		{"maven", map[string]string{"pom.xml": "<project><build><plugins><plugin><artifactId>jacoco-maven-plugin</artifactId></plugin></plugins></build></project>"},
+			"mvn -q jacoco:prepare-agent test jacoco:report -Dtest=own.ATest -Dsurefire.failIfNoSpecifiedTests=false"},
+	} {
+		t.Run(build.name, func(t *testing.T) {
+			dir := t.TempDir()
+			files := map[string]string{
+				"src/main/kotlin/own/A.kt":      "package own\n\nfun a() = 1\n",
+				"src/main/kotlin/own/B.kt":      "package own\n\nfun b() = 1\n",
+				"src/main/kotlin/own/U.kt":      "package own\n\nfun u() = 1\n",
+				"src/test/kotlin/own/ATest.kt":  "package own\n\n" + strings.ReplaceAll(test, "%s", "ATest"),
+				"src/test/kotlin/own/Helper.kt": "package own\n\nobject Helper\n",
+			}
+			for name, text := range build.files {
+				files[name] = text
+			}
+			writeFiles(t, dir, files)
+			at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
+			reach := map[string][]string{
+				at("src/main/kotlin/own/A.kt"): {at("src/test/kotlin/own/ATest.kt"), at("src/test/kotlin/own/Helper.kt")},
+				at("src/main/kotlin/own/B.kt"): {at("src/test/kotlin/own/ATest.kt")},
+				at("src/main/kotlin/own/U.kt"): {at("src/test/kotlin/own/Helper.kt")},
+			}
+			sources := []string{at("src/main/kotlin/own/A.kt"), at("src/main/kotlin/own/B.kt"), at("src/main/kotlin/own/U.kt")}
+			plans := Plans(sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
+			if len(plans) != 2 {
+				t.Fatalf("plans %+v, want two: ATest's, and one no test class reaches", plans)
+			}
+			measured, unreached := plans[0], plans[1]
+			if measured.Unreached {
+				measured, unreached = unreached, measured
+			}
+			want := strings.ReplaceAll(build.want, "%s", dir)
+			if len(measured.Commands) != 1 || strings.Join(measured.Commands[0], " ") != want {
+				t.Errorf("ATest's commands %q, want [%s]", measured.Commands, want)
+			}
+			if strings.Join(measured.Sources, " ") != sources[0]+" "+sources[1] || !measured.OwnSources || measured.Unreached {
+				t.Errorf("ATest's plan: %+v, want A.kt and B.kt, measured for themselves alone", measured)
+			}
+			if strings.Join(unreached.Sources, " ") != sources[2] || !unreached.Unreached || len(unreached.Commands) != 0 {
+				t.Errorf("the other plan: %+v, want U.kt, reached by a helper alone, Unreached, with no command", unreached)
+			}
+			whole := Plans(sources, t.TempDir(), OwnTests, nil)
+			if len(whole) != 1 || whole[0].OwnSources || whole[0].Unreached || len(whole[0].Commands) != 1 ||
+				strings.Contains(strings.Join(whole[0].Commands[0], " "), "ATest") {
+				t.Errorf("without reach: %+v, want one plan of the whole suite", whole)
+			}
+		})
+	}
+}

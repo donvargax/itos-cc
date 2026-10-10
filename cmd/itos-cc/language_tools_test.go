@@ -10,8 +10,8 @@ import (
 // The real TypeScript, Python and Kotlin tools the tests that need them run,
 // found by languageTools. CI installs pinned ones on ubuntu-latest only
 // (T-13): Node's from testdata/tools/node with npm ci, Python's from
-// testdata/tools/python/requirements.txt, and a JDK with Gradle. Elsewhere a
-// test that needs a tool skips, naming it.
+// testdata/tools/python/requirements.txt, and a JDK with Gradle and Maven.
+// Elsewhere a test that needs a tool skips, naming it.
 
 const (
 	// languageToolsEnv, set by the job that installed the pinned tools, turns
@@ -26,8 +26,9 @@ const (
 // the missing one named. For "typescript" it returns the absolute
 // node_modules that holds vitest and @vitest/coverage-v8: the one
 // ITOS_CC_NODE_MODULES names, else testdata/tools/node's, else the viewer's.
-// For "python" it needs python3 with pytest and coverage importable, and for
-// "kotlin" java and gradle; it returns "" for both.
+// For "python" it needs python3 with pytest and coverage importable, for
+// "kotlin" java and gradle, and for "maven", Kotlin's other build, java and
+// mvn; it returns "" for each.
 //
 // A CI job that did not install the pinned tools skips: its runner's
 // preinstalled ones are whatever version its image has.
@@ -77,6 +78,12 @@ func languageTools(t *testing.T, language string) string {
 		}
 	case "kotlin":
 		for _, tool := range []string{"java", "gradle"} {
+			if _, err := exec.LookPath(tool); err != nil {
+				missing(tool)
+			}
+		}
+	case "maven":
+		for _, tool := range []string{"java", "mvn"} {
 			if _, err := exec.LookPath(tool); err != nil {
 				missing(tool)
 			}

@@ -28,10 +28,13 @@ type countedLanguage struct {
 	// the run ends, so a command may name it in the copy, which lies
 	// within the live project, as long as the path ends there.
 	install func(t *testing.T, dir string) string
-	// tests, when set, is the test file each test runner command of
+	// tests, when set, is the tests each test runner command of
 	// preparation names, its coverage and baseline: the one test that
-	// reaches the source, as Python's own tests are.
-	tests string
+	// reaches the source, as Python's and Kotlin's own tests are. narrows
+	// says of a command line whether it runs the test runner, and whether
+	// it runs those tests alone.
+	tests   string
+	narrows func(line string) (runner, alone bool)
 }
 
 var countedLanguages = []countedLanguage{
@@ -88,6 +91,9 @@ var countedLanguages = []countedLanguage{
 			return ""
 		},
 		tests: "test_board.py",
+		narrows: func(line string) (bool, bool) {
+			return strings.Contains(line, " -m pytest"), strings.HasSuffix(line, " test_board.py")
+		},
 	},
 	{
 		name:   "Kotlin",
@@ -119,6 +125,13 @@ var countedLanguages = []countedLanguage{
 				t.Fatalf("warming the Gradle cache: %v\n%s", err, out)
 			}
 			return ""
+		},
+		tests: "board.BoardTest",
+		narrows: func(line string) (bool, bool) {
+			_, command, _ := strings.Cut(line, "$ ")
+			executable, _, _ := strings.Cut(command, " ")
+			return filepath.Base(executable) == "gradle",
+				strings.Count(line, " --tests ") == 1 && strings.Contains(line+" ", " --tests board.BoardTest ")
 		},
 	},
 }
@@ -199,17 +212,18 @@ func TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline(
 			if l.tests != "" {
 				runners := map[string]int{}
 				for _, line := range ran {
-					if !strings.Contains(line, " -m pytest") {
+					runner, alone := l.narrows(line)
+					if !runner {
 						continue
 					}
 					stage, _, _ := strings.Cut(strings.TrimPrefix(line, "itos-cc: "), " ")
 					runners[stage]++
-					if !strings.HasSuffix(line, " "+l.tests) {
+					if !alone {
 						t.Errorf("%q runs other tests than %s, the one that reaches %s", line, l.tests, source)
 					}
 				}
 				if runners["coverage"] == 0 || runners["baseline"] == 0 {
-					t.Errorf("pytest ran %v times by stage, want for coverage and for the baseline", runners)
+					t.Errorf("the test runner ran %v times by stage, want for coverage and for the baseline", runners)
 				}
 			}
 

@@ -81,3 +81,124 @@ func TestPythonMutantsRunTheTestFilesThatReachTheirFile(t *testing.T) {
 		t.Errorf("--test-command: %+v, want make check run in %s", given, dir)
 	}
 }
+
+// kotlinFiles writes files, by slash path and text, beneath dir, and
+// returns dir.
+func kotlinFiles(t *testing.T, dir string, files map[string]string) string {
+	t.Helper()
+	for name, text := range files {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+// kotlinTestFiles are test files of package pkg beneath test, a test
+// directory: a test class, a subclass of an abstract test class that
+// declares no test of its own, a Kotest spec, a JUnit 5 class whose tests
+// are nested, and a test-support helper object and class that declare no
+// test.
+func kotlinTestFiles(test, pkg string) map[string]string {
+	header := "package " + pkg + "\n\nimport kotlin.test.Test\n\n"
+	return map[string]string{
+		test + "/ATest.kt":    header + "class ATest {\n    @Test\n    fun low() {}\n}\n",
+		test + "/BaseTest.kt": header + "abstract class BaseTest {\n    @Test\n    fun inherited() {}\n}\n",
+		test + "/SubTest.kt":  header + "class SubTest : BaseTest()\n",
+		test + "/LowSpec.kt":  "package " + pkg + "\n\nclass LowSpec : FunSpec({ test(\"low\") {} })\n",
+		test + "/Outer.kt":    header + "class Outer {\n    @Nested\n    inner class Inner {\n        @ParameterizedTest\n        fun low(i: Int) {}\n    }\n}\n",
+		test + "/Record.kt":   "package " + pkg + "\n\nobject Record {\n    fun ran(name: String) {}\n}\n",
+		test + "/Fixtures.kt": "package " + pkg + "\n\nclass Fixtures {\n    fun low() = 3\n}\n",
+		test + "/Contract.kt": header + "interface Contract {\n    @Test\n    fun holds() {}\n}\n",
+	}
+}
+
+func TestKotlinMutantsRunTheTestClassesThatReachTheirFile(t *testing.T) {
+	test := "src/test/kotlin/own"
+	files := kotlinTestFiles(test, "own")
+	files["settings.gradle.kts"] = "rootProject.name = \"own\"\n"
+	files["build.gradle.kts"] = ""
+	files["src/main/kotlin/own/A.kt"] = "package own\n\nfun low(i: Int) = i == 3\n"
+	dir := kotlinFiles(t, t.TempDir(), files)
+	src := filepath.Join(dir, "src", "main", "kotlin", "own", "A.kt")
+	var reach []string
+	for name := range kotlinTestFiles(test, "own") {
+		reach = append(reach, filepath.Join(dir, filepath.FromSlash(name)))
+	}
+	got := TestCommand(src, "", false, reach)
+	want := "gradle -p . test --fail-fast --tests own.ATest --tests own.LowSpec --tests own.Outer --tests own.SubTest"
+	if got.String() != want || got.Dir != dir || got.Root != dir {
+		t.Errorf("own tests: %q in %s, want %q in %s: the test classes the reaching files declare, and no helper",
+			got.String(), got.Dir, want, dir)
+	}
+	helpers := []string{filepath.Join(dir, filepath.FromSlash(test+"/Record.kt")), filepath.Join(dir, filepath.FromSlash(test+"/Fixtures.kt"))}
+	if none := TestCommand(src, "", false, helpers); !none.RunsNothing() || none.Dir != dir {
+		t.Errorf("reached by helpers alone: %+v, want nothing run", none)
+	}
+	if none := TestCommand(src, "", false, nil); !none.RunsNothing() {
+		t.Errorf("reached by no test: %+v, want nothing run", none)
+	}
+	if all := TestCommand(src, "", true, reach).String(); all != "gradle test --fail-fast" {
+		t.Errorf("all tests: %q, want the whole build", all)
+	}
+	if given := TestCommand(src, "make check", false, reach); given.String() != "make check" || given.Dir != dir {
+		t.Errorf("--test-command: %+v, want make check run in %s", given, dir)
+	}
+}
+
+func TestKotlinTestClassesOfSeveralGradleModulesRunAsEachModulesTestTask(t *testing.T) {
+	header := "import kotlin.test.Test\n\n"
+	dir := kotlinFiles(t, t.TempDir(), map[string]string{
+		"settings.gradle.kts":                       "include(\"lib\", \"apps:cli\")\n",
+		"lib/build.gradle.kts":                      "",
+		"apps/cli/build.gradle.kts":                 "",
+		"lib/src/main/kotlin/lib/Low.kt":            "package lib\n\nfun low(i: Int) = i == 3\n",
+		"lib/src/test/kotlin/lib/LowTest.kt":        "package lib\n\n" + header + "class LowTest {\n    @Test\n    fun low() {}\n}\n",
+		"apps/cli/src/test/kotlin/cli/CliTest.kt":   "package cli\n\n" + header + "class CliTest {\n    @Test\n    fun low() {}\n}\n",
+		"apps/cli/src/test/kotlin/cli/CliRecord.kt": "package cli\n\nobject CliRecord\n",
+	})
+	src := filepath.Join(dir, "lib", "src", "main", "kotlin", "lib", "Low.kt")
+	at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
+	own := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("apps/cli/src/test/kotlin/cli/CliRecord.kt")})
+	if want := "gradle -p lib test --fail-fast --tests lib.LowTest"; own.String() != want || own.Dir != dir {
+		t.Errorf("one module's classes: %q in %s, want %q in %s", own.String(), own.Dir, want, dir)
+	}
+	both := TestCommand(src, "", false, []string{at("apps/cli/src/test/kotlin/cli/CliTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
+	if want := "gradle :apps:cli:test --fail-fast --tests cli.CliTest :lib:test --fail-fast --tests lib.LowTest"; both.String() != want || both.Dir != dir {
+		t.Errorf("two modules' classes: %q in %s, want %q in %s", both.String(), both.Dir, want, dir)
+	}
+}
+
+func TestKotlinTestClassesRunWithMavenThroughSurefire(t *testing.T) {
+	header := "import kotlin.test.Test\n\n"
+	dir := kotlinFiles(t, t.TempDir(), map[string]string{
+		"pom.xml":                            "<project/>",
+		"lib/pom.xml":                        "<project/>",
+		"app/pom.xml":                        "<project/>",
+		"lib/src/main/kotlin/lib/Low.kt":     "package lib\n\nfun low(i: Int) = i == 3\n",
+		"lib/src/test/kotlin/lib/LowTest.kt": "package lib\n\n" + header + "class LowTest {\n    @Test\n    fun low() {}\n}\n",
+		"lib/src/test/kotlin/lib/Helper.kt":  "package lib\n\nobject Helper\n",
+		"app/src/test/kotlin/app/AppTest.kt": "package app\n\n" + header + "class AppTest {\n    @Test\n    fun low() {}\n}\n",
+	})
+	src := filepath.Join(dir, "lib", "src", "main", "kotlin", "lib", "Low.kt")
+	lib := filepath.Join(dir, "lib")
+	at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
+	own := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("lib/src/test/kotlin/lib/Helper.kt")})
+	if want := "mvn -q test -Dtest=lib.LowTest -Dsurefire.failIfNoSpecifiedTests=false"; own.String() != want || own.Dir != lib || own.Root != lib {
+		t.Errorf("its module's classes: %q in %s, want %q in %s", own.String(), own.Dir, want, lib)
+	}
+	both := TestCommand(src, "", false, []string{at("app/src/test/kotlin/app/AppTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
+	if want := "mvn -q test -pl lib,app -am -Dtest=app.AppTest,lib.LowTest -Dsurefire.failIfNoSpecifiedTests=false"; both.String() != want || both.Dir != dir || both.Root != dir {
+		t.Errorf("two modules' classes: %q in %s, want %q from the reactor's top, %s", both.String(), both.Dir, want, dir)
+	}
+	if none := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/Helper.kt")}); !none.RunsNothing() {
+		t.Errorf("reached by a helper alone: %+v, want nothing run", none)
+	}
+	if all := TestCommand(src, "", true, nil); all.String() != "mvn -q test" || all.Dir != lib {
+		t.Errorf("all tests: %+v, want its module's whole suite", all)
+	}
+}
