@@ -2063,6 +2063,17 @@ Feature: Mutation testing
   #   Static planning, raw snapshots and direct helper processes need no trials.
   #   Broader concurrency/multi-mutant regressions run in CI, not on this machine.
   #   Unknown-flag failures are CLI-admission red, not scheduler-red evidence.
+  # - T-12 built the internal preparation (cmd/itos-cc fresh_preparation.go):
+  #   build on it, do not duplicate it. Its strict Go inventory currently errors
+  #   when an admitted executable function lacks complete evidence (a file only
+  #   another OS builds, an unloaded package). Counted mode reports that as the
+  #   same mutation.coverage-missing finding complete mode reports, failing the
+  #   run with completed stages intact; a failed measurement command stays a
+  #   preparation failure. Listed selection baselines depend on each selected
+  #   mutant's reach, so the counted scheduler runs them (mutation-counted-listed),
+  #   not preparation. The slice is split: this one holds ID-MUT-173 to 177, 180
+  #   and 184 to 186; mutation-counted-listed and mutation-counted-interrupt hold
+  #   the rest, and #27 is released only after all three land.
   Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
 
     @wip @mutation-counted-run @ID-MUT-173
