@@ -1970,6 +1970,42 @@ Feature: Mutation testing
       When a test that reaches no module of that file changes
       Then "itos-cc mutation check" reports that result stale, as it reports a --test-command outcome
 
+  # test-support-reach (coordinator's routine call, 2026-10-10, from q-39's
+  # transitive closure; found by own-tests-python as the idea
+  # python-reach-through-test-helpers): test-support files, the files a
+  # language counts as test code that are not themselves runnable tests
+  # (a Python helper under tests/, a TypeScript helper under __tests__, a
+  # Kotlin helper in src/test), pass reach on: a test reaches what the
+  # test-support files it imports reach, transitively. A Python test also
+  # reaches what every conftest.py in its directory and the directories
+  # above it, up to its build root, reaches, since pytest loads those
+  # without an import. The runnable test is what a file's own command runs
+  # (own-tests-python's test_*.py and *_test.py) and what its freshness
+  # names, beside the support files its reach passes through. Go is
+  # unchanged.
+  Rule: Tests reach code through the test-support files they use
+
+    @wip @test-support-reach @ID-MUT-219
+    Scenario Outline: A <language> test reaches a file through <support>
+      Given a <language> project whose test reaches module A only through <support>, which imports A
+      And A's mutant has a recorded result
+      When that test changes
+      Then "itos-cc mutation check" reports A's result stale, naming the test
+      And a test that uses no support reaching A changing leaves A's result fresh
+
+      Examples:
+        | language   | support                          |
+        | python     | a helper module under tests/     |
+        | python     | a conftest.py fixture above it   |
+        | typescript | a helper module under __tests__/ |
+        | kotlin     | a helper class in src/test       |
+
+    @wip @test-support-reach @ID-MUT-220
+    Scenario: A Python mutant reached only through conftest.py is judged by the test that uses the fixture
+      Given a Python project whose test_a.py uses a conftest.py fixture that imports a.py, and no test imports a.py
+      When I run "itos-cc mutation run --json" for a.py
+      Then a.py's baseline runs test_a.py, its coverage is measured from test_a.py, and its mutant is killed, not reported uncovered
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
