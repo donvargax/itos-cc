@@ -1032,3 +1032,17 @@ items:
       run --json on a tiny committed fixture through the real tool (one or two trials, sparse) and
       checks a judged outcome and measured coverage. No product change, no tool downloads by itos-cc
       itself, and no change to what existing tests assert.
+  - id: counted-mixed-coverage
+    title: A counted run over a mixed range needs every language measured, even a site-free file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found in strict-mixed-languages (2026-10-10). mutation run --count over a Go module plus a
+      TypeScript file with no mutation site fails count.preparation-failed at the coverage stage
+      when no TypeScript coverage tool is installed, with or without --fail-uncovered, before the
+      strict-go-inventory stage (which already skips non-.go units). Whether a language with no
+      eligible site needs a measurement at all, and how this meets uncovered-fails-closed, is
+      undecided.
