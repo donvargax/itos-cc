@@ -1074,3 +1074,15 @@ items:
       'coverage: ' as the package's summary. A tool that reads the ok line, as the nightly might,
       gets no number. Giving coverage.Run a buffer the test logs on failure, instead of os.Stderr,
       would keep the summary line go test's own.
+  - id: transitive-test-reach
+    title: TypeScript, Python and Kotlin tests reach what they import transitively
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      q-39: a test reaches the transitive closure of its imports, as vitest related and jest select;
+      today only direct imports count, so a test that kills a mutant of a file it reaches indirectly
+      is not recorded and its changes never stale that result.
+    refs: ["#14"]
