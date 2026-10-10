@@ -927,7 +927,7 @@ items:
     title: A fail-fast stop keeps the valid judgments of the files it cut short
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [fail-fast-run]
     kind: slice
     why: >
