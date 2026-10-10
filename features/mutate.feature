@@ -2083,6 +2083,16 @@ Feature: Mutation testing
   #   exceptions to counted survivors as complete mode does (a stale one fails).
   #   Counted mode keeps refusing --no-coverage outright: that stays within the
   #   rule that it never bypasses strict coverage or listed discovery.
+  # - mutation-counted-interrupt (ID-MUT-183): in counted mode SIGINT and SIGTERM
+  #   (what CI cancellation sends) abort the run through one cancelled context:
+  #   no new command is admitted, the active judgment ends cancelled with no
+  #   mutation outcome, and every owned worker and preparation process group is
+  #   killed and joined within the one shared five-second post-abort deadline
+  #   before the private frozen inputs are removed. A second signal does not skip
+  #   that join. The run still prints its partial report (completion
+  #   interrupted, completed judgments kept) and exits 75 with the new rule
+  #   count.interrupted, documented in the help and docs/CLI.md. Complete-mode
+  #   signal handling is unchanged.
   Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
 
     @mutation-counted-run @ID-MUT-173
