@@ -1072,7 +1072,7 @@ items:
     title: CI gives go test 30 minutes while cmd/itos-cc's Windows tests near 20
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
