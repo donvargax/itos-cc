@@ -1673,6 +1673,101 @@ Feature: Mutation testing
       Then that outcome is stale
       But adding a _test.go file only beneath a nested Go module leaves that outcome fresh
 
+  # Language parity with Go (the person, 2026-10-10: implement what exists
+  # only for Go for TypeScript, Python and Kotlin too). These three slices
+  # need no new toolchain in CI: their fixtures use --test-command scripts,
+  # missing tools or plain files. The Go precedent decides their substance.
+  # - strict-mixed-languages: strict Go coverage judges Go files only. A
+  #   TypeScript, Python or Kotlin file in the same selection is outside the
+  #   Go evidence inventory: it is neither "missing" nor an error for lack of
+  #   a go.mod, and keeps whatever non-Go --fail-uncovered rules apply.
+  # - uncovered-fails-closed: under --fail-uncovered, a TypeScript, Python
+  #   or Kotlin coverage plan that is unsupported (its tool missing), writes
+  #   no report, or whose command fails is a measurement failure, reported
+  #   with the existing coverage.* problems and their exit categories, and
+  #   no mutant of that language is judged, as ADR-0017 makes Go fail closed.
+  #   Without --fail-uncovered the current fallback (run every mutant) stays.
+  #   Raw-report flags keep their behaviour for non-Go languages until strict
+  #   statement evidence exists for them. README's "for non-strict runs"
+  #   sentence changes accordingly.
+  # - whole-suite-freshness-all: ADR-0016 for every language. An outcome
+  #   recorded with all-tests or test-command scope also depends on every
+  #   test file beneath its source's build root, as project discovery
+  #   classifies tests, plus mutation.tests.support matches. Build roots:
+  #   TypeScript the nearest package.json (excluding nested package.json
+  #   trees and node_modules); Python the nearest pyproject.toml, setup.py
+  #   or setup.cfg (excluding .venv, including conftest.py); Kotlin the
+  #   Gradle build root (settings.gradle or settings.gradle.kts) or the
+  #   Maven module. New outcomes record this evidence under one
+  #   language-neutral snapshot key; Go's existing evidence key is read as
+  #   equivalent, so no Go outcome goes stale from the rename. Non-Go
+  #   whole-suite outcomes recorded before this lack the evidence and are
+  #   stale once, as legacy Go ones were. Run, check, sample and the graph
+  #   share the verdict. Own and listed scopes keep their rules.
+  Rule: Language parity with Go for strict coverage and whole-suite freshness
+
+    @wip @strict-mixed-languages @ID-MUT-203
+    Scenario: Strict Go coverage ignores the other languages of a mixed selection
+      Given a project with a Go module and a TypeScript file that has no go.mod above it
+      And the Go functions have fresh complete coverage evidence
+      When I run "itos-cc mutation check --fail-uncovered --json" over both files
+      Then no TypeScript function is reported as mutation.coverage-missing or as an error
+      And the Go functions are judged as before
+      When a TypeScript file sits beneath the Go module's directory
+      Then it is still not judged for Go coverage evidence
+      And a strict mutation run over a mixed selection can reuse fresh Go evidence instead of measuring every time
+
+    @wip @uncovered-fails-closed @ID-MUT-204
+    Scenario Outline: Strict runs fail closed when another language measured nothing
+      Given a <language> project whose coverage <failure>
+      When I run "itos-cc mutation run --fail-uncovered --json" for one of its files
+      Then the run fails with "<rule>" naming the language and directory, and the exit code is <exit>
+      And no mutant of that file is judged or reported as covered
+      But without --fail-uncovered the run falls back to running every mutant as before
+
+      Examples:
+        | language   | failure                              | rule                      | exit |
+        | TypeScript | tool is missing                      | coverage.tool-missing     | 3    |
+        | Python     | command exits 0 but writes no report | coverage.measured-nothing | 1    |
+        | Kotlin     | command fails                        | coverage.measured-nothing | 1    |
+
+    @wip @whole-suite-freshness-all @ID-MUT-205
+    Scenario Outline: A non-importing test change makes another language's whole-suite outcome stale
+      Given a <language> project whose test <test> does not import the production file
+      And a mutation run with <scope> recorded an outcome for that file with whole-suite evidence
+      And only that test file changed since
+      When I run "itos-cc mutation check --json" for the production file
+      Then its function is stale and the "mutation.stale" message names the changed test file
+      And no test, list or coverage command runs
+      When I run mutation run with <scope> for the production file
+      Then the outcome runs again rather than being reused
+
+      Examples:
+        | language   | test                    | scope                       |
+        | TypeScript | e2e/cli.test.ts         | --all-tests                 |
+        | Python     | tests/test_cli.py       | --test-command "./run.sh"   |
+        | Kotlin     | src/test/kotlin/CliTest.kt | --all-tests              |
+
+    @wip @whole-suite-freshness-all @ID-MUT-206
+    Scenario: Build roots, support files and legacy evidence are explicit for every language
+      Given whole-suite outcomes in a TypeScript, a Python and a Kotlin project with support globs
+      When a support file is added, changed or removed
+      Then each outcome is stale and its message names the support file
+      When a test file is added only beneath a nested package.json, a .venv or node_modules
+      Then the outer outcome stays fresh
+      Given a non-Go whole-suite outcome with matching source and importer hashes but no whole-suite evidence
+      Then it is stale and must rerun before it can be reused
+      But a Go outcome recorded with the existing Go evidence key stays fresh
+
+    @wip @whole-suite-freshness-all @ID-MUT-207
+    Scenario: Mixed scopes and partial runs keep their own dependencies in every language
+      Given TypeScript, Python and Kotlin outcomes recorded with own, all-tests and test-command scopes
+      And only a non-importing test file changed beneath each build root
+      When their freshness is checked by mutation check, mutation run, mutation sample and the graph
+      Then the own outcomes stay usable and every whole-suite outcome is stale
+      And all four agree on each function's freshness
+      And a --since run that judges one function never refreshes the evidence of an unjudged one
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
