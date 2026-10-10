@@ -33,6 +33,9 @@ type worker struct {
 	dir    string
 	copies map[string]string // real root → copy
 	runner commandRunner
+	// prepare, when set, adjusts each command before it runs, such as its
+	// environment; complete runs leave it unset.
+	prepare func(*exec.Cmd)
 }
 
 // copyOf returns the worker's copy of root, creating it on first use.
@@ -152,6 +155,9 @@ func (w *worker) runContext(parent context.Context, c Command, timeout time.Dura
 			paths = append(paths, old)
 		}
 		cmd.Env = append(cmd.Env, c.PathEnv+"="+strings.Join(paths, string(os.PathListSeparator)))
+	}
+	if w.prepare != nil {
+		w.prepare(cmd)
 	}
 	var out bytes.Buffer
 	cmd.Stdout = &out

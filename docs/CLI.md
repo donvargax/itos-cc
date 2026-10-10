@@ -89,7 +89,6 @@ output of the commands it runs passes as it is.
 | `count.no-git`               | 3    | mutation run --count | none                                                  |
 | `count.unsupported-scope`    | 2    | mutation run --count | none                                                  |
 | `count.preparation-failed`   | 1, 3 (a tool missing) | mutation run --count | `stage`                             |
-| `count.listed-unsupported`   | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
 | `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |

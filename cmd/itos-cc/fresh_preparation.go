@@ -45,6 +45,11 @@ type FreshPreparation struct {
 	// without any mutant, with its time.
 	Baselines        []mutate.FreshBaseline
 	ExternalBoundary string
+	// Tests is the frozen config's mutation.tests, nil when it lists none:
+	// how the counted scheduler runs a listed selection.
+	Tests *config.Tests
+	// Exceptions is the frozen config's mutation.exceptions.
+	Exceptions []config.Exception
 }
 
 // PreparationTool is one external executable and where it resolved.
@@ -128,6 +133,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		stage("admission", "failed", err)
 		return prep, fmt.Errorf("read frozen committed config: %w", err)
 	}
+	prep.Tests, prep.Exceptions = cfg.Tests, cfg.Exceptions
 	stage("admission", "complete", nil)
 	if err := ctx.Err(); err != nil {
 		stage("preparation", "aborted", err)

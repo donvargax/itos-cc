@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"slices"
@@ -62,6 +63,12 @@ func selectionKey(ids []string) string {
 // baseline is the baseline of the selection ids, run in w's copy, with no
 // mutant, the first time any worker needs it.
 func (s *selections) baseline(w *worker, ids []string) *selection {
+	return s.baselineContext(context.Background(), w, ids)
+}
+
+// baselineContext is baseline under ctx: a baseline that ctx cancels is an
+// error, never a selection that fails.
+func (s *selections) baselineContext(ctx context.Context, w *worker, ids []string) *selection {
 	key := selectionKey(ids)
 	s.mu.Lock()
 	sel := s.byKey[key]
@@ -73,9 +80,13 @@ func (s *selections) baseline(w *worker, ids []string) *selection {
 	sel.once.Do(func() {
 		c := s.listed.command(ids)
 		fmt.Fprintf(s.log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
-		r, err := w.run(c, 0)
+		r, err := w.runContext(ctx, c, 0)
 		if err != nil {
 			sel.err = err
+			return
+		}
+		if r.cancelled || ctx.Err() != nil {
+			sel.err = fmt.Errorf("cancelled: %w", context.Cause(ctx))
 			return
 		}
 		joined := strings.Join(ids, " ")

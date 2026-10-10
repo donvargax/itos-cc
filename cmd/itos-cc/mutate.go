@@ -107,9 +107,14 @@ Coverage, listed reach and a clean baseline of each selected file's own
 tests are then measured on the frozen copy; any command failing fails the
 run before any mutant. A selected site no test reaches is reported
 uncovered, never run and never redrawn. Every other selected site runs its
-own tests once, even when the cache holds a kill for it; one that survives
-them and that listed tests reach is reported blocked, as counted mode does
-not run listed tests yet. --count bounds mutant trials only, not discovery,
+own tests once, even when the cache holds a kill for it, and one that
+survives them runs the listed tests that reach its line, after their
+selection's clean baseline, as a complete run does: both stages are one
+trial. A selection whose baseline fails is tests.selection-failed, and a
+site that needs it is blocked, with no outcome. Exceptions of the functions
+with a selected site apply as in a complete run: a valid one excepts its
+survivor, which is still drawn and run, and a stale one fails, as
+mutation.exception-stale. --count bounds mutant trials only, not discovery,
 coverage, listing, baselines or total time. A counted run writes no
 snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
@@ -118,7 +123,8 @@ for every admitted function. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux only (Windows is #29); it refuses --changed, --no-coverage,
 existing or raw coverage, --test-command and --mutate-all, and --seed
-needs it.
+needs it. With --all-tests the own stage runs the whole suite, and a
+survivor still runs the listed tests that reach it.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
 survivor. For Go it also requires fresh measured executable coverage for
@@ -212,7 +218,11 @@ judged and no snapshot is written. Listed tests are not run with
    "selected": [{"identity", "file", "line", "column", "function",
    "original", "replacement",
    "state": "judged"|"uncovered"|"blocked"|"failed"|"unattempted",
-   "outcome" (judged and uncovered sites only), "scope", "reason"}],
+   "outcome" (judged and uncovered sites only), "scope", with scope
+   "listed" "tests": ["<test ID>"], for an excepted survivor "excepted":
+   "its reason", "reason", and the stages its trial ran, "stages":
+   [{"name": "own"|"listed-baseline"|"listed",
+   "state": "complete"|"failed", "outcome", "tests", "error"}]}],
    "subjects": {"judged": [{"file", "function"}], "omitted": [...]},
    "stages": [{"name", "state": "complete"|"failed"|"skipped"|"aborted", "error"}]`,
 	rules: []string{
@@ -235,12 +245,11 @@ judged and no snapshot is written. Listed tests are not run with
 		"count.no-git              --count outside a Git repository, or before its first commit",
 		"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
 		"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant: stage",
-		"count.listed-unsupported  with --count, a selected mutant survived its own tests and only listed tests could judge it: file, line, column, function, original, replacement, identity",
 		"count.trial-failed        with --count, a selected mutant's trial could not run: file, line, column, function, original, replacement, identity",
 	},
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
-		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is blocked or not judged"},
+		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
 		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository; --count outside a Git repository with a commit, on a platform other than Linux, or with a required tool missing"},
 	},

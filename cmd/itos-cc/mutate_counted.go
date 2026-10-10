@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 
@@ -52,20 +53,38 @@ type countedSampling struct {
 
 // countedSite is one selected site. State is "judged" (its trial ran to an
 // outcome), "uncovered" (measured, no test reaches it, no trial), "blocked"
-// (it needs what this mode does not run yet), "failed" (its trial could not
+// (it survived its own tests, and the clean baseline of the listed tests it
+// needs failed, so they could not judge it), "failed" (its trial could not
 // run) or "unattempted"; only judged and uncovered sites have an outcome.
+// Stages is each stage its trial ran, in order.
 type countedSite struct {
-	Identity    string `json:"identity"`
-	File        string `json:"file"`
-	Line        int    `json:"line"`
-	Column      int    `json:"column"`
-	Function    string `json:"function"`
-	Original    string `json:"original"`
-	Replacement string `json:"replacement"`
-	State       string `json:"state"`
-	Outcome     string `json:"outcome,omitempty"`
-	Scope       string `json:"scope,omitempty"`
-	Reason      string `json:"reason,omitempty"`
+	Identity    string         `json:"identity"`
+	File        string         `json:"file"`
+	Line        int            `json:"line"`
+	Column      int            `json:"column"`
+	Function    string         `json:"function"`
+	Original    string         `json:"original"`
+	Replacement string         `json:"replacement"`
+	State       string         `json:"state"`
+	Outcome     string         `json:"outcome,omitempty"`
+	Scope       string         `json:"scope,omitempty"`
+	Tests       []string       `json:"tests,omitempty"`
+	Excepted    string         `json:"excepted,omitempty"`
+	Reason      string         `json:"reason,omitempty"`
+	Stages      []countedStage `json:"stages,omitempty"`
+	// selection is, for a blocked site, the listed selection that fails
+	// without any mutant.
+	selection *mutate.FailedSelection
+}
+
+// countedStage is one stage of a site's trial: "own", "listed-baseline" or
+// "listed" (mutate.FreshStage).
+type countedStage struct {
+	Name    string   `json:"name"`
+	State   string   `json:"state"`
+	Outcome string   `json:"outcome,omitempty"`
+	Tests   []string `json:"tests,omitempty"`
+	Error   string   `json:"error,omitempty"`
 }
 
 type countedSubject struct {
@@ -177,6 +196,15 @@ func runCountedMutate(in *invocation) (any, error) {
 		return result, nil
 	}
 
+	exceptions, err := mutate.PlanExceptions(plan, prep.Exceptions)
+	if err != nil {
+		return nil, err
+	}
+	stale := slices.Clone(exceptions.Stale)
+	var listed *mutate.Listed
+	if prep.Tests != nil {
+		listed = &mutate.Listed{Root: plan.FrozenRoot, Select: prep.Tests.Select}
+	}
 	var trials []mutate.FreshTrial
 	var trialSites []int
 	for i, c := range plan.Selected {
@@ -191,47 +219,78 @@ func runCountedMutate(in *invocation) (any, error) {
 			site.State, site.Reason = "failed", "no clean baseline was prepared for its file"
 			continue
 		}
-		trials = append(trials, mutate.FreshTrial{Candidate: c, Baseline: baseline})
+		var reach []string
+		if listed != nil {
+			reach = prep.Report.LineTests(path, c.Site.Line)
+		}
+		trials = append(trials, mutate.FreshTrial{Candidate: c, Baseline: baseline, Reach: reach})
 		trialSites = append(trialSites, i)
 	}
 	if len(trials) == 0 {
 		result.Stages = append(result.Stages, PreparationStage{Name: "trials", State: "skipped"})
 	} else {
 		results, err := mutate.RunFreshTrials(ctx, plan, trials, mutate.FreshTrialOptions{
-			Workers: in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Prepare: countedCommandEnv, Log: os.Stderr})
+			Workers: in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutate.RunScope("", in.set("all-tests")),
+			Listed: listed, Prepare: countedCommandEnv, Log: os.Stderr})
 		if err != nil {
 			return nil, err
 		}
-		state, failure := "complete", ""
+		trialStage := PreparationStage{Name: "trials", State: "complete"}
+		var selectionStage *PreparationStage
 		for n, r := range results {
 			site := &result.Selected[trialSites[n]]
-			if r.Err != nil {
+			for _, stage := range r.Stages {
+				site.Stages = append(site.Stages, countedStage{Name: stage.Name, State: stage.State, Outcome: stage.Outcome, Tests: stage.Tests, Error: stage.Error})
+				switch {
+				case stage.Name == "own" && stage.State == "complete":
+					// The mutant ran: its trial spent the budget, whatever
+					// its later stages could judge.
+					s.Executed++
+				case stage.Name == "listed-baseline" && selectionStage == nil:
+					selectionStage = &PreparationStage{Name: stage.Name, State: stage.State, Error: stage.Error}
+				case stage.Name == "listed-baseline" && stage.State == "failed" && selectionStage.State != "failed":
+					selectionStage.State, selectionStage.Error = stage.State, stage.Error
+				}
+			}
+			switch {
+			case r.Err != nil:
 				site.State, site.Reason = "failed", r.Err.Error()
-				state, failure = "failed", r.Err.Error()
+			case r.FailedSelection != nil:
+				site.State, site.selection = "blocked", r.FailedSelection
+				site.Reason = fmt.Sprintf("it survived its own tests, and its listed tests %s fail without any mutant, so they could not judge it",
+					strings.Join(r.FailedSelection.IDs, " "))
+			default:
+				site.State, site.Outcome, site.Scope, site.Tests = "judged", r.Outcome, r.Scope, r.Tests
+				reason, gone := exceptions.Judge(r.Trial.Candidate, r.Outcome)
+				site.Excepted = reason
+				if gone != nil {
+					stale = append(stale, *gone)
+				}
 				continue
 			}
-			s.Executed++
-			site.Scope = mutate.ScopeOwn
-			path := filepath.Join(plan.FrozenRoot, filepath.FromSlash(r.Trial.Candidate.Path))
-			if r.Outcome == mutate.Survived && len(prep.Report.LineTests(path, r.Trial.Candidate.Site.Line)) > 0 {
-				// Its own tests survived it and listed tests reach it: only
-				// they could finish the judgment, which this mode does not
-				// run yet. No outcome is claimed for it.
-				site.State, site.Reason = "blocked", "listed tests reach its line, and counted mode does not run listed stages yet"
-				continue
+			if trialStage.State == "complete" {
+				trialStage.State, trialStage.Error = "failed", site.Reason
 			}
-			site.State, site.Outcome = "judged", r.Outcome
 		}
-		stage := PreparationStage{Name: "trials", State: state, Error: failure}
-		result.Stages = append(result.Stages, stage)
+		if selectionStage != nil {
+			result.Stages = append(result.Stages, *selectionStage)
+		}
+		result.Stages = append(result.Stages, trialStage)
 	}
 	for _, site := range result.Selected {
-		if site.State == "failed" || site.State == "unattempted" {
+		switch {
+		case s.Stop != "":
+		case site.State == "failed" || site.State == "unattempted":
 			s.Completion, s.Stop = "stopped", "a selected trial could not run"
+		case site.State == "blocked":
+			s.Completion, s.Stop = "stopped", "the listed tests a selected site needs fail without any mutant"
 		}
 	}
 	printCounted(in, result)
 	reportCounted(in, result, strict)
+	for _, e := range stale {
+		reportStaleExceptions(in, e.File, []mutate.StaleException{e})
+	}
 	if strictGo {
 		reportCountedStrictGo(in, plan, prep)
 	}
@@ -397,6 +456,12 @@ func printCounted(in *invocation, r *countedResult) {
 			what = site.Outcome
 		}
 		line := fmt.Sprintf("  %s %s:%d:%d %s → %s in %s", what, site.File, site.Line, site.Column, quote(site.Original), quote(site.Replacement), site.Function)
+		if site.Scope == mutate.ScopeListed {
+			line += " by listed tests " + strings.Join(site.Tests, " ")
+		}
+		if site.Excepted != "" {
+			line += " (excepted: " + site.Excepted + ")"
+		}
 		if site.Reason != "" {
 			line += ": " + site.Reason
 		}
@@ -409,22 +474,24 @@ func printCounted(in *invocation, r *countedResult) {
 	fmt.Println(countedBounds)
 }
 
-// reportCounted reports each selected site that fails the run.
+// reportCounted reports each selected site that fails the run: a survivor
+// no valid exception excepts, an uncovered site with --fail-uncovered, the
+// listed selection a blocked site needs, which fails without any mutant,
+// once, and a site whose trial could not run.
 func reportCounted(in *invocation, r *countedResult, failUncovered bool) {
+	selections := map[string]bool{}
 	for _, site := range r.Selected {
 		m := mutate.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
 		switch {
-		case site.State == "judged" && site.Outcome == mutate.Survived:
+		case site.State == "judged" && site.Outcome == mutate.Survived && site.Excepted == "":
 			p := countedMutantProblem(site, m, "mutation.survived", "survived", "Add a test that fails with this change.")
 			in.report(p)
 		case site.State == "uncovered" && failUncovered:
 			in.report(countedMutantProblem(site, m, "mutation.uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change."))
-		case site.State == "blocked":
-			in.report(countedMutantProblem(site, m, "count.listed-unsupported",
-				"survived its own tests, and only the listed tests that reach it could judge it, which counted mode does not run yet",
-				"Run mutation run without --count to judge it with its listed tests."))
-		case site.State == "failed" || site.State == "unattempted":
+		case site.State == "blocked" && site.selection != nil:
+			reportFailedSelections(in, []mutate.FailedSelection{*site.selection}, selections, "mutation run --count")
+		case site.State == "failed" || site.State == "unattempted" || site.State == "blocked":
 			reason := site.Reason
 			if reason == "" {
 				reason = "it was not attempted"

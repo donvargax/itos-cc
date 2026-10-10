@@ -298,11 +298,16 @@ each selected file's clean baseline are measured on the frozen copy, and any
 failing command fails the run before a mutant runs. A selected site no test
 reaches is uncovered and never redrawn; every other selected site runs its
 own tests once, even when the cache holds a kill, and one that survives them
-while listed tests reach it is reported blocked, since counted mode does not
-run listed tests yet. `--json` gives `sampling` (budget, eligible, selected,
-executed and omitted counts, seed, algorithm and commit), the `selected`
-sites with their `state` and outcome, the judged and omitted `subjects`, and
-the `stages` that ran. A counted run writes no snapshot, comment or coverage
+runs the listed tests that reach its line, after their selection's clean
+baseline, as a complete run does: both stages are one trial. A selection
+whose baseline fails is `tests.selection-failed`, and a site that needs it
+is blocked, with no outcome. Exceptions of the functions with a selected
+site apply as in a complete run: a valid one excepts its survivor, which is
+still drawn and run, and a stale one fails. `--json` gives `sampling`
+(budget, eligible, selected, executed and omitted counts, seed, algorithm
+and commit), the `selected` sites with their `state`, outcome and the
+stages their trial ran, the judged and omitted `subjects`, and the `stages`
+that ran. A counted run writes no snapshot, comment or coverage
 cache, and its pass proves only its sampled judgments; `--count` bounds
 mutant trials, not discovery, baselines or total time. A range with no site
 is reported not applicable. It runs on Linux only for now.
