@@ -423,13 +423,19 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 	return plan
 }
 
+// pytestRunner is how a coverage plan runs pytest: without its cache
+// plugin, as every pytest command itos-cc composes runs, so measuring writes
+// no .pytest_cache into the project. Plugins it autoloads stay the
+// project's.
+var pytestRunner = []string{"-m", "pytest", "-q", "-p", "no:cacheprovider"}
+
 func pythonPlan(dir, out string) Plan {
 	py := pythonFor(dir)
 	data := filepath.Join(out, ".coverage")
 	report := filepath.Join(out, "lcov.info")
 	runner := []string{"-m", "unittest", "discover"}
 	if exec.Command(py, "-c", "import pytest").Run() == nil {
-		runner = []string{"-m", "pytest", "-q"}
+		runner = pytestRunner
 	}
 	plan := Plan{
 		Language: "python",
@@ -459,7 +465,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, execute CommandE
 	runner := []string{"-m", "unittest", "discover"}
 	pytestErr := probe("pytest")
 	if pytestErr == nil {
-		runner = []string{"-m", "pytest", "-q"}
+		runner = pytestRunner
 	} else if ctx.Err() != nil {
 		return Plan{}, executions, ctx.Err()
 	}

@@ -182,7 +182,11 @@ test. What keeps `mutation run` fast:
   `vitest related` / `jest --findRelatedTests`, `pytest -x`. Coverage comes
   from the same tests, so a line only integration or end-to-end tests reach
   is uncovered, not a survivor; a TypeScript project's `coverage` script
-  measures mutation run only with `--all-tests`.
+  measures mutation run only with `--all-tests`. Every command itos-cc
+  composes runs with `PYTHONDONTWRITEBYTECODE=1`, and every pytest one with
+  `-p no:cacheprovider`, so measuring and judging write no bytecode and no
+  `.pytest_cache` into the project; a `--test-command` or
+  `--coverage-command` runs exactly as given.
 - **Parallel workers** in private copies of the project, so the real tree is
   never modified while tests run. The baseline runs inside a worker, which
   proves the copy works before any mutant does. A mutant times out after
