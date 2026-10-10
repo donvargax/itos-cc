@@ -1000,7 +1000,7 @@ items:
     title: CI runs the real TypeScript, Python and Kotlin tools on Linux
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
