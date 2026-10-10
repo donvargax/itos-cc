@@ -12,7 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - counted-unjudged-language
-  - pytest-cache-in-tree
+  - python-no-pytest-cache
   - mutation-windows-ownership
 items:
   - id: T-3
@@ -1049,14 +1049,15 @@ items:
     depends_on: [ts-coverage-scope]
     kind: slice
     refs: ["#27"]
-  - id: pytest-cache-in-tree
-    title: Python coverage in the project tree writes .pytest_cache and plugin files
+  - id: python-no-pytest-cache
+    title: Measuring and judging a Python project leaves no pytest cache in its tree
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was pytest-cache-in-tree.
       Found by python-fresh-bytecode's agent: complete coverage runs python -m coverage run -m
       pytest -q in the project's own tree without -p no:cacheprovider, so pytest writes
       .pytest_cache there and installed plugins (pytest-benchmark writes .benchmarks/) may write
