@@ -927,17 +927,9 @@ items:
     title: A fail-fast stop keeps the valid judgments of the files it cut short
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: [fail-fast-run]
     kind: slice
-    why: >
-      Second part of #26, split by the coordinator on 2026-10-10 so the stop itself lands first.
-      fail-fast-run leaves a file the stop cut short unwritten, as an undecided file is today; this
-      slice preserves its valid completed and reused judgments with their original scope and
-      freshness evidence (ADR-0022), never gives cancelled, blocked or unattempted sites an outcome,
-      keeps a fresh prior cache usable after a cancelled forced rerun, and leaves annotations of
-      incomplete files untouched. The decisions are the comments above its scenarios in
-      features/mutate.feature.
     refs: ["#26"]
   - id: mutation-windows-fail-fast
     title: mutation run --fail-fast on Windows
