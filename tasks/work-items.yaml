@@ -14,6 +14,7 @@ queue:
   - strict-lines-python
   - strict-lines-typescript
   - strict-lines-kotlin
+  - strict-scope-refusals
   - mutation-windows-ownership
 items:
   - id: T-3
