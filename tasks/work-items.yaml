@@ -12,6 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - ts-coverage-scope
+  - counted-languages
   - mutation-windows-ownership
 items:
   - id: T-3
