@@ -795,7 +795,7 @@ items:
     title: Fresh bounded mutation trials without a prior complete cache
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-12]
     kind: slice
     why: >
