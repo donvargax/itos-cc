@@ -1036,25 +1036,9 @@ items:
     title: A Python mutant always runs as mutated, never from stale bytecode
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was python-stale-bytecode.
-      In CI 38044467639 (ubuntu-latest, Python 3.14, pytest 9.1.1), go test -v -run
-      '^TestLanguageToolSmokePython$' ./cmd/itos-cc ran itos-cc mutation run --json board.py over
-      cmd/itos-cc/testdata/smoke/python and reported board.py:2:14 `==` → `!=` in board#low
-      survived, though test_board.py fails on it; the same test kills it locally, where pytest takes
-      about 3s to start. Cause, reproduced with plain python3 imports: the worker's baseline run in
-      its copy compiles board.py into __pycache__, which records the source's mtime in whole seconds
-      and its size; withMutant (mutate/worker.go:177) then writes a mutant of the same size within
-      that same second, so the next python3 finds the bytecode fresh and imports the unmutated code.
-      Any same-size Python mutant (operator swaps such as == to !=, < to >) whose run starts within
-      a second of the previous write of its file can be a false survivor, more so on fast runners.
-      Suspect mutate/worker.go:170-181 (no bytecode invalidation when writing or restoring a mutant)
-      and mutate/command.go:105-120 (pythonCommand runs Python with bytecode writing on;
-      PYTHONDONTWRITEBYTECODE=1 or a per-run PYTHONPYCACHEPREFIX would avoid it).
-      TestLanguageToolSmokePython accepts either judgment of that mutant until this is fixed.
   - id: ts-coverage-scope
     title: TypeScript coverage measures the same related tests that judge the mutants
     phase: 1
