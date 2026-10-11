@@ -1343,13 +1343,9 @@ items:
     title: With --since, --fail-uncovered=lines judges coverage only on the changed lines
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Issue #33, q-43: old uncovered code in a touched function fails a change and taxes
-      refactoring; with --since, =lines judges coverage rules only on lines overlapping the diff, in
-      run, counted and check, every language.
     refs: ["#33"]
   - id: except-renew
     title: A reviewed exception can be renewed when its mutant is unchanged
