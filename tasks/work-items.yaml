@@ -1601,3 +1601,15 @@ items:
       upgraded from 6.5.1 (template CI uses 7.4.0). Settles q-37 (fail-fast-cleanup-report).
     deferred: >
       Waits for itos-template's fix for adopting an existing project (the person, 2026-10-11).
+  - id: left-out-singular-wording
+    title: mutation check's left-out note reads "1 recorded mutant at sites gone"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      check-left-out-count settled the note as "<n> recorded mutants at sites gone" with "mutant"
+      for n = 1, so one left-out mutant reads "at sites gone" though it had one site. The
+      template-driven CLI refactor could word the singular as "at a site gone" when it reshapes
+      check's output.
