@@ -71,6 +71,50 @@ func TestPythonPlansMeasureTheProcessesTheTestsStartInTheirOwnDirectory(t *testi
 	}
 }
 
+func TestPythonPlansCombineTheInProcessDataFilesBeforeTheReport(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the stand-in python is a shell script")
+	}
+	dir := t.TempDir()
+	writeFiles(t, dir, map[string]string{
+		"pyproject.toml":   "",
+		".venv/bin/python": "#!/bin/sh\nexit 0\n",
+		"a.py":             "",
+	})
+	out := filepath.Join(dir, ".metrics", "run-1")
+	sources := []string{filepath.Join(dir, "a.py")}
+	complete := Plans(sources, out, AllTests, nil)
+	run := func(ctx context.Context, cmd *exec.Cmd) error { return cmd.Run() }
+	supervised, _, err := PlansSupervised(context.Background(), sources, out, AllTests, nil, run)
+	if err != nil || len(complete) != 1 || len(supervised) != 1 {
+		t.Fatalf("plans %+v and %+v (%v), want one each", complete, supervised, err)
+	}
+	for name, p := range map[string]Plan{"complete": complete[0], "supervised": supervised[0]} {
+		if len(p.Commands) != 3 {
+			t.Errorf("%s: commands %q, want coverage run, the combine and coverage lcov", name, p.Commands)
+			continue
+		}
+		var data string
+		for _, a := range p.Commands[0] {
+			if v, ok := strings.CutPrefix(a, "--data-file="); ok {
+				data = v
+			}
+		}
+		py := filepath.Join(dir, ".venv", "bin", "python")
+		if want := []string{py, "-c", pythonInProcessScript, data}; data == "" || !slices.Equal(p.Commands[1], want) {
+			t.Errorf("%s: second command %q, want the in-process data files combined into %q", name, p.Commands[1], data)
+		}
+		if !slices.Contains(p.Commands[2], "lcov") || !slices.Contains(p.Commands[2], "--data-file="+data) {
+			t.Errorf("%s: third command %q, want the LCOV report of %q", name, p.Commands[2], data)
+		}
+		// The subprocesses' data files are in a directory of their own,
+		// which the combine of the files beside data never reads.
+		if filepath.Dir(p.CoverDir) != filepath.Dir(data) {
+			t.Errorf("%s: CoverDir %q, want a directory beside %q", name, p.CoverDir, data)
+		}
+	}
+}
+
 func TestPythonSubprocessLinesFoldInBesideTheInProcessReport(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "cli.py")

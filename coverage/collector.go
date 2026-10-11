@@ -49,6 +49,30 @@ import (
 // project's, it makes the subprocesses write beside the in-process data,
 // where nothing tells them apart, and before 7.13 it writes .pth files into
 // site-packages at run time.
+//
+// The in-process data: a project whose configuration sets [run] parallel =
+// true, or patch = subprocess, which forces it, has coverage run write
+// .coverage.<host>.<pid>.<random> beside the data file --data-file names
+// instead of that file. coverage.py 7.14 and later combine such files when
+// they report; before 7.14 coverage lcov reads the data file alone and
+// finds no data. So pythonInProcessScript combines them into the data file
+// before the report, with the project's [paths], as the subprocesses' files
+// are combined, and removes them. The integration data never mixes in: it
+// is written in CoverDir, a directory of its own beneath the data file's.
+//
+// A project's own patch = subprocess has coverage run hand every Python
+// process a test starts coverage run's own configuration, in
+// COVERAGE_PROCESS_CONFIG, which coverage.py's start-up reads before
+// COVERAGE_PROCESS_START: those processes write their parallel data files
+// beside the in-process data, under the same data file's name, and are
+// combined with it, so the lines they ran count as "in-process", not
+// "integration". Nothing coverage.py records tells their files from coverage
+// run's: only the writer's process ID in the name differs, and coverage
+// run's is not reliably the one itos-cc started (a launcher, as a Windows
+// virtualenv's python is, or a supervising executor stands between them).
+// Overriding the project's patch would mean patching coverage.py's private
+// modules. Their lines are covered either way, and their mutants run the
+// same.
 
 // pythonStartScript, run with the project's python in its build root as
 // python -c pythonStartScript RCFILE DATA ROOT..., writes the rcfile and
@@ -125,6 +149,23 @@ try:
     cov.lcov_report(outfile=report)
 except NoDataError:
     open(report, "w").close()
+`
+
+// pythonInProcessScript, run with the project's python in its build root as
+// python -c pythonInProcessScript DATA after coverage run, combines the
+// parallel data files coverage run wrote beside DATA, if any, into it, with
+// the project's [paths], and removes them. DATA's directory holds only the
+// run's own: CoverDir's files are a directory below, which combine never
+// reads. Without any, it does nothing, and DATA is as coverage run wrote it.
+const pythonInProcessScript = `import glob, os, sys
+import coverage
+
+data = os.path.abspath(sys.argv[1])
+if [f for f in glob.glob(glob.escape(data) + ".*") if not f.endswith("-journal")]:
+    cov = coverage.Coverage(data_file=data, data_suffix=False)
+    cov.load()
+    cov.combine([os.path.dirname(data)])
+    cov.save()
 `
 
 // startExit is the exit code of a Plan's Prepare command that says the

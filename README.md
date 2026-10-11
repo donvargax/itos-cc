@@ -152,6 +152,17 @@ configuration untouched, so its data stays apart from the subprocesses':
 afterwards those are combined (with the project's `[paths]`) into an LCOV
 report read beside the in-process one, and the directory is removed. A
 mutant whose line only a subprocess ran says `"coverage": ["integration"]`.
+A project whose coverage.py configuration sets `[run] parallel = true`, or
+`patch = subprocess`, which forces it, has coverage run write parallel data
+files beside the data file itos-cc names instead of that file: itos-cc
+combines them into it (with the project's `[paths]`) before the report, as
+coverage.py 7.14 and later do when they report, so such a project is
+measured whichever coverage.py it has, and none of them is left behind.
+Under the project's own `patch = subprocess`, coverage.py hands the Python
+processes a test starts coverage run's own configuration, which they read
+before `COVERAGE_PROCESS_START`, so they write beside the in-process data,
+where nothing tells their files apart: their lines count as
+`"in-process"`, covered all the same.
 A coverage.py that does not start in new processes (before 7.13, or
 without its `.pth` file) is a log line, the run going on without
 integration coverage, and `coverage.tool-missing` under `mutation run

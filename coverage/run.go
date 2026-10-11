@@ -627,10 +627,21 @@ func pythonPlan(dir, out string, tests []string) Plan {
 		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
 		return plan
 	}
-	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
-	plan.Commands = [][]string{run, {py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report}}
+	plan.Commands = pythonCommands(py, dir, data, report, runner)
 	pythonIntegration(&plan, py, dir, out)
 	return plan
+}
+
+// pythonCommands is the commands of a Python coverage plan: coverage run
+// of runner, writing data, in dir; then the in-process data files a
+// project's parallel data wrote beside data combined into it
+// (pythonInProcessScript); then data's LCOV report, written to report.
+func pythonCommands(py, dir, data, report string, runner []string) [][]string {
+	return [][]string{
+		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
+		{py, "-c", pythonInProcessScript, data},
+		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
+	}
 }
 
 func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, execute CommandExecutor) (Plan, []CommandExecution, error) {
@@ -662,10 +673,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
 		return plan, executions, nil
 	}
-	plan.Commands = [][]string{
-		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
-		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
-	}
+	plan.Commands = pythonCommands(py, dir, data, report, runner)
 	pythonIntegration(&plan, py, dir, out)
 	return plan, executions, nil
 }
@@ -802,7 +810,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		}
 		failed := ""
 		for _, args := range p.Commands {
-			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
+			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Dir = p.Dir
 			cmd.Env = env

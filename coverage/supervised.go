@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 
 	"github.com/donvargax/itos-cc/project"
 )
@@ -123,7 +122,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				failures = append(failures, err)
 				break
 			}
-			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
+			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 			cmd.Dir, cmd.Env = p.Dir, env
 			cmd.Stdout, cmd.Stderr = log, log

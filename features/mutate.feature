@@ -2211,7 +2211,10 @@ Feature: Mutation testing
   # - python-parallel-data: a project whose coverage.py config writes
   #   parallel data files (parallel = true, or patch = subprocess) is
   #   measured: itos-cc combines the run's in-process data files before it
-  #   reports them, as it combines the subprocess ones.
+  #   reports them, as it combines the subprocess ones. Under the project's
+  #   own patch = subprocess, the processes a test starts write beside the
+  #   in-process data, where nothing tells them apart, and count as
+  #   in-process.
   # - mutate-workers-abandoned: worker copies a killed mutation run left in
   #   the temporary directory are removed by a later run, as coverage
   #   removes abandoned run- directories, never one still in use.
@@ -2239,7 +2242,7 @@ Feature: Mutation testing
       Then its mutant is judged by the listed test and killed, as a complete run judges it
       And no "no clean baseline was prepared" problem is reported
 
-    @wip @python-parallel-data-fix @ID-MUT-233
+    @python-parallel-data-fix @ID-MUT-233
     Scenario: A Python project that writes parallel coverage data is measured
       Given a Python project whose coverage.py configuration sets parallel = true, with a test that kills its mutant
       When I run "itos-cc mutation run --json" for its file

@@ -77,7 +77,11 @@ rcfile of the run's own that COVERAGE_PROCESS_START names, which holds the
 project's [run] settings under itos-cc's, and what they wrote is combined
 beside the in-process coverage. A coverage.py that does not start in them
 is coverage.tool-missing with --fail-uncovered, where Python has mutants to
-judge, and otherwise a log line, the run going on without them. In
+judge, and otherwise a log line, the run going on without them. A project
+whose coverage.py configuration sets [run] parallel = true, or patch =
+subprocess, has its parallel data files combined, with its [paths], before
+the report; under its own patch = subprocess the processes a test starts
+write beside the in-process data, and their lines count as in-process. In
 TypeScript under Vitest or Jest, the Node processes a test starts show up
 too: NODE_V8_COVERAGE names a directory of the run's own, and the
 project's c8 reports what they wrote beside the runner's coverage, leaving

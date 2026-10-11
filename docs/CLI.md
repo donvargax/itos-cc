@@ -152,6 +152,12 @@ names (coverage.py 7.13 and later), so their lines are covered, as
 `"integration"`, and their mutants run; listed tests (`mutation.tests`)
 reach them the same way, one test at a time or as a harness splits them
 with `COVERAGE_FILE=<ITOS_CC_TEST_COVERDIR>/<test ID>/.coverage`. A
+project whose coverage.py configuration sets `[run] parallel = true`, or
+`patch = subprocess`, which forces it, is measured too: itos-cc combines
+the parallel data files coverage run writes into the run's own data file,
+with the project's `[paths]`, before the report, leaving none behind. Under
+the project's own `patch = subprocess` the processes a test starts write
+beside the in-process data, so their lines count as `"in-process"`. A
 Python outcome of scope `own` recorded before, which the whole suite
 decided, still reads fresh while its tests are unchanged; `mutation sample`
 re-runs it with the narrowed tests, so a kill only another test made is a
