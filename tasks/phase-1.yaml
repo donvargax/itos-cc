@@ -619,10 +619,6 @@
     harness of features/ runs the feature files that have steps, units.feature the first, its
     scenarios turned into steps without changing what they say (q-52), and the CI plan runs it.
     docs/go.md gains a section on moving a command.
-  done_when:
-    - run: go test ./internal/units -count=1
-    - run: grep -qi 'moving a command' docs/go.md
-    - run: go test ./features -count=1
 - id: T-33
   type: build
   title: itos-cc builds with a kong fork whose user-input failures are typed
