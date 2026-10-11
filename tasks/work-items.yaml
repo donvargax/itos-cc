@@ -1292,3 +1292,20 @@ items:
       matching no test) or c8 (--all --include over an empty program) such files stay unproven and
       are coverage-missing, failing closed. Neither tool is installed in CI, so both need fixtures
       before they can be trusted.
+  - id: strict-lines-kotlin-lone-module
+    title: A Kotlin file no test reaches gets line evidence even when its module measures nothing else
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by strict-lines-kotlin (2026-10-10): a Kotlin file no test reaches has its lines listed,
+      all uncovered, from the JaCoCo or Kover report of another plan of its module, which lists
+      every compiled class. In a module where no selected file is reached, nothing runs and the file
+      is mutation.coverage-missing, failing closed: no report task writes a report without a test
+      run (no execution data; Gradle skips jacocoTestReport, and --tests matching nothing writes no
+      exec file even with failOnNoMatchingTests=false). Running the module's report over an empty
+      execution-data file, or JaCoCo's CLI report over the compiled classes, would list them without
+      running a test.
+    refs: ["#23"]
