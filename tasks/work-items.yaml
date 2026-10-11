@@ -1976,3 +1976,15 @@ items:
       itos-policy.yaml's tests.scenario.range_checks holds that outside feat and fix a live scenario
       only moves, unchanged; itos.yaml lacks it, so a test or refactor commit could reword a live
       scenario with no gate refusing it, now that scenarios run through godog.
+  - id: shared-selection-flags
+    title: Every moved command repeats --changed and the path arguments in its kong struct
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      units declares Changed and Paths itself; crap, dry, scrap and mutation take the same
+      selection. A slice cannot import another, so when the second command moves the selection's
+      flags need one home (an embedded struct the slices share, maybe in internal/cli or beside the
+      selection domain) so their help and words stay the same.
