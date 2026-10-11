@@ -2150,7 +2150,7 @@ Feature: Mutation testing
       And "itos-cc mutation check" passes
       But an exception whose mutant the fresh run killed, whose line changed, or whose function has no fresh results is not renewed, is reported with why, and stays "mutation.exception-stale"
 
-    @stale-fix-renew @ID-MUT-242 @wip
+    @stale-fix-renew @ID-MUT-242
     Scenario: A stale exception whose function changed names the renewal as its fix
       Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
       When I run "itos-cc mutation run src/board.ts --json"

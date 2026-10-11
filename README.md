@@ -785,7 +785,10 @@ new hash and the site, and each entry left stale stays
 `mutation.exception-stale` with why: `killed`, `changed` (its line's text
 changed), `gone`, `ambiguous`, `no-results` (no fresh results for its
 function) or `uncovered`, exit 1. A setup step can so re-prove a project a
-template rendered: `mutation run`, then `mutation except --renew`.
+template rendered: `mutation run`, then `mutation except --renew`. The fix
+`mutation run` and `mutation check` give an entry stale because its function
+`changed` names `mutation except --renew` first, before excepting the mutant
+again by hand.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's

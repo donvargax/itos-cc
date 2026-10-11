@@ -1891,7 +1891,8 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 			fix = "Remove its entry from " + config.File + ": the tests show that the mutant changes behaviour."
 		case mutate.ExceptionChanged:
 			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, config.File, change)
-			fix = fmt.Sprintf("If the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …' after mutation run; otherwise remove its entry from %s.", at, config.File)
+			fix = fmt.Sprintf("Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. "+
+				"If it is not renewed and the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …'; otherwise remove its entry from %s.", at, config.File)
 		case mutate.ExceptionGone:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, config.File, change)
 			if e.Line == 0 {
