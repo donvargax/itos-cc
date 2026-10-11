@@ -1546,3 +1546,18 @@ items:
       the old snapshot as an orphan, so the --since run that would have moved it to the new path
       finds nothing, and the file's unchanged functions lose their results until a full run. Before,
       the snapshot stayed until a --since run followed the rename. Blocks v0.13.0.
+  - id: outside-root-orphan-unreached
+    title: A gone outside-root file leaves a snapshot no run reaches
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since outside-root-snapshot-kept-fix, a snapshot is judged by the file it records, so the
+      snapshot of a gone file outside the project root is an orphan at that absolute path. A run
+      without paths at the root covers only the working directory, so it never removes it, and once
+      the file directory is gone too no path reaches it either: a path that does not exist is a
+      fragment, matched only beneath the working directory. It stays until removed by hand, unnamed
+      by mutation check at the root. Whether a run at the root should reach such orphans needs a
+      decision.
