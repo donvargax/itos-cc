@@ -7,6 +7,7 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/crap"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -119,11 +120,11 @@ func runCrap(in *invocation) (any, error) {
 		if e.CRAP == nil || *e.CRAP <= threshold {
 			continue
 		}
-		in.report(fail(kindNo, "crap.threshold",
+		in.report(cli.NewProblem(cli.CodeNo, "crap.threshold",
 			fmt.Sprintf("%s#%s scores %.1f, above the threshold %.1f", e.Namespace, e.Name, *e.CRAP, threshold),
 			"Cover it with tests or split it.").
-			with("file", e.File).with("line", e.StartLine).with("function", e.Namespace+"#"+e.Name).
-			with("crap", *e.CRAP).with("threshold", threshold))
+			With("file", e.File).With("line", e.StartLine).With("function", e.Namespace+"#"+e.Name).
+			With("crap", *e.CRAP).With("threshold", threshold))
 	}
 	return result, nil
 }

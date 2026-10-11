@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -114,12 +115,12 @@ func runCountedMutate(in *invocation) (any, error) {
 	}
 	count := in.integer("count")
 	if count < 1 {
-		return nil, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
-			"Give it 1 or more.").with("flag", "--count").with("value", in.str("count"))
+		return nil, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
+			"Give it 1 or more.").With("flag", "--count").With("value", in.str("count"))
 	}
 	if in.set("seed") && in.str("seed") == "" {
-		return nil, fail(kindUsage, "flags.value-invalid", "--seed needs a non-empty TEXT", "Give it a seed, or leave it out to seed with HEAD.").
-			with("flag", "--seed").with("value", "")
+		return nil, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", "--seed needs a non-empty TEXT", "Give it a seed, or leave it out to seed with HEAD.").
+			With("flag", "--seed").With("value", "")
 	}
 	for _, flag := range []struct{ name, why string }{
 		{"changed", "--changed judges the working tree, and --count judges committed inputs only; use --since"},
@@ -136,9 +137,9 @@ func runCountedMutate(in *invocation) (any, error) {
 		}
 	}
 	if countedPlatform != "linux" && countedPlatform != "darwin" {
-		return nil, fail(kindMissing, "count.platform",
+		return nil, cli.NewProblem(cli.CodeEnvironment, "count.platform",
 			fmt.Sprintf("mutation run --count supports Linux and macOS, where every command's process tree is owned; this is %s", countedPlatform),
-			"Run it on Linux or macOS, or run mutation run without --count; native Windows support is #29.").with("platform", countedPlatform)
+			"Run it on Linux or macOS, or run mutation run without --count; native Windows support is #29.").With("platform", countedPlatform)
 	}
 	root, err := countedRoot()
 	if err != nil {
@@ -206,12 +207,12 @@ func runCountedMutate(in *invocation) (any, error) {
 			s.Completion = "stopped"
 		}
 		s.Stop = "preparation failed at " + failed
-		k := kindNo
+		k := cli.CodeNo
 		if failed == "tools" {
-			k = kindMissing
+			k = cli.CodeEnvironment
 		}
-		in.report(fail(k, "count.preparation-failed", fmt.Sprintf("counted preparation failed at %s, so no mutant was judged: %v", failed, err),
-			"Make the committed tests and measurement succeed, then run again.").with("stage", failed))
+		in.report(cli.NewProblem(k, "count.preparation-failed", fmt.Sprintf("counted preparation failed at %s, so no mutant was judged: %v", failed, err),
+			"Make the committed tests and measurement succeed, then run again.").With("stage", failed))
 		printCounted(in, result)
 		return result, nil
 	}
@@ -411,7 +412,7 @@ func reportInterrupted(in *invocation, ctx context.Context, r *countedResult) {
 	if r != nil {
 		printCounted(in, r)
 	}
-	in.report(fail(kindTemporary, "count.interrupted",
+	in.report(cli.NewProblem(cli.CodeTemporary, "count.interrupted",
 		fmt.Sprintf("the counted run was %v, so its report is partial: only the judgments it shows are proven", context.Cause(ctx)),
 		"Run it again to judge the selection in full."))
 }
@@ -432,7 +433,7 @@ func countedRoot() (string, error) {
 }
 
 func countedNoGit(err error) error {
-	return fail(kindMissing, "count.no-git", "mutation run --count needs a Git repository with a commit at HEAD: "+err.Error(),
+	return cli.NewProblem(cli.CodeEnvironment, "count.no-git", "mutation run --count needs a Git repository with a commit at HEAD: "+err.Error(),
 		"Run it inside a Git repository, after committing the code to judge.")
 }
 
@@ -457,8 +458,8 @@ func countedPaths(root string, args []string) ([]string, error) {
 		}
 		rel, err := filepath.Rel(root, filepath.Clean(abs))
 		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			return nil, fail(kindUsage, "paths.unmatched", fmt.Sprintf("%q is outside the repository that --count judges", arg),
-				"Name paths inside the repository.").with("argument", arg)
+			return nil, cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is outside the repository that --count judges", arg),
+				"Name paths inside the repository.").With("argument", arg)
 		}
 		paths = append(paths, filepath.ToSlash(rel))
 	}
@@ -471,16 +472,16 @@ func countedPlanError(in *invocation, err error) error {
 	case errors.Is(err, mutate.ErrFreshRepository):
 		return countedNoGit(err)
 	case errors.Is(err, mutate.ErrFreshSince):
-		return fail(kindUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", in.str("since")),
-			"Name a commit, branch, or tag that exists, such as origin/main.").with("ref", in.str("since"))
+		return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", in.str("since")),
+			"Name a commit, branch, or tag that exists, such as origin/main.").With("ref", in.str("since"))
 	case errors.Is(err, mutate.ErrFreshPath):
-		return fail(kindUsage, "paths.unmatched", err.Error(), "Name committed source paths.")
+		return cli.NewProblem(cli.CodeUsage, "paths.unmatched", err.Error(), "Name committed source paths.")
 	case errors.Is(err, mutate.ErrFreshScratch):
-		return fail(kindNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+err.Error(),
+		return cli.NewProblem(cli.CodeNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+err.Error(),
 			"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
-			with("stage", "scratch")
+			With("stage", "scratch")
 	case errors.Is(err, mutate.ErrFreshUnsupported):
-		return fail(kindUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+err.Error(),
+		return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+err.Error(),
 			"Judge paths without it, or run mutation run without --count.")
 	}
 	return err
@@ -628,11 +629,11 @@ func reportCounted(in *invocation, r *countedResult, failUncovered func(countedS
 	}
 }
 
-func countedMutantProblem(site countedSite, m mutate.Mutant, rule, verdict, fix string) *problem {
-	return fail(kindNo, rule,
+func countedMutantProblem(site countedSite, m mutate.Mutant, rule, verdict, fix string) *cli.Problem {
+	return cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", site.File, m.Line, m.Column, quote(m.Original), quote(m.Replacement), site.Function, verdict), fix).
-		with("file", site.File).with("line", m.Line).with("column", m.Column).with("function", site.Function).
-		with("original", m.Original).with("replacement", m.Replacement).with("identity", site.Identity)
+		With("file", site.File).With("line", m.Line).With("column", m.Column).With("function", site.Function).
+		With("original", m.Original).With("replacement", m.Replacement).With("identity", site.Identity)
 }
 
 // reportCountedStrictGo reports, for every admitted Go function, sites or

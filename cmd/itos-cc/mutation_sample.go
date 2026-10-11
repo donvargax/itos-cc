@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -127,8 +128,8 @@ func runMutationSample(in *invocation) (any, error) {
 	result := sampleResult{Files: []sampleFile{}}
 	count := in.integer("count")
 	if count < 1 {
-		return result, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
-			"Give it 1 or more.").with("flag", "--count").with("value", in.str("count"))
+		return result, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
+			"Give it 1 or more.").With("flag", "--count").With("value", in.str("count"))
 	}
 	sources, judge, _, _, err := mutationSelection(in)
 	if err != nil {
@@ -193,8 +194,8 @@ func runMutationSample(in *invocation) (any, error) {
 			if !in.json {
 				fmt.Printf("%s: baseline tests fail; no sampled mutant ran\n%s\n", f.Rel, tail(f.BaselineOutput, 20))
 			}
-			in.report(fail(kindNo, "mutation.baseline-failed", f.Rel+": its tests fail before any mutant, so none was run",
-				"Make its tests pass, then run mutation sample again.").with("file", f.Rel))
+			in.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", f.Rel+": its tests fail before any mutant, so none was run",
+				"Make its tests pass, then run mutation sample again.").With("file", f.Rel))
 			continue
 		}
 		out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}
@@ -225,7 +226,7 @@ func sampleSeed(in *invocation) (string, error) {
 	id, err := project.Head()
 	var noGit *project.NoGitError
 	if errors.As(err, &noGit) {
-		return "", fail(kindMissing, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+noGit.Reason,
+		return "", cli.NewProblem(cli.CodeEnvironment, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+noGit.Reason,
 			"Run it inside a git repository, or give the seed with --seed.")
 	}
 	return id, err
@@ -240,14 +241,14 @@ func reportMismatch(in *invocation, rel string, m mutate.SampledMutant) {
 		fmt.Printf("  mismatch %s:%d:%d %s → %s in %s: recorded %s, now %s\n", rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), m.Function, m.Recorded, m.Outcome)
 	}
-	p := fail(kindNo, "mutation.mismatch",
+	p := cli.NewProblem(cli.CodeNo, "mutation.mismatch",
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s was recorded %s, and is %s now", rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), m.Function, m.Recorded, m.Outcome),
 		fmt.Sprintf("The cached results are not what the tests do: run '%s', and commit .metrics/mutate/ with the code.", rerunIn(m.Scope, rel))).
-		with("file", rel).with("line", m.Line).with("column", m.Column).with("function", m.Function).
-		with("original", m.Original).with("replacement", m.Replacement).
-		with("recorded", m.Recorded).with("outcome", m.Outcome).with("scope", m.Scope)
-	p.shown = true
+		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", m.Function).
+		With("original", m.Original).With("replacement", m.Replacement).
+		With("recorded", m.Recorded).With("outcome", m.Outcome).With("scope", m.Scope)
+	p.Shown = true
 	in.report(p)
 }
 

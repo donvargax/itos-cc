@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/count"
 )
 
 // version is set at release time with -ldflags '-X main.version=…'. A binary
@@ -37,8 +39,8 @@ var versionCommand = &command{
 	examples: []string{"itos-cc version", "itos-cc --version --json"},
 	run: func(in *invocation) (any, error) {
 		if len(in.args) > 0 {
-			return nil, fail(kindUsage, "args.unexpected", fmt.Sprintf("version takes no arguments, and was given %q", in.args[0]),
-				"Run 'itos-cc version' alone.").with("argument", in.args[0])
+			return nil, cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("version takes no arguments, and was given %q", in.args[0]),
+				"Run 'itos-cc version' alone.").With("argument", in.args[0])
 		}
 		if !in.json {
 			fmt.Println("itos-cc", versionString())
@@ -95,12 +97,24 @@ Examples:
   itos-cc crap --top 20
   itos-cc mutation run --changed --json
 
-Report issues at ` + issues + "\n")
+Report issues at ` + cli.Issues + "\n")
 	return b.String()
 }
 
 func main() {
 	os.Exit(run(os.Args[1:]))
+}
+
+// classifiers are each domain's, which turn its sealed failures into
+// problems for internal/cli: the sample count slice's, for the counting
+// domain, until it is wired as a command or dropped. A problem itos-cc's
+// commands report is its own and needs none.
+var classifiers = []cli.Classifier{count.Classify}
+
+// stdUI is the UI of this process: its standard streams as they are when it
+// is called, so a test that swaps os.Stdout reads what it prints.
+func stdUI() *cli.UI {
+	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers}
 }
 
 // init makes this executable the one go test runs each test binary through
@@ -132,15 +146,15 @@ func run(args []string) int {
 		case "--version":
 			args = append([]string{"version"}, args...)
 		default:
-			p := fail(kindUsage, "flags.unknown", fmt.Sprintf("itos-cc takes no flag %s before a command", a),
-				"Put a command's flags after its name; run 'itos-cc --help' for the commands.").with("flag", a)
-			return emit(asJSON, nil, []*problem{p})
+			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("itos-cc takes no flag %s before a command", a),
+				"Put a command's flags after its name; run 'itos-cc --help' for the commands.").With("flag", a)
+			return stdUI().Emit(asJSON, nil, []*cli.Problem{p})
 		}
 	}
 	if len(args) == 0 {
 		if asJSON {
-			p := fail(kindUsage, "command.missing", "no command given", "Name a command; run 'itos-cc --help' for them.")
-			return emit(true, nil, []*problem{p})
+			p := cli.NewProblem(cli.CodeUsage, "command.missing", "no command given", "Name a command; run 'itos-cc --help' for them.")
+			return stdUI().Emit(true, nil, []*cli.Problem{p})
 		}
 		fmt.Print(usage())
 		return 0
@@ -154,7 +168,7 @@ func run(args []string) int {
 	}
 	cmd, ok := commands[name]
 	if !ok {
-		return emit(asJSON, nil, []*problem{unknownCommand(name)})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownCommand(name)})
 	}
 	if cmd.subs != nil {
 		return runGroup(cmd, rest)
@@ -182,24 +196,24 @@ func runGroup(g *command, args []string) int {
 			fmt.Print(g.groupHelp())
 			return 0
 		default:
-			p := fail(kindUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s before a subcommand", g.name, a),
-				fmt.Sprintf("Put a subcommand's flags after its name; run 'itos-cc %s --help' for the subcommands.", g.name)).with("flag", a)
-			return emit(asJSON, nil, []*problem{p})
+			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s before a subcommand", g.name, a),
+				fmt.Sprintf("Put a subcommand's flags after its name; run 'itos-cc %s --help' for the subcommands.", g.name)).With("flag", a)
+			return stdUI().Emit(asJSON, nil, []*cli.Problem{p})
 		}
 		args = args[1:]
 	}
 	if len(args) == 0 {
 		if asJSON {
-			p := fail(kindUsage, "command.missing", fmt.Sprintf("%s needs a subcommand", g.name),
+			p := cli.NewProblem(cli.CodeUsage, "command.missing", fmt.Sprintf("%s needs a subcommand", g.name),
 				fmt.Sprintf("Name one of %s; run 'itos-cc %s --help' for them.", andList(g.subNames()), g.name))
-			return emit(true, nil, []*problem{p})
+			return stdUI().Emit(true, nil, []*cli.Problem{p})
 		}
 		fmt.Print(g.groupHelp())
 		return 0
 	}
 	sub := g.sub(args[0])
 	if sub == nil {
-		return emit(asJSON, nil, []*problem{unknownSubcommand(g, args[0])})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(g, args[0])})
 	}
 	return execute(sub, args[1:])
 }
@@ -218,7 +232,7 @@ func help(args []string, asJSON bool) int {
 	}
 	cmd := commands[topics[0]]
 	if cmd == nil {
-		return emit(asJSON, nil, []*problem{unknownCommand(topics[0])})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownCommand(topics[0])})
 	}
 	// A group takes one more topic, its subcommand.
 	most := 1
@@ -227,10 +241,10 @@ func help(args []string, asJSON bool) int {
 	}
 	switch {
 	case len(topics) > most:
-		return emit(asJSON, nil, []*problem{fail(kindUsage, "args.unexpected", fmt.Sprintf("help takes one command, and was given %q too", topics[most]),
-			"Run 'itos-cc help <command>', or 'itos-cc help <group> <command>'.").with("argument", topics[most])})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("help takes one command, and was given %q too", topics[most]),
+			"Run 'itos-cc help <command>', or 'itos-cc help <group> <command>'.").With("argument", topics[most])})
 	case len(topics) == 2 && cmd.sub(topics[1]) == nil:
-		return emit(asJSON, nil, []*problem{unknownSubcommand(cmd, topics[1])})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(cmd, topics[1])})
 	case len(topics) == 2:
 		fmt.Print(cmd.sub(topics[1]).help())
 	case cmd.subs != nil:
@@ -241,23 +255,23 @@ func help(args []string, asJSON bool) int {
 	return 0
 }
 
-func unknownCommand(name string) *problem {
-	p := fail(kindUsage, "command.unknown", fmt.Sprintf("there is no command %q", name), "Run 'itos-cc --help' for the commands.")
+func unknownCommand(name string) *cli.Problem {
+	p := cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", name), "Run 'itos-cc --help' for the commands.")
 	if guess := closest(name, sortedNames(commands)); guess != "" {
-		p.fix = fmt.Sprintf("Did you mean '%s'? Run 'itos-cc --help' for the commands.", guess)
+		p.Fix = fmt.Sprintf("Did you mean '%s'? Run 'itos-cc --help' for the commands.", guess)
 	}
-	return p.with("command", name)
+	return p.With("command", name)
 }
 
 // unknownSubcommand is the problem of a subcommand that group g lacks: it
 // names g's subcommands, and the one meant when it can guess it.
-func unknownSubcommand(g *command, name string) *problem {
+func unknownSubcommand(g *command, name string) *cli.Problem {
 	full := g.name + " " + name
 	fix := fmt.Sprintf("The subcommands of %s are %s. Run 'itos-cc %s --help' for them.", g.name, andList(g.subNames()), g.name)
 	if guess := closest(name, g.subNames()); guess != "" {
 		fix = fmt.Sprintf("Did you mean '%s %s'? ", g.name, guess) + fix
 	}
-	return fail(kindUsage, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).with("command", full)
+	return cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)
 }
 
 // leaves is every command that runs, a group's subcommands in its place.

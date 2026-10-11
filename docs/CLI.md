@@ -36,7 +36,9 @@ release instead: itos-cc is at 0.x.
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 
 A run with problems of several kinds exits with the first of 2, 70, 3, 75,
-and 1 that it has.
+and 1 that it has, not the highest code (q-54). Every command reports
+through `internal/cli`, whose `Precedence` holds this order and puts 130,
+an interrupt, before it; no command reports an interrupt yet.
 
 ### `--json`
 
@@ -58,7 +60,9 @@ included, prints the object too, with `"ok": false` and its problems:
 ```
 
 `rule` is a stable id; the other keys besides `message` and `fix` are the
-problem's subject. Progress and test output go to stderr, never stdout:
+problem's subject. A subject key is never named `rule`, `message`, `fix` or
+`exit`: these are reserved, `exit` for each problem's own exit code, and
+`internal/cli` refuses a subject key of one of them. Progress and test output go to stderr, never stdout:
 each line itos-cc writes there itself begins `itos-cc:`, such as
 `itos-cc: coverage <dir>$ <command>` before a coverage command runs, and the
 output of the commands it runs passes as it is.
@@ -462,4 +466,4 @@ verdict and no exit code changes for it.
 | 17 | `--threshold` is a CRAP score in `crap` and a similarity in `dry`. | `crap --threshold 30`, `dry --threshold 0.9` |
 | 32 | An internal error's message is Go's error text. | a source file that cannot be read |
 | Shell completion, go-template-itos's rule 41 | No `completion <shell>` command and no hidden `__complete`, so no shell completes itos-cc's commands and flags. | `itos-cc completion bash` exits 2 as an unknown command |
-| Exit 130 on interrupt, go-template-itos's rule 42 | Ctrl-C does not cancel a command's context and exit 130 with one stderr line (`INTERRUPTED` with `--json`): most commands end by the system's default action, `mutation run --count` exits 75 with `count.interrupted`, and `serve` shuts down and exits 0. | Ctrl-C during `itos-cc crap` |
+| Exit 130 on interrupt, go-template-itos's rule 42 | Ctrl-C does not cancel a command's context and exit 130 with one stderr line (`interrupted` with `--json`): most commands end by the system's default action, `mutation run --count` exits 75 with `count.interrupted`, and `serve` shuts down and exits 0. | Ctrl-C during `itos-cc crap` |

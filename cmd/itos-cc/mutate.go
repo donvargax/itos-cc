@@ -14,6 +14,7 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/graph"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -661,8 +662,8 @@ func changedLinesOnly(in *invocation) (bool, error) {
 		return false, nil
 	}
 	if !in.set("since") {
-		return false, fail(kindUsage, "flags.conflict", "--fail-uncovered=lines judges only the lines a --since range changed, and was given without --since",
-			"Add --since REF, such as --since origin/main, or write --fail-uncovered alone to judge whole functions.").with("flag", "--fail-uncovered=lines")
+		return false, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--fail-uncovered=lines judges only the lines a --since range changed, and was given without --since",
+			"Add --since REF, such as --since origin/main, or write --fail-uncovered alone to judge whole functions.").With("flag", "--fail-uncovered=lines")
 	}
 	return true, nil
 }
@@ -715,9 +716,9 @@ func runMutate(in *invocation) (any, error) {
 	failFast := in.set("fail-fast")
 	if failFast {
 		if countedPlatform != "linux" && countedPlatform != "darwin" {
-			return result, fail(kindMissing, "fail-fast.platform",
+			return result, cli.NewProblem(cli.CodeEnvironment, "fail-fast.platform",
 				fmt.Sprintf("mutation run --fail-fast supports Linux and macOS, where every command's process tree is owned and a stop can end it; this is %s", countedPlatform),
-				"Run it on Linux or macOS, or run mutation run without --fail-fast; native Windows support is #29.").with("platform", countedPlatform)
+				"Run it on Linux or macOS, or run mutation run without --fail-fast; native Windows support is #29.").With("platform", countedPlatform)
 		}
 		result.Stop, result.Work = &mutateStop{}, &mutateWork{}
 	}
@@ -909,13 +910,13 @@ func runMutate(in *invocation) (any, error) {
 			others = append(others, integrationToJudge(report, filesToJudge(sources, mutationChecks, in.set("mutate-all")))...)
 			if strictGo && measure["go"] && (missingGo || !report.Measures("go")) {
 				for _, p := range unmeasured(report) {
-					if p.subject["language"] == "go" {
+					if p.Subject("language") == "go" {
 						in.report(p)
 					}
 				}
 				if !missingGo {
-					in.report(fail(kindMissing, "coverage.no-report", "Go coverage measurement did not produce executable coverage",
-						"Run the built-in Go coverage command successfully, then retry.").with("language", "go"))
+					in.report(cli.NewProblem(cli.CodeEnvironment, "coverage.no-report", "Go coverage measurement did not produce executable coverage",
+						"Run the built-in Go coverage command successfully, then retry.").With("language", "go"))
 				}
 				for _, p := range others {
 					in.report(p)
@@ -1049,8 +1050,8 @@ func runMutate(in *invocation) (any, error) {
 				}
 			}
 			if r.BaselineFailed {
-				in.report(fail(kindNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
-					"Make its tests pass, then run mutation run again.").with("file", r.Rel))
+				in.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
+					"Make its tests pass, then run mutation run again.").With("file", r.Rel))
 			}
 			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
 			for _, m := range r.Mutants {
@@ -1076,8 +1077,8 @@ func runMutate(in *invocation) (any, error) {
 			if !in.json {
 				fmt.Printf("%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, tail(r.BaselineOutput, 20))
 			}
-			in.report(fail(kindNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
-				"Make its tests pass, then run mutation run again.").with("file", r.Rel))
+			in.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
+				"Make its tests pass, then run mutation run again.").With("file", r.Rel))
 			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 			continue
 		}
@@ -1328,10 +1329,10 @@ func reportFailedSelections(in *invocation, failed []mutate.FailedSelection, rep
 		if !in.json {
 			fmt.Printf("listed tests %s fail without any mutant\n%s\n", ids, tail(f.Output, 20))
 		}
-		in.report(fail(kindNo, "tests.selection-failed",
+		in.report(cli.NewProblem(cli.CodeNo, "tests.selection-failed",
 			fmt.Sprintf("the listed tests %s fail without any mutant, so no mutant that would run them was judged: %s", ids, f.Command),
 			fmt.Sprintf("Make them pass when they run alone, as that command runs them, then run %s again.", cmd)).
-			with("ids", f.IDs).with("command", f.Command).with("exit_code", f.ExitCode))
+			With("ids", f.IDs).With("command", f.Command).With("exit_code", f.ExitCode))
 	}
 }
 
@@ -1362,9 +1363,9 @@ func loadConfig() (*config.Config, error) {
 	c, err := config.Load()
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return nil, fail(kindUsage, "config.invalid", invalid.Error(),
+		return nil, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(),
 			"Fix it: each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").
-			with("file", config.File)
+			With("file", config.File)
 	}
 	return c, err
 }
@@ -1379,7 +1380,7 @@ func supportNow(cfg *config.Config) (map[string]string, error) {
 }
 
 func flagConflict(flag, message string) error {
-	return fail(kindUsage, "flags.conflict", message, "Drop the incompatible flag and run again.").with("flag", flag)
+	return cli.NewProblem(cli.CodeUsage, "flags.conflict", message, "Drop the incompatible flag and run again.").With("flag", flag)
 }
 
 func flagPresent(in *invocation, flag string) bool {
@@ -1409,7 +1410,7 @@ func rawCoverage(in *invocation) bool {
 // problem unmeasured gives it, as Go does (ADR-0017). A file of a language
 // measured elsewhere in the run is uncovered instead, as before, and a file
 // with nothing to judge needs no coverage.
-func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutate.FileCheck, mutateAll bool) []*problem {
+func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutate.FileCheck, mutateAll bool) []*cli.Problem {
 	var found []coverage.Unmeasured
 	seen := map[int]bool{}
 	for i, source := range sources {
@@ -1464,7 +1465,7 @@ func filesToJudge(sources []string, checks []mutate.FileCheck, mutateAll bool) [
 // file of its language under it has mutants to judge (files): its lines
 // such a process runs would be judged uncovered. Without --fail-uncovered
 // the run goes on without integration coverage, as coverage logged.
-func integrationToJudge(report *coverage.Report, files []string) []*problem {
+func integrationToJudge(report *coverage.Report, files []string) []*cli.Problem {
 	var found []coverage.Unmeasured
 	for _, m := range report.IntegrationMissing() {
 		dir, err := filepath.Abs(m.Dir)
@@ -1704,9 +1705,9 @@ func reportLanguageCoverageProblem(in *invocation, language, file, function stri
 	if rule == "mutation.coverage-unsupported" {
 		fix = "Strict coverage cannot prove inputs beyond the inventoried root: keep them inside it, or judge this code without --fail-uncovered."
 	}
-	p := fail(kindNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message), fix).
-		with("file", file).with("function", function).with("line", line)
-	p.shown = true
+	p := cli.NewProblem(cli.CodeNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message), fix).
+		With("file", file).With("function", function).With("line", line)
+	p.Shown = true
 	in.report(p)
 }
 
@@ -1736,10 +1737,10 @@ func listTests(tests *config.Tests) ([]coverage.Test, error) {
 		if errors.As(err, &exit) {
 			code = exit.ExitCode()
 		}
-		return nil, fail(kindNo, "tests.list-failed",
+		return nil, cli.NewProblem(cli.CodeNo, "tests.list-failed",
 			fmt.Sprintf("the list command of mutation.tests in %s failed (%v), so no mutant was judged: %s", config.File, err, tests.List),
 			"Make the command print the tests, one a line, and exit 0, then run again.").
-			with("command", tests.List).with("exit_code", code)
+			With("command", tests.List).With("exit_code", code)
 	}
 	var listed []coverage.Test
 	seen := map[string]bool{}
@@ -1780,12 +1781,12 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 		fmt.Printf("  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), function)
 	}
-	p := fail(kindNo, rule,
+	p := cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, quote(m.Original), quote(m.Replacement), function, verdict),
 		fix).
-		with("file", rel).with("line", m.Line).with("column", m.Column).with("function", function).
-		with("original", m.Original).with("replacement", m.Replacement)
-	p.shown = true
+		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", function).
+		With("original", m.Original).With("replacement", m.Replacement)
+	p.Shown = true
 	in.report(p)
 }
 
@@ -1794,18 +1795,18 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // tree, --since functions of commits, and together they would judge neither.
 func changedSince(in *invocation) (map[string]project.ChangedFunctions, map[string]string, error) {
 	if in.set("changed") {
-		return nil, nil, fail(kindUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
-			"Drop --changed; commit the work to judge it with --since.").with("flag", "--changed")
+		return nil, nil, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
+			"Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
 	}
 	ref := in.str("since")
 	changed, renamed, err := project.ChangedSince(ref, mutate.UnitHash)
 	var noGit *project.NoGitError
 	switch {
 	case errors.Is(err, project.ErrBadRef):
-		return nil, nil, fail(kindUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
-			"Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").with("ref", ref)
+		return nil, nil, cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
+			"Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").With("ref", ref)
 	case errors.As(err, &noGit):
-		return nil, nil, fail(kindMissing, "since.no-git", "--since needs a git repository: "+noGit.Reason,
+		return nil, nil, cli.NewProblem(cli.CodeEnvironment, "since.no-git", "--since needs a git repository: "+noGit.Reason,
 			"Run it inside a git repository, or name the paths instead.")
 	}
 	return changed, renamed, err
@@ -1907,9 +1908,11 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 				at, config.File, change, newFile)
 			fix = fmt.Sprintf("Change the entry's file in %s from %s to %s, where its function is now.", config.File, e.File, e.NewFile)
 		}
-		p := fail(kindNo, "mutation.exception-stale", message, fix)
-		p.subject = staleSubject(rel, e)
-		p.shown = true
+		p := cli.NewProblem(cli.CodeNo, "mutation.exception-stale", message, fix)
+		for key, value := range staleSubject(rel, e) {
+			p.With(key, value)
+		}
+		p.Shown = true
 		in.report(p)
 	}
 }

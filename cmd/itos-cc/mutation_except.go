@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -129,27 +130,27 @@ func runMutationExcept(in *invocation) (any, error) {
 	}
 	var result exceptResult
 	if !in.set("reason") {
-		return result, fail(kindUsage, "flags.value-missing", "--reason is required: an exception says why no test can kill its mutant",
-			"Give it, such as --reason 'the loop only counts up'.").with("flag", "--reason")
+		return result, cli.NewProblem(cli.CodeUsage, "flags.value-missing", "--reason is required: an exception says why no test can kill its mutant",
+			"Give it, such as --reason 'the loop only counts up'.").With("flag", "--reason")
 	}
 	reason := in.str("reason")
 	if strings.TrimSpace(reason) == "" {
-		return result, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--reason needs a reason, and was given %q", reason),
-			"Say why no test can kill the mutant.").with("flag", "--reason").with("value", reason)
+		return result, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--reason needs a reason, and was given %q", reason),
+			"Say why no test can kill the mutant.").With("flag", "--reason").With("value", reason)
 	}
 	switch len(in.args) {
 	case 0:
-		return result, fail(kindUsage, "args.missing", "mutation except needs the site to except, as <file>:<line>:<column>",
+		return result, cli.NewProblem(cli.CodeUsage, "args.missing", "mutation except needs the site to except, as <file>:<line>:<column>",
 			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.")
 	case 1:
 	default:
-		return result, fail(kindUsage, "args.unexpected", fmt.Sprintf("mutation except takes one site, and was also given %q", in.args[1]),
-			"Except one site at a time.").with("argument", in.args[1])
+		return result, cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("mutation except takes one site, and was also given %q", in.args[1]),
+			"Except one site at a time.").With("argument", in.args[1])
 	}
 	path, line, column, ok := parseSite(in.args[0])
 	if !ok {
-		return result, fail(kindUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", in.args[0]),
-			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").with("argument", in.args[0])
+		return result, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", in.args[0]),
+			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", in.args[0])
 	}
 	// An unreadable file is refused before any work.
 	cfg, err := loadConfig()
@@ -168,9 +169,9 @@ func runMutationExcept(in *invocation) (any, error) {
 	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))
-		return result, fail(kindUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", rel, line, column, none.Reason),
+		return result, cli.NewProblem(cli.CodeUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", rel, line, column, none.Reason),
 			fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", rel)).
-			with("file", rel).with("line", line).with("column", column)
+			With("file", rel).With("line", line).With("column", column)
 	}
 	if err != nil {
 		return result, err
@@ -179,7 +180,7 @@ func runMutationExcept(in *invocation) (any, error) {
 	replaced, err := config.Except(e)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return result, fail(kindUsage, "config.invalid", invalid.Error(), "Fix it, then except the site again.").with("file", config.File)
+		return result, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(), "Fix it, then except the site again.").With("file", config.File)
 	}
 	if err != nil {
 		return result, err
@@ -264,12 +265,12 @@ type renewResult struct {
 func runRenewExceptions(in *invocation) (any, error) {
 	result := renewResult{Renewed: []renewedJSON{}, NotRenewed: []notRenewedJSON{}}
 	if in.set("reason") {
-		return result, fail(kindUsage, "flags.conflict", "--renew keeps each entry's own reason, and was given --reason",
-			"Drop --reason; to except a survivor with a new reason, name its site without --renew.").with("flag", "--reason")
+		return result, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--renew keeps each entry's own reason, and was given --reason",
+			"Drop --reason; to except a survivor with a new reason, name its site without --renew.").With("flag", "--reason")
 	}
 	if len(in.args) > 0 {
-		return result, fail(kindUsage, "args.unexpected", fmt.Sprintf("--renew renews every stale entry of %s, and takes no site, but was given %q", config.File, in.args[0]),
-			"Drop the site, or drop --renew to except that survivor.").with("argument", in.args[0])
+		return result, cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("--renew renews every stale entry of %s, and takes no site, but was given %q", config.File, in.args[0]),
+			"Drop the site, or drop --renew to except that survivor.").With("argument", in.args[0])
 	}
 	cfg, err := loadConfig()
 	if err != nil {
@@ -301,7 +302,7 @@ func runRenewExceptions(in *invocation) (any, error) {
 	err = config.Renew(writes)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return result, fail(kindUsage, "config.invalid", invalid.Error(), "Fix it, then renew again.").with("file", config.File)
+		return result, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(), "Fix it, then renew again.").With("file", config.File)
 	}
 	if err != nil {
 		return result, err
@@ -330,15 +331,15 @@ func runRenewExceptions(in *invocation) (any, error) {
 		if !in.json {
 			fmt.Printf("  not renewed %s %s (%s)\n", at, change, u.Why)
 		}
-		p := fail(kindNo, "mutation.exception-stale",
+		p := cli.NewProblem(cli.CodeNo, "mutation.exception-stale",
 			fmt.Sprintf("%s: the entry in %s for %s was not renewed: %s", at, config.File, change, notRenewedBecause(u.Why)),
 			notRenewedFix(u.Why))
-		p.subject = map[string]any{"file": rel, "function": u.Function, "column": u.Column,
-			"original": u.Original, "replacement": u.Replacement, "why": u.Why}
+		p.With("file", rel).With("function", u.Function).With("column", u.Column).
+			With("original", u.Original).With("replacement", u.Replacement).With("why", u.Why)
 		if u.Line != 0 {
-			p.subject["line"] = u.Line
+			p.With("line", u.Line)
 		}
-		p.shown = true
+		p.Shown = true
 		in.report(p)
 	}
 	return result, nil

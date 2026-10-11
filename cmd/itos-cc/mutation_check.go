@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/mutate"
 )
 
@@ -354,9 +355,9 @@ func reportFunction(in *invocation, rel string, fn mutate.FunctionCheck, rule, v
 	if !in.json {
 		fmt.Printf("  %s %s:%d in %s\n", what, rel, fn.StartLine, fn.Function)
 	}
-	p := fail(kindNo, rule, fmt.Sprintf("%s:%d: %s %s", rel, fn.StartLine, fn.Function, verdict),
+	p := cli.NewProblem(cli.CodeNo, rule, fmt.Sprintf("%s:%d: %s %s", rel, fn.StartLine, fn.Function, verdict),
 		fmt.Sprintf("Run 'itos-cc mutation run %s', and commit .metrics/mutate/ with the code.", rel)).
-		with("file", rel).with("line", fn.StartLine).with("function", fn.Function)
-	p.shown = true
+		With("file", rel).With("line", fn.StartLine).With("function", fn.Function)
+	p.Shown = true
 	in.report(p)
 }

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/server"
 )
 
@@ -59,7 +60,7 @@ func runServe(in *invocation) (any, error) {
 	logger := log.New(os.Stderr, "itos-cc: ", 0)
 	srv, err := server.New(roots, in.str("ui"), logger)
 	if err != nil {
-		return nil, fail(kindUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
+		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -68,8 +69,8 @@ func runServe(in *invocation) (any, error) {
 	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(in.integer("port")))
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		return nil, fail(kindTemporary, "serve.port-in-use", fmt.Sprintf("cannot listen on %s: %v", addr, err),
-			"Stop what uses the port, or choose another with --port.").with("port", in.integer("port"))
+		return nil, cli.NewProblem(cli.CodeTemporary, "serve.port-in-use", fmt.Sprintf("cannot listen on %s: %v", addr, err),
+			"Stop what uses the port, or choose another with --port.").With("port", in.integer("port"))
 	}
 	httpServer := &http.Server{Handler: srv.Handler()}
 	go func() {

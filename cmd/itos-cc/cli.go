@@ -1,74 +1,20 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/donvargax/itos-cc/internal/cli"
 )
 
-// The contract with scripts is the exit code, the --json object less its
-// "message" and "fix" keys, and the files under .metrics/. Plain output is
-// for people and may change in any release. See docs/CLI.md.
-
-// kind is what sort of outcome a problem is. It is the exit code.
-type kind int
-
-const (
-	kindNo        kind = 1  // a check said no
-	kindUsage     kind = 2  // a usage or config error
-	kindMissing   kind = 3  // the environment lacks something
-	kindInternal  kind = 70 // an error nothing classified
-	kindTemporary kind = 75 // may pass when run again unchanged
-)
-
-// precedence picks the exit code of a run with problems of several kinds:
-// the one that says the most about why nothing else could be trusted.
-var precedence = []kind{kindUsage, kindInternal, kindMissing, kindTemporary, kindNo}
-
-const issues = "https://github.com/donvargax/itos-cc/issues"
-
-// problem is one reason a run did not succeed. Rule is a stable id scripts
-// switch on; message and fix are sentences for people. Subject holds what
-// the problem is about, such as file, line, and function, as keys of its
-// own, so no script parses a message.
-type problem struct {
-	kind    kind
-	rule    string
-	message string
-	fix     string
-	subject map[string]any
-	// shown is set when plain output already shows the problem, so it is not
-	// repeated on stderr.
-	shown bool
-}
-
-func fail(k kind, rule, message, fix string) *problem {
-	return &problem{kind: k, rule: rule, message: message, fix: fix, subject: map[string]any{}}
-}
-
-func (p *problem) with(key string, value any) *problem {
-	p.subject[key] = value
-	return p
-}
-
-func (p *problem) Error() string { return p.message }
-
-func (p *problem) MarshalJSON() ([]byte, error) {
-	out := map[string]any{"rule": p.rule, "message": p.message}
-	if p.fix != "" {
-		out["fix"] = p.fix
-	}
-	for k, v := range p.subject {
-		out[k] = v
-	}
-	return json.Marshal(out)
-}
+// The command line's own flag parser and help. Every command reports
+// through internal/cli: its problems, the --json object, the plain lines
+// and the exit code.
 
 // flagType is what a flag's value must parse as. A switch takes none.
 type flagType int
@@ -131,7 +77,7 @@ type command struct {
 }
 
 type exitDoc struct {
-	code    kind
+	code    int
 	meaning string
 }
 
@@ -146,7 +92,7 @@ type invocation struct {
 	values   map[string][]string
 	args     []string
 	json     bool
-	problems []*problem
+	problems []*cli.Problem
 }
 
 func (in *invocation) set(name string) bool { return len(in.values[name]) > 0 }
@@ -181,10 +127,10 @@ func (in *invocation) duration(name string) time.Duration {
 	return d
 }
 
-func (in *invocation) report(p *problem) { in.problems = append(in.problems, p) }
+func (in *invocation) report(p *cli.Problem) { in.problems = append(in.problems, p) }
 
 // errHelp is returned by parse when help was asked for.
-var errHelp = fail(0, "help", "help", "")
+var errHelp = cli.NewProblem(0, "help", "help", "")
 
 // parse reads args against the command's flags: --flag value and
 // --flag=value, flags in any position, -- to end them, and -h or --help
@@ -223,33 +169,33 @@ func parse(cmd *command, args []string) (*invocation, error) {
 		name, value, hasValue := strings.Cut(strings.TrimLeft(a, "-"), "=")
 		f, known := specs[name]
 		if !known || !strings.HasPrefix(a, "--") {
-			p := fail(kindUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", cmd.name, a), "")
+			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", cmd.name, a), "")
 			if guess := closest("--"+name, flagNames(cmd)); guess != "" {
-				p.fix = fmt.Sprintf("Did you mean %s? Run 'itos-cc %s --help' for its flags.", guess, cmd.name)
+				p.Fix = fmt.Sprintf("Did you mean %s? Run 'itos-cc %s --help' for its flags.", guess, cmd.name)
 			} else {
-				p.fix = fmt.Sprintf("Run 'itos-cc %s --help' for its flags.", cmd.name)
+				p.Fix = fmt.Sprintf("Run 'itos-cc %s --help' for its flags.", cmd.name)
 			}
-			return in, p.with("flag", a)
+			return in, p.With("flag", a)
 		}
 		if len(in.values[name]) > 0 && !f.repeat {
-			return in, fail(kindUsage, "flags.repeated", fmt.Sprintf("--%s is given more than once", name),
-				"Give it once.").with("flag", "--"+name)
+			return in, cli.NewProblem(cli.CodeUsage, "flags.repeated", fmt.Sprintf("--%s is given more than once", name),
+				"Give it once.").With("flag", "--"+name)
 		}
 		switch {
 		case f.typ == switchFlag && hasValue && len(f.choices) > 0 && !slices.Contains(f.choices, value):
-			return in, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--%s takes %s, and was given %q", name, choiceList(f.choices), value),
-				fmt.Sprintf("Write --%s alone, or --%s=%s.", name, name, f.choices[0])).with("flag", "--"+name).with("value", value)
+			return in, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s takes %s, and was given %q", name, choiceList(f.choices), value),
+				fmt.Sprintf("Write --%s alone, or --%s=%s.", name, name, f.choices[0])).With("flag", "--"+name).With("value", value)
 		case f.typ == switchFlag && hasValue && len(f.choices) > 0:
 		case f.typ == switchFlag && hasValue:
-			return in, fail(kindUsage, "flags.switch-value", fmt.Sprintf("--%s takes no value, and was given %q", name, value),
-				fmt.Sprintf("Write --%s alone.", name)).with("flag", "--"+name)
+			return in, cli.NewProblem(cli.CodeUsage, "flags.switch-value", fmt.Sprintf("--%s takes no value, and was given %q", name, value),
+				fmt.Sprintf("Write --%s alone.", name)).With("flag", "--"+name)
 		case f.typ == switchFlag:
 			value = "true"
 		case !hasValue && (i+1 == len(args) || (strings.HasPrefix(args[i+1], "-") && args[i+1] != "-")):
 			// An option's value is never read as a flag: --top --json is a
 			// --top with no value.
-			return in, fail(kindUsage, "flags.value-missing", fmt.Sprintf("--%s needs a value", name),
-				fmt.Sprintf("Give it one, such as --%s %s.", name, f.arg)).with("flag", "--"+name)
+			return in, cli.NewProblem(cli.CodeUsage, "flags.value-missing", fmt.Sprintf("--%s needs a value", name),
+				fmt.Sprintf("Give it one, such as --%s %s.", name, f.arg)).With("flag", "--"+name)
 		case !hasValue:
 			i++
 			value = args[i]
@@ -286,8 +232,8 @@ func checkValue(f flagSpec, value string) error {
 		what = "a duration such as 500ms or 2s"
 	}
 	if err != nil {
-		return fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--%s needs %s, and was given %q", f.name, what, value),
-			fmt.Sprintf("Give it %s.", what)).with("flag", "--"+f.name).with("value", value)
+		return cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s needs %s, and was given %q", f.name, what, value),
+			fmt.Sprintf("Give it %s.", what)).With("flag", "--"+f.name).With("value", value)
 	}
 	return nil
 }
@@ -312,10 +258,11 @@ func execute(cmd *command, args []string) int {
 	if err == nil {
 		data, err = runSafely(cmd, in)
 	}
+	ui := stdUI()
 	if err != nil {
-		in.report(asProblem(err))
+		in.problems = append(in.problems, ui.Problems(err)...)
 	}
-	return emit(in.json, data, in.problems)
+	return ui.Emit(in.json, data, in.problems)
 }
 
 // runSafely runs cmd, turning a panic into an internal error, so even a bug
@@ -327,57 +274,6 @@ func runSafely(cmd *command, in *invocation) (data any, err error) {
 		}
 	}()
 	return cmd.run(in)
-}
-
-// asProblem keeps a problem as it is and makes any other error internal.
-func asProblem(err error) *problem {
-	if p, ok := err.(*problem); ok {
-		return p
-	}
-	return fail(kindInternal, "internal", err.Error(), "This is a bug in itos-cc; please report it at "+issues+".")
-}
-
-// emit prints the outcome and returns the exit code: with asJSON the object
-// {"schema": 1, "ok": …, data's keys…, "problems": […]} on stdout,
-// otherwise each problem on stderr as "itos-cc: <message>. <fix>".
-func emit(asJSON bool, data any, problems []*problem) int {
-	if asJSON {
-		out := map[string]any{}
-		if data != nil {
-			raw, err := json.Marshal(data)
-			if err == nil {
-				json.Unmarshal(raw, &out)
-			}
-		}
-		out["schema"] = 1
-		out["ok"] = len(problems) == 0
-		if len(problems) > 0 {
-			out["problems"] = problems
-		}
-		printJSON(out)
-	} else {
-		for _, p := range problems {
-			if !p.shown {
-				fmt.Fprintln(os.Stderr, plainProblem(p))
-			}
-		}
-	}
-	for _, k := range precedence {
-		for _, p := range problems {
-			if p.kind == k {
-				return int(k)
-			}
-		}
-	}
-	return 0
-}
-
-func plainProblem(p *problem) string {
-	line := "itos-cc: " + p.message
-	if p.fix != "" {
-		line += ". " + p.fix
-	}
-	return line
 }
 
 // help is the command's help: usage, what it does, its flags, its --json
@@ -403,7 +299,7 @@ func (c *command) help() string {
 	for _, e := range c.examples {
 		fmt.Fprintf(&b, "  %s\n", e)
 	}
-	fmt.Fprintf(&b, "\nReport issues at %s\n", issues)
+	fmt.Fprintf(&b, "\nReport issues at %s\n", cli.Issues)
 	return b.String()
 }
 
@@ -557,6 +453,6 @@ Exit codes:
 	for _, e := range c.examples {
 		fmt.Fprintf(&b, "  %s\n", e)
 	}
-	fmt.Fprintf(&b, "\nReport issues at %s\n", issues)
+	fmt.Fprintf(&b, "\nReport issues at %s\n", cli.Issues)
 	return b.String()
 }

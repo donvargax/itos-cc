@@ -1,10 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/cli"
 )
 
 var testCommand = &command{
@@ -43,7 +44,7 @@ func TestASwitchWithChoicesTakesOneAfterEqualsOrNone(t *testing.T) {
 		t.Errorf("--strict lines: %v, value %q, args %q; want a bare switch and an argument", err, in.str("strict"), in.args)
 	}
 	_, err := parse(testCommand, []string{"--strict=all"})
-	if p, ok := err.(*problem); !ok || p.rule != "flags.value-invalid" || p.kind != kindUsage || !strings.Contains(p.message, "=functions or =lines") {
+	if p, ok := err.(*cli.Problem); !ok || p.Rule != "flags.value-invalid" || p.Code != cli.CodeUsage || !strings.Contains(p.Message, "=functions or =lines") {
 		t.Errorf("--strict=all: %v, want flags.value-invalid naming its choices", err)
 	}
 	var help strings.Builder
@@ -66,14 +67,14 @@ func TestBadFlagsAreUsageErrors(t *testing.T) {
 		"--threshold 1e":  "flags.value-invalid",
 	} {
 		_, err := parse(testCommand, strings.Fields(args))
-		p, ok := err.(*problem)
-		if !ok || p.rule != rule || p.kind != kindUsage {
+		p, ok := err.(*cli.Problem)
+		if !ok || p.Rule != rule || p.Code != cli.CodeUsage {
 			t.Errorf("%s: %v, want %s, a usage error", args, err, rule)
 		}
 	}
 	_, err := parse(testCommand, []string{"-changed"})
-	if p := err.(*problem); !strings.Contains(p.fix, "Did you mean --changed?") {
-		t.Errorf("fix %q, want the flag that was meant", p.fix)
+	if p := err.(*cli.Problem); !strings.Contains(p.Fix, "Did you mean --changed?") {
+		t.Errorf("fix %q, want the flag that was meant", p.Fix)
 	}
 }
 
@@ -93,48 +94,6 @@ func stdout(t *testing.T, fn func()) string {
 	t.Helper()
 	out, _ := captured(t, fn)
 	return out
-}
-
-func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
-	// Serial: it swaps os.Stdout to read what emit prints.
-	no := fail(kindNo, "x.no", "", "")
-	missing := fail(kindMissing, "x.missing", "", "")
-	usage := fail(kindUsage, "x.usage", "", "")
-	for _, c := range []struct {
-		problems []*problem
-		want     int
-	}{
-		{nil, 0},
-		{[]*problem{no}, 1},
-		{[]*problem{no, missing}, 3},
-		{[]*problem{missing, usage, no}, 2},
-	} {
-		var code int
-		stdout(t, func() { code = emit(true, nil, c.problems) })
-		if code != c.want {
-			t.Errorf("%d problems: exit %d, want %d", len(c.problems), code, c.want)
-		}
-	}
-}
-
-func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
-	// Serial: it swaps os.Stdout to read what emit prints.
-	out := stdout(t, func() {
-		emit(true, struct {
-			Files []string `json:"files"`
-		}{[]string{"a.go"}}, []*problem{fail(kindNo, "mutation.survived", "it survived", "Add a test.").with("line", 3)})
-	})
-	var got map[string]any
-	if err := json.Unmarshal([]byte(out), &got); err != nil {
-		t.Fatalf("%v in %q", err, out)
-	}
-	problems, _ := got["problems"].([]any)
-	if got["schema"] != 1.0 || got["ok"] != false || len(problems) != 1 || got["files"] == nil {
-		t.Fatalf("object %v", got)
-	}
-	if p := problems[0].(map[string]any); p["rule"] != "mutation.survived" || p["line"] != 3.0 || p["fix"] != "Add a test." {
-		t.Errorf("problem %v, want its rule, sentences, and subject keys", p)
-	}
 }
 
 func TestDispatch(t *testing.T) {
@@ -194,7 +153,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	t.Parallel()
 	for _, c := range leaves() {
 		h := c.help()
-		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", issues} {
+		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", c.name, part)
 			}
@@ -205,7 +164,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 			continue
 		}
 		h := g.groupHelp()
-		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", issues} {
+		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}

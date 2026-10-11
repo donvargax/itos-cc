@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -26,7 +26,7 @@ func files(in *invocation) (project.Files, error) {
 	if in.set("changed") {
 		changed, err := project.Changed()
 		if err != nil {
-			return project.Files{}, fail(kindMissing, "changed.no-git", "--changed needs a git repository: "+err.Error(),
+			return project.Files{}, cli.NewProblem(cli.CodeEnvironment, "changed.no-git", "--changed needs a git repository: "+err.Error(),
 				"Run it inside a git repository, or name the paths instead.")
 		}
 		if len(changed) == 0 {
@@ -71,8 +71,8 @@ func files(in *invocation) (project.Files, error) {
 	files.Tests = append(files.Tests, keep(all.Tests)...)
 	for _, frag := range fragments {
 		if !matched[frag] {
-			return files, fail(kindUsage, "paths.unmatched", fmt.Sprintf("%q is no file, and no file's path under the working directory contains it", frag),
-				"Name a file, a directory, or a fragment of a source's path.").with("argument", frag)
+			return files, cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is no file, and no file's path under the working directory contains it", frag),
+				"Name a file, a directory, or a fragment of a source's path.").With("argument", frag)
 		}
 	}
 	return files, nil
@@ -101,7 +101,7 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 		return nil, nil
 	case command != "":
 		if len(reports) == 0 {
-			return nil, fail(kindUsage, "coverage.command-needs-report", "--coverage-command needs --coverage-report to say where its report lands",
+			return nil, cli.NewProblem(cli.CodeUsage, "coverage.command-needs-report", "--coverage-command needs --coverage-report to say where its report lands",
 				"Add --coverage-report FILE.")
 		}
 		fmt.Fprintf(log, "itos-cc: coverage $ %s\n", command)
@@ -151,33 +151,33 @@ func loadCoverage(in *invocation, sources []string, scope coverage.Scope, log io
 // unmeasured is a problem for each build root or report coverage did not
 // measure: a missing tool or report is the environment, tests that measured
 // nothing say no, and an unreadable --coverage-report is a usage error.
-func unmeasured(report *coverage.Report) []*problem {
+func unmeasured(report *coverage.Report) []*cli.Problem {
 	return unmeasuredProblems(relativeUnmeasured(report.Missing()))
 }
 
 // unmeasuredProblems is unmeasured of the build roots and reports ms.
-func unmeasuredProblems(ms []coverage.Unmeasured) []*problem {
-	var out []*problem
+func unmeasuredProblems(ms []coverage.Unmeasured) []*cli.Problem {
+	var out []*cli.Problem
 	for _, m := range ms {
-		var p *problem
+		var p *cli.Problem
 		switch m.Cause {
 		case coverage.ToolMissing:
-			p = fail(kindMissing, "coverage.tool-missing", "no coverage for "+m.String(), "Install what it names, or measure with --coverage-command.")
+			p = cli.NewProblem(cli.CodeEnvironment, "coverage.tool-missing", "no coverage for "+m.String(), "Install what it names, or measure with --coverage-command.")
 		case coverage.MeasuredNothing:
-			p = fail(kindNo, "coverage.measured-nothing", "no coverage for "+m.String(), "Run the tests and fix them, then run itos-cc again.")
+			p = cli.NewProblem(cli.CodeNo, "coverage.measured-nothing", "no coverage for "+m.String(), "Run the tests and fix them, then run itos-cc again.")
 		case coverage.NoReport:
-			p = fail(kindMissing, "coverage.no-report", "no coverage for "+m.String(), "Run without --use-existing-coverage, or write the report first.")
+			p = cli.NewProblem(cli.CodeEnvironment, "coverage.no-report", "no coverage for "+m.String(), "Run without --use-existing-coverage, or write the report first.")
 		default:
-			p = fail(kindUsage, "coverage.report-unreadable", "no coverage for "+m.String(), "Check the --coverage-report path and its format.")
+			p = cli.NewProblem(cli.CodeUsage, "coverage.report-unreadable", "no coverage for "+m.String(), "Check the --coverage-report path and its format.")
 		}
 		if m.Dir != "" {
-			p.with("dir", m.Dir)
+			p.With("dir", m.Dir)
 		}
 		if m.Language != "" {
-			p.with("language", m.Language)
+			p.With("language", m.Language)
 		}
 		if m.Report != "" {
-			p.with("report", m.Report)
+			p.With("report", m.Report)
 		}
 		out = append(out, p)
 	}
@@ -217,13 +217,6 @@ func keepLatest(run, out string) {
 		os.RemoveAll(target)
 		os.Rename(filepath.Join(run, e.Name()), target)
 	}
-}
-
-func printJSON(v any) error {
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	enc.SetEscapeHTML(false)
-	return enc.Encode(v)
 }
 
 func absOrSame(p string) string {
