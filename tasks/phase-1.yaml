@@ -476,3 +476,36 @@
   done_when:
     - run: "grep -q 'version: \"7.5.0\"' itos.yaml"
     - run: itos config check
+- id: T-26
+  type: chore
+  title: Adopt go-template-itos v0.2.0 (stack go, feature cli) with --merge
+  why: >
+    The person's staged adoption (q-47, q-48, q-49, 2026-10-11). Run itos-template adopt --ref
+    v0.2.0 https://github.com/donvargax/go-template-itos.git --stack go --feature cli --answer
+    name=itos-cc --answer owner=donvargax --answer module=github.com/donvargax/itos-cc --merge in
+    this checkout (itos-template 0.28.0 or later), which stages the template's files and
+    .itos-template.yaml and leaves 11 both-added conflicts (a scratch trial on 2026-10-11: ci.yml,
+    .gitignore, AGENTS.md, LICENSE, README.md, cmd/itos-cc/main.go, docs/CLI.md,
+    features/cli.feature, features/smoke.yaml, go.mod, go.sum). Resolve them so that: LICENSE stays
+    AGPL-3.0 (q-47); cmd/itos-cc/main.go, docs/CLI.md, features/cli.feature and the CLI's behaviour
+    stay itos-cc's, since the code design is ported by later slices (q-49); ci.yml keeps the
+    three-OS matrix, the 30m timeout and T-22's release gate, taking the template's steps only where
+    they pass; AGENTS.md keeps itos's generated block and this repository's notes and lessons,
+    taking the template's working rules where they do not contradict them; go.mod and go.sum hold
+    what both need; README keeps itos-cc's content. The template's four decisions, whose numbers
+    0001, 0006, 0007 and 0008 clash with ours, are renumbered to the next free numbers, their
+    citations with them. The sample count app (internal/count, internal/counting, internal/disk,
+    internal/stdin, features/count.feature) stays as reference, unwired, until the refactor (q-48).
+    Main stays green: whatever the template brings that cannot pass yet (the godog harness over
+    feature files without its steps, count.feature against itos-cc's binary, the template
+    itos-cc.yaml's exceptions for the template's main.go, golangci-lint, govulncheck, the
+    architecture check, the pre-commit hook) is set aside by the least change that keeps the file
+    the template's, and each becomes an item: wiring a gate is its own task, never weakening one.
+    Mutation exceptions must not go stale on this repository.
+  done_when:
+    - run: test -f .itos-template.yaml
+    - run: "grep -q 'release: v0.2.0' .itos-template.yaml"
+    - run: grep -q 'GNU AFFERO GENERAL PUBLIC LICENSE' LICENSE
+    - run: test -z "$(ls docs/decisions | grep -E '^[0-9]{4}-' | cut -c1-4 | sort | uniq -d)"
+    - run: go vet ./...
+    - run: go build ./...
