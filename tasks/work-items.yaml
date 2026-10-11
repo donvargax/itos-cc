@@ -1872,7 +1872,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-31]
+    depends_on: [T-31, T-33]
     kind: task
     why: >
       The pilot of the template-design refactor, the pattern every later command follows and other
