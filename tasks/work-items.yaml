@@ -1354,7 +1354,7 @@ items:
     title: Worker copies a killed mutation run leaves in the temp dir are never removed
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
