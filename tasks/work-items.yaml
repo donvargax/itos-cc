@@ -1405,7 +1405,7 @@ items:
     title: Coverage from tests that start other processes, for typescript
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
