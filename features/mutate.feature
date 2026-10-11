@@ -2247,6 +2247,14 @@ Feature: Mutation testing
   #   old snapshot is still an orphan and removed. The help, README and
   #   docs/CLI.md say so, and tell people to stage a move (git mv or git
   #   add) before a run.
+  # - reused-baseline-not-run (coordinator's call, from the precedent of
+  #   --fail-fast and ID-MUT-231): a file's "baseline" in mutation run
+  #   --json says whether its own tests' baseline ran in this run. A file
+  #   whose mutants were all reused from its snapshot, and whose own tests'
+  #   command no other file of the run ran, ran no baseline: "not-run",
+  #   where it said "passed". Files sharing a command (a Go package's)
+  #   share its baseline: one ran for any of them is "passed" for all.
+  #   Snapshots record no baseline, so nothing reads stale.
   Rule: Mutation results say what happened, and leave nothing stale behind
 
     @unreached-baseline-not-run-fix @ID-MUT-231
@@ -2316,6 +2324,13 @@ Feature: Mutation testing
       Then the snapshot of src/old.ts is kept, and no orphan is named
       And "itos-cc mutation check src" names no orphan
       And once the rename is committed, "itos-cc mutation run --since HEAD~1 lib" moves the snapshot to lib/new.ts
+
+    @reused-baseline-not-run-fix @ID-MUT-240 @wip
+    Scenario: A file whose mutants are all reused reports its baseline as not run
+      Given a file whose snapshot is fresh, so that a run reuses every one of its mutants
+      When I run "itos-cc mutation run --json" for that file
+      Then its "baseline" is "not-run", and it ran no mutant
+      And after an edit to one of its functions, the next run reports its "baseline" as "passed"
 
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
