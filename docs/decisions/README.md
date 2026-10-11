@@ -28,5 +28,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0022: Fail-fast preserves valid partial mutation evidence and reports incomplete work explicitly](0022-fail-fast-preserves-valid-partial-mutation-evidence-and-reports-incomplete-work-explicitly.md)
 - [ADR-0023: Own tests of Python, Kotlin and TypeScript-fallback files are the tests that import them](0023-own-tests-of-python-kotlin-and-typescript-fallback-files-are-the-tests-that-import-them.md)
 - [ADR-0024: Tests reach files through the full transitive import closure in TypeScript, Python and Kotlin](0024-tests-reach-files-through-the-full-transitive-import-closure-in-typescript-python-and-kotlin.md)
+- [ADR-0025: Strict line coverage for TypeScript, Python and Kotlin counts partly executed lines as covered and refuses out-of-root scopes](0025-strict-line-coverage-for-typescript-python-and-kotlin-counts-partly-executed-lines-as-covered-and-refuses-out-of-root-scopes.md)
 
 <!-- itos:decisions:end -->
