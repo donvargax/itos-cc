@@ -1822,8 +1822,8 @@ items:
   - id: T-29
     title: CI runs itos's plan with the static gates that already pass
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
