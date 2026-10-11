@@ -360,7 +360,7 @@ items:
     title: A renamed file's snapshot stays at its old path when no run selects the new one
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
