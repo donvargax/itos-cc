@@ -211,3 +211,6 @@ questions:
   - id: q-45
     item: "outside-root-snapshot-kept-fix"
     question: "A snapshot of a file outside the project root is named by the file's absolute path, so its name maps back to a path under the root where nothing is, and since renamed-snapshot-left-behind-fix a run without paths at the root removes it as an orphan. Recommend: judge whether a snapshot is an orphan by the file it records, so one outside the root is no orphan while its file exists; nothing else about outside-root runs changes. Alternatives: refuse files outside the root (usage error, exit 2), or key their snapshots in a namespace of their own."
+  - id: q-46
+    item: "renamed-orphan-kept-fix"
+    question: "Since renamed-snapshot-left-behind-fix, a run whose paths cover a renamed file's old path but not its new one, or a run before the rename is committed, removes the old snapshot, so the --since run that would have moved it finds nothing. Recommend: a run removes an orphan only when git shows no rename of its file to a file that exists, in the --since range or uncommitted against HEAD. Alternatives: runs with --since remove no orphans; or release with it as a known issue."
