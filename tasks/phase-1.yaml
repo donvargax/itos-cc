@@ -590,9 +590,14 @@
     problem, kind, precedence and emit; the template puts that UI in internal/cli, which the sample
     count app alone uses. They move there, the template's shape taking our contract, which
     features/cli.feature pins: problems keep their dotted lower-case rules, subject keys and fix,
-    and the exit code is the first of 2, 70, 3, 75 and 1 present, not the highest. internal/cli
-    stops importing the sample's counting port. cmd keeps its own flag parser until the pilot.
-    Output and exit codes do not change.
+    and the exit code is the first present of an explicit, documented precedence list, 2, 70, 3, 75
+    and 1, not the highest (q-54). internal/cli imports no domain: cmd hands it one classifier per
+    domain, each turning that domain's sealed failures into a code and problems, the sample's
+    counting port included, so removing the sample touches no shared file. Subject keys never take
+    the names rule, message, fix or exit, which docs/CLI.md reserves. cmd keeps its own flag parser
+    until the pilot. Output and exit codes do not change; the exit codes themselves change in the
+    semantic-exit-codes slice (q-56). Once this and T-32 are green, the coordinator files the
+    contract on go-template-itos with the exact diffs.
   done_when:
     - run: grep -lq 'itos-cc/internal/cli"' cmd/itos-cc/*.go
     - run: "! grep -rq 'internal/counting' internal/cli"
@@ -619,7 +624,10 @@
     projects take. units moves to internal/units, a slice: its kong flags, its query to the
     selection domain, its handler, printing through internal/cli. cmd routes a moved command through
     kong and the rest as before; internal/cli turns kong's errors into the flags.* and args.*
-    problems features/cli.feature pins, word for word, and the help keeps its text. The godog
+    problems features/cli.feature pins, word for word, and the help keeps its text. It tells kong's
+    failures apart by the exported error types of the donvargax/kong fork (T-33), never by matching
+    their text; -changed and other single-dash words are mistyped long flags, -h being the only
+    short one (q-55). The godog
     harness of features/ runs the feature files that have steps, units.feature the first, its
     scenarios turned into steps without changing what they say (q-52), and the CI plan runs it.
     docs/go.md gains a section on moving a command.
