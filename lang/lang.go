@@ -339,9 +339,29 @@ func ParseTree(spec *Spec, path string, src []byte) (*sitter.Tree, error) {
 	return tree, nil
 }
 
-// UnitsInFile parses path and returns its units without their nodes.
+// UnitsInFile reads path and returns its units without their nodes, as
+// UnitsOf finds them.
 func UnitsInFile(path string) ([]Unit, error) {
-	f, err := ParseFile(path)
+	if Detect(path) == nil {
+		return nil, fmt.Errorf("unsupported language: %s", path)
+	}
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return UnitsOf(path, src)
+}
+
+// UnitsOf parses src, the source the caller read for path, and returns its
+// units without their nodes. It reads no source itself: path decides the
+// language and the namespace, and needs to exist only where the language
+// names a file by a project file above it, such as go.mod.
+func UnitsOf(path string, src []byte) ([]Unit, error) {
+	spec := Detect(path)
+	if spec == nil {
+		return nil, fmt.Errorf("unsupported language: %s", path)
+	}
+	f, err := Parse(spec, path, src)
 	if err != nil {
 		return nil, err
 	}

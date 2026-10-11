@@ -269,6 +269,30 @@ func TestGo(t *testing.T) {
 	})
 }
 
+// UnitsOf finds a file's units in the source its caller read, reading none
+// itself: what it is given, not what is on disk, decides them.
+func TestUnitsOfParsesTheSourceItIsGiven(t *testing.T) {
+	units, err := UnitsOf("src/billing/total.py", []byte("def total(xs):\n    return sum(xs)\n\n\ndef _round(x):\n    return x\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertUnits(t, describe(units), []string{
+		"function billing.total#total 1-2",
+		"function billing.total#_round 5-6 private",
+	})
+	for _, u := range units {
+		if u.Node != nil {
+			t.Errorf("%s keeps its node", u.Name)
+		}
+	}
+	if _, err := UnitsOf("notes.txt", nil); err == nil || err.Error() != "unsupported language: notes.txt" {
+		t.Errorf("UnitsOf(notes.txt) = %v, want unsupported language", err)
+	}
+	if _, err := UnitsInFile("notes.txt"); err == nil || err.Error() != "unsupported language: notes.txt" {
+		t.Errorf("UnitsInFile(notes.txt) = %v, want unsupported language before any read", err)
+	}
+}
+
 // complexities maps each unit name to its cyclomatic complexity.
 func complexities(t *testing.T, path, src string) map[string]int {
 	t.Helper()
