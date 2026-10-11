@@ -1217,12 +1217,9 @@ items:
     title: A strict Kotlin run proves every executable line of every judged function
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-40: ADR-0017/0018 for Kotlin, at JaCoCo or Kover XML line precision; a partly executed line
-      is covered.
     refs: ["#23"]
   - id: strict-scope-refusals
     title: Strict coverage refuses workspace and out-of-root local dependency scopes
