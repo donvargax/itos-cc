@@ -1838,7 +1838,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-29]
     kind: task
     why: >
       Second stage of the template-design refactor. Every command reports through
