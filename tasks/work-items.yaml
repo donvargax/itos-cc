@@ -1224,7 +1224,7 @@ items:
     title: Strict coverage refuses workspace and out-of-root local dependency scopes
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
