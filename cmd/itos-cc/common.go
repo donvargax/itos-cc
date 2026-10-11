@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
@@ -13,70 +12,6 @@ import (
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
-
-// selectionFlags choose a command's files.
-var selectionFlags = []flagSpec{sw("changed", "only files git reports as added or modified")}
-
-// files resolves the command's paths. A path that does not exist is a
-// fragment: every file under the working directory whose path contains it
-// is selected, so `itos-cc crap billing` finds src/billing/*. An argument
-// that is neither a path nor a fragment of one is refused.
-func files(in *invocation) (project.Files, error) {
-	paths := in.args
-	if in.set("changed") {
-		changed, err := project.Changed()
-		if err != nil {
-			return project.Files{}, cli.NewProblem(cli.CodeEnvironment, "changed.no-git", "--changed needs a git repository: "+err.Error(),
-				"Run it inside a git repository, or name the paths instead.")
-		}
-		if len(changed) == 0 {
-			return project.Files{}, nil
-		}
-		paths = append(paths, changed...)
-	}
-	if len(paths) == 0 {
-		return project.Discover([]string{"."})
-	}
-	var roots, fragments []string
-	for _, p := range paths {
-		if _, err := os.Stat(p); err == nil {
-			roots = append(roots, p)
-		} else {
-			fragments = append(fragments, filepath.ToSlash(p))
-		}
-	}
-	files, err := project.Discover(roots)
-	if err != nil || len(fragments) == 0 {
-		return files, err
-	}
-	all, err := project.Discover([]string{"."})
-	if err != nil {
-		return files, err
-	}
-	matched := map[string]bool{}
-	keep := func(list []string) []string {
-		var out []string
-		for _, f := range list {
-			for _, frag := range fragments {
-				if strings.Contains(filepath.ToSlash(f), frag) {
-					out = append(out, f)
-					matched[frag] = true
-					break
-				}
-			}
-		}
-		return out
-	}
-	files.Sources = append(files.Sources, keep(all.Sources)...)
-	files.Tests = append(files.Tests, keep(all.Tests)...)
-	for _, frag := range fragments {
-		if !matched[frag] {
-			return files, cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is no file, and no file's path under the working directory contains it", frag),
-				"Name a file, a directory, or a fragment of a source's path.").With("argument", frag)
-		}
-	}
-	return files, nil
-}
 
 // coverageFlags say how a command gets coverage.
 var coverageFlags = []flagSpec{

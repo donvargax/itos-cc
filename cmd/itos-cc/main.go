@@ -106,10 +106,11 @@ func main() {
 }
 
 // classifiers are each domain's, which turn its sealed failures into
-// problems for internal/cli: the sample count slice's, for the counting
+// problems for internal/cli: the selection domain's, which every command
+// selects its files through, and the sample count slice's, for the counting
 // domain, until it is wired as a command or dropped. A problem itos-cc's
 // commands report is its own and needs none.
-var classifiers = []cli.Classifier{count.Classify}
+var classifiers = []cli.Classifier{classifySelection, count.Classify}
 
 // stdUI is the UI of this process: its standard streams as they are when it
 // is called, so a test that swaps os.Stdout reads what it prints.

@@ -18,10 +18,21 @@ from it, and thin slices named for their commands.
 - `internal/counting/port` declares `Files` and its sealed set of failures: `Missing`,
   `Unreadable` and `Cancelled`. `Files.Read` takes the context first.
 - `internal/counting/port/porttest` holds our in-memory fake of `Files` for the tests.
+- `internal/selection` is the domain every command chooses its files through: paths given as
+  arguments, a path that is not there taken as a fragment of a file's path under the working
+  directory, `--changed` adding git's changed files, and no paths meaning the whole working
+  directory. `Select(ctx, tree, paths, changed)` reads the tree only through its port.
+- `internal/selection/port` declares `Tree` (`Discover` roots into sources and tests,
+  `Changed` files, whether a path `Exists`, each taking the context first) and its sealed
+  set of failures: `NoGit`, `Unmatched`, carrying the fragment, `Unwalkable` and `Cancelled`.
+  `internal/selection/port/porttest` holds the in-memory fake of `Tree`.
 - `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
   OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
   `Cancelled` once the context is done, and hands every other path to a fallback it is given.
   Each imports nothing of ours but the port.
+- `internal/workdir` is the selection port's adapter: the working directory as the disk and git
+  hold it. It wraps the top-level `project` library's discovery and git query and stats paths,
+  translating their errors into the port's failures, and imports nothing else of ours.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -34,7 +45,9 @@ from it, and thin slices named for their commands.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
   and hands the context and the handler to `Run` through kong's bindings. It is the only place
-  that knows every package.
+  that knows every package. Until itos-cc's commands move into slices, it also holds the
+  selection domain's classifier, `classifySelection`, since every command selects its files,
+  and `files`, which calls the domain through `workdir`.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -45,8 +58,8 @@ deadlines only, always as the first parameter and never in a struct or as a valu
 
 `.golangci.yml` holds these arrows with depguard:
 
-- `domain`: the domain, its port and their tests import nothing of ours but the domain and its
-  port subpackages, and never kong.
+- `domain`: the domains, their ports and their tests import nothing of ours but the domains and
+  their port subpackages, and never kong.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
 - `slices`: a slice imports nothing of ours but the domain and `internal/cli`, so never another
@@ -55,10 +68,10 @@ deadlines only, always as the first parameter and never in a struct or as a valu
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
-- `infra`: an adapter imports nothing of ours but the port it implements; only its tests may
-  use `porttest`.
+- `infra`: an adapter imports nothing of ours but the port it implements, and `internal/workdir`
+  the `project` library it wraps; only its tests may use `porttest`.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
-- `rapid`: the property library only in the domain's own tests.
+- `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
 
 ### Adding a package
@@ -96,9 +109,9 @@ interrupt step is the example, `os.Interrupt` on Unix and `CTRL_BREAK_EVENT` on 
 
 ## Tests
 
-The domain's unit tests use the `porttest` fake and assert results and typed failures.
-The disk adapter's tests use real temporary files, since translating OS errors is what
-the adapter does. The `count` slice's tests use the fake too, standard input being its `-`
+Each domain's unit tests use its `porttest` fake and assert results and typed failures.
+The disk and workdir adapters' tests use real temporary files, and workdir's a real git
+repository, since translating OS and git errors is what an adapter does. The `count` slice's tests use the fake too, standard input being its `-`
 key; reading standard input, and stopping when the context is done, is `internal/stdin`'s,
 held by its own tests. The scenarios in `features/` run the built binary through godog,
 interrupting it once it waits on an open standard input to show the 130 exit. A second Ctrl-C
@@ -107,7 +120,9 @@ interrupts on every system: `count` has no cleanup for a scenario to see skipped
 
 Properties use `pgregory.net/rapid` and live in the domain's tests. The counting property
 joins newline-terminated pieces and checks that their counts add. Arbitrary concatenation
-can join two words, so it is not promised to be additive. Every run sets
+can join two words, so it is not promised to be additive. The selection property checks
+that paths and fragments only narrow the working directory: what they select is exactly the
+files of `.` under a path that is there or holding one that is not. Every run sets
 `RAPID_CHECKS=1`: one new random case per property, as fast as an example test, with the
 seed printed on failure. This project has no scheduled high-count run.
 

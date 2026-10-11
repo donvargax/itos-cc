@@ -28,20 +28,25 @@ linters:
     # as docs/go.md's Adding a package says rather than loosen them.
     depguard:
       rules:
-        # The domain and its ports, their tests too: nothing of ours but the
-        # domain and its port subpackages (no adapter, slice, UI or cmd); the
-        # kong rule below keeps kong out of it. Its tests run it against
+        # The domains and their ports, their tests too: nothing of ours but
+        # the domains and their port subpackages (no adapter, slice, UI or
+        # cmd, nor the top-level libraries an adapter wraps); the kong rule
+        # below keeps kong out of them. Their tests run them against
         # porttest's fakes. domain-coverage reads this list: each glob's
         # folder is a domain package it measures (./internal/counting), its
         # port subpackages not measured, so the floor holds behaviour, not
-        # the ports and fakes.
+        # the ports and fakes. internal/selection chooses every command's
+        # files.
         domain:
           list-mode: lax
           files:
             - "**/internal/counting/**"
+            - "**/internal/selection/**"
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -50,12 +55,13 @@ linters:
         domain-io:
           files:
             - "**/internal/counting/**"
+            - "**/internal/selection/**"
             - "!$test"
           deny:
             - pkg: os
-              desc: "the domain does no I/O (decision 29): do the I/O in an adapter behind internal/counting/port, adding it as docs/go.md's Adding a package says; tests may read fixtures. Never loosen this one"
+              desc: "the domain does no I/O (decision 29): do the I/O in an adapter behind the domain's port, adding it as docs/go.md's Adding a package says; tests may read fixtures. Never loosen this one"
             - pkg: net
-              desc: "the domain does no I/O (decision 29): reach networks from an adapter behind internal/counting/port, adding it as docs/go.md's Adding a package says; never loosen this one"
+              desc: "the domain does no I/O (decision 29): reach networks from an adapter behind the domain's port, adding it as docs/go.md's Adding a package says; never loosen this one"
         # A slice is a command, in one package named for it: its kong struct
         # and Run (UI), its Query and Handler (application). It imports
         # nothing of ours but the domain, its ports and internal/cli: no other
@@ -70,15 +76,19 @@ linters:
           list-mode: lax
           files:
             - "**/internal/**"
-            - "!**/internal/counting/**" # the domain and its ports
+            - "!**/internal/counting/**" # a domain and its ports
+            - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
+            - "!**/internal/workdir/**" # an adapter, held by infra
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/cli$
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -98,15 +108,20 @@ linters:
         # them: not the domain, another adapter, a slice, the UI or porttest's
         # fakes, which its tests alone may use. Each adapter is listed, and
         # excluded from the slices above. cmd hands internal/stdin the disk
-        # adapter as its fallback.
+        # adapter as its fallback. internal/workdir wraps project, the
+        # top-level library that walks a tree and asks git, so project is
+        # allowed here, and no other top-level library is.
         infra:
           list-mode: lax
           files:
             - "**/internal/disk/**"
             - "**/internal/stdin/**"
+            - "**/internal/workdir/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/counting/port$
+            - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "an adapter imports nothing of ours but the ports it implements (decision 29), cmd wiring the rest; if it implements another port, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -130,9 +145,10 @@ linters:
           files:
             - $all
             - "!**/internal/counting/*_test.go"
+            - "!**/internal/selection/*_test.go"
           deny:
             - pkg: pgregory.net/rapid
-              desc: "rapid is only for the domain's property tests, in internal/counting's own tests; test anything else with ordinary tests and porttest's fakes"
+              desc: "rapid is only for the domains' property tests, in a domain package's own tests; test anything else with ordinary tests and porttest's fakes"
         # kong is the UI's, harvested from itos-template's kong rule: here
         # the UI is the entry point and internal/cli. A slice's kong struct
         # carries kong's struct tags, which need no import of kong.

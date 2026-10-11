@@ -10,7 +10,14 @@ exposing an OS's own errors. The `internal/disk` and `internal/stdin` adapters i
 in-memory fake holds the domain's test inputs and failures. Unit tests assert outcomes, and the
 rapid property checks addition for newline-terminated pieces.
 
-The domain knows no command-line flags, JSON or exit codes. The `count` slice, `internal/count`,
+The selection domain, `internal/selection`, owns how every command chooses its files: paths,
+fragments of a path, `--changed` and the whole working directory when none is given. It reaches
+the working tree through its `Tree` port, whose sealed failures say there is no git, a fragment
+matched nothing, a walk failed or the context was done. The `internal/workdir` adapter
+implements it over the `project` library and the disk; cmd's `classifySelection` turns its
+failures into the problems the command line has always reported.
+
+The domains know no command-line flags, JSON or exit codes. The `count` slice, `internal/count`,
 carries the command's domain values to the domain through the port and counts nothing itself;
 its classifier turns the port's sealed failures into problems. `internal/cli`, the UI every
 command shares, itos-cc's own included, imports no domain: it holds the problem, its rule,

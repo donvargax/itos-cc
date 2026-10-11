@@ -53,10 +53,12 @@ func TestArchitecture(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// Decision 29's domain and its port subpackages, the adapters, the count
-	// slice and internal/next, a made project's next slice that no rule
-	// names, the UI, the packages that are no command, and cmd.
-	for _, path := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe"} {
+	// Decision 29's domains and their port subpackages, the adapters, the
+	// count slice and internal/next, a made project's next slice that no
+	// rule names, the UI, the packages that are no command, cmd, and two of
+	// the module's top-level libraries: project, which the workdir adapter
+	// wraps, and lang, which no adapter does.
+	for _, path := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "lang"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	mocks := []string{"github.com/golang/mock/gomock", "go.uber.org/mock/gomock", "github.com/stretchr/testify/mock", "github.com/vektra/mockery/v2", "github.com/maxbrunsfeld/counterfeiter/v6"}
@@ -109,42 +111,49 @@ func TestArchitecture(t *testing.T) {
 		}
 		cases = append(cases, refusal)
 	}
-	// The domain arrow: the domain and its ports, code and tests, import
-	// nothing of ours but the domain and its port subpackages. The kong
-	// rule keeps kong out of them, below.
-	for _, base := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest"} {
-		for _, test := range []bool{false, true} {
-			kind := "code"
-			if test {
-				kind = "test"
+	// The domain arrow: each domain and its ports, code and tests, import
+	// nothing of ours but the domain and its port subpackages, neither an
+	// adapter nor the libraries an adapter wraps. The kong rule keeps kong
+	// out of them, below.
+	domains := []string{"internal/counting", "internal/selection"}
+	for _, domain := range domains {
+		for _, base := range []string{domain, domain + "/port", domain + "/port/porttest"} {
+			for _, test := range []bool{false, true} {
+				kind := "code"
+				if test {
+					kind = "test"
+				}
+				for _, target := range []string{"internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "lang"} {
+					add(strings.ReplaceAll(target, "/", "_")+"_"+kind, base, module+"/"+target, "Value", "domain", test)
+				}
+				add("domain_allowed_"+kind, base, module+"/"+domain, "Value", "", test)
+				add("port_allowed_"+kind, base, module+"/"+domain+"/port", "Value", "", test)
 			}
-			for _, target := range []string{"internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe"} {
-				add(strings.ReplaceAll(target, "/", "_")+"_"+kind, base, module+"/"+target, "Value", "domain", test)
-			}
-			add("domain_allowed_"+kind, base, module+"/internal/counting", "Value", "", test)
-			add("port_allowed_"+kind, base, module+"/internal/counting/port", "Value", "", test)
+			// The domain-io arrow: no I/O in the domain's own code; its tests
+			// may read fixtures and use porttest's fakes.
+			add("os_code", base, "os", "ReadFile", "domain-io", false)
+			add("exec_code", base, "os/exec", "Command", "domain-io", false)
+			add("net_code", base, "net", "Dial", "domain-io", false)
+			add("http_code", base, "net/http", "Get", "domain-io", false)
+			add("fixture_io_allowed", base, "os", "ReadFile", "", true)
+			add("fake_allowed", base, module+"/"+domain+"/port/porttest", "Value", "", true)
 		}
-		// The domain-io arrow: no I/O in the domain's own code; its tests
-		// may read fixtures and use porttest's fakes.
-		add("os_code", base, "os", "ReadFile", "domain-io", false)
-		add("exec_code", base, "os/exec", "Command", "domain-io", false)
-		add("net_code", base, "net", "Dial", "domain-io", false)
-		add("http_code", base, "net/http", "Get", "domain-io", false)
-		add("fixture_io_allowed", base, "os", "ReadFile", "", true)
-		add("fake_allowed", base, module+"/internal/counting/port/porttest", "Value", "", true)
 	}
 	// The adapter arrow: an adapter's code imports nothing of ours but the
-	// port, not the domain, another adapter, a slice, the UI, cmd or the
-	// fakes; it may do I/O, and its tests may use the fakes.
-	for _, base := range []string{"internal/disk", "internal/stdin"} {
-		for _, target := range []string{"internal/counting", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/counting/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe"} {
+	// port it implements, not a domain, another adapter, a slice, the UI,
+	// cmd, the fakes or a top-level library it does not wrap; it may do I/O,
+	// and its tests may use the fakes. workdir wraps project.
+	for _, adapter := range []struct{ base, domain string }{{"internal/disk", "internal/counting"}, {"internal/stdin", "internal/counting"}, {"internal/workdir", "internal/selection"}} {
+		base := adapter.base
+		for _, target := range []string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/counting/port/porttest", "internal/selection/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe", "lang"} {
 			add(strings.ReplaceAll(target, "/", "_"), base, module+"/"+target, "Value", "infra", false)
 		}
-		add("port_allowed", base, module+"/internal/counting/port", "Value", "", false)
-		add("fake_allowed", base, module+"/internal/counting/port/porttest", "Value", "", true)
+		add("port_allowed", base, module+"/"+adapter.domain+"/port", "Value", "", false)
+		add("fake_allowed", base, module+"/"+adapter.domain+"/port/porttest", "Value", "", true)
 		add("os_allowed", base, "os", "ReadFile", "", false)
 		add("fixture_io_allowed", base, "os", "ReadFile", "", true)
 	}
+	add("project_allowed", "internal/workdir", module+"/project", "Value", "", false)
 	// The slice arrow, code and tests alike: a slice imports the domain, its
 	// ports and internal/cli, never another slice, an adapter, a package
 	// that is no command or cmd. internal/next is held as count is with no
@@ -155,14 +164,15 @@ func TestArchitecture(t *testing.T) {
 			if test {
 				kind = "test"
 			}
-			for _, target := range []string{slice.other, "internal/disk", "internal/stdin", "internal/version", "internal/release", "cmd/probe"} {
+			for _, target := range []string{slice.other, "internal/disk", "internal/stdin", "internal/workdir", "internal/version", "internal/release", "cmd/probe"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_"+kind, slice.base, module+"/"+target, "Value", "slices", test)
 			}
-			for _, target := range []string{"internal/counting", "internal/counting/port", "internal/cli"} {
+			for _, target := range []string{"internal/counting", "internal/counting/port", "internal/selection", "internal/selection/port", "internal/cli"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_allowed_"+kind, slice.base, module+"/"+target, "Value", "", test)
 			}
 		}
 		add("fake_allowed", slice.base, module+"/internal/counting/port/porttest", "Value", "", true)
+		add("selection_fake_allowed", slice.base, module+"/internal/selection/port/porttest", "Value", "", true)
 	}
 	// What is no slice is not held as one: the release library's packages
 	// import each other, as releasetest does.
@@ -176,14 +186,14 @@ func TestArchitecture(t *testing.T) {
 		if test {
 			kind = "test"
 		}
-		for _, target := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/version", "internal/release", "cmd/probe"} {
+		for _, target := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/version", "internal/release", "cmd/probe"} {
 			add(strings.ReplaceAll(target, "/", "_")+"_"+kind, "internal/cli", module+"/"+target, "Value", "ui", test)
 		}
 		add("stdlib_allowed_"+kind, "internal/cli", "strings", "ToLower", "", test)
 	}
 	// What assembles them is free to import the domain, the adapters and
 	// the slices.
-	for _, target := range []string{"internal/counting", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/cli", "internal/version"} {
+	for _, target := range []string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/cli", "internal/version", "project"} {
 		add(strings.ReplaceAll(target, "/", "_")+"_allowed", "cmd/probe", module+"/"+target, "Value", "", false)
 	}
 	for i, imported := range mocks {
@@ -191,21 +201,23 @@ func TestArchitecture(t *testing.T) {
 			add(fmt.Sprintf("mock%d_%t", i, test), "internal/next", imported, "Value", "mocks", test)
 		}
 	}
-	add("rapid_allowed", "internal/counting", "pgregory.net/rapid", "Value", "", true)
+	for _, domain := range domains {
+		add("rapid_allowed", domain, "pgregory.net/rapid", "Value", "", true)
+	}
 	// kong is the UI's: the entry point and internal/cli, nowhere else.
 	for i, kong := range kongs {
 		for _, test := range []bool{false, true} {
 			for _, layer := range []string{"cmd/probe", "internal/cli"} {
 				add(fmt.Sprintf("kong%d_allowed_%t", i, test), layer, kong, "Value", "", test)
 			}
-			for _, layer := range []string{"internal/count", "internal/next", "internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/version", "internal/release"} {
+			for _, layer := range []string{"internal/count", "internal/next", "internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/version", "internal/release"} {
 				add(fmt.Sprintf("kong%d_%t", i, test), layer, kong, "Value", "kong", test)
 			}
 		}
 	}
 	// Rapid only in the domain package's own tests, not its code, a
 	// subpackage's tests (its ports and fakes) or anything else.
-	for _, layer := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/count", "internal/next"} {
+	for _, layer := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next"} {
 		add("rapid_code", layer, "pgregory.net/rapid", "Value", "rapid", false)
 		add("rapid_test", layer, "pgregory.net/rapid", "Value", "rapid", true)
 	}
