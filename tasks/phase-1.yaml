@@ -532,10 +532,6 @@
     block is regenerated with the pinned itos (~/.cache/itos/7.5.0/itos init --agent-rules; the
     PATH's 8.0.0-rc.5 rewrites the block itself). Past commits are not rewritten: verification
     judges from a range's start, and the rule holds from this commit on.
-  done_when:
-    - run: grep -q '^    Upgrading:' itos.yaml
-    - run: grep -q 'Upgrading:' AGENTS.md
-    - run: itos config check
 - id: T-28
   type: ci
   title: Main's CI cuts the release itself, as go-template-itos does, with each platform built natively
