@@ -1776,3 +1776,17 @@ items:
       golang.org/x/vuln/cmd/govulncheck) and runs go tool govulncheck -test ./... in its CI plan and
       pre-commit hook. itos-cc's CI does not run it yet; wiring it is its own task: run it over the
       module, its tests included, fix or upgrade what it reports, then add it to CI.
+  - id: gate-architecture-check
+    title: Run the template's import-boundary check in CI
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-26]
+    kind: idea
+    why: >
+      Set aside by T-26. go-template-itos v0.2.0 brought tools/bin/architecture-check and
+      tools/testdata/architecture, the self-test that .golangci.yml's depguard arrows accept and
+      refuse what they should for the template's layout (internal/counting, its port, the adapters,
+      the slices, internal/cli, cmd). itos-cc's code is not in that layout yet, so CI does not run
+      it; wiring it is its own task, after gate-golangci-lint, with the arrows extended to itos-cc's
+      packages as docs/go.md's Adding a package says, never loosened.
