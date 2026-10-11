@@ -1325,7 +1325,7 @@ items:
     title: Take strict-scope-refusals back off a red main
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
