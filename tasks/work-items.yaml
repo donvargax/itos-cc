@@ -1953,3 +1953,15 @@ items:
       (--fail-uncovered=lines). Before they move onto kong, Flags needs a mapper for each kind with
       a typed refusal worded as the hand parser's (--threshold needs a number, and was given "abc");
       until then ParseProblem gives kong's own words under flags.value-invalid.
+  - id: kong-interspersed-args
+    title: kong reads a command's arguments in one run, so cli.Parse moves them behind its flags
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      kong stops a cumulative positional at the first flag (units a --changed b is an unexpected
+      argument b), so internal/cli reorders the line before kong parses it. An option in the
+      donvargax/kong fork, offered upstream with the typed errors, would let a positional slice take
+      arguments between flags and drop the reordering.
