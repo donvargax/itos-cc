@@ -1502,7 +1502,7 @@ items:
     title: A snapshot of a file outside the project root is no orphan while its file exists
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
