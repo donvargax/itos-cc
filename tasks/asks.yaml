@@ -221,6 +221,7 @@ questions:
   - id: q-47
     item: "template-adoption"
     question: "Adopting go-template-itos (MIT) with --merge leaves LICENSE in conflict with itos-cc's AGPL-3.0. Which license does itos-cc carry after adoption? Options: keep AGPL-3.0, or switch to MIT."
+    answer: "Keep AGPL-3.0, 2026-10-11: the adoption resolves LICENSE to itos-cc's."
   - id: q-48
     item: "template-adoption"
     question: "The template brings a sample count app (internal/count, internal/counting, internal/disk, internal/stdin, features/count.feature) and its own itos-cc.yaml with exceptions for the template's main.go. Recommend deleting them at adoption; alternative: keep them as reference while porting, delete after the refactor."
