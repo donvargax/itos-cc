@@ -241,3 +241,4 @@ questions:
     answer: "Convert every feature file to godog over time (answered 2026-10-11), not a hybrid: the harness arrives with the first command moved onto the template design, and each stage that moves a command converts its feature file, mutate.feature last with the mutation group."
   - id: q-53
     question: "When does changed-code mutation proof (proof.code) turn on in CI, given code a refactor moves has no mutation results until the nightly run?"
+    answer: "Keep it off until the refactor is done, after its last stage (answered 2026-10-11): the refactor relies on tests and scenarios, and the nightly run refreshes .metrics/mutate. p1-itos-proof-code waits for it."
