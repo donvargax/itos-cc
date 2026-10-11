@@ -16,6 +16,7 @@ queue:
   - python-parallel-data-fix
   - mutate-workers-abandoned-fix
   - check-removed-operator-sites-fix
+  - renamed-snapshot-left-behind-fix
   - mutation-windows-ownership
 items:
   - id: T-3
