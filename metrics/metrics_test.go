@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// @ID-SNAP-04
 func TestWritesAtTheSameTimeLeaveOneWholeSnapshot(t *testing.T) {
 	t.Chdir(t.TempDir())
 	var wg sync.WaitGroup

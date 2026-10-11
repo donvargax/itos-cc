@@ -39,8 +39,10 @@ const Version = 1
 
 // Write stores v as indented JSON at .metrics/name, replacing it atomically
 // so a reader never sees half a snapshot. Each write stages its own file, so
-// runs at the same time never rename each other's half-written one; on
-// Windows the rename retries for a moment while another one holds the file.
+// runs at the same time never rename each other's half-written one. Writes
+// and reads of one snapshot in a process take turns at its rename (hold),
+// and on Windows the rename retries for a moment while another process
+// holds the file (retry).
 func Write(name string, v any) error {
 	path := filepath.Join(Dir(), name)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -68,6 +70,9 @@ func Write(name string, v any) error {
 	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
 		return err
 	}
+	l := hold(path)
+	l.Lock()
+	defer l.Unlock()
 	return rename(tmp.Name(), path)
 }
 
@@ -84,9 +89,20 @@ func Read(name string, v any) (bool, error) {
 	return ReadIn(Dir(), name, v)
 }
 
-// ReadIn is Read of the snapshots in dir, as DirOf names it.
+// ReadIn is Read of the snapshots in dir, as DirOf names it. It reads
+// between renames of the snapshot in this process, and on Windows retries
+// for a moment while another process renames it.
 func ReadIn(dir, name string, v any) (bool, error) {
-	data, err := osReadFile(filepath.Join(dir, name))
+	path := filepath.Join(dir, name)
+	l := hold(path)
+	l.RLock()
+	var data []byte
+	err := retry(func() error {
+		var err error
+		data, err = osReadFile(path)
+		return err
+	})
+	l.RUnlock()
 	if os.IsNotExist(err) {
 		return false, nil
 	}
