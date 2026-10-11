@@ -1491,3 +1491,16 @@ items:
       (python-parallel-data-fix, ID-MUT-233). A second pinned venv, say coverage.py 7.13.x, in the
       ubuntu language-tools step running the Python scenarios would catch the next version gap such
       stand-ins miss; in-process measurement supports versions far older than 7.13.
+  - id: coverage-runs-locked
+    title: Coverage run directories judged abandoned by a lock, not a day's age
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      removeAbandoned (cmd/itos-cc/common.go) takes any .metrics/coverage/run-* directory a day old
+      for a killed run's: a coverage run longer than a day would lose its reports to a concurrent
+      run, and a killed run's stay for a day. The owner.lock of mutate/worker_scratch.go (flock,
+      LockFileEx, released by the OS when the process dies) could judge them as it judges mutation
+      worker copies, keeping the age only for unmarked ones.
