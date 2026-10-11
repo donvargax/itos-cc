@@ -1464,3 +1464,18 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: kotlin-jacoco-zero-config
+    title: Kotlin integration coverage from the jars Gradle's jacoco plugin already caches
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Gradle's jacoco plugin caches the agent only inside org.jacoco.agent-<version>.jar
+      (jacocoagent.jar within it) and fetches org.jacoco.core and org.jacoco.report for
+      jacocoTestReport, but never the runtime classifier or jacococli, so a Gradle project must
+      resolve both with a configuration of its own before ITOS_CC_JACOCO_AGENT is set. Extracting
+      jacocoagent.jar into the run's directory, and reporting with the cached core and report jars
+      through a small Java program run as a single-file source, would make it work with no build
+      change, still downloading nothing.
