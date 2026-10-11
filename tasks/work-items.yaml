@@ -1323,3 +1323,17 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: listed-suites
+    title: Several listed suites in mutation.tests, each with its own support
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Follow-up from #34 (closed 2026-10-11): itos's conformance corpus joins its features as one
+      listed suite through an adapter (donvargax/itos#44), so one support list covers both and any
+      corpus fixture edit stales every listed kill. Revisit once itos#44 lands: if that staleness
+      proves too coarse, let mutation.tests hold several suites, each with its own list, run,
+      ids_pattern, support and per-test coverage, a mutant escalating to each suite that reaches it.
+    refs: ["#34"]
