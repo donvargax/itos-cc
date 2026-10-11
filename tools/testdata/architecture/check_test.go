@@ -61,8 +61,10 @@ func TestArchitecture(t *testing.T) {
 	}
 	mocks := []string{"github.com/golang/mock/gomock", "go.uber.org/mock/gomock", "github.com/stretchr/testify/mock", "github.com/vektra/mockery/v2", "github.com/maxbrunsfeld/counterfeiter/v6"}
 	mod := "module " + module + "\n\ngo 1.27\n"
-	const kong = "github.com/alecthomas/kong"
-	for i, path := range append(mocks, "pgregory.net/rapid", kong) {
+	// kong, and the fork itos-cc builds with until kong releases its typed
+	// parse errors.
+	kongs := []string{"github.com/alecthomas/kong", "github.com/donvargax/kong"}
+	for i, path := range append(append(mocks, "pgregory.net/rapid"), kongs...) {
 		stub := fmt.Sprintf("stubs/library%d", i)
 		version := "v0.0.0"
 		if strings.HasSuffix(path, "/v2") {
@@ -179,12 +181,14 @@ func TestArchitecture(t *testing.T) {
 	}
 	add("rapid_allowed", "internal/counting", "pgregory.net/rapid", "Value", "", true)
 	// kong is the UI's: the entry point and internal/cli, nowhere else.
-	for _, test := range []bool{false, true} {
-		for _, layer := range []string{"cmd/probe", "internal/cli"} {
-			add(fmt.Sprintf("kong_allowed_%t", test), layer, kong, "Value", "", test)
-		}
-		for _, layer := range []string{"internal/count", "internal/next", "internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/version", "internal/release"} {
-			add(fmt.Sprintf("kong_%t", test), layer, kong, "Value", "kong", test)
+	for i, kong := range kongs {
+		for _, test := range []bool{false, true} {
+			for _, layer := range []string{"cmd/probe", "internal/cli"} {
+				add(fmt.Sprintf("kong%d_allowed_%t", i, test), layer, kong, "Value", "", test)
+			}
+			for _, layer := range []string{"internal/count", "internal/next", "internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/version", "internal/release"} {
+				add(fmt.Sprintf("kong%d_%t", i, test), layer, kong, "Value", "kong", test)
+			}
 		}
 	}
 	// Rapid only in the domain package's own tests, not its code, a

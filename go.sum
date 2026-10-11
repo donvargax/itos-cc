@@ -1,7 +1,5 @@
 github.com/alecthomas/assert/v2 v2.11.0 h1:2Q9r3ki8+JYXvGsDyBXwH3LcJ+WK5D0gc5E8vS6K3D0=
 github.com/alecthomas/assert/v2 v2.11.0/go.mod h1:Bze95FyfUr7x34QZrjL+XP+0qgp/zg8yS+TtBj1WA3k=
-github.com/alecthomas/kong v1.16.1 h1:ixhCt93XkJ98kGposQ54+bl0IK6XwqB40AsMynU7Z8E=
-github.com/alecthomas/kong v1.16.1/go.mod h1:wrlbXem1CWqUV5Vbmss5ISYhsVPkBb1Yo7YKJghju2I=
 github.com/alecthomas/repr v0.5.2 h1:SU73FTI9D1P5UNtvseffFSGmdNci/O6RsqzeXJtP0Qs=
 github.com/alecthomas/repr v0.5.2/go.mod h1:Fr0507jx4eOXV7AlPV6AVZLYrLIuIeSOWtW57eE/O/4=
 github.com/cucumber/gherkin/go/v42 v42.0.0 h1:Ulh3E2awUUSSja+wonP/IOQ+ycmiZwZbgmzqk5H8JNI=
@@ -12,6 +10,8 @@ github.com/cucumber/messages/go/v34 v34.2.0 h1:VCbcNOMz+f8ccjjOOx1NLBNhwvE7/X49A
 github.com/cucumber/messages/go/v34 v34.2.0/go.mod h1:LYUPjqlTS1kS0pdkdf6sS5uirnjwiIzEGyXPezXNhL8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/donvargax/kong v1.16.2-itos.1 h1:5GZmw0y55cIfCawUmParkEAGnVfcPSNf6Rp/OcKcpGk=
+github.com/donvargax/kong v1.16.2-itos.1/go.mod h1:sm+bSCd/FcW5k3gBiHy0kE1PNg79yiwRLbVlwkoMc8I=
 github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6 h1:8g1N0i1aQEVOfV0twXgNG/e7PTOY2HjU+sVW5eDO03k=
 github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6/go.mod h1:VDp2dbLmXdPwjWnz7xVmjLKP6U2ZJyaQrGNxbEflMPc=
 github.com/google/go-cmdtest v0.4.1-0.20220921163831-55ab3332a786 h1:rcv+Ippz6RAtvaGgKxc+8FQIpxHgsF+HBzPyYL2cyVU=

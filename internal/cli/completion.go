@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/alecthomas/kong"
+	"github.com/donvargax/kong"
 )
 
 // Completion is the public command that prints a shell's completion stub.

@@ -20,12 +20,19 @@ package cli
 // takes its environment variable's value (ITOS_CC_JSON=1) and
 // refuses one on the command line, so its mapper knows which it is reading
 // by the hook, which runs between the two.
+//
+// kong (since #618) reads a --no- pair's own value itself and hands the
+// mapper a bool token for the pair, the same for --no-json and
+// --no-json=true. So the mapper refuses only a value the command line wrote
+// (a string), and the hook refuses a --no- pair written with a value.
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
-	"github.com/alecthomas/kong"
+	"github.com/donvargax/kong"
 )
 
 // Flags are the kong options that hold the command line's flags to the rules
@@ -51,6 +58,9 @@ type tracing struct{ over bool }
 // environment variable beside its flag is never the flag given twice.
 func (t *tracing) done(ctx *kong.Context) error {
 	t.over = true
+	if err := pairGivenAValue(ctx); err != nil {
+		return err
+	}
 	given := map[*kong.Flag]bool{}
 	for _, p := range ctx.Path {
 		f := p.Flag
@@ -65,6 +75,23 @@ func (t *tracing) done(ctx *kong.Context) error {
 	return nil
 }
 
+// pairGivenAValue refuses a switch's --no- pair written with a value
+// (--no-json=true) before a bare --, in the command line as given, since kong
+// hands the mapper the pair's value as its own bool.
+func pairGivenAValue(ctx *kong.Context) error {
+	for _, arg := range ctx.Args {
+		if arg == "--" {
+			return nil
+		}
+		for _, f := range ctx.Flags() {
+			if f.Tag.Negatable != "" && f.IsBool() && strings.HasPrefix(arg, "--no-"+f.Name+"=") {
+				return fmt.Errorf("--%s: %s", f.Name, switchTakesNoValue(f))
+			}
+		}
+	}
+	return nil
+}
+
 // switchMapper reads a switch: alone on the command line, its value from its
 // environment variable as kong reads it. kong knows a switch by its bool
 // kind, the only kind this mapper reads, so the mapper need not say so.
@@ -74,10 +101,17 @@ type switchMapper struct {
 }
 
 func (m switchMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
-	if !m.traced.over && ctx.Scan.Peek().Type == kong.FlagValueToken {
-		return fmt.Errorf("a switch takes no value; give --%s%s alone", ctx.Value.Name, either(ctx.Value.Flag))
+	if next := ctx.Scan.Peek(); !m.traced.over && next.Type == kong.FlagValueToken {
+		if _, written := next.Value.(string); written {
+			return errors.New(switchTakesNoValue(ctx.Value.Flag))
+		}
 	}
 	return m.kong.Decode(ctx, target)
+}
+
+// switchTakesNoValue is the refusal of a switch given a value.
+func switchTakesNoValue(f *kong.Flag) string {
+	return fmt.Sprintf("a switch takes no value; give --%s%s alone", f.Name, either(f))
 }
 
 // valueMapper reads a flag's value as kong does, once there is one: never

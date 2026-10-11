@@ -132,6 +132,9 @@ linters:
           deny:
             - pkg: github.com/alecthomas/kong
               desc: "kong stays in the UI, cmd and internal/cli (decision 29): a slice's struct tags need no import of it; never loosen this one"
+            # The fork itos-cc builds with until kong releases its typed parse errors (T-33).
+            - pkg: github.com/donvargax/kong
+              desc: "kong stays in the UI, cmd and internal/cli (decision 29): a slice's struct tags need no import of it; never loosen this one"
     revive:
       rules:
         - name: file-length-limit

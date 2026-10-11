@@ -1,10 +1,11 @@
 package cli
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
-	"github.com/alecthomas/kong"
+	"github.com/donvargax/kong"
 )
 
 // The scenarios (ID-CLI-05 to 09) hold the usage errors by their exit code
@@ -49,6 +50,24 @@ func TestAFlagGivenNoValueIsRefusedNamingIt(t *testing.T) {
 	}
 }
 
+// The kong fork types each failure of the command line, so an unknown flag
+// and a stray argument tell apart by type, not by kong's text.
+func TestAnUnknownFlagAndAStrayArgumentAreTypedApart(t *testing.T) {
+	_, err := parse(t, "--stak")
+	var unknown *kong.UnknownFlagError
+	if !errors.As(err, &unknown) || unknown.Flag != "--stak" {
+		t.Errorf("--stak: got %T %v, want an unknown --stak", err, err)
+	}
+	_, err = parse(t, "made", "more")
+	var unexpected *kong.UnexpectedArgumentError
+	if !errors.As(err, &unexpected) || unexpected.Arg != "more" || unexpected.ExpectedCommand {
+		t.Errorf("made more: got %T %v, want a stray argument more", err, err)
+	}
+	if errors.As(err, &unknown) {
+		t.Errorf("made more: %v is also an unknown flag", err)
+	}
+}
+
 func TestAValueGivenAsAFlagsOwnIsTaken(t *testing.T) {
 	l, err := parse(t, "made", "--stack=--json")
 	if err != nil {
@@ -71,6 +90,26 @@ func TestASwitchGivenAValueIsRefusedNamingItAndItsPair(t *testing.T) {
 		if _, err := parse(t, c.args...); err == nil || err.Error() != c.want {
 			t.Errorf("%v: got %v, want %q", c.args, err, c.want)
 		}
+	}
+}
+
+// kong reads a --no- pair's value itself and hands the mapper a bool for
+// the pair alone and for the pair given a value alike; the pair alone is
+// taken, given a value it is refused as the switch is.
+func TestANegatedSwitchGivenAValueIsRefusedAndAloneTaken(t *testing.T) {
+	want := "--json: a switch takes no value; give --json or --no-json alone"
+	for _, args := range [][]string{{"--no-json=true"}, {"made", "--no-json=true"}} {
+		if _, err := parse(t, args...); err == nil || err.Error() != want {
+			t.Errorf("%v: got %v, want %q", args, err, want)
+		}
+	}
+	l, err := parse(t, "--no-json")
+	if err != nil || l.JSON {
+		t.Errorf("--no-json: got %+v, %v", l, err)
+	}
+	l, err = parse(t, "--", "--no-json=true")
+	if err != nil || l.Folder != "--no-json=true" {
+		t.Errorf("-- --no-json=true: got %+v, %v", l, err)
 	}
 }
 

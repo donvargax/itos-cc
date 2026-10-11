@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/alecthomas/kong"
+	"github.com/donvargax/kong"
 )
 
 // completionModel is a command line of every shape the completion walks: a
