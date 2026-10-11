@@ -418,3 +418,18 @@
     - run: go vet ./...
     - run: go test -count=1 ./mutate/...
       timeout: 600
+- id: T-22
+  type: ci
+  title: A release publishes the commit main's CI proved, without testing it again
+  why: >
+    A pushed vX.Y.Z tag ran the whole test matrix again (about 20 minutes on three OSes plus the
+    language tools) on a commit whose main push had already passed that exact matrix: v0.10.0
+    (97f4b13), v0.11.0 (bed614d) and v0.12.0 (53cb215) each had a green main run on the same sha.
+    The repeat proved nothing new and was where both release flakes struck (v0.9.0, v0.10.0), each
+    holding the release until a rerun. On a tag, test is skipped; draft first requires a successful
+    main push run of CI for exactly that sha, waiting for one still running, and fails with a
+    message when there is none, so an untested commit still cannot publish. Pull requests and main
+    pushes are unchanged.
+  done_when:
+    - run: grep -q 'Require a green main CI run of this commit' .github/workflows/ci.yml
+    - run: "grep -q 'actions: read' .github/workflows/ci.yml"
