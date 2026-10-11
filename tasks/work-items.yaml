@@ -11,6 +11,10 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - T-29
+  - T-30
+  - T-31
+  - T-32
   - mutation-windows-ownership
 items:
   - id: T-3
