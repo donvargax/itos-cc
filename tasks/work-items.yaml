@@ -391,18 +391,9 @@ items:
     title: A recorded mutant whose site no longer exists, as when an operator is removed
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was check-removed-operator-sites.
-      check-unrecorded-sites covers a site an entry never recorded, not the reverse. When a newer
-      itos-cc removes a mutation operator, a function whose text did not change keeps mutants in its
-      entry whose site no longer exists. mutation check keeps them (placed leaves such a mutant at
-      its recorded line), so a recorded survivor there seems to fail as mutation.survived for a
-      mutant that is no longer in the code, until a run rebuilds the entry. Read from
-      mutate/check.go while building check-unrecorded-sites, not reproduced: decide whether check
-      ignores such mutants, calls the function stale, or reports them otherwise.
   - id: graph-stale-marked-entries
     title: The graph marks stale an entry a --since run kept marked stale
     phase: 1
