@@ -1899,3 +1899,16 @@ items:
       (q-54). A feat in the same minor release as interrupt-exit-130, proposed to go-template-itos
       alongside the internal/cli contract.
     refs: [q-56, q-54]
+  - id: release-notes-bookkeeping
+    title: Release notes list the registry's bookkeeping commits
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      v0.14.3's notes list every docs commit since v0.14.2 under Documentation, most of them itos's
+      own bookkeeping (ask q-50, answer q-50, take, close and queue T-29 …), which tells a user of
+      itos-cc nothing. tools/bin/release-notes could leave out commits that touch only tasks/, or
+      name them in one line. It came with go-template-itos, so the change goes upstream as an exact
+      diff.
