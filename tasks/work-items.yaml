@@ -1682,7 +1682,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-26, T-27]
     kind: task
     why: >
       The person (2026-10-11) wants the template's auto-release. On a push to main whose test jobs
