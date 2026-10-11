@@ -230,16 +230,7 @@ file of its module, which lists every class the module compiled, all of
 them uncovered; under Jest or c8 such a file, a Kotlin one whose module
 measured no other file, and any file a project's own coverage script
 measured (--all-tests with one), has no evidence, which is
-mutation.coverage-missing. A scope the fingerprints cannot prove is
-mutation.coverage-unsupported for every judged function of its root, even
-with fresh evidence: an active Go workspace or a local replacement outside
-the module; an npm, yarn or pnpm workspace, a workspace: dependency, or a
-file: or link: dependency outside the package root; a Python path or
-editable dependency outside the build root (pyproject.toml, requirements
-files, the root's virtualenv); a Gradle includeBuild, or a Maven module,
-subproject or parent relativePath, outside the build root. They are found
-in the root's own files, and nothing outside the project root is read.
-Strict runs reject --no-coverage,
+mutation.coverage-missing. Strict runs reject --no-coverage,
 --coverage-report, --use-existing-coverage, and --coverage-command. A
 matching independent cache can avoid remeasurement; otherwise built-in or
 listed coverage must measure successfully. Empty or comment-only function
@@ -355,7 +346,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
 		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
 		"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
-		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
+		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
@@ -667,8 +658,8 @@ func runMutate(in *invocation) (any, error) {
 		for _, check := range cached {
 			if check.State == "unsupported" {
 				unsupported = true
-				reportLanguageCoverageProblem(in, check.Language, check.File, check.Function, check.Line,
-					"mutation.coverage-unsupported", "uses unsupported "+languageName(check.Language)+" coverage scope "+strings.Join(check.Changed, ", "))
+				reportCoverageProblem(in, check.File, check.Function, check.Line,
+					"mutation.coverage-unsupported", "uses unsupported Go coverage scope "+strings.Join(check.Changed, ", "))
 			}
 		}
 		if unsupported {
@@ -1515,11 +1506,8 @@ func reportLanguageCoverageProblem(in *invocation, language, file, function stri
 	if !in.json {
 		fmt.Printf("  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), file, line, function)
 	}
-	fix := "Add a test that executes the uncovered " + languageName(language) + " code, then run mutation run again."
-	if rule == "mutation.coverage-unsupported" {
-		fix = "Strict coverage cannot prove inputs beyond the inventoried root: keep them inside it, or judge this code without --fail-uncovered."
-	}
-	p := fail(kindNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message), fix).
+	p := fail(kindNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message),
+		"Add a test that executes the uncovered "+languageName(language)+" code, then run mutation run again.").
 		with("file", file).with("function", function).with("line", line)
 	p.shown = true
 	in.report(p)

@@ -87,13 +87,10 @@ func CheckCoverage(files []string, judge func(path, function, hash string) bool,
 		language := f.Spec.Name
 		unsupported := ""
 		if language == "go" {
-			unsupported, err = GoCoverageUnsupported(path)
-		} else {
-			unsupported, err = LineCoverageUnsupported(language, path, project.Root())
-		}
-		if err != nil {
-			f.Close()
-			return out, err
+			if unsupported, err = GoCoverageUnsupported(path); err != nil {
+				f.Close()
+				return out, err
+			}
 		}
 		key := project.FromRoot(path)
 		snap, err := LoadSnapshot(key)

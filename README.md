@@ -341,25 +341,7 @@ language. Kotlin evidence rests on its whole build root, every module of a
 multi-module build included: the Gradle root its settings mark, or the top
 of its Maven reactor. An active Go workspace or local
 replacement outside the inventoried module is refused; set `GOWORK=off` to
-disable workspace use. Refused likewise, as `mutation.coverage-unsupported`
-for every judged function of its root even when older evidence looks
-fresh, are an npm, yarn or pnpm workspace (a `workspaces` field in a `package.json` from
-the package root up to the project root, or a `pnpm-workspace.yaml`), a
-`workspace:` dependency, and a `file:` or `link:` dependency outside the
-package root; a Python path or editable dependency outside the build root,
-as `pyproject.toml` (a `path = "…"` key, as `[tool.uv.sources]` and Poetry
-write one, or a `file:` URL), a `requirements*.txt` there (`-e` or
-`--editable`, a path, a `file:` URL), or the root's `.venv` or `venv`
-editable installs (`.pth` paths, setuptools' `__editable__` finders) name
-one; and a Gradle `includeBuild` outside the build root, or a Maven
-`<module>`, `<subproject>` or parent `<relativePath>` outside the reactor.
-A dependency inside the root is admitted, unless it is reached through a
-symbolic link or lies in a nested package or build root, which the
-fingerprints leave out. The scopes are read from the root's own files,
-lexically: detecting them, itos-cc never reads, lists or follows a path
-outside the project root.
-A Maven parent with no `<relativePath>` is taken from a repository, not
-refused. Strict coverage judges each language's files by its
+disable workspace use. Strict coverage judges each language's files by its
 own evidence alone: a Python, TypeScript or Kotlin file is never judged for
 Go evidence, whether or not a `go.mod` sits above it. A counted run
 (`--count`) does not yet prove Python, TypeScript or Kotlin lines.
