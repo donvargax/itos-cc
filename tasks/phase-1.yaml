@@ -577,11 +577,6 @@
     as it is. golangci-lint waits for the selection domain's stage, over internal/ alone; the
     scenario step for the godog harness; mutation sample and proof.code until the refactor is done
     (q-53). itos-policy.yaml, the template's own configuration, is the source to copy from.
-  done_when:
-    - run: grep -q 'itos ci run' .github/workflows/ci.yml
-    - run: grep -q 'tools/bin/architecture-check' itos.yaml
-    - run: grep -q 'govulncheck' itos.yaml
-    - run: grep -q 'tools/bin/domain-coverage' itos.yaml
 - id: T-30
   type: refactor
   title: "internal/cli is itos-cc's UI: problems, exit codes and JSON"
