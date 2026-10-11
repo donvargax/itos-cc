@@ -1371,3 +1371,15 @@ items:
       coverage-stale though no executable line changed. Telling executable lines from the parse
       alone, per language, would let such a function need no evidence.
     refs: ["#22", "#33"]
+  - id: stale-exception-fix-renew
+    title: A stale exception's fix names mutation except --renew
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation run and check fix a changed exception by asking for a new mutation except with a
+      reason; since --renew carries an entry whose mutant is unchanged, keeping its reason, the fix
+      could name it first, so a person tries the renewal before rewriting the entry by hand.
+    refs: ["#32"]
