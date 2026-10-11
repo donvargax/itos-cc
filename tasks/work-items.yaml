@@ -1122,7 +1122,7 @@ items:
     title: A counted run fails an unreached Python file whose line listed tests reach
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
