@@ -126,6 +126,107 @@ Code that differs by OS takes the OS as a value. Logic never branches on `runtim
 build-tagged file holds only a call that one OS lacks, with no mutation site: the scenarios'
 interrupt step is the example, `os.Interrupt` on Unix and `CTRL_BREAK_EVENT` on Windows.
 
+## Moving a command
+
+A command parsed by hand moves onto kong as a slice of its own, printing the same bytes and
+exiting with the same codes as before: a refactor, no behaviour change. `units` moved first
+(T-32), and every step below points at what it did. A project made from go-template-itos
+follows the same steps for a command it wrote before it had the template's design.
+
+1. **The slice.** Make `internal/<command>/<command>.go`, as `internal/units` is laid out:
+   - `CLI`, the kong struct: one field per flag, in the order help lists them, each with its
+     `help` tag; `JSON bool` named `json`; the arguments last
+     (`arg:"" optional:"" name:"path"`). Its tags need no import of kong.
+   - `Contract() cli.Contract`: what the help says beyond the flags, its `About`, the keys
+     `--json` adds, its problem rules, its exit codes and examples, copied from the old
+     `command` value word for word.
+   - `Query`, the command line's values as the domain takes them, and `Handler`, holding the
+     ports cmd gives it. `Handle(ctx, q)` only calls the domain through them.
+   - `Run(ctx, ui, h) int`: builds the `Query`, calls `Handle`, prints through `ui`, and returns
+     `ui.Emit`'s exit code, with the data printed so far beside a failure's problems, as the
+     old command returned it.
+   - Tests in the same package, with the domain's `porttest` fake, for what the scenarios
+     cannot reach, such as a file that cannot be read.
+2. **Its I/O goes through a port.** A slice reads, walks and runs nothing itself (decision
+   29). When it needs something of the outside that every command of the domain needs too,
+   the domain's port grows it, as the selection port's `Tree` grew `Read` for the sources
+   `units` parses: one port the adapter already implements, never a port of the slice's own,
+   which an adapter could not implement without importing a slice. A path a person reads is
+   named from the working directory by `ui.Rel`, not by a library an adapter wraps.
+3. **Its classifier.** A domain's failures become problems in one classifier, held beside the
+   one slice that uses the domain (`count.Classify`). A domain several commands share keeps
+   its classifier in cmd (`classifySelection`), since no slice may import another; the
+   moved slice then needs none. internal/cli never holds one.
+4. **Routing in cmd.** In `cmd/itos-cc/moved.go`, add the slice's struct to `commandLine`,
+   its `help` tag the line the top-level help lists, its handler to `parserOf`'s bindings,
+   and a case to `runMoved` that calls its `Run` through `callSafely`. Remove the old
+   `command` from `main.go`'s list and delete its file. `run` sends a moved command to kong
+   and every other to the hand parser; the top-level help, `help <command>` and the guess
+   for an unknown command know both. A group, such as `mutation`, moves whole, and
+   `ParseProblem`'s `command.unknown` then takes the group's wording, which names its
+   subcommands.
+5. **The command line.** `cli.Read` finds `--json` and help (`-h` or `--help` anywhere
+   before `--`) before anything is judged, so help wins over any mistake and a usage error
+   prints the object `--json` asks for. `cli.Parse` holds kong to what it does not hold by
+   itself: a word of one dash, other than `-` and `-h`, is a long flag mistyped, found
+   against kong's model unless what precedes it fails first (q-55); arguments may stand
+   between flags, so they move behind them before kong reads them. `cli.Flags` refuses a
+   switch given a value, a flag given no value and a flag given twice, the second time
+   before its value is judged. It reads switches and string values; a command whose flags
+   take numbers, durations or a switch's choices (`crap`, `dry`, `mutation run`) first gives
+   `Flags` a mapper for that kind, with a typed refusal in the words the hand parser used
+   (`--threshold needs a number, and was given "abc"`).
+6. **Failures by type, never by text.** `cli.ParseProblem` turns each failure into the
+   problem `docs/CLI.md` names, by the kong fork's error types and `Flags`' own:
+
+   | Failure                                             | Problem                 |
+   | --------------------------------------------------- | ----------------------- |
+   | `kong.UnknownFlagError`, `cli.MistypedFlagError`    | `flags.unknown`, the flag as written and the one meant |
+   | `cli.SwitchValueError`                              | `flags.switch-value`    |
+   | `cli.ValueMissingError`, `kong.MissingValueError`   | `flags.value-missing`   |
+   | `cli.RepeatedFlagError`                             | `flags.repeated`        |
+   | `kong.InvalidValueError`, `kong.EnumError`          | `flags.value-invalid`, in kong's words until a mapper of ours words it |
+   | `kong.UnexpectedArgumentError`, a command expected  | `command.unknown`       |
+   | `kong.UnexpectedArgumentError`, no argument taken   | `args.unexpected`       |
+   | `kong.MissingCommandError`                          | `command.missing`       |
+
+   Any other failure of the command line is a usage problem in kong's words, and an error
+   that is no parse failure is internal. A moved command that meets a kind with no wording
+   yet gives it one here, from `features/cli.feature` and `docs/CLI.md`, never by matching
+   kong's text.
+7. **Help.** kong's printer is replaced: `kong.Help(cli.Help)` prints the selected command's
+   `cli.Page`, from kong's model (its flags, the command's own and then the program's, and
+   its arguments for the usage line) and its `Contract`, in the layout the hand-parsed
+   commands print through the same `Page`. The help flag's text is set in `parserOf`. Help
+   for `<command> --help` and `help <command>` both go through `movedHelp`.
+8. **Its scenarios run through godog.** Convert the command's feature file: its steps in
+   `features/<file>_test.go`, registered from `initializeScenario`, reading only what the
+   binary prints and writes, and the file added to `converted` in `features_test.go`. A live
+   scenario's text never changes outside a `feat` or a `fix`; write the step for the
+   sentence as it stands, or stop and say which scenario cannot be run as written. Check
+   each step can fail: change an expectation in the file locally, see the step fail, and
+   restore it. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
+   step instead of being logged as not run.
+9. **The proof: the old and new binaries agree.** Build the binary of the commit before the
+   move and of the move, and run both over many command lines of the command: every flag
+   alone, with `=value` and given twice, unknown and mistyped flags (`-changed`, `--chnged`),
+   `-h` and `--help` anywhere, after `--` and beside mistakes, `--json` before the command,
+   `help <command>`, arguments between flags, paths that are there, fragments and nothing,
+   in a git repository, in a plain folder and beside a file that cannot be read. Compare
+   stdout, stderr and the exit code of each; say every line that differs and why in the
+   commit. For `units`, 236 lines agreed but one: `---changed`, which the hand parser read as
+   `--changed` and kong refuses as an unknown flag, as rule 15 has it.
+10. **Boundaries.** The `slices` rule holds the new package with no edit. A top-level library
+    it imports that the rule refuses is either a domain library every command measures by,
+    allowed in `slices` with a comment saying why (`lang`), or one an adapter wraps, which
+    stays refused (`project`). Add the slice to the fixture lists of
+    `tools/testdata/architecture/check_test.go`, with every library you allowed or refused,
+    and run `tools/bin/architecture-check` and `tools/bin/pinned golangci-lint run
+    ./internal/...`.
+11. **Then the old tests.** Once CI has run the converted scenarios green, remove only the Go
+    tests of `cmd/itos-cc` that are the same check as a scenario; keep any that holds what no
+    scenario reaches.
+
 ## Tests
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.
