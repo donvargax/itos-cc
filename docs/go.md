@@ -25,12 +25,16 @@ from it, and thin slices named for their commands.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
-  from kong's flags is the one copy the layout accepts.
-- `internal/cli` is the UI every slice shares. It alone turns a failure into its exit code and
-  prints the plain or JSON answer, and it stops a command on Ctrl-C (decision 31).
+  from kong's flags is the one copy the layout accepts. Its `Classify` is the counting
+  domain's classifier, turning the port's sealed failures into problems.
+- `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
+  run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
+  plain or JSON answer, and it stops a command on Ctrl-C (decision 31). A domain's failures
+  reach it through that domain's classifier, which cmd hands it.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
-  `internal/cli`, gives `stdin` the disk as its fallback, and hands the context and the handler
-  to `Run` through kong's bindings. It is the only place that knows every package.
+  `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
+  and hands the context and the handler to `Run` through kong's bindings. It is the only place
+  that knows every package.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -49,6 +53,8 @@ deadlines only, always as the first parameter and never in a struct or as a valu
   slice, an adapter or `cmd`. Its files are every package under `internal/` except the ones the
   rule lists as something else, so a new command's slice is held with no edit. A slice's tests
   are in its own package, since the rule cannot tell a package's import of itself from another's.
+- `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
+  touches no file of the UI (q-54).
 - `infra`: an adapter imports nothing of ours but the port it implements; only its tests may
   use `porttest`.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
@@ -66,7 +72,8 @@ command from reaching into this one.
 - A domain package: add its folder as a `**/internal/<name>/**` glob to `domain` and
   `domain-io`, as a `!**/internal/<name>/**` exclusion to `slices`, and its import path to the
   `allow` lists of `domain` and of `slices` if commands use it. Give it a `port` subpackage for
-  what it reaches outside. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
+  what it reaches outside, and a classifier for its failures beside the slice that uses it,
+  which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
 - An adapter: add its folder to `infra`'s `files`, the port it implements to `infra`'s `allow`,
@@ -78,8 +85,9 @@ command from reaching into this one.
   rule that stops matching fails there instead of passing silently.
 
 A new sealed failure set, an interface with an unexported marker method like
-`port.ReadFailure`, is annotated `//sumtype:decl` and given its exit codes in one switch in
-`internal/cli` that names every kind. gochecksumtype then refuses the switch when a kind is
+`port.ReadFailure`, is annotated `//sumtype:decl` and given its exit codes in one switch that
+names every kind, in its domain's classifier, as `internal/count`'s `Classify` gives the
+counting port's. gochecksumtype then refuses the switch when a kind is
 added and left out; without the annotation nothing checks it.
 
 Code that differs by OS takes the OS as a value. Logic never branches on `runtime.GOOS`. A

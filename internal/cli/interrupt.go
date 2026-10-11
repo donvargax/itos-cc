@@ -27,8 +27,9 @@ func StopOnInterrupt(interrupts <-chan os.Signal, cancel context.CancelFunc, exi
 	exit(CodeInterrupted)
 }
 
-// interrupted is the problem of a command an interrupt cancelled: exit 130,
-// what shells report for Ctrl-C (128 and SIGINT's 2), on every system.
-func interrupted() (int, []Problem) {
-	return CodeInterrupted, one("INTERRUPTED", "interrupted before it finished", "run it again and let it finish")
+// Interrupted is the problem of a command an interrupt cancelled: exit 130,
+// what shells report for Ctrl-C (128 and SIGINT's 2), on every system. A
+// domain's classifier gives it for its kind of a cancelled failure.
+func Interrupted() *Problem {
+	return NewProblem(CodeInterrupted, "interrupted", "interrupted before it finished", "Run it again and let it finish.")
 }

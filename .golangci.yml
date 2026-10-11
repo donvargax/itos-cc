@@ -9,9 +9,10 @@ linters:
   settings:
     # Harvested from github.com/donvargax/itos-template/.golangci.yml with
     # owner MIT permission (CONTRIBUTORS.md). The ports' failures are sealed
-    # sets (//sumtype:decl), and internal/cli gives each kind its exit code
-    # in one switch per set (docs/CLI.md rule 32): a switch that leaves a
-    # kind out is refused, and a default case does not count as naming them.
+    # sets (//sumtype:decl), and each domain's classifier, which cmd hands to
+    # internal/cli, gives each kind its exit code in one switch per set
+    # (docs/CLI.md rule 32): a switch that leaves a kind out is refused, and
+    # a default case does not count as naming them.
     # tools/bin/architecture-check proves it with compile-valid fixtures.
     gochecksumtype:
       default-signifies-exhaustive: false
@@ -21,8 +22,8 @@ linters:
     # tools/bin/architecture-check proves these with compile-valid fixtures.
     # The arrows are decision 29's: the domain and its ports reach the outside
     # only through adapters implementing the ports, an adapter imports
-    # nothing of ours but the ports, a slice imports no other slice, and kong
-    # stays in cmd and internal/cli. Each desc tells the reader of a refusal
+    # nothing of ours but the ports, a slice imports no other slice, the UI
+    # imports nothing of ours (q-54), and kong stays in cmd and internal/cli. Each desc tells the reader of a refusal
     # what it means and, where a new package caused it, to extend the rules
     # as docs/go.md's Adding a package says rather than loosen them.
     depguard:
@@ -82,6 +83,17 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "a slice imports only the domain, its ports and internal/cli (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # The UI every slice shares, its tests too, imports nothing of ours:
+        # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
+        # classifier per domain, held beside that domain's slice, so adding
+        # or removing a domain touches no file of it.
+        ui:
+          list-mode: lax
+          files:
+            - "**/internal/cli/**"
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "internal/cli imports nothing of ours (q-54): turn a domain's failures into problems in a classifier beside its slice, which cmd hands the UI; never loosen this one"
         # An adapter implements the ports and imports nothing of ours but
         # them: not the domain, another adapter, a slice, the UI or porttest's
         # fakes, which its tests alone may use. Each adapter is listed, and

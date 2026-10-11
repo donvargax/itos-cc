@@ -4,9 +4,10 @@
 // Run assembles the Query from the command line, the one copy of a command
 // line's values, and hands it to Handle with the context cmd made; Handle
 // only wires the Query to the domain through the Files port it was given,
-// and Run writes what came back. The slice counts nothing, reads no file and
-// knows no exit code: a failure is the domain's, and internal/cli gives it
-// one.
+// and Run writes what came back. The slice counts nothing and reads no file.
+// A failure is the domain's: Classify, which cmd hands to internal/cli,
+// turns its kind into a problem and its exit code, and Run reports it
+// through the UI.
 package count
 
 import (

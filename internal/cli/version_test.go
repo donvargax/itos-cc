@@ -31,11 +31,11 @@ func TestVersionPrintsTheText(t *testing.T) {
 	}
 }
 
-// With --json, one object on one line: schema 1, ok, the version and the
+// With --json, one object: schema 1, ok, the version and the
 // commit, and nothing on stderr.
 func TestVersionJSONIsOneObjectWithTheVersionAndCommit(t *testing.T) {
 	stdout, stderr := runVersion(t, true, "itos-cc 1.4.0\ncommit 0123abc", "1.4.0", "0123abc")
-	want := `{"schema":1,"ok":true,"version":"1.4.0","commit":"0123abc"}` + "\n"
+	want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"version\": \"1.4.0\",\n  \"commit\": \"0123abc\"\n}\n"
 	if stdout != want {
 		t.Errorf("standard output = %q, want %q", stdout, want)
 	}
@@ -48,7 +48,7 @@ func TestVersionJSONIsOneObjectWithTheVersionAndCommit(t *testing.T) {
 // line: never an empty commit a script would read as one.
 func TestVersionJSONLeavesTheCommitOutWhenTheBuildKnowsNone(t *testing.T) {
 	stdout, _ := runVersion(t, true, "itos-cc (devel)", "(devel)", "")
-	if want := `{"schema":1,"ok":true,"version":"(devel)"}` + "\n"; stdout != want {
+	if want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"version\": \"(devel)\"\n}\n"; stdout != want {
 		t.Errorf("standard output = %q, want %q", stdout, want)
 	}
 }

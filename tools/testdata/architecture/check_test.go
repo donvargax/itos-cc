@@ -165,10 +165,22 @@ func TestArchitecture(t *testing.T) {
 		add("fake_allowed", slice.base, module+"/internal/counting/port/porttest", "Value", "", true)
 	}
 	// What is no slice is not held as one: the release library's packages
-	// import each other, as releasetest does, and the UI imports the ports.
+	// import each other, as releasetest does.
 	add("release_allowed", "internal/release", module+"/internal/release", "Value", "", false)
 	add("version_allowed", "internal/version", module+"/internal/version", "Value", "", false)
-	add("port_allowed", "internal/cli", module+"/internal/counting/port", "Value", "", false)
+	// The UI arrow, code and tests alike: internal/cli imports nothing of
+	// ours, no domain or port above all, since cmd hands it each domain's
+	// classifier; the standard library is its own.
+	for _, test := range []bool{false, true} {
+		kind := "code"
+		if test {
+			kind = "test"
+		}
+		for _, target := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/version", "internal/release", "cmd/probe"} {
+			add(strings.ReplaceAll(target, "/", "_")+"_"+kind, "internal/cli", module+"/"+target, "Value", "ui", test)
+		}
+		add("stdlib_allowed_"+kind, "internal/cli", "strings", "ToLower", "", test)
+	}
 	// What assembles them is free to import the domain, the adapters and
 	// the slices.
 	for _, target := range []string{"internal/counting", "internal/disk", "internal/stdin", "internal/count", "internal/next", "internal/cli", "internal/version"} {
@@ -197,9 +209,9 @@ func TestArchitecture(t *testing.T) {
 		add("rapid_code", layer, "pgregory.net/rapid", "Value", "rapid", false)
 		add("rapid_test", layer, "pgregory.net/rapid", "Value", "rapid", true)
 	}
-	// A sealed failure set as the ports declare one, and internal/cli's
-	// switches over it shaped as readProblem is: starting from the internal
-	// error's 70, each kind its code. Only the switch naming every kind
+	// A sealed failure set as the ports declare one, and a slice's
+	// classifier switching over it shaped as count's readProblem is:
+	// starting from the internal error's 70, each kind its code. Only the switch naming every kind
 	// passes; a default arm does not count as naming the kind it leaves out.
 	sealed := module + "/internal/counting/port/sealed"
 	write("internal/counting/port/sealed/sealed.go", `package sealed
@@ -225,7 +237,7 @@ func (*Unreadable) failure() {}
 func (e *Unreadable) Error() string { return "unreadable: " + e.Path }
 `)
 	sumtype := func(name, arms string, refused bool) {
-		path := "internal/cli/" + name + "/probe.go"
+		path := "internal/count/" + name + "/probe.go"
 		write(path, fmt.Sprintf(`package probe
 
 import sealed %q

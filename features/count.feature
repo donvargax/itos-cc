@@ -11,13 +11,13 @@ Feature: Count
   never the input's contents. --json prints one object, schema 1, with ok, file (the
   argument as given, - for standard input), lines and words, and it prints the hint
   nowhere. Every failure prints its own object, ok false, with problems carrying rule,
-  message and fix. The exit code comes from the kind of the error, in the UI's sealed
-  switch alone: 2 for a usage failure, 3 for an input that is missing
-  (COUNT_INPUT_MISSING) or otherwise unreadable, a directory included
-  (COUNT_INPUT_UNREADABLE). A kind no case classifies is the 70 of an unclassified bug,
-  never a child status passed through, and count itself never refuses with 1. No
-  arguments and --help print help on stdout with exit 0, while count without its file is
-  a usage failure. --help and --version are actions; --json is a negatable switch with
+  message and fix. The exit code comes from the kind of the error, in the count slice's
+  sealed switch alone, the classifier cmd hands the UI: 2 for a usage failure, 3 for an
+  input that is missing (count.input-missing) or otherwise unreadable, a directory
+  included (count.input-unreadable). A kind no case classifies is the 70 of an
+  unclassified bug, never a child status passed through, and count itself never refuses
+  with 1. No arguments and --help print help on stdout with exit 0, while count without
+  its file is a usage failure. --help and --version are actions; --json is a negatable switch with
   ITOS_CC_JSON, the project's name in upper case. -- ends the options and flags
   are accepted in any position.
 
@@ -103,20 +103,20 @@ Feature: Count
   # Exit 3 is the environment's, not a refusal: the input the person named is not
   # there. The rule ID is what a script matches on, not the sentence.
   @ID-COUNT-10 @count-cli @wip
-  Scenario: a missing file exits 3 with COUNT_INPUT_MISSING
+  Scenario: a missing file exits 3 with count.input-missing
     When itos-cc runs with "count absent.txt --json"
     Then it exits with code 3
-    And its JSON output names the problem "COUNT_INPUT_MISSING"
-    And its error output says "absent.txt"
+    And its JSON output names the problem "count.input-missing"
+    And its standard output says "absent.txt"
 
   # A directory exists and still cannot be read as bytes; a platform says so
   # differently, the kind and the code are the same.
   @ID-COUNT-11 @count-cli @wip
-  Scenario: a directory exits 3 with COUNT_INPUT_UNREADABLE
+  Scenario: a directory exits 3 with count.input-unreadable
     Given an empty folder "adirectory"
     When itos-cc runs with "count adirectory --json"
     Then it exits with code 3
-    And its JSON output names the problem "COUNT_INPUT_UNREADABLE"
+    And its JSON output names the problem "count.input-unreadable"
 
   # With --json even a failure is one object, and every problem says what to do next,
   # not only what went wrong: a script reads the rule and prints the fix.

@@ -18,7 +18,7 @@ type ends struct {
 
 // uiOf is a UI writing to ends.
 func uiOf(e *ends) *cli.UI {
-	return &cli.UI{In: strings.NewReader(""), Stdout: &e.stdout, Stderr: &e.stderr}
+	return &cli.UI{In: strings.NewReader(""), Stdout: &e.stdout, Stderr: &e.stderr, Classifiers: []cli.Classifier{Classify}}
 }
 
 // count runs the command over the fake's files named in data. Standard input
@@ -57,14 +57,14 @@ func TestPlainOutputNeverPrintsWhatItRead(t *testing.T) {
 	}
 }
 
-// One object on stdout, one line, and nothing on stderr: --json prints the
+// One object on stdout, and nothing on stderr: --json prints the
 // hint nowhere, so a script's output is only what it reads.
 func TestJSONOutputIsOneObjectAndNoHint(t *testing.T) {
 	var e ends
 	if code := count(t, &e, "notes.txt", map[string][]byte{"notes.txt": []byte("one two three\nfour five")}, true); code != 0 {
 		t.Fatalf("Run exit = %d, want 0", code)
 	}
-	want := `{"schema":1,"ok":true,"file":"notes.txt","lines":2,"words":5}` + "\n"
+	want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"file\": \"notes.txt\",\n  \"lines\": 2,\n  \"words\": 5\n}\n"
 	if got := e.stdout.String(); got != want {
 		t.Errorf("standard output = %q, want %q", got, want)
 	}
@@ -80,7 +80,7 @@ func TestJSONOutputNamesStandardInputAsTheArgument(t *testing.T) {
 	if code := count(t, &e, "-", map[string][]byte{"-": []byte("one two three")}, true); code != 0 {
 		t.Fatalf("Run exit = %d, want 0", code)
 	}
-	want := `{"schema":1,"ok":true,"file":"-","lines":1,"words":3}` + "\n"
+	want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"file\": \"-\",\n  \"lines\": 1,\n  \"words\": 3\n}\n"
 	if got := e.stdout.String(); got != want {
 		t.Errorf("standard output = %q, want %q", got, want)
 	}
@@ -94,14 +94,15 @@ func TestAMissingFileIsTheEnvironments(t *testing.T) {
 	if code := count(t, &e, "absent.txt", nil, true); code != 3 {
 		t.Fatalf("Run exit = %d, want 3", code)
 	}
-	want := `{"schema":1,"ok":false,"problems":[{"rule":"COUNT_INPUT_MISSING",` +
-		`"message":"the file absent.txt is not there",` +
-		`"fix":"check the path, or give - to count standard input"}]}` + "\n"
+	want := "{\n  \"ok\": false,\n  \"problems\": [\n    {\n" +
+		"      \"fix\": \"Check the path, or give - to count standard input.\",\n" +
+		"      \"message\": \"the file absent.txt is not there\",\n" +
+		"      \"rule\": \"count.input-missing\"\n    }\n  ],\n  \"schema\": 1\n}\n"
 	if got := e.stdout.String(); got != want {
 		t.Errorf("standard output = %q, want %q", got, want)
 	}
-	if got, want := e.stderr.String(), "itos-cc: the file absent.txt is not there\n"; got != want {
-		t.Errorf("error output = %q, want %q", got, want)
+	if e.stderr.Len() != 0 {
+		t.Errorf("error output = %q, want none with --json", e.stderr.String())
 	}
 }
 
@@ -115,7 +116,7 @@ func TestAFailureWithoutJSONIsALineForAPerson(t *testing.T) {
 	if e.stdout.Len() != 0 {
 		t.Errorf("standard output = %q, want none", e.stdout.String())
 	}
-	if got, want := e.stderr.String(), "itos-cc: the file absent.txt is not there\n"; got != want {
+	if got, want := e.stderr.String(), "itos-cc: the file absent.txt is not there. Check the path, or give - to count standard input.\n"; got != want {
 		t.Errorf("error output = %q, want %q", got, want)
 	}
 }
@@ -128,7 +129,7 @@ func TestAnUnreadableInputIsTheEnvironments(t *testing.T) {
 	if code := (CLI{File: "adir", JSON: true}).Run(t.Context(), uiOf(&e), Handler{Files: files}); code != 3 {
 		t.Fatalf("Run exit = %d, want 3", code)
 	}
-	if !strings.Contains(e.stdout.String(), `"rule":"COUNT_INPUT_UNREADABLE"`) {
+	if !strings.Contains(e.stdout.String(), `"rule": "count.input-unreadable"`) {
 		t.Errorf("standard output = %q, want the unreadable rule", e.stdout.String())
 	}
 }
