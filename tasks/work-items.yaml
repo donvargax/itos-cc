@@ -1904,3 +1904,19 @@ items:
       pinned commit. Once the pilot (T-32) proves it, a PR goes to alecthomas/kong disclosing AI
       assistance, with the person's review first, and the replace goes when a kong release carries
       the types.
+  - id: interrupt-exit-130
+    title: An interrupted command exits 130, says so once, and a second Ctrl-C ends it at once
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-51: every command, serve and mutation run --count included, cancels its context on Ctrl-C
+      and exits 130 with rule interrupted (count.interrupted's 75 goes), a minor release called out
+      in Upgrading. A second Ctrl-C ends it at once, except while the process groups itos-cc owns
+      are being killed (ADR-0021); q-37 settles as mutation.cleanup-failed. On Unix, once it has
+      reported, it re-raises SIGINT with the default action so a shell's loop stops (q-54). Needs
+      the context threaded through coverage and mutate first. Ships in the same minor release as
+      semantic-exit-codes.
+    refs: [q-51, q-54, q-37]
