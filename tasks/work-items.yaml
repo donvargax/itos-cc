@@ -1493,15 +1493,9 @@ items:
     title: A macOS supervision test reads a grandchild's pid file before it is written
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Main CI 38105144703 (af4646f, registry-only after 5774e1c, whose run passed) failed once on
-      macos-latest: mutate's
-      TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback/captured_group_only parsed an empty
-      grandchild.pid (strconv.Atoi: parsing ""), read before the fixture wrote it. The test should
-      wait for the file's complete content, as other ownership tests poll for their markers.
   - id: T-23
     title: The macOS pid-file and race-build cleanup tests are deterministic
     phase: 1
