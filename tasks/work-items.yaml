@@ -1789,15 +1789,9 @@ items:
     title: T-22's ledger check still looks for the green-main check in ci.yml
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      T-28 moved T-22's 'Require a green main CI run of this commit' step out of ci.yml into
-      release.yml, where it guards the manual workflow_dispatch fallback, so T-22's done_when grep
-      of ci.yml now fails (itos task T-22). The ledger entry's check should follow the step to
-      release.yml, or the coordinator should decide how a done task's checks follow a later task's
-      move.
   - id: release-pending-run-cancelled
     title: A third main push while a release runs cancels the pending one
     phase: 1
