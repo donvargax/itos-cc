@@ -277,22 +277,8 @@ func TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered(t *testin
 		t.Parallel()
 		typescriptIntegrationRepo(t, withoutC8(t, modules), typescriptIntegrationFiles)
 
-		plain := mutateCovered(t, "--all-tests", "--json", cli)
-		logRun(t, &plain)
-		if !strings.Contains(plain.stderr, "integration coverage") || !strings.Contains(plain.stderr, "c8") {
-			t.Errorf("a run without --fail-uncovered logs nothing of integration coverage needing c8")
-		}
-		for _, p := range plain.json(t).Problems {
-			if p["rule"] == "coverage.tool-missing" {
-				t.Errorf("a run without --fail-uncovered reports %v", p)
-			}
-		}
-		for _, m := range tsCliMutants(t, plain) {
-			if m["outcome"] != "uncovered" {
-				t.Errorf("%s, want uncovered, as before: no process the test started was measured", tsCliMutant(m))
-			}
-		}
-
+		// The strict run comes first: a plain run's uncovered outcomes,
+		// reused, would leave it no mutant to judge.
 		strict := mutateCovered(t, "--all-tests", "--fail-uncovered", "--json", cli)
 		logRun(t, &strict)
 		var found bool
@@ -309,6 +295,22 @@ func TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered(t *testin
 		}
 		if strict.code == 0 {
 			t.Errorf("a strict run exits 0, want it to fail")
+		}
+
+		plain := mutateCovered(t, "--all-tests", "--json", cli)
+		logRun(t, &plain)
+		if !strings.Contains(plain.stderr, "integration coverage") || !strings.Contains(plain.stderr, "c8") {
+			t.Errorf("a run without --fail-uncovered logs nothing of integration coverage needing c8")
+		}
+		for _, p := range plain.json(t).Problems {
+			if p["rule"] == "coverage.tool-missing" {
+				t.Errorf("a run without --fail-uncovered reports %v", p)
+			}
+		}
+		for _, m := range tsCliMutants(t, plain) {
+			if m["outcome"] != "uncovered" {
+				t.Errorf("%s, want uncovered, as before: no process the test started was measured", tsCliMutant(m))
+			}
 		}
 	})
 }

@@ -49,12 +49,21 @@ type Plan struct {
 	// get so those processes write there. When Written, a glob in CoverDir,
 	// finds data once they ran, Convert turns it into the report Integration
 	// names, read beside Reports as Integration data. CoverDir is removed.
-	CoverDir    string
-	Prepare     []string
-	CoverEnv    []string
-	Written     string
-	Convert     [][]string
-	Integration string
+	CoverDir string
+	// CollectorMissing, when set, says why the project lacks the collector
+	// of the processes its tests start, such as c8: the commands run
+	// without it (Report.IntegrationMissing).
+	CollectorMissing string
+	// RunnerScripts are what a script URL of the test runner's own
+	// processes holds, such as /node_modules/vitest/: the V8 coverage a
+	// process that loaded one wrote is the runner's, not integration data,
+	// and is dropped before Convert.
+	RunnerScripts []string
+	Prepare       []string
+	CoverEnv      []string
+	Written       string
+	Convert       [][]string
+	Integration   string
 	// Unreached marks a plan of sources no test reaches (Reach): nothing
 	// runs, and its language is measured, so they are loaded by no test.
 	Unreached bool
@@ -484,6 +493,7 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 			}
 			plan.Commands = [][]string{append(args, "--coverage.enabled",
 				"--coverage.reporter=lcov", "--coverage.reportsDirectory="+out)}
+			typescriptIntegration(&plan, dir, out)
 		}
 	case "jest":
 		if jest := project.NodeBin(dir, "jest"); jest == "" {
@@ -494,6 +504,7 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 				args = append(append(args, "--findRelatedTests"), relativeTo(dir, sources)...)
 			}
 			plan.Commands = [][]string{args}
+			typescriptIntegration(&plan, dir, out)
 		}
 	default:
 		if c8 := project.NodeBin(dir, "c8"); c8 == "" {
@@ -746,6 +757,9 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
 		env := project.NoBytecodeEnv(os.Environ())
 		var noIntegration []Unmeasured
+		if p.CollectorMissing != "" {
+			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
+		}
 		if p.CoverDir != "" {
 			p.removeCoverDir()
 			why, _, err := p.start(context.Background(), env, log, nil)
@@ -919,14 +933,40 @@ func load(paths []string, integration, base string, sources []string, log io.Wri
 		if err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		}
+		// Integration data covers what the in-process report counts as
+		// executable in a file it names, and adds nothing to it: a
+		// collector of another tool, such as c8 beside Vitest's v8
+		// provider, names other lines, blank and brace lines among them.
+		in := Build(sources, base, all...)
+		m := newMatcher(sources)
 		for i := range entries {
 			entries[i].Source = Integration
+			if file := m.match(entries[i].Path, base); file != "" && in.Has(file) {
+				entries[i].Segments = keyedLike(entries[i].Segments, in.files[file])
+				entries[i].Branches = keyedLike(entries[i].Branches, in.branches[file])
+			}
 		}
 		all = append(all, entries)
 	}
 	r := Build(sources, base, all...)
 	r.missing = missing
 	return r
+}
+
+// keyedLike is the segments of segs whose key one of like holds, and
+// those with no key.
+func keyedLike(segs, like []Segment) []Segment {
+	keys := map[string]bool{}
+	for _, s := range like {
+		keys[s.Key] = true
+	}
+	var out []Segment
+	for _, s := range segs {
+		if s.Key == "" || keys[s.Key] {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 type packageJSON struct {

@@ -78,9 +78,11 @@ type testCollector struct {
 	whole []string
 	each  func(d string) []string
 	// written says whether data was written to d, and convert is the
-	// command that turns it into report.
+	// command that turns it into a report, under out, and that report.
 	written func(d string) bool
-	convert func(d, report string) []string
+	convert func(d, out string) ([]string, string)
+	// missing, when set, says why the project lacks it: it is left out.
+	missing string
 }
 
 // testCollectors is the collectors of the listed tests of root measuring
@@ -92,27 +94,33 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 		dir:      root,
 		each:     eachTestEnv,
 		written:  hasCoverData,
-		convert: func(d, report string) []string {
-			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + report}
+		convert: func(d, out string) ([]string, string) {
+			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}, out + ".out"
 		},
 	}}
-	var roots []string
-	for _, s := range sources {
-		if spec := lang.Detect(s); spec == nil || spec.Name != "python" {
-			continue
+	if roots := buildRoots(sources, "typescript"); len(roots) > 0 {
+		c := testCollector{
+			language: "typescript",
+			dir:      roots[0],
+			each:     func(d string) []string { return []string{"NODE_V8_COVERAGE=" + d} },
+			written: func(d string) bool {
+				found, _ := filepath.Glob(filepath.Join(d, "coverage-*.json"))
+				return len(found) > 0
+			},
 		}
-		r := lang.FindUp(s, markers["python"]...)
-		if r == "" {
-			r = filepath.Dir(s)
+		if c8 := project.NodeBin(roots[0], "c8"); c8 == "" {
+			c.missing = "c8 is not installed, which reads the V8 coverage of the Node processes the tests start; add c8 to devDependencies"
+		} else {
+			c.convert = func(d, out string) ([]string, string) {
+				return c8Report(c8, d, out), filepath.Join(out, "lcov.info")
+			}
 		}
-		if !slices.Contains(roots, r) {
-			roots = append(roots, r)
-		}
+		collectors = append(collectors, c)
 	}
+	roots := buildRoots(sources, "python")
 	if len(roots) == 0 {
 		return collectors
 	}
-	sort.Strings(roots)
 	py := pythonFor(roots[0])
 	rc := filepath.Join(dir, ".python", "coveragerc")
 	data := func(d string) string { return filepath.Join(d, ".coverage") }
@@ -129,10 +137,29 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 			found, _ := filepath.Glob(filepath.Join(d, ".coverage.*"))
 			return len(found) > 0
 		},
-		convert: func(d, report string) []string {
-			return []string{py, "-c", pythonCombineScript, data(d), report}
+		convert: func(d, out string) ([]string, string) {
+			return []string{py, "-c", pythonCombineScript, data(d), out + ".info"}, out + ".info"
 		},
 	})
+}
+
+// buildRoots is the build roots of sources of language, sorted.
+func buildRoots(sources []string, language string) []string {
+	var roots []string
+	for _, s := range sources {
+		if spec := lang.Detect(s); spec == nil || spec.Name != language {
+			continue
+		}
+		r := lang.FindUp(s, markers[language]...)
+		if r == "" {
+			r = filepath.Dir(s)
+		}
+		if !slices.Contains(roots, r) {
+			roots = append(roots, r)
+		}
+	}
+	sort.Strings(roots)
+	return roots
 }
 
 // startTestCollectors readies collectors, through execute when it is not
@@ -143,6 +170,10 @@ func startTestCollectors(ctx context.Context, collectors []testCollector, log io
 	var out []testCollector
 	var calls []CommandExecution
 	for _, c := range collectors {
+		if c.missing != "" {
+			fmt.Fprintf(log, "itos-cc: coverage: %s: the listed tests' %s processes go unmeasured: %s\n", c.dir, languageLabel(c.language), c.missing)
+			continue
+		}
 		if len(c.prepare) == 0 {
 			out = append(out, c)
 			continue
@@ -257,9 +288,8 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 			if !c.written(d) {
 				continue
 			}
-			profile := filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language)
-			os.MkdirAll(filepath.Dir(profile), 0o755)
-			args := c.convert(d, profile)
+			os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755)
+			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
 			if out, err := cmd.CombinedOutput(); err != nil {

@@ -82,6 +82,9 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		}
 		env := project.NoBytecodeEnv(os.Environ())
 		var noIntegration []Unmeasured
+		if p.CollectorMissing != "" {
+			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
+		}
 		if p.CoverDir != "" {
 			if err := p.removeCoverDir(); err != nil {
 				failures = append(failures, fmt.Errorf("clear integration coverage directory: %w", err))
@@ -263,11 +266,10 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			if !c.written(d) {
 				continue
 			}
-			profile := filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language)
-			if err := os.MkdirAll(filepath.Dir(profile), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755); err != nil {
 				return nil, executions, fmt.Errorf("prepare profile for listed test %s: %w", id, err)
 			}
-			args := c.convert(d, profile)
+			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
 			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
 			cmd.Env = unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
@@ -301,6 +303,9 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 	}()
 	if _, err := filepath.Glob(filepath.Join(p.CoverDir, p.Written)); err != nil {
 		return "", nil, fmt.Errorf("inspect integration coverage data: %w", err)
+	}
+	if err := p.dropRunnerData(); err != nil {
+		return "", nil, err
 	}
 	if !p.written() {
 		return "", nil, nil

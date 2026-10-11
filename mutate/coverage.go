@@ -56,6 +56,13 @@ func CoverageProducer(language string, allTests bool) string {
 	return ""
 }
 
+// nodeSubprocesses is the part of TypeScript's Vitest and Jest producers
+// that says the Node processes a test starts count too: they write V8
+// coverage where NODE_V8_COVERAGE says, which c8 reports beside the
+// runner's own (integration-coverage-typescript). Evidence recorded
+// before, without it, reads stale once.
+const nodeSubprocesses = "subprocesses=NODE_V8_COVERAGE, c8 report"
+
 // TypeScriptCoverageProducer is the built-in producer of TypeScript's
 // strict coverage evidence by runner (coverage.TypeScriptRunner): Vitest's
 // v8 or Jest's LCOV over the related tests, or with allTests the whole
@@ -69,14 +76,14 @@ func TypeScriptCoverageProducer(runner string, allTests bool) string {
 	switch runner {
 	case "vitest":
 		if allTests {
-			return "vitest run --coverage.enabled --coverage.reporter=lcov; scope=" + scope
+			return "vitest run --coverage.enabled --coverage.reporter=lcov; " + nodeSubprocesses + "; scope=" + scope
 		}
-		return "vitest related --run <sources> --coverage.enabled --coverage.reporter=lcov; scope=" + scope
+		return "vitest related --run <sources> --coverage.enabled --coverage.reporter=lcov; " + nodeSubprocesses + "; scope=" + scope
 	case "jest":
 		if allTests {
-			return "jest --coverage --coverageReporters=lcov; scope=" + scope
+			return "jest --coverage --coverageReporters=lcov; " + nodeSubprocesses + "; scope=" + scope
 		}
-		return "jest --coverage --coverageReporters=lcov --findRelatedTests <sources>; scope=" + scope
+		return "jest --coverage --coverageReporters=lcov --findRelatedTests <sources>; " + nodeSubprocesses + "; scope=" + scope
 	case "c8":
 		return "c8 --reporter=lcov <package manager> run test; scope=all-tests"
 	}

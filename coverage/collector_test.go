@@ -269,3 +269,98 @@ func TestLogLinesShowScriptsByName(t *testing.T) {
 		t.Errorf("displayArgs %q", got)
 	}
 }
+
+func TestTypeScriptPlansMeasureChildNodeProcessesWithTheProjectsC8(t *testing.T) {
+	dir, src := vitestProject(t, "5.0.2")
+	plan := onePlan(t, dir, src)
+	if plan.CollectorMissing == "" || !strings.Contains(plan.CollectorMissing, "c8") || plan.CoverDir != "" {
+		t.Errorf("plan %+v, want no integration coverage and why, naming c8", plan)
+	}
+	writeFiles(t, dir, map[string]string{bin("c8"): ""})
+	plan = onePlan(t, dir, src)
+	if plan.CollectorMissing != "" || plan.CoverDir == "" || !slices.Equal(plan.CoverEnv, []string{"NODE_V8_COVERAGE=" + plan.CoverDir}) {
+		t.Errorf("plan %+v, want NODE_V8_COVERAGE naming a directory of the run's", plan)
+	}
+	if len(plan.Convert) != 1 || filepath.Base(filepath.Dir(plan.Convert[0][0])) != ".bin" || plan.Convert[0][1] != "report" ||
+		!slices.Contains(plan.Convert[0], "--temp-directory="+plan.CoverDir) || filepath.Base(plan.Integration) != "lcov.info" {
+		t.Errorf("Convert %q, Integration %q, want the project's c8 reporting the raw coverage as LCOV", plan.Convert, plan.Integration)
+	}
+	if len(plan.RunnerScripts) == 0 {
+		t.Errorf("plan %+v drops no data of the test runner's own processes", plan)
+	}
+}
+
+func TestV8CoverageTheTestRunnersOwnProcessesWroteIsNotIntegration(t *testing.T) {
+	dir := t.TempDir()
+	// Vitest's main process, a worker thread that ran a test importing
+	// src/cli.ts in-process, and a child Node process a test started.
+	writeFiles(t, dir, map[string]string{
+		"coverage-1-1-0.json": `{"result": [{"url": "file:///p/node_modules/vitest/dist/cli.js"}]}`,
+		"coverage-1-2-0.json": `{"result": [{"url": "file:///p/node_modules/.pnpm/vitest@5.0.2/node_modules/vitest/dist/worker.js"}, {"url": "file:///p/src/cli.ts"}]}`,
+		"coverage-2-3-0.json": `{"result": [{"url": "node:internal/main"}, {"url": "file:///p/src/cli.ts"}], "source-map-cache": {}}`,
+	})
+	plan := Plan{Language: "typescript", CoverDir: dir, Written: "coverage-*.json", RunnerScripts: nodeRunnerScripts}
+	if err := plan.dropRunnerData(); err != nil {
+		t.Fatal(err)
+	}
+	left, _ := filepath.Glob(filepath.Join(dir, "*.json"))
+	if len(left) != 1 || filepath.Base(left[0]) != "coverage-2-3-0.json" {
+		t.Errorf("left %q, want the child process's data alone", left)
+	}
+}
+
+func TestIntegrationDataAddsNoLinesToAFileTheInProcessReportNames(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "src", "cli.ts")
+	other := filepath.Join(dir, "src", "main.ts")
+	// Vitest names statements; c8 names every line of the ranges V8 ran,
+	// the declaration and the closing brace among them.
+	writeFiles(t, dir, map[string]string{
+		"src/cli.ts": "", "src/main.ts": "",
+		"lcov.info":        "SF:src/cli.ts\nDA:2,1\nDA:3,0\nDA:5,1\nend_of_record\n",
+		"integration.info": "SF:src/cli.ts\nDA:1,1\nDA:2,1\nDA:3,1\nDA:4,1\nDA:5,0\nDA:6,0\nend_of_record\nSF:src/main.ts\nDA:1,1\nDA:2,0\nend_of_record\n",
+	})
+	var log bytes.Buffer
+	r := load([]string{filepath.Join(dir, "lcov.info")}, filepath.Join(dir, "integration.info"), dir, []string{file, other}, &log)
+	for line, want := range map[int]bool{1: false, 2: true, 3: true, 4: false, 5: true, 6: false} {
+		if _, measured := r.LineCovered(file, line); measured != want {
+			t.Errorf("line %d measured %v, want %v", line, measured, want)
+		}
+	}
+	if got := r.LineSources(file, 3); !slices.Equal(got, []string{"integration"}) {
+		t.Errorf("line 3 sources %q, want integration", got)
+	}
+	// A file the in-process report never names takes the integration
+	// report's lines.
+	if _, measured := r.LineCovered(other, 2); !measured {
+		t.Errorf("main.ts line 2 is not measured, want the integration report's")
+	}
+}
+
+func TestListedTypeScriptTestsWriteTheirV8CoverageWhereTheHarnessOrItosCcSays(t *testing.T) {
+	dir, src := vitestProject(t, "5.0.2")
+	data := filepath.Join(dir, ".metrics", "tests")
+	collectors := testCollectors(dir, data, []string{src})
+	if len(collectors) != 2 || collectors[1].language != "typescript" || !strings.Contains(collectors[1].missing, "c8") {
+		t.Fatalf("collectors %+v, want TypeScript's, missing c8", collectors)
+	}
+	var log bytes.Buffer
+	started, _, err := startTestCollectors(context.Background(), collectors, &log, nil, true)
+	if err != nil || len(started) != 1 || !strings.Contains(log.String(), "c8") {
+		t.Errorf("started %d collectors (%v), log %q, want Go's alone and why", len(started), err, log.String())
+	}
+	writeFiles(t, dir, map[string]string{bin("c8"): ""})
+	ts := testCollectors(dir, data, []string{src})[1]
+	d := filepath.Join(data, ".each", "0")
+	if got := ts.each(d); !slices.Equal(got, []string{"NODE_V8_COVERAGE=" + d}) {
+		t.Errorf("a run of one test gets %q, want NODE_V8_COVERAGE=%s", got, d)
+	}
+	args, report := ts.convert(d, filepath.Join(data, ".profiles", "0.typescript"))
+	if args[1] != "report" || filepath.Base(report) != "lcov.info" {
+		t.Errorf("convert %q to %s, want c8 report writing lcov.info", args, report)
+	}
+	writeFiles(t, filepath.Join(data, "positive"), map[string]string{"coverage-9-9-0.json": "{}"})
+	if !ts.written(filepath.Join(data, "positive")) {
+		t.Errorf("raw V8 coverage in the test's directory is not written data")
+	}
+}

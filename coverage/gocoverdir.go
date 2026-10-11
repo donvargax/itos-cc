@@ -83,6 +83,10 @@ func (p Plan) integrate(log io.Writer) string {
 		return ""
 	}
 	defer p.removeCoverDir()
+	if err := p.dropRunnerData(); err != nil {
+		fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
+		return ""
+	}
 	if !p.written() {
 		return ""
 	}

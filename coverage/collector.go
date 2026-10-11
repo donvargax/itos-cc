@@ -3,6 +3,7 @@ package coverage
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -268,4 +269,98 @@ func displayArgs(args []string) string {
 		}
 	}
 	return strings.Join(shown, " ")
+}
+
+// TypeScript: while the coverage command runs Vitest or Jest, NODE_V8_COVERAGE
+// names a directory of the run's own, so every Node process the tests start
+// writes the V8 coverage of what it ran there as it exits, and the project's
+// own c8 (node_modules/.bin/c8, never fetched) reports it as LCOV, through
+// the source maps Node records with it, under the project's c8
+// configuration and itos-cc's flags. The test runner's own processes write
+// there too, as they inherit the variable: Vitest's main process does, and
+// a pool's worker or Jest's would; what they ran in-process is the runner's
+// own report's to count. A raw file whose process loaded the runner's own
+// modules (nodeRunnerScripts) is dropped before c8 reads the rest, so
+// "integration" is only what child processes ran. No filter by process ID
+// is needed, nor a wrapper that sets the variable for children alone.
+// NODE_V8_COVERAGE is in every Node since 10.12, older than any Vitest or
+// Jest itos-cc runs.
+
+// nodeRunnerScripts are what a script URL of Vitest's or Jest's own
+// processes holds.
+var nodeRunnerScripts = []string{"/node_modules/vitest/", "/node_modules/@vitest/", "/node_modules/jest/", "/node_modules/jest-", "/node_modules/@jest/"}
+
+// typescriptIntegration sets plan's integration coverage: the Node
+// processes the tests of the package at dir start, reported by its c8,
+// write under out. Without c8 it says so (CollectorMissing).
+func typescriptIntegration(plan *Plan, dir, out string) {
+	c8 := project.NodeBin(dir, "c8")
+	if c8 == "" {
+		plan.CollectorMissing = "c8 is not installed, which reads the V8 coverage of the Node processes the tests start; add c8 to devDependencies"
+		return
+	}
+	plan.CoverDir = filepath.Join(out, "integration")
+	plan.CoverEnv = []string{"NODE_V8_COVERAGE=" + plan.CoverDir}
+	plan.Written = "coverage-*.json"
+	plan.RunnerScripts = nodeRunnerScripts
+	reports := filepath.Join(out, "integration-report")
+	plan.Integration = filepath.Join(reports, "lcov.info")
+	plan.Convert = [][]string{c8Report(c8, plan.CoverDir, reports)}
+}
+
+// c8Report is the command that has c8 write the LCOV report of the raw V8
+// coverage in dir to reports/lcov.info.
+func c8Report(c8, dir, reports string) []string {
+	return []string{c8, "report", "--temp-directory=" + dir, "--reporter=lcov", "--reports-dir=" + reports}
+}
+
+// dropRunnerData removes each raw V8 coverage file in p.CoverDir that a
+// process of the test runner wrote: one that loaded a script whose URL
+// holds one of p.RunnerScripts.
+func (p Plan) dropRunnerData() error {
+	if p.CoverDir == "" || len(p.RunnerScripts) == 0 {
+		return nil
+	}
+	files, err := filepath.Glob(filepath.Join(p.CoverDir, p.Written))
+	if err != nil {
+		return fmt.Errorf("inspect integration coverage data: %w", err)
+	}
+	for _, file := range files {
+		runner, err := loadedAny(file, p.RunnerScripts)
+		if err != nil {
+			return fmt.Errorf("read V8 coverage %s: %w", file, err)
+		}
+		if runner {
+			if err := os.Remove(file); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// loadedAny says whether the raw V8 coverage file names a script whose URL
+// holds one of fragments.
+func loadedAny(file string, fragments []string) (bool, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	var raw struct {
+		Result []struct {
+			URL string `json:"url"`
+		} `json:"result"`
+	}
+	if err := json.NewDecoder(f).Decode(&raw); err != nil {
+		return false, err
+	}
+	for _, script := range raw.Result {
+		for _, fragment := range fragments {
+			if strings.Contains(script.URL, fragment) {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

@@ -2183,7 +2183,7 @@ Feature: Mutation testing
       And a mutant the test notices is killed, one it does not notice survives, and only mutants on lines never run are uncovered
       And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
 
-    @wip @integration-coverage-typescript @ID-MUT-229
+    @integration-coverage-typescript @ID-MUT-229
     Scenario: Lines a TypeScript test reaches through a child Node process are covered
       Given a TypeScript project with Vitest and c8 installed whose only test runs its CLI in a child Node process and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"

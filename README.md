@@ -159,6 +159,27 @@ integration coverage, and `coverage.tool-missing` under `mutation run
 process with an environment of its own, without `COVERAGE_PROCESS_START`,
 measures nothing there.
 
+TypeScript code that Vitest or Jest tests reach by starting another Node
+process (`execFileSync(process.execPath, ["src/cli.ts"])`, a CLI) counts
+too. While the coverage command runs, `NODE_V8_COVERAGE` names a directory
+of the run's own under `.metrics/coverage/`, where every Node process the
+tests start writes the V8 coverage of what it ran; afterwards the
+project's own c8 (`node_modules/.bin/c8`, never fetched) reports it as LCOV
+(`c8 report`, with the project's c8 configuration and the source maps Node
+records), read beside the runner's own report, and the directory is
+removed. The runner's own processes write there too, as they inherit the
+variable: Vitest's main process does, and with `pool: threads` its worker
+threads, which ran the in-process tests. A file written by a process that
+loaded Vitest's or Jest's own modules is left out, so `"integration"` is
+only what child processes ran. In a file the runner's report names,
+integration data covers its lines and adds none: c8 names other lines,
+such as closing braces, than Vitest's v8 provider does. A project without
+c8 logs that integration coverage needs it and goes on, and is
+`coverage.tool-missing` under `mutation run --fail-uncovered` where
+TypeScript has mutants to judge. A project measured by c8 over its test
+script, with neither Vitest nor Jest, already measures the processes its
+tests start, as its own.
+
 A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
@@ -238,7 +259,8 @@ the binary is built with `go build -cover` under `GOCOVERDIR` (see
 their kills count. `--json` says, for each mutant whose line is covered,
 which coverage covered it: `"in-process"`, `"integration"`, or both. In
 Python, the Python processes tests start show up in coverage too (see
-[crap](#crap)). In TypeScript and Kotlin such tests do not show up in
+[crap](#crap)), and in TypeScript, under Vitest or Jest with c8 installed,
+the Node processes they start. In Kotlin such tests do not show up in
 coverage yet, so add `--no-coverage` to let them reach code nothing else
 covers. It is slow; run
 it nightly rather than on every change:
@@ -282,9 +304,11 @@ test binaries, as it does not `GOCOVERDIR`); so does one that gives the
 Python processes each test starts
 `COVERAGE_FILE=<that directory>/<test ID>/.coverage`, which coverage.py
 starts in from the rcfile itos-cc names in `COVERAGE_PROCESS_START`, as
-above. Otherwise each test runs alone, every process it starts writing to
-a `GOCOVERDIR` and a coverage.py data file of its own, the test runner's
-own Python process included. A mutant runs its file's own tests first
+above, and one that gives the Node processes each test starts
+`NODE_V8_COVERAGE=<that directory>/<test ID>`, which the project's c8
+reports. Otherwise each test runs alone, every process it starts writing
+to a `GOCOVERDIR`, a coverage.py data file and a `NODE_V8_COVERAGE` of its
+own, the test runner's own processes included. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
 run. The first time a mutant needs a selection of listed tests, that
 selection runs once without any mutant in the mutant's worker's copy: its
@@ -333,7 +357,8 @@ whose coverage command fails or writes no report, fails closed as Go does:
 `coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
 runs; so does a Python build root whose coverage.py does not start in the
-processes its tests start (`coverage.tool-missing`). `--fail-uncovered` is strict in every language: it also requires
+processes its tests start, or a TypeScript package measured by Vitest or
+Jest without c8 (`coverage.tool-missing`). `--fail-uncovered` is strict in every language: it also requires
 fresh measured evidence for every judged Go, Python, TypeScript or Kotlin
 function, including functions with no mutation sites, and fails each
 uncovered Go executable block, each line a Python or TypeScript LCOV report

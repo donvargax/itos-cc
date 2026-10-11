@@ -196,7 +196,15 @@ any test beneath its `package.json` makes them stale in `mutation check`,
 script. Coverage is measured from the same script, by the project's
 `coverage` script or `c8`. An outcome of such a file recorded before as
 `own`, with no whole-suite evidence, reads stale once and is re-run. Projects
-with Vitest or Jest keep their related tests and scope `own`.
+with Vitest or Jest keep their related tests and scope `own`. Their coverage
+also measures the Node processes those tests start, through
+`NODE_V8_COVERAGE` and the project's c8 (`c8 report`), as `"integration"`,
+leaving out what the runner's own processes, which loaded Vitest's or
+Jest's modules, wrote; listed tests (`mutation.tests`) reach them the same
+way, one test at a time or as a harness splits them with
+`NODE_V8_COVERAGE=<ITOS_CC_TEST_COVERDIR>/<test ID>`. Without c8 the run
+logs it and goes on without them, and `--fail-uncovered` reports
+`coverage.tool-missing` where TypeScript has mutants to judge.
 
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
@@ -356,7 +364,7 @@ with `fail-fast.platform`, exit 3, before launching any command (#29).
 | 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
-| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, and coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
+| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, and Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
 | 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |
