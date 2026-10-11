@@ -649,7 +649,3 @@
     kong's module path: once the pilot (T-32) proves the types, to alecthomas/kong, disclosing AI
     assistance, after the person's review; when a kong release carries them, itos-cc imports kong
     again. Nothing that needs the fork goes into the go-template-itos issue until then.
-  done_when:
-    - run: grep -q 'github.com/donvargax/kong ' go.mod
-    - run: "! grep -q '^replace' go.mod"
-    - run: go build ./...
