@@ -1848,3 +1848,18 @@ items:
       rules, subject keys and fix, and the exit code is the first of 2, 70, 3, 75 and 1 present, not
       the highest. internal/cli stops importing the sample's counting port. cmd keeps its own flag
       parser until the pilot. Output and exit codes do not change.
+  - id: T-31
+    title: Selecting files is a domain behind a port
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Third stage of the template-design refactor. Every command selects its files in
+      cmd/itos-cc/common.go's files(): fragments, --changed, paths, reaching git and the disk
+      itself. That becomes internal/selection, a domain behind a port (discovering files, the
+      changed ones, a path's kind) with sealed failures and an in-memory fake for its tests; an
+      adapter wraps project. lang's units come from source the caller reads. golangci-lint joins the
+      CI plan over internal/ alone, widening as packages move (q-50), and domain-coverage covers the
+      new domain. Output and exit codes do not change.

@@ -597,3 +597,17 @@
     - run: grep -lq 'itos-cc/internal/cli"' cmd/itos-cc/*.go
     - run: "! grep -rq 'internal/counting' internal/cli"
     - run: go test ./internal/cli -count=1
+- id: T-31
+  type: refactor
+  title: Selecting files is a domain behind a port
+  why: >
+    Third stage of the template-design refactor. Every command selects its files in
+    cmd/itos-cc/common.go's files(): fragments, --changed, paths, reaching git and the disk itself.
+    That becomes internal/selection, a domain behind a port (discovering files, the changed ones, a
+    path's kind) with sealed failures and an in-memory fake for its tests; an adapter wraps project.
+    lang's units come from source the caller reads. golangci-lint joins the CI plan over internal/
+    alone, widening as packages move (q-50), and domain-coverage covers the new domain. Output and
+    exit codes do not change.
+  done_when:
+    - run: go test ./internal/selection -count=1
+    - run: grep -q 'golangci-lint run ./internal/' itos.yaml
