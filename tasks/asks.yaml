@@ -217,3 +217,4 @@ questions:
     item: "renamed-orphan-kept-fix"
     question: "Since renamed-snapshot-left-behind-fix, a run whose paths cover a renamed file's old path but not its new one, or a run before the rename is committed, removes the old snapshot, so the --since run that would have moved it finds nothing. Recommend: a run removes an orphan only when git shows no rename of its file to a file that exists, in the --since range or uncommitted against HEAD. Alternatives: runs with --since remove no orphans; or release with it as a known issue."
     answer: "As recommended, 2026-10-11: a run removes an orphan only when git shows no rename of its file to a file that exists, in the --since range or uncommitted against HEAD. Fix before v0.13.0."
+    decision: none
