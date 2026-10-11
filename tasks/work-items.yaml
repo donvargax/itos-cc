@@ -1337,3 +1337,15 @@ items:
       proves too coarse, let mutation.tests hold several suites, each with its own list, run,
       ids_pattern, support and per-test coverage, a mutant escalating to each suite that reaches it.
     refs: ["#34"]
+  - id: strict-changed-lines
+    title: With --since, --fail-uncovered=lines judges coverage only on the changed lines
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Issue #33, q-43: old uncovered code in a touched function fails a change and taxes
+      refactoring; with --since, =lines judges coverage rules only on lines overlapping the diff, in
+      run, counted and check, every language.
+    refs: ["#33"]
