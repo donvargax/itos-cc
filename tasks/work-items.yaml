@@ -1793,3 +1793,14 @@ items:
       repository's ADR-0026 and ADR-0023, which are about other things. Prefix them (itos-template's
       decision N) here and upstream in go-template-itos so updates stay clean, or settle it in the
       template-adoption refactor.
+  - id: nightly-checkout-node20
+    title: nightly.yml still pins actions/checkout v4.4.0 (Node 20)
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-26 moved ci.yml's checkouts to the template's pinned v7.0.1; nightly.yml still pins v4.4.0
+      under a comment saying it matches ci.yml, and Node 20 actions are deprecated on GitHub
+      runners.
