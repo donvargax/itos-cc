@@ -96,8 +96,8 @@ ci:
   # range (T-29): every step in cost order, the static ones first, then the
   # checks of the tasks the range's commits name in their Task footers, the
   # first failure stopping the run. Taken from itos-policy.yaml, the
-  # template's own plan, with the gates this code already passes; its
-  # scenario step (T-32), RAPID_CHECKS go test, mutation sample and proof
+  # template's own plan, with the gates this code already passes, and its
+  # scenario step (T-32); RAPID_CHECKS go test, mutation sample and proof
   # (q-53) come later. The test matrix on three systems stays in ci.yml.
   steps:
     - { run: itos config check, cost: static }
@@ -118,6 +118,11 @@ ci:
     - { run: tools/bin/architecture-check, cost: static }
     - { run: go tool govulncheck -test ./..., cost: late }
     - { run: tools/bin/domain-coverage, cost: late }
+    # The one merged run of the scenarios: the smoke set and those the
+    # range names, the whole suite when there is no green run to start
+    # from. The harness runs the feature files converted to godog and logs
+    # the rest as not run there (features/README.md).
+    - { tests: scenario }
   # A push touching only these runs these steps alone.
   prose:
     paths: ["**/*.md", "docs/**", "tasks/**"]
