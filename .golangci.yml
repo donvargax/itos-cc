@@ -108,23 +108,33 @@ linters:
         # them: not the domain, another adapter, a slice, the UI or porttest's
         # fakes, which its tests alone may use. Each adapter is listed, and
         # excluded from the slices above. cmd hands internal/stdin the disk
-        # adapter as its fallback. internal/workdir wraps project, the
-        # top-level library that walks a tree and asks git, so project is
-        # allowed here, and no other top-level library is.
+        # adapter as its fallback. An adapter of another port has a rule of
+        # its own, so no adapter is allowed another's port or library.
         infra:
           list-mode: lax
           files:
             - "**/internal/disk/**"
             - "**/internal/stdin/**"
-            - "**/internal/workdir/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/counting/port$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "an adapter imports nothing of ours but the ports it implements (decision 29), cmd wiring the rest; if it implements another port, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # internal/workdir implements the selection port over project, the
+        # top-level library that walks a tree and asks git: project is allowed
+        # here, and no other top-level library is.
+        workdir:
+          list-mode: lax
+          files:
+            - "**/internal/workdir/**"
+            - "!$test"
+          allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "an adapter imports nothing of ours but the ports it implements (decision 29), cmd wiring the rest; if it implements another port, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "the workdir adapter imports nothing of ours but the selection port and project, which it wraps (decision 29); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         mocks:
           files:
             - $all

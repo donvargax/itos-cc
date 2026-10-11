@@ -68,8 +68,9 @@ deadlines only, always as the first parameter and never in a struct or as a valu
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
-- `infra`: an adapter imports nothing of ours but the port it implements, and `internal/workdir`
-  the `project` library it wraps; only its tests may use `porttest`.
+- `infra` and `workdir`: an adapter imports nothing of ours but the port it implements, and
+  `internal/workdir` the `project` library it wraps; only its tests may use `porttest`. Each port's
+  adapters have a rule of their own, so none is allowed another's port or library.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -89,8 +90,10 @@ command from reaching into this one.
   which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
-- An adapter: add its folder to `infra`'s `files`, the port it implements to `infra`'s `allow`,
-  and a `!**/internal/<name>/**` exclusion to `slices`. Wire it in `cmd`.
+- An adapter: add its folder to the `files` of the rule for its port's adapters (`infra` for
+  counting's, `workdir` for selection's), or give a new port's adapters a rule of their own
+  allowing that port and any library they wrap; add a `!**/internal/<name>/**` exclusion to
+  `slices`. Wire it in `cmd`.
 - Any other package that is no command, such as `internal/version`: add a `slices` exclusion
   saying what it is.
 - Then add compile-valid fixtures to `tools/testdata/architecture` that each rule you touched

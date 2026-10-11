@@ -141,12 +141,20 @@ func TestArchitecture(t *testing.T) {
 	}
 	// The adapter arrow: an adapter's code imports nothing of ours but the
 	// port it implements, not a domain, another adapter, a slice, the UI,
-	// cmd, the fakes or a top-level library it does not wrap; it may do I/O,
-	// and its tests may use the fakes. workdir wraps project.
-	for _, adapter := range []struct{ base, domain string }{{"internal/disk", "internal/counting"}, {"internal/stdin", "internal/counting"}, {"internal/workdir", "internal/selection"}} {
+	// cmd, the fakes, another adapter's port or a top-level library it does
+	// not wrap; it may do I/O, and its tests may use the fakes. workdir wraps
+	// project, under a rule of its own.
+	for _, adapter := range []struct {
+		base, domain, rule string
+		others             []string
+	}{
+		{"internal/disk", "internal/counting", "infra", []string{"internal/selection/port", "project"}},
+		{"internal/stdin", "internal/counting", "infra", []string{"internal/selection/port", "project"}},
+		{"internal/workdir", "internal/selection", "workdir", []string{"internal/counting/port"}},
+	} {
 		base := adapter.base
-		for _, target := range []string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/counting/port/porttest", "internal/selection/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe", "lang"} {
-			add(strings.ReplaceAll(target, "/", "_"), base, module+"/"+target, "Value", "infra", false)
+		for _, target := range append([]string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/next", "internal/counting/port/porttest", "internal/selection/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe", "lang"}, adapter.others...) {
+			add(strings.ReplaceAll(target, "/", "_"), base, module+"/"+target, "Value", adapter.rule, false)
 		}
 		add("port_allowed", base, module+"/"+adapter.domain+"/port", "Value", "", false)
 		add("fake_allowed", base, module+"/"+adapter.domain+"/port/porttest", "Value", "", true)
