@@ -84,7 +84,7 @@ func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed 
 		if err != nil {
 			return nil, nil, err
 		}
-		c := ChangedFunctions{Functions: map[string]bool{}}
+		c := ChangedFunctions{Functions: map[string]bool{}, Lines: changedLines(lines)}
 		named := map[string]int{}
 		for _, u := range f.Units {
 			named[u.Namespace+"#"+u.Name]++
@@ -145,6 +145,31 @@ type ChangedFunctions struct {
 	// file share, the hash of each of them the range left alone, as HEAD
 	// has it.
 	Kept map[string]map[string]bool
+	// Lines holds the lines of HEAD's version of the file that the range
+	// added or changed, the new side of each hunk, in diff order. A pure
+	// deletion has no new side, so it adds no range here, though it still
+	// makes the functions either side of it changed.
+	Lines []LineRange
+}
+
+// LineRange is a range of line numbers, both ends included.
+type LineRange struct{ Start, End int }
+
+// Changes reports whether the range added or changed any of the lines
+// from start to end, both included, of HEAD's version of the file.
+func (c ChangedFunctions) Changes(start, end int) bool {
+	return LinesOverlap(c.Lines, start, end)
+}
+
+// LinesOverlap reports whether any of ranges holds a line from start to
+// end, both included.
+func LinesOverlap(ranges []LineRange, start, end int) bool {
+	for _, r := range ranges {
+		if r.Start <= end && r.End >= start {
+			return true
+		}
+	}
+	return false
 }
 
 // Judges reports whether the function named function, whose text has hash,
@@ -154,8 +179,24 @@ func (c ChangedFunctions) Judges(function, hash string) bool {
 	return c.Functions[function] && !c.Kept[function][hash]
 }
 
-// lines is a range of line numbers, both ends included.
-type lines struct{ start, end int }
+// lines is a range of line numbers, both ends included; deletion marks
+// the two lines either side of a hunk that only deleted lines.
+type lines struct {
+	start, end int
+	deletion   bool
+}
+
+// changedLines is the ranges of ranges that lines were added or changed
+// in, leaving out those either side of a pure deletion.
+func changedLines(ranges []lines) []LineRange {
+	var out []LineRange
+	for _, r := range ranges {
+		if !r.deletion {
+			out = append(out, LineRange{r.start, r.end})
+		}
+	}
+	return out
+}
 
 func overlaps(ranges []lines, start, end int) bool {
 	for _, r := range ranges {
@@ -248,9 +289,9 @@ func hunkLines(header string) (lines, bool) {
 		}
 	}
 	if count == 0 {
-		return lines{start, start + 1}, true
+		return lines{start, start + 1, true}, true
 	}
-	return lines{start, start + count - 1}, true
+	return lines{start, start + count - 1, false}, true
 }
 
 // gitError is git's own message when it printed one, else err's.

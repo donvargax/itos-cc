@@ -47,11 +47,12 @@ type CoverageCheck struct {
 	File, Function string
 	// Language is the function's language.
 	Language string
-	Line     int
-	State    string // "missing", "stale", "fresh", "unsupported"
-	Changed  []string
-	Blocks   []CoverageBlock
-	Evidence *CoverageEvidence
+	// Line and EndLine are the lines the function starts and ends on now.
+	Line, EndLine int
+	State         string // "missing", "stale", "fresh", "unsupported"
+	Changed       []string
+	Blocks        []CoverageBlock
+	Evidence      *CoverageEvidence
 }
 
 // GoCoverageCheck is CoverageCheck, by its name before other languages had
@@ -116,7 +117,7 @@ func CheckCoverage(files []string, judge func(path, function, hash string) bool,
 			if judge != nil && !judge(path, ids[i], hashes[i]) {
 				continue
 			}
-			check := CoverageCheck{File: project.Rel(path), Function: ids[i], Language: language, Line: unit.StartLine, State: "missing"}
+			check := CoverageCheck{File: project.Rel(path), Function: ids[i], Language: language, Line: unit.StartLine, EndLine: unit.EndLine, State: "missing"}
 			if unsupported != "" {
 				check.State = "unsupported"
 				check.Changed = []string{unsupported}

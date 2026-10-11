@@ -2099,7 +2099,7 @@ Feature: Mutation testing
   # Without --since, --fail-uncovered=lines is a usage error.
   Rule: With --since, --fail-uncovered=lines judges coverage only on the changed lines
 
-    @wip @strict-changed-lines @ID-MUT-225
+    @strict-changed-lines @ID-MUT-225
     Scenario Outline: A <language> change is judged on the lines it changed, not the old code around them
       Given a <language> project whose function has an executable line no test runs, committed at a base
       And a commit since the base that changes another line of that function, which a test runs
@@ -2114,7 +2114,7 @@ Feature: Mutation testing
         | go       |
         | python   |
 
-    @wip @strict-changed-lines @ID-MUT-226
+    @strict-changed-lines @ID-MUT-226
     Scenario: Changed-line strictness needs a range and holds in a counted run
       When I run "itos-cc mutation run --fail-uncovered=lines" without --since
       Then it fails as a usage error, exit 2, naming --since

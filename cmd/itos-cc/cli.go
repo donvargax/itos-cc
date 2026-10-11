@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -88,10 +89,18 @@ type flagSpec struct {
 	arg    string // the value's placeholder in help, such as N
 	def    string // the default, shown in help when set
 	repeat bool   // may be given more than once
-	help   string
+	// choices, on a switch, are the values it may take after =, as in
+	// --fail-uncovered=lines; alone, it is "true". Never the next argument.
+	choices []string
+	help    string
 }
 
 func sw(name, help string) flagSpec { return flagSpec{name: name, help: help} }
+
+// swChoice is a switch that may also take one of choices after =.
+func swChoice(name string, choices []string, help string) flagSpec {
+	return flagSpec{name: name, choices: choices, help: help}
+}
 
 func opt(name string, typ flagType, arg, def, help string) flagSpec {
 	return flagSpec{name: name, typ: typ, arg: arg, def: def, help: help}
@@ -180,7 +189,8 @@ var errHelp = fail(0, "help", "help", "")
 // parse reads args against the command's flags: --flag value and
 // --flag=value, flags in any position, -- to end them, and -h or --help
 // anywhere for help. It refuses an unknown flag, a value missing or of the
-// wrong type, a value given to a switch, and a once-only flag given twice.
+// wrong type, a value given to a switch, unless it is one of the switch's
+// choices, given after =, and a once-only flag given twice.
 func parse(cmd *command, args []string) (*invocation, error) {
 	in := &invocation{cmd: cmd, values: map[string][]string{}}
 	specs := map[string]flagSpec{}
@@ -226,6 +236,10 @@ func parse(cmd *command, args []string) (*invocation, error) {
 				"Give it once.").with("flag", "--"+name)
 		}
 		switch {
+		case f.typ == switchFlag && hasValue && len(f.choices) > 0 && !slices.Contains(f.choices, value):
+			return in, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--%s takes %s, and was given %q", name, choiceList(f.choices), value),
+				fmt.Sprintf("Write --%s alone, or --%s=%s.", name, name, f.choices[0])).with("flag", "--"+name).with("value", value)
+		case f.typ == switchFlag && hasValue && len(f.choices) > 0:
 		case f.typ == switchFlag && hasValue:
 			return in, fail(kindUsage, "flags.switch-value", fmt.Sprintf("--%s takes no value, and was given %q", name, value),
 				fmt.Sprintf("Write --%s alone.", name)).with("flag", "--"+name)
@@ -246,6 +260,15 @@ func parse(cmd *command, args []string) (*invocation, error) {
 		in.values[name] = append(in.values[name], value)
 	}
 	return in, nil
+}
+
+// choiceList names a switch's choices, as "=a or =b".
+func choiceList(choices []string) string {
+	var out []string
+	for _, c := range choices {
+		out = append(out, "="+c)
+	}
+	return strings.Join(out, " or ")
 }
 
 func checkValue(f flagSpec, value string) error {
@@ -392,6 +415,9 @@ func writeFlags(w io.Writer, flags []flagSpec) {
 		}
 		if f.arg != "" {
 			name += " " + f.arg
+		}
+		if len(f.choices) > 0 {
+			name += "[=" + strings.Join(f.choices, "|") + "]"
 		}
 		help := f.help
 		if f.def != "" {

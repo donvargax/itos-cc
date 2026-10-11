@@ -47,6 +47,17 @@ type FreshPlan struct {
 	// selected or not, as discovery classifies them: what the tests that
 	// reach a file are found among.
 	Files project.Files
+	// Changed holds, with --since, the lines of each changed committed
+	// source, by its root-relative slash path, that the range added or
+	// changed: the new side of each hunk, renamed files under their new
+	// path, and none for a pure deletion. Nil without --since.
+	Changed map[string][]project.LineRange
+}
+
+// ChangedLines reports whether the --since range added or changed any line
+// from start to end, both included, of the committed source rel.
+func (p *FreshPlan) ChangedLines(rel string, start, end int) bool {
+	return project.LinesOverlap(p.Changed[filepath.ToSlash(rel)], start, end)
 }
 
 // FreshUnit identifies one admitted committed function independently of its
@@ -173,6 +184,16 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 	}
 	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: since, SinceBase: sinceBase,
 		Seed: seed, Algorithm: FreshPlanVersion}
+	if changed != nil {
+		plan.Changed = map[string][]project.LineRange{}
+		for rel, ranges := range changed {
+			for _, r := range ranges {
+				if !r.deletion {
+					plan.Changed[rel] = append(plan.Changed[rel], project.LineRange{Start: r.start, End: r.end})
+				}
+			}
+		}
+	}
 	cleanup := true
 	defer func() {
 		if cleanup {
@@ -630,7 +651,13 @@ func makePrivateDirs(root, target string) error {
 	return nil
 }
 
-type lineRange struct{ start, end int }
+// lineRange is a range of line numbers, both ends included; deletion
+// marks the two lines either side of a hunk that only deleted lines, which
+// admit their functions but are no line the range added or changed.
+type lineRange struct {
+	start, end int
+	deletion   bool
+}
 
 func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, string, error) {
 	if strings.HasPrefix(ref, "-") {
@@ -714,9 +741,9 @@ func hunkRanges(patch string) []lineRange {
 			}
 		}
 		if count == 0 {
-			ranges = append(ranges, lineRange{start, start + 1})
+			ranges = append(ranges, lineRange{start, start + 1, true})
 		} else {
-			ranges = append(ranges, lineRange{start, start + count - 1})
+			ranges = append(ranges, lineRange{start, start + count - 1, false})
 		}
 	}
 	return ranges

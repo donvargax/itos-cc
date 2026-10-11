@@ -358,6 +358,26 @@ symbolic link or lies in a nested package or build root, which the
 fingerprints leave out. The scopes are read from the root's own files,
 lexically: detecting them, itos-cc never reads, lists or follows a path
 outside the project root.
+
+With `--since`, `--fail-uncovered=lines` judges coverage only where the
+range changed, so old uncovered code beside a change does not fail it:
+a Go block or a Python, TypeScript or Kotlin line counts when it overlaps a
+line the commits added or changed (the new side of each hunk of
+`git diff --unified=0 <base>...HEAD`, a renamed file's under its new path),
+and an uncovered mutant fails only on such a line. A judged function with a
+changed line still needs fresh evidence, as missing or stale evidence
+leaves its changed lines unjudged; a function the range only deleted lines
+from has none to judge. Survivors and exceptions are judged as before, and
+evidence is still measured and recorded for whole functions, so a later
+plain `--fail-uncovered` check of the same snapshot judges them whole. It
+holds in `mutation run`, counted runs and `mutation check` alike.
+`--fail-uncovered` alone is `--fail-uncovered=functions`, whole functions;
+`=lines` without `--since` is a usage error, exit 2.
+
+```sh
+itos-cc mutation run --since origin/main --fail-uncovered=lines    # a gate on the lines a branch changed
+itos-cc mutation check --since origin/main --fail-uncovered=lines  # the commit hook to match
+```
 A Maven parent with no `<relativePath>` is taken from a repository, not
 refused. Strict coverage judges each language's files by its
 own evidence alone: a Python, TypeScript or Kotlin file is never judged for

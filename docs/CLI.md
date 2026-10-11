@@ -256,6 +256,25 @@ bypass it. Each cached inventory is bound to its file, function identity, and
 function hash; missing, incomplete, legacy, or misattributed inventories do
 not prove coverage.
 
+`--fail-uncovered` takes an optional value: alone it is
+`--fail-uncovered=functions`, the whole judged functions above.
+`--fail-uncovered=lines`, which needs `--since`, judges only where the range
+changed, in `mutation run`, counted runs, `--fail-fast` runs and
+`mutation check` alike: a Go block or a Python, TypeScript or Kotlin line
+counts when it overlaps a line the commits since the ref added or changed,
+the new side of a hunk of `git diff --unified=0 <ref>...HEAD`, a renamed
+file's under its new path; a pure deletion changes no line. An uncovered
+mutant fails (`mutation.uncovered`) only on such a line. A judged function
+with such a line still needs complete fresh evidence
+(`mutation.coverage-missing`, `mutation.coverage-stale`,
+`mutation.coverage-unsupported`), its changed lines being unjudgeable
+without it; a function with none, such as one the range only deleted lines
+from, is judged for survivors and exceptions alone. Survivors and
+exceptions are judged as before. Evidence is measured and recorded for whole
+functions either way, so a later `--fail-uncovered` check of the same
+snapshot judges them whole. `=lines` without `--since` is `flags.conflict`,
+exit 2, and any other value is `flags.value-invalid`.
+
 `mutation run --count` runs on Linux and macOS, where every command it starts
 runs in a process group it owns, stopped and joined before the run returns.
 A command that detaches from its process group or session is not followed.

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/donvargax/itos-cc/lang"
@@ -171,6 +172,45 @@ type CoverageBlock struct {
 // GoCoverageBlock is Go's CoverageBlock, by its name before other
 // languages had any.
 type GoCoverageBlock = CoverageBlock
+
+// Lines is the first and last line of the block, both included: a Go
+// block's span "line.column,line.column", less its last line when the span
+// ends at that line's first column, before any of it, and an executable
+// line's own line.
+func (b CoverageBlock) Lines() (start, end int) {
+	from, to, ok := strings.Cut(b.Span, ",")
+	if !ok {
+		return b.Line, b.Line
+	}
+	startText, _, _ := strings.Cut(from, ".")
+	endText, endColumn, _ := strings.Cut(to, ".")
+	start, err1 := strconv.Atoi(startText)
+	end, err2 := strconv.Atoi(endText)
+	if err1 != nil || err2 != nil || end < start {
+		return b.Line, b.Line
+	}
+	if endColumn == "1" && end > start {
+		end--
+	}
+	return start, end
+}
+
+// LineScope says whether strict coverage judges the lines from start to
+// end, both included, of the source at path: with --fail-uncovered=lines,
+// whether the --since range added or changed any of them. A nil LineScope
+// judges every line, as --fail-uncovered alone does.
+type LineScope func(path string, start, end int) bool
+
+// Judges reports whether s judges any line from start to end of path.
+func (s LineScope) Judges(path string, start, end int) bool {
+	return s == nil || s(path, start, end)
+}
+
+// JudgesBlock reports whether s judges any line of block, of path.
+func (s LineScope) JudgesBlock(path string, block CoverageBlock) bool {
+	start, end := block.Lines()
+	return s.Judges(path, start, end)
+}
 
 // Mutant is one site's outcome.
 type Mutant struct {

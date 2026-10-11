@@ -54,6 +54,15 @@ It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
 REF...HEAD), as mutation run judges them.
 
+--fail-uncovered=lines, which needs --since, checks coverage as mutation
+run --fail-uncovered=lines judges it: only an executable block or line
+that overlaps a line the range added or changed, and an uncovered mutant
+on such a line, fail. Missing, stale or unsupported evidence fails for a
+judged function with such a line, whose changed lines cannot be judged
+without fresh evidence, and a function with none needs no evidence.
+Survivors and exceptions are checked as before. --fail-uncovered alone is
+--fail-uncovered=functions; without --since, =lines is flags.conflict.
+
 Plain output is a line per file, "<file>: N fresh, N stale, N missing",
 which names the test files that changed when they made functions stale, then
 each problem, a line each:
@@ -69,7 +78,7 @@ counts their entry records, zero when missing; an excepted survivor counts
 in "excepted", not "survived".`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines")),
+		failUncoveredFlag),
 	json: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
    "uncovered"}]}]`,
@@ -86,16 +95,17 @@ in "excepted", not "survived".`,
 		"config.invalid            itos-cc.yaml cannot be read: file",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
-		"flags.conflict            --since with --changed: flag",
+		"flags.conflict            --since with --changed, or --fail-uncovered=lines without --since: flag",
 	},
 	exits: []exitDoc{
 		{0, "every function checked has fresh results, and none records a survivor"},
 		{1, "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript or Kotlin line, or missing/stale Go, Python, TypeScript or Kotlin coverage evidence with --fail-uncovered; or an exception is stale"},
-		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
+		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository"},
 	},
 	examples: []string{
 		"itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook",
+		"itos-cc mutation check --since origin/main --fail-uncovered=lines  # coverage of the changed lines alone",
 		"itos-cc mutation check --json src/billing",
 	},
 	run: runMutationCheck,
@@ -130,9 +140,20 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, renamed, err := mutationSelection(in)
+	linesOnly, err := changedLinesOnly(in)
 	if err != nil {
 		return result, err
+	}
+	sources, judge, renamed, lines, err := mutationSelection(in)
+	if err != nil {
+		return result, err
+	}
+	// With --fail-uncovered=lines, only the lines the range changed are
+	// judged: a function with none needs no evidence, and an uncovered
+	// block, line or mutant elsewhere fails nothing.
+	var scope mutate.LineScope
+	if linesOnly {
+		scope = lines
 	}
 	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
 	if err != nil {
@@ -159,6 +180,9 @@ func runMutationCheck(in *invocation) (any, error) {
 		}
 		for _, coverageCheck := range coverageChecks {
 			language := coverageCheck.Language
+			if !scope.Judges(coverageCheck.File, coverageCheck.Line, coverageCheck.EndLine) {
+				continue
+			}
 			switch coverageCheck.State {
 			case "unsupported":
 				reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, coverageCheck.Line,
@@ -171,7 +195,7 @@ func runMutationCheck(in *invocation) (any, error) {
 					"mutation.coverage-stale", "has "+coverageEvidenceName(language)+" made before inputs changed: "+strings.Join(coverageCheck.Changed, ", "))
 			default:
 				for _, block := range coverageCheck.Blocks {
-					if !block.Covered {
+					if !block.Covered && scope.JudgesBlock(coverageCheck.File, block) {
 						reportLanguageCoverageProblem(in, language, coverageCheck.File, coverageCheck.Function, block.Line,
 							"mutation.uncovered-statement", "has an uncovered "+executableUnit(language))
 					}
@@ -200,7 +224,7 @@ func runMutationCheck(in *invocation) (any, error) {
 			case mutate.Stale:
 				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn))
 			default:
-				reportFailed(in, c.Rel, fn.Function, fn.Mutants, failUncovered)
+				reportFailed(in, c.Rel, fn.Function, fn.Mutants, uncoveredFails(failUncovered, scope, c.Rel))
 			}
 		}
 		reportStaleExceptions(in, c.Rel, c.StaleExceptions)

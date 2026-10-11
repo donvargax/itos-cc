@@ -51,11 +51,11 @@ func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
 		`rename to "q\"new.py"`,
 	}, "\n")
 	want := map[string][]lines{
-		"plain.py":     {{3, 5}, {10, 11}},
-		"año nuevo.py": {{1, 1}},
-		`q"x.py`:       {{1, 2}},
+		"plain.py":     {{3, 5, false}, {10, 11, true}},
+		"año nuevo.py": {{1, 1, false}},
+		`q"x.py`:       {{1, 2, false}},
 		"new.py":       nil,
-		"now.py":       {{2, 2}},
+		"now.py":       {{2, 2, false}},
 		`q"new.py`:     nil,
 	}
 	wantRenames := map[string]string{"new.py": "old.py", "now.py": "was.py", `q"new.py`: `q"old.py`}
@@ -65,6 +65,11 @@ func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
 	}
 	if !maps.Equal(renames, wantRenames) {
 		t.Errorf("renames = %v, want %v", renames, wantRenames)
+	}
+	// The lines a hunk added or changed, its new side: the pure deletion
+	// after line 10 has none, and judges no line.
+	if got, want := changedLines(got["plain.py"]), []LineRange{{3, 5}}; !slices.Equal(got, want) {
+		t.Errorf("changedLines(plain.py) = %v, want %v", got, want)
 	}
 }
 
@@ -102,6 +107,9 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	}
 	if !slices.Equal(functions, []string{"b"}) {
 		t.Errorf("functions %q, want [b]", functions)
+	}
+	if lines := got[abs].Lines; !slices.Equal(lines, []LineRange{{6, 6}}) || !got[abs].Changes(5, 6) || got[abs].Changes(1, 5) {
+		t.Errorf("lines %v, want b's second line alone, HEAD's line 6", lines)
 	}
 
 	if _, _, err := ChangedSince("--output=x", nil); err != ErrBadRef {

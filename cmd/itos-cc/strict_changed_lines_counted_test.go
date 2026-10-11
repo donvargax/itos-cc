@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os/exec"
 	"slices"
 	"testing"
@@ -72,4 +73,43 @@ func TestChangedLineStrictnessHoldsInACountedRun(t *testing.T) {
 	if got := changedLinesFindings(rawProblems(t, addedComplete)); !slices.Equal(got, wantAdded) || addedComplete.code != 1 {
 		t.Errorf("the complete changed-line run after the added line: exit %d, findings %q; want 1 with %q alone", addedComplete.code, got, wantAdded)
 	}
+}
+
+// --fail-fast stops a changed-line run only at what --fail-uncovered=lines
+// judges: the old line's uncovered mutant, which stops a whole-function run
+// before any mutant runs, stops nothing.
+func TestAFailFastChangedLineRunStopsOnlyOnTheChangedLines(t *testing.T) {
+	t.Parallel()
+	requireCountedPlatform(t)
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skip("go is not installed")
+	}
+	e := changedLinesExamples[0]
+	changedLinesRepo(t, e.files)
+	edit(t, e.file, e.changed[0], e.changed[1])
+	edit(t, e.testFile(), e.changedTest[0], e.changedTest[1])
+	commitAll(t, "change the default")
+
+	lines := mutateCovered(t, "--fail-fast", "--since", "base", "--fail-uncovered=lines", "--json", e.file)
+	logRun(t, &lines)
+	if got, stop := changedLinesFindings(rawProblems(t, lines)), failFastStop(t, lines); len(got) != 0 || lines.code != 0 || stop["stopped"] != false {
+		t.Errorf("the fail-fast changed-line run: exit %d, findings %q, stop %v; want 0, none, and no stop", lines.code, got, stop)
+	}
+	whole := mutateCovered(t, "--fail-fast", "--since", "base", "--fail-uncovered", "--json", e.file)
+	logRun(t, &whole)
+	if stop := failFastStop(t, whole); stop["rule"] != "mutation.uncovered" || whole.code != 1 {
+		t.Errorf("the fail-fast whole-function run: exit %d, stop %v; want 1, stopped at mutation.uncovered", whole.code, stop)
+	}
+}
+
+// failFastStop is the "stop" of o's --json object.
+func failFastStop(t *testing.T, o outcome) map[string]any {
+	t.Helper()
+	var out struct {
+		Stop map[string]any `json:"stop"`
+	}
+	if err := json.Unmarshal([]byte(o.stdout), &out); err != nil {
+		t.Fatalf("stdout is not one JSON object: %v\n%s", err, o.stdout)
+	}
+	return out.Stop
 }

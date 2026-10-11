@@ -11,6 +11,7 @@ var testCommand = &command{
 	name: "probe",
 	flags: []flagSpec{
 		sw("changed", ""),
+		swChoice("strict", []string{"functions", "lines"}, ""),
 		opt("top", intFlag, "N", "", ""),
 		opt("threshold", floatFlag, "N", "", ""),
 		{name: "report", typ: stringFlag, arg: "FILE", repeat: true},
@@ -26,6 +27,29 @@ func TestFlagsAreReadByTheirSpec(t *testing.T) {
 	if in.integer("top") != 3 || in.float("threshold") != 2.5 || !in.set("changed") ||
 		!slices.Equal(in.strs("report"), []string{"x", "y"}) || !slices.Equal(in.args, []string{"a", "b", "--top"}) {
 		t.Errorf("values %v args %q", in.values, in.args)
+	}
+}
+
+func TestASwitchWithChoicesTakesOneAfterEqualsOrNone(t *testing.T) {
+	t.Parallel()
+	for args, want := range map[string]string{"--strict": "true", "--strict=lines": "lines", "--strict=functions": "functions"} {
+		in, err := parse(testCommand, append(strings.Fields(args), "a"))
+		if err != nil || !in.set("strict") || in.str("strict") != want || !slices.Equal(in.args, []string{"a"}) {
+			t.Errorf("%s: %v, value %q, args %q; want %q and the argument kept", args, err, in.str("strict"), in.args, want)
+		}
+	}
+	// The next argument is never its value.
+	if in, err := parse(testCommand, []string{"--strict", "lines"}); err != nil || in.str("strict") != "true" || !slices.Equal(in.args, []string{"lines"}) {
+		t.Errorf("--strict lines: %v, value %q, args %q; want a bare switch and an argument", err, in.str("strict"), in.args)
+	}
+	_, err := parse(testCommand, []string{"--strict=all"})
+	if p, ok := err.(*problem); !ok || p.rule != "flags.value-invalid" || p.kind != kindUsage || !strings.Contains(p.message, "=functions or =lines") {
+		t.Errorf("--strict=all: %v, want flags.value-invalid naming its choices", err)
+	}
+	var help strings.Builder
+	writeFlags(&help, testCommand.flags)
+	if !strings.Contains(help.String(), "--strict[=functions|lines]") {
+		t.Errorf("help:\n%s\nwant --strict[=functions|lines]", help.String())
 	}
 }
 

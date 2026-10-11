@@ -130,7 +130,7 @@ func runMutationSample(in *invocation) (any, error) {
 		return result, fail(kindUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
 			"Give it 1 or more.").with("flag", "--count").with("value", in.str("count"))
 	}
-	sources, judge, _, err := mutationSelection(in)
+	sources, judge, _, _, err := mutationSelection(in)
 	if err != nil {
 		return result, err
 	}

@@ -321,7 +321,12 @@ func runCountedMutate(in *invocation) (any, error) {
 		}
 	}
 	printCounted(in, result)
-	reportCounted(in, result, strict, interrupted)
+	// With --fail-uncovered=lines, an uncovered site fails, and strict Go
+	// coverage is judged, on the lines the range changed alone.
+	linesOnly := in.str("fail-uncovered") == "lines"
+	reportCounted(in, result, func(site countedSite) bool {
+		return strict && (!linesOnly || plan.ChangedLines(site.File, site.Line, site.Line))
+	}, interrupted)
 	if interrupted {
 		reportInterrupted(in, ctx, nil)
 	}
@@ -329,7 +334,7 @@ func runCountedMutate(in *invocation) (any, error) {
 		reportStaleExceptions(in, e.File, []mutate.StaleException{e})
 	}
 	if strictGo {
-		reportCountedStrictGo(in, plan, prep)
+		reportCountedStrictGo(in, plan, prep, linesOnly)
 	}
 	return result, nil
 }
@@ -561,10 +566,11 @@ func printCounted(in *invocation, r *countedResult) {
 }
 
 // reportCounted reports each selected site that fails the run: a survivor
-// no valid exception excepts, an uncovered site with --fail-uncovered, the
-// listed selection a blocked site needs, which fails without any mutant,
-// once, and a site whose trial could not run.
-func reportCounted(in *invocation, r *countedResult, failUncovered, interrupted bool) {
+// no valid exception excepts, an uncovered site failUncovered says fails
+// (with --fail-uncovered, every one, or with =lines one on a changed line),
+// the listed selection a blocked site needs, which fails without any
+// mutant, once, and a site whose trial could not run.
+func reportCounted(in *invocation, r *countedResult, failUncovered func(countedSite) bool, interrupted bool) {
 	selections := map[string]bool{}
 	for _, site := range r.Selected {
 		m := mutate.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
@@ -572,7 +578,7 @@ func reportCounted(in *invocation, r *countedResult, failUncovered, interrupted 
 		case site.State == "judged" && site.Outcome == mutate.Survived && site.Excepted == "":
 			p := countedMutantProblem(site, m, "mutation.survived", "survived", "Add a test that fails with this change.")
 			in.report(p)
-		case site.State == "uncovered" && failUncovered:
+		case site.State == "uncovered" && failUncovered(site):
 			in.report(countedMutantProblem(site, m, "mutation.uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change."))
 		case site.State == "blocked" && site.selection != nil:
@@ -599,10 +605,12 @@ func countedMutantProblem(site countedSite, m mutate.Mutant, rule, verdict, fix 
 
 // reportCountedStrictGo reports, for every admitted Go function, sites or
 // none, what complete strict mode reports: a function without complete
-// evidence and each uncovered executable block.
-func reportCountedStrictGo(in *invocation, plan *mutate.FreshPlan, prep *FreshPreparation) {
+// evidence and each uncovered executable block; with linesOnly
+// (--fail-uncovered=lines), only for a function the range added or changed
+// a line of, and a block overlapping such a line.
+func reportCountedStrictGo(in *invocation, plan *mutate.FreshPlan, prep *FreshPreparation, linesOnly bool) {
 	for _, unit := range plan.Units {
-		if !strings.HasSuffix(unit.Path, ".go") {
+		if !strings.HasSuffix(unit.Path, ".go") || linesOnly && !plan.ChangedLines(unit.Path, unit.StartLine, unit.EndLine) {
 			continue
 		}
 		evidence := prep.GoCoverage[unit.Identity]
@@ -611,7 +619,8 @@ func reportCountedStrictGo(in *invocation, plan *mutate.FreshPlan, prep *FreshPr
 			continue
 		}
 		for _, block := range evidence.Blocks {
-			if !block.Covered {
+			start, end := block.Lines()
+			if !block.Covered && (!linesOnly || plan.ChangedLines(unit.Path, start, end)) {
 				reportCoverageProblem(in, unit.Path, unit.Function, block.Line, "mutation.uncovered-statement", "has an uncovered executable Go coverage block")
 			}
 		}

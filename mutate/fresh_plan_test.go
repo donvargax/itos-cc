@@ -436,6 +436,40 @@ func ranks(candidates []FreshCandidate) []string {
 	return out
 }
 
+func TestFreshPlanKeepsTheLinesTheRangeAddedOrChanged(t *testing.T) {
+	repo := freshFixture(t, map[string]string{
+		"old.go":  "package a\n\nfunc Changed(x int) int {\n\ty := x\n\treturn y + 1\n}\n",
+		"trim.go": "package b\n\nfunc Trimmed(x int) int {\n\ty := x\n\ty++\n\treturn y + 1\n}\n",
+	})
+	base := freshGit(t, repo, "rev-parse", "HEAD")
+	if err := os.Rename(filepath.Join(repo, "old.go"), filepath.Join(repo, "renamed.go")); err != nil {
+		t.Fatal(err)
+	}
+	writeFresh(t, filepath.Join(repo, "renamed.go"), "package a\n\nfunc Changed(x int) int {\n\ty := x\n\treturn y * 1\n}\n")
+	// A pure deletion: it admits Trimmed, and adds or changes no line.
+	writeFresh(t, filepath.Join(repo, "trim.go"), "package b\n\nfunc Trimmed(x int) int {\n\ty := x\n\treturn y + 1\n}\n")
+	freshGit(t, repo, "add", "-A")
+	freshGit(t, repo, "commit", "-q", "-m", "rename, change and trim")
+	plan, err := PlanFresh(repo, nil, base, 100, "since")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer plan.Close()
+	var admitted []string
+	for _, u := range plan.Units {
+		admitted = append(admitted, u.Path)
+	}
+	if slices.Sort(admitted); !slices.Equal(admitted, []string{"renamed.go", "trim.go"}) {
+		t.Errorf("admitted units of %q, want Changed and Trimmed", admitted)
+	}
+	if !plan.ChangedLines("renamed.go", 5, 5) || plan.ChangedLines("renamed.go", 1, 4) || plan.ChangedLines("old.go", 1, 9) {
+		t.Errorf("changed lines %v, want renamed.go's line 5 alone, under its new path", plan.Changed)
+	}
+	if plan.ChangedLines("trim.go", 1, 9) {
+		t.Errorf("changed lines %v, want none of trim.go: a pure deletion changes no line", plan.Changed)
+	}
+}
+
 func freshFixture(t *testing.T, files map[string]string) string {
 	t.Helper()
 	repo := t.TempDir()

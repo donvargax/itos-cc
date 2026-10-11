@@ -27,6 +27,12 @@ type FailFast struct {
 	// FailUncovered makes an uncovered mutant, and a strict coverage
 	// finding, actionable: with --fail-uncovered.
 	FailUncovered bool
+	// Lines, with --fail-uncovered=lines, narrows what FailUncovered makes
+	// actionable to the lines the --since range added or changed: an
+	// uncovered mutant on one, a function with one and without complete
+	// evidence, or an uncovered block or line overlapping one. Nil judges
+	// whole functions.
+	Lines LineScope
 	// Known is a failure the caller knew before the run planned, such as an
 	// exception for a file the run does not select that no longer holds:
 	// when any mutant has to run, the run stops before any of them, and
@@ -155,7 +161,7 @@ func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error)
 		slices.SortStableFunc(order, func(a, b int) int { return LineOrder(s.sites[a], s.sites[b]) })
 		for _, i := range order {
 			site := s.sites[i]
-			if s.outcomes[i] != Uncovered || (s.judged != nil && !s.judged[site.Unit]) {
+			if s.outcomes[i] != Uncovered || (s.judged != nil && !s.judged[site.Unit]) || !ff.Lines.Judges(s.file.Path, site.Line, site.Line) {
 				continue
 			}
 			u := s.file.Units[site.Unit]
@@ -169,7 +175,7 @@ func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error)
 			return nil, err
 		}
 		for i, u := range s.file.Units {
-			if s.judged != nil && !s.judged[i] {
+			if s.judged != nil && !s.judged[i] || !ff.Lines.Judges(s.file.Path, u.StartLine, u.EndLine) {
 				continue
 			}
 			id := unitID(u.Namespace, u.Name)
@@ -177,7 +183,7 @@ func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error)
 				return &Stop{Rule: "mutation.coverage-missing", File: s.rel, Function: id, Line: u.StartLine}, nil
 			}
 			for _, block := range evidence[i].Blocks {
-				if !block.Covered {
+				if !block.Covered && ff.Lines.JudgesBlock(s.file.Path, block) {
 					return &Stop{Rule: "mutation.uncovered-statement", File: s.rel, Function: id, Line: block.Line}, nil
 				}
 			}

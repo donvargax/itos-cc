@@ -151,7 +151,8 @@ coverage, listing, baselines or total time. A counted run writes no
 snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
-for every admitted function; strict Python, TypeScript and Kotlin lines
+for every admitted function, and =lines narrows it to the changed lines
+as in a complete run; strict Python, TypeScript and Kotlin lines
 are not yet proven by a counted run. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
@@ -253,6 +254,21 @@ mutant, as it always did, and so it does with --coverage-report,
 --use-existing-coverage or --coverage-command. With --since, only the judged
 functions' uncovered mutants and executable blocks count.
 
+--fail-uncovered=lines, which needs --since, judges only where the range
+changed: an executable Go coverage block or Python, TypeScript or Kotlin
+line counts when it overlaps a line the commits since REF added or
+changed, the new side of each hunk of git diff --unified=0 REF...HEAD, a
+renamed file's under its new path, and an uncovered mutant fails only on
+such a line. A judged function with such a line still needs complete
+evidence, as mutation.coverage-missing says, as its changed lines cannot
+be judged without it; a function with none, such as one the range only
+deleted lines from, is judged for survivors and exceptions alone.
+Survivors and exceptions are judged as before. Evidence is measured and
+recorded for whole functions, so a later --fail-uncovered check of the
+same snapshot judges them whole. --fail-uncovered alone is
+--fail-uncovered=functions, whole functions. =lines holds in --count and
+--fail-fast runs too; without --since it is flags.conflict.
+
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing: it
 is counted excepted, not survived, and is reused without running, as a kill
 is, while its function and the tests that import its file are unchanged.
@@ -313,7 +329,7 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines"),
+		failUncoveredFlag,
 		sw("fail-fast", "stop at the first actionable failure, cancelling the work still running; Linux and macOS"),
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
@@ -367,6 +383,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
 		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript or Kotlin coverage with raw coverage flags: flag",
+		"flags.conflict            --fail-uncovered=lines without --since: flag",
 		"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
@@ -379,13 +396,14 @@ judged and no snapshot is written. Listed tests are not run with
 	exits: []exitDoc{
 		{0, "every mutant that ran was killed"},
 		{1, "a mutant survived, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
-		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
+		{2, "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		{75, "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 	},
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation run --since origin/main --fail-uncovered  # a branch's own commits, as a gate",
+		"itos-cc mutation run --since origin/main --fail-uncovered=lines  # coverage of the changed lines alone",
 		"itos-cc mutation run --all-tests --json                    # nightly",
 		"itos-cc mutation run --count 20 --since origin/main        # a bounded fresh check of committed work (Linux and macOS)",
 		"itos-cc mutation run --changed --fail-fast                 # stop at the first survivor while fixing (Linux and macOS)",
@@ -415,6 +433,12 @@ each file's sites in line and column order.`,
 	},
 	run: runMutationList,
 }
+
+// failUncoveredFlag is --fail-uncovered of mutation run and check: alone,
+// or =functions, it judges whole functions; =lines, with --since, only the
+// lines the range added or changed.
+var failUncoveredFlag = swChoice("fail-uncovered", []string{"functions", "lines"},
+	"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines; =lines, with --since, only on the lines the range changed")
 
 type mutateFile struct {
 	File     string `json:"file"`
@@ -518,23 +542,25 @@ type mutateSite struct {
 
 // mutationSelection is the sources mutation run, check, and sample take:
 // the paths and --changed, and with --since the files the range changed or
-// renamed, with judge saying which of their functions it changed and renamed
-// the path each renamed file had at the ref, "" for the others. judge and
-// renamed are nil without --since.
-func mutationSelection(in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, err error) {
+// renamed, with judge saying which of their functions it changed, renamed
+// the path each renamed file had at the ref, "" for the others, and lines
+// which lines of a source the range added or changed, as HEAD has them
+// (project.ChangedFunctions.Lines). judge, renamed and lines are nil
+// without --since.
+func mutationSelection(in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutate.LineScope, err error) {
 	var since map[string]project.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
 		if since, moves, err = changedSince(in); err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	}
 	files, err := files(in)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	if since == nil {
-		return files.Sources, nil, nil, nil
+		return files.Sources, nil, nil, nil, nil
 	}
 	// The range selects the files; paths only narrow it, by the path a
 	// renamed file has now.
@@ -544,7 +570,39 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 		}
 	}
 	return sources, func(path, function, hash string) bool { return since[path].Judges(function, hash) },
-		func(path string) string { return moves[path] }, nil
+		func(path string) string { return moves[path] },
+		func(path string, start, end int) bool {
+			if abs, err := filepath.Abs(path); err == nil {
+				path = abs
+			}
+			return since[path].Changes(start, end)
+		}, nil
+}
+
+// changedLinesOnly says whether strict coverage judges only the lines a
+// --since range added or changed: --fail-uncovered=lines. Bare
+// --fail-uncovered is =functions, whole functions. =lines without --since
+// has no lines to judge, and is a usage error.
+func changedLinesOnly(in *invocation) (bool, error) {
+	if in.str("fail-uncovered") != "lines" {
+		return false, nil
+	}
+	if !in.set("since") {
+		return false, fail(kindUsage, "flags.conflict", "--fail-uncovered=lines judges only the lines a --since range changed, and was given without --since",
+			"Add --since REF, such as --since origin/main, or write --fail-uncovered alone to judge whole functions.").with("flag", "--fail-uncovered=lines")
+	}
+	return true, nil
+}
+
+// uncoveredFails is whether an uncovered mutant on a line of the source at
+// path fails: never without --fail-uncovered (nil), and with it on every
+// line, or with --fail-uncovered=lines on a line the --since range added or
+// changed (scope).
+func uncoveredFails(failUncovered bool, scope mutate.LineScope, path string) func(line int) bool {
+	if !failUncovered {
+		return nil
+	}
+	return func(line int) bool { return scope.Judges(path, line, line) }
 }
 
 // importingTests lists the test files that reach each source
@@ -570,6 +628,10 @@ func importingTests() (func(path string) []string, error) {
 }
 
 func runMutate(in *invocation) (any, error) {
+	linesOnly, err := changedLinesOnly(in)
+	if err != nil {
+		return nil, err
+	}
 	if in.set("count") || in.set("seed") {
 		return runCountedMutate(in)
 	}
@@ -590,9 +652,16 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, renamed, err := mutationSelection(in)
+	sources, judge, renamed, lines, err := mutationSelection(in)
 	if err != nil {
 		return result, err
+	}
+	// With --fail-uncovered=lines, strict coverage and uncovered mutants
+	// are judged on the lines the range changed alone; evidence is still
+	// measured and recorded for whole functions.
+	var scope mutate.LineScope
+	if linesOnly {
+		scope = lines
 	}
 	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
 	if err != nil {
@@ -665,7 +734,7 @@ func runMutate(in *invocation) (any, error) {
 		}
 		unsupported := false
 		for _, check := range cached {
-			if check.State == "unsupported" {
+			if check.State == "unsupported" && scope.Judges(check.File, check.Line, check.EndLine) {
 				unsupported = true
 				reportLanguageCoverageProblem(in, check.Language, check.File, check.Function, check.Line,
 					"mutation.coverage-unsupported", "uses unsupported "+languageName(check.Language)+" coverage scope "+strings.Join(check.Changed, ", "))
@@ -855,7 +924,7 @@ func runMutate(in *invocation) (any, error) {
 	var results []mutate.FileResult
 	var stop *mutate.Stop
 	if failFast {
-		ff := mutate.FailFast{FailUncovered: failUncovered}
+		ff := mutate.FailFast{FailUncovered: failUncovered, Lines: scope}
 		if len(elsewhere) > 0 {
 			// Known before anything runs: an entry of a file the run does
 			// not select that no longer holds.
@@ -870,7 +939,7 @@ func runMutate(in *invocation) (any, error) {
 		return result, err
 	}
 	if strict {
-		reportStrictCoverage(in, results)
+		reportStrictCoverage(in, results, scope)
 	}
 	reported := map[string]bool{}
 	for _, r := range results {
@@ -915,7 +984,7 @@ func runMutate(in *invocation) (any, error) {
 			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
 			for _, m := range r.Mutants {
 				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
-					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, failUncovered)
+					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 			continue
@@ -988,12 +1057,12 @@ func runMutate(in *invocation) (any, error) {
 			fmt.Println(line)
 		}
 		for _, u := range units {
-			reportFailed(in, r.Rel, u.Namespace+"#"+u.Name, u.Mutants, failUncovered)
+			reportFailed(in, r.Rel, u.Namespace+"#"+u.Name, u.Mutants, uncoveredFails(failUncovered, scope, r.Rel))
 		}
 		if r.Incomplete {
 			for _, m := range r.Mutants {
 				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
-					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, failUncovered)
+					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 		}
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
@@ -1448,8 +1517,9 @@ func strictCoverage(in *invocation, languages []string, sources []string, suite 
 
 // reportStrictCoverage reports, for every judged function of a file of a
 // strict language a run decided, a function without complete evidence
-// and each uncovered executable block or line.
-func reportStrictCoverage(in *invocation, results []mutate.FileResult) {
+// and each uncovered executable block or line; with scope, of those only a
+// function with a line scope judges, and a block or line it judges.
+func reportStrictCoverage(in *invocation, results []mutate.FileResult, scope mutate.LineScope) {
 	for _, result := range results {
 		language := result.Snapshot.Language
 		if !mutate.StrictCoverage(language) {
@@ -1464,7 +1534,7 @@ func reportStrictCoverage(in *invocation, results []mutate.FileResult) {
 		}
 		for _, unit := range result.Snapshot.Units {
 			id := unit.Namespace + "#" + unit.Name
-			if result.Judged != nil && !judged[id] {
+			if result.Judged != nil && !judged[id] || !scope.Judges(result.Rel, unit.StartLine, unit.EndLine) {
 				continue
 			}
 			if unit.Coverage == nil || !unit.Coverage.Complete {
@@ -1472,7 +1542,7 @@ func reportStrictCoverage(in *invocation, results []mutate.FileResult) {
 				continue
 			}
 			for _, block := range unit.Coverage.Blocks {
-				if !block.Covered {
+				if !block.Covered && scope.JudgesBlock(result.Rel, block) {
 					reportLanguageCoverageProblem(in, language, result.Rel, id, block.Line, "mutation.uncovered-statement", "has an uncovered "+executableUnit(language))
 				}
 			}
@@ -1571,15 +1641,16 @@ func listTests(tests *config.Tests) ([]coverage.Test, error) {
 }
 
 // reportFailed reports each mutant of function that fails: a survivor that
-// itos-cc.yaml does not except, and with failUncovered an uncovered mutant.
-func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant, failUncovered bool) {
+// itos-cc.yaml does not except, and an uncovered mutant on a line for which
+// failUncovered, when set, says so (uncoveredFails).
+func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant, failUncovered func(line int) bool) {
 	for _, m := range mutants {
 		switch {
 		case m.Outcome == mutate.Survived && m.Excepted == "":
 			reportMutant(in, rel, function, m, "mutation.survived", "survived", "survived",
 				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except %s:%d:%d --reason …'.",
 					rel, m.Line, m.Column))
-		case m.Outcome == mutate.Uncovered && failUncovered:
+		case m.Outcome == mutate.Uncovered && failUncovered != nil && failUncovered(m.Line):
 			reportMutant(in, rel, function, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change.")
 		}

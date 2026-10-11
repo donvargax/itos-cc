@@ -290,3 +290,28 @@ func TestAnOwnOutcomeOfAWholeSuiteScriptReadsAsTheWholeSuites(t *testing.T) {
 		t.Errorf("the own outcome recorded without evidence: %+v, want a broad outcome with none, stale once", snap.Units[0].Mutants[0])
 	}
 }
+
+func TestACoverageBlockSpansTheLinesOfItsSpan(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		block      CoverageBlock
+		start, end int
+	}{
+		{CoverageBlock{Span: "5.2,6.10", Line: 5}, 5, 6},
+		// It ends before line 8's first character: line 8 is not its.
+		{CoverageBlock{Span: "7.3,8.1", Line: 7}, 7, 7},
+		{CoverageBlock{Span: "9.2,9.10", Line: 9}, 9, 9},
+		// An executable line of a line-precision language.
+		{CoverageBlock{Span: "4", Line: 4}, 4, 4},
+	} {
+		if start, end := c.block.Lines(); start != c.start || end != c.end {
+			t.Errorf("%q: lines %d to %d, want %d to %d", c.block.Span, start, end, c.start, c.end)
+		}
+	}
+	var whole LineScope
+	only := LineScope(func(path string, start, end int) bool { return start <= 6 && end >= 6 })
+	if !whole.JudgesBlock("x.go", CoverageBlock{Span: "7.3,8.1", Line: 7}) || only.JudgesBlock("x.go", CoverageBlock{Span: "7.3,8.1", Line: 7}) ||
+		!only.JudgesBlock("x.go", CoverageBlock{Span: "5.2,6.10", Line: 5}) {
+		t.Error("a nil scope judges every block, and a scope only the blocks overlapping its lines")
+	}
+}

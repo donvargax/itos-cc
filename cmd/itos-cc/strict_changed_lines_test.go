@@ -185,11 +185,20 @@ func changedLinesScenario(t *testing.T, e changedLinesExample) {
 		t.Errorf("the changed-line check: exit %d, findings %q; want 0 and none, as the run\n%s", check.code, got, check.stdout)
 	}
 
+	// The changed-line run measured and recorded the function's evidence
+	// whole: a check of the same snapshot with --fail-uncovered alone still
+	// judges the whole function.
+	old := fmt.Sprintf("mutation.uncovered-statement %s:%d", e.file, e.oldLine)
+	whole := mutationCheck(t, "--since", "base", "--fail-uncovered", "--json", e.file)
+	logRun(t, &whole)
+	if got := changedLinesFindings(rawProblems(t, whole)); !slices.Contains(got, old) || whole.code != 1 {
+		t.Errorf("the whole-function check of the changed-line run's snapshot: exit %d, findings %q; want 1 with %q", whole.code, got, old)
+	}
+
 	// But "itos-cc mutation run --since <base> --fail-uncovered" still
 	// reports the old line as "mutation.uncovered-statement"
 	plain := mutateCovered(t, "--since", "base", "--fail-uncovered", "--json", e.file)
 	logRun(t, &plain)
-	old := fmt.Sprintf("mutation.uncovered-statement %s:%d", e.file, e.oldLine)
 	if got := changedLinesFindings(rawProblems(t, plain)); !slices.Contains(got, old) || plain.code != 1 {
 		t.Errorf("the whole-function run: exit %d, findings %q; want 1 with %q", plain.code, got, old)
 	}
