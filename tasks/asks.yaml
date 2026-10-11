@@ -242,3 +242,5 @@ questions:
   - id: q-53
     question: "When does changed-code mutation proof (proof.code) turn on in CI, given code a refactor moves has no mutation results until the nightly run?"
     answer: "Keep it off until the refactor is done, after its last stage (answered 2026-10-11): the refactor relies on tests and scenarios, and the nightly run refreshes .metrics/mutate. p1-itos-proof-code waits for it."
+  - id: q-54
+    question: "How should internal/cli's contract differ from go-template-itos's sample, given template updates must land cleanly: rule names, exit precedence, the problem's shape, flag errors, and the UI importing a domain's port?"
