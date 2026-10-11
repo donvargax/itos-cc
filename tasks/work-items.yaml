@@ -1616,7 +1616,7 @@ items:
     title: Move itos from 6.5.1 to 7.5.0
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
