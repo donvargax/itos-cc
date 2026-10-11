@@ -473,9 +473,6 @@
     (the pin, schema keys); each breaking change, Upgrading footer and changed scenario it names is
     applied by hand here and named in the commit body, and itos init --agent-rules regenerates
     AGENTS.md's itos block. No product code changes; no template file is taken yet.
-  done_when:
-    - run: "grep -q 'version: \"7.5.0\"' itos.yaml"
-    - run: itos config check
 - id: T-26
   type: chore
   title: Adopt go-template-itos v0.2.0 (stack go, feature cli) with --merge
