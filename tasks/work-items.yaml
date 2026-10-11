@@ -1561,3 +1561,16 @@ items:
       fragment, matched only beneath the working directory. It stays until removed by hand, unnamed
       by mutation check at the root. Whether a run at the root should reach such orphans needs a
       decision.
+  - id: outside-root-snapshot-windows
+    title: Check whether a run on Windows can write the snapshot of a file outside the root
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A file outside the project root has its snapshot named .metrics/mutate/<absolute path>.json,
+      which on Windows holds the drive colon (mutate\C:\...), a name NTFS likely refuses for a
+      directory, so mutation run there may fail to write it. The ID-MUT-237 test and its mutate unit
+      test skip where no such directory can be made, so CI does not say which. If it fails, such
+      files need a decision on Windows: refuse them, or name their snapshots another way.
