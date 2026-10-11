@@ -377,7 +377,16 @@ share on Windows), the snapshot's name being that path under
 orphan while the file exists, and one gone is an orphan at that path,
 outside the root, which only paths that cover it reach;
 only regular files ending in `.json` there are snapshots, and nothing
-outside `.metrics/mutate/` is ever removed. An orphan is not a problem, as
+outside `.metrics/mutate/` is ever removed. A snapshot whose file git shows
+renamed to a path where something is, by `git diff -M REF...HEAD` with
+`--since REF` and by `git diff -M HEAD` always, is no orphan, so the
+`--since` run over the new path still moves it. The working tree's diff
+sees a rename only once the new file is tracked: `git mv` stages it, and a
+plain `mv` with nothing staged is a deletion and an untracked file, whose
+old snapshot is an orphan; stage a move (`git mv`, or `git add`) before a
+run. A file deleted, renamed to a path where nothing is, or never tracked
+is an orphan. Outside a git repository, in one with no commit, or when git
+fails, no orphan can be judged: none is named or removed. An orphan is not a problem, as
 problems mean `"ok": false`: `mutation check` names the orphans under its
 paths in a key of its own, `"orphans": [{"file", "snapshot"}]`, there only
 when it found one, so output with none keeps the keys it had, `file` from

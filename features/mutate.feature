@@ -2301,7 +2301,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run" at the project root
       Then that snapshot is kept
 
-    @renamed-orphan-kept-fix @ID-MUT-238 @wip
+    @renamed-orphan-kept-fix @ID-MUT-238
     Scenario: A --since run whose paths miss a committed rename's new path keeps the old snapshot
       Given src/old.ts, with a snapshot, renamed to lib/new.ts in a commit since HEAD~1
       When I run "itos-cc mutation run --since HEAD~1 src"
@@ -2309,7 +2309,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --since HEAD~1 lib"
       Then the snapshot moves to lib/new.ts, and src/old.ts's is gone
 
-    @renamed-orphan-kept-fix @ID-MUT-239 @wip
+    @renamed-orphan-kept-fix @ID-MUT-239
     Scenario: A run before a rename is committed keeps the old snapshot
       Given src/old.ts, with a snapshot, renamed to lib/new.ts with git mv and not committed
       When I run "itos-cc mutation run src"

@@ -151,8 +151,14 @@ was: neither its snapshot nor its summary comment is written. Renames are
 followed: a move is no change, and a renamed file's snapshot moves with it.
 
 A snapshot whose source file is gone, nothing at its path in the working
-tree, is an orphan, as when a run without --since, or one whose paths do
-not select the new path, follows no rename. A file outside the project
+tree, is an orphan, unless git shows the file renamed to a file that
+exists: in the --since range, or in the working tree against HEAD, staged
+as git mv leaves it or added. Such a snapshot is kept for the --since run
+over the new path, which moves it. A file deleted, renamed to a path
+where nothing is, or not tracked by git is an orphan, and so is one moved
+with a plain mv: git sees a deletion and an untracked file, so stage a
+move (git mv, or git add) before a run. Outside a git repository, or when
+git fails, no snapshot can be judged, and none is removed. A file outside the project
 root, whose snapshot is named by its absolute path, is the file the
 snapshot records, never the path that name maps to under the root: its
 snapshot is no orphan while it exists. Once it has written what it

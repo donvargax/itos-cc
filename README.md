@@ -436,7 +436,14 @@ A snapshot whose source file is gone, as when a run without `--since`, or
 one whose paths do not select the new path, follows no rename, is an
 orphan: nothing is at its path in the working tree, so a file deleted but
 still committed is gone, while a new file at the old path is that path's
-file again, whose functions go stale by hash. A file outside the project
+file again, whose functions go stale by hash. A file git shows renamed to a
+file that exists, in the `--since` range or in the working tree against
+`HEAD` (staged, as `git mv` leaves it, or added), is no orphan: its snapshot
+stays for the `--since` run over the new path, which moves it. A plain `mv`
+with nothing staged is a deletion and an untracked file to git, so its
+snapshot is an orphan: stage a move (`git mv`, or `git add` the new file)
+before a run. Outside a git repository, or when git fails, no snapshot can
+be judged, and none is removed or named. A file outside the project
 root has its snapshot named by its absolute path; such a snapshot is judged
 by the file it records, not the path that name maps to under the root, so
 it is no orphan while the file exists. Each run removes the orphans
@@ -638,7 +645,8 @@ the code: `mutation check` leaves it out of the verdict and the counts, and
 the next `mutation run` drops it from the entry, reusing the rest. An
 exception of such a mutant is stale, as `gone`. A snapshot whose source
 file is gone is an orphan, judged by the file it records, so the snapshot
-of a file outside the root is none while that file exists: `mutation check`
+of a file outside the root is none while that file exists, nor is one
+whose file git shows renamed to a file that exists: `mutation check`
 names an orphan, in `--json` under
 `orphans`, and fails nothing for it, and the next `mutation run` over its
 directory removes it. It takes `mutation run`'s paths, `--changed`, and `--since`, and

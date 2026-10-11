@@ -55,8 +55,11 @@ source checked holds the function unchanged, or gone. An itos-cc.yaml that
 cannot be read is config.invalid.
 
 A snapshot under the paths checked whose source file is gone, nothing at
-its path in the working tree, as when the file was renamed and no
-mutation run --since followed it, is an orphan; the snapshot of a file
+its path in the working tree, as when the file was deleted, is an orphan,
+judged as mutation run judges it: one whose file git shows renamed to a
+file that exists, in the --since range or staged against HEAD (git mv,
+or git add after a mv), is none, kept for the --since run that moves it,
+and outside a git repository none is named; the snapshot of a file
 outside the project root, named by its absolute path, is judged by that
 file, so it is none while the file exists. check names an orphan, a line
 "<file>: gone, its snapshot <snapshot> is an orphan, which mutation run

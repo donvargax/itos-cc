@@ -47,7 +47,7 @@ func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
 	if len(in.args) == 0 {
 		dirs = []string{wd}
 	}
-	return mutate.Orphans(project.Root(), func(path string) bool {
+	orphans, err := mutate.Orphans(project.Root(), func(path string) bool {
 		for _, dir := range dirs {
 			if beneath(dir, path) {
 				return true
@@ -67,6 +67,60 @@ func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
 		}
 		return false
 	})
+	if err != nil || len(orphans) == 0 {
+		return orphans, err
+	}
+	return notRenamed(in, orphans), nil
+}
+
+// notRenamed are the orphans git shows no rename of to a file that
+// exists, so a run with --since over the new path still moves their
+// snapshots: renamed in the --since range, when there is one, or in the
+// working tree against HEAD, staged as git mv leaves it or added. A rename
+// to a path where nothing is, a deletion, a plain mv git sees as a
+// deletion and an untracked file, or a file git does not track keeps an
+// orphan one. Outside a git repository, or when git fails, no orphan can
+// be judged, and none is: each is kept, never named nor removed.
+func notRenamed(in *invocation, orphans []mutate.Orphan) []mutate.Orphan {
+	uncommitted, err := project.RenamesUncommitted()
+	if err != nil {
+		return nil
+	}
+	var since map[string]string
+	if in.set("since") {
+		if since, err = project.RenamesSince(in.str("since")); err != nil {
+			return nil
+		}
+	}
+	var out []mutate.Orphan
+	for _, o := range orphans {
+		if !renamedToAFile(o.Path, since, uncommitted) {
+			out = append(out, o)
+		}
+	}
+	return out
+}
+
+// renamedToAFile reports whether the renames of path, in the range (since)
+// and then in the working tree (uncommitted), each map of an old absolute
+// path to a new one, lead to a path where something is.
+func renamedToAFile(path string, since, uncommitted map[string]string) bool {
+	seen := map[string]bool{path: true}
+	for {
+		next, ok := since[path]
+		if !ok {
+			if next, ok = uncommitted[path]; !ok {
+				return false
+			}
+		}
+		if seen[next] {
+			return false
+		}
+		if _, err := os.Lstat(next); err == nil {
+			return true
+		}
+		seen[next], path = true, next
+	}
 }
 
 // beneath reports whether path is inside dir.
