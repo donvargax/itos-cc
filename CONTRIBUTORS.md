@@ -16,5 +16,5 @@ This project starts with infrastructure from Jorge Vargas's
 [itos](https://github.com/donvargax/itos) and
 [itos-template](https://github.com/donvargax/itos-template) projects.
 
-`donvargax` is the project owner `LICENSE` names. It is not a replacement for upstream
+`donvargax` is the project's owner. Naming the owner is not a replacement for upstream
 provenance.
