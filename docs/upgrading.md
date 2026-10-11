@@ -26,7 +26,7 @@ judges the proof from there.
 git-cliff publishes a `.sha512` file per archive rather than a checksums file: move its pin by
 checking each archive against that file first, then pinning the archive's SHA-256.
 
-The release job in `ci.yml` runs only on a push to `main`, after the ci and platform jobs pass,
-and cuts a release when the commits since the last tag call for one: GoReleaser's five archives
-and `checksums.txt`, the archives attested, published with the notes `tools/bin/release-notes`
-writes.
+The release job in `ci.yml` runs only on a push to `main`, after the commits and test jobs pass,
+and cuts a release when the commits since the last tag call for one: the five archives, each
+built on its own platform's runner, and `checksums.txt`, the archives attested, published with
+the notes `tools/bin/release-notes` writes.

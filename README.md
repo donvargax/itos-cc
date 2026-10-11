@@ -57,9 +57,10 @@ go build -o itos-cc ./cmd/itos-cc
 go test ./...
 ```
 
-Releases are built by CI (`.github/workflows/ci.yml`) on each platform's own
-runner when a `vX.Y.Z` tag is pushed, after the tests pass on Linux, macOS,
-and Windows. To cross-compile Linux and Windows binaries locally instead, use
+Releases are cut by CI: on a push to `main` whose tests pass on Linux, macOS,
+and Windows, `.github/workflows/release.yml` computes the version from the
+commits since the last `vX.Y.Z` tag and builds each platform on its own
+runner. To cross-compile Linux and Windows binaries locally instead, use
 [zig](https://ziglang.org) as the C compiler:
 
 ```bash

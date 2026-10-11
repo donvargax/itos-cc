@@ -1,15 +1,16 @@
 name: CI
 
 # Tests on Linux, macOS and Windows for every push to main and pull request.
-# A pushed vX.Y.Z tag does not test again (T-22): it requires that main's CI
-# passed on exactly the tagged commit, then builds each platform on its own
-# runner, uploads the archives to a draft release, and publishes the release
-# with checksums.txt once every archive is there. A run that fails leaves a
-# draft, which a rerun reuses.
+# On a push to main, once the commits and test jobs pass, the release job
+# cuts the release in the same run (release.yml, T-28): the version from the
+# commits since the last tag (tools/bin/release-version), each platform built
+# on its own runner, the archives attested and published with their notes, or
+# nothing when nothing calls for a release. A pushed tag starts nothing:
+# release.yml's manual run is the fallback, for a tag or a commit main's CI
+# passed.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
 
 # actions: read lets itos ci range find the last green run of this workflow.
@@ -25,7 +26,6 @@ jobs:
   # from go-template-itos's ci job, without its plan, itos ci run, which a
   # later task wires.
   commits:
-    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     env:
       TO: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -51,7 +51,6 @@ jobs:
       - run: itos verify "$FROM" "$TO"
 
   test:
-    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     strategy:
       fail-fast: false
       matrix:
@@ -129,116 +128,21 @@ jobs:
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
         run: go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered|TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered|TestAFileNoTestReachesReportsItsBaselineAsNotRun|TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt|TestAPythonProjectThatWritesParallelCoverageDataIsMeasured)$' ./cmd/itos-cc
 
-  draft:
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+  # The release, after everything above passed on this push: release.yml
+  # releases this commit when its commits call for one, else ends green.
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [commits, test]
+    # What release.yml's jobs ask for: the release and its assets, the OIDC
+    # token Sigstore signs with, and the attestations.
     permissions:
       contents: write
+      id-token: write
+      attestations: write
       actions: read
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      TAG: ${{ github.ref_name }}
-    steps:
-      # The tagged commit was tested when it was pushed to main; testing it
-      # again proves nothing new. A tag on a commit main's CI did not pass,
-      # or never ran, cannot publish. A run still going is waited for.
-      - name: Require a green main CI run of this commit
-        run: |
-          run=$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&branch=main&event=push&per_page=1" --jq '.workflow_runs[0].id // empty')
-          if [ -z "$run" ]; then
-            echo "::error::main's CI never ran on $GITHUB_SHA; tag a commit main's CI passed"
-            exit 1
-          fi
-          gh run watch "$run" --exit-status >/dev/null || true
-          conclusion=$(gh api "repos/$GH_REPO/actions/runs/$run" --jq .conclusion)
-          if [ "$conclusion" != success ]; then
-            echo "::error::main's CI run $run on $GITHUB_SHA ended $conclusion; tag a commit main's CI passed"
-            exit 1
-          fi
-          echo "main's CI passed on $GITHUB_SHA: https://github.com/$GH_REPO/actions/runs/$run"
-      - run: |
-          gh release view "$TAG" >/dev/null 2>&1 ||
-            gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes \
-              "Experimental: commands, output, file formats, and exit codes may change in any release. Check a download with \`sha256sum --ignore-missing -c checksums.txt\`."
-
-  build:
-    needs: draft
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { os: ubuntu-latest, goos: linux, goarch: amd64 }
-          - { os: ubuntu-24.04-arm, goos: linux, goarch: arm64 }
-          - { os: macos-latest, goos: darwin, goarch: arm64 }
-          - { os: macos-latest, goos: darwin, goarch: amd64, cc: "clang -arch x86_64" }
-          - { os: windows-latest, goos: windows, goarch: amd64 }
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    defaults:
-      run:
-        shell: bash
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      TAG: ${{ github.ref_name }}
-      CGO_ENABLED: "1" # tree-sitter is C
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-      - name: Build
-        env:
-          MATRIX_CC: ${{ matrix.cc }}
-        run: |
-          [ -n "$MATRIX_CC" ] && export CC="$MATRIX_CC"
-          flags="-s -w -X main.version=${TAG#v}"
-          tags=""
-          # Linux and Windows link statically, so the binary needs no libc or
-          # MinGW DLLs; netgo and osusergo keep glibc's NSS out of a static link.
-          case "$GOOS" in
-            linux) tags="netgo,osusergo"; flags="$flags -linkmode=external -extldflags=-static" ;;
-            windows) flags="$flags -linkmode=external -extldflags=-static" ;;
-          esac
-          exe=itos-cc; [ "$GOOS" = windows ] && exe=itos-cc.exe
-          mkdir -p dist/pkg
-          go build -trimpath -tags "$tags" -ldflags "$flags" -o "dist/pkg/$exe" ./cmd/itos-cc
-          cp LICENSE README.md dist/pkg/
-      - name: Check
-        if: matrix.cc == ''
-        run: dist/pkg/itos-cc version
-      - name: Upload
-        run: |
-          name="itos-cc-${TAG#v}-$GOOS-$GOARCH"
-          cd dist/pkg
-          if [ "$GOOS" = windows ]; then
-            7z a -tzip "../$name.zip" * >/dev/null
-            archive="../$name.zip"
-          else
-            tar -czf "../$name.tar.gz" *
-            archive="../$name.tar.gz"
-          fi
-          gh release upload "$TAG" "$archive" --clobber
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
-      TAG: ${{ github.ref_name }}
-    steps:
-      - run: |
-          mkdir assets && cd assets
-          gh release download "$TAG" --pattern 'itos-cc-*'
-          sha256sum itos-cc-* > checksums.txt
-          cat checksums.txt
-          gh release upload "$TAG" checksums.txt --clobber
-          gh release edit "$TAG" --draft=false --latest
+    # One release at a time, never cancelled: pushes in a row cut their
+    # releases in order, and a run by hand waits for this one.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    uses: ./.github/workflows/release.yml
