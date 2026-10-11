@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
@@ -54,15 +55,31 @@ var versionCommand = &command{
 var commands = map[string]*command{}
 
 func init() {
-	for _, c := range []*command{crapCommand, dryCommand, mutationGroup, scrapCommand, serveCommand, unitsCommand, versionCommand} {
+	for _, c := range []*command{crapCommand, dryCommand, mutationGroup, scrapCommand, serveCommand, versionCommand} {
 		commands[c.name] = c
 	}
+}
+
+// commandNames are the names of every command, the moved ones' among them,
+// sorted.
+func commandNames() []string {
+	names := sortedNames(commands)
+	for name := range moved() {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
 }
 
 func usage() string {
 	var b strings.Builder
 	b.WriteString("usage: itos-cc <command> [options] [path ...]\n\nCommands:\n")
-	for _, name := range sortedNames(commands) {
+	kong := moved()
+	for _, name := range commandNames() {
+		if node := kong[name]; node != nil {
+			fmt.Fprintf(&b, "  %-15s %s\n", name, node.Help)
+			continue
+		}
 		c := commands[name]
 		if c.subs == nil {
 			fmt.Fprintf(&b, "  %-15s %s\n", name, c.summary)
@@ -115,7 +132,8 @@ var classifiers = []cli.Classifier{classifySelection, count.Classify}
 // stdUI is the UI of this process: its standard streams as they are when it
 // is called, so a test that swaps os.Stdout reads what it prints.
 func stdUI() *cli.UI {
-	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers}
+	dir, _ := os.Getwd()
+	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers, Dir: dir}
 }
 
 // init makes this executable the one go test runs each test binary through
@@ -166,6 +184,9 @@ func run(args []string) int {
 	}
 	if name == "help" {
 		return help(rest, asJSON)
+	}
+	if moved()[name] != nil {
+		return runMoved(append([]string{name}, rest...))
 	}
 	cmd, ok := commands[name]
 	if !ok {
@@ -231,6 +252,12 @@ func help(args []string, asJSON bool) int {
 		fmt.Print(usage())
 		return 0
 	}
+	if moved()[topics[0]] != nil {
+		if len(topics) > 1 {
+			return stdUI().Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[1])})
+		}
+		return movedHelp(topics[0])
+	}
 	cmd := commands[topics[0]]
 	if cmd == nil {
 		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownCommand(topics[0])})
@@ -242,8 +269,7 @@ func help(args []string, asJSON bool) int {
 	}
 	switch {
 	case len(topics) > most:
-		return stdUI().Emit(asJSON, nil, []*cli.Problem{cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("help takes one command, and was given %q too", topics[most]),
-			"Run 'itos-cc help <command>', or 'itos-cc help <group> <command>'.").With("argument", topics[most])})
+		return stdUI().Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[most])})
 	case len(topics) == 2 && cmd.sub(topics[1]) == nil:
 		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(cmd, topics[1])})
 	case len(topics) == 2:
@@ -256,9 +282,16 @@ func help(args []string, asJSON bool) int {
 	return 0
 }
 
+// helpTakesOne is the problem of help given topic beyond the command it
+// takes.
+func helpTakesOne(topic string) *cli.Problem {
+	return cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("help takes one command, and was given %q too", topic),
+		"Run 'itos-cc help <command>', or 'itos-cc help <group> <command>'.").With("argument", topic)
+}
+
 func unknownCommand(name string) *cli.Problem {
 	p := cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", name), "Run 'itos-cc --help' for the commands.")
-	if guess := cli.Closest(name, sortedNames(commands)); guess != "" {
+	if guess := cli.Closest(name, commandNames()); guess != "" {
 		p.Fix = fmt.Sprintf("Did you mean '%s'? Run 'itos-cc --help' for the commands.", guess)
 	}
 	return p.With("command", name)
@@ -275,7 +308,8 @@ func unknownSubcommand(g *command, name string) *cli.Problem {
 	return cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)
 }
 
-// leaves is every command that runs, a group's subcommands in its place.
+// leaves is every hand-parsed command that runs, a group's subcommands in
+// its place.
 func leaves() []*command {
 	var all []*command
 	for _, name := range sortedNames(commands) {

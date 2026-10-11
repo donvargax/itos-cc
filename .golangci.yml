@@ -71,7 +71,11 @@ linters:
         # slice is held with no edit to this rule; a new domain or adapter
         # package is excluded here as it is listed in its own rule. A rule
         # cannot tell a slice's own import from another's, so a slice's tests
-        # are in its own package and need no import of it.
+        # are in its own package and need no import of it. lang, the
+        # top-level library that names a source's units, is allowed: it is
+        # the measure every command shares, no adapter and wrapping none, so a
+        # slice names the units of what it read through its port with it
+        # (internal/units, T-32); project, which an adapter wraps, is not.
         slices:
           list-mode: lax
           files:
@@ -90,9 +94,10 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/cli$
+            - github.com/donvargax/itos-cc/lang$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "a slice imports only the domain, its ports and internal/cli (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "a slice imports only the domain, its ports, internal/cli and lang (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding

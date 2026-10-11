@@ -41,16 +41,28 @@ from it, and thin slices named for their commands.
   only calls the domain through the port, are the application. `Run` assembling the `Query`
   from kong's flags is the one copy the layout accepts. Its `Classify` is the counting
   domain's classifier, turning the port's sealed failures into problems.
+- `internal/units` is the `units` command's slice, the first of itos-cc's own commands moved
+  onto kong (T-32), laid out as `count`'s: its kong struct `CLI` with its `Contract` for the
+  help, its `Query`, and `Handler.Handle(ctx, q)`, which selects the files through the
+  selection domain, reads each through the same `Tree` port and names its units with the
+  top-level `lang` library. `Run` prints them, their paths from the working directory
+  (`UI.Rel`). It has no classifier: its failures are the selection domain's, whose classifier
+  is cmd's, or `lang`'s, internal ones.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
   plain or JSON answer, and it stops a command on Ctrl-C (decision 31). A domain's failures
-  reach it through that domain's classifier, which cmd hands it.
+  reach it through that domain's classifier, which cmd hands it. For the commands kong parses
+  it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
+  types (`ParseProblem`) and prints help (`Help`, a command's `Page`), as "Moving a command"
+  below says.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
   and hands the context and the handler to `Run` through kong's bindings. It is the only place
-  that knows every package. Until itos-cc's commands move into slices, it also holds the
-  selection domain's classifier, `classifySelection`, since every command selects its files,
-  and `files`, which calls the domain through `workdir`.
+  that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
+  every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
+  it also holds the selection domain's classifier, `classifySelection`, since every command
+  selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
+  ones.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -65,8 +77,9 @@ deadlines only, always as the first parameter and never in a struct or as a valu
   their port subpackages, and never kong.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
-- `slices`: a slice imports nothing of ours but the domain and `internal/cli`, so never another
-  slice, an adapter or `cmd`. Its files are every package under `internal/` except the ones the
+- `slices`: a slice imports nothing of ours but the domain, `internal/cli` and `lang`, the
+  top-level library naming a source's units that every command measures by, so never another
+  slice, an adapter, the `project` library an adapter wraps, or `cmd`. Its files are every package under `internal/` except the ones the
   rule lists as something else, so a new command's slice is held with no edit. A slice's tests
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain

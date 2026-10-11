@@ -18,6 +18,10 @@ or the context was done. The `internal/workdir` adapter
 implements it over the `project` library and the disk; cmd's `classifySelection` turns its
 failures into the problems the command line has always reported.
 
+The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
+through the domain, reads each file through the same port and names its units with `lang`.
+cmd routes it through kong, and the commands not moved yet through its own parser.
+
 The domains know no command-line flags, JSON or exit codes. The `count` slice, `internal/count`,
 carries the command's domain values to the domain through the port and counts nothing itself;
 its classifier turns the port's sealed failures into problems. `internal/cli`, the UI every

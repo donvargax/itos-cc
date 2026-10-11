@@ -140,6 +140,12 @@ func TestDispatch(t *testing.T) {
 		{[]string{"mutation", "--json"}, 2, `"command.missing"`},
 		{[]string{"--json", "mutation", "rn"}, 2, `"Did you mean 'mutation run'?`},
 		{[]string{"--json", "mutation", "--changed", "run"}, 2, `"flags.unknown"`},
+		{nil, 0, "  units           list the functions"},
+		{[]string{"units", "--help"}, 0, "usage: itos-cc units [options] [path ...]"},
+		{[]string{"help", "units"}, 0, "usage: itos-cc units [options] [path ...]"},
+		{[]string{"help", "units", "extra"}, 2, ""},
+		{[]string{"--json", "unit"}, 2, `"Did you mean 'units'?`},
+		{[]string{"--json", "units", "-changed"}, 2, `"Did you mean --changed?`},
 	} {
 		o := itosCc(t, c.args...)
 		code, out := o.code, o.stdout
@@ -156,6 +162,20 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", c.name, part)
+			}
+		}
+	}
+	// The commands kong parses print theirs from its model and their
+	// Contract, in the same layout.
+	for name, node := range moved() {
+		page, err := cli.PageOf(node)
+		if err != nil {
+			t.Fatal(err)
+		}
+		h := page.String()
+		for _, part := range []string{"usage: itos-cc " + name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
+			if !strings.Contains(h, part) {
+				t.Errorf("%s --help lacks %q", name, part)
 			}
 		}
 	}
