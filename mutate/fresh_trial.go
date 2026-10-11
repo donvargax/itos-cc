@@ -100,11 +100,12 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	if len(trials) == 0 {
 		return results, nil
 	}
-	base, err := os.MkdirTemp("", "itos-cc-fresh-")
+	scratch, err := newWorkerScratch("itos-cc-fresh-")
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(base)
+	defer scratch.remove()
+	base := scratch.dir
 	budget := &cleanupBudget{} // one run-abort deadline, shared by every worker
 	if opt.Owner != nil {
 		budget = &opt.Owner.cleanup

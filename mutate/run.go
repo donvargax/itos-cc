@@ -649,11 +649,12 @@ type job struct {
 // The worker copies are removed only once every worker returned, its
 // owned commands joined.
 func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
-	base, err := os.MkdirTemp("", "itos-cc-mutate-")
+	scratch, err := newWorkerScratch("itos-cc-mutate-")
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(base)
+	defer scratch.remove()
+	base := scratch.dir
 	ctx := context.Background()
 	var st *stopper
 	var runner commandRunner

@@ -2217,7 +2217,10 @@ Feature: Mutation testing
   #   in-process.
   # - mutate-workers-abandoned: worker copies a killed mutation run left in
   #   the temporary directory are removed by a later run, as coverage
-  #   removes abandoned run- directories, never one still in use.
+  #   removes abandoned run- directories, never one still in use. A run
+  #   holds a lock on owner.lock in its directory, which the OS releases
+  #   when the process dies (flock, LockFileEx); a directory with no marker,
+  #   from an older itos-cc, goes once unchanged for three days.
   # - check-removed-operator-sites: the reverse of ID-MUT-106. A recorded
   #   mutant whose site the function no longer holds, as when a newer
   #   itos-cc removes an operator, is not in the code: mutation check
@@ -2249,7 +2252,7 @@ Feature: Mutation testing
       Then its coverage is measured, not "coverage.measured-nothing", and its mutant is killed
       And nothing of the run's data files is left in the project's tree
 
-    @wip @mutate-workers-abandoned-fix @ID-MUT-234
+    @mutate-workers-abandoned-fix @ID-MUT-234
     Scenario: A later run removes the worker copies a killed run left behind
       Given worker copies a mutation run left in the temporary directory when it was killed
       And worker copies of a mutation run still going

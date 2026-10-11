@@ -322,6 +322,14 @@ test. What keeps `mutation run` fast:
   proves the copy works before any mutant does. A mutant times out after
   the baseline's time times `--timeout-factor` (10 by default), plus 5
   seconds for building the mutated code, and a timeout counts as killed.
+  The copies live in an `itos-cc-mutate-` directory of the temporary
+  directory (`itos-cc-fresh-` for a counted run's trials), removed when the
+  run ends. A run killed before then leaves it, and the next run removes
+  it: a run holds a lock on `owner.lock` in its directory while it runs,
+  which the OS releases when the process dies, so a run never removes the
+  copies of one still going, such as an agent's while a commit hook runs.
+  A directory with no `owner.lock`, from an older itos-cc, is removed once
+  nothing in it changed for three days.
 
 `--all-tests` runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests anywhere in the build root can kill
