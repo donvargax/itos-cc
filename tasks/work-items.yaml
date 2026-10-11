@@ -1391,3 +1391,15 @@ items:
       before their cleanup ran. Coverage runs already remove abandoned run- directories
       (removeAbandoned); mutation workers could do the same with a lock or pid marker per directory,
       or live under the repository's private git dir as counted scratch does.
+  - id: integration-coverage-python
+    title: Coverage from tests that start other processes, for python
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      q-41: issue #14's integration coverage and per-test listed coverage for python through the
+      project's own collector, never downloaded; a missing collector is coverage.tool-missing under
+      --fail-uncovered, otherwise a log line.
+    refs: ["#14"]
