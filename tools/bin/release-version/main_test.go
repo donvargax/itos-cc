@@ -174,3 +174,44 @@ func TestShallow(t *testing.T) {
 		t.Errorf("exit %d, stdout %q, stderr %q; want 2, nothing and the shallow clone named", code, stdout.String(), stderr.String())
 	}
 }
+
+// Before 1.0 a breaking change makes a minor, not a major: a 0.y.z version
+// promises no stable interface, so 1.0.0 is never a commit's side effect. From
+// 1.0 a breaking change makes a major, as before (here refused, the example's
+// module path having no /v2).
+func TestBreakingBeforeOne(t *testing.T) {
+	cases := []struct {
+		name, message, tag string
+		untagged           bool
+		code               int
+		stdout, says       string
+	}{
+		{name: "from v0.1.0", message: "feat!: a key goes",
+			stdout: "next=0.2.0\nbump=minor\n", says: "1 breaking change(s), before 1.0 a minor: 0.2.0"},
+		{name: "with no release yet", message: "fix: a bug\n\nBREAKING-CHANGE: a key goes", untagged: true,
+			stdout: "next=0.1.0\nbump=minor\n", says: "1 breaking change(s), before 1.0 a minor: 0.1.0"},
+		{name: "from v1.0.0", message: "refactor!: a key goes", tag: "v1.0.0",
+			code: 1, says: "refusing v2.0.0"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			repo := releasetest.Example(t, !c.untagged)
+			if c.tag != "" {
+				releasetest.Git(t, repo, "tag", c.tag)
+			}
+			releasetest.Change(t, filepath.Join(repo, "cmd/itos-cc/key.go"), "", "package main\n")
+			releasetest.Commit(t, repo, c.message)
+			t.Chdir(repo)
+			var stdout, stderr bytes.Buffer
+			if code := run(nil, &stdout, &stderr); code != c.code {
+				t.Fatalf("exit %d, want %d: %s", code, c.code, stderr.String())
+			}
+			if !strings.Contains(stdout.String(), c.stdout) {
+				t.Errorf("stdout does not hold %q:\n%s", c.stdout, stdout.String())
+			}
+			if !strings.Contains(stderr.String(), c.says) {
+				t.Errorf("stderr does not say %q:\n%s", c.says, stderr.String())
+			}
+		})
+	}
+}
