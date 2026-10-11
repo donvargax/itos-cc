@@ -37,9 +37,9 @@ func classifySelection(err error) ([]*cli.Problem, bool) {
 
 // selectionProblem is failure's problem: --changed with no git is the
 // environment's, exit 3, and an argument that names nothing a usage error,
-// exit 2, as file_selection.feature reads them; a walk that failed is the 70
-// it has always been, its own message whole; an interrupt is 130 (decision
-// 31). None has a default; a kind with no case here is the 70 of a bug.
+// exit 2, as file_selection.feature reads them; a walk or a read that
+// failed is the 70 it has always been, its own message whole; an interrupt
+// is 130 (decision 31). None has a default; a kind with no case here is the 70 of a bug.
 func selectionProblem(failure port.Failure) *cli.Problem {
 	p := cli.Internal(failure)
 	switch e := failure.(type) {
@@ -50,6 +50,8 @@ func selectionProblem(failure port.Failure) *cli.Problem {
 		p = cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is no file, and no file's path under the working directory contains it", e.Fragment),
 			"Name a file, a directory, or a fragment of a source's path.").With("argument", e.Fragment)
 	case *port.Unwalkable:
+		p = cli.Internal(e)
+	case *port.Unreadable:
 		p = cli.Internal(e)
 	case *port.Cancelled:
 		p = cli.Interrupted()

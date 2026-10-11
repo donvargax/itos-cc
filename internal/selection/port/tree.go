@@ -1,6 +1,6 @@
 // Package port defines what the selection domain reaches outside itself:
-// the files under some roots, the ones git reports as changed, and whether
-// a path is there.
+// the files under some roots, the ones git reports as changed, whether a
+// path is there, and what a selected file holds.
 package port
 
 import "context"
@@ -37,6 +37,13 @@ type Unwalkable struct{ Reason string }
 func (*Unwalkable) selectionFailure() {}
 func (e *Unwalkable) Error() string   { return e.Reason }
 
+// Unreadable is returned when a selected file could not be read. Reason is
+// the read's own message, a sentence for people.
+type Unreadable struct{ Path, Reason string }
+
+func (*Unreadable) selectionFailure() {}
+func (e *Unreadable) Error() string   { return e.Reason }
+
 // Cancelled is returned when the context was done before the files were
 // found, as an interrupt makes it.
 type Cancelled struct{}
@@ -56,4 +63,8 @@ type Tree interface {
 	Changed(ctx context.Context) ([]string, Failure)
 	// Exists says whether path names a file or a directory.
 	Exists(ctx context.Context, path string) bool
+	// Read is what the file at path, as Discover named it, holds. Every
+	// command that selects files reads them, so it reads them here, through
+	// the tree it chose them from, never by itself (decision 29).
+	Read(ctx context.Context, path string) ([]byte, Failure)
 }

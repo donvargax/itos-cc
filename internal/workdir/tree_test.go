@@ -100,6 +100,31 @@ func TestADoneContextFindsNothing(t *testing.T) {
 	if !errors.As(failure, &stopped) || changed != nil {
 		t.Errorf("Changed() = %q, %T; want Cancelled and nothing", changed, failure)
 	}
+	text, failure := (Tree{}).Read(cancelled(t), "pkg/sum.go")
+	if !errors.As(failure, &stopped) || text != nil {
+		t.Errorf("Read() = %q, %T; want Cancelled and nothing", text, failure)
+	}
+}
+
+func TestReadGivesWhatAFileHolds(t *testing.T) {
+	tree(t)
+	text, failure := (Tree{}).Read(t.Context(), filepath.Join("pkg", "sum.go"))
+	if failure != nil || string(text) != "package pkg\n" {
+		t.Errorf("Read(pkg/sum.go) = %q, %v", text, failure)
+	}
+}
+
+func TestReadOfAFileThatIsNotThereIsUnreadable(t *testing.T) {
+	absent := filepath.Join(tree(t), "absent.go")
+	_, failure := (Tree{}).Read(t.Context(), absent)
+	var unreadable *port.Unreadable
+	if !errors.As(failure, &unreadable) || unreadable.Path != absent {
+		t.Fatalf("Read(absent) = %T %v, want Unreadable", failure, failure)
+	}
+	// The read's own message, as the command line has always printed it.
+	if _, readErr := os.ReadFile(absent); unreadable.Reason != readErr.Error() {
+		t.Errorf("Reason = %q, want %q", unreadable.Reason, readErr.Error())
+	}
 }
 
 func TestExistsSaysWhetherAPathIsThere(t *testing.T) {

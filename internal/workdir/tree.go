@@ -1,7 +1,7 @@
 // Package workdir adapts the working directory, as the disk and git hold
 // it, to the selection domain's Tree port: it walks it with project's
-// discovery, asks git for its changes, and stats paths, translating what
-// fails into the port's failures.
+// discovery, asks git for its changes, stats paths and reads files,
+// translating what fails into the port's failures.
 package workdir
 
 import (
@@ -51,4 +51,18 @@ func (Tree) Changed(ctx context.Context) ([]string, port.Failure) {
 func (Tree) Exists(ctx context.Context, path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// Read reads the file at path, any failure to Unreadable with the read's
+// own message, as the command line has always printed it. A done ctx reads
+// nothing; a read under way runs to its end.
+func (Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
+	if ctx.Err() != nil {
+		return nil, &port.Cancelled{}
+	}
+	text, err := os.ReadFile(path) //nolint:gosec // the person selected the path, reading it is the point
+	if err != nil {
+		return nil, &port.Unreadable{Path: path, Reason: err.Error()}
+	}
+	return text, nil
 }

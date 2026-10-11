@@ -22,6 +22,9 @@ type Tree struct {
 	// Failures are Discover's, by root: a walk that takes a root here fails
 	// with its failure.
 	Failures map[string]port.Failure
+	// Contents are what Read gives, by path; a path with none is
+	// Unreadable.
+	Contents map[string]string
 }
 
 var _ port.Tree = Tree{}
@@ -52,6 +55,15 @@ func (t Tree) Changed(ctx context.Context) ([]string, port.Failure) {
 // above one.
 func (t Tree) Exists(ctx context.Context, path string) bool {
 	return path == "." || len(under(t.Sources, path)) > 0 || len(under(t.Tests, path)) > 0
+}
+
+// Read is path's text in Contents, or Unreadable when it has none.
+func (t Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
+	text, ok := t.Contents[path]
+	if !ok {
+		return nil, &port.Unreadable{Path: path, Reason: "open " + path + ": no such file in the fake"}
+	}
+	return []byte(text), nil
 }
 
 // under is the files of list at or below root.

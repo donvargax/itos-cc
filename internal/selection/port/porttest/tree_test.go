@@ -1,8 +1,11 @@
 package porttest
 
 import (
+	"errors"
 	"slices"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
 // The fake walks as a real tree does: a root is "." or a path at or above
@@ -23,5 +26,19 @@ func TestTreeWalksAsARealTreeDoes(t *testing.T) {
 	changed[0] = "other"
 	if tree.ChangedFiles[0] != "src/a.go" {
 		t.Errorf("Changed() exposed the fake's own list")
+	}
+}
+
+// Read gives a file's contents, and a file without any is Unreadable, as a
+// real tree's read of a file it cannot open is.
+func TestTreeReadsWhatItHolds(t *testing.T) {
+	tree := Tree{Contents: map[string]string{"src/a.go": "package a\n"}}
+	if text, failure := tree.Read(t.Context(), "src/a.go"); failure != nil || string(text) != "package a\n" {
+		t.Errorf("Read(src/a.go) = %q, %v", text, failure)
+	}
+	_, failure := tree.Read(t.Context(), "src/b.go")
+	var unreadable *port.Unreadable
+	if !errors.As(failure, &unreadable) || unreadable.Path != "src/b.go" {
+		t.Errorf("Read(src/b.go) = %T %v, want Unreadable", failure, failure)
 	}
 }

@@ -23,16 +23,19 @@ from it, and thin slices named for their commands.
   directory, `--changed` adding git's changed files, and no paths meaning the whole working
   directory. `Select(ctx, tree, paths, changed)` reads the tree only through its port.
 - `internal/selection/port` declares `Tree` (`Discover` roots into sources and tests,
-  `Changed` files, whether a path `Exists`, each taking the context first) and its sealed
-  set of failures: `NoGit`, `Unmatched`, carrying the fragment, `Unwalkable` and `Cancelled`.
+  `Changed` files, whether a path `Exists`, and `Read`, what a selected file holds, each
+  taking the context first) and its sealed set of failures: `NoGit`, `Unmatched`, carrying
+  the fragment, `Unwalkable`, `Unreadable` and `Cancelled`. Every command reads the files it
+  selects, so it reads them through the tree it chose them from, never by itself.
   `internal/selection/port/porttest` holds the in-memory fake of `Tree`.
 - `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
   OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
   `Cancelled` once the context is done, and hands every other path to a fallback it is given.
   Each imports nothing of ours but the port.
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
-  hold it. It wraps the top-level `project` library's discovery and git query and stats paths,
-  translating their errors into the port's failures, and imports nothing else of ours.
+  hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
+  reads files, translating their errors into the port's failures, and imports nothing else of
+  ours.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`

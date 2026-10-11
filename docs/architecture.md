@@ -12,8 +12,9 @@ rapid property checks addition for newline-terminated pieces.
 
 The selection domain, `internal/selection`, owns how every command chooses its files: paths,
 fragments of a path, `--changed` and the whole working directory when none is given. It reaches
-the working tree through its `Tree` port, whose sealed failures say there is no git, a fragment
-matched nothing, a walk failed or the context was done. The `internal/workdir` adapter
+the working tree through its `Tree` port, which also reads the files a command selected, and
+whose sealed failures say there is no git, a fragment matched nothing, a walk or a read failed
+or the context was done. The `internal/workdir` adapter
 implements it over the `project` library and the disk; cmd's `classifySelection` turns its
 failures into the problems the command line has always reported.
 
