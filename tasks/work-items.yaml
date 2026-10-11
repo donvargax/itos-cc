@@ -1119,14 +1119,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: counted-unreached-listed
+  - id: counted-unreached-listed-fix
     title: A counted run fails an unreached Python file whose line listed tests reach
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was counted-unreached-listed.
       Found by own-tests-python (2026-10-10): in a counted run, a Python file no test reaches but
       whose line a listed test reaches gets 'no clean baseline was prepared for its file' and fails,
       since FreshBaselineCommands skips files whose own command runs nothing; a complete run judges
