@@ -1920,3 +1920,17 @@ items:
       the context threaded through coverage and mutate first. Ships in the same minor release as
       semantic-exit-codes.
     refs: [q-51, q-54, q-37]
+  - id: semantic-exit-codes
+    title: Exit codes follow square/exit, 75 kept for retry
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-56: 80 usage, 81 unknown command, 82 a requirement not met (was 3), 100 internal (was 70),
+      75 a failure that may pass when run again, 1 a check's no, 130 interrupted; precedence 130, 80
+      and 81, 100, 82, 75, 1. Each problem in --json gains its own exit, as RFC 9457's status
+      (q-54). A feat in the same minor release as interrupt-exit-130, proposed to go-template-itos
+      alongside the internal/cli contract.
+    refs: [q-56, q-54]
