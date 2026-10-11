@@ -1354,16 +1354,9 @@ items:
     title: Worker copies a killed mutation run leaves in the temp dir are never removed
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was mutate-workers-abandoned.
-      Found 2026-10-11: /tmp held four itos-cc-mutate-* directories from 10-08 to 10-10, 3.7 GB,
-      each with w0..wN worker copies of a project, left by mutation runs (here, test runs) killed
-      before their cleanup ran. Coverage runs already remove abandoned run- directories
-      (removeAbandoned); mutation workers could do the same with a lock or pid marker per directory,
-      or live under the repository's private git dir as counted scratch does.
   - id: integration-coverage-python
     title: Coverage from tests that start other processes, for python
     phase: 1
