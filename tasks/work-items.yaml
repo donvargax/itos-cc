@@ -1661,3 +1661,19 @@ items:
       without it, since the move takes no decision; whether itos-cc's CI should run a code proof
       (for example its own mutation or coverage check over the changed functions) is the person's
       call.
+  - id: T-27
+    title: Every feat and fix says what a user must change, in an Upgrading footer
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The person (2026-10-11): with the template's auto-release, a release's notes are generated
+      from its commits and quote every Upgrading footer, so a behaviour change reaches the notes
+      only if its commit says so; the person chose to require it, as go-template-itos does.
+      itos.yaml's commits.footers gains Upgrading (source text, required_for feat and fix), with the
+      template's comment: what a user must change, or none (itos commit --upgrading none).
+      AGENTS.md's generated block is regenerated with the pinned itos (~/.cache/itos/7.5.0/itos init
+      --agent-rules; the PATH's 8.0.0-rc.5 rewrites the block itself). Past commits are not
+      rewritten: verification judges from a range's start, and the rule holds from this commit on.
