@@ -582,3 +582,18 @@
     - run: grep -q 'tools/bin/architecture-check' itos.yaml
     - run: grep -q 'govulncheck' itos.yaml
     - run: grep -q 'tools/bin/domain-coverage' itos.yaml
+- id: T-30
+  type: refactor
+  title: "internal/cli is itos-cc's UI: problems, exit codes and JSON"
+  why: >
+    Second stage of the template-design refactor. Every command reports through cmd/itos-cc/cli.go's
+    problem, kind, precedence and emit; the template puts that UI in internal/cli, which the sample
+    count app alone uses. They move there, the template's shape taking our contract, which
+    features/cli.feature pins: problems keep their dotted lower-case rules, subject keys and fix,
+    and the exit code is the first of 2, 70, 3, 75 and 1 present, not the highest. internal/cli
+    stops importing the sample's counting port. cmd keeps its own flag parser until the pilot.
+    Output and exit codes do not change.
+  done_when:
+    - run: grep -lq 'itos-cc/internal/cli"' cmd/itos-cc/*.go
+    - run: "! grep -rq 'internal/counting' internal/cli"
+    - run: go test ./internal/cli -count=1
