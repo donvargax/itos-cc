@@ -39,6 +39,10 @@ type FunctionCheck struct {
 	// site's line and column now, a survivor itos-cc.yaml excepts with its
 	// reason; nil otherwise.
 	Mutants []Mutant
+	// LeftOut is how many mutants the function's entry records at sites it
+	// no longer holds, which OnSites left out of Entry, when Fresh; 0
+	// otherwise. The next mutation run drops them from the entry.
+	LeftOut int
 	unit    int // the function's index in its file's units
 }
 
@@ -261,7 +265,7 @@ func (c FunctionCheck) judged() bool {
 // naming those sites in Unrecorded: no run judged them, and a run runs only
 // them. A mutant an entry of the function's hash records at a site the
 // function no longer holds is left out, of its mutants and its counts
-// (OnSites).
+// (OnSites), and a fresh function counts them in LeftOut.
 func Check(files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
@@ -347,9 +351,11 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 		// of another hash changed since.
 		c := FunctionCheck{Function: id, StartLine: u.StartLine, unit: i}
 		var e *UnitResult
+		var leftOut int
 		if pair[i] >= 0 {
 			e = OnSites(&entries[pair[i]], hashes[i], sites[i])
 			c.Entry = *e
+			leftOut = len(entries[pair[i]].Mutants) - len(e.Mutants)
 		}
 		var broad []string
 		if e != nil {
@@ -359,6 +365,9 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 			broad = uniqueSorted(broad)
 		}
 		c.Freshness = FreshnessOf(e, hashes[i], changed, listed, broad, sites[i])
+		if c.State == Fresh {
+			c.LeftOut = leftOut
+		}
 		if c.judged() {
 			c.Mutants = placed(e.Mutants, sites[i])
 		}

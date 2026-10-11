@@ -2340,7 +2340,7 @@ Feature: Mutation testing
       Then its "baseline" is "not-run", and it ran no mutant
       And after an edit to one of its functions, the next run reports its "baseline" as "passed"
 
-    @check-left-out-count @ID-MUT-241 @wip
+    @check-left-out-count @ID-MUT-241
     Scenario: mutation check says how many recorded mutants it left out
       Given fresh results for "Board#place" that record a killed mutant at a site the function no longer holds, and every other mutant killed
       When I run "itos-cc mutation check src/board.ts --json"

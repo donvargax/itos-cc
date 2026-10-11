@@ -89,16 +89,22 @@ each problem, a line each:
   uncovered <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name>
   exception-stale <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
 the place being the file alone when the function or the file is gone, and
-the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now. With --json,
+the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now.
+A fresh function whose entry records mutants at sites it no longer holds
+gets a note, which fails nothing:
+  left out <file>:<line> in <namespace#name>: <n> recorded mutants at sites gone, which the next mutation run drops
+the line being where it starts now. With --json,
 "functions" holds the functions checked, in the file's order, with the
 counts their entry records, less mutants at sites gone, zero when missing; an excepted survivor counts
-in "excepted", not "survived".`,
+in "excepted", not "survived"; and "left_out" counts a fresh function's
+mutants at sites gone, when it has any.`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),
 		failUncoveredFlag),
 	json: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
-   "uncovered"}]}], and when there is any, "orphans": [{"file",
+   "uncovered", and when there are any "left_out", the mutants its fresh
+   entry records at sites gone}]}], and when there is any, "orphans": [{"file",
    "snapshot"}], each snapshot under the paths whose source file is gone,
    "snapshot" its path from the project root`,
 	rules: []string{
@@ -142,6 +148,9 @@ type checkFunction struct {
 	Survived  int    `json:"survived"`
 	Excepted  int    `json:"excepted"`
 	Uncovered int    `json:"uncovered"`
+	// LeftOut is how many mutants its fresh entry records at sites it no
+	// longer holds, left out of the counts; left out when there are none.
+	LeftOut int `json:"left_out,omitempty"`
 }
 
 type checkResult struct {
@@ -238,7 +247,8 @@ func runMutationCheck(in *invocation) (any, error) {
 			count[fn.State]++
 			excepted := exceptedIn(fn.Mutants)
 			f.Functions = append(f.Functions, checkFunction{Function: fn.Function, State: fn.State,
-				Killed: fn.Entry.Killed, Survived: fn.Entry.Survived - excepted, Excepted: excepted, Uncovered: fn.Entry.Uncovered})
+				Killed: fn.Entry.Killed, Survived: fn.Entry.Survived - excepted, Excepted: excepted, Uncovered: fn.Entry.Uncovered,
+				LeftOut: fn.LeftOut})
 		}
 		result.Files = append(result.Files, f)
 		if !in.json {
@@ -253,6 +263,7 @@ func runMutationCheck(in *invocation) (any, error) {
 				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn))
 			default:
 				reportFailed(in, c.Rel, fn.Function, fn.Mutants, uncoveredFails(failUncovered, scope, c.Rel))
+				printLeftOut(in, c.Rel, fn)
 			}
 		}
 		reportStaleExceptions(in, c.Rel, c.StaleExceptions)
@@ -317,6 +328,22 @@ func testsNote(functions []mutate.FunctionCheck) string {
 		}
 	}
 	return ""
+}
+
+// printLeftOut notes, in plain output, the mutants fn's fresh entry records
+// at sites it no longer holds, as "left out <file>:<line> in <function>: <n>
+// recorded mutants at sites gone, which the next mutation run drops": a
+// note, not a problem, so it fails nothing.
+func printLeftOut(in *invocation, rel string, fn mutate.FunctionCheck) {
+	if in.json || fn.LeftOut == 0 {
+		return
+	}
+	mutants := "mutants"
+	if fn.LeftOut == 1 {
+		mutants = "mutant"
+	}
+	fmt.Printf("  left out %s:%d in %s: %d recorded %s at sites gone, which the next mutation run drops\n",
+		rel, fn.StartLine, fn.Function, fn.LeftOut, mutants)
 }
 
 // reportFunction lists function fn of file rel on stdout, as "<what>

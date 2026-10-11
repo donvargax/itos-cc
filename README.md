@@ -642,7 +642,9 @@ on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
 exits 1. A mutant an entry records at a site its unchanged function no
 longer holds, as when a newer itos-cc removes a mutation operator, is not in
 the code: `mutation check` leaves it out of the verdict and the counts, and
-the next `mutation run` drops it from the entry, reusing the rest. An
+the next `mutation run` drops it from the entry, reusing the rest; `mutation
+check` notes how many it left out, a `left out` line naming the function,
+and `left_out` in its `--json` entry, failing nothing. An
 exception of such a mutant is stale, as `gone`. A snapshot whose source
 file is gone is an orphan, judged by the file it records, so the snapshot
 of a file outside the root is none while that file exists, nor is one

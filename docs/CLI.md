@@ -408,6 +408,16 @@ slash-separated, and its exit code stays what its functions make it.
 directory) once it has written what it judged, and lists them under the
 same key; a `--count` run writes nothing and removes nothing.
 
+A mutant a fresh entry records at a site its unchanged function no longer
+holds, as when a newer itos-cc removes a mutation operator, is left out of
+`mutation check`'s verdict and counts, and the next `mutation run` drops it
+from the entry. Leaving it out is a note, not a problem: `mutation check`
+prints `left out <file>:<line> in <namespace#name>: <n> recorded mutants at
+sites gone, which the next mutation run drops` under the function's file,
+and in `--json` gives that function's `"functions"` entry `"left_out": <n>`,
+there only when n is above zero, so output without one keeps its keys. No
+verdict and no exit code changes for it.
+
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |
