@@ -1447,7 +1447,7 @@ items:
     title: A file whose mutants are all reused reports its baseline as not run
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
