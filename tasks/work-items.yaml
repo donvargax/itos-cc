@@ -1965,3 +1965,14 @@ items:
       argument b), so internal/cli reorders the line before kong parses it. An option in the
       donvargax/kong fork, offered upstream with the typed errors, would let a positional slice take
       arguments between flags and drop the reordering.
+  - id: scenario-moves-check
+    title: itos.yaml has no scenario-moves range check, which itos-policy.yaml has
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      itos-policy.yaml's tests.scenario.range_checks holds that outside feat and fix a live scenario
+      only moves, unchanged; itos.yaml lacks it, so a test or refactor commit could reword a live
+      scenario with no gate refusing it, now that scenarios run through godog.
