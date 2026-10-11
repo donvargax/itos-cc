@@ -1363,3 +1363,16 @@ items:
       hash when exactly one fresh site matches its original, replacement and unchanged line text and
       that mutant survived the fresh run; every renewal reported.
     refs: ["#32"]
+  - id: strict-lines-nonexecutable-changes
+    title: Changed-line strictness asks no evidence of a change to no executable line
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With --fail-uncovered=lines, a judged function with any changed line needs fresh complete
+      evidence, so a comment-only or signature-only change (#22) still reports coverage-missing or
+      coverage-stale though no executable line changed. Telling executable lines from the parse
+      alone, per language, would let such a function need no evidence.
+    refs: ["#22", "#33"]
