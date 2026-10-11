@@ -11,7 +11,7 @@
 //
 //   - any commit marked as breaking (a ! before its header's colon, of any
 //     type, or a BREAKING-CHANGE: or BREAKING CHANGE: footer in its message's
-//     last paragraph) makes a major;
+//     last paragraph) makes a major, or a minor before 1.0;
 //   - else a feat makes a minor;
 //   - else a fix makes a patch;
 //   - else a patch when the binary is built from something else than the
@@ -122,6 +122,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return fail("cannot read the commits of %s: %v", rng, err)
 	}
 	b := bumpOf(messages(out))
+	if b.kind == "major" && bumped(tag, "major") == "1.0.0" {
+		// Before 1.0 a breaking change makes a minor: a 0.y.z version promises
+		// no stable interface, so 1.0.0 is never a commit's side effect.
+		b.kind, b.why = "minor", b.why+", before 1.0 a minor"
+	}
 	if b.kind == "none" && tag != "" {
 		moved, err := release.BinaryMoved(tag, "HEAD")
 		if err != nil {
