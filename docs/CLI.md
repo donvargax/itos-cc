@@ -240,7 +240,17 @@ written under a
 unit's `line_coverage` key, with its `"language"`; Go evidence stays under
 `go_coverage`. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
-including excluded nested modules; `GOWORK=off` remains supported. The refusal
+including excluded nested modules; `GOWORK=off` remains supported. They
+refuse, likewise, npm, yarn and pnpm workspaces, `workspace:` dependencies
+and `file:` or `link:` dependencies outside the package root; Python path
+or editable dependencies outside the build root (`pyproject.toml` path
+keys and `file:` URLs, `requirements*.txt` editable or path lines, `.pth`
+paths and `__editable__` finder mappings in the root's `.venv` or `venv`);
+and Gradle `includeBuild`, Maven `<module>`, `<subproject>` and parent
+`<relativePath>` outside the build root. A target inside the root counts
+only through no symbolic link and no nested package or build root. They
+are read lexically from files beneath the project root; nothing outside it
+is read, listed or followed. The refusal
 is reported as `mutation.coverage-unsupported`, and cached evidence cannot
 bypass it. Each cached inventory is bound to its file, function identity, and
 function hash; missing, incomplete, legacy, or misattributed inventories do

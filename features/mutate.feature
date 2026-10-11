@@ -2068,7 +2068,7 @@ Feature: Mutation testing
       And a strict Kotlin run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
-    @wip @strict-scope-refusals @ID-MUT-224
+    @strict-scope-refusals @ID-MUT-224
     Scenario Outline: Strict coverage refuses <scope>
       Given a <language> project with <scope>, and fresh line coverage evidence for its judged functions
       When I run "itos-cc mutation check --fail-uncovered --json" and "itos-cc mutation run --fail-uncovered --json"
