@@ -1656,3 +1656,16 @@ items:
       the architecture check, the pre-commit hook) is set aside by the least change that keeps the
       file the template's, and each becomes an item: wiring a gate is its own task, never weakening
       one. Mutation exceptions must not go stale on this repository.
+  - id: p1-itos-proof-code
+    title: Decide whether itos-cc sets itos 7's proof.code
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      itos 7.0.0 added the optional proof.code key (371596c, 31df605): paths that count as code and
+      a check taking {base}, which itos ci run runs over a push's range. T-25 moved the pin to 7.5.0
+      without it, since the move takes no decision; whether itos-cc's CI should run a code proof
+      (for example its own mutation or coverage check over the changed functions) is the person's
+      call.
