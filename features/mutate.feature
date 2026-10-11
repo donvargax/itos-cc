@@ -2229,6 +2229,24 @@ Feature: Mutation testing
   # - renamed-snapshot-left-behind: a snapshot whose source file is gone
   #   is an orphan; a mutation run removes the orphans under the paths it
   #   was given, and mutation check names them, never as a function result.
+  # - outside-root-snapshot-kept (q-45): a file outside the project root
+  #   has its snapshot named by its absolute path, which maps back to a
+  #   path under the root where nothing is. Whether a snapshot is an orphan
+  #   is judged by the file the snapshot records, so one outside the root
+  #   is no orphan while its file exists. Nothing else about outside-root
+  #   runs changes.
+  # - renamed-orphan-kept (q-46): a snapshot whose file git shows renamed
+  #   to a file that exists, in the --since range (REF...HEAD) or
+  #   uncommitted against HEAD (staged, as git mv leaves it), is no orphan:
+  #   run keeps it and check does not name it, so the --since run over the
+  #   new path still moves it. Before renamed-snapshot-left-behind it
+  #   stayed until such a run; that fix removed it first. A file git shows
+  #   deleted, or renamed to a path where nothing is, is still an orphan.
+  #   Git sees a rename only once the new file is tracked: after a plain mv
+  #   with nothing staged it sees a deletion and an untracked file, so the
+  #   old snapshot is still an orphan and removed. The help, README and
+  #   docs/CLI.md say so, and tell people to stage a move (git mv or git
+  #   add) before a run.
   Rule: Mutation results say what happened, and leave nothing stale behind
 
     @unreached-baseline-not-run-fix @ID-MUT-231
@@ -2274,6 +2292,30 @@ Feature: Mutation testing
       Then it names the orphaned snapshot, without failing any function for it
       When I run "itos-cc mutation run src"
       Then the orphaned snapshot is removed, and the snapshots of files that exist are kept
+
+    @outside-root-snapshot-kept-fix @ID-MUT-237 @wip
+    Scenario: A snapshot of a file outside the project root is kept while its file exists
+      Given a snapshot that "itos-cc mutation run" wrote for a file outside the project root, which still exists
+      When I run "itos-cc mutation check" at the project root
+      Then it names no orphan
+      When I run "itos-cc mutation run" at the project root
+      Then that snapshot is kept
+
+    @renamed-orphan-kept-fix @ID-MUT-238 @wip
+    Scenario: A --since run whose paths miss a committed rename's new path keeps the old snapshot
+      Given src/old.ts, with a snapshot, renamed to lib/new.ts in a commit since HEAD~1
+      When I run "itos-cc mutation run --since HEAD~1 src"
+      Then the snapshot of src/old.ts is kept, and no orphan is named
+      When I run "itos-cc mutation run --since HEAD~1 lib"
+      Then the snapshot moves to lib/new.ts, and src/old.ts's is gone
+
+    @renamed-orphan-kept-fix @ID-MUT-239 @wip
+    Scenario: A run before a rename is committed keeps the old snapshot
+      Given src/old.ts, with a snapshot, renamed to lib/new.ts with git mv and not committed
+      When I run "itos-cc mutation run src"
+      Then the snapshot of src/old.ts is kept, and no orphan is named
+      And "itos-cc mutation check src" names no orphan
+      And once the rename is committed, "itos-cc mutation run --since HEAD~1 lib" moves the snapshot to lib/new.ts
 
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
