@@ -232,6 +232,7 @@ questions:
     answer: "Staged, as recommended, 2026-10-11."
   - id: q-50
     question: "Should the top-level packages (mutate, coverage, project, lang, crap, dry, …) move under internal/ as each becomes a domain or an adapter in the template-design refactor?"
+    answer: "Move them, each as it is refactored into a domain or an adapter (answered 2026-10-11). The Go API is not part of the contract; .metrics/mutate paths and exceptions move with them, an exception following a moved file once as ADR-0014 allows."
   - id: q-51
     question: "Exit 130 on Ctrl-C changes serve (0 → 130) and mutation run --count (75, count.interrupted → 130, interrupted): adopt it fully, keep --count's 75, or defer?"
   - id: q-52
