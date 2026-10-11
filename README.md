@@ -824,7 +824,13 @@ each with the keys `mutation list` gives a site, its `outcome` (`killed`,
 `survived`, `timeout`, which counts as killed, or `uncovered`), and `reused`,
 true when the outcome came from the snapshot without running; with
 `--since`, only the judged functions' mutants, and none for a file whose
-baseline failed.
+baseline failed. Each file's `baseline` says whether this run ran its own
+tests without any mutant: `passed` means they ran and passed in this run,
+for it or for another file sharing its command (a Go package's files share
+one), `failed` that they failed, and `not-run` that none ran, as for a file
+whose mutants were all reused from its snapshot, which said `passed` before,
+or one no test reaches. A script that checked for `passed` should accept
+`not-run`, or check for `failed` instead.
 
 ### scrap
 

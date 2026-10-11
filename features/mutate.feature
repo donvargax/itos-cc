@@ -2325,7 +2325,7 @@ Feature: Mutation testing
       And "itos-cc mutation check src" names no orphan
       And once the rename is committed, "itos-cc mutation run --since HEAD~1 lib" moves the snapshot to lib/new.ts
 
-    @reused-baseline-not-run-fix @ID-MUT-240 @wip
+    @reused-baseline-not-run-fix @ID-MUT-240
     Scenario: A file whose mutants are all reused reports its baseline as not run
       Given a file whose snapshot is fresh, so that a run reuses every one of its mutants
       When I run "itos-cc mutation run --json" for that file

@@ -135,6 +135,18 @@ file's tests were only those importing it directly, or before tests reached
 through support files, reads stale once if a test reaches the file through
 another module or a support file, and is re-run as any stale result is.
 
+`mutation run --json` gives each file's `"baseline"`: whether this run ran
+the file's own tests without any mutant. `"passed"` means they ran in this
+run and passed, `"failed"` that they failed. Files sharing a command, as a
+Go package's files do, share its baseline: one that ran for any of them is
+`"passed"` for all. `"not-run"` means none ran for the file in this run: a
+file whose mutants were all reused from its snapshot, or otherwise decided
+before any ran, while no other file of the run ran its command, or a file
+no test reaches. A file whose mutants were all reused said `"passed"`
+before; a script that checked for `"passed"` should accept `"not-run"`, or
+check for `"failed"` instead. Snapshots record no baseline, so none reads
+stale for it.
+
 A Python file's own tests, the scope `own`, are those of its `tests` that
 pytest collects by name (`test_*.py`, `*_test.py`): `mutation run` runs them
 as `python -m pytest -q -x -p no:cacheprovider <files>`, or `python -m

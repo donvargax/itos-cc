@@ -395,8 +395,13 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
-   "reused", "baseline": "passed"|"failed"|"not-run" (a Python or Kotlin
-   file no test reaches runs none), "mutants": [{"line", "column",
+   "reused", "baseline": "passed"|"failed"|"not-run", whether this run
+   ran the file's own tests without any mutant: "passed" only when they
+   ran and passed in this run, for it or for another file sharing its
+   command, as a Go package's files do; "not-run" when none ran, as for a
+   file whose mutants were all reused, which said "passed" before, or a
+   Python or Kotlin file no test reaches (a script that checked for
+   "passed" should accept "not-run", or check for "failed"), "mutants": [{"line", "column",
    "function", "original", "replacement",
    "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
    "scope": "own"|"all-tests"|"listed"|"<test command>", for an
@@ -406,7 +411,7 @@ judged and no snapshot is written. Listed tests are not run with
    --since
    "judged": ["namespace#name"], and with --fail-fast "state":
    "completed"|"stopped"|"unattempted"|"blocked", "work",
-   "cache": "complete"|"incomplete", "baseline" also "not-run", every
+   "cache": "complete"|"incomplete", every
    mutant "state":
    "completed"|"cancelled"|"unattempted"|"blocked", and "outcome" and
    "scope" for completed ones only}]; with --fail-fast, "stop":
@@ -1015,16 +1020,10 @@ func runMutate(in *invocation) (any, error) {
 	}
 	reported := map[string]bool{}
 	for _, r := range results {
-		// With --fail-fast every file has its state, its work and the
-		// baseline it actually ran, and a file not written still lists its
+		// Every file has the baseline this run actually ran for its
+		// command, or "not-run". With --fail-fast every file has its state
+		// and its work too, and a file not written still lists its
 		// mutants, each with its state.
-		baseline := func(aggregate string) string {
-			// A file no test reaches runs no baseline in any run.
-			if r.Baseline == mutate.BaselineNotRun {
-				return r.Baseline
-			}
-			return aggregate
-		}
 		var work *mutateWork
 		state, cache := "", ""
 		if failFast {
@@ -1034,17 +1033,11 @@ func runMutate(in *invocation) (any, error) {
 			if r.Cached {
 				cache = "complete"
 			}
-			baseline = func(string) string {
-				if r.Baseline == "" {
-					return mutate.BaselineNotRun
-				}
-				return r.Baseline
-			}
 		}
 		if failFast && (r.BaselineFailed || len(r.FailedSelections) > 0) {
 			// It counts what it ran and reused before the stop, as its
 			// completed work does.
-			f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: baseline(""), Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
+			f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: r.Baseline, Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
 				State: state, Work: work, Cache: cache}
 			countMutants(&f, r.Mutants)
 			result.Files = append(result.Files, f)
@@ -1088,7 +1081,7 @@ func runMutate(in *invocation) (any, error) {
 			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 			continue
 		}
-		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: baseline("passed"), Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
+		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: r.Baseline, Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
 			State: state, Work: work, Cache: cache}
 		// Only the functions judged count: the others keep outcomes no
 		// change in the range is to blame for.

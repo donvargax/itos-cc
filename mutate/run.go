@@ -110,11 +110,12 @@ type FileResult struct {
 	// longer holds: those whose function changed or whose site is gone,
 	// then those whose mutant the tests now kill.
 	StaleExceptions []StaleException
-	// Baseline is BaselineNotRun for a file whose own tests run nothing,
-	// as no test reaches it (Command.RunsNothing), so no baseline runs for
-	// it in any run; in a fail-fast run it is otherwise "passed" or
-	// "failed" when the run ran the file's own tests without any mutant,
-	// empty when it did not.
+	// Baseline says whether this run ran the file's own tests without any
+	// mutant: "passed" or "failed" when it did, for this file or another
+	// sharing its command, as a Go package's files do; BaselineNotRun when
+	// it did not, as for a file no test reaches (Command.RunsNothing), one
+	// whose mutants were all reused or otherwise decided before any ran,
+	// and in a fail-fast run one the run never got to.
 	Baseline string
 	// Incomplete is set when a fail-fast stop left a site of a function
 	// judged undecided: the run's own work on the file is not complete. The
@@ -218,9 +219,11 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	return results, err
 }
 
-// BaselineNotRun is the baseline of a file whose own tests never ran
-// without a mutant: one no test reaches, whose tests run nothing, and in a
-// fail-fast run one the run never got to.
+// BaselineNotRun is the baseline of a file whose own tests did not run
+// without a mutant in this run: one no test reaches, whose tests run
+// nothing, one none of whose mutants needed them, as when all were reused
+// from its snapshot and no other file ran its command, and in a fail-fast
+// run one the run never got to.
 const BaselineNotRun = "not-run"
 
 // RunFailFast is Run stopping at the first actionable final judgment, as
@@ -280,6 +283,13 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 		}
 	} else {
 		fmt.Fprintln(opt.Log, "itos-cc: no mutations to test")
+	}
+	for _, s := range states {
+		// No baseline ran for the file: none of its mutants needed one,
+		// nor any of another file sharing its command.
+		if s.result.Baseline == "" {
+			s.result.Baseline = BaselineNotRun
+		}
 	}
 
 	var results []FileResult
@@ -719,21 +729,18 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 			jobs = append(jobs, job{s, i})
 		}
 	}
+	// A baseline that ran is every file's sharing its command, whether or
+	// not one of its own mutants needed it.
 	for _, s := range states {
 		if s.command.RunsNothing() {
-			s.result.Baseline = BaselineNotRun
+			// No test reaches the file: no baseline runs for it in any
+			// run, and run says BaselineNotRun.
+			continue
 		}
-	}
-	if ff != nil {
-		for _, s := range states {
-			if s.command.RunsNothing() {
-				continue
-			}
-			if _, ran := timeouts[s.command.Key()]; ran {
-				s.result.Baseline = "passed"
-			} else if s.result.BaselineFailed {
-				s.result.Baseline = "failed"
-			}
+		if _, ran := timeouts[s.command.Key()]; ran {
+			s.result.Baseline = "passed"
+		} else if s.result.BaselineFailed {
+			s.result.Baseline = "failed"
 		}
 	}
 
