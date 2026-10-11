@@ -43,6 +43,8 @@ func TestMain(m *testing.M) {
 			countedPlatform = platform
 		}
 		code = run(os.Args[2:])
+	} else if len(os.Args) > 2 && os.Args[1] == holdLockArg {
+		code = holdLock(os.Args[2])
 	} else {
 		code = m.Run()
 	}
