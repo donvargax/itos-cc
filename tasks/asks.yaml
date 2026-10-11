@@ -200,3 +200,4 @@ questions:
     answer: "As recommended, 2026-10-11: with --since, --fail-uncovered=lines judges only the changed lines; =functions stays the default."
   - id: q-44
     question: "q-41 follow-up: should Python and TypeScript measure the processes a test starts automatically, or only when a project opts in (Go needs its harness to build with -cover)? Recommend automatic: those lines really are run by tests; call it out in the release notes, since mutants there now run and may survive. Kotlin stays opt-in through ITOS_CC_JACOCO_AGENT."
+    answer: "Automatic, with a release-note callout, 2026-10-11."
