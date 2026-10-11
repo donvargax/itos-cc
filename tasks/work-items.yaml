@@ -1625,7 +1625,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-25]
     kind: task
     why: >
       The person's staged adoption (q-47, q-48, q-49, 2026-10-11). Run itos-template adopt --ref
