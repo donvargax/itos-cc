@@ -2062,9 +2062,11 @@ Feature: Mutation testing
     Scenario: A strict Kotlin run proves every executable line of every judged function
       Given a Kotlin project built with Gradle and JaCoCo whose judged file has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one branch of
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
-      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, and the partly executed line is not
+      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, and the partly executed line is not, the mutant counts are unchanged, and the run fails
       And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
       And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+      And a strict Kotlin run refuses --coverage-report, --use-existing-coverage and --coverage-command
+      But without --fail-uncovered the run and the check report as before
 
     @wip @strict-scope-refusals @ID-MUT-224
     Scenario Outline: Strict coverage refuses <scope>
