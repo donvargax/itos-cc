@@ -2136,7 +2136,7 @@ Feature: Mutation testing
   # mutation.exception-stale. --renew writes nothing else.
   Rule: A reviewed exception can be renewed when its mutant is unchanged
 
-    @wip @except-renew @ID-MUT-227
+    @except-renew @ID-MUT-227
     Scenario: A renewed exception follows its unchanged mutant across a rename
       Given a Go project with a reviewed exception for an equivalent mutant in a function
       And a commit that renames a string literal on another line of that function

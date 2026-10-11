@@ -240,7 +240,8 @@ func Survivor(path string, line, column int, tests func(path string) []string, s
 					return config.Exception{}, &NoSurvivorError{fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", m.Outcome)}
 				}
 				return config.Exception{File: c.key, Function: fn.Function, Hash: UnitHash(f, u),
-					LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement}, nil
+					LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
+					LineText: LineText(f.Src, s.Line)}, nil
 			}
 			return config.Exception{}, &NoSurvivorError{"the results of " + fn.Function + " record no mutant there"}
 		}

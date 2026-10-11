@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"maps"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
@@ -259,5 +260,53 @@ func TestRenewingTakesNoSiteAndNoReason(t *testing.T) {
 		if o.code != 2 || !named {
 			t.Errorf("mutation except %s: exit %d, problems %v; want 2, %s naming --renew", strings.Join(c.args, " "), o.code, rawProblems(t, o), c.rule)
 		}
+	}
+}
+
+// An entry written before entries recorded their line's text renews by its
+// place in the function, and follows its function across a renamed module,
+// which changes the function's namespace, as a template's render does
+// (#32).
+func TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule(t *testing.T) {
+	t.Parallel()
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skip("go is not installed")
+	}
+	dir := t.TempDir()
+	for name, text := range renewFiles {
+		writeFile(t, filepath.Join(dir, name), text)
+	}
+	useDir(t, dir)
+	if o := mutateRun(t); o.code != 1 {
+		t.Fatalf("the first run: exit %d, want 1 for the survivors\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	legacy := exceptionYAML{File: "label.go", Function: renewLabel, Hash: renewHash(t, "label.go", renewLabel), LineInFunction: 3, Column: 7,
+		Original: ">", Replacement: ">=", Reason: "reviewed before line texts"}
+	writeExceptions(t, "# Reviewed by hand.\n", legacy)
+	edit(t, "go.mod", "module example.com/renew", "module example.com/renamed")
+	run := mutateRun(t, "--json", "label.go")
+	logRun(t, &run)
+
+	renew := mutationExcept(t, "--renew", "--json")
+	logRun(t, &renew)
+	r := renew.renew(t)
+	const renamed = "example.com/renamed#Label"
+	if len(r.Renewed) != 1 || r.Renewed[0]["function"] != renamed || r.Renewed[0]["old_function"] != renewLabel || r.Renewed[0]["match"] != "place" || renew.code != 0 {
+		t.Fatalf("the renewal: exit %d, renewed %v, not renewed %v; want 0 and Label renewed by its place, from %s to %s", renew.code, r.Renewed, r.NotRenewed, renewLabel, renamed)
+	}
+	want := legacy
+	want.Function, want.Hash = renamed, renewHash(t, "label.go", renamed)
+	if got := readExceptions(t); !slices.Equal(got, []exceptionYAML{want}) {
+		t.Errorf("mutation.exceptions %+v, want %+v", got, want)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "itos-cc.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data := string(data); !strings.Contains(data, "# Reviewed by hand.") || !strings.Contains(data, "line_text: if n > 0 {") {
+		t.Errorf("itos-cc.yaml:\n%s\nwant its comment kept and the renewed entry's line text", data)
+	}
+	if check := mutationCheck(t, "--json", "label.go"); check.code != 0 {
+		t.Errorf("the check after the renewal: exit %d, want 0\n%s", check.code, check.stdout)
 	}
 }

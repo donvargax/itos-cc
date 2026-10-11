@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -42,6 +43,11 @@ type Exception struct {
 	Original       string `yaml:"original"`
 	Replacement    string `yaml:"replacement"` // empty for a deletion
 	Reason         string `yaml:"reason"`
+	// LineText is the text of the site's line, less the space around it, as
+	// it was when the entry was written: what mutation except --renew
+	// matches the line against. Optional: entries written before it have
+	// none.
+	LineText string `yaml:"line_text,omitempty"`
 }
 
 // SameSite reports whether e and o except the same site: one function, one
@@ -118,6 +124,7 @@ type raw struct {
 			Original       *string `yaml:"original"`
 			Replacement    *string `yaml:"replacement"`
 			Reason         *string `yaml:"reason"`
+			LineText       *string `yaml:"line_text"`
 		} `yaml:"exceptions"`
 		Tests *rawTests `yaml:"tests"`
 	} `yaml:"mutation"`
@@ -189,6 +196,9 @@ func parse(data []byte) (*Config, error) {
 		}
 		if len(missing) > 0 {
 			return nil, &InvalidError{fmt.Sprintf("%s has no %s", at, strings.Join(missing, ", no "))}
+		}
+		if x.LineText != nil {
+			e.LineText = *x.LineText
 		}
 		c.Exceptions = append(c.Exceptions, e)
 	}
@@ -294,6 +304,64 @@ func Except(e Exception) (replaced bool, err error) {
 	}
 	exceptions.Content = append(exceptions.Content, &entry)
 	return false, write(&doc)
+}
+
+// Renewal is an entry of itos-cc.yaml, Old, and what it is to read now,
+// New.
+type Renewal struct{ Old, New Exception }
+
+// Renew writes each renewal's New into itos-cc.yaml at the project root in
+// place of the entry that reads as its Old, keeping the entry's comments,
+// the file's other entries and keys, and its comments. It refuses, with an
+// *InvalidError, a file it cannot read, and errs, writing nothing, when an
+// Old is no entry of it.
+func Renew(renewals []Renewal) error {
+	if len(renewals) == 0 {
+		return nil
+	}
+	data, err := os.ReadFile(Path())
+	if err != nil {
+		return err
+	}
+	c, err := parse(data)
+	if err != nil {
+		return err
+	}
+	var doc yaml.Node
+	if err := yaml.Unmarshal(data, &doc); err != nil {
+		return &InvalidError{err.Error()}
+	}
+	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
+		return &InvalidError{"its top level is not a mapping"}
+	}
+	exceptions := valueOf(valueOf(doc.Content[0], "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
+	if len(exceptions.Content) != len(c.Exceptions) {
+		return fmt.Errorf("%s: mutation.exceptions changed while it was read", File)
+	}
+	done := make([]bool, len(c.Exceptions))
+	for _, r := range renewals {
+		i := slices.IndexFunc(c.Exceptions, func(e Exception) bool { return e == r.Old })
+		for i >= 0 && done[i] {
+			next := slices.IndexFunc(c.Exceptions[i+1:], func(e Exception) bool { return e == r.Old })
+			if next < 0 {
+				i = -1
+				break
+			}
+			i += 1 + next
+		}
+		if i < 0 {
+			return fmt.Errorf("%s: no entry for %s in %s to renew", File, r.Old.Function, r.Old.File)
+		}
+		var entry yaml.Node
+		if err := entry.Encode(r.New); err != nil {
+			return err
+		}
+		was := exceptions.Content[i]
+		entry.HeadComment, entry.LineComment, entry.FootComment = was.HeadComment, was.LineComment, was.FootComment
+		exceptions.Content[i] = &entry
+		done[i] = true
+	}
+	return write(&doc)
 }
 
 // valueOf is the value of key in mapping m, made a node of kind when it is

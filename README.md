@@ -550,8 +550,9 @@ and review like the code. The site must be a survivor its fresh snapshot
 records. The entry, under `mutation.exceptions`, holds the file, the
 function, the function's hash, the site's `line_in_function` (counted from
 the function's first line, so a move keeps it) and `column`, the `original`,
-the `replacement`, and the `reason`; excepting a site again replaces it, and
-the file's other keys and comments are kept:
+the `replacement`, the `reason`, and the site's `line_text`, its line less
+the space around it; excepting a site again replaces it, and the file's
+other keys and comments are kept:
 
 ```yaml
 mutation:
@@ -564,6 +565,7 @@ mutation:
       original: "0"
       replacement: "1"
       reason: c is set again before it is read
+      line_text: let c = 0;
 ```
 
 An excepted survivor fails nothing in `mutation run` and `mutation check`: it
@@ -586,6 +588,24 @@ select holds a function of the entry's name and hash, the entry has
 entry never excuses an uncovered mutant: that needs a test, not a reason. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
 `config.invalid`, exit 2.
+
+A change that leaves an excepted mutant the same, such as a rename, a
+literal or comment edit, reformatting or a line added elsewhere in its
+function, still makes the entry stale. `mutation except --renew`, run after
+`mutation run`, carries such entries across: an entry is renewed when its
+function, by name in its file (or, its file gone, by name and hash in one
+other file), has fresh results holding exactly one site of its `original`
+and `replacement` on a line whose text, spaces aside, is its `line_text`
+(an entry without one, from before entries had it, matches the site at its
+`line_in_function` and `column`, else the function's only site of that
+change), and that mutant survived. The entry then names the function's
+current hash, name, place and line text, and keeps its reason and comments;
+`--renew` writes nothing else. Each renewal is reported with its old and
+new hash and the site, and each entry left stale stays
+`mutation.exception-stale` with why: `killed`, `changed` (its line's text
+changed), `gone`, `ambiguous`, `no-results` (no fresh results for its
+function) or `uncovered`, exit 1. A setup step can so re-prove a project a
+template rendered: `mutation run`, then `mutation except --renew`.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's

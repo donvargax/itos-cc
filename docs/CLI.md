@@ -72,7 +72,7 @@ output of the commands it runs passes as it is.
 | `flags.value-invalid`        | 2    | every          | `flag`, `value`                                             |
 | `flags.switch-value`         | 2    | every          | `flag`                                                      |
 | `flags.repeated`             | 2    | every          | `flag`                                                      |
-| `flags.conflict`             | 2    | mutation run, mutation check, mutation sample | `flag`                                        |
+| `flags.conflict`             | 2    | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
 | `command.unknown`            | 2    | itos-cc, mutation | `command`                                                |
 | `command.missing`            | 2    | itos-cc --json, mutation --json | none                                       |
 | `args.unexpected`            | 2    | version, help, mutation except | `argument`                                  |
@@ -104,7 +104,7 @@ output of the commands it runs passes as it is.
 | `mutation.coverage-missing`  | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-stale`    | 1    | mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-unsupported` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
-| `mutation.exception-stale`   | 1    | mutation run, mutation check | `file`, `function`, `line` (none when the function or its file is gone), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`), with `moved` `new_file` |
+| `mutation.exception-stale`   | 1    | mutation run, mutation check, mutation except --renew | `file`, `function`, `line` (none when the function or its file is gone, or with `--renew` when its site is not found), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`; with `--renew` also `ambiguous`, `no-results`, `uncovered`), with `moved` `new_file` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
@@ -256,6 +256,23 @@ bypass it. Each cached inventory is bound to its file, function identity, and
 function hash; missing, incomplete, legacy, or misattributed inventories do
 not prove coverage.
 
+`mutation except --renew`, run after `mutation run`, renews each entry of
+`itos-cc.yaml` that no longer holds when its mutant is unchanged: its
+function, found by `namespace#name` in its file, else by its name alone
+there when exactly one function has it, or, its file gone, by name and hash
+in exactly one other source, has fresh results holding exactly one site of
+the entry's `original` and `replacement` on a line whose text, less all
+space, is its `line_text`, or of several such the one at its place; an entry
+without `line_text` matches the site at its `line_in_function` and
+`column`, else the function's only site of that change. That mutant must be
+recorded survived. The renewed entry takes the function's current `hash`,
+`function`, `file`, `line_in_function`, `column` and `line_text`, and keeps
+its `reason` and comments; nothing else is written. `--json` lists
+`renewed`, each with `old_hash`, `new_hash`, the site and `match` (`line`,
+`place` or `only`), and `not_renewed`, each entry left stale with `why`,
+also reported as `mutation.exception-stale`, exit 1. `--renew` with a site
+is `args.unexpected`, and with `--reason` `flags.conflict`, exit 2.
+
 `--fail-uncovered` takes an optional value: alone it is
 `--fail-uncovered=functions`, the whole judged functions above.
 `--fail-uncovered=lines`, which needs `--since`, judges only where the range
@@ -336,7 +353,7 @@ with `fail-fast.platform`, exit 3, before launching any command (#29).
 | 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, and `reason`, which `mutation except` writes, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |
+| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |
 | 39–41 | Entry points for other programs | None. |
 | 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 

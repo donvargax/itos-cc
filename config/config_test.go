@@ -65,6 +65,45 @@ func TestExceptReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 	}
 }
 
+func TestRenewRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
+	t.Chdir(t.TempDir())
+	// The first entry predates line_text, and reads with none.
+	text := "# Settings.\nother: [1, 2] # kept\nmutation:\n  exceptions:\n" +
+		"    # The first.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}\n" +
+		"    - {file: src/a.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 20, original: '<', replacement: '!=', reason: kept, line_text: 'if a < b {'}\n"
+	if err := os.WriteFile(File, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	before, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before.Exceptions[0].LineText != "" || before.Exceptions[1].LineText != "if a < b {" {
+		t.Fatalf("line texts %q and %q, want none and the second's", before.Exceptions[0].LineText, before.Exceptions[1].LineText)
+	}
+	renewed := before.Exceptions[0]
+	renewed.Hash, renewed.LineInFunction, renewed.LineText = "fedcba9876543210", 3, "for i < n {"
+	if err := Renew([]Renewal{{Old: before.Exceptions[0], New: renewed}}); err != nil {
+		t.Fatal(err)
+	}
+	after, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(after.Exceptions, []Exception{renewed, before.Exceptions[1]}) {
+		t.Errorf("exceptions %+v, want the first renewed and the second as it was", after.Exceptions)
+	}
+	data, _ := os.ReadFile(File)
+	for _, kept := range []string{"# Settings.", "# kept", "# The first.", "other:"} {
+		if !strings.Contains(string(data), kept) {
+			t.Errorf("itos-cc.yaml lost %q:\n%s", kept, data)
+		}
+	}
+	if err := Renew([]Renewal{{Old: before.Exceptions[0], New: renewed}}); err == nil {
+		t.Error("renewing an entry that is no longer there: no error")
+	}
+}
+
 func TestExceptFillsAnEmptyOrNullSetting(t *testing.T) {
 	for _, text := range []string{"", "# Nothing yet.\n", "mutation:\n", "mutation:\n  exceptions:\n"} {
 		t.Run(text, func(t *testing.T) {
