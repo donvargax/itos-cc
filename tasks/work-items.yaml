@@ -1574,3 +1574,19 @@ items:
       nor mutation check names any. A project without git keeps snapshots of deleted files until
       removed by hand. Whether such a project, where nothing can be renamed as git sees it, should
       have its orphans judged by the working tree alone needs a decision.
+  - id: shared-failed-baseline-reused
+    title: A reused file whose command's baseline failed for another file reports "not-run"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since reused-baseline-not-run-fix, a file's "baseline" in mutation run --json says whether its
+      own tests' baseline ran in this run, and files sharing a command share it. Yet a file whose
+      mutants were all reused, sharing its command (a Go package's) with a file whose baseline ran
+      and failed in this run, reports "not-run", with or without --fail-fast, and its snapshot is
+      written as reused, though the baseline of its tests did run and fail. "A failed baseline stays
+      as it is" kept that case out of the fix, as did --fail-fast's unchanged output; whether it
+      should say "failed", and whether its reused outcomes should still be written, is a decision to
+      take.
