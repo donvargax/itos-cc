@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -137,5 +138,72 @@ func TestOrphanNamesMapBackAsTheyAre(t *testing.T) {
 	}
 	if there(t, root, `.metrics/mutate/src\c.ts.json`) || !there(t, root, `.metrics/mutate/src/a\b.ts.json`) || !there(t, root, "target.json") {
 		t.Errorf(`want only .metrics/mutate/src\c.ts.json removed`)
+	}
+}
+
+// A snapshot is judged by the file it records: one of a file outside the
+// root, named by that file's absolute path, is no orphan while the file
+// exists, and is one, at that path, once it is gone. A snapshot that names
+// another file, or none, is judged by the path its name maps to.
+func TestOrphansAreJudgedByTheFileTheSnapshotRecords(t *testing.T) {
+	root, outside := t.TempDir(), t.TempDir()
+	kept, gone, other := filepath.Join(outside, "kept.go"), filepath.Join(outside, "gone.go"), filepath.Join(outside, "other.go")
+	writeIn(t, outside, "kept.go", "package x\n")
+	writeIn(t, outside, "other.go", "package x\n")
+	snapshotOf := func(path string) string {
+		return filepath.ToSlash(filepath.Join(".metrics", SnapshotName(filepath.ToSlash(path))))
+	}
+	if err := os.MkdirAll(filepath.Join(root, filepath.Dir(filepath.FromSlash(snapshotOf(kept)))), 0o755); err != nil {
+		t.Skipf("no snapshot can be named %s here: %v", snapshotOf(kept), err)
+	}
+	for _, path := range []string{kept, gone} {
+		writeIn(t, root, snapshotOf(path), `{"version": 1, "file": "`+filepath.ToSlash(path)+`", "units": []}`+"\n")
+	}
+	// other.go exists, but its snapshot records a file that is no longer
+	// there, as when it was copied from one: it is that file's, which
+	// LoadSnapshotOf takes for none, and judged by its name.
+	writeIn(t, root, snapshotOf(other), `{"version": 1, "file": "src/old.go", "units": []}`+"\n")
+
+	var asked []string
+	orphans, err := Orphans(root, func(path string) bool { asked = append(asked, path); return true })
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapped := filepath.Join(root, strings.TrimSuffix(filepath.FromSlash(strings.TrimPrefix(snapshotOf(other), ".metrics/mutate/")), ".json"))
+	want := []Orphan{{Path: gone, Snapshot: snapshotOf(gone)}, {Path: mapped, Snapshot: snapshotOf(other)}}
+	slices.SortFunc(want, func(a, b Orphan) int { return strings.Compare(a.Snapshot, b.Snapshot) })
+	if !slices.Equal(orphans, want) {
+		t.Errorf("orphans %v, want %v: the snapshot of %s, whose file exists, kept", orphans, want, kept)
+	}
+	if !slices.Contains(asked, gone) {
+		t.Errorf("covers was asked of %v, want of the gone file's own path, %s", asked, gone)
+	}
+}
+
+// A snapshot's recorded file is the absolute path it names in this
+// platform's form, a drive's letter included, only where the snapshot is
+// that file's.
+func TestARecordedFileIsAnAbsolutePathWhereItsSnapshotLives(t *testing.T) {
+	abs := filepath.Join(t.TempDir(), "src", "board.go")
+	cases := []struct {
+		name, file string
+		want       string
+	}{
+		{SnapshotName(filepath.ToSlash(abs)), filepath.ToSlash(abs), abs},
+		{SnapshotName("src/board.go"), "src/board.go", ""},
+		{SnapshotName("src/board.go"), filepath.ToSlash(abs), ""},
+		{SnapshotName(filepath.ToSlash(abs)), "", ""},
+	}
+	if runtime.GOOS == "windows" {
+		cases = append(cases,
+			struct{ name, file, want string }{SnapshotName("D:/work/board.go"), "D:/work/board.go", `D:\work\board.go`},
+			struct{ name, file, want string }{SnapshotName("//host/share/board.go"), "//host/share/board.go", `\\host\share\board.go`},
+			struct{ name, file, want string }{SnapshotName("/work/board.go"), "/work/board.go", ""})
+	}
+	for _, c := range cases {
+		got, ok := recordedPath(c.name, c.file)
+		if got != c.want || ok != (c.want != "") {
+			t.Errorf("recordedPath(%q, %q) = %q, %v, want %q", c.name, c.file, got, ok, c.want)
+		}
 	}
 }

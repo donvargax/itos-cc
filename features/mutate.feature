@@ -2293,7 +2293,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src"
       Then the orphaned snapshot is removed, and the snapshots of files that exist are kept
 
-    @outside-root-snapshot-kept-fix @ID-MUT-237 @wip
+    @outside-root-snapshot-kept-fix @ID-MUT-237
     Scenario: A snapshot of a file outside the project root is kept while its file exists
       Given a snapshot that "itos-cc mutation run" wrote for a file outside the project root, which still exists
       When I run "itos-cc mutation check" at the project root

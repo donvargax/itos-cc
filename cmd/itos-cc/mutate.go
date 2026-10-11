@@ -152,7 +152,10 @@ followed: a move is no change, and a renamed file's snapshot moves with it.
 
 A snapshot whose source file is gone, nothing at its path in the working
 tree, is an orphan, as when a run without --since, or one whose paths do
-not select the new path, follows no rename. Once it has written what it
+not select the new path, follows no rename. A file outside the project
+root, whose snapshot is named by its absolute path, is the file the
+snapshot records, never the path that name maps to under the root: its
+snapshot is no orphan while it exists. Once it has written what it
 judged, a run removes the orphans under its paths, the working directory
 when it is given none, and every directory that leaves empty under
 .metrics/mutate; it keeps every snapshot whose file exists, even a new

@@ -56,7 +56,9 @@ cannot be read is config.invalid.
 
 A snapshot under the paths checked whose source file is gone, nothing at
 its path in the working tree, as when the file was renamed and no
-mutation run --since followed it, is an orphan: check names it, a line
+mutation run --since followed it, is an orphan; the snapshot of a file
+outside the project root, named by its absolute path, is judged by that
+file, so it is none while the file exists. check names an orphan, a line
 "<file>: gone, its snapshot <snapshot> is an orphan, which mutation run
 removes", and in --json under "orphans", and judges and fails nothing for
 it. With no paths it looks under the working directory. The next

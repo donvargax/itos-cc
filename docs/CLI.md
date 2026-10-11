@@ -369,7 +369,13 @@ with `fail-fast.platform`, exit 3, before launching any command (#29).
 A snapshot under `.metrics/mutate/` whose source file is gone, nothing at
 its path in the working tree, is an orphan. Its source path is its own path
 under `.metrics/mutate/` less `.json`, taken as the file system names it,
-so a name with a space or, off Windows, a backslash maps back to itself;
+so a name with a space or, off Windows, a backslash maps back to itself,
+unless the snapshot is a file's outside the project root: its `"file"` is
+then that file's absolute path, in the platform's form (a drive letter or a
+share on Windows), the snapshot's name being that path under
+`.metrics/mutate/`, and the snapshot is judged by that file, so it is no
+orphan while the file exists, and one gone is an orphan at that path,
+outside the root, which only paths that cover it reach;
 only regular files ending in `.json` there are snapshots, and nothing
 outside `.metrics/mutate/` is ever removed. An orphan is not a problem, as
 problems mean `"ok": false`: `mutation check` names the orphans under its
