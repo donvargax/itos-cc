@@ -80,10 +80,21 @@ func TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt(t *testing.
 	if strings.Contains(o.stdout, "no clean baseline was prepared") {
 		t.Errorf("the run says no clean baseline was prepared:\n%s", o.stdout)
 	}
-	// No own test ran for calc.py: no own baseline was prepared for it.
-	for _, line := range strings.Split(o.stderr, "\n") {
-		if strings.HasPrefix(line, "itos-cc: baseline ") {
-			t.Errorf("an own baseline ran for calc.py: %s", line)
-		}
+	// No own test ran for calc.py: preparation ran no own baseline, and its
+	// trial ran the listed selection's clean baseline, then the mutant under
+	// it, with no own stage.
+	if b := c.stage("baseline"); b == nil || b["state"] != "skipped" {
+		t.Errorf("preparation's baseline stage %v, want skipped: no own test reaches calc.py", b)
+	}
+	var stages []string
+	list, _ := site["stages"].([]any)
+	for _, stage := range list {
+		m, _ := stage.(map[string]any)
+		name, _ := m["name"].(string)
+		state, _ := m["state"].(string)
+		stages = append(stages, name+" "+state)
+	}
+	if want := []string{"listed-baseline complete", "listed complete"}; !slices.Equal(stages, want) {
+		t.Errorf("the trial's stages %q, want %q", stages, want)
 	}
 }

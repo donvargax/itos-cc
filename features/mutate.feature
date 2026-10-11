@@ -2232,7 +2232,7 @@ Feature: Mutation testing
       Then its "baseline" is "not-run" and its mutants are uncovered
       And a file whose tests ran reports its baseline as "passed", as before
 
-    @wip @counted-unreached-listed-fix @ID-MUT-232
+    @counted-unreached-listed-fix @ID-MUT-232
     Scenario: A counted run judges an unreached file by the listed tests that reach it
       Given a committed Python project whose file no own test reaches, but a listed test reaches one of its lines and kills its mutant
       When a count-one run judges that file

@@ -252,14 +252,22 @@ func runCountedMutate(in *invocation) (any, error) {
 			site.State, site.Outcome = "uncovered", mutate.Uncovered
 			continue
 		}
-		baseline, ok := baselineOf(prep.Baselines, c.Path)
-		if !ok {
-			site.State, site.Reason = "failed", "no clean baseline was prepared for its file"
-			continue
-		}
 		var reach []string
 		if listed != nil {
 			reach = prep.Report.LineTests(path, c.Site.Line)
+		}
+		baseline, ok := baselineOf(prep.Baselines, c.Path)
+		if !ok && len(reach) > 0 {
+			// Preparation runs no own baseline for a Python or Kotlin file
+			// whose own tests run nothing, as no own test reaches it: its
+			// mutant goes straight to the listed tests that reach its line,
+			// after their selection's clean baseline, as a complete run
+			// judges it.
+			baseline, ok = mutate.FreshBaseline{Paths: []string{c.Path}}, true
+		}
+		if !ok {
+			site.State, site.Reason = "failed", "no clean baseline was prepared for its file"
+			continue
 		}
 		trials = append(trials, mutate.FreshTrial{Candidate: c, Baseline: baseline, Reach: reach})
 		trialSites = append(trialSites, i)
@@ -280,9 +288,11 @@ func runCountedMutate(in *invocation) (any, error) {
 			for _, stage := range r.Stages {
 				site.Stages = append(site.Stages, countedStage{Name: stage.Name, State: stage.State, Outcome: stage.Outcome, Tests: stage.Tests, Error: stage.Error})
 				switch {
-				case stage.Name == "own" && stage.State == "complete":
+				case stage.Name == "own" && stage.State == "complete",
+					stage.Name == "listed" && stage.State == "complete" && !r.RanOwn():
 					// The mutant ran: its trial spent the budget, whatever
-					// its later stages could judge.
+					// its later stages could judge. A file no own test
+					// reaches runs it under the listed tests alone.
 					s.Executed++
 				case stage.Name == "listed-baseline" && selectionStage == nil:
 					selectionStage = &PreparationStage{Name: stage.Name, State: stage.State, Error: stage.Error}
@@ -302,8 +312,12 @@ func runCountedMutate(in *invocation) (any, error) {
 				site.State, site.Reason = "failed", r.Err.Error()
 			case r.FailedSelection != nil:
 				site.State, site.selection = "blocked", r.FailedSelection
-				site.Reason = fmt.Sprintf("it survived its own tests, and its listed tests %s fail without any mutant, so they could not judge it",
-					strings.Join(r.FailedSelection.IDs, " "))
+				own := "it survived its own tests"
+				if !r.RanOwn() {
+					own = "no own test reaches its file"
+				}
+				site.Reason = fmt.Sprintf("%s, and its listed tests %s fail without any mutant, so they could not judge it",
+					own, strings.Join(r.FailedSelection.IDs, " "))
 			default:
 				site.State, site.Outcome, site.Scope, site.Tests = "judged", r.Outcome, r.Scope, r.Tests
 				reason, gone := exceptions.Judge(r.Trial.Candidate, r.Outcome)

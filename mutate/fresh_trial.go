@@ -16,7 +16,9 @@ import (
 
 // FreshTrial is one selected mutant to judge with the own-test command whose
 // clean baseline preparation ran, then, when it survives that, with the
-// listed tests that reach its line.
+// listed tests that reach its line. A file whose own tests run nothing
+// (Command.RunsNothing), as no own test reaches it, has a Baseline with no
+// command and never ran: its mutant goes straight to the listed tests.
 type FreshTrial struct {
 	Candidate FreshCandidate
 	Baseline  FreshBaseline
@@ -135,9 +137,9 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 				case r.Err != nil:
 					said = "not judged: " + r.Err.Error()
 				case r.FailedSelection != nil:
-					said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(r.FailedSelection.IDs, " "))
+					said = fmt.Sprintf("%s, then not judged: %s fail without any mutant", r.ownSaid(), strings.Join(r.FailedSelection.IDs, " "))
 				case r.Scope == ScopeListed:
-					said = fmt.Sprintf("survived its own tests, then %s with %s", r.Outcome, strings.Join(r.Tests, " "))
+					said = fmt.Sprintf("%s, then %s with %s", r.ownSaid(), r.Outcome, strings.Join(r.Tests, " "))
 				}
 				fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", done, len(trials),
 					c.Path, c.Site.Line, show(c.Site.Original), show(c.Site.Replacement), said, r.Elapsed.Seconds())
@@ -168,7 +170,11 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 		return out
 	}
 	c := trial.Baseline.Command
-	if len(c.Args) == 0 {
+	switch {
+	case c.RunsNothing() && len(trial.Reach) == 0:
+		out.Err = errors.New("no own test reaches its file, and no listed test reaches its line")
+		return out
+	case !c.RunsNothing() && len(c.Args) == 0:
 		out.Err = errors.New("no own-test command")
 		return out
 	}
@@ -184,17 +190,23 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 		return out
 	}
 	mutated := site.Apply(src)
-	timeout := timeoutOf(trial.Baseline.Elapsed, opt.TimeoutFactor)
-	r, err := w.withMutant(c.Root, path, src, mutated, func() (result, error) {
-		return w.runContext(ctx, c, timeout)
-	})
-	out.Elapsed = r.elapsed
-	if out.Err = stageError(ctx, r, err); out.Err != nil {
-		out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
-		return out
+	// A file no own test reaches has no own stage: the mutant survives its
+	// own tests without running them, as in a complete run, and the listed
+	// tests that reach its line judge it.
+	own := Survived
+	if !c.RunsNothing() {
+		timeout := timeoutOf(trial.Baseline.Elapsed, opt.TimeoutFactor)
+		r, err := w.withMutant(c.Root, path, src, mutated, func() (result, error) {
+			return w.runContext(ctx, c, timeout)
+		})
+		out.Elapsed = r.elapsed
+		if out.Err = stageError(ctx, r, err); out.Err != nil {
+			out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
+			return out
+		}
+		own = judged(r)
+		out.Stages = append(out.Stages, FreshStage{Name: "own", State: "complete", Outcome: own})
 	}
-	own := judged(r)
-	out.Stages = append(out.Stages, FreshStage{Name: "own", State: "complete", Outcome: own})
 	if own != Survived || len(trial.Reach) == 0 {
 		out.Outcome, out.Scope = own, opt.Scope
 		if opt.Scope == ScopeOwn {
@@ -231,6 +243,21 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	out.Outcome, out.Scope, out.Tests = judged(listed), ScopeListed, ids
 	out.Stages = append(out.Stages, FreshStage{Name: "listed", State: "complete", Outcome: out.Outcome, Tests: ids})
 	return out
+}
+
+// RanOwn says whether the trial ran the mutant under its own tests: not
+// for a file no own test reaches, which the listed tests alone judge.
+func (r FreshTrialResult) RanOwn() bool {
+	return len(r.Stages) > 0 && r.Stages[0].Name == "own"
+}
+
+// ownSaid is how a log line tells what the own stage did before the listed
+// tests ran.
+func (r FreshTrialResult) ownSaid() string {
+	if r.RanOwn() {
+		return "survived its own tests"
+	}
+	return "no own test reaches its file"
 }
 
 // stageError is why a stage of a fresh trial has no outcome: the error its

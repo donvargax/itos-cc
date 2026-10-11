@@ -171,7 +171,10 @@ uncovered, never run and never redrawn. Every other selected site runs its
 own tests once, even when the cache holds a kill for it, and one that
 survives them runs the listed tests that reach its line, after their
 selection's clean baseline, as a complete run does: both stages are one
-trial. A selection whose baseline fails is tests.selection-failed, and a
+trial. A site of a Python or Kotlin file no own test reaches, whose own
+tests run nothing, needs no clean baseline of them: listed tests that
+reach its line judge it alone, as in a complete run. A selection whose
+baseline fails is tests.selection-failed, and a
 site that needs it is blocked, with no outcome. Exceptions of the functions
 with a selected site apply as in a complete run: a valid one excepts its
 survivor, which is still drawn and run, and a stale one fails, as

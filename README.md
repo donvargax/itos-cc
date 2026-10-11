@@ -529,7 +529,10 @@ failing command fails the run before a mutant runs. A selected site no test
 reaches is uncovered and never redrawn; every other selected site runs its
 own tests once, even when the cache holds a kill, and one that survives them
 runs the listed tests that reach its line, after their selection's clean
-baseline, as a complete run does: both stages are one trial. A selection
+baseline, as a complete run does: both stages are one trial. A site of a
+Python or Kotlin file no own test reaches has no own stage and needs no
+clean baseline of its own tests: the listed tests that reach its line judge
+it alone, as in a complete run. A selection
 whose baseline fails is `tests.selection-failed`, and a site that needs it
 is blocked, with no outcome. Exceptions of the functions with a selected
 site apply as in a complete run: a valid one excepts its survivor, which is
