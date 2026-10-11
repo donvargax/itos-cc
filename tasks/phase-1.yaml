@@ -635,3 +635,22 @@
     - run: go test ./internal/units -count=1
     - run: grep -qi 'moving a command' docs/go.md
     - run: go test ./features -count=1
+- id: T-33
+  type: build
+  title: itos-cc builds with a kong fork whose user-input failures are typed
+  why: >
+    q-55: kong v1.16.1 reports every user-input failure as a plain string, its unknown-flag type
+    unexported, so an unknown flag, an unknown command and a stray argument cannot be told apart
+    without matching text. In the donvargax/kong fork, each user-input failure becomes an exported
+    error type, wrapped in ParseError and matched with errors.As, its Error() text byte for byte as
+    before: unknown flag (flag, candidates), unexpected argument (argument, whether a command was
+    expected, candidates), unexpected token, missing value and invalid value (flag or argument,
+    value, expected type), a value outside its enum (allowed values), missing required flags,
+    missing positional arguments, a missing command (candidates), xor conflicts and and-groups
+    (flags); errors in an app's own declarations stay strings. kong's own tests pass, with a test
+    for each type. go.mod replaces github.com/alecthomas/kong with the fork at a pinned commit. Once
+    the pilot (T-32) proves it, a PR goes to alecthomas/kong disclosing AI assistance, with the
+    person's review first, and the replace goes when a kong release carries the types.
+  done_when:
+    - run: grep -q 'github.com/alecthomas/kong => github.com/donvargax/kong' go.mod
+    - run: go build ./...
