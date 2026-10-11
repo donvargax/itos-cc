@@ -553,13 +553,21 @@
     archives (linux amd64 and arm64, darwin amd64 and arm64, windows amd64) are built natively on
     their own runners as ci.yml's build job does today, stamped with the version, and the publishing
     job gathers them; .goreleaser.yaml stays unused, or is used only for packing if that keeps the
-    native builds. This replaces T-22's flow: the person no longer pushes tags, and a pushed tag no
-    longer starts a release. Before 1.0 a breaking change bumps the minor version, not the major, as
+    native builds. Releasing inside main's own run, after its test jobs (needs), tests nothing
+    twice, which is what T-22's check of a green main run bought. The tag-push trigger goes: a
+    pushed tag no longer starts a release. T-22's path stays only as a manual fallback, which the
+    person expects not to need: the release workflow can be run by hand (workflow_dispatch) for a
+    given tag or commit, publishing it only when main's CI passed on exactly that commit, as T-22's
+    draft step requires today; the auto-release skips a commit that already carries a release tag,
+    so the two never cut the same version. Before 1.0 a breaking change bumps the minor version, not the major, as
     docs/CLI.md says, so release-version gains that rule with a test; the person wants the change
     upstream too, so the coordinator files it on go-template-itos with the exact diff once it lands,
-    and it must be a minimal, self-contained patch to the template's file. The first release this
-    cuts is v0.14.0 from the commits since v0.13.0. Pin every new action to a commit, as ci.yml
-    does.
+    and it must be a minimal, self-contained patch to the template's file. Pin every new action to
+    a commit, as ci.yml does.
+
+    v0.14.0 was cut by hand at 0e1eb50, before T-26, with notes written as before (the person,
+    2026-10-11), so its behaviour change, the "not-run" baseline that c13df5f made with no
+    Upgrading footer, is in those notes; the first release this cuts follows v0.14.0.
   done_when:
     - run: grep -q 'release-version' .github/workflows/ci.yml .github/workflows/release.yml
     - run: grep -q 'attest-build-provenance' .github/workflows/release.yml
