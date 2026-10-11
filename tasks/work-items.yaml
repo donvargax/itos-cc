@@ -1343,7 +1343,7 @@ items:
     title: With --since, --fail-uncovered=lines judges coverage only on the changed lines
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
