@@ -191,3 +191,38 @@ func TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testi
 		t.Errorf("the check without --fail-uncovered: exit %d %q, want exit %d %q as before\n%s", afterCheck.code, got, beforeCheck.code, want, afterCheck.stdout)
 	}
 }
+
+// A strict run of the same Kotlin project built with Maven proves the same
+// lines from jacoco-maven-plugin's report, whose XML lists every class of
+// the module's output as Gradle's jacocoTestReport does, and its check
+// gives the same verdict without running a test. It is no scenario of its
+// own: @ID-MUT-223 names Gradle, and this holds the other build tool to it.
+func TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines(t *testing.T) {
+	t.Parallel()
+	languageTools(t, "maven")
+	dir := t.TempDir()
+	for name, text := range strictKotlinFiles {
+		writeFile(t, filepath.Join(dir, filepath.FromSlash(name)), text)
+	}
+	for name, text := range kotlinOwnBuilds["maven"] {
+		writeFile(t, filepath.Join(dir, name), text)
+	}
+	useDir(t, dir)
+	selection := []string{filepath.FromSlash("src/main/kotlin/calc/Calc.kt"), filepath.FromSlash("src/main/kotlin/other/Lonely.kt")}
+	strict := mutateCovered(t, append([]string{"--fail-uncovered", "--json"}, selection...)...)
+	logRun(t, &strict)
+	if got := strictLineFindings(t, strict); !slices.Equal(got, strictKotlinLines) {
+		t.Errorf("the strict Maven run reports %q, want %q", got, strictKotlinLines)
+	}
+	if strict.code != 1 {
+		t.Errorf("the strict Maven run exit %d, want 1", strict.code)
+	}
+	check := mutationCheck(t, append([]string{"--fail-uncovered", "--json"}, selection...)...)
+	if got := strictLineFindings(t, check); !slices.Equal(got, strictKotlinLines) || check.code != 1 {
+		t.Errorf("the strict Maven check: exit %d %q, want exit 1 %q\n%s%s", check.code, got, strictKotlinLines, check.stdout, check.stderr)
+	}
+	requireNoTestRun(t, check, "the strict Maven check")
+	if strings.Contains(check.stderr, "mvn") {
+		t.Errorf("the strict Maven check ran Maven:\n%s", check.stderr)
+	}
+}

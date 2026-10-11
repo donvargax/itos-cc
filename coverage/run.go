@@ -640,7 +640,8 @@ func kotlinPlan(dir string, classes []string) Plan {
 	jacoco := filepath.Join(dir, "build", "reports", "jacoco", "test", "jacocoTestReport.xml")
 	maven := filepath.Join(dir, "target", "site", "jacoco", "jacoco.xml")
 	plan := Plan{Language: "kotlin", Dir: dir, Existing: []string{kover, jacoco, maven}}
-	if exists(filepath.Join(dir, "pom.xml")) {
+	runner := KotlinRunner(dir)
+	if runner == "maven" {
 		// The project's own JaCoCo, at the version it declares: naming the
 		// plugin here would have Maven download one the project never chose.
 		if !pomMentions(dir, "jacoco-maven-plugin") {
@@ -658,7 +659,7 @@ func kotlinPlan(dir string, classes []string) Plan {
 	// The report task runs the test task, which the filter then narrows.
 	task := "jacocoTestReport"
 	plan.Reports = []string{jacoco}
-	if buildMentions(dir, "kover") {
+	if runner == "kover" {
 		task = "koverXmlReport"
 		plan.Reports = []string{kover}
 	}
@@ -699,10 +700,22 @@ func MavenTests(classes []string) []string {
 // Measures its language, and is never Missing: its files the report never
 // names are untested, since no test loaded them. Problems are written to
 // log.
+//
+// A file of a language whose reports list every class of their module
+// (classInventories) that no test reaches has its executable lines listed,
+// all unexecuted, from the report of a successful plan of its module.
 func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
+	// classes is, by language and module, the entries of a successful
+	// report that lists every class of the module; unlisted is each
+	// Unreached plan whose files they can list, by its report's index.
+	classes := map[[2]string][]Entry{}
+	unlisted := map[int]Plan{}
 	for _, p := range plans {
 		if p.Unreached {
+			if classInventories[p.Language] {
+				unlisted[len(reports)] = p
+			}
 			reports = append(reports, p.unreached(log))
 			continue
 		}
@@ -740,9 +753,21 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 			r.languages = map[string]bool{p.Language: true}
 			p.prove(r)
 			reports = append(reports, r)
+			if classInventories[p.Language] && !p.Unattested && len(p.Reports) == 1 {
+				// Read again, whole: r holds only the files p measures,
+				// and the next plan of the module writes over the report.
+				if entries, err := Load(p.Reports[0]); err == nil {
+					classes[[2]string{p.Language, p.Dir}] = entries
+				}
+			}
 			continue
 		}
 		reports = append(reports, p.measured(r, MeasuredNothing, "its coverage run measured none of its files"+failed))
+	}
+	for i, p := range unlisted {
+		if entries, ok := classes[[2]string{p.Language, p.Dir}]; ok {
+			reports[i].list(p.Sources, p.Dir, entries)
+		}
 	}
 	return Merge(reports...)
 }

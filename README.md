@@ -303,35 +303,48 @@ Kotlin build root with mutants to judge whose coverage tool is missing, or
 whose coverage command fails or writes no report, fails closed as Go does:
 `coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
-runs. For Kotlin, reports read with `--coverage-report`,
-`--use-existing-coverage` or `--coverage-command` keep the fallback. Go,
-Python and TypeScript `--fail-uncovered` is strict: it also requires fresh
-measured evidence for every judged Go, Python or TypeScript function,
-including functions with no mutation sites, and fails each uncovered Go
-executable block, and each line a Python or TypeScript LCOV report names
-executable that no test executed, as `mutation.uncovered-statement` without
-changing mutant counts. Python's report is coverage.py's over the tests that
-reach the file; TypeScript's is Vitest's v8 or Jest's over its related tests
-(the whole suite with `--all-tests`), or c8's over the test script of a
-package with neither. A function's lines run from its body's first
-statement to its end: a Python `def` line, or a TypeScript arrow function's
-declaration, runs when the module is imported, not when the function is
-called. A Python file no test reaches has its executable lines listed by
-coverage.py's own analysis, and a TypeScript file no test loads by Vitest's
-v8 provider run with no test, and all of them are uncovered. Under Jest or
-c8 such a TypeScript file has no evidence, nor does any file a project's
-own `coverage` script measured (with `--all-tests`, where it has one):
-`mutation.coverage-missing`. Empty and comment-only Go bodies, and Python
-or TypeScript functions with no executable body line, have no executable
-obligation. Strict coverage needs a successful built-in or
-listed measurement; `--coverage-report`, `--use-existing-coverage`, and
-`--coverage-command` are rejected. An active Go workspace or local
+runs. `--fail-uncovered` is strict in every language: it also requires
+fresh measured evidence for every judged Go, Python, TypeScript or Kotlin
+function, including functions with no mutation sites, and fails each
+uncovered Go executable block, each line a Python or TypeScript LCOV report
+names executable that no test executed, and each line of a Kotlin JaCoCo or
+Kover XML report none of whose instructions ran, as
+`mutation.uncovered-statement` without changing mutant counts. A Kotlin
+line some of whose instructions ran, such as one a test took one branch of,
+is covered: branches are out of scope, as Go has none. Python's report is
+coverage.py's over the tests that reach the file; TypeScript's is Vitest's
+v8 or Jest's over its related tests (the whole suite with `--all-tests`), or
+c8's over the test script of a package with neither; Kotlin's is Gradle's
+`jacocoTestReport` or `koverXmlReport`, or Maven's `jacoco:report`, over
+the test classes of the file's module that reach it (the module's whole
+suite with `--all-tests` or `--test-command`). A function's lines run from
+its body's first statement to its end: a Python `def` line, or a TypeScript
+arrow function's declaration, runs when the module is imported, not when
+the function is called, and a Kotlin declaration's line holds the bridge
+that fills in default arguments, which runs only for a call that omits one.
+A one-line Kotlin expression body (`fun f(x: Int) = x * 2`) shares that
+line, which is covered when any of its instructions ran. A Python file no
+test reaches has its executable lines listed by coverage.py's own analysis,
+a TypeScript file no test loads by Vitest's v8 provider run with no test,
+and a Kotlin file no test reaches by the report of another file of its
+module, since JaCoCo and Kover list every class the module compiled, and
+all of them are uncovered. Under Jest or c8 such a TypeScript file has no
+evidence, nor does a Kotlin file whose module measured no other file in
+the run (no report task writes a report without running a test), nor any
+file a project's own `coverage` script measured (with `--all-tests`, where
+it has one): `mutation.coverage-missing`. Empty and comment-only Go and
+Kotlin bodies, and Python or TypeScript functions with no executable body
+line, have no executable obligation. Strict coverage needs a successful
+built-in or listed measurement; `--coverage-report`,
+`--use-existing-coverage`, and `--coverage-command` are rejected in every
+language. Kotlin evidence rests on its whole build root, every module of a
+multi-module build included: the Gradle root its settings mark, or the top
+of its Maven reactor. An active Go workspace or local
 replacement outside the inventoried module is refused; set `GOWORK=off` to
 disable workspace use. Strict coverage judges each language's files by its
-own evidence alone: a Python or TypeScript file is never judged for Go
-evidence, whether or not a `go.mod` sits above it, and a Kotlin file of the
-same selection keeps the uncovered-mutant rule of its language. A counted
-run (`--count`) does not yet prove Python or TypeScript lines.
+own evidence alone: a Python, TypeScript or Kotlin file is never judged for
+Go evidence, whether or not a `go.mod` sits above it. A counted run
+(`--count`) does not yet prove Python, TypeScript or Kotlin lines.
 
 `--count N` judges at most N mutation sites freshly, without the cache, as
 a bounded check of committed work. It resolves the repository and HEAD once
@@ -377,7 +390,7 @@ process group or session is not followed. On Windows it fails with
 `--fail-fast` stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop: an
 unexcepted survivor, once the listed tests that reach it failed to kill it
-too; with `--fail-uncovered`, an uncovered mutant or a strict Go, Python or TypeScript
+too; with `--fail-uncovered`, an uncovered mutant or a strict Go, Python, TypeScript or Kotlin
 coverage finding; a stale exception; a file whose tests fail before any mutant; or a
 selection of listed tests that fails without any mutant. It reports that
 failure under the rule a run without it reports, and exits as that rule
@@ -425,7 +438,7 @@ exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 
-For strict Go, Python and TypeScript coverage, `mutation check` additionally rejects
+For strict Go, Python, TypeScript and Kotlin coverage, `mutation check` additionally rejects
 missing or stale per-function block or line evidence without running tests,
 coverage, or list commands. Go evidence fingerprints module Go sources and
 tests, module configuration, project config, configured support files,
@@ -441,7 +454,19 @@ tests and Vitest, Jest or Vite configuration alike, its `package.json`,
 lockfile, `tsconfig*.json` and JSON Babel, SWC, Vitest and Jest
 configuration, project config, configured support files, the producer and
 the Node environment; `node_modules`, hidden directories, nested packages
-and the root's `dist`, `build`, `out` and `coverage` are left out. Raw profiles and reports cannot be stamped with current
+and the root's `dist`, `build`, `out` and `coverage` are left out. Kotlin
+evidence fingerprints its whole build root, the nearest directory with a
+`settings.gradle(.kts)`, else the module's, or the top of its Maven reactor:
+every module's `.kt`, `.kts` and `.java` sources and tests, Gradle scripts
+(`build.gradle(.kts)`, `settings.gradle(.kts)` and the `.gradle` scripts
+they apply), `gradle.properties`, version catalogs, the wrapper's
+`gradle-wrapper.properties`, every `pom.xml` and `.mvn`'s configuration,
+project config, configured support files, the producer, whether Gradle runs
+through its wrapper, and `JAVA_HOME`, `GRADLE_OPTS`, `MAVEN_OPTS` and
+`JAVA_TOOL_OPTIONS`; each module's `build` and `target` outputs, other
+hidden directories and nested Gradle builds (a directory with settings of
+its own, other than `buildSrc` or a build the root's settings name) are left
+out. Raw profiles and reports cannot be stamped with current
 hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a

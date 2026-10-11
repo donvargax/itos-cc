@@ -213,3 +213,176 @@ func TestTypeScriptCoverageInputsFingerprintThePackageRoot(t *testing.T) {
 		t.Errorf("inputs %v, want %v", got, want)
 	}
 }
+
+// Kotlin units take their lines from their body's first statement: JaCoCo
+// puts a default-argument bridge on the declaration line, which runs only
+// for a call that omits the argument, and a data class's generated methods
+// on its own declaration line, which belongs to no function. An empty or
+// comment-only body, or none, has nothing to prove, even unmeasured; a
+// one-line expression body shares its declaration's line.
+func TestKotlinLineEvidenceStartsAtTheBodysFirstStatement(t *testing.T) {
+	f := parse(t, "Calc.kt", "package calc\n\n"+
+		"fun reached(i: Int, label: String = \"x\"): Boolean {\n    // why\n    return i > 5\n}\n\n"+ // 3-6
+		"fun twice(i: Int) = i * 2\n\n"+ // 8
+		"fun split(i: Int) =\n    if (i > 0) 1\n    else 2\n\n"+ // 10-12
+		"fun empty() {\n}\n\n"+ // 14-15
+		"fun quiet() {\n    // nothing\n}\n\n"+ // 17-19
+		"data class Span(val from: Int, val to: Int)\n\n"+ // 21
+		"interface Shape {\n    fun area(): Int\n}\n") // 23-25
+	defer f.Close()
+	// The lines JaCoCo names: the bridge on 3, missed, the data class's
+	// accessors on 21, missed, and the bodies.
+	lines := []coverage.Line{{Line: 3}, {Line: 5, Covered: true}, {Line: 8}, {Line: 11, Covered: true}, {Line: 12},
+		{Line: 15}, {Line: 19}, {Line: 21}}
+	got := map[string][]int{}
+	for _, unit := range f.Units {
+		evidence := lineCoverageEvidence(f, unit, lines, true, "p", nil)
+		if !evidence.Complete {
+			t.Errorf("%s's proven evidence is incomplete", unit.Name)
+		}
+		for _, b := range evidence.Blocks {
+			got[unit.Name] = append(got[unit.Name], b.Line)
+		}
+	}
+	if want := map[string][]int{"reached": {5}, "twice": {8}, "split": {11, 12}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("lines %v, want %v", got, want)
+	}
+	for _, unit := range f.Units {
+		evidence := lineCoverageEvidence(f, unit, nil, false, "p", nil)
+		bodiless := unit.Name == "empty" || unit.Name == "quiet" || unit.Name == "area"
+		if evidence.Complete != bodiless || len(evidence.Blocks) != 0 {
+			t.Errorf("%s unmeasured: complete %v with %d lines, want complete %v with none", unit.Name, evidence.Complete, len(evidence.Blocks), bodiless)
+		}
+	}
+}
+
+// Kotlin evidence names the build tool that measured it and its scope, and
+// mutation check admits each.
+func TestKotlinCoverageProducersAreAdmitted(t *testing.T) {
+	seen := map[string]bool{}
+	for _, runner := range []string{"jacoco", "kover", "maven"} {
+		for _, all := range []bool{false, true} {
+			producer := KotlinCoverageProducer(runner, all)
+			if producer == "" || seen[producer] || !validCoverageProducer("kotlin", producer) {
+				t.Errorf("%s all-tests %v: producer %q, want a distinct admitted one", runner, all, producer)
+			}
+			seen[producer] = true
+			if validCoverageProducer("typescript", producer) || validCoverageProducer("python", producer) {
+				t.Errorf("%q is admitted for another language", producer)
+			}
+		}
+	}
+	if got := KotlinCoverageProducer("maven", false); !strings.Contains(got, "jacoco:report") || !strings.Contains(got, "scope=own") {
+		t.Errorf("Maven's own producer %q, want its JaCoCo report over the reaching classes", got)
+	}
+	if KotlinCoverageProducer("script", false) != "" || validCoverageProducer("kotlin", TypeScriptCoverageProducer("vitest", false)) {
+		t.Error("a runner that is not Kotlin's produces Kotlin evidence")
+	}
+}
+
+// writeTree writes text files under dir.
+func writeTree(t *testing.T, dir string, files map[string]string) {
+	t.Helper()
+	for name, text := range files {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// Kotlin evidence of a module of a multi-module Gradle build rests on the
+// whole build: every module's Kotlin and Java sources and tests, Gradle
+// scripts, properties, version catalog and wrapper, the included build and
+// buildSrc, but no build output, hidden directory or nested build.
+func TestKotlinCoverageInputsFingerprintTheWholeGradleBuild(t *testing.T) {
+	dir := t.TempDir()
+	writeTree(t, dir, map[string]string{
+		"settings.gradle.kts":                      "include(\"app\", \"lib\")\nincludeBuild(\"build-logic\")\n",
+		"build.gradle.kts":                         "",
+		"gradle.properties":                        "",
+		"gradle/libs.versions.toml":                "",
+		"gradle/wrapper/gradle-wrapper.properties": "",
+		"gradle/jacoco.gradle":                     "",
+		"app/build.gradle.kts":                     "",
+		"app/src/main/kotlin/calc/Calc.kt":         "package calc\n",
+		"app/src/test/kotlin/calc/CalcTest.kt":     "",
+		"app/src/main/resources/x.txt":             "",
+		"app/build/generated/G.kt":                 "",
+		"app/src/main/kotlin/calc/build/Kept.kt":   "",
+		"lib/build.gradle":                         "",
+		"lib/src/main/java/lib/Lib.java":           "",
+		"lib/target/T.kt":                          "",
+		"buildSrc/settings.gradle.kts":             "",
+		"buildSrc/src/main/kotlin/Conv.kt":         "",
+		"build-logic/settings.gradle.kts":          "",
+		"build-logic/src/main/kotlin/Plugin.kt":    "",
+		"samples/demo/settings.gradle.kts":         "",
+		"samples/demo/src/main/kotlin/Demo.kt":     "",
+		".gradle/8.0/x.kt":                         "",
+		".idea/y.kt":                               "",
+		"README.md":                                "",
+	})
+	inputs, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"@jvm-env", "@producer", "app/build.gradle.kts", "app/src/main/kotlin/calc/Calc.kt",
+		"app/src/main/kotlin/calc/build/Kept.kt", "app/src/test/kotlin/calc/CalcTest.kt",
+		"build-logic/settings.gradle.kts", "build-logic/src/main/kotlin/Plugin.kt", "build.gradle.kts",
+		"buildSrc/settings.gradle.kts", "buildSrc/src/main/kotlin/Conv.kt", "gradle.properties",
+		"gradle/jacoco.gradle", "gradle/libs.versions.toml", "gradle/wrapper/gradle-wrapper.properties",
+		"itos-cc.yaml", "lib/build.gradle", "lib/src/main/java/lib/Lib.java", "settings.gradle.kts"}
+	if got := sortedKeys(inputs); !reflect.DeepEqual(got, want) {
+		t.Errorf("inputs %v, want %v", got, want)
+	}
+	// A Gradle wrapper, or JAVA_HOME, is another JVM environment.
+	writeTree(t, dir, map[string]string{"gradlew": ""})
+	wrapped, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if wrapped["@jvm-env"] == inputs["@jvm-env"] {
+		t.Error("running through gradlew leaves the JVM environment as it was")
+	}
+	t.Setenv("JAVA_HOME", filepath.Join(dir, "other-jdk"))
+	other, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if other["@jvm-env"] == wrapped["@jvm-env"] {
+		t.Error("another JAVA_HOME leaves the JVM environment as it was")
+	}
+}
+
+// Kotlin evidence of a Maven module rests on its whole reactor, from the
+// top pom.xml, with each module's pom.xml and .mvn's configuration, but no
+// target output.
+func TestKotlinCoverageInputsFingerprintTheWholeMavenReactor(t *testing.T) {
+	dir := t.TempDir()
+	writeTree(t, dir, map[string]string{
+		"pom.xml":                        "",
+		".mvn/maven.config":              "",
+		"core/pom.xml":                   "",
+		"core/src/main/kotlin/Core.kt":   "",
+		"app/pom.xml":                    "",
+		"app/src/main/kotlin/App.kt":     "",
+		"app/src/test/kotlin/AppTest.kt": "",
+		"app/target/classes/Gen.kt":      "",
+	})
+	if got := KotlinBuildRoot(filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt")); got != dir {
+		t.Errorf("build root %s, want the reactor's top %s", got, dir)
+	}
+	inputs, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{".mvn/maven.config", "@jvm-env", "@producer", "app/pom.xml", "app/src/main/kotlin/App.kt",
+		"app/src/test/kotlin/AppTest.kt", "core/pom.xml", "core/src/main/kotlin/Core.kt", "itos-cc.yaml", "pom.xml"}
+	if got := sortedKeys(inputs); !reflect.DeepEqual(got, want) {
+		t.Errorf("inputs %v, want %v", got, want)
+	}
+}

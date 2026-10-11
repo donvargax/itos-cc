@@ -140,24 +140,42 @@ func (r *Report) Inventory(ctx context.Context, language string, log io.Writer, 
 			failures = append(failures, fmt.Errorf("%s static coverage inventory in %s: %w", language, dir, err))
 			continue
 		}
-		m := newMatcher(files)
-		for _, e := range entries {
-			file := m.match(e.Path, dir)
-			if file == "" {
-				continue
-			}
-			if r.inventory == nil {
-				r.inventory = map[string][]Segment{}
-			}
-			if r.proven == nil {
-				r.proven = map[string]bool{}
-			}
-			for _, seg := range e.Segments {
-				seg.Covered = 0
-				r.inventory[file] = append(r.inventory[file], seg)
-			}
-			r.proven[file] = true
-		}
+		r.list(files, dir, entries)
 	}
 	return executions, errors.Join(failures...)
 }
+
+// list records, of files no test loaded, the executable lines entries name,
+// a report's paths relative to dir, all of them unexecuted, and proves
+// each file it names complete (Lines).
+func (r *Report) list(files []string, dir string, entries []Entry) {
+	m := newMatcher(files)
+	for _, e := range entries {
+		file := m.match(e.Path, dir)
+		if file == "" {
+			continue
+		}
+		if r.inventory == nil {
+			r.inventory = map[string][]Segment{}
+		}
+		if r.proven == nil {
+			r.proven = map[string]bool{}
+		}
+		for _, seg := range e.Segments {
+			seg.Covered = 0
+			r.inventory[file] = append(r.inventory[file], seg)
+		}
+		r.proven[file] = true
+	}
+}
+
+// classInventories are the languages whose coverage report lists every
+// class the build compiled of a module, those no test loaded with every
+// line missed: JaCoCo's and Kover's XML, of the classes of the report
+// task's class directories, by default the module's main output. A
+// successful plan's report then lists the executable lines of a file of
+// the same module that no test reaches (Unreached), which runs no test of
+// its own, and Run lists them, all unexecuted, as Inventory would. No
+// report task writes one without running a test: with no test run, no
+// execution data exists, and Gradle's jacocoTestReport is skipped.
+var classInventories = map[string]bool{"kotlin": true}

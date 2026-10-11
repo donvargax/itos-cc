@@ -2,6 +2,7 @@ package coverage
 
 import (
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"sync"
@@ -77,4 +78,25 @@ func kotlinTestClasses(path string) []string {
 	kotlinClasses.files[path] = kotlinClassesOf{size: info.Size(), modTime: info.ModTime(), classes: classes}
 	kotlinClasses.Unlock()
 	return classes
+}
+
+// KotlinRunner is what measures the coverage of the Kotlin module at dir:
+// "maven", JaCoCo through the project's jacoco-maven-plugin, for a module
+// with a pom.xml; "kover", Kover's XML report, for a Gradle build file that
+// mentions Kover; "jacoco", Gradle's jacocoTestReport, otherwise.
+func KotlinRunner(dir string) string {
+	switch {
+	case exists(filepath.Join(dir, "pom.xml")):
+		return "maven"
+	case buildMentions(dir, "kover"):
+		return "kover"
+	}
+	return "jacoco"
+}
+
+// GradleWrapper says whether the Gradle build of the module at dir runs
+// through a gradlew in it or a directory above it, rather than the gradle
+// on PATH.
+func GradleWrapper(dir string) bool {
+	return lang.FindUp(filepath.Join(dir, "x"), "gradlew") != ""
 }

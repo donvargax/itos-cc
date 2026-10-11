@@ -151,8 +151,8 @@ coverage, listing, baselines or total time. A counted run writes no
 snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
-for every admitted function; strict Python and TypeScript lines are not
-yet proven by a counted run. A range with no site is not applicable, which
+for every admitted function; strict Python, TypeScript and Kotlin lines
+are not yet proven by a counted run. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
@@ -168,8 +168,8 @@ report, completion "interrupted", keeps the judgments completed before it.
 --fail-fast stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop:
 an unexcepted survivor, once the listed tests that reach it failed to kill
-it too; with --fail-uncovered, an uncovered mutant or a strict Go, Python
-or TypeScript coverage finding; an exception that no longer holds; a file whose tests fail before
+it too; with --fail-uncovered, an uncovered mutant or a strict Go, Python,
+TypeScript or Kotlin coverage finding; an exception that no longer holds; a file whose tests fail before
 any mutant; or a selection of listed tests that fails without any mutant.
 It reports that failure under the rule a run without it reports, and exits
 as that rule says. Killed, timed-out, validly excepted and listed-killed
@@ -208,26 +208,34 @@ aggregate. Without it, scheduling, output, snapshots and comments are as
 they always were.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
-survivor. For Go, Python and TypeScript it also requires fresh measured
-executable coverage for every judged function, including functions with no
-mutation sites, and fails, as mutation.uncovered-statement, each uncovered
-positive-weight Go coverage block and each line a Python or TypeScript LCOV
-report names executable that no test executed: coverage.py's over the
-tests that reach the file, Vitest's v8 or Jest's over its related tests, or
-c8's over the test script of a package with neither. A function's lines run
+survivor. For Go, Python, TypeScript and Kotlin it also requires fresh
+measured executable coverage for every judged function, including functions
+with no mutation sites, and fails, as mutation.uncovered-statement, each
+uncovered positive-weight Go coverage block, each line a Python or
+TypeScript LCOV report names executable that no test executed, and each
+line of a Kotlin JaCoCo or Kover XML report none of whose instructions ran
+(a line with some run, such as one a test took one branch of, is covered):
+coverage.py's over the tests that reach the file, Vitest's v8 or Jest's
+over its related tests, or c8's over the test script of a package with
+neither, and Gradle's jacocoTestReport or koverXmlReport, or Maven's
+jacoco:report, over the test classes of the file's module that reach it,
+the whole suite with --all-tests or --test-command. A function's lines run
 from its body's first statement to its end: a Python def line, or a
-TypeScript arrow function's declaration, runs at import. A Python file no
-test reaches has its executable lines listed by coverage.py's own analysis,
-and a TypeScript file no test loads by Vitest's v8 provider run with no
-test, all of them uncovered; under Jest or c8 such a file, and any file a
-project's own coverage script measured (--all-tests with one), has no
-evidence, which is mutation.coverage-missing. Strict Go, Python and
-TypeScript runs reject --no-coverage, --coverage-report,
---use-existing-coverage, and --coverage-command. A matching independent cache can avoid
-remeasurement; otherwise built-in or listed coverage must measure
-successfully. Empty or comment-only function bodies have no executable
-coverage obligation. For the mutants of TypeScript, Python and Kotlin it
-fails closed as Go does: a build root with
+TypeScript arrow function's declaration, runs at import, and a Kotlin
+declaration's line holds the bridge that fills in default arguments. A
+Python file no test reaches has its executable lines listed by coverage.py's
+own analysis, a TypeScript file no test loads by Vitest's v8 provider run
+with no test, and a Kotlin file no test reaches by the report of another
+file of its module, which lists every class the module compiled, all of
+them uncovered; under Jest or c8 such a file, a Kotlin one whose module
+measured no other file, and any file a project's own coverage script
+measured (--all-tests with one), has no evidence, which is
+mutation.coverage-missing. Strict runs reject --no-coverage,
+--coverage-report, --use-existing-coverage, and --coverage-command. A
+matching independent cache can avoid remeasurement; otherwise built-in or
+listed coverage must measure successfully. Empty or comment-only function
+bodies have no executable coverage obligation. For the mutants of
+TypeScript, Python and Kotlin it fails closed as Go does: a build root with
 mutants to judge whose coverage tool is missing, or whose coverage command
 fails or writes no report, is coverage.tool-missing or
 coverage.measured-nothing, naming its language and dir, and the run stops
@@ -296,7 +304,7 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("test-command", stringFlag, "CMD", "", "shell command that runs the tests, instead of the per-language default"),
 		sw("no-annotate", "do not write the summary comment into source files"),
 		opt("since", stringFlag, "REF", "", "judge only the functions the commits since REF changed (git diff REF...HEAD)"),
-		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python and TypeScript lines"),
+		sw("fail-uncovered", "fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines"),
 		sw("fail-fast", "stop at the first actionable failure, cancelling the work still running; Linux and macOS"),
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
@@ -336,8 +344,8 @@ judged and no snapshot is written. Listed tests are not run with
 	rules: []string{
 		"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 		"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python or TypeScript line is uncovered: file, function, line",
-		"mutation.coverage-missing  with --fail-uncovered, a Go, Python or TypeScript function lacks complete measured coverage evidence: file, function, line",
+		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
+		"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried Go module: file, function, line",
 		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
@@ -349,7 +357,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed: flag",
-		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python or TypeScript coverage with raw coverage flags: flag",
+		"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript or Kotlin coverage with raw coverage flags: flag",
 		"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 		"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",
 		"fail-fast.platform        --fail-fast on a platform other than Linux and macOS, that is Windows (#29), before any command runs: platform",
@@ -1233,8 +1241,9 @@ func flagPresent(in *invocation, flag string) bool {
 }
 
 // rawCoverage says whether coverage comes from reports the run is given or
-// told to read, not from the per-language commands: the strict coverage of
-// TypeScript and Kotlin mutants keeps their behaviour.
+// told to read, not from the per-language commands. Every language strict
+// coverage proves (mutate.StrictCoverage) refuses them under
+// --fail-uncovered, so only a language it does not prove reaches this.
 func rawCoverage(in *invocation) bool {
 	return in.set("use-existing-coverage") || in.str("coverage-command") != "" || len(in.strs("coverage-report")) > 0
 }
@@ -1362,6 +1371,19 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 				}
 				producer := mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(dir, !allTests), allTests)
 				inputs, err := mutate.TypeScriptCoverageInputs(source, project.Root(), producer, support)
+				return producer, inputs, err
+			}
+		case "kotlin":
+			// Its producer is what measures the module: Gradle's JaCoCo or
+			// Kover, or Maven's JaCoCo (coverage.KotlinRunner), over the
+			// whole suite with --test-command too, as Python's.
+			out[language] = func(source string) (string, map[string]string, error) {
+				module := lang.FindUp(source, "build.gradle.kts", "build.gradle", "pom.xml")
+				if module == "" {
+					module = filepath.Dir(source)
+				}
+				producer := mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), allTests || testCommand)
+				inputs, err := mutate.KotlinCoverageInputs(source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		}

@@ -212,15 +212,16 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 
 // TestHelperCoverageCommand is the coverage command of
 // TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage, run as this test
-// binary: it writes an empty report where HELPER_COVERAGE_REPORT says, unless
-// that is "-", and exits 1 when HELPER_COVERAGE_FAIL is set.
+// binary: it writes a report where HELPER_COVERAGE_REPORT says, unless that
+// is "-", empty or of the text HELPER_COVERAGE_TEXT holds, and exits 1 when
+// HELPER_COVERAGE_FAIL is set.
 func TestHelperCoverageCommand(t *testing.T) {
 	report := os.Getenv("HELPER_COVERAGE_REPORT")
 	if report == "" {
 		return
 	}
 	if report != "-" {
-		os.WriteFile(report, nil, 0o644)
+		os.WriteFile(report, []byte(os.Getenv("HELPER_COVERAGE_TEXT")), 0o644)
 	}
 	if os.Getenv("HELPER_COVERAGE_FAIL") != "" {
 		os.Exit(1)
@@ -362,6 +363,11 @@ func TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses(t *testing.T) {
 				files[name] = text
 			}
 			writeFiles(t, dir, files)
+			// What measures it, which strict evidence records as its
+			// producer.
+			if got := KotlinRunner(dir); got != build.name {
+				t.Errorf("runner %q, want %q", got, build.name)
+			}
 			at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
 			reach := map[string][]string{
 				at("src/main/kotlin/own/A.kt"): {at("src/test/kotlin/own/ATest.kt"), at("src/test/kotlin/own/Helper.kt")},

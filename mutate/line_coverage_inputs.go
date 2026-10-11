@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
 )
 
@@ -25,6 +26,9 @@ var pythonConfigFiles = map[string]bool{
 type rootInventory struct {
 	// markers mark a build root, as coverage plans find it.
 	markers []string
+	// root, when set, finds source's build root, in place of the nearest
+	// directory holding a marker.
+	root func(source string) string
 	// source says which files anywhere in the root count, by name.
 	source func(name string) bool
 	// config says which files directly in the root count, by name.
@@ -32,13 +36,23 @@ type rootInventory struct {
 	// skip leaves out a directory, besides hidden ones, node_modules and
 	// nested build roots: top is true directly in the root.
 	skip func(path, name string, top bool) bool
+	// nested, when set, says which directories below the root are other
+	// build roots, in place of those holding a marker.
+	nested func(path string) bool
+	// hidden are the hidden directories that count all the same.
+	hidden []string
 }
 
 // rootCoverageInputs fingerprints the files of source's build root inv
 // counts, each by addCoverageInput, and returns the root. A build root
 // above the project root is not followed: the project root stands for it.
 func rootCoverageInputs(source, projectRoot string, inv rootInventory) (map[string]string, string, error) {
-	root := lang.FindUp(source, inv.markers...)
+	var root string
+	if inv.root != nil {
+		root = inv.root(source)
+	} else {
+		root = lang.FindUp(source, inv.markers...)
+	}
 	if root == "" || !beneathRoot(projectRoot, root) {
 		abs, err := filepath.Abs(source)
 		if err != nil {
@@ -59,8 +73,15 @@ func rootCoverageInputs(source, projectRoot string, inv rootInventory) (map[stri
 			if path == root {
 				return nil
 			}
-			if strings.HasPrefix(name, ".") || name == "node_modules" || inv.skip != nil && inv.skip(path, name, top) {
+			if strings.HasPrefix(name, ".") && !slices.Contains(inv.hidden, name) || name == "node_modules" ||
+				inv.skip != nil && inv.skip(path, name, top) {
 				return filepath.SkipDir
+			}
+			if inv.nested != nil {
+				if inv.nested(path) {
+					return filepath.SkipDir
+				}
+				return nil
 			}
 			for _, marker := range inv.markers {
 				if coverageFileExists(filepath.Join(path, marker)) {
@@ -163,6 +184,127 @@ func TypeScriptCoverageInputs(source, projectRoot, producer string, support map[
 		return nil, err
 	}
 	out["@node-env"] = envInput("", "NODE_OPTIONS", "NODE_ENV", "NODE_PATH", "TS_NODE_PROJECT")
+	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// kotlinModuleMarkers mark a Kotlin build module, as coverage plans find
+// it, and kotlinSettings a Gradle build root.
+var (
+	kotlinModuleMarkers = []string{"build.gradle.kts", "build.gradle", "pom.xml"}
+	kotlinSettings      = []string{"settings.gradle.kts", "settings.gradle"}
+)
+
+// kotlinInput says whether a file anywhere in a Kotlin build root is an
+// input of its coverage: a Kotlin or Java source or test, a Gradle script
+// (build and settings scripts, in Kotlin or Groovy, and scripts they
+// apply), gradle.properties, a version catalog, the Gradle wrapper's
+// properties, a Maven pom.xml, or Maven's own configuration in .mvn.
+func kotlinInput(name string) bool {
+	switch filepath.Ext(name) {
+	case ".kt", ".kts", ".java", ".gradle":
+		return true
+	}
+	switch name {
+	case "pom.xml", "gradle.properties", "gradle-wrapper.properties", "maven.config", "jvm.config", "extensions.xml":
+		return true
+	}
+	return strings.HasSuffix(name, ".versions.toml")
+}
+
+// KotlinBuildRoot is the build root of the Kotlin source at source, or ""
+// outside any build: for a Maven module, the top of its reactor, the
+// highest of the directories holding a pom.xml from the module up without
+// a gap; for Gradle, the nearest directory with a settings script, else the
+// module's own directory.
+func KotlinBuildRoot(source string) string {
+	module := lang.FindUp(source, kotlinModuleMarkers...)
+	if module == "" {
+		return ""
+	}
+	if coverageFileExists(filepath.Join(module, "pom.xml")) {
+		top := module
+		for dir := filepath.Dir(module); dir != filepath.Dir(dir) && coverageFileExists(filepath.Join(dir, "pom.xml")); dir = filepath.Dir(dir) {
+			top = dir
+		}
+		return top
+	}
+	if root := lang.FindUp(source, kotlinSettings...); root != "" {
+		return root
+	}
+	return module
+}
+
+// KotlinCoverageInputs fingerprints the conservative input boundary of
+// independently measured Kotlin line coverage of source: every input
+// (kotlinInput) of its whole build root (KotlinBuildRoot), every module of
+// a multi-module build included, each source without the summary comment
+// itos-cc writes, the project's itos-cc.yaml, the configured support files,
+// the producer and the JVM environment with whether Gradle runs through its
+// wrapper. A module's coverage plan runs in the build its settings or its
+// reactor make, which compiles the modules it depends on, and its tests
+// reach code anywhere in it, so a change anywhere in the build stales it.
+// Each module's build and target output directories, hidden directories
+// (but .mvn), node_modules and nested Gradle builds, a directory below the
+// root with settings of its own other than buildSrc or a build the root's
+// settings name (includeBuild), are left out. A build root above the
+// project root is not followed: the project root stands for it.
+func KotlinCoverageInputs(source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+	build := KotlinBuildRoot(source)
+	if build != "" && !beneathRoot(projectRoot, build) {
+		build = projectRoot
+	}
+	var settings string
+	for _, name := range kotlinSettings {
+		if build == "" {
+			break
+		}
+		if data, err := os.ReadFile(filepath.Join(build, name)); err == nil {
+			settings += string(data)
+		}
+	}
+	out, _, err := rootCoverageInputs(source, projectRoot, rootInventory{
+		root:   func(string) string { return build },
+		source: kotlinInput,
+		config: func(string) bool { return false },
+		skip: func(path, name string, _ bool) bool {
+			if name != "build" && name != "target" {
+				return false
+			}
+			for _, marker := range append(slices.Clone(kotlinModuleMarkers), kotlinSettings...) {
+				if coverageFileExists(filepath.Join(filepath.Dir(path), marker)) {
+					return true
+				}
+			}
+			return false
+		},
+		nested: func(path string) bool {
+			if filepath.Base(path) == "buildSrc" {
+				return false
+			}
+			for _, marker := range kotlinSettings {
+				if coverageFileExists(filepath.Join(path, marker)) {
+					rel, err := filepath.Rel(build, path)
+					return err != nil || !strings.Contains(settings, filepath.ToSlash(rel))
+				}
+			}
+			return false
+		},
+		hidden: []string{".mvn"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	runner := "mvn"
+	if module := lang.FindUp(source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
+		runner = "gradle"
+		if coverage.GradleWrapper(module) {
+			runner = "gradlew"
+		}
+	}
+	out["@jvm-env"] = envInput(runner, "JAVA_HOME", "GRADLE_OPTS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}

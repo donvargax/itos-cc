@@ -2058,7 +2058,7 @@ Feature: Mutation testing
       And a strict TypeScript run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
-    @wip @strict-lines-kotlin @ID-MUT-223
+    @strict-lines-kotlin @ID-MUT-223
     Scenario: A strict Kotlin run proves every executable line of every judged function
       Given a Kotlin project built with Gradle and JaCoCo whose judged file has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one branch of
       When I run "itos-cc mutation run --fail-uncovered --json" for the file

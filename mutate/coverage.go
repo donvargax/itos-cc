@@ -22,7 +22,7 @@ const lineCoverageEvidenceVersion = 1
 // strictLanguages are the languages whose functions strict coverage
 // (--fail-uncovered) proves executed: Go at cover-profile block precision,
 // the others at their format's line precision (coverage.Report.Lines).
-var strictLanguages = map[string]bool{"go": true, "python": true, "typescript": true}
+var strictLanguages = map[string]bool{"go": true, "python": true, "typescript": true, "kotlin": true}
 
 // StrictCoverage says whether strict coverage proves the executable code of
 // language's functions: whether its functions need fresh measured evidence.
@@ -75,21 +75,51 @@ func TypeScriptCoverageProducer(runner string, allTests bool) string {
 	return ""
 }
 
+// KotlinCoverageProducer is the built-in producer of Kotlin's strict
+// coverage evidence by runner (coverage.KotlinRunner): Gradle's
+// jacocoTestReport or Kover's koverXmlReport, or Maven's jacoco:report,
+// over the test classes of the module that reach the file, or with
+// allTests the module's whole suite.
+func KotlinCoverageProducer(runner string, allTests bool) string {
+	switch {
+	case runner == "jacoco" && allTests:
+		return "gradle -p <module> test jacocoTestReport; scope=all-tests"
+	case runner == "jacoco":
+		return "gradle -p <module> test --tests <reaching classes> jacocoTestReport; scope=own"
+	case runner == "kover" && allTests:
+		return "gradle -p <module> koverXmlReport; scope=all-tests"
+	case runner == "kover":
+		return "gradle -p <module> test --tests <reaching classes> koverXmlReport; scope=own"
+	case runner == "maven" && allTests:
+		return "mvn -q jacoco:prepare-agent test jacoco:report; scope=all-tests"
+	case runner == "maven":
+		return "mvn -q jacoco:prepare-agent test jacoco:report -Dtest=<reaching classes> -Dsurefire.failIfNoSpecifiedTests=false; scope=own"
+	}
+	return ""
+}
+
 // validCoverageProducer says whether producer is a built-in producer of
 // language's strict coverage evidence.
 func validCoverageProducer(language, producer string) bool {
 	if producer == "" {
 		return false
 	}
-	if language == "typescript" {
-		for _, runner := range []string{"vitest", "jest", "c8"} {
-			if producer == TypeScriptCoverageProducer(runner, false) || producer == TypeScriptCoverageProducer(runner, true) {
-				return true
-			}
-		}
-		return false
+	var producers func(runner string, allTests bool) string
+	var runners []string
+	switch language {
+	case "typescript":
+		producers, runners = TypeScriptCoverageProducer, []string{"vitest", "jest", "c8"}
+	case "kotlin":
+		producers, runners = KotlinCoverageProducer, []string{"jacoco", "kover", "maven"}
+	default:
+		return producer == CoverageProducer(language, false) || producer == CoverageProducer(language, true)
 	}
-	return producer == CoverageProducer(language, false) || producer == CoverageProducer(language, true)
+	for _, runner := range runners {
+		if producer == producers(runner, false) || producer == producers(runner, true) {
+			return true
+		}
+	}
+	return false
 }
 
 // evidenceKey is how CoverageEvidence.Language names language: "" for Go,
@@ -126,18 +156,29 @@ func coverageEvidence(file *lang.File, unit lang.Unit, report *coverage.Report, 
 // is called, so it is no line of the unit's to prove. The evidence is
 // complete when proven: the measurement lists every executable line of the
 // file (coverage.Report.Lines), so a unit with none has nothing to prove.
+// A Kotlin function's lines start at its body's first statement
+// (kotlinBodyLine), and one with no statement in its body has nothing to
+// prove, measured or not.
 func lineCoverageEvidence(file *lang.File, unit lang.Unit, lines []coverage.Line, proven bool, producer string, inputs map[string]string) *CoverageEvidence {
 	evidence := &CoverageEvidence{
 		Version: lineCoverageEvidenceVersion, Language: file.Spec.Name, File: project.FromRoot(file.Path),
 		Function: unitID(unit.Namespace, unit.Name), Hash: UnitHash(file, unit), Producer: producer,
 		Inputs: cloneHashes(inputs), Blocks: []CoverageBlock{}, Complete: proven,
 	}
-	if !proven {
-		return evidence
-	}
 	first := unit.BodyLine
 	if first <= 0 {
 		first = unit.StartLine
+	}
+	if file.Spec.Name == "kotlin" {
+		line, ok := kotlinBodyLine(unit.Node)
+		if !ok {
+			evidence.Complete = true
+			return evidence
+		}
+		first = line
+	}
+	if !proven {
+		return evidence
 	}
 	for _, line := range lines {
 		if line.Line < first || line.Line > unit.EndLine || inInner(file, unit, line.Line) {
@@ -148,6 +189,34 @@ func lineCoverageEvidence(file *lang.File, unit lang.Unit, lines []coverage.Line
 		})
 	}
 	return evidence
+}
+
+// kotlinBodyLine is the first line of the Kotlin function at n whose
+// coverage is the function's: its block body's first statement, or its
+// expression body's expression, and false for a function with neither, one
+// whose block holds no statement or that has no body. The declaration's
+// own lines are not the function's: JaCoCo puts on them the bridge that
+// fills in default arguments, which runs only for a call that omits one,
+// and the methods a data class or @JvmOverloads generates. A one-line
+// expression body shares its line with them, which is then covered when
+// any of its instructions ran.
+func kotlinBodyLine(n *sitter.Node) (int, bool) {
+	if n == nil {
+		return 0, false
+	}
+	for i := uint(0); i < n.NamedChildCount(); i++ {
+		body := n.NamedChild(i)
+		if body.Kind() != "function_body" {
+			continue
+		}
+		for j := uint(0); j < body.NamedChildCount(); j++ {
+			if c := body.NamedChild(j); c.Kind() != "line_comment" && c.Kind() != "multiline_comment" {
+				return int(c.StartPosition().Row) + 1, true
+			}
+		}
+		return 0, false
+	}
+	return 0, false
 }
 
 // inInner says whether line belongs to an inline unit inside unit, from
