@@ -2147,6 +2147,60 @@ Feature: Mutation testing
       And "itos-cc mutation check" passes
       But an exception whose mutant the fresh run killed, whose line changed, or whose function has no fresh results is not renewed, is reported with why, and stays "mutation.exception-stale"
 
+  # integration-coverage-python, integration-coverage-typescript and
+  # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
+  # two parts, integration coverage (ID-MUT-117 to 120) and per-test
+  # coverage of listed tests (ID-MUT-121 to 129), Go only until now, for the
+  # other languages, each through its own collector, the project's own,
+  # never downloaded:
+  # - Python: coverage.py measures the Python processes a test starts
+  #   (subprocess patching), and its data files are combined.
+  # - TypeScript: NODE_V8_COVERAGE names a directory the Node processes a
+  #   test starts write V8 coverage to, and the project's c8 reports it.
+  # - Kotlin: the JaCoCo agent from the build's Gradle or Maven cache; a
+  #   harness opts in, as Go's builds with -cover, by starting the JVMs its
+  #   tests run with the agent itos-cc names in ITOS_CC_JACOCO_AGENT,
+  #   writing under ITOS_CC_JACOCO_DESTDIR (the coordinator's names), and
+  #   jacococli merges and reports what was written.
+  # As in Go, the data lives under the run's own run-* directory and is
+  # merged beside the in-process coverage, each covered mutant's "coverage"
+  # says "in-process", "integration" or both, and a project whose processes
+  # write nothing behaves as before. Per-test coverage of listed tests sets
+  # the same collector to <ITOS_CC_TEST_COVERDIR>/<test-id> for a harness
+  # that splits it, else runs each listed test alone with a collector of
+  # its own (ID-MUT-123). A collector the project lacks (c8, the JaCoCo
+  # agent or jacococli, a coverage.py without subprocess support) is
+  # coverage.tool-missing under --fail-uncovered where that language has
+  # mutants to judge, and otherwise a log line, the run going on without
+  # integration coverage, as today.
+  Rule: Coverage from tests that start other processes, in every language
+
+    @wip @integration-coverage-python @ID-MUT-228
+    Scenario: Lines a Python test reaches through a subprocess are covered
+      Given a Python project whose only test runs its module in a subprocess and checks one branch of its output
+      When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
+      Then the lines the subprocess ran are covered, with "coverage" listing "integration", and their mutants run
+      And a mutant the test notices is killed, one it does not notice survives, and only mutants on lines never run are uncovered
+      And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
+
+    @wip @integration-coverage-typescript @ID-MUT-229
+    Scenario: Lines a TypeScript test reaches through a child Node process are covered
+      Given a TypeScript project with Vitest and c8 installed whose only test runs its CLI in a child Node process and checks one branch of its output
+      When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
+      Then the lines the child process ran are covered, with "coverage" listing "integration", and their mutants run
+      And a mutant the test notices is killed, one it does not notice survives, and only mutants on lines never run are uncovered
+      And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
+      But without c8 the run logs that integration coverage needs it and goes on, and a strict run fails with "coverage.tool-missing"
+
+    @wip @integration-coverage-kotlin @ID-MUT-230
+    Scenario: Lines a Kotlin test reaches through a JVM it starts are covered
+      Given a Kotlin project built with Gradle whose only test starts its main class in a JVM with the agent ITOS_CC_JACOCO_AGENT names, and checks one branch of its output
+      When I run "itos-cc mutation run --all-tests --fail-uncovered --json"
+      Then the lines the started JVM ran are covered, with "coverage" listing "integration", and their mutants run
+      And a mutant the test notices is killed, one it does not notice survives, and only mutants on lines never run are uncovered
+      And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
+      But a test that starts its JVM without the agent leaves those lines uncovered, as before
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
