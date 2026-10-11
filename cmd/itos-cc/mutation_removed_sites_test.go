@@ -2,17 +2,19 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/mutate"
 )
 
-// The scenario of "Rule: Mutation results say what happened, and leave
+// The scenarios of "Rule: Mutation results say what happened, and leave
 // nothing stale behind" in features/mutate.feature that the
 // check-removed-operator-sites-fix slice holds, the reverse of
-// mutation_unrecorded_test.go's. They use the module of
+// mutation_unrecorded_test.go's, and the check-left-out-count slice. They use the module of
 // mutate_since_test.go with killedTests, and stand for an operator a newer
 // itos-cc removes by adding to Board#place's entry a surviving mutant at
 // the place of its `>` site with a replacement no operator makes now, `<`.
@@ -21,6 +23,13 @@ import (
 // to Board#place's entry a survivor at a site the function no longer holds,
 // and returns that mutant.
 func removedSiteRepo(t *testing.T) mutate.Mutant {
+	t.Helper()
+	return removedSiteRepoWith(t, mutate.Survived)
+}
+
+// removedSiteRepoWith is removedSiteRepo with the added mutant's outcome
+// outcome, counted in the entry's counts.
+func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
 	t.Helper()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
@@ -38,7 +47,7 @@ func removedSiteRepo(t *testing.T) mutate.Mutant {
 		var gone *mutate.Mutant
 		for j := range u.Mutants {
 			if m := u.Mutants[j]; m.Original == ">" && m.Replacement == ">=" {
-				m.Replacement, m.Outcome = "<", mutate.Survived
+				m.Replacement, m.Outcome = "<", outcome
 				gone = &m
 			}
 		}
@@ -47,7 +56,14 @@ func removedSiteRepo(t *testing.T) mutate.Mutant {
 		}
 		u.Mutants = append(u.Mutants, *gone)
 		u.Sites++
-		u.Survived++
+		switch outcome {
+		case mutate.Survived:
+			u.Survived++
+		case mutate.Killed:
+			u.Killed++
+		default:
+			t.Fatalf("an added mutant %s, want survived or killed", outcome)
+		}
 		data, err := json.MarshalIndent(snap, "", "  ")
 		if err != nil {
 			t.Fatal(err)
@@ -131,5 +147,53 @@ func TestAnExceptionOfARemovedSiteIsGone(t *testing.T) {
 	wantProblem(t, o.json(t).problem("mutation.exception-stale"), map[string]any{"file": boardSource, "function": placeID, "why": "gone"}, o.stdout)
 	if o.code != 1 {
 		t.Errorf("mutation check: exit %d, want 1 for the stale exception", o.code)
+	}
+}
+
+// @ID-MUT-241
+func TestCheckSaysHowManyRecordedMutantsItLeftOut(t *testing.T) {
+	t.Parallel()
+	removedSiteRepoWith(t, mutate.Killed)
+
+	o := mutationCheck(t, "--json", boardSource)
+	var out struct {
+		Files []struct {
+			File      string           `json:"file"`
+			Functions []map[string]any `json:"functions"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal([]byte(o.stdout), &out); err != nil {
+		t.Fatalf("stdout is not one JSON object: %v\n%s\nstderr:\n%s", err, o.stdout, o.stderr)
+	}
+	var place int
+	for _, f := range out.Files {
+		for _, fn := range f.Functions {
+			leftOut, has := fn["left_out"]
+			switch {
+			case f.File == boardSource && fn["function"] == placeID:
+				place++
+				if leftOut != float64(1) {
+					t.Errorf("place in mutation check %v, want \"left_out\" 1", fn)
+				}
+			case has:
+				t.Errorf("%s's %v has \"left_out\", want it only on place", f.File, fn)
+			}
+		}
+	}
+	if place != 1 {
+		t.Errorf("mutation check lists place %d times, want once\n%s", place, o.stdout)
+	}
+	if o.code != 0 {
+		t.Errorf("mutation check: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
+	}
+
+	o = mutationCheck(t, boardSource)
+	want := fmt.Sprintf("  left out %s:%d in %s: 1 recorded mutant at sites gone, which the next mutation run drops\n",
+		boardSource, boardUnits(t)[placeID].StartLine, placeID)
+	if !strings.Contains(o.stdout, want) || strings.Count(o.stdout, "left out ") != 1 {
+		t.Errorf("mutation check prints\n%s\nwant one line %q", o.stdout, want)
+	}
+	if o.code != 0 {
+		t.Errorf("mutation check: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
 	}
 }
