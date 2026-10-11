@@ -1267,7 +1267,7 @@ items:
     title: Snapshot writes at the same time succeed on Windows
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
