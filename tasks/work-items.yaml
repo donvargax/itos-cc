@@ -1492,7 +1492,7 @@ items:
     title: The macOS pid-file and race-build cleanup tests are deterministic
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
