@@ -1677,3 +1677,31 @@ items:
       AGENTS.md's generated block is regenerated with the pinned itos (~/.cache/itos/7.5.0/itos init
       --agent-rules; the PATH's 8.0.0-rc.5 rewrites the block itself). Past commits are not
       rewritten: verification judges from a range's start, and the rule holds from this commit on.
+  - id: T-28
+    title: Main's CI cuts the release itself, as go-template-itos does, with each platform built natively
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The person (2026-10-11) wants the template's auto-release. On a push to main whose test jobs
+      pass, CI computes the next version from the commits since the last vX.Y.Z tag with the
+      template's tools/bin/release-version (a feat a minor, a fix a patch, the binary's moved
+      modules or toolchain a patch, nothing otherwise and the job ends green), writes the notes with
+      tools/bin/release-notes and its cliff.toml (git-cliff over the range, every Upgrading and
+      BREAKING-CHANGE footer quoted; T-27 makes Upgrading required), attests the archives
+      (actions/attest-build-provenance, subject checksums.txt), and publishes, the tag appearing
+      only when a release holds every asset; a failed run leaves a draft the next one replaces and
+      never moves a tag; one release at a time, never cancelled. Unlike the template, itos-cc links
+      tree-sitter through cgo, so GoReleaser's CGO_ENABLED=0 cross-build cannot build it: the five
+      archives (linux amd64 and arm64, darwin amd64 and arm64, windows amd64) are built natively on
+      their own runners as ci.yml's build job does today, stamped with the version, and the
+      publishing job gathers them; .goreleaser.yaml stays unused, or is used only for packing if
+      that keeps the native builds. This replaces T-22's flow: the person no longer pushes tags, and
+      a pushed tag no longer starts a release. Before 1.0 a breaking change bumps the minor version,
+      not the major, as docs/CLI.md says, so release-version gains that rule with a test; the person
+      wants the change upstream too, so the coordinator files it on go-template-itos with the exact
+      diff once it lands, and it must be a minimal, self-contained patch to the template's file. The
+      first release this cuts is v0.14.0 from the commits since v0.13.0. Pin every new action to a
+      commit, as ci.yml does.
