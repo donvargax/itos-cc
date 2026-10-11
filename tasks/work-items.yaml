@@ -1853,7 +1853,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-30]
     kind: task
     why: >
       Third stage of the template-design refactor. Every command selects its files in
