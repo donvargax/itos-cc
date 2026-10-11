@@ -1484,3 +1484,18 @@ items:
       unreached-baseline-not-run-fix covered only files no test reaches, as its scenario says;
       making the aggregate value follow what ran would change the value a reused file has always
       reported.
+  - id: python-oldest-coverage-ci
+    title: CI measures Python with the oldest coverage.py itos-cc supports, not only the pinned one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      CI installs coverage.py 7.16.2 alone (testdata/tools/python/requirements.txt). Older versions
+      itos-cc supports are only simulated: coverage.py before 7.13, which starts in no subprocess,
+      by a .pth file popping COVERAGE_PROCESS_START (ID-MUT-228's missing collector), and before
+      7.14, whose reports combine no parallel data files, by testdata/python/coverage_before_7_14.py
+      (python-parallel-data-fix, ID-MUT-233). A second pinned venv, say coverage.py 7.13.x, in the
+      ubuntu language-tools step running the Python scenarios would catch the next version gap such
+      stand-ins miss; in-process measurement supports versions far older than 7.13.
