@@ -1479,3 +1479,15 @@ items:
       jacocoagent.jar into the run's directory, and reporting with the cached core and report jars
       through a small Java program run as a single-file source, would make it work with no build
       change, still downloading nothing.
+  - id: kotlin-kover-agent
+    title: Name Kover's own agent for Kover projects' integration coverage
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      integration-coverage-kotlin names only JaCoCo's runtime agent; a Kover project's harness has
+      to use JaCoCo's from caches some build filled, and its JaCoCo lines are read beside Kover's
+      report, which may name other lines. Kover's kover-jvm-agent and its reporter would measure the
+      started JVMs the way the in-process report does.
