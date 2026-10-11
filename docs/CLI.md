@@ -366,6 +366,21 @@ within one shared five-second deadline from the stop; on Windows it fails
 with `fail-fast.platform`, exit 3, before launching any command (#29).
 `--fail-fast` with `--count` is `flags.conflict`.
 
+A snapshot under `.metrics/mutate/` whose source file is gone, nothing at
+its path in the working tree, is an orphan. Its source path is its own path
+under `.metrics/mutate/` less `.json`, taken as the file system names it,
+so a name with a space or, off Windows, a backslash maps back to itself;
+only regular files ending in `.json` there are snapshots, and nothing
+outside `.metrics/mutate/` is ever removed. An orphan is not a problem, as
+problems mean `"ok": false`: `mutation check` names the orphans under its
+paths in a key of its own, `"orphans": [{"file", "snapshot"}]`, there only
+when it found one, so output with none keeps the keys it had, `file` from
+the working directory as in `"files"` and `snapshot` from the project root,
+slash-separated, and its exit code stays what its functions make it.
+`mutation run` removes the orphans under its paths (with none, the working
+directory) once it has written what it judged, and lists them under the
+same key; a `--count` run writes nothing and removes nothing.
+
 | Rule | Topic | itos-cc |
 | ---- | ----- | ------- |
 | 1 | Short lowercase program name | Follows. |

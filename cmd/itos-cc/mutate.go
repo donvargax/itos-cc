@@ -150,6 +150,17 @@ problems, and the exit code. A file with no function judged is left as it
 was: neither its snapshot nor its summary comment is written. Renames are
 followed: a move is no change, and a renamed file's snapshot moves with it.
 
+A snapshot whose source file is gone, nothing at its path in the working
+tree, is an orphan, as when a run without --since, or one whose paths do
+not select the new path, follows no rename. Once it has written what it
+judged, a run removes the orphans under its paths, the working directory
+when it is given none, and every directory that leaves empty under
+.metrics/mutate; it keeps every snapshot whose file exists, even a new
+file's at an old path, whose functions go stale by hash. It names each one,
+a line "<file>: gone, its snapshot <snapshot> was an orphan, and is
+removed", and in --json under "orphans". A counted run writes nothing, so
+it removes nothing.
+
 --count N judges at most N mutation sites freshly, as a bounded check
 that needs no cache: the cache neither saves a trial nor is written. It
 resolves the Git repository and its HEAD commit once and judges that
@@ -391,8 +402,10 @@ judged and no snapshot is written. Listed tests are not run with
    "completed"|"cancelled"|"unattempted"|"blocked", and "outcome" and
    "scope" for completed ones only}]; with --fail-fast, "stop":
    {"stopped", "rule", "subject"}, the problem's rule and subject keys, and
-   "work": {"completed", "cancelled", "unattempted", "blocked"}; with
-   --count, instead of "files":
+   "work": {"completed", "cancelled", "unattempted", "blocked"};
+   when it removed any, "orphans": [{"file", "snapshot"}], each snapshot
+   whose source file was gone, "snapshot" its path from the project root; with
+   --count, instead of "files" and "orphans":
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
    "seed", "algorithm", "commit", "since", "since_base",
    "assurance": "sampled"|"not-applicable",
@@ -571,6 +584,10 @@ type mutateResult struct {
 	// Stop and Work are there with --fail-fast only.
 	Stop *mutateStop `json:"stop,omitempty"`
 	Work *mutateWork `json:"work,omitempty"`
+	// Orphans are the snapshots under the run's paths whose source file
+	// was gone, which it removed; left out when there were none, so a run
+	// with no orphan prints the keys it always did.
+	Orphans []orphanEntry `json:"orphans,omitempty"`
 }
 
 type mutateSite struct {
@@ -712,7 +729,8 @@ func runMutate(in *invocation) (any, error) {
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		reportElsewhere(in, elsewhere)
-		return result, nil
+		result.Orphans, err = removeOrphans(in)
+		return result, err
 	}
 	// Strict coverage proves the functions of each strict language of the
 	// selection (mutate.StrictCoverage) executed.
@@ -1119,6 +1137,11 @@ func runMutate(in *invocation) (any, error) {
 		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
 	}
 	reportElsewhere(in, elsewhere)
+	// Only once the run has written what it judged: a --since run moves a
+	// renamed file's snapshot first.
+	if result.Orphans, err = removeOrphans(in); err != nil {
+		return result, err
+	}
 	if stop != nil {
 		result.Stop = &mutateStop{Stopped: true, Rule: stop.Rule, Subject: stopSubject(stop)}
 		if !in.json {

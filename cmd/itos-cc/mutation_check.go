@@ -54,6 +54,14 @@ entries of files it does not select as mutation run does: moved, when one
 source checked holds the function unchanged, or gone. An itos-cc.yaml that
 cannot be read is config.invalid.
 
+A snapshot under the paths checked whose source file is gone, nothing at
+its path in the working tree, as when the file was renamed and no
+mutation run --since followed it, is an orphan: check names it, a line
+"<file>: gone, its snapshot <snapshot> is an orphan, which mutation run
+removes", and in --json under "orphans", and judges and fails nothing for
+it. With no paths it looks under the working directory. The next
+mutation run over its directory removes it.
+
 It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
 REF...HEAD), as mutation run judges them.
@@ -85,7 +93,9 @@ in "excepted", not "survived".`,
 		failUncoveredFlag),
 	json: `"files": [{"file", "functions": [{"function",
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
-   "uncovered"}]}]`,
+   "uncovered"}]}], and when there is any, "orphans": [{"file",
+   "snapshot"}], each snapshot under the paths whose source file is gone,
+   "snapshot" its path from the project root`,
 	rules: []string{
 		"mutation.missing          a function with a mutation site has no results: file, line, function",
 		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
@@ -131,6 +141,9 @@ type checkFunction struct {
 
 type checkResult struct {
 	Files []checkFile `json:"files"`
+	// Orphans are the snapshots under the paths checked whose source file
+	// is gone: named, never judged; left out when there are none.
+	Orphans []orphanEntry `json:"orphans,omitempty"`
 }
 
 // runMutationCheck checks the chosen functions' cached results.
@@ -163,9 +176,15 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	orphans, err := orphansCovered(in)
+	if err != nil {
+		return result, err
+	}
+	result.Orphans = orphansJSON(orphans)
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to check")
 		reportElsewhere(in, elsewhere)
+		printOrphans(in, result.Orphans, "is an orphan, which mutation run removes")
 		return result, nil
 	}
 	tests, err := importingTests()
@@ -234,6 +253,7 @@ func runMutationCheck(in *invocation) (any, error) {
 		reportStaleExceptions(in, c.Rel, c.StaleExceptions)
 	}
 	reportElsewhere(in, elsewhere)
+	printOrphans(in, result.Orphans, "is an orphan, which mutation run removes")
 	return result, nil
 }
 
