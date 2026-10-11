@@ -1491,3 +1491,16 @@ items:
       to use JaCoCo's from caches some build filled, and its JaCoCo lines are read beside Kover's
       report, which may name other lines. Kover's kover-jvm-agent and its reporter would measure the
       started JVMs the way the in-process report does.
+  - id: macos-pidfile-race
+    title: A macOS supervision test reads a grandchild's pid file before it is written
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Main CI 38105144703 (af4646f, registry-only after 5774e1c, whose run passed) failed once on
+      macos-latest: mutate's
+      TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback/captured_group_only parsed an empty
+      grandchild.pid (strconv.Atoi: parsing ""), read before the fixture wrote it. The test should
+      wait for the file's complete content, as other ownership tests poll for their markers.
