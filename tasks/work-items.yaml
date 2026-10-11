@@ -1794,3 +1794,16 @@ items:
       T-26 moved ci.yml's checkouts to the template's pinned v7.0.1; nightly.yml still pins v4.4.0
       under a comment saying it matches ci.yml, and Node 20 actions are deprecated on GitHub
       runners.
+  - id: release-notes-pre-one-minor
+    title: Release notes say a breaking change makes a minor before 1.0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-28 taught tools/bin/release-version that before 1.0 a breaking change bumps the minor, but
+      tools/bin/release-notes still opens with 'where a breaking change makes a major release, a
+      feat a minor one and a fix a patch', so a 0.x release cut for a breaking change would explain
+      its minor version wrongly. The notes' line should say what release-version did; the same fix
+      belongs upstream on go-template-itos beside the release-version patch.
