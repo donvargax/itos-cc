@@ -1666,7 +1666,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-26]
     kind: task
     why: >
       The person (2026-10-11): with the template's auto-release, a release's notes are generated
