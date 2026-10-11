@@ -432,6 +432,17 @@ is left as it was: neither its snapshot nor its summary comment is written.
 the functions the range edited, and its snapshot moves to the new path, even
 when none is judged. Paths narrow the range by the path a file has now.
 
+A snapshot whose source file is gone, as when a run without `--since`, or
+one whose paths do not select the new path, follows no rename, is an
+orphan: nothing is at its path in the working tree, so a file deleted but
+still committed is gone, while a new file at the old path is that path's
+file again, whose functions go stale by hash. Each run removes the orphans
+under its paths, the working directory when it is given none, keeping
+every snapshot whose file exists, and names each one it removed, in
+`--json` under `orphans` as `{"file", "snapshot"}`. `mutation check` names
+the orphans under its paths the same way, without judging or failing
+anything for them. A `--count` run writes nothing, so it removes nothing.
+
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a
 `mutation.uncovered` problem in `--json`, and exit 1. With `--since`, only the
@@ -621,7 +632,10 @@ exits 1. A mutant an entry records at a site its unchanged function no
 longer holds, as when a newer itos-cc removes a mutation operator, is not in
 the code: `mutation check` leaves it out of the verdict and the counts, and
 the next `mutation run` drops it from the entry, reusing the rest. An
-exception of such a mutant is stale, as `gone`. It takes `mutation run`'s paths, `--changed`, and `--since`, and
+exception of such a mutant is stale, as `gone`. A snapshot whose source
+file is gone is an orphan: `mutation check` names it, in `--json` under
+`orphans`, and fails nothing for it, and the next `mutation run` over its
+directory removes it. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 

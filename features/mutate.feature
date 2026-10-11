@@ -2267,7 +2267,7 @@ Feature: Mutation testing
       Then no "mutation.survived" is reported for that mutant, and the exit code is 0
       And "itos-cc mutation run src/board.ts" runs no mutant, and rewrites the entry without it
 
-    @wip @renamed-snapshot-left-behind-fix @ID-MUT-236
+    @renamed-snapshot-left-behind-fix @ID-MUT-236
     Scenario: A snapshot whose source file is gone is removed by the next run over its directory
       Given a snapshot under .metrics/mutate for src/old.ts, a file that no longer exists
       When I run "itos-cc mutation check src"
