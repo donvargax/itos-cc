@@ -1840,8 +1840,8 @@ items:
   - id: T-32
     title: units is the first command on kong, a slice and the domain's port
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-31, T-33]
     kind: task
     why: >
