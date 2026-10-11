@@ -1565,3 +1565,17 @@ items:
       directory, so mutation run there may fail to write it. The ID-MUT-237 test and its mutate unit
       test skip where no such directory can be made, so CI does not say which. If it fails, such
       files need a decision on Windows: refuse them, or name their snapshots another way.
+  - id: orphans-outside-git
+    title: Orphans outside a git repository are never removed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since renamed-orphan-kept-fix an orphan is removed only once git shows no rename of its file
+      to a file that exists. Outside a git repository, in one with no commit yet, or when git fails,
+      renames cannot be read, so fail-safe every orphan is kept, and neither mutation run removes
+      nor mutation check names any. A project without git keeps snapshots of deleted files until
+      removed by hand. Whether such a project, where nothing can be renamed as git sees it, should
+      have its orphans judged by the working tree alone needs a decision.
