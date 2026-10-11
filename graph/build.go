@@ -413,7 +413,7 @@ func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Sna
 			score := float64(int(crap.Score(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
-		if m := entries[i]; m != nil {
+		if m := mutate.OnSites(entries[i], u.hash, u.sites); m != nil {
 			u.Mutated = true
 			u.Stale = mutate.FreshnessOf(m, u.hash, snap.TestsChanged(tests), listed,
 				mutate.BroadChangesForUnit(m.Mutants, moduleTests, support), u.sites).State == mutate.Stale

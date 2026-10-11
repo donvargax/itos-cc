@@ -259,7 +259,9 @@ func (c FunctionCheck) judged() bool {
 // nothing, and one that no longer holds is stale. An entry whose hash and
 // tests match but which lacks a site the function has now is stale too,
 // naming those sites in Unrecorded: no run judged them, and a run runs only
-// them.
+// them. A mutant an entry of the function's hash records at a site the
+// function no longer holds is left out, of its mutants and its counts
+// (OnSites).
 func Check(files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
@@ -346,7 +348,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 		c := FunctionCheck{Function: id, StartLine: u.StartLine, unit: i}
 		var e *UnitResult
 		if pair[i] >= 0 {
-			e = &entries[pair[i]]
+			e = OnSites(&entries[pair[i]], hashes[i], sites[i])
 			c.Entry = *e
 		}
 		var broad []string
@@ -404,6 +406,47 @@ func unrecorded(recorded []Mutant, sites []Site) []Site {
 	}
 	slices.SortStableFunc(out, LineOrder)
 	return out
+}
+
+// OnSites is entry, the snapshot's entry paired with a function (nil for
+// none), less each mutant it records at a site the function no longer
+// holds, its counts less theirs, while entry has hash, the function's hash
+// now, so its mutants are of the function's text; sites are the function's
+// sites now. A recorded mutant matches a site as reuse matches them, by its
+// place in the function, original and replacement (Site.Key). Such a mutant
+// is not in the code, as when a newer itos-cc removes a mutation operator,
+// so it bears on no verdict and no count, and a run, which builds the entry
+// from the sites, leaves it out. An entry of another hash is returned as it
+// is: it is stale anyway. entry is never changed.
+func OnSites(entry *UnitResult, hash string, sites []Site) *UnitResult {
+	if entry == nil || entry.Hash != hash {
+		return entry
+	}
+	has := map[string]bool{}
+	for _, s := range sites {
+		has[s.Key()] = true
+	}
+	out := *entry
+	out.Mutants = make([]Mutant, 0, len(entry.Mutants))
+	for _, m := range entry.Mutants {
+		if has[m.key()] {
+			out.Mutants = append(out.Mutants, m)
+			continue
+		}
+		out.Sites--
+		switch m.Outcome {
+		case Killed, Timeout:
+			out.Killed--
+		case Survived:
+			out.Survived--
+		case Uncovered:
+			out.Uncovered--
+		}
+	}
+	if len(out.Mutants) == len(entry.Mutants) {
+		return entry
+	}
+	return &out
 }
 
 // placed is recorded at the line and column of its site now, which differ

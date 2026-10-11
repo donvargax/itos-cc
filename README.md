@@ -617,7 +617,11 @@ entry in `.metrics/mutate/` is `mutation.missing`, one changed since its
 entry is `mutation.stale` (a move is not a change), as is every function of
 a file whose tests changed (below), and a fresh entry fails
 on a recorded survivor, or an uncovered mutant with `--fail-uncovered`; each
-exits 1. It takes `mutation run`'s paths, `--changed`, and `--since`, and
+exits 1. A mutant an entry records at a site its unchanged function no
+longer holds, as when a newer itos-cc removes a mutation operator, is not in
+the code: `mutation check` leaves it out of the verdict and the counts, and
+the next `mutation run` drops it from the entry, reusing the rest. An
+exception of such a mutant is stale, as `gone`. It takes `mutation run`'s paths, `--changed`, and `--since`, and
 `--json` gives each file's `functions` with their `state`: `fresh`, `stale`,
 or `missing`.
 

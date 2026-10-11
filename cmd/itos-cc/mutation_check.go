@@ -25,7 +25,11 @@ entry whose function has changed since is stale, while a function that only
 moved is fresh; an entry that lacks a site the function has now, as when a
 newer itos-cc adds a mutation operator or a mutation run --fail-fast stop
 left the site undecided, is stale, naming each such site, and
-mutation run runs only those; and a fresh entry fails on each survivor it records, and
+mutation run runs only those; a mutant an entry records at a site the
+unchanged function no longer holds, as when a newer itos-cc removes a
+mutation operator, is not in the code: it is left out of the verdict and
+the counts, and mutation run drops it from the entry, reusing the rest; and
+a fresh entry fails on each survivor it records, and
 with --fail-uncovered on each uncovered mutant it records. A function with no
 mutation site needs no mutation results, but with --fail-uncovered every
 judged Go function also needs fresh independent executable coverage evidence,
@@ -74,7 +78,7 @@ each problem, a line each:
 the place being the file alone when the function or the file is gone, and
 the why "moved to <file>" when the function is in another file now. The line of a missing or stale function is where it starts now. With --json,
 "functions" holds the functions checked, in the file's order, with the
-counts their entry records, zero when missing; an excepted survivor counts
+counts their entry records, less mutants at sites gone, zero when missing; an excepted survivor counts
 in "excepted", not "survived".`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
 		opt("since", stringFlag, "REF", "", "check only the functions the commits since REF changed (git diff REF...HEAD)"),

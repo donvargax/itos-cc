@@ -2260,7 +2260,7 @@ Feature: Mutation testing
       Then the killed run's worker copies are removed
       And the running one's are left alone
 
-    @wip @check-removed-operator-sites-fix @ID-MUT-235
+    @check-removed-operator-sites-fix @ID-MUT-235
     Scenario: A recorded mutant whose site is gone is left out
       Given fresh results for "Board#place" that record a surviving mutant at a site the function no longer holds, as when a newer itos-cc removes an operator, and every other mutant killed
       When I run "itos-cc mutation check src/board.ts"
