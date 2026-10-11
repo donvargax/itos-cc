@@ -1393,18 +1393,9 @@ items:
     title: Python coverage reads a project's parallel data files
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was python-parallel-data.
-      A project whose coverage.py configuration sets [run] parallel = true (or patch = subprocess,
-      which forces it) has coverage run write .coverage.<host>.<pid>.<random> instead of the
-      --data-file itos-cc names, so the coverage lcov that follows finds no data and the build root
-      is coverage.measured-nothing, as it was before integration-coverage-python. Combining the
-      in-process data files (coverage combine into the run's own data file) before the report would
-      measure such projects; with patch = subprocess the project's own subprocess data would then
-      count as in-process.
   - id: python-subprocess-reach
     title: A Python test that reaches code only through a subprocess counts among its own tests
     phase: 1
