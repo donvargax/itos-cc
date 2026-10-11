@@ -170,7 +170,7 @@ func parse(cmd *command, args []string) (*invocation, error) {
 		f, known := specs[name]
 		if !known || !strings.HasPrefix(a, "--") {
 			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("%s takes no flag %s", cmd.name, a), "")
-			if guess := closest("--"+name, flagNames(cmd)); guess != "" {
+			if guess := cli.Closest("--"+name, flagNames(cmd)); guess != "" {
 				p.Fix = fmt.Sprintf("Did you mean %s? Run 'itos-cc %s --help' for its flags.", guess, cmd.name)
 			} else {
 				p.Fix = fmt.Sprintf("Run 'itos-cc %s --help' for its flags.", cmd.name)
@@ -277,83 +277,30 @@ func runSafely(cmd *command, in *invocation) (data any, err error) {
 }
 
 // help is the command's help: usage, what it does, its flags, its --json
-// shape, its problem rules, its exit codes, and examples.
+// shape, its problem rules, its exit codes, and examples, in the layout
+// every command's help has (cli.Page).
 func (c *command) help() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "usage: itos-cc %s %s\n\n%s\n\nOptions:\n", c.name, c.synopsis, strings.TrimSpace(c.about))
-	writeFlags(&b, c.allFlags())
-	fmt.Fprintf(&b, "\nOutput with --json, one object on stdout:\n  {\"schema\": 1, \"ok\": true|false, %s,\n   \"problems\": [{\"rule\", \"message\", \"fix\", and keys for its subject}]}\n", c.json)
-	b.WriteString("  \"problems\" is there only when ok is false. Scripts read the exit code and\n  these keys, never \"message\", \"fix\", or the plain output.\n")
-	if len(c.rules) > 0 {
-		b.WriteString("\nProblem rules:\n")
-		for _, r := range c.rules {
-			fmt.Fprintf(&b, "  %s\n", r)
-		}
-	}
-	b.WriteString("\nExit codes:\n")
+	page := cli.Page{Program: "itos-cc", Command: c.name, Synopsis: c.synopsis, Flags: helpFlags(c.allFlags()),
+		Contract: cli.Contract{About: c.about, JSON: c.json, Rules: c.rules, Examples: c.examples}}
 	for _, e := range c.exits {
-		fmt.Fprintf(&b, "  %-3d %s\n", e.code, e.meaning)
+		page.Exits = append(page.Exits, cli.Exit{Code: e.code, Meaning: e.meaning})
 	}
-	b.WriteString("  70  an internal error itos-cc could not classify; please report it\n")
-	b.WriteString("\nExamples:\n")
-	for _, e := range c.examples {
-		fmt.Fprintf(&b, "  %s\n", e)
-	}
-	fmt.Fprintf(&b, "\nReport issues at %s\n", cli.Issues)
-	return b.String()
+	return page.String()
 }
 
-func writeFlags(w io.Writer, flags []flagSpec) {
+func writeFlags(w io.Writer, flags []flagSpec) { cli.WriteFlags(w, helpFlags(flags)) }
+
+// helpFlags are flags as help lists them, help's own with -h.
+func helpFlags(flags []flagSpec) []cli.HelpFlag {
+	var out []cli.HelpFlag
 	for _, f := range flags {
-		name := "--" + f.name
+		one := cli.HelpFlag{Name: f.name, Arg: f.arg, Default: f.def, Choices: f.choices, Repeat: f.repeat, Help: f.help}
 		if f.name == "help" {
-			name = "-h, --help"
+			one.Short = 'h'
 		}
-		if f.arg != "" {
-			name += " " + f.arg
-		}
-		if len(f.choices) > 0 {
-			name += "[=" + strings.Join(f.choices, "|") + "]"
-		}
-		help := f.help
-		if f.def != "" {
-			help += fmt.Sprintf(" (default %s)", f.def)
-		}
-		if f.repeat {
-			help += "; repeatable"
-		}
-		if len(name) > 26 {
-			fmt.Fprintf(w, "  %s\n  %-26s %s\n", name, "", help)
-		} else {
-			fmt.Fprintf(w, "  %-26s %s\n", name, help)
-		}
+		out = append(out, one)
 	}
-}
-
-// closest is the candidate nearest to word, or "" when none is near enough
-// to be what was meant. A word that only ends differently, such as mutate
-// for mutation, is near: all but its last letter, four letters at least,
-// begin exactly one candidate.
-func closest(word string, candidates []string) string {
-	best, bestDist := "", 3
-	for _, c := range candidates {
-		if d := distance(word, c); d < bestDist {
-			best, bestDist = c, d
-		}
-	}
-	if best != "" || len(word) < 5 {
-		return best
-	}
-	stem := word[:len(word)-1]
-	for _, c := range candidates {
-		if strings.HasPrefix(c, stem) {
-			if best != "" {
-				return ""
-			}
-			best = c
-		}
-	}
-	return best
+	return out
 }
 
 // andList joins words as "a", "a and b", or "a, b, and c".
@@ -367,27 +314,6 @@ func andList(words []string) string {
 		return words[0] + " and " + words[1]
 	}
 	return strings.Join(words[:len(words)-1], ", ") + ", and " + words[len(words)-1]
-}
-
-// distance is the Levenshtein distance between a and b.
-func distance(a, b string) int {
-	prev := make([]int, len(b)+1)
-	for j := range prev {
-		prev[j] = j
-	}
-	for i := 1; i <= len(a); i++ {
-		cur := make([]int, len(b)+1)
-		cur[0] = i
-		for j := 1; j <= len(b); j++ {
-			cost := 1
-			if a[i-1] == b[j-1] {
-				cost = 0
-			}
-			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
-		}
-		prev = cur
-	}
-	return prev[len(b)]
 }
 
 func sortedNames(m map[string]*command) []string {

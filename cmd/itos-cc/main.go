@@ -258,7 +258,7 @@ func help(args []string, asJSON bool) int {
 
 func unknownCommand(name string) *cli.Problem {
 	p := cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", name), "Run 'itos-cc --help' for the commands.")
-	if guess := closest(name, sortedNames(commands)); guess != "" {
+	if guess := cli.Closest(name, sortedNames(commands)); guess != "" {
 		p.Fix = fmt.Sprintf("Did you mean '%s'? Run 'itos-cc --help' for the commands.", guess)
 	}
 	return p.With("command", name)
@@ -269,7 +269,7 @@ func unknownCommand(name string) *cli.Problem {
 func unknownSubcommand(g *command, name string) *cli.Problem {
 	full := g.name + " " + name
 	fix := fmt.Sprintf("The subcommands of %s are %s. Run 'itos-cc %s --help' for them.", g.name, andList(g.subNames()), g.name)
-	if guess := closest(name, g.subNames()); guess != "" {
+	if guess := cli.Closest(name, g.subNames()); guess != "" {
 		fix = fmt.Sprintf("Did you mean '%s %s'? ", g.name, guess) + fix
 	}
 	return cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)

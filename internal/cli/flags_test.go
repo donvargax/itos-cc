@@ -226,3 +226,39 @@ func flagNamed(t *testing.T, name, tag string) *kong.Flag {
 	t.Fatalf("the model declares no flag named %q", name)
 	return nil
 }
+
+// Each refusal is a type of its own, so the UI tells them apart by type,
+// never by their text, and names the flag and the value as written.
+func TestEachRefusalIsTypedNamingItsFlag(t *testing.T) {
+	_, err := parse(t, "--json=yes")
+	var switchValue *SwitchValueError
+	if !errors.As(err, &switchValue) || switchValue.Flag.Name != "json" || switchValue.Value != "yes" {
+		t.Errorf("--json=yes: got %T %v, want a switch given yes", err, err)
+	}
+	_, err = parse(t, "--no-json=true")
+	if !errors.As(err, &switchValue) || switchValue.Flag.Name != "json" || switchValue.Value != "true" {
+		t.Errorf("--no-json=true: got %T %v, want the pair given true", err, err)
+	}
+	_, err = parse(t, "--stack", "--json")
+	var missing *ValueMissingError
+	if !errors.As(err, &missing) || missing.Flag.Name != "stack" || missing.Next != "--json" {
+		t.Errorf("--stack --json: got %T %v, want --stack missing its value", err, err)
+	}
+	_, err = parse(t, "--json", "--json")
+	var repeated *RepeatedFlagError
+	if !errors.As(err, &repeated) || repeated.Flag.Name != "json" {
+		t.Errorf("--json --json: got %T %v, want --json given twice", err, err)
+	}
+}
+
+// A flag's second occurrence is refused as given twice before its value is
+// judged: the second --json given a value, the second --stack given none.
+func TestASecondOccurrenceIsRefusedAsRepeatedBeforeItsValue(t *testing.T) {
+	for _, args := range [][]string{{"--json", "--json=yes"}, {"--stack", "go", "--stack"}, {"--stack", "go", "--stack", "--json"}} {
+		_, err := parse(t, args...)
+		var repeated *RepeatedFlagError
+		if !errors.As(err, &repeated) {
+			t.Errorf("%v: got %T %v, want the flag given twice", args, err, err)
+		}
+	}
+}

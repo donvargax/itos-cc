@@ -13,7 +13,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path/filepath"
 	"slices"
+	"strings"
 )
 
 // The exit codes, as docs/CLI.md's table gives them.
@@ -44,6 +46,23 @@ type UI struct {
 	Stderr io.Writer
 	// Classifiers are cmd's, one per domain, tried in turn.
 	Classifiers []Classifier
+	// Dir is the working directory, which the paths a person reads are
+	// named from; "" when it is not known.
+	Dir string
+}
+
+// Rel is path as a person reads it: from the working directory when it is
+// in it, and as it is otherwise, so output reads like the command line
+// that produced it.
+func (u *UI) Rel(path string) string {
+	if u.Dir == "" {
+		return path
+	}
+	rel, err := filepath.Rel(u.Dir, path)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return path
+	}
+	return rel
 }
 
 // Classifier turns err, a failure of one domain's sealed set, into its

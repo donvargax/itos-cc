@@ -25,9 +25,14 @@ package cli
 // mapper a bool token for the pair, the same for --no-json and
 // --no-json=true. So the mapper refuses only a value the command line wrote
 // (a string), and the hook refuses a --no- pair written with a value.
+//
+// Each refusal is a type of its own, as the kong fork's are, so the UI tells
+// them apart with errors.As, never by their text: SwitchValueError,
+// ValueMissingError and RepeatedFlagError. A flag's second occurrence is
+// refused as given twice before its value is judged, as the mapper sees it
+// already set.
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -68,7 +73,7 @@ func (t *tracing) done(ctx *kong.Context) error {
 			continue
 		}
 		if given[f] {
-			return fmt.Errorf("--%s%s: given more than once; give it once", f.Name, either(f))
+			return fmt.Errorf("--%s%s: %w", f.Name, either(f), &RepeatedFlagError{Flag: f})
 		}
 		given[f] = true
 	}
@@ -84,8 +89,8 @@ func pairGivenAValue(ctx *kong.Context) error {
 			return nil
 		}
 		for _, f := range ctx.Flags() {
-			if f.Tag.Negatable != "" && f.IsBool() && strings.HasPrefix(arg, "--no-"+f.Name+"=") {
-				return fmt.Errorf("--%s: %s", f.Name, switchTakesNoValue(f))
+			if value, ok := strings.CutPrefix(arg, "--no-"+f.Name+"="); ok && f.Tag.Negatable != "" && f.IsBool() {
+				return fmt.Errorf("--%s: %w", f.Name, &SwitchValueError{Flag: f, Value: value})
 			}
 		}
 	}
@@ -102,16 +107,25 @@ type switchMapper struct {
 
 func (m switchMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
 	if next := ctx.Scan.Peek(); !m.traced.over && next.Type == kong.FlagValueToken {
-		if _, written := next.Value.(string); written {
-			return errors.New(switchTakesNoValue(ctx.Value.Flag))
+		if value, written := next.Value.(string); written {
+			if repeated(ctx.Value) {
+				return &RepeatedFlagError{Flag: ctx.Value.Flag}
+			}
+			return &SwitchValueError{Flag: ctx.Value.Flag, Value: value}
 		}
 	}
 	return m.kong.Decode(ctx, target)
 }
 
-// switchTakesNoValue is the refusal of a switch given a value.
-func switchTakesNoValue(f *kong.Flag) string {
-	return fmt.Sprintf("a switch takes no value; give --%s%s alone", f.Name, either(f))
+// SwitchValueError is a switch the command line gave a value, Value, as it
+// was written after the =.
+type SwitchValueError struct {
+	Flag  *kong.Flag
+	Value string
+}
+
+func (e *SwitchValueError) Error() string {
+	return fmt.Sprintf("a switch takes no value; give --%s%s alone", e.Flag.Name, either(e.Flag))
 }
 
 // valueMapper reads a flag's value as kong does, once there is one: never
@@ -120,12 +134,41 @@ type valueMapper struct{ kong kong.Mapper }
 
 func (m valueMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
 	if next := ctx.Scan.Peek(); ctx.Value.Flag != nil && !next.IsValue() {
-		if next.IsEOL() {
-			return fmt.Errorf("needs a value, as --%s %s", ctx.Value.Name, ctx.Value.Flag.FormatPlaceHolder())
+		if repeated(ctx.Value) {
+			return &RepeatedFlagError{Flag: ctx.Value.Flag}
 		}
-		return fmt.Errorf("needs a value, and %s is a flag, never its value; to give it as the value, write --%s=%s", next, ctx.Value.Name, next)
+		missing := &ValueMissingError{Flag: ctx.Value.Flag}
+		if !next.IsEOL() {
+			missing.Next = next.String()
+		}
+		return missing
 	}
 	return m.kong.Decode(ctx, target)
+}
+
+// ValueMissingError is a flag that takes a value given none: the command
+// line ended after it, or Next, a flag, came next.
+type ValueMissingError struct {
+	Flag *kong.Flag
+	Next string
+}
+
+func (e *ValueMissingError) Error() string {
+	if e.Next == "" {
+		return fmt.Sprintf("needs a value, as --%s %s", e.Flag.Name, e.Flag.FormatPlaceHolder())
+	}
+	return fmt.Sprintf("needs a value, and %s is a flag, never its value; to give it as the value, write --%s=%s", e.Next, e.Flag.Name, e.Next)
+}
+
+// RepeatedFlagError is a flag that is not cumulative given more than once.
+type RepeatedFlagError struct{ Flag *kong.Flag }
+
+func (e *RepeatedFlagError) Error() string { return "given more than once; give it once" }
+
+// repeated is whether v, a flag being traced, was set earlier on the
+// command line and is not cumulative: given again.
+func repeated(v *kong.Value) bool {
+	return v.Flag != nil && v.Set && !v.IsCumulative()
 }
 
 // either is a switch's --no- pair, as a message names it beside the switch.
