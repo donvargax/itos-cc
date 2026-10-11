@@ -1863,3 +1863,19 @@ items:
       adapter wraps project. lang's units come from source the caller reads. golangci-lint joins the
       CI plan over internal/ alone, widening as packages move (q-50), and domain-coverage covers the
       new domain. Output and exit codes do not change.
+  - id: T-32
+    title: units is the first command on kong, a slice and the domain's port
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The pilot of the template-design refactor, the pattern every later command follows and other
+      projects take. units moves to internal/units, a slice: its kong flags, its query to the
+      selection domain, its handler, printing through internal/cli. cmd routes a moved command
+      through kong and the rest as before; internal/cli turns kong's errors into the flags.* and
+      args.* problems features/cli.feature pins, word for word, and the help keeps its text. The
+      godog harness of features/ runs the feature files that have steps, units.feature the first,
+      its scenarios turned into steps without changing what they say (q-52), and the CI plan runs
+      it. docs/go.md gains a section on moving a command.
