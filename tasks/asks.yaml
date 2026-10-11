@@ -197,3 +197,4 @@ questions:
     answer: "As recommended, with both guards (survived the fresh run; every renewal reported), 2026-10-11."
   - id: q-43
     question: "#33: with --since and --fail-uncovered, judge whole touched functions or only the changed lines? Recommend --fail-uncovered=lines: with --since, judge and report only the executable blocks or lines that overlap the diff hunks, in complete, counted and check, for every language; plain --fail-uncovered (=functions) keeps ADR-0017's whole functions."
+    answer: "As recommended, 2026-10-11: with --since, --fail-uncovered=lines judges only the changed lines; =functions stays the default."
