@@ -1903,3 +1903,17 @@ items:
       itos-cc nothing. tools/bin/release-notes could leave out commits that touch only tasks/, or
       name them in one line. It came with go-template-itos, so the change goes upstream as an exact
       diff.
+  - id: selection-fragment-rules
+    title: Fragments match a source path relative to the working directory, each fragment on its own
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Fragments are matched against absolute paths, so a fragment that is part of the working
+      directory path itself (itos-cc units tmp under /home/x/tmp/proj) selects every file. Each file
+      also counts only toward the first fragment it contains, so "itos-cc crap billing bill" refuses
+      bill as paths.unmatched even though files under src/billing contain it. internal/selection
+      keeps both rules unchanged (T-31), and a test holds the second, so changing either one is a
+      decision that needs a scenario.
