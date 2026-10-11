@@ -171,7 +171,7 @@ func TestTheSubprocessRcfileLayersItosCcsSettingsOnTheProjects(t *testing.T) {
 	if !plan.written() {
 		t.Fatalf("nothing written to %s", plan.CoverDir)
 	}
-	report := plan.integrate(&log)
+	report, _ := plan.integrate(&log)
 	if report == "" {
 		t.Fatalf("no integration report:\n%s", log.String())
 	}

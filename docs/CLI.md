@@ -206,6 +206,30 @@ way, one test at a time or as a harness splits them with
 logs it and goes on without them, and `--fail-uncovered` reports
 `coverage.tool-missing` where TypeScript has mutants to judge.
 
+Kotlin coverage measures the JVMs a test starts when its harness opts in.
+While the coverage command runs, `ITOS_CC_JACOCO_AGENT` names the JaCoCo
+runtime agent jar (`org.jacoco.agent-<version>-runtime.jar`) in the Gradle
+or Maven cache, at the version the build files name where they name one,
+else the newest, and `ITOS_CC_JACOCO_DESTDIR` a directory of the run's own;
+the harness starts each JVM with
+`-javaagent:$ITOS_CC_JACOCO_AGENT=destfile=$ITOS_CC_JACOCO_DESTDIR/<name>.exec`,
+a `<name>` of the JVM's own, or `append=true` added where JVMs share a file.
+The `.exec` files written are merged and reported as XML by jacococli
+(`org.jacoco.cli-<version>-nodeps.jar`, from the same caches, run with
+`JAVA_HOME`'s `java`) against the module's class files
+(`build/classes/kotlin/main` and `build/classes/java/main`, or
+`target/classes`) and sources, as `"integration"` beside the JaCoCo or
+Kover report; while the agent is named, Gradle's test task runs with
+`--rerun`. Listed tests reach them the same way, one test at a time with an
+`ITOS_CC_JACOCO_DESTDIR` of its own, or as a harness splits them by
+writing each test's `.exec` files under `<ITOS_CC_TEST_COVERDIR>/<test ID>/`.
+Neither jar is downloaded. Without the agent `ITOS_CC_JACOCO_AGENT` is unset
+and the run logs it; `.exec` files with no jacococli to report them are a
+log line, and `coverage.tool-missing` under `--fail-uncovered` where Kotlin
+has mutants to judge. Kover's own agent is not named. Kotlin evidence
+recorded before this (its producer without
+`subprocesses=ITOS_CC_JACOCO_AGENT, jacococli report`) reads stale once.
+
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files
@@ -364,7 +388,7 @@ with `fail-fast.platform`, exit 3, before launching any command (#29).
 | 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
-| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, and Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
+| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start, and `ITOS_CC_JACOCO_AGENT` and `ITOS_CC_JACOCO_DESTDIR` for the JVMs a Kotlin harness starts with the JaCoCo agent. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
 | 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |

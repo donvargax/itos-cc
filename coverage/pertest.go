@@ -27,11 +27,14 @@ import (
 // it: GOCOVERDIR=<dir>/<test ID> for Go binaries built with -cover, and
 // COVERAGE_FILE=<dir>/<test ID>/.coverage for Python processes, which
 // coverage.py starts in with the rcfile itos-cc names in
-// COVERAGE_PROCESS_START. go test passes the variable on to its test
-// binaries, as it does not GOCOVERDIR. When nothing is written there, each
-// test runs alone, every process it starts writing to a directory of its
-// own: GOCOVERDIR, as integration coverage passes it, and COVERAGE_FILE,
-// so a Python test runner's own process counts too.
+// COVERAGE_PROCESS_START, NODE_V8_COVERAGE=<dir>/<test ID> for Node
+// processes, and a JaCoCo destfile under <dir>/<test ID>/ for the JVMs a
+// Kotlin harness starts with the agent JacocoAgentEnv names. go test passes
+// the variable on to its test binaries, as it does not GOCOVERDIR. When
+// nothing is written there, each test runs alone, every process it starts
+// writing to a directory of its own: GOCOVERDIR, as integration coverage
+// passes it, COVERAGE_FILE, so a Python test runner's own process counts
+// too, NODE_V8_COVERAGE and JacocoDestDirEnv.
 
 // TestCoverDirEnv names the directory under which a harness has each
 // test's processes write their coverage: GOCOVERDIR=<dir>/<test ID>, or
@@ -86,8 +89,8 @@ type testCollector struct {
 }
 
 // testCollectors is the collectors of the listed tests of root measuring
-// sources, with dir for their data: Go's always, and Python's when sources
-// hold Python files, from their build roots.
+// sources, with dir for their data: Go's always, and TypeScript's, Kotlin's
+// and Python's when sources hold files of theirs, from their build roots.
 func testCollectors(root, dir string, sources []string) []testCollector {
 	collectors := []testCollector{{
 		language: "go",
@@ -116,6 +119,9 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 			}
 		}
 		collectors = append(collectors, c)
+	}
+	if roots := buildRoots(sources, "kotlin"); len(roots) > 0 {
+		collectors = append(collectors, kotlinTestCollector(roots[0], dir))
 	}
 	roots := buildRoots(sources, "python")
 	if len(roots) == 0 {

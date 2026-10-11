@@ -180,6 +180,67 @@ TypeScript has mutants to judge. A project measured by c8 over its test
 script, with neither Vitest nor Jest, already measures the processes its
 tests start, as its own.
 
+Kotlin code that tests reach by starting another JVM (`ProcessBuilder`
+running `java -cp … board.MainKt`, a server) counts when the harness opts
+in, as a Go one builds its binary with `-cover`. While the coverage command
+runs, `ITOS_CC_JACOCO_AGENT` names the JaCoCo runtime agent jar
+(`org.jacoco.agent-<version>-runtime.jar`) in the Gradle cache
+(`GRADLE_USER_HOME` or `~/.gradle`) or Maven's (`~/.m2/repository`), the
+build tool's own first, at the version the build files name (the jacoco
+`toolVersion`, the `jacoco-maven-plugin` version) where they name one, else
+the newest; and `ITOS_CC_JACOCO_DESTDIR` names a directory of the run's own
+under `.metrics/coverage/`. The harness starts the JVMs its tests run with
+
+```
+-javaagent:$ITOS_CC_JACOCO_AGENT=destfile=$ITOS_CC_JACOCO_DESTDIR/<name>.exec
+```
+
+where `<name>` is the JVM's own (a test name and a random suffix), or adds
+`,append=true` when JVMs share a file. In Kotlin:
+
+```kotlin
+val agent = System.getenv("ITOS_CC_JACOCO_AGENT")
+val dest = System.getenv("ITOS_CC_JACOCO_DESTDIR")
+if (!agent.isNullOrEmpty() && !dest.isNullOrEmpty()) {
+    command += "-javaagent:$agent=destfile=$dest/$name-${UUID.randomUUID()}.exec"
+}
+```
+
+Afterwards, if any `.exec` file was written there, jacococli
+(`org.jacoco.cli-<version>-nodeps.jar`, from the same caches, the agent's
+version first, run with `JAVA_HOME`'s `java`, else the one on `PATH`)
+merges them into an XML report against the module's class files
+(`build/classes/kotlin/main` and `build/classes/java/main`, or Maven's
+`target/classes`) and sources, read beside the JaCoCo or Kover report, and
+the directory is removed. While the agent is named, Gradle's test task runs
+with `--rerun` (Gradle 7.6 and later), since a task Gradle deems up to date
+would start no JVM. Nothing is downloaded, and Gradle's jacoco plugin
+fetches neither jar (Maven's jacoco-maven-plugin fetches the agent), so a
+build resolves them once, for instance with a configuration of its own:
+
+```kotlin
+val itosJacoco by configurations.creating { isTransitive = false }
+dependencies {
+    itosJacoco("org.jacoco:org.jacoco.agent:0.8.15:runtime")
+    itosJacoco("org.jacoco:org.jacoco.cli:0.8.15:nodeps")
+}
+tasks.register("jacocoJars") {
+    val jars: FileCollection = itosJacoco
+    inputs.files(jars)
+    doLast { jars.files.forEach { println(it) } }
+}
+```
+
+and `gradle jacocoJars` before itos-cc runs. Without the agent,
+`ITOS_CC_JACOCO_AGENT` is unset, which a harness can tell, its JVMs go
+unmeasured as before, and the run logs it. `.exec` files with no jacococli
+to report them are a log line, the run going on without integration
+coverage, and `coverage.tool-missing` under `mutation run
+--fail-uncovered` where Kotlin has mutants to judge. A JVM started without
+the agent measures nothing. Kover measures with an agent of its own, which
+itos-cc does not name: a Kover project's harness uses JaCoCo's agent the
+same way, its report read beside Kover's.
+
 A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
@@ -260,8 +321,9 @@ their kills count. `--json` says, for each mutant whose line is covered,
 which coverage covered it: `"in-process"`, `"integration"`, or both. In
 Python, the Python processes tests start show up in coverage too (see
 [crap](#crap)), and in TypeScript, under Vitest or Jest with c8 installed,
-the Node processes they start. In Kotlin such tests do not show up in
-coverage yet, so add `--no-coverage` to let them reach code nothing else
+the Node processes they start, and in Kotlin the JVMs a harness starts
+with the JaCoCo agent itos-cc names. Where such tests do not show up in
+coverage, add `--no-coverage` to let them reach code nothing else
 covers. It is slow; run
 it nightly rather than on every change:
 
@@ -306,9 +368,14 @@ Python processes each test starts
 starts in from the rcfile itos-cc names in `COVERAGE_PROCESS_START`, as
 above, and one that gives the Node processes each test starts
 `NODE_V8_COVERAGE=<that directory>/<test ID>`, which the project's c8
+reports, and one that starts the JVMs each test runs with the JaCoCo agent
+writing under `<that directory>/<test ID>/`
+(`destfile=$ITOS_CC_TEST_COVERDIR/<test ID>/<name>.exec`), which jacococli
 reports. Otherwise each test runs alone, every process it starts writing
-to a `GOCOVERDIR`, a coverage.py data file and a `NODE_V8_COVERAGE` of its
-own, the test runner's own processes included. A mutant runs its file's own tests first
+to a `GOCOVERDIR`, a coverage.py data file, a `NODE_V8_COVERAGE` and an
+`ITOS_CC_JACOCO_DESTDIR` of its own, the test runner's own processes
+included. A Gradle harness's run command passes `--rerun` to its test
+task, so it runs the tests though Gradle deems the task up to date. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
 run. The first time a mutant needs a selection of listed tests, that
 selection runs once without any mutant in the mutant's worker's copy: its
@@ -357,8 +424,9 @@ whose coverage command fails or writes no report, fails closed as Go does:
 `coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
 runs; so does a Python build root whose coverage.py does not start in the
-processes its tests start, or a TypeScript package measured by Vitest or
-Jest without c8 (`coverage.tool-missing`). `--fail-uncovered` is strict in every language: it also requires
+processes its tests start, a TypeScript package measured by Vitest or
+Jest without c8, or a Kotlin build root whose JVMs wrote `.exec` files
+with no jacococli to report them (`coverage.tool-missing`). `--fail-uncovered` is strict in every language: it also requires
 fresh measured evidence for every judged Go, Python, TypeScript or Kotlin
 function, including functions with no mutation sites, and fails each
 uncovered Go executable block, each line a Python or TypeScript LCOV report

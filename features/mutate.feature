@@ -2192,7 +2192,7 @@ Feature: Mutation testing
       And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
       But without c8 the run logs that integration coverage needs it and goes on, and a strict run fails with "coverage.tool-missing"
 
-    @wip @integration-coverage-kotlin @ID-MUT-230
+    @integration-coverage-kotlin @ID-MUT-230
     Scenario: Lines a Kotlin test reaches through a JVM it starts are covered
       Given a Kotlin project built with Gradle whose only test starts its main class in a JVM with the agent ITOS_CC_JACOCO_AGENT names, and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"

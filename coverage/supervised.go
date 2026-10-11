@@ -85,6 +85,9 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
 		}
+		if p.Notice != "" {
+			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Notice)
+		}
 		if p.CoverDir != "" {
 			if err := p.removeCoverDir(); err != nil {
 				failures = append(failures, fmt.Errorf("clear integration coverage directory: %w", err))
@@ -143,8 +146,14 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		if !aborted {
 			var conversions []CommandExecution
 			var conversion error
-			integration, conversions, conversion = p.integrateSupervised(ctx, log, execute)
+			var why string
+			integration, why, conversions, conversion = p.integrateSupervised(ctx, log, execute)
 			executions = append(executions, conversions...)
+			if why != "" {
+				// Data the project has no converter for: the run goes on
+				// without it, as without a collector.
+				noIntegration = append(noIntegration, p.noIntegration(why, log))
+			}
 			if conversion != nil {
 				failures = append(failures, conversion)
 				planFailed = true
@@ -291,10 +300,11 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 }
 
 // integrateSupervised converts what the processes the tests started wrote
-// under CoverDir, returning the conversions it actually ran, if any.
-func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute CommandExecutor) (report string, calls []CommandExecution, resultErr error) {
+// under CoverDir, returning the conversions it actually ran, if any, and
+// why, when data was written that p has no converter for.
+func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute CommandExecutor) (report, why string, calls []CommandExecution, resultErr error) {
 	if p.CoverDir == "" {
-		return "", nil, nil
+		return "", "", nil, nil
 	}
 	defer func() {
 		if err := p.removeCoverDir(); err != nil {
@@ -302,26 +312,29 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 		}
 	}()
 	if _, err := filepath.Glob(filepath.Join(p.CoverDir, p.Written)); err != nil {
-		return "", nil, fmt.Errorf("inspect integration coverage data: %w", err)
+		return "", "", nil, fmt.Errorf("inspect integration coverage data: %w", err)
 	}
 	if err := p.dropRunnerData(); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
 	if !p.written() {
-		return "", nil, nil
+		return "", "", nil, nil
 	}
-	for _, args := range p.Convert {
+	if p.ConverterMissing != "" {
+		return "", p.ConverterMissing, nil, nil
+	}
+	for _, args := range p.conversions() {
 		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
 		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.Dir, p.convertEnv(), log, log
 		err := execute(ctx, cmd)
 		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.Dir, Err: err})
 		if err != nil {
-			return "", calls, fmt.Errorf("convert %s integration coverage: %w", p.Language, err)
+			return "", "", calls, fmt.Errorf("convert %s integration coverage: %w", p.Language, err)
 		}
 	}
 	if _, err := Load(p.Integration); err != nil {
-		return "", calls, fmt.Errorf("%s integration conversion produced no readable report: %w", p.Language, err)
+		return "", "", calls, fmt.Errorf("%s integration conversion produced no readable report: %w", p.Language, err)
 	}
-	return p.Integration, calls, nil
+	return p.Integration, "", calls, nil
 }

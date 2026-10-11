@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -77,20 +79,24 @@ func ExecTest(args []string) int {
 // integrate turns what the processes the tests started wrote to p.CoverDir
 // into the report p.Integration, with p.Convert, removes the directory, and
 // returns the report's path, or "" when nothing was written or the report
-// could not be made.
-func (p Plan) integrate(log io.Writer) string {
+// could not be made, and why, when data was written that p has no
+// converter for (ConverterMissing).
+func (p Plan) integrate(log io.Writer) (string, string) {
 	if p.CoverDir == "" {
-		return ""
+		return "", ""
 	}
 	defer p.removeCoverDir()
 	if err := p.dropRunnerData(); err != nil {
 		fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
-		return ""
+		return "", ""
 	}
 	if !p.written() {
-		return ""
+		return "", ""
 	}
-	for _, args := range p.Convert {
+	if p.ConverterMissing != "" {
+		return "", p.ConverterMissing
+	}
+	for _, args := range p.conversions() {
 		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
 		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Dir, cmd.Env = p.Dir, p.convertEnv()
@@ -98,8 +104,19 @@ func (p Plan) integrate(log io.Writer) string {
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
-			return ""
+			return "", ""
 		}
 	}
-	return p.Integration
+	return p.Integration, ""
+}
+
+// conversions is p's Convert commands: those ConvertWritten gives from the
+// files written, when it is set.
+func (p Plan) conversions() [][]string {
+	if p.ConvertWritten == nil {
+		return p.Convert
+	}
+	found, _ := filepath.Glob(filepath.Join(p.CoverDir, p.Written))
+	sort.Strings(found)
+	return p.ConvertWritten(found)
 }

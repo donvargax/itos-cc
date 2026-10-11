@@ -82,8 +82,25 @@ TypeScript under Vitest or Jest, the Node processes a test starts show up
 too: NODE_V8_COVERAGE names a directory of the run's own, and the
 project's c8 reports what they wrote beside the runner's coverage, leaving
 out what the runner's own processes wrote; a project without c8 is
-coverage.tool-missing or a log line likewise. Kotlin coverage does not see
-such tests yet: add --no-coverage for them.
+coverage.tool-missing or a log line likewise. A Kotlin harness opts in,
+as a Go one builds with -cover: while the coverage command runs,
+ITOS_CC_JACOCO_AGENT names the JaCoCo runtime agent jar
+(org.jacoco.agent-<version>-runtime.jar) in the Gradle or Maven cache, at
+the version the build names where it names one, and ITOS_CC_JACOCO_DESTDIR
+a directory of the run's own, and the harness starts the JVMs its tests
+run with
+  -javaagent:$ITOS_CC_JACOCO_AGENT=destfile=$ITOS_CC_JACOCO_DESTDIR/<name>.exec
+a <name> of each JVM's own, or append=true when JVMs share one. Afterwards
+jacococli (org.jacoco.cli-<version>-nodeps.jar, from the same caches, run
+with JAVA_HOME's java) merges what they wrote and reports it against the
+module's class files (build/classes/kotlin/main and java/main, or
+target/classes) beside the JaCoCo or Kover report; while the agent is
+named, Gradle's test task runs with --rerun. Neither jar is downloaded:
+without the agent ITOS_CC_JACOCO_AGENT is unset, which a harness can tell,
+and .exec files with no jacococli to report them are coverage.tool-missing
+with --fail-uncovered, where Kotlin has mutants to judge, and otherwise a
+log line. Kover's own agent is not named: a Kover project's harness uses
+JaCoCo's too.
 Every test and coverage command itos-cc composes runs with
 PYTHONDONTWRITEBYTECODE=1, and every pytest one with -p no:cacheprovider,
 so neither bytecode nor a .pytest_cache is written into the project; a
@@ -316,10 +333,12 @@ has to run, the list command runs once, then every listed test, for
 coverage, with ITOS_CC_TEST_COVERDIR set to a directory of the run's own:
 a harness that gives the processes each test starts
 GOCOVERDIR=<that directory>/<test ID>, COVERAGE_FILE=<that
-directory>/<test ID>/.coverage to Python ones, or NODE_V8_COVERAGE=<that
-directory>/<test ID> to Node ones, splits the coverage by test in one run;
+directory>/<test ID>/.coverage to Python ones, NODE_V8_COVERAGE=<that
+directory>/<test ID> to Node ones, or a JaCoCo destfile under <that
+directory>/<test ID>/ to JVMs, splits the coverage by test in one run;
 otherwise each test runs alone, every process it starts with a
-GOCOVERDIR, a coverage.py data file and a NODE_V8_COVERAGE of its own. A
+GOCOVERDIR, a coverage.py data file, a NODE_V8_COVERAGE and an
+ITOS_CC_JACOCO_DESTDIR of its own. A
 mutant runs its file's own tests first and, only if it survives them, the
 listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
@@ -387,7 +406,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
 		"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
-		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8), is missing where it has mutants to judge: language, dir",
+		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",

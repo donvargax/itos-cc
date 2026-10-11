@@ -61,8 +61,10 @@ const (
 	InProcess Source = iota
 	// Integration is what the processes the tests started executed, as
 	// their collector measured it: Go binaries built with go build -cover
-	// write it to GOCOVERDIR, and Python processes coverage.py starts in to
-	// the data files of the run's own rcfile (collector.go).
+	// write it to GOCOVERDIR, Python processes coverage.py starts in to
+	// the data files of the run's own rcfile (collector.go), Node processes
+	// to NODE_V8_COVERAGE, and JVMs started with the JaCoCo agent to
+	// ITOS_CC_JACOCO_DESTDIR (jacoco.go).
 	Integration
 )
 

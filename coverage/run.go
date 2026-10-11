@@ -42,7 +42,8 @@ type Plan struct {
 	// CoverDir, when set, is where the processes the tests start write
 	// their coverage data while the commands run (collector.go): the
 	// GOCOVERDIR of the binaries the tests build with go build -cover, the
-	// data files of the Python processes coverage.py starts in. Prepare,
+	// data files of the Python processes coverage.py starts in, the .exec
+	// files of the JVMs a Kotlin harness starts with the JaCoCo agent. Prepare,
 	// when set, runs first to ready the collector, and exits 3 when it
 	// cannot measure them, printing why: the commands then run without it
 	// (Report.IntegrationMissing). CoverEnv is the environment the commands
@@ -63,7 +64,17 @@ type Plan struct {
 	CoverEnv      []string
 	Written       string
 	Convert       [][]string
-	Integration   string
+	// ConvertWritten, when set, gives the Convert commands from the files
+	// Written found, sorted, such as the .exec files jacococli merges.
+	ConvertWritten func(written []string) [][]string
+	// ConverterMissing, when set, says why what was written cannot be
+	// turned into a report, such as no jacococli: data written is then a
+	// missing collector (Report.IntegrationMissing), and none is nothing.
+	ConverterMissing string
+	Integration      string
+	// Notice, when set, is logged before the commands run, such as that no
+	// JaCoCo agent is cached, so the opt-in variable naming it is unset.
+	Notice string
 	// Unreached marks a plan of sources no test reaches (Reach): nothing
 	// runs, and its language is measured, so they are loaded by no test.
 	Unreached bool
@@ -210,7 +221,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 				}
 			}
 		case "kotlin":
-			p = kotlinPlan(k.dir, tests)
+			p = kotlinPlan(k.dir, out, tests)
 		default:
 			continue
 		}
@@ -661,8 +672,9 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 
 // kotlinPlan measures the Kotlin module at dir with its JaCoCo or Kover,
 // running classes, the test classes KotlinTests gives, or the whole suite
-// when classes is nil.
-func kotlinPlan(dir string, classes []string) Plan {
+// when classes is nil, and the JVMs its tests start with the JaCoCo agent
+// it names (kotlinIntegration), their data under out.
+func kotlinPlan(dir, out string, classes []string) Plan {
 	kover := filepath.Join(dir, "build", "reports", "kover", "report.xml")
 	jacoco := filepath.Join(dir, "build", "reports", "jacoco", "test", "jacocoTestReport.xml")
 	maven := filepath.Join(dir, "target", "site", "jacoco", "jacoco.xml")
@@ -677,6 +689,7 @@ func kotlinPlan(dir string, classes []string) Plan {
 		}
 		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, MavenTests(classes)...)}
 		plan.Reports = []string{maven}
+		kotlinIntegration(&plan, dir, out)
 		return plan
 	}
 	gradle := "gradle"
@@ -690,11 +703,18 @@ func kotlinPlan(dir string, classes []string) Plan {
 		task = "koverXmlReport"
 		plan.Reports = []string{kover}
 	}
+	kotlinIntegration(&plan, dir, out)
+	// While the agent is named, the test task runs even when Gradle deems
+	// it up to date, so the JVMs its tests start write to this run.
+	test := []string{"test"}
+	if plan.CoverDir != "" {
+		test = append(test, "--rerun")
+	}
 	args := []string{gradle, "-p", dir}
 	if classes != nil {
-		args = append(append(args, "test"), GradleTests(classes)...)
-	} else if task == "jacocoTestReport" {
-		args = append(args, "test")
+		args = append(append(args, test...), GradleTests(classes)...)
+	} else if task == "jacocoTestReport" || plan.CoverDir != "" {
+		args = append(args, test...)
 	}
 	plan.Commands = [][]string{append(args, task)}
 	return plan
@@ -760,6 +780,9 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
 		}
+		if p.Notice != "" {
+			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Notice)
+		}
 		if p.CoverDir != "" {
 			p.removeCoverDir()
 			why, _, err := p.start(context.Background(), env, log, nil)
@@ -790,7 +813,11 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
 			}
 		}
-		r := load(p.Reports, p.integrate(log), p.Dir, p.measures(sources), log)
+		integration, why := p.integrate(log)
+		if why != "" {
+			noIntegration = append(noIntegration, p.noIntegration(why, log))
+		}
+		r := load(p.Reports, integration, p.Dir, p.measures(sources), log)
 		r.integrationMissing = noIntegration
 		// Told by exit status and the report alone, never by what the
 		// runner prints: a run that succeeded and wrote its report measured

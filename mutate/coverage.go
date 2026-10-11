@@ -90,6 +90,13 @@ func TypeScriptCoverageProducer(runner string, allTests bool) string {
 	return ""
 }
 
+// jvmSubprocesses is the part of Kotlin's producers that says the JVMs a
+// test starts count too, when its harness starts them with the JaCoCo
+// agent ITOS_CC_JACOCO_AGENT names: jacococli reports the .exec files they
+// write beside the in-process report (integration-coverage-kotlin).
+// Evidence recorded before, without it, reads stale once.
+const jvmSubprocesses = "subprocesses=ITOS_CC_JACOCO_AGENT, jacococli report"
+
 // KotlinCoverageProducer is the built-in producer of Kotlin's strict
 // coverage evidence by runner (coverage.KotlinRunner): Gradle's
 // jacocoTestReport or Kover's koverXmlReport, or Maven's jacoco:report,
@@ -98,17 +105,17 @@ func TypeScriptCoverageProducer(runner string, allTests bool) string {
 func KotlinCoverageProducer(runner string, allTests bool) string {
 	switch {
 	case runner == "jacoco" && allTests:
-		return "gradle -p <module> test jacocoTestReport; scope=all-tests"
+		return "gradle -p <module> test jacocoTestReport; " + jvmSubprocesses + "; scope=all-tests"
 	case runner == "jacoco":
-		return "gradle -p <module> test --tests <reaching classes> jacocoTestReport; scope=own"
+		return "gradle -p <module> test --tests <reaching classes> jacocoTestReport; " + jvmSubprocesses + "; scope=own"
 	case runner == "kover" && allTests:
-		return "gradle -p <module> koverXmlReport; scope=all-tests"
+		return "gradle -p <module> koverXmlReport; " + jvmSubprocesses + "; scope=all-tests"
 	case runner == "kover":
-		return "gradle -p <module> test --tests <reaching classes> koverXmlReport; scope=own"
+		return "gradle -p <module> test --tests <reaching classes> koverXmlReport; " + jvmSubprocesses + "; scope=own"
 	case runner == "maven" && allTests:
-		return "mvn -q jacoco:prepare-agent test jacoco:report; scope=all-tests"
+		return "mvn -q jacoco:prepare-agent test jacoco:report; " + jvmSubprocesses + "; scope=all-tests"
 	case runner == "maven":
-		return "mvn -q jacoco:prepare-agent test jacoco:report -Dtest=<reaching classes> -Dsurefire.failIfNoSpecifiedTests=false; scope=own"
+		return "mvn -q jacoco:prepare-agent test jacoco:report -Dtest=<reaching classes> -Dsurefire.failIfNoSpecifiedTests=false; " + jvmSubprocesses + "; scope=own"
 	}
 	return ""
 }
