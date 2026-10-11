@@ -1350,13 +1350,9 @@ items:
     title: A reviewed exception can be renewed when its mutant is unchanged
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Issue #32, q-42: mutation except --renew re-points a stale exception at its function's current
-      hash when exactly one fresh site matches its original, replacement and unchanged line text and
-      that mutant survived the fresh run; every renewal reported.
     refs: ["#32"]
   - id: strict-lines-nonexecutable-changes
     title: Changed-line strictness asks no evidence of a change to no executable line
