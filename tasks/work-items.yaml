@@ -1815,3 +1815,21 @@ items:
       release workflow runs it and tools/bin/pinned still pins goreleaser; both are the template's,
       so removing or marking them should go through the template update path rather than drift
       silently.
+  - id: T-29
+    title: CI runs itos's plan with the static gates that already pass
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      First stage of the template-design refactor (q-50 to q-53). go-template-itos runs its checks
+      as a plan, itos ci run over itos.yaml's ci.steps; ours runs go vet and go test by hand. This
+      puts the plan in itos.yaml with the gates our code already passes, so none weakens later: itos
+      config check, doc-caps, gofmt over every Go folder, go build, go mod verify, go mod tidy
+      -diff, the smoke check, architecture-check (it lints its own fixture modules, not our code),
+      govulncheck and domain-coverage, run by a CI job through itos ci run. The test matrix on three
+      systems stays as it is. golangci-lint waits for the selection domain's stage, over internal/
+      alone; the scenario step for the godog harness; mutation sample and proof.code until the
+      refactor is done (q-53). itos-policy.yaml, the template's own configuration, is the source to
+      copy from.
