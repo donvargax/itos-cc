@@ -1624,7 +1624,7 @@ items:
     title: Adopt go-template-itos v0.2.0 (stack go, feature cli) with --merge
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: [T-25]
     kind: task
     why: >
