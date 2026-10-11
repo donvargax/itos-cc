@@ -1533,3 +1533,17 @@ items:
       results and runs every mutant again. git's rename detection over the working tree (or the
       snapshot's function hashes matched against a new file's) could move such a snapshot instead,
       as since-follows-renames moves one.
+  - id: T-24
+    title: Take renamed-snapshot-left-behind-fix back off a red main
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The first landing of renamed-snapshot-left-behind-fix, 7af071b (its steps) and d10838d (the
+      fix), turned main red in CI 38122696206 on ubuntu-latest and macos-latest:
+      TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork expects mutation run
+      --json without --fail-fast to give exactly files, ok, problems and schema, and the fix added
+      an "orphans" key there always. Both commits come out together, since the steps alone are red;
+      the slice relands with "orphans" there only when a run removed or a check found one.
