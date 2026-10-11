@@ -47,11 +47,6 @@ Things we noted but did not build. Rough, unordered within each group.
   `test("…")`, `it`, `should` are.
 - **EDN output** for Bob's uml-viewer, if anyone wants to feed it our
   metrics.
-- **Say what mutation check left out.** A mutant an entry records at a site
-  its unchanged function no longer holds (an operator a newer itos-cc
-  removed) is left out of check's verdict silently; a note in plain output
-  and a count in `--json` would say the entry is out of date until the next
-  `mutation run` drops it.
 
 ## Gating and debt
 
