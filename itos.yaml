@@ -77,9 +77,8 @@ ci:
   # checks of the tasks the range's commits name in their Task footers, the
   # first failure stopping the run. Taken from itos-policy.yaml, the
   # template's own plan, with the gates this code already passes; its
-  # golangci-lint step (T-31), scenario step (T-32), RAPID_CHECKS go test,
-  # mutation sample and proof (q-53) come later. The test matrix on three
-  # systems stays in ci.yml.
+  # scenario step (T-32), RAPID_CHECKS go test, mutation sample and proof
+  # (q-53) come later. The test matrix on three systems stays in ci.yml.
   steps:
     - { run: itos config check, cost: static }
     - { run: tools/bin/doc-caps, cost: static }
@@ -91,6 +90,9 @@ ci:
     - { run: go mod verify, cost: static }
     - { run: go mod tidy -diff, cost: static }
     - { run: itos tests smoke check scenario, cost: static }
+    # The pinned golangci-lint over internal/ alone, the packages laid out
+    # as decision 29 says, widening as packages move there (q-50, T-31).
+    - { run: tools/bin/pinned golangci-lint run ./internal/..., cost: static }
     # The depguard arrows of .golangci.yml over its own fixture modules, with
     # the golangci-lint tools/bin/pinned fetches and checks; not our code.
     - { run: tools/bin/architecture-check, cost: static }

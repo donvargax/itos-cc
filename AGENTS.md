@@ -97,6 +97,7 @@ CI runs its plan, `itos ci run`, on every push, in this order, stopping at the f
 - `go mod verify`
 - `go mod tidy -diff`
 - `itos tests smoke check scenario`
+- `tools/bin/pinned golangci-lint run ./internal/...`
 - `tools/bin/architecture-check`
 - The static checks of the tasks the push's commits name.
 - `go tool govulncheck -test ./...`

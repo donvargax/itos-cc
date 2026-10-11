@@ -137,9 +137,10 @@ list them exactly:
 - `gofmt` over `cmd`, `internal` and `features`, `go build`, `go vet`, `go mod verify`
   against `go.sum`, and `go mod tidy -diff` so the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.
-- golangci-lint: the standard linters plus depguard, gosec on non-test code, revive's
-  file-length limit and gochecksumtype, which refuses a type switch over a sealed set that
-  leaves a kind out, a default arm not counting.
+- golangci-lint over `internal/`, widening as packages move there (q-50): the standard
+  linters plus depguard, gosec on non-test code, revive's file-length limit and
+  gochecksumtype, which refuses a type switch over a sealed set that leaves a kind out, a
+  default arm not counting.
 - `tools/bin/architecture-check`, the self-test above.
 - `go tool govulncheck -test ./...`, covering the dependencies in use, test-only ones and
   the standard library.
