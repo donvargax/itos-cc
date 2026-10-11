@@ -1506,3 +1506,17 @@ items:
       its unchanged function no longer holds (an operator a newer itos-cc removed) is left out of
       check's verdict silently; a note in plain output and a count in --json would say the entry is
       out of date until the next mutation run drops it.
+  - id: outside-root-snapshot-orphaned
+    title: A source outside the project root gets a snapshot that a run without paths takes for an orphan
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation run on a file outside the project root writes its snapshot under .metrics/mutate at
+      the file's absolute path (project.FromRootOf returns it, and SnapshotName joins it under
+      mutate/), so the name maps back to a path under the root where nothing is. Since
+      renamed-snapshot-left-behind-fix, a later run without paths at the root takes that snapshot
+      for an orphan and removes it. Whether such files should be refused, keyed elsewhere, or kept
+      needs a decision.
