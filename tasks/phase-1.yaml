@@ -499,6 +499,27 @@
     architecture check, the pre-commit hook) is set aside by the least change that keeps the file
     the template's, and each becomes an item: wiring a gate is its own task, never weakening one.
     Mutation exceptions must not go stale on this repository.
+
+    Taken from the template's side of the conflicts, on the person's word (2026-10-11): .gitignore
+    gains /.tools/, where tools/bin/pinned downloads; ci.yml gains the itos ci range step and itos
+    verify "$FROM" "$TO" (the commit rules held in CI, not only by a local hook; a full-history
+    verify refuses e3ccc36, which a range from the last green run never reaches) and the template's
+    pinned actions/checkout v7.0.1 in place of v4.4.0 (Node 20); AGENTS.md gains the template's
+    working rules that are not about the sample app: the pointers to docs/engineering.md,
+    docs/go.md, docs/CONFIG.md and docs/CLI.md, the changes-and-commits rules (stage explicit paths,
+    gates through hooks and CI, never weakened) and the code-boundary rules (thin entry points over
+    ports, the OS as a value, no credentials, provenance kept), but not its Finishing paragraph,
+    whose local mutation proof the repository's notes forbid; README.md gains a Working here section
+    linking the adopted docs; go.mod and go.sum take the template's requirements through go mod
+    tidy. .gitattributes (eol=lf) is taken as the template has it, CI telling whether Windows tests
+    need more. CONTRIBUTORS.md drops the sentence authorizing MIT distribution, as itos-cc stays
+    AGPL-3.0 (q-47). Left for the refactor: main.go, docs/CLI.md (it lists exit 130 on interrupt
+    and shell completion under the rules not yet followed), cli.feature (the template's scenarios
+    become the kong slice's specs), the CI plan itos ci run, and release.yml, which a task after
+    this one wires. count.feature and completion.feature have their scenarios set @wip, with the
+    reason above them, so the smoke rule holds. The itos on PATH may be a newer release than the
+    pin (8.0.0-rc.5 rewrites AGENTS.md's block itself): regenerate it with the pinned 7.5.0
+    (~/.cache/itos/7.5.0/itos init --agent-rules).
   done_when:
     - run: test -f .itos-template.yaml
     - run: "grep -q 'release: v0.2.0' .itos-template.yaml"
@@ -506,3 +527,6 @@
     - run: test -z "$(ls docs/decisions | grep -E '^[0-9]{4}-' | cut -c1-4 | sort | uniq -d)"
     - run: go vet ./...
     - run: go build ./...
+    - run: grep -q '^/.tools/' .gitignore
+    - run: grep -q 'itos verify' .github/workflows/ci.yml
+    - run: "! grep -q 'MIT distribution' CONTRIBUTORS.md"
