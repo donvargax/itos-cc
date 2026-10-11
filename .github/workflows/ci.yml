@@ -1,9 +1,11 @@
 name: CI
 
-# Tests on Linux, macOS and Windows for every push and pull request. A pushed
-# vX.Y.Z tag also builds each platform on its own runner, uploads the archives
-# to a draft release, and publishes the release with checksums.txt once every
-# archive is there. A run that fails leaves a draft, which a rerun reuses.
+# Tests on Linux, macOS and Windows for every push to main and pull request.
+# A pushed vX.Y.Z tag does not test again (T-22): it requires that main's CI
+# passed on exactly the tagged commit, then builds each platform on its own
+# runner, uploads the archives to a draft release, and publishes the release
+# with checksums.txt once every archive is there. A run that fails leaves a
+# draft, which a rerun reuses.
 on:
   push:
     branches: [main]
@@ -15,6 +17,7 @@ permissions:
 
 jobs:
   test:
+    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
     strategy:
       fail-fast: false
       matrix:
@@ -93,16 +96,33 @@ jobs:
         run: go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered)$' ./cmd/itos-cc
 
   draft:
-    needs: test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       TAG: ${{ github.ref_name }}
     steps:
+      # The tagged commit was tested when it was pushed to main; testing it
+      # again proves nothing new. A tag on a commit main's CI did not pass,
+      # or never ran, cannot publish. A run still going is waited for.
+      - name: Require a green main CI run of this commit
+        run: |
+          run=$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&branch=main&event=push&per_page=1" --jq '.workflow_runs[0].id // empty')
+          if [ -z "$run" ]; then
+            echo "::error::main's CI never ran on $GITHUB_SHA; tag a commit main's CI passed"
+            exit 1
+          fi
+          gh run watch "$run" --exit-status >/dev/null || true
+          conclusion=$(gh api "repos/$GH_REPO/actions/runs/$run" --jq .conclusion)
+          if [ "$conclusion" != success ]; then
+            echo "::error::main's CI run $run on $GITHUB_SHA ended $conclusion; tag a commit main's CI passed"
+            exit 1
+          fi
+          echo "main's CI passed on $GITHUB_SHA: https://github.com/$GH_REPO/actions/runs/$run"
       - run: |
           gh release view "$TAG" >/dev/null 2>&1 ||
             gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes \
