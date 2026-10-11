@@ -1267,16 +1267,9 @@ items:
     title: Snapshot writes at the same time succeed on Windows
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was metrics-windows-concurrent-rename.
-      CI 38095077392 attempt 1 failed on windows-latest in metrics'
-      TestWritesAtTheSameTimeLeaveOneWholeSnapshot: twenty goroutines' os.Rename of their staging
-      file over .metrics/x.json got Access is denied, which Windows returns while another rename or
-      reader holds the target. A rerun passed. metrics.Write could retry a sharing-violation rename
-      briefly, as atomic-write libraries do on Windows, or the test could accept it there.
   - id: strict-lines-ts-jest-c8-inventory
     title: TypeScript files no test loads get a static line inventory under Jest and c8 too
     phase: 1
