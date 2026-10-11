@@ -1820,3 +1820,16 @@ items:
       of ci.yml now fails (itos task T-22). The ledger entry's check should follow the step to
       release.yml, or the coordinator should decide how a done task's checks follow a later task's
       move.
+  - id: release-pending-run-cancelled
+    title: A third main push while a release runs cancels the pending one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Releases share the concurrency group release with cancel-in-progress false, but GitHub keeps
+      one pending run per group: when a release is running, one is pending and a third push arrives,
+      the pending one is cancelled, so its CI run ends cancelled (red for itos ci range) though the
+      later release carries its commits. go-template-itos has the same shape. Worth deciding whether
+      to accept it, or to queue releases another way.
