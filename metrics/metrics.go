@@ -27,6 +27,13 @@ func DirOf(root string) string {
 	return filepath.Join(root, Name)
 }
 
+// osRename and osReadFile are the file operations snapshots are renamed
+// into place and read with; tests replace them.
+var (
+	osRename   = os.Rename
+	osReadFile = os.ReadFile
+)
+
 // Version is the snapshot format version every snapshot records.
 const Version = 1
 
@@ -79,7 +86,7 @@ func Read(name string, v any) (bool, error) {
 
 // ReadIn is Read of the snapshots in dir, as DirOf names it.
 func ReadIn(dir, name string, v any) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(dir, name))
+	data, err := osReadFile(filepath.Join(dir, name))
 	if os.IsNotExist(err) {
 		return false, nil
 	}

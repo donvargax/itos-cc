@@ -5,7 +5,6 @@ package metrics
 import (
 	"errors"
 	"math/rand/v2"
-	"os"
 	"syscall"
 	"time"
 )
@@ -26,8 +25,8 @@ func rename(oldpath, newpath string) error {
 	start := time.Now()
 	delay := time.Millisecond
 	for {
-		err := os.Rename(oldpath, newpath)
-		if err == nil || !transient(err) || time.Since(start) >= renameTimeout {
+		err := osRename(oldpath, newpath)
+		if err == nil || !ephemeral(err) || time.Since(start) >= renameTimeout {
 			return err
 		}
 		// A random sleep keeps writers that collided from colliding again.
@@ -36,9 +35,9 @@ func rename(oldpath, newpath string) error {
 	}
 }
 
-// transient reports whether err is one a rename on Windows gets while
+// ephemeral reports whether err is one a rename on Windows gets while
 // another process or goroutine holds the target for a moment.
-func transient(err error) bool {
+var ephemeral = func(err error) bool {
 	var errno syscall.Errno
 	if !errors.As(err, &errno) {
 		return false
