@@ -236,3 +236,5 @@ questions:
     question: "Exit 130 on Ctrl-C changes serve (0 → 130) and mutation run --count (75, count.interrupted → 130, interrupted): adopt it fully, keep --count's 75, or defer?"
   - id: q-52
     question: "The template runs scenarios with godog against the built binary; ours are prose checked by in-process Go tests: hybrid, convert everything over time, or stay with Go tests?"
+  - id: q-53
+    question: "When does changed-code mutation proof (proof.code) turn on in CI, given code a refactor moves has no mutation results until the nightly run?"
