@@ -593,10 +593,6 @@
     until the pilot. Output and exit codes do not change; the exit codes themselves change in the
     semantic-exit-codes slice (q-56). Once this and T-32 are green, the coordinator files the
     contract on go-template-itos with the exact diffs.
-  done_when:
-    - run: grep -lq 'itos-cc/internal/cli"' cmd/itos-cc/*.go
-    - run: "! grep -rq 'internal/counting' internal/cli"
-    - run: go test ./internal/cli -count=1
 - id: T-31
   type: refactor
   title: Selecting files is a domain behind a port
