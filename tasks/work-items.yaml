@@ -1722,3 +1722,17 @@ items:
       scenarios moved to them), the t.Skip removed, and itos.yaml's tests.scenario given the
       template's run selection so itos ci run can run them; a gate of its own, never weakened to
       pass.
+  - id: template-main-tests
+    title: Restore the template's cmd/itos-cc/main_test.go with the port of its main.go
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-26]
+    kind: idea
+    why: >
+      Set aside by T-26. go-template-itos v0.2.0 brought cmd/itos-cc/main_test.go, the template's
+      tests of the template's main.go (its logger, wantsJSON, run and commandName). itos-cc's
+      main.go stays its own until the refactor ports the template's CLI (template-adoption), so the
+      file cannot compile beside it and carries a //go:build ignore constraint with the reason above
+      it. When the port brings the template's main.go, the constraint goes, the tests run, and
+      go.mod takes back golang.org/x/term, which go mod tidy dropped while no built file imports it.
