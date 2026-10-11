@@ -1445,3 +1445,16 @@ items:
       in-process data files (coverage combine into the run's own data file) before the report would
       measure such projects; with patch = subprocess the project's own subprocess data would then
       count as in-process.
+  - id: python-subprocess-reach
+    title: A Python test that reaches code only through a subprocess counts among its own tests
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Own-scope Python runs a file's mutants with the test files whose imports reach it
+      (graph.TestsImporting), so a test that runs cli.py in a subprocess reaches nothing and its
+      kills need --all-tests, though integration coverage now measures what the subprocess ran. The
+      per-test integration data (which test files' subprocesses executed a file) could add those
+      test files to the file's own tests, as listed tests do, without --all-tests.
