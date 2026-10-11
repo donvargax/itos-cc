@@ -1531,3 +1531,16 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: renamed-orphan-kept-fix
+    title: A snapshot whose file git shows renamed is kept for the run that follows the rename
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      Since renamed-snapshot-left-behind-fix (5055946, unreleased), a run whose paths cover a
+      renamed file's old path but not its new one, or a run before the rename is committed, removes
+      the old snapshot as an orphan, so the --since run that would have moved it to the new path
+      finds nothing, and the file's unchanged functions lose their results until a full run. Before,
+      the snapshot stayed until a --since run followed the rename. Blocks v0.13.0.
