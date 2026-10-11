@@ -1929,3 +1929,15 @@ items:
       exits 70 and asks the user to report a bug. The selection port now names this case as
       Unwalkable, and its classifier keeps the old 70 so that T-31 changes no output. Exit 3, with a
       rule and a fix that name the directory, is a behaviour change that needs a scenario.
+  - id: lang-root-through-port
+    title: lang finds a namespace's project root and go.mod on disk itself
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The units slice reads sources through the selection port, but lang.UnitsOf still stats root
+      markers (FindUp), reads go.mod and calls os.Getwd to name a unit's namespace, so a slice that
+      uses it does I/O behind its port. A namespace domain fed through the Tree port would make the
+      slice's work testable with the fake alone.
