@@ -146,6 +146,10 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 		return nil
 	})
 	sc.Step(`^an empty folder "([^"]*)"$`, w.emptyFolder)
+
+	// The steps of each converted feature file, after the world's, so a
+	// file's own Before runs in the scratch folder made above.
+	unitSteps(sc, w)
 }
 
 // setUp makes the scenario's scratch folder.

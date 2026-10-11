@@ -38,6 +38,19 @@ binary's open stdin than any pipe holds unread, so the write returns only once t
 reading, its interrupt handling already in place; no sleep guesses when. A run the interrupt
 killed by the system's default action fails the step: it never handled the interrupt.
 
+## Which files run
+
+The harness runs the feature files that have steps, the ones `converted` lists in
+`features_test.go`: `units.feature`, and `count.feature`, the template's sample, all of whose
+scenarios are `@wip`. Every other file converts to godog over time, each with the command that
+moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests of `cmd/itos-cc`
+hold its scenarios. A selection that names a scenario of such a file, as the smoke set does for
+every file, logs it as not run here and runs the rest; one that names nothing a converted file
+holds fails, as one matching no tag does.
+
+A `units.feature` scenario runs in a sample project of TypeScript and Python, production code and
+tests, unless it writes files of its own and lists those alone.
+
 ## Running them
 
 ```sh
@@ -129,3 +142,29 @@ with the program named as the built binary is.
 | `the file "…" holds a line of <n> characters`                                         | A file written for the scenario, long enough to beat a token limit. |
 | `standard input holds "…"`                                                            | The text the run reads from its standard input.                   |
 | `an empty folder "…"`                                                                 | A folder in the scratch directory.                                |
+
+`units.feature`'s steps, in `units_test.go`:
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `I run "itos-cc …"`                                                                   | Runs the binary in the scratch folder with those words.          |
+| `I run "itos-cc …" from that directory`                                               | The same, in the folder a Given made outside every project.      |
+| `stdout lists each unit as "file:start-end  namespace#name  kind"`                    | Units are listed, each line of that form.                        |
+| `stdout is one object with "schema": 1, "ok", and "…"`                                | One JSON value, an object with those keys.                        |
+| `each unit has …`                                                                     | Each listed unit has every key named.                             |
+| `only units from test files are listed`                                               | Units are listed, each in a test file of the sample project.     |
+| `the selection holds no supported files`                                              | The scratch folder holds only files of no supported language.    |
+| `"units" is an empty list`                                                            | `[]`, never `null`.                                               |
+| `the file "…":` with its text, `… with a component that returns JSX`, `… defining "…"` | Writes the file a scenario lists.                                 |
+| `its units are listed` / `the units of … are listed`                                  | Runs `units --json` over that file.                               |
+| `the units are:` with a table                                                         | Exactly the table's units, in order: kind, namespace, name, lines, private. |
+| `the unit is "…"` / `the component "…" is a unit`                                     | One unit, that one; or that one among them.                       |
+| `nested arrow functions, callbacks, and abstract methods are not units`               | No unit starts on a line of the file declaring one the listing leaves out. |
+| `… on any object are routes`                                                          | Each method, called on an object of its own with a path, is a route unit. |
+| `a route's complexity, mutation sites, duplication, coverage, and hash are its own, not mount's` | A branch added to a mounted route changes its crap complexity, mutation list sites, dry nodes and snapshot hash, and none of mount's; mount is wholly covered though its routes' bodies never ran. |
+| `the line a route starts on is mount's, since mounting runs it`                       | That line run leaves the route uncovered; not run, mount is not wholly covered. |
+| `test files have no route units`                                                      | The same file as a test file lists units, none a route.          |
+| `a Kotlin class annotated with both @Configuration and @EnableWebSecurity` / `its method is a unit of that class` | The class's method is a method unit of the class.     |
+| `the Go module "…" with package "…"`                                                  | Writes its go.mod and the package's board.go.                    |
+| `x.ts declares function place, in a directory with no package.json, go.mod or .git in it or above it` | A folder outside every project; skipped where a marker is above the temporary directory. |
+| `it is "…" from a copy of that directory at another path`                             | The same command in a copy lists that unit alone.                 |

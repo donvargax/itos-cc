@@ -16,6 +16,13 @@
 // (itos.yaml's tests.scenario.run), so -scenarios takes that expression and
 // is turned here into godog's filter. A scenario tagged @wip never runs.
 //
+// Only the feature files in converted run here: those whose scenarios have
+// steps (q-52). The others are converted over time, each with the command
+// that moves onto kong, and until then their scenarios are held by the Go
+// tests of cmd/itos-cc; a selection naming one of theirs logs it as not run
+// here, and a selection naming nothing else fails, as one matching no tag
+// does.
+//
 // The scenarios run itos-cc as another process, where Go records
 // coverage only for a binary built with -cover and run with GOCOVERDIR naming
 // an existing folder (go.dev/doc/build-cover); go test's own -cover sees none
@@ -42,6 +49,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -68,14 +76,20 @@ const (
 	commitSymbol  = "github.com/donvargax/itos-cc/internal/version.commit"
 )
 
+// converted are the feature files this harness runs, those whose scenarios
+// have steps: count.feature, the template's sample, every scenario of it
+// @wip (T-26), and units.feature, the first command moved onto kong (T-32).
+// A command that moves converts its own file and adds it here, its scenarios'
+// text unchanged (q-52).
+var converted = []string{"count.feature", "units.feature"}
+
 func TestFeatures(t *testing.T) {
-	// Set aside (T-26): itos-cc's feature files have no godog steps yet, so the
-	// harness, run over them, could only fail. Wiring it is the work item
-	// godog-harness, which takes this line away.
-	t.Skip("set aside until itos-cc's feature files have godog steps (godog-harness)")
-	filter, err := tagFilter(*scenarios, ".")
+	filter, unconverted, err := tagFilter(*scenarios, ".")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(unconverted) > 0 {
+		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(unconverted, " "))
 	}
 	t.Cleanup(removeCallerPath)
 	root, err := moduleRoot()
@@ -91,7 +105,7 @@ func TestFeatures(t *testing.T) {
 		ScenarioInitializer: func(sc *godog.ScenarioContext) { initializeScenario(sc, root, bin) },
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    []string{"."},
+			Paths:    converted,
 			Tags:     filter,
 			Strict:   true,
 			TestingT: t,
@@ -127,20 +141,26 @@ func build(root, dir string) (string, error) {
 	return bin, nil
 }
 
-// godog's tag filter for a selection: every live scenario without one, else
-// the live scenarios carrying a tag the expression matches. An expression
-// that matches no tag is an error, so a selection never runs nothing.
-func tagFilter(selection, dir string) (string, error) {
+// godog's tag filter for a selection: every live scenario of the converted
+// files without one, else the live scenarios of the converted files carrying
+// a tag the expression matches, with the tags it matches only in other
+// files, which this harness does not run. An expression that matches no tag
+// of a converted file is an error, so a selection never runs nothing.
+func tagFilter(selection, dir string) (filter string, unconverted []string, err error) {
 	if selection == "" {
-		return "~@wip", nil
+		return "~@wip", nil, nil
 	}
 	pattern, err := regexp.Compile(selection)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	tags, err := featureTags(dir)
+	var files []string
+	for _, name := range converted {
+		files = append(files, filepath.Join(dir, name))
+	}
+	tags, err := featureTags(files)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	var each []string
 	for _, tag := range tags {
@@ -148,24 +168,40 @@ func tagFilter(selection, dir string) (string, error) {
 			each = append(each, tag+"&&~@wip")
 		}
 	}
-	if len(each) == 0 {
-		return "", &noMatch{selection}
+	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
+	if err != nil {
+		return "", nil, err
 	}
-	return strings.Join(each, ","), nil
+	everyTag, err := featureTags(all)
+	if err != nil {
+		return "", nil, err
+	}
+	for _, tag := range everyTag {
+		if pattern.MatchString(tag) && !slices.Contains(tags, tag) {
+			unconverted = append(unconverted, tag)
+		}
+	}
+	if len(each) == 0 {
+		return "", unconverted, &noMatch{selection, unconverted}
+	}
+	return strings.Join(each, ","), unconverted, nil
 }
 
-type noMatch struct{ selection string }
+type noMatch struct {
+	selection   string
+	unconverted []string
+}
 
 func (e *noMatch) Error() string {
+	if len(e.unconverted) > 0 {
+		return "no scenario this harness runs has a tag that " + e.selection + " matches: " +
+			strings.Join(e.unconverted, " ") + " are in feature files with no steps yet (q-52), held by cmd/itos-cc's Go tests"
+	}
 	return "no scenario has a tag that " + e.selection + " matches"
 }
 
-// Every tag written in the feature files under dir, once each, sorted.
-func featureTags(dir string) ([]string, error) {
-	files, err := filepath.Glob(filepath.Join(dir, "*.feature"))
-	if err != nil {
-		return nil, err
-	}
+// Every tag written in files, once each, sorted.
+func featureTags(files []string) ([]string, error) {
 	seen := map[string]bool{}
 	for _, file := range files {
 		f, err := os.Open(file)
