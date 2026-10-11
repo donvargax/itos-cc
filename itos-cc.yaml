@@ -16,14 +16,6 @@ mutation:
     #   original: '>'
     #   replacement: '>='
     #   reason: run replaces an empty line with --help before this comparison, so len(args) is never 0 here and > and >= both hold.
-    - file: internal/cli/cli.go
-      function: github.com/donvargax/itos-cc/internal/cli#report
-      hash: 8e5da9179eefceb3
-      line_in_function: 3
-      column: 10
-      original: "0"
-      replacement: "1"
-      reason: report seeds the code and raises it with max over the leaves; classify returns 2, 3, 70 or 130 for every leaf it is given and leaves is never empty, so every read of the result is a leaf's code and 0 and 1 seed the same value.
     - file: internal/release/build.go
       function: github.com/donvargax/itos-cc/internal/release#extract
       hash: 6e51bcbcdcf402f5
