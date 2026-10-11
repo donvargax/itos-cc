@@ -30,5 +30,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0024: Tests reach files through the full transitive import closure in TypeScript, Python and Kotlin](0024-tests-reach-files-through-the-full-transitive-import-closure-in-typescript-python-and-kotlin.md)
 - [ADR-0025: Strict line coverage for TypeScript, Python and Kotlin counts partly executed lines as covered and refuses out-of-root scopes](0025-strict-line-coverage-for-typescript-python-and-kotlin-counts-partly-executed-lines-as-covered-and-refuses-out-of-root-scopes.md)
 - [ADR-0026: Child-process and per-test coverage use each project's own installed collectors, never downloaded](0026-child-process-and-per-test-coverage-use-each-project-s-own-installed-collectors-never-downloaded.md)
+- [ADR-0027: Python and TypeScript measure the processes tests start automatically; Kotlin opts in](0027-python-and-typescript-measure-the-processes-tests-start-automatically-kotlin-opts-in.md)
 
 <!-- itos:decisions:end -->
