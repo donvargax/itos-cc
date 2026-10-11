@@ -431,7 +431,7 @@
     message when there is none, so an untested commit still cannot publish. Pull requests and main
     pushes are unchanged.
   done_when:
-    - run: grep -q 'Require a green main CI run of this commit' .github/workflows/ci.yml
+    - run: grep -q 'Require a green main CI run of this commit' .github/workflows/release.yml
     - run: "grep -q 'actions: read' .github/workflows/ci.yml"
 - id: T-23
   type: test
