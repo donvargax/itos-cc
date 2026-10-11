@@ -195,3 +195,5 @@ questions:
   - id: q-42
     question: "#32: carry a reviewed exception across a change that leaves its mutant unchanged? Recommend mutation except --renew: after mutation run, re-point each stale exception at its function's current hash when the function still has a site with the same original and replacement at the same position relative to the function AND that mutant survived the fresh run; keep the reason; report every renewal (old hash, new hash, site) and every exception it could not match or whose mutant is now killed. Useful beyond templates: renames, literal or comment edits, reformatting, unrelated lines added to the function."
     answer: "As recommended, with both guards (survived the fresh run; every renewal reported), 2026-10-11."
+  - id: q-43
+    question: "#33: with --since and --fail-uncovered, judge whole touched functions or only the changed lines? Recommend --fail-uncovered=lines: with --since, judge and report only the executable blocks or lines that overlap the diff hunks, in complete, counted and check, for every language; plain --fail-uncovered (=functions) keeps ADR-0017's whole functions."
