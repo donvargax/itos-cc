@@ -221,6 +221,10 @@ func checkCompletedExitPrecedesLaterCancellation(t *testing.T) {
 func checkCleanupFailureIsReturnedNotJudged(t *testing.T) {
 	t.Helper()
 	t.Setenv(runnerFixtureMode, "success")
+	// Under go test -race the helper would sleep a second as it exits
+	// (atexit_sleep_ms), racing the one-second mutant timeout: the check is
+	// of the cleanup failure, not of a timeout.
+	t.Setenv("GORACE", strings.TrimSpace(os.Getenv("GORACE")+" atexit_sleep_ms=0"))
 	w := newCommandRunnerWorker(t)
 	cleanupErr := fmt.Errorf("injected cleanup failure")
 	w.runner.lifecycle.wait = func(_ context.Context, cmd *exec.Cmd) error {
@@ -337,7 +341,7 @@ func TestOwnershipFixtureHelper(t *testing.T) {
 		if err := grandchild.Start(); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(os.Getenv(ownershipGrandEnv), []byte(strconv.Itoa(grandchild.Process.Pid)), 0o600); err != nil {
+		if err := writePIDFile(os.Getenv(ownershipGrandEnv), grandchild.Process.Pid); err != nil {
 			t.Fatal(err)
 		}
 		_ = grandchild.Process.Release()
@@ -366,19 +370,19 @@ func TestOwnershipFixtureHelper(t *testing.T) {
 		if err := child.Start(); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(os.Getenv(ownershipChildEnv), []byte(strconv.Itoa(child.Process.Pid)), 0o600); err != nil {
+		if err := writePIDFile(os.Getenv(ownershipChildEnv), child.Process.Pid); err != nil {
 			t.Fatal(err)
 		}
 		_ = child.Process.Release()
+		// The grandchild's pid, whole: returning before the child wrote it
+		// would have cleanup stop the child first, leaving the test no pid
+		// to check.
 		grandchildDeadline := time.Now().Add(2 * time.Second)
-		for time.Now().Before(grandchildDeadline) {
-			if _, err := os.Stat(os.Getenv(ownershipGrandEnv)); err == nil {
-				break
-			}
+		for time.Now().Before(grandchildDeadline) && !pidWritten(os.Getenv(ownershipGrandEnv)) {
 			time.Sleep(5 * time.Millisecond)
 		}
-		if _, err := os.Stat(os.Getenv(ownershipGrandEnv)); err != nil {
-			t.Fatalf("grandchild did not start: %v", err)
+		if !pidWritten(os.Getenv(ownershipGrandEnv)) {
+			t.Fatalf("grandchild did not start: no pid in %s", os.Getenv(ownershipGrandEnv))
 		}
 		if started := os.Getenv(runnerStartedPathEnv); started != "" {
 			if err := os.WriteFile(started, []byte("started"), 0o600); err != nil {
@@ -403,6 +407,26 @@ func TestOwnershipFixtureHelper(t *testing.T) {
 
 func ownershipHelperArgs() []string {
 	return []string{os.Args[0], "-test.run=^TestOwnershipFixtureHelper$"}
+}
+
+// writePIDFile writes pid to path whole: to a file beside it, renamed
+// into place, so a reader never sees it empty or partly written.
+func writePIDFile(path string, pid int) error {
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, []byte(strconv.Itoa(pid)), 0o600); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
+}
+
+// pidWritten says whether the file at path holds a whole pid.
+func pidWritten(path string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	return err == nil && pid > 0
 }
 
 func readPID(t *testing.T, path string) int {
