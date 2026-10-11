@@ -1482,15 +1482,9 @@ items:
     title: mutation check says what it left out
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was check-left-out-note.
-      Found by check-removed-operator-sites-fix (2026-10-11): a mutant an entry records at a site
-      its unchanged function no longer holds (an operator a newer itos-cc removed) is left out of
-      check's verdict silently; a note in plain output and a count in --json would say the entry is
-      out of date until the next mutation run drops it.
   - id: outside-root-snapshot-kept-fix
     title: A snapshot of a file outside the project root is no orphan while its file exists
     phase: 1
