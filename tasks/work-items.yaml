@@ -606,15 +606,9 @@ items:
     title: "Each GitHub release carries notes: what changed and what a user must change"
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Issue #17: releases v0.2.0 to v0.5.0 carry only the experimental line, so a user upgrading
-      reads the compare view. The coordinator has written notes for v0.5.0 and v0.6.0 in the clone;
-      they could be published on the releases (v0.5.0 backfilled), and the release workflow could
-      take them from the tag's message or a file, so every release has them, with an upgrading
-      section as itos's have.
     refs: ["#17"]
   - id: other-os-code
     title: Code only another OS builds or runs is not judged uncovered on this one
