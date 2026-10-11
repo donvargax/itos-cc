@@ -2201,6 +2201,74 @@ Feature: Mutation testing
       And with mutation.tests listing two tests that run different branches, each line is covered by the IDs of the tests that reached it
       But a test that starts its JVM without the agent leaves those lines uncovered, as before
 
+  # Bug fixes before the CLI-guidance refactor (coordinator's routine
+  # calls, 2026-10-11, each from the precedent named):
+  # - unreached-baseline-not-run: a baseline that never ran is "not-run",
+  #   as fail-fast already reports one, never "passed".
+  # - counted-unreached-listed: a counted run judges a file no own test
+  #   reaches by the listed tests that reach its lines, as a complete run
+  #   does, instead of failing for a clean baseline it never needed.
+  # - python-parallel-data: a project whose coverage.py config writes
+  #   parallel data files (parallel = true, or patch = subprocess) is
+  #   measured: itos-cc combines the run's in-process data files before it
+  #   reports them, as it combines the subprocess ones.
+  # - mutate-workers-abandoned: worker copies a killed mutation run left in
+  #   the temporary directory are removed by a later run, as coverage
+  #   removes abandoned run- directories, never one still in use.
+  # - check-removed-operator-sites: the reverse of ID-MUT-106. A recorded
+  #   mutant whose site the function no longer holds, as when a newer
+  #   itos-cc removes an operator, is not in the code: mutation check
+  #   leaves it out of the verdict, and mutation run drops it from the
+  #   entry, reusing the rest.
+  # - renamed-snapshot-left-behind: a snapshot whose source file is gone
+  #   is an orphan; a mutation run removes the orphans under the paths it
+  #   was given, and mutation check names them, never as a function result.
+  Rule: Mutation results say what happened, and leave nothing stale behind
+
+    @wip @unreached-baseline-not-run-fix @ID-MUT-231
+    Scenario: A file no test reaches reports its baseline as not run
+      Given a Python project with a file no test reaches
+      When I run "itos-cc mutation run --json" for that file
+      Then its "baseline" is "not-run" and its mutants are uncovered
+      And a file whose tests ran reports its baseline as "passed", as before
+
+    @wip @counted-unreached-listed-fix @ID-MUT-232
+    Scenario: A counted run judges an unreached file by the listed tests that reach it
+      Given a committed Python project whose file no own test reaches, but a listed test reaches one of its lines and kills its mutant
+      When a count-one run judges that file
+      Then its mutant is judged by the listed test and killed, as a complete run judges it
+      And no "no clean baseline was prepared" problem is reported
+
+    @wip @python-parallel-data-fix @ID-MUT-233
+    Scenario: A Python project that writes parallel coverage data is measured
+      Given a Python project whose coverage.py configuration sets parallel = true, with a test that kills its mutant
+      When I run "itos-cc mutation run --json" for its file
+      Then its coverage is measured, not "coverage.measured-nothing", and its mutant is killed
+      And nothing of the run's data files is left in the project's tree
+
+    @wip @mutate-workers-abandoned-fix @ID-MUT-234
+    Scenario: A later run removes the worker copies a killed run left behind
+      Given worker copies a mutation run left in the temporary directory when it was killed
+      And worker copies of a mutation run still going
+      When I run "itos-cc mutation run" for a file
+      Then the killed run's worker copies are removed
+      And the running one's are left alone
+
+    @wip @check-removed-operator-sites-fix @ID-MUT-235
+    Scenario: A recorded mutant whose site is gone is left out
+      Given fresh results for "Board#place" that record a surviving mutant at a site the function no longer holds, as when a newer itos-cc removes an operator, and every other mutant killed
+      When I run "itos-cc mutation check src/board.ts"
+      Then no "mutation.survived" is reported for that mutant, and the exit code is 0
+      And "itos-cc mutation run src/board.ts" runs no mutant, and rewrites the entry without it
+
+    @wip @renamed-snapshot-left-behind-fix @ID-MUT-236
+    Scenario: A snapshot whose source file is gone is removed by the next run over its directory
+      Given a snapshot under .metrics/mutate for src/old.ts, a file that no longer exists
+      When I run "itos-cc mutation check src"
+      Then it names the orphaned snapshot, without failing any function for it
+      When I run "itos-cc mutation run src"
+      Then the orphaned snapshot is removed, and the snapshots of files that exist are kept
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
