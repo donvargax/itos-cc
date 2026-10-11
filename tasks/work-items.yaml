@@ -1828,8 +1828,8 @@ items:
   - id: T-30
     title: "internal/cli is itos-cc's UI: problems, exit codes and JSON"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-29]
     kind: task
     why: >
