@@ -232,3 +232,5 @@ questions:
     answer: "Staged, as recommended, 2026-10-11."
   - id: q-50
     question: "Should the top-level packages (mutate, coverage, project, lang, crap, dry, …) move under internal/ as each becomes a domain or an adapter in the template-design refactor?"
+  - id: q-51
+    question: "Exit 130 on Ctrl-C changes serve (0 → 130) and mutation run --count (75, count.interrupted → 130, interrupted): adopt it fully, keep --count's 75, or defer?"
