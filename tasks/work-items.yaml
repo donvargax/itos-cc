@@ -1318,7 +1318,7 @@ items:
     title: Snapshot file operations go through replaceable seams
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
