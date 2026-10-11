@@ -648,9 +648,13 @@
     value, expected type), a value outside its enum (allowed values), missing required flags,
     missing positional arguments, a missing command (candidates), xor conflicts and and-groups
     (flags); errors in an app's own declarations stay strings. kong's own tests pass, with a test
-    for each type. go.mod replaces github.com/alecthomas/kong with the fork at a pinned commit. Once
-    the pilot (T-32) proves it, a PR goes to alecthomas/kong disclosing AI assistance, with the
-    person's review first, and the replace goes when a kong release carries the types.
+    for each type. The fork's own module path is github.com/donvargax/kong, which itos-cc imports
+    at a pinned version, never through a replace: go install refuses a module whose go.mod has one,
+    and the README installs itos-cc with go install. The PR goes from a branch of the fork that keeps
+    kong's module path: once the pilot (T-32) proves the types, to alecthomas/kong, disclosing AI
+    assistance, after the person's review; when a kong release carries them, itos-cc imports kong
+    again. Nothing that needs the fork goes into the go-template-itos issue until then.
   done_when:
-    - run: grep -q 'github.com/alecthomas/kong => github.com/donvargax/kong' go.mod
+    - run: grep -q 'github.com/donvargax/kong ' go.mod
+    - run: "! grep -q '^replace' go.mod"
     - run: go build ./...
