@@ -4,18 +4,21 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/mutate"
 )
 
-// The scenario of "Rule: Mutation results say what happened, and leave
+// The scenarios of "Rule: Mutation results say what happened, and leave
 // nothing stale behind" in features/mutate.feature that the
-// renamed-snapshot-left-behind-fix slice holds. It uses the module of
-// mutate_since_test.go with killedTests, and writes beside src/board.go's
-// snapshot raw ones of TypeScript files that are gone, so no Node is
-// needed: the orphan names no file of the module's language.
+// renamed-snapshot-left-behind-fix and outside-root-snapshot-kept-fix
+// slices hold. They use the module of mutate_since_test.go with
+// killedTests. The first writes beside src/board.go's snapshot raw ones of
+// TypeScript files that are gone, so no Node is needed: the orphan names
+// no file of the module's language. The second runs a copy of the module
+// outside the project root.
 
 // orphanSnapshot is a raw snapshot of the TypeScript file at rel that
 // records a survivor, so judging it as a function would fail.
@@ -150,5 +153,59 @@ func TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory(t *test
 	}
 	if !snapshotThere(t, board) {
 		t.Errorf("mutation run removed %s, a snapshot whose file exists", board)
+	}
+}
+
+// @ID-MUT-237
+func TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists(t *testing.T) {
+	t.Parallel()
+	boardRepo(t, killedTests)
+	outside := t.TempDir()
+	for name, text := range boardFiles {
+		writeFile(t, filepath.Join(outside, filepath.FromSlash(name)), text)
+	}
+	for name, text := range killedTests {
+		writeFile(t, filepath.Join(outside, filepath.FromSlash(name)), text)
+	}
+	file := filepath.Join(outside, boardSource)
+	// The run names the file by its absolute path (project.FromRootOf), so
+	// its snapshot is .metrics/mutate/<absolute path>.json.
+	snapshot := filepath.ToSlash(filepath.Join(".metrics", mutate.SnapshotName(filepath.ToSlash(file))))
+	if runtime.GOOS == "windows" {
+		// A drive's colon is no part of a directory's name on Windows, so
+		// no snapshot can sit at that name there.
+		if err := os.MkdirAll(filepath.Dir(inWD(t, filepath.FromSlash(snapshot))), 0o755); err != nil {
+			t.Skipf("no snapshot can be named %s here: %v", snapshot, err)
+		}
+	}
+
+	// Given a snapshot that mutation run wrote for a file outside the
+	// project root, which still exists.
+	if o := mutateRun(t, file); o.code != 0 {
+		t.Fatalf("mutation run %s: exit %d, want every mutant killed\n%s%s", file, o.code, o.stdout, o.stderr)
+	}
+	if snap, err := mutate.LoadSnapshotOf(wd(t), filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
+		t.Fatalf("the snapshot of %s after its run: %v, %v, want one at %s", file, snap, err, snapshot)
+	}
+
+	// mutation check at the project root names no orphan.
+	o := mutationCheck(t, "--json")
+	if got := o.orphansOf(t); got != nil {
+		t.Errorf("mutation check: \"orphans\" %v, want the key missing: the snapshot's file exists\n%s", *got, o.stdout)
+	}
+	if o = mutationCheck(t); strings.Contains(o.stdout, snapshot) {
+		t.Errorf("mutation check names %s, want no orphan named\n%s", snapshot, o.stdout)
+	}
+
+	// mutation run at the project root keeps that snapshot.
+	o = mutateRun(t, "--json")
+	if o.code != 0 {
+		t.Errorf("mutation run: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
+	}
+	if got := o.orphansOf(t); got != nil {
+		t.Errorf("mutation run: \"orphans\" %v, want the key missing: the snapshot's file exists\n%s", *got, o.stdout)
+	}
+	if !snapshotThere(t, snapshot) {
+		t.Errorf("after mutation run at the project root, %s is gone, want the snapshot of a file that exists kept", snapshot)
 	}
 }
