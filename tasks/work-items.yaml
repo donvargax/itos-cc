@@ -1501,3 +1501,19 @@ items:
       TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback/captured_group_only parsed an empty
       grandchild.pid (strconv.Atoi: parsing ""), read before the fixture wrote it. The test should
       wait for the file's complete content, as other ownership tests poll for their markers.
+  - id: T-23
+    title: The macOS pid-file and race-build cleanup tests are deterministic
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Two flaky tests in mutate:
+      TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback/captured_group_only read an empty
+      grandchild.pid on macos-latest (main CI 38105144703, af4646f) before the fixture wrote it; and
+      TestLinuxCleanupFailureIsReturnedNotJudged fails every time under go test -race, since the
+      race runtime's one-second exit sleep (atexit_sleep_ms) outlasts the test's one-second mutant
+      timeout (idea race-cleanup-timeout). Tests only: wait for the pid file's complete content;
+      give the re-executed helper GORACE=atexit_sleep_ms=0 or a timeout that does not race the exit
+      sleep.

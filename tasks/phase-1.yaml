@@ -433,3 +433,19 @@
   done_when:
     - run: grep -q 'Require a green main CI run of this commit' .github/workflows/ci.yml
     - run: "grep -q 'actions: read' .github/workflows/ci.yml"
+- id: T-23
+  type: test
+  title: The macOS pid-file and race-build cleanup tests are deterministic
+  why: >
+    Two flaky tests in mutate:
+    TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback/captured_group_only read an empty
+    grandchild.pid on macos-latest (main CI 38105144703, af4646f) before the fixture wrote it; and
+    TestLinuxCleanupFailureIsReturnedNotJudged fails every time under go test -race, since the race
+    runtime's one-second exit sleep (atexit_sleep_ms) outlasts the test's one-second mutant timeout
+    (idea race-cleanup-timeout). Tests only: wait for the pid file's complete content; give the
+    re-executed helper GORACE=atexit_sleep_ms=0 or a timeout that does not race the exit sleep.
+  done_when:
+    - run: go vet ./mutate
+    - run: go test -count=3 -run 'TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback|TestLinuxCleanupFailureIsReturnedNotJudged' ./mutate
+    - run: go test -race -count=1 -run 'TestLinuxCleanupFailureIsReturnedNotJudged' ./mutate
+      timeout: 600
