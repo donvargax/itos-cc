@@ -1520,3 +1520,16 @@ items:
       renamed-snapshot-left-behind-fix, a later run without paths at the root takes that snapshot
       for an orphan and removes it. Whether such files should be refused, keyed elsewhere, or kept
       needs a decision.
+  - id: orphan-follows-worktree-rename
+    title: An orphan's results could follow a rename the working tree shows, not only one a --since range does
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since renamed-snapshot-left-behind-fix, a snapshot whose file is gone is removed by the next
+      run over its directory, so a file renamed without a --since run over its new path loses its
+      results and runs every mutant again. git's rename detection over the working tree (or the
+      snapshot's function hashes matched against a new file's) could move such a snapshot instead,
+      as since-follows-renames moves one.
