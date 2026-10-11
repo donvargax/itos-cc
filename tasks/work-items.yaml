@@ -1833,3 +1833,17 @@ items:
       the pending one is cancelled, so its CI run ends cancelled (red for itos ci range) though the
       later release carries its commits. go-template-itos has the same shape. Worth deciding whether
       to accept it, or to queue releases another way.
+  - id: goreleaser-config-unused
+    title: Drop or mark the unused .goreleaser.yaml and its pinned GoReleaser
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-28 builds every archive natively, because itos-cc links tree-sitter through cgo and
+      GoReleaser's open-source edition can neither cross-build it with CGO_ENABLED=0 nor pack
+      binaries it did not build (prebuilt and split/merge are Pro). .goreleaser.yaml still says the
+      release workflow runs it and tools/bin/pinned still pins goreleaser; both are the template's,
+      so removing or marking them should go through the template update path rather than drift
+      silently.
