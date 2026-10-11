@@ -1309,3 +1309,18 @@ items:
       execution-data file, or JaCoCo's CLI report over the compiled classes, would list them without
       running a test.
     refs: ["#23"]
+  - id: kotlin-coverage-module-closure
+    title: Kotlin line evidence rests on the module and the modules it depends on, not the whole build
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      strict-lines-kotlin fingerprints the whole Gradle build root or Maven reactor, every module
+      included, so an edit in any module stales every strict Kotlin function's evidence in the
+      build. Binding a module's evidence to its own sources and tests, the modules its build depends
+      on, and the build scripts that configure them would keep unrelated modules' edits from staling
+      it, at the cost of reading the dependency graph from the build (offline gradle or mvn
+      dependency output, or a settings and build-script parse).
+    refs: ["#23"]
