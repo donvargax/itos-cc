@@ -2255,6 +2255,14 @@ Feature: Mutation testing
   #   where it said "passed". Files sharing a command (a Go package's)
   #   share its baseline: one ran for any of them is "passed" for all.
   #   Snapshots record no baseline, so nothing reads stale.
+  # - check-left-out-note (coordinator's call): mutation check says what
+  #   ID-MUT-235 leaves out. A function whose fresh entry records mutants at
+  #   sites it no longer holds gets, in plain output, a line "left out
+  #   <file>:<line> in <namespace#name>: <n> recorded mutants at sites gone,
+  #   which the next mutation run drops", and in --json "left_out": <n> in
+  #   its "functions" entry, present only when n > 0 so output without one
+  #   keeps its keys (the "orphans" precedent). It is a note, not a
+  #   problem: it changes no verdict and no exit code.
   Rule: Mutation results say what happened, and leave nothing stale behind
 
     @unreached-baseline-not-run-fix @ID-MUT-231
@@ -2331,6 +2339,14 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --json" for that file
       Then its "baseline" is "not-run", and it ran no mutant
       And after an edit to one of its functions, the next run reports its "baseline" as "passed"
+
+    @check-left-out-count @ID-MUT-241 @wip
+    Scenario: mutation check says how many recorded mutants it left out
+      Given fresh results for "Board#place" that record a killed mutant at a site the function no longer holds, and every other mutant killed
+      When I run "itos-cc mutation check src/board.ts --json"
+      Then the "functions" entry of "Board#place" has "left_out" 1, and no other function has "left_out"
+      And the exit code is 0
+      And "itos-cc mutation check src/board.ts" prints a "left out" line naming "Board#place" and 1 mutant
 
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
