@@ -1453,3 +1453,17 @@ items:
       kills need --all-tests, though integration coverage now measures what the subprocess ran. The
       per-test integration data (which test files' subprocesses executed a file) could add those
       test files to the file's own tests, as listed tests do, without --all-tests.
+  - id: typescript-integration-jest
+    title: Prove Jest's integration coverage with a real Jest
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      integration-coverage-typescript measures the Node processes Jest tests start, as it does
+      Vitest's, and drops the V8 coverage of processes that loaded Jest's own modules (jest/,
+      jest-*, @jest/), but only Vitest is installed in testdata/tools/node, so Jest's workers and
+      its child processes were checked by unit tests of synthetic raw files alone. Pinning Jest
+      there and running the scenario of ID-MUT-229 under it would prove the filter and the c8 report
+      for Jest projects.
