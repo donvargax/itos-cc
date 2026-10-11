@@ -27,7 +27,8 @@ const (
 // languageTools finds the tools language's tests run, or skips the test with
 // the missing one named. For "typescript" it returns the absolute
 // node_modules that holds vitest and @vitest/coverage-v8: the one
-// ITOS_CC_NODE_MODULES names, else testdata/tools/node's, else the viewer's.
+// ITOS_CC_NODE_MODULES names, else testdata/tools/node's, else the viewer's;
+// for "c8", the same holding c8 too, as testdata/tools/node's does.
 // For "python" it needs python3 with pytest and coverage importable, for
 // "kotlin" java and gradle, for "maven", Kotlin's other build, java and
 // mvn, and for "node" node and npm alone, a node that runs .ts files by
@@ -49,7 +50,7 @@ func languageTools(t *testing.T, language string) string {
 		t.Skipf("CI installs the %s tools on ubuntu-latest only, where it sets %s", language, languageToolsEnv)
 	}
 	switch language {
-	case "typescript":
+	case "typescript", "c8":
 		if _, err := exec.LookPath("node"); err != nil {
 			missing("node")
 		}
@@ -65,9 +66,12 @@ func languageTools(t *testing.T, language string) string {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if installed(dir, "vitest") && installed(dir, "@vitest/coverage-v8") {
+			if installed(dir, "vitest") && installed(dir, "@vitest/coverage-v8") && (language != "c8" || installed(dir, "c8")) {
 				return dir
 			}
+		}
+		if language == "c8" {
+			missing("vitest with @vitest/coverage-v8 and c8 (npm ci in testdata/tools/node, or " + nodeModulesEnv + ")")
 		}
 		missing("vitest with @vitest/coverage-v8 (npm ci in testdata/tools/node, or " + nodeModulesEnv + ")")
 	case "python":
