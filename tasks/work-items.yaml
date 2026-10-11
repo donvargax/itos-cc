@@ -1322,3 +1322,16 @@ items:
       it, at the cost of reading the dependency graph from the build (offline gradle or mvn
       dependency output, or a settings and build-script parse).
     refs: ["#23"]
+  - id: T-20
+    title: Snapshot file operations go through replaceable seams
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      metrics-windows-rename needs red unit tests that inject a rename and a read failing with the
+      error Windows returns while another writer or reader holds a snapshot, and that compile
+      against the product before the fix. The rename and read of metrics go through package
+      variables (osRename, osReadFile) and the Windows retry's error test through another
+      (ephemeral), each the call it was, so nothing changes until the fix.

@@ -393,3 +393,15 @@
     - run: go vet ./...
     - run: go test -count=1 ./mutate/...
       timeout: 600
+- id: T-20
+  type: refactor
+  title: Snapshot file operations go through replaceable seams
+  why: >
+    metrics-windows-rename needs red unit tests that inject a rename and a read failing with the
+    error Windows returns while another writer or reader holds a snapshot, and that compile against
+    the product before the fix. The rename and read of metrics go through package variables
+    (osRename, osReadFile) and the Windows retry's error test through another (ephemeral), each the
+    call it was, so nothing changes until the fix.
+  done_when:
+    - run: go vet ./metrics
+    - run: go test -count=1 ./metrics
