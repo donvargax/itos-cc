@@ -1978,3 +1978,18 @@ items:
       selection. A slice cannot import another, so when the second command moves the selection's
       flags need one home (an embedded struct the slices share, maybe in internal/cli or beside the
       selection domain) so their help and words stay the same.
+  - id: seed-test-timeouts
+    title: The seed tests of mutation sample hold on a slow runner
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      TestSeedReproducesARun and TestOutsideAGitRepositoryTheSeedMustBeGiven count survivors
+      exactly, so a slow Windows runner that times out one mutant (part5.ts:38 in CI run
+      38183179372, a tasks-only push whose code was green the run before) records 49 survivors where
+      50 are wanted and fails the push. The tests should compare the sampled sites and the seed's
+      reproduction, not outcomes that depend on the runner's speed, or give these fixtures a timeout
+      no runner reaches.
+    refs: [flaky-kills, timeout-allowance]
