@@ -137,6 +137,28 @@ replaces `GOCOVERDIR` in each test binary's environment with a directory of
 its own, so itos-cc runs each test binary itself (`go test -exec`), with
 `GOCOVERDIR` set to the run's directory.
 
+Python code that tests reach by starting another Python process (a
+`subprocess.run([sys.executable, "cli.py"])`, the installed CLI) counts too.
+coverage.py 7.13 and later install a `.pth` file that starts coverage.py in
+every Python process whose environment names an rcfile in
+`COVERAGE_PROCESS_START`. Before the coverage run, itos-cc writes one in a
+directory of the run's own under `.metrics/coverage/`: the project's own
+`[run]` settings and plugin options, read with coverage.py's reader from
+whichever file it reads (`.coveragerc`, `setup.cfg`, `tox.ini`,
+`pyproject.toml`, `COVERAGE_RCFILE`), with itos-cc's on top (branch
+coverage, the build root as source, parallel data files in that
+directory). The coverage command itself runs as before, with the project's
+configuration untouched, so its data stays apart from the subprocesses':
+afterwards those are combined (with the project's `[paths]`) into an LCOV
+report read beside the in-process one, and the directory is removed. A
+mutant whose line only a subprocess ran says `"coverage": ["integration"]`.
+A coverage.py that does not start in new processes (before 7.13, or
+without its `.pth` file) is a log line, the run going on without
+integration coverage, and `coverage.tool-missing` under `mutation run
+--fail-uncovered` where Python has mutants to judge. A test that starts its
+process with an environment of its own, without `COVERAGE_PROCESS_START`,
+measures nothing there.
+
 A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
@@ -215,8 +237,10 @@ the binary is built with `go build -cover` under `GOCOVERDIR` (see
 [crap](#crap)), and each mutant's run rebuilds it from the mutated copy, so
 their kills count. `--json` says, for each mutant whose line is covered,
 which coverage covered it: `"in-process"`, `"integration"`, or both. In
-other languages such tests do not show up in coverage, so add
-`--no-coverage` to let them reach code nothing else covers. It is slow; run
+Python, the Python processes tests start show up in coverage too (see
+[crap](#crap)). In TypeScript and Kotlin such tests do not show up in
+coverage yet, so add `--no-coverage` to let them reach code nothing else
+covers. It is slow; run
 it nightly rather than on every change:
 
 ```bash
@@ -254,8 +278,13 @@ for coverage, with `ITOS_CC_TEST_COVERDIR` set to a directory of the run's
 own. A harness that builds the binary with `go build -cover` and gives the
 processes each test starts `GOCOVERDIR=<that directory>/<test ID>` splits
 the coverage by test in one run (`go test` passes that variable on to its
-test binaries, as it does not `GOCOVERDIR`); otherwise each test runs alone,
-with a `GOCOVERDIR` of its own. A mutant runs its file's own tests first
+test binaries, as it does not `GOCOVERDIR`); so does one that gives the
+Python processes each test starts
+`COVERAGE_FILE=<that directory>/<test ID>/.coverage`, which coverage.py
+starts in from the rcfile itos-cc names in `COVERAGE_PROCESS_START`, as
+above. Otherwise each test runs alone, every process it starts writing to
+a `GOCOVERDIR` and a coverage.py data file of its own, the test runner's
+own Python process included. A mutant runs its file's own tests first
 and, only if it survives them, the listed tests that reach its line, in one
 run. The first time a mutant needs a selection of listed tests, that
 selection runs once without any mutant in the mutant's worker's copy: its
@@ -303,7 +332,8 @@ Kotlin build root with mutants to judge whose coverage tool is missing, or
 whose coverage command fails or writes no report, fails closed as Go does:
 `coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
-runs. `--fail-uncovered` is strict in every language: it also requires
+runs; so does a Python build root whose coverage.py does not start in the
+processes its tests start (`coverage.tool-missing`). `--fail-uncovered` is strict in every language: it also requires
 fresh measured evidence for every judged Go, Python, TypeScript or Kotlin
 function, including functions with no mutation sites, and fails each
 uncovered Go executable block, each line a Python or TypeScript LCOV report

@@ -81,12 +81,36 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			continue
 		}
 		env := project.NoBytecodeEnv(os.Environ())
+		var noIntegration []Unmeasured
 		if p.CoverDir != "" {
-			if err := os.MkdirAll(p.CoverDir, 0o755); err != nil {
-				failures = append(failures, fmt.Errorf("prepare integration coverage directory: %w", err))
+			if err := p.removeCoverDir(); err != nil {
+				failures = append(failures, fmt.Errorf("clear integration coverage directory: %w", err))
 				continue
 			}
-			env = append(env, coverDirEnv+"="+p.CoverDir)
+			why, call, err := p.start(ctx, env, log, execute)
+			if len(p.Prepare) > 0 {
+				executions = append(executions, call)
+			}
+			if err != nil {
+				failures = append(failures, err)
+				_ = p.removeCoverDir()
+				continue
+			}
+			if why != "" {
+				// A collector the project lacks measures nothing, as
+				// before, and the run goes on without it.
+				noIntegration = append(noIntegration, p.noIntegration(why, log))
+				if err := p.removeCoverDir(); err != nil {
+					failures = append(failures, fmt.Errorf("remove integration coverage directory: %w", err))
+				}
+				p.CoverDir = ""
+			} else {
+				if err := os.MkdirAll(p.CoverDir, 0o755); err != nil {
+					failures = append(failures, fmt.Errorf("prepare integration coverage directory: %w", err))
+					continue
+				}
+				env = setEnv(env, p.CoverEnv...)
+			}
 		}
 		for _, args := range p.Commands {
 			if err := ctx.Err(); err != nil {
@@ -124,6 +148,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			}
 		}
 		r := load(p.Reports, integration, p.Dir, p.measures(sources), log)
+		r.integrationMissing = noIntegration
 		if len(r.missing) > 0 {
 			for _, missing := range r.missing {
 				failures = append(failures, fmt.Errorf("coverage report: %s", missing.String()))
@@ -186,7 +211,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		cmd := exec.CommandContext(ctx, name, flag, line)
 		cmd.Dir = p.Root
-		cmd.Env = append(project.NoBytecodeEnv(os.Environ()), env...)
+		cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
 		cmd.Stdout, cmd.Stderr = log, log
 		err := execute(ctx, cmd)
 		args := append([]string{name, flag, line}, env...)
@@ -196,13 +221,18 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		return nil
 	}
+	collectors, calls, err := startTestCollectors(ctx, testCollectors(p.Root, dir, sources), log, execute, true)
+	executions = append(executions, calls...)
+	if err != nil {
+		return nil, executions, err
+	}
 	written := map[string]string{}
-	if err := run("all", p.All, []string{TestCoverDirEnv + "=" + dir}); err != nil {
+	if err := run("all", p.All, wholeEnv(collectors, dir)); err != nil {
 		return nil, executions, err
 	}
 	for _, id := range ids {
 		candidate := filepath.Join(dir, id)
-		if hasCoverData(candidate) {
+		if anyWritten(collectors, candidate) {
 			written[id] = candidate
 		}
 	}
@@ -215,10 +245,10 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			if err := os.MkdirAll(d, 0o755); err != nil {
 				return nil, executions, fmt.Errorf("prepare coverage for listed test %s: %w", id, err)
 			}
-			if err := run(id, p.Select([]string{id}), eachTestEnv(d)); err != nil {
+			if err := run(id, p.Select([]string{id}), eachEnv(collectors, d)); err != nil {
 				return nil, executions, err
 			}
-			if hasCoverData(d) {
+			if anyWritten(collectors, d) {
 				written[id] = d
 			}
 		}
@@ -228,57 +258,65 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		if !ok {
 			return nil, executions, fmt.Errorf("listed test %s produced no per-ID coverage data", id)
 		}
-		profile := filepath.Join(dir, ".profiles", strconv.Itoa(i)+".out")
-		if err := os.MkdirAll(filepath.Dir(profile), 0o755); err != nil {
-			return nil, executions, fmt.Errorf("prepare profile for listed test %s: %w", id, err)
-		}
-		args := []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + profile}
-		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-		cmd.Dir, cmd.Stdout, cmd.Stderr = p.Root, log, log
-		err := execute(ctx, cmd)
-		executions = append(executions, CommandExecution{Args: args, Dir: p.Root, Err: err})
-		if err != nil {
-			return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
-		}
-		entries, err := Load(profile)
-		if err != nil {
-			return nil, executions, fmt.Errorf("read listed test %s coverage: %w", id, err)
+		var reports []*Report
+		for _, c := range collectors {
+			if !c.written(d) {
+				continue
+			}
+			profile := filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language)
+			if err := os.MkdirAll(filepath.Dir(profile), 0o755); err != nil {
+				return nil, executions, fmt.Errorf("prepare profile for listed test %s: %w", id, err)
+			}
+			args := c.convert(d, profile)
+			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
+			cmd.Env = unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
+			err := execute(ctx, cmd)
+			executions = append(executions, CommandExecution{Args: args, Dir: c.dir, Err: err})
+			if err != nil {
+				return nil, executions, fmt.Errorf("convert listed test %s coverage: %w", id, err)
+			}
+			entries, err := Load(profile)
+			if err != nil {
+				return nil, executions, fmt.Errorf("read listed test %s coverage: %w", id, err)
+			}
+			reports = append(reports, Build(sources, c.dir, entries))
 		}
 		tc.ids = append(tc.ids, id)
-		tc.reports[id] = Build(sources, p.Root, entries)
+		tc.reports[id] = Merge(reports...)
 	}
 	return tc, executions, nil
 }
 
-// integrateSupervised converts what Go binaries built with -cover wrote under
-// CoverDir, returning the conversion it actually ran, if any.
-func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute CommandExecutor) (profile string, calls []CommandExecution, resultErr error) {
+// integrateSupervised converts what the processes the tests started wrote
+// under CoverDir, returning the conversions it actually ran, if any.
+func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute CommandExecutor) (report string, calls []CommandExecution, resultErr error) {
 	if p.CoverDir == "" {
 		return "", nil, nil
 	}
 	defer func() {
-		if err := os.RemoveAll(p.CoverDir); err != nil {
-			resultErr = errors.Join(resultErr, fmt.Errorf("remove Go integration coverage data: %w", err))
+		if err := p.removeCoverDir(); err != nil {
+			resultErr = errors.Join(resultErr, fmt.Errorf("remove %s integration coverage data: %w", p.Language, err))
 		}
 	}()
-	written, err := filepath.Glob(filepath.Join(p.CoverDir, "covmeta.*"))
-	if err != nil {
+	if _, err := filepath.Glob(filepath.Join(p.CoverDir, p.Written)); err != nil {
 		return "", nil, fmt.Errorf("inspect integration coverage data: %w", err)
 	}
-	if len(written) == 0 {
+	if !p.written() {
 		return "", nil, nil
 	}
-	args := []string{"go", "tool", "covdata", "textfmt", "-i=" + p.CoverDir, "-o=" + p.Integration}
-	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Dir, cmd.Stdout, cmd.Stderr = p.Dir, log, log
-	err = execute(ctx, cmd)
-	calls = []CommandExecution{{Args: args, Dir: p.Dir, Err: err}}
-	if err != nil {
-		return "", calls, fmt.Errorf("convert Go integration coverage: %w", err)
+	for _, args := range p.Convert {
+		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.Dir, p.convertEnv(), log, log
+		err := execute(ctx, cmd)
+		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.Dir, Err: err})
+		if err != nil {
+			return "", calls, fmt.Errorf("convert %s integration coverage: %w", p.Language, err)
+		}
 	}
 	if _, err := Load(p.Integration); err != nil {
-		return "", calls, fmt.Errorf("Go integration conversion produced no readable profile: %w", err)
+		return "", calls, fmt.Errorf("%s integration conversion produced no readable report: %w", p.Language, err)
 	}
 	return p.Integration, calls, nil
 }

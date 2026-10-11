@@ -39,11 +39,21 @@ type Plan struct {
 	// a test runner older than the one supported. Run reports it and runs
 	// nothing; existing reports are still read.
 	Unsupported string
-	// CoverDir, when set, is the GOCOVERDIR the binaries the tests build
-	// with go build -cover write to while the commands run. Run turns what
-	// they wrote into the profile Integration names, read beside Reports,
-	// and removes the directory.
+	// CoverDir, when set, is where the processes the tests start write
+	// their coverage data while the commands run (collector.go): the
+	// GOCOVERDIR of the binaries the tests build with go build -cover, the
+	// data files of the Python processes coverage.py starts in. Prepare,
+	// when set, runs first to ready the collector, and exits 3 when it
+	// cannot measure them, printing why: the commands then run without it
+	// (Report.IntegrationMissing). CoverEnv is the environment the commands
+	// get so those processes write there. When Written, a glob in CoverDir,
+	// finds data once they ran, Convert turns it into the report Integration
+	// names, read beside Reports as Integration data. CoverDir is removed.
 	CoverDir    string
+	Prepare     []string
+	CoverEnv    []string
+	Written     string
+	Convert     [][]string
 	Integration string
 	// Unreached marks a plan of sources no test reaches (Reach): nothing
 	// runs, and its language is measured, so they are loaded by no test.
@@ -255,16 +265,20 @@ func goPlanWithScope(dir, out string, sources []string, own bool, pkgs, testing 
 	default:
 		args = append(args, "-coverpkg=./...", "./...")
 	}
-	return Plan{
+	plan := Plan{
 		Language: "go",
 		Dir:      dir,
 		Commands: [][]string{args},
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "coverage.out"), filepath.Join(dir, "cover.out")},
-		CoverDir: coverDir,
 		// Kept beside the report, so --use-existing-coverage reads it too.
 		Integration: filepath.Join(out, "integration.out"),
 	}
+	if coverDir != "" {
+		plan.CoverDir, plan.CoverEnv, plan.Written = coverDir, []string{coverDirEnv + "=" + coverDir}, "covmeta.*"
+		plan.Convert = [][]string{{"go", "tool", "covdata", "textfmt", "-i=" + coverDir, "-o=" + plan.Integration}}
+	}
+	return plan
 }
 
 // GoScope is the packages of sources in the module at dir, and the packages
@@ -593,6 +607,7 @@ func pythonPlan(dir, out string, tests []string) Plan {
 	}
 	run := append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...)
 	plan.Commands = [][]string{run, {py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report}}
+	pythonIntegration(&plan, py, dir, out)
 	return plan
 }
 
@@ -629,6 +644,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
 		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
 	}
+	pythonIntegration(&plan, py, dir, out)
 	return plan, executions, nil
 }
 
@@ -729,8 +745,23 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		}
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
 		env := project.NoBytecodeEnv(os.Environ())
-		if p.CoverDir != "" && os.MkdirAll(p.CoverDir, 0o755) == nil {
-			env = append(env, coverDirEnv+"="+p.CoverDir)
+		var noIntegration []Unmeasured
+		if p.CoverDir != "" {
+			p.removeCoverDir()
+			why, _, err := p.start(context.Background(), env, log, nil)
+			if err != nil {
+				why = err.Error()
+			}
+			switch {
+			case why != "":
+				noIntegration = append(noIntegration, p.noIntegration(why, log))
+				p.removeCoverDir()
+				p.CoverDir = ""
+			case os.MkdirAll(p.CoverDir, 0o755) == nil:
+				env = setEnv(env, p.CoverEnv...)
+			default:
+				p.CoverDir = ""
+			}
 		}
 		failed := ""
 		for _, args := range p.Commands {
@@ -746,6 +777,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 			}
 		}
 		r := load(p.Reports, p.integrate(log), p.Dir, p.measures(sources), log)
+		r.integrationMissing = noIntegration
 		// Told by exit status and the report alone, never by what the
 		// runner prints: a run that succeeded and wrote its report measured
 		// its language, whichever files the report names.

@@ -216,6 +216,24 @@ func runCountedMutate(in *invocation) (any, error) {
 		return result, nil
 	}
 
+	if strict {
+		// A collector that could not measure the processes the tests
+		// start fails a strict run where its language has a mutant to
+		// judge, as a complete run does (integrationToJudge).
+		var files []string
+		for _, c := range plan.Selected {
+			files = append(files, filepath.Join(plan.FrozenRoot, filepath.FromSlash(c.Path)))
+		}
+		if problems := integrationToJudge(prep.Report, files); len(problems) > 0 {
+			s.Completion, s.Stop = "stopped", "integration coverage could not be measured"
+			for _, p := range problems {
+				in.report(p)
+			}
+			printCounted(in, result)
+			return result, nil
+		}
+	}
+
 	exceptions, err := mutate.PlanExceptions(plan, prep.Exceptions)
 	if err != nil {
 		return nil, err

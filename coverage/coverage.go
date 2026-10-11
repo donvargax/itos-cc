@@ -59,8 +59,10 @@ const (
 	// InProcess is a report's own data: what the tests executed in their own
 	// processes, or whatever a report named with --coverage-report holds.
 	InProcess Source = iota
-	// Integration is what Go binaries built with go build -cover wrote to
-	// GOCOVERDIR while the tests ran them.
+	// Integration is what the processes the tests started executed, as
+	// their collector measured it: Go binaries built with go build -cover
+	// write it to GOCOVERDIR, and Python processes coverage.py starts in to
+	// the data files of the run's own rcfile (collector.go).
 	Integration
 )
 
@@ -73,6 +75,9 @@ type Report struct {
 	files    map[string][]Segment
 	branches map[string][]Segment
 	missing  []Unmeasured
+	// integrationMissing is each build root whose processes the tests
+	// started went unmeasured, as its collector could not measure them.
+	integrationMissing []Unmeasured
 	// languages are those a coverage command measured: every command of its
 	// plan exited 0 and every report it was to write was written and read.
 	languages map[string]bool
@@ -459,6 +464,7 @@ func Merge(reports ...*Report) *Report {
 			continue
 		}
 		out.missing = append(out.missing, r.missing...)
+		out.integrationMissing = append(out.integrationMissing, r.integrationMissing...)
 		if out.tests == nil {
 			out.tests = r.tests
 		}

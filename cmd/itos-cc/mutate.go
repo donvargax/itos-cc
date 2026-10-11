@@ -70,8 +70,15 @@ only through a subprocess, the CLI or reflection reaches nothing: run
 integration and end-to-end tests can kill mutants too. It is slow: run it
 nightly. In Go, a test that runs the built binary shows up in coverage when
 it builds the binary with go build -cover while GOCOVERDIR is set: itos-cc
-sets it, and merges what the binary wrote with go test's own coverage.
-Elsewhere coverage does not see such tests: add --no-coverage for them.
+sets it, and merges what the binary wrote with go test's own coverage. In
+Python, the Python processes a test starts show up too: coverage.py starts
+in them through the .pth file it installs (7.13 and later), from an
+rcfile of the run's own that COVERAGE_PROCESS_START names, which holds the
+project's [run] settings under itos-cc's, and what they wrote is combined
+beside the in-process coverage. A coverage.py that does not start in them
+is coverage.tool-missing with --fail-uncovered, where Python has mutants to
+judge, and otherwise a log line, the run going on without them. TypeScript
+and Kotlin coverage does not see such tests yet: add --no-coverage for them.
 Every test and coverage command itos-cc composes runs with
 PYTHONDONTWRITEBYTECODE=1, and every pytest one with -p no:cacheprovider,
 so neither bytecode nor a .pytest_cache is written into the project; a
@@ -303,8 +310,10 @@ Commands run through the platform shell at the project root. When a mutant
 has to run, the list command runs once, then every listed test, for
 coverage, with ITOS_CC_TEST_COVERDIR set to a directory of the run's own:
 a harness that gives the processes each test starts
-GOCOVERDIR=<that directory>/<test ID> splits the coverage by test in one
-run; otherwise each test runs alone, with a GOCOVERDIR of its own. A
+GOCOVERDIR=<that directory>/<test ID>, or COVERAGE_FILE=<that
+directory>/<test ID>/.coverage to Python ones, splits the coverage by test
+in one run; otherwise each test runs alone, every process it starts with a
+GOCOVERDIR and a coverage.py data file of its own. A
 mutant runs its file's own tests first and, only if it survives them, the
 listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
@@ -372,7 +381,7 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
 		"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
-		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool is missing where it has mutants to judge: language, dir",
+		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them), is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
@@ -832,6 +841,7 @@ func runMutate(in *invocation) (any, error) {
 			// Another language that measured nothing fails closed as Go
 			// does, and stops the run with it.
 			others := unmeasuredToJudge(report, sources, mutationChecks, in.set("mutate-all"))
+			others = append(others, integrationToJudge(report, filesToJudge(sources, mutationChecks, in.set("mutate-all")))...)
 			if strictGo && measure["go"] && (missingGo || !report.Measures("go")) {
 				for _, p := range unmeasured(report) {
 					if p.subject["language"] == "go" {
@@ -907,7 +917,9 @@ func runMutate(in *invocation) (any, error) {
 				if err != nil {
 					return result, err
 				}
-				if others := unmeasuredToJudge(report, sources, checks, in.set("mutate-all")); len(others) > 0 {
+				others := unmeasuredToJudge(report, sources, checks, in.set("mutate-all"))
+				others = append(others, integrationToJudge(report, filesToJudge(sources, checks, in.set("mutate-all")))...)
+				if len(others) > 0 {
 					for _, p := range others {
 						in.report(p)
 					}
@@ -1366,6 +1378,45 @@ func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutat
 		if !matched {
 			found = append(found, coverage.Unmeasured{Dir: filepath.Dir(abs), Language: spec.Name, Cause: coverage.MeasuredNothing,
 				Reason: "its coverage run measured none of its files"})
+		}
+	}
+	return unmeasuredProblems(relativeUnmeasured(found))
+}
+
+// filesToJudge is each of sources whose mutants this run must judge.
+func filesToJudge(sources []string, checks []mutate.FileCheck, mutateAll bool) []string {
+	var out []string
+	for i, source := range sources {
+		if i < len(checks) && mutate.NeedsMutationCoverage(checks[i:i+1], mutateAll) {
+			out = append(out, source)
+		}
+	}
+	return out
+}
+
+// integrationToJudge is, under --fail-uncovered, coverage.tool-missing for
+// each build root whose collector could not measure the processes its
+// tests start, such as a coverage.py that does not start in them, while a
+// file of its language under it has mutants to judge (files): its lines
+// such a process runs would be judged uncovered. Without --fail-uncovered
+// the run goes on without integration coverage, as coverage logged.
+func integrationToJudge(report *coverage.Report, files []string) []*problem {
+	var found []coverage.Unmeasured
+	for _, m := range report.IntegrationMissing() {
+		dir, err := filepath.Abs(m.Dir)
+		if err != nil {
+			continue
+		}
+		for _, file := range files {
+			spec := lang.Detect(file)
+			abs, err := filepath.Abs(file)
+			if spec == nil || spec.Name != m.Language || err != nil {
+				continue
+			}
+			if rel, err := filepath.Rel(dir, abs); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+				found = append(found, m)
+				break
+			}
 		}
 	}
 	return unmeasuredProblems(relativeUnmeasured(found))

@@ -30,6 +30,14 @@ func StrictCoverage(language string) bool {
 	return strictLanguages[language]
 }
 
+// pythonSubprocesses is the part of Python's producer that says the
+// Python processes a test starts count too: coverage.py measures them with
+// the rcfile COVERAGE_PROCESS_START names, and their combined LCOV is read
+// beside the in-process report (integration-coverage-python). Evidence
+// recorded before, without it, reads stale once, so a line only a
+// subprocess runs is measured again rather than kept uncovered.
+const pythonSubprocesses = "subprocesses=COVERAGE_PROCESS_START, python -m coverage combine"
+
 // CoverageProducer is the built-in producer of language's strict coverage
 // evidence, measuring each file with the tests that reach it, or, with
 // allTests, the whole suite of its build root: what evidence records, and
@@ -41,9 +49,9 @@ func CoverageProducer(language string, allTests bool) string {
 	case language == "go":
 		return "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
 	case language == "python" && allTests:
-		return "python -m coverage run --branch --source=<build root> <whole suite>; python -m coverage lcov; scope=all-tests"
+		return "python -m coverage run --branch --source=<build root> <whole suite>; python -m coverage lcov; " + pythonSubprocesses + "; scope=all-tests"
 	case language == "python":
-		return "python -m coverage run --branch --source=<build root> <reaching tests>; python -m coverage lcov; scope=own"
+		return "python -m coverage run --branch --source=<build root> <reaching tests>; python -m coverage lcov; " + pythonSubprocesses + "; scope=own"
 	}
 	return ""
 }

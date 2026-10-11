@@ -262,9 +262,10 @@ func TestLinesAPythonTestReachesThroughASubprocessAreCovered(t *testing.T) {
 // is a missing collector: coverage.tool-missing under --fail-uncovered,
 // where Python has mutants to judge, and otherwise a log line, the run
 // going on without integration coverage. The project's .venv sees the
-// system's pytest and coverage.py, with a .pth file that keeps coverage.py
-// from starting in a new process, as one before 7.13, which installs no
-// .pth file, never does.
+// system's pytest and coverage.py, with a .pth file of its own, read before
+// the system's, that keeps coverage.py's .pth file from starting it in a
+// new process: as coverage.py before 7.13, which installs none, never
+// starts.
 func TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "python")
@@ -279,7 +280,7 @@ func TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector(t *testing.
 		t.Fatalf("the .venv's site-packages: %v", err)
 	}
 	writeFile(t, filepath.Join(strings.TrimSpace(string(out)), "no_subprocess_coverage.pth"),
-		"import coverage; coverage.process_startup = lambda *args, **kwargs: None\n")
+		"import os; os.environ.pop(\"COVERAGE_PROCESS_START\", None)\n")
 	// The test runs cli.py with the .venv's python too.
 
 	strict := mutateCovered(t, "--all-tests", "--fail-uncovered", "--json", "cli.py")

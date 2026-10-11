@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -75,26 +74,28 @@ func ExecTest(args []string) int {
 	return 0
 }
 
-// integrate turns what binaries wrote to p.CoverDir into the profile
-// p.Integration, removes the directory, and returns the profile's path, or
-// "" when nothing was written or the profile could not be made.
+// integrate turns what the processes the tests started wrote to p.CoverDir
+// into the report p.Integration, with p.Convert, removes the directory, and
+// returns the report's path, or "" when nothing was written or the report
+// could not be made.
 func (p Plan) integrate(log io.Writer) string {
 	if p.CoverDir == "" {
 		return ""
 	}
-	defer os.RemoveAll(p.CoverDir)
-	if written, _ := filepath.Glob(filepath.Join(p.CoverDir, "covmeta.*")); len(written) == 0 {
+	defer p.removeCoverDir()
+	if !p.written() {
 		return ""
 	}
-	args := []string{"go", "tool", "covdata", "textfmt", "-i=" + p.CoverDir, "-o=" + p.Integration}
-	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, strings.Join(args, " "))
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Dir = p.Dir
-	cmd.Stdout = log
-	cmd.Stderr = log
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
-		return ""
+	for _, args := range p.Convert {
+		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir, cmd.Env = p.Dir, p.convertEnv()
+		cmd.Stdout = log
+		cmd.Stderr = log
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
+			return ""
+		}
 	}
 	return p.Integration
 }

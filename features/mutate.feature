@@ -2175,7 +2175,7 @@ Feature: Mutation testing
   # integration coverage, as today.
   Rule: Coverage from tests that start other processes, in every language
 
-    @wip @integration-coverage-python @ID-MUT-228
+    @integration-coverage-python @ID-MUT-228
     Scenario: Lines a Python test reaches through a subprocess are covered
       Given a Python project whose only test runs its module in a subprocess and checks one branch of its output
       When I run "itos-cc mutation run --all-tests --fail-uncovered --json"

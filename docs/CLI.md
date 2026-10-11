@@ -94,7 +94,7 @@ output of the commands it runs passes as it is.
 | `fail-fast.platform`         | 3    | mutation run --fail-fast | `platform`                                        |
 | `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
-| `coverage.tool-missing`      | 3    | crap --threshold | `dir`, `language`                                         |
+| `coverage.tool-missing`      | 3    | crap --threshold, mutation run --fail-uncovered (a coverage tool, or the collector of the processes tests start, missing where its language has mutants to judge) | `dir`, `language`                                         |
 | `coverage.no-report`         | 3    | crap --threshold | `dir`, `language`                                         |
 | `coverage.report-unreadable` | 2    | crap --threshold | `report`                                                  |
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
@@ -144,7 +144,13 @@ distinct set of those files. A Python file none of whose tests is such a
 file runs no test: its mutants are `uncovered`. A test that executes code
 only through a subprocess or the CLI reaches none of it, so those kills
 need `--all-tests` or
-`--test-command`, which keep the whole suite and the given command. A
+`--test-command`, which keep the whole suite and the given command. Under
+`--all-tests` the coverage run measures the Python processes such a test
+starts too, through an rcfile of the run's own that `COVERAGE_PROCESS_START`
+names (coverage.py 7.13 and later), so their lines are covered, as
+`"integration"`, and their mutants run; listed tests (`mutation.tests`)
+reach them the same way, one test at a time or as a harness splits them
+with `COVERAGE_FILE=<ITOS_CC_TEST_COVERDIR>/<test ID>/.coverage`. A
 Python outcome of scope `own` recorded before, which the whole suite
 decided, still reads fresh while its tests are unchanged; `mutation sample`
 re-runs it with the narrowed tests, so a kill only another test made is a
@@ -350,7 +356,7 @@ with `fail-fast.platform`, exit 3, before launching any command (#29).
 | 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
-| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
+| 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, and coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
 | 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |
