@@ -13,6 +13,7 @@ phases:
 queue:
   - integration-coverage-python
   - integration-coverage-typescript
+  - integration-coverage-kotlin
   - mutation-windows-ownership
 items:
   - id: T-3
