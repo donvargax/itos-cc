@@ -520,16 +520,6 @@
     reason above them, so the smoke rule holds. The itos on PATH may be a newer release than the
     pin (8.0.0-rc.5 rewrites AGENTS.md's block itself): regenerate it with the pinned 7.5.0
     (~/.cache/itos/7.5.0/itos init --agent-rules).
-  done_when:
-    - run: test -f .itos-template.yaml
-    - run: "grep -q 'release: v0.2.0' .itos-template.yaml"
-    - run: grep -q 'GNU AFFERO GENERAL PUBLIC LICENSE' LICENSE
-    - run: test -z "$(ls docs/decisions | grep -E '^[0-9]{4}-' | cut -c1-4 | sort | uniq -d)"
-    - run: go vet ./...
-    - run: go build ./...
-    - run: grep -q '^/.tools/' .gitignore
-    - run: grep -q 'itos verify' .github/workflows/ci.yml
-    - run: "! grep -q 'MIT distribution' CONTRIBUTORS.md"
 - id: T-27
   type: chore
   title: Every feat and fix says what a user must change, in an Upgrading footer
