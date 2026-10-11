@@ -1,0 +1,20 @@
+# The template render this project is kept up to date with, as
+# itos-template new made it or adopt linked it: the template, by a name
+# update can reach (an absolute path, a URL with no credential), the
+# release, when it was one, the stack, the features, the answers, and the
+# commit each of the template's branches was at. itos-template update reads
+# it; edit it only to change what an update renders.
+version: 1
+template: https://github.com/donvargax/go-template-itos.git
+release: v0.2.0
+stack: go
+features:
+  - cli
+answers:
+  module: github.com/donvargax/itos-cc
+  name: itos-cc
+  owner: donvargax
+commits:
+  go/cli: a30b2a1db28c3ccee5830f66186ff40f6967ec3e
+  main: b2aceb77f312e66b0f8e68069db2b09b95c9f93d
+  stack/go: b366d45479592f5afc658aea4e09c502ca5d7687

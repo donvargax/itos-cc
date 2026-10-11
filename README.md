@@ -928,6 +928,25 @@ Adding a language means one file in `lang/` (grammar, units, decisions,
 syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
 plan in `coverage/`.
 
+## Working here
+
+The repository is adopted from the template
+[go-template-itos](https://github.com/donvargax/go-template-itos) (stack go, feature cli;
+`.itos-template.yaml` records the release), so `itos-template update` can bring its later
+releases. Read [AGENTS.md](AGENTS.md) for the project's rules. [docs/CLI.md](docs/CLI.md) holds
+the command line's contract and rules, [docs/engineering.md](docs/engineering.md) the shared
+engineering rules, [docs/go.md](docs/go.md) Go's, [docs/architecture.md](docs/architecture.md)
+the layer boundaries, [docs/security.md](docs/security.md) the trust boundaries,
+[docs/upgrading.md](docs/upgrading.md) how to move dependency pins,
+[docs/CONFIG.md](docs/CONFIG.md) the rules for a configuration file the project owns,
+[features/README.md](features/README.md) the scenarios, and
+[docs/decisions/](docs/decisions/) its decision records. The layout docs/go.md and
+docs/architecture.md describe is the template's, which the code moves to in later slices; until
+then the template's sample `count` command (`internal/count`, `internal/counting`,
+`internal/disk`, `internal/stdin`) stays as a reference, wired to no command.
+[CONTRIBUTORS.md](CONTRIBUTORS.md) records where the harvested infrastructure came from. `itos go`
+coordinates the work; an implementing agent uses `itos guide work`.
+
 ## License
 
 [GNU Affero General Public License v3.0](LICENSE).

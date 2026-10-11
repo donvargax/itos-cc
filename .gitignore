@@ -7,3 +7,5 @@
 .metrics/mutate/**/*.tmp
 # The Node tools of the language smoke tests, installed with npm ci.
 /testdata/tools/node/node_modules/
+# Pinned tools downloaded for local use, by tools/bin/pinned.
+/.tools/

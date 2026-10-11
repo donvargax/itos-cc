@@ -461,3 +461,5 @@ verdict and no exit code changes for it.
 | 5 | Two commands with names a letter apart. | `crap`, `scrap` |
 | 17 | `--threshold` is a CRAP score in `crap` and a similarity in `dry`. | `crap --threshold 30`, `dry --threshold 0.9` |
 | 32 | An internal error's message is Go's error text. | a source file that cannot be read |
+| Shell completion, go-template-itos's rule 41 | No `completion <shell>` command and no hidden `__complete`, so no shell completes itos-cc's commands and flags. | `itos-cc completion bash` exits 2 as an unknown command |
+| Exit 130 on interrupt, go-template-itos's rule 42 | Ctrl-C does not cancel a command's context and exit 130 with one stderr line (`INTERRUPTED` with `--json`): most commands end by the system's default action, `mutation run --count` exits 75 with `count.interrupted`, and `serve` shuts down and exits 0. | Ctrl-C during `itos-cc crap` |

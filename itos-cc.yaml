@@ -1,0 +1,42 @@
+# The mutants no test can kill, each with why it changes no behaviour, so no
+# test could tell it from the code as it stands. Reviewed like the code it
+# excuses: mutation run and mutation check count a site listed here as
+# excepted, and refuse the entry as soon as the function it names changes, so
+# a reason that stops holding cannot outlive the code it was written for.
+mutation:
+  exceptions:
+    # Set aside (T-26): the template's exception for the template's main.go, whose
+    # run itos-cc's main.go is not yet, so it would go stale here. It returns when
+    # the refactor ports the template's main.go (the work item template-main-exception).
+    # - file: cmd/itos-cc/main.go
+    #   function: github.com/donvargax/itos-cc/cmd/itos-cc#run
+    #   hash: c33f9e2625dbed56
+    #   line_in_function: 22
+    #   column: 15
+    #   original: '>'
+    #   replacement: '>='
+    #   reason: run replaces an empty line with --help before this comparison, so len(args) is never 0 here and > and >= both hold.
+    - file: internal/cli/cli.go
+      function: github.com/donvargax/itos-cc/internal/cli#report
+      hash: 8e5da9179eefceb3
+      line_in_function: 3
+      column: 10
+      original: "0"
+      replacement: "1"
+      reason: report seeds the code and raises it with max over the leaves; classify returns 2, 3, 70 or 130 for every leaf it is given and leaves is never empty, so every read of the result is a leaf's code and 0 and 1 seed the same value.
+    - file: internal/release/build.go
+      function: github.com/donvargax/itos-cc/internal/release#extract
+      hash: 6e51bcbcdcf402f5
+      line_in_function: 13
+      column: 14
+      original: '!='
+      replacement: ==
+      reason: untar reads a tar git archive wrote, whose entries are all relative names, each written once, each a folder, a regular file or a symlink, so it cannot refuse a name and the only way it returns is a write failing on the temporary folder BuiltAt made; it returns nil there, and draining a pipe afterwards cannot change the error extract returns.
+    - file: internal/release/release.go
+      function: github.com/donvargax/itos-cc/internal/release#Newest
+      hash: 169323ab8c351ad2
+      line_in_function: 4
+      column: 58
+      original: '>'
+      replacement: '>='
+      reason: compareTags returns 0 only for two identical spellings, because equal numbers give equal lengths and two strings of one length never compare equal otherwise, so taking the later of a pair it calls equal sets newest to the string it already holds.

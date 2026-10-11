@@ -31,5 +31,9 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0025: Strict line coverage for TypeScript, Python and Kotlin counts partly executed lines as covered and refuses out-of-root scopes](0025-strict-line-coverage-for-typescript-python-and-kotlin-counts-partly-executed-lines-as-covered-and-refuses-out-of-root-scopes.md)
 - [ADR-0026: Child-process and per-test coverage use each project's own installed collectors, never downloaded](0026-child-process-and-per-test-coverage-use-each-project-s-own-installed-collectors-never-downloaded.md)
 - [ADR-0027: Python and TypeScript measure the processes tests start automatically; Kotlin opts in](0027-python-and-typescript-measure-the-processes-tests-start-automatically-kotlin-opts-in.md)
+- [ADR-0028: Non-cumulative CLI flags are accepted once](0028-non-cumulative-cli-flags-are-accepted-once.md)
+- [ADR-0029: Go code is a shared domain behind ports, separate adapters and thin slices named for their commands](0029-go-code-is-a-shared-domain-behind-ports-separate-adapters-and-thin-slices-named-for-their-commands.md)
+- [ADR-0030: context.Context carries cancellation from cmd through Handle to the ports, never a value](0030-context-context-carries-cancellation-from-cmd-through-handle-to-the-ports-never-a-value.md)
+- [ADR-0031: An interrupted command exits 130, says so once, and a second interrupt ends it at once](0031-an-interrupted-command-exits-130-says-so-once-and-a-second-interrupt-ends-it-at-once.md)
 
 <!-- itos:decisions:end -->

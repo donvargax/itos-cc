@@ -1,3 +1,43 @@
+# Working rules
+
+Shared design, testing and dependency rules are in `docs/engineering.md`. They apply to every
+stack and interface; stack and feature guides add only what is specific to them.
+Go's packages, boundary lists, tests and quality checks are in `docs/go.md`.
+Rules for any configuration file a project owns are in `docs/CONFIG.md`.
+The command line's contract and rules are in `docs/CLI.md`.
+
+The person's session coordinates with `itos go`. An implementing agent runs `itos guide work`,
+takes its item with `itos work take`, does the work itself and starts no agents. Read the registry
+with `itos work`; never edit owners or statuses by hand.
+
+## Changes and commits
+
+- Specify behavior before building it. The command line's features and fixes follow its
+  black-box scenarios in `features/`, with red steps committed first. Never add unspecified
+  behavior.
+- Other work names a ledger task. Decide each commit's type and paths before editing.
+- Commit with `itos commit -F <file>`, never `git commit`. Bodies explain what changed and why;
+  no body line starts with a word and a colon, or with `with #,`.
+- Read `git status --short` before staging; stage only explicit file paths, never a whole folder,
+  `.`, or with `git add -A` or `-u`.
+- Never bypass hooks, force-push or rewrite published history. Push with `itos push` in the
+  background, reading its output and watching CI without polling. Never pipe a commit or push.
+- Gates run through their configured hooks and CI, not manually before committing. Fix a valid
+  check's failure in the work, not by weakening the check; stop on a wrong gate.
+
+## Code boundaries
+
+- Keep thin entry points over domain-owned behavior through ports. The domain knows no UI,
+  filesystem implementation, JSON or exit codes. Use our fakes in its tests, never mocks.
+- Look for a library before building what one likely solves; settle the choice in the spec.
+- Code differing by OS takes the OS as a value. Build tags hold only a call unavailable on one
+  OS, with no mutation site; never branch on runtime.GOOS inside logic.
+- No credentials in fixtures, logs or committed files. Go vulnerability checks are not
+  credential scans; the pinned gitleaks is, `tools/bin/pinned gitleaks dir . --redact`.
+- Preserve third-party notices, `CONTRIBUTORS.md` and the comments naming where harvested code
+  came from. Owner permission for copied infrastructure does not relicense dependencies or the
+  original source projects.
+
 <!-- itos:begin -->
 
 ## The rules itos holds this repository to
