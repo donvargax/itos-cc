@@ -248,3 +248,5 @@ questions:
   - id: q-55
     question: "Kong reports unknown flags, unexpected arguments and its other user-input failures as plain strings. How do we get typed errors from it?"
     answer: "Fork it, donvargax/kong, and make kong's user-input failures exported error types matched with errors.As, Error() text unchanged (answered 2026-10-11). itos-cc uses the fork through a replace until it is proven, then a PR goes to alecthomas/kong with AI assistance disclosed."
+  - id: q-56
+    question: "Should itos-cc and go-template-itos adopt square/exit's semantic exit codes?"
