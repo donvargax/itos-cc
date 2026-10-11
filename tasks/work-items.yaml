@@ -1262,14 +1262,15 @@ items:
       reaching tests, their support and conftest files and what they import would keep unrelated
       edits from staling it, at the cost of trusting the import graph for dynamic imports.
     refs: ["#23"]
-  - id: metrics-windows-concurrent-rename
-    title: Concurrent snapshot writes on Windows can fail a rename with Access is denied
+  - id: metrics-windows-rename
+    title: Snapshot writes at the same time succeed on Windows
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was metrics-windows-concurrent-rename.
       CI 38095077392 attempt 1 failed on windows-latest in metrics'
       TestWritesAtTheSameTimeLeaveOneWholeSnapshot: twenty goroutines' os.Rename of their staging
       file over .metrics/x.json got Access is denied, which Windows returns while another rename or
