@@ -1,7 +1,7 @@
 name: Release
 
 # The release, cut by CI (T-28): ci.yml calls this on a push to main, after its
-# commits and test jobs pass, in the same run, so nothing is tested twice.
+# ci and test jobs pass, in the same run, so nothing is tested twice.
 #
 # Harvested from go-template-itos's .github/workflows/release.yml, which took
 # it from itos's, keeping its version, notes, attestation and publishing, and

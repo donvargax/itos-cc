@@ -72,6 +72,36 @@ hooks:
   bin: itos # the hooks call the global itos, which runs the release pinned
 
 ci:
+  # The plan ci.yml's ci job runs, itos ci run "$FROM" "$TO" over the push's
+  # range (T-29): every step in cost order, the static ones first, then the
+  # checks of the tasks the range's commits name in their Task footers, the
+  # first failure stopping the run. Taken from itos-policy.yaml, the
+  # template's own plan, with the gates this code already passes; its
+  # golangci-lint step (T-31), scenario step (T-32), RAPID_CHECKS go test,
+  # mutation sample and proof (q-53) come later. The test matrix on three
+  # systems stays in ci.yml.
+  steps:
+    - { run: itos config check, cost: static }
+    - { run: tools/bin/doc-caps, cost: static }
+    # Every tracked Go file, each top-level package and tools/ included,
+    # named when gofmt would change it.
+    - { run: "! git ls-files -z -- '*.go' | xargs -0 gofmt -l | grep .", cost: static }
+    - { run: go build ./..., cost: static }
+    - { run: go vet ./..., cost: static }
+    - { run: go mod verify, cost: static }
+    - { run: go mod tidy -diff, cost: static }
+    - { run: itos tests smoke check scenario, cost: static }
+    # The depguard arrows of .golangci.yml over its own fixture modules, with
+    # the golangci-lint tools/bin/pinned fetches and checks; not our code.
+    - { run: tools/bin/architecture-check, cost: static }
+    - { run: go tool govulncheck -test ./..., cost: late }
+    - { run: tools/bin/domain-coverage, cost: late }
+  # A push touching only these runs these steps alone.
+  prose:
+    paths: ["**/*.md", "docs/**", "tasks/**"]
+    steps:
+      - itos config check
+      - tools/bin/doc-caps
   # itos ci watch, and the CI check of itos work done, read the push's run of
   # ci.yml on GitHub.
   watch:

@@ -1,7 +1,9 @@
 name: CI
 
-# Tests on Linux, macOS and Windows for every push to main and pull request.
-# On a push to main, once the commits and test jobs pass, the release job
+# For every push to main and pull request: the ci job holds the pushed
+# commits to itos's rules and runs itos.yaml's plan, ci.steps (T-29), and
+# the test job runs the tests on Linux, macOS and Windows.
+# On a push to main, once the ci and test jobs pass, the release job
 # cuts the release in the same run (release.yml, T-28): the version from the
 # commits since the last tag (tools/bin/release-version), each platform built
 # on its own runner, the archives attested and published with their notes, or
@@ -22,10 +24,14 @@ jobs:
   # The commit rules, held in CI as well as by the local hooks (T-26): itos
   # verify judges every commit from the last green run's head to this one,
   # itos ci range finding that start. A range, not the whole history, which
-  # holds commits from before the rules (e3ccc36) that verify refuses. Taken
-  # from go-template-itos's ci job, without its plan, itos ci run, which a
-  # later task wires.
-  commits:
+  # holds commits from before the rules (e3ccc36) that verify refuses. Then
+  # the plan over the same range (T-29): itos ci run takes itos.yaml's
+  # ci.steps in cost order, and the checks of the tasks the range's commits
+  # name; a push touching only ci.prose.paths runs ci.prose.steps alone.
+  # go-template-itos's ci job, with Go set up for the plan's go steps.
+  # tools/bin/pinned fetches golangci-lint for architecture-check and checks
+  # its SHA-256, and govulncheck is a Go tool of go.mod.
+  ci:
     runs-on: ubuntu-latest
     env:
       TO: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -49,6 +55,7 @@ jobs:
           echo "FROM=$from"
           echo "FROM=$from" >> "$GITHUB_ENV"
       - run: itos verify "$FROM" "$TO"
+      - run: itos ci run "$FROM" "$TO"
 
   test:
     strategy:
@@ -132,7 +139,7 @@ jobs:
   # releases this commit when its commits call for one, else ends green.
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [commits, test]
+    needs: [ci, test]
     # What release.yml's jobs ask for: the release and its assets, the OIDC
     # token Sigstore signs with, and the attestations.
     permissions:
