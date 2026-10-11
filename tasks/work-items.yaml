@@ -1917,3 +1917,15 @@ items:
       bill as paths.unmatched even though files under src/billing contain it. internal/selection
       keeps both rules unchanged (T-31), and a test holds the second, so changing either one is a
       decision that needs a scenario.
+  - id: selection-unwalkable-exit
+    title: A directory that cannot be walked is the environment, not an internal error
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      When a selected tree holds a directory itos-cc cannot read (permission denied), every command
+      exits 70 and asks the user to report a bug. The selection port now names this case as
+      Unwalkable, and its classifier keeps the old 70 so that T-31 changes no output. Exit 3, with a
+      rule and a fix that name the directory, is a behaviour change that needs a scenario.
