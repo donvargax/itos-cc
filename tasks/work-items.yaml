@@ -1405,13 +1405,9 @@ items:
     title: Coverage from tests that start other processes, for typescript
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-41: issue #14's integration coverage and per-test listed coverage for typescript through the
-      project's own collector, never downloaded; a missing collector is coverage.tool-missing under
-      --fail-uncovered, otherwise a log line.
     refs: ["#14"]
   - id: integration-coverage-kotlin
     title: Coverage from tests that start other processes, for kotlin
