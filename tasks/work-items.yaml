@@ -1581,3 +1581,19 @@ items:
       as it is" kept that case out of the fix, as did --fail-fast's unchanged output; whether it
       should say "failed", and whether its reused outcomes should still be written, is a decision to
       take.
+  - id: template-adoption
+    title: Adopt go-template-itos fully, and move the code to the design it brings
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person (2026-10-11): adopt the full template (go-template-itos, stack go, feature cli)
+      properly once itos-template's fix for adopting an existing project lands; itos-cc's code then
+      follows the template's code design (shared domain behind ports, thin command slices,
+      internal/cli, kong, context cancellation, exit codes incl. 130 on interrupt), the bigger
+      refactor. Not before: no CLI-guidance work until then. A scratch trial on 2026-10-11 with
+      itos-template 0.27.0 and template v0.2.0 showed adopt alone installs nothing (missing files
+      count as our deletions) and adopt v0.1.0 + update to v0.2.0 conflicts in 30 paths. Needs itos
+      upgraded from 6.5.1 (template CI uses 7.4.0). Settles q-37 (fail-fast-cleanup-report).
