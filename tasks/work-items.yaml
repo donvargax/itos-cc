@@ -1137,7 +1137,7 @@ items:
     title: A file no test reaches reports its baseline as passed though none ran
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
