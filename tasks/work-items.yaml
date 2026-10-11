@@ -1447,17 +1447,9 @@ items:
     title: A file whose mutants are all reused reports its baseline as not run
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was reused-baseline-not-run.
-      Without --fail-fast, mutation run --json reports "baseline": "passed" for every file whose
-      baseline did not fail, including a file whose mutants were all reused from its snapshot, for
-      which no baseline ran in this run; --fail-fast already says "not-run" there.
-      unreached-baseline-not-run-fix covered only files no test reaches, as its scenario says;
-      making the aggregate value follow what ran would change the value a reused file has always
-      reported.
   - id: python-oldest-coverage-ci
     title: CI measures Python with the oldest coverage.py itos-cc supports, not only the pinned one
     phase: 1
