@@ -1467,7 +1467,7 @@ items:
     title: A release publishes the commit main's CI proved, without testing it again
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: task
     why: >
