@@ -1393,7 +1393,7 @@ items:
     title: Python coverage reads a project's parallel data files
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
