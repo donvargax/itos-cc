@@ -37,6 +37,12 @@ commits:
       validate_for: [feat, fix]
       must_be_live: true
       read_at: commit
+    # What a user of this project must change for the commit, or none
+    # (itos commit --upgrading none): feat and fix are what a user can feel, and
+    # the release notes quote it (T-27, as go-template-itos requires it).
+    Upgrading:
+      source: text
+      required_for: [feat, fix]
     # The work item a commit belongs to, for the commits no other footer ties
     # to it: a slice's @wip scenarios and its steps committed red first, in a
     # test commit, or a chore it needs. It stands in for Task in those types,
