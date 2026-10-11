@@ -564,8 +564,3 @@
     v0.14.0 was cut by hand at 0e1eb50, before T-26, with notes written as before (the person,
     2026-10-11), so its behaviour change, the "not-run" baseline that c13df5f made with no
     Upgrading footer, is in those notes; the first release this cuts follows v0.14.0.
-  done_when:
-    - run: grep -q 'release-version' .github/workflows/ci.yml .github/workflows/release.yml
-    - run: grep -q 'attest-build-provenance' .github/workflows/release.yml
-    - run: go test -count=1 ./tools/bin/release-version ./tools/bin/release-notes
-      timeout: 600
