@@ -1502,17 +1502,9 @@ items:
     title: A snapshot of a file outside the project root is no orphan while its file exists
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was outside-root-snapshot-orphaned.
-      mutation run on a file outside the project root writes its snapshot under .metrics/mutate at
-      the file's absolute path (project.FromRootOf returns it, and SnapshotName joins it under
-      mutate/), so the name maps back to a path under the root where nothing is. Since
-      renamed-snapshot-left-behind-fix, a later run without paths at the root takes that snapshot
-      for an orphan and removes it. Whether such files should be refused, keyed elsewhere, or kept
-      needs a decision.
   - id: orphan-follows-worktree-rename
     title: An orphan's results could follow a rename the working tree shows, not only one a --since range does
     phase: 1
