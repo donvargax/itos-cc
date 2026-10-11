@@ -2084,6 +2084,69 @@ Feature: Mutation testing
         | kotlin     | a Gradle includeBuild outside the root             |
         | kotlin     | a Maven module outside the root                    |
 
+  # strict-changed-lines, issue #33, q-43 (answered 2026-10-11):
+  # --fail-uncovered=lines, with --since, judges coverage only where the
+  # range changed: an executable block or line is judged when it overlaps a
+  # hunk of git diff --unified=0 <base>...HEAD, for every language and in
+  # mutation run, counted runs (--count) and mutation check alike. The
+  # coverage rules follow the lines: mutation.uncovered-statement,
+  # mutation.coverage-missing and mutation.coverage-stale, and an uncovered
+  # mutant fails only on a changed line. Survivors are judged as before,
+  # over every admitted function. Evidence is measured and recorded as
+  # before, whole functions, so a later --fail-uncovered check of the same
+  # snapshot still judges them whole. --fail-uncovered alone is
+  # --fail-uncovered=functions, ADR-0017's whole functions, unchanged.
+  # Without --since, --fail-uncovered=lines is a usage error.
+  Rule: With --since, --fail-uncovered=lines judges coverage only on the changed lines
+
+    @wip @strict-changed-lines @ID-MUT-225
+    Scenario Outline: A <language> change is judged on the lines it changed, not the old code around them
+      Given a <language> project whose function has an executable line no test runs, committed at a base
+      And a commit since the base that changes another line of that function, which a test runs
+      When I run "itos-cc mutation run --since <base> --fail-uncovered=lines --json" for its file
+      Then the old unexecuted line is not reported and the run passes
+      And "itos-cc mutation check --since <base> --fail-uncovered=lines" gives the same verdict
+      But "itos-cc mutation run --since <base> --fail-uncovered" still reports the old line as "mutation.uncovered-statement"
+      And a commit that adds a line no test runs is reported on that line, and the run fails
+
+      Examples:
+        | language |
+        | go       |
+        | python   |
+
+    @wip @strict-changed-lines @ID-MUT-226
+    Scenario: Changed-line strictness needs a range and holds in a counted run
+      When I run "itos-cc mutation run --fail-uncovered=lines" without --since
+      Then it fails as a usage error, exit 2, naming --since
+      And a counted Go run with --count 1 --since <base> --fail-uncovered=lines judges coverage only on the changed lines, as a complete run does
+
+  # except-renew, issue #32, q-42 (answered 2026-10-11): mutation except
+  # --renew carries reviewed exceptions across a change that leaves their
+  # mutant the same: a rename, a literal or comment edit, reformatting, a
+  # line added elsewhere in the function. Run after mutation run, it
+  # renews a stale exception only when its function's fresh results hold
+  # exactly one site with the same original and replacement on a line
+  # whose text is unchanged, and that mutant survived the fresh run: the
+  # entry then names the function's current hash, line and column and
+  # keeps its reason. Every renewal is reported with its old and new hash
+  # and the site, so the commit shows what a person reviewed carrying over.
+  # An exception whose mutant the fresh run killed, whose site changed,
+  # whose match is ambiguous, or whose function has no fresh results is
+  # not renewed; it is reported with why, and stays
+  # mutation.exception-stale. --renew writes nothing else.
+  Rule: A reviewed exception can be renewed when its mutant is unchanged
+
+    @wip @except-renew @ID-MUT-227
+    Scenario: A renewed exception follows its unchanged mutant across a rename
+      Given a Go project with a reviewed exception for an equivalent mutant in a function
+      And a commit that renames a string literal on another line of that function
+      And "itos-cc mutation run" has judged the function again and the mutant still survives
+      When I run "itos-cc mutation except --renew --json"
+      Then the exception names the function's current hash, line and column and keeps its reason
+      And the renewal is reported with the old and new hash and the site
+      And "itos-cc mutation check" passes
+      But an exception whose mutant the fresh run killed, whose line changed, or whose function has no fresh results is not renewed, is reported with why, and stays "mutation.exception-stale"
+
   # strict-go-coverage, issue #23, q-25/q-26 and ADR-0017/0018:
   # - --fail-uncovered judges positive-weight Go executable coverage blocks
   #   in every selected, judged function, including functions with no sites.
