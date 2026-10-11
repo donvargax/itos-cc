@@ -2225,7 +2225,7 @@ Feature: Mutation testing
   #   was given, and mutation check names them, never as a function result.
   Rule: Mutation results say what happened, and leave nothing stale behind
 
-    @wip @unreached-baseline-not-run-fix @ID-MUT-231
+    @unreached-baseline-not-run-fix @ID-MUT-231
     Scenario: A file no test reaches reports its baseline as not run
       Given a Python project with a file no test reaches
       When I run "itos-cc mutation run --json" for that file

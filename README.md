@@ -297,7 +297,7 @@ test. What keeps `mutation run` fast:
   recorded with scope `all-tests` and the whole suite's evidence, so any
   test change makes them stale, as a `--test-command` outcome. A Python or
   Kotlin file no such test reaches runs no test, and its
-  mutants are uncovered. A test reaches code through the helpers it imports
+  mutants are uncovered (its `--json` `"baseline"` is `"not-run"`). A test reaches code through the helpers it imports
   and, in Python, the `conftest.py` files above it, but a Python or Kotlin
   test that runs code only through a subprocess, the CLI or reflection
   reaches none of it, so that code's mutants are uncovered too: judge them

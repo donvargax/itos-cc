@@ -368,7 +368,8 @@ judged and no snapshot is written. Listed tests are not run with
 		opt("count", intFlag, "N", "", "judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"),
 		opt("seed", stringFlag, "TEXT", "", "with --count, seed the draw with TEXT instead of the HEAD commit's id")),
 	json: `"files": [{"file", "killed", "survived", "excepted", "uncovered", "ran",
-   "reused", "baseline": "passed"|"failed", "mutants": [{"line", "column",
+   "reused", "baseline": "passed"|"failed"|"not-run" (a Python or Kotlin
+   file no test reaches runs none), "mutants": [{"line", "column",
    "function", "original", "replacement",
    "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
    "scope": "own"|"all-tests"|"listed"|"<test command>", for an
@@ -983,7 +984,13 @@ func runMutate(in *invocation) (any, error) {
 		// With --fail-fast every file has its state, its work and the
 		// baseline it actually ran, and a file not written still lists its
 		// mutants, each with its state.
-		baseline := func(aggregate string) string { return aggregate }
+		baseline := func(aggregate string) string {
+			// A file no test reaches runs no baseline in any run.
+			if r.Baseline == mutate.BaselineNotRun {
+				return r.Baseline
+			}
+			return aggregate
+		}
 		var work *mutateWork
 		state, cache := "", ""
 		if failFast {
@@ -995,7 +1002,7 @@ func runMutate(in *invocation) (any, error) {
 			}
 			baseline = func(string) string {
 				if r.Baseline == "" {
-					return "not-run"
+					return mutate.BaselineNotRun
 				}
 				return r.Baseline
 			}

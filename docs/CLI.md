@@ -141,7 +141,8 @@ as `python -m pytest -q -x -p no:cacheprovider <files>`, or `python -m
 unittest -f <modules>` without pytest, and measures the coverage that
 decides which of the file's mutants run from them too, one coverage run per
 distinct set of those files. A Python file none of whose tests is such a
-file runs no test: its mutants are `uncovered`. A test that executes code
+file runs no test: its mutants are `uncovered`, and its `--json`
+`"baseline"` is `"not-run"`, as no baseline ran. A test that executes code
 only through a subprocess or the CLI reaches none of it, so those kills
 need `--all-tests` or
 `--test-command`, which keep the whole suite and the given command. Under
@@ -179,7 +180,7 @@ jacoco:prepare-agent test jacoco:report -Dtest=<classes>
 of them: a module's report measures its own tests alone, so a class in
 another module can kill a mutant but measures none of it. A Kotlin file
 none of whose tests declares a class of its build runs no test: its mutants
-are `uncovered`. A test that executes code only through a subprocess, the
+are `uncovered`, and its `"baseline"` is `"not-run"`. A test that executes code only through a subprocess, the
 CLI or reflection reaches none of it, so those kills need `--all-tests` or
 `--test-command`, which keep the whole suite and the given command. As in
 Python, a Kotlin outcome of scope `own` recorded before still reads fresh

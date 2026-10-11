@@ -110,8 +110,11 @@ type FileResult struct {
 	// longer holds: those whose function changed or whose site is gone,
 	// then those whose mutant the tests now kill.
 	StaleExceptions []StaleException
-	// Baseline is, in a fail-fast run, "passed" or "failed" when the run
-	// ran the file's own tests without any mutant, empty when it did not.
+	// Baseline is BaselineNotRun for a file whose own tests run nothing,
+	// as no test reaches it (Command.RunsNothing), so no baseline runs for
+	// it in any run; in a fail-fast run it is otherwise "passed" or
+	// "failed" when the run ran the file's own tests without any mutant,
+	// empty when it did not.
 	Baseline string
 	// Incomplete is set when a fail-fast stop left a site of a function
 	// judged undecided: the run's own work on the file is not complete. The
@@ -214,6 +217,11 @@ func Run(files []string, opt Options) ([]FileResult, error) {
 	results, _, err := run(files, opt, nil)
 	return results, err
 }
+
+// BaselineNotRun is the baseline of a file whose own tests never ran
+// without a mutant: one no test reaches, whose tests run nothing, and in a
+// fail-fast run one the run never got to.
+const BaselineNotRun = "not-run"
 
 // RunFailFast is Run stopping at the first actionable final judgment, as
 // ff says. It returns the stop too, nil when nothing stopped the run
@@ -710,8 +718,16 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 			jobs = append(jobs, job{s, i})
 		}
 	}
+	for _, s := range states {
+		if s.command.RunsNothing() {
+			s.result.Baseline = BaselineNotRun
+		}
+	}
 	if ff != nil {
 		for _, s := range states {
+			if s.command.RunsNothing() {
+				continue
+			}
 			if _, ran := timeouts[s.command.Key()]; ran {
 				s.result.Baseline = "passed"
 			} else if s.result.BaselineFailed {
