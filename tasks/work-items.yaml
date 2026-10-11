@@ -14,6 +14,7 @@ queue:
   - unreached-baseline-not-run-fix
   - counted-unreached-listed-fix
   - python-parallel-data-fix
+  - mutate-workers-abandoned-fix
   - mutation-windows-ownership
 items:
   - id: T-3
