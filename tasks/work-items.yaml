@@ -1318,12 +1318,6 @@ items:
     title: Snapshot file operations go through replaceable seams
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      metrics-windows-rename needs red unit tests that inject a rename and a read failing with the
-      error Windows returns while another writer or reader holds a snapshot, and that compile
-      against the product before the fix. The rename and read of metrics go through package
-      variables (osRename, osReadFile) and the Windows retry's error test through another
-      (ephemeral), each the call it was, so nothing changes until the fix.
