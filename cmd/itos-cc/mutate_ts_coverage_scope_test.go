@@ -139,7 +139,7 @@ func TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants(t *testin
 
 	// And crap still measures with the coverage script
 	tsScopeRepo(t, modules)
-	o = cli(t, "crap", "--json", source)
+	o = itosCc(t, "crap", "--json", source)
 	if ran := coverageLines(o.stderr); len(ran) != 1 || !strings.HasSuffix(ran[0], "$ npm run coverage") {
 		t.Errorf("crap: coverage commands %q, want the coverage script, npm run coverage\nstderr:\n%s", ran, o.stderr)
 	}

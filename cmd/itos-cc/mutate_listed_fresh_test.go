@@ -76,7 +76,7 @@ func listedJSONOf(t *testing.T, n int) ([]map[string]any, outcome) {
 // mutation.stale problem, if any.
 func checked(t *testing.T) (map[string]string, map[string]string, outcome) {
 	t.Helper()
-	o := cli(t, "mutation", "check", "--json", greetSource)
+	o := itosCc(t, "mutation", "check", "--json", greetSource)
 	m := o.json(t)
 	var out struct {
 		Files []struct {

@@ -81,7 +81,7 @@ func TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
 	t.Parallel()
 	dir, snapshot := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
-	o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go")
+	o := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go")
 	requireUnsupportedCoverage(t, o, "go.work")
 	if strings.Contains(o.stderr, "coverage ") || strings.Contains(o.stderr, "tests ") {
 		t.Errorf("strict cached check ran a command:\n%s", o.stderr)
@@ -113,7 +113,7 @@ func TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements(t *testing.T) 
 			writeFile(t, filepath.Join(target, "replacement.go"), "package replacement\n\nfunc Value() int { return 1 }\n")
 			goMod := "module example.com/strictscope\n\ngo 1.22\n\nreplace example.com/replacement => " + scope.replacement + "\n"
 			writeFile(t, filepath.Join(dir, "go.mod"), goMod)
-			check := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go")
+			check := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go")
 			requireUnsupportedCoverage(t, check, scope.replacement)
 			run := mutateCovered(t, "--fail-uncovered", "--json", "entry.go")
 			requireUnsupportedCoverage(t, run, scope.replacement)
@@ -126,11 +126,11 @@ func TestStrictGoScopeGuardrailsRemainSupported(t *testing.T) {
 	dir, _ := freshStrictScopeEvidence(t)
 	writeFile(t, filepath.Join(dir, "go.work"), "go 1.22\n\nuse .\n")
 	useEnv(t, "GOWORK", "off")
-	if o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
+	if o := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("GOWORK=off should keep inventoried module supported: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	useEnv(t, "GOWORK", "")
-	if o := cli(t, "mutation", "check", "--json", "entry.go"); o.code != 0 {
+	if o := itosCc(t, "mutation", "check", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("non-strict check should retain workspace behavior: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	repo := strictScopeRepo(t)
@@ -139,7 +139,7 @@ func TestStrictGoScopeGuardrailsRemainSupported(t *testing.T) {
 		t.Fatalf("setup same-module replacement run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	useEnv(t, "GOWORK", "off")
-	if o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
+	if o := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "entry.go"); o.code != 0 {
 		t.Errorf("replacement target inside the actual module inventory should remain supported: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 }

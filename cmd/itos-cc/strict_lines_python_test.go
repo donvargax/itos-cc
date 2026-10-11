@@ -193,7 +193,7 @@ func TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testi
 		{"--coverage-command", "python3 -m coverage lcov -o lcov.info"},
 	} {
 		command := append(append([]string{"mutation", "run", "--fail-uncovered", "--json"}, args...), "calc.py")
-		o := cli(t, command...)
+		o := itosCc(t, command...)
 		p := o.json(t).problem("flags.conflict")
 		if p == nil || p["flag"] != args[0] {
 			t.Errorf("strict Python run with %v reports %v, want flags.conflict naming %s\n%s", args, p, args[0], o.stdout)

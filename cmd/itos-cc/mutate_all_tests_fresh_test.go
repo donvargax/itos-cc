@@ -50,7 +50,7 @@ func TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale(t *testing.T) {
 			test = strings.Replace(test, `got != "one"`, `got != "one" && got != "0 more"`, 1)
 			writeFile(t, path, test)
 
-			check := cli(t, "mutation", "check", "--json", greetSource)
+			check := itosCc(t, "mutation", "check", "--json", greetSource)
 			if check.code != 1 || !strings.Contains(check.stdout, `"mutation.stale"`) || !strings.Contains(check.stdout, path) {
 				t.Fatalf("after changing binary-only test: want stale naming %s, exit 1; got exit %d\n%s%s", path, check.code, check.stdout, check.stderr)
 			}
@@ -199,7 +199,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 		t.Fatalf("snapshot units %v, want six functions", byName)
 	}
 	excepted := byName["Excepted"]
-	if result := cli(t, "mutation", "except", fmt.Sprintf("main.go:%d:%d", excepted.Line, excepted.Column), "--reason", "equivalent"); result.code != 0 {
+	if result := itosCc(t, "mutation", "except", fmt.Sprintf("main.go:%d:%d", excepted.Line, excepted.Column), "--reason", "equivalent"); result.code != 0 {
 		t.Fatalf("except broad survivor: exit %d\n%s%s", result.code, result.stdout, result.stderr)
 	}
 	byName["Own"].Scope = ""
@@ -232,7 +232,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 		t.Fatal(err)
 	}
 	writeFile(t, "e2e/support_test.go", "package e2e\n\nimport \"testing\"\n\nfunc TestSupport(t *testing.T) { t.Log(1) }\n")
-	check := cli(t, "mutation", "check", "--json", greetSource)
+	check := itosCc(t, "mutation", "check", "--json", greetSource)
 	if check.code != 1 {
 		t.Fatalf("mutation check: exit %d, want stale broad outcomes\n%s%s", check.code, check.stdout, check.stderr)
 	}
@@ -324,7 +324,7 @@ func TestBroadScopeSupportFilesAreHashed(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			check := cli(t, "mutation", "check", "--json", greetSource)
+			check := itosCc(t, "mutation", "check", "--json", greetSource)
 			if check.code != 1 || !strings.Contains(check.stdout, `"mutation.stale"`) || !strings.Contains(check.stdout, "features/example.feature") {
 				t.Fatalf("support %s: want stale naming features/example.feature, got exit %d\n%s%s", tc.change, check.code, check.stdout, check.stderr)
 			}
@@ -379,7 +379,7 @@ func TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules(t *testing
 		t.Fatalf("legacy mutant: found=%v reused=%v, want rerun", found, mutant["reused"])
 	}
 	writeFile(t, "tagged_test.go", "//go:build freshness_test\n\npackage main\n\nimport \"testing\"\n\nfunc TestTagged(t *testing.T) {}\n")
-	check = cli(t, "mutation", "check", "--json", greetSource)
+	check = itosCc(t, "mutation", "check", "--json", greetSource)
 	if check.code != 1 || !strings.Contains(check.stdout, "tagged_test.go") {
 		t.Fatalf("build-tagged test: want stale naming tagged_test.go, got exit %d\n%s%s", check.code, check.stdout, check.stderr)
 	}
@@ -468,7 +468,7 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 			}
 		}
 	}
-	sample := cli(t, "mutation", "sample", "--count", "100", "--seed", "all-tests-freshness", "--json", greetSource)
+	sample := itosCc(t, "mutation", "sample", "--count", "100", "--seed", "all-tests-freshness", "--json", greetSource)
 	if strings.Contains(sample.stdout, greetID) {
 		t.Fatalf("mutation sample included stale %s:\n%s%s", greetID, sample.stdout, sample.stderr)
 	}

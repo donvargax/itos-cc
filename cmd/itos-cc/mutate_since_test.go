@@ -431,7 +431,7 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
 	// A first run writes the snapshot and the summary comment.
-	o := cli(t, "mutation", "run", "--no-coverage", "--workers", "1", boardSource)
+	o := itosCc(t, "mutation", "run", "--no-coverage", "--workers", "1", boardSource)
 	if o.code != 1 {
 		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 	}
@@ -467,7 +467,7 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 		}
 	}
 
-	o = cli(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base")
+	o = itosCc(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base")
 	line := ""
 	for _, l := range strings.Split(o.stdout, "\n") {
 		if strings.HasPrefix(l, boardSource+": ") {
@@ -479,7 +479,7 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 	}
 	untouched("mutation run --since base")
 
-	o = cli(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base", "--json")
+	o = itosCc(t, "mutation", "run", "--no-coverage", "--workers", "1", "--since", "base", "--json")
 	if j := o.json(t).judged(t, boardSource); j == nil || len(*j) != 0 || o.code != 0 {
 		t.Errorf("exit %d, judged %v, want exit 0 and judged []\n%s", o.code, j, o.stdout)
 	}

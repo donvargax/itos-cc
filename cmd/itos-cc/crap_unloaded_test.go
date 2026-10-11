@@ -57,7 +57,7 @@ func TestAFileNoTestLoadsScoredAloneIsUntestedNotUnmeasured(t *testing.T) {
 	t.Parallel()
 	vitestRepo(t)
 
-	o := cli(t, "crap", "--json", "--threshold", "30", unusedSource)
+	o := itosCc(t, "crap", "--json", "--threshold", "30", unusedSource)
 	c := crapOf(t, o)
 	wantUntested(t, c, o)
 	for _, p := range c.Problems {
@@ -76,7 +76,7 @@ func TestWithoutAThresholdAFileNoTestLoadsIsUntestedWithNoWarning(t *testing.T) 
 	t.Parallel()
 	vitestRepo(t)
 
-	o := cli(t, "crap", "--json", unusedSource)
+	o := itosCc(t, "crap", "--json", unusedSource)
 	wantUntested(t, crapOf(t, o), o)
 	if strings.Contains(o.stderr, "itos-cc: no coverage") {
 		t.Errorf("stderr warns of missing coverage:\n%s", o.stderr)

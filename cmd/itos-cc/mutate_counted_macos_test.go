@@ -63,7 +63,7 @@ func TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows(t *testing.T)
 
 	// The help, README and docs name Linux and macOS as the supported
 	// platforms, and Windows as #29.
-	help := cli(t, "mutation", "run", "--help").stdout
+	help := itosCc(t, "mutation", "run", "--help").stdout
 	for name, text := range map[string]string{"mutation run --help": help, "README.md": string(readme), "docs/CLI.md": string(docs)} {
 		if !strings.Contains(text, "Linux and macOS") || !strings.Contains(text, "#29") {
 			t.Errorf("%s does not name Linux and macOS as counted mode's platforms and Windows as #29", name)

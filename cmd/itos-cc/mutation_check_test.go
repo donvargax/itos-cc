@@ -66,7 +66,7 @@ func appendTo(t *testing.T, name, text string) {
 // mutationCheck runs itos-cc mutation check with args.
 func mutationCheck(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "check"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "check"}, args...)...)
 }
 
 type checkFunctionJSON struct {

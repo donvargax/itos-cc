@@ -195,7 +195,7 @@ func TestStrictCoverageRefusesScopesItsFingerprintsCannotProve(t *testing.T) {
 			seedFreshLineEvidence(t, plain, example.source)
 			for _, name := range []string{"check", "run"} {
 				useDir(t, plain)
-				o := cli(t, strictCommands(source)[name]...)
+				o := itosCc(t, strictCommands(source)[name]...)
 				if got := strictLineFindings(t, o); len(got) != 0 || o.code != 0 {
 					t.Fatalf("the plain project's strict %s: exit %d %q, want a pass on fresh evidence\n%s%s", name, o.code, got, o.stdout, o.stderr)
 				}
@@ -228,7 +228,7 @@ func TestStrictCoverageRefusesScopesItsFingerprintsCannotProve(t *testing.T) {
 			// and "itos-cc mutation run --fail-uncovered --json"
 			useDir(t, root)
 			for _, name := range []string{"check", "run"} {
-				o := cli(t, strictCommands(source)[name]...)
+				o := itosCc(t, strictCommands(source)[name]...)
 				// Then both report "mutation.coverage-unsupported" for its
 				// judged functions, naming the scope, and fail
 				want := fmt.Sprintf("mutation.coverage-unsupported %s %s:%d", example.source, scopeFunction(example), 1)
@@ -269,7 +269,7 @@ func TestStrictCoverageRefusesScopesItsFingerprintsCannotProve(t *testing.T) {
 				{"mutation", "check", "--json", source},
 				{"mutation", "run", "--json", "--no-annotate", "--workers", "1", source},
 			} {
-				o := cli(t, args...)
+				o := itosCc(t, args...)
 				if rules := problemRules(t, o); len(rules) != 0 || o.code != 0 {
 					t.Errorf("%s without --fail-uncovered: exit %d %q, want a pass as before\n%s%s", args[1], o.code, rules, o.stdout, o.stderr)
 				}

@@ -21,7 +21,7 @@ import (
 // whatever coverage says, and the summary comment written.
 func annotatedRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--no-coverage", "--workers", "1"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "run", "--no-coverage", "--workers", "1"}, args...)...)
 }
 
 // summaryComment is the summary comment that ends src/board.go, from its

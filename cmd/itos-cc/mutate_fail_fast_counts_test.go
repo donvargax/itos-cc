@@ -28,7 +28,7 @@ func TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused(t *testin
 	commitAll(t, "judge shown")
 	ff := t.TempDir()
 	useEnv(t, "FF_DIR", ff)
-	prior := cli(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
+	prior := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
 	logOutcome(t, &prior)
 	if shown := ffRecorded(ffSnapshot(t, "main.go"), "shown"); prior.code != 0 || len(shown) != 1 || shown[0]["outcome"] != "killed" {
 		t.Fatalf("earlier run: exit %d, shown recorded %v: want 0 and its mutant killed by the listed tests", prior.code, shown)
@@ -48,7 +48,7 @@ func TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused(t *testin
 	run := func(args ...string) outcome {
 		t.Helper()
 		writeFile(t, snapshot, recorded)
-		o := cli(t, append([]string{"mutation", "run", "--no-annotate", "--since", "HEAD~2", "--workers", "1"}, args...)...)
+		o := itosCc(t, append([]string{"mutation", "run", "--no-annotate", "--since", "HEAD~2", "--workers", "1"}, args...)...)
 		logOutcome(t, &o)
 		return o
 	}

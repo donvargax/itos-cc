@@ -17,7 +17,7 @@ var rootMarkers = []string{"package.json", "tsconfig.json", "go.mod", ".git"}
 // args, run in the test's directory (useDir).
 func unitIDs(t *testing.T, args ...string) []string {
 	t.Helper()
-	o := cli(t, append([]string{"units", "--json"}, args...)...)
+	o := itosCc(t, append([]string{"units", "--json"}, args...)...)
 	var got struct {
 		Units []struct {
 			Namespace string `json:"namespace"`

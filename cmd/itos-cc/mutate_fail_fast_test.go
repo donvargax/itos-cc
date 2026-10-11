@@ -152,7 +152,7 @@ func ffRepo(t *testing.T, files map[string]string) (string, string) {
 // coverage, and args.
 func shellRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--json", "--no-coverage", "--test-command", "sh test.sh"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "run", "--json", "--no-coverage", "--test-command", "sh test.sh"}, args...)...)
 }
 
 // runsIn is how many times test.sh ran, as $FF_DIR/runs records.
@@ -575,7 +575,7 @@ func ffListedRepo(t *testing.T, judged ...string) string {
 // listedRun runs mutation run --json --since HEAD~1 with args.
 func listedRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1"}, args...)...)
 }
 
 // ffException is an itos-cc.yaml exception entry for the one site of
@@ -714,11 +714,11 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 	} {
 		t.Run(c.name+" under --fail-uncovered", func(t *testing.T) {
 			moduleRepo(t, compareTwins(c.extra))
-			o := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", "--fail-fast")
+			o := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", "--fail-fast")
 			logOutcome(t, &o)
 			f := o.ff(t)
 			// The run without --fail-fast, after it, judges Compare's mutant.
-			all := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered")
+			all := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered")
 			logOutcome(t, &all)
 			agg := all.ff(t)
 			if all.code != 1 || trialLines(all.stderr) != 1 {
@@ -742,7 +742,7 @@ func TestKnownPolicyFailuresStopBeforeAvoidableMutantWork(t *testing.T) {
 
 	t.Run("uncovered mutant without --fail-uncovered", func(t *testing.T) {
 		moduleRepo(t, compareTwins(halfSource))
-		o := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-fast")
+		o := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)
 		m := f.file("main.go")
@@ -869,7 +869,7 @@ func TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork(t *test
 
 	// Plain output says the run stopped early and why.
 	os.Remove(filepath.Join(ff, "started"))
-	text := cli(t, "mutation", "run", "--no-annotate", "--since", "HEAD~1", "--workers", "2", "--fail-fast")
+	text := itosCc(t, "mutation", "run", "--no-annotate", "--since", "HEAD~1", "--workers", "2", "--fail-fast")
 	logOutcome(t, &text)
 	if text.code != 1 || !strings.Contains(text.stdout, "stopped early") || !strings.Contains(text.stdout, "tests.selection-failed") {
 		t.Errorf("plain output, exit %d:\n%s\nwant it to say the run stopped early, at tests.selection-failed", text.code, text.stdout)
@@ -878,7 +878,7 @@ func TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork(t *test
 	// A run without --fail-fast keeps its existing output exactly: no new
 	// key, and the plain lines it always printed.
 	_, _ = ffRepo(t, threeFiles)
-	plain := cli(t, "mutation", "run", "--no-coverage", "--test-command", "sh test.sh", "--no-annotate", "--workers", "1")
+	plain := itosCc(t, "mutation", "run", "--no-coverage", "--test-command", "sh test.sh", "--no-annotate", "--workers", "1")
 	if wantText := "main.go: 2 killed, 1 survived, 0 uncovered (ran 3, reused 0)\n  survived main.go:4:34 `>` → `>=` in example.com/ff#Weak\n"; plain.stdout != wantText {
 		t.Errorf("plain output without --fail-fast:\n%q\nwant exactly\n%q", plain.stdout, wantText)
 	}
@@ -964,7 +964,7 @@ func TestAFileTheStopCutShortPublishesNoPartialProof(t *testing.T) {
 	// mutation check still reports the stopped file's missing or stale
 	// results without running tests: C's, which no valid result records.
 	runs := runsIn(ff)
-	check := cli(t, "mutation", "check", "--json", "b.go")
+	check := itosCc(t, "mutation", "check", "--json", "b.go")
 	logOutcome(t, &check)
 	if rules := ffCheckRules(t, check); check.code != 1 || !unjudgedRule(rules["C"]) || runsIn(ff) != runs {
 		t.Errorf("mutation check b.go: exit %d, rules %v, %d runs: want 1, C missing or stale, and no test run", check.code, rules, runsIn(ff)-runs)

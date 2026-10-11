@@ -489,7 +489,7 @@ func TestMutationSampleRerunsAListedOutcomeWithItsTests(t *testing.T) {
 	writeFile(t, path, string(data)+"\n")
 	harnessRuns(t, record)
 
-	o := cli(t, "mutation", "sample", "--count", "100", "--workers", "1", "--seed", "s", "--json")
+	o := itosCc(t, "mutation", "sample", "--count", "100", "--workers", "1", "--seed", "s", "--json")
 	var out struct {
 		Files []struct {
 			Mutants []map[string]any `json:"mutants"`

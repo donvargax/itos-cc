@@ -43,7 +43,7 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 	}
 
 	// --count with --fail-fast is a flags.conflict usage error.
-	o := cli(t, "mutation", "run", "--json", "--count", "1", "--fail-fast")
+	o := itosCc(t, "mutation", "run", "--json", "--count", "1", "--fail-fast")
 	if p := problemOf(o, "flags.conflict"); o.code != 2 || p == nil || p["flag"] != "--fail-fast" {
 		t.Errorf("--count with --fail-fast: exit %d, want 2 with flags.conflict for --fail-fast\n%s%s", o.code, o.stdout, o.stderr)
 	}
@@ -52,7 +52,7 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		useEnv(t, platformEnv, "windows")
 	}
-	o = cli(t, "mutation", "run", "--json", "--fail-fast")
+	o = itosCc(t, "mutation", "run", "--json", "--fail-fast")
 	useEnv(t, platformEnv, "")
 	if p := problemOf(o, "fail-fast.platform"); o.code != 3 || p == nil || p["platform"] != "windows" {
 		t.Errorf("--fail-fast on Windows: exit %d, want 3 with fail-fast.platform for windows\n%s%s", o.code, o.stdout, o.stderr)
@@ -68,7 +68,7 @@ func TestFailFastAdmissionBoundaries(t *testing.T) {
 
 	// The help, README and docs/CLI.md describe --fail-fast, its rule and
 	// its platforms.
-	help := cli(t, "mutation", "run", "--help").stdout
+	help := itosCc(t, "mutation", "run", "--help").stdout
 	for name, text := range map[string]string{"mutation run --help": help, "README.md": string(readme), "docs/CLI.md": string(docs)} {
 		for _, want := range []string{"--fail-fast", "fail-fast.platform", "Linux and macOS", "unattempted"} {
 			if !strings.Contains(text, want) {

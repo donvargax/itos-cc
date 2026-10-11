@@ -66,7 +66,7 @@ func TestSitesAreListedInLineOrderInlineCallbacksIncluded(t *testing.T) {
 		t.Fatalf("sites %+v, want those of lines 2 and 7 in routes and those of line 4 in the callback", sites)
 	}
 
-	o := cli(t, "mutation", "list", appSource)
+	o := itosCc(t, "mutation", "list", appSource)
 	var want []string
 	for _, s := range slices.SortedStableFunc(slices.Values(sites), func(a, b mutateSite) int {
 		if a.Line != b.Line {

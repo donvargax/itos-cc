@@ -60,7 +60,7 @@ func TestAFileTheTestsNeverLoadFailsWhole(t *testing.T) {
 	boardRepo(t, map[string]string{
 		"src/unused/unused.go": "package unused\n\nfunc Half(i int) bool {\n\treturn i > 2\n}\n\nfunc Zero(i int) bool {\n\treturn i == 0\n}\n",
 	})
-	sites := cli(t, "mutation", "list", "--json", unused).stdout
+	sites := itosCc(t, "mutation", "list", "--json", unused).stdout
 	var scan struct {
 		Sites []mutateSite `json:"sites"`
 	}
@@ -139,7 +139,7 @@ func TestUncoveredMutantsAsJSON(t *testing.T) {
 func TestStrictModeRejectsSkippedCoverage(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
-	o := cli(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json", boardSource)
+	o := itosCc(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json", boardSource)
 	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)
 	if o.code != 2 {
 		t.Errorf("exit %d, want usage conflict 2\n%s%s", o.code, o.stdout, o.stderr)

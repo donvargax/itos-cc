@@ -152,7 +152,7 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 		t.Fatalf("setup strict run: exit %d, want 1 for Dormant's uncovered block alone\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	requireCompleteGoEvidence(t, dir)
-	goOnly := cli(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo)
+	goOnly := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo)
 	if findings := mixedFindings(t, goOnly, mixedGo); goOnly.code != 1 || len(findings) != 1 ||
 		!strings.HasPrefix(findings[0], "mutation.uncovered-statement example.com/mixed#Dormant:") {
 		t.Fatalf("setup Go-only check: exit %d findings %q, want Dormant's uncovered block alone\n%s%s", goOnly.code, findings, goOnly.stdout, goOnly.stderr)
@@ -160,7 +160,7 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 
 	// When I run "itos-cc mutation check --fail-uncovered --json" over both
 	// files
-	mixed := cli(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo, mixedOutside)
+	mixed := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo, mixedOutside)
 	// Then the TypeScript function is reported as mutation.coverage-missing
 	// of TypeScript line evidence, never of Go evidence, and nothing is an
 	// error
@@ -170,7 +170,7 @@ func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T)
 
 	// When a TypeScript file sits beneath the Go module's directory
 	writeFile(t, filepath.Join(dir, filepath.FromSlash(mixedBeneath)), mixedTypeScript)
-	beneath := cli(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo, mixedBeneath)
+	beneath := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", mixedGo, mixedBeneath)
 	// Then it is still not judged for Go coverage evidence
 	requireTypeScriptUnjudged(t, beneath, mixedBeneath)
 	requireGoJudgedAsBefore(t, beneath, goOnly, "the check with a TypeScript file beneath the module")

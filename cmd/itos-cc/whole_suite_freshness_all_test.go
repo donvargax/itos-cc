@@ -220,7 +220,7 @@ func (l suiteLanguage) changeTest(t *testing.T, dir, mark string) {
 // suiteRun runs mutation run --json, without coverage, with args.
 func suiteRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	o := cli(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--no-coverage", "--workers", "1"}, args...)...)
+	o := itosCc(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--no-coverage", "--workers", "1"}, args...)...)
 	if o.code > 1 {
 		t.Fatalf("mutation run %v: exit %d\n%s%s", args, o.code, o.stdout, o.stderr)
 	}
@@ -237,7 +237,7 @@ func suiteKey(file, function string) string {
 // function's state and each stale function's message, by suiteKey.
 func suiteCheck(t *testing.T, files ...string) (map[string]string, map[string]string, outcome) {
 	t.Helper()
-	o := cli(t, append([]string{"mutation", "check", "--json"}, osPaths(files)...)...)
+	o := itosCc(t, append([]string{"mutation", "check", "--json"}, osPaths(files)...)...)
 	var out struct {
 		Files []struct {
 			File      string `json:"file"`
@@ -615,7 +615,7 @@ func TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage(t *tes
 		states, _, check := suiteCheck(t, all...)
 		requireNoCommand(t, check)
 		stale := graphStale(t, dir)
-		sample := cli(t, "mutation", "sample", "--workers", "1", "--count", "1000", "--seed", "whole-suite", "--json")
+		sample := itosCc(t, "mutation", "sample", "--workers", "1", "--count", "1000", "--seed", "whole-suite", "--json")
 		sampled := map[string]bool{}
 		for _, m := range sample.sampled(t) {
 			sampled[suiteKey(m.File, m.Function)] = true

@@ -27,7 +27,7 @@ import (
 // mutationSample runs itos-cc mutation sample with args, on one worker.
 func mutationSample(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "sample", "--workers", "1"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "sample", "--workers", "1"}, args...)...)
 }
 
 // sampledJSON is one entry of a file's "mutants" in mutation sample --json.

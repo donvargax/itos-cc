@@ -227,7 +227,7 @@ func TestChangedLineStrictnessNeedsARange(t *testing.T) {
 		{"mutation", "run", "--count", "1", "--fail-uncovered=lines", "--json"},
 		{"mutation", "check", "--fail-uncovered=lines", "--json"},
 	} {
-		o := cli(t, args...)
+		o := itosCc(t, args...)
 		named := false
 		for _, p := range rawProblems(t, o) {
 			message, _ := p["message"].(string)

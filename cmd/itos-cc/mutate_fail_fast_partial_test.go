@@ -131,7 +131,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		// recorded with that scope and the module's tests as its evidence.
 		edit(t, "main.go", "func Done(n int) bool { return n > 4 }", "func Done(n int) bool { /* judged */ return n > 4 }")
 		commitAll(t, "judge Done")
-		prior := cli(t, "mutation", "run", "--json", "--no-coverage", "--no-annotate", "--test-command", "sh prior.sh", "--since", "HEAD~1")
+		prior := itosCc(t, "mutation", "run", "--json", "--no-coverage", "--no-annotate", "--test-command", "sh prior.sh", "--since", "HEAD~1")
 		logOutcome(t, &prior)
 		done := ffRecorded(ffSnapshot(t, "main.go"), "Done")
 		if prior.code != 0 || len(done) != 1 || done[0]["outcome"] != "killed" || done[0]["scope"] != "sh prior.sh" || wholeSuiteEvidence(done[0]) == nil {
@@ -142,7 +142,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		// Given a fail-fast run judges some mutants of the file, Done's
 		// reused and Surv's run, and the stop cancels Hold's and leaves
 		// Later's.
-		o := cli(t, "mutation", "run", "--json", "--no-coverage", "--test-command", "sh test.sh", "--workers", "2",
+		o := itosCc(t, "mutation", "run", "--json", "--no-coverage", "--test-command", "sh test.sh", "--workers", "2",
 			"--timeout-factor", "10000", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)
@@ -180,7 +180,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		}
 		// And mutation check still fails the functions with missing valid
 		// site entries.
-		check := cli(t, "mutation", "check", "--json", "main.go")
+		check := itosCc(t, "mutation", "check", "--json", "main.go")
 		logOutcome(t, &check)
 		rules := ffCheckRules(t, check)
 		if check.code != 1 || !unjudgedRule(rules["Hold"]) || !unjudgedRule(rules["Later"]) || len(rules["Done"]) != 0 {
@@ -206,7 +206,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		ff := t.TempDir()
 		useEnv(t, "FF_DIR", ff)
 		release(t, ff)
-		prior := cli(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
+		prior := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--since", "HEAD~1", "--workers", "1")
 		logOutcome(t, &prior)
 		before := ffSnapshot(t, "main.go")
 		shown := ffRecorded(before, "shown")
@@ -227,7 +227,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		// and spare's never starts.
 		useEnv(t, "FF_FAIL_ALONE", "1")
 		useEnv(t, "FF_FAIL_AFTER", filepath.Join(ff, "started"))
-		o := cli(t, "mutation", "run", "--json", "--since", "HEAD~2", "--workers", "2", "--fail-fast")
+		o := itosCc(t, "mutation", "run", "--json", "--since", "HEAD~2", "--workers", "2", "--fail-fast")
 		logOutcome(t, &o)
 		f := o.ff(t)
 		m := f.file("main.go")
@@ -266,7 +266,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		}
 		// And mutation check still fails the functions with missing valid
 		// site entries.
-		check := cli(t, "mutation", "check", "--json", "--since", "HEAD~2")
+		check := itosCc(t, "mutation", "check", "--json", "--since", "HEAD~2")
 		logOutcome(t, &check)
 		rules := ffCheckRules(t, check)
 		for _, function := range []string{"wait", "label", "spare"} {
@@ -317,7 +317,7 @@ func TestACancelledForcedRerunLeavesAFreshPriorCacheUsable(t *testing.T) {
 	// Given a file with fresh complete mutation results.
 	first := shellRun(t, "--no-annotate", "--workers", "1")
 	logOutcome(t, &first)
-	if check := cli(t, "mutation", "check", "--json", "a.go"); first.code != 0 || check.code != 0 {
+	if check := itosCc(t, "mutation", "check", "--json", "a.go"); first.code != 0 || check.code != 0 {
 		t.Fatalf("first run exit %d, then mutation check a.go exit %d: want both 0\n%s", first.code, check.code, check.stdout)
 	}
 
@@ -334,7 +334,7 @@ func TestACancelledForcedRerunLeavesAFreshPriorCacheUsable(t *testing.T) {
 	}
 
 	// Then its prior fresh results still satisfy mutation check.
-	check := cli(t, "mutation", "check", "--json", "a.go")
+	check := itosCc(t, "mutation", "check", "--json", "a.go")
 	logOutcome(t, &check)
 	if check.code != 0 {
 		t.Errorf("mutation check a.go: exit %d, rules %v: want 0, its prior results still fresh and complete", check.code, check.ff(t).rules())

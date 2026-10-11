@@ -42,7 +42,7 @@ func TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	check := cli(t, "mutation", "check", "--fail-uncovered", "--json", source)
+	check := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", source)
 	var checkProblem map[string]any
 	for _, candidate := range check.json(t).Problems {
 		if candidate["rule"] == "mutation.uncovered-statement" && candidate["function"] == "example.com/strict#Choose" {
@@ -244,7 +244,7 @@ func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing
 	if err != nil {
 		t.Fatal(err)
 	}
-	o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+	o := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
 	var p map[string]any
 	for _, candidate := range o.json(t).Problems {
 		if candidate["rule"] == "mutation.coverage-missing" && candidate["function"] == "example.com/strictcheck#Choose" {
@@ -315,7 +315,7 @@ func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 		t.Fatalf("initial strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	writeFile(t, filepath.Join(dir, "main_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestValue(t *testing.T) { if Value(false) != 2 || Value(true) != 1 { t.Fatal(\"Value\") } }\n")
-	check := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+	check := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
 	var stale map[string]any
 	for _, problem := range check.json(t).Problems {
 		if problem["rule"] == "mutation.coverage-stale" && problem["function"] == "example.com/strictinputs#Value" {
@@ -392,7 +392,7 @@ func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T
 				t.Fatalf("setup strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 			}
 			tc.edit(t, dir)
-			check := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+			check := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
 			var stale map[string]any
 			for _, problem := range check.json(t).Problems {
 				if problem["rule"] == "mutation.coverage-stale" && problem["function"] == "example.com/strictfingerprints#Value" {
@@ -462,7 +462,7 @@ func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 			if err := os.WriteFile(path, append(updated, '\n'), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			o := cli(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
+			o := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", "main.go")
 			var missing bool
 			for _, problem := range o.json(t).Problems {
 				if problem["rule"] == "mutation.coverage-missing" && problem["function"] == "example.com/strictownership#Second" {
@@ -579,7 +579,7 @@ func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *t
 func TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection(t *testing.T) {
 	t.Parallel()
 	inEmptyDir(t)
-	o := cli(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json")
+	o := itosCc(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json")
 	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)
 	if o.code != 2 {
 		t.Errorf("strict no-coverage exit %d, want 2\n%s%s", o.code, o.stdout, o.stderr)
@@ -601,7 +601,7 @@ func TestStrictGoRejectsUnattestedRawCoverageFlags(t *testing.T) {
 			command := []string{"mutation", "run", "--fail-uncovered", "--json"}
 			command = append(command, args...)
 			command = append(command, "main.go")
-			o := cli(t, command...)
+			o := itosCc(t, command...)
 			wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": args[0]}, o.stdout)
 			if o.code != 2 {
 				t.Errorf("strict raw coverage flag %v exit %d, want 2\n%s%s", args, o.code, o.stdout, o.stderr)

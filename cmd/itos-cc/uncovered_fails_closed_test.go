@@ -66,7 +66,7 @@ func placeStub(t *testing.T, stub, path string) {
 // every mutant's tests, and args.
 func failClosedRun(t *testing.T, source string, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--workers", "1", "--test-command", "go version"},
+	return itosCc(t, append([]string{"mutation", "run", "--json", "--no-annotate", "--workers", "1", "--test-command", "go version"},
 		append(args, source)...)...)
 }
 
@@ -213,7 +213,7 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 	})
 	goSource, ts, siteFree := filepath.FromSlash("gomod/entry.go"), filepath.FromSlash("app/src/calc.ts"), filepath.FromSlash("app/src/label.ts")
 
-	mixed := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, ts)
+	mixed := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, ts)
 	if p := mixed.json(t).problem("coverage.tool-missing"); p == nil || p["language"] != "typescript" || mixed.code != 3 {
 		t.Errorf("mixed strict run: exit %d, want 3 with TypeScript's coverage.tool-missing\n%s%s", mixed.code, mixed.stdout, mixed.stderr)
 	}
@@ -229,7 +229,7 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 	// A site-free TypeScript file needs no coverage for its mutants, but its
 	// function needs TypeScript line evidence (strict-lines-typescript),
 	// which no tool measures here: it is missing, never a tool failure.
-	siteFreeRun := cli(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, siteFree)
+	siteFreeRun := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, siteFree)
 	missing := siteFreeRun.json(t).problem("mutation.coverage-missing")
 	if siteFreeRun.code != 1 || siteFreeRun.json(t).problem("coverage.tool-missing") != nil ||
 		missing == nil || filepath.ToSlash(fmt.Sprint(missing["file"])) != "app/src/label.ts" {

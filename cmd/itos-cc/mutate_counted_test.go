@@ -80,7 +80,7 @@ func (c countedJSON) stage(name string) map[string]any {
 // say otherwise.
 func countedRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--json"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "run", "--json"}, args...)...)
 }
 
 // requireCountedPlatform skips where counted mode refuses to run: it runs
@@ -421,20 +421,20 @@ func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing
 func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	t.Parallel()
 	useDir(t, t.TempDir())
-	help := cli(t, "mutation", "run", "--help").stdout
+	help := itosCc(t, "mutation", "run", "--help").stdout
 	for _, want := range []string{"--count N", "--seed TEXT", "--since REF", "--fail-uncovered", "--all-tests"} {
 		if !strings.Contains(help, want) {
 			t.Errorf("mutation run --help lacks %q", want)
 		}
 	}
-	sampleHelp := cli(t, "mutation", "sample", "--help").stdout
+	sampleHelp := itosCc(t, "mutation", "sample", "--help").stdout
 	if !strings.Contains(sampleHelp, "--count N") || !strings.Contains(sampleHelp, "how many mutants to run, at least 1") {
 		t.Errorf("mutation sample --help changed its --count:\n%s", sampleHelp)
 	}
 
 	dir := moduleRepo(t, compareFiles)
 	// Without the opt-in, a complete run caches and annotates: one trial.
-	o := cli(t, "mutation", "run", "--json", "--workers", "1", "main.go")
+	o := itosCc(t, "mutation", "run", "--json", "--workers", "1", "main.go")
 	if o.code != 0 || len(o.json(t).Files) != 1 {
 		t.Fatalf("complete run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
@@ -445,7 +445,7 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 		t.Errorf("complete run did not annotate main.go:\n%s", source)
 	}
 	// Cached sample rechecks its recorded outcome: one trial.
-	sample := cli(t, "mutation", "sample", "--json", "--count", "5", "--workers", "1")
+	sample := itosCc(t, "mutation", "sample", "--json", "--count", "5", "--workers", "1")
 	if sample.code != 0 || len(sample.sampled(t)) != 1 {
 		t.Errorf("cached sample: exit %d\n%s%s", sample.code, sample.stdout, sample.stderr)
 	}
@@ -453,7 +453,7 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	// With no cache, sample has nothing to sample, while counted mode draws
 	// from the committed sites: measured uncovered here, so no trial.
 	moduleRepo(t, untestedFiles)
-	nothing := cli(t, "mutation", "sample", "--json")
+	nothing := itosCc(t, "mutation", "sample", "--json")
 	if nothing.code != 0 || len(nothing.sample(t).Files) != 0 || !strings.Contains(nothing.stderr, "no cached mutant to sample") {
 		t.Errorf("sample without a cache: exit %d\n%s%s", nothing.code, nothing.stdout, nothing.stderr)
 	}
@@ -574,7 +574,7 @@ func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t 
 
 	// Plain output, on a selection that runs no trial.
 	moduleRepo(t, untestedFiles)
-	text := cli(t, "mutation", "run", "--count", "1")
+	text := itosCc(t, "mutation", "run", "--count", "1")
 	for _, want := range []string{"sampled", "not a complete", "bounds mutant trials, not discovery"} {
 		if !strings.Contains(text.stdout, want) {
 			t.Errorf("plain output lacks %q:\n%s", want, text.stdout)
@@ -595,7 +595,7 @@ func TestSampledExecutionPublishesNoPersistentCompleteProof(t *testing.T) {
 		"y/y_test.go": "package y\n\nimport \"testing\"\n\nfunc TestMix(t *testing.T) {\n\tif Mix(2, 3) != 7 {\n\t\tt.Fatal(\"Mix\")\n\t}\n}\n",
 	})
 	// A genuine complete cache of x/x.go, annotated: one trial.
-	if o := cli(t, "mutation", "run", "--workers", "1", filepath.FromSlash("x/x.go")); o.code != 0 {
+	if o := itosCc(t, "mutation", "run", "--workers", "1", filepath.FromSlash("x/x.go")); o.code != 0 {
 		t.Fatalf("complete run of x/x.go: exit %d\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	gitIn(t, dir, "add", "x/x.go")
@@ -609,14 +609,14 @@ func TestSampledExecutionPublishesNoPersistentCompleteProof(t *testing.T) {
 	if after := tree(t, dir); !maps2Equal(before, after) {
 		t.Errorf("counted run published files:\nbefore %v\nafter  %v", keys(before), keys(after))
 	}
-	check := cli(t, "mutation", "check", "--json", filepath.FromSlash("y/y.go"))
+	check := itosCc(t, "mutation", "check", "--json", filepath.FromSlash("y/y.go"))
 	if p := check.json(t).problem("mutation.missing"); check.code != 1 || p == nil {
 		t.Errorf("complete check of y/y.go: exit %d, want its missing complete proof\n%s", check.code, check.stdout)
 	}
 	if strings.Contains(check.stderr, "itos-cc: coverage") || strings.Contains(check.stderr, "itos-cc: baseline") {
 		t.Errorf("mutation check ran tests:\n%s", check.stderr)
 	}
-	if valid := cli(t, "mutation", "check", filepath.FromSlash("x/x.go")); valid.code != 0 {
+	if valid := itosCc(t, "mutation", "check", filepath.FromSlash("x/x.go")); valid.code != 0 {
 		t.Errorf("the genuine complete cache of x/x.go no longer holds: exit %d\n%s%s", valid.code, valid.stdout, valid.stderr)
 	}
 }
@@ -637,7 +637,7 @@ func TestOnlyAGenuinelySiteFreeRangeIsNotApplicable(t *testing.T) {
 	if c.number("executed") != 0 || trialLines(o.stderr) != 0 {
 		t.Errorf("site-free range ran trials:\n%s", o.stderr)
 	}
-	if text := cli(t, "mutation", "run", "--count", "3"); !strings.Contains(text.stdout, "not applicable") {
+	if text := itosCc(t, "mutation", "run", "--count", "3"); !strings.Contains(text.stdout, "not applicable") {
 		t.Errorf("plain output does not say not applicable:\n%s", text.stdout)
 	}
 	// Strict obligations still apply to a site-free range.

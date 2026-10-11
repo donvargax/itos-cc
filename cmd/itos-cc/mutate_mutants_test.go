@@ -61,7 +61,7 @@ func scanned(t *testing.T, file string) []mutateSite {
 	var scan struct {
 		Sites []mutateSite `json:"sites"`
 	}
-	o := cli(t, "mutation", "list", "--json", file)
+	o := itosCc(t, "mutation", "list", "--json", file)
 	if err := json.Unmarshal([]byte(o.stdout), &scan); err != nil {
 		t.Fatalf("sites of %s: %v\n%s", file, err, o.stdout)
 	}

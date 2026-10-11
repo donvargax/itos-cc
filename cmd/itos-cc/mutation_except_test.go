@@ -38,7 +38,7 @@ const clearSite, clearLineInFunction = "11:11", 2
 // mutationExcept runs itos-cc mutation except with args.
 func mutationExcept(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "except"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "except"}, args...)...)
 }
 
 // clearException is the entry that excepts clear's survivor with reason,

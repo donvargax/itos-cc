@@ -100,7 +100,7 @@ func lineOf(t *testing.T, text, s string) int {
 // returns what it printed.
 func mutationRun(t *testing.T, args ...string) outcome {
 	t.Helper()
-	return cli(t, append([]string{"mutation", "run", "--no-annotate"}, args...)...)
+	return itosCc(t, append([]string{"mutation", "run", "--no-annotate"}, args...)...)
 }
 
 // mainMutants is the mutants of main.go in o's --json output, as plain maps,

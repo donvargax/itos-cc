@@ -164,7 +164,7 @@ func TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testi
 		{"--coverage-command", "gradle test jacocoTestReport"},
 	} {
 		command := append(append([]string{"mutation", "run", "--fail-uncovered", "--json"}, args...), calc)
-		o := cli(t, command...)
+		o := itosCc(t, command...)
 		p := o.json(t).problem("flags.conflict")
 		if p == nil || p["flag"] != args[0] {
 			t.Errorf("strict Kotlin run with %v reports %v, want flags.conflict naming %s\n%s", args, p, args[0], o.stdout)

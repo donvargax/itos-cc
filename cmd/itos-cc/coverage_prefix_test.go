@@ -45,7 +45,7 @@ func TestTheCoverageCommandIsAnnouncedAsItosCcs(t *testing.T) {
 	t.Parallel()
 	coverageModule(t, false)
 
-	o := cli(t, "crap", filepath.FromSlash("a/a.go"))
+	o := itosCc(t, "crap", filepath.FromSlash("a/a.go"))
 	if o.code != 0 {
 		t.Fatalf("exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
 	}
@@ -72,7 +72,7 @@ func TestACoverageCommandThatFailsIsReportedAsItosCcs(t *testing.T) {
 	t.Parallel()
 	coverageModule(t, true)
 
-	o := cli(t, "crap", filepath.FromSlash("a/a.go"))
+	o := itosCc(t, "crap", filepath.FromSlash("a/a.go"))
 	reported := false
 	for _, l := range stderrLines(o.stderr) {
 		if strings.HasPrefix(l, "itos-cc: coverage: go: ") && strings.Contains(l, "exit status") {

@@ -88,7 +88,7 @@ func TestEveryCommandsSnapshotNamesFilesFromTheRoot(t *testing.T) {
 		t.Run(c.args[0], func(t *testing.T) {
 			root := boardRepo(t, nil)
 			inSrc(t, root)
-			if o := cli(t, c.args...); o.code != 0 {
+			if o := itosCc(t, c.args...); o.code != 0 {
 				t.Fatalf("itos-cc %v: exit %d, stderr:\n%s", c.args, o.code, o.stderr)
 			}
 			got := snapshotFiles(t, filepath.Join(root, ".metrics", c.snapshot))
@@ -145,7 +145,7 @@ func TestOutsideAGitRepositoryTheWorkingDirectoryIsTheRoot(t *testing.T) {
 	dir := inEmptyDir(t)
 	writeFile(t, filepath.Join(dir, "go.mod"), "module example.com/m\n\ngo 1.22\n")
 	writeFile(t, filepath.Join(dir, "board.go"), boardFiles["src/board.go"])
-	if o := cli(t, "crap", "--no-coverage"); o.code != 0 {
+	if o := itosCc(t, "crap", "--no-coverage"); o.code != 0 {
 		t.Fatalf("exit %d, stderr:\n%s", o.code, o.stderr)
 	}
 	if got := snapshotFiles(t, filepath.Join(dir, ".metrics", "crap.json")); len(got) == 0 || got[0] != "board.go" {
