@@ -2134,6 +2134,9 @@ Feature: Mutation testing
   # whose match is ambiguous, or whose function has no fresh results is
   # not renewed; it is reported with why, and stays
   # mutation.exception-stale. --renew writes nothing else.
+  # stale-fix-renew (issue #32): a stale exception whose function changed
+  # names the renewal as its fix first, so a person tries it before
+  # rewriting the entry by hand.
   Rule: A reviewed exception can be renewed when its mutant is unchanged
 
     @except-renew @ID-MUT-227
@@ -2146,6 +2149,13 @@ Feature: Mutation testing
       And the renewal is reported with the old and new hash and the site
       And "itos-cc mutation check" passes
       But an exception whose mutant the fresh run killed, whose line changed, or whose function has no fresh results is not renewed, is reported with why, and stays "mutation.exception-stale"
+
+    @stale-fix-renew @ID-MUT-242 @wip
+    Scenario: A stale exception whose function changed names the renewal as its fix
+      Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
+      When I run "itos-cc mutation run src/board.ts --json"
+      Then the "mutation.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --renew" before "--reason"
+      And "itos-cc mutation check src/board.ts --json" gives it the same fix
 
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's

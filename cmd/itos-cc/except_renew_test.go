@@ -17,6 +17,8 @@ import (
 // mutant is unchanged" in features/mutate.feature that the except-renew
 // slice holds. It drives the CLI and reads itos-cc.yaml and the --json
 // object as raw data, so it compiles against a product without the feature.
+// The rule's stale-fix-renew scenario, at the end, uses the module of
+// mutation_except_test.go instead.
 //
 // Each function of the module has a survivor no test kills, its `>` or
 // `<` at the 7th column of its if line, the function's 3rd: Label's, in label.go, stands for the equivalent mutant a
@@ -308,5 +310,35 @@ func TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule(t *testing.T) {
 	}
 	if check := mutationCheck(t, "--json", "label.go"); check.code != 0 {
 		t.Errorf("the check after the renewal: exit %d, want 0\n%s", check.code, check.stdout)
+	}
+}
+
+// @ID-MUT-242
+func TestAStaleExceptionWhoseFunctionChangedNamesTheRenewalAsItsFix(t *testing.T) {
+	t.Parallel()
+	// Given itos-cc.yaml excepts a survivor of clear, and clear changed
+	// since the entry was written
+	boardRepo(t, nil)
+	survivorRun(t)
+	writeExceptions(t, "", clearException(t, "clear is never called"))
+	edit(t, boardSource, "i < 3", "i < 4")
+
+	run := mutateRun(t, "--json", boardSource)
+	p := run.json(t).problem("mutation.exception-stale")
+	wantProblem(t, p, map[string]any{"file": boardSource, "function": clearID, "why": "changed"}, run.stdout)
+	fix, _ := p["fix"].(string)
+	renewAt, reasonAt := strings.Index(fix, "itos-cc mutation except --renew"), strings.Index(fix, "--reason")
+	if renewAt < 0 || reasonAt < 0 || renewAt > reasonAt {
+		t.Errorf("mutation run's fix %q, want it to name 'itos-cc mutation except --renew' before '--reason'", fix)
+	}
+	if want := "'itos-cc mutation except " + boardSource + ":"; !strings.Contains(fix, want) || !strings.Contains(fix, "itos-cc.yaml") {
+		t.Errorf("mutation run's fix %q, want it to name %s<line>:<column> and itos-cc.yaml", fix, want)
+	}
+
+	check := mutationCheck(t, "--json", boardSource)
+	c := check.json(t).problem("mutation.exception-stale")
+	wantProblem(t, c, map[string]any{"file": boardSource, "function": clearID, "why": "changed"}, check.stdout)
+	if c["fix"] != fix {
+		t.Errorf("mutation check's fix %q, want mutation run's, %q", c["fix"], fix)
 	}
 }
