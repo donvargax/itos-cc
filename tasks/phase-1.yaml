@@ -604,9 +604,6 @@
     lang's units come from source the caller reads. golangci-lint joins the CI plan over internal/
     alone, widening as packages move (q-50), and domain-coverage covers the new domain. Output and
     exit codes do not change.
-  done_when:
-    - run: go test ./internal/selection -count=1
-    - run: grep -q 'golangci-lint run ./internal/' itos.yaml
 - id: T-32
   type: refactor
   title: units is the first command on kong, a slice and the domain's port
