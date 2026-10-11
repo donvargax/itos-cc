@@ -1528,7 +1528,7 @@ items:
     title: A snapshot whose file git shows renamed is kept for the run that follows the rename
     phase: 1
     owner: null
-    status: todo
+    status: doing
     depends_on: []
     kind: slice
     why: >
