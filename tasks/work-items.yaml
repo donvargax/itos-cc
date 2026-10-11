@@ -384,14 +384,15 @@ items:
     status: done
     depends_on: []
     kind: slice
-  - id: check-removed-operator-sites
+  - id: check-removed-operator-sites-fix
     title: A recorded mutant whose site no longer exists, as when an operator is removed
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was check-removed-operator-sites.
       check-unrecorded-sites covers a site an entry never recorded, not the reverse. When a newer
       itos-cc removes a mutation operator, a function whose text did not change keeps mutants in its
       entry whose site no longer exists. mutation check keeps them (placed leaves such a mutant at
