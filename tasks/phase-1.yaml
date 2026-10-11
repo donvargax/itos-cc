@@ -463,3 +463,16 @@
     - run: go vet ./...
     - run: go test -count=1 -run '^TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork$' ./cmd/itos-cc
       timeout: 600
+- id: T-25
+  type: chore
+  title: Move itos from 6.5.1 to 7.5.0
+  why: >
+    The person chose to adopt go-template-itos in stages (q-49); the template's CI runs
+    donvargax/itos v7.4.0 and its AGENTS.md rules come from itos 7's init, so itos moves first,
+    alone. itos upgrade 7.5.0 walks every release after 6.5.1 and edits only what each fixes exactly
+    (the pin, schema keys); each breaking change, Upgrading footer and changed scenario it names is
+    applied by hand here and named in the commit body, and itos init --agent-rules regenerates
+    AGENTS.md's itos block. No product code changes; no template file is taken yet.
+  done_when:
+    - run: "grep -q 'version: \"7.5.0\"' itos.yaml"
+    - run: itos config check
