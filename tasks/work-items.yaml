@@ -1325,12 +1325,6 @@ items:
     title: Take strict-scope-refusals back off a red main
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      The first landing of strict-scope-refusals, c081fa6 (the feature), turned main red in CI
-      38101270114 on windows-latest: TestLineCoverageRefusesOnlyScopesOutsideItsInventory's Python
-      examples name targets such as /elsewhere/lib, which Windows does not call absolute, so they
-      were joined beneath the build root and admitted. The feature comes out alone; its steps,
-      1d8259b, stay, red until it relands with rooted paths taken as outside the root.
