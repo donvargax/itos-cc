@@ -1224,13 +1224,9 @@ items:
     title: Strict coverage refuses workspace and out-of-root local dependency scopes
     phase: 1
     owner: null
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      q-40 (2): ADR-0019 for TypeScript, Python and Kotlin: npm/pnpm/yarn workspaces,
-      file:/link:/workspace: and editable or path dependencies, Gradle includeBuild and Maven
-      modules outside the root are mutation.coverage-unsupported.
     refs: ["#23"]
   - id: strict-lines-counted
     title: A counted strict run proves the executable lines of every admitted Python function
