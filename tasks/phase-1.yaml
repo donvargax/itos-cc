@@ -405,3 +405,16 @@
   done_when:
     - run: go vet ./metrics
     - run: go test -count=1 ./metrics
+- id: T-21
+  type: revert
+  title: Take strict-scope-refusals back off a red main
+  why: >
+    The first landing of strict-scope-refusals, c081fa6 (the feature), turned main red in CI
+    38101270114 on windows-latest: TestLineCoverageRefusesOnlyScopesOutsideItsInventory's Python
+    examples name targets such as /elsewhere/lib, which Windows does not call absolute, so they were
+    joined beneath the build root and admitted. The feature comes out alone; its steps, 1d8259b,
+    stay, red until it relands with rooted paths taken as outside the root.
+  done_when:
+    - run: go vet ./...
+    - run: go test -count=1 ./mutate/...
+      timeout: 600
