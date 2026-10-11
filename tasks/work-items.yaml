@@ -13,6 +13,7 @@ phases:
 queue:
   - unreached-baseline-not-run-fix
   - counted-unreached-listed-fix
+  - python-parallel-data-fix
   - mutation-windows-ownership
 items:
   - id: T-3
