@@ -2087,8 +2087,8 @@ items:
   - id: T-36
     title: The pure lang is a domain package under internal/
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-35]
     kind: task
     why: >
