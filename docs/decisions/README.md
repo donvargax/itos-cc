@@ -42,5 +42,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0037: Top-level packages move under internal/ as each is refactored](0037-top-level-packages-move-under-internal-as-each-is-refactored.md)
 - [ADR-0038: Every command exits 130 on interrupt, and a second interrupt waits only for owned process groups](0038-every-command-exits-130-on-interrupt-and-a-second-interrupt-waits-only-for-owned-process-groups.md)
 - [ADR-0039: Every feature file converts to godog, one command at a time](0039-every-feature-file-converts-to-godog-one-command-at-a-time.md)
+- [ADR-0040: Changed-code mutation proof stays off until the refactor ends](0040-changed-code-mutation-proof-stays-off-until-the-refactor-ends.md)
 
 <!-- itos:decisions:end -->
