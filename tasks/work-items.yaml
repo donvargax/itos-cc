@@ -1865,6 +1865,10 @@ items:
       reported, it re-raises SIGINT with the default action so a shell's loop stops (q-54). Needs
       the context threaded through coverage and mutate first. Ships in the same minor release as
       semantic-exit-codes.
+
+      Decision 38 (q-51) supersedes decision 31: move the code comments citing decision 31
+      (internal/cli, internal/count, internal/disk, cmd/itos-cc/selection.go) to decision 38 in this
+      slice.
     refs: [q-51, q-54, q-37]
   - id: semantic-exit-codes
     title: Exit codes follow square/exit, 75 kept for retry
