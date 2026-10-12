@@ -114,7 +114,7 @@ type Found struct {
 // (snapshot.Key). A last snapshot that cannot be read is Ignored; any other
 // failure stops Handle with no report, and Ignored still set.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
-	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed)
+	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, selection.Exclusion{})
 	if err != nil {
 		return Found{}, err
 	}

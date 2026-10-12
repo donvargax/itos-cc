@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -470,7 +471,10 @@ func countedPaths(root string, args []string) ([]string, error) {
 
 // countedPlanError is the problem a refused fresh plan reports.
 func countedPlanError(in *invocation, err error) error {
+	var invalid *config.InvalidError
 	switch {
+	case errors.As(err, &invalid):
+		return configProblem(invalid, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
 	case errors.Is(err, mutate.ErrFreshRepository):
 		return countedNoGit(err)
 	case errors.Is(err, mutate.ErrFreshSince):

@@ -30,7 +30,7 @@ release instead: itos-cc is at 0.x.
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
 | 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript or Kotlin line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
-| 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor. |
+| 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 3    | The environment lacks something: a tool, a report, a git repository.                   |
 | 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
@@ -82,8 +82,9 @@ output of the commands it runs passes as it is.
 | `args.unexpected`            | 2    | version, help, mutation except | `argument`                                  |
 | `args.missing`               | 2    | mutation except | none                                                       |
 | `args.invalid`               | 2    | mutation except | `argument`                                                 |
-| `config.invalid`             | 2    | mutation run, mutation check, mutation sample, mutation except | `file`        |
+| `config.invalid`             | 2    | crap, dry, units, mutation run, mutation list, mutation check, mutation sample, mutation except | `file`, and `key` for an `exclude` glob (`exclude[1]`) |
 | `exception.no-survivor`      | 2    | mutation except | `file`, `line`, `column`                                   |
+| `exception.excluded`         | 2    | mutation except | `file`                                                     |
 | `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
 | `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
 | `since.bad-ref`              | 2    | mutation run, mutation check, mutation sample | `ref`                                         |
@@ -108,7 +109,7 @@ output of the commands it runs passes as it is.
 | `mutation.coverage-missing`  | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-stale`    | 1    | mutation check --fail-uncovered | `file`, `function`, `line` |
 | `mutation.coverage-unsupported` | 1 | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `function`, `line` |
-| `mutation.exception-stale`   | 1    | mutation run, mutation check, mutation except --renew | `file`, `function`, `line` (none when the function or its file is gone, or with `--renew` when its site is not found), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`; with `--renew` also `ambiguous`, `no-results`, `uncovered`), with `moved` `new_file` |
+| `mutation.exception-stale`   | 1    | mutation run, mutation check, mutation except --renew | `file`, `function`, `line` (none when the function or its file is gone, or with `--renew` when its site is not found), `column`, `original`, `replacement`, `why` (`killed`, `changed`, `gone`, `moved`, `excluded`; with `--renew` also `ambiguous`, `no-results`, `uncovered`), with `moved` `new_file` |
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
@@ -402,12 +403,15 @@ plain `mv` with nothing staged is a deletion and an untracked file, whose
 old snapshot is an orphan; stage a move (`git mv`, or `git add`) before a
 run. A file deleted, renamed to a path where nothing is, or never tracked
 is an orphan. Outside a git repository, in one with no commit, or when git
-fails, no orphan can be judged: none is named or removed. An orphan is not a problem, as
+fails, no orphan can be judged: none is named or removed. The snapshot of
+a source that `itos-cc.yaml`'s `exclude` leaves out is an orphan too,
+though its file is there. An orphan is not a problem, as
 problems mean `"ok": false`: `mutation check` names the orphans under its
-paths in a key of its own, `"orphans": [{"file", "snapshot"}]`, there only
+paths in a key of its own, `"orphans": [{"file", "snapshot", "why"}]`, there only
 when it found one, so output with none keeps the keys it had, `file` from
-the working directory as in `"files"` and `snapshot` from the project root,
-slash-separated, and its exit code stays what its functions make it.
+the working directory as in `"files"`, `snapshot` from the project root,
+slash-separated, and `why` `gone` or `excluded`, a key added to each entry,
+and its exit code stays what its functions make it.
 `mutation run` removes the orphans under its paths (with none, the working
 directory) once it has written what it judged, and lists them under the
 same key; a `--count` run writes nothing and removes nothing.
@@ -454,7 +458,7 @@ verdict and no exit code changes for it.
 | 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start, and `ITOS_CC_JACOCO_AGENT` and `ITOS_CC_JACOCO_DESTDIR` for the JVMs a Kotlin harness starts with the JaCoCo agent. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2. |
+| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `exclude`, doublestar globs, slash-separated and from the project root, of the sources (never tests) that `crap`, `dry`, `units` and `mutation run`, `list`, `check`, `sample` and `run --count` leave out however they were chosen, which a person writes; `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2, and so is an `exclude` glob that is empty, absolute, holds `..` or a backslash, or is no pattern, its `key` naming it. `crap`, `dry`, `units` and `mutation list` read the file too, from the version that has `exclude`; `units` and `dry` read it once their command line is parsed, so a file that cannot be read never breaks help or `version`, and `scrap`, which reads only tests, never reads it. `mutation run --count` reads the file the commit at `HEAD` holds. |
 | 39–41 | Entry points for other programs | None. |
 | 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 

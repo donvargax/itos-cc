@@ -240,7 +240,7 @@ Feature: Units: the functions and methods every tool measures
   # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
   # sources it names out of units, but never a test: units --tests still
   # lists the test files under an excluded folder.
-  @wip @slice-6 @ID-UNIT-15
+  @slice-6 @ID-UNIT-15
   Scenario: Sources that itos-cc.yaml excludes are not listed, their tests are
     Given itos-cc.yaml excludes "features/**"
     And the file "features/steps.go":

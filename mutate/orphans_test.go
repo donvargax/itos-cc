@@ -26,6 +26,9 @@ func there(t *testing.T, root, name string) bool {
 	return err == nil
 }
 
+// none is an exclusion that leaves out nothing.
+func none(string) bool { return false }
+
 func snapshotsOf(orphans []Orphan) []string {
 	var out []string
 	for _, o := range orphans {
@@ -48,7 +51,7 @@ func TestOrphansAreSnapshotsWhoseSourceIsGone(t *testing.T) {
 	writeIn(t, root, ".metrics/mutate/src/notes.txt", "")
 	writeIn(t, root, ".metrics/mutate/.json", "{}\n")
 
-	all, err := Orphans(root, func(string) bool { return true })
+	all, err := Orphans(root, func(string) bool { return true }, none)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +64,7 @@ func TestOrphansAreSnapshotsWhoseSourceIsGone(t *testing.T) {
 	}
 
 	src := filepath.Join(root, "src")
-	under, err := Orphans(root, func(path string) bool { return filepath.Dir(path) == src })
+	under, err := Orphans(root, func(path string) bool { return filepath.Dir(path) == src }, none)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +92,7 @@ func TestRemovingOrphansStaysInsideTheSnapshots(t *testing.T) {
 	writeIn(t, root, ".metrics/mutate/a/b/gone.ts.json", "{}\n")
 	writeIn(t, root, "outside.json", "{}\n")
 	writeIn(t, root, ".metrics/crap.json", "{}\n")
-	orphans, err := Orphans(root, func(string) bool { return true })
+	orphans, err := Orphans(root, func(string) bool { return true }, none)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +109,7 @@ func TestRemovingOrphansStaysInsideTheSnapshots(t *testing.T) {
 			t.Errorf("%s is gone, want everything outside the orphans kept", name)
 		}
 	}
-	if got, err := Orphans(t.TempDir(), func(string) bool { return true }); got != nil || err != nil {
+	if got, err := Orphans(t.TempDir(), func(string) bool { return true }, none); got != nil || err != nil {
 		t.Errorf("orphans of a project with no snapshots %v, %v, want none", got, err)
 	}
 }
@@ -126,7 +129,7 @@ func TestOrphanNamesMapBackAsTheyAre(t *testing.T) {
 	if err := os.Symlink(filepath.Join(root, "target.json"), filepath.Join(root, ".metrics", "mutate", "link.ts.json")); err != nil {
 		t.Fatal(err)
 	}
-	orphans, err := Orphans(root, func(string) bool { return true })
+	orphans, err := Orphans(root, func(string) bool { return true }, none)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,12 +168,12 @@ func TestOrphansAreJudgedByTheFileTheSnapshotRecords(t *testing.T) {
 	writeIn(t, root, snapshotOf(other), `{"version": 1, "file": "src/old.go", "units": []}`+"\n")
 
 	var asked []string
-	orphans, err := Orphans(root, func(path string) bool { asked = append(asked, path); return true })
+	orphans, err := Orphans(root, func(path string) bool { asked = append(asked, path); return true }, none)
 	if err != nil {
 		t.Fatal(err)
 	}
 	mapped := filepath.Join(root, strings.TrimSuffix(filepath.FromSlash(strings.TrimPrefix(snapshotOf(other), ".metrics/mutate/")), ".json"))
-	want := []Orphan{{Path: gone, Snapshot: snapshotOf(gone)}, {Path: mapped, Snapshot: snapshotOf(other)}}
+	want := []Orphan{{Path: gone, Snapshot: snapshotOf(gone), Why: OrphanGone}, {Path: mapped, Snapshot: snapshotOf(other), Why: OrphanGone}}
 	slices.SortFunc(want, func(a, b Orphan) int { return strings.Compare(a.Snapshot, b.Snapshot) })
 	if !slices.Equal(orphans, want) {
 		t.Errorf("orphans %v, want %v: the snapshot of %s, whose file exists, kept", orphans, want, kept)
@@ -205,5 +208,37 @@ func TestARecordedFileIsAnAbsolutePathWhereItsSnapshotLives(t *testing.T) {
 		if got != c.want || ok != (c.want != "") {
 			t.Errorf("recordedPath(%q, %q) = %q, %v, want %q", c.name, c.file, got, ok, c.want)
 		}
+	}
+}
+
+// A snapshot whose source is there but excluded is an orphan too, with why
+// excluded, beside those whose source is gone; one that covers does not
+// reach is not, and an excluded source with no snapshot is nothing.
+func TestTheSnapshotOfAnExcludedSourceIsAnOrphan(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"src/kept.go", "src/porttest/fake.go", "lib/porttest/fake.go", "src/porttest/bare.go"} {
+		writeIn(t, root, name, "package p\n")
+	}
+	for _, name := range []string{"src/kept.go", "src/porttest/fake.go", "lib/porttest/fake.go", "src/gone.go"} {
+		writeIn(t, root, ".metrics/mutate/"+name+".json", "{}\n")
+	}
+	excluded := func(path string) bool { return strings.Contains(filepath.ToSlash(path), "/porttest/") }
+	src := filepath.Join(root, "src")
+	orphans, err := Orphans(root, func(path string) bool { return strings.HasPrefix(path, src+string(filepath.Separator)) }, excluded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Orphan{
+		{Path: filepath.Join(root, "src", "gone.go"), Snapshot: ".metrics/mutate/src/gone.go.json", Why: OrphanGone},
+		{Path: filepath.Join(root, "src", "porttest", "fake.go"), Snapshot: ".metrics/mutate/src/porttest/fake.go.json", Why: OrphanExcluded},
+	}
+	if !slices.Equal(orphans, want) {
+		t.Errorf("orphans %v, want %v", orphans, want)
+	}
+	if err := RemoveOrphans(root, orphans); err != nil {
+		t.Fatal(err)
+	}
+	if there(t, root, ".metrics/mutate/src/porttest/fake.go.json") || !there(t, root, "src/porttest/fake.go") {
+		t.Error("removing the excluded orphan left its snapshot, or removed its source")
 	}
 }

@@ -41,7 +41,7 @@ func names(t *testing.T, h Handler, q Query) ([]string, error) {
 	t.Helper()
 	found, err := h.Handle(t.Context(), q)
 	var all []string
-	for _, u := range found {
+	for _, u := range found.Units {
 		all = append(all, u.Namespace+"#"+u.Name)
 	}
 	return all, err

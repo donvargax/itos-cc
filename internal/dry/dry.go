@@ -55,13 +55,17 @@ operators, and the shape of the code do.
 
 With paths or --changed, those files are compared against every source under
 the working directory, so a change is checked against the whole project.
-Writes .metrics/dry.json.`,
+The sources itos-cc.yaml's exclude names are left out of both, however they
+are chosen. Writes .metrics/dry.json.`,
 		JSON: `"threshold", "candidates": [{"score", "language", "left", "right"}],
    "groups": [{"language", "min_score", "max_score", "members": [{"file",
    "start_line", "end_line", "namespace", "name", "nodes"}]}]`,
+		Rules: []string{
+			"config.invalid  itos-cc.yaml cannot be read: file, and key for an exclude glob",
+		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success, duplicates or not"},
-			{Code: 2, Meaning: "a usage error: a bad flag or path"},
+			{Code: 2, Meaning: "a usage or config error: a bad flag or path, or an itos-cc.yaml that cannot be read"},
 			{Code: 3, Meaning: "--changed outside a git repository"},
 		},
 		Examples: []string{
@@ -82,33 +86,40 @@ type Query struct {
 
 // Handler is the dry command's application: the working tree it selects
 // and reads files through, what surrounds those files, which lang asks
-// about to parse them, the store its snapshot is recorded in, and Name, the
-// name a person reads a file by, from the working directory. cmd gives
-// each, choosing the adapters behind them. No value of a command line is
-// read here.
+// about to parse them, the store its snapshot is recorded in, Name, the
+// name a person reads a file by, from the working directory, and Exclude,
+// the sources the project's settings leave out. cmd gives each, choosing
+// the adapters behind them and reading the settings. No value of a command
+// line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
 	Name         func(path string) string
+	Exclude      selection.Exclusion
 }
 
 // Found is what Handle found: the pairs at or above the threshold, best
 // first, and the groups they link. NoSources is set when paths or changed
 // selected no source to check, so nothing was compared or recorded.
+// Excluded is the count of the sources the paths and changed chose that
+// Exclude left out.
 type Found struct {
 	Candidates []duplication.Candidate
 	Groups     []duplication.Group
 	NoSources  bool
+	Excluded   int
 }
 
 // Handle finds the duplicates q asks for and records them in dry.json,
-// passing ctx on to the domains, lang and the ports. Each side names its
-// file by Name, and dry.json by its path from the project root
-// (snapshot.Key). A failure to select or read stops it with nothing found;
-// a failure to record what was found returns it beside the failure.
+// passing ctx on to the domains, lang and the ports, the sources the
+// handler's Exclude names left out of the files checked and of the whole
+// project they are checked against alike. Each side names its file by
+// Name, and dry.json by its path from the project root (snapshot.Key). A
+// failure to select or read stops it with nothing found; a failure to
+// record what was found returns it beside the failure.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
-	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed)
+	chosen, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, h.Exclude)
 	if err != nil {
 		return Found{}, err
 	}
@@ -119,9 +130,9 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 			focus[f] = true
 		}
 		if len(focus) == 0 {
-			return Found{NoSources: true}, nil
+			return Found{NoSources: true, Excluded: chosen.Excluded}, nil
 		}
-		whole, err := selection.Select(ctx, h.Tree, nil, false)
+		whole, err := selection.Select(ctx, h.Tree, nil, false, h.Exclude)
 		if err != nil {
 			return Found{}, err
 		}
@@ -143,7 +154,7 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		forms = append(forms, duplication.Forms(f, name, q.Options)...)
 		f.Close()
 	}
-	found := Found{Candidates: []duplication.Candidate{}}
+	found := Found{Candidates: []duplication.Candidate{}, Excluded: chosen.Excluded}
 	if c := duplication.Compare(forms, focus, q.Options); c != nil {
 		found.Candidates = c
 	}
@@ -251,6 +262,9 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	if err != nil {
 		return ui.Emit(c.JSON, out, ui.Problems(err))
+	}
+	if found.Excluded > 0 {
+		ui.Line(fmt.Sprintf("%d sources left out by exclude in itos-cc.yaml", found.Excluded))
 	}
 	if found.NoSources {
 		ui.Line("no source files to check")

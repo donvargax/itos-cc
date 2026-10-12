@@ -16,7 +16,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	fileselection "github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -110,7 +112,9 @@ func (p *FreshPlan) Close() error {
 // measurement commands. Cancellation owns those Git process trees and removes
 // the private export. paths, when non-empty, narrow root-relative committed
 // paths; since, when non-empty, further restricts candidates to changed
-// functions.
+// functions. The sources the committed itos-cc.yaml excludes are no
+// candidates, whatever paths name; a committed itos-cc.yaml that cannot be
+// read is its *config.InvalidError.
 func PlanFresh(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
 	if count <= 0 {
 		return nil, errors.New("fresh plan count must be positive")
@@ -196,6 +200,11 @@ func PlanFresh(ctx context.Context, repoRoot string, paths []string, since strin
 	if err != nil {
 		return nil, err
 	}
+	cfg, err := config.LoadFrom(frozen)
+	if err != nil {
+		return nil, err
+	}
+	exclude := fileselection.Exclusion{Root: frozen, Globs: cfg.Exclude}
 	for chosen := range selectedPaths {
 		found := false
 		for _, rel := range tracked {
@@ -250,6 +259,9 @@ func PlanFresh(ctx context.Context, repoRoot string, paths []string, since strin
 	for _, discoveredPath := range discovered.Sources {
 		if err := ctx.Err(); err != nil {
 			return nil, err
+		}
+		if exclude.Excludes(discoveredPath) {
+			continue
 		}
 		rel, err := filepath.Rel(frozen, discoveredPath)
 		if err != nil {

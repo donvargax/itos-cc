@@ -1,8 +1,9 @@
 // Package config reads and writes itos-cc.yaml, the project's settings,
 // kept at the project root under version control and reviewed like the
-// code. It holds mutation.exceptions, the equivalent mutants a person
-// excepted, each with a reason, and mutation.tests, how to list the
-// project's tests and run a selection of them.
+// code. It holds exclude, globs of the sources no command measures or
+// mutates, mutation.exceptions, the equivalent mutants a person excepted,
+// each with a reason, and mutation.tests, how to list the project's tests
+// and run a selection of them.
 package config
 
 import (
@@ -14,6 +15,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/project"
@@ -59,6 +61,10 @@ func (e Exception) SameSite(o Exception) bool {
 
 // Config is what itos-cc reads of itos-cc.yaml.
 type Config struct {
+	// Exclude are doublestar globs, slash-separated and from the project
+	// root, of the sources every command leaves out of what it measures and
+	// mutates; never of the tests.
+	Exclude    []string
 	Exceptions []Exception
 	// Tests, when set, is how to list the project's tests and run a
 	// selection of them.
@@ -106,14 +112,20 @@ func (t *Tests) All(ids []string) string {
 }
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
-// the wrong type, or an exception that lacks a key.
-type InvalidError struct{ Reason string }
+// the wrong type, an exclude glob that is no pattern, or an exception that
+// lacks a key. Key is the path from the top of the key at fault, such as
+// exclude[1], where one key is; empty otherwise.
+type InvalidError struct {
+	Reason string
+	Key    string
+}
 
 func (e *InvalidError) Error() string { return File + ": " + e.Reason }
 
 // raw is the file as decoded, with pointers to tell a missing key from an
 // empty value. Keys itos-cc does not read are left alone.
 type raw struct {
+	Exclude  []string `yaml:"exclude"`
 	Mutation *struct {
 		Exceptions []struct {
 			File           *string `yaml:"file"`
@@ -165,9 +177,15 @@ func LoadFrom(root string) (*Config, error) {
 func parse(data []byte) (*Config, error) {
 	var r raw
 	if err := yaml.Unmarshal(data, &r); err != nil {
-		return nil, &InvalidError{strings.TrimPrefix(err.Error(), "yaml: ")}
+		return nil, &InvalidError{Reason: strings.TrimPrefix(err.Error(), "yaml: ")}
 	}
 	c := &Config{}
+	for i, glob := range r.Exclude {
+		if err := checkExclude(i, glob); err != nil {
+			return nil, err
+		}
+		c.Exclude = append(c.Exclude, glob)
+	}
 	if r.Mutation == nil {
 		return c, nil
 	}
@@ -195,7 +213,7 @@ func parse(data []byte) (*Config, error) {
 			Reason: text("reason", x.Reason, false),
 		}
 		if len(missing) > 0 {
-			return nil, &InvalidError{fmt.Sprintf("%s has no %s", at, strings.Join(missing, ", no "))}
+			return nil, &InvalidError{Reason: fmt.Sprintf("%s has no %s", at, strings.Join(missing, ", no "))}
 		}
 		if x.LineText != nil {
 			e.LineText = *x.LineText
@@ -210,6 +228,37 @@ func parse(data []byte) (*Config, error) {
 		c.Tests = t
 	}
 	return c, nil
+}
+
+// checkExclude refuses exclude[i], glob, unless it is a doublestar pattern
+// from the project root, slash-separated: not empty, not absolute, never
+// leaving the root through .., and holding no backslash, which doublestar
+// reads as an escape where a path on Windows means a separator. A glob
+// that matches nothing is fine.
+func checkExclude(i int, glob string) error {
+	key := fmt.Sprintf("exclude[%d]", i)
+	var why string
+	switch {
+	case strings.TrimSpace(glob) == "":
+		why = "is empty"
+	case strings.Contains(glob, `\`):
+		why = "holds a backslash; separate its folders with /"
+	case strings.HasPrefix(glob, "/") || filepath.VolumeName(glob) != "" || hasDrive(glob):
+		why = "is absolute; write it from the project root"
+	case slices.Contains(strings.Split(glob, "/"), ".."):
+		why = "leaves the project root through .."
+	case !doublestar.ValidatePattern(glob):
+		why = "is no pattern"
+	default:
+		return nil
+	}
+	return &InvalidError{Reason: fmt.Sprintf("%s %q %s", key, glob, why), Key: key}
+}
+
+// hasDrive is whether glob begins with a Windows drive, such as C:, on
+// every system, so a file is read the same wherever it is.
+func hasDrive(glob string) bool {
+	return len(glob) > 1 && glob[1] == ':' && ('a' <= glob[0] && glob[0] <= 'z' || 'A' <= glob[0] && glob[0] <= 'Z')
 }
 
 // parse checks mutation.tests: list, run with {pattern}, ids_pattern with
@@ -255,7 +304,7 @@ func (r *rawTests) parse() (*Tests, error) {
 		t.Support = append(t.Support, glob)
 	}
 	if len(wrong) > 0 {
-		return nil, &InvalidError{"mutation.tests " + strings.Join(wrong, ", ")}
+		return nil, &InvalidError{Reason: "mutation.tests " + strings.Join(wrong, ", ")}
 	}
 	return t, nil
 }
@@ -276,7 +325,7 @@ func Except(e Exception) (replaced bool, err error) {
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return false, &InvalidError{err.Error()}
+		return false, &InvalidError{Reason: err.Error()}
 	}
 	if doc.Kind == 0 {
 		doc.Kind = yaml.DocumentNode
@@ -286,7 +335,7 @@ func Except(e Exception) (replaced bool, err error) {
 	}
 	root := doc.Content[0]
 	if root.Kind != yaml.MappingNode {
-		return false, &InvalidError{"its top level is not a mapping"}
+		return false, &InvalidError{Reason: "its top level is not a mapping"}
 	}
 	exceptions := valueOf(valueOf(root, "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 
@@ -329,10 +378,10 @@ func Renew(renewals []Renewal) error {
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return &InvalidError{err.Error()}
+		return &InvalidError{Reason: err.Error()}
 	}
 	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
-		return &InvalidError{"its top level is not a mapping"}
+		return &InvalidError{Reason: "its top level is not a mapping"}
 	}
 	exceptions := valueOf(valueOf(doc.Content[0], "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 	if len(exceptions.Content) != len(c.Exceptions) {

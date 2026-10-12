@@ -82,7 +82,7 @@ func TestSelectChoosesItsFiles(t *testing.T) {
 		{name: "nothing changed selects nothing, whatever the paths", tree: project(), paths: []string{"src", "nosuch"}, changed: true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := selection.Select(t.Context(), c.tree, c.paths, c.changed)
+			got, err := selection.Select(t.Context(), c.tree, c.paths, c.changed, selection.Exclusion{})
 			if err != nil {
 				t.Fatalf("Select() failed: %v", err)
 			}
@@ -99,7 +99,7 @@ func withChanged(tree porttest.Tree, changed ...string) porttest.Tree {
 }
 
 func TestSelectRefusesTheFirstFragmentNoFileContains(t *testing.T) {
-	got, err := selection.Select(t.Context(), project(), []string{"billing", "nosuch", "absent"}, false)
+	got, err := selection.Select(t.Context(), project(), []string{"billing", "nosuch", "absent"}, false, selection.Exclusion{})
 	var unmatched *port.Unmatched
 	if !errors.As(err, &unmatched) || unmatched.Fragment != "nosuch" {
 		t.Fatalf("Select() failure = %T %v, want Unmatched naming nosuch", err, err)
@@ -116,7 +116,7 @@ func TestSelectRefusesTheFirstFragmentNoFileContains(t *testing.T) {
 // every file an earlier one took is unmatched: the rule as the command line
 // has it, held so that changing it is a decision.
 func TestAFragmentWhoseFilesAnEarlierOneTookIsUnmatched(t *testing.T) {
-	_, err := selection.Select(t.Context(), project(), []string{"billing", "bill"}, false)
+	_, err := selection.Select(t.Context(), project(), []string{"billing", "bill"}, false, selection.Exclusion{})
 	var unmatched *port.Unmatched
 	if !errors.As(err, &unmatched) || unmatched.Fragment != "bill" {
 		t.Fatalf("Select() failure = %T %v, want Unmatched naming bill", err, err)
@@ -140,7 +140,7 @@ func TestSelectPassesTheTreesFailuresOn(t *testing.T) {
 		{name: "the working directory under a fragment", tree: failing(".", cancelled), paths: []string{"src", "billing"}, want: cancelled},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got, err := selection.Select(t.Context(), c.tree, c.paths, c.changed)
+			got, err := selection.Select(t.Context(), c.tree, c.paths, c.changed, selection.Exclusion{})
 			if err != c.want {
 				t.Fatalf("Select() failure = %T %v, want %T %v", err, err, c.want, c.want)
 			}
@@ -163,7 +163,7 @@ func failing(root string, failure port.Failure) porttest.Tree {
 func TestSelectLeavesItsCallersPathsAlone(t *testing.T) {
 	paths := make([]string, 1, 4)
 	paths[0] = "lib"
-	if _, err := selection.Select(t.Context(), withChanged(project(), "src/main.go"), paths, true); err != nil {
+	if _, err := selection.Select(t.Context(), withChanged(project(), "src/main.go"), paths, true, selection.Exclusion{}); err != nil {
 		t.Fatal(err)
 	}
 	if spare := paths[:cap(paths)]; spare[1] != "" {
@@ -183,11 +183,11 @@ func TestPathsAndFragmentsOnlyNarrowTheWorkingDirectory(t *testing.T) {
 		tests := rapid.SliceOfDistinct(rapid.StringMatching(`[ab]{1,2}/[ab]{1,2}_test\.go`), func(s string) string { return s }).Draw(t, "tests")
 		tree := porttest.TreeOf(dir, files(append(sources, tests...)...), nil)
 		paths := rapid.SliceOfN(rapid.StringMatching(`[ab.][ab/.]{0,3}`), 1, 4).Draw(t, "paths")
-		all, err := selection.Select(t.Context(), tree, nil, false)
+		all, err := selection.Select(t.Context(), tree, nil, false, selection.Exclusion{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := selection.Select(t.Context(), tree, paths, false)
+		got, err := selection.Select(t.Context(), tree, paths, false, selection.Exclusion{})
 		var unmatched *port.Unmatched
 		if errors.As(err, &unmatched) {
 			if !slices.Contains(paths, unmatched.Fragment) || tree.Exists(t.Context(), unmatched.Fragment) {
@@ -213,6 +213,114 @@ func TestPathsAndFragmentsOnlyNarrowTheWorkingDirectory(t *testing.T) {
 			if have := slices.Compact(slices.Sorted(slices.Values(list[1]))); !slices.Equal(have, want) {
 				t.Fatalf("Select(%q) = %q, want the files of . it names, %q", paths, have, want)
 			}
+		}
+	})
+}
+
+// fakes is the project with a package of fakes beside its sources, and a
+// test of the fakes.
+func fakes() porttest.Tree {
+	return porttest.TreeOf(dir, files(
+		"src/main.go", "src/port/porttest/fake.go", "src/port/porttest/fake_test.go", "src/main_test.go",
+	), nil)
+}
+
+// porttests is the Exclusion of every porttest package, from dir.
+var porttests = selection.Exclusion{Root: dir, Globs: []string{"**/porttest/**"}}
+
+func TestExclusionLeavesSourcesOutHoweverTheyWereChosen(t *testing.T) {
+	for _, c := range []struct {
+		name    string
+		tree    porttest.Tree
+		paths   []string
+		changed bool
+		want    selection.Files
+	}{
+		{name: "no paths", tree: fakes(),
+			want: selection.Files{Sources: at("src/main.go"), Tests: at("src/main_test.go", "src/port/porttest/fake_test.go"), Excluded: 1}},
+		{name: "a root holding them", tree: fakes(), paths: []string{"src/port"},
+			want: selection.Files{Tests: at("src/port/porttest/fake_test.go"), Excluded: 1}},
+		{name: "a root that is one", tree: fakes(), paths: []string{"src/port/porttest/fake.go"},
+			want: selection.Files{Excluded: 1}},
+		{name: "a fragment only they and their tests hold", tree: fakes(), paths: []string{"porttest"},
+			want: selection.Files{Tests: at("src/port/porttest/fake_test.go"), Excluded: 1}},
+		{name: "a fragment only one holds is matched all the same", tree: fakes(), paths: []string{"fake.go"},
+			want: selection.Files{Excluded: 1}},
+		{name: "changed naming one", tree: withChanged(fakes(), "src/port/porttest/fake.go"), changed: true,
+			want: selection.Files{Excluded: 1}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := selection.Select(t.Context(), c.tree, c.paths, c.changed, porttests)
+			if err != nil {
+				t.Fatalf("Select() failed: %v", err)
+			}
+			slices.Sort(got.Tests)
+			if !slices.Equal(got.Sources, c.want.Sources) || !slices.Equal(got.Tests, c.want.Tests) || got.Excluded != c.want.Excluded {
+				t.Errorf("Select(%q, changed %t) = %+v, want %+v", c.paths, c.changed, got, c.want)
+			}
+		})
+	}
+}
+
+func TestExclusionMatchesSlashPathsFromItsRoot(t *testing.T) {
+	for _, c := range []struct {
+		glob string
+		rel  string
+		want bool
+	}{
+		{"**/porttest/**", "internal/a/port/porttest/fake.go", true},
+		{"**/porttest/**", "porttest/fake.go", true},
+		{"**/porttest/**", "internal/porttests/fake.go", false},
+		{"features/**", "features/steps.go", true},
+		{"features/**", "src/features/steps.go", false},
+		{"src/*.go", "src/a.go", true},
+		{"src/*.go", "src/a/b.go", false},
+		{"src/?.go", "src/a.go", true},
+		{"src/[ab].go", "src/c.go", false},
+		{"{lib,src}/gen/*.ts", "lib/gen/x.ts", true},
+	} {
+		e := selection.Exclusion{Root: dir, Globs: []string{c.glob}}
+		if got := e.Excludes(filepath.Join(dir, filepath.FromSlash(c.rel))); got != c.want {
+			t.Errorf("%q excludes %s: %t, want %t", c.glob, c.rel, got, c.want)
+		}
+	}
+}
+
+func TestExclusionNeverReachesAboveItsRoot(t *testing.T) {
+	e := selection.Exclusion{Root: filepath.Join(dir, "project"), Globs: []string{"**"}}
+	if e.Excludes(filepath.Join(dir, "other", "a.go")) {
+		t.Errorf("%v excludes a file outside its root", e)
+	}
+	if !e.Excludes(filepath.Join(dir, "project", "a.go")) {
+		t.Errorf("%v excludes nothing under its root", e)
+	}
+	if (selection.Exclusion{}).Excludes(filepath.Join(dir, "a.go")) {
+		t.Error("the zero Exclusion excludes a file")
+	}
+}
+
+// Exclusion only ever takes sources away: what a selection with one gives
+// is what it gives without, less the sources the globs match, and the
+// count of those; the tests are the same.
+func TestExclusionOnlyTakesSourcesAway(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		name := rapid.StringMatching(`[ab]{1,2}(/[ab]{1,2}){0,2}\.(go|ts)`)
+		sources := rapid.SliceOfDistinct(name, func(s string) string { return s }).Draw(t, "sources")
+		tests := rapid.SliceOfDistinct(rapid.StringMatching(`[ab]{1,2}/[ab]{1,2}_test\.go`), func(s string) string { return s }).Draw(t, "tests")
+		tree := porttest.TreeOf(dir, files(append(sources, tests...)...), nil)
+		globs := rapid.SliceOfN(rapid.SampledFrom([]string{"a/**", "**/b/**", "*.go", "**/*.ts", "b?/*", "{a,b}/a.go", "**/*_test.go"}), 0, 3).Draw(t, "globs")
+		exclude := selection.Exclusion{Root: dir, Globs: globs}
+		whole, err := selection.Select(t.Context(), tree, nil, false, selection.Exclusion{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := selection.Select(t.Context(), tree, nil, false, exclude)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := slices.DeleteFunc(slices.Clone(whole.Sources), exclude.Excludes)
+		if !slices.Equal(got.Sources, want) || !slices.Equal(got.Tests, whole.Tests) || got.Excluded != len(whole.Sources)-len(want) {
+			t.Fatalf("Select excluding %q = %+v, want sources %q, tests %q, %d excluded", globs, got, want, whole.Tests, len(whole.Sources)-len(want))
 		}
 	})
 }

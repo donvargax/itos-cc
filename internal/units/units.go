@@ -40,12 +40,16 @@ func (CLI) Contract() cli.Contract {
 	return cli.Contract{
 		About: `
 Lists the functions and methods of production code, or of test code with
---tests: the units crap, dry, and mutate measure.`,
+--tests: the units crap, dry, and mutate measure. The sources itos-cc.yaml's
+exclude names are left out, however they are chosen; tests never are.`,
 		JSON: `"units": [{"file", "language", "namespace", "name", "kind", "private",
    "start_line", "end_line"}]`,
+		Rules: []string{
+			"config.invalid  itos-cc.yaml cannot be read: file, and key for an exclude glob",
+		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success"},
-			{Code: 2, Meaning: "a usage error: a bad flag or path"},
+			{Code: 2, Meaning: "a usage or config error: a bad flag or path, or an itos-cc.yaml that cannot be read"},
 			{Code: 3, Meaning: "--changed outside a git repository"},
 		},
 		Examples: []string{
@@ -64,39 +68,49 @@ type Query struct {
 }
 
 // Handler is the units command's application: the working tree it selects
-// and reads files through, and what surrounds those files, which lang asks
-// about to name them, each given by cmd, which chooses the adapters behind
-// them. No value of a command line is read here.
+// and reads files through, what surrounds those files, which lang asks
+// about to name them, and the sources the project's settings exclude, each
+// given by cmd, which chooses the adapters behind them and reads the
+// settings. No value of a command line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
+	Exclude      selection.Exclusion
+}
+
+// Found is what Handle found: the units listed, and Excluded, the count of
+// the sources the selection left out by the handler's Exclude when it
+// listed production code; 0 with tests, which nothing excludes.
+type Found struct {
+	Units    []lang.Unit
+	Excluded int
 }
 
 // Handle lists the units of the files q selects, passing ctx on to the
-// domain, lang and the ports: the selection is the domain's, and naming a
-// file's units lang's. On a failure it returns the units listed before it.
-func (h Handler) Handle(ctx context.Context, q Query) ([]lang.Unit, error) {
-	files, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed)
+// domain, lang and the ports: the selection is the domain's, the sources
+// the handler's Exclude names left out, and naming a file's units lang's.
+// On a failure it returns the units listed before it.
+func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
+	files, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, h.Exclude)
 	if err != nil {
-		return nil, err
+		return Found{}, err
 	}
-	list := files.Sources
+	list, found := files.Sources, Found{Excluded: files.Excluded}
 	if q.Tests {
-		list = files.Tests
+		list, found.Excluded = files.Tests, 0
 	}
-	var all []lang.Unit
 	for _, path := range list {
 		src, failure := h.Tree.Read(ctx, path)
 		if failure != nil {
-			return all, failure
+			return found, failure
 		}
-		found, err := lang.UnitsOf(ctx, h.Surroundings, path, src)
+		units, err := lang.UnitsOf(ctx, h.Surroundings, path, src)
 		if err != nil {
-			return all, err
+			return found, err
 		}
-		all = append(all, found...)
+		found.Units = append(found.Units, units...)
 	}
-	return all, nil
+	return found, nil
 }
 
 // listing is the object --json prints beside schema and ok: the units, an
@@ -112,12 +126,15 @@ type listing struct {
 func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed, Tests: c.Tests})
 	result := listing{Units: []lang.Unit{}}
-	for _, u := range found {
+	for _, u := range found.Units {
 		u.File = ui.Rel(u.File)
 		result.Units = append(result.Units, u)
 	}
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(err))
+	}
+	if found.Excluded > 0 {
+		ui.Line(fmt.Sprintf("%d sources left out by exclude in itos-cc.yaml", found.Excluded))
 	}
 	if !c.JSON {
 		for _, u := range result.Units {

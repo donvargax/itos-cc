@@ -32,7 +32,11 @@ With paths or --changed, Go and TypeScript coverage runs only the tests that
 load those files. A build root whose coverage could not be measured shows
 N/A, not 0%: a warning, and with --threshold a problem, since the threshold
 cannot be checked for it. A file no test loads is 0%, untested, when the
-coverage run for its language succeeded, even with paths that name it alone.`,
+coverage run for its language succeeded, even with paths that name it alone.
+
+The sources itos-cc.yaml's exclude names, globs from the project root such
+as **/porttest/**, are left out, however they are chosen: a path or
+--changed naming one selects nothing.`,
 	flags: append(append(append([]flagSpec{}, selectionFlags...), coverageFlags...),
 		opt("threshold", floatFlag, "N", "", "say no (exit 1) when a function scores above N"),
 		opt("top", intFlag, "N", "", "print only the N worst functions")),
@@ -45,11 +49,12 @@ coverage run for its language succeeded, even with paths that name it alone.`,
 		"coverage.tool-missing      with --threshold, a tool coverage needs is not installed",
 		"coverage.no-report         with --threshold and --use-existing-coverage, no report measures the files",
 		"coverage.report-unreadable with --threshold, a --coverage-report cannot be read",
+		"config.invalid             itos-cc.yaml cannot be read: file, and key for an exclude glob",
 	},
 	exits: []exitDoc{
 		{0, "success"},
 		{1, "a function scores above --threshold, or with --threshold, the tests measured nothing"},
-		{2, "a usage error: a bad flag, path, or --coverage-report"},
+		{2, "a usage or config error: a bad flag, path, or --coverage-report, or an itos-cc.yaml that cannot be read"},
 		{3, "with --threshold, a coverage tool or report is missing; --changed outside git"},
 	},
 	examples: []string{

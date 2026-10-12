@@ -205,3 +205,50 @@ func TestMalformedMutationTestsAreInvalid(t *testing.T) {
 		}
 	}
 }
+
+// exclude holds doublestar globs from the project root, in order, a glob
+// that matches nothing among them.
+func TestExcludeReadsItsGlobs(t *testing.T) {
+	c, err := parse([]byte("exclude: [\"**/porttest/**\", \"features/*.go\", \"{a,b}/x?.[ch]\", \"nothing/here\"]\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"**/porttest/**", "features/*.go", "{a,b}/x?.[ch]", "nothing/here"}; !slices.Equal(c.Exclude, want) {
+		t.Errorf("exclude %q, want %q", c.Exclude, want)
+	}
+}
+
+// A glob that is not one from the project root is refused, naming its key,
+// before anything else is read.
+func TestExcludeRefusesWhatIsNoPatternFromTheRoot(t *testing.T) {
+	for _, c := range []struct{ glob, why string }{
+		{"", "is empty"},
+		{"  ", "is empty"},
+		{"/src/**", "is absolute"},
+		{"C:/src/**", "is absolute"},
+		{"../other/**", "leaves the project root"},
+		{"src/../../x", "leaves the project root"},
+		{`src\port\**`, "backslash"},
+		{"src/[x", "is no pattern"},
+		{"src/{a,b", "is no pattern"},
+	} {
+		text := "exclude:\n  - src/**\n  - '" + c.glob + "'\nmutation:\n  exceptions:\n    - {file: x}\n"
+		_, err := parse([]byte(text))
+		var invalid *InvalidError
+		if !errors.As(err, &invalid) {
+			t.Errorf("%q: error %v, want an *InvalidError", c.glob, err)
+			continue
+		}
+		if invalid.Key != "exclude[1]" || !strings.Contains(invalid.Reason, "exclude[1] ") || !strings.Contains(invalid.Reason, c.why) {
+			t.Errorf("%q: key %q, reason %q, want exclude[1] and %q", c.glob, invalid.Key, invalid.Reason, c.why)
+		}
+	}
+}
+
+// An exclude that is no list is a file that cannot be read.
+func TestExcludeThatIsNoListIsInvalid(t *testing.T) {
+	var invalid *InvalidError
+	if _, err := parse([]byte("exclude: {a: b}\n")); !errors.As(err, &invalid) {
+		t.Errorf("error %v, want an *InvalidError", err)
+	}
+}

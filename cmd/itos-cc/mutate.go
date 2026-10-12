@@ -37,7 +37,9 @@ cached are there, fresh, and passing, without running any test either;
 mutation sample runs a few of the cached mutants again and fails when an
 outcome differs from the one recorded; and mutation except excepts an
 equivalent mutant, a survivor no test can kill, in itos-cc.yaml, with the
-reason no test can.`,
+reason no test can. The sources itos-cc.yaml's exclude names, globs from
+the project root such as **/porttest/**, are none of theirs, however they
+are chosen; a test never is.`,
 	examples: []string{
 		"itos-cc mutation run --changed",
 		"itos-cc mutation list src/billing/invoice.ts",
@@ -145,8 +147,9 @@ did not judge. Legacy broad-scope Go results without this evidence rerun once.
 
 --since REF judges only the functions the commits since REF changed, as a
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
-Paths narrow it to the files under them. Functions not judged neither run nor
-change in the snapshot, and only those judged count in the summary, the
+Paths narrow it to the files under them, and the sources itos-cc.yaml's
+exclude names are dropped before the range is, so a gate's command stays
+the same. Functions not judged neither run nor change in the snapshot, and only those judged count in the summary, the
 problems, and the exit code. A file with no function judged is left as it
 was: neither its snapshot nor its summary comment is written. Renames are
 followed: a move is no change, and a renamed file's snapshot moves with it.
@@ -168,8 +171,10 @@ when it is given none, and every directory that leaves empty under
 .metrics/mutate; it keeps every snapshot whose file exists, even a new
 file's at an old path, whose functions go stale by hash. It names each one,
 a line "<file>: gone, its snapshot <snapshot> was an orphan, and is
-removed", and in --json under "orphans". A counted run writes nothing, so
-it removes nothing.
+removed", and in --json under "orphans". The snapshot of a source that
+itos-cc.yaml's exclude leaves out is an orphan too, though its file is
+there, named "<file>: excluded, …". A counted run writes nothing, so it
+removes nothing.
 
 --count N judges at most N mutation sites freshly, as a bounded check
 that needs no cache: the cache neither saves a trial nor is written. It
@@ -418,8 +423,9 @@ judged and no snapshot is written. Listed tests are not run with
    "scope" for completed ones only}]; with --fail-fast, "stop":
    {"stopped", "rule", "subject"}, the problem's rule and subject keys, and
    "work": {"completed", "cancelled", "unattempted", "blocked"};
-   when it removed any, "orphans": [{"file", "snapshot"}], each snapshot
-   whose source file was gone, "snapshot" its path from the project root; with
+   when it removed any, "orphans": [{"file", "snapshot", "why"}], each
+   snapshot whose source file was gone or excluded, "snapshot" its path
+   from the project root, "why" "gone"|"excluded"; with
    --count, instead of "files" and "orphans":
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
    "seed", "algorithm", "commit", "since", "since_base",
@@ -444,9 +450,9 @@ judged and no snapshot is written. Listed tests are not run with
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
 		"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 		"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
-		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
 		"mutation.baseline-failed  the tests fail before any mutant: file",
-		"config.invalid            itos-cc.yaml cannot be read: file",
+		"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 		"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
 		"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 		"since.bad-ref             --since names no commit: ref",
@@ -489,12 +495,16 @@ var mutationListCommand = &command{
 Lists each mutation site of the production sources chosen, the changes
 mutation run makes one at a time, without running any test, as
 "file:line:column ` + "`original` → `replacement`" + ` in namespace#name",
-each file's sites in line and column order.`,
+each file's sites in line and column order. The sources itos-cc.yaml's
+exclude names are left out, however they are chosen.`,
 	flags: append([]flagSpec{}, selectionFlags...),
 	json:  `"sites": [{"file", "line", "column", "function", "original", "replacement"}]`,
+	rules: []string{
+		"config.invalid  itos-cc.yaml cannot be read: file, and key for an exclude glob",
+	},
 	exits: []exitDoc{
 		{0, "success"},
-		{2, "a usage error: a bad flag or path"},
+		{2, "a usage or config error: a bad flag or path, or an itos-cc.yaml that cannot be read"},
 		{3, "--changed outside a git repository"},
 	},
 	examples: []string{
@@ -1269,7 +1279,8 @@ func describeStop(s *mutate.Stop) string {
 // judges every entry for a file under the working directory; with --since,
 // each whose file the range deleted, unless paths narrow it, or renamed to
 // one of sources, renamed giving the path each had at the ref; with paths
-// or --changed alone, none.
+// or --changed alone, none. An entry it judges whose file itos-cc.yaml
+// excludes is stale as excluded.
 func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutate.StaleException, []config.Exception, error) {
 	if len(exceptions) == 0 {
 		return nil, nil, nil
@@ -1305,7 +1316,11 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 	default:
 		return nil, nil, nil
 	}
-	return mutate.Elsewhere(ctx, exceptions, sources, judge)
+	exclude, err := exclusion()
+	if err != nil {
+		return nil, nil, err
+	}
+	return mutate.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(project.AtRoot(file)) })
 }
 
 // reportElsewhere reports each exception of exceptionsElsewhere, each under
@@ -1365,11 +1380,21 @@ func loadConfig() (*config.Config, error) {
 	c, err := config.Load()
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return nil, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(),
-			"Fix it: each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").
-			With("file", config.File)
+		return nil, configProblem(invalid,
+			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.")
 	}
 	return c, err
+}
+
+// configProblem is config.invalid for invalid, an itos-cc.yaml that cannot
+// be read, with fix: its subject the file, and the key at fault when one
+// is.
+func configProblem(invalid *config.InvalidError, fix string) *cli.Problem {
+	p := cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(), fix).With("file", config.File)
+	if invalid.Key != "" {
+		p.With("key", invalid.Key)
+	}
+	return p
 }
 
 // supportNow is the hashes of the support files of the tests cfg lists,
@@ -1909,6 +1934,9 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 					message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone", at, config.File, change)
 				}
 			}
+			fix = "Remove its entry from " + config.File + "."
+		case mutate.ExceptionExcluded:
+			message = fmt.Sprintf("%s: the entry in %s for %s names a source that its exclude leaves out, which no command mutates", at, config.File, change)
 			fix = "Remove its entry from " + config.File + "."
 		case mutate.ExceptionMoved:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone; its function is in %s now, where the entry still excepts the mutant",

@@ -23,7 +23,11 @@ from it, and thin slices named for their commands.
 - `internal/selection` is the domain every command chooses its files through: paths given as
   arguments, a path that is not there taken as a fragment of a file's path under the working
   directory, `--changed` adding git's changed files, and no paths meaning the whole working
-  directory. `Select(ctx, tree, paths, changed)` reads the tree only through its port.
+  directory. `Select(ctx, tree, paths, changed, exclude)` reads the tree only through its port,
+  then leaves out the sources `exclude` names, never a test, counting them in `Files.Excluded`.
+  `Exclusion{Root, Globs}` is itos-cc.yaml's `exclude` as a value, which cmd and the slices'
+  handlers are given, read at the edge: `Excludes(path)` matches a path's slash form from
+  `Root` against the doublestar globs, by `filepath.Rel` alone, no I/O.
 - `internal/selection/port` declares `Tree` (`Discover` roots into sources and tests,
   `Changed` files, whether a path `Exists`, and `Read`, what a selected file holds, each
   taking the context first) and its sealed set of failures: `NoGit`, `Unmatched`, carrying
@@ -96,14 +100,16 @@ from it, and thin slices named for their commands.
   onto kong (T-32), laid out as `count`'s: its kong struct `CLI` with its `Contract` for the
   help, its `Query`, and `Handler.Handle(ctx, q)`, which selects the files through the
   selection domain, reads each through the same `Tree` port and names its units with
-  `internal/lang`, through the `Surroundings` port its handler is given. `Run` prints them,
+  `internal/lang`, through the `Surroundings` port its handler is given, its `Exclude` the
+  sources the selection leaves out. `Run` prints them,
   their paths from the working directory (`UI.Rel`). It has no classifier: its failures are the
   selection domain's, whose classifier is cmd's, or `internal/lang`'s, internal ones.
 - `internal/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first moved
   command with number flags. Its `Handler` holds the selection `Tree`, lang's `Surroundings`,
   the snapshot `Store` and `Name`, the name a person reads a file by, which cmd binds to
-  `UI.Rel`. `Handle` selects the sources, and with paths or `--changed` checks them against
-  every source the selection finds under the working directory; it reads each through the
+  `UI.Rel`, and `Exclude`, the sources both selections leave out. `Handle` selects the
+  sources, and with paths or `--changed` checks them against every source the selection finds
+  under the working directory; it reads each through the
   `Tree`, parses it with `internal/lang`, hands it to `internal/duplication` under its `Name`,
   and records `dry.json` through the `Store`, each file named from the root
   (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
@@ -129,7 +135,10 @@ from it, and thin slices named for their commands.
   it to `run(ctx, args)`, and every command runs under it: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
   calls; a moved one through the parser `run` builds once with `parserOf(ctx, …)`, whose
-  bindings hand it to `Run`. A command that stops on a signal derives its own from it
+  bindings hand it to `Run`. The handlers of `units` and `dry` hold itos-cc.yaml's
+  `exclude`, so `runMoved` reads the file once the command line is parsed and binds them
+  then: a file that cannot be read fails that command as `config.invalid`, never help or
+  `version`. A command that stops on a signal derives its own from it
   (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
   `main` makes a context of its own, and none is held in a value or captured by a closure
@@ -139,7 +148,7 @@ from it, and thin slices named for their commands.
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
   selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
-  ones. It holds the snapshot domain's too, `classifySnapshot`, since several commands share
+  ones with the `Exclusion` it reads from itos-cc.yaml (`exclusion`). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
   an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
@@ -244,7 +253,9 @@ follows the same steps for a command it wrote before it had the template's desig
    its classifier in cmd (`classifySelection`), since no slice may import another; the
    moved slice then needs none. internal/cli never holds one.
 4. **Routing in cmd.** In `cmd/itos-cc/moved.go`, add the slice's struct to `commandLine`,
-   its `help` tag the line the top-level help lists, its handler to `parserOf`'s bindings,
+   its `help` tag the line the top-level help lists, its handler to `parserOf`'s bindings
+   (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s do, bound in `runMoved`
+   once the line is parsed),
    and a case to `runMoved` that calls its `Run` through `callSafely`. Remove the old
    `command` from `main.go`'s list and delete its file. `run` sends a moved command to kong
    and every other to the hand parser; the top-level help, `help <command>` and the guess

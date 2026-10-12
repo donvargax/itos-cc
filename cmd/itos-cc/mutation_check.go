@@ -52,9 +52,10 @@ An exception that no longer holds fails as mutation.exception-stale, as in
 mutation run: its function changed, its function or site is gone, or a fresh
 entry records its mutant killed. A check of the whole project, or with
 --since one whose range deleted or renamed an entry's file, judges the
-entries of files it does not select as mutation run does: moved, when one
-source checked holds the function unchanged, or gone. An itos-cc.yaml that
-cannot be read is config.invalid.
+entries of files it does not select as mutation run does: excluded, when
+itos-cc.yaml's exclude leaves the file out, moved, when one source checked
+holds the function unchanged, or gone. An itos-cc.yaml that cannot be read
+is config.invalid.
 
 A snapshot under the paths checked whose source file is gone, nothing at
 its path in the working tree, as when the file was deleted, is an orphan,
@@ -63,10 +64,12 @@ file that exists, in the --since range or staged against HEAD (git mv,
 or git add after a mv), is none, kept for the --since run that moves it,
 and outside a git repository none is named; the snapshot of a file
 outside the project root, named by its absolute path, is judged by that
-file, so it is none while the file exists. check names an orphan, a line
-"<file>: gone, its snapshot <snapshot> is an orphan, which mutation run
-removes", and in --json under "orphans", and judges and fails nothing for
-it. With no paths it looks under the working directory. The next
+file, so it is none while the file exists. The snapshot of a source that
+itos-cc.yaml's exclude leaves out is an orphan too, though its file is
+there. check names an orphan, a line "<file>: gone, its snapshot
+<snapshot> is an orphan, which mutation run removes", excluded in place of
+gone for an excluded source, and in --json under "orphans", and judges
+and fails nothing for it. With no paths it looks under the working directory. The next
 mutation run over its directory removes it.
 
 It chooses as mutation run does: paths, --changed, and --since REF, which
@@ -107,8 +110,9 @@ mutants at sites gone, when it has any.`,
    "state": "fresh"|"stale"|"missing", "killed", "survived", "excepted",
    "uncovered", and when there are any "left_out", the mutants its fresh
    entry records at sites gone}]}], and when there is any, "orphans": [{"file",
-   "snapshot"}], each snapshot under the paths whose source file is gone,
-   "snapshot" its path from the project root`,
+   "snapshot", "why"}], each snapshot under the paths whose source file is
+   gone or excluded, "snapshot" its path from the project root, "why"
+   "gone"|"excluded"`,
 	rules: []string{
 		"mutation.missing          a function with a mutation site has no results: file, line, function",
 		"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
@@ -118,8 +122,8 @@ mutants at sites gone, when it has any.`,
 		"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
 		"mutation.coverage-stale    with --fail-uncovered, Go, Python, TypeScript or Kotlin coverage inputs changed since measurement: file, function, line",
 		"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
-		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone), column, original, replacement, why: killed|changed|gone|moved, and with moved new_file",
-		"config.invalid            itos-cc.yaml cannot be read: file",
+		"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
+		"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 		"since.bad-ref             --since names no commit: ref",
 		"since.no-git              --since outside a git repository",
 		"flags.conflict            --since with --changed, or --fail-uncovered=lines without --since: flag",

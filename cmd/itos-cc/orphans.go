@@ -11,21 +11,27 @@ import (
 )
 
 // orphanEntry is an orphaned snapshot in the --json output of mutation run
-// and check: "file", the gone source's path as "files" names a file, from
-// the working directory, and "snapshot", the snapshot's path from the
-// project root, slash-separated.
+// and check: "file", the source's path as "files" names a file, from the
+// working directory, "snapshot", the snapshot's path from the project
+// root, slash-separated, and "why", gone or excluded.
 type orphanEntry struct {
 	File     string `json:"file"`
 	Snapshot string `json:"snapshot"`
+	Why      string `json:"why"`
 }
 
-// orphansCovered are the snapshots whose source file is gone (mutate.Orphans)
-// that the paths of mutation run or check cover: those under a directory
-// given, or whose path from the working directory holds a fragment given,
-// as a file's must to be chosen. With no paths, whatever --changed or
-// --since chooses, they cover the working directory, the whole project
-// when run at its root, as a run without paths discovers its files there.
+// orphansCovered are the snapshots whose source file is gone, or there but
+// excluded by itos-cc.yaml (mutate.Orphans), that the paths of mutation run
+// or check cover: those under a directory given, or whose path from the
+// working directory holds a fragment given, as a file's must to be chosen.
+// With no paths, whatever --changed or --since chooses, they cover the
+// working directory, the whole project when run at its root, as a run
+// without paths discovers its files there.
 func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
+	exclude, err := exclusion()
+	if err != nil {
+		return nil, err
+	}
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -66,7 +72,7 @@ func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
 			}
 		}
 		return false
-	})
+	}, exclude.Excludes)
 	if err != nil || len(orphans) == 0 {
 		return orphans, err
 	}
@@ -79,8 +85,9 @@ func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
 // working tree against HEAD, staged as git mv leaves it or added. A rename
 // to a path where nothing is, a deletion, a plain mv git sees as a
 // deletion and an untracked file, or a file git does not track keeps an
-// orphan one. Outside a git repository, or when git fails, no orphan can
-// be judged, and none is: each is kept, never named nor removed.
+// orphan one, and so does an excluded source, which is there. Outside a
+// git repository, or when git fails, no orphan can be judged, and none is:
+// each is kept, never named nor removed.
 func notRenamed(in *invocation, orphans []mutate.Orphan) []mutate.Orphan {
 	uncommitted, err := project.RenamesUncommitted()
 	if err != nil {
@@ -94,7 +101,7 @@ func notRenamed(in *invocation, orphans []mutate.Orphan) []mutate.Orphan {
 	}
 	var out []mutate.Orphan
 	for _, o := range orphans {
-		if !renamedToAFile(o.Path, since, uncommitted) {
+		if o.Why == mutate.OrphanExcluded || !renamedToAFile(o.Path, since, uncommitted) {
 			out = append(out, o)
 		}
 	}
@@ -133,19 +140,19 @@ func beneath(dir, path string) bool {
 func orphansJSON(orphans []mutate.Orphan) []orphanEntry {
 	var out []orphanEntry
 	for _, o := range orphans {
-		out = append(out, orphanEntry{File: project.Rel(o.Path), Snapshot: o.Snapshot})
+		out = append(out, orphanEntry{File: project.Rel(o.Path), Snapshot: o.Snapshot, Why: o.Why})
 	}
 	return out
 }
 
 // printOrphans prints, in plain output, a line for each orphan:
-// "<file>: gone, its snapshot <snapshot> <what>".
+// "<file>: <why>, its snapshot <snapshot> <what>", why gone or excluded.
 func printOrphans(in *invocation, orphans []orphanEntry, what string) {
 	if in.json {
 		return
 	}
 	for _, o := range orphans {
-		fmt.Printf("%s: gone, its snapshot %s %s\n", o.File, o.Snapshot, what)
+		fmt.Printf("%s: %s, its snapshot %s %s\n", o.File, o.Why, o.Snapshot, what)
 	}
 }
 

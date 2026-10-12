@@ -1,6 +1,7 @@
 // Package selection owns how a command chooses its files: the paths it is
-// given, fragments of a path, and the files git reports as changed. It
-// reaches the working tree only through its port.
+// given, fragments of a path, the files git reports as changed, and the
+// sources the project's settings exclude. It reaches the working tree only
+// through its port.
 package selection
 
 import (
@@ -8,16 +9,65 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
+
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
-// Files are the selected files, split into production sources and tests.
+// Files are the selected files, split into production sources and tests,
+// and the count of the sources the selection left out by its Exclusion.
 type Files struct {
-	Sources []string
-	Tests   []string
+	Sources  []string
+	Tests    []string
+	Excluded int
 }
 
-// Select chooses the files of paths, through tree, passing ctx on to it.
+// Exclusion is the sources a project leaves out of what every command
+// measures and mutates: those whose path from Root, slash-separated,
+// matches one of Globs, doublestar patterns (itos-cc.yaml's exclude). It
+// never names a test, and the zero Exclusion excludes nothing.
+type Exclusion struct {
+	Root  string
+	Globs []string
+}
+
+// Excludes reports whether the source at path, absolute, is left out: a
+// path the root cannot reach never is. The globs are taken as valid, as
+// the settings that hold them checked them.
+func (e Exclusion) Excludes(path string) bool {
+	if len(e.Globs) == 0 {
+		return false
+	}
+	rel, err := filepath.Rel(e.Root, path)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	for _, glob := range e.Globs {
+		if doublestar.MatchUnvalidated(glob, rel) {
+			return true
+		}
+	}
+	return false
+}
+
+// from is files less the sources e excludes, counted in Excluded; the
+// tests stay whole.
+func (e Exclusion) from(files Files) Files {
+	var kept []string
+	for _, f := range files.Sources {
+		if e.Excludes(f) {
+			files.Excluded++
+			continue
+		}
+		kept = append(kept, f)
+	}
+	files.Sources = kept
+	return files
+}
+
+// Select chooses the files of paths, through tree, passing ctx on to it,
+// and leaves out the sources exclude names.
 //
 // With changed, the files git reports as changed join paths, and when there
 // are none nothing is selected, whatever paths say. Without any path the
@@ -26,7 +76,21 @@ type Files struct {
 // under "." whose path contains it, so "billing" finds src/billing/*. A
 // fragment that no file's path contains is refused as port.Unmatched, the
 // first such in argument order. A failure selects nothing.
-func Select(ctx context.Context, tree port.Tree, paths []string, changed bool) (Files, error) {
+//
+// Exclusion comes last and always wins: a source exclude names is left out
+// however it was chosen, a path, a fragment or changed naming it, and a
+// fragment that only such sources contain still matched, so it is no
+// port.Unmatched.
+func Select(ctx context.Context, tree port.Tree, paths []string, changed bool, exclude Exclusion) (Files, error) {
+	files, err := chosen(ctx, tree, paths, changed)
+	if err != nil {
+		return Files{}, err
+	}
+	return exclude.from(files), nil
+}
+
+// chosen is the files of paths and changed, before any is excluded.
+func chosen(ctx context.Context, tree port.Tree, paths []string, changed bool) (Files, error) {
 	paths = append([]string(nil), paths...)
 	if changed {
 		found, failure := tree.Changed(ctx)

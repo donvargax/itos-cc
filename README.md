@@ -80,6 +80,29 @@ Run anywhere in a project: `.metrics/` and `itos-cc.yaml` are at its root
 path (`itos-cc crap billing`); `--changed` selects what git reports as added
 or modified. Every command takes `-h` and `--json`.
 
+Source files that are test support, such as a package of fakes several
+packages' tests share, are left out of what is measured and mutated by
+`exclude` in `itos-cc.yaml`: a list of globs, slash-separated and from the
+project root, in [doublestar](https://github.com/bmatcuk/doublestar)'s
+syntax (`**`, `*`, `?`, `[…]`, `{a,b}`).
+
+```yaml
+exclude: ["**/porttest/**", "features/**"]
+```
+
+`crap`, `dry` (the whole project a change is checked against included),
+`units` and `mutation run`, `list`, `check`, `sample` and `run --count` leave
+those sources out however they were chosen: a path, a fragment or
+`--changed` naming one selects nothing, so a gate's command stays the same.
+A test is never excluded, and `scrap` and the graph see every file. Each
+says on stderr how many sources it left out. The snapshot of a source newly
+excluded is an orphan, which the next `mutation run` removes; an exception
+naming one is stale, as `excluded`, and `mutation except` refuses its sites
+as `exception.excluded`. `mutation run --count` reads the `itos-cc.yaml`
+`HEAD` commits. A glob that is no pattern, empty, absolute, holding `..` or
+a backslash is `config.invalid`, exit 2, its `key` naming it
+(`exclude[1]`). An itos-cc release older than this one ignores `exclude`.
+
 Scripts rely on three things only, as with itos ([docs/CLI.md](docs/CLI.md)):
 the exit code, the `--json` object less its `message` and `fix` keys, and the
 files itos-cc writes: those under `.metrics/`, and `itos-cc.yaml`. Plain
@@ -450,8 +473,10 @@ by the file it records, not the path that name maps to under the root, so
 it is no orphan while the file exists. Each run removes the orphans
 under its paths, the working directory when it is given none, keeping
 every snapshot whose file exists, and names each one it removed, in
-`--json` under `orphans` as `{"file", "snapshot"}`, a key there only when
-there is one. `mutation check` names
+`--json` under `orphans` as `{"file", "snapshot", "why"}`, a key there only
+when there is one. The snapshot of a source `itos-cc.yaml` excludes is an
+orphan too, though its file is there: `why` is `excluded` for it and `gone`
+for the others. `mutation check` names
 the orphans under its paths the same way, without judging or failing
 anything for them. A `--count` run writes nothing, so it removes nothing.
 
@@ -764,7 +789,8 @@ the entries of files they do not select: when exactly one source they
 select holds a function of the entry's name and hash, the entry has
 `moved`, still excepts the mutant at its site there, and fails with
 `new_file` naming the file to put in the entry; otherwise its file is
-`gone`. Only `mutation except` writes `itos-cc.yaml`. An
+`gone`. An entry those judge whose file `exclude` leaves out is `excluded`,
+to remove. Only `mutation except` writes `itos-cc.yaml`. An
 entry never excuses an uncovered mutant: that needs a test, not a reason. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
 `config.invalid`, exit 2.

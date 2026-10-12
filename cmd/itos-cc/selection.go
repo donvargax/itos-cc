@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
@@ -17,12 +20,40 @@ var selectionFlags = []flagSpec{sw("changed", "only files git reports as added o
 
 // files is the command's files, as the selection domain chooses them under
 // ctx from its paths and --changed in the working directory
-// (internal/workdir).
+// (internal/workdir), less the sources itos-cc.yaml excludes, whose count
+// it says on stderr when there is any. A file that cannot be read is
+// config.invalid.
 // Every command selects its files so, which is why cmd holds this and the
 // domain's classifier until the commands move into slices.
 func files(ctx context.Context, in *invocation) (project.Files, error) {
-	chosen, err := selection.Select(ctx, workdir.Tree{}, in.args, in.set("changed"))
-	return project.Files(chosen), err
+	exclude, err := exclusion()
+	if err != nil {
+		return project.Files{}, err
+	}
+	chosen, err := selection.Select(ctx, workdir.Tree{}, in.args, in.set("changed"), exclude)
+	if err != nil {
+		return project.Files{}, err
+	}
+	sayExcluded(os.Stderr, chosen.Excluded)
+	return project.Files{Sources: chosen.Sources, Tests: chosen.Tests}, nil
+}
+
+// exclusion is the sources itos-cc.yaml's exclude leaves out, its globs
+// from the project root. A file that cannot be read is config.invalid.
+func exclusion() (selection.Exclusion, error) {
+	cfg, err := loadConfig()
+	if err != nil {
+		return selection.Exclusion{}, err
+	}
+	return selection.Exclusion{Root: project.Root(), Globs: cfg.Exclude}, nil
+}
+
+// sayExcluded says on w how many sources itos-cc.yaml's exclude left out of
+// a selection, when it left out any: plain output, for a person.
+func sayExcluded(w io.Writer, n int) {
+	if n > 0 {
+		_, _ = fmt.Fprintf(w, "itos-cc: %d sources left out by exclude in %s\n", n, config.File)
+	}
 }
 
 // classifySelection is the selection domain's classifier, which cmd hands to

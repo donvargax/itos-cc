@@ -108,6 +108,7 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 	two := write("two.py", b)
 	changed := write("changed.py", "def b(x):\n    return x < 2\n")
 	all := func(string) bool { return true }
+	nothing := func(string) bool { return false }
 
 	for _, c := range []struct {
 		name    string
@@ -118,7 +119,7 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 		{"in two files", []string{one, two}, ExceptionGone},
 		{"changed", []string{changed}, ExceptionGone},
 	} {
-		stale, moved, err := Elsewhere(t.Context(), []config.Exception{e}, c.sources, all)
+		stale, moved, err := Elsewhere(t.Context(), []config.Exception{e}, c.sources, all, nothing)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,10 +143,20 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 
 	// An entry for a file that is still selected, or one judge leaves out,
 	// is not judged here.
-	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{write("x.py", b)}, all); len(stale) != 0 {
+	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{write("x.py", b)}, all, nothing); len(stale) != 0 {
 		t.Errorf("an entry of a selected file: %+v, want none", stale)
 	}
-	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{one}, func(string) bool { return false }); len(stale) != 0 {
+	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{one}, nothing, all); len(stale) != 0 {
 		t.Errorf("an entry judge leaves out: %+v, want none", stale)
+	}
+
+	// An entry for a file itos-cc.yaml excludes is stale as excluded, even
+	// where its function is in one of sources, and never moves.
+	stale, moved, err := Elsewhere(t.Context(), []config.Exception{e}, []string{one}, all, func(file string) bool { return file == e.File })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stale) != 1 || stale[0].Why != ExceptionExcluded || stale[0].Line != 0 || stale[0].NewFile != "" || len(moved) != 0 {
+		t.Errorf("an entry of an excluded file: stale %+v, moved %+v, want one, excluded, with no line, moved nowhere", stale, moved)
 	}
 }

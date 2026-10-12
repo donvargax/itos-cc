@@ -15,16 +15,17 @@ import (
 
 // Why an exception in itos-cc.yaml no longer holds.
 const (
-	ExceptionKilled  = "killed"  // the tests now kill its mutant
-	ExceptionChanged = "changed" // its function changed since it was written
-	ExceptionGone    = "gone"    // its function, or its site in the function, is gone, or its file is with no trace of it
-	ExceptionMoved   = "moved"   // its file is gone, and its function, unchanged, is in one other file now
+	ExceptionKilled   = "killed"   // the tests now kill its mutant
+	ExceptionChanged  = "changed"  // its function changed since it was written
+	ExceptionGone     = "gone"     // its function, or its site in the function, is gone, or its file is with no trace of it
+	ExceptionMoved    = "moved"    // its file is gone, and its function, unchanged, is in one other file now
+	ExceptionExcluded = "excluded" // its file is one itos-cc.yaml excludes, which no command mutates
 )
 
 // StaleException is an exception that no longer holds, and why.
 type StaleException struct {
 	config.Exception
-	Why string // ExceptionKilled, ExceptionChanged, or ExceptionGone
+	Why string // ExceptionKilled, ExceptionChanged, ExceptionGone, ExceptionMoved, or ExceptionExcluded
 	// Line is where the site is in the file now, or would be within its
 	// function; 0 when the function or its file is gone.
 	Line int
@@ -81,21 +82,27 @@ func locate(e config.Exception, f *lang.File, sites []Site) (site int, why strin
 // has moved there: it is stale, ExceptionMoved, naming that file, and
 // moved holds it as it reads there, so a run or a check still excepts its
 // mutant. The namespace is left out because a file's path can be part of
-// it, as in TypeScript. Any other is stale as ExceptionGone, with no line.
-// Neither changes itos-cc.yaml.
-func Elsewhere(ctx context.Context, exceptions []config.Exception, sources []string, judge func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
+// it, as in TypeScript. One whose file excluded says itos-cc.yaml leaves
+// out, by the path an entry names it by, is stale as ExceptionExcluded,
+// with no line, wherever its function is. Any other is stale as
+// ExceptionGone, with no line. Neither changes itos-cc.yaml.
+func Elsewhere(ctx context.Context, exceptions []config.Exception, sources []string, judge, excluded func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
 	selected := map[string]bool{}
 	for _, path := range sources {
 		selected[project.FromRoot(path)] = true
 	}
 	var orphans []config.Exception
 	for _, e := range exceptions {
-		if !selected[e.File] && judge(e.File) {
+		switch {
+		case selected[e.File] || !judge(e.File):
+		case excluded(e.File):
+			stale = append(stale, StaleException{Exception: e, Why: ExceptionExcluded})
+		default:
 			orphans = append(orphans, e)
 		}
 	}
 	if len(orphans) == 0 {
-		return nil, nil, nil
+		return stale, nil, nil
 	}
 	// Where each orphan's function is now: one entry per file holding it.
 	found := make([][]config.Exception, len(orphans))

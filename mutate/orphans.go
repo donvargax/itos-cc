@@ -10,9 +10,16 @@ import (
 	"github.com/donvargax/itos-cc/metrics"
 )
 
+// Why a snapshot is an orphan.
+const (
+	OrphanGone     = "gone"     // nothing is at its source's path
+	OrphanExcluded = "excluded" // its source is there, and itos-cc.yaml excludes it
+)
+
 // Orphan is a snapshot under .metrics/mutate whose source file is gone:
 // nothing is at the path of the file it records (recordedFile), as when
-// the file was renamed or deleted and no run moved its snapshot.
+// the file was renamed or deleted and no run moved its snapshot; or whose
+// source is there but excluded, which no command measures any more.
 type Orphan struct {
 	// Path is the source file's path, absolute, where nothing is now: under
 	// the root, or the absolute path of a file outside it.
@@ -20,11 +27,15 @@ type Orphan struct {
 	// Snapshot is the snapshot's path from the project root,
 	// slash-separated, as .metrics/mutate/<source path>.json.
 	Snapshot string
+	// Why is OrphanGone or OrphanExcluded.
+	Why string
 }
 
 // Orphans lists the orphans among the snapshots of the project whose root
 // is root, sorted by snapshot, whose source path covers says a command's
-// paths cover. A snapshot's source is the file it records (recordedFile):
+// paths cover: those whose source is gone, and those whose source is there
+// and excluded says is left out of what is measured, an absolute path as
+// covers takes. A snapshot's source is the file it records (recordedFile):
 // one outside the root, which a snapshot names by its absolute path, is
 // that path, not the path its name maps to under the root. A file is gone
 // when nothing is at its path in the working tree, as mutation run and
@@ -32,7 +43,7 @@ type Orphan struct {
 // that sits at the path again, whatever it is, is that path's file. Only
 // regular files whose names end in .json are snapshots; a staging file of
 // a write, or anything else, is never one.
-func Orphans(root string, covers func(path string) bool) ([]Orphan, error) {
+func Orphans(root string, covers, excluded func(path string) bool) ([]Orphan, error) {
 	dir := filepath.Join(metrics.DirOf(root), "mutate")
 	if _, err := os.Lstat(dir); os.IsNotExist(err) {
 		return nil, nil
@@ -49,16 +60,23 @@ func Orphans(root string, covers func(path string) bool) ([]Orphan, error) {
 		if !ok {
 			return nil
 		}
+		snapshot := filepath.ToSlash(filepath.Join(metrics.Name, "mutate", rel))
 		mapped := filepath.Join(root, strings.TrimSuffix(rel, ".json"))
 		if present(mapped) {
+			if excluded(mapped) && covers(mapped) {
+				out = append(out, Orphan{Path: mapped, Snapshot: snapshot, Why: OrphanExcluded})
+			}
 			return nil
 		}
 		source := recordedFile(root, rel, mapped)
 		if source != mapped && present(source) {
+			if excluded(source) && covers(source) {
+				out = append(out, Orphan{Path: source, Snapshot: snapshot, Why: OrphanExcluded})
+			}
 			return nil
 		}
 		if covers(source) {
-			out = append(out, Orphan{Path: source, Snapshot: filepath.ToSlash(filepath.Join(metrics.Name, "mutate", rel))})
+			out = append(out, Orphan{Path: source, Snapshot: snapshot, Why: OrphanGone})
 		}
 		return nil
 	})

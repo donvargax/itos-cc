@@ -9,6 +9,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -29,7 +30,8 @@ The site must be a survivor that its file's snapshot in .metrics/mutate/
 records, fresh as mutation check judges it: run mutation run first. A site
 recorded killed or uncovered, one whose function's results are stale or
 missing, or no site at all, is refused: an uncovered mutant needs a test,
-not a reason.
+not a reason. So is a site in a source that the exclude of itos-cc.yaml
+leaves out, which nothing mutates: exception.excluded.
 
 The entry, under mutation.exceptions, holds the file, the function, the
 function's hash, the site's line counted from the function's first line
@@ -82,9 +84,10 @@ and with --renew a line per renewal and per entry left stale:
    "why", "line" when its site is found}]`,
 	rules: []string{
 		"exception.no-survivor     the site is no survivor a fresh snapshot records: file, line, column",
+		"exception.excluded        the site is in a source itos-cc.yaml excludes: file",
 		"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered",
 		"flags.conflict            --renew with --reason: flag",
-		"config.invalid            itos-cc.yaml cannot be read: file",
+		"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 		"flags.value-missing       no --reason: flag",
 		"flags.value-invalid       an empty --reason: flag, value",
 		"args.missing              no site given",
@@ -94,7 +97,7 @@ and with --renew a line per renewal and per entry left stale:
 	exits: []exitDoc{
 		{0, "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale"},
 		{1, "with --renew, an entry that no longer holds could not be renewed"},
-		{2, "a usage or config error: no site or no --reason, a site that is no recorded survivor, --renew with a site or --reason, or an itos-cc.yaml that cannot be read"},
+		{2, "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew with a site or --reason, or an itos-cc.yaml that cannot be read"},
 	},
 	examples: []string{
 		"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",
@@ -153,10 +156,18 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 		return result, cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", in.args[0]),
 			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", in.args[0])
 	}
-	// An unreadable file is refused before any work.
+	// An unreadable file is refused before any work, and so is a site of
+	// a source the file excludes, which nothing mutates.
 	cfg, err := loadConfig()
 	if err != nil {
 		return result, err
+	}
+	if exclude := (selection.Exclusion{Root: project.Root(), Globs: cfg.Exclude}); exclude.Excludes(absOrSame(path)) {
+		rel := project.Rel(absOrSame(path))
+		return result, cli.NewProblem(cli.CodeUsage, "exception.excluded",
+			fmt.Sprintf("%s:%d:%d is in %s, a source the exclude of %s leaves out, so none of its mutants is judged or excepted", rel, line, column, rel, config.File),
+			fmt.Sprintf("Except a survivor of a source mutation run judges, or take %s out of exclude in %s first.", rel, config.File)).
+			With("file", rel)
 	}
 	support, err := supportNow(cfg)
 	if err != nil {
@@ -181,7 +192,7 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	replaced, err := config.Except(e)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return result, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(), "Fix it, then except the site again.").With("file", config.File)
+		return result, configProblem(invalid, "Fix it, then except the site again.")
 	}
 	if err != nil {
 		return result, err
@@ -303,7 +314,7 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	err = config.Renew(writes)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return result, cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(), "Fix it, then renew again.").With("file", config.File)
+		return result, configProblem(invalid, "Fix it, then renew again.")
 	}
 	if err != nil {
 		return result, err

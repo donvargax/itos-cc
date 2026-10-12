@@ -163,7 +163,7 @@ Feature: Duplicate functions
   # sources it names out of dry, the whole project a change is checked
   # against included, so a fake that copies the code it stands in for is
   # never reported as its duplicate.
-  @wip @slice-6 @ID-DRY-18
+  @slice-6 @ID-DRY-18
   Scenario: Sources that itos-cc.yaml excludes are not compared
     Given itos-cc.yaml excludes "**/porttest/**"
     And src/a.go and src/port/porttest/fake.go hold the same function with its names changed

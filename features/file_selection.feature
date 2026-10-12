@@ -158,7 +158,7 @@ Feature: Choosing which files a command looks at
   # paths.unmatched. A count of the sources left out goes to stderr when
   # there is any, plain output and no contract. A glob that is no pattern
   # is config.invalid, naming its key.
-  @wip @slice-6 @ID-SEL-17
+  @slice-6 @ID-SEL-17
   Scenario: Sources that itos-cc.yaml excludes are left out
     Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
     And the sources src/board.go and src/port/porttest/fake.go
@@ -166,7 +166,7 @@ Feature: Choosing which files a command looks at
     Then src/board.go is scored, and src/port/porttest/fake.go is not
     And stderr says "itos-cc: 1 sources left out by exclude in itos-cc.yaml"
 
-  @wip @slice-6 @ID-SEL-18
+  @slice-6 @ID-SEL-18
   Scenario: A path or --changed never selects an excluded source
     Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
     And git reports src/port/porttest/fake.go as modified
@@ -174,7 +174,7 @@ Feature: Choosing which files a command looks at
     Then stderr says "itos-cc: no source files to score"
     And the exit code is 0
 
-  @wip @slice-6 @ID-SEL-19
+  @slice-6 @ID-SEL-19
   Scenario: An exclude glob that is no pattern is a config error
     Given itos-cc.yaml holds 'exclude: ["src/**", "src/[x"]'
     When I run "itos-cc crap"
