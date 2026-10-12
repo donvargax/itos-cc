@@ -241,6 +241,7 @@ questions:
   - id: q-50
     question: "Should the top-level packages (mutate, coverage, project, lang, crap, dry, …) move under internal/ as each becomes a domain or an adapter in the template-design refactor?"
     answer: "Move them, each as it is refactored into a domain or an adapter (answered 2026-10-11). The Go API is not part of the contract; .metrics/mutate paths and exceptions move with them, an exception following a moved file once as ADR-0014 allows."
+    decision: 37
   - id: q-51
     question: "Exit 130 on Ctrl-C changes serve (0 → 130) and mutation run --count (75, count.interrupted → 130, interrupted): adopt it fully, keep --count's 75, or defer?"
     answer: "Adopt it fully, in a minor release (answered 2026-10-11): every command exits 130 with rule interrupted, serve and mutation run --count included, called out in Upgrading. A second Ctrl-C ends the process at once, except while the process groups itos-cc owns are being killed (ADR-0021). q-37 settles as mutation.cleanup-failed, exit 70."
