@@ -33,8 +33,8 @@ type FreshBaseline struct {
 // file whose own tests run nothing has no baseline: no test reaches it, so
 // its sites are uncovered.
 func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests func(path string) []string, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
-	if ctx == nil || execute == nil {
-		return nil, nil, errors.New("fresh baselines need a context and command executor")
+	if execute == nil {
+		return nil, nil, errors.New("fresh baselines need a command executor")
 	}
 	if plan == nil || plan.FrozenRoot == "" {
 		return nil, nil, errors.New("fresh baselines need a live frozen plan")
@@ -74,7 +74,7 @@ func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests
 				return nil, executions, err
 			}
 		} else {
-			c = TestCommand(path, "", all, reaching)
+			c = TestCommand(ctx, path, "", all, reaching)
 		}
 		if c.RunsNothing() && (spec.Name == "python" || spec.Name == "kotlin") {
 			continue
@@ -98,7 +98,7 @@ func FreshBaselineCommands(ctx context.Context, plan *FreshPlan, all bool, tests
 // freshPythonCommand is pythonCommand with its pytest probe supervised. A
 // probe that fails falls back to unittest exactly as pythonCommand does.
 func freshPythonCommand(ctx context.Context, path string, all bool, tests []string, execute coverage.CommandExecutor) (Command, []coverage.CommandExecution, error) {
-	c := pythonBase(path)
+	c := pythonBase(ctx, path)
 	root := c.Root
 	var run []string
 	if !all {
@@ -123,8 +123,8 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 // fails the whole preparation: no selected site of a failing command could
 // be judged.
 func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
-	if ctx == nil || execute == nil {
-		return nil, nil, errors.New("fresh baselines need a context and command executor")
+	if execute == nil {
+		return nil, nil, errors.New("fresh baselines need a command executor")
 	}
 	if log == nil {
 		log = io.Discard

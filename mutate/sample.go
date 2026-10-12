@@ -74,7 +74,7 @@ func (m SampledMutant) Agrees() bool {
 // the listed tests its outcome records, through opt's Listed, after the
 // baseline of that selection, which sets its timeout, as in Run. opt's Workers, TimeoutFactor, Judge, Tests, Listed, and Log
 // apply as in Run; the rest is not used.
-func Sample(files []string, count int, seed string, opt Options) (Sampled, error) {
+func Sample(ctx context.Context, files []string, count int, seed string, opt Options) (Sampled, error) {
 	var states []*fileState
 	defer func() {
 		for _, s := range states {
@@ -93,13 +93,13 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 	override := opt.TestCommand != "" || opt.AllTests
 	var candidates []candidate
 	for _, path := range files {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return Sampled{}, err
 		}
 		s := &fileState{file: f, sites: Sites(f)}
 		states = append(states, s)
-		c, err := checkParsed(f, path, opt.Judge, opt.Tests, opt.Support, nil)
+		c, err := checkParsed(ctx, f, path, opt.Judge, opt.Tests, opt.Support, nil)
 		if err != nil {
 			return Sampled{}, err
 		}
@@ -153,7 +153,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 			if opt.Tests != nil {
 				tests = opt.Tests(s.file.Path)
 			}
-			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(s.file.Path, c.scope, tests),
+			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(ctx, s.file.Path, c.scope, tests),
 				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites)),
 				scopes: make([]string, len(s.sites)), ran: make([][]string, len(s.sites))}
 			if c.scope == ScopeListed {
@@ -168,7 +168,10 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 		}
 		drawn[c.state] = append(drawn[c.state], c)
 	}
-	if _, err := execute(order, opt, nil); err != nil {
+	if _, err := execute(ctx, order, opt, nil); err != nil {
+		return result, stopped(ctx, err)
+	}
+	if err := stopped(ctx, nil); err != nil {
 		return result, err
 	}
 	for _, s := range states {

@@ -34,7 +34,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 		PathEnv:  "ITOS_COMMAND_RUNNER_PATH",
 		PathDirs: []string{"bin"},
 	}
-	r, err := w.run(c, 0)
+	r, err := w.run(t.Context(), c, 0)
 	if err != nil {
 		t.Fatalf("worker.run: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		shell = "echo shell-output"
 	}
-	r, err = w.run(Command{Root: root, Dir: root, Shell: shell}, 0)
+	r, err = w.run(t.Context(), Command{Root: root, Dir: root, Shell: shell}, 0)
 	if err != nil || !r.passed || !strings.Contains(r.output, "shell-output") {
 		t.Errorf("shell command result = %+v, err = %v; want captured shell output", r, err)
 	}
@@ -85,35 +85,35 @@ func TestCommandRunnerPreservesLegacyResults(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "success")
-		r, err := w.run(base, 10*time.Second)
+		r, err := w.run(t.Context(), base, 10*time.Second)
 		if err != nil || !r.passed || r.timedOut || r.exitCode != 0 || !strings.Contains(r.output, "success-stdout") || !strings.Contains(r.output, "success-stderr") {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("nonzero", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "nonzero")
-		r, err := w.run(base, 10*time.Second)
+		r, err := w.run(t.Context(), base, 10*time.Second)
 		if err != nil || r.passed || r.timedOut || r.exitCode != 7 || !strings.Contains(r.output, "nonzero-output") {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("own timeout", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "loop")
-		r, err := w.run(base, 60*time.Millisecond)
+		r, err := w.run(t.Context(), base, 60*time.Millisecond)
 		if err != nil || !r.timedOut || r.passed {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("zero timeout", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "success")
-		r, err := w.run(base, 0)
+		r, err := w.run(t.Context(), base, 0)
 		if err != nil || !r.passed || r.timedOut || r.exitCode != 0 {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("start error", func(t *testing.T) {
 		c := Command{Root: root, Dir: root, Args: []string{filepath.Join(root, "missing-command")}}
-		_, err := w.run(c, time.Second)
+		_, err := w.run(t.Context(), c, time.Second)
 		if err == nil {
 			t.Fatal("worker.run succeeded for a missing executable")
 		}
@@ -141,7 +141,7 @@ func TestCommandRunnerPreservesLifecycleOrdering(t *testing.T) {
 	}
 	done := make(chan runResult, 1)
 	go func() {
-		r, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 5*time.Second)
+		r, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 5*time.Second)
 		done <- runResult{r: r, err: err}
 	}()
 	consumed := false

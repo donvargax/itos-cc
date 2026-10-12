@@ -152,7 +152,7 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	ctx, stop := countedSignalContext(ctx)
 	defer stop()
-	plan, err := mutate.PlanFreshContext(ctx, root, paths, in.str("since"), count, in.str("seed"))
+	plan, err := mutate.PlanFresh(ctx, root, paths, in.str("since"), count, in.str("seed"))
 	if err != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: count, Assurance: "sampled", Completion: "interrupted",
@@ -236,7 +236,7 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		}
 	}
 
-	exceptions, err := mutate.PlanExceptions(plan, prep.Exceptions)
+	exceptions, err := mutate.PlanExceptions(ctx, plan, prep.Exceptions)
 	if err != nil {
 		return nil, err
 	}

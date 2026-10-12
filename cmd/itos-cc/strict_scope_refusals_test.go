@@ -114,14 +114,14 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 	switch f.Spec.Name {
 	case "typescript":
 		producer = mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
-		inputs, err = mutate.TypeScriptCoverageInputs(source, root, producer, nil)
+		inputs, err = mutate.TypeScriptCoverageInputs(t.Context(), source, root, producer, nil)
 	case "python":
 		producer = mutate.CoverageProducer("python", false)
-		inputs, err = mutate.PythonCoverageInputs(source, root, producer, nil)
+		inputs, err = mutate.PythonCoverageInputs(t.Context(), source, root, producer, nil)
 	case "kotlin":
 		module := project.FindUp(t.Context(), source, "build.gradle.kts", "build.gradle", "pom.xml")
 		producer = mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), false)
-		inputs, err = mutate.KotlinCoverageInputs(source, root, producer, nil)
+		inputs, err = mutate.KotlinCoverageInputs(t.Context(), source, root, producer, nil)
 	default:
 		t.Fatalf("no strict line evidence for %s", f.Spec.Name)
 	}

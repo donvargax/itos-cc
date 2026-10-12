@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"slices"
@@ -39,7 +40,7 @@ func TestCheckGoCoverageJudgesGoFilesAlone(t *testing.T) {
 	t.Chdir(dir)
 
 	var asked []string
-	checks, err := CheckGoCoverage(selection, nil, func(path string) (string, map[string]string, error) {
+	checks, err := CheckGoCoverage(t.Context(), selection, nil, func(_ context.Context, path string) (string, map[string]string, error) {
 		asked = append(asked, filepath.ToSlash(path))
 		inputs, err := GoCoverageInputs(path, dir, "producer", nil)
 		return "producer", inputs, err

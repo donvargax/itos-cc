@@ -21,7 +21,7 @@ func TestAFreshTrialOfAFileNoOwnTestReachesIsJudgedByItsListedTests(t *testing.T
 		"build.gradle.kts":       "plugins { jacoco }\n",
 		"src/main/kotlin/a/A.kt": "package a\n\nfun low(i: Int): Boolean {\n    return i == 3\n}\n",
 	})
-	plan, err := PlanFresh(repo, nil, "", 1, "unreached")
+	plan, err := PlanFresh(t.Context(), repo, nil, "", 1, "unreached")
 	if err != nil {
 		t.Fatal(err)
 	}

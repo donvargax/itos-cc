@@ -93,7 +93,7 @@ func siteTests(site map[string]any) []string {
 // instead of its function's when hash is not empty.
 func exceptionEntry(t *testing.T, dir string, c mutate.FreshCandidate, hash, reason string) string {
 	t.Helper()
-	plan, err := mutate.PlanFresh(dir, nil, "", 1, "any")
+	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "any")
 	if err != nil {
 		t.Fatal(err)
 	}

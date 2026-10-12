@@ -105,21 +105,13 @@ func (p *FreshPlan) Close() error {
 	return os.RemoveAll(root)
 }
 
-// PlanFresh is the background-context adapter for PlanFreshContext.
-func PlanFresh(repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
-	return PlanFreshContext(context.Background(), repoRoot, paths, since, count, seed)
-}
-
-// PlanFreshContext inventories and globally selects static sites from
+// PlanFresh inventories and globally selects static sites from
 // committed inputs. It runs Git metadata commands only: no mutation, test or
 // measurement commands. Cancellation owns those Git process trees and removes
 // the private export. paths, when non-empty, narrow root-relative committed
 // paths; since, when non-empty, further restricts candidates to changed
 // functions.
-func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
-	if ctx == nil {
-		return nil, errors.New("fresh plan context must not be nil")
-	}
+func PlanFresh(ctx context.Context, repoRoot string, paths []string, since string, count int, seed string) (*FreshPlan, error) {
 	if count <= 0 {
 		return nil, errors.New("fresh plan count must be positive")
 	}

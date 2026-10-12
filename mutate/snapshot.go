@@ -2,6 +2,7 @@ package mutate
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -306,14 +307,14 @@ func recordedScope(scope string) string {
 
 // scopeCommand is the command that runs path's tests in scope, tests the
 // test files that reach it.
-func scopeCommand(path, scope string, tests []string) Command {
+func scopeCommand(ctx context.Context, path, scope string, tests []string) Command {
 	switch scope {
 	case ScopeOwn, ScopeListed, "":
-		return TestCommand(path, "", false, tests)
+		return TestCommand(ctx, path, "", false, tests)
 	case ScopeAllTests:
-		return TestCommand(path, "", true, nil)
+		return TestCommand(ctx, path, "", true, nil)
 	}
-	return TestCommand(path, scope, false, nil)
+	return TestCommand(ctx, path, scope, false, nil)
 }
 
 func (m Mutant) key() string {
@@ -328,8 +329,8 @@ func SnapshotName(rel string) string {
 
 // LoadSnapshot reads the snapshot of the file at rel, its path from the
 // project root, or returns nil when there is none.
-func LoadSnapshot(rel string) (*Snapshot, error) {
-	return LoadSnapshotOf(project.Root(), rel)
+func LoadSnapshot(ctx context.Context, rel string) (*Snapshot, error) {
+	return LoadSnapshotOf(ctx, project.Root(), rel)
 }
 
 // LoadSnapshotOf is LoadSnapshot for the project whose root is root, which
@@ -343,13 +344,13 @@ func LoadSnapshot(rel string) (*Snapshot, error) {
 // suite (OwnScope), reads as ScopeAllTests, the scope that decided it: one
 // recorded before that rule has no whole-suite evidence, so it reads stale
 // once.
-func LoadSnapshotOf(root, rel string) (*Snapshot, error) {
+func LoadSnapshotOf(ctx context.Context, root, rel string) (*Snapshot, error) {
 	var s Snapshot
 	ok, err := metrics.ReadIn(metrics.DirOf(root), SnapshotName(rel), &s)
 	if err != nil || !ok || s.File != filepath.ToSlash(rel) {
 		return nil, err
 	}
-	if OwnScope(filepath.Join(root, filepath.FromSlash(rel))) == ScopeAllTests {
+	if OwnScope(ctx, filepath.Join(root, filepath.FromSlash(rel))) == ScopeAllTests {
 		for i := range s.Units {
 			for j := range s.Units[i].Mutants {
 				if m := &s.Units[i].Mutants[j]; m.TestScope() == ScopeOwn {

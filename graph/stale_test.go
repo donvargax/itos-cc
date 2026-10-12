@@ -281,7 +281,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checks, err := mutate.Check(files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
+	checks, err := mutate.Check(t.Context(), files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -117,16 +117,9 @@ type result struct {
 	exitCode  int // -1 when the command gave none
 }
 
-// run executes c inside the worker's copy of c.Root. A zero timeout waits
-// as long as the tests take.
-func (w *worker) run(c Command, timeout time.Duration) (result, error) {
-	return w.runContext(context.Background(), c, timeout)
-}
-
-// runContext is the internal parent-context entrypoint. Command setup stays
-// here so both the legacy adapter and supervised callers use the same copy,
-// arguments, environment and streams.
-func (w *worker) runContext(parent context.Context, c Command, timeout time.Duration) (result, error) {
+// run executes c inside the worker's copy of c.Root, under parent. A zero
+// timeout waits as long as the tests take.
+func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (result, error) {
 	root, err := w.copyOf(c.Root)
 	if err != nil {
 		return result{}, err
@@ -165,9 +158,9 @@ func (w *worker) runContext(parent context.Context, c Command, timeout time.Dura
 	return w.runner.run(ctx, cmd, &out)
 }
 
-// withMutant writes src to the worker's copy of path, runs fn, and restores
-// the original text.
-func (w *worker) withMutant(root, path string, original, mutated []byte, fn func() (result, error)) (result, error) {
+// withMutant writes src to the worker's copy of path, runs fn under ctx,
+// and restores the original text.
+func (w *worker) withMutant(ctx context.Context, root, path string, original, mutated []byte, fn func(context.Context) (result, error)) (result, error) {
 	copyRoot, err := w.copyOf(root)
 	if err != nil {
 		return result{}, err
@@ -178,7 +171,7 @@ func (w *worker) withMutant(root, path string, original, mutated []byte, fn func
 		return result{}, err
 	}
 	defer os.WriteFile(target, original, 0o644)
-	return fn()
+	return fn(ctx)
 }
 
 func isExit(err error) bool {

@@ -237,7 +237,7 @@ func (m mutateJSON) file(t *testing.T, file string) fileJSON {
 // boardUnits is the snapshot of src/board.go, by namespace#name.
 func boardUnits(t *testing.T) map[string]mutate.UnitResult {
 	t.Helper()
-	snap, err := mutate.LoadSnapshotOf(wd(t), boardSource)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), boardSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -500,7 +500,7 @@ func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
 	if o := mutateRun(t); o.code != 0 {
 		t.Fatalf("the first run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	before, err := mutate.LoadSnapshotOf(wd(t), boardSource)
+	before, err := mutate.LoadSnapshotOf(t.Context(), wd(t), boardSource)
 	if err != nil || before == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -521,7 +521,7 @@ func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
 // namespace#name.
 func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
 	t.Helper()
-	snap, err := mutate.LoadSnapshotOf(wd(t), gridSource)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), gridSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", gridSource, err)
 	}
@@ -535,7 +535,7 @@ func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
 // noBoardSnapshot fails t when the snapshot of src/board.go is still there.
 func noBoardSnapshot(t *testing.T) {
 	t.Helper()
-	if snap, err := mutate.LoadSnapshotOf(wd(t), boardSource); err != nil || snap != nil {
+	if snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), boardSource); err != nil || snap != nil {
 		t.Errorf("the snapshot of %s is still there (%v), want it moved", boardSource, err)
 	}
 }

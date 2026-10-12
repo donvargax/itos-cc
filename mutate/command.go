@@ -61,23 +61,23 @@ func (c Command) RunsNothing() bool {
 // end-to-end tests anywhere in it can kill a mutant. Every command stops at
 // the first failure, since one failing test is enough to kill a mutant. A
 // non-empty shell overrides the command but not where it runs.
-func TestCommand(path, shell string, all bool, tests []string) Command {
+func TestCommand(ctx context.Context, path, shell string, all bool, tests []string) Command {
 	spec := lang.Detect(path)
 	var c Command
 	switch spec.Name {
 	case "go":
-		c = goCommand(path, all)
+		c = goCommand(ctx, path, all)
 	case "typescript":
-		c = typescriptCommand(path, all)
+		c = typescriptCommand(ctx, path, all)
 	case "python":
 		if shell != "" {
 			// Only where it runs: the probe of pytest is for nothing.
-			c = pythonBase(path)
+			c = pythonBase(ctx, path)
 			break
 		}
-		c = pythonCommand(path, all, tests)
+		c = pythonCommand(ctx, path, all, tests)
 	case "kotlin":
-		c = kotlinCommand(path, all, tests)
+		c = kotlinCommand(ctx, path, all, tests)
 	}
 	if shell != "" {
 		c.Args, c.Shell = nil, shell
@@ -87,8 +87,8 @@ func TestCommand(path, shell string, all bool, tests []string) Command {
 
 // goCommand runs the tests of path's own package, or with all the whole
 // module, integration and end-to-end tests included.
-func goCommand(path string, all bool) Command {
-	root := orDir(project.FindUp(context.TODO(), path, "go.mod"), path)
+func goCommand(ctx context.Context, path string, all bool) Command {
+	root := orDir(project.FindUp(ctx, path, "go.mod"), path)
 	pkg, _ := filepath.Rel(root, filepath.Dir(path))
 	target := "./" + filepath.ToSlash(pkg)
 	if all {
@@ -97,8 +97,8 @@ func goCommand(path string, all bool) Command {
 	return Command{Root: root, Dir: root, Args: []string{"go", "test", "-count=1", "-failfast", target}}
 }
 
-func typescriptCommand(path string, all bool) Command {
-	root := orDir(project.FindUp(context.TODO(), path, "package.json"), path)
+func typescriptCommand(ctx context.Context, path string, all bool) Command {
+	root := orDir(project.FindUp(ctx, path, "package.json"), path)
 	rel, _ := filepath.Rel(root, path)
 	c := Command{Root: root, Dir: root}
 	// Tools run from node_modules, never through npx, which would download
@@ -130,8 +130,8 @@ func typescriptCommand(path string, all bool) Command {
 // project's test script runs without Vitest or Jest installed, else
 // ScopeOwn. An outcome they decide rests on the whole suite, as a
 // --test-command outcome does, and is recorded with its evidence.
-func OwnScope(path string) string {
-	if spec := lang.Detect(path); spec != nil && spec.Name == "typescript" && typescriptCommand(path, false).Suite {
+func OwnScope(ctx context.Context, path string) string {
+	if spec := lang.Detect(path); spec != nil && spec.Name == "typescript" && typescriptCommand(ctx, path, false).Suite {
 		return ScopeAllTests
 	}
 	return ScopeOwn
@@ -139,16 +139,16 @@ func OwnScope(path string) string {
 
 // FileScope is RunScope for path: with neither shell nor all, its own
 // tests' scope (OwnScope).
-func FileScope(path, shell string, all bool) string {
+func FileScope(ctx context.Context, path, shell string, all bool) string {
 	if scope := RunScope(shell, all); scope != ScopeOwn {
 		return scope
 	}
-	return OwnScope(path)
+	return OwnScope(ctx, path)
 }
 
 // pythonBase is where path's Python tests run, with no command yet.
-func pythonBase(path string) Command {
-	root := orDir(project.FindUp(context.TODO(), path, "pyproject.toml", "setup.py", "setup.cfg"), path)
+func pythonBase(ctx context.Context, path string) Command {
+	root := orDir(project.FindUp(ctx, path, "pyproject.toml", "setup.py", "setup.cfg"), path)
 	return Command{Root: root, Dir: root, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
 }
 
@@ -168,8 +168,8 @@ func pythonInterpreter(root string) string {
 // pytest, or as their modules with unittest when pytest is not installed;
 // with all, the whole suite. It runs nothing when none of tests is such a
 // file.
-func pythonCommand(path string, all bool, tests []string) Command {
-	c := pythonBase(path)
+func pythonCommand(ctx context.Context, path string, all bool, tests []string) Command {
+	c := pythonBase(ctx, path)
 	var run []string
 	if !all {
 		if run = coverage.PythonTests(c.Dir, tests); len(run) == 0 {
@@ -198,13 +198,13 @@ func pythonArgs(py string, pytest bool, run []string) []string {
 // (coverage.KotlinTests), with Gradle or Maven, in the build of path's
 // module; with all, its build's whole suite. It runs nothing when they
 // declare none in that build.
-func kotlinCommand(path string, all bool, tests []string) Command {
-	module := orDir(project.FindUp(context.TODO(), path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
+func kotlinCommand(ctx context.Context, path string, all bool, tests []string) Command {
+	module := orDir(project.FindUp(ctx, path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
 	if fileExists(filepath.Join(module, "pom.xml")) {
 		return mavenCommand(module, all, tests)
 	}
 	// Gradle modules need the build root that holds settings and the wrapper.
-	root := orDir(project.FindUp(context.TODO(), path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
+	root := orDir(project.FindUp(ctx, path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
 	gradle := "gradle"
 	if fileExists(filepath.Join(root, "gradlew")) {
 		gradle = "./gradlew"

@@ -23,12 +23,12 @@ func TestTypeScriptTestsRunFromNodeModules(t *testing.T) {
 		os.MkdirAll(filepath.Dir(path), 0o755)
 		os.WriteFile(path, []byte(text), 0o644)
 	}
-	if got := TestCommand(src, "", false, nil).String(); got != "pnpm run test" {
+	if got := TestCommand(t.Context(), src, "", false, nil).String(); got != "pnpm run test" {
 		t.Errorf("without vitest installed: %q, want the project's own test script", got)
 	}
 	os.MkdirAll(filepath.Dir(vitest), 0o755)
 	os.WriteFile(vitest, nil, 0o755)
-	if got := TestCommand(src, "", false, nil); got.Args[0] != vitest || got.Args[1] != "related" {
+	if got := TestCommand(t.Context(), src, "", false, nil); got.Args[0] != vitest || got.Args[1] != "related" {
 		t.Errorf("with vitest installed: %q, want %s related", got.Args, vitest)
 	}
 }
@@ -46,10 +46,10 @@ func TestGoMutantsRunTheirOwnPackagesTestsOrTheWholeSuite(t *testing.T) {
 		os.WriteFile(path, []byte(text), 0o644)
 	}
 	src := filepath.Join(dir, "a", "a.go")
-	if got := TestCommand(src, "", false, nil).String(); got != "go test -count=1 -failfast ./a" {
+	if got := TestCommand(t.Context(), src, "", false, nil).String(); got != "go test -count=1 -failfast ./a" {
 		t.Errorf("default: %q, want a's own tests", got)
 	}
-	if got := TestCommand(src, "", true, nil).String(); got != "go test -count=1 -failfast ./..." {
+	if got := TestCommand(t.Context(), src, "", true, nil).String(); got != "go test -count=1 -failfast ./..." {
 		t.Errorf("all tests: %q, want the whole module, e2e tests included", got)
 	}
 }
@@ -63,7 +63,7 @@ func TestPythonMutantsRunTheTestFilesThatReachTheirFile(t *testing.T) {
 	}
 	src := filepath.Join(dir, "a.py")
 	reach := []string{filepath.Join(dir, "conftest.py"), filepath.Join(dir, "tests", "test_a.py")}
-	got := TestCommand(src, "", false, reach)
+	got := TestCommand(t.Context(), src, "", false, reach)
 	args := strings.Join(got.Args, " ")
 	if !strings.HasSuffix(args, " -m pytest -q -x -p no:cacheprovider tests/test_a.py") && !strings.HasSuffix(args, " -m unittest -f tests.test_a") {
 		t.Errorf("own tests: %q, want pytest over tests/test_a.py, or unittest over tests.test_a", args)
@@ -71,13 +71,13 @@ func TestPythonMutantsRunTheTestFilesThatReachTheirFile(t *testing.T) {
 	if got.Dir != dir || got.RunsNothing() {
 		t.Errorf("own tests: %+v, want them run in %s", got, dir)
 	}
-	if none := TestCommand(src, "", false, reach[:1]); !none.RunsNothing() || none.Dir != dir {
+	if none := TestCommand(t.Context(), src, "", false, reach[:1]); !none.RunsNothing() || none.Dir != dir {
 		t.Errorf("reached by conftest.py alone: %+v, want nothing run", none)
 	}
-	if all := strings.Join(TestCommand(src, "", true, reach).Args, " "); strings.Contains(all, "test_a") {
+	if all := strings.Join(TestCommand(t.Context(), src, "", true, reach).Args, " "); strings.Contains(all, "test_a") {
 		t.Errorf("all tests: %q, want the whole suite", all)
 	}
-	if given := TestCommand(src, "make check", false, nil); given.String() != "make check" || given.Dir != dir {
+	if given := TestCommand(t.Context(), src, "make check", false, nil); given.String() != "make check" || given.Dir != dir {
 		t.Errorf("--test-command: %+v, want make check run in %s", given, dir)
 	}
 }
@@ -129,23 +129,23 @@ func TestKotlinMutantsRunTheTestClassesThatReachTheirFile(t *testing.T) {
 	for name := range kotlinTestFiles(test, "own") {
 		reach = append(reach, filepath.Join(dir, filepath.FromSlash(name)))
 	}
-	got := TestCommand(src, "", false, reach)
+	got := TestCommand(t.Context(), src, "", false, reach)
 	want := "gradle -p . test --fail-fast --tests own.ATest --tests own.LowSpec --tests own.Outer --tests own.SubTest"
 	if got.String() != want || got.Dir != dir || got.Root != dir {
 		t.Errorf("own tests: %q in %s, want %q in %s: the test classes the reaching files declare, and no helper",
 			got.String(), got.Dir, want, dir)
 	}
 	helpers := []string{filepath.Join(dir, filepath.FromSlash(test+"/Record.kt")), filepath.Join(dir, filepath.FromSlash(test+"/Fixtures.kt"))}
-	if none := TestCommand(src, "", false, helpers); !none.RunsNothing() || none.Dir != dir {
+	if none := TestCommand(t.Context(), src, "", false, helpers); !none.RunsNothing() || none.Dir != dir {
 		t.Errorf("reached by helpers alone: %+v, want nothing run", none)
 	}
-	if none := TestCommand(src, "", false, nil); !none.RunsNothing() {
+	if none := TestCommand(t.Context(), src, "", false, nil); !none.RunsNothing() {
 		t.Errorf("reached by no test: %+v, want nothing run", none)
 	}
-	if all := TestCommand(src, "", true, reach).String(); all != "gradle test --fail-fast" {
+	if all := TestCommand(t.Context(), src, "", true, reach).String(); all != "gradle test --fail-fast" {
 		t.Errorf("all tests: %q, want the whole build", all)
 	}
-	if given := TestCommand(src, "make check", false, reach); given.String() != "make check" || given.Dir != dir {
+	if given := TestCommand(t.Context(), src, "make check", false, reach); given.String() != "make check" || given.Dir != dir {
 		t.Errorf("--test-command: %+v, want make check run in %s", given, dir)
 	}
 }
@@ -163,11 +163,11 @@ func TestKotlinTestClassesOfSeveralGradleModulesRunAsEachModulesTestTask(t *test
 	})
 	src := filepath.Join(dir, "lib", "src", "main", "kotlin", "lib", "Low.kt")
 	at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
-	own := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("apps/cli/src/test/kotlin/cli/CliRecord.kt")})
+	own := TestCommand(t.Context(), src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("apps/cli/src/test/kotlin/cli/CliRecord.kt")})
 	if want := "gradle -p lib test --fail-fast --tests lib.LowTest"; own.String() != want || own.Dir != dir {
 		t.Errorf("one module's classes: %q in %s, want %q in %s", own.String(), own.Dir, want, dir)
 	}
-	both := TestCommand(src, "", false, []string{at("apps/cli/src/test/kotlin/cli/CliTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
+	both := TestCommand(t.Context(), src, "", false, []string{at("apps/cli/src/test/kotlin/cli/CliTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
 	if want := "gradle :apps:cli:test --fail-fast --tests cli.CliTest :lib:test --fail-fast --tests lib.LowTest"; both.String() != want || both.Dir != dir {
 		t.Errorf("two modules' classes: %q in %s, want %q in %s", both.String(), both.Dir, want, dir)
 	}
@@ -187,18 +187,18 @@ func TestKotlinTestClassesRunWithMavenThroughSurefire(t *testing.T) {
 	src := filepath.Join(dir, "lib", "src", "main", "kotlin", "lib", "Low.kt")
 	lib := filepath.Join(dir, "lib")
 	at := func(name string) string { return filepath.Join(dir, filepath.FromSlash(name)) }
-	own := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("lib/src/test/kotlin/lib/Helper.kt")})
+	own := TestCommand(t.Context(), src, "", false, []string{at("lib/src/test/kotlin/lib/LowTest.kt"), at("lib/src/test/kotlin/lib/Helper.kt")})
 	if want := "mvn -q test -Dtest=lib.LowTest -Dsurefire.failIfNoSpecifiedTests=false"; own.String() != want || own.Dir != lib || own.Root != lib {
 		t.Errorf("its module's classes: %q in %s, want %q in %s", own.String(), own.Dir, want, lib)
 	}
-	both := TestCommand(src, "", false, []string{at("app/src/test/kotlin/app/AppTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
+	both := TestCommand(t.Context(), src, "", false, []string{at("app/src/test/kotlin/app/AppTest.kt"), at("lib/src/test/kotlin/lib/LowTest.kt")})
 	if want := "mvn -q test -pl lib,app -am -Dtest=app.AppTest,lib.LowTest -Dsurefire.failIfNoSpecifiedTests=false"; both.String() != want || both.Dir != dir || both.Root != dir {
 		t.Errorf("two modules' classes: %q in %s, want %q from the reactor's top, %s", both.String(), both.Dir, want, dir)
 	}
-	if none := TestCommand(src, "", false, []string{at("lib/src/test/kotlin/lib/Helper.kt")}); !none.RunsNothing() {
+	if none := TestCommand(t.Context(), src, "", false, []string{at("lib/src/test/kotlin/lib/Helper.kt")}); !none.RunsNothing() {
 		t.Errorf("reached by a helper alone: %+v, want nothing run", none)
 	}
-	if all := TestCommand(src, "", true, nil); all.String() != "mvn -q test" || all.Dir != lib {
+	if all := TestCommand(t.Context(), src, "", true, nil); all.String() != "mvn -q test" || all.Dir != lib {
 		t.Errorf("all tests: %+v, want its module's whole suite", all)
 	}
 }
@@ -214,22 +214,22 @@ func TestATypeScriptScriptWithoutVitestOrJestRunsTheWholeSuite(t *testing.T) {
 		"py/a.py":                         "",
 	})
 	src := filepath.Join(dir, "src", "a.ts")
-	if c := TestCommand(src, "", false, nil); !c.Suite || !strings.HasSuffix(c.String(), " run test") && !strings.HasSuffix(c.String(), " run test --silent") {
+	if c := TestCommand(t.Context(), src, "", false, nil); !c.Suite || !strings.HasSuffix(c.String(), " run test") && !strings.HasSuffix(c.String(), " run test --silent") {
 		t.Errorf("own tests: %+v, want the test script, marked as the whole suite", c)
 	}
-	if got := OwnScope(src); got != ScopeAllTests {
+	if got := OwnScope(t.Context(), src); got != ScopeAllTests {
 		t.Errorf("OwnScope of a script without Vitest or Jest: %q, want %q", got, ScopeAllTests)
 	}
-	if got := FileScope(src, "make check", false); got != "make check" {
+	if got := FileScope(t.Context(), src, "make check", false); got != "make check" {
 		t.Errorf("FileScope with --test-command: %q, want the command", got)
 	}
 	vitest := filepath.Join(dir, "vitest", "a.ts")
 	if runtime.GOOS != "windows" {
-		if got := OwnScope(vitest); got != ScopeOwn || TestCommand(vitest, "", false, nil).Suite {
+		if got := OwnScope(t.Context(), vitest); got != ScopeOwn || TestCommand(t.Context(), vitest, "", false, nil).Suite {
 			t.Errorf("OwnScope with Vitest installed: %q, want %q", got, ScopeOwn)
 		}
 	}
-	if got := OwnScope(filepath.Join(dir, "py", "a.py")); got != ScopeOwn {
+	if got := OwnScope(t.Context(), filepath.Join(dir, "py", "a.py")); got != ScopeOwn {
 		t.Errorf("OwnScope of a Python file: %q, want %q", got, ScopeOwn)
 	}
 }

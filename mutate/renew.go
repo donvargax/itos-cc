@@ -69,7 +69,7 @@ type Unrenewed struct {
 // that holds is left alone, unless its fresh results record its mutant
 // killed, which no renewal can mend. It writes nothing; the caller writes
 // the renewals (config.Renew).
-func Renew(exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string) ([]Renewal, []Unrenewed, error) {
+func Renew(ctx context.Context, exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string) ([]Renewal, []Unrenewed, error) {
 	var renewed []Renewal
 	var left []Unrenewed
 	files := map[string]*renewFile{}
@@ -78,15 +78,15 @@ func Renew(exceptions []config.Exception, sources []string, tests func(path stri
 			f.file.Close()
 		}
 	}()
-	open := func(path string) (*renewFile, error) {
+	open := func(ctx context.Context, path string) (*renewFile, error) {
 		if f, ok := files[path]; ok {
 			return f, nil
 		}
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return nil, err
 		}
-		c, err := checkParsed(f, path, nil, tests, support, nil)
+		c, err := checkParsed(ctx, f, path, nil, tests, support, nil)
 		if err != nil {
 			f.Close()
 			return nil, err
@@ -100,7 +100,7 @@ func Renew(exceptions []config.Exception, sources []string, tests func(path stri
 		unit := -1
 		why := ExceptionGone
 		if info, err := os.Stat(path); err == nil && !info.IsDir() && lang.Detect(path) != nil {
-			f, err := open(path)
+			f, err := open(ctx, path)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -115,7 +115,7 @@ func Renew(exceptions []config.Exception, sources []string, tests func(path stri
 				if project.FromRoot(source) == e.File {
 					continue
 				}
-				f, err := open(source)
+				f, err := open(ctx, source)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -169,7 +169,7 @@ func Renew(exceptions []config.Exception, sources []string, tests func(path stri
 			Reason: e.Reason, LineText: LineText(f.file.Src, m.Line),
 		}})
 	}
-	return renewed, left, nil
+	return renewed, left, stopped(ctx, nil)
 }
 
 // renewFile is a source Renew reads: parsed, checked against its snapshot,

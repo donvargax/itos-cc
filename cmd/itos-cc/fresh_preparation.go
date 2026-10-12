@@ -165,7 +165,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	}
 	// The dependencies the live project installed, which the commit never
 	// holds, before any plan looks for its tools among them.
-	if _, err := plan.LinkInstalledDependencies(); err != nil {
+	if _, err := plan.LinkInstalledDependencies(ctx); err != nil {
 		stage("coverage-plan", "failed", err)
 		return prep, fmt.Errorf("prepare coverage plans: %w", err)
 	}
@@ -306,7 +306,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 				return prep, err
 			}
 			inputs["@fresh-preparation-go-network-policy"] = hashPreparationPolicy("GOTOOLCHAIN=local\x00GOPROXY=off\x00GOSUMDB=off")
-			evidence, err := mutate.FreshGoCoverageEvidence(root, unit, report.GoBlocks(path), producer, inputs)
+			evidence, err := mutate.FreshGoCoverageEvidence(ctx, root, unit, report.GoBlocks(path), producer, inputs)
 			if err != nil {
 				stage("strict-go-inventory", "failed", err)
 				return prep, err
@@ -490,7 +490,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execut
 	}
 	configDir := filepath.Join(gitDir, "itos-preparation")
 	configPath := filepath.Join(configDir, "gitconfig")
-	run := func(args ...string) error {
+	run := func(ctx context.Context, args ...string) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -512,7 +512,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execut
 	for _, args := range [][]string{{"init", "--quiet"}, {"fetch", "--quiet", "--no-tags", "--no-recurse-submodules", plan.Root, plan.Commit},
 		{"update-ref", "refs/heads/itos-fresh", plan.Commit}, {"symbolic-ref", "HEAD", "refs/heads/itos-fresh"},
 		{"read-tree", plan.Commit}} {
-		if err := run(args...); err != nil {
+		if err := run(ctx, args...); err != nil {
 			return "", err
 		}
 		if args[0] == "init" {

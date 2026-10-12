@@ -35,7 +35,7 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snap, err := mutate.LoadSnapshotOf(wd(t), filepath.ToSlash(boardSource))
+	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), filepath.ToSlash(boardSource))
 	if err != nil || snap == nil {
 		t.Fatalf("the snapshot of %s: %v", boardSource, err)
 	}

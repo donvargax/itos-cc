@@ -583,7 +583,7 @@ func listedRun(t *testing.T, args ...string) outcome {
 // function's when hash is not empty.
 func ffException(t *testing.T, dir, function, hash string) string {
 	t.Helper()
-	plan, err := mutate.PlanFresh(dir, nil, "", 1, "any")
+	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "any")
 	if err != nil {
 		t.Fatal(err)
 	}

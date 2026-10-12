@@ -169,7 +169,7 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if cfg.Tests != nil && !opt.AllTests && opt.TestCommand == "" {
 		opt.Listed = &mutate.Listed{Root: project.Root(), Select: cfg.Tests.Select}
 	}
-	sampled, err := mutate.Sample(sources, count, result.Seed, opt)
+	sampled, err := mutate.Sample(ctx, sources, count, result.Seed, opt)
 	if err != nil {
 		return result, err
 	}

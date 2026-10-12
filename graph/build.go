@@ -125,8 +125,8 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 			if err != nil {
 				return nil, false, err
 			}
-			snap := b.snapshot(r.top, info.abs, live)
-			infos[i] = overlay.apply(info, now, snap, snap.ListedChanged(r.top, r.support), r.top, r.support)
+			snap := b.snapshot(ctx, r.top, info.abs, live)
+			infos[i] = overlay.apply(ctx, info, now, snap, snap.ListedChanged(r.top, r.support), r.top, r.support)
 		}
 		rg := newRepoGraph(ctx, r.name, r.root, infos)
 		// A stopped build resolves no further: what it left unresolved is
@@ -270,7 +270,7 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 // (mutate.LoadSnapshotOf), or nil when there is none. One that cannot be
 // read is none too, so the graph still builds. It is read again only when
 // its file changed since the last build. Its path is marked live.
-func (b *Builder) snapshot(top, path string, live map[string]bool) *mutate.Snapshot {
+func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) *mutate.Snapshot {
 	rel := project.FromRootOf(top, path)
 	at := filepath.Join(metrics.DirOf(top), mutate.SnapshotName(rel))
 	live[at] = true
@@ -280,7 +280,7 @@ func (b *Builder) snapshot(top, path string, live map[string]bool) *mutate.Snaps
 	}
 	var snap *mutate.Snapshot
 	if st != "" {
-		snap, _ = mutate.LoadSnapshotOf(top, rel)
+		snap, _ = mutate.LoadSnapshotOf(ctx, top, rel)
 	}
 	b.snapshots[at] = cachedSnapshot{st, snap}
 	return snap
@@ -412,11 +412,11 @@ func loadOverlay(root string) overlay {
 // import its file now, and listed how the files its listed outcomes rest
 // on changed; a function with no entry, which check calls missing, carries
 // none.
-func (o overlay) apply(info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange, root string, support map[string]string) *fileInfo {
+func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]string, snap *mutate.Snapshot, listed *mutate.ListedChange, root string, support map[string]string) *fileInfo {
 	entries := mutationEntries(info, snap)
 	var moduleTests map[string]string
 	if snap != nil && mutate.HasBroadOutcome(snap.Units) {
-		moduleTests, _ = mutate.SuiteTestHashes(info.abs, root)
+		moduleTests, _ = mutate.SuiteTestHashes(ctx, info.abs, root)
 	}
 	occurrence := map[string]int{}
 	for i := range info.units {

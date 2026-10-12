@@ -67,7 +67,7 @@ func checkOwnTimeoutStopsOwnedTree(t *testing.T) {
 	cmd := Command{Root: copyDir, Dir: copyDir, Args: ownershipHelperArgs()}
 
 	started := time.Now()
-	got, err := w.run(cmd, 300*time.Millisecond)
+	got, err := w.run(t.Context(), cmd, 300*time.Millisecond)
 	took := time.Since(started)
 	if err != nil || !got.timedOut || got.passed {
 		t.Fatalf("own timeout result = %+v, err = %v; want timed out", got, err)
@@ -106,7 +106,7 @@ func checkNormalReturnStopsOwnedDescendant(t *testing.T) {
 	cleanupOwnershipFixture(t, childPID, grandchildPID)
 	cmd := Command{Root: root, Dir: root, Args: ownershipHelperArgs()}
 
-	got, err := w.run(cmd, 3*time.Second)
+	got, err := w.run(t.Context(), cmd, 3*time.Second)
 	if err != nil || !got.passed || got.exitCode != 0 {
 		t.Fatalf("normal command result = %+v, err = %v; want successful parent exit", got, err)
 	}
@@ -136,7 +136,7 @@ func checkOwnershipStartupFailureDoesNotRunCommand(t *testing.T) {
 		return startErr
 	}
 
-	_, err := w.run(Command{Root: root, Dir: root, Args: []string{"/bin/sh", "-c", "touch " + started}}, time.Second)
+	_, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: []string{"/bin/sh", "-c", "touch " + started}}, time.Second)
 	if err != startErr {
 		t.Fatalf("startup error = %v, want injected ownership error", err)
 	}
@@ -168,7 +168,7 @@ func checkParentCancellationStopsOwnedTree(t *testing.T, sharedBudget *cleanupBu
 	}
 	done := make(chan runResult, 1)
 	go func() {
-		value, err := w.runContext(parent, Command{Root: root, Dir: root, Args: ownershipHelperArgs()}, 10*time.Second)
+		value, err := w.run(parent, Command{Root: root, Dir: root, Args: ownershipHelperArgs()}, 10*time.Second)
 		done <- runResult{value: value, err: err}
 	}()
 	if err := waitForFile(started, 2*time.Second); err != nil {
@@ -210,7 +210,7 @@ func checkCompletedExitPrecedesLaterCancellation(t *testing.T) {
 			defer cancel()
 			w.runner.lifecycle.complete = func(context.Context, *exec.Cmd, error) { cancel() }
 			root := t.TempDir()
-			got, err := w.runContext(parent, Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
+			got, err := w.run(parent, Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
 			if err != nil || got.cancelled || got.timedOut || got.exitCode != test.code || got.passed != (test.code == 0) {
 				t.Fatalf("completed command result = %+v, err = %v; want actual exit %d before later cancellation", got, err, test.code)
 			}
@@ -234,7 +234,7 @@ func checkCleanupFailureIsReturnedNotJudged(t *testing.T) {
 		return cleanupErr
 	}
 	root := t.TempDir()
-	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second)
+	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second)
 	if err != cleanupErr {
 		t.Fatalf("cleanup error = %v, want %v", err, cleanupErr)
 	}
@@ -261,7 +261,7 @@ func checkOnlyCapturedGroupIsTargeted(t *testing.T) {
 	w := newCommandRunnerWorker(t)
 	cleanupOwnershipFixture(t, childPID, grandchildPID)
 
-	got, err := w.run(Command{Root: root, Dir: root, Args: ownershipHelperArgs()}, 3*time.Second)
+	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: ownershipHelperArgs()}, 3*time.Second)
 	if err != nil || !got.passed {
 		t.Fatalf("command result = %+v, err = %v; want its successful exit", got, err)
 	}
@@ -294,7 +294,7 @@ func checkSuccessKeepsRunAbortBudget(t *testing.T) {
 	sharedBudget := &cleanupBudget{}
 	w.runner.cleanupBudget = sharedBudget
 	root := t.TempDir()
-	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
+	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
 	if err != nil || !got.passed {
 		t.Fatalf("successful command = %+v, err = %v", got, err)
 	}
@@ -310,7 +310,7 @@ func checkOwnTimeoutKeepsRunAbortBudget(t *testing.T) {
 	sharedBudget := &cleanupBudget{}
 	w.runner.cleanupBudget = sharedBudget
 	root := t.TempDir()
-	got, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
+	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
 	if err != nil || !got.timedOut || got.passed {
 		t.Fatalf("own timeout = %+v, err = %v; want own timeout judgment", got, err)
 	}

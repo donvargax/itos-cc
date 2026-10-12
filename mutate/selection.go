@@ -41,9 +41,11 @@ type selections struct {
 }
 
 // selection is the baseline of one selection: the timeout of its mutant
-// runs, or how it failed.
+// runs, or how it failed. ran says whether it ran, which mu guards, so it
+// runs once while the other workers that need it wait.
 type selection struct {
-	once    sync.Once
+	mu      sync.Mutex
+	ran     bool
 	timeout time.Duration
 	failed  *FailedSelection
 	err     error
@@ -60,15 +62,10 @@ func selectionKey(ids []string) string {
 	return strings.Join(sorted, "\x00")
 }
 
-// baseline is the baseline of the selection ids, run in w's copy, with no
-// mutant, the first time any worker needs it.
-func (s *selections) baseline(w *worker, ids []string) *selection {
-	return s.baselineContext(context.Background(), w, ids)
-}
-
-// baselineContext is baseline under ctx: a baseline that ctx cancels is an
-// error, never a selection that fails.
-func (s *selections) baselineContext(ctx context.Context, w *worker, ids []string) *selection {
+// baseline is the baseline of the selection ids, run in w's copy under ctx,
+// with no mutant, the first time any worker needs it: a baseline that ctx
+// cancels is an error, never a selection that fails.
+func (s *selections) baseline(ctx context.Context, w *worker, ids []string) *selection {
 	key := selectionKey(ids)
 	s.mu.Lock()
 	sel := s.byKey[key]
@@ -77,29 +74,38 @@ func (s *selections) baselineContext(ctx context.Context, w *worker, ids []strin
 		s.byKey[key] = sel
 	}
 	s.mu.Unlock()
-	sel.once.Do(func() {
-		c := s.listed.command(ids)
-		fmt.Fprintf(s.log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
-		r, err := w.runContext(ctx, c, 0)
-		if err != nil {
-			sel.err = err
-			return
-		}
-		if r.cancelled || ctx.Err() != nil {
-			sel.err = fmt.Errorf("cancelled: %w", context.Cause(ctx))
-			return
-		}
-		joined := strings.Join(ids, " ")
-		if !r.passed {
-			sel.failed = &FailedSelection{IDs: slices.Clone(ids), Command: c.Shell, ExitCode: r.exitCode, Output: r.output}
-			fmt.Fprintf(s.log, "itos-cc: baseline of %s failed: no mutant runs it\n", joined)
-			return
-		}
-		sel.timeout = timeoutOf(r.elapsed, s.factor)
-		fmt.Fprintf(s.log, "itos-cc: baseline of %s passed in %.1fs: a mutant running it times out after %.1fs\n",
-			joined, r.elapsed.Seconds(), sel.timeout.Seconds())
-	})
+	sel.mu.Lock()
+	defer sel.mu.Unlock()
+	if !sel.ran {
+		sel.ran = true
+		s.run(ctx, sel, w, ids)
+	}
 	return sel
+}
+
+// run runs sel, the selection ids, in w's copy under ctx, with no mutant,
+// and records its timeout, or how it failed.
+func (s *selections) run(ctx context.Context, sel *selection, w *worker, ids []string) {
+	c := s.listed.command(ids)
+	fmt.Fprintf(s.log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
+	r, err := w.run(ctx, c, 0)
+	if err != nil {
+		sel.err = err
+		return
+	}
+	if r.cancelled || ctx.Err() != nil {
+		sel.err = fmt.Errorf("cancelled: %w", context.Cause(ctx))
+		return
+	}
+	joined := strings.Join(ids, " ")
+	if !r.passed {
+		sel.failed = &FailedSelection{IDs: slices.Clone(ids), Command: c.Shell, ExitCode: r.exitCode, Output: r.output}
+		fmt.Fprintf(s.log, "itos-cc: baseline of %s failed: no mutant runs it\n", joined)
+		return
+	}
+	sel.timeout = timeoutOf(r.elapsed, s.factor)
+	fmt.Fprintf(s.log, "itos-cc: baseline of %s passed in %.1fs: a mutant running it times out after %.1fs\n",
+		joined, r.elapsed.Seconds(), sel.timeout.Seconds())
 }
 
 // timeoutAllowance is added to every mutant's timeout. A mutant's run

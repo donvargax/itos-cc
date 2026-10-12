@@ -188,7 +188,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if linesOnly {
 		scope = lines
 	}
-	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
+	elsewhere, moved, err := exceptionsElsewhere(ctx, in, cfg.Exceptions, sources, renamed)
 	if err != nil {
 		return result, err
 	}
@@ -207,13 +207,13 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+	checks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 	if err != nil {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
 	if languages := strictLanguagesOf(sources); failUncovered && len(languages) > 0 {
-		coverageChecks, err := mutate.CheckCoverage(sources, judge, strictCoverageInputs(languages, false, false, support))
+		coverageChecks, err := mutate.CheckCoverage(ctx, sources, judge, strictCoverageInputs(languages, false, false, support))
 		if err != nil {
 			return result, err
 		}

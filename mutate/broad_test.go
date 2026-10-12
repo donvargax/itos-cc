@@ -77,7 +77,7 @@ func TestSuiteTestHashesFollowEachLanguagesBuildRoot(t *testing.T) {
 		"mvn/src/main/kotlin/App.kt":    {"mvn/src/test/kotlin/AppTest.kt"},
 		"loose/app.ts":                  {},
 	} {
-		tests, err := SuiteTestHashes(filepath.Join(root, filepath.FromSlash(source)), root)
+		tests, err := SuiteTestHashes(t.Context(), filepath.Join(root, filepath.FromSlash(source)), root)
 		if err != nil {
 			t.Fatal(err)
 		}

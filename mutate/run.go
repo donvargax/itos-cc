@@ -25,10 +25,11 @@ type Options struct {
 	TestCommand   string  // shell command that replaces the per-language default
 	AllTests      bool    // kill mutants with the whole suite, integration and end-to-end tests included
 	Annotate      bool    // write a summary comment at the end of each file
-	// Coverage is called only when some mutant has to run. It returns nil
-	// to run every mutant regardless of coverage, and an error to stop the
-	// run before any mutant runs or any snapshot is written.
-	Coverage func(sources []string) (*coverage.Report, error)
+	// Coverage is called only when some mutant has to run, under the
+	// run's context. It returns nil to run every mutant regardless of
+	// coverage, and an error to stop the run before any mutant runs or any
+	// snapshot is written.
+	Coverage func(ctx context.Context, sources []string) (*coverage.Report, error)
 	// StatementCoverage is a successful independently admitted coverage
 	// measurement for strict mode, of every strict language
 	// (StrictCoverage). It is attached per unit of a file of such a
@@ -36,8 +37,8 @@ type Options struct {
 	StatementCoverage *coverage.Report
 	CoverageProducer  string
 	// CoverageInputs is the producer and input fingerprint of the file at
-	// source's evidence, of its language.
-	CoverageInputs func(source string) (string, map[string]string, error)
+	// source's evidence, of its language, read under the run's context.
+	CoverageInputs CoverageInputs
 	CachedCoverage func(path, function, hash string) *CoverageEvidence
 	// Support is the hashes of the support files of the listed tests now
 	// (SupportHashes): what a listed outcome records, and holds while they
@@ -214,8 +215,8 @@ type freshOutcome struct {
 
 // Run mutates files and writes their snapshots. It returns one result per
 // file, in the order given.
-func Run(files []string, opt Options) ([]FileResult, error) {
-	results, _, err := run(files, opt, nil)
+func Run(ctx context.Context, files []string, opt Options) ([]FileResult, error) {
+	results, _, err := run(ctx, files, opt, nil)
 	return results, err
 }
 
@@ -231,18 +232,18 @@ const BaselineNotRun = "not-run"
 // before every selected mutant was decided. Each result's Baseline is set,
 // and each mutant listed has its State: a file the stop cut short lists
 // the mutants of its functions judged, decided or not.
-func RunFailFast(files []string, opt Options, ff FailFast) ([]FileResult, *Stop, error) {
-	return run(files, opt, &ff)
+func RunFailFast(ctx context.Context, files []string, opt Options, ff FailFast) ([]FileResult, *Stop, error) {
+	return run(ctx, files, opt, &ff)
 }
 
-func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error) {
-	states, err := plan(files, opt)
+func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error) {
+	states, err := plan(ctx, files, opt)
 	defer func() {
 		for _, s := range states {
 			s.file.Close()
 		}
 	}()
-	if err != nil {
+	if err = stopped(ctx, err); err != nil {
 		return nil, nil, err
 	}
 
@@ -267,22 +268,28 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 			}
 		}
 		if stop == nil {
-			if err := markUncovered(states, opt); err != nil {
+			if err := markUncovered(ctx, states, opt); err != nil {
 				return nil, nil, err
 			}
 			if ff != nil {
-				if stop, err = coverageStop(states, opt, ff); err != nil {
+				if stop, err = coverageStop(ctx, states, opt, ff); err != nil {
 					return nil, nil, err
 				}
 			}
 		}
 		if stop != nil {
 			announce(opt.Log, stop)
-		} else if stop, err = execute(states, opt, ff); err != nil {
+		} else if stop, err = execute(ctx, states, opt, ff); err != nil {
 			return nil, nil, err
 		}
 	} else {
 		fmt.Fprintln(opt.Log, "itos-cc: no mutations to test")
+	}
+	// A run whose own context stopped writes nothing: what it left
+	// undecided is the stop, never an outcome. A fail-fast stop cancels
+	// only the context execute derives.
+	if err := stopped(ctx, nil); err != nil {
+		return nil, nil, err
 	}
 	for _, s := range states {
 		// No baseline ran for the file: none of its mutants needed one,
@@ -322,7 +329,7 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 		}
 		s.result.Snapshot = buildScoped(s.file, s.key, s.tests, s.sites, outcomes, scopes, ran)
 		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && StrictCoverage(s.file.Spec.Name) {
-			evidence, err := s.coverageEvidence(opt)
+			evidence, err := s.coverageEvidence(ctx, opt)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -397,7 +404,7 @@ func run(files []string, opt Options, ff *FailFast) ([]FileResult, *Stop, error)
 // follow takes the snapshot of a file renamed from a path that holds no
 // file now: as the file's own when it has none yet, as *snap. The old
 // snapshot is removed once the new one is written.
-func (s *fileState) follow(opt Options, path string, snap **Snapshot) error {
+func (s *fileState) follow(ctx context.Context, opt Options, path string, snap **Snapshot) error {
 	if opt.Renamed == nil {
 		return nil
 	}
@@ -412,7 +419,7 @@ func (s *fileState) follow(opt Options, path string, snap **Snapshot) error {
 	if *snap != nil {
 		return nil
 	}
-	moving, err := LoadSnapshot(s.moved)
+	moving, err := LoadSnapshot(ctx, s.moved)
 	if err != nil {
 		return fmt.Errorf("%s: %w", SnapshotName(s.moved), err)
 	}
@@ -434,10 +441,10 @@ func (s *fileState) removeMoved() error {
 
 // plan parses each file, finds its sites, and keeps the outcomes the
 // previous snapshot allows.
-func plan(files []string, opt Options) ([]*fileState, error) {
+func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error) {
 	var states []*fileState
 	for _, path := range files {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return states, err
 		}
@@ -446,14 +453,14 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		if opt.Tests != nil {
 			tests = opt.Tests(path)
 		}
-		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(path, opt.TestCommand, opt.AllTests, tests), currentSupport: opt.Support,
+		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(ctx, path, opt.TestCommand, opt.AllTests, tests), currentSupport: opt.Support,
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
-		snap, err := LoadSnapshot(key)
+		snap, err := LoadSnapshot(ctx, key)
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}
-		if err := s.follow(opt, path, &snap); err != nil {
+		if err := s.follow(ctx, opt, path, &snap); err != nil {
 			return states, err
 		}
 		if s.tests, err = TestHashes(tests); err != nil {
@@ -461,8 +468,8 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		}
 		// Only a broad-scope outcome, judged now or recorded before,
 		// depends on the build root's tests.
-		if broadScope(FileScope(path, opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
-			if s.moduleTests, err = SuiteTestHashes(path, project.Root()); err != nil {
+		if broadScope(FileScope(ctx, path, opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
+			if s.moduleTests, err = SuiteTestHashes(ctx, path, project.Root()); err != nil {
 				return states, err
 			}
 		}
@@ -491,7 +498,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 		s.scopes = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
 		s.fresh = make([]freshOutcome, len(s.sites))
-		scope := FileScope(path, opt.TestCommand, opt.AllTests)
+		scope := FileScope(ctx, path, opt.TestCommand, opt.AllTests)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
 			s.scopes[i] = scope
@@ -527,7 +534,7 @@ func plan(files []string, opt Options) ([]*fileState, error) {
 // file, of a strict language, as its snapshot records it: from the run's
 // statement coverage, or from a matching independent cache, which wins;
 // nil where neither has any.
-func (s *fileState) coverageEvidence(opt Options) ([]*CoverageEvidence, error) {
+func (s *fileState) coverageEvidence(ctx context.Context, opt Options) ([]*CoverageEvidence, error) {
 	out := make([]*CoverageEvidence, len(s.file.Units))
 	if !StrictCoverage(s.file.Spec.Name) {
 		return out, nil
@@ -536,7 +543,7 @@ func (s *fileState) coverageEvidence(opt Options) ([]*CoverageEvidence, error) {
 		producer, inputs := opt.CoverageProducer, map[string]string{}
 		if opt.CoverageInputs != nil {
 			var err error
-			producer, inputs, err = opt.CoverageInputs(s.file.Path)
+			producer, inputs, err = opt.CoverageInputs(ctx, s.file.Path)
 			if err != nil {
 				return nil, err
 			}
@@ -603,7 +610,7 @@ func (s *fileState) decided() []MutantResult {
 // report that names no file of the run, or the report measured other files
 // of the run in it. The tests ran and never loaded it. A line a listed test
 // executes is never uncovered.
-func markUncovered(states []*fileState, opt Options) error {
+func markUncovered(ctx context.Context, states []*fileState, opt Options) error {
 	if opt.Coverage == nil {
 		return nil
 	}
@@ -611,7 +618,7 @@ func markUncovered(states []*fileState, opt Options) error {
 	for _, s := range states {
 		sources = append(sources, s.file.Path)
 	}
-	report, err := opt.Coverage(sources)
+	report, err := opt.Coverage(ctx, sources)
 	if err != nil || report == nil {
 		return err
 	}
@@ -658,20 +665,19 @@ type job struct {
 // stop cancels, and the workers share one cleanup deadline from the stop.
 // The worker copies are removed only once every worker returned, its
 // owned commands joined.
-func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
+func execute(ctx context.Context, states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 	scratch, err := newWorkerScratch("itos-cc-mutate-")
 	if err != nil {
 		return nil, err
 	}
 	defer scratch.remove()
 	base := scratch.dir
-	ctx := context.Background()
 	var st *stopper
 	var runner commandRunner
 	if ff != nil {
-		st = newStopper(opt.Log)
+		ctx, st = newStopper(ctx, opt.Log)
 		defer st.cancel(nil)
-		ctx, runner.cleanupBudget = st.ctx, st.budget
+		runner.cleanupBudget = st.budget
 	}
 	workers := make([]*worker, max(1, opt.Workers))
 	for i := range workers {
@@ -704,7 +710,7 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 			key := s.command.Key()
 			if _, done := timeouts[key]; !done && failed[key] == "" && !st.stopped() {
 				fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(s.command.Dir), s.command)
-				r, err := workers[0].runContext(ctx, s.command, 0)
+				r, err := workers[0].run(ctx, s.command, 0)
 				if err != nil {
 					return nil, err
 				}
@@ -758,7 +764,7 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 	var wg sync.WaitGroup
 	for _, w := range workers {
 		wg.Add(1)
-		go func(w *worker) {
+		go func(ctx context.Context, w *worker) {
 			defer wg.Done()
 			for j := range queue {
 				r, err := runMutant(ctx, w, j, timeouts[j.state.command.Key()], sels)
@@ -812,7 +818,7 @@ func execute(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 				}
 				mu.Unlock()
 			}
-		}(w)
+		}(ctx, w)
 	}
 	// After a stop no job is admitted; the Done of a run without fail-fast
 	// never closes.
@@ -862,8 +868,8 @@ func runMutant(ctx context.Context, w *worker, j job, timeout time.Duration, sel
 	run, err := mutantRun{outcome: Survived, started: true}, error(nil)
 	if !s.command.RunsNothing() {
 		var r result
-		r, err = w.withMutant(s.command.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
-			return w.runContext(ctx, s.command, timeout)
+		r, err = w.withMutant(ctx, s.command.Root, s.file.Path, s.file.Src, mutated, func(ctx context.Context) (result, error) {
+			return w.run(ctx, s.command, timeout)
 		})
 		run = mutantRun{outcome: judged(r), elapsed: r.elapsed, started: true}
 		if r.cancelled || cancelledBy(ctx, err) {
@@ -878,7 +884,7 @@ func runMutant(ctx context.Context, w *worker, j job, timeout time.Duration, sel
 	if ctx.Err() != nil {
 		return cut, nil
 	}
-	sel := sels.baselineContext(ctx, w, run.ids)
+	sel := sels.baseline(ctx, w, run.ids)
 	if cancelledBy(ctx, sel.err) {
 		return cut, nil
 	}
@@ -886,8 +892,8 @@ func runMutant(ctx context.Context, w *worker, j job, timeout time.Duration, sel
 		run.failed = sel.failed
 		return run, sel.err
 	}
-	listed, err := w.withMutant(sels.listed.Root, s.file.Path, s.file.Src, mutated, func() (result, error) {
-		return w.runContext(ctx, sels.listed.command(run.ids), sel.timeout)
+	listed, err := w.withMutant(ctx, sels.listed.Root, s.file.Path, s.file.Src, mutated, func(ctx context.Context) (result, error) {
+		return w.run(ctx, sels.listed.command(run.ids), sel.timeout)
 	})
 	if listed.cancelled || cancelledBy(ctx, err) {
 		cut.elapsed += listed.elapsed

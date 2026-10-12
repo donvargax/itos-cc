@@ -83,7 +83,7 @@ func locate(e config.Exception, f *lang.File, sites []Site) (site int, why strin
 // mutant. The namespace is left out because a file's path can be part of
 // it, as in TypeScript. Any other is stale as ExceptionGone, with no line.
 // Neither changes itos-cc.yaml.
-func Elsewhere(exceptions []config.Exception, sources []string, judge func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
+func Elsewhere(ctx context.Context, exceptions []config.Exception, sources []string, judge func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
 	selected := map[string]bool{}
 	for _, path := range sources {
 		selected[project.FromRoot(path)] = true
@@ -100,7 +100,7 @@ func Elsewhere(exceptions []config.Exception, sources []string, judge func(file 
 	// Where each orphan's function is now: one entry per file holding it.
 	found := make([][]config.Exception, len(orphans))
 	for _, path := range sources {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,7 +126,7 @@ func Elsewhere(exceptions []config.Exception, sources []string, judge func(file 
 		stale = append(stale, StaleException{Exception: e, Why: ExceptionMoved, NewFile: found[i][0].File})
 		moved = append(moved, found[i][0])
 	}
-	return stale, moved, nil
+	return stale, moved, stopped(ctx, nil)
 }
 
 // fileExceptions is how the exceptions of one file apply to its sites now.
@@ -202,19 +202,19 @@ func (e *NoSurvivorError) Error() string { return e.Reason }
 // never recorded. A site with no such survivor, whether its mutant is
 // recorded killed or uncovered, its function's results are stale or
 // missing, or there is no site there, is a *NoSurvivorError.
-func Survivor(path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
+func Survivor(ctx context.Context, path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
 	if lang.Detect(path) == nil {
 		return config.Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
 	}
 	if info, err := os.Stat(path); err != nil || info.IsDir() {
 		return config.Exception{}, &NoSurvivorError{"there is no such file"}
 	}
-	f, err := project.ParseFile(context.TODO(), path)
+	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return config.Exception{}, err
 	}
 	defer f.Close()
-	c, err := checkParsed(f, path, nil, tests, support, nil)
+	c, err := checkParsed(ctx, f, path, nil, tests, support, nil)
 	if err != nil {
 		return config.Exception{}, err
 	}
@@ -264,7 +264,7 @@ type FreshExceptions struct {
 
 // PlanExceptions places exceptions on the selected sites of plan, reading
 // each selected file from its frozen root.
-func PlanExceptions(plan *FreshPlan, exceptions []config.Exception) (*FreshExceptions, error) {
+func PlanExceptions(ctx context.Context, plan *FreshPlan, exceptions []config.Exception) (*FreshExceptions, error) {
 	out := &FreshExceptions{held: map[string]config.Exception{}}
 	if len(exceptions) == 0 || plan == nil {
 		return out, nil
@@ -279,7 +279,7 @@ func PlanExceptions(plan *FreshPlan, exceptions []config.Exception) (*FreshExcep
 	}
 	slices.Sort(paths)
 	for _, rel := range paths {
-		f, err := project.ParseFile(context.TODO(), filepath.Join(plan.FrozenRoot, filepath.FromSlash(rel)))
+		f, err := project.ParseFile(ctx, filepath.Join(plan.FrozenRoot, filepath.FromSlash(rel)))
 		if err != nil {
 			return nil, err
 		}

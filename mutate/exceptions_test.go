@@ -118,7 +118,7 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 		{"in two files", []string{one, two}, ExceptionGone},
 		{"changed", []string{changed}, ExceptionGone},
 	} {
-		stale, moved, err := Elsewhere([]config.Exception{e}, c.sources, all)
+		stale, moved, err := Elsewhere(t.Context(), []config.Exception{e}, c.sources, all)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,10 +142,10 @@ func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing
 
 	// An entry for a file that is still selected, or one judge leaves out,
 	// is not judged here.
-	if stale, _, _ := Elsewhere([]config.Exception{e}, []string{write("x.py", b)}, all); len(stale) != 0 {
+	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{write("x.py", b)}, all); len(stale) != 0 {
 		t.Errorf("an entry of a selected file: %+v, want none", stale)
 	}
-	if stale, _, _ := Elsewhere([]config.Exception{e}, []string{one}, func(string) bool { return false }); len(stale) != 0 {
+	if stale, _, _ := Elsewhere(t.Context(), []config.Exception{e}, []string{one}, func(string) bool { return false }); len(stale) != 0 {
 		t.Errorf("an entry judge leaves out: %+v, want none", stale)
 	}
 }

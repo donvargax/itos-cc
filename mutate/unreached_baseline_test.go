@@ -32,16 +32,16 @@ func TestAKotlinFileNoTestClassReachesReportsItsBaselineAsNotRun(t *testing.T) {
 	src := filepath.Join(dir, "src", "main", "kotlin", "a", "A.kt")
 	helper := filepath.Join(dir, "src", "test", "kotlin", "a", "Helper.kt")
 	opt := Options{Workers: 1, Log: io.Discard, Tests: func(string) []string { return []string{helper} }}
-	if c := TestCommand(src, "", false, []string{helper}); !c.RunsNothing() {
+	if c := TestCommand(t.Context(), src, "", false, []string{helper}); !c.RunsNothing() {
 		t.Fatalf("A.kt's own tests run %q, want nothing: Helper.kt declares no test class", c)
 	}
 	for _, failFast := range []bool{false, true} {
 		var results []FileResult
 		var err error
 		if failFast {
-			results, _, err = RunFailFast([]string{src}, opt, FailFast{})
+			results, _, err = RunFailFast(t.Context(), []string{src}, opt, FailFast{})
 		} else {
-			results, err = Run([]string{src}, opt)
+			results, err = Run(t.Context(), []string{src}, opt)
 		}
 		if err != nil {
 			t.Fatalf("fail-fast %v: %v", failFast, err)

@@ -141,7 +141,7 @@ func TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory(t *test
 	if string(boardAfter) != string(boardBefore) {
 		t.Errorf("mutation run src rewrote %s, want it kept as it was:\nbefore\n%s\nafter\n%s", board, boardBefore, boardAfter)
 	}
-	if snap, err := mutate.LoadSnapshotOf(wd(t), "src/board.go"); err != nil || snap == nil {
+	if snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), "src/board.go"); err != nil || snap == nil {
 		t.Errorf("the snapshot of src/board.go after mutation run src: %v, %v, want it kept", snap, err)
 	}
 
@@ -186,7 +186,7 @@ func TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists(t *testin
 	if o := mutateRun(t, file); o.code != 0 {
 		t.Fatalf("mutation run %s: exit %d, want every mutant killed\n%s%s", file, o.code, o.stdout, o.stderr)
 	}
-	if snap, err := mutate.LoadSnapshotOf(wd(t), filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
+	if snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
 		t.Fatalf("the snapshot of %s after its run: %v, %v, want one at %s", file, snap, err, snapshot)
 	}
 
@@ -240,7 +240,7 @@ func renamedOld(t *testing.T) string {
 // lib/new.ts.
 func movedToNew(t *testing.T, old string) {
 	t.Helper()
-	if snap, err := mutate.LoadSnapshotOf(wd(t), "lib/new.ts"); err != nil || snap == nil {
+	if snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), "lib/new.ts"); err != nil || snap == nil {
 		t.Errorf("the snapshot of lib/new.ts: %v, %v, want the one of src/old.ts moved there", snap, err)
 	}
 	if snapshotThere(t, old) {

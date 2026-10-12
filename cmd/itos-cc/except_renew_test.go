@@ -79,7 +79,7 @@ func renewEntries(t *testing.T) map[string]exceptionYAML {
 // renewHash is the hash the snapshot of file records for function.
 func renewHash(t *testing.T, file, function string) string {
 	t.Helper()
-	snap, err := mutate.LoadSnapshotOf(wd(t), file)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), file)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", file, err)
 	}

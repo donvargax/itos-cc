@@ -73,9 +73,9 @@ var errFailFastStop = errors.New("the run stopped at its first actionable failur
 
 // stopper publishes a fail-fast run's one stop: the first trigger cancels
 // the run's one context, which every command runs under, and starts the
-// cleanup deadline every worker shares.
+// cleanup deadline every worker shares. It holds the context's cancel
+// function, never the context, which the run passes down.
 type stopper struct {
-	ctx    context.Context
 	cancel context.CancelCauseFunc
 	budget *cleanupBudget
 	log    io.Writer
@@ -83,9 +83,11 @@ type stopper struct {
 	stop   *Stop
 }
 
-func newStopper(log io.Writer) *stopper {
-	ctx, cancel := context.WithCancelCause(context.Background())
-	return &stopper{ctx: ctx, cancel: cancel, budget: &cleanupBudget{}, log: log}
+// newStopper is the stopper of a fail-fast run under parent, and the run's
+// context, derived from parent, which its trigger cancels.
+func newStopper(parent context.Context, log io.Writer) (context.Context, *stopper) {
+	ctx, cancel := context.WithCancelCause(parent)
+	return ctx, &stopper{cancel: cancel, budget: &cleanupBudget{}, log: log}
 }
 
 // trigger stops the run at s, unless it stopped already.
@@ -132,6 +134,16 @@ func cancelledBy(ctx context.Context, err error) bool {
 	return ctx.Err() != nil && err != nil && (errors.Is(err, context.Canceled) || errors.Is(err, errFailFastStop))
 }
 
+// stopped is the cause of ctx once it is done, or else err: a call that a
+// stopped run cut short reports the stop, never what it left undone, such
+// as a build root it could not find.
+func stopped(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return context.Cause(ctx)
+	}
+	return err
+}
+
 // knownStop is the first failure the plan already knows, before coverage:
 // an exception of a function judged that no longer holds, in file order.
 func knownStop(states []*fileState) *Stop {
@@ -149,7 +161,7 @@ func knownStop(states []*fileState) *Stop {
 // function judged, in line order, then a function judged that strict
 // coverage finds without complete evidence or with an uncovered block or
 // line, as reportStrictCoverage would report it.
-func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
+func coverageStop(ctx context.Context, states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
 	if !ff.FailUncovered {
 		return nil, nil
 	}
@@ -170,7 +182,7 @@ func coverageStop(states []*fileState, opt Options, ff *FailFast) (*Stop, error)
 		if !StrictCoverage(s.file.Spec.Name) || (opt.StatementCoverage == nil && opt.CachedCoverage == nil) {
 			continue
 		}
-		evidence, err := s.coverageEvidence(opt)
+		evidence, err := s.coverageEvidence(ctx, opt)
 		if err != nil {
 			return nil, err
 		}

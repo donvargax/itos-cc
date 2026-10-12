@@ -19,25 +19,6 @@ const (
 
 // These tests exercise capabilities introduced by T-10. They are not red
 // evidence against the original worker API.
-func TestLegacyWorkerAdapterUsesBackgroundContext(t *testing.T) {
-	t.Setenv(runnerFixtureMode, "success")
-	w := newCommandRunnerWorker(t)
-	root := t.TempDir()
-	observedBackground := false
-	w.runner.lifecycle.wait = func(ctx context.Context, cmd *exec.Cmd) error {
-		observedBackground = ctx.Done() == nil && ctx.Err() == nil
-		return cmd.Wait()
-	}
-
-	r, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
-	if err != nil || !r.passed {
-		t.Fatalf("legacy worker run = %+v, err = %v", r, err)
-	}
-	if !observedBackground {
-		t.Fatal("legacy worker adapter did not pass a Background context to command execution")
-	}
-}
-
 func TestCommandRunnerAcceptsParentContext(t *testing.T) {
 	root := t.TempDir()
 	started := filepath.Join(root, "started")
@@ -59,7 +40,7 @@ func TestCommandRunnerAcceptsParentContext(t *testing.T) {
 	}
 	done := make(chan runResult, 1)
 	go func() {
-		r, err := w.runContext(parent, Command{Root: root, Dir: root, Args: commandRunnerContextHelperArgs()}, 0)
+		r, err := w.run(parent, Command{Root: root, Dir: root, Args: commandRunnerContextHelperArgs()}, 0)
 		done <- runResult{r: r, err: err}
 	}()
 	if err := waitForFile(started, 2*time.Second); err != nil {
@@ -107,7 +88,7 @@ func TestCommandRunnerAcceptsInstanceLocalLifecycleOperations(t *testing.T) {
 
 	for _, w := range []*worker{first, second} {
 		root := t.TempDir()
-		r, err := w.run(Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second*10)
+		r, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second*10)
 		if err != nil || !r.passed {
 			t.Fatalf("runner execution = %+v, err = %v", r, err)
 		}

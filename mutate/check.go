@@ -65,12 +65,12 @@ type CoverageCheck struct {
 type GoCoverageCheck = CoverageCheck
 
 // CoverageInputs returns the current producer and input fingerprint of the
-// strict coverage evidence of the source at path.
-type CoverageInputs func(path string) (string, map[string]string, error)
+// strict coverage evidence of the source at path, reading under ctx.
+type CoverageInputs func(ctx context.Context, path string) (string, map[string]string, error)
 
 // CheckGoCoverage is CheckCoverage of Go files alone.
-func CheckGoCoverage(files []string, judge func(path, function, hash string) bool, current func(path string) (string, map[string]string, error)) ([]CoverageCheck, error) {
-	return CheckCoverage(files, judge, map[string]CoverageInputs{"go": current})
+func CheckGoCoverage(ctx context.Context, files []string, judge func(path, function, hash string) bool, current CoverageInputs) ([]CoverageCheck, error) {
+	return CheckCoverage(ctx, files, judge, map[string]CoverageInputs{"go": current})
 }
 
 // CheckCoverage checks independent coverage evidence for every selected
@@ -79,10 +79,10 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 // language, the current producer/input fingerprint per file. A file of
 // another language is outside every evidence inventory, beneath a go.mod or
 // not: it has no verdict here, and current is never asked about it.
-func CheckCoverage(files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs) ([]CoverageCheck, error) {
+func CheckCoverage(ctx context.Context, files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs) ([]CoverageCheck, error) {
 	var out []CoverageCheck
 	for _, path := range files {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return out, err
 		}
@@ -95,19 +95,19 @@ func CheckCoverage(files []string, judge func(path, function, hash string) bool,
 		if language == "go" {
 			unsupported, err = GoCoverageUnsupported(path)
 		} else {
-			unsupported, err = LineCoverageUnsupported(language, path, project.Root())
+			unsupported, err = LineCoverageUnsupported(ctx, language, path, project.Root())
 		}
 		if err != nil {
 			f.Close()
 			return out, err
 		}
 		key := project.FromRoot(path)
-		snap, err := LoadSnapshot(key)
+		snap, err := LoadSnapshot(ctx, key)
 		if err != nil {
 			f.Close()
 			return out, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}
-		_, inputs, err := current[language](path)
+		_, inputs, err := current[language](ctx, path)
 		if err != nil {
 			f.Close()
 			return out, err
@@ -155,7 +155,7 @@ func CheckCoverage(files []string, judge func(path, function, hash string) bool,
 		}
 		f.Close()
 	}
-	return out, nil
+	return out, stopped(ctx, nil)
 }
 
 // NeedsMutationCoverage reports whether Run must test at least one mutant.
@@ -267,25 +267,25 @@ func (c FunctionCheck) judged() bool {
 // them. A mutant an entry of the function's hash records at a site the
 // function no longer holds is left out, of its mutants and its counts
 // (OnSites), and a fresh function counts them in LeftOut.
-func Check(files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) ([]FileCheck, error) {
+func Check(ctx context.Context, files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
-		c, err := checkFile(path, judge, tests, support, exceptions)
+		c, err := checkFile(ctx, path, judge, tests, support, exceptions)
 		if err != nil {
 			return out, err
 		}
 		out = append(out, c)
 	}
-	return out, nil
+	return out, stopped(ctx, nil)
 }
 
-func checkFile(path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
-	f, err := project.ParseFile(context.TODO(), path)
+func checkFile(ctx context.Context, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
+	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return FileCheck{}, err
 	}
 	defer f.Close()
-	c, err := checkParsed(f, path, judge, tests, support, exceptions)
+	c, err := checkParsed(ctx, f, path, judge, tests, support, exceptions)
 	for i := range c.Functions {
 		if fn := &c.Functions[i]; fn.State != Fresh {
 			fn.Mutants = nil
@@ -298,10 +298,10 @@ func checkFile(path string, judge func(path, function, hash string) bool, tests 
 // Mutants of a function Stale only for sites its entry never recorded
 // (judged), so mutation sample and mutation except, which read only the
 // mutants an entry records, judge it as before; checkFile drops them.
-func checkParsed(f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
+func checkParsed(ctx context.Context, f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
 	key := project.FromRoot(path)
 	result := FileCheck{Rel: project.Rel(path), key: key, Functions: []FunctionCheck{}}
-	snap, err := LoadSnapshot(key)
+	snap, err := LoadSnapshot(ctx, key)
 	if err != nil {
 		return result, fmt.Errorf("%s: %w", SnapshotName(key), err)
 	}
@@ -316,7 +316,7 @@ func checkParsed(f *lang.File, path string, judge func(path, function, hash stri
 	var changed *TestChange
 	var moduleTests map[string]string
 	if snap != nil && HasBroadOutcome(snap.Units) {
-		if moduleTests, err = SuiteTestHashes(path, project.Root()); err != nil {
+		if moduleTests, err = SuiteTestHashes(ctx, path, project.Root()); err != nil {
 			return result, err
 		}
 	}

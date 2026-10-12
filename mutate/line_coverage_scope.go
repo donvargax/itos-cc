@@ -36,7 +36,7 @@ import (
 // build root) beneath it, which the fingerprints leave out. Detection is
 // lexical: it reads only files beneath projectRoot, and never follows,
 // opens or lists a target outside it.
-func LineCoverageUnsupported(language, source, projectRoot string) (string, error) {
+func LineCoverageUnsupported(ctx context.Context, language, source, projectRoot string) (string, error) {
 	abs, err := filepath.Abs(source)
 	if err != nil {
 		return "", err
@@ -48,11 +48,11 @@ func LineCoverageUnsupported(language, source, projectRoot string) (string, erro
 	s := scopeReader{root: root}
 	switch language {
 	case "typescript":
-		return s.typescript(abs), nil
+		return s.typescript(ctx, abs), nil
 	case "python":
-		return s.python(abs), nil
+		return s.python(ctx, abs), nil
 	case "kotlin":
-		return s.kotlin(abs), nil
+		return s.kotlin(ctx, abs), nil
 	}
 	return "", nil
 }
@@ -132,8 +132,8 @@ func rooted(target string) bool {
 
 // buildRoot is the nearest directory above source holding one of markers,
 // "" when there is none beneath the project root.
-func (s scopeReader) buildRoot(source string, markers ...string) string {
-	dir := project.FindUp(context.TODO(), source, markers...)
+func (s scopeReader) buildRoot(ctx context.Context, source string, markers ...string) string {
+	dir := project.FindUp(ctx, source, markers...)
 	if dir == "" || !beneathRoot(s.root, dir) {
 		return ""
 	}
@@ -144,8 +144,8 @@ func (s scopeReader) buildRoot(source string, markers ...string) string {
 // dependencies.
 var typescriptDependencyFields = []string{"dependencies", "devDependencies", "optionalDependencies", "peerDependencies"}
 
-func (s scopeReader) typescript(source string) string {
-	pkg := s.buildRoot(source, "package.json")
+func (s scopeReader) typescript(ctx context.Context, source string) string {
+	pkg := s.buildRoot(ctx, source, "package.json")
 	if pkg == "" {
 		return ""
 	}
@@ -214,8 +214,8 @@ var (
 	quoted          = regexp.MustCompile(`'([^']*)'|"([^"]*)"`)
 )
 
-func (s scopeReader) python(source string) string {
-	root := s.buildRoot(source, pythonRootMarkers...)
+func (s scopeReader) python(ctx context.Context, source string) string {
+	root := s.buildRoot(ctx, source, pythonRootMarkers...)
 	if root == "" {
 		return ""
 	}
@@ -332,13 +332,13 @@ var (
 	xmlComment = regexp.MustCompile(`(?s)<!--.*?-->`)
 )
 
-func (s scopeReader) kotlin(source string) string {
-	module := s.buildRoot(source, kotlinModuleMarkers...)
+func (s scopeReader) kotlin(ctx context.Context, source string) string {
+	module := s.buildRoot(ctx, source, kotlinModuleMarkers...)
 	if module == "" {
 		return ""
 	}
 	if !coverageFileExists(filepath.Join(module, "pom.xml")) {
-		root := s.buildRoot(source, kotlinSettings...)
+		root := s.buildRoot(ctx, source, kotlinSettings...)
 		if root == "" {
 			return ""
 		}

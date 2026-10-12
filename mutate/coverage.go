@@ -316,9 +316,9 @@ func goHasExecutableStatements(unit *sitter.Node) bool {
 
 // FreshGoCoverageEvidence binds measured blocks to one frozen admitted
 // function without consulting persistent snapshots or the live project root.
-func FreshGoCoverageEvidence(root string, admitted FreshUnit, blocks []coverage.GoBlock, producer string, inputs map[string]string) (*GoCoverageEvidence, error) {
+func FreshGoCoverageEvidence(ctx context.Context, root string, admitted FreshUnit, blocks []coverage.GoBlock, producer string, inputs map[string]string) (*GoCoverageEvidence, error) {
 	source := filepath.Join(root, filepath.FromSlash(admitted.Path))
-	file, err := project.ParseFile(context.TODO(), source)
+	file, err := project.ParseFile(ctx, source)
 	if err != nil {
 		return nil, err
 	}

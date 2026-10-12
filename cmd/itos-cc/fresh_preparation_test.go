@@ -80,7 +80,7 @@ func TestFreshPreparationOwnsCommandsAndPreservesListedReach(t *testing.T) {
 			t.Fatalf("commit range fixture with git %v: %v\n%s", args, err, out)
 		}
 	}
-	plan, err := mutate.PlanFresh(repo, nil, strings.TrimSpace(string(base)), 1, "prep-test")
+	plan, err := mutate.PlanFresh(t.Context(), repo, nil, strings.TrimSpace(string(base)), 1, "prep-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +184,7 @@ func TestFreshPreparationOwnsCommandsAndPreservesListedReach(t *testing.T) {
 func TestFreshPreparationFailsClosedOnBaselineFailure(t *testing.T) {
 	t.Parallel()
 	repo := freshPreparationFixture(t)
-	plan, err := mutate.PlanFresh(repo, nil, "", 1, "prep-test")
+	plan, err := mutate.PlanFresh(t.Context(), repo, nil, "", 1, "prep-test")
 	if err != nil {
 		t.Fatal(err)
 	}

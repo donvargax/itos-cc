@@ -86,9 +86,6 @@ type FreshTrialOptions struct {
 // plus the usual allowance. Results are in the order of trials. Nothing is
 // written outside the worker copies, which are removed before it returns.
 func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, opt FreshTrialOptions) ([]FreshTrialResult, error) {
-	if ctx == nil {
-		return nil, errors.New("fresh trials need a context")
-	}
 	if plan == nil || plan.FrozenRoot == "" {
 		return nil, errors.New("fresh trials need a live frozen plan")
 	}
@@ -125,7 +122,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	var wg sync.WaitGroup
 	for _, w := range workers {
 		wg.Add(1)
-		go func(w *worker) {
+		go func(ctx context.Context, w *worker) {
 			defer wg.Done()
 			for i := range queue {
 				r := runFreshTrial(ctx, w, plan, trials[i], opt, sels)
@@ -146,7 +143,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 					c.Path, c.Site.Line, show(c.Site.Original), show(c.Site.Replacement), said, r.Elapsed.Seconds())
 				mu.Unlock()
 			}
-		}(w)
+		}(ctx, w)
 	}
 	for i := range trials {
 		if ctx.Err() != nil {
@@ -197,8 +194,8 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	own := Survived
 	if !c.RunsNothing() {
 		timeout := timeoutOf(trial.Baseline.Elapsed, opt.TimeoutFactor)
-		r, err := w.withMutant(c.Root, path, src, mutated, func() (result, error) {
-			return w.runContext(ctx, c, timeout)
+		r, err := w.withMutant(ctx, c.Root, path, src, mutated, func(ctx context.Context) (result, error) {
+			return w.run(ctx, c, timeout)
 		})
 		out.Elapsed = r.elapsed
 		if out.Err = stageError(ctx, r, err); out.Err != nil {
@@ -211,7 +208,7 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 	if own != Survived || len(trial.Reach) == 0 {
 		out.Outcome, out.Scope = own, opt.Scope
 		if opt.Scope == ScopeOwn {
-			out.Scope = OwnScope(path)
+			out.Scope = OwnScope(ctx, path)
 		}
 		return out
 	}
@@ -220,7 +217,7 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 		return out
 	}
 	ids := slices.Clone(trial.Reach)
-	sel := sels.baselineContext(ctx, w, ids)
+	sel := sels.baseline(ctx, w, ids)
 	switch {
 	case sel.err != nil:
 		out.Err = sel.err
@@ -233,8 +230,8 @@ func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshT
 		return out
 	}
 	out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "complete", Tests: ids})
-	listed, err := w.withMutant(sels.listed.Root, path, src, mutated, func() (result, error) {
-		return w.runContext(ctx, sels.listed.command(ids), sel.timeout)
+	listed, err := w.withMutant(ctx, sels.listed.Root, path, src, mutated, func(ctx context.Context) (result, error) {
+		return w.run(ctx, sels.listed.command(ids), sel.timeout)
 	})
 	out.Elapsed += listed.elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {

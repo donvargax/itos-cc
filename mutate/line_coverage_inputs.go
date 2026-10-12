@@ -48,12 +48,12 @@ type rootInventory struct {
 // rootCoverageInputs fingerprints the files of source's build root inv
 // counts, each by addCoverageInput, and returns the root. A build root
 // above the project root is not followed: the project root stands for it.
-func rootCoverageInputs(source, projectRoot string, inv rootInventory) (map[string]string, string, error) {
+func rootCoverageInputs(ctx context.Context, source, projectRoot string, inv rootInventory) (map[string]string, string, error) {
 	var root string
 	if inv.root != nil {
 		root = inv.root(source)
 	} else {
-		root = project.FindUp(context.TODO(), source, inv.markers...)
+		root = project.FindUp(ctx, source, inv.markers...)
 	}
 	if root == "" || !beneathRoot(projectRoot, root) {
 		abs, err := filepath.Abs(source)
@@ -119,8 +119,8 @@ func envInput(more string, keys ...string) string {
 // (pyvenv.cfg), hidden, __pycache__, node_modules or another build root is
 // left out. A build root above the project root is not followed: the
 // project root stands for it.
-func PythonCoverageInputs(source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
-	out, root, err := rootCoverageInputs(source, projectRoot, rootInventory{
+func PythonCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+	out, root, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		markers: pythonRootMarkers,
 		source:  func(name string) bool { return strings.HasSuffix(name, ".py") },
 		config:  func(name string) bool { return pythonConfigFiles[name] },
@@ -173,8 +173,8 @@ func typescriptConfig(name string) bool {
 // directories, nested packages and the root's dist, build, out and coverage
 // outputs are left out. A package root above the project root is not
 // followed: the project root stands for it.
-func TypeScriptCoverageInputs(source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
-	out, _, err := rootCoverageInputs(source, projectRoot, rootInventory{
+func TypeScriptCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+	out, _, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		markers: []string{"package.json"},
 		source:  func(name string) bool { return slices.Contains(typescriptSources, filepath.Ext(name)) },
 		config:  typescriptConfig,
@@ -221,8 +221,8 @@ func kotlinInput(name string) bool {
 // highest of the directories holding a pom.xml from the module up without
 // a gap; for Gradle, the nearest directory with a settings script, else the
 // module's own directory.
-func KotlinBuildRoot(source string) string {
-	module := project.FindUp(context.TODO(), source, kotlinModuleMarkers...)
+func KotlinBuildRoot(ctx context.Context, source string) string {
+	module := project.FindUp(ctx, source, kotlinModuleMarkers...)
 	if module == "" {
 		return ""
 	}
@@ -233,7 +233,7 @@ func KotlinBuildRoot(source string) string {
 		}
 		return top
 	}
-	if root := project.FindUp(context.TODO(), source, kotlinSettings...); root != "" {
+	if root := project.FindUp(ctx, source, kotlinSettings...); root != "" {
 		return root
 	}
 	return module
@@ -253,8 +253,8 @@ func KotlinBuildRoot(source string) string {
 // root with settings of its own other than buildSrc or a build the root's
 // settings name (includeBuild), are left out. A build root above the
 // project root is not followed: the project root stands for it.
-func KotlinCoverageInputs(source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
-	build := KotlinBuildRoot(source)
+func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+	build := KotlinBuildRoot(ctx, source)
 	if build != "" && !beneathRoot(projectRoot, build) {
 		build = projectRoot
 	}
@@ -267,7 +267,7 @@ func KotlinCoverageInputs(source, projectRoot, producer string, support map[stri
 			settings += string(data)
 		}
 	}
-	out, _, err := rootCoverageInputs(source, projectRoot, rootInventory{
+	out, _, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		root:   func(string) string { return build },
 		source: kotlinInput,
 		config: func(string) bool { return false },
@@ -300,7 +300,7 @@ func KotlinCoverageInputs(source, projectRoot, producer string, support map[stri
 		return nil, err
 	}
 	runner := "mvn"
-	if module := project.FindUp(context.TODO(), source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
+	if module := project.FindUp(ctx, source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
 		runner = "gradle"
 		if coverage.GradleWrapper(module) {
 			runner = "gradlew"

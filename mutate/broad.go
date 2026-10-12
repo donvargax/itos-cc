@@ -22,7 +22,7 @@ import (
 // never walked, and conftest.py counts; a test beneath a nested build root
 // of the language belongs to that root. A source with no build root has
 // none.
-func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
+func SuiteTestHashes(ctx context.Context, source, projectRoot string) (map[string]string, error) {
 	spec := lang.Detect(source)
 	if spec == nil {
 		return map[string]string{}, nil
@@ -30,7 +30,7 @@ func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
 	if spec.Name == "go" {
 		return GoModuleTestHashes(source, projectRoot)
 	}
-	root := suiteRoot(spec.Name, source)
+	root := suiteRoot(ctx, spec.Name, source)
 	if root == "" {
 		return map[string]string{}, nil
 	}
@@ -40,7 +40,7 @@ func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
 	}
 	out := map[string]string{}
 	for _, test := range files.Tests {
-		if s := lang.Detect(test); s == nil || s.Name != spec.Name || suiteRoot(spec.Name, test) != root {
+		if s := lang.Detect(test); s == nil || s.Name != spec.Name || suiteRoot(ctx, spec.Name, test) != root {
 			continue
 		}
 		rel, err := filepath.Rel(projectRoot, test)
@@ -54,17 +54,17 @@ func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
 
 // suiteRoot is the build root of path, a file of language, as
 // SuiteTestHashes names it; "" for none.
-func suiteRoot(language, path string) string {
+func suiteRoot(ctx context.Context, language, path string) string {
 	switch language {
 	case "typescript":
-		return project.FindUp(context.TODO(), path, "package.json")
+		return project.FindUp(ctx, path, "package.json")
 	case "python":
-		return project.FindUp(context.TODO(), path, "pyproject.toml", "setup.py", "setup.cfg")
+		return project.FindUp(ctx, path, "pyproject.toml", "setup.py", "setup.cfg")
 	case "kotlin":
-		if root := project.FindUp(context.TODO(), path, "settings.gradle.kts", "settings.gradle"); root != "" {
+		if root := project.FindUp(ctx, path, "settings.gradle.kts", "settings.gradle"); root != "" {
 			return root
 		}
-		return project.FindUp(context.TODO(), path, "pom.xml")
+		return project.FindUp(ctx, path, "pom.xml")
 	}
 	return ""
 }

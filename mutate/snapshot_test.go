@@ -275,7 +275,7 @@ func TestAnOwnOutcomeOfAWholeSuiteScriptReadsAsTheWholeSuites(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	snap, err := LoadSnapshotOf(root, "src/a.ts")
+	snap, err := LoadSnapshotOf(t.Context(), root, "src/a.ts")
 	if err != nil || snap == nil {
 		t.Fatalf("snapshot: %v, %v", snap, err)
 	}

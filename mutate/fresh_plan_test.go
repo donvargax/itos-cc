@@ -39,7 +39,7 @@ func TestFreshPlanUsesCommittedInputs(t *testing.T) {
 	cache := filepath.Join(repo, ".metrics/mutate/snapshot.json")
 	writeFresh(t, cache, `{"outcome":"killed"}`)
 
-	plan, err := PlanFresh(repo, nil, "", 100, "")
+	plan, err := PlanFresh(t.Context(), repo, nil, "", 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestFreshPlanRootDirectorySelection(t *testing.T) {
 		"vendor/dependency.go": "package dependency\nfunc Dependency(x int) int { return x + 1 }\n",
 		"package.json":         "{}\n",
 	})
-	plan, err := PlanFresh(repo, []string{"."}, "", 20, "root-dot")
+	plan, err := PlanFresh(t.Context(), repo, []string{"."}, "", 20, "root-dot")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestFreshPlanRootDirectorySelection(t *testing.T) {
 	}
 	// project.Discover intentionally takes an explicitly named file even
 	// inside a skipped directory; the mutation planner preserves that API.
-	explicit, err := PlanFresh(repo, []string{"vendor/dependency.go"}, "", 20, "explicit")
+	explicit, err := PlanFresh(t.Context(), repo, []string{"vendor/dependency.go"}, "", 20, "explicit")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestFreshPlanSelectsGloballyWithoutMutationCache(t *testing.T) {
 	}
 	writeFresh(t, filepath.Join(repo, ".metrics/mutate/a.json"), `{"functions":[{"outcome":"killed"}]}`)
 	writeFresh(t, filepath.Join(repo, ".metrics/mutate/b.json"), `{"functions":[{"outcome":"survived"}]}`)
-	plan, err := PlanFresh(repo, nil, "", 2, "global-budget")
+	plan, err := PlanFresh(t.Context(), repo, nil, "", 2, "global-budget")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestFreshPlanSelectsGloballyWithoutMutationCache(t *testing.T) {
 func TestFreshPlanContextCapabilityStopsGitMetadata(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := PlanFreshContext(ctx, t.TempDir(), nil, "", 1, "context")
+	_, err := PlanFresh(ctx, t.TempDir(), nil, "", 1, "context")
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("cancelled context was not propagated from Git metadata: %v", err)
 	}
@@ -165,12 +165,12 @@ func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 		"src/kotlin/Mod.kt":     "fun duplicate(x: Int): Int = x + 1\n",
 	})
 	commit := freshGit(t, repo, "rev-parse", "HEAD")
-	first, err := PlanFresh(repo, []string{"src/kotlin/Mod.kt", "src/typescript/mod.ts", "src/python/mod.py", "b.go", "a.go"}, "", 100, "fixed text seed")
+	first, err := PlanFresh(t.Context(), repo, []string{"src/kotlin/Mod.kt", "src/typescript/mod.ts", "src/python/mod.py", "b.go", "a.go"}, "", 100, "fixed text seed")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first.Close()
-	second, err := PlanFresh(repo, []string{"a.go", "b.go", "src/python/mod.py", "src/typescript/mod.ts", "src/kotlin/Mod.kt"}, "", 100, "fixed text seed")
+	second, err := PlanFresh(t.Context(), repo, []string{"a.go", "b.go", "src/python/mod.py", "src/typescript/mod.ts", "src/kotlin/Mod.kt"}, "", 100, "fixed text seed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 			t.Errorf("supported language source %q has no static candidate", want)
 		}
 	}
-	defaultSeed, err := PlanFresh(repo, nil, "", 100, "")
+	defaultSeed, err := PlanFresh(t.Context(), repo, nil, "", 100, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +198,7 @@ func TestFreshPlanSeedAndUnitIdentityAreStable(t *testing.T) {
 	if defaultSeed.Seed != commit {
 		t.Fatalf("default seed = %q, want resolved commit %q", defaultSeed.Seed, commit)
 	}
-	otherSeed, err := PlanFresh(repo, nil, "", 100, "another text")
+	otherSeed, err := PlanFresh(t.Context(), repo, nil, "", 100, "another text")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestFreshPlanSinceAndPathNarrowingUseCommittedHead(t *testing.T) {
 	writeFresh(t, filepath.Join(repo, "renamed.go"), "package a\nfunc Changed(x int) int { return x * 1 }\nfunc Untouched(y int) int { return y + 2 }\n")
 	freshGit(t, repo, "add", "-A")
 	freshGit(t, repo, "commit", "-m", "rename and change")
-	plan, err := PlanFresh(repo, nil, base, 100, "since")
+	plan, err := PlanFresh(t.Context(), repo, nil, base, 100, "since")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func TestFreshPlanSinceAndPathNarrowingUseCommittedHead(t *testing.T) {
 			t.Errorf("--since selected nonchanged committed unit: %s %s", c.Path, c.Function)
 		}
 	}
-	narrow, err := PlanFresh(repo, []string{"other.go"}, base, 100, "since")
+	narrow, err := PlanFresh(t.Context(), repo, []string{"other.go"}, base, 100, "since")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestFreshPlanSincePinsResolvedBaseDuringInventory(t *testing.T) {
 	t.Setenv("ITOS_FRESH_PLAN_MOVE_TO", head)
 	t.Setenv("PATH", wrapperDir+string(os.PathListSeparator)+originalPath)
 
-	plan, err := PlanFresh(repo, nil, "refs/heads/since-base", 50, "pinned-base")
+	plan, err := PlanFresh(t.Context(), repo, nil, "refs/heads/since-base", 50, "pinned-base")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,13 +351,13 @@ func freshRealGit(t *testing.T) string {
 func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
 	t.Run("path escape", func(t *testing.T) {
 		repo := freshFixture(t, map[string]string{"a.go": "package a\nfunc A() int { return 1 }\n"})
-		if _, err := PlanFresh(repo, []string{"../outside.go"}, "", 1, ""); err == nil {
+		if _, err := PlanFresh(t.Context(), repo, []string{"../outside.go"}, "", 1, ""); err == nil {
 			t.Fatal("expected escaping path rejection")
 		}
 	})
 	t.Run("unresolved path", func(t *testing.T) {
 		repo := freshFixture(t, map[string]string{"a.go": "package a\nfunc A() int { return 1 }\n"})
-		if _, err := PlanFresh(repo, []string{"missing.go"}, "", 1, ""); err == nil || !strings.Contains(err.Error(), "no committed supported source") {
+		if _, err := PlanFresh(t.Context(), repo, []string{"missing.go"}, "", 1, ""); err == nil || !strings.Contains(err.Error(), "no committed supported source") {
 			t.Fatalf("expected unresolved source path rejection, got %v", err)
 		}
 	})
@@ -370,7 +370,7 @@ func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
 		}
 		freshGit(t, repo, "add", "link.go")
 		freshGit(t, repo, "commit", "-m", "symlink")
-		if _, err := PlanFresh(repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "symlink") {
+		if _, err := PlanFresh(t.Context(), repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "symlink") {
 			t.Fatalf("expected clear symlink refusal, got %v", err)
 		}
 		if entries, err := os.ReadDir(filepath.Join(repo, ".git", "itos")); err != nil || len(entries) != 0 {
@@ -387,7 +387,7 @@ func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
 		if err := os.Symlink(outside, filepath.Join(repo, ".git", "itos")); err != nil {
 			t.Skipf("symlink creation unavailable: %v", err)
 		}
-		if _, err := PlanFresh(repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "symlink") {
+		if _, err := PlanFresh(t.Context(), repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "symlink") {
 			t.Fatalf("expected private scratch symlink refusal, got %v", err)
 		}
 		entries, err := os.ReadDir(outside)
@@ -409,12 +409,12 @@ func TestFreshPlanRejectsUnsafeAndUnsupportedInputs(t *testing.T) {
 		freshGit(t, nested, "commit", "-q", "-m", "nested fixture")
 		freshGit(t, repo, "add", "vendor/dep")
 		freshGit(t, repo, "commit", "-m", "submodule")
-		if _, err := PlanFresh(repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "submodule") {
+		if _, err := PlanFresh(t.Context(), repo, nil, "", 1, ""); err == nil || !strings.Contains(err.Error(), "submodule") {
 			t.Fatalf("expected clear submodule refusal, got %v", err)
 		}
 	})
 	t.Run("invalid count", func(t *testing.T) {
-		if _, err := PlanFresh(t.TempDir(), nil, "", 0, ""); err == nil || !strings.Contains(err.Error(), "positive") {
+		if _, err := PlanFresh(t.Context(), t.TempDir(), nil, "", 0, ""); err == nil || !strings.Contains(err.Error(), "positive") {
 			t.Fatalf("expected positive count validation, got %v", err)
 		}
 	})
@@ -450,7 +450,7 @@ func TestFreshPlanKeepsTheLinesTheRangeAddedOrChanged(t *testing.T) {
 	writeFresh(t, filepath.Join(repo, "trim.go"), "package b\n\nfunc Trimmed(x int) int {\n\ty := x\n\treturn y + 1\n}\n")
 	freshGit(t, repo, "add", "-A")
 	freshGit(t, repo, "commit", "-q", "-m", "rename, change and trim")
-	plan, err := PlanFresh(repo, nil, base, 100, "since")
+	plan, err := PlanFresh(t.Context(), repo, nil, base, 100, "since")
 	if err != nil {
 		t.Fatal(err)
 	}

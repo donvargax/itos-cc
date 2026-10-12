@@ -737,7 +737,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if linesOnly {
 		scope = lines
 	}
-	elsewhere, moved, err := exceptionsElsewhere(in, cfg.Exceptions, sources, renamed)
+	elsewhere, moved, err := exceptionsElsewhere(ctx, in, cfg.Exceptions, sources, renamed)
 	if err != nil {
 		return result, err
 	}
@@ -799,11 +799,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	if strict {
 		var cached []mutate.CoverageCheck
-		mutationChecks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+		mutationChecks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 		if err != nil {
 			return result, err
 		}
-		cached, err = mutate.CheckCoverage(sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
+		cached, err = mutate.CheckCoverage(ctx, sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
 		if err != nil {
 			return result, err
 		}
@@ -857,7 +857,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					report = coverage.Merge(report, coverage.FromLines(language, byLines[language]))
 				}
 			}
-			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+			opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 		} else {
 			// A strict language whose every judged function has fresh
 			// evidence and whose mutants all hold is not measured again:
@@ -932,15 +932,16 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			opt.StatementCoverage = report
 			opt.CoverageProducer = measuredProducer
 			opt.CoverageInputs = currentInputs
-			opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+			opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 			if opt.Listed != nil {
 				opt.Listed.Files = listedFiles
 			}
 		}
 	} else if !in.set("no-coverage") {
-		// measure measures sources; a strict run fails on a coverage error
-		// rather than going without coverage.
-		measure := func(sources []string, strict bool) (*coverage.Report, error) {
+		// measure measures sources under its context, which loadCoverage
+		// takes once coverage does (T-50); a strict run fails on a coverage
+		// error rather than going without coverage.
+		measure := func(_ context.Context, sources []string, strict bool) (*coverage.Report, error) {
 			var perTest *coverage.PerTest
 			if suite != nil {
 				listed, err := listTests(suite)
@@ -969,17 +970,19 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 			return report, nil
 		}
-		opt.Coverage = func(sources []string) (*coverage.Report, error) { return measure(sources, false) }
+		opt.Coverage = func(ctx context.Context, sources []string) (*coverage.Report, error) {
+			return measure(ctx, sources, false)
+		}
 		if in.set("fail-uncovered") && !rawCoverage(in) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
 			// every mutant, and stops the run before any mutant runs.
-			checks, err := mutate.Check(sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+			checks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 			if err != nil {
 				return result, err
 			}
 			if mutate.NeedsMutationCoverage(checks, in.set("mutate-all")) {
-				report, err := measure(sources, true)
+				report, err := measure(ctx, sources, true)
 				if err != nil {
 					return result, err
 				}
@@ -991,7 +994,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					}
 					return result, nil
 				}
-				opt.Coverage = func([]string) (*coverage.Report, error) { return report, nil }
+				opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 			}
 		}
 	}
@@ -1009,9 +1012,9 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			e := elsewhere[0]
 			ff.Known = &mutate.Stop{Rule: "mutation.exception-stale", File: project.Rel(project.AtRoot(e.File)), Exception: &e}
 		}
-		results, stop, err = mutate.RunFailFast(sources, opt, ff)
+		results, stop, err = mutate.RunFailFast(ctx, sources, opt, ff)
 	} else {
-		results, err = mutate.Run(sources, opt)
+		results, err = mutate.Run(ctx, sources, opt)
 	}
 	if err != nil {
 		return result, err
@@ -1268,7 +1271,7 @@ func describeStop(s *mutate.Stop) string {
 // each whose file the range deleted, unless paths narrow it, or renamed to
 // one of sources, renamed giving the path each had at the ref; with paths
 // or --changed alone, none.
-func exceptionsElsewhere(in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutate.StaleException, []config.Exception, error) {
+func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutate.StaleException, []config.Exception, error) {
 	if len(exceptions) == 0 {
 		return nil, nil, nil
 	}
@@ -1303,7 +1306,7 @@ func exceptionsElsewhere(in *invocation, exceptions []config.Exception, sources 
 	default:
 		return nil, nil, nil
 	}
-	return mutate.Elsewhere(exceptions, sources, judge)
+	return mutate.Elsewhere(ctx, exceptions, sources, judge)
 }
 
 // reportElsewhere reports each exception of exceptionsElsewhere, each under
@@ -1545,39 +1548,39 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 		producer := mutate.CoverageProducer(language, allTests || testCommand && language != "go")
 		switch language {
 		case "go":
-			out[language] = func(source string) (string, map[string]string, error) {
+			out[language] = func(_ context.Context, source string) (string, map[string]string, error) {
 				inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		case "python":
-			out[language] = func(source string) (string, map[string]string, error) {
-				inputs, err := mutate.PythonCoverageInputs(source, project.Root(), producer, support)
+			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
+				inputs, err := mutate.PythonCoverageInputs(ctx, source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		case "typescript":
 			// Its producer is what measures the package: Vitest, Jest or
 			// c8 (coverage.TypeScriptRunner); --test-command changes
 			// nothing about it.
-			out[language] = func(source string) (string, map[string]string, error) {
-				dir := project.FindUp(context.TODO(), source, "package.json")
+			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
+				dir := project.FindUp(ctx, source, "package.json")
 				if dir == "" {
 					dir = filepath.Dir(source)
 				}
 				producer := mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(dir, !allTests), allTests)
-				inputs, err := mutate.TypeScriptCoverageInputs(source, project.Root(), producer, support)
+				inputs, err := mutate.TypeScriptCoverageInputs(ctx, source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		case "kotlin":
 			// Its producer is what measures the module: Gradle's JaCoCo or
 			// Kover, or Maven's JaCoCo (coverage.KotlinRunner), over the
 			// whole suite with --test-command too, as Python's.
-			out[language] = func(source string) (string, map[string]string, error) {
-				module := project.FindUp(context.TODO(), source, "build.gradle.kts", "build.gradle", "pom.xml")
+			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
+				module := project.FindUp(ctx, source, "build.gradle.kts", "build.gradle", "pom.xml")
 				if module == "" {
 					module = filepath.Dir(source)
 				}
 				producer := mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), allTests || testCommand)
-				inputs, err := mutate.KotlinCoverageInputs(source, project.Root(), producer, support)
+				inputs, err := mutate.KotlinCoverageInputs(ctx, source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		}
@@ -1591,7 +1594,7 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 // test loaded without running a test (coverage.Report.Inventory). It
 // returns the report, Go's producer, the producer and fingerprint of each
 // source's evidence by its language, and the file of each listed test.
-func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
+func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, mutate.CoverageInputs, map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
@@ -1627,9 +1630,9 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 		return nil, "", nil, nil, context.Cause(ctx)
 	}
 	inputs := strictCoverageInputs(languages, in.set("all-tests"), in.set("test-command"), support)
-	fingerprint := func(source string) (string, map[string]string, error) {
+	fingerprint := func(ctx context.Context, source string) (string, map[string]string, error) {
 		if spec := lang.Detect(source); spec != nil && inputs[spec.Name] != nil {
-			return inputs[spec.Name](source)
+			return inputs[spec.Name](ctx, source)
 		}
 		return "", nil, fmt.Errorf("%s: no strict coverage inputs for its language", source)
 	}

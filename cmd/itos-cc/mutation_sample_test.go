@@ -85,7 +85,7 @@ func (o outcome) sampled(t *testing.T) []sampledJSON {
 // written by hand would be.
 func recordAs(t *testing.T, rel, function, original, outcome string) {
 	t.Helper()
-	snap, err := mutate.LoadSnapshotOf(wd(t), rel)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), rel)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", rel, err)
 	}

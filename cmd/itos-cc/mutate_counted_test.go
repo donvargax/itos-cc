@@ -109,7 +109,7 @@ func seedSelecting(t *testing.T, repo string, count int, want func([]mutate.Fres
 	t.Helper()
 	for i := 0; i < 500; i++ {
 		seed := fmt.Sprintf("seed-%d", i)
-		plan, err := mutate.PlanFresh(repo, nil, "", count, seed)
+		plan, err := mutate.PlanFresh(t.Context(), repo, nil, "", count, seed)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -333,7 +333,7 @@ func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
 
 	// Static checks, no trial: every eligible site is fully identified, and
 	// another seed can be checked to draw another site.
-	plan, err := mutate.PlanFresh(dir, nil, "", 1, "fixed")
+	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "fixed")
 	if err != nil {
 		t.Fatal(err)
 	}

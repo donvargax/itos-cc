@@ -113,7 +113,7 @@ func TestPythonCoverageInputsFingerprintTheBuildRoot(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	inputs, err := PythonCoverageInputs(filepath.Join(dir, "calc.py"), dir, "producer", map[string]string{"features/a.feature": "h"})
+	inputs, err := PythonCoverageInputs(t.Context(), filepath.Join(dir, "calc.py"), dir, "producer", map[string]string{"features/a.feature": "h"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,7 +129,7 @@ func TestPythonCoverageInputsFingerprintTheBuildRoot(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "calc.py"), []byte(annotated), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	again, err := PythonCoverageInputs(filepath.Join(dir, "calc.py"), dir, "producer", map[string]string{"features/a.feature": "h"})
+	again, err := PythonCoverageInputs(t.Context(), filepath.Join(dir, "calc.py"), dir, "producer", map[string]string{"features/a.feature": "h"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func TestTypeScriptCoverageInputsFingerprintThePackageRoot(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	inputs, err := TypeScriptCoverageInputs(filepath.Join(dir, "src", "calc.ts"), dir, "producer", nil)
+	inputs, err := TypeScriptCoverageInputs(t.Context(), filepath.Join(dir, "src", "calc.ts"), dir, "producer", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +326,7 @@ func TestKotlinCoverageInputsFingerprintTheWholeGradleBuild(t *testing.T) {
 		".idea/y.kt":                               "",
 		"README.md":                                "",
 	})
-	inputs, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	inputs, err := KotlinCoverageInputs(t.Context(), filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -341,7 +341,7 @@ func TestKotlinCoverageInputsFingerprintTheWholeGradleBuild(t *testing.T) {
 	}
 	// A Gradle wrapper, or JAVA_HOME, is another JVM environment.
 	writeTree(t, dir, map[string]string{"gradlew": ""})
-	wrapped, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	wrapped, err := KotlinCoverageInputs(t.Context(), filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestKotlinCoverageInputsFingerprintTheWholeGradleBuild(t *testing.T) {
 		t.Error("running through gradlew leaves the JVM environment as it was")
 	}
 	t.Setenv("JAVA_HOME", filepath.Join(dir, "other-jdk"))
-	other, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
+	other, err := KotlinCoverageInputs(t.Context(), filepath.Join(dir, "app", "src", "main", "kotlin", "calc", "Calc.kt"), dir, "producer", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -373,10 +373,10 @@ func TestKotlinCoverageInputsFingerprintTheWholeMavenReactor(t *testing.T) {
 		"app/src/test/kotlin/AppTest.kt": "",
 		"app/target/classes/Gen.kt":      "",
 	})
-	if got := KotlinBuildRoot(filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt")); got != dir {
+	if got := KotlinBuildRoot(t.Context(), filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt")); got != dir {
 		t.Errorf("build root %s, want the reactor's top %s", got, dir)
 	}
-	inputs, err := KotlinCoverageInputs(filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt"), dir, "producer", nil)
+	inputs, err := KotlinCoverageInputs(t.Context(), filepath.Join(dir, "app", "src", "main", "kotlin", "App.kt"), dir, "producer", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -166,7 +166,7 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	e, err := mutate.Survivor(path, line, column, tests, support)
+	e, err := mutate.Survivor(ctx, path, line, column, tests, support)
 	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))
@@ -292,7 +292,7 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	renewed, left, err := mutate.Renew(cfg.Exceptions, all.Sources, tests, support)
+	renewed, left, err := mutate.Renew(ctx, cfg.Exceptions, all.Sources, tests, support)
 	if err != nil {
 		return result, err
 	}

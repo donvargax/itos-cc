@@ -23,9 +23,6 @@ func (e *OwnedExecutor) Run(ctx context.Context, cmd *exec.Cmd) error {
 	if e == nil {
 		return errors.New("owned executor must not be nil")
 	}
-	if ctx == nil {
-		return errors.New("owned command context must not be nil")
-	}
 	if cmd == nil {
 		return errors.New("owned command must not be nil")
 	}

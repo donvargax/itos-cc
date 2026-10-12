@@ -13,7 +13,7 @@ func scopeOf(t *testing.T, language, source string, files map[string]string) str
 	t.Helper()
 	root := t.TempDir()
 	writeTree(t, root, files)
-	got, err := LineCoverageUnsupported(language, filepath.Join(root, filepath.FromSlash(source)), root)
+	got, err := LineCoverageUnsupported(t.Context(), language, filepath.Join(root, filepath.FromSlash(source)), root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,13 +116,13 @@ func TestLineCoverageScopeIsReadBeneathTheProjectRootAlone(t *testing.T) {
 	if err := os.Symlink(t.TempDir(), filepath.Join(root, "linked")); err != nil {
 		t.Skip("symlinks unavailable:", err)
 	}
-	if got, err := LineCoverageUnsupported("typescript", filepath.Join(root, "src", "f.ts"), root); err != nil || !strings.Contains(got, "file:./linked") {
+	if got, err := LineCoverageUnsupported(t.Context(), "typescript", filepath.Join(root, "src", "f.ts"), root); err != nil || !strings.Contains(got, "file:./linked") {
 		t.Errorf("a dependency through a symbolic link: %q %v, want it refused", got, err)
 	}
 	outer := t.TempDir()
 	writeTree(t, outer, map[string]string{"package.json": `{"workspaces": ["*"]}`, "inner/src/f.ts": "export const f = 1;\n"})
 	inner := filepath.Join(outer, "inner")
-	if got, err := LineCoverageUnsupported("typescript", filepath.Join(inner, "src", "f.ts"), inner); err != nil || got != "" {
+	if got, err := LineCoverageUnsupported(t.Context(), "typescript", filepath.Join(inner, "src", "f.ts"), inner); err != nil || got != "" {
 		t.Errorf("a package root above the project root: %q %v, want nothing read, nothing refused", got, err)
 	}
 }
