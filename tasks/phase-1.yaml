@@ -1076,3 +1076,28 @@
     - run: "! go list -deps ./cmd/itos-cc | grep -q porttest"
     - run: tools/bin/architecture-check
     - run: tools/bin/pinned golangci-lint run ./internal/...
+- id: T-57
+  type: refactor
+  title: run takes its streams and adapters from main
+  why: >
+    The seam the in-process driver needs: run(ctx, args, stdin, stdout, stderr, a adapters) int,
+    adapters holding the working directory and the ports the moved commands use (selection's Tree,
+    lang's Surroundings, snapshot's Store), main passing os.Stdin, os.Stdout, os.Stderr, workdir and
+    metricsdir. parserOf binds the handlers from them, the package-level snapshots value goes, the
+    UI is built from the streams given (not stdUI), and top-level help and usage write to the stdout
+    given, not fmt.Print. The hand-parsed commands (crap, mutation, serve, version) keep the os
+    streams and their own disk access until they move. os.Exit stays in main alone. A test in
+    cmd/itos-cc (TestRunWithFakes) runs units against porttest fakes through run, which proves the
+    seam; its fakes come from porttest.TreeOf and the other suites' fakes. Decision 44 and the
+    person's choice of 2026-10-12: the steps become ordinary files of package features, which
+    slice-6's exclude (decision 45) leaves out of mutation and the measures; the in-process driver
+    is a _test.go in cmd/itos-cc, since package main cannot be imported. Rules whole: ctx first and
+    never held or captured for I/O, no fake in production code (porttest enters cmd only through its
+    _test.go files), fakes not mocks. Light local testing: the packages and scenarios named in the
+    checks, never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No
+    binary comparison; a case worth comparing joins refactor-final-proof's list.
+  done_when:
+    - run: go vet ./cmd/itos-cc
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestRunWithFakes'
+    - run: "! go list -deps ./cmd/itos-cc | grep -q porttest"
+    - run: go test ./features -count=1 -scenarios='@ID-(UNIT-01|DRY-15|SCRAP-21)'
