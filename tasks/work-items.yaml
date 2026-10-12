@@ -2245,3 +2245,21 @@ items:
       thin. Its tests parse in memory; domain-coverage and golangci-lint hold it, fixed without
       changing behaviour. Its three .metrics/mutate records move unedited with the files; the
       nightly refreshes them (decision 40).
+  - id: T-43
+    title: scrap is a slice on kong
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      scrap moves to internal/scrap, a slice, as dry did: same bytes, same exit codes. CLI: Changed,
+      Verbose, JSON, the paths; Contract copied word for word, the action table included. Run prints
+      printScrap's lines through ui.Stdout and the 'no test files to measure' and 'ignoring
+      unreadable' lines through ui.Stderr, even with --json, as today. The Handler holds Tree,
+      Store, lang's port and Name. scrapCommand and cmd/itos-cc/scrap.go go, with their
+      .metrics/mutate record (say so in the commit); cmd/itos-cc/snapshots_root_test.go, which runs
+      dry and scrap in process for metrics_snapshots.feature, keeps passing or moves to the slices.
+      Proof (step 9) over scrap command lines including --verbose=x and an invalid
+      .metrics/scrap.json, each differing line explained; a difference that is not an agreed fix
+      stops the task.
