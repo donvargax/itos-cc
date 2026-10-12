@@ -2228,6 +2228,11 @@ items:
       scrap twice over different paths (the second keeps the first's files in scrap.json and
       compares the files both measured), and scrap with a .metrics/scrap.json whose files list holds
       one file twice or a value of the wrong type.
+
+      T-43 (scrap on kong): compare scrap --verbose=x (flags.switch-value), scrap with an invalid
+      .metrics/scrap.json, plain and with --json (the ignoring line on stderr, the run going on),
+      scrap selecting no test file with --json, scrap --help and help scrap, and scrap over a test
+      file that cannot be read.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
