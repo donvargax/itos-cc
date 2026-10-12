@@ -41,5 +41,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0036: Exit codes follow square/exit, keeping 75 for retry](0036-exit-codes-follow-square-exit-keeping-75-for-retry.md)
 - [ADR-0037: Top-level packages move under internal/ as each is refactored](0037-top-level-packages-move-under-internal-as-each-is-refactored.md)
 - [ADR-0038: Every command exits 130 on interrupt, and a second interrupt waits only for owned process groups](0038-every-command-exits-130-on-interrupt-and-a-second-interrupt-waits-only-for-owned-process-groups.md)
+- [ADR-0039: Every feature file converts to godog, one command at a time](0039-every-feature-file-converts-to-godog-one-command-at-a-time.md)
 
 <!-- itos:decisions:end -->
