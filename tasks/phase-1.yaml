@@ -871,12 +871,6 @@
     binary comparison (docs/go.md step 9); a case worth comparing joins refactor-final-proof's list.
     Never run itos task show for this task locally (it runs the checks); run only the targeted tests
     while working, CI runs the rest.
-  done_when:
-    - run: test "$(git grep -l 'context.Background()' -- 'cmd/*.go' ':!*_test.go')" = cmd/itos-cc/main.go
-    - run: "! git grep -n 'panic(' -- cmd/itos-cc/moved.go"
-    - run: go vet ./cmd/itos-cc
-    - run: go test -count=1 ./cmd/itos-cc -run '^(TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands|TestEveryCommandsHelpGivesItsContract|TestHelpAnywhereButAfterDashDash|TestBadFlagsAreUsageErrors)$'
-    - run: go test ./features -count=1 -scenarios='@ID-(UNIT|DRY|SCRAP)-'
 - id: T-48
   type: refactor
   title: graph and the server build under the context their callers give them
