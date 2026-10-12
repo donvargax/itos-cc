@@ -2099,8 +2099,8 @@ items:
   - id: T-38
     title: Snapshots are read and written through the snapshot domain's port
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
