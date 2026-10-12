@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/donvargax/itos-cc/dry"
+	"github.com/donvargax/itos-cc/internal/duplication"
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/snapshot"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/project"
 )
 
 type drySnapshot struct {
-	Version    int             `json:"version"`
-	Threshold  float64         `json:"threshold"`
-	Candidates []dry.Candidate `json:"candidates"`
-	Groups     []dry.Group     `json:"groups"`
+	Version    int                     `json:"version"`
+	Threshold  float64                 `json:"threshold"`
+	Candidates []duplication.Candidate `json:"candidates"`
+	Groups     []duplication.Group     `json:"groups"`
 }
 
 var dryCommand = &command{
@@ -31,9 +33,9 @@ With paths or --changed, those files are compared against every source under
 the working directory, so a change is checked against the whole project.
 Writes .metrics/dry.json.`,
 	flags: append(append([]flagSpec{}, selectionFlags...),
-		opt("threshold", floatFlag, "N", fmt.Sprint(dry.Defaults.Threshold), "minimum similarity, 0–1"),
-		opt("min-lines", intFlag, "N", fmt.Sprint(dry.Defaults.MinLines), "skip functions shorter than N lines"),
-		opt("min-nodes", intFlag, "N", fmt.Sprint(dry.Defaults.MinNodes), "skip functions with fewer than N normalized syntax nodes")),
+		opt("threshold", floatFlag, "N", fmt.Sprint(duplication.Defaults.Threshold), "minimum similarity, 0–1"),
+		opt("min-lines", intFlag, "N", fmt.Sprint(duplication.Defaults.MinLines), "skip functions shorter than N lines"),
+		opt("min-nodes", intFlag, "N", fmt.Sprint(duplication.Defaults.MinNodes), "skip functions with fewer than N normalized syntax nodes")),
 	json: `"threshold", "candidates": [{"score", "language", "left", "right"}],
    "groups": [{"language", "min_score", "max_score", "members": [{"file",
    "start_line", "end_line", "namespace", "name", "nodes"}]}]`,
@@ -50,14 +52,14 @@ Writes .metrics/dry.json.`,
 }
 
 type dryResult struct {
-	Threshold  float64         `json:"threshold"`
-	Candidates []dry.Candidate `json:"candidates"`
-	Groups     []dry.Group     `json:"groups"`
+	Threshold  float64                 `json:"threshold"`
+	Candidates []duplication.Candidate `json:"candidates"`
+	Groups     []duplication.Group     `json:"groups"`
 }
 
 func runDry(in *invocation) (any, error) {
-	opt := dry.Options{Threshold: in.float("threshold"), MinLines: in.integer("min-lines"), MinNodes: in.integer("min-nodes")}
-	result := dryResult{Threshold: opt.Threshold, Candidates: []dry.Candidate{}, Groups: []dry.Group{}}
+	opt := duplication.Options{Threshold: in.float("threshold"), MinLines: in.integer("min-lines"), MinNodes: in.integer("min-nodes")}
+	result := dryResult{Threshold: opt.Threshold, Candidates: []duplication.Candidate{}, Groups: []duplication.Group{}}
 	focusFiles, err := files(in)
 	if err != nil {
 		return result, err
@@ -77,15 +79,15 @@ func runDry(in *invocation) (any, error) {
 		}
 		all.Sources = union(all.Sources, focusFiles.Sources)
 	}
-	forms, err := dry.Forms(all.Sources, opt)
+	ctx := context.Background()
+	forms, err := dryForms(ctx, all.Sources, opt)
 	if err != nil {
 		return result, err
 	}
-	if c := dry.Compare(forms, focus, opt); c != nil {
+	if c := duplication.Compare(forms, focus, opt); c != nil {
 		result.Candidates = c
 	}
-	result.Groups = dry.Groups(result.Candidates)
-	ctx := context.Background()
+	result.Groups = duplication.Groups(result.Candidates)
 	root, failure := snapshots.Root(ctx)
 	if failure != nil {
 		return result, failure
@@ -109,6 +111,38 @@ func runDry(in *invocation) (any, error) {
 		}
 	}
 	return result, nil
+}
+
+// dryForms is the forms of sources, each read through the selection's tree
+// and parsed with internal/lang through workdir's Surroundings, its sides
+// named from the working directory (project.Rel), as output prints them. A
+// file that cannot be read or parsed stops it.
+func dryForms(ctx context.Context, sources []string, opt duplication.Options) ([]duplication.Form, error) {
+	var forms []duplication.Form
+	for _, path := range sources {
+		f, err := parseSource(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		forms = append(forms, duplication.Forms(f, project.Rel(path), opt)...)
+		f.Close()
+	}
+	return forms, nil
+}
+
+// parseSource is the source at path parsed: a language lang does not know
+// is refused before anything is read, then the selection's tree reads it
+// and lang parses it, naming it through workdir's Surroundings.
+func parseSource(ctx context.Context, path string) (*lang.File, error) {
+	spec := lang.Detect(path)
+	if spec == nil {
+		return nil, fmt.Errorf("unsupported language: %s", path)
+	}
+	src, failure := workdir.Tree{}.Read(ctx, path)
+	if failure != nil {
+		return nil, failure
+	}
+	return lang.Parse(ctx, workdir.Surroundings{}, spec, path, src)
 }
 
 // union merges sorted path lists without duplicates; paths named outside the
@@ -142,25 +176,25 @@ func dryKeys(root string, sources []string) map[string]string {
 // dryFromRoot is candidates and groups as dry.json records them: each file
 // by its key, from the project root, while output names it from the
 // working directory.
-func dryFromRoot(candidates []dry.Candidate, groups []dry.Group, keys map[string]string) ([]dry.Candidate, []dry.Group) {
-	side := func(s dry.Side) dry.Side {
+func dryFromRoot(candidates []duplication.Candidate, groups []duplication.Group, keys map[string]string) ([]duplication.Candidate, []duplication.Group) {
+	side := func(s duplication.Side) duplication.Side {
 		s.File = keys[s.File]
 		return s
 	}
-	var cs []dry.Candidate
+	var cs []duplication.Candidate
 	if candidates != nil {
-		cs = []dry.Candidate{}
+		cs = []duplication.Candidate{}
 	}
 	for _, c := range candidates {
 		c.Left, c.Right = side(c.Left), side(c.Right)
 		cs = append(cs, c)
 	}
-	var gs []dry.Group
+	var gs []duplication.Group
 	if groups != nil {
-		gs = []dry.Group{}
+		gs = []duplication.Group{}
 	}
 	for _, g := range groups {
-		members := make([]dry.Side, 0, len(g.Members))
+		members := make([]duplication.Side, 0, len(g.Members))
 		for _, m := range g.Members {
 			members = append(members, side(m))
 		}

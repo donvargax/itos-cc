@@ -1,5 +1,7 @@
-// Package dry finds functions whose structure is close enough to be
-// duplicates worth reviewing.
+// Package duplication finds functions whose structure is close enough to be
+// duplicates worth reviewing. It is a domain (decision 37): it takes files
+// internal/lang has parsed, with the names its caller gives them, and reads
+// nothing itself.
 //
 // Each function's syntax tree is normalized: local names, field names, and
 // literal values drop out; called function names, operators, and the shape of
@@ -7,10 +9,9 @@
 // beneath it, one and two levels deep. Two functions score the Jaccard
 // similarity of their fingerprint sets: shared fingerprints over all
 // fingerprints seen in either.
-package dry
+package duplication
 
 import (
-	"context"
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
@@ -19,7 +20,6 @@ import (
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Options bound which functions are compared and which pairs are reported.
@@ -124,44 +124,41 @@ type Form struct {
 	Side
 	Language string
 	prints   []uint64 // sorted, unique
-	path     string   // absolute
+	path     string   // the file's path as it was parsed (lang.File.Path)
 }
 
-// Forms fingerprints every unit in files that is large enough to compare.
-func Forms(files []string, opt Options) ([]Form, error) {
+// Forms fingerprints every unit of f, a parsed file, that is large enough to
+// compare, each Side naming the file name. The caller gives the name a
+// person reads, since it is the key Groups, Compare and the pairs sort and
+// pair by, and keeps f open until Forms returns; the forms hold nothing of
+// its tree.
+func Forms(f *lang.File, name string, opt Options) []Form {
 	var forms []Form
-	for _, path := range files {
-		f, err := project.ParseFile(context.TODO(), path)
-		if err != nil {
-			return nil, err
+	for _, u := range f.Units {
+		if u.EndLine-u.StartLine+1 < opt.MinLines {
+			continue
 		}
-		for _, u := range f.Units {
-			if u.EndLine-u.StartLine+1 < opt.MinLines {
-				continue
-			}
-			prints, nodes := Fingerprint(f, u.Node, f.InnerNodes(u)...)
-			if nodes < opt.MinNodes {
-				continue
-			}
-			forms = append(forms, Form{
-				Side: Side{
-					File: project.Rel(path), StartLine: u.StartLine, EndLine: u.EndLine,
-					Namespace: u.Namespace, Name: u.Name, Nodes: nodes,
-				},
-				Language: u.Language,
-				prints:   prints,
-				path:     path,
-			})
+		prints, nodes := Fingerprint(f, u.Node, f.InnerNodes(u)...)
+		if nodes < opt.MinNodes {
+			continue
 		}
-		f.Close()
+		forms = append(forms, Form{
+			Side: Side{
+				File: name, StartLine: u.StartLine, EndLine: u.EndLine,
+				Namespace: u.Namespace, Name: u.Name, Nodes: nodes,
+			},
+			Language: u.Language,
+			prints:   prints,
+			path:     f.Path,
+		})
 	}
-	return forms, nil
+	return forms
 }
 
 // Compare scores every pair of forms in the same language and returns those
 // at or above the threshold, best first. When focus is non-empty, only pairs
-// with at least one form in a focus file are reported, so a change can be
-// checked against the whole project.
+// with at least one form in a focus file, by the path its file was parsed
+// as, are reported, so a change can be checked against the whole project.
 func Compare(forms []Form, focus map[string]bool, opt Options) []Candidate {
 	byLang := map[string][]Form{}
 	for _, f := range forms {
@@ -285,7 +282,7 @@ func (fp *fingerprinter) visit(n *sitter.Node) ([depth + 1]uint64, bool) {
 		}
 	}
 	h[0] = hashOf(label, nil, 0)
-	for d := 1; d <= depth; d++ {
+	for d := byte(1); d <= depth; d++ {
 		h[d] = hashOf(label, kids, d-1)
 	}
 	for d := 1; d <= depth; d++ {
@@ -315,16 +312,19 @@ func (fp *fingerprinter) label(n *sitter.Node) (label string, leaf, keep bool) {
 	return kind, n.ChildCount() == 0, true
 }
 
-func hashOf(label string, kids [][depth + 1]uint64, d int) uint64 {
+// hashOf is the hash of label over kids' hashes at depth d, a byte since
+// it is at most depth. A hash's Write never returns an error (hash.Hash),
+// so none is checked.
+func hashOf(label string, kids [][depth + 1]uint64, d byte) uint64 {
 	h := fnv.New64a()
-	h.Write([]byte(label))
+	_, _ = h.Write([]byte(label))
 	var buf [8]byte
 	for _, k := range kids {
 		binary.LittleEndian.PutUint64(buf[:], k[d])
-		h.Write(buf[:])
+		_, _ = h.Write(buf[:])
 	}
 	// Separate a node's depths so h1 of one node never equals h2 of another.
-	buf[0] = byte(d)
-	h.Write(buf[:1])
+	buf[0] = d
+	_, _ = h.Write(buf[:1])
 	return h.Sum64()
 }

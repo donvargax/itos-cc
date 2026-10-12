@@ -66,6 +66,13 @@ from it, and thin slices named for their commands.
   making the calls lang once made itself, and `ParseFile` and `FindUp`, which the packages not
   yet refactored
   call, passing `context.TODO()` until stage S4 threads them a context.
+- `internal/duplication` is the domain that finds functions similar enough to be duplicates
+  (decision 37), named for what it is while the command keeps its name, `dry`. It takes files
+  `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
+  with the name its caller gives the file, since a side's file is the key its pairs and groups
+  are sorted and paired by. It reads nothing and imports neither `project` nor any disk code,
+  so it has no port; its tests parse in memory through lang's fake. `scrap` measures test code
+  with its `Fingerprint` and `Jaccard`.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -97,7 +104,9 @@ from it, and thin slices named for their commands.
   it, and `snapshots`, the `Store` `internal/metricsdir` gives the hand-parsed `dry` and `scrap`:
   a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
   an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
-  library until each moves (decision 41).
+  library until each moves (decision 41). The hand-parsed `dry` reads each source through
+  `workdir`'s `Tree`, parses it with `internal/lang` through `workdir`'s `Surroundings` and
+  hands it to `internal/duplication`, named from the working directory.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.

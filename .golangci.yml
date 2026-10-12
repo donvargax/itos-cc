@@ -39,7 +39,10 @@ linters:
         # files; internal/lang names the units every command measures, its
         # port asking what surrounds a file (decisions 42 and 43);
         # internal/snapshot names the files the snapshots under .metrics/
-        # record, its port reading and writing them (decision 41).
+        # record, its port reading and writing them (decision 41);
+        # internal/duplication finds functions similar enough to be
+        # duplicates in files internal/lang parsed, reaching nothing outside,
+        # so it has no port (decision 37).
         domain:
           list-mode: lax
           files:
@@ -47,6 +50,7 @@ linters:
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
+            - "**/internal/duplication/**"
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
@@ -56,6 +60,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
+            - github.com/donvargax/itos-cc/internal/duplication$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -67,6 +72,7 @@ linters:
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
+            - "**/internal/duplication/**"
             - "!$test"
           deny:
             - pkg: os
@@ -98,6 +104,7 @@ linters:
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
+            - "!**/internal/duplication/**" # a domain, with no port
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
@@ -112,6 +119,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
+            - github.com/donvargax/itos-cc/internal/duplication$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$

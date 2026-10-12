@@ -1,14 +1,24 @@
-package dry
+package duplication
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/lang/port/porttest"
 )
+
+// parse is src parsed in memory as the file at path, nothing around it,
+// closed when the test ends.
+func parse(t *testing.T, path, src string) *lang.File {
+	t.Helper()
+	f, err := lang.Parse(t.Context(), porttest.Surroundings{}, lang.Detect(path), path, []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(f.Close)
+	return f
+}
 
 // score fingerprints the only unit in each source and returns their
 // similarity.
@@ -19,12 +29,7 @@ func score(t *testing.T, ext, a, b string) float64 {
 
 func prints(t *testing.T, ext, src string) []uint64 {
 	t.Helper()
-	path := "x" + ext
-	f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect(path), path, []byte(src))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
+	f := parse(t, "/work/x"+ext, src)
 	if len(f.Units) != 1 {
 		t.Fatalf("want one unit in %q, got %d", src, len(f.Units))
 	}
@@ -49,12 +54,8 @@ func TestRoutesAreNotPartOfTheFunctionAroundThem(t *testing.T) {
 }`
 	got := [2][]uint64{}
 	for i, src := range []string{a, b} {
-		f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect("x.ts"), "x.ts", []byte(src))
-		if err != nil {
-			t.Fatal(err)
-		}
+		f := parse(t, "/work/x.ts", src)
 		got[i], _ = Fingerprint(f, f.Units[0].Node, f.InnerNodes(f.Units[0])...)
-		f.Close()
 	}
 	if s := Jaccard(got[0], got[1]); s != 1 {
 		t.Errorf("score = %v, want 1", s)
@@ -121,15 +122,6 @@ func TestUnrelatedCodeScoresLow(t *testing.T) {
 	}
 }
 
-func write(t *testing.T, dir, name, src string) string {
-	t.Helper()
-	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	return path
-}
-
 const invoice = `def render(invoice):
     lines = []
     for item in invoice.items:
@@ -156,43 +148,62 @@ const unrelated = `def parse(text):
     return {"head": head.strip(), "rest": rest.strip()}
 `
 
-func TestComparePairsAndFocus(t *testing.T) {
-	dir := t.TempDir()
-	inv := write(t, dir, "invoice.py", invoice)
-	rec := write(t, dir, "receipt.py", receipt)
-	other := write(t, dir, "parse.py", unrelated)
-	forms, err := Forms([]string{inv, rec, other}, Defaults)
-	if err != nil {
-		t.Fatal(err)
+// forms is the forms of each source, parsed as the file at its path and
+// named as names gives it.
+func forms(t *testing.T, sources map[string]string, names map[string]string, opt Options) []Form {
+	t.Helper()
+	var all []Form
+	for path, src := range sources {
+		all = append(all, Forms(parse(t, path, src), names[path], opt)...)
 	}
-	got := Compare(forms, nil, Defaults)
+	return all
+}
+
+func TestComparePairsAndFocus(t *testing.T) {
+	sources := map[string]string{"/work/invoice.py": invoice, "/work/receipt.py": receipt, "/work/parse.py": unrelated}
+	names := map[string]string{"/work/invoice.py": "invoice.py", "/work/receipt.py": "receipt.py", "/work/parse.py": "parse.py"}
+	all := forms(t, sources, names, Defaults)
+	got := Compare(all, nil, Defaults)
 	if len(got) != 1 {
 		t.Fatalf("candidates %+v, want the invoice/receipt pair", got)
 	}
 	c := got[0]
-	if filepath.Base(c.Left.File) != "invoice.py" || filepath.Base(c.Right.File) != "receipt.py" {
-		t.Errorf("pair %s / %s, want invoice.py / receipt.py", c.Left.File, c.Right.File)
+	if c.Left.File != "invoice.py" || c.Right.File != "receipt.py" || c.Language != "python" {
+		t.Errorf("pair %s / %s in %s, want invoice.py / receipt.py in python", c.Left.File, c.Right.File, c.Language)
 	}
 	if c.Score < Defaults.Threshold || c.Score >= 1 {
 		t.Errorf("score %v: one extra line should be close but not identical", c.Score)
 	}
-	if focused := Compare(forms, map[string]bool{other: true}, Defaults); len(focused) != 0 {
+	if focused := Compare(all, map[string]bool{"/work/parse.py": true}, Defaults); len(focused) != 0 {
 		t.Errorf("focus on parse.py reported %+v", focused)
 	}
-	if focused := Compare(forms, map[string]bool{rec: true}, Defaults); len(focused) != 1 {
+	if focused := Compare(all, map[string]bool{"/work/receipt.py": true}, Defaults); len(focused) != 1 {
 		t.Errorf("focus on receipt.py reported %+v, want its pair", focused)
 	}
 }
 
-func TestSmallFunctionsAreNotCandidates(t *testing.T) {
-	dir := t.TempDir()
-	a := write(t, dir, "a.py", "def a(x):\n    return g(x)\n")
-	forms, err := Forms([]string{a}, Defaults)
-	if err != nil {
-		t.Fatal(err)
+// The names the caller gives are what a pair reads in and is ordered by,
+// whatever paths the files were parsed as.
+func TestTheCallersNamesOrderAPair(t *testing.T) {
+	sources := map[string]string{"/work/invoice.py": invoice, "/work/receipt.py": receipt}
+	names := map[string]string{"/work/invoice.py": "z/invoice.py", "/work/receipt.py": "a/receipt.py"}
+	got := Compare(forms(t, sources, names, Defaults), nil, Defaults)
+	if len(got) != 1 || got[0].Left.File != "a/receipt.py" || got[0].Right.File != "z/invoice.py" {
+		t.Fatalf("candidates %+v, want a/receipt.py then z/invoice.py", got)
 	}
-	if len(forms) != 0 {
-		t.Errorf("a two-line function became a candidate: %+v", forms)
+	if s := got[0].Left; s.StartLine != 1 || s.EndLine != 8 || s.Name != "render" || s.Nodes == 0 {
+		t.Errorf("left side %+v, want render at lines 1-8 with its nodes", s)
+	}
+}
+
+func TestSmallFunctionsAreNotCandidates(t *testing.T) {
+	short := Forms(parse(t, "/work/a.py", "def a(x):\n    return g(x)\n"), "a.py", Defaults)
+	if len(short) != 0 {
+		t.Errorf("a two-line function became a candidate: %+v", short)
+	}
+	few := Forms(parse(t, "/work/b.py", invoice), "b.py", Options{Threshold: 0.82, MinLines: 1, MinNodes: 1000})
+	if len(few) != 0 {
+		t.Errorf("a function under MinNodes became a candidate: %+v", few)
 	}
 }
 
