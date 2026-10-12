@@ -803,8 +803,23 @@
     refactor-final-proof's list.
 - id: T-46
   type: ci
-  title: The nightly mutation run survives every mutant and commits its results
+  title: The nightly mutation run finishes over the whole repository and commits its results
   why: >
+    Moved to the refactor's end (the person, 2026-10-12). Nightly 38231106901, the first after S3,
+    hit no runner death (it passed mutant 161; main.go:133 was not reached) but was cancelled at
+    GitHub's 6-hour job limit after 267 of 4901 mutants (6872 sites), all in cmd/itos-cc, with
+    nothing saved: under --all-tests each mutant runs cmd/itos-cc's 217-second suite (survivors
+    took 323 s on average, kills 103 s), so a full run needs some 30 to 100 hours, and mutation run
+    writes .metrics/mutate/ only once every mutant has run (mutate/run.go, after execute). The
+    refactor rewrites cmd daily and moves its logic into internal/ slices with fast tests, so tuning
+    the nightly now would measure code about to change; mutation proof is off until the refactor
+    ends anyway (decision 40), so the person disabled the workflow (gh workflow disable Nightly,
+    2026-10-12; workflow_dispatch also needs it enabled). This task starts after the last stage
+    (semantic-exit-codes) and before mutation proof turns back on (p1-itos-proof-code): the person
+    re-enables the workflow, a dispatched run measures the refactored code, and the design follows
+    from that measure (parallel shards with a merging commit job, a step timeout under the job's,
+    mutation-run-saves-each-file if it has landed, resource caps if a mutant still takes the runner
+    down). The parts below still hold. Earlier history follows.
     The person's call (2026-10-11): the nightly has committed no mutation results since 2026-10-07,
     every run dying with a runner shutdown at about mutant 161 of 2213, right after
     cmd/itos-cc/main.go:133 (runs 37600315790, 37627544105, then 37756389520, 37911085058,
@@ -829,6 +844,7 @@
     when it was cut off (a timeout, a kill, a lost runner). Done once a nightly on main has
     committed a finished run's results; partial saves alone do not close it.
   done_when:
+    - run: "test \"$(gh api repos/donvargax/itos-cc/actions/workflows/nightly.yml --jq .state)\" = active"
     - run: "test -n \"$(git log --since=2026-10-12 --format=%s -- .metrics/mutate | grep -x 'chore: record the nightly mutation results')\""
 - id: T-47
   type: refactor
