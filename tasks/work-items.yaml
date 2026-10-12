@@ -2514,7 +2514,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-53]
     kind: task
     why: >
       porttest.SurroundingsContract over lang's Surroundings: Exists is true for a file and the
