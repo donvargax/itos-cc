@@ -773,11 +773,11 @@
     number' for ints) and its strconv.ParseFloat and Atoi semantics, not kong's own parsing. No
     classifier of its own: selection's and snapshot's live in cmd. moved.go gains its field, binding
     and runMoved case; dryCommand and cmd/itos-cc/dry.go go, and
-    .metrics/mutate/cmd/itos-cc/dry.go.json goes with the deleted code (say so in the commit). Proof
-    (step 9): old and new binaries compared over dry command lines including --threshold -1,
-    --threshold=-1, --threshold=, --min-lines 1.5, --min-lines=0x10, --min-lines 010, -threshold and
-    a path outside the working directory, each differing line explained in the commit; a difference
-    that is not a bug fix the person has agreed to stops the task.
+    .metrics/mutate/cmd/itos-cc/dry.go.json goes with the deleted code (say so in the commit). No
+    binary comparison here (docs/go.md step 9): the number mappers' edge cases (--threshold -1,
+    --threshold=-1, --threshold=, --min-lines 1.5, --min-lines=0x10, --min-lines 010, -threshold, a
+    path outside the working directory) get unit tests in internal/cli against the hand parser's
+    answers, and join refactor-final-proof's list.
   done_when:
     - run: test ! -e cmd/itos-cc/dry.go && go test ./internal/dry/... ./internal/cli/... ./cmd/itos-cc/...
     - run: grep -q 'dry.CLI' cmd/itos-cc/moved.go
@@ -826,9 +826,9 @@
     unreadable' lines through ui.Stderr, even with --json, as today. The Handler holds Tree, Store,
     lang's port and Name. scrapCommand and cmd/itos-cc/scrap.go go, with their .metrics/mutate
     record (say so in the commit); cmd/itos-cc/snapshots_root_test.go, which runs dry and scrap in
-    process for metrics_snapshots.feature, keeps passing or moves to the slices. Proof (step 9) over
-    scrap command lines including --verbose=x and an invalid .metrics/scrap.json, each differing
-    line explained; a difference that is not an agreed fix stops the task.
+    process for metrics_snapshots.feature, keeps passing or moves to the slices. No binary
+    comparison here (docs/go.md step 9); --verbose=x and an invalid .metrics/scrap.json join
+    refactor-final-proof's list.
   done_when:
     - run: test ! -e cmd/itos-cc/scrap.go && go test ./internal/scrap/... ./cmd/itos-cc/...
     - run: grep -q 'scrap.CLI' cmd/itos-cc/moved.go

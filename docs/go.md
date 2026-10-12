@@ -221,15 +221,18 @@ follows the same steps for a command it wrote before it had the template's desig
    each step can fail: change an expectation in the file locally, see the step fail, and
    restore it. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
    step instead of being logged as not run.
-9. **The proof: the old and new binaries agree.** Build the binary of the commit before the
-   move and of the move, and run both over many command lines of the command: every flag
-   alone, with `=value` and given twice, unknown and mistyped flags (`-changed`, `--chnged`),
-   `-h` and `--help` anywhere, after `--` and beside mistakes, `--json` before the command,
-   `help <command>`, arguments between flags, paths that are there, fragments and nothing,
-   in a git repository, in a plain folder and beside a file that cannot be read. Compare
-   stdout, stderr and the exit code of each; say every line that differs and why in the
-   commit. For `units`, 236 lines agreed but one: `---changed`, which the hand parser read as
-   `--changed` and kong refuses as an unknown flag, as rule 15 has it.
+9. **The proof comes once, after the whole refactor.** A move does not compare binaries on
+   its own: its scenarios and tests hold it. Once every command has moved, one task builds
+   the binary from before the refactor and the refactored one, and runs both over many
+   command lines of every command: every flag alone, with `=value` and given twice, unknown
+   and mistyped flags (`-changed`, `--chnged`), `-h` and `--help` anywhere, after `--` and
+   beside mistakes, `--json` before the command, `help <command>`, arguments between flags,
+   paths that are there, fragments and nothing, in a git repository, in a plain folder and
+   beside a file that cannot be read. It compares stdout, stderr and the exit code of each,
+   and every line that differs is either a deliberate change that task lists or a bug. A move
+   that finds a case worth comparing adds it to that task's list. `units` (T-32) was compared
+   on its own before this: 236 lines agreed but one, `---changed`, which the hand parser read
+   as `--changed` and kong refuses as an unknown flag, as rule 15 has it.
 10. **Boundaries.** The `slices` rule holds the new package with no edit. A top-level library
     it imports that the rule refuses is either a domain library every command measures by,
     allowed in `slices` with a comment saying why (`lang`), or one an adapter wraps, which
