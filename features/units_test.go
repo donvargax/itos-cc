@@ -92,15 +92,10 @@ func unitSteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
-	sc.Step(`^I run "itos-cc ?([^"]*)"$`, func(args string) error {
-		return w.runWith(w.env(), args)
-	})
 	sc.Step(`^stdout lists each unit as "file:start-end  namespace#name  kind"$`, u.listsEachUnitAsALine)
-	sc.Step(`^stdout is one object with "schema": 1, "ok", and "([^"]*)"$`, u.isOneObjectWith)
 	sc.Step(`^each unit has (.+)$`, u.eachUnitHas)
 	sc.Step(`^only units from test files are listed$`, u.onlyTestFiles)
 	sc.Step(`^the selection holds no supported files$`, u.noSupportedFiles)
-	sc.Step(`^"units" is an empty list$`, u.unitsIsEmpty)
 
 	sc.Step(`^the file "([^"]*)":$`, func(name string, text *godog.DocString) error {
 		u.file, u.source = name, text.Content+"\n"
@@ -135,16 +130,6 @@ func unitSteps(sc *godog.ScenarioContext, w *world) {
 		return u.runIn(u.alone, args)
 	})
 	sc.Step(`^it is "([^"]*)" from a copy of that directory at another path$`, u.fromACopy)
-}
-
-// write writes text to name, a slash-separated path in the scratch folder,
-// making the folders above it.
-func (w *world) write(name, text string) error {
-	path := filepath.Join(w.dir, filepath.FromSlash(name))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(text), 0o600)
 }
 
 // unit is one unit as itos-cc units lists it. The plain lines give no
@@ -210,24 +195,6 @@ func (u *unitsState) listsEachUnitAsALine() error {
 	return nil
 }
 
-// isOneObjectWith is whether standard output is one JSON object, schema 1,
-// with ok and key.
-func (u *unitsState) isOneObjectWith(key string) error {
-	w := u.w
-	dec := json.NewDecoder(strings.NewReader(w.stdout))
-	var object map[string]any
-	if err := dec.Decode(&object); err != nil {
-		return fmt.Errorf("standard output is not a JSON object: %v\n%s", err, w.report())
-	}
-	if dec.More() {
-		return fmt.Errorf("standard output holds more than one JSON value\n%s", w.report())
-	}
-	if _, ok := object["ok"].(bool); !ok || object["schema"] != 1.0 || object[key] == nil {
-		return fmt.Errorf("the object lacks \"schema\": 1, \"ok\" or %q\n%s", key, w.report())
-	}
-	return nil
-}
-
 // eachUnitHas is whether the object lists units, each with every key the
 // list names ("a, b, and c").
 func (u *unitsState) eachUnitHas(list string) error {
@@ -282,19 +249,6 @@ func (u *unitsState) noSupportedFiles() error {
 		if err := u.w.write(name, text); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// unitsIsEmpty is whether the object's "units" is a list with nothing in
-// it, not null.
-func (u *unitsState) unitsIsEmpty() error {
-	var object map[string]any
-	if err := json.Unmarshal([]byte(u.w.stdout), &object); err != nil {
-		return fmt.Errorf("standard output is not a JSON object: %v\n%s", err, u.w.report())
-	}
-	if list, ok := object["units"].([]any); !ok || len(list) != 0 {
-		return fmt.Errorf("\"units\" is %v, not an empty list\n%s", object["units"], u.w.report())
 	}
 	return nil
 }
@@ -831,14 +785,6 @@ func markerAbove(dir string) string {
 		}
 		dir = parent
 	}
-}
-
-// writeIn writes text to name in dir, making dir.
-func writeIn(dir, name, text string) error {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(dir, name), []byte(text), 0o600)
 }
 
 // runIn runs itos-cc with args in dir.

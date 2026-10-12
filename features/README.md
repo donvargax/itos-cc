@@ -41,15 +41,19 @@ killed by the system's default action fails the step: it never handled the inter
 ## Which files run
 
 The harness runs the feature files that have steps, the ones `converted` lists in
-`features_test.go`: `units.feature`, and `count.feature`, the template's sample, all of whose
-scenarios are `@wip`. Every other file converts to godog over time, each with the command that
+`features_test.go`: `units.feature`, `dry.feature`, and `count.feature`, the template's sample,
+all of whose scenarios are `@wip`. Every other file converts to godog over time, each with the command that
 moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests of `cmd/itos-cc`
 hold its scenarios. A selection that names a scenario of such a file, as the smoke set does for
 every file, logs it as not run here and runs the rest; one that names nothing a converted file
 holds fails, as one matching no tag does.
 
 A `units.feature` scenario runs in a sample project of TypeScript and Python, production code and
-tests, unless it writes files of its own and lists those alone.
+tests, unless it writes files of its own and lists those alone. A `dry.feature` scenario that only
+says When I run runs in a sample project of TypeScript in a git repository, one file changed since
+its commit, its functions paired at and just past every bound those scenarios name; the others
+write their own files. Step patterns are global across the files, so each file's own setup is a
+Before hook keyed on the scenario's file.
 
 ## Running them
 
@@ -142,19 +146,22 @@ with the program named as the built binary is.
 | `the file "…" holds a line of <n> characters`                                         | A file written for the scenario, long enough to beat a token limit. |
 | `standard input holds "…"`                                                            | The text the run reads from its standard input.                   |
 | `an empty folder "…"`                                                                 | A folder in the scratch directory.                                |
+| `I run "itos-cc …"`, also `… without options`                                         | Runs the binary in the scratch folder with those words.          |
+| `stdout is one object with "schema": 1, "ok", "…", and "…"`                           | One JSON value, an object with those keys, none of them null.    |
+| `stdout shows:` with its text                                                         | stdout is the text exactly, a path's separators read as slashes. |
+| `stderr says "…"`                                                                     | Containment, on stderr.                                           |
+| `the exit code is <n>`                                                                | The binary's exit status.                                         |
+| `"…" is an empty list` / `"…" and "…" are empty lists, not null`                      | `[]` in the JSON object, never `null`.                            |
 
 `units.feature`'s steps, in `units_test.go`:
 
 | Step                                                                                  | What it asserts                                                  |
 | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `I run "itos-cc …"`                                                                   | Runs the binary in the scratch folder with those words.          |
 | `I run "itos-cc …" from that directory`                                               | The same, in the folder a Given made outside every project.      |
 | `stdout lists each unit as "file:start-end  namespace#name  kind"`                    | Units are listed, each line of that form.                        |
-| `stdout is one object with "schema": 1, "ok", and "…"`                                | One JSON value, an object with those keys.                        |
 | `each unit has …`                                                                     | Each listed unit has every key named.                             |
 | `only units from test files are listed`                                               | Units are listed, each in a test file of the sample project.     |
 | `the selection holds no supported files`                                              | The scratch folder holds only files of no supported language.    |
-| `"units" is an empty list`                                                            | `[]`, never `null`.                                               |
 | `the file "…":` with its text, `… with a component that returns JSX`, `… defining "…"` | Writes the file a scenario lists.                                 |
 | `its units are listed` / `the units of … are listed`                                  | Runs `units --json` over that file.                               |
 | `the units are:` with a table                                                         | Exactly the table's units, in order: kind, namespace, name, lines, private. |
@@ -168,3 +175,31 @@ with the program named as the built binary is.
 | `the Go module "…" with package "…"`                                                  | Writes its go.mod and the package's board.go.                    |
 | `x.ts declares function place, in a directory with no package.json, go.mod or .git in it or above it` | A folder outside every project; skipped where a marker is above the temporary directory. |
 | `it is "…" from a copy of that directory at another path`                             | The same command in a copy lists that unit alone.                 |
+
+`dry.feature`'s steps, in `dry_test.go`. "Every pair" is what `dry --json --threshold 0
+--min-lines 1 --min-nodes 1` reports, and "the pairs reported" are those of the scenario's run, from
+its object, or from the `.metrics/dry.json` it wrote, which its text output must list. A step about
+every pair first finds in its fixture the pairs that make the sentence worth checking, and fails
+when there are none.
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `the <language> functions:` with their text, `the TypeScript function "…"`            | Writes them to one file of that language.                        |
+| `a copy of it with <change>`                                                          | Adds a copy, a called function or the returned value changed as the table words it. |
+| `the two functions are compared directly`                                             | Every pair of the file, which must be one.                       |
+| `their similarity is <n>` / `is above <a> and below <b>` / `is at most <n>`           | That pair's score, to two decimals where written so.             |
+| `pairs scoring at least <t> are reported`                                             | Exactly those of the pairs the run's sizes admit (`--threshold 0`). |
+| `functions shorter than <l> lines or with fewer than <n> normalized nodes are not candidates` | The functions admitted are exactly those of l lines and n nodes or more. |
+| `only pairs scoring at least <t> among functions of <l>+ lines and <n>+ nodes are reported` | Exactly those of every pair.                                 |
+| The Givens naming files, as `invoice.py renders an invoice's lines and total` or `two functions that score 0.95 in TypeScript` | Write the files the sentence describes; the ones a score or range is printed of are tuned to it. |
+| `exactly one pair is reported: <file>#<name> and <file>#<name>` / `its score is at least <a> but below <b>` | The one pair and its score.             |
+| `they are not compared`                                                               | Each file has units, and every pair is none.                     |
+| `they are not reported`                                                               | No pair of the two is reported; they score 1.                    |
+| `the pair from <a> and <b> is reported` / `is not reported`                           | A pair of the two files; or none, though the whole project's run reports one. |
+| `only pairs with at least one function in a changed file are reported`                | Each pair reported touches the sample's changed file.            |
+| `those functions are compared against every source in the project`                    | The whole project's pairs touching it, one with an unchanged file. |
+| `pairs are listed best first` / `groups are listed best first, then largest first`    | The same command over groups of their own: the order of entries and pairs. |
+| `stdout shows one entry, not <n> pairs:` with its text                                | stdout is the text; the run reported that many pairs.            |
+| `a group holds every function linked to another member by a pair at or above the threshold` | The same command over functions of their own: each entry is a set of functions joined by pairs at or above the threshold. |
+| `.metrics/dry.json holds the version, the threshold, the candidates, and the groups`   | A version, and stdout's threshold, candidates and groups.        |
+| `each candidate has …, and left and right sides with …` / `each group has …, and its members` | Each has every key named, `lines` the start and end lines. |

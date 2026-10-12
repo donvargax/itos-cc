@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strconv"
@@ -150,6 +151,31 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 	sc.Step(`^its JSON output gives the stamped version and commit$`, w.jsonGivesBuild)
 	sc.Step(`^its standard output is one line$`, w.stdoutIsOneLine)
 
+	// The steps of the feature files written in the short form, a run of
+	// "itos-cc ..." and what stdout and stderr show, which units.feature
+	// and dry.feature share.
+	sc.Step(`^I run "itos-cc ?([^"]*)"$`, func(args string) error {
+		return w.runWith(w.env(), args)
+	})
+	sc.Step(`^I run "itos-cc ?([^"]*)" without options$`, func(args string) error {
+		return w.runWith(w.env(), args)
+	})
+	sc.Step(`^stdout is one object with "schema": 1, "ok", (.+)$`, w.isOneObjectWith)
+	sc.Step(`^stdout shows:$`, w.stdoutShows)
+	sc.Step(`^stderr says "([^"]*)"$`, func(text string) error {
+		if !strings.Contains(w.stderr, text) {
+			return fmt.Errorf("stderr does not say %q\n%s", text, w.report())
+		}
+		return nil
+	})
+	sc.Step(`^"([^"]*)" is an empty list$`, w.isEmptyList)
+	sc.Step(`^"([^"]*)" and "([^"]*)" are empty lists, not null$`, func(first, second string) error {
+		if err := w.isEmptyList(first); err != nil {
+			return err
+		}
+		return w.isEmptyList(second)
+	})
+
 	// The fixtures a scenario asks for. godog takes one parameter per
 	// capturing group and none variadic, so the second text is its own
 	// group, empty where the scenario names one.
@@ -170,6 +196,7 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 	// The steps of each converted feature file, after the world's, so a
 	// file's own Before runs in the scratch folder made above.
 	unitSteps(sc, w)
+	drySteps(sc, w)
 }
 
 // setUp makes the scenario's scratch folder.
@@ -470,6 +497,52 @@ func (w *world) emptyFolder(name string) error {
 	return os.Mkdir(filepath.Join(w.dir, name), 0o755)
 }
 
+// write writes text to name, a slash-separated path in the scratch folder,
+// making the folders above it.
+func (w *world) write(name, text string) error {
+	return writeIn(w.dir, name, text)
+}
+
+// writeIn writes text to name, a slash-separated path in dir, making the
+// folders above it.
+func writeIn(dir, name, text string) error {
+	path := filepath.Join(dir, filepath.FromSlash(name))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(text), 0o600)
+}
+
+// git runs the real git in the scratch folder, in the scenarios'
+// environment, for a fixture that needs a repository.
+func (w *world) git(args ...string) error {
+	bin, err := realGit()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(bin, args...)
+	cmd.Dir = w.dir
+	cmd.Env = w.env()
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git %s: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return nil
+}
+
+// realGit is the first git on the scenarios' PATH (callerPath) that is no
+// itos, the one every command a scenario starts finds.
+func realGit() (string, error) {
+	for _, folder := range filepath.SplitList(callerPath()) {
+		for _, name := range []string{"git.exe", "git"} {
+			path := filepath.Join(folder, name)
+			if info, err := os.Stat(path); err == nil && !info.IsDir() && !isItos(path) {
+				return path, nil
+			}
+		}
+	}
+	return "", errors.New("no git on the PATH")
+}
+
 // Then steps.
 
 func (w *world) report() string {
@@ -647,6 +720,59 @@ func (w *world) jsonGivesBuild() error {
 func (w *world) stdoutIsOneLine() error {
 	if strings.Count(w.stdout, "\n") != 1 || !strings.HasSuffix(w.stdout, "\n") {
 		return fmt.Errorf("standard output is not one line\n%s", w.report())
+	}
+	return nil
+}
+
+// objectKeys is a list of quoted keys as a sentence writes it: "a", "b",
+// and "c", or and "a" alone.
+var objectKeys = regexp.MustCompile(`^(?:and )?"[^"]+"(?:(?:, and |, | and )"[^"]+")*$`)
+
+// isOneObjectWith is whether standard output is one JSON object, schema 1,
+// with ok and every key of the list ("a", "b", and "c"), none of them null.
+func (w *world) isOneObjectWith(list string) error {
+	if !objectKeys.MatchString(list) {
+		return fmt.Errorf("%s is no list of quoted keys", list)
+	}
+	dec := json.NewDecoder(strings.NewReader(w.stdout))
+	var object map[string]any
+	if err := dec.Decode(&object); err != nil {
+		return fmt.Errorf("standard output is not a JSON object: %v\n%s", err, w.report())
+	}
+	if dec.More() {
+		return fmt.Errorf("standard output holds more than one JSON value\n%s", w.report())
+	}
+	if _, ok := object["ok"].(bool); !ok || object["schema"] != 1.0 {
+		return fmt.Errorf("the object lacks \"schema\": 1 or \"ok\"\n%s", w.report())
+	}
+	for _, m := range regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(list, -1) {
+		if object[m[1]] == nil {
+			return fmt.Errorf("the object lacks %q\n%s", m[1], w.report())
+		}
+	}
+	return nil
+}
+
+// stdoutShows is whether standard output is the text, line for line, with
+// its last line's newline. A path printed with the system's separator reads
+// as one with slashes, as the scenarios write paths.
+func (w *world) stdoutShows(text *godog.DocString) error {
+	got := strings.ReplaceAll(filepath.ToSlash(w.stdout), "\r\n", "\n")
+	if want := text.Content + "\n"; got != want {
+		return fmt.Errorf("stdout is\n%s\nnot\n%s\n%s", got, want, w.report())
+	}
+	return nil
+}
+
+// isEmptyList is whether the object standard output holds has key, a list
+// with nothing in it, not null.
+func (w *world) isEmptyList(key string) error {
+	object, err := w.json()
+	if err != nil {
+		return err
+	}
+	if list, ok := object[key].([]any); !ok || len(list) != 0 {
+		return fmt.Errorf("%q is %v, not an empty list\n%s", key, object[key], w.report())
 	}
 	return nil
 }
