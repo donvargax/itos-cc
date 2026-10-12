@@ -2,11 +2,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime/debug"
 	"slices"
 	"strings"
+
+	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
@@ -38,7 +41,7 @@ var versionCommand = &command{
 		{2, "a usage error: a bad flag or an argument"},
 	},
 	examples: []string{"itos-cc version", "itos-cc --version --json"},
-	run: func(in *invocation) (any, error) {
+	run: func(_ context.Context, in *invocation) (any, error) {
 		if len(in.args) > 0 {
 			return nil, cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("version takes no arguments, and was given %q", in.args[0]),
 				"Run 'itos-cc version' alone.").With("argument", in.args[0])
@@ -61,22 +64,24 @@ func init() {
 }
 
 // commandNames are the names of every command, the moved ones' among them,
-// sorted.
-func commandNames() []string {
+// as parser's model holds them, sorted.
+func commandNames(parser *kong.Kong) []string {
 	names := sortedNames(commands)
-	for name := range moved() {
+	for name := range moved(parser) {
 		names = append(names, name)
 	}
 	slices.Sort(names)
 	return names
 }
 
-func usage() string {
+// usage is the top-level help, the moved commands' lines from parser's
+// model.
+func usage(parser *kong.Kong) string {
 	var b strings.Builder
 	b.WriteString("usage: itos-cc <command> [options] [path ...]\n\nCommands:\n")
-	kong := moved()
-	for _, name := range commandNames() {
-		if node := kong[name]; node != nil {
+	nodes := moved(parser)
+	for _, name := range commandNames(parser) {
+		if node := nodes[name]; node != nil {
 			fmt.Fprintf(&b, "  %-15s %s\n", name, node.Help)
 			continue
 		}
@@ -118,8 +123,10 @@ Report issues at ` + cli.Issues + "\n")
 	return b.String()
 }
 
+// main makes the program's one context, which every command runs under.
+// No interrupt cancels it yet (docs/CLI.md).
 func main() {
-	os.Exit(run(os.Args[1:]))
+	os.Exit(run(context.Background(), os.Args[1:]))
 }
 
 // classifiers are each domain's, which turn its sealed failures into
@@ -148,9 +155,18 @@ func init() {
 	coverage.Executable, _ = os.Executable()
 }
 
-// run dispatches args to a command. --json, -h, --help, and --version may
-// come before the command too.
-func run(args []string) int {
+// run dispatches args to a command, run under ctx. --json, -h, --help, and
+// --version may come before the command too. It builds the moved commands'
+// parser once, which a run reads their names and help from and parses
+// their command line with; a model kong refuses is a bug, an internal
+// failure.
+func run(ctx context.Context, args []string) int {
+	ui := stdUI()
+	var c commandLine
+	parser, err := parserOf(ctx, &c, ui)
+	if err != nil {
+		return ui.Fail(err, cli.Read(args).JSON)
+	}
 	var leading []string
 	for len(args) > 0 && strings.HasPrefix(args[0], "-") && args[0] != "--" {
 		leading, args = append(leading, args[0]), args[1:]
@@ -161,22 +177,22 @@ func run(args []string) int {
 		case "--json":
 			asJSON = true
 		case "-h", "--help":
-			fmt.Print(usage())
+			fmt.Print(usage(parser))
 			return 0
 		case "--version":
 			args = append([]string{"version"}, args...)
 		default:
 			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("itos-cc takes no flag %s before a command", a),
 				"Put a command's flags after its name; run 'itos-cc --help' for the commands.").With("flag", a)
-			return stdUI().Emit(asJSON, nil, []*cli.Problem{p})
+			return ui.Emit(asJSON, nil, []*cli.Problem{p})
 		}
 	}
 	if len(args) == 0 {
 		if asJSON {
 			p := cli.NewProblem(cli.CodeUsage, "command.missing", "no command given", "Name a command; run 'itos-cc --help' for them.")
-			return stdUI().Emit(true, nil, []*cli.Problem{p})
+			return ui.Emit(true, nil, []*cli.Problem{p})
 		}
-		fmt.Print(usage())
+		fmt.Print(usage(parser))
 		return 0
 	}
 	name, rest := args[0], args[1:]
@@ -184,25 +200,26 @@ func run(args []string) int {
 		rest = append(rest, "--json")
 	}
 	if name == "help" {
-		return help(rest, asJSON)
+		return help(parser, ui, rest, asJSON)
 	}
-	if moved()[name] != nil {
-		return runMoved(append([]string{name}, rest...))
+	if moved(parser)[name] != nil {
+		return runMoved(parser, &c, ui, append([]string{name}, rest...))
 	}
 	cmd, ok := commands[name]
 	if !ok {
-		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownCommand(name)})
+		return ui.Emit(asJSON, nil, []*cli.Problem{unknownCommand(parser, name)})
 	}
 	if cmd.subs != nil {
-		return runGroup(cmd, rest)
+		return runGroup(ctx, cmd, rest)
 	}
-	return execute(cmd, rest)
+	return execute(ctx, cmd, rest)
 }
 
-// runGroup dispatches args to a subcommand of group g. Alone, or with -h or
-// --help before a subcommand, it prints the group's help; with --json and
-// no subcommand it is a usage error, as itos-cc --json alone is.
-func runGroup(g *command, args []string) int {
+// runGroup dispatches args to a subcommand of group g, run under ctx.
+// Alone, or with -h or --help before a subcommand, it prints the group's
+// help; with --json and no subcommand it is a usage error, as itos-cc
+// --json alone is.
+func runGroup(ctx context.Context, g *command, args []string) int {
 	asJSON := false
 	for _, a := range args {
 		if a == "--" {
@@ -238,11 +255,12 @@ func runGroup(g *command, args []string) int {
 	if sub == nil {
 		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(g, args[0])})
 	}
-	return execute(sub, args[1:])
+	return execute(ctx, sub, args[1:])
 }
 
-// help prints the top-level help, or with a command name that command's.
-func help(args []string, asJSON bool) int {
+// help prints the top-level help, or with a command name that command's,
+// the moved commands' from parser's model, and reports through ui.
+func help(parser *kong.Kong, ui *cli.UI, args []string, asJSON bool) int {
 	var topics []string
 	for _, a := range args {
 		if a != "--json" {
@@ -250,18 +268,18 @@ func help(args []string, asJSON bool) int {
 		}
 	}
 	if len(topics) == 0 {
-		fmt.Print(usage())
+		fmt.Print(usage(parser))
 		return 0
 	}
-	if moved()[topics[0]] != nil {
+	if moved(parser)[topics[0]] != nil {
 		if len(topics) > 1 {
-			return stdUI().Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[1])})
+			return ui.Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[1])})
 		}
-		return movedHelp(topics[0])
+		return movedHelp(parser, ui, topics[0])
 	}
 	cmd := commands[topics[0]]
 	if cmd == nil {
-		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownCommand(topics[0])})
+		return ui.Emit(asJSON, nil, []*cli.Problem{unknownCommand(parser, topics[0])})
 	}
 	// A group takes one more topic, its subcommand.
 	most := 1
@@ -270,9 +288,9 @@ func help(args []string, asJSON bool) int {
 	}
 	switch {
 	case len(topics) > most:
-		return stdUI().Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[most])})
+		return ui.Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[most])})
 	case len(topics) == 2 && cmd.sub(topics[1]) == nil:
-		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(cmd, topics[1])})
+		return ui.Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(cmd, topics[1])})
 	case len(topics) == 2:
 		fmt.Print(cmd.sub(topics[1]).help())
 	case cmd.subs != nil:
@@ -290,9 +308,11 @@ func helpTakesOne(topic string) *cli.Problem {
 		"Run 'itos-cc help <command>', or 'itos-cc help <group> <command>'.").With("argument", topic)
 }
 
-func unknownCommand(name string) *cli.Problem {
+// unknownCommand is the problem of a command itos-cc lacks, naming the one
+// meant, the moved commands among them (parser's), when it can guess it.
+func unknownCommand(parser *kong.Kong, name string) *cli.Problem {
 	p := cli.NewProblem(cli.CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", name), "Run 'itos-cc --help' for the commands.")
-	if guess := cli.Closest(name, commandNames()); guess != "" {
+	if guess := cli.Closest(name, commandNames(parser)); guess != "" {
 		p.Fix = fmt.Sprintf("Did you mean '%s'? Run 'itos-cc --help' for the commands.", guess)
 	}
 	return p.With("command", name)

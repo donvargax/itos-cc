@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"slices"
@@ -162,7 +163,7 @@ type checkResult struct {
 }
 
 // runMutationCheck checks the chosen functions' cached results.
-func runMutationCheck(in *invocation) (any, error) {
+func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	result := checkResult{Files: []checkFile{}}
 	cfg, err := loadConfig()
 	if err != nil {
@@ -176,7 +177,7 @@ func runMutationCheck(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, renamed, lines, err := mutationSelection(in)
+	sources, judge, renamed, lines, err := mutationSelection(ctx, in)
 	if err != nil {
 		return result, err
 	}

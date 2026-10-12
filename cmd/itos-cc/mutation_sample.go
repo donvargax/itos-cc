@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -124,14 +125,14 @@ type sampleResult struct {
 
 // runMutationSample runs a sample of the chosen functions' cached mutants
 // again and compares their outcomes with those recorded.
-func runMutationSample(in *invocation) (any, error) {
+func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	result := sampleResult{Files: []sampleFile{}}
 	count := in.integer("count")
 	if count < 1 {
 		return result, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--count needs a whole number of at least 1, and was given %q", in.str("count")),
 			"Give it 1 or more.").With("flag", "--count").With("value", in.str("count"))
 	}
-	sources, judge, _, _, err := mutationSelection(in)
+	sources, judge, _, _, err := mutationSelection(ctx, in)
 	if err != nil {
 		return result, err
 	}

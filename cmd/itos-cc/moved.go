@@ -28,39 +28,32 @@ type commandLine struct {
 	Units units.CLI `cmd:"" help:"list the functions and methods every tool measures"`
 }
 
-// parserOf makes parsers of c, one for each parse, as cli.Parse asks:
-// itos-cc's name, its flags held by internal/cli's Flags, help printed by
-// internal/cli's Help, and the bindings each Run is handed. kong never
-// exits the process: help is printed before it parses, and a failure is
-// returned.
-func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) func() (*kong.Kong, error) {
-	return func() (*kong.Kong, error) {
-		*c = commandLine{}
-		return kong.New(c, append(cli.Flags(),
-			kong.Name("itos-cc"),
-			kong.Help(cli.Help),
-			kong.Writers(ui.Stdout, ui.Stderr),
-			kong.Exit(func(int) {}),
-			kong.PostBuild(func(k *kong.Kong) error {
-				k.Model.HelpFlag.Help = "print this help"
-				return nil
-			}),
-			kong.BindTo(ctx, (*context.Context)(nil)),
-			kong.Bind(ui, units.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}},
-				dry.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel},
-				scrap.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel}),
-		)...)
-	}
+// parserOf is the parser of c, which run builds once, as it parses one
+// command line at most (cli.Parse): itos-cc's name, its flags held by
+// internal/cli's Flags, help printed by internal/cli's Help, and the
+// bindings each Run is handed, ctx among them. kong never exits the
+// process: help is printed before it parses, and a failure is returned. A
+// model kong refuses is the error returned, a bug run reports as an
+// internal failure.
+func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) (*kong.Kong, error) {
+	return kong.New(c, append(cli.Flags(),
+		kong.Name("itos-cc"),
+		kong.Help(cli.Help),
+		kong.Writers(ui.Stdout, ui.Stderr),
+		kong.Exit(func(int) {}),
+		kong.PostBuild(func(k *kong.Kong) error {
+			k.Model.HelpFlag.Help = "print this help"
+			return nil
+		}),
+		kong.BindTo(ctx, (*context.Context)(nil)),
+		kong.Bind(ui, units.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}},
+			dry.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel},
+			scrap.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel}),
+	)...)
 }
 
-// moved are the moved commands, as kong's model holds them, by name.
-func moved() map[string]*kong.Node {
-	parser, err := parserOf(context.Background(), &commandLine{}, stdUI())()
-	if err != nil {
-		// The model is this file's: one kong refuses is a bug, which every
-		// run of a test meets.
-		panic(err)
-	}
+// moved are the moved commands, as parser's model holds them, by name.
+func moved(parser *kong.Kong) map[string]*kong.Node {
 	all := map[string]*kong.Node{}
 	for _, node := range parser.Model.Children {
 		all[node.Name] = node
@@ -69,21 +62,19 @@ func moved() map[string]*kong.Node {
 }
 
 // runMoved runs args, a moved command's name and the rest of its command
-// line, and returns its exit code. Help, -h or --help before any --, wins
-// over anything else the line holds; a line kong cannot parse is a usage
-// problem, with --json the failure's object.
+// line, with parser, which fills c, and returns its exit code. Help, -h or
+// --help before any --, wins over anything else the line holds; a line kong
+// cannot parse is a usage problem, with --json the failure's object.
 //
-// No interrupt cancels ctx yet: Ctrl-C ends the command by the system's
-// default action, as it ends every command until one reports an interrupt
-// (docs/CLI.md).
-func runMoved(args []string) int {
+// No interrupt cancels the context parser binds yet: Ctrl-C ends the
+// command by the system's default action, as it ends every command until
+// one reports an interrupt (docs/CLI.md).
+func runMoved(parser *kong.Kong, c *commandLine, ui *cli.UI, args []string) int {
 	line := cli.Read(args)
 	if line.Help {
-		return movedHelp(args[0])
+		return movedHelp(parser, ui, args[0])
 	}
-	ui := stdUI()
-	var c commandLine
-	parsed, err := cli.Parse(parserOf(context.Background(), &c, ui), args)
+	parsed, err := cli.Parse(parser, args)
 	if err != nil {
 		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)})
 	}
@@ -118,15 +109,11 @@ func callSafely(ui *cli.UI, parsed *kong.Context, name string, run any, asJSON b
 }
 
 // movedHelp prints the help of the moved command name, internal/cli's Help
-// printing it from kong's model, and returns 0.
-func movedHelp(name string) int {
-	ui := stdUI()
-	parser, err := parserOf(context.Background(), &commandLine{}, ui)()
+// printing it from parser's model, and returns 0.
+func movedHelp(parser *kong.Kong, ui *cli.UI, name string) int {
+	traced, err := kong.Trace(parser, []string{name})
 	if err == nil {
-		var traced *kong.Context
-		if traced, err = kong.Trace(parser, []string{name}); err == nil {
-			err = traced.PrintUsage(false)
-		}
+		err = traced.PrintUsage(false)
 	}
 	if err != nil {
 		return ui.Fail(err, false)

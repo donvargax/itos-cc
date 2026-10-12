@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"slices"
@@ -69,7 +70,7 @@ type command struct {
 	exits    []exitDoc // its exit codes, 0 and 2 included
 	rules    []string  // the problem rules it reports, "rule: meaning"
 	examples []string
-	run      func(*invocation) (any, error)
+	run      func(context.Context, *invocation) (any, error)
 	// subs makes the command a group, a noun whose subcommands are the
 	// actions: mutation run, mutation list. A group has no run of its own;
 	// alone it prints its help.
@@ -246,9 +247,9 @@ func flagNames(cmd *command) []string {
 	return names
 }
 
-// execute runs cmd with args and returns its exit code. Problems print on
-// stderr, or with --json in the one object on stdout.
-func execute(cmd *command, args []string) int {
+// execute runs cmd with args under ctx and returns its exit code. Problems
+// print on stderr, or with --json in the one object on stdout.
+func execute(ctx context.Context, cmd *command, args []string) int {
 	in, err := parse(cmd, args)
 	if err == errHelp {
 		fmt.Print(cmd.help())
@@ -256,7 +257,7 @@ func execute(cmd *command, args []string) int {
 	}
 	var data any
 	if err == nil {
-		data, err = runSafely(cmd, in)
+		data, err = runSafely(ctx, cmd, in)
 	}
 	ui := stdUI()
 	if err != nil {
@@ -265,15 +266,15 @@ func execute(cmd *command, args []string) int {
 	return ui.Emit(in.json, data, in.problems)
 }
 
-// runSafely runs cmd, turning a panic into an internal error, so even a bug
-// ends in the --json object and exit 70.
-func runSafely(cmd *command, in *invocation) (data any, err error) {
+// runSafely runs cmd under ctx, turning a panic into an internal error, so
+// even a bug ends in the --json object and exit 70.
+func runSafely(ctx context.Context, cmd *command, in *invocation) (data any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%s panicked: %v", cmd.name, r)
 		}
 	}()
-	return cmd.run(in)
+	return cmd.run(ctx, in)
 }
 
 // help is the command's help: usage, what it does, its flags, its --json

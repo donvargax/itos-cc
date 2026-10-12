@@ -106,8 +106,9 @@ type countedSubjects struct {
 
 // runCountedMutate is mutation run --count: a fresh judgment of at most N
 // committed sites, drawn with the seed from the HEAD commit's inputs. It
-// writes no snapshot, annotation or coverage cache.
-func runCountedMutate(in *invocation) (any, error) {
+// writes no snapshot, annotation or coverage cache. It runs under its own
+// context, derived from ctx (countedSignalContext).
+func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 	result := &countedResult{Selected: []countedSite{}, Subjects: countedSubjects{Judged: []countedSubject{}, Omitted: []countedSubject{}},
 		Stages: []PreparationStage{}}
 	if !in.set("count") {
@@ -149,14 +150,14 @@ func runCountedMutate(in *invocation) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx, stop := countedSignalContext()
+	ctx, stop := countedSignalContext(ctx)
 	defer stop()
 	plan, err := mutate.PlanFreshContext(ctx, root, paths, in.str("since"), count, in.str("seed"))
 	if err != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: count, Assurance: "sampled", Completion: "interrupted",
 				Stop: "interrupted while planning the selection", Bounds: countedBounds}
-			reportInterrupted(in, ctx, result)
+			reportInterrupted(ctx, in, result)
 			return result, nil
 		}
 		return nil, countedPlanError(in, err)
@@ -200,7 +201,7 @@ func runCountedMutate(in *invocation) (any, error) {
 		}
 		if ctx.Err() != nil {
 			s.Completion, s.Stop = "interrupted", "interrupted during preparation, at "+failed
-			reportInterrupted(in, ctx, result)
+			reportInterrupted(ctx, in, result)
 			return result, nil
 		}
 		if s.Completion != "not-applicable" {
@@ -361,7 +362,7 @@ func runCountedMutate(in *invocation) (any, error) {
 		return strict && (!linesOnly || plan.ChangedLines(site.File, site.Line, site.Line))
 	}, interrupted)
 	if interrupted {
-		reportInterrupted(in, ctx, nil)
+		reportInterrupted(ctx, in, nil)
 	}
 	for _, e := range stale {
 		reportStaleExceptions(in, e.File, []mutate.StaleException{e})
@@ -376,12 +377,13 @@ func runCountedMutate(in *invocation) (any, error) {
 // SIGINT or SIGTERM aborts it.
 var errCountedInterrupted = errors.New("interrupted")
 
-// countedSignalContext is the one context of a counted run: SIGINT or
-// SIGTERM cancels it, with errCountedInterrupted as its cause. Every later
-// signal is caught too, until stop, so a second one cannot end the process
-// before its owned commands are joined and its private inputs removed.
-func countedSignalContext() (context.Context, func()) {
-	ctx, cancel := context.WithCancelCause(context.Background())
+// countedSignalContext is the one context of a counted run, derived from
+// parent: SIGINT or SIGTERM cancels it, with errCountedInterrupted as its
+// cause. Every later signal is caught too, until stop, so a second one
+// cannot end the process before its owned commands are joined and its
+// private inputs removed.
+func countedSignalContext(parent context.Context) (context.Context, func()) {
+	ctx, cancel := context.WithCancelCause(parent)
 	signals := make(chan os.Signal, 4)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 	done := make(chan struct{})
@@ -406,9 +408,9 @@ func countedSignalContext() (context.Context, func()) {
 	}
 }
 
-// reportInterrupted reports that a signal stopped the counted run, after
-// printing r, when given, as its partial report.
-func reportInterrupted(in *invocation, ctx context.Context, r *countedResult) {
+// reportInterrupted reports that a signal stopped the counted run, ctx's,
+// after printing r, when given, as its partial report.
+func reportInterrupted(ctx context.Context, in *invocation, r *countedResult) {
 	if r != nil {
 		printCounted(in, r)
 	}

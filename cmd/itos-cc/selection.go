@@ -15,12 +15,13 @@ import (
 // selectionFlags choose a command's files.
 var selectionFlags = []flagSpec{sw("changed", "only files git reports as added or modified")}
 
-// files is the command's files, as the selection domain chooses them from
-// its paths and --changed in the working directory (internal/workdir).
+// files is the command's files, as the selection domain chooses them under
+// ctx from its paths and --changed in the working directory
+// (internal/workdir).
 // Every command selects its files so, which is why cmd holds this and the
 // domain's classifier until the commands move into slices.
-func files(in *invocation) (project.Files, error) {
-	chosen, err := selection.Select(context.Background(), workdir.Tree{}, in.args, in.set("changed"))
+func files(ctx context.Context, in *invocation) (project.Files, error) {
+	chosen, err := selection.Select(ctx, workdir.Tree{}, in.args, in.set("changed"))
 	return project.Files(chosen), err
 }
 

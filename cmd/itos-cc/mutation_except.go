@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -124,7 +125,7 @@ type exceptResult struct {
 // runMutationExcept writes the entry for a recorded survivor into
 // itos-cc.yaml, or with --renew renews the stale entries whose mutant is
 // unchanged.
-func runMutationExcept(in *invocation) (any, error) {
+func runMutationExcept(_ context.Context, in *invocation) (any, error) {
 	if in.set("renew") {
 		return runRenewExceptions(in)
 	}

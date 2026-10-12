@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -63,9 +64,9 @@ type crapResult struct {
 	Unmeasured []coverage.Unmeasured `json:"unmeasured"`
 }
 
-func runCrap(in *invocation) (any, error) {
+func runCrap(ctx context.Context, in *invocation) (any, error) {
 	result := crapResult{Entries: []crap.Entry{}, Unmeasured: []coverage.Unmeasured{}}
-	files, err := files(in)
+	files, err := files(ctx, in)
 	if err != nil {
 		return result, err
 	}

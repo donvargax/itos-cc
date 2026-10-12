@@ -116,7 +116,15 @@ from it, and thin slices named for their commands.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
   and hands the context and the handler, with `workdir`'s `Tree` and `Surroundings`, to `Run`
-  through kong's bindings. It is the only place
+  through kong's bindings. `main` makes the program's one `context.Background()` and passes
+  it to `run(ctx, args)`, and every command runs under it: a hand-parsed one through
+  `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
+  calls; a moved one through the parser `run` builds once with `parserOf(ctx, …)`, whose
+  bindings hand it to `Run`. A command that stops on a signal derives its own from it
+  (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`), and
+  cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
+  `main` makes a context of its own but the `context.TODO()` that the code stage S4 has not
+  yet threaded passes. It is the only place
   that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
@@ -233,7 +241,9 @@ follows the same steps for a command it wrote before it had the template's desig
    subcommands.
 5. **The command line.** `cli.Read` finds `--json` and help (`-h` or `--help` anywhere
    before `--`) before anything is judged, so help wins over any mistake and a usage error
-   prints the object `--json` asks for. `cli.Parse` holds kong to what it does not hold by
+   prints the object `--json` asks for. `cli.Parse` parses with a parser that has parsed
+   nothing before, since `cli.Flags` holds the state of one parse, so `run` parses once
+   with the parser it built. It holds kong to what it does not hold by
    itself: a word of one dash, other than `-` and `-h`, is a long flag mistyped, found
    against kong's model unless what precedes it fails first (q-55); arguments may stand
    between flags, so they move behind them before kong reads them. `cli.Flags` refuses a

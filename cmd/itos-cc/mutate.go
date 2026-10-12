@@ -621,7 +621,7 @@ type mutateSite struct {
 // which lines of a source the range added or changed, as HEAD has them
 // (project.ChangedFunctions.Lines). judge, renamed and lines are nil
 // without --since.
-func mutationSelection(in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutate.LineScope, err error) {
+func mutationSelection(ctx context.Context, in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutate.LineScope, err error) {
 	var since map[string]project.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
@@ -629,7 +629,7 @@ func mutationSelection(in *invocation) (sources []string, judge func(path, funct
 			return nil, nil, nil, nil, err
 		}
 	}
-	files, err := files(in)
+	files, err := files(ctx, in)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -701,13 +701,13 @@ func importingTests() (func(path string) []string, error) {
 	}, nil
 }
 
-func runMutate(in *invocation) (any, error) {
+func runMutate(ctx context.Context, in *invocation) (any, error) {
 	linesOnly, err := changedLinesOnly(in)
 	if err != nil {
 		return nil, err
 	}
 	if in.set("count") || in.set("seed") {
-		return runCountedMutate(in)
+		return runCountedMutate(ctx, in)
 	}
 	result := mutateResult{Files: []mutateFile{}}
 	if in.set("fail-uncovered") && in.set("no-coverage") {
@@ -726,7 +726,7 @@ func runMutate(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	sources, judge, renamed, lines, err := mutationSelection(in)
+	sources, judge, renamed, lines, err := mutationSelection(ctx, in)
 	if err != nil {
 		return result, err
 	}
@@ -893,7 +893,7 @@ func runMutate(in *invocation) (any, error) {
 					return kept[project.Rel(path)+"\x00"+function]
 				}
 			}
-			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(in, strictLanguages, measured, suite, support, reach)
+			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(ctx, in, strictLanguages, measured, suite, support, reach)
 			if err != nil {
 				return result, err
 			}
@@ -1591,7 +1591,7 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 // test loaded without running a test (coverage.Report.Inventory). It
 // returns the report, Go's producer, the producer and fingerprint of each
 // source's evidence by its language, and the file of each listed test.
-func strictCoverage(in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
+func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, func(string) (string, map[string]string, error), map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
@@ -1619,7 +1619,12 @@ func strictCoverage(in *invocation, languages []string, sources []string, suite 
 	for _, language := range languages {
 		// A command that fails leaves its files without proof, which the
 		// run reports as missing evidence; it logged why.
-		_, _ = report.Inventory(context.Background(), language, os.Stderr, nil)
+		_, _ = report.Inventory(ctx, language, os.Stderr, nil)
+	}
+	// A stopped run leaves files unlisted for that reason, not for a
+	// command's failure: it is reported as the stop.
+	if ctx.Err() != nil {
+		return nil, "", nil, nil, context.Cause(ctx)
 	}
 	inputs := strictCoverageInputs(languages, in.set("all-tests"), in.set("test-command"), support)
 	fingerprint := func(source string) (string, map[string]string, error) {
@@ -1817,9 +1822,9 @@ type mutationListResult struct {
 }
 
 // runMutationList lists the mutation sites of the chosen sources.
-func runMutationList(in *invocation) (any, error) {
+func runMutationList(ctx context.Context, in *invocation) (any, error) {
 	result := mutationListResult{Sites: []mutateSite{}}
-	files, err := files(in)
+	files, err := files(ctx, in)
 	if err != nil {
 		return result, err
 	}
@@ -1828,7 +1833,7 @@ func runMutationList(in *invocation) (any, error) {
 		return result, nil
 	}
 	for _, path := range files.Sources {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return result, err
 		}

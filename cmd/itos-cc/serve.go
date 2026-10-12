@@ -52,7 +52,9 @@ updates their numbers. Listens on localhost only, until interrupted.`,
 	run: runServe,
 }
 
-func runServe(in *invocation) (any, error) {
+// runServe serves until an interrupt, which cancels a context of its own
+// over ctx, shuts the server down.
+func runServe(ctx context.Context, in *invocation) (any, error) {
 	roots := in.args
 	if len(roots) == 0 {
 		roots = []string{"."}
@@ -62,7 +64,7 @@ func runServe(in *invocation) (any, error) {
 	if err != nil {
 		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
 	go srv.Watch(ctx, in.duration("interval"))
 
@@ -73,12 +75,7 @@ func runServe(in *invocation) (any, error) {
 			"Stop what uses the port, or choose another with --port.").With("port", in.integer("port"))
 	}
 	httpServer := &http.Server{Handler: srv.Handler()}
-	go func() {
-		<-ctx.Done()
-		shutdown, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-		httpServer.Shutdown(shutdown)
-	}()
+	go shutdownWhenDone(ctx, httpServer)
 	logger.Printf("serving %v on http://%s", roots, addr)
 	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return nil, err
@@ -86,4 +83,14 @@ func runServe(in *invocation) (any, error) {
 	return struct {
 		Address string `json:"address"`
 	}{addr}, nil
+}
+
+// shutdownWhenDone shuts srv down once ctx is done, giving what it is
+// serving 2 seconds to end: the shutdown's own context is ctx's, without
+// its cancellation, which has already come.
+func shutdownWhenDone(ctx context.Context, srv *http.Server) {
+	<-ctx.Done()
+	shutdown, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	srv.Shutdown(shutdown)
 }

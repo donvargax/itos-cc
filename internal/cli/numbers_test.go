@@ -32,13 +32,13 @@ type numbersApp struct {
 func parseNumbers(t *testing.T, args string) (numbers, *Problem) {
 	t.Helper()
 	app := &numbersApp{}
-	newParser := func() (*kong.Kong, error) {
-		*app = numbersApp{}
-		return kong.New(app, append(Flags(), kong.Name("itos-cc"), kong.Help(Help),
-			kong.Exit(func(int) { t.Fatal("kong exited") }))...)
+	parser, err := kong.New(app, append(Flags(), kong.Name("itos-cc"), kong.Help(Help),
+		kong.Exit(func(int) { t.Fatal("kong exited") }))...)
+	if err != nil {
+		t.Fatal(err)
 	}
 	words := strings.Fields(args)
-	if _, err := Parse(newParser, words); err != nil {
+	if _, err := Parse(parser, words); err != nil {
 		return app.Dry, ParseProblem(err, words)
 	}
 	return app.Dry, nil

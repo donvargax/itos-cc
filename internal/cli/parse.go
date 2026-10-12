@@ -52,18 +52,18 @@ type MistypedFlagError struct {
 func (e *MistypedFlagError) Error() string { return "unknown flag " + e.Word }
 
 // Parse parses args, a command line naming a command of the parser's model
-// (units --changed src), with a parser newParser makes: one for each parse,
-// since Flags holds the state of one. It reads the line as every command
-// does, where kong would not:
+// (units --changed src), with parser, which has parsed nothing before:
+// Flags holds the state of one parse, so a parser parses once. It reads the
+// line as every command does, where kong would not:
 //
 //   - A word of one dash before -- is a mistyped long flag
 //     (MistypedFlagError), unless what comes before it fails first.
 //   - Arguments may stand between flags: kong reads a command's arguments
 //     in one run, so they are moved behind its flags, after a --, keeping
 //     what each word is.
-func Parse(newParser func() (*kong.Kong, error), args []string) (*kong.Context, error) {
+func Parse(parser *kong.Kong, args []string) (*kong.Context, error) {
 	if i := slices.IndexFunc(beforeDashes(args), mistyped); i >= 0 {
-		parsed, err := Parse(newParser, args[:i])
+		parsed, err := Parse(parser, args[:i])
 		if err != nil {
 			return nil, err
 		}
@@ -72,10 +72,6 @@ func Parse(newParser func() (*kong.Kong, error), args []string) (*kong.Context, 
 			node = parsed.Model.Node
 		}
 		return nil, &MistypedFlagError{Word: args[i], Command: node}
-	}
-	parser, err := newParser()
-	if err != nil {
-		return nil, err
 	}
 	return parser.Parse(flagsFirst(parser.Model, args))
 }

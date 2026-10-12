@@ -49,14 +49,15 @@ type probeApp struct {
 }
 
 // newProbe is a parser of probeApp, as cmd makes one, and the app it fills.
-func newProbe(t *testing.T) (func() (*kong.Kong, error), *probeApp) {
+func newProbe(t *testing.T) (*kong.Kong, *probeApp) {
 	t.Helper()
 	app := &probeApp{}
-	return func() (*kong.Kong, error) {
-		*app = probeApp{}
-		return kong.New(app, append(Flags(), kong.Name("itos-cc"), kong.Help(Help),
-			kong.Exit(func(int) { t.Fatal("kong exited") }))...)
-	}, app
+	parser, err := kong.New(app, append(Flags(), kong.Name("itos-cc"), kong.Help(Help),
+		kong.Exit(func(int) { t.Fatal("kong exited") }))...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parser, app
 }
 
 func TestReadFindsJSONAndHelpBeforeDashDash(t *testing.T) {
@@ -76,8 +77,8 @@ func TestReadFindsJSONAndHelpBeforeDashDash(t *testing.T) {
 // Arguments may stand between flags, a value is its flag's, and a word
 // after -- is an argument whatever it looks like.
 func TestArgumentsMayStandBetweenFlags(t *testing.T) {
-	newParser, app := newProbe(t)
-	if _, err := Parse(newParser, strings.Fields("probe a --changed b --top 3 - c -- --json d")); err != nil {
+	parser, app := newProbe(t)
+	if _, err := Parse(parser, strings.Fields("probe a --changed b --top 3 - c -- --json d")); err != nil {
 		t.Fatal(err)
 	}
 	if got := app.Probe; !got.Changed || got.Top != "3" || got.JSON || !slices.Equal(got.Paths, []string{"a", "b", "-", "c", "--json", "d"}) {
@@ -86,8 +87,8 @@ func TestArgumentsMayStandBetweenFlags(t *testing.T) {
 }
 
 func TestADashDashAloneLeavesNoArgument(t *testing.T) {
-	newParser, app := newProbe(t)
-	if _, err := Parse(newParser, []string{"probe", "--changed", "--"}); err != nil || len(app.Probe.Paths) != 0 {
+	parser, app := newProbe(t)
+	if _, err := Parse(parser, []string{"probe", "--changed", "--"}); err != nil || len(app.Probe.Paths) != 0 {
 		t.Errorf("got %+v, %v", app.Probe, err)
 	}
 }
@@ -95,8 +96,8 @@ func TestADashDashAloneLeavesNoArgument(t *testing.T) {
 // problemOf is the problem the command line args is.
 func problemOf(t *testing.T, args ...string) *Problem {
 	t.Helper()
-	newParser, _ := newProbe(t)
-	_, err := Parse(newParser, args)
+	parser, _ := newProbe(t)
+	_, err := Parse(parser, args)
 	if err == nil {
 		t.Fatalf("%q parsed", args)
 	}
