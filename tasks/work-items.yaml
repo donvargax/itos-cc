@@ -572,22 +572,9 @@ items:
     title: itos-cc.yaml's exclude leaves sources out of what is measured and mutated
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-55]
     kind: slice
-    why: >
-      Was mutation-exclude.
-      Issue #16: Go test support often lives in a package of its own (fakes such as
-      internal/template/port/porttest), and mutation run mutates it like production code, so a gate
-      with --fail-uncovered asks for tests of the fakes, which an exception cannot excuse. Paths can
-      narrow a run but not leave a folder out. The issue proposes exclude globs in itos-cc.yaml,
-      applied before --since's selection so a gate's command stays the same, likely for crap and dry
-      too: which commands, and the key's name and place, are to be decided.
-
-      Specified 2026-10-12 (decision on q-61); the full spec, scenarios and landing plan are in the
-      coordinator's clone notes (.git/itos/spec-16.md), given to the implementing agent. Comes
-      before scenario-two-drivers, after the contract suites (T-52 touches internal/selection's
-      port).
     refs: ["#16"]
   - id: release-notes
     title: "Each GitHub release carries notes: what changed and what a user must change"
