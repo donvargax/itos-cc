@@ -1855,7 +1855,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [refactor-final-proof]
     kind: idea
     why: >
       q-51: every command, serve and mutation run --count included, cancels its context on Ctrl-C
