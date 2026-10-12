@@ -2093,8 +2093,8 @@ items:
   - id: T-37
     title: dry.feature runs through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
