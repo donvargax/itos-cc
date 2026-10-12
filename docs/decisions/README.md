@@ -35,5 +35,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0029: Go code is a shared domain behind ports, separate adapters and thin slices named for their commands](0029-go-code-is-a-shared-domain-behind-ports-separate-adapters-and-thin-slices-named-for-their-commands.md)
 - [ADR-0030: context.Context carries cancellation from cmd through Handle to the ports, never a value](0030-context-context-carries-cancellation-from-cmd-through-handle-to-the-ports-never-a-value.md)
 - [ADR-0031: An interrupted command exits 130, says so once, and a second interrupt ends it at once](0031-an-interrupted-command-exits-130-says-so-once-and-a-second-interrupt-ends-it-at-once.md)
+- [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
 
 <!-- itos:decisions:end -->
