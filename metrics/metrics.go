@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/donvargax/itos-cc/internal/snapshot"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -34,8 +35,9 @@ var (
 	osReadFile = os.ReadFile
 )
 
-// Version is the snapshot format version every snapshot records.
-const Version = 1
+// Version is the snapshot format version every snapshot records, the
+// snapshot domain's.
+const Version = snapshot.Version
 
 // Write stores v as indented JSON at .metrics/name, replacing it atomically
 // so a reader never sees half a snapshot. Each write stages its own file, so

@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/donvargax/itos-cc/internal/snapshot"
 )
 
 var roots sync.Map // directory → its root, as RootOf finds it
@@ -52,17 +54,14 @@ func FromRoot(path string) string {
 }
 
 // FromRootOf is FromRoot for the project whose root is root, which need not
-// be the working directory's.
+// be the working directory's: path made absolute, named as the snapshot
+// domain names it (snapshot.Key).
 func FromRootOf(root, path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return filepath.ToSlash(path)
 	}
-	rel, err := filepath.Rel(root, abs)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return filepath.ToSlash(abs)
-	}
-	return filepath.ToSlash(rel)
+	return snapshot.Key(root, abs)
 }
 
 // AtRoot is the absolute path of rel, a path a snapshot records.

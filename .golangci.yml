@@ -37,13 +37,16 @@ linters:
         # port subpackages not measured, so the floor holds behaviour, not
         # the ports and fakes. internal/selection chooses every command's
         # files; internal/lang names the units every command measures, its
-        # port asking what surrounds a file (decisions 42 and 43).
+        # port asking what surrounds a file (decisions 42 and 43);
+        # internal/snapshot names the files the snapshots under .metrics/
+        # record, its port reading and writing them (decision 41).
         domain:
           list-mode: lax
           files:
             - "**/internal/counting/**"
             - "**/internal/selection/**"
             - "**/internal/lang/**"
+            - "**/internal/snapshot/**"
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
@@ -51,6 +54,8 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/
+            - github.com/donvargax/itos-cc/internal/snapshot$
+            - github.com/donvargax/itos-cc/internal/snapshot/
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -61,6 +66,7 @@ linters:
             - "**/internal/counting/**"
             - "**/internal/selection/**"
             - "**/internal/lang/**"
+            - "**/internal/snapshot/**"
             - "!$test"
           deny:
             - pkg: os
@@ -91,9 +97,11 @@ linters:
             - "!**/internal/counting/**" # a domain and its ports
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
+            - "!**/internal/snapshot/**" # a domain and its ports
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
+            - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -102,6 +110,8 @@ linters:
             - github.com/donvargax/itos-cc/internal/counting/
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
+            - github.com/donvargax/itos-cc/internal/snapshot$
+            - github.com/donvargax/itos-cc/internal/snapshot/
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
@@ -153,6 +163,23 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the workdir adapter imports nothing of ours but the selection port, lang's port and project, which it wraps (decision 29); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # internal/metricsdir implements the snapshot port over metrics, the
+        # top-level library that writes .metrics/ as indented JSON renamed
+        # into place, and project, which finds the root it lives at
+        # (decision 41): that port and those two libraries are allowed here,
+        # and no other top-level library is.
+        metricsdir:
+          list-mode: lax
+          files:
+            - "**/internal/metricsdir/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/snapshot/port$
+            - github.com/donvargax/itos-cc/metrics$
+            - github.com/donvargax/itos-cc/project$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the metricsdir adapter imports nothing of ours but the snapshot port and metrics and project, which it wraps (decision 41); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         mocks:
           files:
             - $all

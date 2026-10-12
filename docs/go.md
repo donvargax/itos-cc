@@ -28,6 +28,17 @@ from it, and thin slices named for their commands.
   the fragment, `Unwalkable`, `Unreadable` and `Cancelled`. Every command reads the files it
   selects, so it reads them through the tree it chose them from, never by itself.
   `internal/selection/port/porttest` holds the in-memory fake of `Tree`.
+- `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
+  share and projects commit (decision 41): the format `Version` every snapshot records, and
+  `Key(root, abs)`, an absolute path named as a snapshot records it, from the project root and
+  slash-separated, a path the root cannot reach staying whole. The paths a selection discovers
+  are absolute, so naming one needs no working directory. `project.FromRootOf` names paths
+  through it, so the arithmetic has one copy.
+- `internal/snapshot/port` declares `Store`: the project `Root`, and `Read` and `Write` of a
+  snapshot by name, each taking the context first, and its sealed set of failures:
+  `Unreadable`, `Unwritable`, each carrying the snapshot's name and the library's error text
+  whole as its `Reason`, and `Cancelled`. `internal/snapshot/port/porttest` holds the
+  in-memory fake of `Store`.
 - `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
   OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
   `Cancelled` once the context is done, and hands every other path to a fallback it is given.
@@ -37,6 +48,11 @@ from it, and thin slices named for their commands.
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
   `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk. It
   imports nothing else of ours.
+- `internal/metricsdir` is the snapshot port's adapter: the snapshots under `.metrics/` at the
+  project root of the working directory. It wraps the top-level `metrics` library, which
+  writes them as indented JSON renamed into place, and `project`, which finds the root, so
+  every byte and every atomic write stays the library's, translating their errors into the
+  port's failures. It imports nothing else of ours.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
   syntax and mutation rules. Every language's rules for a namespace (the markers it walks up
@@ -100,9 +116,10 @@ deadlines only, always as the first parameter and never in a struct or as a valu
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
-- `infra` and `workdir`: an adapter imports nothing of ours but the port it implements, and
-  `internal/workdir` the two it implements, selection's and `internal/lang`'s, and the `project` library
-  it wraps; only its tests may use `porttest`. Each port's
+- `infra`, `workdir` and `metricsdir`: an adapter imports nothing of ours but the port it
+  implements, `internal/workdir` the two it implements, selection's and `internal/lang`'s, and
+  the `project` library it wraps, and `internal/metricsdir` the snapshot port and the `metrics`
+  and `project` libraries it wraps; only its tests may use `porttest`. Each port's
   adapters have a rule of their own, so none is allowed another's port or library.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
@@ -124,9 +141,9 @@ command from reaching into this one.
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
 - An adapter: add its folder to the `files` of the rule for its port's adapters (`infra` for
-  counting's, `workdir` for selection's), or give a new port's adapters a rule of their own
-  allowing that port and any library they wrap; add a `!**/internal/<name>/**` exclusion to
-  `slices`. Wire it in `cmd`.
+  counting's, `workdir` for selection's, `metricsdir` for the snapshot port's), or give a new
+  port's adapters a rule of their own allowing that port and any library they wrap; add a
+  `!**/internal/<name>/**` exclusion to `slices`. Wire it in `cmd`.
 - Any other package that is no command, such as `internal/version`: add a `slices` exclusion
   saying what it is.
 - Then add compile-valid fixtures to `tools/testdata/architecture` that each rule you touched
