@@ -2254,6 +2254,13 @@ items:
       without paths (output names from the working directory, dry.json keys from the root), and dry
       --changed naming a source outside the working directory (its absolute name in output and in
       dry.json).
+
+      T-40 (dry on kong): internal/cli's numbers_test.go holds dry's number edges to the hand
+      parser's answers; compare them again in the binaries, with these added: --threshold 0.5
+      --threshold x (refused as repeated before the value is judged), --threshold - and --min-lines
+      1_000 (value-invalid), --min-lines +7 and --threshold 1e3 (accepted), dry --help and help dry,
+      and lines holding two mistakes, such as --threshold abc --bogus, where kong may report another
+      first.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
