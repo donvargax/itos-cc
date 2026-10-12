@@ -2322,8 +2322,8 @@ items:
   - id: T-49
     title: mutate runs under the context cmd gives it and holds none in a value
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-48]
     kind: task
     why: >
