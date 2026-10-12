@@ -1052,3 +1052,27 @@
     the suite finds is fixed in whichever side is wrong, never by leaving the case out. Rules whole:
     ctx first, never held or captured for I/O, no fake in production code. Light local testing: the
     packages named in the checks; never itos task show locally.
+- id: T-56
+  type: build
+  title: No porttest fake is linked into itos-cc or a slice's code
+  why: >
+    A gate of its own (decision 33) before fakes come near cmd: a depguard rule over the slices'
+    code (files under internal/ that are slices, !$test) refuses every porttest package while their
+    tests keep them, as the infra and workdir rules do with !$test (absorbs slice-fakes-tests-only;
+    today the slices rule lists internal/selection/ and lang/port/ as prefixes, so a slice could
+    ship a fake); and tools/bin/architecture-check, which CI runs, also refuses itos-cc's binary
+    linking any porttest package (go list -deps ./cmd/itos-cc), since golangci-lint does not lint
+    cmd. Fixtures in tools/testdata/architecture prove the rule refuses a slice's code importing a
+    porttest and allows its test. Decision 44 and the person's choice of 2026-10-12: the steps
+    become ordinary files of package features, which slice-6's exclude (decision 45) leaves out of
+    mutation and the measures; the in-process driver is a _test.go in cmd/itos-cc, since package
+    main cannot be imported. Rules whole: ctx first and never held or captured for I/O, no fake in
+    production code (porttest enters cmd only through its _test.go files), fakes not mocks. Light
+    local testing: the packages and scenarios named in the checks, never the whole cmd/itos-cc suite
+    or a mutation run; never itos task show locally. No binary comparison; a case worth comparing
+    joins refactor-final-proof's list.
+  done_when:
+    - run: grep -q 'go list -deps' tools/bin/architecture-check
+    - run: "! go list -deps ./cmd/itos-cc | grep -q porttest"
+    - run: tools/bin/architecture-check
+    - run: tools/bin/pinned golangci-lint run ./internal/...
