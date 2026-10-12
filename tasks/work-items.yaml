@@ -2285,3 +2285,20 @@ items:
       itself to save as it goes, that is product behaviour with a scenario: stop and report so it is
       specified as a slice. Done once a scheduled or dispatched nightly on main completes its Mutate
       step over the whole repository and commits its results.
+  - id: refactor-final-proof
+    title: The binaries from before and after the refactor agree, but for its listed changes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person, 2026-10-11: one byte-for-byte comparison once every command has moved (docs/go.md
+      step 9), not one per move. Build the binary of T-29's parent and the refactored one; run both
+      over the command lines step 9 lists for every command, plus each move's added cases (dry's
+      number flags: --threshold -1, --threshold=-1, --threshold=, --min-lines 1.5, --min-lines=0x10,
+      --min-lines 010, -threshold, a path outside the working directory; scrap's --verbose=x and an
+      invalid .metrics/scrap.json); compare stdout, stderr and exit codes. Deliberate differences so
+      far: units ---changed refused as flags.unknown, exit 2 (slice-5); add exit 130 on interrupt
+      and the semantic exit codes when they land. Becomes a task after the refactor's last stage,
+      before mutation proof turns back on.
