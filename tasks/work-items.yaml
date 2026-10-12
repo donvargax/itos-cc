@@ -2192,7 +2192,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-37, T-38, T-39]
     kind: task
     why: >
       dry moves to internal/dry, a slice, by docs/go.md's Moving a command: same bytes, same exit
