@@ -1925,14 +1925,9 @@ items:
     title: lang finds a namespace's project root and go.mod on disk itself
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      The units slice reads sources through the selection port, but lang.UnitsOf still stats root
-      markers (FindUp), reads go.mod and calls os.Getwd to name a unit's namespace, so a slice that
-      uses it does I/O behind its port. A namespace domain fed through the Tree port would make the
-      slice's work testable with the fake alone.
   - id: flags-typed-value-mappers
     title: internal/cli's Flags reads only switches and strings, in the words of neither crap nor dry
     phase: 1
