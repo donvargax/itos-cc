@@ -1,4 +1,4 @@
-package scrap
+package teststructure
 
 import (
 	"slices"

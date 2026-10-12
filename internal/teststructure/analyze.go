@@ -1,4 +1,4 @@
-package scrap
+package teststructure
 
 import (
 	"fmt"
@@ -169,8 +169,7 @@ func clusters(f *lang.File, examples []Example, reports []ExampleReport) []Clust
 	for i := range parent {
 		parent[i] = i
 	}
-	var find func(int) int
-	find = func(i int) int {
+	find := func(i int) int {
 		for parent[i] != i {
 			parent[i] = parent[parent[i]]
 			i = parent[i]

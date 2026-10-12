@@ -7,15 +7,17 @@ import (
 	"os"
 	"sort"
 
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
+	"github.com/donvargax/itos-cc/internal/teststructure"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/project"
-	"github.com/donvargax/itos-cc/scrap"
 )
 
 type scrapSnapshot struct {
-	Version int                `json:"version"`
-	Files   []scrap.FileReport `json:"files"`
+	Version int                        `json:"version"`
+	Files   []teststructure.FileReport `json:"files"`
 }
 
 var scrapCommand = &command{
@@ -54,11 +56,11 @@ the test is for before changing it. Each run is compared with the previous
 }
 
 type scrapResult struct {
-	Files []scrap.FileReport `json:"files"`
+	Files []teststructure.FileReport `json:"files"`
 }
 
 func runScrap(in *invocation) (any, error) {
-	result := scrapResult{Files: []scrap.FileReport{}}
+	result := scrapResult{Files: []teststructure.FileReport{}}
 	files, err := files(in)
 	if err != nil {
 		return result, err
@@ -84,39 +86,22 @@ func runScrap(in *invocation) (any, error) {
 	}
 	// scrap.json names each file from the project root, while output names
 	// it from the working directory.
-	byFile := map[string]scrap.FileReport{}
-	for _, r := range previous.Files {
-		byFile[r.File] = r
-	}
-
-	reports := []scrap.FileReport{}
+	history := teststructure.HistoryOf(previous.Files)
+	reports := []teststructure.FileReport{}
 	for _, path := range files.Tests {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := parseTest(ctx, path)
 		if err != nil {
 			return result, err
 		}
-		r := scrap.Analyze(f, project.Rel(path))
+		r := teststructure.Analyze(f, project.Rel(path))
 		f.Close()
 		if r.Examples == 0 {
 			continue
 		}
-		key := snapshot.Key(root, path)
-		if prev, ok := byFile[key]; ok {
-			prev.Compare = nil
-			r.CompareTo(prev)
-		}
-		recorded := r
-		recorded.File = key
-		byFile[key] = recorded
-		reports = append(reports, r)
+		reports = append(reports, history.Record(snapshot.Key(root, path), r))
 	}
 
-	recorded := scrapSnapshot{Version: snapshot.Version, Files: []scrap.FileReport{}}
-	for _, r := range byFile {
-		r.Compare = nil
-		recorded.Files = append(recorded.Files, r)
-	}
-	sort.Slice(recorded.Files, func(i, j int) bool { return recorded.Files[i].File < recorded.Files[j].File })
+	recorded := scrapSnapshot{Version: snapshot.Version, Files: history.Files()}
 	if failure := snapshots.Write(ctx, "scrap.json", recorded); failure != nil {
 		return result, failure
 	}
@@ -131,7 +116,22 @@ func runScrap(in *invocation) (any, error) {
 	return result, nil
 }
 
-func printScrap(r scrap.FileReport, verbose bool) {
+// parseTest is the test file at path parsed: a language lang does not know
+// is refused before anything is read, then the selection's tree reads it
+// and lang parses it, naming it through workdir's Surroundings.
+func parseTest(ctx context.Context, path string) (*lang.File, error) {
+	spec := lang.Detect(path)
+	if spec == nil {
+		return nil, fmt.Errorf("unsupported language: %s", path)
+	}
+	src, failure := workdir.Tree{}.Read(ctx, path)
+	if failure != nil {
+		return nil, failure
+	}
+	return lang.Parse(ctx, workdir.Surroundings{}, spec, path, src)
+}
+
+func printScrap(r teststructure.FileReport, verbose bool) {
 	change := ""
 	if c := r.Compare; c != nil && c.Verdict != "unchanged" {
 		change = fmt.Sprintf("  %s from %.1f", c.Verdict, c.PreviousPressure)
@@ -142,7 +142,7 @@ func printScrap(r scrap.FileReport, verbose bool) {
 		fmt.Println("  the last change made this file worse: check new helpers and duplication before keeping it")
 	}
 	// A file to leave alone keeps its minor hints out of the way.
-	if r.Action != scrap.LeaveAlone || verbose {
+	if r.Action != teststructure.LeaveAlone || verbose {
 		for _, rec := range r.Recommendations {
 			fmt.Printf("  %-6s %s\n", rec.Confidence, rec.Text)
 		}
