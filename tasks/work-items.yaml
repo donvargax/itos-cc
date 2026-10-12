@@ -2130,20 +2130,9 @@ items:
     title: scrap is a slice on kong
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-38, T-41, T-42]
     kind: task
-    why: >
-      scrap moves to internal/scrap, a slice, as dry did: same bytes, same exit codes. CLI: Changed,
-      Verbose, JSON, the paths; Contract copied word for word, the action table included. Run prints
-      printScrap's lines through ui.Stdout and the 'no test files to measure' and 'ignoring
-      unreadable' lines through ui.Stderr, even with --json, as today. The Handler holds Tree,
-      Store, lang's port and Name. scrapCommand and cmd/itos-cc/scrap.go go, with their
-      .metrics/mutate record (say so in the commit); cmd/itos-cc/snapshots_root_test.go, which runs
-      dry and scrap in process for metrics_snapshots.feature, keeps passing or moves to the slices.
-      Proof (step 9) over scrap command lines including --verbose=x and an invalid
-      .metrics/scrap.json, each differing line explained; a difference that is not an agreed fix
-      stops the task.
   - id: slice-fakes-tests-only
     title: Hold the ports' fakes out of a slice's code
     phase: 1

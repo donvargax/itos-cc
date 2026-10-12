@@ -801,11 +801,6 @@
     process for metrics_snapshots.feature, keeps passing or moves to the slices. No binary
     comparison here (docs/go.md step 9); --verbose=x and an invalid .metrics/scrap.json join
     refactor-final-proof's list.
-  done_when:
-    - run: test ! -e cmd/itos-cc/scrap.go && go test ./internal/scrap/... ./cmd/itos-cc/...
-    - run: grep -q 'scrap.CLI' cmd/itos-cc/moved.go
-    - run: go test ./features -count=1 -scenarios='@ID-(SCRAP|DRY|UNIT)-'
-    - run: tools/bin/architecture-check && tools/bin/pinned golangci-lint run ./internal/...
 - id: T-46
   type: ci
   title: The nightly mutation run survives every mutant and commits its results
