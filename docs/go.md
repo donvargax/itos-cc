@@ -50,7 +50,7 @@ from it, and thin slices named for their commands.
   is cmd's, or `lang`'s, internal ones.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
-  plain or JSON answer, and it stops a command on Ctrl-C (decision 31). A domain's failures
+  plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
   reach it through that domain's classifier, which cmd hands it. For the commands kong parses
   it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
   types (`ParseProblem`) and prints help (`Help`, a command's `Page`), as "Moving a command"
