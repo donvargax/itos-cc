@@ -2287,3 +2287,8 @@ items:
       far: units ---changed refused as flags.unknown, exit 2 (slice-5); add exit 130 on interrupt
       and the semantic exit codes when they land. Becomes a task after the refactor's last stage,
       before mutation proof turns back on.
+
+      The person, 2026-10-11: exit codes change last. Every other stage of the refactor lands first,
+      then this one comparison runs (from T-29's parent to that head, where no exit code has changed
+      yet), and only then interrupt-exit-130 and semantic-exit-codes, features held by their own
+      scenarios, which need no comparison after. Both depend on this item.
