@@ -36,5 +36,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0030: context.Context carries cancellation from cmd through Handle to the ports, never a value](0030-context-context-carries-cancellation-from-cmd-through-handle-to-the-ports-never-a-value.md)
 - [ADR-0031: An interrupted command exits 130, says so once, and a second interrupt ends it at once](0031-an-interrupted-command-exits-130-says-so-once-and-a-second-interrupt-ends-it-at-once.md)
 - [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
+- [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
 
 <!-- itos:decisions:end -->

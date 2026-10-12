@@ -233,6 +233,7 @@ questions:
     item: "template-adoption"
     question: "How far does the adoption commit go? Recommend staged: an itos upgrade task (6.5.1 to 7.5.0), then an adoption task taking the template's docs, tools, CI and ADRs (renumbered after ours) while keeping itos-cc's main.go and CLI behaviour, the new gates wired only as far as they pass; then slices porting the code design (kong + internal/cli, exit 130 on interrupt, ports and slices, the godog harness), each new gate a task of its own. Alternative: all at once, main.go rewritten onto kong and internal/cli in the adoption."
     answer: "Staged, as recommended, 2026-10-11."
+    decision: 33
   - id: q-50
     question: "Should the top-level packages (mutate, coverage, project, lang, crap, dry, …) move under internal/ as each becomes a domain or an adapter in the template-design refactor?"
     answer: "Move them, each as it is refactored into a domain or an adapter (answered 2026-10-11). The Go API is not part of the contract; .metrics/mutate paths and exceptions move with them, an exception following a moved file once as ADR-0014 allows."
