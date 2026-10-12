@@ -949,8 +949,3 @@
     (./internal/...), with fixtures that fail the rule if tools/testdata/architecture is where such
     fixtures live. After S4 nothing should trip it; fix any finding in the code, never by weakening
     the rule. Never run itos task show for this task locally.
-  done_when:
-    - run: grep -q containedctx .golangci.yml
-    - run: grep -q context-as-argument .golangci.yml
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...

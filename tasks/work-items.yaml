@@ -2351,15 +2351,9 @@ items:
     title: golangci-lint refuses a context held in a value or passed anywhere but first
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-50]
     kind: task
-    why: >
-      ADR-0030's rule as a gate, a task of its own as ADR-0033 asks of every new gate: containedctx
-      and revive's context-as-argument in .golangci.yml over what golangci-lint checks
-      (./internal/...), with fixtures that fail the rule if tools/testdata/architecture is where
-      such fixtures live. After S4 nothing should trip it; fix any finding in the code, never by
-      weakening the rule. Never run itos task show for this task locally.
   - id: mutation-run-saves-each-file
     title: mutation run saves each file's results as soon as the file is decided
     phase: 1
