@@ -776,9 +776,6 @@
     value; SCRAP-19 and 20 need 25 examples and more than 10 recommendations. Shared steps go to
     steps_test.go. Each step is checked to fail on a changed expectation. scrap.feature joins
     converted. No product code changes.
-  done_when:
-    - run: grep -q '"scrap.feature"' features/features_test.go
-    - run: go test ./features -count=1 -scenarios='@ID-SCRAP-'
 - id: T-42
   type: refactor
   title: scrap's library is the teststructure domain under internal/

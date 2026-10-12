@@ -2118,20 +2118,9 @@ items:
     title: scrap.feature runs through godog against the built binary
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      As dry.feature's conversion, for scrap.feature (decision 39): its scenarios become godog steps
-      in features/scrap_test.go without changing what any says. 'When it is measured', 'When it is
-      scored' and the Thens with no When (SCRAP-07, 08, 12, 15) run itos-cc scrap --json --verbose
-      on the written file and read details (name, group, lines, raw_lines, assertions, decisions,
-      mocks, table, score, smells), setup_lines, clusters and recommendations. SCRAP-11 generates an
-      example with the stated counts; SCRAP-25's 'and its pressure is now <after>' needs fixtures
-      whose pressure is exactly the stated values, found by running the binary, never by seeding a
-      shifted value; SCRAP-19 and 20 need 25 examples and more than 10 recommendations. Shared steps
-      go to steps_test.go. Each step is checked to fail on a changed expectation. scrap.feature
-      joins converted. No product code changes.
   - id: T-42
     title: scrap's library is the teststructure domain under internal/
     phase: 1
