@@ -2253,6 +2253,14 @@ items:
       exit 1), mutation sample, mutation check and mutation except --renew over a TypeScript, a
       Python and a Kotlin project (their build roots now found under the context), and mutation run
       --fail-uncovered over the same (the coverage fingerprints now read under it).
+
+      T-50 (coverage, crap and project under the caller's context): discovery and the mutation
+      workers' tree copies now walk through project.WalkDir, which follows filepath.WalkDir's order
+      and SkipDir rules with the context handed to its callback. Compare units, crap and mutation
+      list over a tree holding a symlinked directory, an unreadable directory, a build directory
+      beside a manifest and one only git ignores, and mutation run in a project whose worker copy
+      links node_modules or .venv; compare crap and mutation run with listed tests
+      (coverage.MeasureTests) as before.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
