@@ -2393,3 +2393,16 @@ items:
       a missing file. No binary comparison (docs/go.md step 9); a case worth comparing joins
       refactor-final-proof's list. Never run itos task show for this task locally (it runs the
       checks); run only the targeted tests while working, CI runs the rest.
+  - id: T-51
+    title: golangci-lint refuses a context held in a value or passed anywhere but first
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      ADR-0030's rule as a gate, a task of its own as ADR-0033 asks of every new gate: containedctx
+      and revive's context-as-argument in .golangci.yml over what golangci-lint checks
+      (./internal/...), with fixtures that fail the rule if tools/testdata/architecture is where
+      such fixtures live. After S4 nothing should trip it; fix any finding in the code, never by
+      weakening the rule. Never run itos task show for this task locally.
