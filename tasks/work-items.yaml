@@ -2017,6 +2017,9 @@ items:
       promoted or renamed since (efdef73 promoted mutate-check-sample to mutation-check). Each
       warning says to name the item new id in the question, or remove its item; doing so quiets 23
       lines of every config check and task run. Found moving to itos 8.0.0 under T-34.
+
+      Filed as donvargax/itos#49 (no sanctioned command to re-point an answered question); wait for
+      it rather than editing tasks/asks.yaml by hand.
     refs: [T-34]
   - id: killed-timeout-test-timing
     title: TestKilledAndTimeoutAgree holds on a slow runner
