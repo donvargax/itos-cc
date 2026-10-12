@@ -1635,7 +1635,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-46]
     kind: idea
     why: >
       itos 7.0.0 added the optional proof.code key (371596c, 31df605): paths that count as code and
