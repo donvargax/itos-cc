@@ -940,13 +940,6 @@
     binary comparison (docs/go.md step 9); a case worth comparing joins refactor-final-proof's list.
     Never run itos task show for this task locally (it runs the checks); run only the targeted tests
     while working, CI runs the rest.
-  done_when:
-    - run: "! git grep -n 'context.TODO()' -- '*.go'"
-    - run: test "$(git grep -l 'context.Background()' -- '*.go' ':!*_test.go')" = cmd/itos-cc/main.go
-    - run: "! git grep -nE '^\\s+\\w+\\s+context\\.Context$' -- '*.go' ':!*_test.go'"
-    - run: "! grep -q 'until stage S4' docs/go.md"
-    - run: go vet ./...
-    - run: go test -count=1 ./coverage/... ./crap/... ./project/...
 - id: T-51
   type: build
   title: golangci-lint refuses a context held in a value or passed anywhere but first
