@@ -149,3 +149,34 @@ Feature: Choosing which files a command looks at
     When a command reports on a file inside the working directory
     Then the file is named by its path relative to the working directory
     But a file outside the working directory keeps its absolute path
+
+  # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude lists
+  # doublestar globs, from the project root, of the sources (never the
+  # tests) that crap, dry, units and mutation leave out. Exclusion always
+  # wins: a path, a fragment or --changed naming an excluded source selects
+  # nothing, and a fragment that matches only excluded sources is no
+  # paths.unmatched. A count of the sources left out goes to stderr when
+  # there is any, plain output and no contract. A glob that is no pattern
+  # is config.invalid, naming its key.
+  @wip @slice-6 @ID-SEL-17
+  Scenario: Sources that itos-cc.yaml excludes are left out
+    Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
+    And the sources src/board.go and src/port/porttest/fake.go
+    When I run "itos-cc crap --no-coverage --json"
+    Then src/board.go is scored, and src/port/porttest/fake.go is not
+    And stderr says "itos-cc: 1 sources left out by exclude in itos-cc.yaml"
+
+  @wip @slice-6 @ID-SEL-18
+  Scenario: A path or --changed never selects an excluded source
+    Given itos-cc.yaml holds 'exclude: ["**/porttest/**"]'
+    And git reports src/port/porttest/fake.go as modified
+    When I run "itos-cc crap --changed", "itos-cc crap porttest" or "itos-cc crap src/port/porttest/fake.go"
+    Then stderr says "itos-cc: no source files to score"
+    And the exit code is 0
+
+  @wip @slice-6 @ID-SEL-19
+  Scenario: An exclude glob that is no pattern is a config error
+    Given itos-cc.yaml holds 'exclude: ["src/**", "src/[x"]'
+    When I run "itos-cc crap"
+    Then the problem is "config.invalid", with key "exclude[1]"
+    And the exit code is 2

@@ -158,3 +158,15 @@ Feature: Duplicate functions
     When I run "itos-cc dry docs"
     Then stderr says "itos-cc: no source files to check"
     And the exit code is 0
+
+  # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
+  # sources it names out of dry, the whole project a change is checked
+  # against included, so a fake that copies the code it stands in for is
+  # never reported as its duplicate.
+  @wip @slice-6 @ID-DRY-18
+  Scenario: Sources that itos-cc.yaml excludes are not compared
+    Given itos-cc.yaml excludes "**/porttest/**"
+    And src/a.go and src/port/porttest/fake.go hold the same function with its names changed
+    When I run "itos-cc dry"
+    Then no pair is reported
+    And "itos-cc dry src" reports no pair

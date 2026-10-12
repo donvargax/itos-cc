@@ -236,3 +236,28 @@ Feature: Units: the functions and methods every tool measures
     Then the problem is "flags.unknown", with flag "---changed"
     And its fix suggests "--changed"
     And the exit code is 2
+
+  # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
+  # sources it names out of units, but never a test: units --tests still
+  # lists the test files under an excluded folder.
+  @wip @slice-6 @ID-UNIT-15
+  Scenario: Sources that itos-cc.yaml excludes are not listed, their tests are
+    Given itos-cc.yaml excludes "features/**"
+    And the file "features/steps.go":
+      """
+      package features
+
+      func step() int { return 1 }
+      """
+    And the file "features/steps_test.go":
+      """
+      package features
+
+      import "testing"
+
+      func TestStep(t *testing.T) { _ = step() }
+      """
+    When I run "itos-cc units features"
+    Then no unit of features/steps.go is listed
+    When I run "itos-cc units --tests features"
+    Then a unit of features/steps_test.go is listed

@@ -3143,3 +3143,48 @@ Feature: Mutation testing
       When the same run is repeated with unchanged inputs
       Then the preserved judgments are reused and only the unjudged sites run
       But a preserved judgment whose source, tests or support inputs changed runs again
+
+  # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
+  # sources it names out of mutation run, list, check, sample and run
+  # --count. The selection drops them before a --since range is
+  # intersected, so a gate's command stays the same. Old records of a
+  # source newly excluded are orphans: its snapshot is named under
+  # "orphans", each entry of which gains "why", "gone" or "excluded" (an
+  # added key), and the next mutation run under its paths removes it; an
+  # exception naming it is stale with why excluded, whose fix is to remove
+  # the entry, and mutation except refuses its sites as exception.excluded,
+  # exit 2. --count reads the itos-cc.yaml HEAD commits.
+  Rule: Sources itos-cc.yaml excludes are not mutated
+
+    @wip @slice-6 @ID-MUT-243
+    Scenario: A gate judges no excluded source the range changed
+      Given itos-cc.yaml excludes "**/porttest/**"
+      And the only commit since main changes src/port/porttest/fake.go, whose mutants no test reaches
+      When I run "itos-cc mutation run --since main --fail-uncovered"
+      Then stderr says "itos-cc: no source files to mutate", and the exit code is 0
+      And "itos-cc mutation check --since main --fail-uncovered" exits 0
+      And neither "itos-cc mutation list" nor "itos-cc mutation sample --count 5" names a site in fake.go
+
+    @wip @slice-6 @ID-MUT-244
+    Scenario: The snapshot of a source newly excluded is an orphan
+      Given a snapshot under .metrics/mutate for src/port/porttest/fake.go, and fresh results for every other source
+      And itos-cc.yaml then excludes "**/porttest/**"
+      When I run "itos-cc mutation check --json"
+      Then its "orphans" list src/port/porttest/fake.go with "why" "excluded", and the exit code is 0
+      When I run "itos-cc mutation run --json"
+      Then the snapshot is removed, and its "orphans" list it with "why" "excluded"
+
+    @wip @slice-6 @ID-MUT-245
+    Scenario: An exception naming an excluded source is stale, and none can be added
+      Given itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"
+      When I run "itos-cc mutation check --json"
+      Then it reports "mutation.exception-stale" with "why" "excluded"
+      When I run "itos-cc mutation except src/port/porttest/fake.go:7:9 --reason x"
+      Then the problem is "exception.excluded", with file "src/port/porttest/fake.go"
+      And the exit code is 2
+
+    @wip @slice-6 @ID-MUT-246
+    Scenario: A counted run selects no site in an excluded source
+      Given the itos-cc.yaml HEAD commits excludes "**/porttest/**"
+      When I run "itos-cc mutation run --count 20 --json"
+      Then no selected site is in src/port/porttest/fake.go
