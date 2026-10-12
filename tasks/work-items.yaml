@@ -2108,7 +2108,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-35]
     kind: task
     why: >
       Decision 37: the pure lang, once T-35 leaves it no disk, is a domain package and moves to
