@@ -2409,7 +2409,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [port-contract-suites, T-51, slice-6]
+    depends_on: [T-51, T-55, slice-6]
     kind: idea
     why: >
       The person (2026-10-12): the same scenarios as fast tests with fakes and as real tests, the
