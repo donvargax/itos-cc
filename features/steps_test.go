@@ -192,6 +192,11 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 		return nil
 	})
 	sc.Step(`^an empty folder "([^"]*)"$`, w.emptyFolder)
+	// itos-cc.yaml, the project's settings at the root of the scratch
+	// folder, leaving out of what is measured the sources a glob names.
+	sc.Step(`^itos-cc\.yaml excludes "([^"]*)"$`, func(glob string) error {
+		return w.write("itos-cc.yaml", "exclude: ["+strconv.Quote(glob)+"]\n")
+	})
 
 	// The steps of each converted feature file, after the world's, so a
 	// file's own Before runs in the scratch folder made above.

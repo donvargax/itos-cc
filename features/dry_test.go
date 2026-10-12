@@ -132,6 +132,18 @@ func drySteps(sc *godog.ScenarioContext, w *world) {
 		return d.writeFiles(map[string]string{dir + "/notes.md": "# Notes\n", "src/cart.ts": totalTs, "src/receipt.ts": totalTs})
 	})
 
+	// Sources itos-cc.yaml excludes, with the step writing it (steps_test.go).
+	sc.Step(`^src/a\.go and src/port/porttest/fake\.go hold the same function with its names changed$`, func() error {
+		return d.writeFiles(map[string]string{"src/a.go": positiveGo, "src/port/porttest/fake.go": fakePositiveGo})
+	})
+	sc.Step(`^no pair is reported$`, d.noPairReported)
+	sc.Step(`^"itos-cc ([^"]*)" reports no pair$`, func(args string) error {
+		if err := w.runWith(w.env(), args); err != nil {
+			return err
+		}
+		return d.noPairReported()
+	})
+
 	// The text output.
 	sc.Step(`^two functions that score (\d\.\d\d) in TypeScript$`, func(score string) error {
 		if score != "0.95" {
@@ -155,6 +167,36 @@ func drySteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^each candidate has (.+), and left and right sides with (.+)$`, d.eachCandidateHas)
 	sc.Step(`^each group has (.+), and its members$`, d.eachGroupHas)
 }
+
+// positiveGo and fakePositiveGo are one Go function of nine lines, its
+// names changed, the second in a package of fakes, as a fake that copies
+// the code it stands in for is.
+const (
+	positiveGo = `package a
+
+func total(xs []int) int {
+	sum := 0
+	for _, x := range xs {
+		if x > 0 {
+			sum += x
+		}
+	}
+	return sum
+}
+`
+	fakePositiveGo = `package porttest
+
+func count(items []int) int {
+	kept := 0
+	for _, item := range items {
+		if item > 0 {
+			kept += item
+		}
+	}
+	return kept
+}
+`
+)
 
 // The fixtures. Each TypeScript function is ten lines or fewer and scored
 // as its comment says; the scores were read from dry itself.
@@ -929,6 +971,43 @@ func (d *dryState) identicalFunctions(count int) error {
 
 // theyAreNotReported is whether no pair reported holds two of the
 // scenario's functions, which dry scores 1 with nothing left out.
+// noPairReported is whether the run reported no pair, while the files the
+// scenario wrote, laid out alone in a folder of their own with nothing
+// left out, hold a pair scoring 1: only what the run leaves out keeps that
+// pair from it.
+func (d *dryState) noPairReported() error {
+	got, err := d.reported()
+	if err != nil {
+		return err
+	}
+	if len(got) > 0 {
+		return fmt.Errorf("reported:\n  %s\n%s", strings.Join(keys(got), "\n  "), d.w.report())
+	}
+	alone, err := os.MkdirTemp("", "itos-cc-features-dry-")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.RemoveAll(alone) }()
+	for _, name := range d.files {
+		data, err := os.ReadFile(filepath.Join(d.w.dir, filepath.FromSlash(name)))
+		if err != nil {
+			return err
+		}
+		if err := writeIn(alone, name, string(data)); err != nil {
+			return err
+		}
+	}
+	all, err := d.everyPair(alone)
+	if err != nil {
+		return err
+	}
+	theirs := func(p dryPair) bool {
+		l, r := filepath.ToSlash(p.Left.File), filepath.ToSlash(p.Right.File)
+		return l != r && slices.Contains(d.files, l) && slices.Contains(d.files, r)
+	}
+	return needs(all, "of the files written scoring 1", func(p dryPair) bool { return theirs(p) && p.Score == 1 })
+}
+
 func (d *dryState) theyAreNotReported() error {
 	got, err := d.reported()
 	if err != nil {

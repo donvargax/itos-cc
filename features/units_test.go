@@ -130,6 +130,10 @@ func unitSteps(sc *godog.ScenarioContext, w *world) {
 		return u.runIn(u.alone, args)
 	})
 	sc.Step(`^it is "([^"]*)" from a copy of that directory at another path$`, u.fromACopy)
+
+	// Sources itos-cc.yaml excludes, with the step writing it (steps_test.go).
+	sc.Step(`^no unit of (\S+) is listed$`, u.noUnitOf)
+	sc.Step(`^a unit of (\S+) is listed$`, u.aUnitOf)
 }
 
 // unit is one unit as itos-cc units lists it. The plain lines give no
@@ -180,6 +184,36 @@ func (u *unitsState) listed() ([]unit, error) {
 		all = append(all, unit{File: m[1], Namespace: namespace, Name: name, Kind: m[5], StartLine: start, EndLine: end})
 	}
 	return all, nil
+}
+
+// noUnitOf is whether the run succeeded and listed no unit of file, a
+// slash-separated path from the scratch folder.
+func (u *unitsState) noUnitOf(file string) error {
+	all, err := u.listed()
+	if err != nil {
+		return err
+	}
+	for _, x := range all {
+		if filepath.ToSlash(x.File) == file {
+			return fmt.Errorf("%s#%s of %s is listed\n%s", x.Namespace, x.Name, file, u.w.report())
+		}
+	}
+	return nil
+}
+
+// aUnitOf is whether the run listed a unit of file, a slash-separated path
+// from the scratch folder.
+func (u *unitsState) aUnitOf(file string) error {
+	all, err := u.listed()
+	if err != nil {
+		return err
+	}
+	for _, x := range all {
+		if filepath.ToSlash(x.File) == file {
+			return nil
+		}
+	}
+	return fmt.Errorf("no unit of %s is listed\n%s", file, u.w.report())
 }
 
 // listsEachUnitAsALine is whether the run listed units, each a line of the
