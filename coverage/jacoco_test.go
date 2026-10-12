@@ -98,7 +98,7 @@ func TestKotlinPlansNameTheCachedJaCoCoAgentToTheJVMsTheTestsStart(t *testing.T)
 		t.Helper()
 		dir := t.TempDir()
 		writeFiles(t, dir, files)
-		plans := Plans([]string{filepath.Join(dir, "src", "main", "kotlin", "a", "A.kt")}, out, AllTests, nil)
+		plans := Plans(t.Context(), []string{filepath.Join(dir, "src", "main", "kotlin", "a", "A.kt")}, out, AllTests, nil)
 		if len(plans) != 1 {
 			t.Fatalf("plans %+v, want one", plans)
 		}
@@ -196,7 +196,7 @@ func TestExecFilesNoJacococliReportsAreAMissingCollector(t *testing.T) {
 				p.CoverEnv = append(p.CoverEnv, JacocoAgentEnv+"=agent.jar")
 			}
 			var log bytes.Buffer
-			r := Run([]Plan{p}, []string{src}, &log)
+			r := Run(t.Context(), []Plan{p}, []string{src}, &log)
 			missing := r.IntegrationMissing()
 			if got := len(missing) == 1 && missing[0].Language == "kotlin" && missing[0].Cause == ToolMissing && strings.Contains(missing[0].Reason, "jacococli"); got != c.missing {
 				t.Errorf("integration missing %+v, want it naming jacococli: %v\nlog:\n%s", missing, c.missing, &log)

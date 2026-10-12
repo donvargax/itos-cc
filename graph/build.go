@@ -76,7 +76,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 	}
 	var repos []repo
 	for i, root := range b.roots {
-		files, err := project.Discover([]string{root})
+		files, err := project.Discover(ctx, []string{root})
 		if err != nil {
 			return nil, false, err
 		}

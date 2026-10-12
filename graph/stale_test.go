@@ -273,7 +273,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	g := m.build()
 
 	t.Chdir(m.root)
-	files, err := project.Discover([]string{m.root})
+	files, err := project.Discover(t.Context(), []string{m.root})
 	if err != nil {
 		t.Fatal(err)
 	}

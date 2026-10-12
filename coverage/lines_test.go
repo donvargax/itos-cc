@@ -167,7 +167,7 @@ func TestAKotlinFileNoTestReachesHasTheLinesItsModulesReportLists(t *testing.T) 
 		{Language: "kotlin", Dir: module, Sources: []string{calc}, OwnSources: true, Reports: []string{report},
 			Commands: [][]string{{os.Args[0], "-test.run=^TestHelperCoverageCommand$"}}},
 	}
-	r := Run(plans, []string{calc, lonely, far}, io.Discard)
+	r := Run(t.Context(), plans, []string{calc, lonely, far}, io.Discard)
 	if lines, ok := r.Lines(calc); !ok || !reflect.DeepEqual(lines, []Line{{Line: 3}, {Line: 4, Covered: true}, {Line: 5}, {Line: 7, Covered: true}}) {
 		t.Errorf("Calc.kt's lines %v %v, want 4 and 7 covered, 3 and 5 not, proven", lines, ok)
 	}
@@ -183,7 +183,7 @@ func TestAKotlinFileNoTestReachesHasTheLinesItsModulesReportLists(t *testing.T) 
 	// Without a successful plan of its module, a file no test reaches has
 	// nothing listed.
 	t.Setenv("HELPER_COVERAGE_FAIL", "1")
-	if _, ok := Run(plans, []string{calc, lonely, far}, io.Discard).Lines(lonely); ok {
+	if _, ok := Run(t.Context(), plans, []string{calc, lonely, far}, io.Discard).Lines(lonely); ok {
 		t.Error("a failed plan's report lists Lonely.kt's lines")
 	}
 }

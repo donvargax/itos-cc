@@ -225,13 +225,13 @@ func PlanFresh(ctx context.Context, repoRoot string, paths []string, since strin
 		}
 		sort.Strings(roots)
 	}
-	discovered, err := project.DiscoverWithBuildOutput(roots, buildOutput)
+	discovered, err := project.DiscoverWithBuildOutput(ctx, roots, buildOutput)
 	if err != nil {
 		return nil, fmt.Errorf("discover committed mutation targets: %w", err)
 	}
 	plan.Files = discovered
 	if len(roots) != 1 || roots[0] != frozen {
-		if plan.Files, err = project.DiscoverWithBuildOutput([]string{frozen}, buildOutput); err != nil {
+		if plan.Files, err = project.DiscoverWithBuildOutput(ctx, []string{frozen}, buildOutput); err != nil {
 			return nil, fmt.Errorf("discover committed files: %w", err)
 		}
 	}
@@ -393,7 +393,7 @@ func selectedPath(rel string, selected map[string]bool) bool {
 	return false
 }
 
-func committedBuildOutput(ctx context.Context, frozen string) (func(string) bool, func() error, error) {
+func committedBuildOutput(ctx context.Context, frozen string) (func(ctx context.Context, dir string) bool, func() error, error) {
 	gitDir := filepath.Join(frozen, ".git")
 	emptyTemplate := filepath.Join(frozen, ".fresh-plan-empty-template")
 	if err := os.Mkdir(emptyTemplate, 0700); err != nil {
@@ -414,7 +414,7 @@ func committedBuildOutput(ctx context.Context, frozen string) (func(string) bool
 	env := cleanGitEnvironment(emptyConfig)
 	env = append(env, "GIT_DIR="+gitDir, "GIT_WORK_TREE="+frozen)
 	var firstErr error
-	classify := func(dir string) bool {
+	classify := func(ctx context.Context, dir string) bool {
 		rel, err := filepath.Rel(frozen, dir)
 		if err != nil {
 			firstErr = err
@@ -433,8 +433,8 @@ func committedBuildOutput(ctx context.Context, frozen string) (func(string) bool
 		firstErr = err
 		return false
 	}
-	return func(dir string) bool {
-		return project.IsBuildOutputWithIgnore(dir, classify)
+	return func(ctx context.Context, dir string) bool {
+		return project.IsBuildOutputWithIgnore(ctx, dir, classify)
 	}, func() error { return firstErr }, nil
 }
 

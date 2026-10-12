@@ -38,8 +38,9 @@ func Score(cc int, coverage float64) float64 {
 // nil. A file the report never mentions counts as 0% covered when the report
 // measured other files of the same language, or a coverage run for its
 // language succeeded and wrote its report (Report.Measures), because the
-// tests ran and never loaded it; otherwise its coverage is unknown.
-func Analyze(files []string, report *coverage.Report) ([]Entry, error) {
+// tests ran and never loaded it; otherwise its coverage is unknown. It
+// parses under ctx, and once ctx is done returns its cause.
+func Analyze(ctx context.Context, files []string, report *coverage.Report) ([]Entry, error) {
 	// A language is measured when the report names one of its files, or its
 	// coverage run succeeded and wrote its report though it names none:
 	// either way, a file of it the report never names is untested.
@@ -51,8 +52,11 @@ func Analyze(files []string, report *coverage.Report) ([]Entry, error) {
 	}
 	var entries []Entry
 	for _, path := range files {
-		f, err := project.ParseFile(context.TODO(), path)
+		f, err := project.ParseFile(ctx, path)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil, context.Cause(ctx)
+			}
 			return nil, err
 		}
 		for _, u := range f.Units {

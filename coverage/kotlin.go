@@ -21,17 +21,17 @@ import (
 // language or of no module, and those that declare no test class, such as
 // test-support helpers, are left out, and so is a file that cannot be read
 // or parsed.
-func KotlinTests(tests []string) map[string][]string {
+func KotlinTests(ctx context.Context, tests []string) map[string][]string {
 	out := map[string][]string{}
 	for _, test := range tests {
 		if spec := lang.Detect(test); spec == nil || spec.Name != "kotlin" {
 			continue
 		}
-		module := project.FindUp(context.TODO(), test, markers["kotlin"]...)
+		module := project.FindUp(ctx, test, markers["kotlin"]...)
 		if module == "" {
 			continue
 		}
-		for _, class := range kotlinTestClasses(test) {
+		for _, class := range kotlinTestClasses(ctx, test) {
 			if !slices.Contains(out[module], class) {
 				out[module] = append(out[module], class)
 			}
@@ -59,7 +59,7 @@ type kotlinClassesOf struct {
 
 // kotlinTestClasses is lang.TestClasses of the Kotlin file at path, none
 // when it cannot be read or parsed.
-func kotlinTestClasses(path string) []string {
+func kotlinTestClasses(ctx context.Context, path string) []string {
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil
@@ -70,7 +70,7 @@ func kotlinTestClasses(path string) []string {
 	if ok && cached.size == info.Size() && cached.modTime.Equal(info.ModTime()) {
 		return cached.classes
 	}
-	f, err := project.ParseFile(context.TODO(), path)
+	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return nil
 	}
@@ -99,6 +99,6 @@ func KotlinRunner(dir string) string {
 // GradleWrapper says whether the Gradle build of the module at dir runs
 // through a gradlew in it or a directory above it, rather than the gradle
 // on PATH.
-func GradleWrapper(dir string) bool {
-	return project.FindUp(context.TODO(), filepath.Join(dir, "x"), "gradlew") != ""
+func GradleWrapper(ctx context.Context, dir string) bool {
+	return project.FindUp(ctx, filepath.Join(dir, "x"), "gradlew") != ""
 }

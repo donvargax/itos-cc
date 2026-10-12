@@ -32,8 +32,8 @@ type CommandExecution struct {
 // commands, unreadable/missing reports, and failed Go covdata conversion are
 // returned as errors. Run remains the compatibility path for complete runs.
 func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.Writer, execute CommandExecutor) (*Report, []CommandExecution, error) {
-	if ctx == nil || execute == nil {
-		return nil, nil, errors.New("supervised coverage needs a context and command executor")
+	if execute == nil {
+		return nil, nil, errors.New("supervised coverage needs a command executor")
 	}
 	if len(plans) == 0 && len(sources) > 0 {
 		return nil, nil, errors.New("supervised coverage has sources but no measurement plans")
@@ -188,8 +188,8 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 // executor used for language coverage and conversion. It fails closed when a
 // listed test has no per-ID coverage artifact or an artifact cannot be read.
 func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) (result *TestCoverage, calls []CommandExecution, resultErr error) {
-	if ctx == nil || execute == nil {
-		return nil, nil, errors.New("supervised listed coverage needs a context and command executor")
+	if execute == nil {
+		return nil, nil, errors.New("supervised listed coverage needs a command executor")
 	}
 	if err := os.RemoveAll(dir); err != nil {
 		return nil, nil, fmt.Errorf("clear listed coverage directory: %w", err)
@@ -211,7 +211,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		ids = append(ids, test.ID)
 	}
 	var executions []CommandExecution
-	run := func(id, line string, env []string) error {
+	run := func(ctx context.Context, id, line string, env []string) error {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -232,13 +232,13 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		}
 		return nil
 	}
-	collectors, calls, err := startTestCollectors(ctx, testCollectors(p.Root, dir, sources), log, execute, true)
+	collectors, calls, err := startTestCollectors(ctx, testCollectors(ctx, p.Root, dir, sources), log, execute, true)
 	executions = append(executions, calls...)
 	if err != nil {
 		return nil, executions, err
 	}
 	written := map[string]string{}
-	if err := run("all", p.All, wholeEnv(collectors, dir)); err != nil {
+	if err := run(ctx, "all", p.All, wholeEnv(collectors, dir)); err != nil {
 		return nil, executions, err
 	}
 	for _, id := range ids {
@@ -256,7 +256,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			if err := os.MkdirAll(d, 0o755); err != nil {
 				return nil, executions, fmt.Errorf("prepare coverage for listed test %s: %w", id, err)
 			}
-			if err := run(id, p.Select([]string{id}), eachEnv(collectors, d)); err != nil {
+			if err := run(ctx, id, p.Select([]string{id}), eachEnv(collectors, d)); err != nil {
 				return nil, executions, err
 			}
 			if anyWritten(collectors, d) {

@@ -39,28 +39,30 @@ type worker struct {
 }
 
 // copyOf returns the worker's copy of root, creating it on first use.
-func (w *worker) copyOf(root string) (string, error) {
+func (w *worker) copyOf(ctx context.Context, root string) (string, error) {
 	if c, ok := w.copies[root]; ok {
 		return c, nil
 	}
 	h := sha256.Sum256([]byte(root))
 	dst := filepath.Join(w.dir, hex.EncodeToString(h[:4]), filepath.Base(root))
-	if err := copyTree(root, dst); err != nil {
+	if err := copyTree(ctx, root, dst); err != nil {
 		return "", err
 	}
 	w.copies[root] = dst
 	return dst, nil
 }
 
-func copyTree(src, dst string) error {
-	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
+// copyTree copies the tree at src to dst under ctx, linking dependencies
+// and leaving out history, caches and build output.
+func copyTree(ctx context.Context, src, dst string) error {
+	return project.WalkDir(ctx, src, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		rel, _ := filepath.Rel(src, path)
 		target := filepath.Join(dst, rel)
 		switch {
-		case d.IsDir() && path != src && (skipDirs[d.Name()] || project.IsBuildOutput(path)):
+		case d.IsDir() && path != src && (skipDirs[d.Name()] || project.IsBuildOutput(ctx, path)):
 			return filepath.SkipDir
 		case d.IsDir() && path != src && linkDirs[d.Name()]:
 			return skipAfter(os.Symlink(path, target))
@@ -120,7 +122,7 @@ type result struct {
 // run executes c inside the worker's copy of c.Root, under parent. A zero
 // timeout waits as long as the tests take.
 func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (result, error) {
-	root, err := w.copyOf(c.Root)
+	root, err := w.copyOf(parent, c.Root)
 	if err != nil {
 		return result{}, err
 	}
@@ -161,7 +163,7 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 // withMutant writes src to the worker's copy of path, runs fn under ctx,
 // and restores the original text.
 func (w *worker) withMutant(ctx context.Context, root, path string, original, mutated []byte, fn func(context.Context) (result, error)) (result, error) {
-	copyRoot, err := w.copyOf(root)
+	copyRoot, err := w.copyOf(ctx, root)
 	if err != nil {
 		return result{}, err
 	}

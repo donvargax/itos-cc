@@ -91,7 +91,7 @@ type testCollector struct {
 // testCollectors is the collectors of the listed tests of root measuring
 // sources, with dir for their data: Go's always, and TypeScript's, Kotlin's
 // and Python's when sources hold files of theirs, from their build roots.
-func testCollectors(root, dir string, sources []string) []testCollector {
+func testCollectors(ctx context.Context, root, dir string, sources []string) []testCollector {
 	collectors := []testCollector{{
 		language: "go",
 		dir:      root,
@@ -101,7 +101,7 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 			return []string{"go", "tool", "covdata", "textfmt", "-i=" + d, "-o=" + out + ".out"}, out + ".out"
 		},
 	}}
-	if roots := buildRoots(sources, "typescript"); len(roots) > 0 {
+	if roots := buildRoots(ctx, sources, "typescript"); len(roots) > 0 {
 		c := testCollector{
 			language: "typescript",
 			dir:      roots[0],
@@ -120,10 +120,10 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 		}
 		collectors = append(collectors, c)
 	}
-	if roots := buildRoots(sources, "kotlin"); len(roots) > 0 {
+	if roots := buildRoots(ctx, sources, "kotlin"); len(roots) > 0 {
 		collectors = append(collectors, kotlinTestCollector(roots[0], dir))
 	}
-	roots := buildRoots(sources, "python")
+	roots := buildRoots(ctx, sources, "python")
 	if len(roots) == 0 {
 		return collectors
 	}
@@ -150,13 +150,13 @@ func testCollectors(root, dir string, sources []string) []testCollector {
 }
 
 // buildRoots is the build roots of sources of language, sorted.
-func buildRoots(sources []string, language string) []string {
+func buildRoots(ctx context.Context, sources []string, language string) []string {
 	var roots []string
 	for _, s := range sources {
 		if spec := lang.Detect(s); spec == nil || spec.Name != language {
 			continue
 		}
-		r := project.FindUp(context.TODO(), s, markers[language]...)
+		r := project.FindUp(ctx, s, markers[language]...)
 		if r == "" {
 			r = filepath.Dir(s)
 		}
@@ -243,20 +243,20 @@ func anyWritten(collectors []testCollector, d string) bool {
 // MeasureTests runs p's tests for coverage of sources, with dir, which it
 // removes once read, for their data. It returns nil when the tests fail:
 // the tests that fail without any mutant decide no mutant.
-func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestCoverage {
+func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer) *TestCoverage {
 	os.RemoveAll(dir)
 	defer os.RemoveAll(dir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		return nil
 	}
-	collectors, _, _ := startTestCollectors(context.Background(), testCollectors(p.Root, dir, sources), log, nil, false)
+	collectors, _, _ := startTestCollectors(ctx, testCollectors(ctx, p.Root, dir, sources), log, nil, false)
 	tc := &TestCoverage{reports: map[string]*Report{}}
 	var ids []string
 	for _, t := range p.Tests {
 		ids = append(ids, t.ID)
 	}
-	if err := runShell(p.All, p.Root, wholeEnv(collectors, dir), log); err != nil {
+	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log); err != nil {
 		fmt.Fprintf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
 		return nil
 	}
@@ -275,7 +275,7 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 				fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 				return nil
 			}
-			if err := runShell(p.Select([]string{id}), p.Root, eachEnv(collectors, d), log); err != nil {
+			if err := runShell(ctx, p.Select([]string{id}), p.Root, eachEnv(collectors, d), log); err != nil {
 				fmt.Fprintf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
 				return nil
 			}
@@ -288,6 +288,10 @@ func MeasureTests(p PerTest, dir string, sources []string, log io.Writer) *TestC
 		d, ok := written[id]
 		if !ok {
 			continue
+		}
+		// A done context starts no command: the caller reports the stop.
+		if ctx.Err() != nil {
+			return nil
 		}
 		var reports []*Report
 		for _, c := range collectors {
@@ -337,8 +341,12 @@ func hasCoverData(dir string) bool {
 }
 
 // runShell runs line through the platform shell in dir, with env set in
-// the environment and its output written to log.
-func runShell(line, dir string, env []string, log io.Writer) error {
+// the environment and its output written to log. Once ctx is done it starts
+// nothing and returns its cause.
+func runShell(ctx context.Context, line, dir string, env []string, log io.Writer) error {
+	if ctx.Err() != nil {
+		return context.Cause(ctx)
+	}
 	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", dir, line)
 	name, flag := "sh", "-c"
 	if runtime.GOOS == "windows" {

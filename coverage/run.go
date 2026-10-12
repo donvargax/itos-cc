@@ -132,16 +132,16 @@ const (
 // sources no such test reaches have an Unreached plan. A Kotlin module's
 // report measures its own tests alone, so a test class in another module
 // that reaches a source measures none of it.
-func Plans(sources []string, outDir string, scope Scope, reach Reach) []Plan {
-	plans, _, _ := buildPlans(context.Background(), sources, outDir, scope, reach, nil)
+func Plans(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach) []Plan {
+	plans, _, _ := buildPlans(ctx, sources, outDir, scope, reach, nil)
 	return plans
 }
 
 // PlansSupervised builds coverage plans while routing executable probes
 // (Go package discovery and Python provider checks) through execute.
 func PlansSupervised(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
-	if ctx == nil || execute == nil {
-		return nil, nil, errors.New("supervised coverage planning needs a context and command executor")
+	if execute == nil {
+		return nil, nil, errors.New("supervised coverage planning needs a command executor")
 	}
 	return buildPlans(ctx, sources, outDir, scope, reach, execute)
 }
@@ -168,7 +168,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		case spec.Name == "python" && narrow:
 			k.tests = "\x00" + strings.Join(PythonTests(dir, reach(s)), "\x00")
 		case spec.Name == "kotlin" && narrow:
-			k.tests = "\x00" + strings.Join(KotlinTests(reach(s))[dir], "\x00")
+			k.tests = "\x00" + strings.Join(KotlinTests(ctx, reach(s))[dir], "\x00")
 		}
 		groups[k] = append(groups[k], s)
 	}
@@ -221,7 +221,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 				}
 			}
 		case "kotlin":
-			p = kotlinPlan(k.dir, out, tests)
+			p = kotlinPlan(ctx, k.dir, out, tests)
 		default:
 			continue
 		}
@@ -647,14 +647,14 @@ func pythonCommands(py, dir, data, report string, runner []string) [][]string {
 func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, execute CommandExecutor) (Plan, []CommandExecution, error) {
 	py := pythonFor(dir)
 	var executions []CommandExecution
-	probe := func(module string) error {
+	probe := func(ctx context.Context, module string) error {
 		cmd := exec.CommandContext(ctx, py, "-c", "import "+module)
 		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, io.Discard, io.Discard
 		err := execute(ctx, cmd)
 		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
 		return err
 	}
-	pytestErr := probe("pytest")
+	pytestErr := probe(ctx, "pytest")
 	if pytestErr != nil && ctx.Err() != nil {
 		return Plan{}, executions, ctx.Err()
 	}
@@ -666,7 +666,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 		Reports:  []string{report},
 		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
 	}
-	if err := probe("coverage"); err != nil {
+	if err := probe(ctx, "coverage"); err != nil {
 		if ctx.Err() != nil {
 			return Plan{}, executions, ctx.Err()
 		}
@@ -682,7 +682,7 @@ func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, 
 // running classes, the test classes KotlinTests gives, or the whole suite
 // when classes is nil, and the JVMs its tests start with the JaCoCo agent
 // it names (kotlinIntegration), their data under out.
-func kotlinPlan(dir, out string, classes []string) Plan {
+func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 	kover := filepath.Join(dir, "build", "reports", "kover", "report.xml")
 	jacoco := filepath.Join(dir, "build", "reports", "jacoco", "test", "jacocoTestReport.xml")
 	maven := filepath.Join(dir, "target", "site", "jacoco", "jacoco.xml")
@@ -701,7 +701,7 @@ func kotlinPlan(dir, out string, classes []string) Plan {
 		return plan
 	}
 	gradle := "gradle"
-	if root := project.FindUp(context.TODO(), filepath.Join(dir, "x"), "gradlew"); root != "" {
+	if root := project.FindUp(ctx, filepath.Join(dir, "x"), "gradlew"); root != "" {
 		gradle = filepath.Join(root, "gradlew")
 	}
 	// The report task runs the test task, which the filter then narrows.
@@ -759,7 +759,7 @@ func MavenTests(classes []string) []string {
 // A file of a language whose reports list every class of their module
 // (classInventories) that no test reaches has its executable lines listed,
 // all unexecuted, from the report of a successful plan of its module.
-func Run(plans []Plan, sources []string, log io.Writer) *Report {
+func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Report {
 	var reports []*Report
 	// classes is, by language and module, the entries of a successful
 	// report that lists every class of the module; unlisted is each
@@ -767,6 +767,10 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 	classes := map[[2]string][]Entry{}
 	unlisted := map[int]Plan{}
 	for _, p := range plans {
+		// A done context starts no command: the caller reports the stop.
+		if ctx.Err() != nil {
+			break
+		}
 		if p.Unreached {
 			if classInventories[p.Language] {
 				unlisted[len(reports)] = p
@@ -793,7 +797,7 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		}
 		if p.CoverDir != "" {
 			p.removeCoverDir()
-			why, _, err := p.start(context.Background(), env, log, nil)
+			why, _, err := p.start(ctx, env, log, nil)
 			if err != nil {
 				why = err.Error()
 			}
@@ -810,6 +814,10 @@ func Run(plans []Plan, sources []string, log io.Writer) *Report {
 		}
 		failed := ""
 		for _, args := range p.Commands {
+			if ctx.Err() != nil {
+				failed = fmt.Sprintf("; %v", context.Cause(ctx))
+				break
+			}
 			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Dir = p.Dir

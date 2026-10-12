@@ -288,7 +288,7 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	all, err := project.Discover([]string{project.Root()})
+	all, err := project.Discover(ctx, []string{project.Root()})
 	if err != nil {
 		return result, err
 	}

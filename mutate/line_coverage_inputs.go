@@ -302,7 +302,7 @@ func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer str
 	runner := "mvn"
 	if module := project.FindUp(ctx, source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
 		runner = "gradle"
-		if coverage.GradleWrapper(module) {
+		if coverage.GradleWrapper(ctx, module) {
 			runner = "gradlew"
 		}
 	}

@@ -44,8 +44,12 @@ func Head() (string, error) {
 // file, so an uncommitted edit neither adds one nor moves its lines. renamed
 // maps each file the range renamed, by its absolute path, to the absolute
 // path it had at ref. hash, when set, fingerprints a function's text, so
-// functions sharing a name are told apart (see ChangedFunctions).
-func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
+// functions sharing a name are told apart (see ChangedFunctions). It reads
+// under ctx: once ctx is done it starts no command and returns its cause.
+func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
+	if ctx.Err() != nil {
+		return nil, nil, context.Cause(ctx)
+	}
 	if out, err := exec.Command("git", "rev-parse", "--git-dir").CombinedOutput(); err != nil {
 		return nil, nil, &NoGitError{gitError(out, err)}
 	}
@@ -77,12 +81,18 @@ func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed 
 		}
 		// ./ makes the path relative to the working directory, as --relative
 		// made name.
+		if ctx.Err() != nil {
+			return nil, nil, context.Cause(ctx)
+		}
 		src, err := exec.Command("git", "cat-file", "blob", "HEAD:./"+name).Output()
 		if err != nil {
 			return nil, nil, fmt.Errorf("git cat-file HEAD:./%s: %s", name, gitError(nil, err))
 		}
-		f, err := lang.Parse(context.TODO(), Surroundings{}, spec, abs, src)
+		f, err := lang.Parse(ctx, Surroundings{}, spec, abs, src)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil, nil, context.Cause(ctx)
+			}
 			return nil, nil, err
 		}
 		c := ChangedFunctions{Functions: map[string]bool{}, Lines: changedLines(lines)}

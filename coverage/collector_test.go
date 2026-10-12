@@ -43,7 +43,7 @@ func TestPythonPlansMeasureTheProcessesTheTestsStartInTheirOwnDirectory(t *testi
 		"a.py":             "",
 	})
 	out := filepath.Join(dir, ".metrics", "run-1")
-	plans := Plans([]string{filepath.Join(dir, "a.py")}, out, AllTests, nil)
+	plans := Plans(t.Context(), []string{filepath.Join(dir, "a.py")}, out, AllTests, nil)
 	if len(plans) != 1 {
 		t.Fatalf("plans %+v, want one", plans)
 	}
@@ -83,7 +83,7 @@ func TestPythonPlansCombineTheInProcessDataFilesBeforeTheReport(t *testing.T) {
 	})
 	out := filepath.Join(dir, ".metrics", "run-1")
 	sources := []string{filepath.Join(dir, "a.py")}
-	complete := Plans(sources, out, AllTests, nil)
+	complete := Plans(t.Context(), sources, out, AllTests, nil)
 	run := func(ctx context.Context, cmd *exec.Cmd) error { return cmd.Run() }
 	supervised, _, err := PlansSupervised(context.Background(), sources, out, AllTests, nil, run)
 	if err != nil || len(complete) != 1 || len(supervised) != 1 {
@@ -272,7 +272,7 @@ func TestListedPythonTestsWriteTheirCoverageWhereTheHarnessOrItosCcSays(t *testi
 		"b.go":              "package m\n",
 	})
 	data := filepath.Join(dir, ".metrics", "tests")
-	collectors := testCollectors(dir, data, []string{filepath.Join(dir, "py", "a.py"), filepath.Join(dir, "b.go")})
+	collectors := testCollectors(t.Context(), dir, data, []string{filepath.Join(dir, "py", "a.py"), filepath.Join(dir, "b.go")})
 	if len(collectors) != 2 || collectors[0].language != "go" || collectors[1].language != "python" {
 		t.Fatalf("collectors %+v, want Go's and Python's", collectors)
 	}
@@ -300,7 +300,7 @@ func TestListedPythonTestsWriteTheirCoverageWhereTheHarnessOrItosCcSays(t *testi
 	if !anyWritten(collectors, id) || collectors[0].written(id) || !py.written(id) {
 		t.Errorf("a coverage.py data file in %s is not Python's data alone", id)
 	}
-	if only := testCollectors(dir, data, []string{filepath.Join(dir, "b.go")}); len(only) != 1 {
+	if only := testCollectors(t.Context(), dir, data, []string{filepath.Join(dir, "b.go")}); len(only) != 1 {
 		t.Errorf("collectors %+v without a Python source, want Go's alone", only)
 	}
 }
@@ -384,7 +384,7 @@ func TestIntegrationDataAddsNoLinesToAFileTheInProcessReportNames(t *testing.T) 
 func TestListedTypeScriptTestsWriteTheirV8CoverageWhereTheHarnessOrItosCcSays(t *testing.T) {
 	dir, src := vitestProject(t, "5.0.2")
 	data := filepath.Join(dir, ".metrics", "tests")
-	collectors := testCollectors(dir, data, []string{src})
+	collectors := testCollectors(t.Context(), dir, data, []string{src})
 	if len(collectors) != 2 || collectors[1].language != "typescript" || !strings.Contains(collectors[1].missing, "c8") {
 		t.Fatalf("collectors %+v, want TypeScript's, missing c8", collectors)
 	}
@@ -394,7 +394,7 @@ func TestListedTypeScriptTestsWriteTheirV8CoverageWhereTheHarnessOrItosCcSays(t 
 		t.Errorf("started %d collectors (%v), log %q, want Go's alone and why", len(started), err, log.String())
 	}
 	writeFiles(t, dir, map[string]string{bin("c8"): ""})
-	ts := testCollectors(dir, data, []string{src})[1]
+	ts := testCollectors(t.Context(), dir, data, []string{src})[1]
 	d := filepath.Join(data, ".each", "0")
 	if got := ts.each(d); !slices.Equal(got, []string{"NODE_V8_COVERAGE=" + d}) {
 		t.Errorf("a run of one test gets %q, want NODE_V8_COVERAGE=%s", got, d)

@@ -78,11 +78,11 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 	if len(in.args) > 0 || in.set("changed") {
 		scope = coverage.RelatedTests
 	}
-	report, err := loadCoverage(in, files.Sources, scope, os.Stderr, nil, nil)
+	report, err := loadCoverage(ctx, in, files.Sources, scope, os.Stderr, nil, nil)
 	if err != nil {
 		return result, err
 	}
-	entries, err := crap.Analyze(files.Sources, report)
+	entries, err := crap.Analyze(ctx, files.Sources, report)
 	if err != nil {
 		return result, err
 	}

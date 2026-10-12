@@ -2,6 +2,7 @@
 package project
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -35,20 +36,27 @@ var buildManifests = []string{
 
 // IsBuildOutput reports whether dir is build or test output rather than
 // source: it has a build output name, and it sits beside a manifest of a
-// tool that writes there, or git ignores it.
-func IsBuildOutput(dir string) bool {
-	return IsBuildOutputWithIgnore(dir, func(dir string) bool {
-		cmd := exec.Command("git", "check-ignore", "-q", dir)
-		cmd.Dir = filepath.Dir(dir)
-		return cmd.Run() == nil
-	})
+// tool that writes there, or git ignores it, asked under ctx.
+func IsBuildOutput(ctx context.Context, dir string) bool {
+	return IsBuildOutputWithIgnore(ctx, dir, gitIgnores)
+}
+
+// gitIgnores says whether git ignores dir. Once ctx is done it starts no
+// command and says no.
+func gitIgnores(ctx context.Context, dir string) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	cmd := exec.Command("git", "check-ignore", "-q", dir)
+	cmd.Dir = filepath.Dir(dir)
+	return cmd.Run() == nil
 }
 
 // IsBuildOutputWithIgnore reports whether dir is a known build directory
-// with a nearby build manifest or whether ignored says it is ignored. The
-// callback lets committed-input callers evaluate ignore rules against a
-// frozen tree instead of the live checkout.
-func IsBuildOutputWithIgnore(dir string, ignored func(string) bool) bool {
+// with a nearby build manifest or whether ignored, asked under ctx, says it
+// is ignored. The callback lets committed-input callers evaluate ignore
+// rules against a frozen tree instead of the live checkout.
+func IsBuildOutputWithIgnore(ctx context.Context, dir string, ignored func(ctx context.Context, dir string) bool) bool {
 	if !buildDirs[filepath.Base(dir)] {
 		return false
 	}
@@ -57,7 +65,7 @@ func IsBuildOutputWithIgnore(dir string, ignored func(string) bool) bool {
 			return true
 		}
 	}
-	return ignored != nil && ignored(dir)
+	return ignored != nil && ignored(ctx, dir)
 }
 
 // Files are the supported source files under some roots, split into
@@ -67,17 +75,18 @@ type Files struct {
 	Tests   []string
 }
 
-// Discover walks roots (files or directories) and classifies every file in a
-// supported language. A root that names a file is taken even if it would be
-// skipped while walking.
-func Discover(roots []string) (Files, error) {
-	return DiscoverWithBuildOutput(roots, IsBuildOutput)
+// Discover walks roots (files or directories) under ctx and classifies
+// every file in a supported language. A root that names a file is taken
+// even if it would be skipped while walking. Once ctx is done it returns
+// its cause.
+func Discover(ctx context.Context, roots []string) (Files, error) {
+	return DiscoverWithBuildOutput(ctx, roots, IsBuildOutput)
 }
 
 // DiscoverWithBuildOutput is Discover with an explicit build-output
-// classifier. All other source/test, hidden-directory, fixture and dependency
-// rules remain the same.
-func DiscoverWithBuildOutput(roots []string, isBuildOutput func(string) bool) (Files, error) {
+// classifier, asked under ctx. All other source/test, hidden-directory,
+// fixture and dependency rules remain the same.
+func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput func(ctx context.Context, dir string) bool) (Files, error) {
 	if isBuildOutput == nil {
 		isBuildOutput = IsBuildOutput
 	}
@@ -108,12 +117,12 @@ func DiscoverWithBuildOutput(roots []string, isBuildOutput func(string) bool) (F
 			add(abs)
 			continue
 		}
-		err = filepath.WalkDir(abs, func(path string, d fs.DirEntry, err error) error {
+		err = WalkDir(ctx, abs, func(ctx context.Context, path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 			if d.IsDir() {
-				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || isBuildOutput(path)) {
+				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || isBuildOutput(ctx, path)) {
 					return filepath.SkipDir
 				}
 				return nil

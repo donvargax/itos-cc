@@ -625,7 +625,7 @@ func mutationSelection(ctx context.Context, in *invocation) (sources []string, j
 	var since map[string]project.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
-		if since, moves, err = changedSince(in); err != nil {
+		if since, moves, err = changedSince(ctx, in); err != nil {
 			return nil, nil, nil, nil, err
 		}
 	}
@@ -685,7 +685,7 @@ func uncoveredFails(failUncovered bool, scope mutate.LineScope, path string) fun
 // what a snapshot records the hashes of. It reads under ctx.
 func importingTests(ctx context.Context) (func(path string) []string, error) {
 	root := project.Root()
-	all, err := project.Discover([]string{root})
+	all, err := project.Discover(ctx, []string{root})
 	if err != nil {
 		return nil, err
 	}
@@ -938,10 +938,9 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 	} else if !in.set("no-coverage") {
-		// measure measures sources under its context, which loadCoverage
-		// takes once coverage does (T-50); a strict run fails on a coverage
-		// error rather than going without coverage.
-		measure := func(_ context.Context, sources []string, strict bool) (*coverage.Report, error) {
+		// measure measures sources under ctx; a strict run fails on a
+		// coverage error rather than going without coverage.
+		measure := func(ctx context.Context, sources []string, strict bool) (*coverage.Report, error) {
 			var perTest *coverage.PerTest
 			if suite != nil {
 				listed, err := listTests(suite)
@@ -960,7 +959,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Coverage comes from the tests that kill mutants, so a line only
 			// other tests reach is uncovered rather than a survivor, unless
 			// a listed test reaches it.
-			report, err := loadCoverage(in, sources, coverage.OwnTests, os.Stderr, perTest, reach)
+			report, err := loadCoverage(ctx, in, sources, coverage.OwnTests, os.Stderr, perTest, reach)
 			if err != nil {
 				if strict {
 					return nil, err
@@ -1615,7 +1614,7 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 		scope = coverage.AllTests
 	}
 	producer := mutate.CoverageProducer("go", in.set("all-tests"))
-	report, err := loadCoverage(in, sources, scope, os.Stderr, perTest, reach)
+	report, err := loadCoverage(ctx, in, sources, scope, os.Stderr, perTest, reach)
 	if err != nil {
 		return nil, "", nil, nil, err
 	}
@@ -1801,13 +1800,13 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
-func changedSince(in *invocation) (map[string]project.ChangedFunctions, map[string]string, error) {
+func changedSince(ctx context.Context, in *invocation) (map[string]project.ChangedFunctions, map[string]string, error) {
 	if in.set("changed") {
 		return nil, nil, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
 			"Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
 	}
 	ref := in.str("since")
-	changed, renamed, err := project.ChangedSince(ref, mutate.UnitHash)
+	changed, renamed, err := project.ChangedSince(ctx, ref, mutate.UnitHash)
 	var noGit *project.NoGitError
 	switch {
 	case errors.Is(err, project.ErrBadRef):

@@ -93,7 +93,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	write(t, name, "import os\n\n\ndef a(x):\n    return x * 2\n\n\ndef b(x):\n    return x + 1\n")
 
 	t.Chdir(filepath.Join(repo, "sub"))
-	got, _, err := ChangedSince("base", nil)
+	got, _, err := ChangedSince(t.Context(), "base", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 		t.Errorf("lines %v, want b's second line alone, HEAD's line 6", lines)
 	}
 
-	if _, _, err := ChangedSince("--output=x", nil); err != ErrBadRef {
+	if _, _, err := ChangedSince(t.Context(), "--output=x", nil); err != ErrBadRef {
 		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
 	}
 }
@@ -160,7 +160,7 @@ func TestChangedSinceTellsFunctionsSharingANameApartByHash(t *testing.T) {
 
 	t.Chdir(repo)
 	text := func(f *lang.File, u lang.Unit) string { return string(f.Src[u.Node.StartByte():u.Node.EndByte()]) }
-	got, _, err := ChangedSince("base", text)
+	got, _, err := ChangedSince(t.Context(), "base", text)
 	if err != nil {
 		t.Fatal(err)
 	}

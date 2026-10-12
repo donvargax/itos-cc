@@ -48,7 +48,7 @@ func vitestProject(t *testing.T, version string) (dir, source string) {
 
 func onePlan(t *testing.T, dir, src string) Plan {
 	t.Helper()
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
+	plans := Plans(t.Context(), []string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
 	if len(plans) != 1 {
 		t.Fatalf("plans %+v, want one", plans)
 	}
@@ -57,12 +57,12 @@ func onePlan(t *testing.T, dir, src string) Plan {
 
 func TestVitestBeforeTheCurrentMajorIsNotRun(t *testing.T) {
 	dir, src := vitestProject(t, "4.1.11")
-	plans := Plans([]string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
+	plans := Plans(t.Context(), []string{src}, filepath.Join(dir, ".metrics"), RelatedTests, nil)
 	if len(plans) != 1 || len(plans[0].Commands) != 0 || plans[0].Unsupported == "" {
 		t.Fatalf("plans %+v, want one unsupported plan with no commands", plans)
 	}
 	var log bytes.Buffer
-	Run(plans, []string{src}, &log)
+	Run(t.Context(), plans, []string{src}, &log)
 	if !strings.Contains(log.String(), "Vitest 4.1.11 is not supported; upgrade to Vitest 5 or later") {
 		t.Errorf("log %q does not say why", log.String())
 	}
@@ -192,7 +192,7 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 		Reports: []string{filepath.Join(dir, "out", "coverage.out")}}
 	unsupported := Plan{Language: "typescript", Dir: dir, Unsupported: "Vitest is not installed"}
 	var log bytes.Buffer
-	missing := Run([]Plan{failing, unsupported}, []string{src}, &log).Missing()
+	missing := Run(t.Context(), []Plan{failing, unsupported}, []string{src}, &log).Missing()
 	if len(missing) != 2 || missing[0].Cause != MeasuredNothing || !strings.Contains(missing[0].String(), "(go): its coverage run measured none of its files; go: exit status") ||
 		missing[1].Cause != ToolMissing || !strings.Contains(missing[1].Reason, "Vitest is not installed") {
 		t.Errorf("missing %q, want the failed run and the missing tool", missing)
@@ -246,7 +246,7 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 		t.Setenv("HELPER_COVERAGE_REPORT", c.report)
 		t.Setenv("HELPER_COVERAGE_FAIL", c.fail)
 		var log bytes.Buffer
-		r := Run([]Plan{plan}, []string{src}, &log)
+		r := Run(t.Context(), []Plan{plan}, []string{src}, &log)
 		if r.Measures("typescript") != c.measures || r.Measures("go") || r.Has(src) {
 			t.Errorf("%s: measures typescript %v, go %v, has %s %v; want %v, false, false\nlog:\n%s",
 				c.name, r.Measures("typescript"), r.Measures("go"), src, r.Has(src), c.measures, &log)
@@ -286,7 +286,7 @@ func TestPythonOwnCoverageIsPlannedPerSetOfReachingTests(t *testing.T) {
 		at("c.py"): {at("conftest.py")},
 	}
 	sources := []string{at("a.py"), at("b.py"), at("c.py"), at("u.py")}
-	plans := Plans(sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
+	plans := Plans(t.Context(), sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
 	if len(plans) != 2 {
 		t.Fatalf("plans %+v, want two: test_a's, and one no test reaches", plans)
 	}
@@ -300,12 +300,12 @@ func TestPythonOwnCoverageIsPlannedPerSetOfReachingTests(t *testing.T) {
 	if strings.Join(unreached.Sources, " ") != at("c.py")+" "+at("u.py") || !unreached.Unreached || len(unreached.Commands) != 0 {
 		t.Errorf("the other plan: %+v, want c.py and u.py, Unreached, with no command", unreached)
 	}
-	if whole := Plans(sources, t.TempDir(), OwnTests, nil); len(whole) != 1 || whole[0].OwnSources || whole[0].Unreached {
+	if whole := Plans(t.Context(), sources, t.TempDir(), OwnTests, nil); len(whole) != 1 || whole[0].OwnSources || whole[0].Unreached {
 		t.Errorf("without reach: %+v, want one plan of the whole suite", whole)
 	}
 
 	var log bytes.Buffer
-	r := Run([]Plan{unreached}, sources, &log)
+	r := Run(t.Context(), []Plan{unreached}, sources, &log)
 	if !r.Measures("python") || r.Has(at("u.py")) || len(r.Missing()) != 0 {
 		t.Errorf("an Unreached plan's report: measures python %v, has u.py %v, missing %v; want python measured and u.py loaded by no test",
 			r.Measures("python"), r.Has(at("u.py")), r.Missing())
@@ -375,7 +375,7 @@ func TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses(t *testing.T) {
 				at("src/main/kotlin/own/U.kt"): {at("src/test/kotlin/own/Helper.kt")},
 			}
 			sources := []string{at("src/main/kotlin/own/A.kt"), at("src/main/kotlin/own/B.kt"), at("src/main/kotlin/own/U.kt")}
-			plans := Plans(sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
+			plans := Plans(t.Context(), sources, t.TempDir(), OwnTests, func(s string) []string { return reach[s] })
 			if len(plans) != 2 {
 				t.Fatalf("plans %+v, want two: ATest's, and one no test class reaches", plans)
 			}
@@ -393,7 +393,7 @@ func TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses(t *testing.T) {
 			if strings.Join(unreached.Sources, " ") != sources[2] || !unreached.Unreached || len(unreached.Commands) != 0 {
 				t.Errorf("the other plan: %+v, want U.kt, reached by a helper alone, Unreached, with no command", unreached)
 			}
-			whole := Plans(sources, t.TempDir(), OwnTests, nil)
+			whole := Plans(t.Context(), sources, t.TempDir(), OwnTests, nil)
 			if len(whole) != 1 || whole[0].OwnSources || whole[0].Unreached || len(whole[0].Commands) != 1 ||
 				strings.Contains(strings.Join(whole[0].Commands[0], " "), "ATest") {
 				t.Errorf("without reach: %+v, want one plan of the whole suite", whole)

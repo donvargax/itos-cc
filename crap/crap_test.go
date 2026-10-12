@@ -28,7 +28,7 @@ func TestRouteLinesAreNotTheEnclosingFunctions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := Analyze([]string{path}, coverage.Build([]string{path}, filepath.Dir(path), entries))
+	got, err := Analyze(t.Context(), []string{path}, coverage.Build([]string{path}, filepath.Dir(path), entries))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -201,7 +201,7 @@ func pythonArgs(py string, pytest bool, run []string) []string {
 func kotlinCommand(ctx context.Context, path string, all bool, tests []string) Command {
 	module := orDir(project.FindUp(ctx, path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
 	if fileExists(filepath.Join(module, "pom.xml")) {
-		return mavenCommand(module, all, tests)
+		return mavenCommand(ctx, module, all, tests)
 	}
 	// Gradle modules need the build root that holds settings and the wrapper.
 	root := orDir(project.FindUp(ctx, path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
@@ -214,7 +214,7 @@ func kotlinCommand(ctx context.Context, path string, all bool, tests []string) C
 		c.Args = []string{gradle, "test", "--fail-fast"}
 		return c
 	}
-	classes := within(root, coverage.KotlinTests(tests))
+	classes := within(root, coverage.KotlinTests(ctx, tests))
 	switch len(classes) {
 	case 0:
 		return c
@@ -246,7 +246,7 @@ func kotlinCommand(ctx context.Context, path string, all bool, tests []string) C
 // modules of its reactor, the directories above it that hold a pom.xml,
 // run from the reactor's top with those modules and the ones they depend
 // on built, so they test module's sources and not an installed copy.
-func mavenCommand(module string, all bool, tests []string) Command {
+func mavenCommand(ctx context.Context, module string, all bool, tests []string) Command {
 	c := Command{Root: module, Dir: module}
 	if all {
 		c.Args = []string{"mvn", "-q", "test"}
@@ -256,7 +256,7 @@ func mavenCommand(module string, all bool, tests []string) Command {
 	for dir := filepath.Dir(module); dir != filepath.Dir(dir) && fileExists(filepath.Join(dir, "pom.xml")); dir = filepath.Dir(dir) {
 		top = dir
 	}
-	classes := within(top, coverage.KotlinTests(tests))
+	classes := within(top, coverage.KotlinTests(ctx, tests))
 	var names, others []string
 	for _, dir := range slices.Sorted(maps.Keys(classes)) {
 		names = append(names, classes[dir]...)

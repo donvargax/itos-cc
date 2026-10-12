@@ -24,7 +24,11 @@ func (Tree) Discover(ctx context.Context, roots []string) (sources, tests []stri
 	if ctx.Err() != nil {
 		return nil, nil, &port.Cancelled{}
 	}
-	files, err := project.Discover(roots)
+	files, err := project.Discover(ctx, roots)
+	if err != nil && ctx.Err() != nil {
+		// The walk stopped because ctx did: the tree is not unwalkable.
+		return nil, nil, &port.Cancelled{}
+	}
 	if err != nil {
 		return nil, nil, &port.Unwalkable{Reason: err.Error()}
 	}

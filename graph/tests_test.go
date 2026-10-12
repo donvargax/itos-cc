@@ -50,7 +50,7 @@ func TestTheTestsOfAFileAreThoseThatReachIt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	files, err := project.Discover([]string{root})
+	files, err := project.Discover(t.Context(), []string{root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestATestReachesThroughTheTestSupportFilesItUses(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	files, err := project.Discover([]string{root})
+	files, err := project.Discover(t.Context(), []string{root})
 	if err != nil {
 		t.Fatal(err)
 	}

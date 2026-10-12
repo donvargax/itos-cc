@@ -34,7 +34,7 @@ func SuiteTestHashes(ctx context.Context, source, projectRoot string) (map[strin
 	if root == "" {
 		return map[string]string{}, nil
 	}
-	files, err := project.Discover([]string{root})
+	files, err := project.Discover(ctx, []string{root})
 	if err != nil {
 		return nil, err
 	}

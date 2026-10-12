@@ -64,8 +64,7 @@ from it, and thin slices named for their commands.
   the context's error once it is done. `internal/lang/port/porttest` holds the in-memory fake its
   tests parse through. The top-level `project` library is its disk side: `project.Surroundings`,
   making the calls lang once made itself, and `ParseFile` and `FindUp`, which the packages not
-  yet refactored
-  call, passing `context.TODO()` until stage S4 threads them a context.
+  yet refactored call with the context their caller gives them.
 - `internal/duplication` is the domain that finds functions similar enough to be duplicates
   (decision 37), named for what it is while the command keeps its name, `dry`. It takes files
   `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
@@ -123,8 +122,9 @@ from it, and thin slices named for their commands.
   bindings hand it to `Run`. A command that stops on a signal derives its own from it
   (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
-  `main` makes a context of its own but the `context.TODO()` that the code stage S4 has not
-  yet threaded passes. It is the only place
+  `main` makes a context of its own, and none is held in a value or captured by a closure
+  that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
+  does. A done context starts no command. It is the only place
   that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command

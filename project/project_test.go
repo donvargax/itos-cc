@@ -89,7 +89,7 @@ func TestBuildOutputNamesAreSkippedOnlyWhenTheyAreBuildOutput(t *testing.T) {
 	write(t, filepath.Join(root, "web", "src", "app.ts"), "export const a = 1\n")
 	write(t, filepath.Join(root, "web", "dist", "app.js"), "export const a = 1\n")
 
-	files, err := Discover([]string{root})
+	files, err := Discover(t.Context(), []string{root})
 	if err != nil {
 		t.Fatal(err)
 	}
