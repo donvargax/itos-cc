@@ -230,7 +230,7 @@ Feature: Units: the functions and methods every tool measures
   # already behaves so: a guardrail, with no red to show. The refactor that
   # changed it carried no release note, so the scenario goes live in a fix
   # commit whose Upgrading footer says units ---changed now fails with exit 2.
-  @wip @slice-5 @ID-UNIT-14
+  @slice-5 @ID-UNIT-14
   Scenario: A flag spelled with three dashes is an unknown flag
     When I run "itos-cc units ---changed"
     Then the problem is "flags.unknown", with flag "---changed"
