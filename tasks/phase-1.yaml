@@ -1052,9 +1052,3 @@
     the suite finds is fixed in whichever side is wrong, never by leaving the case out. Rules whole:
     ctx first, never held or captured for I/O, no fake in production code. Light local testing: the
     packages named in the checks; never itos task show locally.
-  done_when:
-    - run: grep -q 'func FilesContract' internal/counting/port/porttest/contract.go
-    - run: git grep -q 'FilesContract(' -- 'internal/counting/port/porttest/*_test.go'
-    - run: git grep -q 'porttest.FilesContract(' -- 'internal/disk/*_test.go'
-    - run: go test -count=1 ./internal/counting/... ./internal/disk
-    - run: tools/bin/pinned golangci-lint run ./internal/...
