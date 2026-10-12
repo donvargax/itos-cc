@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // LineCoverageUnsupported names the scope of source, a file of a
@@ -132,7 +133,7 @@ func rooted(target string) bool {
 // buildRoot is the nearest directory above source holding one of markers,
 // "" when there is none beneath the project root.
 func (s scopeReader) buildRoot(source string, markers ...string) string {
-	dir := lang.FindUp(source, markers...)
+	dir := project.FindUp(context.TODO(), source, markers...)
 	if dir == "" || !beneathRoot(s.root, dir) {
 		return ""
 	}

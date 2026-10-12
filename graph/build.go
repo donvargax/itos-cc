@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -211,7 +212,7 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info.clone(), nil
 	}
-	f, err := lang.ParseFile(path)
+	f, err := project.ParseFile(context.TODO(), path)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +240,7 @@ func (b *Builder) parseTest(root, path string) (*fileInfo, error) {
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info, nil
 	}
-	f, err := lang.ParseFile(path)
+	f, err := project.ParseFile(context.TODO(), path)
 	if err != nil {
 		return nil, err
 	}

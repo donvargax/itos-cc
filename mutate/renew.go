@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"os"
 	"strings"
 	"unicode"
@@ -81,7 +82,7 @@ func Renew(exceptions []config.Exception, sources []string, tests func(path stri
 		if f, ok := files[path]; ok {
 			return f, nil
 		}
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return nil, err
 		}

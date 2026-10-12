@@ -1,13 +1,14 @@
 package mutate
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
 	"slices"
 	"sort"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Sampled is a sample of cached mutants run again.
@@ -92,7 +93,7 @@ func Sample(files []string, count int, seed string, opt Options) (Sampled, error
 	override := opt.TestCommand != "" || opt.AllTests
 	var candidates []candidate
 	for _, path := range files {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return Sampled{}, err
 		}

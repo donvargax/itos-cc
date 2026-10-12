@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"sort"
@@ -81,7 +82,7 @@ func CheckGoCoverage(files []string, judge func(path, function, hash string) boo
 func CheckCoverage(files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs) ([]CoverageCheck, error) {
 	var out []CoverageCheck
 	for _, path := range files {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return out, err
 		}
@@ -279,7 +280,7 @@ func Check(files []string, judge func(path, function, hash string) bool, tests f
 }
 
 func checkFile(path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
-	f, err := lang.ParseFile(path)
+	f, err := project.ParseFile(context.TODO(), path)
 	if err != nil {
 		return FileCheck{}, err
 	}

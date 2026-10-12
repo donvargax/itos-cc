@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -99,7 +100,7 @@ func Elsewhere(exceptions []config.Exception, sources []string, judge func(file 
 	// Where each orphan's function is now: one entry per file holding it.
 	found := make([][]config.Exception, len(orphans))
 	for _, path := range sources {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -208,7 +209,7 @@ func Survivor(path string, line, column int, tests func(path string) []string, s
 	if info, err := os.Stat(path); err != nil || info.IsDir() {
 		return config.Exception{}, &NoSurvivorError{"there is no such file"}
 	}
-	f, err := lang.ParseFile(path)
+	f, err := project.ParseFile(context.TODO(), path)
 	if err != nil {
 		return config.Exception{}, err
 	}
@@ -278,7 +279,7 @@ func PlanExceptions(plan *FreshPlan, exceptions []config.Exception) (*FreshExcep
 	}
 	slices.Sort(paths)
 	for _, rel := range paths {
-		f, err := lang.ParseFile(filepath.Join(plan.FrozenRoot, filepath.FromSlash(rel)))
+		f, err := project.ParseFile(context.TODO(), filepath.Join(plan.FrozenRoot, filepath.FromSlash(rel)))
 		if err != nil {
 			return nil, err
 		}

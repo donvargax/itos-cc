@@ -10,6 +10,7 @@
 package dry
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
@@ -130,7 +131,7 @@ type Form struct {
 func Forms(files []string, opt Options) ([]Form, error) {
 	var forms []Form
 	for _, path := range files {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return nil, err
 		}

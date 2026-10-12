@@ -156,7 +156,7 @@ func buildRoots(sources []string, language string) []string {
 		if spec := lang.Detect(s); spec == nil || spec.Name != language {
 			continue
 		}
-		r := lang.FindUp(s, markers[language]...)
+		r := project.FindUp(context.TODO(), s, markers[language]...)
 		if r == "" {
 			r = filepath.Dir(s)
 		}

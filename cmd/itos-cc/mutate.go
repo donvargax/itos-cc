@@ -1559,7 +1559,7 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 			// c8 (coverage.TypeScriptRunner); --test-command changes
 			// nothing about it.
 			out[language] = func(source string) (string, map[string]string, error) {
-				dir := lang.FindUp(source, "package.json")
+				dir := project.FindUp(context.TODO(), source, "package.json")
 				if dir == "" {
 					dir = filepath.Dir(source)
 				}
@@ -1572,7 +1572,7 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 			// Kover, or Maven's JaCoCo (coverage.KotlinRunner), over the
 			// whole suite with --test-command too, as Python's.
 			out[language] = func(source string) (string, map[string]string, error) {
-				module := lang.FindUp(source, "build.gradle.kts", "build.gradle", "pom.xml")
+				module := project.FindUp(context.TODO(), source, "build.gradle.kts", "build.gradle", "pom.xml")
 				if module == "" {
 					module = filepath.Dir(source)
 				}
@@ -1828,7 +1828,7 @@ func runMutationList(in *invocation) (any, error) {
 		return result, nil
 	}
 	for _, path := range files.Sources {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return result, err
 		}

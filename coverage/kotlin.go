@@ -1,6 +1,7 @@
 package coverage
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"slices"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // KotlinTests is the runnable test classes (lang.TestClasses) the Kotlin
@@ -25,7 +27,7 @@ func KotlinTests(tests []string) map[string][]string {
 		if spec := lang.Detect(test); spec == nil || spec.Name != "kotlin" {
 			continue
 		}
-		module := lang.FindUp(test, markers["kotlin"]...)
+		module := project.FindUp(context.TODO(), test, markers["kotlin"]...)
 		if module == "" {
 			continue
 		}
@@ -68,7 +70,7 @@ func kotlinTestClasses(path string) []string {
 	if ok && cached.size == info.Size() && cached.modTime.Equal(info.ModTime()) {
 		return cached.classes
 	}
-	f, err := lang.ParseFile(path)
+	f, err := project.ParseFile(context.TODO(), path)
 	if err != nil {
 		return nil
 	}
@@ -98,5 +100,5 @@ func KotlinRunner(dir string) string {
 // through a gradlew in it or a directory above it, rather than the gradle
 // on PATH.
 func GradleWrapper(dir string) bool {
-	return lang.FindUp(filepath.Join(dir, "x"), "gradlew") != ""
+	return project.FindUp(context.TODO(), filepath.Join(dir, "x"), "gradlew") != ""
 }

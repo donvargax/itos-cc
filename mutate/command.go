@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"encoding/json"
 	"maps"
 	"os"
@@ -87,7 +88,7 @@ func TestCommand(path, shell string, all bool, tests []string) Command {
 // goCommand runs the tests of path's own package, or with all the whole
 // module, integration and end-to-end tests included.
 func goCommand(path string, all bool) Command {
-	root := orDir(lang.FindUp(path, "go.mod"), path)
+	root := orDir(project.FindUp(context.TODO(), path, "go.mod"), path)
 	pkg, _ := filepath.Rel(root, filepath.Dir(path))
 	target := "./" + filepath.ToSlash(pkg)
 	if all {
@@ -97,7 +98,7 @@ func goCommand(path string, all bool) Command {
 }
 
 func typescriptCommand(path string, all bool) Command {
-	root := orDir(lang.FindUp(path, "package.json"), path)
+	root := orDir(project.FindUp(context.TODO(), path, "package.json"), path)
 	rel, _ := filepath.Rel(root, path)
 	c := Command{Root: root, Dir: root}
 	// Tools run from node_modules, never through npx, which would download
@@ -147,7 +148,7 @@ func FileScope(path, shell string, all bool) string {
 
 // pythonBase is where path's Python tests run, with no command yet.
 func pythonBase(path string) Command {
-	root := orDir(lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg"), path)
+	root := orDir(project.FindUp(context.TODO(), path, "pyproject.toml", "setup.py", "setup.cfg"), path)
 	return Command{Root: root, Dir: root, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
 }
 
@@ -198,12 +199,12 @@ func pythonArgs(py string, pytest bool, run []string) []string {
 // module; with all, its build's whole suite. It runs nothing when they
 // declare none in that build.
 func kotlinCommand(path string, all bool, tests []string) Command {
-	module := orDir(lang.FindUp(path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
+	module := orDir(project.FindUp(context.TODO(), path, "build.gradle.kts", "build.gradle", "pom.xml"), path)
 	if fileExists(filepath.Join(module, "pom.xml")) {
 		return mavenCommand(module, all, tests)
 	}
 	// Gradle modules need the build root that holds settings and the wrapper.
-	root := orDir(lang.FindUp(path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
+	root := orDir(project.FindUp(context.TODO(), path, "settings.gradle.kts", "settings.gradle", "gradlew"), module)
 	gradle := "gradle"
 	if fileExists(filepath.Join(root, "gradlew")) {
 		gradle = "./gradlew"

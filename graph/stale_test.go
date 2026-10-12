@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -45,7 +44,7 @@ func (m module) write(rel, text string) {
 // every mutant records it: its hash, and a mutant for each of its sites.
 func (m module) recorded(rel string) []mutate.UnitResult {
 	m.t.Helper()
-	f, err := lang.ParseFile(filepath.Join(m.root, rel))
+	f, err := project.ParseFile(m.t.Context(), filepath.Join(m.root, rel))
 	if err != nil {
 		m.t.Fatal(err)
 	}

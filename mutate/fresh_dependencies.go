@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // LinkInstalledDependencies links into the frozen export the dependencies
@@ -34,7 +36,7 @@ func (p *FreshPlan) LinkInstalledDependencies() ([]string, error) {
 		}
 		switch spec.Name {
 		case "typescript":
-			for dir := orDir(lang.FindUp(path, "package.json"), path); ; dir = filepath.Dir(dir) {
+			for dir := orDir(project.FindUp(context.TODO(), path, "package.json"), path); ; dir = filepath.Dir(dir) {
 				rel, err := filepath.Rel(p.FrozenRoot, dir)
 				if err != nil || !filepath.IsLocal(rel) {
 					break
@@ -48,7 +50,7 @@ func (p *FreshPlan) LinkInstalledDependencies() ([]string, error) {
 				}
 			}
 		case "python":
-			dir := orDir(lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg"), path)
+			dir := orDir(project.FindUp(context.TODO(), path, "pyproject.toml", "setup.py", "setup.cfg"), path)
 			rel, err := filepath.Rel(p.FrozenRoot, dir)
 			if err != nil {
 				continue

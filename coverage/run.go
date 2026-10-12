@@ -159,7 +159,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		if spec == nil {
 			continue
 		}
-		dir := lang.FindUp(s, markers[spec.Name]...)
+		dir := project.FindUp(ctx, s, markers[spec.Name]...)
 		if dir == "" {
 			dir = filepath.Dir(s)
 		}
@@ -701,7 +701,7 @@ func kotlinPlan(dir, out string, classes []string) Plan {
 		return plan
 	}
 	gradle := "gradle"
-	if root := lang.FindUp(filepath.Join(dir, "x"), "gradlew"); root != "" {
+	if root := project.FindUp(context.TODO(), filepath.Join(dir, "x"), "gradlew"); root != "" {
 		gradle = filepath.Join(root, "gradlew")
 	}
 	// The report task runs the test task, which the filter then narrows.

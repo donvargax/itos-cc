@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"sort"
@@ -56,14 +57,14 @@ func SuiteTestHashes(source, projectRoot string) (map[string]string, error) {
 func suiteRoot(language, path string) string {
 	switch language {
 	case "typescript":
-		return lang.FindUp(path, "package.json")
+		return project.FindUp(context.TODO(), path, "package.json")
 	case "python":
-		return lang.FindUp(path, "pyproject.toml", "setup.py", "setup.cfg")
+		return project.FindUp(context.TODO(), path, "pyproject.toml", "setup.py", "setup.cfg")
 	case "kotlin":
-		if root := lang.FindUp(path, "settings.gradle.kts", "settings.gradle"); root != "" {
+		if root := project.FindUp(context.TODO(), path, "settings.gradle.kts", "settings.gradle"); root != "" {
 			return root
 		}
-		return lang.FindUp(path, "pom.xml")
+		return project.FindUp(context.TODO(), path, "pom.xml")
 	}
 	return ""
 }

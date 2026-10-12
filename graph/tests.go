@@ -1,13 +1,13 @@
 package graph
 
 import (
+	"context"
 	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -128,7 +128,7 @@ func applyingConftests(t *fileInfo, conftests map[string]*fileInfo, root string)
 	if t.language != "python" || len(conftests) == 0 || !coverage.PythonTestFile(t.abs) && filepath.Base(t.abs) != "conftest.py" {
 		return nil
 	}
-	top := lang.FindUp(t.abs, "pyproject.toml", "setup.py", "setup.cfg")
+	top := project.FindUp(context.TODO(), t.abs, "pyproject.toml", "setup.py", "setup.cfg")
 	if top == "" {
 		top = root
 	}
@@ -146,7 +146,7 @@ func applyingConftests(t *fileInfo, conftests map[string]*fileInfo, root string)
 func parseDependencies(root string, paths []string) ([]*fileInfo, error) {
 	var out []*fileInfo
 	for _, path := range paths {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return nil, err
 		}

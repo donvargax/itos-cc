@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"slices"
@@ -317,7 +318,7 @@ func goHasExecutableStatements(unit *sitter.Node) bool {
 // function without consulting persistent snapshots or the live project root.
 func FreshGoCoverageEvidence(root string, admitted FreshUnit, blocks []coverage.GoBlock, producer string, inputs map[string]string) (*GoCoverageEvidence, error) {
 	source := filepath.Join(root, filepath.FromSlash(admitted.Path))
-	file, err := lang.ParseFile(source)
+	file, err := project.ParseFile(context.TODO(), source)
 	if err != nil {
 		return nil, err
 	}

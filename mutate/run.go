@@ -437,7 +437,7 @@ func (s *fileState) removeMoved() error {
 func plan(files []string, opt Options) ([]*fileState, error) {
 	var states []*fileState
 	for _, path := range files {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return states, err
 		}

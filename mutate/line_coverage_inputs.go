@@ -1,6 +1,7 @@
 package mutate
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // pythonRootMarkers mark a Python build root, as coverage plans find it.
@@ -51,7 +53,7 @@ func rootCoverageInputs(source, projectRoot string, inv rootInventory) (map[stri
 	if inv.root != nil {
 		root = inv.root(source)
 	} else {
-		root = lang.FindUp(source, inv.markers...)
+		root = project.FindUp(context.TODO(), source, inv.markers...)
 	}
 	if root == "" || !beneathRoot(projectRoot, root) {
 		abs, err := filepath.Abs(source)
@@ -220,7 +222,7 @@ func kotlinInput(name string) bool {
 // a gap; for Gradle, the nearest directory with a settings script, else the
 // module's own directory.
 func KotlinBuildRoot(source string) string {
-	module := lang.FindUp(source, kotlinModuleMarkers...)
+	module := project.FindUp(context.TODO(), source, kotlinModuleMarkers...)
 	if module == "" {
 		return ""
 	}
@@ -231,7 +233,7 @@ func KotlinBuildRoot(source string) string {
 		}
 		return top
 	}
-	if root := lang.FindUp(source, kotlinSettings...); root != "" {
+	if root := project.FindUp(context.TODO(), source, kotlinSettings...); root != "" {
 		return root
 	}
 	return module
@@ -298,7 +300,7 @@ func KotlinCoverageInputs(source, projectRoot, producer string, support map[stri
 		return nil, err
 	}
 	runner := "mvn"
-	if module := lang.FindUp(source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
+	if module := project.FindUp(context.TODO(), source, kotlinModuleMarkers...); module != "" && coverage.KotlinRunner(module) != "maven" {
 		runner = "gradle"
 		if coverage.GradleWrapper(module) {
 			runner = "gradlew"

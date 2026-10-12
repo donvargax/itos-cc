@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
 
-	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 	"github.com/donvargax/itos-cc/scrap"
@@ -79,7 +79,7 @@ func runScrap(in *invocation) (any, error) {
 
 	reports := []scrap.FileReport{}
 	for _, path := range files.Tests {
-		f, err := lang.ParseFile(path)
+		f, err := project.ParseFile(context.TODO(), path)
 		if err != nil {
 			return result, err
 		}

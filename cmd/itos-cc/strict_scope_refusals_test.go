@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // The scenario outline of "Rule: Strict runs prove executable line coverage
@@ -104,7 +104,7 @@ var scopeExamples = []scopeExample{
 func seedFreshLineEvidence(t *testing.T, root, rel string) {
 	t.Helper()
 	source := filepath.Join(root, filepath.FromSlash(rel))
-	f, err := lang.ParseFile(source)
+	f, err := project.ParseFile(t.Context(), source)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,13 +113,13 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 	var inputs map[string]string
 	switch f.Spec.Name {
 	case "typescript":
-		producer = mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(lang.FindUp(source, "package.json"), true), false)
+		producer = mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
 		inputs, err = mutate.TypeScriptCoverageInputs(source, root, producer, nil)
 	case "python":
 		producer = mutate.CoverageProducer("python", false)
 		inputs, err = mutate.PythonCoverageInputs(source, root, producer, nil)
 	case "kotlin":
-		module := lang.FindUp(source, "build.gradle.kts", "build.gradle", "pom.xml")
+		module := project.FindUp(t.Context(), source, "build.gradle.kts", "build.gradle", "pom.xml")
 		producer = mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), false)
 		inputs, err = mutate.KotlinCoverageInputs(source, root, producer, nil)
 	default:

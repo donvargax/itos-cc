@@ -7,6 +7,7 @@
 package graph
 
 import (
+	"context"
 	"path"
 	"path/filepath"
 	"sort"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/donvargax/itos-cc/lang"
 	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // Node is one box: a repository, a directory, or a module.
@@ -286,7 +288,7 @@ func (idx *index) tsFile(target string) (string, bool) {
 // aliases are the tsconfig aliases that apply to f: those of the nearest
 // tsconfig.json above it.
 func (idx *index) aliases(f *fileInfo) *tsAliases {
-	dir := lang.FindUp(f.abs, "tsconfig.json")
+	dir := project.FindUp(context.TODO(), f.abs, "tsconfig.json")
 	a, ok := idx.tsconfigs[dir]
 	if !ok {
 		a = &tsAliases{}
