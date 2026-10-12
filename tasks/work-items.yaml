@@ -2557,7 +2557,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-57]
     kind: task
     why: >
       The step definitions of the converted feature files move with git mv from _test.go files into
