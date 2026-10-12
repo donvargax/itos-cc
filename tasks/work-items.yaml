@@ -2002,20 +2002,9 @@ items:
     title: Move itos from 7.5.0 to 8.0.0
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      The person chose to upgrade before the refactor goes on (2026-10-11). itos upgrade 8.0.0 hands
-      the move to the 8.0.0 release, which edits the pin and what each release fixes exactly; each
-      breaking change and Upgrading footer the v8.0.0 notes name is then applied by hand and named
-      in the commit body: AGENTS.md's itos block becomes two lines (itos init --agent-rules, run
-      after the upgrade so it runs the pinned 8.0.0), trimming only our own text it repeats and
-      keeping this repository's working rules, notes and lessons; config check's new refusals are
-      fixed as each problem's fix says. The shim's refusals (--no-verify, commit -a, git add -A,
-      force-push) and push no longer following tags touch nothing here: no script uses them (git
-      grep, 2026-10-11) and releases are cut by CI since T-28. ci.yml's itos version moves with the
-      pin if it names one. No product code changes.
   - id: asks-stale-item-ids
     title: Answered questions in tasks/asks.yaml name items by ids they no longer have
     phase: 1

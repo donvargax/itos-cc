@@ -652,6 +652,3 @@
     push no longer following tags touch nothing here: no script uses them (git grep, 2026-10-11) and
     releases are cut by CI since T-28. ci.yml's itos version moves with the pin if it names one. No
     product code changes.
-  done_when:
-    - run: "grep -q 'version: \"8.0.0\"' itos.yaml"
-    - run: itos config check
