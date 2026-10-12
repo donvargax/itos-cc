@@ -2246,6 +2246,14 @@ items:
       mutation run --count stopped by SIGINT while it finds the tests that reach each frozen file
       (graph.TestsImporting now returns the interrupt, reported as the coverage-plan stage failing
       with it, exit 75).
+
+      T-49 (mutate under the context cmd gives it): the fail-fast stop now cancels a context derived
+      from the command's, and each selection of listed tests runs its baseline once under a mutex
+      instead of sync.Once. Compare mutation run --fail-fast stopping at a survivor with listed
+      tests whose selection several workers need at once (one baseline line, the stop's lines and
+      exit 1), mutation sample, mutation check and mutation except --renew over a TypeScript, a
+      Python and a Kotlin project (their build roots now found under the context), and mutation run
+      --fail-uncovered over the same (the coverage fingerprints now read under it).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
