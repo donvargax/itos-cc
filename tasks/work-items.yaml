@@ -2231,6 +2231,13 @@ items:
       1_000 (value-invalid), --min-lines +7 and --threshold 1e3 (accepted), dry --help and help dry,
       and lines holding two mistakes, such as --threshold abc --bogus, where kong may report another
       first.
+
+      T-42 (scrap's library to internal/teststructure): cmd now reads each test file through
+      selection's Tree.Read and parses it through workdir's Surroundings, and the snapshot merge is
+      the domain's History. Compare scrap over a test file that cannot be read (its 70 and message),
+      scrap twice over different paths (the second keeps the first's files in scrap.json and
+      compares the files both measured), and scrap with a .metrics/scrap.json whose files list holds
+      one file twice or a value of the wrong type.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
