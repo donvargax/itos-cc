@@ -917,3 +917,33 @@
     - run: go vet ./mutate ./graph ./cmd/itos-cc
     - run: go test -count=1 ./mutate/...
     - run: go test -count=1 ./cmd/itos-cc -run 'Interruption|FailFast'
+- id: T-50
+  type: refactor
+  title: coverage, crap and project take the context, and only main makes one
+  why: >
+    KotlinTests, kotlinTestClasses, GradleWrapper, buildRoots, kotlinPlan, Plans, Run and
+    MeasureTests in coverage, crap.Analyze, project.ChangedSince and cmd's loadCoverage take ctx
+    first, ending the last TODOs (coverage/kotlin.go:30, 73, 103; pertest.go:159; run.go:704;
+    crap/crap.go:54; project/since.go:84) and the Background roots at coverage/pertest.go:253,
+    run.go:136 and 796. A done context starts no command, as internal/workdir does; killing a
+    command tree already running is interrupt-exit-130's work (ADR-0038). docs/go.md drops its note
+    that packages pass context.TODO() until S4. S4 of the template-design refactor (ADR-0030,
+    ADR-0043; docs/go.md says packages pass context.TODO() until S4 threads them a context). Rules
+    kept whole: ctx is the first parameter, never held in a struct, never captured in a closure for
+    I/O (a callback that does I/O takes ctx first), and no context.TODO() or context.Background() is
+    made below main except context.WithoutCancel(ctx) for real cleanup. Signal handling stays as it
+    is (docs/CLI.md: Ctrl-C does not yet cancel commands; exit codes change last, after
+    refactor-final-proof): serve keeps signal.NotifyContext over the ctx it is given, mutation run
+    --count keeps countedSignalContext and its exit 75. Where a call now under a real context can
+    return early because the run was stopped (fail-fast, counted interrupt), check ctx.Err() after
+    it and return context.Cause, so the stop is reported as today, never as a missing file. No
+    binary comparison (docs/go.md step 9); a case worth comparing joins refactor-final-proof's list.
+    Never run itos task show for this task locally (it runs the checks); run only the targeted tests
+    while working, CI runs the rest.
+  done_when:
+    - run: "! git grep -n 'context.TODO()' -- '*.go'"
+    - run: test "$(git grep -l 'context.Background()' -- '*.go' ':!*_test.go')" = cmd/itos-cc/main.go
+    - run: "! git grep -nE '^\\s+\\w+\\s+context\\.Context$' -- '*.go' ':!*_test.go'"
+    - run: "! grep -q 'until stage S4' docs/go.md"
+    - run: go vet ./...
+    - run: go test -count=1 ./coverage/... ./crap/... ./project/...
