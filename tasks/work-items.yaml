@@ -2533,7 +2533,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-56]
     kind: task
     why: >
       The seam the in-process driver needs: run(ctx, args, stdin, stdout, stderr, a adapters) int,
