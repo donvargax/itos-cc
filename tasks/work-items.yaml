@@ -2471,8 +2471,8 @@ items:
   - id: T-54
     title: lang's Surroundings fake and both its adapters pass one contract suite
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-53]
     kind: task
     why: >
