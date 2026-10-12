@@ -2440,3 +2440,25 @@ items:
       errors, symlinks) stays in the adapter's own tests; what the fake configures (an injected
       failure) stays in the fake's. A difference the suite finds is fixed in the fake or the
       adapter, whichever is wrong, never by leaving the case out.
+  - id: scenario-two-drivers
+    title: The scenarios run in process against the ports' fakes as well as against the binary
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [port-contract-suites, T-51]
+    kind: idea
+    why: >
+      The person (2026-10-12): the same scenarios as fast tests with fakes and as real tests, the
+      best of both worlds (decision on q-60). The godog harness gains a second driver: in process,
+      its steps call cmd's run(ctx, args) with a UI writing to buffers and every port a porttest
+      fake, the Given steps filling the fakes instead of a temporary directory; the binary driver
+      runs the same scenarios as today. Both run in CI; a scenario runs under both unless a step can
+      only hold in one, which it says by a tag the harness reads, never by a copy of the scenario.
+      The pilot covers the converted feature files whose commands are slices: units, dry and scrap.
+      cmd needs a seam where main hands run its adapters, so the in-process driver hands it fakes;
+      no fake enters a slice's code (slice-fakes-tests-only). Mutation then kills a slice's or
+      domain's mutant in process, in seconds, with no binary rebuilt per mutant (the godog suite
+      takes 61 s today, cmd/itos-cc's 217 s). Each later move (crap, mutation, serve) adds its
+      feature file to the in-process driver as part of the move (template-adoption's stages).
+      Depends on port-contract-suites, so every fake the driver uses is held to its adapter's
+      behaviour, and on T-51, the end of S4.
