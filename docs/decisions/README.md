@@ -37,5 +37,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0031: An interrupted command exits 130, says so once, and a second interrupt ends it at once](0031-an-interrupted-command-exits-130-says-so-once-and-a-second-interrupt-ends-it-at-once.md)
 - [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
 - [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
+- [ADR-0034: internal/cli keeps itos-cc's contract and upstreams it to the template](0034-internal-cli-keeps-itos-cc-s-contract-and-upstreams-it-to-the-template.md)
 
 <!-- itos:decisions:end -->

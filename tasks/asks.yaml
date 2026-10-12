@@ -249,6 +249,7 @@ questions:
   - id: q-54
     question: "How should internal/cli's contract differ from go-template-itos's sample, given template updates must land cleanly: rule names, exit precedence, the problem's shape, flag errors, and the UI importing a domain's port?"
     answer: "Keep ours and upstream it to go-template-itos with exact diffs, as for release-version (answered 2026-10-11): dotted lower-case rule IDs; an explicit, documented exit precedence with the interrupt first (130, then usage, internal, environment, retry, the check's no), not the highest code; problems keep subject keys as flat extension members as RFC 9457 has them, with rule, message, fix and exit reserved and a per-problem exit added; the plain line keeps the fix; flag errors keep typed rules and our wording; cmd hands internal/cli one classifier per domain so it imports none. On Unix an interrupted command, once it has reported, re-raises SIGINT with the default action so shells stop their loops; Windows exits 130."
+    decision: 34
   - id: q-55
     question: "Kong reports unknown flags, unexpected arguments and its other user-input failures as plain strings. How do we get typed errors from it?"
     answer: "Fork it, donvargax/kong, and make kong's user-input failures exported error types matched with errors.As, Error() text unchanged (answered 2026-10-11). itos-cc uses the fork through a replace until it is proven, then a PR goes to alecthomas/kong with AI assistance disclosed."
