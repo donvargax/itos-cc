@@ -2418,3 +2418,16 @@ items:
       feature file to the in-process driver as part of the move (template-adoption's stages).
       Depends on port-contract-suites, so every fake the driver uses is held to its adapter's
       behaviour, and on T-51, the end of S4.
+  - id: revive-default-rules
+    title: Decide which of revive's default rules golangci-lint runs over internal
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-51 enabled only revive's context-as-argument beside file-length-limit, since listing rules
+      keeps revive's defaults off. Over ./internal/... the defaults find 10 issues today (7
+      unused-parameter, 2 redefines-builtin-id, 1 exported); over the architecture fixtures they
+      would also ask for package and exported-name comments. Whether to enable some, all or none of
+      them is a gate decision of its own (ADR-0033).
