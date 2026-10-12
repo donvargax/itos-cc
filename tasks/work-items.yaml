@@ -2032,3 +2032,15 @@ items:
       was rerun. Like seed-test-timeouts, the test should not depend on the runner speed; one fix
       may serve both.
     refs: [seed-test-timeouts, flaky-kills, timeout-allowance]
+  - id: units-triple-dash
+    title: units refuses a flag spelled with three dashes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-32 moved units onto kong: units ---changed, accepted with exit 0 before, now fails as
+      flags.unknown, exit 2, suggesting --changed. The person chose to keep exit 2 (2026-10-11): an
+      unknown flag is a usage error. No scenario pins it, so a later change could bring the silent
+      acceptance back.
