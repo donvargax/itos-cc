@@ -2538,3 +2538,28 @@ items:
       never by leaving the case out. Rules whole: ctx first, never held or captured for I/O, no fake
       in production code. Light local testing: the packages named in the checks; never itos task
       show locally.
+  - id: T-55
+    title: counting's Files fake and disk's Files pass one contract suite
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Decision 44 gives every port a contract suite, the count sample's too while it stays (q-48: it
+      goes after the refactor), so the rule has no exception: a small porttest.FilesContract over
+      counting's Files (a present file's text, Missing for an absent one, the caller's own copy),
+      run against the fake and internal/disk. They agree today. Standard input stays
+      internal/stdin's own tests. Decision 44: a fake stands in for an adapter in the in-process
+      scenarios only when both pass one contract suite. The suite is exported from the port's
+      porttest (contract.go, non-test code importing testing), takes a testing.T and an opener that
+      lays out a fixture and returns the port and the absolute working directory, and asserts what
+      every implementation must do: results, typed failures from fixture states both sides can hold,
+      a done context. The fake's configured failures stay in the fake's own tests; what only the
+      disk can do (symlinks, permissions, OS error texts, git check-ignore) stays in the adapter's.
+      Adapter openers use an EvalSymlinks'd t.TempDir and t.Chdir as internal/workdir/tree_test.go
+      does, so no case runs in parallel; fake openers use a t.TempDir path only as an absolute name,
+      so paths hold on Windows. A difference the suite finds is fixed in whichever side is wrong,
+      never by leaving the case out. Rules whole: ctx first, never held or captured for I/O, no fake
+      in production code. Light local testing: the packages named in the checks; never itos task
+      show locally.
