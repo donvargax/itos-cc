@@ -2269,7 +2269,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-43]
     kind: task
     why: >
       The person's call (2026-10-11): the nightly has committed no mutation results since
