@@ -2582,7 +2582,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-58]
     kind: task
     why: >
       cmd/itos-cc's TestScenarios runs the converted feature files through the in-process driver: an
