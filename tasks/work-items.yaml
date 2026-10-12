@@ -2163,6 +2163,8 @@ items:
       slice could ship a fake. A rule of its own for slice code, refusing every porttest while the
       tests keep them, would hold fakes to tests as the infra and workdir rules already do with
       !$test.
+
+      Absorbed by T-56 (the gate refusing porttest in a slice's code and in itos-cc's binary).
   - id: T-46
     title: The nightly mutation run survives every mutant and commits its results
     phase: 1
