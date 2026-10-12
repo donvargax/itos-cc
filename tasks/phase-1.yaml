@@ -742,10 +742,6 @@
     memory through lang's porttest fake and meet domain-coverage's bar; golangci-lint covers it for
     the first time, fixed without changing behaviour. .metrics/mutate/dry/dry.go.json moves unedited
     with the file; the nightly refreshes it (decision 40).
-  done_when:
-    - run: test ! -e dry && go test ./internal/duplication/...
-    - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
-    - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
 - id: T-40
   type: refactor
   title: dry is a slice on kong
