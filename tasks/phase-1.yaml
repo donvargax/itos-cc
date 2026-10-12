@@ -855,9 +855,11 @@
     that kills the runner from the logs, fixing its cause in the product or the test it runs (a test
     that forks without end, eats memory or signals every process) and never by excluding code to get
     green. If keeping partial results needs itos-cc itself to save as it goes, that is product
-    behaviour with a scenario: stop and report so it is specified as a slice. Done once a scheduled
-    or dispatched nightly on main completes its Mutate step over the whole repository and commits
-    its results.
+    behaviour with a scenario: stop and report so it is specified as a slice. The run's colour says
+    nothing (it ends red on any survivor, by design), so the commit step's subject says how far the
+    run got: "chore: record the nightly mutation results" only when the Mutate step finished over
+    the whole repository (itos-cc exited 0 or 1), "chore: record partial nightly mutation results"
+    when it was cut off (a timeout, a kill, a lost runner). Done once a nightly on main has
+    committed a finished run's results; partial saves alone do not close it.
   done_when:
-    - run: gh run list -w nightly.yml -b main -L 1 --json conclusion,status -q '.[0].status' | grep -qx completed
-    - run: test -n "$(git log --since=2026-10-12 --grep="nightly mutation results" --format=%h -- .metrics/mutate)"
+    - run: "test -n \"$(git log --since=2026-10-12 --format=%s -- .metrics/mutate | grep -x 'chore: record the nightly mutation results')\""
