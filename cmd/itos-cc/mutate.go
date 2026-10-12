@@ -682,14 +682,14 @@ func uncoveredFails(failUncovered bool, scope mutate.LineScope, path string) fun
 // importingTests lists the test files that reach each source
 // (graph.TestsImporting), as the graph of the project under the project root
 // resolves imports, whatever command runs the mutants and wherever it runs:
-// what a snapshot records the hashes of.
-func importingTests() (func(path string) []string, error) {
+// what a snapshot records the hashes of. It reads under ctx.
+func importingTests(ctx context.Context) (func(path string) []string, error) {
 	root := project.Root()
 	all, err := project.Discover([]string{root})
 	if err != nil {
 		return nil, err
 	}
-	tests, err := graph.TestsImporting(root, all)
+	tests, err := graph.TestsImporting(ctx, root, all)
 	if err != nil {
 		return nil, err
 	}
@@ -762,7 +762,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 	}
-	tests, err := importingTests()
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}

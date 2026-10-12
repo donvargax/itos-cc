@@ -317,7 +317,7 @@ func graphStale(t *testing.T, dir string) map[string]bool {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, _, err := builder.Build()
+	g, _, err := builder.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

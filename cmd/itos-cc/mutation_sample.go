@@ -147,7 +147,7 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests()
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}

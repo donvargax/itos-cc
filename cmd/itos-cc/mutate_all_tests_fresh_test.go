@@ -268,7 +268,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, _, err := builder.Build()
+	g, _, err := builder.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -457,7 +457,7 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, _, err := builder.Build()
+	g, _, err := builder.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

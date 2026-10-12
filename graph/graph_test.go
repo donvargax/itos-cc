@@ -15,7 +15,7 @@ func build(t *testing.T) *Graph {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, changed, err := b.Build()
+	g, changed, err := b.Build(t.Context())
 	if err != nil || !changed {
 		t.Fatalf("build: changed=%v err=%v", changed, err)
 	}
@@ -102,8 +102,8 @@ func TestTreeAndModules(t *testing.T) {
 
 func TestUnchangedSourcesDoNotRebuild(t *testing.T) {
 	b, _ := NewBuilder([]string{"testdata/shop"})
-	first, _, _ := b.Build()
-	again, changed, err := b.Build()
+	first, _, _ := b.Build(t.Context())
+	again, changed, err := b.Build(t.Context())
 	if err != nil || changed || again.Version != first.Version {
 		t.Errorf("second build changed=%v version %d→%d err=%v", changed, first.Version, again.Version, err)
 	}
@@ -147,7 +147,7 @@ func TestMetricsMatchTheirOwnFile(t *testing.T) {
 		{"namespace":"example.com/p","name":"init","file":"a.go","complexity":1,"coverage":100,"crap":1},
 		{"namespace":"example.com/p","name":"init","file":"b.go","complexity":1,"coverage":0,"crap":2}]}`)
 	b, _ := NewBuilder([]string{root})
-	g, _, err := b.Build()
+	g, _, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

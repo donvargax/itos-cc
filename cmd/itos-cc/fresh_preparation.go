@@ -77,9 +77,6 @@ type freshPreparationOptions struct {
 // prepareFreshContext measures only the scope frozen by PlanFresh. It admits
 // functions from the plan's committed discovery inventory, not from Selected.
 func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options freshPreparationOptions) (*FreshPreparation, error) {
-	if ctx == nil {
-		return nil, errors.New("fresh preparation context must not be nil")
-	}
 	if plan == nil || plan.FrozenRoot == "" || plan.Commit == "" {
 		return nil, errors.New("fresh preparation requires a live frozen plan")
 	}
@@ -177,7 +174,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	// tree.
 	var reach coverage.Reach
 	if options.Scope == coverage.OwnTests && hasReachedUnit(plan.Units) {
-		tests, err := graph.TestsImporting(root, plan.Files)
+		tests, err := graph.TestsImporting(ctx, root, plan.Files)
 		if err != nil {
 			stage("coverage-plan", "failed", err)
 			return prep, fmt.Errorf("find the tests that reach each frozen file: %w", err)

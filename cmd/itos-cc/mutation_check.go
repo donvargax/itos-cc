@@ -203,7 +203,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 		printOrphans(in, result.Orphans, "is an orphan, which mutation run removes")
 		return result, nil
 	}
-	tests, err := importingTests()
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}

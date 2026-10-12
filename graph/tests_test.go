@@ -54,7 +54,7 @@ func TestTheTestsOfAFileAreThoseThatReachIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tests, err := TestsImporting(root, files)
+	tests, err := TestsImporting(t.Context(), root, files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestATestReachesThroughTheTestSupportFilesItUses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tests, err := TestsImporting(root, files)
+	tests, err := TestsImporting(t.Context(), root, files)
 	if err != nil {
 		t.Fatal(err)
 	}

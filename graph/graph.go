@@ -99,7 +99,9 @@ type repoGraph struct {
 	edges   map[[2]string]int
 }
 
-func newRepoGraph(name, root string, files []*fileInfo) *repoGraph {
+// newRepoGraph is the graph of files, the repository name's under root, its
+// imports resolved under ctx.
+func newRepoGraph(ctx context.Context, name, root string, files []*fileInfo) *repoGraph {
 	g := &repoGraph{name: name, root: root, files: files,
 		nodes: map[string]*Node{}, modules: map[string]*Node{}, edges: map[[2]string]int{}}
 	g.nodes[name] = &Node{ID: name, Kind: "repo", Label: name}
@@ -114,7 +116,7 @@ func newRepoGraph(name, root string, files []*fileInfo) *repoGraph {
 			m.Calls = appendUnique(m.Calls, e.String())
 		}
 	}
-	g.resolveAll()
+	g.resolveAll(ctx)
 	return g
 }
 
@@ -170,7 +172,7 @@ func (g *repoGraph) attach(n *Node) {
 	parent.children = append(parent.children, n)
 }
 
-func (g *repoGraph) resolveAll() {
+func (g *repoGraph) resolveAll(ctx context.Context) {
 	idx := g.index()
 	for _, f := range g.files {
 		from := g.moduleID(f)
@@ -182,7 +184,7 @@ func (g *repoGraph) resolveAll() {
 			}
 		}
 		for _, imp := range f.imports {
-			targets, external := idx.resolve(f, imp)
+			targets, external := idx.resolve(ctx, f, imp)
 			for _, to := range targets {
 				if to != from {
 					g.edges[[2]string{from, to}]++
@@ -230,11 +232,11 @@ func (g *repoGraph) index() *index {
 }
 
 // resolve returns the project modules an import names, or the external
-// package it names.
-func (idx *index) resolve(f *fileInfo, imp lang.Import) (targets []string, external string) {
+// package it names, looking under ctx for what surrounds f.
+func (idx *index) resolve(ctx context.Context, f *fileInfo, imp lang.Import) (targets []string, external string) {
 	switch f.language {
 	case "typescript":
-		return idx.typescript(f, imp.Path)
+		return idx.typescript(ctx, f, imp.Path)
 	case "python":
 		return idx.python(f, imp)
 	case "go":
@@ -250,7 +252,7 @@ func (idx *index) resolve(f *fileInfo, imp lang.Import) (targets []string, exter
 
 var tsExtensions = []string{".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"}
 
-func (idx *index) typescript(f *fileInfo, spec string) ([]string, string) {
+func (idx *index) typescript(ctx context.Context, f *fileInfo, spec string) ([]string, string) {
 	if strings.HasPrefix(spec, ".") {
 		if id, ok := idx.tsFile(path.Join(path.Dir(f.rel), spec)); ok {
 			return []string{id}, ""
@@ -258,7 +260,7 @@ func (idx *index) typescript(f *fileInfo, spec string) ([]string, string) {
 		return nil, ""
 	}
 	// An alias from tsconfig paths or baseUrl names a project file.
-	for _, abs := range idx.aliases(f).resolve(spec) {
+	for _, abs := range idx.aliases(ctx, f).resolve(spec) {
 		if id, ok := idx.tsFile(rel(idx.g.root, abs)); ok {
 			return []string{id}, ""
 		}
@@ -286,9 +288,9 @@ func (idx *index) tsFile(target string) (string, bool) {
 }
 
 // aliases are the tsconfig aliases that apply to f: those of the nearest
-// tsconfig.json above it.
-func (idx *index) aliases(f *fileInfo) *tsAliases {
-	dir := project.FindUp(context.TODO(), f.abs, "tsconfig.json")
+// tsconfig.json above it, found under ctx.
+func (idx *index) aliases(ctx context.Context, f *fileInfo) *tsAliases {
+	dir := project.FindUp(ctx, f.abs, "tsconfig.json")
 	a, ok := idx.tsconfigs[dir]
 	if !ok {
 		a = &tsAliases{}

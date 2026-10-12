@@ -187,7 +187,7 @@ func TestTheGraphAgrees(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, _, err := b.Build()
+	g, _, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

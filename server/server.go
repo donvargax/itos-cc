@@ -33,22 +33,23 @@ type Server struct {
 	listeners map[chan int]bool
 }
 
-// New builds the first graph of roots.
-func New(roots []string, ui string, logger *log.Logger) (*Server, error) {
+// New builds the first graph of roots, under ctx.
+func New(ctx context.Context, roots []string, ui string, logger *log.Logger) (*Server, error) {
 	b, err := graph.NewBuilder(roots)
 	if err != nil {
 		return nil, err
 	}
 	s := &Server{builder: b, ui: ui, log: logger, listeners: map[chan int]bool{}}
-	if err := s.rebuild(); err != nil {
+	if err := s.rebuild(ctx); err != nil {
 		return nil, err
 	}
 	return s, nil
 }
 
-// rebuild refreshes the graph and tells listeners when it changed.
-func (s *Server) rebuild() error {
-	g, changed, err := s.builder.Build()
+// rebuild refreshes the graph under ctx and tells listeners when it
+// changed.
+func (s *Server) rebuild(ctx context.Context) error {
+	g, changed, err := s.builder.Build(ctx)
 	if err != nil || !changed {
 		return err
 	}
@@ -75,8 +76,9 @@ func (s *Server) rebuild() error {
 	return nil
 }
 
-// Watch rebuilds every interval until ctx ends. A failed build keeps the
-// previous graph: a file caught mid-save parses on the next tick.
+// Watch rebuilds every interval under ctx until it ends. A failed build
+// keeps the previous graph: a file caught mid-save parses on the next tick.
+// A build ctx's end cuts short is no failure, and is not logged.
 func (s *Server) Watch(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
@@ -85,7 +87,7 @@ func (s *Server) Watch(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			if err := s.rebuild(); err != nil {
+			if err := s.rebuild(ctx); err != nil && ctx.Err() == nil {
 				s.log.Printf("rebuild: %v", err)
 			}
 		}

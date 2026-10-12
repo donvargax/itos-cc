@@ -60,7 +60,7 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 		roots = []string{"."}
 	}
 	logger := log.New(os.Stderr, "itos-cc: ", 0)
-	srv, err := server.New(roots, in.str("ui"), logger)
+	srv, err := server.New(ctx, roots, in.str("ui"), logger)
 	if err != nil {
 		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}

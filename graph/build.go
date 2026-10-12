@@ -62,11 +62,12 @@ func NewBuilder(roots []string) (*Builder, error) {
 }
 
 // Build returns the current graph and whether it changed since the last
-// call. Sources, tests, and the snapshots under the .metrics of each
-// repository's project root, where every command keeps them, are all
-// watched: a mutation snapshot holds while the tests that import its file
-// are as it recorded them.
-func (b *Builder) Build() (*Graph, bool, error) {
+// call, built under ctx. Sources, tests, and the snapshots under the
+// .metrics of each repository's project root, where every command keeps
+// them, are all watched: a mutation snapshot holds while the tests that
+// import its file are as it recorded them. Once ctx is done it returns its
+// cause and keeps the last graph.
+func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 	var stamps []string
 	type repo struct {
 		name, root, top string
@@ -103,21 +104,21 @@ func (b *Builder) Build() (*Graph, bool, error) {
 		var infos, tests []*fileInfo
 		for _, path := range r.files.Sources {
 			live[path] = true
-			info, err := b.parse(r.root, path)
+			info, err := b.parse(ctx, r.root, path)
 			if err != nil {
-				return nil, false, err
+				return nil, false, stopped(ctx, err)
 			}
 			infos = append(infos, info)
 		}
 		for _, path := range r.files.Tests {
 			live[path] = true
-			info, err := b.parseTest(r.root, path)
+			info, err := b.parseTest(ctx, r.root, path)
 			if err != nil {
-				return nil, false, err
+				return nil, false, stopped(ctx, err)
 			}
 			tests = append(tests, info)
 		}
-		importing := importingTests(r.root, infos, tests)
+		importing := importingTests(ctx, r.root, infos, tests)
 		hashes := testHashes(r.top)
 		for i, info := range infos {
 			now, err := hashes(importing[info.abs])
@@ -127,7 +128,12 @@ func (b *Builder) Build() (*Graph, bool, error) {
 			snap := b.snapshot(r.top, info.abs, live)
 			infos[i] = overlay.apply(info, now, snap, snap.ListedChanged(r.top, r.support), r.top, r.support)
 		}
-		rg := newRepoGraph(r.name, r.root, infos)
+		rg := newRepoGraph(ctx, r.name, r.root, infos)
+		// A stopped build resolves no further: what it left unresolved is
+		// the stop, never a missing file.
+		if err := stopped(ctx, nil); err != nil {
+			return nil, false, err
+		}
 		rg.summarize()
 		rg.output(g)
 		built = append(built, rg)
@@ -147,6 +153,15 @@ func (b *Builder) Build() (*Graph, bool, error) {
 	g.Version = b.version
 	b.signature, b.graph = signature, g
 	return g, true, nil
+}
+
+// stopped is the cause of ctx once it is done, or else err, so a call cut
+// short by a stopped run reports the stop, never what it left undone.
+func stopped(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return context.Cause(ctx)
+	}
+	return err
 }
 
 // Roots are the absolute repository roots, by name.
@@ -207,12 +222,12 @@ func metricStamps(root string) []string {
 
 // parse returns the file's facts, from the cache when it has not changed.
 // Live complexity always reflects the file on disk.
-func (b *Builder) parse(root, path string) (*fileInfo, error) {
+func (b *Builder) parse(ctx context.Context, root, path string) (*fileInfo, error) {
 	st := stamp(path)
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info.clone(), nil
 	}
-	f, err := project.ParseFile(context.TODO(), path)
+	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -235,12 +250,12 @@ func (b *Builder) parse(root, path string) (*fileInfo, error) {
 
 // parseTest returns what the graph needs of a test file to find the sources
 // it tests, from the cache when it has not changed.
-func (b *Builder) parseTest(root, path string) (*fileInfo, error) {
+func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, error) {
 	st := stamp(path)
 	if c, ok := b.cache[path]; ok && c.stamp == st {
 		return c.info, nil
 	}
-	f, err := project.ParseFile(context.TODO(), path)
+	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return nil, err
 	}

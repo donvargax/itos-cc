@@ -98,7 +98,7 @@ func (m module) build() *Graph {
 	if err != nil {
 		m.t.Fatal(err)
 	}
-	g, _, err := b.Build()
+	g, _, err := b.Build(m.t.Context())
 	if err != nil {
 		m.t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestMutationResultsWhoseTestsChangedAreStale(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, _, err := b.Build()
+	g, _, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestMutationResultsWhoseTestsChangedAreStale(t *testing.T) {
 	if _, u := posModule(t, m.build()); !u.Stale {
 		t.Errorf("Pos in a new graph after a_test.go changed: %+v, want stale", u)
 	}
-	g, changed, err := b.Build()
+	g, changed, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	importing, err := TestsImporting(m.root, files)
+	importing, err := TestsImporting(t.Context(), m.root, files)
 	if err != nil {
 		t.Fatal(err)
 	}

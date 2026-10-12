@@ -125,9 +125,9 @@ type exceptResult struct {
 // runMutationExcept writes the entry for a recorded survivor into
 // itos-cc.yaml, or with --renew renews the stale entries whose mutant is
 // unchanged.
-func runMutationExcept(_ context.Context, in *invocation) (any, error) {
+func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	if in.set("renew") {
-		return runRenewExceptions(in)
+		return runRenewExceptions(ctx, in)
 	}
 	var result exceptResult
 	if !in.set("reason") {
@@ -162,7 +162,7 @@ func runMutationExcept(_ context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests()
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}
@@ -263,7 +263,7 @@ type renewResult struct {
 // (mutate.Renew), and only those entries are written. Every renewal is
 // reported, and every stale entry left as it was is
 // mutation.exception-stale, with why.
-func runRenewExceptions(in *invocation) (any, error) {
+func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	result := renewResult{Renewed: []renewedJSON{}, NotRenewed: []notRenewedJSON{}}
 	if in.set("reason") {
 		return result, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--renew keeps each entry's own reason, and was given --reason",
@@ -284,7 +284,7 @@ func runRenewExceptions(in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests()
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}
