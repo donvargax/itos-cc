@@ -2016,3 +2016,17 @@ items:
       force-push) and push no longer following tags touch nothing here: no script uses them (git
       grep, 2026-10-11) and releases are cut by CI since T-28. ci.yml's itos version moves with the
       pin if it names one. No product code changes.
+  - id: asks-stale-item-ids
+    title: Answered questions in tasks/asks.yaml name items by ids they no longer have
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      itos 8.0.0 config check warns (not refuses) that 23 answered questions, q-1 to q-36, name
+      items such as mutate-check-sample, test-attribution and mutation-fail-fast, which were
+      promoted or renamed since (efdef73 promoted mutate-check-sample to mutation-check). Each
+      warning says to name the item new id in the question, or remove its item; doing so quiets 23
+      lines of every config check and task run. Found moving to itos 8.0.0 under T-34.
+    refs: [T-34]
