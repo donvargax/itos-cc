@@ -2350,8 +2350,8 @@ items:
   - id: T-51
     title: golangci-lint refuses a context held in a value or passed anywhere but first
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-50]
     kind: task
     why: >
