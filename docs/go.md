@@ -85,6 +85,15 @@ from it, and thin slices named for their commands.
   `internal/lang`, through the `Surroundings` port its handler is given. `Run` prints them,
   their paths from the working directory (`UI.Rel`). It has no classifier: its failures are the
   selection domain's, whose classifier is cmd's, or `internal/lang`'s, internal ones.
+- `internal/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first moved
+  command with number flags. Its `Handler` holds the selection `Tree`, lang's `Surroundings`,
+  the snapshot `Store` and `Name`, the name a person reads a file by, which cmd binds to
+  `UI.Rel`. `Handle` selects the sources, and with paths or `--changed` checks them against
+  every source the selection finds under the working directory; it reads each through the
+  `Tree`, parses it with `internal/lang`, hands it to `internal/duplication` under its `Name`,
+  and records `dry.json` through the `Store`, each file named from the root
+  (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
+  domains', whose classifiers are cmd's, or `internal/lang`'s, internal ones.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
   plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
@@ -101,12 +110,10 @@ from it, and thin slices named for their commands.
   it also holds the selection domain's classifier, `classifySelection`, since every command
   selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
   ones. It holds the snapshot domain's too, `classifySnapshot`, since several commands share
-  it, and `snapshots`, the `Store` `internal/metricsdir` gives the hand-parsed `dry` and `scrap`:
-  a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
-  an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
-  library until each moves (decision 41). The hand-parsed `dry` reads each source through
-  `workdir`'s `Tree`, parses it with `internal/lang` through `workdir`'s `Surroundings` and
-  hands it to `internal/duplication`, named from the working directory.
+  it, and `snapshots`, the `Store` `internal/metricsdir` gives the hand-parsed `scrap` and
+  `dry`'s handler: a snapshot that cannot be written is the internal 70 it always was, and
+  `scrap` warns about an unreadable last one and goes on. `crap`, `mutation` and `serve` still
+  call the `metrics` library until each moves (decision 41).
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -219,10 +226,13 @@ follows the same steps for a command it wrote before it had the template's desig
    against kong's model unless what precedes it fails first (q-55); arguments may stand
    between flags, so they move behind them before kong reads them. `cli.Flags` refuses a
    switch given a value, a flag given no value and a flag given twice, the second time
-   before its value is judged. It reads switches and string values; a command whose flags
-   take numbers, durations or a switch's choices (`crap`, `dry`, `mutation run`) first gives
-   `Flags` a mapper for that kind, with a typed refusal in the words the hand parser used
-   (`--threshold needs a number, and was given "abc"`).
+   before its value is judged. It reads switches, string values and numbers: a float64 flag
+   by `strconv.ParseFloat` and an int flag by `strconv.Atoi`, as the hand parser read them,
+   refusing what is none as a `cli.NumberError` in its words (`--threshold needs a number,
+   and was given "abc"`; `a whole number` for an int), added when `dry` moved (T-40). A
+   command whose flags take durations or a switch's choices (`crap`, `mutation run`) first
+   gives `Flags` a mapper for that kind, with a typed refusal in the words the hand parser
+   used.
 6. **Failures by type, never by text.** `cli.ParseProblem` turns each failure into the
    problem `docs/CLI.md` names, by the kong fork's error types and `Flags`' own:
 
@@ -232,6 +242,7 @@ follows the same steps for a command it wrote before it had the template's desig
    | `cli.SwitchValueError`                              | `flags.switch-value`    |
    | `cli.ValueMissingError`, `kong.MissingValueError`   | `flags.value-missing`   |
    | `cli.RepeatedFlagError`                             | `flags.repeated`        |
+   | `cli.NumberError`                                   | `flags.value-invalid`, in the hand parser's words |
    | `kong.InvalidValueError`, `kong.EnumError`          | `flags.value-invalid`, in kong's words until a mapper of ours words it |
    | `kong.UnexpectedArgumentError`, a command expected  | `command.unknown`       |
    | `kong.UnexpectedArgumentError`, no argument taken   | `args.unexpected`       |

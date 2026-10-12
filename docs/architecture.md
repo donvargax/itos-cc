@@ -28,8 +28,9 @@ its failures into problems.
 
 The duplication domain, `internal/duplication`, finds functions similar enough to be
 duplicates. It takes files `internal/lang` has parsed, with the names its caller gives them, and
-reads nothing, so it has no port; cmd reads and parses each source for the hand-parsed `dry`
-through `internal/workdir`.
+reads nothing, so it has no port; the `dry` slice, `internal/dry`, reads each source through
+the selection `Tree`, parses it with `internal/lang` and records what was found through the
+snapshot `Store`.
 
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain, reads each file through the same port and names its units with
