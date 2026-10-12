@@ -2280,3 +2280,33 @@ items:
       parses (crap and mutation next). A helper in internal/lang taking the bytes reader as a
       function (or the selection domain offering a parse of what it selected) would keep one copy
       and one order of failures; decide which in the spec of the next command that parses.
+  - id: T-47
+    title: Every command runs under the one context main makes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      main makes the program's only context.Background() and hands it down: run(ctx, args), execute,
+      runSafely, command.run(ctx, in), and parserOf for the moved commands. The context.Background()
+      roots in cmd go (moved.go:58, 86, 124; mutate.go:1622; mutate_counted.go:384, which derives
+      from the ctx it is given; selection.go:23; serve.go:65, and serve.go:78's shutdown becomes
+      context.WithTimeout(context.WithoutCancel(ctx), 2s)), and reportInterrupted takes ctx first
+      (mutate_counted.go:411). Absorbs moved-parser-once: the kong parser is built once per run, and
+      a model error is an internal failure (70) through ui, not a panic (moved.go:62). Callees that
+      take no context yet are left alone for the next tasks, so no new TODO appears. Update
+      docs/go.md where it describes how a command gets its context. S4 of the template-design
+      refactor (ADR-0030, ADR-0043; docs/go.md says packages pass context.TODO() until S4 threads
+      them a context). Rules kept whole: ctx is the first parameter, never held in a struct, never
+      captured in a closure for I/O (a callback that does I/O takes ctx first), and no
+      context.TODO() or context.Background() is made below main except context.WithoutCancel(ctx)
+      for real cleanup. Signal handling stays as it is (docs/CLI.md: Ctrl-C does not yet cancel
+      commands; exit codes change last, after refactor-final-proof): serve keeps
+      signal.NotifyContext over the ctx it is given, mutation run --count keeps countedSignalContext
+      and its exit 75. Where a call now under a real context can return early because the run was
+      stopped (fail-fast, counted interrupt), check ctx.Err() after it and return context.Cause, so
+      the stop is reported as today, never as a missing file. No binary comparison (docs/go.md step
+      9); a case worth comparing joins refactor-final-proof's list. Never run itos task show for
+      this task locally (it runs the checks); run only the targeted tests while working, CI runs the
+      rest.
