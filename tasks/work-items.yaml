@@ -2088,8 +2088,8 @@ items:
   - id: T-35
     title: "lang reads no disk: it asks a port, and its disk part is project's"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
