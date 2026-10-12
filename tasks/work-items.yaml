@@ -2292,3 +2292,20 @@ items:
       then this one comparison runs (from T-29's parent to that head, where no exit code has changed
       yet), and only then interrupt-exit-130 and semantic-exit-codes, features held by their own
       scenarios, which need no comparison after. Both depend on this item.
+  - id: step-strictness-check
+    title: Automate checking that a converted feature file's steps can fail
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Moving a command step 8 asks that each step of a converted feature file be seen to fail with
+      its expectation changed. T-37 did this by hand with a scratch script: it changed one number,
+      quoted text, docstring line or table phrase of dry.feature at a time, ran that scenario alone,
+      and expected a failure (37 changes), plus 11 edits to steps with no value to change. Every
+      remaining conversion repeats this. A harness option or a tools/bin script could mutate each
+      scenario's literals in turn (numbers stepped by a small amount, quoted words altered), run the
+      scenario, and list the expectations whose change still passed: the steps or fixtures that
+      cannot tell right from wrong. T-37 found one that way, a grouping fixture whose groups did not
+      change with a lower threshold.
