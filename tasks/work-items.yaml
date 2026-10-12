@@ -2058,3 +2058,14 @@ items:
       Precedence does not list and another listed code is present, ExitCode silently ignores it,
       hiding the very defect its comment describes. It should surface as an internal failure, or a
       test should hold every code to the list.
+  - id: emit-key-order
+    title: JSON output orders keys differently in Emit and in UI.JSON
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found reading internal/cli (2026-10-11): Emit builds its object from a map, so keys come out
+      sorted (ok, problems, schema), while UI.JSON(struct) keeps the struct order. Two outputs of
+      one CLI order keys differently; decide one order before more commands move onto kong.
