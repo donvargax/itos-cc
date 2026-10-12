@@ -269,3 +269,4 @@ questions:
   - id: q-57
     question: "Moving dry and scrap onto slices (S3): they read and write .metrics/*.json snapshots and name paths from the project root themselves, which a slice may not do. Where does snapshot I/O go? Recommend a new shared domain internal/snapshot with its own port (Root, Read, Write; sealed failures Unreadable, Unwritable, Cancelled carrying the library's text; a porttest fake), the pure part (format version, naming a path from a root) in the domain, and an adapter internal/metricsdir wrapping metrics and project, its classifier in cmd. Alternative: grow selection's Tree port with Recorded, Record and Root."
     answer: "A new shared domain internal/snapshot with its own port and an adapter internal/metricsdir, as recommended (the person, 2026-10-11). crap, mutation and serve take it as they move."
+    decision: 41
