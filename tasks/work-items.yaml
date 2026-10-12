@@ -2310,8 +2310,8 @@ items:
   - id: T-48
     title: graph and the server build under the context their callers give them
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-47]
     kind: task
     why: >
