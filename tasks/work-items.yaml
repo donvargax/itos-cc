@@ -2089,29 +2089,9 @@ items:
     title: "lang reads no disk: it asks a port, and its disk part is project's"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      Decisions 42 and 43 (the person, 2026-10-11): before dry and scrap move, lang stops reading
-      the disk, following the domain's rules whole. Today every Parse of a Go, TypeScript or Python
-      file looks around it on disk to name its namespace: Go's nearest go.mod with a module line
-      (golang.go goImportPath/goModule), the TypeScript and Python marker walks (lang.go modulePath,
-      FindUp), filepath.Abs and os.Getwd; ParseFile and UnitsInFile read the file itself. lang keeps
-      every language's rules (the markers, the walk up, the module-line scan, the ../ src/ lib/
-      stripping, the package-clause fallback) and asks a port declared in lang/port for what
-      surrounds a file: whether a path exists, a file's bytes, the working directory, a path made
-      absolute, each method taking the context first (decision 30), with a porttest fake; an
-      unanswerable working directory reads as today's failed Getwd. Parse and UnitsOf take ctx and
-      the port and return the context's error once it is done. The OS implementation, ParseFile and
-      FindUp move to project with the same calls in the same order (unsupported language refused
-      before any read), so every namespace and byte stays the same; UnitsInFile goes (only lang's
-      tests used it). internal/workdir implements lang's port beside selection's, and internal/units
-      names units through it, cmd binding it. Packages not yet refactored (mutate, graph, crap,
-      coverage, project's own callers) call project and pass context.TODO(), which S4 replaces;
-      never context.Background() there, so S4 finds every one. lang's tests parse in memory through
-      the fake; the disk tests (testdata/gomod, FindUp, the working-directory cases) move to
-      project. No new depguard rule; lang stays top-level until the next task moves it.
   - id: T-36
     title: The pure lang is a domain package under internal/
     phase: 1

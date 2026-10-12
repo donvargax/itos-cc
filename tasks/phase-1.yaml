@@ -675,11 +675,6 @@
     one. lang's tests parse in memory through the fake; the disk tests (testdata/gomod, FindUp, the
     working-directory cases) move to project. No new depguard rule; lang stays top-level until the
     next task moves it.
-  done_when:
-    - run: "! grep -lE --exclude='*_test.go' '\"os\"|os\\.Getwd|filepath\\.Abs' lang/*.go"
-    - run: "! git grep -qE 'lang\\.(ParseFile|UnitsInFile|FindUp)\\(' -- '*.go'"
-    - run: go test ./lang/... ./project/... ./internal/...
-    - run: go test ./features -count=1 -scenarios=@ID-UNIT-
 - id: T-36
   type: refactor
   title: The pure lang is a domain package under internal/
