@@ -2272,3 +2272,16 @@ items:
       Proof (step 9) over scrap command lines including --verbose=x and an invalid
       .metrics/scrap.json, each differing line explained; a difference that is not an agreed fix
       stops the task.
+  - id: slice-fakes-tests-only
+    title: Hold the ports' fakes out of a slice's code
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The slices depguard rule allows a port's porttest package in a slice's own code, not only its
+      tests: its allow list names internal/selection/ and, since T-35, lang/port/ as prefixes, so a
+      slice could ship a fake. A rule of its own for slice code, refusing every porttest while the
+      tests keep them, would hold fakes to tests as the infra and workdir rules already do with
+      !$test.
