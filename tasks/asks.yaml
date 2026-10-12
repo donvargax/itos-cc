@@ -232,6 +232,7 @@ questions:
     item: "template-adoption"
     question: "The template brings a sample count app (internal/count, internal/counting, internal/disk, internal/stdin, features/count.feature) and its own itos-cc.yaml with exceptions for the template's main.go. Recommend deleting them at adoption; alternative: keep them as reference while porting, delete after the refactor."
     answer: "Keep for now, 2026-10-11: the sample app stays as reference while porting and goes after the refactor."
+    decision: none
   - id: q-49
     item: "template-adoption"
     question: "How far does the adoption commit go? Recommend staged: an itos upgrade task (6.5.1 to 7.5.0), then an adoption task taking the template's docs, tools, CI and ADRs (renumbered after ours) while keeping itos-cc's main.go and CLI behaviour, the new gates wired only as far as they pass; then slices porting the code design (kong + internal/cli, exit 130 on interrupt, ports and slices, the godog harness), each new gate a task of its own. Alternative: all at once, main.go rewritten onto kong and internal/cli in the adoption."
