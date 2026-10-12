@@ -886,3 +886,34 @@
     - run: "! git grep -nE 'context\\.(TODO|Background)\\(\\)' -- 'graph/*.go' 'server/*.go' ':!*_test.go'"
     - run: go vet ./graph ./server ./cmd/itos-cc
     - run: go test -count=1 ./graph/... ./server/...
+- id: T-49
+  type: refactor
+  title: mutate runs under the context cmd gives it and holds none in a value
+  why: >
+    The 25 TODOs in mutate (broad.go, check.go, command.go, coverage.go, exceptions.go,
+    fresh_dependencies.go, line_coverage_inputs.go, line_coverage_scope.go, renew.go, run.go,
+    sample.go) and cmd/itos-cc/mutate.go's three (1562, 1575, 1831) take the caller's ctx.
+    mutate.CoverageInputs takes ctx first instead of the closures in cmd capturing one (ADR-0043
+    rejects capture); pure callbacks stay as they are. The fail-fast stopper holds no context
+    (fail_fast.go:78): it keeps its cancel function and budget, and the run's context is passed
+    down. The Background roots in fail_fast.go:87, fresh_plan.go:110, run.go:668, selection.go:66
+    and worker.go:123 go with the context-less wrappers used only by tests (PlanFresh, baseline,
+    run): one function each, ctx first, the tests passing t.Context(). S4 of the template-design
+    refactor (ADR-0030, ADR-0043; docs/go.md says packages pass context.TODO() until S4 threads them
+    a context). Rules kept whole: ctx is the first parameter, never held in a struct, never captured
+    in a closure for I/O (a callback that does I/O takes ctx first), and no context.TODO() or
+    context.Background() is made below main except context.WithoutCancel(ctx) for real cleanup.
+    Signal handling stays as it is (docs/CLI.md: Ctrl-C does not yet cancel commands; exit codes
+    change last, after refactor-final-proof): serve keeps signal.NotifyContext over the ctx it is
+    given, mutation run --count keeps countedSignalContext and its exit 75. Where a call now under a
+    real context can return early because the run was stopped (fail-fast, counted interrupt), check
+    ctx.Err() after it and return context.Cause, so the stop is reported as today, never as a
+    missing file. No binary comparison (docs/go.md step 9); a case worth comparing joins
+    refactor-final-proof's list. Never run itos task show for this task locally (it runs the
+    checks); run only the targeted tests while working, CI runs the rest.
+  done_when:
+    - run: "! git grep -nE 'context\\.(TODO|Background)\\(\\)' -- 'mutate/*.go' 'cmd/*.go' ':!*_test.go' ':!cmd/itos-cc/main.go'"
+    - run: "! git grep -nE '^\\s+\\w+\\s+context\\.Context$' -- 'mutate/*.go' 'cmd/*.go' ':!*_test.go'"
+    - run: go vet ./mutate ./graph ./cmd/itos-cc
+    - run: go test -count=1 ./mutate/...
+    - run: go test -count=1 ./cmd/itos-cc -run 'Interruption|FailFast'
