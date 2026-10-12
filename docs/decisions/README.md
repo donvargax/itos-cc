@@ -45,5 +45,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0040: Changed-code mutation proof stays off until the refactor ends](0040-changed-code-mutation-proof-stays-off-until-the-refactor-ends.md)
 - [ADR-0041: Snapshots are read and written through a snapshot domain and its port](0041-snapshots-are-read-and-written-through-a-snapshot-domain-and-its-port.md)
 - [ADR-0042: lang is split into a pure part domains may import and a part that reads the disk](0042-lang-is-split-into-a-pure-part-domains-may-import-and-a-part-that-reads-the-disk.md)
+- [ADR-0043: The pure lang asks a port for what surrounds a file, with the context first](0043-the-pure-lang-asks-a-port-for-what-surrounds-a-file-with-the-context-first.md)
 
 <!-- itos:decisions:end -->
