@@ -2172,7 +2172,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-36]
     kind: task
     why: >
       Decision 37: dry's library moves to internal/duplication, a domain (count/counting's naming:
