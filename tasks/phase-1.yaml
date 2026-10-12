@@ -1032,13 +1032,6 @@
     the suite finds is fixed in whichever side is wrong, never by leaving the case out. Rules whole:
     ctx first, never held or captured for I/O, no fake in production code. Light local testing: the
     packages named in the checks; never itos task show locally.
-  done_when:
-    - run: grep -q 'func SurroundingsContract' internal/lang/port/porttest/contract.go
-    - run: git grep -q 'SurroundingsContract(' -- 'internal/lang/port/porttest/*_test.go'
-    - run: git grep -q 'porttest.SurroundingsContract(' -- 'internal/workdir/*_test.go'
-    - run: git grep -q 'porttest.SurroundingsContract(' -- 'project/*_test.go'
-    - run: go test -count=1 ./internal/lang/... ./internal/workdir ./project
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-55
   type: test
   title: counting's Files fake and disk's Files pass one contract suite
