@@ -2261,6 +2261,13 @@ items:
       then this one comparison runs (from T-29's parent to that head, where no exit code has changed
       yet), and only then interrupt-exit-130 and semantic-exit-codes, features held by their own
       scenarios, which need no comparison after. Both depend on this item.
+
+      T-39 (dry's library to internal/duplication): cmd now reads each source through selection's
+      Tree.Read and parses it through workdir's Surroundings, its sides named by cmd. Compare dry
+      over a source that cannot be read (its 70 and message), dry run from a subdirectory with and
+      without paths (output names from the working directory, dry.json keys from the root), and dry
+      --changed naming a source outside the working directory (its absolute name in output and in
+      dry.json).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
