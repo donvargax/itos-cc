@@ -2278,3 +2278,17 @@ items:
       returns, nil when none. SCRAP-24 only asks that the key be there, so T-41 pins nothing either
       way; whether the scrap slice (T-43) keeps null or gives [] is a behaviour change to decide
       with a scenario, not in the refactor.
+  - id: slice-parse-source
+    title: One way for a slice to read and parse a selected source
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      internal/dry's and internal/scrap's Handler each hold the same parse: lang.Detect, refusing an
+      unsupported language before the read, then Tree.Read, then lang.Parse with the handler's
+      Surroundings. No slice may import another, so the copy grows with every moved command that
+      parses (crap and mutation next). A helper in internal/lang taking the bytes reader as a
+      function (or the selection domain offering a parse of what it selected) would keep one copy
+      and one order of failures; decide which in the spec of the next command that parses.
