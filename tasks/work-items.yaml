@@ -2465,8 +2465,8 @@ items:
   - id: T-53
     title: snapshot's Store fake and metricsdir's Store pass one contract suite
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-52]
     kind: task
     why: >
