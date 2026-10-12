@@ -2077,15 +2077,9 @@ items:
     title: cmd builds the kong parser once per run
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found reading cmd/itos-cc/moved.go (2026-10-11): moved() builds a whole kong parser on every
-      call, several times a run, and panics on a model error. Build it once in main and turn a model
-      error into an internal problem.
-
-      Absorbed by T-47 (the parser built once per run, a model error a 70 through ui, not a panic).
   - id: T-35
     title: "lang reads no disk: it asks a port, and its disk part is project's"
     phase: 1
