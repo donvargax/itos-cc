@@ -744,3 +744,22 @@
     - run: go test ./internal/snapshot/... ./internal/metricsdir/... ./cmd/itos-cc/...
     - run: "! grep -l 'itos-cc/metrics\"' cmd/itos-cc/dry.go cmd/itos-cc/scrap.go"
     - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
+- id: T-39
+  type: refactor
+  title: dry's library is the duplication domain under internal/
+  why: >
+    Decision 37: dry's library moves to internal/duplication, a domain (count/counting's naming: the
+    slice keeps the command's name). First a commit that only git mv's the files, then the edits. It
+    takes parsed files (internal/lang) and their display names from its caller and imports neither
+    project nor any disk code; depguard's domain and domain-io rules hold it. Display names matter:
+    Side.File, the path relative to the working directory, is the sort and pairing key in Groups,
+    Compare and candidate, so the caller supplies the name (as scrap's Analyze(f, rel) already takes
+    it) and order stays the same. The hand-parsed dry reads through selection's Tree.Read and parses
+    with internal/lang through workdir's port. Defaults and the JSON tags stay. Its tests parse in
+    memory through lang's porttest fake and meet domain-coverage's bar; golangci-lint covers it for
+    the first time, fixed without changing behaviour. .metrics/mutate/dry/dry.go.json moves unedited
+    with the file; the nightly refreshes it (decision 40).
+  done_when:
+    - run: test ! -e dry && go test ./internal/duplication/...
+    - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
+    - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
