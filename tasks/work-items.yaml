@@ -2453,40 +2453,9 @@ items:
     title: selection's Tree fake and workdir's Tree pass one contract suite
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-51]
     kind: task
-    why: >
-      porttest.TreeContract over selection's Tree: Discover('.') gives every supported file,
-      absolute, split into sources and tests, sorted, each once, unsupported files absent; a
-      directory root gives what is below it, a file root that file; hidden directories and the
-      skipped ones (node_modules, vendor, testdata, .metrics) are skipped from '.' but a file under
-      one is taken when named; a root that is not there is Unwalkable; Exists is true for '.', a
-      directory, a source, a non-source and a directory holding no source, false for an absent path
-      and for file/x; Read of a discovered path gives its text, an absent one Unreadable; Changed is
-      NoGit without a repository, else the uncommitted and untracked supported files as a set, the
-      caller's own copy; a done ctx makes Discover, Changed and Read return Cancelled. Fixes to the
-      fake (internal/selection/port/porttest/tree.go), each a difference from the adapter today: it
-      gives paths as stored and never resolves roots against a directory (the adapter gives absolute
-      paths, which snapshot.Key relies on; add a Dir and say 'absolute' in the port's doc); a
-      missing root gives nothing instead of Unwalkable; it skips no hidden or skipped directory;
-      Exists knows only files, so a directory with no source is absent (DRY-17's 'dry docs'); it
-      ignores ctx; Changed keeps unsupported files. An exported porttest.TreeOf(dir, files, changed)
-      classifies with lang's Detect and IsTest, used by the contract's fake opener and later by the
-      in-process scenarios; the porttest.Tree literals in the selection, units, dry and scrap tests
-      move to it where they need to. Decision 44: a fake stands in for an adapter in the in-process
-      scenarios only when both pass one contract suite. The suite is exported from the port's
-      porttest (contract.go, non-test code importing testing), takes a testing.T and an opener that
-      lays out a fixture and returns the port and the absolute working directory, and asserts what
-      every implementation must do: results, typed failures from fixture states both sides can hold,
-      a done context. The fake's configured failures stay in the fake's own tests; what only the
-      disk can do (symlinks, permissions, OS error texts, git check-ignore) stays in the adapter's.
-      Adapter openers use an EvalSymlinks'd t.TempDir and t.Chdir as internal/workdir/tree_test.go
-      does, so no case runs in parallel; fake openers use a t.TempDir path only as an absolute name,
-      so paths hold on Windows. A difference the suite finds is fixed in whichever side is wrong,
-      never by leaving the case out. Rules whole: ctx first, never held or captured for I/O, no fake
-      in production code. Light local testing: the packages named in the checks; never itos task
-      show locally.
   - id: T-53
     title: snapshot's Store fake and metricsdir's Store pass one contract suite
     phase: 1

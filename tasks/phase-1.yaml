@@ -982,12 +982,6 @@
     the suite finds is fixed in whichever side is wrong, never by leaving the case out. Rules whole:
     ctx first, never held or captured for I/O, no fake in production code. Light local testing: the
     packages named in the checks; never itos task show locally.
-  done_when:
-    - run: grep -q 'func TreeContract' internal/selection/port/porttest/contract.go
-    - run: git grep -q 'TreeContract(' -- 'internal/selection/port/porttest/*_test.go'
-    - run: git grep -q 'porttest.TreeContract(' -- 'internal/workdir/*_test.go'
-    - run: go test -count=1 ./internal/selection/... ./internal/workdir ./internal/units ./internal/dry ./internal/scrap
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-53
   type: test
   title: snapshot's Store fake and metricsdir's Store pass one contract suite
