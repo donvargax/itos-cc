@@ -2129,8 +2129,8 @@ items:
   - id: T-43
     title: scrap is a slice on kong
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-38, T-41, T-42]
     kind: task
     why: >
