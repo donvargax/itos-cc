@@ -763,3 +763,28 @@
     - run: test ! -e dry && go test ./internal/duplication/...
     - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
     - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
+- id: T-40
+  type: refactor
+  title: dry is a slice on kong
+  why: >
+    dry moves to internal/dry, a slice, by docs/go.md's Moving a command: same bytes, same exit
+    codes. CLI: Changed, Threshold, MinLines, MinNodes, JSON, then the paths, placeholder N,
+    defaults 0.82, 4 and 20, a test holding them equal to duplication.Defaults. Contract copied word
+    for word, Writes .metrics/dry.json included. The Handler holds selection's Tree, the snapshot
+    Store, lang's port and Name, the display-name function cmd binds to ui.Rel; the
+    focus-against-the-whole-project logic and union move into it. dry is the first moved command
+    with number flags: internal/cli first gains float and int mappers keeping the hand parser's
+    wording ('--threshold needs a number, and was given "abc"', fix 'Give it a number.'; 'a whole
+    number' for ints) and its strconv.ParseFloat and Atoi semantics, not kong's own parsing. No
+    classifier of its own: selection's and snapshot's live in cmd. moved.go gains its field, binding
+    and runMoved case; dryCommand and cmd/itos-cc/dry.go go, and
+    .metrics/mutate/cmd/itos-cc/dry.go.json goes with the deleted code (say so in the commit). Proof
+    (step 9): old and new binaries compared over dry command lines including --threshold -1,
+    --threshold=-1, --threshold=, --min-lines 1.5, --min-lines=0x10, --min-lines 010, -threshold and
+    a path outside the working directory, each differing line explained in the commit; a difference
+    that is not a bug fix the person has agreed to stops the task.
+  done_when:
+    - run: test ! -e cmd/itos-cc/dry.go && go test ./internal/dry/... ./internal/cli/... ./cmd/itos-cc/...
+    - run: grep -q 'dry.CLI' cmd/itos-cc/moved.go
+    - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
+    - run: tools/bin/architecture-check && tools/bin/pinned golangci-lint run ./internal/...
