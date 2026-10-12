@@ -3,7 +3,19 @@ package porttest
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
+
+// The fake keeps the contract every Surroundings keeps, the disk's
+// included. Its directory is a name only: the fake never touches it, and a
+// temporary directory's is absolute on every system.
+func TestSurroundingsKeepTheContract(t *testing.T) {
+	SurroundingsContract(t, func(t *testing.T, files map[string]string) (port.Surroundings, string) {
+		dir := t.TempDir()
+		return Surroundings{Files: files, Dir: dir}, dir
+	})
+}
 
 // The fake answers as a disk does: a file and the directories above it are
 // there, a file's bytes are what it holds, and a relative path is made
@@ -13,6 +25,8 @@ func TestSurroundingsAnswerAsADiskDoes(t *testing.T) {
 	for p, want := range map[string]bool{
 		"/work/mod/go.mod": true, "/work/mod": true, "/work": true, "/": true,
 		"/work/mo": false, "/work/mod/go.mod/x": false, "/other": false,
+		// A relative path is from Dir.
+		"mod/go.mod": true, "mod": true, ".": true, "go.mod": false,
 	} {
 		if got := s.Exists(t.Context(), filepath.FromSlash(p)); got != want {
 			t.Errorf("Exists(%q) = %t, want %t", p, got, want)

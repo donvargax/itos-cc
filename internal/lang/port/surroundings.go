@@ -12,7 +12,9 @@ import "context"
 // never a value (decision 30). An answer lang cannot have is false: lang
 // then names the file as it does when the disk gives no answer, and once
 // ctx is done it returns the context's error, so no answer given after
-// that matters.
+// that matters. A relative path is from the working directory.
+// porttest.SurroundingsContract holds what every Surroundings, the fake and
+// the disk's, must do.
 type Surroundings interface {
 	// Exists says whether path names a file or a directory.
 	Exists(ctx context.Context, path string) bool

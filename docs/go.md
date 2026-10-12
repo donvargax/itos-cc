@@ -67,7 +67,10 @@ from it, and thin slices named for their commands.
   `WorkingDir` and a path made absolute (`Abs`), each taking the context first and answering
   false where the disk could not. `Parse(ctx, around, …)` and `UnitsOf(ctx, around, …)` return
   the context's error once it is done. `internal/lang/port/porttest` holds the in-memory fake its
-  tests parse through. The top-level `project` library is its disk side: `project.Surroundings`,
+  tests parse through, at an absolute `Dir` a relative path is from, a path rooted with no
+  volume such as `/work` on `Dir`'s volume so a test reads the same on every system, and
+  `SurroundingsContract`, the contract it and both adapters, `project`'s and
+  `internal/workdir`'s, pass (Tests, below). The top-level `project` library is its disk side: `project.Surroundings`,
   making the calls lang once made itself, and `ParseFile` and `FindUp`, which the packages not
   yet refactored call with the context their caller gives them.
 - `internal/duplication` is the domain that finds functions similar enough to be duplicates
@@ -326,9 +329,11 @@ repository, since translating OS and git errors is what an adapter does.
 A fake stands in for its adapter only when both pass one contract suite (decision 44). Each
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
 so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
-`StoreContract(t, open)` for the snapshot `Store` (T-53). `open` lays out a fixture, a
-`TreeFixture` of files' text, whether git holds them and which changed, or the snapshots' raw
-text by name, and returns the port over it and its absolute working directory. The suite
+`StoreContract(t, open)` for the snapshot `Store` (T-53) and `SurroundingsContract(t, open)`
+for lang's `Surroundings` (T-54). `open` lays out a fixture, a `TreeFixture` of files' text,
+whether git holds them and which changed, the snapshots' raw text by name, or files' text, and
+returns the port over it and its absolute working directory. A port whose doc says answers
+after a done context do not matter, as `Surroundings`' does, has no done-context case. The suite
 asserts what every implementation must do: results, the typed failures of fixture states both
 sides can hold, and a done context. The fake's opener names a `t.TempDir()` path it never
 touches, so its paths are absolute on every system; the adapter's lays the fixture out under

@@ -2,46 +2,31 @@ package project
 
 import (
 	"context"
-	"os"
+	"maps"
 	"path/filepath"
+	"slices"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port/porttest"
 )
 
-// Surroundings answer as the disk does: a stat that succeeds is there, a
-// file's bytes are what os.ReadFile gives, and the working directory and an
-// absolute path are os.Getwd's and filepath.Abs's.
-func TestSurroundingsAnswerAsTheDiskDoes(t *testing.T) {
-	dir, err := filepath.EvalSymlinks(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	write(t, filepath.Join(dir, "mod", "go.mod"), "module m\n")
-	t.Chdir(dir)
-	s := Surroundings{}
-	for path, want := range map[string]bool{"mod": true, filepath.Join("mod", "go.mod"): true, "absent": false} {
-		if got := s.Exists(t.Context(), path); got != want {
-			t.Errorf("Exists(%q) = %t, want %t", path, got, want)
+// Surroundings keep the contract every Surroundings keeps, the fake's
+// included, answering from the disk of a temporary working directory, git
+// above it out of reach.
+func TestSurroundingsKeepTheContract(t *testing.T) {
+	porttest.SurroundingsContract(t, func(t *testing.T, files map[string]string) (port.Surroundings, string) {
+		dir, err := filepath.EvalSymlinks(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
-	if text, ok := s.Read(t.Context(), filepath.Join("mod", "go.mod")); !ok || string(text) != "module m\n" {
-		t.Errorf("Read(go.mod) = %q, %t", text, ok)
-	}
-	if text, ok := s.Read(t.Context(), "mod"); ok {
-		t.Errorf("Read(a directory) = %q, want no answer", text)
-	}
-	if text, ok := s.Read(t.Context(), "absent"); ok {
-		t.Errorf("Read(absent) = %q, want no answer", text)
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, ok := s.WorkingDir(t.Context()); !ok || got != wd {
-		t.Errorf("WorkingDir() = %q, %t; want %q", got, ok, wd)
-	}
-	if got, ok := s.Abs(t.Context(), "x.ts"); !ok || got != filepath.Join(wd, "x.ts") {
-		t.Errorf("Abs(x.ts) = %q, %t", got, ok)
-	}
+		for _, name := range slices.Sorted(maps.Keys(files)) {
+			write(t, filepath.Join(dir, filepath.FromSlash(name)), files[name])
+		}
+		t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
+		t.Chdir(dir)
+		return Surroundings{}, dir
+	})
 }
 
 // A done context reads nothing.
