@@ -287,3 +287,4 @@ questions:
     item: "mutation-exclude"
     question: "Issue #16 (mutation-exclude): test support outside _test.go files (porttest fakes, soon the godog step code in features/) is measured and mutated as product code. Recommend a top-level exclude: list of globs in itos-cc.yaml that leaves sources (never tests) out of crap, dry, units and mutation run, list, check, sample and --count; doublestar/v4 globs from the project root; exclusion always wins, a path or --changed naming an excluded file selecting nothing; snapshots of newly excluded files become orphans (why excluded), exceptions naming one go stale, mutation except on one is refused (exception.excluded). Alternatives: per-command keys; excluding tests too; our own ** matcher; a named file overriding exclusion; leaving old records in place."
     answer: "As recommended (the person, 2026-10-12), all four points."
+    decision: 45
