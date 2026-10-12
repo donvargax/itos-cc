@@ -2037,15 +2037,9 @@ items:
     title: units refuses a flag spelled with three dashes
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was units-triple-dash.
-      T-32 moved units onto kong: units ---changed, accepted with exit 0 before, now fails as
-      flags.unknown, exit 2, suggesting --changed. The person chose to keep exit 2 (2026-10-11): an
-      unknown flag is a usage error. No scenario pins it, so a later change could bring the silent
-      acceptance back.
   - id: exit-code-unlisted-hidden
     title: cli.ExitCode drops a problem whose code is not in Precedence
     phase: 1
