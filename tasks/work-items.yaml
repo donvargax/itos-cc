@@ -2510,7 +2510,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [slice-6]
     kind: task
     why: >
       A gate of its own (decision 33) before fakes come near cmd: a depguard rule over the slices'
