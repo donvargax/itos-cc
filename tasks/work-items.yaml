@@ -2393,6 +2393,10 @@ items:
       errors, symlinks) stays in the adapter's own tests; what the fake configures (an injected
       failure) stays in the fake's. A difference the suite finds is fixed in the fake or the
       adapter, whichever is wrong, never by leaving the case out.
+
+      Specified 2026-10-12 as T-52 (selection Tree), T-53 (snapshot Store), T-54 (lang Surroundings,
+      both adapters) and T-55 (counting Files, so decision 44 has no exception while the sample
+      stays); done when they are.
   - id: scenario-two-drivers
     title: The scenarios run in process against the ports' fakes as well as against the binary
     phase: 1
