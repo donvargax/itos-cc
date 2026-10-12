@@ -36,6 +36,21 @@ type world struct {
 	stdin string // the text the run reads from its standard input, "" for none
 
 	running *running // the run started with its standard input left open, nil for none
+
+	// last is the last run of itos-cc, which the problem steps run again
+	// with --json when it was run without, nil before one.
+	last *run
+	// problem is the problem of the last run the problem step found, its
+	// fix what the fix step reads, nil before one.
+	problem map[string]any
+}
+
+// run is one run of itos-cc: where, in what environment and with which
+// words.
+type run struct {
+	dir  string
+	env  []string
+	args []string
 }
 
 func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
@@ -66,6 +81,11 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 	sc.Step(`^it is interrupted while it waits$`, w.interruptWhileWaiting)
 
 	sc.Step(`^it exits with code (\d+)$`, w.exitsWith)
+	sc.Step(`^the exit code is (\d+)$`, w.exitsWith)
+	// The problem a run reports, by its rule and the flag it names, and the
+	// flag its fix suggests.
+	sc.Step(`^the problem is "([^"]*)", with flag "([^"]*)"$`, w.problemIs)
+	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
 	sc.Step(`^its standard output lists "([^"]*)"$`, func(text string) error {
 		if !slices.Contains(outputLines(w.stdout), text) {
 			return fmt.Errorf("standard output does not list %q\n%s", text, w.report())
@@ -154,6 +174,7 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 
 // setUp makes the scenario's scratch folder.
 func (w *world) setUp() error {
+	w.last, w.problem = nil, nil
 	var err error
 	if w.dir, err = os.MkdirTemp("", "itos-cc-features-"); err != nil {
 		return err
@@ -392,27 +413,36 @@ func setEnv(env []string, name, value string) []string {
 // runEnv runs program in the folder dir in the environment env, its exit
 // code and output what the Then steps read.
 func (w *world) runEnv(dir string, env []string, program string, args ...string) error {
+	if program == w.bin {
+		w.last = &run{dir: dir, env: env, args: args}
+	}
+	var err error
+	w.exit, w.stdout, w.stderr, err = w.capture(dir, env, program, args...)
+	return err
+}
+
+// capture runs program in the folder dir in the environment env, reading
+// the scenario's standard input, and gives its exit code and output.
+func (w *world) capture(dir string, env []string, program string, args ...string) (code int, stdout, stderr string, err error) {
 	cmd := exec.Command(program, args...)
 	cmd.Dir = dir
 	cmd.Env = env
 	if w.stdin != "" {
 		cmd.Stdin = strings.NewReader(w.stdin)
 	}
-	var stdout, stderr strings.Builder
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	w.stdout, w.stderr = stdout.String(), stderr.String()
+	var out, errOut strings.Builder
+	cmd.Stdout = &out
+	cmd.Stderr = &errOut
+	err = cmd.Run()
 	var exit *exec.ExitError
 	switch {
 	case err == nil:
-		w.exit = 0
+		return 0, out.String(), errOut.String(), nil
 	case errors.As(err, &exit):
-		w.exit = exit.ExitCode()
+		return exit.ExitCode(), out.String(), errOut.String(), nil
 	default:
-		return fmt.Errorf("running %s: %w", program, err)
+		return 0, out.String(), errOut.String(), fmt.Errorf("running %s: %w", program, err)
 	}
-	return nil
 }
 
 // Fixture steps.
@@ -504,6 +534,63 @@ func (w *world) jsonNamesProblem(rule string) error {
 		}
 	}
 	return fmt.Errorf("no problem of the JSON output has the rule %q\n%s", rule, w.report())
+}
+
+// problemIs is whether the last run reports a problem of that rule naming
+// that flag. The plain output names no rule, so the run is made again with
+// --json before its words, as a script would make it, unless it had --json
+// already: that run must exit as the plain one did, and the plain one's
+// error output must print the problem's message.
+func (w *world) problemIs(rule, flag string) error {
+	if w.last == nil {
+		return errors.New("no run of itos-cc to read a problem of")
+	}
+	stdout, report := w.stdout, w.report()
+	if !slices.Contains(w.last.args, "--json") {
+		code, out, errOut, err := w.capture(w.last.dir, w.last.env, w.bin, append([]string{"--json"}, w.last.args...)...)
+		if err != nil {
+			return err
+		}
+		report = fmt.Sprintf("%s\n--- with --json, exit %d\n--- stdout\n%s--- stderr\n%s", report, code, out, errOut)
+		if code != w.exit {
+			return fmt.Errorf("with --json itos-cc exited %d, not %d as without it\n%s", code, w.exit, report)
+		}
+		stdout = out
+	}
+	var object map[string]any
+	if err := json.Unmarshal([]byte(stdout), &object); err != nil {
+		return fmt.Errorf("the output with --json is not one JSON object: %v\n%s", err, report)
+	}
+	problems, _ := object["problems"].([]any)
+	for _, one := range problems {
+		problem, _ := one.(map[string]any)
+		if problem["rule"] != rule || problem["flag"] != flag {
+			continue
+		}
+		if message, _ := problem["message"].(string); message == "" || !strings.Contains(w.stderr, message) {
+			return fmt.Errorf("the error output does not print the problem's message %q\n%s", message, report)
+		}
+		w.problem = problem
+		return nil
+	}
+	return fmt.Errorf("no problem has the rule %q and the flag %q\n%s", rule, flag, report)
+}
+
+// fixSuggests is whether the fix of the problem problemIs found asks
+// whether the person meant flag, in the words the command line uses, and
+// the error output prints that fix.
+func (w *world) fixSuggests(flag string) error {
+	if w.problem == nil {
+		return errors.New("no problem found to read the fix of")
+	}
+	fix, _ := w.problem["fix"].(string)
+	if want := "Did you mean " + flag + "?"; !strings.Contains(fix, want) {
+		return fmt.Errorf("the problem's fix %q does not say %q\n%s", fix, want, w.report())
+	}
+	if !strings.Contains(w.stderr, fix) {
+		return fmt.Errorf("the error output does not print the problem's fix %q\n%s", fix, w.report())
+	}
+	return nil
 }
 
 // jsonGivesCounts is whether the success object's file is file, its lines
