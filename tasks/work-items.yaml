@@ -2616,3 +2616,19 @@ items:
       files), fakes not mocks. Light local testing: the packages and scenarios named in the checks,
       never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No binary
       comparison; a case worth comparing joins refactor-final-proof's list.
+  - id: inprocess-mutation-tests
+    title: Mutation kills slice and domain mutants through the in-process scenarios
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-59]
+    kind: idea
+    why: >
+      After T-59 (decision 44): itos-cc.yaml's mutation.tests lists the in-process scenarios (go
+      test ./cmd/itos-cc -run '^TestScenarios$' -scenarios={pattern}, support features/**), each
+      scenario's coverage written apart inside one process (runtime/coverage ClearCounters and
+      WriteCountersDir, covermode atomic, unverified), so a mutant in a slice or domain is killed in
+      seconds instead of through cmd/itos-cc's 217-second suite and a rebuilt binary. The
+      coordinator answered yes for the person's intent (2026-10-12: the same tests as fast tests
+      with fakes); specify after measuring T-59's run. It changes Go evidence and freshness, so the
+      next full run re-judges everything: land it before T-46 re-scopes the nightly.
