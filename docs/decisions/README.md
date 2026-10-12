@@ -46,5 +46,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0041: Snapshots are read and written through a snapshot domain and its port](0041-snapshots-are-read-and-written-through-a-snapshot-domain-and-its-port.md)
 - [ADR-0042: lang is split into a pure part domains may import and a part that reads the disk](0042-lang-is-split-into-a-pure-part-domains-may-import-and-a-part-that-reads-the-disk.md)
 - [ADR-0043: The pure lang asks a port for what surrounds a file, with the context first](0043-the-pure-lang-asks-a-port-for-what-surrounds-a-file-with-the-context-first.md)
+- [ADR-0044: Scenarios run in process against the ports' fakes and against the built binary](0044-scenarios-run-in-process-against-the-ports-fakes-and-against-the-built-binary.md)
 
 <!-- itos:decisions:end -->
