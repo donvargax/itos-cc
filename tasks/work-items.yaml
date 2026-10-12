@@ -2452,8 +2452,8 @@ items:
   - id: T-52
     title: selection's Tree fake and workdir's Tree pass one contract suite
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-51]
     kind: task
     why: >
