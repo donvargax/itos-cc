@@ -4,38 +4,51 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/counting/port"
+	"github.com/donvargax/itos-cc/internal/counting/port/porttest"
 )
 
-func TestFilesReadExistingFile(t *testing.T) {
+// Files keep the contract every Files keeps, the fake's included, reading
+// a temporary working directory.
+func TestFilesKeepTheContract(t *testing.T) {
+	porttest.FilesContract(t, func(t *testing.T, files map[string][]byte) (port.Files, string) {
+		dir, err := filepath.EvalSymlinks(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range slices.Sorted(maps.Keys(files)) {
+			path := filepath.Join(dir, filepath.FromSlash(name))
+			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, files[name], 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		t.Chdir(dir)
+		return Files{}, dir
+	})
+}
+
+// Reading a file leaves it as it was.
+func TestFilesReadLeavesTheInputAlone(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "input.txt")
 	want := []byte("read only\n")
 	if err := os.WriteFile(path, want, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	got, err := (Files{}).Read(t.Context(), path)
-	if err != nil {
+	if _, err := (Files{}).Read(t.Context(), path); err != nil {
 		t.Fatal(err)
-	}
-	if string(got) != string(want) {
-		t.Errorf("Read() = %q, want %q", got, want)
 	}
 	contents, readErr := os.ReadFile(path)
 	if readErr != nil || string(contents) != string(want) {
 		t.Errorf("Read() changed the input to %q, %v", contents, readErr)
-	}
-}
-
-func TestFilesReadMissingPathAsTypedFailure(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "absent")
-	_, err := (Files{}).Read(t.Context(), path)
-	var missing *port.Missing
-	if !errors.As(err, &missing) || missing.Path != path {
-		t.Fatalf("Read() error = %T %v, want typed Missing for %q", err, err, path)
 	}
 }
 

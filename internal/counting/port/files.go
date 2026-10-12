@@ -34,7 +34,9 @@ func (e *Cancelled) Error() string { return "cancelled read: " + e.Path }
 // Files reads the bytes at a path. Implementations return a typed ReadFailure
 // for missing and unreadable inputs, and Cancelled for a read that waits and
 // whose ctx is done first. ctx carries only the read's cancellation and
-// deadline, never a value.
+// deadline, never a value. A relative path is from the working directory.
+// porttest.FilesContract holds what every Files, the fake and the disk's,
+// must do.
 type Files interface {
 	Read(ctx context.Context, path string) ([]byte, ReadFailure)
 }

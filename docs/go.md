@@ -17,7 +17,9 @@ from it, and thin slices named for their commands.
   30); pure logic, such as counting bytes, takes none.
 - `internal/counting/port` declares `Files` and its sealed set of failures: `Missing`,
   `Unreadable` and `Cancelled`. `Files.Read` takes the context first.
-- `internal/counting/port/porttest` holds our in-memory fake of `Files` for the tests.
+- `internal/counting/port/porttest` holds our in-memory fake of `Files` for the tests, at an
+  absolute `Dir` a relative path is from, as the other ports' fakes are, and `FilesContract`,
+  the contract it and `internal/disk`'s `Files` both pass (Tests, below).
 - `internal/selection` is the domain every command chooses its files through: paths given as
   arguments, a path that is not there taken as a fragment of a file's path under the working
   directory, `--changed` adding git's changed files, and no paths meaning the whole working
@@ -329,11 +331,15 @@ repository, since translating OS and git errors is what an adapter does.
 A fake stands in for its adapter only when both pass one contract suite (decision 44). Each
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
 so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
-`StoreContract(t, open)` for the snapshot `Store` (T-53) and `SurroundingsContract(t, open)`
-for lang's `Surroundings` (T-54). `open` lays out a fixture, a `TreeFixture` of files' text,
-whether git holds them and which changed, the snapshots' raw text by name, or files' text, and
-returns the port over it and its absolute working directory. A port whose doc says answers
-after a done context do not matter, as `Surroundings`' does, has no done-context case. The suite
+`StoreContract(t, open)` for the snapshot `Store` (T-53), `SurroundingsContract(t, open)`
+for lang's `Surroundings` (T-54) and `FilesContract(t, open)` for counting's `Files` (T-55).
+`open` lays out a fixture, a `TreeFixture` of files' text, whether git holds them and which
+changed, the snapshots' raw text by name, or files' text or bytes, and returns the port over
+it and its absolute working directory. Every fake that names paths sits at an absolute `Dir`
+a relative path is from, a path rooted with no volume such as `/work` on `Dir`'s volume, so a
+suite reads by relative and absolute paths alike. A port whose doc says it does not act on a
+done context, or that answers after one do not matter, as `Files`' and `Surroundings`' do,
+has no done-context case, and its suite says why. The suite
 asserts what every implementation must do: results, the typed failures of fixture states both
 sides can hold, and a done context. The fake's opener names a `t.TempDir()` path it never
 touches, so its paths are absolute on every system; the adapter's lays the fixture out under
