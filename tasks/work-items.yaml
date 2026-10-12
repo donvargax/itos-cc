@@ -2545,3 +2545,14 @@ items:
       never by leaving the case out. Rules whole: ctx first, never held or captured for I/O, no fake
       in production code. Light local testing: the packages named in the checks; never itos task
       show locally.
+  - id: listed-support-doublestar
+    title: mutation.tests.support takes the same globs as exclude
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      mutation.tests.support uses filepath.Glob (mutate/listed.go), which has no **, while exclude:
+      takes doublestar globs (decision on q-61). One glob syntax across itos-cc.yaml would be easier
+      to learn; changing support's is an Upgrading change.
