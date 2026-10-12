@@ -2036,8 +2036,8 @@ items:
   - id: slice-5
     title: units refuses a flag spelled with three dashes
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
