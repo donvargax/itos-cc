@@ -2490,8 +2490,8 @@ items:
   - id: T-56
     title: No porttest fake is linked into itos-cc or a slice's code
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-6]
     kind: task
     why: >
