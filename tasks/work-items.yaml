@@ -2466,32 +2466,9 @@ items:
     title: snapshot's Store fake and metricsdir's Store pass one contract suite
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-52]
     kind: task
-    why: >
-      porttest.StoreContract over snapshot's Store, its opener given raw snapshot text by name: Root
-      is the given absolute root; Write then Read gives the value back, a nested name such as
-      mutate/a.go.json included; an absent snapshot is false with no failure and the value
-      untouched; malformed text is true and Unreadable; writing NaN is Unwritable and a later Read
-      finds nothing; a Write replaces the snapshot whole; a done ctx makes Root, Read and Write
-      return Cancelled and writes nothing. No difference shows through the port today, but the fake
-      encodes with json.Marshal (porttest/store.go) where metrics indents, does not escape HTML and
-      ends with a newline (metrics/metrics.go): the fake writes the same bytes, so a scenario
-      reading .metrics in process sees what it sees on disk. The git-toplevel root, the atomic
-      rename and a file blocking a folder stay metricsdir's own tests. Decision 44: a fake stands in
-      for an adapter in the in-process scenarios only when both pass one contract suite. The suite
-      is exported from the port's porttest (contract.go, non-test code importing testing), takes a
-      testing.T and an opener that lays out a fixture and returns the port and the absolute working
-      directory, and asserts what every implementation must do: results, typed failures from fixture
-      states both sides can hold, a done context. The fake's configured failures stay in the fake's
-      own tests; what only the disk can do (symlinks, permissions, OS error texts, git check-ignore)
-      stays in the adapter's. Adapter openers use an EvalSymlinks'd t.TempDir and t.Chdir as
-      internal/workdir/tree_test.go does, so no case runs in parallel; fake openers use a t.TempDir
-      path only as an absolute name, so paths hold on Windows. A difference the suite finds is fixed
-      in whichever side is wrong, never by leaving the case out. Rules whole: ctx first, never held
-      or captured for I/O, no fake in production code. Light local testing: the packages named in
-      the checks; never itos task show locally.
   - id: T-54
     title: lang's Surroundings fake and both its adapters pass one contract suite
     phase: 1

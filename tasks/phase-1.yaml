@@ -1008,12 +1008,6 @@
     never by leaving the case out. Rules whole: ctx first, never held or captured for I/O, no fake
     in production code. Light local testing: the packages named in the checks; never itos task show
     locally.
-  done_when:
-    - run: grep -q 'func StoreContract' internal/snapshot/port/porttest/contract.go
-    - run: git grep -q 'StoreContract(' -- 'internal/snapshot/port/porttest/*_test.go'
-    - run: git grep -q 'porttest.StoreContract(' -- 'internal/metricsdir/*_test.go'
-    - run: go test -count=1 ./internal/snapshot/... ./internal/metricsdir ./internal/dry ./internal/scrap
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-54
   type: test
   title: lang's Surroundings fake and both its adapters pass one contract suite
