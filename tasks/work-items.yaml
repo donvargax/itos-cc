@@ -2046,3 +2046,15 @@ items:
       flags.unknown, exit 2, suggesting --changed. The person chose to keep exit 2 (2026-10-11): an
       unknown flag is a usage error. No scenario pins it, so a later change could bring the silent
       acceptance back.
+  - id: exit-code-unlisted-hidden
+    title: cli.ExitCode drops a problem whose code is not in Precedence
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found reading internal/cli for the template issue (2026-10-11): when a problem carries a code
+      Precedence does not list and another listed code is present, ExitCode silently ignores it,
+      hiding the very defect its comment describes. It should surface as an internal failure, or a
+      test should hold every code to the list.
