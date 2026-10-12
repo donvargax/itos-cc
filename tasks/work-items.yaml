@@ -2424,3 +2424,20 @@ items:
       unused-parameter, 2 redefines-builtin-id, 1 exported); over the architecture fixtures they
       would also ask for package and exported-name comments. Whether to enable some, all or none of
       them is a gate decision of its own (ADR-0033).
+  - id: dart-support
+    title: itos-cc supports Dart
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [semantic-exit-codes]
+    kind: idea
+    why: >
+      The person (2026-10-12): once the refactor is done, itos-cc gains a new language, Dart. The
+      order the person set is the refactor first (through S10: refactor-final-proof,
+      interrupt-exit-130, semantic-exit-codes), then the open GitHub issues others may depend on (as
+      of 2026-10-12, #15 to #47 bar the Renovate dashboard #38), and only then Dart. It lands in the
+      refactored design: Dart's rules in internal/lang behind its port, its coverage and test
+      commands behind the coverage domain's port, its scenarios under both drivers (decision 44).
+      Specify it when it comes up: which commands it covers first (units, dry, scrap, crap,
+      mutation), the coverage tool (dart test --coverage, package:coverage), and the library to
+      parse Dart, if any, decided in the spec.
