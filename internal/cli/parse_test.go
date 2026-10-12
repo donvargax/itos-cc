@@ -180,10 +180,12 @@ func TestOtherFailuresAreUsageErrorsAndTheRestBugs(t *testing.T) {
 	}
 }
 
+// A kind no mapper of ours reads, such as a uint (a number flag is a float64
+// or an int, numbers.go), is refused in kong's words.
 func TestAValueKongsMapperRefusesIsInvalid(t *testing.T) {
 	var app struct {
 		Count struct {
-			Top  int    `help:"top"`
+			Top  uint   `help:"top"`
 			Kind string `enum:"a,b" default:"a" help:"kind"`
 		} `cmd:""`
 	}

@@ -11,8 +11,8 @@ package cli
 // flag before kong's own mapper reads it, and a hook before kong resets the
 // values, where the flags given are known, in kong's path of the command
 // line. Every flag is a switch (a bool, its --no- pair beside it) or takes
-// one value (a string), and is given once; a flag of another kind is added
-// here first. A cumulative flag (a slice, as kong reads one) may be given
+// one value (a string, or a number, read as numbers.go says), and is given
+// once; a flag of another kind is added here first. A cumulative flag (a slice, as kong reads one) may be given
 // again, though no command has one yet.
 //
 // kong decodes a flag twice over: from the command line while it traces it,
@@ -48,6 +48,8 @@ func Flags() []kong.Option {
 	return []kong.Option{
 		kong.KindMapper(reflect.Bool, switchMapper{traced, kongs.ForType(reflect.TypeFor[bool]())}),
 		kong.KindMapper(reflect.String, valueMapper{kongs.ForType(reflect.TypeFor[string]())}),
+		kong.KindMapper(reflect.Float64, numberMapper{traced: traced}),
+		kong.KindMapper(reflect.Int, numberMapper{traced: traced, whole: true}),
 		kong.WithBeforeReset(traced.done),
 	}
 }
@@ -133,6 +135,16 @@ func (e *SwitchValueError) Error() string {
 type valueMapper struct{ kong kong.Mapper }
 
 func (m valueMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
+	if err := valueGiven(ctx); err != nil {
+		return err
+	}
+	return m.kong.Decode(ctx, target)
+}
+
+// valueGiven refuses a flag that takes a value and is given none: the
+// command line ends after it, or a flag comes next. A flag given before is
+// refused as given twice, before its value is judged.
+func valueGiven(ctx *kong.DecodeContext) error {
 	if next := ctx.Scan.Peek(); ctx.Value.Flag != nil && !next.IsValue() {
 		if repeated(ctx.Value) {
 			return &RepeatedFlagError{Flag: ctx.Value.Flag}
@@ -143,7 +155,7 @@ func (m valueMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error
 		}
 		return missing
 	}
-	return m.kong.Decode(ctx, target)
+	return nil
 }
 
 // ValueMissingError is a flag that takes a value given none: the command
