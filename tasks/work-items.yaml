@@ -2371,7 +2371,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-49]
     kind: task
     why: >
       KotlinTests, kotlinTestClasses, GradleWrapper, buildRoots, kotlinPlan, Plans, Run and
