@@ -2477,8 +2477,8 @@ items:
   - id: T-55
     title: counting's Files fake and disk's Files pass one contract suite
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-54]
     kind: task
     why: >
