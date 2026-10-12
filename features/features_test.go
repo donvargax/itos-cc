@@ -79,10 +79,10 @@ const (
 // converted are the feature files this harness runs, those whose scenarios
 // have steps: count.feature, the template's sample, every scenario of it
 // @wip (T-26), units.feature, the first command moved onto kong (T-32), and
-// dry.feature, converted before its command moves so the move is held by its
-// scenarios (T-37). A command that moves converts its own file and adds it
+// dry.feature and scrap.feature, each converted before its command moves so
+// the move is held by its scenarios (T-37, T-41). A command that moves converts its own file and adds it
 // here, its scenarios' text unchanged (q-52).
-var converted = []string{"count.feature", "units.feature", "dry.feature"}
+var converted = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
 
 func TestFeatures(t *testing.T) {
 	filter, unconverted, err := tagFilter(*scenarios, ".")

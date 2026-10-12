@@ -41,8 +41,8 @@ killed by the system's default action fails the step: it never handled the inter
 ## Which files run
 
 The harness runs the feature files that have steps, the ones `converted` lists in
-`features_test.go`: `units.feature`, `dry.feature`, and `count.feature`, the template's sample,
-all of whose scenarios are `@wip`. Every other file converts to godog over time, each with the command that
+`features_test.go`: `units.feature`, `dry.feature`, `scrap.feature`, and `count.feature`, the
+template's sample, all of whose scenarios are `@wip`. Every other file converts to godog over time, each with the command that
 moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests of `cmd/itos-cc`
 hold its scenarios. A selection that names a scenario of such a file, as the smoke set does for
 every file, logs it as not run here and runs the rest; one that names nothing a converted file
@@ -52,7 +52,8 @@ A `units.feature` scenario runs in a sample project of TypeScript and Python, pr
 tests, unless it writes files of its own and lists those alone. A `dry.feature` scenario that only
 says When I run runs in a sample project of TypeScript in a git repository, one file changed since
 its commit, its functions paired at and just past every bound those scenarios name; the others
-write their own files. Step patterns are global across the files, so each file's own setup is a
+write their own files. A `scrap.feature` scenario that only says When I run runs in a sample of
+test files in Python, TypeScript and Go, of four pressures. Step patterns are global across the files, so each file's own setup is a
 Before hook keyed on the scenario's file.
 
 ## Running them
@@ -203,3 +204,32 @@ when there are none.
 | `a group holds every function linked to another member by a pair at or above the threshold` | The same command over functions of their own: each entry is a set of functions joined by pairs at or above the threshold. |
 | `.metrics/dry.json holds the version, the threshold, the candidates, and the groups`   | A version, and stdout's threshold, candidates and groups.        |
 | `each candidate has …, and left and right sides with …` / `each group has …, and its members` | Each has every key named, `lines` the start and end lines. |
+
+`scrap.feature`'s steps, in `scrap_test.go`. A measurement is what `scrap --json --verbose` reports
+of the scenario's files, and "the file's report" is that of the scenario's run, from its object, or
+from the `.metrics/scrap.json` it wrote, of which its text output must print each file's action,
+pressure, examples and scores. Where a Given states what its fixture holds (counts, scores, a
+similarity, a pressure recorded), the fixture is checked against what scrap measures.
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `it is measured` / `it is scored`                                                     | Measures the scenario's files; scored, the example must have the Given's counts. |
+| `a <language> test file using <frameworks>` / `each test case is an example, grouped by its enclosing …` | Files of each framework; their examples exactly, each grouped by the constructs of the kinds named, joined by ` › `, and by no other. |
+| `the <language> test file "…":` with its text                                         | Writes the file.                                                  |
+| `the examples are:` with a table                                                      | Exactly the table's examples, in order: assertions, decisions, mocks, table. |
+| `a <language> example containing <code>` / `it counts as an assertion`; `the call counts` or `does not count` | The one example's assertions are 1, or 0.        |
+| `an example with <n> code lines, …` / `its score is <n>`                              | An example of exactly those counts, and its score.               |
+| `an example with <measure>` / `it has the smell "…"`                                  | The example with the measure has the smell; one just short of it does not. |
+| `its action is …`, `its pressure is …`, `it has no recommendations`                   | The file's report.                                                |
+| `it has one "…" cluster of <n> examples`, `the first recommendation says to fold them into "…"` | The clusters of that kind; the first recommendation folds the table's examples, naming each. |
+| `its first recommendation is <confidence> confidence: …`, `a <confidence> recommendation says to …`, `a recommendation says to …` | A recommendation holding the sentence's words, in order. |
+| `HIGH recommendations come before MEDIUM ones, and MEDIUM before LOW` / `at most <n> recommendations are listed` / `each names the example and its line range` | The order; the cap, reached since the file calls for more; each quotes an example with its lines. |
+| `each file is printed as "…"` / `files are listed from the highest pressure down` / `recommendations follow, indented, with their confidence` | The text output's lines. |
+| `the hint is not printed` / `it is printed with --verbose`                            | A LEAVE_ALONE file's LOW hint, hidden, and printed with the flag. |
+| `every example is printed with its …`                                                 | Each example's verbose line holds the measures named.            |
+| `each file's report has …`                                                            | Each file of the object has the keys named.                      |
+| `.metrics/scrap.json recorded a pressure of <p> for a file` / `I run "…" and its pressure is now <p>` / `its verdict is …` | Fixtures of those pressures, the first recorded by a run of scrap; the verdict in the line and in `--json`'s compare. |
+| `its line ends with "…" and the previous pressure` / `a warning says to … before keeping the change` | The worse file's line and the warning under it.          |
+| `.metrics/scrap.json holds reports for … and …` / `still holds …'s report`             | Both recorded, the second then changed on disk; its old report kept. |
+| `.metrics/scrap.json is not valid JSON`, `stderr says it is ignoring the unreadable snapshot`, `the run completes` | The warning, and a report written. |
+| `the selection holds no test files`                                                   | Only a production file and a README.                              |

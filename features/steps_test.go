@@ -197,6 +197,7 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 	// file's own Before runs in the scratch folder made above.
 	unitSteps(sc, w)
 	drySteps(sc, w)
+	scrapSteps(sc, w)
 }
 
 // setUp makes the scenario's scratch folder.
