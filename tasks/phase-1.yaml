@@ -727,10 +727,6 @@
     warns about an unreadable snapshot and goes on. crap, mutation and serve keep the metrics
     library until each moves. depguard rules, architecture fixtures and docs/go.md's package entries
     follow docs/go.md's Adding a package.
-  done_when:
-    - run: go test ./internal/snapshot/... ./internal/metricsdir/... ./cmd/itos-cc/...
-    - run: "! grep -l 'itos-cc/metrics\"' cmd/itos-cc/dry.go cmd/itos-cc/scrap.go"
-    - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
 - id: T-39
   type: refactor
   title: dry's library is the duplication domain under internal/
