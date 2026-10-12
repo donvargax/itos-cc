@@ -2484,7 +2484,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-52]
     kind: task
     why: >
       porttest.StoreContract over snapshot's Store, its opener given raw snapshot text by name: Root
