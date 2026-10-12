@@ -8,6 +8,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/dry"
+	"github.com/donvargax/itos-cc/internal/scrap"
 	"github.com/donvargax/itos-cc/internal/units"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
@@ -23,6 +24,7 @@ import (
 // slice's kong struct, its help the line usage lists it by.
 type commandLine struct {
 	Dry   dry.CLI   `cmd:"" help:"functions similar enough to be duplicates"`
+	Scrap scrap.CLI `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
 	Units units.CLI `cmd:"" help:"list the functions and methods every tool measures"`
 }
 
@@ -45,7 +47,8 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) func() (*kong.Kon
 			}),
 			kong.BindTo(ctx, (*context.Context)(nil)),
 			kong.Bind(ui, units.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}},
-				dry.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel}),
+				dry.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel},
+				scrap.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel}),
 		)...)
 	}
 }
@@ -87,6 +90,8 @@ func runMoved(args []string) int {
 	switch name := parsed.Selected().Name; name {
 	case "dry":
 		return callSafely(ui, parsed, name, c.Dry.Run, c.Dry.JSON)
+	case "scrap":
+		return callSafely(ui, parsed, name, c.Scrap.Run, c.Scrap.JSON)
 	case "units":
 		return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON)
 	}

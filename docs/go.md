@@ -99,6 +99,13 @@ from it, and thin slices named for their commands.
   and records `dry.json` through the `Store`, each file named from the root
   (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
   domains', whose classifiers are cmd's, or `internal/lang`'s, internal ones.
+- `internal/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, its `Handler`
+  holding the same four. `Handle` selects the test files, reads the last `scrap.json` through
+  the `Store`, going on without it when it is `Unreadable`, reads and parses each test file as
+  `dry` does, measures it with `internal/teststructure` under its `Name`, merges the run into
+  the last snapshot with the domain's `History` and records it, each file keyed from the root.
+  `Run` prints each file's report, and says on stderr, with `--json` too, when the last
+  snapshot was ignored or there was no test file to measure. It has no classifier.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
   plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
@@ -115,12 +122,10 @@ from it, and thin slices named for their commands.
   it also holds the selection domain's classifier, `classifySelection`, since every command
   selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
   ones. It holds the snapshot domain's too, `classifySnapshot`, since several commands share
-  it, and `snapshots`, the `Store` `internal/metricsdir` gives the hand-parsed `scrap` and
-  `dry`'s handler: a snapshot that cannot be written is the internal 70 it always was, and
-  `scrap` warns about an unreadable last one and goes on. `crap`, `mutation` and `serve` still
-  call the `metrics` library until each moves (decision 41). The hand-parsed `scrap` reads
-  each test file through `workdir`'s `Tree`, parses it with `internal/lang` through `workdir`'s
-  `Surroundings` and hands it to `internal/teststructure`, named from the working directory.
+  it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
+  a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
+  an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
+  library until each moves (decision 41).
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.

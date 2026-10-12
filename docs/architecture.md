@@ -36,8 +36,8 @@ The test-structure domain, `internal/teststructure`, measures test code: which e
 large, branch, mock heavily, assert too little or too much, or repeat each other, and what an
 assistant may do about each file. It takes files `internal/lang` has parsed, with the names its
 caller gives them, and merges a run's reports into the last snapshot's; it reads nothing, so it
-has no port. cmd reads and parses each test file for the hand-parsed `scrap` through
-`internal/workdir`.
+has no port. The `scrap` slice, `internal/scrap`, reads and parses each test file through the
+selection `Tree` and lang, and reads and records its snapshot through the snapshot `Store`.
 
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain, reads each file through the same port and names its units with

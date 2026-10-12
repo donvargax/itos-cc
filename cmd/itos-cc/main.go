@@ -55,7 +55,7 @@ var versionCommand = &command{
 var commands = map[string]*command{}
 
 func init() {
-	for _, c := range []*command{crapCommand, mutationGroup, scrapCommand, serveCommand, versionCommand} {
+	for _, c := range []*command{crapCommand, mutationGroup, serveCommand, versionCommand} {
 		commands[c.name] = c
 	}
 }
