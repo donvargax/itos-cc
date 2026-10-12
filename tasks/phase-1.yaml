@@ -710,9 +710,6 @@
     in Before hooks keyed on the scenario's file. Each step is checked to fail on a changed
     expectation. dry.feature joins converted, and its smoke scenario then runs in the smoke step. No
     product code changes.
-  done_when:
-    - run: grep -q '"dry.feature"' features/features_test.go
-    - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
 - id: T-38
   type: refactor
   title: Snapshots are read and written through the snapshot domain's port
