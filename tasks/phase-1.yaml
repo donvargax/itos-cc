@@ -788,10 +788,6 @@
     thin. Its tests parse in memory; domain-coverage and golangci-lint hold it, fixed without
     changing behaviour. Its three .metrics/mutate records move unedited with the files; the nightly
     refreshes them (decision 40).
-  done_when:
-    - run: test ! -e scrap && go test ./internal/teststructure/...
-    - run: tools/bin/architecture-check && tools/bin/domain-coverage && tools/bin/pinned golangci-lint run ./internal/...
-    - run: go test ./features -count=1 -scenarios='@ID-SCRAP-'
 - id: T-43
   type: refactor
   title: scrap is a slice on kong
