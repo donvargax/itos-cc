@@ -2030,3 +2030,17 @@ items:
       warning says to name the item new id in the question, or remove its item; doing so quiets 23
       lines of every config check and task run. Found moving to itos 8.0.0 under T-34.
     refs: [T-34]
+  - id: killed-timeout-test-timing
+    title: TestKilledAndTimeoutAgree holds on a slow runner
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      TestKilledAndTimeoutAgree in cmd/itos-cc/mutation_sample_test.go wants board.go:16 recorded as
+      timeout then killed, but the Windows runner of CI run 38201420401 (7b16aec, a pin and
+      AGENTS.md change only) timed it out on the second run too, so the push went red until the job
+      was rerun. Like seed-test-timeouts, the test should not depend on the runner speed; one fix
+      may serve both.
+    refs: [seed-test-timeouts, flaky-kills, timeout-allowance]
