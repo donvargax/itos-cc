@@ -2398,7 +2398,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-50]
     kind: task
     why: >
       ADR-0030's rule as a gate, a task of its own as ADR-0033 asks of every new gate: containedctx
