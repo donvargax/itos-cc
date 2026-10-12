@@ -2293,3 +2293,17 @@ items:
       scenario, and list the expectations whose change still passed: the steps or fixtures that
       cannot tell right from wrong. T-37 found one that way, a grouping fixture whose groups did not
       change with a lower threshold.
+  - id: snapshot-port-remove-and-other-roots
+    title: The snapshot port grows Remove and another project's root before mutation and serve move
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-38's Store has Root, Read and Write, all dry and scrap need. mutate/run.go calls
+      metrics.Remove, mutate/orphans.go and mutate/snapshot.go read with
+      metrics.ReadIn(metrics.DirOf(root)) for a root other than the working directory's, and
+      graph/build.go walks metrics.DirOf(root) and its mutate folder. Settling in the spec of the
+      first of those moves how the port grows (a Remove method, a store made for a given root,
+      listing a folder of snapshots) keeps that move from reaching metrics around the port.
