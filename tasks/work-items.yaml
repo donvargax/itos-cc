@@ -2386,26 +2386,9 @@ items:
     title: Each port's fake and adapter pass one contract suite
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-51]
     kind: idea
-    why: >
-      The prerequisite of scenario-two-drivers (decision on q-60): a fake can stand in for an
-      adapter in scenarios only when both are held to the same behaviour. Today each fake and each
-      adapter is tested apart (internal/snapshot/port/porttest/store_test.go beside
-      internal/metricsdir's tests, the selection Tree fake beside internal/workdir's), and nothing
-      says they agree. Each port's porttest gains one exported contract suite, a function taking a
-      testing.T and a constructor, asserting what every implementation must do (results, typed
-      failures, a done context), run from the fake's tests and from the adapter's tests against a
-      real temporary directory: selection's Tree, snapshot's Store and lang's Surroundings, and
-      counting's Files if the count sample is still there. What only the disk can do (permission
-      errors, symlinks) stays in the adapter's own tests; what the fake configures (an injected
-      failure) stays in the fake's. A difference the suite finds is fixed in the fake or the
-      adapter, whichever is wrong, never by leaving the case out.
-
-      Specified 2026-10-12 as T-52 (selection Tree), T-53 (snapshot Store), T-54 (lang Surroundings,
-      both adapters) and T-55 (counting Files, so decision 44 has no exception while the sample
-      stays); done when they are.
   - id: scenario-two-drivers
     title: The scenarios run in process against the ports' fakes as well as against the binary
     phase: 1
