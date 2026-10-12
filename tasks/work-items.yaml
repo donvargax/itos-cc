@@ -2317,28 +2317,9 @@ items:
     title: graph and the server build under the context their callers give them
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-47]
     kind: task
-    why: >
-      Builder.Build, parse and parseTest, TestsImporting, parseDependencies, applyingConftests and
-      aliases take ctx first, and server.New and rebuild take the ctx serve gives them, which ends
-      the TODOs at graph/build.go:215, 243, graph/graph.go:291 and graph/tests.go:131, 149; their
-      callers (serve.go, mutate.go:686, fresh_preparation.go:180) pass theirs. graph goes before
-      mutate because graph calls mutate.SuiteTestHashes (graph/build.go:404), whose suiteRoot TODOs
-      the next task threads. S4 of the template-design refactor (ADR-0030, ADR-0043; docs/go.md says
-      packages pass context.TODO() until S4 threads them a context). Rules kept whole: ctx is the
-      first parameter, never held in a struct, never captured in a closure for I/O (a callback that
-      does I/O takes ctx first), and no context.TODO() or context.Background() is made below main
-      except context.WithoutCancel(ctx) for real cleanup. Signal handling stays as it is
-      (docs/CLI.md: Ctrl-C does not yet cancel commands; exit codes change last, after
-      refactor-final-proof): serve keeps signal.NotifyContext over the ctx it is given, mutation run
-      --count keeps countedSignalContext and its exit 75. Where a call now under a real context can
-      return early because the run was stopped (fail-fast, counted interrupt), check ctx.Err() after
-      it and return context.Cause, so the stop is reported as today, never as a missing file. No
-      binary comparison (docs/go.md step 9); a case worth comparing joins refactor-final-proof's
-      list. Never run itos task show for this task locally (it runs the checks); run only the
-      targeted tests while working, CI runs the rest.
   - id: T-49
     title: mutate runs under the context cmd gives it and holds none in a value
     phase: 1

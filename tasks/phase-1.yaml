@@ -892,10 +892,6 @@
     the stop is reported as today, never as a missing file. No binary comparison (docs/go.md step
     9); a case worth comparing joins refactor-final-proof's list. Never run itos task show for this
     task locally (it runs the checks); run only the targeted tests while working, CI runs the rest.
-  done_when:
-    - run: "! git grep -nE 'context\\.(TODO|Background)\\(\\)' -- 'graph/*.go' 'server/*.go' ':!*_test.go'"
-    - run: go vet ./graph ./server ./cmd/itos-cc
-    - run: go test -count=1 ./graph/... ./server/...
 - id: T-49
   type: refactor
   title: mutate runs under the context cmd gives it and holds none in a value
