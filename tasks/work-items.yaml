@@ -2420,3 +2420,19 @@ items:
       (./internal/...), with fixtures that fail the rule if tools/testdata/architecture is where
       such fixtures live. After S4 nothing should trip it; fix any finding in the code, never by
       weakening the rule. Never run itos task show for this task locally.
+  - id: mutation-run-saves-each-file
+    title: mutation run saves each file's results as soon as the file is decided
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      A mutation run writes .metrics/mutate/ only after every mutant has run (mutate/run.go:
+      execute, then the write loop), except a fail-fast stop's Preserved files. A run cut off by a
+      timeout, a kill or a lost machine keeps nothing, so a long run over a big repository never
+      makes progress across attempts. Nightly 38231106901 (2026-10-12) ran 267 of 4901 mutants in 6
+      hours and was cancelled at GitHub's job limit with nothing saved. Writing each file's snapshot
+      once all its judged mutants are decided would keep every finished file; how a stopped run
+      reports and exits ties to interrupt-exit-130 and ADR-0022's preserved files. Product behaviour
+      with scenarios; its natural place is the mutation move (S6, S7).
