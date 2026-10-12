@@ -17,10 +17,10 @@ import (
 	"fmt"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/lang"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
-	"github.com/donvargax/itos-cc/lang"
-	langport "github.com/donvargax/itos-cc/lang/port"
 )
 
 // CLI is the units command's command line: the files it selects, as every

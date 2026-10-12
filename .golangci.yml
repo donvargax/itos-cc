@@ -36,17 +36,21 @@ linters:
         # folder is a domain package it measures (./internal/counting), its
         # port subpackages not measured, so the floor holds behaviour, not
         # the ports and fakes. internal/selection chooses every command's
-        # files.
+        # files; internal/lang names the units every command measures, its
+        # port asking what surrounds a file (decisions 42 and 43).
         domain:
           list-mode: lax
           files:
             - "**/internal/counting/**"
             - "**/internal/selection/**"
+            - "**/internal/lang/**"
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -56,6 +60,7 @@ linters:
           files:
             - "**/internal/counting/**"
             - "**/internal/selection/**"
+            - "**/internal/lang/**"
             - "!$test"
           deny:
             - pkg: os
@@ -71,19 +76,21 @@ linters:
         # slice is held with no edit to this rule; a new domain or adapter
         # package is excluded here as it is listed in its own rule. A rule
         # cannot tell a slice's own import from another's, so a slice's tests
-        # are in its own package and need no import of it. lang, the
-        # top-level library that names a source's units, is allowed: it is
-        # the measure every command shares, no adapter and wrapping none, so a
+        # are in its own package and need no import of it. internal/lang, the
+        # domain library that names a source's units, is allowed: it is the
+        # measure every command shares, no adapter and wrapping none, so a
         # slice names the units of what it read through its port with it
         # (internal/units, T-32), and with them lang's port, Surroundings,
         # which a slice's handler holds and its tests fake (T-35); project,
-        # which an adapter wraps, is not.
+        # which an adapter wraps and which answers lang's port from the disk,
+        # is not.
         slices:
           list-mode: lax
           files:
             - "**/internal/**"
             - "!**/internal/counting/**" # a domain and its ports
             - "!**/internal/selection/**" # a domain and its ports
+            - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
@@ -96,12 +103,12 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/cli$
-            - github.com/donvargax/itos-cc/lang$
-            - github.com/donvargax/itos-cc/lang/port$
-            - github.com/donvargax/itos-cc/lang/port/
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/lang/port/
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "a slice imports only the domain, its ports, internal/cli and lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "a slice imports only the domain, its ports, internal/cli and internal/lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding
@@ -141,7 +148,7 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
-            - github.com/donvargax/itos-cc/lang/port$
+            - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc

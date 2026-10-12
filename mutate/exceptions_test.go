@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 // exceptionAt is the exception for the site of f's unit u at line and

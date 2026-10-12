@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 )
 

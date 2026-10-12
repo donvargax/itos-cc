@@ -19,9 +19,10 @@ implements it over the `project` library and the disk; cmd's `classifySelection`
 failures into the problems the command line has always reported.
 
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
-through the domain, reads each file through the same port and names its units with `lang`.
-`lang` keeps every language's rules for naming a file but reads nothing: it asks its
-`Surroundings` port, `lang/port`, whether a path is there, what a file holds, the working
+through the domain, reads each file through the same port and names its units with
+`internal/lang`, the measure every command shares and a domain of its own. It keeps every
+language's rules for naming a file but reads nothing: it asks its `Surroundings` port,
+`internal/lang/port`, whether a path is there, what a file holds, the working
 directory and a path made absolute, and `internal/workdir` answers it from the disk through
 `project`, as it answers the selection port.
 cmd routes it through kong, and the commands not moved yet through its own parser.

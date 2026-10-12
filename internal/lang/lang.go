@@ -11,7 +11,7 @@ import (
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // Unit is one function or method. Namespace + Name is the join key every

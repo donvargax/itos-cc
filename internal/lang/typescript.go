@@ -10,7 +10,7 @@ import (
 	javascript "github.com/tree-sitter/tree-sitter-javascript/bindings/go"
 	typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // TypeScript units are top-level functions, class methods, and top-level

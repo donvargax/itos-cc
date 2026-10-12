@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 // ParseFile reads and parses path, lang naming it through Surroundings, the

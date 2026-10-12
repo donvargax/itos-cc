@@ -16,7 +16,7 @@ import (
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 // Site is one mutation: a byte range of the source and its replacement.

@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	langporttest "github.com/donvargax/itos-cc/lang/port/porttest"
 )
 
 // tree is a working tree of a TypeScript source and its test, and a Python

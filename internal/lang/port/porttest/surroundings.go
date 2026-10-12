@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // Surroundings are files and a working directory held in memory. Paths are

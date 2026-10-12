@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 // ErrBadRef is returned by ChangedSince for a ref git cannot resolve to a

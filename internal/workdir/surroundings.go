@@ -3,7 +3,7 @@ package workdir
 import (
 	"context"
 
-	langport "github.com/donvargax/itos-cc/lang/port"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/project"
 )
 

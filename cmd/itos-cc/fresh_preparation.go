@@ -18,7 +18,7 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/graph"
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )

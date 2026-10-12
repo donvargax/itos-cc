@@ -13,7 +13,7 @@ import (
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	golang "github.com/tree-sitter/tree-sitter-go/bindings/go"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // Go units are functions and methods with a body. A method's namespace is

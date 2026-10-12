@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 	sitter "github.com/tree-sitter/go-tree-sitter"
 )

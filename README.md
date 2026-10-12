@@ -919,7 +919,7 @@ to `.metrics/coverage/`, which ignores itself.
 
 | Package | Role |
 | --- | --- |
-| `lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules; it reads nothing, asking its port, `lang/port`, what surrounds a file |
+| `internal/lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules; it reads nothing, asking its port, `internal/lang/port`, what surrounds a file |
 | `project` | Finding source and test files, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
 | `crap`, `dry`, `mutate`, `scrap` | The tools |
@@ -928,7 +928,7 @@ to `.metrics/coverage/`, which ignores itself.
 | `cmd/itos-cc` | The command line |
 | `viewer/` | The web viewer, a separate npm project |
 
-Adding a language means one file in `lang/` (grammar, units, decisions,
+Adding a language means one file in `internal/lang/` (grammar, units, decisions,
 syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
 plan in `coverage/`.
 

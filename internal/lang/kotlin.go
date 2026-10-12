@@ -9,7 +9,7 @@ import (
 	kotlin "github.com/fwcd/tree-sitter-kotlin/bindings/go"
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // Kotlin uses fwcd's grammar: the tree-sitter-grammars one misreads a class

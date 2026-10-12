@@ -9,7 +9,7 @@ import (
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	python "github.com/tree-sitter/tree-sitter-python/bindings/go"
 
-	"github.com/donvargax/itos-cc/lang/port"
+	"github.com/donvargax/itos-cc/internal/lang/port"
 )
 
 // Python units are functions and methods. Functions nested inside another

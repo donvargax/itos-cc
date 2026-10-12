@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 // GoCoverageInputs fingerprints the conservative nearest-module input

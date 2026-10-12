@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 func TestAnnotateReplacesItsOwnBlock(t *testing.T) {

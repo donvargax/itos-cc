@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 func TestBuildCountsEveryUnit(t *testing.T) {
