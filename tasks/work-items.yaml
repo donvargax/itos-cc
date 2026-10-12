@@ -2296,8 +2296,8 @@ items:
   - id: T-47
     title: Every command runs under the one context main makes
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
