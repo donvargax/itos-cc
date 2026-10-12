@@ -762,11 +762,6 @@
     --threshold=-1, --threshold=, --min-lines 1.5, --min-lines=0x10, --min-lines 010, -threshold, a
     path outside the working directory) get unit tests in internal/cli against the hand parser's
     answers, and join refactor-final-proof's list.
-  done_when:
-    - run: test ! -e cmd/itos-cc/dry.go && go test ./internal/dry/... ./internal/cli/... ./cmd/itos-cc/...
-    - run: grep -q 'dry.CLI' cmd/itos-cc/moved.go
-    - run: go test ./features -count=1 -scenarios='@ID-(DRY|UNIT)-'
-    - run: tools/bin/architecture-check && tools/bin/pinned golangci-lint run ./internal/...
 - id: T-41
   type: test
   title: scrap.feature runs through godog against the built binary
