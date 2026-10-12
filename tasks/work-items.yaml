@@ -2426,6 +2426,13 @@ items:
       feature file to the in-process driver as part of the move (template-adoption's stages).
       Depends on port-contract-suites, so every fake the driver uses is held to its adapter's
       behaviour, and on T-51, the end of S4.
+
+      Specified 2026-10-12 as T-56 (gate: no porttest in itos-cc or a slice's code, absorbs
+      slice-fakes-tests-only), T-57 (run takes streams and adapters), T-58 (steps through a driver,
+      ordinary files of package features), T-59 (units, dry, scrap in process; itos.yaml runs both
+      drivers). Left for after T-59, measured: listing the in-process scenarios in itos-cc.yaml's
+      mutation.tests with per-scenario coverage (idea inprocess-mutation-tests), so mutation kills
+      slice and domain mutants through them.
   - id: revive-default-rules
     title: Decide which of revive's default rules golangci-lint runs over internal
     phase: 1
