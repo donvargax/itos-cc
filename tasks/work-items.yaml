@@ -1875,7 +1875,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-30]
+    depends_on: [T-30, refactor-final-proof]
     kind: idea
     why: >
       q-56: 80 usage, 81 unknown command, 82 a requirement not met (was 3), 100 internal (was 70),
