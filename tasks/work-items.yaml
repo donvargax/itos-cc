@@ -2336,8 +2336,8 @@ items:
   - id: T-50
     title: coverage, crap and project take the context, and only main makes one
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-49]
     kind: task
     why: >
