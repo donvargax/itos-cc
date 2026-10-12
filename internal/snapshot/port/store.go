@@ -37,7 +37,10 @@ func (*Cancelled) snapshotFailure() {}
 func (*Cancelled) Error() string    { return "cancelled snapshot" }
 
 // Store is where a project's snapshots live: .metrics/ at its root. ctx
-// carries only cancellation and deadlines, never a value (decision 30).
+// carries only cancellation and deadlines, never a value (decision 30);
+// once it is done, Root, Read and Write are Cancelled and nothing is
+// written. porttest.StoreContract holds what every Store, the fake and the
+// disk's, must do.
 type Store interface {
 	// Root is the project root, absolute: where the snapshots live, and
 	// what every path a snapshot records is relative to (snapshot.Key).

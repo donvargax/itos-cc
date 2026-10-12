@@ -42,7 +42,8 @@ from it, and thin slices named for their commands.
   snapshot by name, each taking the context first, and its sealed set of failures:
   `Unreadable`, `Unwritable`, each carrying the snapshot's name and the library's error text
   whole as its `Reason`, and `Cancelled`. `internal/snapshot/port/porttest` holds the
-  in-memory fake of `Store`.
+  in-memory fake of `Store`, writing the bytes the `metrics` library writes, and
+  `StoreContract`, the contract it and `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
   OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
   `Cancelled` once the context is done, and hands every other path to a fallback it is given.
@@ -324,9 +325,10 @@ repository, since translating OS and git errors is what an adapter does.
 
 A fake stands in for its adapter only when both pass one contract suite (decision 44). Each
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
-so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree`, the first
-(T-52). `open` lays out a fixture, here a `TreeFixture` of files' text, whether git holds them
-and which changed, and returns the port over it and its absolute working directory. The suite
+so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
+`StoreContract(t, open)` for the snapshot `Store` (T-53). `open` lays out a fixture, a
+`TreeFixture` of files' text, whether git holds them and which changed, or the snapshots' raw
+text by name, and returns the port over it and its absolute working directory. The suite
 asserts what every implementation must do: results, the typed failures of fixture states both
 sides can hold, and a done context. The fake's opener names a `t.TempDir()` path it never
 touches, so its paths are absolute on every system; the adapter's lays the fixture out under

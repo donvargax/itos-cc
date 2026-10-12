@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/snapshot/port"
+	"github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 	"github.com/donvargax/itos-cc/metrics"
 )
 
@@ -22,6 +25,27 @@ func inProject(t *testing.T) string {
 	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
 	t.Chdir(dir)
 	return dir
+}
+
+// open lays snapshots, raw text by name, out under .metrics in a project
+// of its own, as inProject makes one.
+func open(t *testing.T, snapshots map[string]string) (port.Store, string) {
+	root := inProject(t)
+	for _, name := range slices.Sorted(maps.Keys(snapshots)) {
+		path := filepath.Join(root, metrics.Name, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(snapshots[name]), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return Store{}, root
+}
+
+// The adapter keeps the contract every Store keeps, the fake's included.
+func TestStoreKeepsTheContract(t *testing.T) {
+	porttest.StoreContract(t, open)
 }
 
 func cancelled(t *testing.T) context.Context {

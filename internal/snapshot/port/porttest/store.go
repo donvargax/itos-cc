@@ -2,6 +2,7 @@
 package porttest
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 
@@ -9,9 +10,10 @@ import (
 )
 
 // Store is a project's snapshots held in memory: its root, the JSON each
-// snapshot holds, and configured failures.
+// snapshot holds, and configured failures. It reads and writes as
+// internal/metricsdir's Store does on the disk, which StoreContract holds.
 type Store struct {
-	// RootDir is what Root gives.
+	// RootDir is what Root gives: the project root, absolute.
 	RootDir string
 	// Snapshots are the JSON of each snapshot, by name; Write stores there.
 	Snapshots map[string]string
@@ -55,8 +57,10 @@ func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failur
 	return true, nil
 }
 
-// Write stores v's JSON as the snapshot name; one that does not encode is
-// Unwritable, with the encoder's text.
+// Write stores v's JSON as the snapshot name, in the metrics library's
+// bytes: indented by two spaces, nothing escaped for HTML, ending in a
+// newline. One that does not encode is Unwritable, with the encoder's
+// text, and stores nothing.
 func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if ctx.Err() != nil {
 		return &port.Cancelled{}
@@ -64,13 +68,16 @@ func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if failure, ok := s.Failures[name]; ok {
 		return failure
 	}
-	data, err := json.Marshal(v)
-	if err != nil {
+	var data bytes.Buffer
+	enc := json.NewEncoder(&data)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
 		return &port.Unwritable{Name: name, Reason: err.Error()}
 	}
 	if s.Snapshots == nil {
 		s.Snapshots = map[string]string{}
 	}
-	s.Snapshots[name] = string(data)
+	s.Snapshots[name] = data.String()
 	return nil
 }
