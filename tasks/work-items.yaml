@@ -2229,3 +2229,19 @@ items:
       shifted value; SCRAP-19 and 20 need 25 examples and more than 10 recommendations. Shared steps
       go to steps_test.go. Each step is checked to fail on a changed expectation. scrap.feature
       joins converted. No product code changes.
+  - id: T-42
+    title: scrap's library is the teststructure domain under internal/
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Decision 37: scrap's library moves to internal/teststructure, a domain importing
+      internal/duplication (for Fingerprint and Jaccard) and internal/lang. First a commit that only
+      git mv's the files, then the edits. Its Analyze(f, rel) is already pure; the hand-parsed scrap
+      reads through Tree.Read, parses through lang's port and reads and writes its snapshot through
+      the Store. The keep-files-not-run merge (SCRAP-27) may move into the domain so the slice stays
+      thin. Its tests parse in memory; domain-coverage and golangci-lint hold it, fixed without
+      changing behaviour. Its three .metrics/mutate records move unedited with the files; the
+      nightly refreshes them (decision 40).
