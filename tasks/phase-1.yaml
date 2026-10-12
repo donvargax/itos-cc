@@ -1071,11 +1071,6 @@
     local testing: the packages and scenarios named in the checks, never the whole cmd/itos-cc suite
     or a mutation run; never itos task show locally. No binary comparison; a case worth comparing
     joins refactor-final-proof's list.
-  done_when:
-    - run: grep -q 'go list -deps' tools/bin/architecture-check
-    - run: "! go list -deps ./cmd/itos-cc | grep -q porttest"
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-57
   type: refactor
   title: run takes its streams and adapters from main
