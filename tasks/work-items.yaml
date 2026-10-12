@@ -571,8 +571,8 @@ items:
   - id: slice-6
     title: itos-cc.yaml's exclude leaves sources out of what is measured and mutated
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-55]
     kind: slice
     why: >
