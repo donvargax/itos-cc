@@ -159,7 +159,7 @@ const testsYAML = `mutation:
 `
 
 func TestMutationTestsSelectTheirIDs(t *testing.T) {
-	c, err := parse([]byte(testsYAML))
+	c, err := Parse([]byte(testsYAML))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,18 +172,18 @@ func TestMutationTestsSelectTheirIDs(t *testing.T) {
 	if got, want := c.Tests.All([]string{"A"}), "go test ./e2e -run '^Test(A)$'"; got != want {
 		t.Errorf("All(A) = %q, want %q: run with every ID, without whole", got, want)
 	}
-	c, err = parse([]byte(testsYAML + "    whole: go test ./e2e\n"))
+	c, err = Parse([]byte(testsYAML + "    whole: go test ./e2e\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := c.Tests.All([]string{"A"}); got != "go test ./e2e" {
 		t.Errorf("All(A) = %q, want whole", got)
 	}
-	c, err = parse([]byte(testsYAML + "    support: [\"features/*_test.go\"]\n"))
+	c, err = Parse([]byte(testsYAML + "    support: [\"features/*_test.go\"]\n"))
 	if err != nil || !slices.Equal(c.Tests.Support, []string{"features/*_test.go"}) {
 		t.Errorf("support %v, %v, want the glob", c, err)
 	}
-	if c, err := parse([]byte("mutation: {}\n")); err != nil || c.Tests != nil {
+	if c, err := Parse([]byte("mutation: {}\n")); err != nil || c.Tests != nil {
 		t.Errorf("without mutation.tests: %+v, %v, want no tests", c, err)
 	}
 }
@@ -198,7 +198,7 @@ func TestMalformedMutationTestsAreInvalid(t *testing.T) {
 		{"    join:\n      each: \"{id}\"\n      sep: \"|\"\n", "", "has no join"},
 		{"    list: ./list\n", "    list: ./list\n    support: [\"features/[\"]\n", "has a support glob \"features/[\" that is no pattern"},
 	} {
-		_, err := parse([]byte(strings.Replace(testsYAML, c.from, c.to, 1)))
+		_, err := Parse([]byte(strings.Replace(testsYAML, c.from, c.to, 1)))
 		var invalid *InvalidError
 		if !errors.As(err, &invalid) || !strings.Contains(err.Error(), c.says) {
 			t.Errorf("without %q: error %v, want an *InvalidError that says %q", c.from, err, c.says)
@@ -209,7 +209,7 @@ func TestMalformedMutationTestsAreInvalid(t *testing.T) {
 // exclude holds doublestar globs from the project root, in order, a glob
 // that matches nothing among them.
 func TestExcludeReadsItsGlobs(t *testing.T) {
-	c, err := parse([]byte("exclude: [\"**/porttest/**\", \"features/*.go\", \"{a,b}/x?.[ch]\", \"nothing/here\"]\n"))
+	c, err := Parse([]byte("exclude: [\"**/porttest/**\", \"features/*.go\", \"{a,b}/x?.[ch]\", \"nothing/here\"]\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestExcludeRefusesWhatIsNoPatternFromTheRoot(t *testing.T) {
 		{"src/{a,b", "is no pattern"},
 	} {
 		text := "exclude:\n  - src/**\n  - '" + c.glob + "'\nmutation:\n  exceptions:\n    - {file: x}\n"
-		_, err := parse([]byte(text))
+		_, err := Parse([]byte(text))
 		var invalid *InvalidError
 		if !errors.As(err, &invalid) {
 			t.Errorf("%q: error %v, want an *InvalidError", c.glob, err)
@@ -248,7 +248,7 @@ func TestExcludeRefusesWhatIsNoPatternFromTheRoot(t *testing.T) {
 // An exclude that is no list is a file that cannot be read.
 func TestExcludeThatIsNoListIsInvalid(t *testing.T) {
 	var invalid *InvalidError
-	if _, err := parse([]byte("exclude: {a: b}\n")); !errors.As(err, &invalid) {
+	if _, err := Parse([]byte("exclude: {a: b}\n")); !errors.As(err, &invalid) {
 		t.Errorf("error %v, want an *InvalidError", err)
 	}
 }

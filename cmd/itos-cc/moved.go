@@ -10,7 +10,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/dry"
 	"github.com/donvargax/itos-cc/internal/scrap"
 	"github.com/donvargax/itos-cc/internal/units"
-	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
 // The commands moved onto kong (T-32), each a slice of its own: kong parses
@@ -31,13 +30,13 @@ type commandLine struct {
 // parserOf is the parser of c, which run builds once, as it parses one
 // command line at most (cli.Parse): itos-cc's name, its flags held by
 // internal/cli's Flags, help printed by internal/cli's Help, and the
-// bindings each Run is handed, ctx among them. The handlers of units and
-// dry are not among them: they hold what itos-cc.yaml excludes, which
-// runMoved reads once the line is parsed, so a file that cannot be read
-// never breaks help. kong never exits the process: help is printed before
+// bindings each Run is handed, ctx among them and scrap's handler over a's
+// ports. The handlers of units and dry are not among them: they hold what
+// itos-cc.yaml excludes, which runMoved reads once the line is parsed, so a
+// file that cannot be read never breaks help. kong never exits the process: help is printed before
 // it parses, and a failure is returned. A model kong refuses is the error
 // returned, a bug run reports as an internal failure.
-func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) (*kong.Kong, error) {
+func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kong.Kong, error) {
 	return kong.New(c, append(cli.Flags(),
 		kong.Name("itos-cc"),
 		kong.Help(cli.Help),
@@ -48,7 +47,7 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) (*kong.Kong, erro
 			return nil
 		}),
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Bind(ui, scrap.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel}),
+		kong.Bind(ui, scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}),
 	)...)
 }
 
@@ -65,15 +64,15 @@ func moved(parser *kong.Kong) map[string]*kong.Node {
 // line, with parser, which fills c, and returns its exit code. Help, -h or
 // --help before any --, wins over anything else the line holds; a line kong
 // cannot parse is a usage problem, with --json the failure's object. Once
-// the line is parsed, units and dry read itos-cc.yaml for the sources it
-// excludes, bound into their handlers: a file that cannot be read is
-// config.invalid. scrap reads only tests, which nothing excludes, so it
-// never reads the file.
+// the line is parsed, units and dry read itos-cc.yaml under ctx for the
+// sources it excludes, bound into their handlers over a's ports: a file that
+// cannot be read is config.invalid. scrap reads only tests, which nothing
+// excludes, so it never reads the file.
 //
 // No interrupt cancels the context parser binds yet: Ctrl-C ends the
 // command by the system's default action, as it ends every command until
 // one reports an interrupt (docs/CLI.md).
-func runMoved(parser *kong.Kong, c *commandLine, ui *cli.UI, args []string) int {
+func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI, a adapters, args []string) int {
 	line := cli.Read(args)
 	if line.Help {
 		return movedHelp(parser, ui, args[0])
@@ -84,12 +83,12 @@ func runMoved(parser *kong.Kong, c *commandLine, ui *cli.UI, args []string) int 
 	}
 	switch name := parsed.Selected().Name; name {
 	case "dry", "units":
-		exclude, err := exclusion()
+		exclude, err := exclusionOf(ctx, a.Config)
 		if err != nil {
 			return ui.Fail(err, line.JSON)
 		}
-		parsed.Bind(units.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Exclude: exclude},
-			dry.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: snapshots, Name: ui.Rel, Exclude: exclude})
+		parsed.Bind(units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude},
+			dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude})
 		if name == "units" {
 			return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON)
 		}

@@ -130,15 +130,21 @@ from it, and thin slices named for their commands.
   below says.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
-  and hands the context and the handler, with `workdir`'s `Tree` and `Surroundings`, to `Run`
-  through kong's bindings. `main` makes the program's one `context.Background()` and passes
-  it to `run(ctx, args)`, and every command runs under it: a hand-parsed one through
+  and hands the context and the handler, over the ports in `adapters`, to `Run` through
+  kong's bindings. `main` makes the program's one `context.Background()` and passes it to
+  `run(ctx, args, stdin, stdout, stderr, a)` with the process's streams and
+  `diskAdapters()`: the working directory, `workdir`'s `Tree` and `Surroundings`,
+  `metricsdir`'s `Store` and itos-cc.yaml on the disk. The top-level help, its problems and
+  the moved commands use the streams and adapters given, so a test runs them in process with
+  buffers and porttest's fakes (`TestRunWithFakes`, decision 44); the hand-parsed commands
+  keep the process's streams and disk until they move, and only `main` exits. Every command
+  runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
-  calls; a moved one through the parser `run` builds once with `parserOf(ctx, …)`, whose
+  calls; a moved one through the parser `run` builds once with `parserOf(ctx, …, a)`, whose
   bindings hand it to `Run`. The handlers of `units` and `dry` hold itos-cc.yaml's
-  `exclude`, so `runMoved` reads the file once the command line is parsed and binds them
-  then: a file that cannot be read fails that command as `config.invalid`, never help or
-  `version`. A command that stops on a signal derives its own from it
+  `exclude`, so `runMoved` reads the file through `a.Config` once the command line is parsed
+  and binds them then: a file that cannot be read fails that command as `config.invalid`,
+  never help or `version`. A command that stops on a signal derives its own from it
   (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
   `main` makes a context of its own, and none is held in a value or captured by a closure
@@ -260,7 +266,8 @@ follows the same steps for a command it wrote before it had the template's desig
 4. **Routing in cmd.** In `cmd/itos-cc/moved.go`, add the slice's struct to `commandLine`,
    its `help` tag the line the top-level help lists, its handler to `parserOf`'s bindings
    (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s do, bound in `runMoved`
-   once the line is parsed),
+   once the line is parsed), built over the ports in `adapters` and never over an adapter
+   itself, a port it needs added there and to `diskAdapters`,
    and a case to `runMoved` that calls its `Run` through `callSafely`. Remove the old
    `command` from `main.go`'s list and delete its file. `run` sends a moved command to kong
    and every other to the hand parser; the top-level help, `help <command>` and the guess

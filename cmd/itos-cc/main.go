@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"runtime/debug"
 	"slices"
@@ -123,10 +124,11 @@ Report issues at ` + cli.Issues + "\n")
 	return b.String()
 }
 
-// main makes the program's one context, which every command runs under.
-// No interrupt cancels it yet (docs/CLI.md).
+// main makes the program's one context, which every command runs under,
+// and gives run this process's standard streams and adapters. No interrupt
+// cancels the context yet (docs/CLI.md). It alone exits.
 func main() {
-	os.Exit(run(context.Background(), os.Args[1:]))
+	os.Exit(run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr, diskAdapters()))
 }
 
 // classifiers are each domain's, which turn its sealed failures into
@@ -137,8 +139,9 @@ func main() {
 // itos-cc's commands report is its own and needs none.
 var classifiers = []cli.Classifier{classifySelection, classifySnapshot, count.Classify}
 
-// stdUI is the UI of this process: its standard streams as they are when it
-// is called, so a test that swaps os.Stdout reads what it prints.
+// stdUI is the UI of this process, which the hand-parsed commands report
+// through until they move: its standard streams as they are when it is
+// called.
 func stdUI() *cli.UI {
 	dir, _ := os.Getwd()
 	return &cli.UI{In: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr, Classifiers: classifiers, Dir: dir}
@@ -156,14 +159,17 @@ func init() {
 }
 
 // run dispatches args to a command, run under ctx. --json, -h, --help, and
-// --version may come before the command too. It builds the moved commands'
-// parser once, which a run reads their names and help from and parses
-// their command line with; a model kong refuses is a bug, an internal
-// failure.
-func run(ctx context.Context, args []string) int {
-	ui := stdUI()
+// --version may come before the command too. The top-level help and
+// problems and the moved commands read stdin and write stdout and stderr,
+// and the moved commands reach the world through a; the hand-parsed ones
+// keep this process's streams and disk until they move. It builds the moved
+// commands' parser once, which a run reads their names and help from and
+// parses their command line with; a model kong refuses is a bug, an
+// internal failure.
+func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, a adapters) int {
+	ui := &cli.UI{In: stdin, Stdout: stdout, Stderr: stderr, Classifiers: classifiers, Dir: a.Dir}
 	var c commandLine
-	parser, err := parserOf(ctx, &c, ui)
+	parser, err := parserOf(ctx, &c, ui, a)
 	if err != nil {
 		return ui.Fail(err, cli.Read(args).JSON)
 	}
@@ -177,7 +183,7 @@ func run(ctx context.Context, args []string) int {
 		case "--json":
 			asJSON = true
 		case "-h", "--help":
-			fmt.Print(usage(parser))
+			fmt.Fprint(ui.Stdout, usage(parser))
 			return 0
 		case "--version":
 			args = append([]string{"version"}, args...)
@@ -192,7 +198,7 @@ func run(ctx context.Context, args []string) int {
 			p := cli.NewProblem(cli.CodeUsage, "command.missing", "no command given", "Name a command; run 'itos-cc --help' for them.")
 			return ui.Emit(true, nil, []*cli.Problem{p})
 		}
-		fmt.Print(usage(parser))
+		fmt.Fprint(ui.Stdout, usage(parser))
 		return 0
 	}
 	name, rest := args[0], args[1:]
@@ -203,7 +209,7 @@ func run(ctx context.Context, args []string) int {
 		return help(parser, ui, rest, asJSON)
 	}
 	if moved(parser)[name] != nil {
-		return runMoved(parser, &c, ui, append([]string{name}, rest...))
+		return runMoved(ctx, parser, &c, ui, a, append([]string{name}, rest...))
 	}
 	cmd, ok := commands[name]
 	if !ok {
@@ -258,8 +264,9 @@ func runGroup(ctx context.Context, g *command, args []string) int {
 	return execute(ctx, sub, args[1:])
 }
 
-// help prints the top-level help, or with a command name that command's,
-// the moved commands' from parser's model, and reports through ui.
+// help prints on ui's stdout the top-level help, or with a command name
+// that command's, the moved commands' from parser's model, and reports
+// through ui.
 func help(parser *kong.Kong, ui *cli.UI, args []string, asJSON bool) int {
 	var topics []string
 	for _, a := range args {
@@ -268,7 +275,7 @@ func help(parser *kong.Kong, ui *cli.UI, args []string, asJSON bool) int {
 		}
 	}
 	if len(topics) == 0 {
-		fmt.Print(usage(parser))
+		fmt.Fprint(ui.Stdout, usage(parser))
 		return 0
 	}
 	if moved(parser)[topics[0]] != nil {
@@ -292,11 +299,11 @@ func help(parser *kong.Kong, ui *cli.UI, args []string, asJSON bool) int {
 	case len(topics) == 2 && cmd.sub(topics[1]) == nil:
 		return ui.Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(cmd, topics[1])})
 	case len(topics) == 2:
-		fmt.Print(cmd.sub(topics[1]).help())
+		fmt.Fprint(ui.Stdout, cmd.sub(topics[1]).help())
 	case cmd.subs != nil:
-		fmt.Print(cmd.groupHelp())
+		fmt.Fprint(ui.Stdout, cmd.groupHelp())
 	default:
-		fmt.Print(cmd.help())
+		fmt.Fprint(ui.Stdout, cmd.help())
 	}
 	return 0
 }

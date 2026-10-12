@@ -4,14 +4,8 @@ import (
 	"errors"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
-
-// snapshots is where the hand-parsed commands read and write their
-// snapshots: .metrics/ at the project root of the working directory, as
-// internal/metricsdir keeps it (decision 41).
-var snapshots snapport.Store = metricsdir.Store{}
 
 // classifySnapshot is the snapshot domain's classifier, which cmd hands to
 // internal/cli: a failure of the port's sealed set is its problem, and any

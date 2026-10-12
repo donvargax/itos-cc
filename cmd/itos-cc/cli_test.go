@@ -168,7 +168,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	}
 	// The commands kong parses print theirs from its model and their
 	// Contract, in the same layout.
-	parser, err := parserOf(t.Context(), &commandLine{}, stdUI())
+	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters())
 	if err != nil {
 		t.Fatal(err)
 	}

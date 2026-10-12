@@ -1378,12 +1378,22 @@ func loadExceptions() ([]config.Exception, error) {
 // error.
 func loadConfig() (*config.Config, error) {
 	c, err := config.Load()
+	if err != nil {
+		return nil, invalidConfig(err)
+	}
+	return c, nil
+}
+
+// invalidConfig is err, from reading itos-cc.yaml, as a person reads it: a
+// file that cannot be read as a config is config.invalid, saying what each
+// key needs, and any other error is err.
+func invalidConfig(err error) error {
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return nil, configProblem(invalid,
+		return configProblem(invalid,
 			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.")
 	}
-	return c, err
+	return err
 }
 
 // configProblem is config.invalid for invalid, an itos-cc.yaml that cannot

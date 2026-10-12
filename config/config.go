@@ -164,17 +164,27 @@ func Load() (*Config, error) {
 // LoadFrom is Load for the project whose root is root, which need not be
 // the working directory's.
 func LoadFrom(root string) (*Config, error) {
-	data, err := os.ReadFile(filepath.Join(root, File))
-	if errors.Is(err, os.ErrNotExist) {
-		return &Config{}, nil
-	}
+	data, err := Read(root)
 	if err != nil {
 		return nil, err
 	}
-	return parse(data)
+	return Parse(data)
 }
 
-func parse(data []byte) (*Config, error) {
+// Read is the text of itos-cc.yaml at the project root root, nil when there
+// is no file there.
+func Read(root string) ([]byte, error) {
+	data, err := os.ReadFile(filepath.Join(root, File))
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	return data, err
+}
+
+// Parse reads data, the text of an itos-cc.yaml, as a config: no text at
+// all is an empty one, and text that cannot be read as a config is an
+// *InvalidError.
+func Parse(data []byte) (*Config, error) {
 	var r raw
 	if err := yaml.Unmarshal(data, &r); err != nil {
 		return nil, &InvalidError{Reason: strings.TrimPrefix(err.Error(), "yaml: ")}
@@ -319,7 +329,7 @@ func Except(e Exception) (replaced bool, err error) {
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return false, err
 	}
-	c, err := parse(data)
+	c, err := Parse(data)
 	if err != nil {
 		return false, err
 	}
@@ -372,7 +382,7 @@ func Renew(renewals []Renewal) error {
 	if err != nil {
 		return err
 	}
-	c, err := parse(data)
+	c, err := Parse(data)
 	if err != nil {
 		return err
 	}
