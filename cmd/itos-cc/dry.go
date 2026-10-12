@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/donvargax/itos-cc/dry"
-	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/internal/snapshot"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -84,10 +85,15 @@ func runDry(in *invocation) (any, error) {
 		result.Candidates = c
 	}
 	result.Groups = dry.Groups(result.Candidates)
-	candidates, groups := dryFromRoot(result.Candidates, result.Groups)
-	if err := metrics.Write("dry.json", drySnapshot{Version: metrics.Version, Threshold: opt.Threshold,
-		Candidates: candidates, Groups: groups}); err != nil {
-		return result, err
+	ctx := context.Background()
+	root, failure := snapshots.Root(ctx)
+	if failure != nil {
+		return result, failure
+	}
+	candidates, groups := dryFromRoot(result.Candidates, result.Groups, dryKeys(root, all.Sources))
+	if failure := snapshots.Write(ctx, "dry.json", drySnapshot{Version: snapshot.Version, Threshold: opt.Threshold,
+		Candidates: candidates, Groups: groups}); failure != nil {
+		return result, failure
 	}
 	if in.json {
 		return result, nil
@@ -121,11 +127,24 @@ func union(a, b []string) []string {
 	return out
 }
 
+// dryKeys is, by the name dry gives each of sources (project.Rel, from the
+// working directory), the source as dry.json records it: from root, the
+// project root (snapshot.Key). Every side dry finds is of a file of
+// sources, which are absolute as the selection discovered them.
+func dryKeys(root string, sources []string) map[string]string {
+	keys := make(map[string]string, len(sources))
+	for _, path := range sources {
+		keys[project.Rel(path)] = snapshot.Key(root, path)
+	}
+	return keys
+}
+
 // dryFromRoot is candidates and groups as dry.json records them: each file
-// from the project root, while output names it from the working directory.
-func dryFromRoot(candidates []dry.Candidate, groups []dry.Group) ([]dry.Candidate, []dry.Group) {
+// by its key, from the project root, while output names it from the
+// working directory.
+func dryFromRoot(candidates []dry.Candidate, groups []dry.Group, keys map[string]string) ([]dry.Candidate, []dry.Group) {
 	side := func(s dry.Side) dry.Side {
-		s.File = project.FromRoot(s.File)
+		s.File = keys[s.File]
 		return s
 	}
 	var cs []dry.Candidate

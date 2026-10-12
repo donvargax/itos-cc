@@ -18,6 +18,14 @@ or the context was done. The `internal/workdir` adapter
 implements it over the `project` library and the disk; cmd's `classifySelection` turns its
 failures into the problems the command line has always reported.
 
+The snapshot domain, `internal/snapshot`, owns the snapshots under `.metrics/` that the commands
+share: their format version, and naming a file from the project root, so a snapshot is the same
+from any directory a command runs in. It reads and writes them through its `Store` port, whose
+sealed failures say a snapshot could not be read or written, with the library's own message, or
+the context was done. The `internal/metricsdir` adapter implements it over the `metrics` and
+`project` libraries, which keep every byte and the atomic rename; cmd's `classifySnapshot` turns
+its failures into problems.
+
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain, reads each file through the same port and names its units with
 `internal/lang`, the measure every command shares and a domain of its own. It keeps every

@@ -93,7 +93,11 @@ from it, and thin slices named for their commands.
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
   selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
-  ones.
+  ones. It holds the snapshot domain's too, `classifySnapshot`, since several commands share
+  it, and `snapshots`, the `Store` `internal/metricsdir` gives the hand-parsed `dry` and `scrap`:
+  a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
+  an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
+  library until each moves (decision 41).
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.

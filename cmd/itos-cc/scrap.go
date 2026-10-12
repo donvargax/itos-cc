@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
 
-	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/internal/snapshot"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 	"github.com/donvargax/itos-cc/scrap"
 )
@@ -66,9 +68,19 @@ func runScrap(in *invocation) (any, error) {
 		return result, nil
 	}
 
+	ctx := context.Background()
 	var previous scrapSnapshot
-	if _, err := metrics.Read("scrap.json", &previous); err != nil {
-		fmt.Fprintln(os.Stderr, "itos-cc: ignoring unreadable .metrics/scrap.json:", err)
+	// An unreadable last snapshot is only warned about, and the run goes on.
+	if _, failure := snapshots.Read(ctx, "scrap.json", &previous); failure != nil {
+		var unreadable *snapport.Unreadable
+		if !errors.As(failure, &unreadable) {
+			return result, failure
+		}
+		fmt.Fprintln(os.Stderr, "itos-cc: ignoring unreadable .metrics/scrap.json:", failure)
+	}
+	root, failure := snapshots.Root(ctx)
+	if failure != nil {
+		return result, failure
 	}
 	// scrap.json names each file from the project root, while output names
 	// it from the working directory.
@@ -88,7 +100,7 @@ func runScrap(in *invocation) (any, error) {
 		if r.Examples == 0 {
 			continue
 		}
-		key := project.FromRoot(path)
+		key := snapshot.Key(root, path)
 		if prev, ok := byFile[key]; ok {
 			prev.Compare = nil
 			r.CompareTo(prev)
@@ -99,14 +111,14 @@ func runScrap(in *invocation) (any, error) {
 		reports = append(reports, r)
 	}
 
-	snapshot := scrapSnapshot{Version: metrics.Version, Files: []scrap.FileReport{}}
+	recorded := scrapSnapshot{Version: snapshot.Version, Files: []scrap.FileReport{}}
 	for _, r := range byFile {
 		r.Compare = nil
-		snapshot.Files = append(snapshot.Files, r)
+		recorded.Files = append(recorded.Files, r)
 	}
-	sort.Slice(snapshot.Files, func(i, j int) bool { return snapshot.Files[i].File < snapshot.Files[j].File })
-	if err := metrics.Write("scrap.json", snapshot); err != nil {
-		return result, err
+	sort.Slice(recorded.Files, func(i, j int) bool { return recorded.Files[i].File < recorded.Files[j].File })
+	if failure := snapshots.Write(ctx, "scrap.json", recorded); failure != nil {
+		return result, failure
 	}
 
 	sort.SliceStable(reports, func(i, j int) bool { return reports[i].Pressure > reports[j].Pressure })
