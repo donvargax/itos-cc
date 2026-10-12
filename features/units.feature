@@ -223,3 +223,16 @@ Feature: Units: the functions and methods every tool measures
     When I run "itos-cc units x.ts" from that directory
     Then the unit is "x#place"
     And it is "x#place" from a copy of that directory at another path
+
+  # Before units moved onto kong (T-32), units ---changed was accepted and
+  # exited 0. An unknown flag is a usage error, the person's call
+  # (2026-10-11), and the fix suggests the flag it looks like. The product
+  # already behaves so: a guardrail, with no red to show. The refactor that
+  # changed it carried no release note, so the scenario goes live in a fix
+  # commit whose Upgrading footer says units ---changed now fails with exit 2.
+  @wip @slice-5 @ID-UNIT-14
+  Scenario: A flag spelled with three dashes is an unknown flag
+    When I run "itos-cc units ---changed"
+    Then the problem is "flags.unknown", with flag "---changed"
+    And its fix suggests "--changed"
+    And the exit code is 2
