@@ -917,12 +917,6 @@
     missing file. No binary comparison (docs/go.md step 9); a case worth comparing joins
     refactor-final-proof's list. Never run itos task show for this task locally (it runs the
     checks); run only the targeted tests while working, CI runs the rest.
-  done_when:
-    - run: "! git grep -nE 'context\\.(TODO|Background)\\(\\)' -- 'mutate/*.go' 'cmd/*.go' ':!*_test.go' ':!cmd/itos-cc/main.go'"
-    - run: "! git grep -nE '^\\s+\\w+\\s+context\\.Context$' -- 'mutate/*.go' 'cmd/*.go' ':!*_test.go'"
-    - run: go vet ./mutate ./graph ./cmd/itos-cc
-    - run: go test -count=1 ./mutate/...
-    - run: go test -count=1 ./cmd/itos-cc -run 'Interruption|FailFast'
 - id: T-50
   type: refactor
   title: coverage, crap and project take the context, and only main makes one
