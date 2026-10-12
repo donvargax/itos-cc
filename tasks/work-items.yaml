@@ -1602,6 +1602,11 @@ items:
       top-level dispatch on kong with the template's main.go (template-main-tests,
       template-main-exception) and deletes the count sample (q-48). S10 is refactor-final-proof,
       then interrupt-exit-130, then semantic-exit-codes.
+
+      From 2026-10-12 (decision on q-60): after S4, port-contract-suites then scenario-two-drivers
+      (units, dry, scrap in process with fakes); each later move (S5 crap, S6-S7 mutation, S8 serve)
+      adds its port's contract suite and its feature file to the in-process driver as part of the
+      move.
   - id: left-out-singular-wording
     title: mutation check's left-out note reads "1 recorded mutant at sites gone"
     phase: 1
