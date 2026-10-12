@@ -245,6 +245,7 @@ questions:
   - id: q-51
     question: "Exit 130 on Ctrl-C changes serve (0 → 130) and mutation run --count (75, count.interrupted → 130, interrupted): adopt it fully, keep --count's 75, or defer?"
     answer: "Adopt it fully, in a minor release (answered 2026-10-11): every command exits 130 with rule interrupted, serve and mutation run --count included, called out in Upgrading. A second Ctrl-C ends the process at once, except while the process groups itos-cc owns are being killed (ADR-0021). q-37 settles as mutation.cleanup-failed, exit 70."
+    decision: 38
   - id: q-52
     question: "The template runs scenarios with godog against the built binary; ours are prose checked by in-process Go tests: hybrid, convert everything over time, or stay with Go tests?"
     answer: "Convert every feature file to godog over time (answered 2026-10-11), not a hybrid: the harness arrives with the first command moved onto the template design, and each stage that moves a command converts its feature file, mutate.feature last with the mutation group."

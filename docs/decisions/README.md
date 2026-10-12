@@ -34,12 +34,12 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0028: Non-cumulative CLI flags are accepted once](0028-non-cumulative-cli-flags-are-accepted-once.md)
 - [ADR-0029: Go code is a shared domain behind ports, separate adapters and thin slices named for their commands](0029-go-code-is-a-shared-domain-behind-ports-separate-adapters-and-thin-slices-named-for-their-commands.md)
 - [ADR-0030: context.Context carries cancellation from cmd through Handle to the ports, never a value](0030-context-context-carries-cancellation-from-cmd-through-handle-to-the-ports-never-a-value.md)
-- [ADR-0031: An interrupted command exits 130, says so once, and a second interrupt ends it at once](0031-an-interrupted-command-exits-130-says-so-once-and-a-second-interrupt-ends-it-at-once.md)
 - [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
 - [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
 - [ADR-0034: internal/cli keeps itos-cc's contract and upstreams it to the template](0034-internal-cli-keeps-itos-cc-s-contract-and-upstreams-it-to-the-template.md)
 - [ADR-0035: Kong is forked for typed user-input errors](0035-kong-is-forked-for-typed-user-input-errors.md)
 - [ADR-0036: Exit codes follow square/exit, keeping 75 for retry](0036-exit-codes-follow-square-exit-keeping-75-for-retry.md)
 - [ADR-0037: Top-level packages move under internal/ as each is refactored](0037-top-level-packages-move-under-internal-as-each-is-refactored.md)
+- [ADR-0038: Every command exits 130 on interrupt, and a second interrupt waits only for owned process groups](0038-every-command-exits-130-on-interrupt-and-a-second-interrupt-waits-only-for-owned-process-groups.md)
 
 <!-- itos:decisions:end -->
