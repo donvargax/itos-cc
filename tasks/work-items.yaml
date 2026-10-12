@@ -2146,3 +2146,24 @@ items:
       lives in Before hooks keyed on the scenario's file. Each step is checked to fail on a changed
       expectation. dry.feature joins converted, and its smoke scenario then runs in the smoke step.
       No product code changes.
+  - id: T-38
+    title: Snapshots are read and written through the snapshot domain's port
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Decision 41: snapshots are read and written through a snapshot domain and its port, built here
+      and wired into the hand-parsed dry and scrap first, as T-31 wired selection into files().
+      internal/snapshot holds the pure part: the format Version and naming an absolute path from a
+      root (project.FromRoot's path arithmetic as Key(root, abs); Discover's paths are absolute, so
+      no working directory is needed). internal/snapshot/port declares Store: Root(ctx), Read(ctx,
+      name, v) (bool, Failure), Write(ctx, name, v) Failure, with sealed failures Unreadable,
+      Unwritable and Cancelled, each Reason the library's error text whole, and a porttest fake. The
+      adapter internal/metricsdir wraps metrics and project (its own depguard rule, as workdir has),
+      so the JSON indenting and atomic rename stay the library's and no byte changes. cmd holds
+      classifySnapshot (the domain is shared): a failed write stays internal (70), and scrap still
+      warns about an unreadable snapshot and goes on. crap, mutation and serve keep the metrics
+      library until each moves. depguard rules, architecture fixtures and docs/go.md's package
+      entries follow docs/go.md's Adding a package.
