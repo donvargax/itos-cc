@@ -18,14 +18,20 @@ type Store struct {
 	// Failures are Read's and Write's, by name: a snapshot named here
 	// fails with its failure.
 	Failures map[string]port.Failure
+	// RootFailure, when set, is Root's failure.
+	RootFailure port.Failure
 }
 
 var _ port.Store = (*Store)(nil)
 
-// Root is RootDir, or Cancelled once ctx is done.
+// Root is RootDir, RootFailure when it is set, or Cancelled once ctx is
+// done.
 func (s *Store) Root(ctx context.Context) (string, port.Failure) {
 	if ctx.Err() != nil {
 		return "", &port.Cancelled{}
+	}
+	if s.RootFailure != nil {
+		return "", s.RootFailure
 	}
 	return s.RootDir, nil
 }

@@ -2,6 +2,7 @@ package selection_test
 
 import (
 	"errors"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -12,13 +13,43 @@ import (
 	"pgregory.net/rapid"
 )
 
+// dir is the working directory the trees are at: absolute, and holding no
+// fragment the tests give, since a fragment is matched against the whole
+// of a path.
+var dir = func() string {
+	abs, err := filepath.Abs(string(filepath.Separator) + "work")
+	if err != nil {
+		panic(err)
+	}
+	return abs
+}()
+
+// files are a tree's files, by slash-separated paths from dir, holding
+// nothing.
+func files(names ...string) map[string]string {
+	held := map[string]string{}
+	for _, name := range names {
+		held[name] = ""
+	}
+	return held
+}
+
+// at is each of rels, slash-separated from dir, made absolute.
+func at(rels ...string) []string {
+	var paths []string
+	for _, rel := range rels {
+		paths = append(paths, filepath.Join(dir, filepath.FromSlash(rel)))
+	}
+	return paths
+}
+
 // project is a small working tree: sources and tests in two languages'
 // folders, one test only under a folder no source is in.
 func project() porttest.Tree {
-	return porttest.Tree{
-		Sources: []string{"lib/cart/total.ts", "src/billing/invoice.ts", "src/billing/tax.py", "src/main.go"},
-		Tests:   []string{"spec/refund_test.go", "src/billing/invoice.test.ts", "src/main_test.go"},
-	}
+	return porttest.TreeOf(dir, files(
+		"lib/cart/total.ts", "src/billing/invoice.ts", "src/billing/tax.py", "src/main.go",
+		"spec/refund_test.go", "src/billing/invoice.test.ts", "src/main_test.go",
+	), nil)
 }
 
 func TestSelectChoosesItsFiles(t *testing.T) {
@@ -30,21 +61,24 @@ func TestSelectChoosesItsFiles(t *testing.T) {
 		want    selection.Files
 	}{
 		{name: "no paths is the whole working directory", tree: project(),
-			want: selection.Files{Sources: project().Sources, Tests: project().Tests}},
+			want: selection.Files{
+				Sources: at("lib/cart/total.ts", "src/billing/invoice.ts", "src/billing/tax.py", "src/main.go"),
+				Tests:   at("spec/refund_test.go", "src/billing/invoice.test.ts", "src/main_test.go"),
+			}},
 		{name: "a directory and a file are roots", tree: project(), paths: []string{"src/billing", "lib/cart/total.ts"},
-			want: selection.Files{Sources: []string{"lib/cart/total.ts", "src/billing/invoice.ts", "src/billing/tax.py"}, Tests: []string{"src/billing/invoice.test.ts"}}},
+			want: selection.Files{Sources: at("lib/cart/total.ts", "src/billing/invoice.ts", "src/billing/tax.py"), Tests: at("src/billing/invoice.test.ts")}},
 		{name: "a path that is not there is a fragment", tree: project(), paths: []string{"billing"},
-			want: selection.Files{Sources: []string{"src/billing/invoice.ts", "src/billing/tax.py"}, Tests: []string{"src/billing/invoice.test.ts"}}},
+			want: selection.Files{Sources: at("src/billing/invoice.ts", "src/billing/tax.py"), Tests: at("src/billing/invoice.test.ts")}},
 		{name: "a fragment matching tests alone selects them", tree: project(), paths: []string{"refund"},
-			want: selection.Files{Tests: []string{"spec/refund_test.go"}}},
+			want: selection.Files{Tests: at("spec/refund_test.go")}},
 		{name: "fragments' files follow the roots' in their own order", tree: project(), paths: []string{"lib", "tax", "main"},
-			want: selection.Files{Sources: []string{"lib/cart/total.ts", "src/billing/tax.py", "src/main.go"}, Tests: []string{"src/main_test.go"}}},
+			want: selection.Files{Sources: at("lib/cart/total.ts", "src/billing/tax.py", "src/main.go"), Tests: at("src/main_test.go")}},
 		{name: "a root and a fragment over the same file select it twice", tree: project(), paths: []string{"src/main.go", "main.go"},
-			want: selection.Files{Sources: []string{"src/main.go", "src/main.go"}}},
+			want: selection.Files{Sources: at("src/main.go", "src/main.go")}},
 		{name: "changed files join the paths", tree: withChanged(project(), "src/main.go"), paths: []string{"lib"}, changed: true,
-			want: selection.Files{Sources: []string{"lib/cart/total.ts", "src/main.go"}}},
+			want: selection.Files{Sources: at("lib/cart/total.ts", "src/main.go")}},
 		{name: "changed alone is the changed files", tree: withChanged(project(), "src/billing/invoice.test.ts", "src/billing/tax.py"), changed: true,
-			want: selection.Files{Sources: []string{"src/billing/tax.py"}, Tests: []string{"src/billing/invoice.test.ts"}}},
+			want: selection.Files{Sources: at("src/billing/tax.py"), Tests: at("src/billing/invoice.test.ts")}},
 		{name: "nothing changed selects nothing, whatever the paths", tree: project(), paths: []string{"src", "nosuch"}, changed: true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -140,15 +174,15 @@ func TestSelectLeavesItsCallersPathsAlone(t *testing.T) {
 // Paths and fragments only ever narrow the working directory: what they
 // select is exactly the files of "." under a path that is there or holding
 // one that is not, and a fragment refused is one of the arguments that is
-// not there.
+// not there. The paths are relative, as a path from the working directory
+// is: one may climb above it, never start at the root of the disk.
 func TestPathsAndFragmentsOnlyNarrowTheWorkingDirectory(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		name := rapid.StringMatching(`[ab]{1,2}(/[ab]{1,2}){0,2}\.(go|ts)`)
-		tree := porttest.Tree{
-			Sources: rapid.SliceOfDistinct(name, func(s string) string { return s }).Draw(t, "sources"),
-			Tests:   rapid.SliceOfDistinct(rapid.StringMatching(`[ab]{1,2}/[ab]{1,2}_test\.go`), func(s string) string { return s }).Draw(t, "tests"),
-		}
-		paths := rapid.SliceOfN(rapid.StringMatching(`[ab/.]{1,4}`), 1, 4).Draw(t, "paths")
+		sources := rapid.SliceOfDistinct(name, func(s string) string { return s }).Draw(t, "sources")
+		tests := rapid.SliceOfDistinct(rapid.StringMatching(`[ab]{1,2}/[ab]{1,2}_test\.go`), func(s string) string { return s }).Draw(t, "tests")
+		tree := porttest.TreeOf(dir, files(append(sources, tests...)...), nil)
+		paths := rapid.SliceOfN(rapid.StringMatching(`[ab.][ab/.]{0,3}`), 1, 4).Draw(t, "paths")
 		all, err := selection.Select(t.Context(), tree, nil, false)
 		if err != nil {
 			t.Fatal(err)
@@ -166,8 +200,9 @@ func TestPathsAndFragmentsOnlyNarrowTheWorkingDirectory(t *testing.T) {
 		}
 		chosen := func(f string) bool {
 			for _, p := range paths {
-				if tree.Exists(t.Context(), p) && (p == "." || f == p || strings.HasPrefix(f, strings.TrimSuffix(p, "/")+"/")) ||
-					!tree.Exists(t.Context(), p) && strings.Contains(f, p) {
+				root := filepath.Join(dir, p)
+				if tree.Exists(t.Context(), p) && (f == root || strings.HasPrefix(f, strings.TrimSuffix(root, string(filepath.Separator))+string(filepath.Separator))) ||
+					!tree.Exists(t.Context(), p) && strings.Contains(filepath.ToSlash(f), p) {
 					return true
 				}
 			}

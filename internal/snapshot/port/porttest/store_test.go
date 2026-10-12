@@ -41,7 +41,8 @@ func TestStoreReadsWhatItWrote(t *testing.T) {
 }
 
 // A store with no snapshots yet takes one, a value that does not encode is
-// Unwritable, and a configured failure is what a read or a write returns.
+// Unwritable, and a configured failure is what a read, a write or the
+// root returns.
 func TestStoreFailsAsConfigured(t *testing.T) {
 	store := &Store{}
 	if failure := store.Write(t.Context(), "dry.json", []int{}); failure != nil || store.Snapshots["dry.json"] != "[]" {
@@ -59,6 +60,11 @@ func TestStoreFailsAsConfigured(t *testing.T) {
 	var v int
 	if found, failure := store.Read(t.Context(), "full.json", &v); found || failure != full {
 		t.Errorf("Read(full.json) = %t, %v, want %v", found, failure, full)
+	}
+	stopped := &port.Cancelled{}
+	store.RootFailure = stopped
+	if root, failure := store.Root(t.Context()); root != "" || failure != stopped {
+		t.Errorf("Root() = %q, %v, want %v", root, failure, stopped)
 	}
 }
 

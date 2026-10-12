@@ -52,16 +52,23 @@ func (*Cancelled) selectionFailure() {}
 func (*Cancelled) Error() string     { return "cancelled selection" }
 
 // Tree is the working tree a command selects its files from. ctx carries
-// only cancellation and deadlines, never a value.
+// only cancellation and deadlines, never a value; once it is done,
+// Discover, Changed and Read are Cancelled. porttest.TreeContract holds
+// what every Tree, the fake and the disk's, must do.
 type Tree interface {
-	// Discover is every supported file under roots, files or directories,
-	// split into production sources and tests, each list sorted; a root
-	// naming a file is taken even where a walk would skip it.
+	// Discover is every supported file under roots, files or directories
+	// relative to the working directory or absolute, split into production
+	// sources and tests, each path absolute, each list sorted and holding
+	// a file once. A walk skips hidden directories, dependencies, fixtures
+	// and build output; a root naming a file is taken even where a walk
+	// would skip it. A root that is not there is Unwalkable.
 	Discover(ctx context.Context, roots []string) (sources, tests []string, failure Failure)
 	// Changed is the supported files git reports as added, modified or
-	// untracked under the working directory, relative to it.
+	// untracked under the working directory, relative to it and
+	// slash-separated, a list the caller owns.
 	Changed(ctx context.Context) ([]string, Failure)
-	// Exists says whether path names a file or a directory.
+	// Exists says whether path, relative to the working directory or
+	// absolute, names a file or a directory, whatever it holds.
 	Exists(ctx context.Context, path string) bool
 	// Read is what the file at path, as Discover named it, holds. Every
 	// command that selects files reads them, so it reads them here, through

@@ -2,43 +2,77 @@ package porttest
 
 import (
 	"errors"
-	"slices"
+	"path/filepath"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
 
-// The fake walks as a real tree does: a root is "." or a path at or above
-// files, each list comes sorted with each file once, and what Changed
-// returns is the caller's own.
-func TestTreeWalksAsARealTreeDoes(t *testing.T) {
-	tree := Tree{Sources: []string{"src/b.go", "src/a.go", "srcs/c.go"}, Tests: []string{"src/a_test.go"}, ChangedFiles: []string{"src/a.go"}}
-	sources, tests, failure := tree.Discover(t.Context(), []string{"src/", "src/a.go"})
-	if failure != nil || !slices.Equal(sources, []string{"src/a.go", "src/b.go"}) || !slices.Equal(tests, []string{"src/a_test.go"}) {
-		t.Errorf("Discover(src/, src/a.go) = %q, %q, %v", sources, tests, failure)
-	}
-	for path, want := range map[string]bool{".": true, "src": true, "src/a_test.go": true, "sr": false, "src/a": false} {
-		if got := tree.Exists(t.Context(), path); got != want {
-			t.Errorf("Exists(%q) = %t, want %t", path, got, want)
+// The fake does what internal/workdir's Tree does on the disk. Its
+// directory is a name only: the fake never touches it, and a temporary
+// directory's is absolute on every system.
+func TestTreeKeepsTheContract(t *testing.T) {
+	TreeContract(t, func(t *testing.T, f TreeFixture) (port.Tree, string) {
+		dir := t.TempDir()
+		tree := TreeOf(dir, f.Files, f.Changed)
+		if !f.Git {
+			tree.NoGit = &port.NoGit{Reason: "not a git repository"}
 		}
+		return tree, dir
+	})
+}
+
+// A failure configured for a root is Discover's when a walk takes that
+// root, before anything is found.
+func TestTreeFailsAtAConfiguredRoot(t *testing.T) {
+	walk := &port.Unwalkable{Reason: "open src: permission denied"}
+	tree := TreeOf(t.TempDir(), map[string]string{"src/a.go": "package src\n", "lib/b.go": "package lib\n"}, nil)
+	tree.Failures = map[string]port.Failure{"src": walk}
+	if sources, _, failure := tree.Discover(t.Context(), []string{"lib", "src"}); failure != walk || sources != nil {
+		t.Errorf("Discover(lib, src) = %q, %v; want the configured failure and nothing", sources, failure)
 	}
-	changed, _ := tree.Changed(t.Context())
-	changed[0] = "other"
-	if tree.ChangedFiles[0] != "src/a.go" {
-		t.Errorf("Changed() exposed the fake's own list")
+	if sources, _, failure := tree.Discover(t.Context(), []string{"lib"}); failure != nil || len(sources) != 1 {
+		t.Errorf("Discover(lib) = %q, %v; want lib/b.go", sources, failure)
 	}
 }
 
-// Read gives a file's contents, and a file without any is Unreadable, as a
-// real tree's read of a file it cannot open is.
-func TestTreeReadsWhatItHolds(t *testing.T) {
-	tree := Tree{Contents: map[string]string{"src/a.go": "package a\n"}}
-	if text, failure := tree.Read(t.Context(), "src/a.go"); failure != nil || string(text) != "package a\n" {
-		t.Errorf("Read(src/a.go) = %q, %v", text, failure)
-	}
-	_, failure := tree.Read(t.Context(), "src/b.go")
+// A source with no text in Contents cannot be read, as a file the disk
+// will not open, while it is still found and there.
+func TestTreeCannotReadASourceWithNoText(t *testing.T) {
+	dir := t.TempDir()
+	tree := TreeOf(dir, map[string]string{"src/a.go": "package src\n"}, nil)
+	delete(tree.Contents, "src/a.go")
+	path := filepath.Join(dir, "src", "a.go")
+	_, failure := tree.Read(t.Context(), path)
 	var unreadable *port.Unreadable
-	if !errors.As(failure, &unreadable) || unreadable.Path != "src/b.go" {
-		t.Errorf("Read(src/b.go) = %T %v, want Unreadable", failure, failure)
+	if !errors.As(failure, &unreadable) || unreadable.Path != path || !tree.Exists(t.Context(), "src/a.go") {
+		t.Errorf("Read(%q) = %T %v; want Unreadable of a file that is there", path, failure, failure)
+	}
+}
+
+// NoGit is Changed's failure whenever it is configured, the changed files
+// set or not.
+func TestTreeChangedIsTheConfiguredNoGit(t *testing.T) {
+	noGit := &port.NoGit{Reason: "exit status 128"}
+	tree := TreeOf(t.TempDir(), map[string]string{"a.go": "package a\n"}, []string{"a.go"})
+	tree.NoGit = noGit
+	if changed, failure := tree.Changed(t.Context()); failure != noGit || changed != nil {
+		t.Errorf("Changed() = %q, %v; want the configured NoGit", changed, failure)
+	}
+}
+
+// Paths rooted with no volume, as Windows writes them, are on the volume
+// of the tree's directory, so a tree at such a path names its files under
+// it on every system.
+func TestTreeAtARootedPathNamesItsFilesUnderIt(t *testing.T) {
+	dir := filepath.FromSlash("/work")
+	tree := TreeOf(dir, map[string]string{"src/a.go": "package src\n"}, nil)
+	path := filepath.Join(dir, "src", "a.go")
+	sources, _, failure := tree.Discover(t.Context(), []string{filepath.Join(dir, "src")})
+	if failure != nil || len(sources) != 1 || sources[0] != path {
+		t.Errorf("Discover(%q) = %q, %v; want %q", filepath.Join(dir, "src"), sources, failure, path)
+	}
+	if text, failure := tree.Read(t.Context(), path); failure != nil || string(text) != "package src\n" {
+		t.Errorf("Read(%q) = %q, %v", path, text, failure)
 	}
 }

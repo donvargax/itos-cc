@@ -58,13 +58,9 @@ func at(rel string) string { return filepath.FromSlash("/work/" + rel) }
 // tree is a project at /work: two sources that are near copies, one that
 // is no copy of either, and a test, held in memory.
 func tree() porttest.Tree {
-	return porttest.Tree{
-		Sources: []string{at("src/invoice.py"), at("src/parse.py"), at("src/receipt.py")},
-		Tests:   []string{at("src/invoice_test.py")},
-		Contents: map[string]string{
-			at("src/invoice.py"): invoice, at("src/parse.py"): unrelated, at("src/receipt.py"): receipt,
-		},
-	}
+	return porttest.TreeOf(at(""), map[string]string{
+		"src/invoice.py": invoice, "src/parse.py": unrelated, "src/receipt.py": receipt, "src/invoice_test.py": "",
+	}, nil)
 }
 
 // fromSrc names a file as a person in /work/src reads it, so names and
@@ -148,26 +144,31 @@ func TestPathsAreCheckedAgainstTheWholeProject(t *testing.T) {
 	}
 }
 
-// A file that cannot be read, a language lang does not know and a root the
-// store cannot give stop Handle with nothing found; a snapshot that cannot
-// be written returns what was found beside the failure.
+// A file that cannot be read, a language lang does not know, a done
+// context and a root the store cannot give stop Handle with nothing found;
+// a snapshot that cannot be written returns what was found beside the
+// failure.
 func TestHandleStopsAtAFailure(t *testing.T) {
 	locked := tree()
-	delete(locked.Contents, at("src/parse.py"))
+	delete(locked.Contents, "src/parse.py")
 	_, err := handler(locked, &snapporttest.Store{}).Handle(t.Context(), query())
 	var unreadable *port.Unreadable
 	if !errors.As(err, &unreadable) {
 		t.Errorf("an unreadable file: %T %v, want Unreadable", err, err)
 	}
 	strange := tree()
-	strange.Sources = append(strange.Sources, at("src/notes.txt"))
+	strange.Sources = append(strange.Sources, "src/notes.txt")
 	if _, err := handler(strange, &snapporttest.Store{}).Handle(t.Context(), query()); err == nil || err.Error() != "unsupported language: "+at("src/notes.txt") {
 		t.Errorf("a language lang does not know: %v", err)
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
+	var stopped *port.Cancelled
+	if _, err := handler(tree(), &snapporttest.Store{}).Handle(ctx, query()); !errors.As(err, &stopped) {
+		t.Errorf("a done context: %T %v, want the selection Cancelled", err, err)
+	}
 	var cancelled *snapport.Cancelled
-	if _, err := handler(tree(), &snapporttest.Store{}).Handle(ctx, query()); !errors.As(err, &cancelled) {
+	if _, err := handler(tree(), &snapporttest.Store{RootFailure: &snapport.Cancelled{}}).Handle(t.Context(), query()); !errors.As(err, &cancelled) {
 		t.Errorf("a root the store cannot give: %T %v, want Cancelled", err, err)
 	}
 	full := &snapport.Unwritable{Name: "dry.json", Reason: "no space left on device"}

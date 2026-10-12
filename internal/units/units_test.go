@@ -8,6 +8,7 @@ package units
 
 import (
 	"errors"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -18,18 +19,17 @@ import (
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
 )
 
-// tree is a working tree of a TypeScript source and its test, and a Python
-// source, held in memory.
+// work is the working directory, as the system writes it.
+var work = filepath.FromSlash("/work")
+
+// tree is a working tree at work of a TypeScript source and its test, and
+// a Python source, held in memory.
 func tree() porttest.Tree {
-	return porttest.Tree{
-		Sources: []string{"src/cart.ts", "src/price.py"},
-		Tests:   []string{"src/cart.test.ts"},
-		Contents: map[string]string{
-			"src/cart.ts":      "export function total(p: number[]): number {\n  return p.length;\n}\n",
-			"src/price.py":     "def discount(p):\n    return p\n",
-			"src/cart.test.ts": "function cartOf(n: number) {\n  return n;\n}\n",
-		},
-	}
+	return porttest.TreeOf(work, map[string]string{
+		"src/cart.ts":      "export function total(p: number[]): number {\n  return p.length;\n}\n",
+		"src/price.py":     "def discount(p):\n    return p\n",
+		"src/cart.test.ts": "function cartOf(n: number) {\n  return n;\n}\n",
+	}, nil)
 }
 
 // around is what surrounds the tree's files: a working directory holding no
@@ -83,7 +83,7 @@ func TestHandleStopsAtAFailureWithWhatItListed(t *testing.T) {
 // lang names each unit through the Surroundings it is handed, not the
 // disk: a go.mod they hold names a Go source by its module.
 func TestHandleNamesUnitsThroughTheSurroundingsItIsGiven(t *testing.T) {
-	tree := porttest.Tree{Sources: []string{"billing/sum.go"}, Contents: map[string]string{"billing/sum.go": "package billing\n\nfunc Sum() int { return 0 }\n"}}
+	tree := porttest.TreeOf(work, map[string]string{"billing/sum.go": "package billing\n\nfunc Sum() int { return 0 }\n"}, nil)
 	module := langporttest.Surroundings{Dir: "/work", Files: map[string]string{"/work/go.mod": "module example.com/shop\n"}}
 	got, err := names(t, Handler{Tree: tree, Surroundings: module}, Query{})
 	if err != nil || !slices.Equal(got, []string{"example.com/shop/billing#Sum"}) {
@@ -96,7 +96,7 @@ type ends struct{ stdout, stderr strings.Builder }
 
 func run(t *testing.T, e *ends, c CLI, h Handler) int {
 	t.Helper()
-	ui := &cli.UI{Stdout: &e.stdout, Stderr: &e.stderr, Dir: t.TempDir()}
+	ui := &cli.UI{Stdout: &e.stdout, Stderr: &e.stderr, Dir: work}
 	return c.Run(t.Context(), ui, h)
 }
 
@@ -105,7 +105,9 @@ func TestRunPrintsALineAUnit(t *testing.T) {
 	if code := run(t, &e, CLI{}, Handler{Tree: tree(), Surroundings: around}); code != 0 {
 		t.Fatalf("exit %d\n%s", code, e.stderr.String())
 	}
-	want := "src/cart.ts:1-3  cart#total  function\nsrc/price.py:1-2  price#discount  function\n"
+	// Each path is from the working directory, as the system writes it.
+	want := filepath.FromSlash("src/cart.ts") + ":1-3  cart#total  function\n" +
+		filepath.FromSlash("src/price.py") + ":1-2  price#discount  function\n"
 	if e.stdout.String() != want || e.stderr.Len() != 0 {
 		t.Errorf("stdout %q, stderr %q; want %q", e.stdout.String(), e.stderr.String(), want)
 	}

@@ -36,11 +36,7 @@ func at(rel string) string { return filepath.FromSlash("/work/" + rel) }
 
 // tree is a project at /work: a source and its test, held in memory.
 func tree() porttest.Tree {
-	return porttest.Tree{
-		Sources:  []string{at("src/cart.ts")},
-		Tests:    []string{at("src/cart.test.ts")},
-		Contents: map[string]string{at("src/cart.test.ts"): cartTest},
-	}
+	return porttest.TreeOf(at(""), map[string]string{"src/cart.ts": "", "src/cart.test.ts": cartTest}, nil)
 }
 
 // fromSrc names a file as a person in /work/src reads it, so names and
@@ -125,27 +121,32 @@ func TestAnUnreadableSnapshotIsIgnored(t *testing.T) {
 	}
 }
 
-// A test file that cannot be read, a language lang does not know, a root
-// the store cannot give and a snapshot that cannot be written stop Handle
-// with no report, the ignored snapshot still said.
+// A test file that cannot be read, a language lang does not know, a done
+// context, a root the store cannot give and a snapshot that cannot be
+// written stop Handle with no report, the ignored snapshot still said.
 func TestHandleStopsAtAFailure(t *testing.T) {
 	locked := tree()
-	delete(locked.Contents, at("src/cart.test.ts"))
+	delete(locked.Contents, "src/cart.test.ts")
 	found, err := handler(locked, store("{")).Handle(t.Context(), Query{})
 	var unreadable *port.Unreadable
 	if !errors.As(err, &unreadable) || found.Ignored == nil || found.Reports != nil {
 		t.Errorf("an unreadable test: %+v, %T %v; want Unreadable, the snapshot ignored", found, err, err)
 	}
 	strange := tree()
-	strange.Tests = append(strange.Tests, at("src/notes_test.txt"))
+	strange.Tests = append(strange.Tests, "src/notes_test.txt")
 	if _, err := handler(strange, store("")).Handle(t.Context(), Query{}); err == nil || err.Error() != "unsupported language: "+at("src/notes_test.txt") {
 		t.Errorf("a language lang does not know: %v", err)
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
+	var stopped *port.Cancelled
+	if _, err := handler(tree(), &snapporttest.Store{}).Handle(ctx, Query{}); !errors.As(err, &stopped) {
+		t.Errorf("a done context: %T %v, want the selection Cancelled", err, err)
+	}
 	var cancelled *snapport.Cancelled
-	if _, err := handler(tree(), &snapporttest.Store{}).Handle(ctx, Query{}); !errors.As(err, &cancelled) {
-		t.Errorf("a root the store cannot give: %T %v, want Cancelled", err, err)
+	found, err = handler(tree(), &snapporttest.Store{RootFailure: &snapport.Cancelled{}}).Handle(t.Context(), Query{})
+	if !errors.As(err, &cancelled) || found.Reports != nil {
+		t.Errorf("a root the store cannot give: %+v, %T %v; want Cancelled and no report", found, err, err)
 	}
 	full := &snapport.Unwritable{Name: "scrap.json", Reason: "no space left on device"}
 	found, err = handler(tree(), &snapporttest.Store{Failures: map[string]snapport.Failure{"scrap.json": full}}).Handle(t.Context(), Query{})

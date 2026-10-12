@@ -3,6 +3,7 @@ package workdir
 import (
 	"context"
 	"errors"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,28 +11,39 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
 )
 
-// tree is a temporary working directory holding a Go source and its test,
-// the test's working directory for its duration, git above it out of
-// reach.
-func tree(t *testing.T) string {
+// workingDir is a temporary directory holding files, by slash-separated
+// paths with their text, the test's working directory for its duration,
+// git above it out of reach.
+func workingDir(t *testing.T, files map[string]string) string {
+	t.Helper()
 	dir, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
-	for name, contents := range map[string]string{"pkg/sum.go": "package pkg\n", "pkg/sum_test.go": "package pkg\n"} {
-		path := filepath.Join(dir, filepath.FromSlash(name))
-		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
-			t.Fatal(err)
-		}
+	for _, name := range slices.Sorted(maps.Keys(files)) {
+		write(t, filepath.Join(dir, filepath.FromSlash(name)), files[name])
 	}
 	t.Setenv("GIT_CEILING_DIRECTORIES", filepath.Dir(dir))
 	t.Chdir(dir)
 	return dir
+}
+
+func write(t *testing.T, path, text string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// tree is a working directory holding a Go source and its test.
+func tree(t *testing.T) string {
+	return workingDir(t, map[string]string{"pkg/sum.go": "package pkg\n", "pkg/sum_test.go": "package pkg\n"})
 }
 
 func cancelled(t *testing.T) context.Context {
@@ -40,33 +52,72 @@ func cancelled(t *testing.T) context.Context {
 	return ctx
 }
 
-func TestDiscoverSplitsTheFilesUnderItsRoots(t *testing.T) {
-	dir := tree(t)
-	sources, tests, failure := (Tree{}).Discover(t.Context(), []string{"."})
-	if failure != nil {
-		t.Fatal(failure)
-	}
-	wantSources := []string{filepath.Join(dir, "pkg", "sum.go")}
-	wantTests := []string{filepath.Join(dir, "pkg", "sum_test.go")}
-	if !slices.Equal(sources, wantSources) || !slices.Equal(tests, wantTests) {
-		t.Errorf("Discover(.) = %q, %q; want %q, %q", sources, tests, wantSources, wantTests)
+// git runs git in the working directory, with an identity of its own,
+// no signing, line ending conversion or upkeep, skipping the test when
+// there is no git.
+func git(t *testing.T, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", append([]string{"-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", "-c", "core.autocrlf=false", "-c", "maintenance.auto=false", "-c", "gc.auto=0"}, args...)...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		if _, missing := exec.LookPath("git"); missing != nil {
+			t.Skipf("no git: %v", missing)
+		}
+		t.Fatalf("git %q: %v\n%s", args, err, out)
 	}
 }
 
-func TestDiscoverOfARootThatIsNotThereIsUnwalkable(t *testing.T) {
+// open lays f out as the working directory. In a repository every file is
+// committed but the changed ones, which alternate between modified since
+// the commit and never added, so Changed meets both kinds git reports.
+func open(t *testing.T, f porttest.TreeFixture) (port.Tree, string) {
+	dir := workingDir(t, f.Files)
+	if !f.Git {
+		return Tree{}, dir
+	}
+	git(t, "init", "-q", ".")
+	untracked := map[string]bool{}
+	for i, name := range f.Changed {
+		if i%2 == 0 {
+			write(t, filepath.Join(dir, filepath.FromSlash(name)), "committed before it changed\n")
+		} else {
+			untracked[name] = true
+		}
+	}
+	for name := range f.Files {
+		if !untracked[name] {
+			git(t, "add", "--", name)
+		}
+	}
+	git(t, "commit", "-q", "--allow-empty", "-m", "fixture")
+	for i, name := range f.Changed {
+		if i%2 == 0 {
+			write(t, filepath.Join(dir, filepath.FromSlash(name)), f.Files[name])
+		}
+	}
+	return Tree{}, dir
+}
+
+// The adapter does what every Tree does, the fake's included.
+func TestTreeKeepsTheContract(t *testing.T) {
+	porttest.TreeContract(t, open)
+}
+
+// A root that is not there is Unwalkable with the walk's own message, as
+// the command line has always printed it.
+func TestDiscoverOfARootThatIsNotThereSaysWhatTheWalkSaid(t *testing.T) {
 	absent := filepath.Join(tree(t), "absent")
 	_, _, failure := (Tree{}).Discover(t.Context(), []string{absent})
 	var unwalkable *port.Unwalkable
 	if !errors.As(failure, &unwalkable) {
 		t.Fatalf("Discover(absent) = %T %v, want Unwalkable", failure, failure)
 	}
-	// The walk's own message, as the command line has always printed it.
 	if _, statErr := os.Stat(absent); unwalkable.Reason != statErr.Error() {
 		t.Errorf("Reason = %q, want %q", unwalkable.Reason, statErr.Error())
 	}
 }
 
-func TestChangedOutsideGitIsNoGit(t *testing.T) {
+// Without a repository, NoGit carries what git said.
+func TestChangedOutsideGitSaysWhatGitSaid(t *testing.T) {
 	tree(t)
 	_, failure := (Tree{}).Changed(t.Context())
 	var noGit *port.NoGit
@@ -75,63 +126,16 @@ func TestChangedOutsideGitIsNoGit(t *testing.T) {
 	}
 }
 
-func TestChangedListsWhatGitReports(t *testing.T) {
-	dir := tree(t)
-	if out, err := exec.Command("git", "init", "-q", dir).CombinedOutput(); err != nil {
-		t.Skipf("git init: %v\n%s", err, out)
-	}
-	changed, failure := (Tree{}).Changed(t.Context())
-	if failure != nil {
-		t.Fatal(failure)
-	}
-	if want := []string{"pkg/sum.go", "pkg/sum_test.go"}; !slices.Equal(changed, want) {
-		t.Errorf("Changed() = %q, want the untracked %q", changed, want)
-	}
-}
-
-func TestADoneContextFindsNothing(t *testing.T) {
-	tree(t)
-	sources, tests, failure := (Tree{}).Discover(cancelled(t), []string{"."})
-	var stopped *port.Cancelled
-	if !errors.As(failure, &stopped) || sources != nil || tests != nil {
-		t.Errorf("Discover() = %q, %q, %T; want Cancelled and nothing", sources, tests, failure)
-	}
-	changed, failure := (Tree{}).Changed(cancelled(t))
-	if !errors.As(failure, &stopped) || changed != nil {
-		t.Errorf("Changed() = %q, %T; want Cancelled and nothing", changed, failure)
-	}
-	text, failure := (Tree{}).Read(cancelled(t), "pkg/sum.go")
-	if !errors.As(failure, &stopped) || text != nil {
-		t.Errorf("Read() = %q, %T; want Cancelled and nothing", text, failure)
-	}
-}
-
-func TestReadGivesWhatAFileHolds(t *testing.T) {
-	tree(t)
-	text, failure := (Tree{}).Read(t.Context(), filepath.Join("pkg", "sum.go"))
-	if failure != nil || string(text) != "package pkg\n" {
-		t.Errorf("Read(pkg/sum.go) = %q, %v", text, failure)
-	}
-}
-
-func TestReadOfAFileThatIsNotThereIsUnreadable(t *testing.T) {
+// A file that is not there is Unreadable with the read's own message, as
+// the command line has always printed it.
+func TestReadOfAFileThatIsNotThereSaysWhatTheReadSaid(t *testing.T) {
 	absent := filepath.Join(tree(t), "absent.go")
 	_, failure := (Tree{}).Read(t.Context(), absent)
 	var unreadable *port.Unreadable
 	if !errors.As(failure, &unreadable) || unreadable.Path != absent {
 		t.Fatalf("Read(absent) = %T %v, want Unreadable", failure, failure)
 	}
-	// The read's own message, as the command line has always printed it.
 	if _, readErr := os.ReadFile(absent); unreadable.Reason != readErr.Error() {
 		t.Errorf("Reason = %q, want %q", unreadable.Reason, readErr.Error())
-	}
-}
-
-func TestExistsSaysWhetherAPathIsThere(t *testing.T) {
-	tree(t)
-	for path, want := range map[string]bool{"pkg": true, "pkg/sum.go": true, ".": true, "absent": false, "pkg/sum.go/x": false} {
-		if got := (Tree{}).Exists(t.Context(), path); got != want {
-			t.Errorf("Exists(%q) = %t, want %t", path, got, want)
-		}
 	}
 }

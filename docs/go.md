@@ -27,7 +27,11 @@ from it, and thin slices named for their commands.
   taking the context first) and its sealed set of failures: `NoGit`, `Unmatched`, carrying
   the fragment, `Unwalkable`, `Unreadable` and `Cancelled`. Every command reads the files it
   selects, so it reads them through the tree it chose them from, never by itself.
-  `internal/selection/port/porttest` holds the in-memory fake of `Tree`.
+  `Discover` gives absolute paths, which `snapshot.Key` names from the root.
+  `internal/selection/port/porttest` holds the in-memory fake of `Tree`, at an absolute
+  directory it names and never touches, and `TreeOf`, which lays one out from files' text,
+  classified by `internal/lang` as the disk adapter classifies them, and `TreeContract`, the
+  contract it and `internal/workdir`'s `Tree` both pass (Tests, below).
 - `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
   share and projects commit (decision 41): the format `Version` every snapshot records, and
   `Key(root, abs)`, an absolute path named as a snapshot records it, from the project root and
@@ -316,7 +320,22 @@ follows the same steps for a command it wrote before it had the template's desig
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.
 The disk and workdir adapters' tests use real temporary files, and workdir's a real git
-repository, since translating OS and git errors is what an adapter does. The `count` slice's tests use the fake too, standard input being its `-`
+repository, since translating OS and git errors is what an adapter does.
+
+A fake stands in for its adapter only when both pass one contract suite (decision 44). Each
+port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
+so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree`, the first
+(T-52). `open` lays out a fixture, here a `TreeFixture` of files' text, whether git holds them
+and which changed, and returns the port over it and its absolute working directory. The suite
+asserts what every implementation must do: results, the typed failures of fixture states both
+sides can hold, and a done context. The fake's opener names a `t.TempDir()` path it never
+touches, so its paths are absolute on every system; the adapter's lays the fixture out under
+an `EvalSymlinks`'d `t.TempDir()`, git above it out of reach, and makes it the test's working
+directory with `t.Chdir`, so no case runs in parallel. A failure the fake is configured with
+stays in the fake's own tests, and what only a disk can do (symlinks, permissions, OS error
+texts, what git ignores) in the adapter's. A difference the suite finds is fixed in whichever
+side is wrong, never by leaving the case out; the fake's lists of skipped directories and
+build output are copies of `project`'s, which the suite keeps honest. The `count` slice's tests use the fake too, standard input being its `-`
 key; reading standard input, and stopping when the context is done, is `internal/stdin`'s,
 held by its own tests. The scenarios in `features/` run the built binary through godog,
 interrupting it once it waits on an open standard input to show the 130 exit. A second Ctrl-C
