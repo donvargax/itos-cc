@@ -2105,8 +2105,8 @@ items:
   - id: T-39
     title: dry's library is the duplication domain under internal/
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-36]
     kind: task
     why: >
