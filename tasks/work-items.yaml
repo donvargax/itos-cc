@@ -2234,6 +2234,15 @@ items:
       .metrics/scrap.json, plain and with --json (the ignoring line on stderr, the run going on),
       scrap selecting no test file with --json, scrap --help and help scrap, and scrap over a test
       file that cannot be read.
+
+      T-47 (one context from main, the kong parser built once per run): run builds the moved
+      commands' parser before reading any word, so compare the lines that read its model without
+      parsing: itos-cc alone, --help, --json alone, help dry, help units --json, help dry extra, an
+      unknown command with a guess (dri) and with --json, and units -changed (the mistyped flag
+      parsed with the same parser). Compare serve stopped by SIGINT (exit 0, its shutdown now under
+      context.WithoutCancel) and mutation run --count stopped by SIGINT (exit 75,
+      count.interrupted), and mutation list over a source that cannot be parsed (ParseFile now under
+      main's context).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
