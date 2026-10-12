@@ -2088,23 +2088,9 @@ items:
     title: The pure lang is a domain package under internal/
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-35]
     kind: task
-    why: >
-      Decision 37: the pure lang, once T-35 leaves it no disk, is a domain package and moves to
-      internal/lang, its port to internal/lang/port. First a commit that only git mv's the files, so
-      git records the renames; then every import follows. depguard's domain and domain-io rules gain
-      internal/lang, domains and slices may import internal/lang and internal/lang/port (slices'
-      lang$ allowance becomes internal/lang$, its comment kept), and project stays refused to both;
-      the architecture fixtures (tools/testdata/architecture/check_test.go) follow, a domain
-      importing internal/lang now accepted. golangci-lint and tools/bin/domain-coverage hold it for
-      the first time: fix what they find without changing behaviour, a reasoned nolint only where
-      tree-sitter's bindings force unsafe.Pointer (gosec G103), and lang_test.go split if it passes
-      revive's length limit. docs/go.md names internal/lang as the measure library every command
-      shares and project as its disk side. The six .metrics/mutate/lang records move unedited to
-      .metrics/mutate/internal/lang in the move commit; they will not read fresh (their namespace
-      changes), and the nightly run refreshes them (decision 40).
   - id: T-37
     title: dry.feature runs through godog against the built binary
     phase: 1

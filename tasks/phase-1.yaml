@@ -692,11 +692,6 @@
     its disk side. The six .metrics/mutate/lang records move unedited to
     .metrics/mutate/internal/lang in the move commit; they will not read fresh (their namespace
     changes), and the nightly run refreshes them (decision 40).
-  done_when:
-    - run: test ! -e lang && test -d internal/lang/port
-    - run: test -d .metrics/mutate/internal/lang && test ! -e .metrics/mutate/lang
-    - run: go test ./internal/... ./project/... && tools/bin/architecture-check && tools/bin/domain-coverage
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-37
   type: test
   title: dry.feature runs through godog against the built binary
