@@ -15,6 +15,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	langporttest "github.com/donvargax/itos-cc/lang/port/porttest"
 )
 
 // tree is a working tree of a TypeScript source and its test, and a Python
@@ -31,6 +32,10 @@ func tree() porttest.Tree {
 	}
 }
 
+// around is what surrounds the tree's files: a working directory holding no
+// project marker, so each file is named by its path from there.
+var around = langporttest.Surroundings{Dir: "/work"}
+
 // names are the namespace#name of each unit.
 func names(t *testing.T, h Handler, q Query) ([]string, error) {
 	t.Helper()
@@ -43,7 +48,6 @@ func names(t *testing.T, h Handler, q Query) ([]string, error) {
 }
 
 func TestHandleListsTheUnitsOfWhatItSelects(t *testing.T) {
-	t.Chdir(t.TempDir())
 	for _, c := range []struct {
 		q    Query
 		want []string
@@ -52,7 +56,7 @@ func TestHandleListsTheUnitsOfWhatItSelects(t *testing.T) {
 		{Query{Tests: true}, []string{"cart.test#cartOf"}},
 		{Query{Paths: []string{"price"}}, []string{"price#discount"}},
 	} {
-		got, err := names(t, Handler{Tree: tree()}, c.q)
+		got, err := names(t, Handler{Tree: tree(), Surroundings: around}, c.q)
 		if err != nil || !slices.Equal(got, c.want) {
 			t.Errorf("%+v: %q, %v; want %q", c.q, got, err, c.want)
 		}
@@ -62,18 +66,28 @@ func TestHandleListsTheUnitsOfWhatItSelects(t *testing.T) {
 // A selection that fails lists nothing; a file that cannot be read stops
 // the listing with the units before it, and the port's failure.
 func TestHandleStopsAtAFailureWithWhatItListed(t *testing.T) {
-	t.Chdir(t.TempDir())
-	_, err := names(t, Handler{Tree: tree()}, Query{Paths: []string{"nosuch"}})
+	_, err := names(t, Handler{Tree: tree(), Surroundings: around}, Query{Paths: []string{"nosuch"}})
 	var unmatched *port.Unmatched
 	if !errors.As(err, &unmatched) {
 		t.Errorf("an unmatched fragment: %T %v, want Unmatched", err, err)
 	}
 	locked := tree()
 	delete(locked.Contents, "src/price.py")
-	got, err := names(t, Handler{Tree: locked}, Query{})
+	got, err := names(t, Handler{Tree: locked, Surroundings: around}, Query{})
 	var unreadable *port.Unreadable
 	if !errors.As(err, &unreadable) || !slices.Equal(got, []string{"cart#total"}) {
 		t.Errorf("an unreadable file: %q, %T %v; want cart#total and Unreadable", got, err, err)
+	}
+}
+
+// lang names each unit through the Surroundings it is handed, not the
+// disk: a go.mod they hold names a Go source by its module.
+func TestHandleNamesUnitsThroughTheSurroundingsItIsGiven(t *testing.T) {
+	tree := porttest.Tree{Sources: []string{"billing/sum.go"}, Contents: map[string]string{"billing/sum.go": "package billing\n\nfunc Sum() int { return 0 }\n"}}
+	module := langporttest.Surroundings{Dir: "/work", Files: map[string]string{"/work/go.mod": "module example.com/shop\n"}}
+	got, err := names(t, Handler{Tree: tree, Surroundings: module}, Query{})
+	if err != nil || !slices.Equal(got, []string{"example.com/shop/billing#Sum"}) {
+		t.Errorf("units %q, %v; want example.com/shop/billing#Sum", got, err)
 	}
 }
 
@@ -87,9 +101,8 @@ func run(t *testing.T, e *ends, c CLI, h Handler) int {
 }
 
 func TestRunPrintsALineAUnit(t *testing.T) {
-	t.Chdir(t.TempDir())
 	var e ends
-	if code := run(t, &e, CLI{}, Handler{Tree: tree()}); code != 0 {
+	if code := run(t, &e, CLI{}, Handler{Tree: tree(), Surroundings: around}); code != 0 {
 		t.Fatalf("exit %d\n%s", code, e.stderr.String())
 	}
 	want := "src/cart.ts:1-3  cart#total  function\nsrc/price.py:1-2  price#discount  function\n"
@@ -101,7 +114,7 @@ func TestRunPrintsALineAUnit(t *testing.T) {
 // With nothing to list, the object's units are an empty list, never null.
 func TestRunListsNoUnitAsAnEmptyList(t *testing.T) {
 	var e ends
-	if code := run(t, &e, CLI{JSON: true}, Handler{Tree: porttest.Tree{}}); code != 0 {
+	if code := run(t, &e, CLI{JSON: true}, Handler{Tree: porttest.Tree{}, Surroundings: around}); code != 0 {
 		t.Fatalf("exit %d", code)
 	}
 	if want := "{\n  \"ok\": true,\n  \"schema\": 1,\n  \"units\": []\n}\n"; e.stdout.String() != want {
@@ -112,18 +125,17 @@ func TestRunListsNoUnitAsAnEmptyList(t *testing.T) {
 // A failure is reported through the UI, the object keeping the units
 // listed before it, and plain output printing none of them.
 func TestRunReportsAFailureWithWhatItListed(t *testing.T) {
-	t.Chdir(t.TempDir())
 	locked := tree()
 	delete(locked.Contents, "src/price.py")
 	var e ends
-	if code := run(t, &e, CLI{JSON: true}, Handler{Tree: locked}); code != cli.CodeInternal {
+	if code := run(t, &e, CLI{JSON: true}, Handler{Tree: locked, Surroundings: around}); code != cli.CodeInternal {
 		t.Fatalf("exit %d, want %d", code, cli.CodeInternal)
 	}
 	if out := e.stdout.String(); !strings.Contains(out, `"name": "total"`) || !strings.Contains(out, `"rule": "internal"`) {
 		t.Errorf("stdout %q, want total and the internal problem", out)
 	}
 	var plain ends
-	if code := run(t, &plain, CLI{}, Handler{Tree: locked}); code != cli.CodeInternal || plain.stdout.Len() != 0 {
+	if code := run(t, &plain, CLI{}, Handler{Tree: locked, Surroundings: around}); code != cli.CodeInternal || plain.stdout.Len() != 0 {
 		t.Errorf("plain: exit %d, stdout %q; want 70 and nothing", code, plain.stdout.String())
 	}
 }

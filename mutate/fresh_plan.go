@@ -276,7 +276,7 @@ func PlanFreshContext(ctx context.Context, repoRoot string, paths []string, sinc
 		if err != nil {
 			return nil, fmt.Errorf("read committed %s: %w", rel, err)
 		}
-		file, err := lang.Parse(lang.Detect(rel), frozenPath, source)
+		file, err := lang.Parse(ctx, project.Surroundings{}, lang.Detect(rel), frozenPath, source)
 		if err != nil {
 			return nil, fmt.Errorf("parse committed %s: %w", rel, err)
 		}

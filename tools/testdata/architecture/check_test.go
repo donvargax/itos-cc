@@ -57,8 +57,9 @@ func TestArchitecture(t *testing.T) {
 	// count and units slices and internal/next, a made project's next slice
 	// that no rule names, the UI, the packages that are no command, cmd, and
 	// two of the module's top-level libraries: project, which the workdir
-	// adapter wraps, and lang, which no adapter does and the slices use.
-	for _, path := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/units", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "lang"} {
+	// adapter wraps, and lang, which no adapter does and the slices use, with
+	// lang's port, which workdir implements, and its fake.
+	for _, path := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/units", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "lang", "lang/port", "lang/port/porttest"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	mocks := []string{"github.com/golang/mock/gomock", "go.uber.org/mock/gomock", "github.com/stretchr/testify/mock", "github.com/vektra/mockery/v2", "github.com/maxbrunsfeld/counterfeiter/v6"}
@@ -143,17 +144,17 @@ func TestArchitecture(t *testing.T) {
 	// port it implements, not a domain, another adapter, a slice, the UI,
 	// cmd, the fakes, another adapter's port or a top-level library it does
 	// not wrap; it may do I/O, and its tests may use the fakes. workdir wraps
-	// project, under a rule of its own.
+	// project and implements lang's port too, under a rule of its own.
 	for _, adapter := range []struct {
 		base, domain, rule string
 		others             []string
 	}{
-		{"internal/disk", "internal/counting", "infra", []string{"internal/selection/port", "project"}},
-		{"internal/stdin", "internal/counting", "infra", []string{"internal/selection/port", "project"}},
+		{"internal/disk", "internal/counting", "infra", []string{"internal/selection/port", "lang/port", "project"}},
+		{"internal/stdin", "internal/counting", "infra", []string{"internal/selection/port", "lang/port", "project"}},
 		{"internal/workdir", "internal/selection", "workdir", []string{"internal/counting/port"}},
 	} {
 		base := adapter.base
-		for _, target := range append([]string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/units", "internal/next", "internal/counting/port/porttest", "internal/selection/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe", "lang"}, adapter.others...) {
+		for _, target := range append([]string{"internal/counting", "internal/selection", "internal/disk", "internal/stdin", "internal/workdir", "internal/count", "internal/units", "internal/next", "internal/counting/port/porttest", "internal/selection/port/porttest", "lang/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe", "lang"}, adapter.others...) {
 			add(strings.ReplaceAll(target, "/", "_"), base, module+"/"+target, "Value", adapter.rule, false)
 		}
 		add("port_allowed", base, module+"/"+adapter.domain+"/port", "Value", "", false)
@@ -162,8 +163,10 @@ func TestArchitecture(t *testing.T) {
 		add("fixture_io_allowed", base, "os", "ReadFile", "", true)
 	}
 	add("project_allowed", "internal/workdir", module+"/project", "Value", "", false)
+	add("lang_port_allowed", "internal/workdir", module+"/lang/port", "Value", "", false)
+	add("lang_fake_allowed", "internal/workdir", module+"/lang/port/porttest", "Value", "", true)
 	// The slice arrow, code and tests alike: a slice imports the domain, its
-	// ports, internal/cli and lang, never another slice, an adapter, the
+	// ports, internal/cli and lang with its port, never another slice, an adapter, the
 	// library an adapter wraps, a package that is no command or cmd.
 	// internal/units and internal/next are held as count is with no rule
 	// naming them, as a made project's next slice is.
@@ -176,12 +179,13 @@ func TestArchitecture(t *testing.T) {
 			for _, target := range []string{slice.other, "internal/disk", "internal/stdin", "internal/workdir", "internal/version", "internal/release", "cmd/probe", "project"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_"+kind, slice.base, module+"/"+target, "Value", "slices", test)
 			}
-			for _, target := range []string{"internal/counting", "internal/counting/port", "internal/selection", "internal/selection/port", "internal/cli", "lang"} {
+			for _, target := range []string{"internal/counting", "internal/counting/port", "internal/selection", "internal/selection/port", "internal/cli", "lang", "lang/port"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_allowed_"+kind, slice.base, module+"/"+target, "Value", "", test)
 			}
 		}
 		add("fake_allowed", slice.base, module+"/internal/counting/port/porttest", "Value", "", true)
 		add("selection_fake_allowed", slice.base, module+"/internal/selection/port/porttest", "Value", "", true)
+		add("lang_fake_allowed", slice.base, module+"/lang/port/porttest", "Value", "", true)
 	}
 	// What is no slice is not held as one: the release library's packages
 	// import each other, as releasetest does.

@@ -919,8 +919,8 @@ to `.metrics/coverage/`, which ignores itself.
 
 | Package | Role |
 | --- | --- |
-| `lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules |
-| `project` | Finding source and test files |
+| `lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules; it reads nothing, asking its port, `lang/port`, what surrounds a file |
+| `project` | Finding source and test files, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
 | `crap`, `dry`, `mutate`, `scrap` | The tools |
 | `metrics` | Snapshot files |

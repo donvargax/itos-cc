@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 func parse(t *testing.T, path, src string) *lang.File {
 	t.Helper()
-	f, err := lang.Parse(lang.Detect(path), path, []byte(src))
+	f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect(path), path, []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}

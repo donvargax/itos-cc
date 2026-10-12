@@ -5,7 +5,8 @@
 // line's values, and hands it to Handle with the context cmd made. Handle
 // only wires: the selection domain chooses the files through the Tree port
 // it was given, the same port reads each one, and lang names the units of
-// what was read. Run writes what came back, its paths from the working
+// what was read, asking the Surroundings port it was given what surrounds
+// each file. Run writes what came back, its paths from the working
 // directory. The slice reads no file itself. A failure is the selection
 // domain's, which cmd's classifier for that domain turns into a problem, or
 // lang's, an internal one; Run reports it through the UI.
@@ -19,6 +20,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/lang"
+	langport "github.com/donvargax/itos-cc/lang/port"
 )
 
 // CLI is the units command's command line: the files it selects, as every
@@ -62,15 +64,17 @@ type Query struct {
 }
 
 // Handler is the units command's application: the working tree it selects
-// and reads files through, given by cmd, which chooses the adapter behind
-// it. No value of a command line is read here.
+// and reads files through, and what surrounds those files, which lang asks
+// about to name them, each given by cmd, which chooses the adapters behind
+// them. No value of a command line is read here.
 type Handler struct {
-	Tree port.Tree
+	Tree         port.Tree
+	Surroundings langport.Surroundings
 }
 
 // Handle lists the units of the files q selects, passing ctx on to the
-// domain and the port: the selection is the domain's, and naming a file's
-// units lang's. On a failure it returns the units listed before it.
+// domain, lang and the ports: the selection is the domain's, and naming a
+// file's units lang's. On a failure it returns the units listed before it.
 func (h Handler) Handle(ctx context.Context, q Query) ([]lang.Unit, error) {
 	files, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed)
 	if err != nil {
@@ -86,7 +90,7 @@ func (h Handler) Handle(ctx context.Context, q Query) ([]lang.Unit, error) {
 		if failure != nil {
 			return all, failure
 		}
-		found, err := lang.UnitsOf(path, src)
+		found, err := lang.UnitsOf(ctx, h.Surroundings, path, src)
 		if err != nil {
 			return all, err
 		}

@@ -34,8 +34,19 @@ from it, and thin slices named for their commands.
   Each imports nothing of ours but the port.
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
   hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
-  reads files, translating their errors into the port's failures, and imports nothing else of
-  ours.
+  reads files, translating their errors into the port's failures. Beside `Tree` it implements
+  `lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk. It imports
+  nothing else of ours.
+- `lang`, still top-level, names a source's units: every language's rules for its namespace
+  (the markers it walks up to, the go.mod module line, the package clause) are its own, but it
+  reads nothing (decisions 42 and 43). `lang/port` declares `Surroundings`, what it asks about
+  what surrounds a file: whether a path `Exists`, what a file holds (`Read`), the
+  `WorkingDir` and a path made absolute (`Abs`), each taking the context first and answering
+  false where the disk could not. `Parse(ctx, around, …)` and `UnitsOf(ctx, around, …)` return
+  the context's error once it is done. `lang/port/porttest` holds the in-memory fake its tests
+  parse through. `project` holds the disk's side: `project.Surroundings`, making the calls
+  `lang` once made itself, and `ParseFile` and `FindUp`, which the packages not yet refactored
+  call, passing `context.TODO()` until stage S4 threads them a context.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -45,7 +56,7 @@ from it, and thin slices named for their commands.
   onto kong (T-32), laid out as `count`'s: its kong struct `CLI` with its `Contract` for the
   help, its `Query`, and `Handler.Handle(ctx, q)`, which selects the files through the
   selection domain, reads each through the same `Tree` port and names its units with the
-  top-level `lang` library. `Run` prints them, their paths from the working directory
+  top-level `lang` library, through the `Surroundings` port its handler is given. `Run` prints them, their paths from the working directory
   (`UI.Rel`). It has no classifier: its failures are the selection domain's, whose classifier
   is cmd's, or `lang`'s, internal ones.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
@@ -57,7 +68,8 @@ from it, and thin slices named for their commands.
   below says.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
-  and hands the context and the handler to `Run` through kong's bindings. It is the only place
+  and hands the context and the handler, with `workdir`'s `Tree` and `Surroundings`, to `Run`
+  through kong's bindings. It is the only place
   that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
@@ -78,14 +90,16 @@ deadlines only, always as the first parameter and never in a struct or as a valu
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
 - `slices`: a slice imports nothing of ours but the domain, `internal/cli` and `lang`, the
-  top-level library naming a source's units that every command measures by, so never another
+  top-level library naming a source's units that every command measures by, with its port
+  and the port's fake, so never another
   slice, an adapter, the `project` library an adapter wraps, or `cmd`. Its files are every package under `internal/` except the ones the
   rule lists as something else, so a new command's slice is held with no edit. A slice's tests
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `infra` and `workdir`: an adapter imports nothing of ours but the port it implements, and
-  `internal/workdir` the `project` library it wraps; only its tests may use `porttest`. Each port's
+  `internal/workdir` the two it implements, selection's and `lang`'s, and the `project` library
+  it wraps; only its tests may use `porttest`. Each port's
   adapters have a rule of their own, so none is allowed another's port or library.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.

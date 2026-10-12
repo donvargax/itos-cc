@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/lang"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // score fingerprints the only unit in each source and returns their
@@ -19,7 +20,7 @@ func score(t *testing.T, ext, a, b string) float64 {
 func prints(t *testing.T, ext, src string) []uint64 {
 	t.Helper()
 	path := "x" + ext
-	f, err := lang.Parse(lang.Detect(path), path, []byte(src))
+	f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect(path), path, []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +49,7 @@ func TestRoutesAreNotPartOfTheFunctionAroundThem(t *testing.T) {
 }`
 	got := [2][]uint64{}
 	for i, src := range []string{a, b} {
-		f, err := lang.Parse(lang.Detect("x.ts"), "x.ts", []byte(src))
+		f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect("x.ts"), "x.ts", []byte(src))
 		if err != nil {
 			t.Fatal(err)
 		}

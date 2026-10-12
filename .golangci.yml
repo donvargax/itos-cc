@@ -75,7 +75,9 @@ linters:
         # top-level library that names a source's units, is allowed: it is
         # the measure every command shares, no adapter and wrapping none, so a
         # slice names the units of what it read through its port with it
-        # (internal/units, T-32); project, which an adapter wraps, is not.
+        # (internal/units, T-32), and with them lang's port, Surroundings,
+        # which a slice's handler holds and its tests fake (T-35); project,
+        # which an adapter wraps, is not.
         slices:
           list-mode: lax
           files:
@@ -95,9 +97,11 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/lang$
+            - github.com/donvargax/itos-cc/lang/port$
+            - github.com/donvargax/itos-cc/lang/port/
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "a slice imports only the domain, its ports, internal/cli and lang (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "a slice imports only the domain, its ports, internal/cli and lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding
@@ -127,8 +131,9 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "an adapter imports nothing of ours but the ports it implements (decision 29), cmd wiring the rest; if it implements another port, extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/workdir implements the selection port over project, the
-        # top-level library that walks a tree and asks git: project is allowed
-        # here, and no other top-level library is.
+        # top-level library that walks a tree and asks git, and lang's port
+        # over project's answers from the disk (T-35): both ports and project
+        # are allowed here, and no other top-level library is.
         workdir:
           list-mode: lax
           files:
@@ -136,10 +141,11 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/lang/port$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the workdir adapter imports nothing of ours but the selection port and project, which it wraps (decision 29); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "the workdir adapter imports nothing of ours but the selection port, lang's port and project, which it wraps (decision 29); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         mocks:
           files:
             - $all

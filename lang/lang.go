@@ -3,13 +3,15 @@
 package lang
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"unsafe"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
+
+	"github.com/donvargax/itos-cc/lang/port"
 )
 
 // Unit is one function or method. Namespace + Name is the join key every
@@ -43,8 +45,10 @@ type Spec struct {
 	Extensions []string
 	Grammar    func(path string) unsafe.Pointer
 
-	// Namespace of the file, before any container names are appended.
-	Namespace func(path string, root *sitter.Node, src []byte) string
+	// Namespace of the file, before any container names are appended. A
+	// language that names a file by what surrounds it, such as Go's go.mod,
+	// asks around, passing ctx on.
+	Namespace func(ctx context.Context, around port.Surroundings, path string, root *sitter.Node, src []byte) string
 
 	// Unit returns the unit's name when n is a function or method, and false
 	// otherwise. The walker does not descend into a unit.
@@ -293,29 +297,24 @@ func (f *File) Close() {
 	}
 }
 
-// ParseFile reads and parses path.
-func ParseFile(path string) (*File, error) {
-	spec := Detect(path)
-	if spec == nil {
-		return nil, fmt.Errorf("unsupported language: %s", path)
-	}
-	src, err := os.ReadFile(path)
-	if err != nil {
+// Parse parses src as spec's language. path names the file and decides its
+// namespace; it does not have to exist unless the language names a file by
+// a project file such as go.mod, which it asks around about. Parse reads
+// nothing itself, and once ctx is done it returns the context's error.
+func Parse(ctx context.Context, around port.Surroundings, spec *Spec, path string, src []byte) (*File, error) {
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	return Parse(spec, path, src)
-}
-
-// Parse parses src as spec's language. path names the file and decides its
-// namespace; it does not have to exist unless the language reads a project
-// file such as go.mod to name it.
-func Parse(spec *Spec, path string, src []byte) (*File, error) {
 	tree, err := ParseTree(spec, path, src)
 	if err != nil {
 		return nil, err
 	}
 	root := tree.RootNode()
-	ns := spec.Namespace(path, root, src)
+	ns := spec.Namespace(ctx, around, path, root, src)
+	if err := ctx.Err(); err != nil {
+		tree.Close()
+		return nil, err
+	}
 	w := walker{spec: spec, path: path, src: src, ns: ns, inline: spec.Inline,
 		names: map[string]int{}}
 	if spec.IsTest(path) {
@@ -339,29 +338,17 @@ func ParseTree(spec *Spec, path string, src []byte) (*sitter.Tree, error) {
 	return tree, nil
 }
 
-// UnitsInFile reads path and returns its units without their nodes, as
-// UnitsOf finds them.
-func UnitsInFile(path string) ([]Unit, error) {
-	if Detect(path) == nil {
-		return nil, fmt.Errorf("unsupported language: %s", path)
-	}
-	src, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	return UnitsOf(path, src)
-}
-
 // UnitsOf parses src, the source the caller read for path, and returns its
 // units without their nodes. It reads no source itself: path decides the
-// language and the namespace, and needs to exist only where the language
-// names a file by a project file above it, such as go.mod.
-func UnitsOf(path string, src []byte) ([]Unit, error) {
+// language and the namespace, around answering what surrounds path where
+// the language names a file by a project file above it, such as go.mod.
+// Once ctx is done it returns the context's error.
+func UnitsOf(ctx context.Context, around port.Surroundings, path string, src []byte) ([]Unit, error) {
 	spec := Detect(path)
 	if spec == nil {
 		return nil, fmt.Errorf("unsupported language: %s", path)
 	}
-	f, err := Parse(spec, path, src)
+	f, err := Parse(ctx, around, spec, path, src)
 	if err != nil {
 		return nil, err
 	}
@@ -581,18 +568,19 @@ func kindIn(n *sitter.Node, kinds ...string) bool {
 // package.json is demo.board. Without a marker the working directory stands
 // in for that directory, so the name never depends on where the checkout
 // lives; a file above the working directory drops the ../ of its path, and
-// one the working directory has no path to is named by its file name.
-func modulePath(path string, markers ...string) string {
+// one the working directory has no path to, or that around cannot tell, is
+// named by its file name.
+func modulePath(ctx context.Context, around port.Surroundings, path string, markers ...string) string {
 	rel := path
-	if root := FindUp(path, markers...); root != "" {
-		if abs, err := filepath.Abs(path); err == nil {
+	if root := Nearest(ctx, around, path, markers...); root != "" {
+		if abs, ok := around.Abs(ctx, path); ok {
 			if r, err := filepath.Rel(root, abs); err == nil {
 				rel = r
 			}
 		}
-	} else if abs, err := filepath.Abs(path); err == nil {
+	} else if abs, ok := around.Abs(ctx, path); ok {
 		rel = filepath.Base(path)
-		if wd, err := os.Getwd(); err == nil {
+		if wd, ok := around.WorkingDir(ctx); ok {
 			if r, err := filepath.Rel(wd, abs); err == nil {
 				rel = r
 			}
@@ -609,16 +597,18 @@ func modulePath(path string, markers ...string) string {
 	return strings.ReplaceAll(p, "/", ".")
 }
 
-// FindUp returns the nearest directory at or above path's directory that
-// contains one of markers, or "" when none does.
-func FindUp(path string, markers ...string) string {
-	dir, err := filepath.Abs(filepath.Dir(path))
-	if err != nil {
+// Nearest returns the nearest directory at or above path's directory that
+// contains one of markers, as around answers, or "" when none does: the
+// root a module is named from. Each directory is asked about its markers in
+// order, from path's own up to the top.
+func Nearest(ctx context.Context, around port.Surroundings, path string, markers ...string) string {
+	dir, ok := around.Abs(ctx, filepath.Dir(path))
+	if !ok {
 		return ""
 	}
 	for {
 		for _, m := range markers {
-			if _, err := os.Stat(filepath.Join(dir, m)); err == nil {
+			if around.Exists(ctx, filepath.Join(dir, m)) {
 				return dir
 			}
 		}

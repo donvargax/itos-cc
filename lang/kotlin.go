@@ -1,12 +1,15 @@
 package lang
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"unsafe"
 
 	kotlin "github.com/fwcd/tree-sitter-kotlin/bindings/go"
 	sitter "github.com/tree-sitter/go-tree-sitter"
+
+	"github.com/donvargax/itos-cc/lang/port"
 )
 
 // Kotlin uses fwcd's grammar: the tree-sitter-grammars one misreads a class
@@ -86,7 +89,7 @@ func ktIsTest(path string) bool {
 		strings.HasSuffix(base, "Test") || strings.HasSuffix(base, "Tests") || strings.HasSuffix(base, "Spec")
 }
 
-func ktPackage(_ string, root *sitter.Node, src []byte) string {
+func ktPackage(_ context.Context, _ port.Surroundings, _ string, root *sitter.Node, src []byte) string {
 	if h := firstChildOfKind(root, "package_header"); h != nil {
 		if id := firstChildOfKind(h, "identifier"); id != nil {
 			return id.Utf8Text(src)

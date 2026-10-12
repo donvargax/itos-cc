@@ -1,12 +1,15 @@
 package lang
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"unsafe"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	python "github.com/tree-sitter/tree-sitter-python/bindings/go"
+
+	"github.com/donvargax/itos-cc/lang/port"
 )
 
 // Python units are functions and methods. Functions nested inside another
@@ -17,8 +20,8 @@ func init() {
 		Extensions: []string{".py"},
 		Separator:  ".",
 		Grammar:    func(string) unsafe.Pointer { return python.Language() },
-		Namespace: func(path string, _ *sitter.Node, _ []byte) string {
-			return strings.TrimSuffix(modulePath(path, "pyproject.toml", "setup.py", "setup.cfg"), ".__init__")
+		Namespace: func(ctx context.Context, around port.Surroundings, path string, _ *sitter.Node, _ []byte) string {
+			return strings.TrimSuffix(modulePath(ctx, around, path, "pyproject.toml", "setup.py", "setup.cfg"), ".__init__")
 		},
 		Unit: func(n *sitter.Node, src []byte) (string, bool) {
 			if n.Kind() == "function_definition" {

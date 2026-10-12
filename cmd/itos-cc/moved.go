@@ -42,7 +42,7 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI) func() (*kong.Kon
 				return nil
 			}),
 			kong.BindTo(ctx, (*context.Context)(nil)),
-			kong.Bind(ui, units.Handler{Tree: workdir.Tree{}}),
+			kong.Bind(ui, units.Handler{Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}),
 		)...)
 	}
 }

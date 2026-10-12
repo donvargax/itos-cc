@@ -2,7 +2,8 @@ package lang
 
 import (
 	"bufio"
-	"os"
+	"bytes"
+	"context"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -11,6 +12,8 @@ import (
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	golang "github.com/tree-sitter/tree-sitter-go/bindings/go"
+
+	"github.com/donvargax/itos-cc/lang/port"
 )
 
 // Go units are functions and methods with a body. A method's namespace is
@@ -78,11 +81,11 @@ func init() {
 
 // goImportPath is the module path from the nearest go.mod joined with the
 // file's directory, falling back to the package clause without a go.mod.
-func goImportPath(path string, root *sitter.Node, src []byte) string {
-	dir, err := filepath.Abs(filepath.Dir(path))
-	if err == nil {
+// around says what each directory up from the file's holds.
+func goImportPath(ctx context.Context, around port.Surroundings, path string, root *sitter.Node, src []byte) string {
+	if dir, ok := around.Abs(ctx, filepath.Dir(path)); ok {
 		for d := dir; ; d = filepath.Dir(d) {
-			if module := goModule(filepath.Join(d, "go.mod")); module != "" {
+			if module := goModule(ctx, around, filepath.Join(d, "go.mod")); module != "" {
 				rel, _ := filepath.Rel(d, dir)
 				if rel == "." {
 					return module
@@ -102,13 +105,15 @@ func goImportPath(path string, root *sitter.Node, src []byte) string {
 	return ""
 }
 
-func goModule(gomod string) string {
-	f, err := os.Open(gomod)
-	if err != nil {
+// goModule is the module a go.mod's module line names, or "" when gomod
+// cannot be read or has none. Its lines are scanned as they always were, a
+// line too long for the scanner ending the scan.
+func goModule(ctx context.Context, around port.Surroundings, gomod string) string {
+	text, ok := around.Read(ctx, gomod)
+	if !ok {
 		return ""
 	}
-	defer f.Close()
-	s := bufio.NewScanner(f)
+	s := bufio.NewScanner(bytes.NewReader(text))
 	for s.Scan() {
 		if rest, ok := strings.CutPrefix(strings.TrimSpace(s.Text()), "module "); ok {
 			return strings.Trim(strings.TrimSpace(rest), `"`)

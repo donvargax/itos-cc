@@ -1,6 +1,7 @@
 package project
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -80,7 +81,7 @@ func ChangedSince(ref string, hash func(*lang.File, lang.Unit) string) (changed 
 		if err != nil {
 			return nil, nil, fmt.Errorf("git cat-file HEAD:./%s: %s", name, gitError(nil, err))
 		}
-		f, err := lang.Parse(spec, abs, src)
+		f, err := lang.Parse(context.TODO(), Surroundings{}, spec, abs, src)
 		if err != nil {
 			return nil, nil, err
 		}

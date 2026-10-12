@@ -1,6 +1,7 @@
 package lang
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"unsafe"
@@ -8,6 +9,8 @@ import (
 	sitter "github.com/tree-sitter/go-tree-sitter"
 	javascript "github.com/tree-sitter/tree-sitter-javascript/bindings/go"
 	typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
+
+	"github.com/donvargax/itos-cc/lang/port"
 )
 
 // TypeScript units are top-level functions, class methods, and top-level
@@ -31,8 +34,8 @@ func init() {
 			}
 			return typescript.LanguageTypescript()
 		},
-		Namespace: func(path string, _ *sitter.Node, _ []byte) string {
-			return modulePath(path, "package.json", "tsconfig.json")
+		Namespace: func(ctx context.Context, around port.Surroundings, path string, _ *sitter.Node, _ []byte) string {
+			return modulePath(ctx, around, path, "package.json", "tsconfig.json")
 		},
 		Unit:      tsUnit,
 		Inline:    tsRoute,
