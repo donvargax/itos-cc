@@ -38,5 +38,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
 - [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
 - [ADR-0034: internal/cli keeps itos-cc's contract and upstreams it to the template](0034-internal-cli-keeps-itos-cc-s-contract-and-upstreams-it-to-the-template.md)
+- [ADR-0035: Kong is forked for typed user-input errors](0035-kong-is-forked-for-typed-user-input-errors.md)
 
 <!-- itos:decisions:end -->
