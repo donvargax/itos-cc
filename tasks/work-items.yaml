@@ -2124,3 +2124,25 @@ items:
       shares and project as its disk side. The six .metrics/mutate/lang records move unedited to
       .metrics/mutate/internal/lang in the move commit; they will not read fresh (their namespace
       changes), and the nightly run refreshes them (decision 40).
+  - id: T-37
+    title: dry.feature runs through godog against the built binary
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      S3's first step (decision 39): dry.feature's scenarios become godog steps in
+      features/dry_test.go, registered from initializeScenario, without changing what any scenario
+      says, so the later move of dry is held by its public scenarios against the built binary. 'When
+      the two functions are compared directly' (DRY-02 to 06) runs itos-cc dry --json --threshold 0
+      --min-lines 1 --min-nodes 1 over the written functions and reads the pair's score, as
+      units_test.go already runs dry; 'a copy of it with <change>' builds the copy from the table's
+      phrasings; a Before hook keyed on dry.feature lays out a git-initialized sample for the
+      scenarios that only say When I run (DRY-13 needs a changed file). DRY-10 and DRY-11 need
+      fixtures tuned to the scores and ranges they print, DRY-01 and DRY-14 pairs either side of the
+      threshold. Steps units_test.go registers that dry reuses move to steps_test.go, new shared
+      ones (stderr says, the exit code is) go there too; step patterns are global, so per-file setup
+      lives in Before hooks keyed on the scenario's file. Each step is checked to fail on a changed
+      expectation. dry.feature joins converted, and its smoke scenario then runs in the smoke step.
+      No product code changes.
