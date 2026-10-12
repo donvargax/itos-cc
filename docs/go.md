@@ -140,7 +140,9 @@ from it, and thin slices named for their commands.
 
 The domain is shared, not part of any command, so a second command reuses counting through its
 port without reaching into another command's package. A context carries cancellation and
-deadlines only, always as the first parameter and never in a struct or as a value.
+deadlines only, always as the first parameter and never in a struct or as a value (decision 30).
+golangci-lint holds the shape: containedctx refuses a struct field holding one, and revive's
+context-as-argument a context after any other parameter, tests included.
 
 `.golangci.yml` holds these arrows with depguard:
 
@@ -341,9 +343,11 @@ list them exactly:
   against `go.sum`, and `go mod tidy -diff` so the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.
 - golangci-lint over `internal/`, widening as packages move there (q-50): the standard
-  linters plus depguard, gosec on non-test code, revive's file-length limit and
+  linters plus depguard, gosec on non-test code, revive's file-length limit,
   gochecksumtype, which refuses a type switch over a sealed set that leaves a kind out, a
-  default arm not counting.
+  default arm not counting, and the context rules of decision 30: containedctx, which refuses
+  a context held in a struct, and revive's context-as-argument, which refuses one passed
+  anywhere but first. revive runs only the rules `.golangci.yml` lists, never its defaults.
 - `tools/bin/architecture-check`, the self-test above.
 - `go tool govulncheck -test ./...`, covering the dependencies in use, test-only ones and
   the standard library.

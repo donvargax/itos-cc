@@ -2,6 +2,11 @@ version: "2"
 linters:
   default: standard
   enable:
+    # Decision 30: a context carries cancellation and deadlines only, always as
+    # the first parameter, never held in a struct; containedctx refuses a
+    # struct field of it, revive's context-as-argument a context after any
+    # other parameter. tools/bin/architecture-check proves both refuse.
+    - containedctx
     - depguard
     - gochecksumtype
     - gosec
@@ -233,8 +238,10 @@ linters:
             # The fork itos-cc builds with until kong releases its typed parse errors (T-33).
             - pkg: github.com/donvargax/kong
               desc: "kong stays in the UI, cmd and internal/cli (decision 29): a slice's struct tags need no import of it; never loosen this one"
+    # Only the rules listed run: revive's defaults stay off.
     revive:
       rules:
+        - name: context-as-argument
         - name: file-length-limit
           arguments:
             - max: 600

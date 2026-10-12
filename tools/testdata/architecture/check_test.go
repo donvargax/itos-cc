@@ -312,6 +312,41 @@ func Code(failure sealed.Failure) int {
 	sumtype("sumtype_allowed", missing+"case *sealed.Unreadable:\n code = 4\n", false)
 	sumtype("sumtype_omitted", missing, true)
 	sumtype("sumtype_default", missing+"default:\n", true)
+	// Decision 30: a context is the first parameter, never a struct's field,
+	// in code and tests alike. containedctx refuses the field and revive's
+	// context-as-argument a context after another parameter; a context
+	// first, named or blank as lang's Surroundings takes it, passes. The
+	// stubs' exported names have no comments, so revive's default rules,
+	// which would ask for them, are shown to stay off.
+	contexts := func(name, body, linter, text string, test bool) {
+		path := "internal/count/" + name + "/probe.go"
+		imports := "import \"context\"\n"
+		if test {
+			path = "internal/count/" + name + "/probe_test.go"
+			imports = "import (\n \"context\"\n \"testing\"\n)\n"
+			body += "func TestProbe(t *testing.T) {\n _ = t\n _ = Probe\n}\n"
+		}
+		write(path, "package probe\n\n"+imports+"\n"+body)
+		refusal := expectation{path: path}
+		if linter != "" {
+			refusal = expectation{path, linter, []string{text}}
+		}
+		cases = append(cases, refusal)
+	}
+	held := "type Holder struct {\n Ctx context.Context\n}\n\nfunc Probe(ctx context.Context, n int) Holder {\n _ = n\n return Holder{Ctx: ctx}\n}\n"
+	second := "func Probe(n int, ctx context.Context) error {\n _ = n\n return ctx.Err()\n}\n"
+	first := "func Probe(ctx context.Context, n int) error {\n _ = n\n return ctx.Err()\n}\n"
+	blank := "func Probe(_ context.Context, n int) int {\n return n\n}\n"
+	for _, test := range []bool{false, true} {
+		kind := "code"
+		if test {
+			kind = "test"
+		}
+		contexts("context_held_"+kind, held, "containedctx", "contains a context.Context field", test)
+		contexts("context_second_"+kind, second, "revive", "context.Context should be the first parameter", test)
+		contexts("context_first_allowed_"+kind, first, "", "", test)
+		contexts("context_blank_allowed_"+kind, blank, "", "", test)
+	}
 	compile := exec.Command("go", "test", "./...")
 	compile.Dir = dir
 	compile.Env = append(os.Environ(), "GOWORK=off", "GOPROXY=off")
