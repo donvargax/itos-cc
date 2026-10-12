@@ -39,5 +39,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
 - [ADR-0034: internal/cli keeps itos-cc's contract and upstreams it to the template](0034-internal-cli-keeps-itos-cc-s-contract-and-upstreams-it-to-the-template.md)
 - [ADR-0035: Kong is forked for typed user-input errors](0035-kong-is-forked-for-typed-user-input-errors.md)
+- [ADR-0036: Exit codes follow square/exit, keeping 75 for retry](0036-exit-codes-follow-square-exit-keeping-75-for-retry.md)
 
 <!-- itos:decisions:end -->
