@@ -1592,6 +1592,18 @@ items:
       code), per q-47..q-49. This idea is what follows: slices porting kong + internal/cli, exit 130
       on interrupt (settles q-37), ports and slices, the godog harness, each set-aside gate as a
       task, then deleting the sample count app (q-48).
+
+      Stages, 2026-10-12 (S0..S3 done: T-29..T-43). S4 threads one context from main to every
+      package (T-47..T-50) and gates ADR-0030 (T-51). S5 moves crap: its feature files to godog,
+      shared selection flags and one parse of a selected source (shared-selection-flags,
+      slice-parse-source), a coverage domain behind a port shared with mutation (a question for the
+      person first), crap's scoring under internal/, then the crap slice. S6 and S7 move the
+      mutation group: the rest of flags-typed-value-mappers, snapshot-port-remove-and-other-roots,
+      mutate.feature to godog in pieces, the mutate domain and adapter split, then the slices. S8
+      moves serve (graph and server), after mutation since graph imports mutate. S9 puts version and
+      top-level dispatch on kong with the template's main.go (template-main-tests,
+      template-main-exception) and deletes the count sample (q-48). S10 is refactor-final-proof,
+      then interrupt-exit-130, then semantic-exit-codes.
   - id: left-out-singular-wording
     title: mutation check's left-out note reads "1 recorded mutant at sites gone"
     phase: 1
