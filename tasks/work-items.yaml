@@ -2241,6 +2241,12 @@ items:
       context.WithoutCancel) and mutation run --count stopped by SIGINT (exit 75,
       count.interrupted), and mutation list over a source that cannot be parsed (ParseFile now under
       main's context).
+
+      T-48 (graph and server under their caller's context): compare serve stopped by SIGINT while a
+      rebuild runs (it now ends that build early and logs nothing, where it once finished it), and
+      mutation run --count stopped by SIGINT while it finds the tests that reach each frozen file
+      (graph.TestsImporting now returns the interrupt, reported as the coverage-plan stage failing
+      with it, exit 75).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
