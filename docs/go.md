@@ -171,10 +171,15 @@ context-as-argument a context after any other parameter, tests included.
   fixtures.
 - `slices`: a slice imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
-  with its port and the port's fake, so never another slice, an adapter, the `project` library
+  with its port and, in its tests, the port's fake, so never another slice, an adapter, the `project` library
   an adapter wraps and lang's disk side, or `cmd`. Its files are every package under `internal/` except the ones the
   rule lists as something else, so a new command's slice is held with no edit. A slice's tests
   are in its own package, since the rule cannot tell a package's import of itself from another's.
+- `slice-fakes`: a slice's own code imports no `porttest`, which only its tests may use (T-56).
+  It holds the same files as `slices`, tests left out, and names each port's `porttest`, since
+  depguard matches a prefix and `slices` allows the ports' folders. `tools/bin/architecture-check`
+  also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
+  golangci-lint does not lint `cmd`: a fake enters `cmd` only through its `_test.go` files.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `infra`, `workdir` and `metricsdir`: an adapter imports nothing of ours but the port it
@@ -195,18 +200,18 @@ command from reaching into this one.
 - A command: add its slice as `internal/<command>`. The `slices` rule holds it already. Add it
   to `cmd`'s bindings and give it scenarios.
 - A domain package: add its folder as a `**/internal/<name>/**` glob to `domain` and
-  `domain-io`, as a `!**/internal/<name>/**` exclusion to `slices`, and its import path to the
-  `allow` lists of `domain` and of `slices` if commands use it. Give it a `port` subpackage for
-  what it reaches outside, and a classifier for its failures beside the slice that uses it,
-  which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
+  `domain-io`, as a `!**/internal/<name>/**` exclusion to `slices` and `slice-fakes`, and its
+  import path to the `allow` lists of `domain` and of `slices` if commands use it. Give it a
+  `port` subpackage for what it reaches outside, its `porttest` named in `slice-fakes`' `deny`,
+  and a classifier for its failures beside the slice that uses it, which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
 - An adapter: add its folder to the `files` of the rule for its port's adapters (`infra` for
   counting's, `workdir` for selection's, `metricsdir` for the snapshot port's), or give a new
   port's adapters a rule of their own allowing that port and any library they wrap; add a
-  `!**/internal/<name>/**` exclusion to `slices`. Wire it in `cmd`.
+  `!**/internal/<name>/**` exclusion to `slices` and to `slice-fakes`. Wire it in `cmd`.
 - Any other package that is no command, such as `internal/version`: add a `slices` exclusion
-  saying what it is.
+  saying what it is, and the same to `slice-fakes`.
 - Then add compile-valid fixtures to `tools/testdata/architecture` that each rule you touched
   must accept and refuse. `tools/bin/architecture-check` runs the pinned linter over them, so a
   rule that stops matching fails there instead of passing silently.

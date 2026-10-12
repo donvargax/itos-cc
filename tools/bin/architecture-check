@@ -1,8 +1,34 @@
 #!/bin/sh
 # Exercise the actual pinned linter/configuration, without requiring template git history.
 set -eu
+
+# linked <package>: refuse a binary linking a port's fake (T-56), which
+# golangci-lint cannot hold since it does not lint cmd. go list -deps leaves
+# _test.go files out, so a fake a command's tests import passes.
+linked() {
+	deps=$(go list -deps "$1")
+	fakes=$(printf '%s\n' "$deps" | grep -E '/porttest(/|$)' || true)
+	[ -z "$fakes" ] && return 0
+	for fake in $fakes; do
+		echo "architecture-check: $1 links $fake; a port's fake enters only through _test.go files" >&2
+	done
+	return 1
+}
+
+# --linked <package> runs that check alone, in the current module: the
+# fixtures prove it refuses.
+if [ "${1-}" = "--linked" ]; then
+	[ $# -eq 2 ] || {
+		echo "usage: tools/bin/architecture-check [--linked <package>]" >&2
+		exit 2
+	}
+	linked "$2"
+	exit 0
+fi
+
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$root"
+linked ./cmd/itos-cc
 ARCHITECTURE_ROOT=$root
 ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint)
 export ARCHITECTURE_ROOT ARCHITECTURE_LINTER

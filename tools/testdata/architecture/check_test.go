@@ -36,6 +36,23 @@ func TestArchitecture(t *testing.T) {
 		t.Fatal(err)
 	}
 	module := strings.Fields(string(moduleBytes))[1]
+	// Every port's fake the module holds, as paths from its root: each is
+	// stubbed below, and a slice's code importing it must be refused.
+	listed := exec.Command("go", "list", "./...")
+	listed.Dir = root
+	packages, err := listed.Output()
+	if err != nil {
+		t.Fatalf("list the module's packages: %v", err)
+	}
+	var fakes []string
+	for _, path := range strings.Fields(string(packages)) {
+		if strings.HasSuffix(path, "/porttest") {
+			fakes = append(fakes, strings.TrimPrefix(path, module+"/"))
+		}
+	}
+	if len(fakes) == 0 {
+		t.Fatal("the module lists no porttest package")
+	}
 	write := func(path, contents string) {
 		t.Helper()
 		if strings.HasSuffix(path, ".go") {
@@ -63,6 +80,9 @@ func TestArchitecture(t *testing.T) {
 	// of the snapshots under .metrics/, its port metricsdir's (decision 41).
 	for _, path := range []string{"internal/counting", "internal/counting/port", "internal/counting/port/porttest", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/duplication", "internal/teststructure", "internal/disk", "internal/stdin", "internal/workdir", "internal/metricsdir", "internal/count", "internal/dry", "internal/scrap", "internal/units", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
+	}
+	for _, fake := range fakes {
+		write(fake+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	mocks := []string{"github.com/golang/mock/gomock", "go.uber.org/mock/gomock", "github.com/stretchr/testify/mock", "github.com/vektra/mockery/v2", "github.com/maxbrunsfeld/counterfeiter/v6"}
 	mod := "module " + module + "\n\ngo 1.27\n"
@@ -210,6 +230,12 @@ func TestArchitecture(t *testing.T) {
 		add("selection_fake_allowed", slice.base, module+"/internal/selection/port/porttest", "Value", "", true)
 		add("lang_fake_allowed", slice.base, module+"/internal/lang/port/porttest", "Value", "", true)
 		add("snapshot_fake_allowed", slice.base, module+"/internal/snapshot/port/porttest", "Value", "", true)
+		// A slice's own code links no fake (T-56): every porttest of the
+		// module, as go list finds them, so a new port's fake that the
+		// slice-fakes rule does not name fails here.
+		for _, fake := range fakes {
+			add(strings.ReplaceAll(fake, "/", "_")+"_code", slice.base, module+"/"+fake, "Value", "slice-fakes", false)
+		}
 	}
 	// What is no slice is not held as one: the release library's packages
 	// import each other, as releasetest does.
@@ -347,6 +373,14 @@ func Code(failure sealed.Failure) int {
 		contexts("context_first_allowed_"+kind, first, "", "", test)
 		contexts("context_blank_allowed_"+kind, blank, "", "", test)
 	}
+	// itos-cc's binary links no fake (T-56), which golangci-lint cannot
+	// hold since it does not lint cmd: architecture-check --linked refuses a
+	// command linking a porttest, naming it, and passes one whose fake enters
+	// only through a _test.go file.
+	fake := module + "/" + fakes[0]
+	write("cmd/linked/main.go", fmt.Sprintf("package main\n\nimport _ %q\n\nfunc main() {}\n", fake))
+	write("cmd/tested/main.go", "package main\n\nfunc main() {}\n")
+	write("cmd/tested/main_test.go", fmt.Sprintf("package main\n\nimport (\n _ %q\n \"testing\"\n)\n\nfunc TestProbe(t *testing.T) {\n _ = t\n}\n", fake))
 	compile := exec.Command("go", "test", "./...")
 	compile.Dir = dir
 	compile.Env = append(os.Environ(), "GOWORK=off", "GOPROXY=off")
@@ -420,6 +454,32 @@ func Code(failure sealed.Failure) int {
 		t.Run(c.path, func(t *testing.T) {
 			if c.linter != "" && !seen[c.path] {
 				t.Errorf("missing %s refusal: %s", c.linter, strings.Join(c.texts, ", "))
+			}
+		})
+	}
+	check := filepath.Join(root, "tools", "bin", "architecture-check")
+	for _, c := range []struct {
+		pkg     string
+		refused bool
+	}{{"./cmd/linked", true}, {"./cmd/tested", false}} {
+		t.Run("linked "+c.pkg, func(t *testing.T) {
+			run := exec.Command("sh", check, "--linked", c.pkg)
+			run.Dir = dir
+			run.Env = compile.Env
+			output, err := run.CombinedOutput()
+			if !c.refused {
+				if err != nil {
+					t.Errorf("refused a fake entering only through a _test.go file: %v\n%s", err, output)
+				}
+				return
+			}
+			if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+				t.Fatalf("missing refusal of %s linking %s: %v\n%s", c.pkg, fake, err, output)
+			}
+			for _, text := range []string{c.pkg, fake, "_test.go"} {
+				if !strings.Contains(string(output), text) {
+					t.Errorf("the refusal does not say %q:\n%s", text, output)
+				}
 			}
 		})
 	}

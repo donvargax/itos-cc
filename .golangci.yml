@@ -139,6 +139,40 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "a slice imports only the domain, its ports, internal/cli and internal/lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # A slice's own code links no port's fake, which its tests alone may
+        # use, as an adapter's do (T-56): the slices rule allows the domains'
+        # ports by prefix, which porttest shares, so this rule refuses each
+        # porttest by name over the same files, tests left out. depguard
+        # matches a prefix, never a pattern, so a new port's porttest is
+        # listed here as docs/go.md's Adding a package says;
+        # tools/bin/architecture-check proves every porttest of the module is.
+        # The same check refuses itos-cc's binary linking any porttest.
+        slice-fakes:
+          files:
+            - "**/internal/**"
+            - "!**/internal/counting/**" # a domain and its ports
+            - "!**/internal/selection/**" # a domain and its ports
+            - "!**/internal/lang/**" # a domain and its ports
+            - "!**/internal/snapshot/**" # a domain and its ports
+            - "!**/internal/duplication/**" # a domain, with no port
+            - "!**/internal/teststructure/**" # a domain, with no port
+            - "!**/internal/disk/**" # an adapter, held by infra
+            - "!**/internal/stdin/**" # an adapter, held by infra
+            - "!**/internal/workdir/**" # an adapter, held by infra
+            - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
+            - "!**/internal/cli/**" # the UI the slices share
+            - "!**/internal/version/**" # what cmd says the build is
+            - "!**/internal/release/**" # the release tools' library
+            - "!$test"
+          deny:
+            - pkg: github.com/donvargax/itos-cc/internal/counting/port/porttest
+              desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
+            - pkg: github.com/donvargax/itos-cc/internal/selection/port/porttest
+              desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
+            - pkg: github.com/donvargax/itos-cc/internal/lang/port/porttest
+              desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
+            - pkg: github.com/donvargax/itos-cc/internal/snapshot/port/porttest
+              desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding
