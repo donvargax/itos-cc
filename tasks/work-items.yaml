@@ -1980,6 +1980,8 @@ items:
       selection. A slice cannot import another, so when the second command moves the selection's
       flags need one home (an embedded struct the slices share, maybe in internal/cli or beside the
       selection domain) so their help and words stay the same.
+
+      Specified 2026-10-13 as T-63 (with slice-parse-source).
   - id: seed-test-timeouts
     title: The seed tests of mutation sample hold on a slow runner
     phase: 1
