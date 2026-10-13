@@ -76,3 +76,23 @@ func TestTreeAtARootedPathNamesItsFilesUnderIt(t *testing.T) {
 		t.Errorf("Read(%q) = %q, %v", path, text, failure)
 	}
 }
+
+// A file outside the working directory, ../ leading to it, is there, reads
+// and is found by a walk from it, as the disk holds it, while a walk of the
+// working directory never reaches it.
+func TestTreeHoldsFilesOutsideItsDirectory(t *testing.T) {
+	tree := TreeOf("/work/src", map[string]string{"a.go": "package src\n", "../lib/b.go": "package lib\n"}, nil)
+	outside := filepath.FromSlash("/work/lib/b.go")
+	if !tree.Exists(t.Context(), "../lib/b.go") || !tree.Exists(t.Context(), outside) || !tree.Exists(t.Context(), "../lib") {
+		t.Error("the file outside the working directory, or its folder, is not there")
+	}
+	if text, failure := tree.Read(t.Context(), outside); failure != nil || string(text) != "package lib\n" {
+		t.Errorf("Read(%s) = %q, %v", outside, text, failure)
+	}
+	if sources, _, failure := tree.Discover(t.Context(), []string{"."}); failure != nil || len(sources) != 1 {
+		t.Errorf("Discover(.) = %q, %v; want a.go alone", sources, failure)
+	}
+	if sources, _, failure := tree.Discover(t.Context(), []string{"../lib"}); failure != nil || len(sources) != 1 || sources[0] != outside {
+		t.Errorf("Discover(../lib) = %q, %v; want %s", sources, failure, outside)
+	}
+}

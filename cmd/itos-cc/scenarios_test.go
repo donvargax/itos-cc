@@ -16,6 +16,9 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
+	"github.com/donvargax/itos-cc/internal/coverage"
+	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
@@ -84,8 +87,7 @@ type memory struct {
 	repos   map[string]*repo
 	folders int
 	// coverage is what each folder's own tools measure, as the scenario
-	// declared it, by folder: what the fake measurer is to be handed once
-	// crap moves (T-67).
+	// declared it, by folder, which the fake measurer is handed (measurer).
 	coverage map[string]features.Coverage
 }
 
@@ -260,8 +262,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	if git == nil {
 		root = dir
 	}
-	inDir := m.under(dir)
-	tree := selporttest.TreeOf(dir, inDir, m.changed(dir, root, git))
+	tree := selporttest.TreeOf(dir, m.from(dir), m.changed(dir, root, git))
 	if git == nil {
 		tree.NoGit = &selport.NoGit{Reason: "fatal: not a git repository (the in-process driver's)"}
 	}
@@ -279,6 +280,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Tree:         tree,
 		Surroundings: langporttest.Surroundings{Files: maps.Clone(m.files), Dir: dir},
 		Store:        store,
+		Coverage:     m.measurer(dir),
 		Config:       file,
 	}
 	var stdout, stderr bytes.Buffer
@@ -376,4 +378,108 @@ func pathSet(files map[string]string) map[string]bool {
 		set[p] = true
 	}
 	return set
+}
+
+// markers are the files that make a folder a build root of each language,
+// as the coverage runner finds them.
+var markers = map[string][]string{
+	"go":         {"go.mod"},
+	"typescript": {"package.json"},
+	"python":     {"pyproject.toml", "setup.py", "setup.cfg"},
+	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
+}
+
+// measurer is the coverage port's fake over the memory, from dir: every
+// file, the reports a run names among them, and the report of each build
+// root, as the runner groups the sources by language and the nearest
+// folder holding that language's marker, or their own folder. A root whose
+// Coverage the scenario declared is measured as it says: by the LCOV report
+// its tools write, every source of its language proven, or nothing, a
+// report its tools do not write; a root declared for none is a tool missing.
+// An earlier run left no report of any root, so reading what one left finds
+// none.
+func (m *memory) measurer(dir string) covporttest.Measurer {
+	disk := covporttest.Files{Dir: dir, Regular: slices.Collect(maps.Keys(m.files))}
+	type group struct{ language, root string }
+	groups := map[group][]string{}
+	for _, path := range slices.Sorted(maps.Keys(m.files)) {
+		spec := lang.Detect(path)
+		if spec == nil || spec.IsTest(path) || markers[spec.Name] == nil || under(path, filepath.Join(m.scratch(path), ".metrics")) {
+			continue
+		}
+		g := group{spec.Name, m.buildRoot(path, markers[spec.Name])}
+		groups[g] = append(groups[g], path)
+	}
+	roots, left := map[string]*coverage.Report{}, map[string]*coverage.Report{}
+	for g, sources := range groups {
+		report := &coverage.Report{}
+		declared, ok := m.coverage[g.root]
+		switch {
+		case !ok || declared.Language != g.language:
+			report.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.ToolMissing{},
+				Reason: "no tool the in-process driver declares measures it"})
+		case declared.Report == "":
+			report.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.MeasuredNothing{},
+				Reason: "its coverage run measured none of its files"})
+		default:
+			entries, err := coverage.ParseLCOV(strings.NewReader(declared.Report))
+			if err != nil {
+				m.t.Errorf("the report declared in %s is no LCOV: %v", g.root, err)
+			}
+			report = coverage.Build(m.t.Context(), disk, sources, g.root, entries)
+			report.MarkMeasured(g.language)
+			report.Prove(g.language, g.root, sources)
+		}
+		roots[g.root] = coverage.Merge(roots[g.root], report)
+		existing := &coverage.Report{}
+		existing.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.NoReport{}, Reason: "no report on disk measures its files"})
+		left[g.root] = coverage.Merge(left[g.root], existing)
+	}
+	return covporttest.Measurer{Dir: dir, Files: maps.Clone(m.files), Roots: roots, Left: left}
+}
+
+// buildRoot is the nearest folder above path holding one of names, or
+// path's own folder when none does, up to the scratch folder path is in.
+func (m *memory) buildRoot(path string, names []string) string {
+	top := m.scratch(path)
+	for dir := filepath.Dir(path); ; dir = filepath.Dir(dir) {
+		for _, name := range names {
+			if _, ok := m.files[filepath.Join(dir, name)]; ok {
+				return dir
+			}
+		}
+		if dir == top || filepath.Dir(dir) == dir {
+			return filepath.Dir(path)
+		}
+	}
+}
+
+// scratch is the scratch folder path is in, a folder Folder made.
+func (m *memory) scratch(path string) string {
+	return scratchOf(filepath.Dir(path))
+}
+
+// scratchOf is the scratch folder dir is, or is in: a folder Folder made.
+func scratchOf(dir string) string {
+	for d := dir; filepath.Dir(d) != d; d = filepath.Dir(d) {
+		if filepath.Base(filepath.Dir(d)) == "itos-cc-in-process" {
+			return d
+		}
+	}
+	return dir
+}
+
+// from is every file of the scratch folder dir is in, as the disk holds
+// it around a run there, by path relative to dir, slash-separated, ../
+// leading out of it.
+func (m *memory) from(dir string) map[string]string {
+	files := map[string]string{}
+	for path, text := range m.files {
+		if under(path, scratchOf(dir)) {
+			if rel, err := filepath.Rel(dir, path); err == nil {
+				files[filepath.ToSlash(rel)] = text
+			}
+		}
+	}
+	return files
 }

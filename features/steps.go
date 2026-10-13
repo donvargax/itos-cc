@@ -98,9 +98,9 @@ type Coverage struct {
 	// typescript or python.
 	Language string
 	// Report is the report the command writes, as LCOV, its paths relative
-	// to the folder: what the in-process driver is to hand its fake in
-	// place of running the tools once the command measuring it moves
-	// (T-67). "" when it writes none, as when the tests do not compile.
+	// to the folder: what the in-process driver hands its fake in place of
+	// running the tools. "" when it writes none, as when the tests do not
+	// compile.
 	Report string
 	// Venv is whether the Python project keeps its own virtualenv in
 	// .venv, whose python is the one with pytest and coverage: the binary
@@ -160,10 +160,10 @@ var Converted = []string{
 
 // InProcess are the converted files the in-process driver runs: those of
 // the commands moved onto kong, which run against the ports' fakes. A file
-// joins it in the task that moves its command (crap's, coverage's and
-// file selection's files in T-67, cli.feature in S9); until then the binary
-// driver alone runs its scenarios.
-var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
+// joins it in the task that moves its command (crap's, coverage's,
+// complexity's and file selection's files in T-67, cli.feature in S9); until
+// then the binary driver alone runs its scenarios.
+var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real

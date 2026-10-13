@@ -14,13 +14,14 @@ import (
 )
 
 // Tree is a working tree held in memory: the directory it is at, its
-// files, by slash-separated paths relative to that directory, the changed
-// ones, and configured failures. It walks, names and skips as
+// files, by slash-separated paths relative to that directory, one outside
+// it starting with ../, as the disk holds files outside the working
+// directory too, the changed ones, and configured failures. It walks, names and skips as
 // internal/workdir's Tree does on the disk, which TreeContract holds.
 type Tree struct {
 	// Dir is the working directory, absolute: a relative path resolves
-	// against it, and every path Discover gives is under it. TreeOf sets
-	// it.
+	// against it, and every path Discover gives is under the root it was
+	// given. TreeOf sets it.
 	Dir string
 	// Sources and Tests are the tree's supported files, wherever they are,
 	// a skipped directory included.
@@ -130,12 +131,11 @@ func (t Tree) Changed(ctx context.Context) ([]string, port.Failure) {
 // answers at once, so ctx has nothing to cut short.
 func (t Tree) Exists(ctx context.Context, path string) bool {
 	abs := t.abs(path)
-	rel, ok := t.rel(abs)
-	if !ok {
-		above, err := filepath.Rel(abs, t.Dir)
-		return err == nil && filepath.IsLocal(above)
+	if above, err := filepath.Rel(abs, t.Dir); err == nil && (above == "." || filepath.IsLocal(above)) {
+		return true
 	}
-	return rel == "." || t.isFile(rel) || t.isDir(rel)
+	rel, ok := t.rel(abs)
+	return ok && (t.isFile(rel) || t.isDir(rel))
 }
 
 // Read is the text in Contents of the file at path, relative to Dir or
@@ -166,11 +166,12 @@ func (t Tree) abs(path string) string {
 	}
 }
 
-// rel is abs as the tree holds it, slash-separated from Dir, and whether
-// it is at or below Dir.
+// rel is abs as the tree holds it, slash-separated from Dir, ../ leading
+// it out of Dir, and whether Dir reaches it, as one on another volume it
+// does not.
 func (t Tree) rel(abs string) (string, bool) {
 	rel, err := filepath.Rel(t.Dir, abs)
-	if err != nil || !filepath.IsLocal(rel) && rel != "." {
+	if err != nil {
 		return "", false
 	}
 	return filepath.ToSlash(rel), true

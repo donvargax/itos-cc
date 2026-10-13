@@ -14,23 +14,28 @@ import (
 
 // Measurer measures coverage in memory: the reports a request names are
 // read from Files, and a request that names none is given the canned
-// reports of Roots. It answers as internal/coveragetools' Measurer answers
-// from the disk, which MeasurerContract holds; it runs no tool.
+// reports of Roots, or of Left when it reads what an earlier run left
+// (Existing). It answers as internal/coveragetools' Measurer answers from
+// the disk, which MeasurerContract holds; it runs no tool.
 type Measurer struct {
 	// Dir is the working directory, absolute: a relative path, a named
-	// report or a key of Files and Roots, is from it. A path rooted with no
-	// volume, such as "/work", is on Dir's volume, as Files' are.
+	// report or a key of Files, Roots and Left, is from it. A path rooted
+	// with no volume, such as "/work", is on Dir's volume, as Files' are.
 	Dir string
 	// Files are the files on the disk, their text by path: a named report
 	// is read from them, and each is a regular file, which a path a report
 	// names may be.
 	Files map[string]string
 	// Roots are the reports the project's own tools measure, by the build
-	// root they run in: a request that names no report, running the tests
-	// or reading what they left (Existing), is given those of every root
-	// holding one of its sources, merged. A source under no root is
+	// root they run in: a request that names no report is given the report
+	// of each root that is the nearest to one of its sources, merged in the
+	// roots' order, as a build root measures what is below it and a root
+	// nested in another measures its own. A source under no root is
 	// measured by none and missing from none.
 	Roots map[string]*coverage.Report
+	// Left are the reports an earlier run left, by build root, which a
+	// request that reads them (Existing) is given as Roots are.
+	Left map[string]*coverage.Report
 }
 
 var _ port.Measurer[*coverage.Report] = Measurer{}
@@ -42,8 +47,11 @@ func (m Measurer) Measure(ctx context.Context, req port.Request) (*coverage.Repo
 	if ctx.Err() != nil {
 		return nil, port.Cancelled{}
 	}
-	if len(req.Reports) == 0 {
-		return m.canned(req.Sources), nil
+	switch {
+	case len(req.Reports) == 0 && req.Existing:
+		return m.canned(m.Left, req.Sources), nil
+	case len(req.Reports) == 0:
+		return m.canned(m.Roots, req.Sources), nil
 	}
 	var all [][]coverage.Entry
 	var missing []coverage.Unmeasured
@@ -89,18 +97,28 @@ func (m Measurer) load(path string) ([]coverage.Entry, error) {
 	return nil, &fs.PathError{Op: "open", Path: path, Err: fs.ErrNotExist}
 }
 
-// canned is the reports of every root of Roots that holds one of sources,
-// merged in the roots' order.
-func (m Measurer) canned(sources []string) *coverage.Report {
+// canned is the reports of roots each the nearest of them to one of
+// sources, merged in the roots' order.
+func (m Measurer) canned(roots map[string]*coverage.Report, sources []string) *coverage.Report {
 	disk := m.disk()
-	var reports []*coverage.Report
-	for _, root := range slices.Sorted(maps.Keys(m.Roots)) {
-		dir := disk.abs(root)
-		if slices.ContainsFunc(sources, func(source string) bool {
+	nearest := map[string]bool{}
+	for _, source := range sources {
+		best, length := "", -1
+		for root := range roots {
+			dir := disk.abs(root)
 			rel, err := filepath.Rel(dir, disk.abs(source))
-			return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-		}) {
-			reports = append(reports, m.Roots[root])
+			if err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && len(dir) > length {
+				best, length = root, len(dir)
+			}
+		}
+		if best != "" {
+			nearest[best] = true
+		}
+	}
+	var reports []*coverage.Report
+	for _, root := range slices.Sorted(maps.Keys(roots)) {
+		if nearest[root] {
+			reports = append(reports, roots[root])
 		}
 	}
 	return coverage.Merge(reports...)
