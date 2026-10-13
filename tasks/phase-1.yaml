@@ -1386,3 +1386,30 @@
     - run: grep -q '"mutate.feature"' features/steps.go
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(0[1-6]|101|11[4-6]|24[3-6])$'
     - run: "! git grep -nE '// @ID-MUT-(0[1-6]|101|11[4-6]|24[3-6])$' -- cmd/itos-cc"
+- id: T-71
+  type: test
+  title: mutate.feature's running, coverage, built-binary and uncovered scenarios run through godog against the built binary
+  why: >
+    Piece 2 of mutate.feature (the plan's table): running, coverage, built-binary and uncovered
+    scenarios. Go tests holding them today include mutate_mutants, mutate_integration and
+    mutate_uncovered tests. Measure CI time after this piece and report it; it is the first with
+    real mutation runs through the binary driver on three systems. Each piece of mutate.feature
+    (decision 39: it converts before the group moves) writes steps for every sentence as it stands,
+    checks each sentence against the built binary first and stops on one that cannot run as written
+    (docs/go.md step 8), declares its fixtures' test outcomes through Driver.Tests, tags
+    @binary-only only what needs real processes or tools for good, removes its IDs from
+    features.Unstepped, deletes the Go tests in cmd/itos-cc its steps now hold (docs/go.md step 11,
+    each named in the commit, never before the steps hold the same check), adds runs that need Node,
+    Python or Kotlin to ci.yml's language-tools line, and shows every new step can fail (strictness
+    edits, counted in the report). S6 of the template-design refactor; the coordinator's plan is in
+    the clone notes (.git/itos/s6-plan.md: the settled questions, the mutate.feature pieces, the
+    in-process fakes, proof cases per task). Rules whole: ctx first, never held or captured for I/O;
+    nothing leaks into a domain, adapters and ports use the domain's types with no mappers (decision
+    47); fakes not mocks, none in production code. Light local testing: the packages and scenarios
+    in the checks, never the whole cmd/itos-cc suite or a mutation run of this repository (mutate's
+    Go tests over fixtures are fine); never itos task show or itos task <id> locally; no worktrees;
+    never push a commit naming the task before its checks can pass. No binary comparison: the plan's
+    cases for this task join refactor-final-proof's list.
+  done_when:
+    - run: go test ./features -count=1 -scenarios='@ID-MUT-(0[7-9]|1[0-9]|2[0-2]|4[7-9]|5[01]|100|105|11[7-9]|120|149)$'
+    - run: "! git grep -nE '// @ID-MUT-(0[7-9]|1[0-9]|2[0-2]|4[7-9]|5[01]|100|105|11[7-9]|120|149)$' -- cmd/itos-cc"
