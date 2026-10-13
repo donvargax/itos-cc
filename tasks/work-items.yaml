@@ -2500,8 +2500,8 @@ items:
   - id: T-59
     title: units, dry and scrap run in process against the ports' fakes
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-58]
     kind: task
     why: >
