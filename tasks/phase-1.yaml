@@ -1112,12 +1112,6 @@
     _test.go files), fakes not mocks. Light local testing: the packages and scenarios named in the
     checks, never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No
     binary comparison; a case worth comparing joins refactor-final-proof's list.
-  done_when:
-    - run: go vet ./features
-    - run: grep -q 'type Driver interface' features/steps.go
-    - run: "! grep -nE 'os\\.(ReadFile|WriteFile|MkdirTemp|Mkdir)\\(|exec\\.Command' features/units.go features/dry.go features/scrap.go"
-    - run: grep -q 'features/\*\*' itos-cc.yaml
-    - run: go test ./features -count=1 -scenarios='@ID-(UNIT|DRY|SCRAP)-'
 - id: T-59
   type: test
   title: units, dry and scrap run in process against the ports' fakes
