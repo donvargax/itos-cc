@@ -2710,16 +2710,6 @@ items:
     title: cli.feature's ID-CLI-03 says a go build in a checkout reports dev; it reports a pseudo-version
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found converting cli.feature (T-62). ID-CLI-03's third row says a binary built from a local
-      checkout with go build says itos-cc dev. Since Go 1.24, go build in a git checkout records the
-      module version from git, so the binary says a pseudo-version (itos-cc
-      v0.15.2-0.20261013050945-7ef45e9a4685 at 7ef45e9 with go1.27.2); only -buildvcs=false or a
-      tree with no .git says dev. internal/version documents the pseudo-version for a checkout
-      build, so after S9 moves version onto internal/version the row stays wrong, and its first
-      row's -X main.version stamp goes too (goreleaser and the harness stamp internal/version.stamp,
-      which the version command ignores today). The row needs a feat or fix deciding what a checkout
-      build says, before cli.feature can join Converted.
