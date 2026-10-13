@@ -42,17 +42,21 @@ from it, and thin slices named for their commands.
   classified by `internal/lang` as the disk adapter classifies them, and `TreeContract`, the
   contract it and `internal/workdir`'s `Tree` both pass (Tests, below).
 - `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
-  share and projects commit (decision 41): the format `Version` every snapshot records, and
-  `Key(root, abs)`, an absolute path named as a snapshot records it, from the project root and
-  slash-separated, a path the root cannot reach staying whole. The paths a selection discovers
-  are absolute, so naming one needs no working directory. `project.FromRootOf` names paths
-  through it, so the arithmetic has one copy.
-- `internal/snapshot/port` declares `Store`: the project `Root`, and `Read` and `Write` of a
-  snapshot by name, each taking the context first, and its sealed set of failures:
-  `Unreadable`, `Unwritable`, each carrying the snapshot's name and the library's error text
-  whole as its `Reason`, and `Cancelled`. `internal/snapshot/port/porttest` holds the
-  in-memory fake of `Store`, writing the bytes the `metrics` library writes, and
-  `StoreContract`, the contract it and `internal/metricsdir`'s `Store` both pass (Tests, below).
+  share and projects commit (decision 41): the `Folder` they live in, the format `Version`
+  every snapshot records, and `Key(root, abs)`, an absolute path named as a snapshot records
+  it, from the project root and slash-separated, a path the root cannot reach staying whole.
+  The paths a selection discovers are absolute, so naming one needs no working directory.
+  `project.FromRootOf` names paths through it, and `metrics.Name` and `metrics.Version` are
+  its, so each has one copy.
+- `internal/snapshot/port` declares `Store`: the project `Root`, `Read`, `Write` and `Remove`
+  of a snapshot by name, its path from `.metrics/`, a removal taking the folders it empties
+  below the top one (`mutate/` stays), and `List`, the names of the regular `*.json` files
+  under a folder, each taking the context first, and its sealed set of failures:
+  `Unreadable`, `Unwritable` and `Unremovable`, each carrying the snapshot's name, and
+  `Unlistable`, the folder's, with the library's error text whole as its `Reason`, and
+  `Cancelled`. `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing
+  the bytes the `metrics` library writes, and `StoreContract`, the contract it and
+  `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
   OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
   `Cancelled` once the context is done, and hands every other path to a fallback it is given.
@@ -63,8 +67,10 @@ from it, and thin slices named for their commands.
   `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk. It
   imports nothing else of ours.
 - `internal/metricsdir` is the snapshot port's adapter: the snapshots under `.metrics/` at the
-  project root of the working directory. It wraps the top-level `metrics` library, which
-  writes them as indented JSON renamed into place, and `project`, which finds the root, so
+  project root of the working directory, or at the root its `RootDir` names, so one `Store` for
+  each root serves several projects (graph's, in S8) with no change to the port. It wraps the
+  top-level `metrics` library, which writes them as indented JSON renamed into place, removes
+  and lists them, and `project`, which finds the root, so
   every byte and every atomic write stays the library's, translating their errors into the
   port's failures. It imports nothing else of ours.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
@@ -221,9 +227,9 @@ from it, and thin slices named for their commands.
   selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
   ones with the `Exclusion` it reads from itos-cc.yaml (`exclusion`). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
-  a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
-  an unreadable last one and goes on. `mutation` and `serve` still call the `metrics`
-  library until each moves (decision 41). It holds the coverage domain's classifier,
+  a snapshot that cannot be written is the internal 70 it always was, its message whole with
+  whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
+  on. `mutation` and `serve` still call the `metrics` library until each moves (decision 41). It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
   `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the

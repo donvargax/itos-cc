@@ -5,20 +5,28 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"path"
+	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
 // Store is a project's snapshots held in memory: its root, the JSON each
-// snapshot holds, and configured failures. It reads and writes as
-// internal/metricsdir's Store does on the disk, which StoreContract holds.
+// snapshot holds, and configured failures. It reads, writes, removes and
+// lists as internal/metricsdir's Store does on the disk, which
+// StoreContract holds. It holds no folders, so a removal leaves none
+// empty. Every name is taken slash-separated, as the disk takes a
+// snapshot's name in either form where a backslash separates.
 type Store struct {
 	// RootDir is what Root gives: the project root, absolute.
 	RootDir string
-	// Snapshots are the JSON of each snapshot, by name; Write stores there.
+	// Snapshots are the JSON of each snapshot, by its name,
+	// slash-separated; Write stores there, and Remove deletes there.
 	Snapshots map[string]string
-	// Failures are Read's and Write's, by name: a snapshot named here
-	// fails with its failure.
+	// Failures are Read's, Write's and Remove's, by the snapshot's name,
+	// and List's, by the folder's: a name here fails with its failure.
 	Failures map[string]port.Failure
 	// RootFailure, when set, is Root's failure.
 	RootFailure port.Failure
@@ -44,10 +52,10 @@ func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failur
 	if ctx.Err() != nil {
 		return false, &port.Cancelled{}
 	}
-	if failure, ok := s.Failures[name]; ok {
+	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
 		return false, failure
 	}
-	text, ok := s.Snapshots[name]
+	text, ok := s.Snapshots[filepath.ToSlash(name)]
 	if !ok {
 		return false, nil
 	}
@@ -65,7 +73,7 @@ func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if ctx.Err() != nil {
 		return &port.Cancelled{}
 	}
-	if failure, ok := s.Failures[name]; ok {
+	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
 		return failure
 	}
 	var data bytes.Buffer
@@ -78,6 +86,39 @@ func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if s.Snapshots == nil {
 		s.Snapshots = map[string]string{}
 	}
-	s.Snapshots[name] = data.String()
+	s.Snapshots[filepath.ToSlash(name)] = data.String()
 	return nil
+}
+
+// Remove deletes the snapshot name from Snapshots; one not there is no
+// failure.
+func (s *Store) Remove(ctx context.Context, name string) port.Failure {
+	if ctx.Err() != nil {
+		return &port.Cancelled{}
+	}
+	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
+		return failure
+	}
+	delete(s.Snapshots, filepath.ToSlash(name))
+	return nil
+}
+
+// List is the names in Snapshots under the folder dir that end in .json,
+// sorted.
+func (s *Store) List(ctx context.Context, dir string) ([]string, port.Failure) {
+	if ctx.Err() != nil {
+		return nil, &port.Cancelled{}
+	}
+	if failure, ok := s.Failures[filepath.ToSlash(dir)]; ok {
+		return nil, failure
+	}
+	prefix := path.Clean(filepath.ToSlash(dir)) + "/"
+	var names []string
+	for name := range s.Snapshots {
+		if (prefix == "./" || strings.HasPrefix(name, prefix)) && strings.HasSuffix(name, ".json") {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	return names, nil
 }

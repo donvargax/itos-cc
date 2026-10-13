@@ -13,6 +13,10 @@ import (
 // Version is the snapshot format version every snapshot records.
 const Version = 1
 
+// Folder is the folder snapshots live in, at the project root: a snapshot
+// named name is Folder/name there.
+const Folder = ".metrics"
+
 // Key is abs, an absolute path, as a snapshot records it: relative to root,
 // the project root, and slash-separated. A path outside root, or one root
 // cannot be made relative to, stays absolute, slash-separated. The paths a

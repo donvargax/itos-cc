@@ -285,6 +285,13 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	}
 	var stdout, stderr bytes.Buffer
 	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
+	// What the run removed from the store is gone from the memory too, and
+	// what it wrote is there.
+	for rel := range m.under(metricsDir) {
+		if _, ok := store.Snapshots[rel]; !ok {
+			delete(m.files, filepath.Join(metricsDir, filepath.FromSlash(rel)))
+		}
+	}
 	for name, text := range store.Snapshots {
 		m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
 	}

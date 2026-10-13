@@ -16,22 +16,28 @@ func classifySnapshot(err error) ([]*cli.Problem, bool) {
 	if !errors.As(err, &failure) {
 		return nil, false
 	}
-	return []*cli.Problem{snapshotProblem(failure)}, true
+	return []*cli.Problem{snapshotProblem(err, failure)}, true
 }
 
-// snapshotProblem is failure's problem: a snapshot that could not be read
-// or written is the 70 it has always been, the library's message whole,
-// and an interrupt is 130 (decision 31). A command that can go on without
-// a snapshot, as scrap without its last one, says so and never brings the
-// failure here. None has a default; a kind with no case here is the 70 of
-// a bug.
-func snapshotProblem(failure snapport.Failure) *cli.Problem {
-	p := cli.Internal(failure)
-	switch e := failure.(type) {
+// snapshotProblem is the problem of err, which holds failure: a snapshot
+// that could not be read, written or removed, or a folder of them listed,
+// is the 70 it has always been, its message err's text whole, the
+// library's with whatever a caller wrapped it in, such as the snapshot's
+// name mutation gives, as when no classifier claimed it; and an interrupt
+// is 130 (decision 31). A command that can go on without a snapshot, as
+// scrap without its last one, says so and never brings the failure here.
+// None has a default; a kind with no case here is the 70 of a bug.
+func snapshotProblem(err error, failure snapport.Failure) *cli.Problem {
+	p := cli.Internal(err)
+	switch failure.(type) {
 	case *snapport.Unreadable:
-		p = cli.Internal(e)
+		p = cli.Internal(err)
 	case *snapport.Unwritable:
-		p = cli.Internal(e)
+		p = cli.Internal(err)
+	case *snapport.Unremovable:
+		p = cli.Internal(err)
+	case *snapport.Unlistable:
+		p = cli.Internal(err)
 	case *snapport.Cancelled:
 		p = cli.Interrupted()
 	}

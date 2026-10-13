@@ -48,6 +48,21 @@ func TestStoreKeepsTheContract(t *testing.T) {
 	porttest.StoreContract(t, open)
 }
 
+// A store given its root keeps it too, wherever the process runs: the
+// working directory is another project, whose snapshots it never touches.
+func TestAStoreOfAnotherRootKeepsTheContract(t *testing.T) {
+	porttest.StoreContract(t, func(t *testing.T, snapshots map[string]string) (port.Store, string) {
+		_, root := open(t, snapshots)
+		elsewhere := inProject(t)
+		t.Cleanup(func() {
+			if _, err := os.Stat(filepath.Join(elsewhere, metrics.Name)); err == nil {
+				t.Errorf("a store of %s touched the working directory's .metrics", root)
+			}
+		})
+		return Store{RootDir: root}, root
+	})
+}
+
 func cancelled(t *testing.T) context.Context {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -137,7 +152,90 @@ func TestStoreStopsOnceCancelled(t *testing.T) {
 	if failure := (Store{}).Write(ctx, "x.json", v); !errors.As(failure, &c) {
 		t.Errorf("Write(x.json) = %v, want Cancelled", failure)
 	}
+	if failure := (Store{}).Remove(ctx, "x.json"); !errors.As(failure, &c) {
+		t.Errorf("Remove(x.json) = %v, want Cancelled", failure)
+	}
+	if _, failure := (Store{}).List(ctx, "mutate"); !errors.As(failure, &c) {
+		t.Errorf("List(mutate) = %v, want Cancelled", failure)
+	}
 	if _, err := os.Stat(filepath.Join(root, ".metrics")); err == nil {
 		t.Errorf("a cancelled write made .metrics")
+	}
+}
+
+// A removal deletes each folder it left empty up to the one at the top of
+// the snapshot's name, which stays, as .metrics does; a folder that holds
+// anything else stays too.
+func TestRemovingEmptiesNestedFoldersBelowTheTopOne(t *testing.T) {
+	_, root := open(t, map[string]string{
+		"mutate/src/deep/er/a.go.json": "{}",
+		"mutate/src/kept/b.go.json":    "{}",
+		"mutate/src/other/c.go.json":   "{}",
+		"mutate/src/other/notes.txt":   "",
+		"coverage/run/only.json":       "{}",
+		"dry.json":                     "{}",
+	})
+	for _, name := range []string{"mutate/src/deep/er/a.go.json", "mutate/src/other/c.go.json", "coverage/run/only.json", "dry.json"} {
+		if failure := (Store{}).Remove(t.Context(), name); failure != nil {
+			t.Fatalf("Remove(%s) = %v", name, failure)
+		}
+	}
+	at := func(name string) bool {
+		_, err := os.Lstat(filepath.Join(root, metrics.Name, filepath.FromSlash(name)))
+		return err == nil
+	}
+	for _, name := range []string{"mutate/src/deep/er", "mutate/src/deep", "coverage/run"} {
+		if at(name) {
+			t.Errorf("%s is still there, want the folders the removal emptied removed", name)
+		}
+	}
+	for _, name := range []string{"mutate/src/kept/b.go.json", "mutate/src/other/notes.txt", "mutate/src", "coverage", "."} {
+		if !at(name) {
+			t.Errorf("%s is gone, want it kept", name)
+		}
+	}
+	if failure := (Store{}).Remove(t.Context(), "mutate/src/kept/b.go.json"); failure != nil {
+		t.Fatal(failure)
+	}
+	if at("mutate/src/kept") || !at("mutate") {
+		t.Errorf("removing the last snapshot under mutate/src/kept left the folder, or removed mutate, the top one")
+	}
+}
+
+// A link is no snapshot, whatever it points to and whatever its name, and
+// a link to a folder is not followed.
+func TestALinkIsNoSnapshot(t *testing.T) {
+	_, root := open(t, map[string]string{"mutate/a.go.json": "{}", "elsewhere/b.go.json": "{}"})
+	dir := filepath.Join(root, metrics.Name)
+	if err := os.Symlink(filepath.Join(dir, "mutate", "a.go.json"), filepath.Join(dir, "mutate", "link.go.json")); err != nil {
+		t.Skipf("no symbolic link can be made here: %v", err)
+	}
+	if err := os.Symlink(filepath.Join(dir, "elsewhere"), filepath.Join(dir, "mutate", "folder")); err != nil {
+		t.Skipf("no symbolic link can be made here: %v", err)
+	}
+	if names, failure := (Store{}).List(t.Context(), "mutate"); failure != nil || !slices.Equal(names, []string{"mutate/a.go.json"}) {
+		t.Errorf("List(mutate) = %q, %v; want only mutate/a.go.json", names, failure)
+	}
+}
+
+// A snapshot that cannot be removed is Unremovable, and a folder that
+// cannot be listed Unlistable, each with the library's own text whole. No
+// system takes a name holding a NUL.
+func TestStoreTranslatesTheLibrarysRemoveAndListFailures(t *testing.T) {
+	_, root := open(t, map[string]string{"mutate/a.go.json": "{}"})
+	dir := filepath.Join(root, metrics.Name)
+	const bad = "mutate/a\x00.go.json"
+	want := metrics.RemoveIn(dir, bad)
+	failure := Store{}.Remove(t.Context(), bad)
+	var unremovable *port.Unremovable
+	if want == nil || !errors.As(failure, &unremovable) || unremovable.Name != bad || unremovable.Reason != want.Error() {
+		t.Errorf("Remove(%q) = %T %v, want Unremovable %v", bad, failure, failure, want)
+	}
+	const folder = "mutate\x00"
+	_, want = metrics.ListIn(dir, folder)
+	names, failure := Store{}.List(t.Context(), folder)
+	var unlistable *port.Unlistable
+	if want == nil || names != nil || !errors.As(failure, &unlistable) || unlistable.Dir != folder || unlistable.Reason != want.Error() {
+		t.Errorf("List(%q) = %q, %T %v, want Unlistable %v", folder, names, failure, failure, want)
 	}
 }

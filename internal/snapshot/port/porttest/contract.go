@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"math"
 	"slices"
 	"testing"
@@ -13,14 +14,15 @@ import (
 )
 
 // StoreContract holds a Store to what every one, the fake and the disk's,
-// must do: the root, what it reads and writes and the bytes it writes, the
-// failures of snapshots both can hold, and a done context. open lays out
+// must do: the root, what it reads and writes and the bytes it writes, what
+// it removes and lists, the failures of snapshots both can hold, and a done
+// context. open lays out
 // snapshots, raw text by name, in a project and returns the Store over it
 // and the project's root, absolute; it may make that the test's working
 // directory, so no case runs in parallel. What only a disk can do (the git
 // top level as the root, the atomic rename, a file where a folder should
-// be) is the adapter's own tests'; a failure the fake is configured with,
-// the fake's.
+// be, the folders a removal empties, a link) is the adapter's own tests'; a
+// failure the fake is configured with, the fake's.
 func StoreContract(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
 	t.Helper()
 	cases := []struct {
@@ -34,6 +36,12 @@ func StoreContract(t *testing.T, open func(t *testing.T, snapshots map[string]st
 		{"a snapshot that does not decode is unreadable", refusesMalformedText},
 		{"a value that does not encode is unwritable and writes nothing", refusesWhatDoesNotEncode},
 		{"a write replaces the snapshot whole", replacesWhole},
+		{"a removed snapshot is gone and the others stay", removesTheSnapshot},
+		{"removing an absent snapshot is no failure", removesNothingAbsent},
+		{"removing the last snapshot of nested folders leaves the others, and they take one again", removesFromNestedFolders},
+		{"a folder lists its snapshots at any depth, named from .metrics, sorted", listsTheFolder},
+		{"what is no json file is not listed, and a folder named like one lists what it holds", listsOnlyJSONFiles},
+		{"an absent folder lists none", listsNoAbsentFolder},
 		{"a done context is cancelled and writes nothing", aDoneContextIsCancelled},
 	}
 	for _, c := range cases {
@@ -158,12 +166,135 @@ func aDoneContextIsCancelled(t *testing.T, open func(t *testing.T, snapshots map
 			t.Errorf("Write(%s) = %T; want Cancelled", name, failure)
 		}
 	}
+	if failure := store.Remove(ctx, "dry.json"); !errors.As(failure, &cancelled) {
+		t.Errorf("Remove(dry.json) = %T; want Cancelled", failure)
+	}
+	if names, failure := store.List(ctx, "."); !errors.As(failure, &cancelled) || names != nil {
+		t.Errorf("List(.) = %q, %T; want Cancelled and no names", names, failure)
+	}
 	var after record
 	if found, failure := store.Read(t.Context(), "dry.json", &after); !found || failure != nil || after.Version != 1 {
 		t.Errorf("Read(dry.json) after = %t, %v, %+v; want the snapshot as it was", found, failure, after)
 	}
 	if found, failure := store.Read(t.Context(), "scrap.json", &after); found || failure != nil {
 		t.Errorf("Read(scrap.json) after = %t, %v; want nothing written", found, failure)
+	}
+}
+
+func removesTheSnapshot(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	store, _ := open(t, map[string]string{"dry.json": `{"version": 1}`, "mutate/a.go.json": `{"version": 2}`, "mutate/b.go.json": `{"version": 3}`})
+	for _, name := range []string{"mutate/a.go.json", "dry.json"} {
+		if failure := store.Remove(t.Context(), name); failure != nil {
+			t.Fatalf("Remove(%s) = %v", name, failure)
+		}
+		var got record
+		if found, failure := store.Read(t.Context(), name, &got); found || failure != nil {
+			t.Errorf("Read(%s) after its removal = %t, %v; want not there", name, found, failure)
+		}
+	}
+	var kept record
+	if found, failure := store.Read(t.Context(), "mutate/b.go.json", &kept); !found || failure != nil || kept.Version != 3 {
+		t.Errorf("Read(mutate/b.go.json) = %t, %v, %+v; want it kept", found, failure, kept)
+	}
+	if names, failure := store.List(t.Context(), "mutate"); failure != nil || !slices.Equal(names, []string{"mutate/b.go.json"}) {
+		t.Errorf("List(mutate) = %q, %v; want only mutate/b.go.json", names, failure)
+	}
+}
+
+func removesNothingAbsent(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	store, _ := open(t, map[string]string{"mutate/a.go.json": `{"version": 1}`})
+	for _, name := range []string{"scrap.json", "mutate/absent.go.json", "absent/folder/x.json"} {
+		if failure := store.Remove(t.Context(), name); failure != nil {
+			t.Errorf("Remove(%s) = %T %v; want no failure", name, failure, failure)
+		}
+	}
+	if names, failure := store.List(t.Context(), "."); failure != nil || !slices.Equal(names, []string{"mutate/a.go.json"}) {
+		t.Errorf("List(.) = %q, %v; want mutate/a.go.json kept", names, failure)
+	}
+}
+
+func removesFromNestedFolders(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	store, _ := open(t, map[string]string{
+		"mutate/src/deep/er/a.go.json": `{"version": 1}`,
+		"mutate/src/b.go.json":         `{"version": 2}`,
+		"mutate/lib/c.go.json":         `{"version": 3}`,
+	})
+	for _, name := range []string{"mutate/src/deep/er/a.go.json", "mutate/lib/c.go.json"} {
+		if failure := store.Remove(t.Context(), name); failure != nil {
+			t.Fatalf("Remove(%s) = %v", name, failure)
+		}
+	}
+	if names, failure := store.List(t.Context(), "mutate"); failure != nil || !slices.Equal(names, []string{"mutate/src/b.go.json"}) {
+		t.Errorf("List(mutate) = %q, %v; want only mutate/src/b.go.json", names, failure)
+	}
+	if names, failure := store.List(t.Context(), "mutate/src/deep"); failure != nil || len(names) != 0 {
+		t.Errorf("List(mutate/src/deep) = %q, %v; want none", names, failure)
+	}
+	if failure := store.Remove(t.Context(), "mutate/src/b.go.json"); failure != nil {
+		t.Fatalf("Remove(mutate/src/b.go.json) = %v", failure)
+	}
+	if names, failure := store.List(t.Context(), "mutate"); failure != nil || len(names) != 0 {
+		t.Errorf("List(mutate) = %q, %v; want none once the last is removed", names, failure)
+	}
+	for _, name := range []string{"mutate/src/deep/er/a.go.json", "mutate/lib/c.go.json", "dry.json"} {
+		if failure := store.Write(t.Context(), name, written); failure != nil {
+			t.Errorf("Write(%s) after the removals = %v", name, failure)
+		}
+		var got record
+		if found, failure := store.Read(t.Context(), name, &got); !found || failure != nil || !equal(got, written) {
+			t.Errorf("Read(%s) = %t, %v, %+v; want what was written", name, found, failure, got)
+		}
+	}
+}
+
+func listsTheFolder(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	store, _ := open(t, map[string]string{
+		"dry.json":               `{}`,
+		"mutate.json":            `{}`,
+		"mutated/x.go.json":      `{}`,
+		"mutate/b.go.json":       `{}`,
+		"mutate/a/c.ts.json":     `{}`,
+		"mutate/a/d/e.py.json":   `{}`,
+		"mutate/with space.json": `{}`,
+		"coverage/run/lcov.json": `{}`,
+	})
+	if names, failure := store.List(t.Context(), "mutate"); failure != nil ||
+		!slices.Equal(names, []string{"mutate/a/c.ts.json", "mutate/a/d/e.py.json", "mutate/b.go.json", "mutate/with space.json"}) {
+		t.Errorf("List(mutate) = %q, %v; want the four under mutate, sorted", names, failure)
+	}
+	if names, failure := store.List(t.Context(), "mutate/a"); failure != nil || !slices.Equal(names, []string{"mutate/a/c.ts.json", "mutate/a/d/e.py.json"}) {
+		t.Errorf("List(mutate/a) = %q, %v; want the two under mutate/a", names, failure)
+	}
+	var got record
+	for _, name := range []string{"mutate/a/d/e.py.json", "mutate/with space.json"} {
+		if found, failure := store.Read(t.Context(), name, &got); !found || failure != nil {
+			t.Errorf("Read(%s) of a listed name = %t, %v; want it there", name, found, failure)
+		}
+	}
+}
+
+func listsOnlyJSONFiles(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	store, _ := open(t, map[string]string{
+		"mutate/a.go.json":             `{}`,
+		"mutate/a.go.json.123.tmp":     `{`,
+		"mutate/notes.txt":             ``,
+		"mutate/b.go.JSON.bak":         `{}`,
+		"mutate/folder.json/c.go.json": `{}`,
+		"mutate/folder.json/readme.md": ``,
+	})
+	if names, failure := store.List(t.Context(), "mutate"); failure != nil || !slices.Equal(names, []string{"mutate/a.go.json", "mutate/folder.json/c.go.json"}) {
+		t.Errorf("List(mutate) = %q, %v; want only the json files", names, failure)
+	}
+}
+
+func listsNoAbsentFolder(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
+	for _, snapshots := range []map[string]string{nil, {"dry.json": `{}`}} {
+		store, _ := open(t, snapshots)
+		for _, dir := range []string{"mutate", "mutate/src"} {
+			if names, failure := store.List(t.Context(), dir); failure != nil || len(names) != 0 {
+				t.Errorf("List(%s) of %q = %q, %v; want none", dir, slices.Sorted(maps.Keys(snapshots)), names, failure)
+			}
+		}
 	}
 }
 
