@@ -2710,3 +2710,28 @@ items:
       tests over fixtures are fine); never itos task show or itos task <id> locally; no worktrees;
       never push a commit naming the task before its checks can pass. No binary comparison: the
       plan's cases for this task join refactor-final-proof's list.
+  - id: T-69
+    title: The snapshot port removes and lists snapshots, and mutate reads and writes its snapshots only through it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Settles snapshot-port-remove-and-other-roots. mutate calls the metrics library itself:
+      metrics.Write at run.go:359, 375, 385, metrics.Remove at run.go:439, a walk and removal of
+      .metrics/mutate at orphans.go:47-112 and a read at :119, metrics.ReadIn at snapshot.go:349.
+      Store grows Remove(ctx, name), which also removes the folders it leaves empty as RemoveOrphans
+      does, and List(ctx, dir), the names of the regular *.json files under a folder; the fake and
+      StoreContract gain cases for both. For other roots metricsdir.Store gets a Root field (zero is
+      the working directory's project root), so graph can use one per served root in S8 with no port
+      change. mutate.Options carries the Store and LoadSnapshotOf takes one. S6 of the
+      template-design refactor; the coordinator's plan is in the clone notes (.git/itos/s6-plan.md:
+      the settled questions, the mutate.feature pieces, the in-process fakes, proof cases per task).
+      Rules whole: ctx first, never held or captured for I/O; nothing leaks into a domain, adapters
+      and ports use the domain's types with no mappers (decision 47); fakes not mocks, none in
+      production code. Light local testing: the packages and scenarios in the checks, never the
+      whole cmd/itos-cc suite or a mutation run of this repository (mutate's Go tests over fixtures
+      are fine); never itos task show or itos task <id> locally; no worktrees; never push a commit
+      naming the task before its checks can pass. No binary comparison: the plan's cases for this
+      task join refactor-final-proof's list.
