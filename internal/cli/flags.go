@@ -12,8 +12,11 @@ package cli
 // values, where the flags given are known, in kong's path of the command
 // line. Every flag is a switch (a bool, its --no- pair beside it) or takes
 // one value (a string, or a number, read as numbers.go says), and is given
-// once; a flag of another kind is added here first. A cumulative flag (a slice, as kong reads one) may be given
-// again, though no command has one yet.
+// once; a flag of another kind is added here first. A cumulative flag (a
+// slice, as kong reads one) may be given again, each time with a value of its
+// own, as crap's --coverage-report is: listMapper judges each value given
+// before kong's slice decoder reads it, which would take a flag after it
+// as its value.
 //
 // kong decodes a flag twice over: from the command line while it traces it,
 // then from its environment variable when it resets the values. A switch
@@ -50,6 +53,7 @@ func Flags() []kong.Option {
 		kong.KindMapper(reflect.String, valueMapper{kongs.ForType(reflect.TypeFor[string]())}),
 		kong.KindMapper(reflect.Float64, numberMapper{traced: traced}),
 		kong.KindMapper(reflect.Int, numberMapper{traced: traced, whole: true}),
+		kong.KindMapper(reflect.Slice, listMapper{kongs}),
 		kong.WithBeforeReset(traced.done),
 	}
 }
@@ -156,6 +160,18 @@ func valueGiven(ctx *kong.DecodeContext) error {
 		return missing
 	}
 	return nil
+}
+
+// listMapper reads a cumulative flag's value, or a command's arguments, as
+// kong does, once a flag has one: never the end of the command line, nor a
+// flag. A flag given again adds its value, as kong's slices do.
+type listMapper struct{ kongs *kong.Registry }
+
+func (m listMapper) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
+	if err := valueGiven(ctx); err != nil {
+		return err
+	}
+	return m.kongs.ForType(target.Type()).Decode(ctx, target)
 }
 
 // ValueMissingError is a flag that takes a value given none: the command

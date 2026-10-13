@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/kong"
@@ -156,21 +157,36 @@ func TestAFlagAfterDashDashIsNotGivenTwice(t *testing.T) {
 	}
 }
 
-// A cumulative flag may be given again. No command has one, so a line of
-// its own declares one, as kong reads a slice.
+// A cumulative flag may be given again, as crap's --coverage-report is,
+// each time with a value of its own, a comma in it no separator under sep
+// none; given none, or a flag where its value goes, it is refused as any
+// flag that takes a value is.
 func TestACumulativeFlagMayBeGivenAgain(t *testing.T) {
-	var l struct {
-		Answer []string `sep:"none"`
+	type answers struct {
+		Answer []string `sep:"none" placeholder:"A"`
+		JSON   bool
 	}
-	parser, err := kong.New(&l, append(Flags(), kong.Exit(func(int) { t.Fatal("kong exited") }))...)
-	if err != nil {
-		t.Fatal(err)
+	parse := func(args ...string) (answers, error) {
+		var l answers
+		parser, err := kong.New(&l, append(Flags(), kong.Exit(func(int) { t.Fatal("kong exited") }))...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = parser.Parse(args)
+		return l, err
 	}
-	if _, err := parser.Parse([]string{"--answer", "a", "--answer=b"}); err != nil {
-		t.Fatal(err)
+	l, err := parse("--answer", "a,b", "--answer=--json")
+	if err != nil || !reflect.DeepEqual(l.Answer, []string{"a,b", "--json"}) || l.JSON {
+		t.Errorf("got %+v, %v", l, err)
 	}
-	if !reflect.DeepEqual(l.Answer, []string{"a", "b"}) {
-		t.Errorf("got %q", l.Answer)
+	for args, want := range map[string]string{
+		"--answer":        "--answer: needs a value, as --answer A",
+		"--answer --json": "--answer: needs a value, and --json is a flag, never its value; to give it as the value, write --answer=--json",
+	} {
+		var missing *ValueMissingError
+		if _, err := parse(strings.Fields(args)...); !errors.As(err, &missing) || err.Error() != want {
+			t.Errorf("%s: got %v, want %q", args, err, want)
+		}
 	}
 }
 
