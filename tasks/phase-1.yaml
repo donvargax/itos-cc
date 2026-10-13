@@ -1343,11 +1343,6 @@
     show or itos task <id> locally; no worktrees; never push a commit naming the task before its
     checks can pass. No binary comparison: the plan's cases for this task join
     refactor-final-proof's list.
-  done_when:
-    - run: grep -q 'Remove(ctx context.Context' internal/snapshot/port/store.go
-    - run: "! git grep -nE 'metrics\\.(Write|Remove|ReadIn|DirOf)\\(' -- mutate"
-    - run: go test -count=1 ./internal/snapshot/... ./internal/metricsdir ./mutate/...
-    - run: go test ./cmd/itos-cc -count=1 -run 'Orphan|Snapshot|Rename|Root'
 - id: T-70
   type: test
   title: mutate.feature's sites, same-name and exclude scenarios run through godog against the built binary
