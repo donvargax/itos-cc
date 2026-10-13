@@ -68,7 +68,12 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 	d := &scrapState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {
 		*d = scrapState{w: w}
-		if filepath.Base(s.Uri) != "scrap.feature" || len(s.Steps) == 0 || !strings.HasPrefix(s.Steps[0].Text, `I run "itos-cc`) {
+		if filepath.Base(s.Uri) != "scrap.feature" {
+			return ctx, nil
+		}
+		// it is scored (steps.go) scores the example.
+		w.scored = d.scored
+		if len(s.Steps) == 0 || !strings.HasPrefix(s.Steps[0].Text, `I run "itos-cc`) {
 			return ctx, nil
 		}
 		// The scenarios that only say When I run run in the sample.
@@ -82,7 +87,6 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 		return d.writeFile("table_test.go", goTableTest)
 	})
 	sc.Step(`^it is measured$`, func() error { return d.measure() })
-	sc.Step(`^it is scored$`, d.scored)
 	sc.Step(`^it is marked as a table$`, func() error {
 		e, err := d.onlyExample()
 		if err != nil {

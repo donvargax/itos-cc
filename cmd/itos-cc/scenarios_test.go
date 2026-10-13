@@ -23,12 +23,15 @@ import (
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
-// The converted feature files run in process (decision 44): the steps of
-// package features, through a driver that keeps every folder and file in
-// memory with a fake git, and runs itos-cc through run with buffers and
-// porttest's fakes built from that memory. The binary driver
-// (features.TestFeatures) runs the same scenarios against the built binary;
-// a scenario only one of them can run carries its tag, never a copy.
+// The feature files of the commands moved onto kong run in process
+// (decision 44), the ones features.InProcess lists: the steps of package
+// features, through a driver that keeps every folder and file in memory
+// with a fake git, and runs itos-cc through run with buffers and porttest's
+// fakes built from that memory. The binary driver (features.TestFeatures)
+// runs the same scenarios against the built binary, and alone those of the
+// converted files whose command has not moved, a selection naming only
+// theirs running nothing here; a scenario only one of them can run, for
+// good, carries its tag, never a copy.
 //
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$'                       every live scenario
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios=<regexp>   those with a tag it matches
@@ -37,15 +40,21 @@ var scenarios = flag.String("scenarios", "", "run only the live scenarios with a
 
 func TestScenarios(t *testing.T) {
 	dir := filepath.Join("..", "..", "features")
-	filter, unconverted, err := features.TagFilter(*scenarios, dir, features.BinaryOnly)
+	sel, err := features.TagFilter(*scenarios, dir, features.InProcess, features.BinaryOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(unconverted) > 0 {
-		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(unconverted, " "))
+	if len(sel.Unconverted) > 0 {
+		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
+	}
+	if len(sel.Unmoved) > 0 {
+		t.Logf("binary driver only until its command moves: %s", strings.Join(sel.Unmoved, " "))
+	}
+	if sel.Filter == "" {
+		return
 	}
 	var paths []string
-	for _, name := range features.Converted {
+	for _, name := range features.InProcess {
 		paths = append(paths, filepath.Join(dir, name))
 	}
 	suite := godog.TestSuite{
@@ -54,7 +63,7 @@ func TestScenarios(t *testing.T) {
 		Options: &godog.Options{
 			Format:      "pretty",
 			Paths:       paths,
-			Tags:        filter,
+			Tags:        sel.Filter,
 			Strict:      true,
 			Concurrency: 1,
 			TestingT:    t,
@@ -74,6 +83,10 @@ type memory struct {
 	dirs    map[string]bool
 	repos   map[string]*repo
 	folders int
+	// coverage is what each folder's own tools measure, as the scenario
+	// declared it, by folder: what the fake measurer is to be handed once
+	// crap moves (T-67).
+	coverage map[string]features.Coverage
 }
 
 // repo is a fake git repository: what add staged and the last commit holds,
@@ -86,7 +99,10 @@ type repo struct {
 var _ features.Driver = (*memory)(nil)
 
 func newMemory(t *testing.T) *memory {
-	return &memory{t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{}}
+	return &memory{
+		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
+		coverage: map[string]features.Coverage{},
+	}
 }
 
 // Folder is a fresh absolute folder, on the volume of the working directory
@@ -150,6 +166,12 @@ func (m *memory) Remove(path string) error {
 			delete(m.repos, p)
 		}
 	}
+	return nil
+}
+
+// Coverage records what the project's own tools measure in dir.
+func (m *memory) Coverage(dir string, c features.Coverage) error {
+	m.coverage[filepath.Clean(dir)] = c
 	return nil
 }
 

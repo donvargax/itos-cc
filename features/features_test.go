@@ -17,11 +17,12 @@
 // tagged @wip never runs.
 //
 // Only the feature files in Converted run here: those whose scenarios have
-// steps (q-52). The others are converted over time, each with the command
-// that moves onto kong, and until then their scenarios are held by the Go
-// tests of cmd/itos-cc; a selection naming one of theirs logs it as not run
-// here, and a selection naming nothing else fails, as one matching no tag
-// does.
+// steps (q-52), the files of commands not moved yet among them, which the
+// in-process driver leaves to this one until they move (InProcess). The
+// others are converted over time, and until then their scenarios are held
+// by the Go tests of cmd/itos-cc; a selection naming one of theirs logs it
+// as not run here, and a selection naming nothing else fails, as one
+// matching no tag does.
 //
 // The scenarios run itos-cc as another process, where Go records
 // coverage only for a binary built with -cover and run with GOCOVERDIR naming
@@ -65,12 +66,12 @@ const (
 )
 
 func TestFeatures(t *testing.T) {
-	filter, unconverted, err := TagFilter(*scenarios, ".", InProcessOnly)
+	sel, err := TagFilter(*scenarios, ".", Converted, InProcessOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(unconverted) > 0 {
-		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(unconverted, " "))
+	if len(sel.Unconverted) > 0 {
+		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
 	}
 	t.Cleanup(removeCallerPath)
 	root, err := moduleRoot()
@@ -83,11 +84,11 @@ func TestFeatures(t *testing.T) {
 	}
 	suite := godog.TestSuite{
 		Name:                "itos-cc",
-		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin}, interruptSteps(bin)) },
+		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin: bin, root: root}, interruptSteps(bin)) },
 		Options: &godog.Options{
 			Format:      "pretty",
 			Paths:       Converted,
-			Tags:        filter,
+			Tags:        sel.Filter,
 			Strict:      true,
 			Concurrency: 1,
 			TestingT:    t,

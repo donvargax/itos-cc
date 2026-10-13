@@ -47,6 +47,27 @@ type Driver interface {
 	// Run runs itos-cc as r says and gives what it did. Its error is a run
 	// that could not be made, never an exit code other than 0.
 	Run(r Run) (Result, error)
+	// Coverage declares what the project's own tools measure in the folder
+	// dir, before a run of itos-cc measures coverage there with them. The
+	// binary driver checks the tools are installed, skipping the scenario
+	// (godog.ErrSkip) when they are not, or failing it where the job says
+	// it installed them (ITOS_CC_LANGUAGE_TOOLS), and links the pinned
+	// node_modules into dir for TypeScript; the in-process driver records
+	// it. A folder with no Coverage declared has no tools that measure it.
+	Coverage(dir string, c Coverage) error
+}
+
+// Coverage is what a project's own tools measure in a folder, as a Given
+// declares it.
+type Coverage struct {
+	// Language is the language whose coverage command runs there: go,
+	// typescript or python.
+	Language string
+	// Report is the report the command writes, as LCOV, its paths relative
+	// to the folder: what the in-process driver is to hand its fake in
+	// place of running the tools once the command measuring it moves
+	// (T-67). "" when it writes none, as when the tests do not compile.
+	Report string
 }
 
 // Run is one run of itos-cc: the folder it runs in, the variables the
@@ -77,16 +98,26 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 
 // Converted are the feature files the steps run, those whose scenarios
 // have steps: count.feature, the template's sample, every scenario of it
-// @wip (T-26), units.feature, the first command moved onto kong (T-32), and
-// dry.feature and scrap.feature, each converted before its command moves so
-// the move is held by its scenarios (T-37, T-41). A command that moves
-// converts its own file and adds it here, its scenarios' text unchanged
-// (q-52).
-var Converted = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
+// @wip (T-26), units.feature, the first command moved onto kong (T-32),
+// dry.feature and scrap.feature, and crap.feature and complexity.feature,
+// each converted before its command moves so the move is held by its
+// scenarios (T-37, T-41, T-60). A file converts with its scenarios' text
+// unchanged (q-52); the binary driver runs every one.
+var Converted = []string{
+	"count.feature", "units.feature", "dry.feature", "scrap.feature",
+	"crap.feature", "complexity.feature",
+}
 
-// The tags of a scenario only one driver can run: the binary's, for one
-// that runs a command still hand-parsed or needs a process of its own, and
-// the in-process driver's.
+// InProcess are the converted files the in-process driver runs: those of
+// the commands moved onto kong, which run against the ports' fakes. A file
+// joins it in the task that moves its command (crap's files in T-67); until
+// then the binary driver alone runs its scenarios.
+var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
+
+// The tags of a scenario only one driver can run, for good: the binary's,
+// for one that needs a process of its own, the real disk or the real
+// tools, and the in-process driver's. A scenario of a command not moved
+// yet carries neither: its file is not in InProcess.
 const (
 	BinaryOnly    = "@binary-only"
 	InProcessOnly = "@in-process-only"
@@ -96,6 +127,19 @@ const (
 type world struct {
 	d   Driver // the world the steps reach
 	dir string // the scratch folder
+
+	// feature is the name of the scenario's feature file.
+	feature string
+	// scored is what "it is scored" does, a sentence of two files: set by
+	// the steps of the scenario's file, nil in any other.
+	scored func() error
+	// with are the words a Given adds after a scenario's own to each run
+	// its When makes, as a row of an outline says "with --flag".
+	with []string
+	// project is the folder of the project a Given made, slash-separated
+	// from the scratch folder, which a sentence names as <dir>; "" for
+	// none.
+	project string
 
 	exit           int
 	stdout, stderr string
@@ -130,8 +174,8 @@ func Initialize(sc *godog.ScenarioContext, d Driver) {
 // (interrupt_test.go).
 func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.ScenarioContext, *world)) {
 	w := &world{d: d}
-	sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
-		return ctx, w.setUp()
+	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {
+		return ctx, w.setUp(s)
 	})
 	for _, steps := range own {
 		steps(sc, w)
@@ -234,12 +278,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	})
 	sc.Step(`^stdout is one object with "schema": 1, "ok", (.+)$`, w.isOneObjectWith)
 	sc.Step(`^stdout shows:$`, w.stdoutShows)
-	sc.Step(`^stderr says "([^"]*)"$`, func(text string) error {
-		if !strings.Contains(w.stderr, text) {
-			return fmt.Errorf("stderr does not say %q\n%s", text, w.report())
-		}
-		return nil
-	})
+	sc.Step(`^stderr says "([^"]*)"$`, w.stderrSays)
 	sc.Step(`^"([^"]*)" is an empty list$`, w.isEmptyList)
 	sc.Step(`^"([^"]*)" and "([^"]*)" are empty lists, not null$`, func(first, second string) error {
 		if err := w.isEmptyList(first); err != nil {
@@ -270,16 +309,28 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 		return w.write("itos-cc.yaml", "exclude: ["+strconv.Quote(glob)+"]\n")
 	})
 
+	// scrap.feature scores an example and crap.feature a function, each
+	// file's steps saying what scoring is in its scenarios.
+	sc.Step(`^it is scored$`, func() error {
+		if w.scored == nil {
+			return fmt.Errorf("nothing is scored in a scenario of %s", w.feature)
+		}
+		return w.scored()
+	})
+
 	// The steps of each converted feature file, after the world's, so a
 	// file's own Before runs in the scratch folder made above.
 	unitSteps(sc, w)
 	drySteps(sc, w)
 	scrapSteps(sc, w)
+	crapSteps(sc, w)
+	complexitySteps(sc, w)
 }
 
-// setUp makes the scenario's scratch folder.
-func (w *world) setUp() error {
+// setUp makes scenario s's scratch folder.
+func (w *world) setUp(s *godog.Scenario) error {
 	w.last, w.problem = nil, nil
+	w.feature, w.scored, w.with, w.project = filepath.Base(s.Uri), nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
@@ -304,13 +355,13 @@ func (w *world) withEnv(vars string) []string {
 // When steps.
 
 // runWith runs itos-cc in the scratch folder with args, split as a
-// scenario wrote them, in the environment env.
+// scenario wrote them, and the words a Given added, in the environment env.
 func (w *world) runWith(env []string, args string) error {
 	fields, err := commandWords(args)
 	if err != nil {
 		return err
 	}
-	return w.runEnv(w.dir, env, fields...)
+	return w.runEnv(w.dir, env, append(fields, w.with...)...)
 }
 
 // commandWords splits a scenario's command line without involving a shell.
@@ -436,6 +487,38 @@ func (w *world) git(args ...string) error {
 
 func (w *world) report() string {
 	return fmt.Sprintf("exit %d\n--- stdout\n%s--- stderr\n%s", w.exit, w.stdout, w.stderr)
+}
+
+// stderrSays is whether stderr holds text. In a text naming <dir>, that
+// stands for the folder of the project the Given made, as itos-cc names it
+// from the scratch folder, and "..." for the rest of what it says there.
+func (w *world) stderrSays(text string) error {
+	if !strings.Contains(text, "<dir>") && !strings.Contains(text, "...") {
+		if !strings.Contains(w.stderr, text) {
+			return fmt.Errorf("stderr does not say %q\n%s", text, w.report())
+		}
+		return nil
+	}
+	if strings.Contains(text, "<dir>") && w.project == "" {
+		return fmt.Errorf("%q names <dir>, and no Given made a project's folder", text)
+	}
+	var pattern strings.Builder
+	for i, part := range strings.Split(text, "...") {
+		if i > 0 {
+			pattern.WriteString(".+")
+		}
+		pieces := strings.Split(part, "<dir>")
+		for j, piece := range pieces {
+			if j > 0 {
+				pattern.WriteString(regexp.QuoteMeta(w.project))
+			}
+			pattern.WriteString(regexp.QuoteMeta(piece))
+		}
+	}
+	if !regexp.MustCompile(pattern.String()).MatchString(filepath.ToSlash(w.stderr)) {
+		return fmt.Errorf("stderr does not say %q, <dir> being %s\n%s", text, w.project, w.report())
+	}
+	return nil
 }
 
 func outputLines(output string) []string {
@@ -695,60 +778,92 @@ func numberOf(value any) int {
 	return int(number)
 }
 
-// TagFilter is godog's tag filter for a selection, the feature files in dir,
-// for a driver that cannot run the scenarios tagged skip: every live
-// scenario of the Converted files without one, else the live scenarios of
-// the Converted files carrying a tag the expression matches, with the tags
-// it matches only in other files, which the steps do not run. An expression
-// that matches no tag of a converted file is an error, so a selection never
-// runs nothing. A scenario only one driver can run carries @binary-only or
+// Selection is what a -scenarios expression selects for one driver.
+type Selection struct {
+	// Filter is godog's tag filter over the driver's files, "" when the
+	// expression selects none of their scenarios.
+	Filter string
+	// Unconverted are the tags it matches only in feature files with no
+	// steps yet (q-52), held by cmd/itos-cc's Go tests.
+	Unconverted []string
+	// Unmoved are the tags it matches only in converted files the driver
+	// does not run: the binary driver's alone until their command moves.
+	Unmoved []string
+}
+
+// TagFilter is what a selection selects of the feature files in dir for a
+// driver that runs files of them and cannot run the scenarios tagged skip:
+// every live scenario of files without one, else the live scenarios of
+// files carrying a tag the expression matches, with the tags it matches
+// only in other files, which the driver does not run. An expression that
+// matches no tag of a converted file is an error, so a selection never
+// runs nothing; one that matches only tags of converted files the driver
+// does not run selects nothing for it, the binary driver running those. A
+// scenario only one driver can run carries @binary-only or
 // @in-process-only, never a copy, and the other driver passes it by.
 //
 // godog's own tag filter takes exact tags joined by commas; itos's run
 // templates join the IDs they select with |, as a regular expression
 // (itos.yaml's tests.scenario.run), so a selection is that expression,
 // turned here into godog's filter. A scenario tagged @wip never runs.
-func TagFilter(selection, dir, skip string) (filter string, unconverted []string, err error) {
+func TagFilter(selection, dir string, files []string, skip string) (Selection, error) {
 	if selection == "" {
-		return "~@wip&&~" + skip, nil, nil
+		return Selection{Filter: "~@wip&&~" + skip}, nil
 	}
 	pattern, err := regexp.Compile(selection)
 	if err != nil {
-		return "", nil, err
+		return Selection{}, err
 	}
-	var files []string
-	for _, name := range Converted {
-		files = append(files, filepath.Join(dir, name))
-	}
-	tags, err := featureTags(files)
-	if err != nil {
-		return "", nil, err
-	}
-	var each []string
-	for _, tag := range tags {
-		if pattern.MatchString(tag) {
-			each = append(each, tag+"&&~@wip&&~"+skip)
+	in := func(names []string) []string {
+		var paths []string
+		for _, name := range names {
+			paths = append(paths, filepath.Join(dir, name))
 		}
+		return paths
+	}
+	own, err := featureTags(in(files))
+	if err != nil {
+		return Selection{}, err
+	}
+	converted, err := featureTags(in(Converted))
+	if err != nil {
+		return Selection{}, err
 	}
 	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
 	if err != nil {
-		return "", nil, err
+		return Selection{}, err
 	}
 	everyTag, err := featureTags(all)
 	if err != nil {
-		return "", nil, err
+		return Selection{}, err
 	}
+	var sel Selection
+	var each []string
+	matched := false
 	for _, tag := range everyTag {
-		if pattern.MatchString(tag) && !slices.Contains(tags, tag) {
-			unconverted = append(unconverted, tag)
+		if !pattern.MatchString(tag) {
+			continue
 		}
+		switch {
+		case slices.Contains(own, tag):
+			each = append(each, tag+"&&~@wip&&~"+skip)
+		case slices.Contains(converted, tag):
+			sel.Unmoved = append(sel.Unmoved, tag)
+		default:
+			sel.Unconverted = append(sel.Unconverted, tag)
+			continue
+		}
+		matched = true
 	}
-	if len(each) == 0 {
-		return "", unconverted, &noMatch{selection, unconverted}
+	if !matched {
+		return sel, &noMatch{selection, sel.Unconverted}
 	}
-	return strings.Join(each, ","), unconverted, nil
+	sel.Filter = strings.Join(each, ",")
+	return sel, nil
 }
 
+// noMatch is a selection matching no tag of a converted file, with the
+// tags it matches in files with no steps yet.
 type noMatch struct {
 	selection   string
 	unconverted []string

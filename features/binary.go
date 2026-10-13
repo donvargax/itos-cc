@@ -11,14 +11,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/cucumber/godog"
 )
 
 // binary is the driver that runs itos-cc as another process, the binary at
-// bin TestFeatures built from this tree, in folders of the system's
-// temporary directory, with the real git: what proves main's wiring, the
-// real adapters, exit codes and signals (decision 44).
+// bin TestFeatures built from this tree, the module at root, in folders of
+// the system's temporary directory, with the real git and the project's
+// own tools: what proves main's wiring, the real adapters, exit codes and
+// signals (decision 44).
 type binary struct {
-	bin string
+	bin, root string
 }
 
 var _ Driver = binary{}
@@ -70,6 +73,102 @@ func (binary) Git(dir string, args ...string) error {
 		return fmt.Errorf("git %s: %v\n%s", strings.Join(args, " "), err, out)
 	}
 	return nil
+}
+
+// The real TypeScript and Python tools a scenario declares (Coverage) are
+// the ones CI installs, pinned, on ubuntu-latest alone (T-13): Node's from
+// testdata/tools/node with npm ci, Python's from
+// testdata/tools/python/requirements.txt. Elsewhere a scenario that needs
+// one skips, naming it, as cmd/itos-cc's languageTools does.
+const (
+	// languageToolsEnv, set by the job that installed the pinned tools,
+	// turns a missing tool into a failure, so a broken install is never a
+	// skip.
+	languageToolsEnv = "ITOS_CC_LANGUAGE_TOOLS"
+	// nodeModulesEnv names a node_modules that holds vitest and
+	// @vitest/coverage-v8.
+	nodeModulesEnv = "ITOS_CC_NODE_MODULES"
+)
+
+// Coverage checks the tools c's language measures with are installed, and
+// for TypeScript links into dir the node_modules holding vitest and
+// @vitest/coverage-v8: the one ITOS_CC_NODE_MODULES names, else
+// testdata/tools/node's, else the viewer's. Go needs only go; TypeScript
+// node; Python python3 with pytest and coverage importable. A tool missing
+// skips the scenario, or fails it under ITOS_CC_LANGUAGE_TOOLS. A CI job
+// that did not install the pinned tools skips a scenario needing node or
+// python: its runner's preinstalled ones are whatever version its image has.
+func (b binary) Coverage(dir string, c Coverage) error {
+	required := os.Getenv(languageToolsEnv) != ""
+	missing := func(what string) error {
+		if required {
+			return fmt.Errorf("%s is not installed, and %s says the language tools are", what, languageToolsEnv)
+		}
+		return fmt.Errorf("%w: %s is not installed", godog.ErrSkip, what)
+	}
+	if c.Language != "go" && !required && os.Getenv("CI") != "" {
+		return fmt.Errorf("%w: CI installs the %s tools on ubuntu-latest only, where it sets %s", godog.ErrSkip, c.Language, languageToolsEnv)
+	}
+	switch c.Language {
+	case "go":
+		if _, err := exec.LookPath("go"); err != nil {
+			return missing("go")
+		}
+	case "typescript":
+		if _, err := exec.LookPath("node"); err != nil {
+			return missing("node")
+		}
+		modules := b.nodeModules()
+		if modules == "" {
+			return missing("vitest with @vitest/coverage-v8 (npm ci in testdata/tools/node, or " + nodeModulesEnv + ")")
+		}
+		if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
+			if required {
+				return err
+			}
+			return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
+		}
+	case "python":
+		if _, err := exec.LookPath("python3"); err != nil {
+			return missing("python3")
+		}
+		for _, module := range []string{"pytest", "coverage"} {
+			if exec.Command("python3", "-c", "import "+module).Run() != nil {
+				return missing(module + " for python3")
+			}
+		}
+	default:
+		return fmt.Errorf("no tools known for %s", c.Language)
+	}
+	return nil
+}
+
+// nodeModules is the absolute node_modules holding vitest and
+// @vitest/coverage-v8 that Coverage links, "" when there is none.
+func (b binary) nodeModules() string {
+	candidates := []string{
+		filepath.Join(b.root, "testdata", "tools", "node", "node_modules"),
+		filepath.Join(b.root, "viewer", "node_modules"),
+	}
+	if dir := os.Getenv(nodeModulesEnv); dir != "" {
+		candidates = []string{dir}
+	}
+	for _, dir := range candidates {
+		dir, err := filepath.Abs(dir)
+		if err != nil {
+			continue
+		}
+		if installed(dir, "vitest") && installed(dir, "@vitest/coverage-v8") {
+			return dir
+		}
+	}
+	return ""
+}
+
+// installed says whether modules holds the package name.
+func installed(modules, name string) bool {
+	_, err := os.Stat(filepath.Join(modules, filepath.FromSlash(name), "package.json"))
+	return err == nil
 }
 
 // Run runs the binary with r's arguments in r's folder, in the scenarios'

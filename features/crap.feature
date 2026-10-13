@@ -17,7 +17,9 @@ Feature: CRAP scores
       | 10 | 50       | 22.5  |
       | 10 | 0        | 110.0 |
 
-  @ID-CRAP-02
+  # Binary-only for good: which commands the runner picks and where their
+  # output goes are the coverage tools' adapter's, held against the real tools.
+  @ID-CRAP-02 @binary-only
   Scenario: Scoring a project runs its tests with coverage first
     Given a project with tests
     When I run "itos-cc crap"
@@ -104,15 +106,15 @@ Feature: CRAP scores
     Given a project whose <problem>
     When I run "itos-cc crap --threshold 30"
     Then its functions show "N/A"
-    And the problem is "<rule>", with dir and language
+    And the problem is "<rule>", with <names>
     And the exit code is <code>
 
     Examples:
-      | problem                                         | rule                       | code |
-      | tests do not compile                            | coverage.measured-nothing  | 1    |
-      | coverage tool is not installed                  | coverage.tool-missing      | 3    |
-      | report is missing, with --use-existing-coverage | coverage.no-report         | 3    |
-      | --coverage-report cannot be read                | coverage.report-unreadable | 2    |
+      | problem                                         | rule                       | names            | code |
+      | tests do not compile                            | coverage.measured-nothing  | dir and language | 1    |
+      | coverage tool is not installed                  | coverage.tool-missing      | dir and language | 3    |
+      | report is missing, with --use-existing-coverage | coverage.no-report         | dir and language | 3    |
+      | --coverage-report cannot be read                | coverage.report-unreadable | report           | 2    |
     # N/A is not 0%: a broken test setup is not untested code, but it must
     # not pass the gate
 

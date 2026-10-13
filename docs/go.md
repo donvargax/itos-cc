@@ -314,16 +314,21 @@ follows the same steps for a command it wrote before it had the template's desig
    its arguments for the usage line) and its `Contract`, in the layout the hand-parsed
    commands print through the same `Page`. The help flag's text is set in `parserOf`. Help
    for `<command> --help` and `help <command>` both go through `movedHelp`.
-8. **Its scenarios run through godog.** Convert the command's feature file: its steps in
-   `features/<file>.go`, registered from `Initialize` in `steps.go`, reaching the world only
-   through its `Driver` and reading only what itos-cc prints and writes, and the file added to
-   `Converted` in `steps.go`. Its scenarios then run through both drivers, the binary and
-   the in-process one (Tests, below), the moved command needing nothing more of the
-   in-process driver than the ports in `adapters`. A live
-   scenario's text never changes outside a `feat` or a `fix`; write the step for the
-   sentence as it stands, or stop and say which scenario cannot be run as written. Check
-   each step can fail: change an expectation in the file locally, see the step fail, and
-   restore it. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
+8. **Its scenarios run through godog.** Convert the command's feature file before the move,
+   so its scenarios hold it: its steps in `features/<file>.go`, registered from `Initialize`
+   in `steps.go`, reaching the world only through its `Driver` and reading only what itos-cc
+   prints and writes, and the file added to `Converted` in `steps.go`. The binary driver then
+   runs its scenarios (Tests, below); a Given whose run measures coverage with the project's
+   own tools declares them (`Driver.Coverage`), so the binary driver skips the scenario where
+   they are not installed. The move adds the file to `InProcess`, and its scenarios run
+   through the in-process driver too, the moved command needing nothing more of it than the
+   ports in `adapters`. Never tag a scenario `@binary-only` because its command has not
+   moved: the tag says the binary's for good, as for a scenario about the real tools' commands
+   (crap.feature's ID-CRAP-02). A live scenario's text never changes outside a `feat` or a
+   `fix`; write the step for the sentence as it stands, or stop and say which scenario cannot
+   be run as written. Check each step can fail: change an expectation in the file locally,
+   see the step fail, and restore it, and for a sentence with no value to change, change the
+   step's check. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
    step instead of being logged as not run.
 9. **The proof comes once, after the whole refactor.** A move does not compare binaries on
    its own: its scenarios and tests hold it. Once every command has moved, one task builds
@@ -379,10 +384,11 @@ key; reading standard input, and stopping when the context is done, is `internal
 held by its own tests.
 
 The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
-of package `features` behind its `Driver`. `features`' `TestFeatures` runs them against the
-built binary (`binary.go`), which proves main's wiring, the real adapters, exit codes and
-signals, interrupting it once it waits on an open standard input to show the 130 exit.
-`cmd/itos-cc`'s `TestScenarios` runs them in process: its driver, a `_test.go`, holds every
+of package `features` behind its `Driver`. `features`' `TestFeatures` runs every converted
+file against the built binary (`binary.go`), which proves main's wiring, the real adapters and
+tools, exit codes and signals, interrupting it once it waits on an open standard input to show
+the 130 exit. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
+(`InProcess`) in process, a selection naming only scenarios of the others running nothing there: its driver, a `_test.go`, holds every
 folder and file in memory with a fake git (init, add and commit; `--changed` is what differs
 from the last commit, and every file before one), and each run calls `run` with buffers and
 porttest's fakes built from that memory, `TreeOf`, lang's `Surroundings`, snapshot's `Store`

@@ -66,12 +66,16 @@ commits:
 # TestFeatures against the binary built from this tree (features/README.md),
 # as itos-policy.yaml, the template's config, does, and cmd/itos-cc's
 # TestScenarios in process against the ports' fakes, so every run holds each
-# scenario both ways but those tagged @binary-only or @in-process-only.
-# -scenarios= is a regular expression over the scenarios' tags, which each
-# harness turns into godog's tag filter, as godog's own takes only exact
-# tags. The harnesses run only the feature files converted to godog (q-52,
-# T-32): a scenario of another, the smoke set's included, is logged as not
-# run there, its Go tests in cmd/itos-cc holding it until its command moves.
+# scenario of a moved command both ways but those tagged @binary-only or
+# @in-process-only. -scenarios= is a regular expression over the scenarios'
+# tags, which each harness turns into godog's tag filter, as godog's own
+# takes only exact tags. The harnesses run only the feature files converted
+# to godog (q-52, T-32): a scenario of another, the smoke set's included, is
+# logged as not run there, its Go tests in cmd/itos-cc holding it until its
+# command moves. A converted file whose command has not moved, crap's
+# (T-60), runs through TestFeatures alone; TestScenarios logs its scenarios
+# as binary driver only until the move, and passes when it is all a
+# selection names.
 tests:
   scenario:
     adapter: gherkin
