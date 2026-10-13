@@ -137,8 +137,50 @@ func (b binary) Coverage(dir string, c Coverage) error {
 				return missing(module + " for python3")
 			}
 		}
+		if c.Venv {
+			if err := venv(dir, required); err != nil {
+				return err
+			}
+		}
 	default:
 		return fmt.Errorf("no tools known for %s", c.Language)
+	}
+	if c.Program != "" {
+		if _, err := exec.LookPath(c.Program); err != nil {
+			return missing(c.Program)
+		}
+	}
+	return nil
+}
+
+// venv links python3 into dir as .venv/bin/python, the project's own
+// virtualenv's python, with python3's pytest and coverage.
+func venv(dir string, required bool) error {
+	python, err := exec.LookPath("python3")
+	if err == nil {
+		python, err = filepath.Abs(python)
+	}
+	link := filepath.Join(dir, ".venv", "bin", "python")
+	if err == nil {
+		err = os.MkdirAll(filepath.Dir(link), 0o755)
+	}
+	if err != nil {
+		return err
+	}
+	if err := os.Symlink(python, link); err != nil {
+		if required {
+			return err
+		}
+		return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
+	}
+	return nil
+}
+
+// Link makes path a symbolic link to target, skipping the scenario where
+// the system makes none.
+func (binary) Link(target, path string) error {
+	if err := os.Symlink(target, path); err != nil {
+		return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
 	}
 	return nil
 }
@@ -172,11 +214,15 @@ func installed(modules, name string) bool {
 }
 
 // Run runs the binary with r's arguments in r's folder, in the scenarios'
-// environment with r's variables set, reading r's standard input.
+// environment with r's variables set and the programs r leaves out off its
+// PATH, reading r's standard input.
 func (b binary) Run(r Run) (Result, error) {
 	cmd := exec.Command(b.bin, r.Args...)
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
+	if len(r.Without) > 0 {
+		cmd.Env = setEnv(cmd.Env, "PATH", pathHiding(append(slices.Clone(hiddenAlways), r.Without...)...))
+	}
 	if r.Stdin != "" {
 		cmd.Stdin = strings.NewReader(r.Stdin)
 	}

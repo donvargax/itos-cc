@@ -55,6 +55,10 @@ type Driver interface {
 	// node_modules into dir for TypeScript; the in-process driver records
 	// it. A folder with no Coverage declared has no tools that measure it.
 	Coverage(dir string, c Coverage) error
+	// Link makes path a symbolic link to target, a folder or a file that
+	// is there. The binary driver skips the scenario (godog.ErrSkip) where
+	// the system lets it make none; the in-process driver makes none.
+	Link(target, path string) error
 }
 
 // Coverage is what a project's own tools measure in a folder, as a Given
@@ -68,16 +72,27 @@ type Coverage struct {
 	// place of running the tools once the command measuring it moves
 	// (T-67). "" when it writes none, as when the tests do not compile.
 	Report string
+	// Venv is whether the Python project keeps its own virtualenv in
+	// .venv, whose python is the one with pytest and coverage: the binary
+	// driver links python3 there.
+	Venv bool
+	// Program is a program the project's coverage runs besides the
+	// language's tools, such as make for a Makefile's cover target; ""
+	// for none.
+	Program string
 }
 
 // Run is one run of itos-cc: the folder it runs in, the variables the
 // scenario sets in its environment as NAME=value, the text of its standard
-// input, "" for none, and its arguments.
+// input, "" for none, its arguments, and the programs it finds on no
+// folder of the PATH, so a command naming one never runs, as Gradle and
+// Maven for a scenario that only reads which of them itos-cc chose.
 type Run struct {
-	Dir   string
-	Env   []string
-	Stdin string
-	Args  []string
+	Dir     string
+	Env     []string
+	Stdin   string
+	Args    []string
+	Without []string
 }
 
 // Result is what a run of itos-cc did: its exit code and its output.
@@ -99,19 +114,19 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // Converted are the feature files the steps run, those whose scenarios
 // have steps: count.feature, the template's sample, every scenario of it
 // @wip (T-26), units.feature, the first command moved onto kong (T-32),
-// dry.feature and scrap.feature, and crap.feature and complexity.feature,
-// each converted before its command moves so the move is held by its
-// scenarios (T-37, T-41, T-60). A file converts with its scenarios' text
-// unchanged (q-52); the binary driver runs every one.
+// dry.feature and scrap.feature, and crap.feature, complexity.feature and
+// coverage.feature, each converted before its command moves so the move is
+// held by its scenarios (T-37, T-41, T-60, T-61). A file converts with its
+// scenarios' text unchanged (q-52); the binary driver runs every one.
 var Converted = []string{
 	"count.feature", "units.feature", "dry.feature", "scrap.feature",
-	"crap.feature", "complexity.feature",
+	"crap.feature", "complexity.feature", "coverage.feature",
 }
 
 // InProcess are the converted files the in-process driver runs: those of
 // the commands moved onto kong, which run against the ports' fakes. A file
-// joins it in the task that moves its command (crap's files in T-67); until
-// then the binary driver alone runs its scenarios.
+// joins it in the task that moves its command (crap's and coverage's files
+// in T-67); until then the binary driver alone runs its scenarios.
 var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
@@ -145,6 +160,11 @@ type world struct {
 	stdout, stderr string
 
 	stdin string // the text the run reads from its standard input, "" for none
+	// without are the programs a Given leaves off every run's PATH.
+	without []string
+	// wrote is the source "the <language> function:" wrote, slash-separated
+	// from the scratch folder, which coverage.feature's steps measure too.
+	wrote string
 
 	// last is the last run of itos-cc, which the problem steps run again
 	// with --json when it was run without, nil before one.
@@ -325,11 +345,12 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	scrapSteps(sc, w)
 	crapSteps(sc, w)
 	complexitySteps(sc, w)
+	coverageSteps(sc, w)
 }
 
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
-	w.last, w.problem = nil, nil
+	w.last, w.problem, w.without, w.wrote = nil, nil, nil, ""
 	w.feature, w.scored, w.with, w.project = filepath.Base(s.Uri), nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
@@ -431,7 +452,7 @@ func (w *world) runEnv(dir string, env []string, args ...string) error {
 // sets, reading the scenario's standard input, and gives its exit code and
 // output.
 func (w *world) capture(dir string, env []string, args ...string) (code int, stdout, stderr string, err error) {
-	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args})
+	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without})
 	return result.Exit, result.Stdout, result.Stderr, err
 }
 

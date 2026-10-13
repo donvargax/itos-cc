@@ -19,11 +19,12 @@ Never here:
 
 ## Black-box boundary
 
-The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go` and `complexity.go`, Go, run by
-[godog](https://github.com/cucumber/godog)) treat itos-cc as a black box. They reach the world
-only through a `Driver` (`steps.go`): a fresh folder, files written and read, git, runs of
-itos-cc with a folder, environment, stdin and arguments, and what a project's own coverage tools
-measure in a folder (`Coverage`), which a Given declares before a run measures with them. They are ordinary files of package
+The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go` and
+`coverage.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
+read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
+and programs left off the PATH (`Run.Without`), and what a project's own coverage tools measure
+in a folder (`Coverage`), which a Given declares before a run measures with them. They are ordinary files of package
 `features`, so `cmd/itos-cc`'s tests can run them in process against the ports' fakes (decision
 44); `itos-cc.yaml` excludes `features/**`, so they are neither measured nor mutated.
 Two drivers run them, one scenario at a time each: `cmd/itos-cc`'s `TestScenarios` in process,
@@ -50,11 +51,15 @@ binary with `-cover` and collects what each run did, for itos-cc to merge with `
 A Given that declares a project's coverage tools (`Coverage`) needs them installed for the binary
 driver: Go needs `go`; TypeScript `node` and a `node_modules` holding vitest and
 `@vitest/coverage-v8`, `ITOS_CC_NODE_MODULES`'s, else `testdata/tools/node`'s, else the
-viewer's, linked into the project; Python `python3` with pytest and coverage. A tool missing skips
-the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
+viewer's, linked into the project; Python `python3` with pytest and coverage, linked into the
+project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); and a program the
+project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
 pinned tools sets; any other CI job skips the TypeScript and Python ones, its runner's tools being
 whatever its image has. The in-process driver records what was declared, for the fake measurer a
-command measuring coverage is handed once it moves.
+command measuring coverage is handed once it moves. A scenario that only reads which Gradle or
+Maven command itos-cc chose runs with `gradle` and `mvn` off the PATH, so neither runs anywhere;
+one that needs a symbolic link skips where the system makes none. The in-process driver refuses
+both, naming `@binary-only`.
 
 An interrupt is the binary driver's alone (`interrupt_test.go`), sent as each system delivers
 Ctrl-C, from one build-tagged file per system:
@@ -68,9 +73,9 @@ killed by the system's default action fails the step: it never handled the inter
 
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
-`complexity.feature`, and `count.feature`, the template's sample, all of whose scenarios are
-`@wip`. The in-process driver runs those of `InProcess`: all of them but `crap.feature` and
-`complexity.feature`, which join it when crap moves. Every other file converts to godog over time,
+`complexity.feature`, `coverage.feature`, and `count.feature`, the template's sample, all of whose
+scenarios are `@wip`. The in-process driver runs those of `InProcess`: all of them but
+`crap.feature`, `complexity.feature` and `coverage.feature`, which join it when crap moves. Every other file converts to godog over time,
 before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
 the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
 file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
@@ -88,7 +93,12 @@ test files in Python, TypeScript and Go, of four pressures. A `crap.feature` sce
 says When I run runs in a sample Go module, `board`, of 24 functions, `f01` to `f24`, each of
 complexity its number, the first four wholly covered by its test and the rest never run, so no two
 score the same, beside a Kotlin module in `kt/` built with Maven and no JaCoCo, which coverage
-cannot measure and no tool needs to be installed to show. Step patterns are global across the files, so each file's own setup is a
+cannot measure and no tool needs to be installed to show. A `coverage.feature` scenario that only
+says When I run, or that coverage is run, runs in a sample Go module, `example.com/m`, whose
+`a/a.go` its test covers and `b/b.go` no test runs, beside `a/lcov.info` and `b/coverage.out`, a
+person's reports of each, and a Makefile whose cover target writes `cover.out`, with a second
+module, `example.com/other`, in `other/`; each test writes `test-ran` in its folder when it runs.
+Step patterns are global across the files, so each file's own setup is a
 Before hook keyed on the scenario's file.
 
 ## Running them
@@ -304,3 +314,42 @@ fixture is checked against what crap scores.
 | `its complexity is measured` / `it is <n>`                                            | Its one function's complexity is n.                               |
 | `it is <n> in a <.ext> file too`                                                      | The same text in a file of that extension, n too.                |
 | `a Kotlin safe call a?.b counts like the elvis ?:`                                    | A function returning a?.length and one returning a ?: "x" each one more than one returning a. |
+
+`coverage.feature`'s steps, in `coverage.go`. A coverage command is one itos-cc announces on
+stderr, `itos-cc: coverage <dir>$ <command>`, its folder read from the scratch folder by its name,
+as the system may name it through another path. A report a Given writes by hand stands for what a
+tool writes, and what it gives a function is worked out from the pieces the step wrote: lines, Go
+blocks of their statements or JaCoCo lines of their instructions, and the decisions it records.
+Paths written from the root, `/p/…` or `/work/…`, are under the scratch folder; a run over sources
+named so goes from their first folder. A placeholder stands for an install no pinned tool set has
+(Jest, Vitest 4, Vitest without its provider, gradlew, a `.venv` python that cannot run), a file
+itos-cc finds and cannot run.
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `coverage runs "…"` / `…, without <flag>`                                             | A coverage command is the text, `...` any words or any text in a word; with no word beginning with the flag. |
+| `its coverage is the same as with the whole module's tests`                           | `crap --all-tests --json a/a.go`, over `./...`, gives a/a.go's functions what the run gave them. |
+| `I run "itos-cc …" in a Vitest or Jest project` / `coverage runs <tool> <words>, or <tool> <words>` | A Vitest project measured by the pinned tools; a command whose program is either tool, the words following it. |
+| `coverage runs the whole suite of each build root`                                    | One command in each build root of the sources named, every one go test over `./...`. |
+| `a <language> project whose build root holds <marker>` and its setups / `coverage is run (for it)` / `the command is …` | The project at the scratch folder; `itos-cc crap`; its commands, joined by ", then ", each holding the words, `<pm>` the package manager, "the installed <tool>" one from a node_modules/.bin, "writing LCOV" an LCOV reporter, "read from <path>" that report there, giving what the script wrote. |
+| `a TypeScript project in a workspace whose root declares "packageManager": "…"` / `<pm> is …` | packages/app with a coverage script, the manager off the PATH; the command running the script is the manager's. |
+| `… with its tools installed at the workspace root` / `vitest, jest, or c8 runs from the nearest node_modules/.bin` / `npx is never used, …` | The pinned node_modules at the root alone; the tool's folder is the nearest .bin holding it; no command runs npx. |
+| `a TypeScript project using …`, `a Python project whose python cannot import coverage`, `a Kotlin project built by Maven, …` / `nothing runs for it` / `stderr says what to install, or to use --coverage-command` / `only complexity is reported (for it)` | No command runs in the project; a line names its folder and the missing tool, saying to install or add it or to use --coverage-command; every function listed has a complexity and no coverage or score. |
+| `a Python project with a .venv directory` / `the .venv's python runs the tests`       | python3 linked as .venv/bin/python; the command starting with it runs pytest or unittest, measuring place. |
+| `a Kotlin Gradle module under a build root that holds gradlew` / `the gradlew wrapper is used instead of gradle` | The module's command is the root's gradlew; none is gradle. |
+| `a repository with a Go module and a TypeScript package` / `each build root runs its own coverage command` / `the reports are merged into one` | api/ and web/; each runs its language's command; the one run gives a function of each coverage. |
+| `a project whose tests fail but still write a coverage report` / `the failure is logged to stderr` / `the report is still used` | go test's FAIL and `itos-cc: coverage: go: exit status N`; Place has what the failing test ran. |
+| `reports are written under .metrics/coverage/` / `.metrics/coverage/.gitignore ignores everything in it` | Each command's report is in .metrics/coverage/; git ignores what is in it, and not .metrics/crap.json. |
+| `a Go project with a coverage.out from an earlier run` / `no tests are run` / `coverage is read from the first existing report for each build root` | Two modules, coverage.out before cover.out; no command and no test's mark; each function has its first report's coverage. |
+| `both reports are read, relative to the working directory` / `"…" runs through the platform shell` / `cover.out is read afterwards` | Each named report there gives its function its coverage; the command announced as a shell line and make's recipe echoed; cover.out, not in the sample, written and read. |
+| `a report file "…"` / `it is loaded` / `it is read as …` / `it has one entry for "…"` | A report of the format its name is usual for; crap --json over it; written in that format, its function given what it means; its one entry names the source, the one file scored. |
+| `a <format> report` / `the covered share of … is computed` / `each measured piece is weighted by …` / `a decision is …` | A function's pieces of different weights; crap --json over the reports written; the share by that weight; probe reports showing what decides. |
+| `a coverage.py LCOV report for:` / `the tests call pick(x) once` / `it is <n>%, <n> of its <n> branches` | pick.py and the LCOV coverage.py writes for that call; the decision's branches and the share. |
+| `a function whose lines hold no decision in the report` / `its coverage is the share of its lines or statements that ran` | LCOV and a Go profile with no decision; each function's share of its lines or statements. |
+| `an LCOV report from c8, …` / `it lists the function body as a block and leaves out the arm that ran` / `those one-branch blocks are ignored and its lines decide` | One-branch BRDA blocks; the share of the lines. |
+| The matching Givens / `it is matched to sources` / `it matches that source …`, `the paths still match` / `it matches neither source` | Sources and entries as written, a run of crap --json over a report of the entries for each case; each source has its entry's coverage, or none. |
+| `a report entry that matches no selected source` / `the report is built` / `that entry is ignored` | A test file's and a dependency's entries beside board.go's; the run lists board.go alone, with its coverage, and says nothing of them. |
+| `a module with packages …` / `a profile from go test -coverpkg=./..., …` / `it is <n>%, as go tool cover -func says` | Every block once per test binary; the share go tool cover's rule gives, and crap's. |
+| `two reports given with --coverage-report, …` / `each covers a line of a file the other does not` / `a line or block is covered when any report covered it` / `a decision counts the branches of the report that took the most` | F has the union of the lines, more than either; G the branches of the report that took most, fewer than both. |
+| `its coverage starts at line <n>, not at its first line <n>`                          | The function `the <language> function:` wrote starts on that line; a report running that line alone of all of its lines gives it one line's share of those from there. |
+| `stderr has a line "…" naming the command coverage runs` / `no line of stderr begins "…"` / `stderr has a line beginning "…" that gives the command's exit status` | The line, `<dir>` the build root of the sources named, its command's output after it; none so; one so ending in `exit status N`. |

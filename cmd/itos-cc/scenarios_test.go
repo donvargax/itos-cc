@@ -175,6 +175,12 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 	return nil
 }
 
+// Link makes no link: the memory holds no symbolic links, so a scenario
+// that needs one is the binary driver's.
+func (m *memory) Link(target, path string) error {
+	return fmt.Errorf("the in-process driver makes no symbolic link (%s to %s): tag the scenario %s", path, target, features.BinaryOnly)
+}
+
 // Git is the fake git in dir: init makes it a repository, add stages its
 // files, every one with -A or the paths named, and commit records what is
 // staged. Anything else fails, naming the tag of a scenario that needs the
@@ -233,6 +239,9 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	}
 	if len(r.Env) > 0 {
 		return features.Result{}, fmt.Errorf("the in-process driver sets no environment (%s): tag the scenario %s", strings.Join(r.Env, " "), features.BinaryOnly)
+	}
+	if len(r.Without) > 0 {
+		return features.Result{}, fmt.Errorf("the in-process driver has no PATH to leave %s off: tag the scenario %s", strings.Join(r.Without, " "), features.BinaryOnly)
 	}
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)

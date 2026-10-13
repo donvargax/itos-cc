@@ -64,7 +64,7 @@ func complexitySteps(sc *godog.ScenarioContext, w *world) {
 // writeSource writes source to name in the scratch folder, the file the
 // scenario measures.
 func (c *complexityState) writeSource(name, source string) error {
-	c.file, c.source = name, source
+	c.file, c.source, c.w.wrote = name, source, name
 	return c.w.write(name, source)
 }
 

@@ -73,9 +73,9 @@ commits:
 # to godog (q-52, T-32): a scenario of another, the smoke set's included, is
 # logged as not run there, its Go tests in cmd/itos-cc holding it until its
 # command moves. A converted file whose command has not moved, crap's
-# (T-60), runs through TestFeatures alone; TestScenarios logs its scenarios
-# as binary driver only until the move, and passes when it is all a
-# selection names.
+# (T-60) and coverage's (T-61), runs through TestFeatures alone;
+# TestScenarios logs its scenarios as binary driver only until the move,
+# and passes when it is all a selection names.
 tests:
   scenario:
     adapter: gherkin

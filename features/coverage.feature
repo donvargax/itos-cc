@@ -5,7 +5,7 @@ Feature: Coverage
 
   Rule: Chosen files run only the tests that load them
 
-    @ID-COV-01
+    @ID-COV-01 @binary-only
     Scenario: A Go file is measured by the tests that link its package
       Given a/a.go, tested by its own package and by e2e/e2e_test.go, which imports package a
       And slow/slow_test.go, which never loads package a
@@ -14,18 +14,18 @@ Feature: Coverage
       And its coverage is the same as with the whole module's tests
       # a test binary that does not link a package cannot cover it
 
-    @ID-COV-02
+    @ID-COV-02 @binary-only
     Scenario: A TypeScript file is measured by the tests that import it
       When I run "itos-cc crap src/board.ts" in a Vitest or Jest project
       Then coverage runs vitest related --run src/board.ts, or jest --findRelatedTests src/board.ts
 
-    @ID-COV-03
+    @ID-COV-03 @binary-only
     Scenario: mutation run measures a Go file by its own package's tests
       When I run "itos-cc mutation run a/a.go"
       Then coverage runs "go test ... -coverprofile=... example.com/m/a", without -coverpkg
       # the tests mutation run kills a/a.go's mutants with; see mutate.feature
 
-    @ID-COV-04
+    @ID-COV-04 @binary-only
     Scenario Outline: The whole suite
       When I run "itos-cc <command>"
       Then coverage runs the whole suite of each build root
@@ -39,7 +39,7 @@ Feature: Coverage
 
   Rule: Each build root gets the language's own coverage command
 
-    @ID-COV-05
+    @ID-COV-05 @binary-only
     Scenario Outline: Choosing the coverage command
       Given a <language> project whose build root holds <marker>
       And <setup>
@@ -59,21 +59,21 @@ Feature: Coverage
         | Kotlin     | build.gradle     | the build does not mention kover             | gradle test jacocoTestReport                                      |
         | Kotlin     | pom.xml          | it or a parent declares jacoco-maven-plugin  | mvn -q jacoco:prepare-agent test jacoco:report                    |
 
-    @ID-COV-06
+    @ID-COV-06 @binary-only
     Scenario: The project's own package manager runs its scripts
       Given a TypeScript project in a workspace whose root declares "packageManager": "pnpm@9.12.0"
       When coverage is run for it
       Then <pm> is pnpm
       # otherwise the nearest lockfile decides (pnpm, yarn, bun, npm), and npm when there is none
 
-    @ID-COV-07
+    @ID-COV-07 @binary-only
     Scenario: Node tools come from node_modules, never from the registry
       Given a TypeScript project in a workspace, with its tools installed at the workspace root
       When coverage is run for it
       Then vitest, jest, or c8 runs from the nearest node_modules/.bin
       And npx is never used, so nothing that the project's lockfile does not pin is downloaded
 
-    @ID-COV-08
+    @ID-COV-08 @binary-only
     Scenario Outline: A tool that is not installed is not fetched
       Given a <language> project <missing>
       When coverage is run for it
@@ -91,7 +91,7 @@ Feature: Coverage
         | Kotlin     | built by Maven, with no pom.xml declaring jacoco-maven-plugin |
       # the user makes the tool available; itos-cc never installs or downloads it
 
-    @ID-COV-09
+    @ID-COV-09 @binary-only
     Scenario: Only the current Vitest major is supported
       Given a TypeScript project using vitest 4.1.11
       When coverage is run for it
@@ -100,33 +100,33 @@ Feature: Coverage
       And only complexity is reported for it
       # older Vitest writes V8 blocks, not branches; Jest's istanbul branches are the same in every version
 
-    @ID-COV-10
+    @ID-COV-10 @binary-only
     Scenario: Python uses the project's own virtualenv
       Given a Python project with a .venv directory
       When coverage is run for it
       Then the .venv's python runs the tests
 
-    @ID-COV-11
+    @ID-COV-11 @binary-only
     Scenario: A Gradle wrapper is preferred
       Given a Kotlin Gradle module under a build root that holds gradlew
       When coverage is run for it
       Then the gradlew wrapper is used instead of gradle
 
-    @ID-COV-12
+    @ID-COV-12 @binary-only
     Scenario: Several build roots and languages are measured separately and merged
       Given a repository with a Go module and a TypeScript package
       When coverage is run
       Then each build root runs its own coverage command
       And the reports are merged into one
 
-    @ID-COV-13
+    @ID-COV-13 @binary-only
     Scenario: Failing tests still contribute coverage
       Given a project whose tests fail but still write a coverage report
       When coverage is run
       Then the failure is logged to stderr
       And the report is still used
 
-    @ID-COV-14
+    @ID-COV-14 @binary-only
     Scenario: Raw reports stay out of version control
       When coverage is run
       Then reports are written under .metrics/coverage/
@@ -134,7 +134,7 @@ Feature: Coverage
 
   Rule: The user can bring their own coverage
 
-    @ID-COV-15
+    @ID-COV-15 @binary-only
     Scenario: Reading reports already on disk
       Given a Go project with a coverage.out from an earlier run
       When I run "itos-cc crap --use-existing-coverage"
@@ -146,7 +146,7 @@ Feature: Coverage
       When I run "itos-cc crap --coverage-report a/lcov.info --coverage-report b/coverage.out"
       Then both reports are read, relative to the working directory
 
-    @ID-COV-17
+    @ID-COV-17 @binary-only
     Scenario: Running a custom coverage command
       When I run "itos-cc crap --coverage-command 'make cover' --coverage-report cover.out"
       Then "make cover" runs through the platform shell
@@ -264,7 +264,7 @@ Feature: Coverage
       Then it matches neither source
       # its longest tail that exists, graph/metrics.go, is not a source
 
-    @ID-COV-30
+    @ID-COV-30 @binary-only
     Scenario: A symlinked directory still matches
       Given a source reached through a symlinked directory
       And a report entry that names the same file by the symlink's target
@@ -349,13 +349,13 @@ Feature: Coverage
   # - The output of the coverage commands themselves is passed on as it is.
   Rule: What itos-cc says while it measures
 
-    @coverage-prefix @ID-COV-38
+    @coverage-prefix @ID-COV-38 @binary-only
     Scenario: The coverage command is announced as itos-cc's
       When I run "itos-cc crap a/a.go"
       Then stderr has a line "itos-cc: coverage <dir>$ go test …" naming the command coverage runs
       And no line of stderr begins "coverage:"
 
-    @coverage-prefix @ID-COV-39
+    @coverage-prefix @ID-COV-39 @binary-only
     Scenario: A coverage command that fails is reported as itos-cc's
       Given a test of a/a.go fails
       When I run "itos-cc crap a/a.go"
