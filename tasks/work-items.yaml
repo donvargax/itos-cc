@@ -2685,3 +2685,15 @@ items:
     status: dropped
     depends_on: []
     kind: idea
+  - id: coverage-executable-value
+    title: The coverage adapter carries the executable go test runs test binaries through, not a global cmd's init sets
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      coverage.Executable is a package global main's init sets (cmd/itos-cc/main.go), which the
+      runner reads for every Go plan. With the runner behind internal/coveragetools (T-66), the
+      adapter could carry it as a field main gives it, as it carries its Log, so nothing below main
+      holds process-wide state and a test names the executable it measures with.
