@@ -49,5 +49,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0044: Scenarios run in process against the ports' fakes and against the built binary](0044-scenarios-run-in-process-against-the-ports-fakes-and-against-the-built-binary.md)
 - [ADR-0045: itos-cc.yaml's exclude leaves sources out of what is measured and mutated](0045-itos-cc-yaml-s-exclude-leaves-sources-out-of-what-is-measured-and-mutated.md)
 - [ADR-0046: Coverage splits into a pure domain and a port whose adapter runs the test tools](0046-coverage-splits-into-a-pure-domain-and-a-port-whose-adapter-runs-the-test-tools.md)
+- [ADR-0047: Adapters may import the domain they serve; nothing outside the domain is imported into it](0047-adapters-may-import-the-domain-they-serve-nothing-outside-the-domain-is-imported-into-it.md)
 
 <!-- itos:decisions:end -->
