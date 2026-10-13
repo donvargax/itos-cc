@@ -342,11 +342,7 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 		return context.Cause(ctx)
 	}
 	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", dir, line)
-	name, flag := "sh", "-c"
-	if runtime.GOOS == "windows" {
-		name, flag = "cmd", "/C"
-	}
-	cmd := exec.Command(name, flag, line)
+	cmd := shellCommand(line)
 	cmd.Dir = dir
 	cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
 	var out bytes.Buffer
@@ -354,4 +350,24 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 	err := cmd.Run()
 	log.Write(out.Bytes())
 	return err
+}
+
+// Shell runs line, a person's command line such as --coverage-command,
+// through the platform shell in the working directory, with its output
+// written to log.
+func Shell(line string, log io.Writer) error {
+	cmd := shellCommand(line)
+	cmd.Stdout = log
+	cmd.Stderr = log
+	return cmd.Run()
+}
+
+// shellCommand is line run through the platform shell: sh, or cmd on
+// Windows.
+func shellCommand(line string) *exec.Cmd {
+	name, flag := "sh", "-c"
+	if runtime.GOOS == "windows" {
+		name, flag = "cmd", "/C"
+	}
+	return exec.Command(name, flag, line)
 }

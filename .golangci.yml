@@ -27,7 +27,8 @@ linters:
     # tools/bin/architecture-check proves these with compile-valid fixtures.
     # The arrows are decision 29's: the domain and its ports reach the outside
     # only through adapters implementing the ports, an adapter imports
-    # nothing of ours but the ports, a slice imports no other slice, the UI
+    # nothing of ours but the ports and, as decision 47 amends it, the
+    # domain it serves, a slice imports no other slice, the UI
     # imports nothing of ours (q-54), and kong stays in cmd and internal/cli. Each desc tells the reader of a refusal
     # what it means and, where a new package caused it, to extend the rules
     # as docs/go.md's Adding a package says rather than loosen them.
@@ -134,6 +135,7 @@ linters:
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
+            - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -179,6 +181,7 @@ linters:
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
+            - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -206,7 +209,8 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "internal/cli imports nothing of ours (q-54): turn a domain's failures into problems in a classifier beside its slice, which cmd hands the UI; never loosen this one"
         # An adapter implements the ports and imports nothing of ours but
-        # them: not the domain, another adapter, a slice, the UI or porttest's
+        # them and, once its rule allows it (decision 47), the domain it
+        # serves: not another domain, another adapter, a slice, the UI or porttest's
         # fakes, which its tests alone may use. Each adapter is listed, and
         # excluded from the slices above. cmd hands internal/stdin the disk
         # adapter as its fallback. An adapter of another port has a rule of
@@ -255,6 +259,27 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the metricsdir adapter imports nothing of ours but the snapshot port and metrics and project, which it wraps (decision 41); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # internal/coveragetools implements the coverage port over coverage,
+        # the top-level runner of each language's tools, its process groups
+        # and run folders, and metrics, which says where .metrics/ is for
+        # them (decision 46). It returns the coverage domain's Report, so,
+        # as decision 47 lets an adapter, it imports the domain it serves,
+        # with no mapper between the two; nothing of it reaches the domain,
+        # whose rules refuse every adapter. That domain, its port, the runner
+        # and metrics are allowed here, and no other package of ours.
+        coveragetools:
+          list-mode: lax
+          files:
+            - "**/internal/coveragetools/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/coverage$
+            - github.com/donvargax/itos-cc/internal/coverage/port$
+            - github.com/donvargax/itos-cc/coverage$
+            - github.com/donvargax/itos-cc/metrics$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the coveragetools adapter imports nothing of ours but the coverage domain it serves (decision 47), its port, and coverage and metrics, which it wraps (decision 46); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         mocks:
           files:
             - $all
