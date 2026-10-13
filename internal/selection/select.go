@@ -1,7 +1,8 @@
 // Package selection owns how a command chooses its files: the paths it is
 // given, fragments of a path, the files git reports as changed, and the
-// sources the project's settings exclude. It reaches the working tree only
-// through its port.
+// sources the project's settings exclude, and how it parses a file it
+// chose. It reaches the working tree only through its port, and what
+// surrounds a file only through lang's.
 package selection
 
 import (

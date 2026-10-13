@@ -25,6 +25,9 @@ from it, and thin slices named for their commands.
   directory, `--changed` adding git's changed files, and no paths meaning the whole working
   directory. `Select(ctx, tree, paths, changed, exclude)` reads the tree only through its port,
   then leaves out the sources `exclude` names, never a test, counting them in `Files.Excluded`.
+  `Parse(ctx, tree, around, path)` is a selected file parsed, the one copy every command that
+  measures what it selects uses (T-63): a language `internal/lang` does not know is refused
+  before the read, then the tree reads it and lang parses it through its `Surroundings` port.
   `Exclusion{Root, Globs}` is itos-cc.yaml's `exclude` as a value, which cmd and the slices'
   handlers are given, read at the edge: `Excludes(path)` matches a path's slash form from
   `Root` against the doublestar globs, by `filepath.Rel` alone, no I/O.
@@ -99,20 +102,19 @@ from it, and thin slices named for their commands.
 - `internal/units` is the `units` command's slice, the first of itos-cc's own commands moved
   onto kong (T-32), laid out as `count`'s: its kong struct `CLI` with its `Contract` for the
   help, its `Query`, and `Handler.Handle(ctx, q)`, which selects the files through the
-  selection domain, reads each through the same `Tree` port and names its units with
-  `internal/lang`, through the `Surroundings` port its handler is given, its `Exclude` the
-  sources the selection leaves out. `Run` prints them,
-  their paths from the working directory (`UI.Rel`). It has no classifier: its failures are the
+  selection domain, parses each with the domain's `Parse`, read through the same `Tree` port
+  and named by `internal/lang` through the `Surroundings` port its handler is given, its
+  `Exclude` the sources the selection leaves out. `Run` prints them, their paths from the
+  working directory (`UI.Rel`). It has no classifier: its failures are the
   selection domain's, whose classifier is cmd's, or `internal/lang`'s, internal ones.
 - `internal/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first moved
   command with number flags. Its `Handler` holds the selection `Tree`, lang's `Surroundings`,
   the snapshot `Store` and `Name`, the name a person reads a file by, which cmd binds to
   `UI.Rel`, and `Exclude`, the sources both selections leave out. `Handle` selects the
   sources, and with paths or `--changed` checks them against every source the selection finds
-  under the working directory; it reads each through the
-  `Tree`, parses it with `internal/lang`, hands it to `internal/duplication` under its `Name`,
-  and records `dry.json` through the `Store`, each file named from the root
-  (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
+  under the working directory; it parses each with the selection domain's `Parse`, hands it
+  to `internal/duplication` under its `Name`, and records `dry.json` through the `Store`, each
+  file named from the root (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
   domains', whose classifiers are cmd's, or `internal/lang`'s, internal ones.
 - `internal/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, its `Handler`
   holding the same four. `Handle` selects the test files, reads the last `scrap.json` through
@@ -121,7 +123,9 @@ from it, and thin slices named for their commands.
   the last snapshot with the domain's `History` and records it, each file keyed from the root.
   `Run` prints each file's report, and says on stderr, with `--json` too, when the last
   snapshot was ignored or there was no test file to measure. It has no classifier.
-- `internal/cli` is the UI every slice shares, and imports nothing of ours. It alone turns a
+- `internal/cli` is the UI every slice shares, and imports nothing of ours. Its `Selection`,
+  `--changed` and the path arguments, is the command line every command selects its files by,
+  embedded first in each slice's kong struct (T-63). It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
   plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
   reach it through that domain's classifier, which cmd hands it. For the commands kong parses
@@ -240,9 +244,10 @@ exiting with the same codes as before: a refactor, no behaviour change. `units` 
 follows the same steps for a command it wrote before it had the template's design.
 
 1. **The slice.** Make `internal/<command>/<command>.go`, as `internal/units` is laid out:
-   - `CLI`, the kong struct: one field per flag, in the order help lists them, each with its
-     `help` tag; `JSON bool` named `json`; the arguments last
-     (`arg:"" optional:"" name:"path"`). Its tags need no import of kong.
+   - `CLI`, the kong struct: `cli.Selection` embedded first when the command selects files,
+     giving it `--changed` and the path arguments, then one field per flag of its own, in the
+     order help lists them, each with its `help` tag; `JSON bool` named `json`; any other
+     arguments last (`arg:""`). Its tags need no import of kong.
    - `Contract() cli.Contract`: what the help says beyond the flags, its `About`, the keys
      `--json` adds, its problem rules, its exit codes and examples, copied from the old
      `command` value word for word.

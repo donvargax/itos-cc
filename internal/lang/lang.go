@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unsafe"
 
@@ -297,6 +298,16 @@ func (f *File) Close() {
 	}
 }
 
+// Detached is a copy of f's units without their nodes, so they stay valid
+// once f is closed, as a command that lists them keeps them.
+func (f *File) Detached() []Unit {
+	units := slices.Clone(f.Units)
+	for i := range units {
+		units[i].Node = nil
+	}
+	return units
+}
+
 // Parse parses src as spec's language. path names the file and decides its
 // namespace; it does not have to exist unless the language names a file by
 // a project file such as go.mod, which it asks around about. Parse reads
@@ -353,11 +364,7 @@ func UnitsOf(ctx context.Context, around port.Surroundings, path string, src []b
 		return nil, err
 	}
 	defer f.Close()
-	units := f.Units
-	for i := range units {
-		units[i].Node = nil
-	}
-	return units, nil
+	return f.Detached(), nil
 }
 
 type walker struct {

@@ -189,7 +189,7 @@ func TestRunSaysOnStderrWhatItSkipped(t *testing.T) {
 	if code != 0 || stderr != "itos-cc: ignoring unreadable .metrics/scrap.json: unexpected end of JSON input\n" || !strings.Contains(stdout, `"file": "cart.test.ts"`) {
 		t.Errorf("exit %d, stdout\n%s\nstderr %q", code, stdout, stderr)
 	}
-	code, stdout, stderr = run(t, CLI{JSON: true, Paths: []string{at("src/cart.ts")}}, handler(tree(), store("")))
+	code, stdout, stderr = run(t, CLI{Selection: cli.Selection{Paths: []string{at("src/cart.ts")}}, JSON: true}, handler(tree(), store("")))
 	if code != 0 || stderr != "itos-cc: no test files to measure\n" || !strings.Contains(stdout, `"files": []`) {
 		t.Errorf("no tests: exit %d, stdout\n%s\nstderr %q", code, stdout, stderr)
 	}

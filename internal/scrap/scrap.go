@@ -4,15 +4,15 @@
 // Run assembles the Query from the command line, the one copy of a command
 // line's values, and hands it to Handle with the context cmd made. Handle
 // only wires: the selection domain chooses the test files through the Tree
-// port it was given, the same port reads each one, lang parses it, asking
-// the Surroundings port it was given what surrounds it, and the
-// teststructure domain measures it and merges the run into the last
-// snapshot, which the snapshot domain names from the project root and its
-// Store port reads and records. Run writes what came back, each file named
-// from the working directory. The slice reads no file itself. A failure is
-// the selection domain's or the snapshot domain's, which cmd's classifiers
-// turn into problems, or lang's, an internal one; Run reports it through
-// the UI. It has no classifier of its own.
+// port it was given and parses each one, read through the same port and
+// parsed by lang, asking the Surroundings port it was given what surrounds
+// it, and the teststructure domain measures it and merges the run into the
+// last snapshot, which the snapshot domain names from the project root and
+// its Store port reads and records. Run writes what came back, each file
+// named from the working directory. The slice reads no file itself. A
+// failure is the selection domain's or the snapshot domain's, which cmd's
+// classifiers turn into problems, or lang's, an internal one; Run reports
+// it through the UI. It has no classifier of its own.
 package scrap
 
 import (
@@ -23,7 +23,6 @@ import (
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/lang"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
@@ -33,13 +32,13 @@ import (
 )
 
 // CLI is the scrap command's command line: the files it selects, as every
-// command selects them, whether it prints every example's measurements,
-// and whether it prints lines or the one object a script reads.
+// command selects them (cli.Selection, first), whether it prints every
+// example's measurements, and whether it prints lines or the one object a
+// script reads.
 type CLI struct {
-	Changed bool     `help:"only files git reports as added or modified"`
-	Verbose bool     `help:"print every example's measurements"`
-	JSON    bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
-	Paths   []string `arg:"" optional:"" name:"path" help:"files, directories, or fragments of a path under the working directory"`
+	cli.Selection
+	Verbose bool `help:"print every example's measurements"`
+	JSON    bool `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
 // Contract is what scrap's help says beyond its flags: what it measures,
@@ -135,7 +134,7 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	history := teststructure.HistoryOf(previous.Files)
 	reports := []teststructure.FileReport{}
 	for _, path := range chosen.Tests {
-		f, err := h.parse(ctx, path)
+		f, err := selection.Parse(ctx, h.Tree, h.Surroundings, path)
 		if err != nil {
 			return Found{Ignored: found.Ignored}, err
 		}
@@ -152,21 +151,6 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	sort.SliceStable(reports, func(i, j int) bool { return reports[i].Pressure > reports[j].Pressure })
 	found.Reports = reports
 	return found, nil
-}
-
-// parse is the test file at path parsed: a language lang does not know is
-// refused before anything is read, then the tree reads it and lang parses
-// it, naming it through the handler's Surroundings.
-func (h Handler) parse(ctx context.Context, path string) (*lang.File, error) {
-	spec := lang.Detect(path)
-	if spec == nil {
-		return nil, fmt.Errorf("unsupported language: %s", path)
-	}
-	src, failure := h.Tree.Read(ctx, path)
-	if failure != nil {
-		return nil, failure
-	}
-	return lang.Parse(ctx, h.Surroundings, spec, path, src)
 }
 
 // recorded is scrap.json: the format version and each file's last report,

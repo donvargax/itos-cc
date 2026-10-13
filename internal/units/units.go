@@ -4,12 +4,12 @@
 // Run assembles the Query from the command line, the one copy of a command
 // line's values, and hands it to Handle with the context cmd made. Handle
 // only wires: the selection domain chooses the files through the Tree port
-// it was given, the same port reads each one, and lang names the units of
-// what was read, asking the Surroundings port it was given what surrounds
-// each file. Run writes what came back, its paths from the working
-// directory. The slice reads no file itself. A failure is the selection
-// domain's, which cmd's classifier for that domain turns into a problem, or
-// lang's, an internal one; Run reports it through the UI.
+// it was given and parses each one, read through the same port and parsed
+// by lang, which asks the Surroundings port it was given what surrounds the
+// file and names its units. Run writes what came back, its paths from the
+// working directory. The slice reads no file itself. A failure is the
+// selection domain's, which cmd's classifier for that domain turns into a
+// problem, or lang's, an internal one; Run reports it through the UI.
 package units
 
 import (
@@ -24,13 +24,13 @@ import (
 )
 
 // CLI is the units command's command line: the files it selects, as every
-// command selects them, whether it lists their tests instead, and whether
-// it prints lines or the one object a script reads.
+// command selects them (cli.Selection, first), whether it lists their
+// tests instead, and whether it prints lines or the one object a script
+// reads.
 type CLI struct {
-	Changed bool     `help:"only files git reports as added or modified"`
-	Tests   bool     `help:"list test code instead of production code"`
-	JSON    bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
-	Paths   []string `arg:"" optional:"" name:"path" help:"files, directories, or fragments of a path under the working directory"`
+	cli.Selection
+	Tests bool `help:"list test code instead of production code"`
+	JSON  bool `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
 // Contract is what units' help says beyond its flags: what it lists, the
@@ -87,9 +87,10 @@ type Found struct {
 }
 
 // Handle lists the units of the files q selects, passing ctx on to the
-// domain, lang and the ports: the selection is the domain's, the sources
-// the handler's Exclude names left out, and naming a file's units lang's.
-// On a failure it returns the units listed before it.
+// domain, lang and the ports: the selection and each file's parse are the
+// domain's, the sources the handler's Exclude names left out, and naming a
+// file's units lang's. On a failure it returns the units listed before
+// it.
 func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	files, err := selection.Select(ctx, h.Tree, q.Paths, q.Changed, h.Exclude)
 	if err != nil {
@@ -100,15 +101,12 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		list, found.Excluded = files.Tests, 0
 	}
 	for _, path := range list {
-		src, failure := h.Tree.Read(ctx, path)
-		if failure != nil {
-			return found, failure
-		}
-		units, err := lang.UnitsOf(ctx, h.Surroundings, path, src)
+		f, err := selection.Parse(ctx, h.Tree, h.Surroundings, path)
 		if err != nil {
 			return found, err
 		}
-		found.Units = append(found.Units, units...)
+		found.Units = append(found.Units, f.Detached()...)
+		f.Close()
 	}
 	return found, nil
 }
