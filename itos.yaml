@@ -62,13 +62,16 @@ commits:
 
 # The named tests: the scenarios of the feature files under features/, each
 # with an ID tag such as @ID-PAGE-01, and a smoke set naming one of each file.
-# godog runs them through go test against the binary built from this tree
-# (features/README.md), as itos-policy.yaml, the template's config, does.
-# -scenarios= is a regular expression over the scenarios' tags, which the
-# harness turns into godog's tag filter, as godog's own takes only exact tags.
-# The harness runs only the feature files converted to godog (q-52, T-32):
-# a scenario of another, the smoke set's included, is logged as not run
-# there, its Go tests in cmd/itos-cc holding it until its command moves.
+# godog runs them through go test with two drivers (decision 44, T-59):
+# TestFeatures against the binary built from this tree (features/README.md),
+# as itos-policy.yaml, the template's config, does, and cmd/itos-cc's
+# TestScenarios in process against the ports' fakes, so every run holds each
+# scenario both ways but those tagged @binary-only or @in-process-only.
+# -scenarios= is a regular expression over the scenarios' tags, which each
+# harness turns into godog's tag filter, as godog's own takes only exact
+# tags. The harnesses run only the feature files converted to godog (q-52,
+# T-32): a scenario of another, the smoke set's included, is logged as not
+# run there, its Go tests in cmd/itos-cc holding it until its command moves.
 tests:
   scenario:
     adapter: gherkin
@@ -77,11 +80,13 @@ tests:
     tag_prefix: "@"
     wip_tag: "@wip"
     run:
-      whole: "go test ./features -count=1"
-      select: "go test ./features -count=1 -scenarios={pattern}"
+      whole: "go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$'"
+      select: "go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios={pattern}"
       ids_pattern: "^@(?:{ids})$"
       join: { each: "(?:{p})", sep: "|" }
     recognize: # a task check read back as a selection, so CI runs it in the one run
+      - { command: "go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$'", as: whole }
+      - { command: "go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios={pattern}", as: pattern }
       - { command: "go test ./features -count=1", as: whole }
       - { command: "go test ./features -count=1 -scenarios={pattern}", as: pattern }
       - { command: "itos tests smoke run scenario", as: smoke }

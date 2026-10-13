@@ -84,6 +84,14 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // (q-52).
 var Converted = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
 
+// The tags of a scenario only one driver can run: the binary's, for one
+// that runs a command still hand-parsed or needs a process of its own, and
+// the in-process driver's.
+const (
+	BinaryOnly    = "@binary-only"
+	InProcessOnly = "@in-process-only"
+)
+
 // One scenario's state.
 type world struct {
 	d   Driver // the world the steps reach
@@ -687,20 +695,22 @@ func numberOf(value any) int {
 	return int(number)
 }
 
-// TagFilter is godog's tag filter for a selection, the feature files in dir:
-// every live scenario of the Converted files without one, else the live
-// scenarios of the Converted files carrying a tag the expression matches,
-// with the tags it matches only in other files, which the steps do not
-// run. An expression that matches no tag of a converted file is an error,
-// so a selection never runs nothing.
+// TagFilter is godog's tag filter for a selection, the feature files in dir,
+// for a driver that cannot run the scenarios tagged skip: every live
+// scenario of the Converted files without one, else the live scenarios of
+// the Converted files carrying a tag the expression matches, with the tags
+// it matches only in other files, which the steps do not run. An expression
+// that matches no tag of a converted file is an error, so a selection never
+// runs nothing. A scenario only one driver can run carries @binary-only or
+// @in-process-only, never a copy, and the other driver passes it by.
 //
 // godog's own tag filter takes exact tags joined by commas; itos's run
 // templates join the IDs they select with |, as a regular expression
 // (itos.yaml's tests.scenario.run), so a selection is that expression,
 // turned here into godog's filter. A scenario tagged @wip never runs.
-func TagFilter(selection, dir string) (filter string, unconverted []string, err error) {
+func TagFilter(selection, dir, skip string) (filter string, unconverted []string, err error) {
 	if selection == "" {
-		return "~@wip", nil, nil
+		return "~@wip&&~" + skip, nil, nil
 	}
 	pattern, err := regexp.Compile(selection)
 	if err != nil {
@@ -717,7 +727,7 @@ func TagFilter(selection, dir string) (filter string, unconverted []string, err 
 	var each []string
 	for _, tag := range tags {
 		if pattern.MatchString(tag) {
-			each = append(each, tag+"&&~@wip")
+			each = append(each, tag+"&&~@wip&&~"+skip)
 		}
 	}
 	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))

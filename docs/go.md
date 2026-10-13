@@ -317,7 +317,9 @@ follows the same steps for a command it wrote before it had the template's desig
 8. **Its scenarios run through godog.** Convert the command's feature file: its steps in
    `features/<file>.go`, registered from `Initialize` in `steps.go`, reaching the world only
    through its `Driver` and reading only what itos-cc prints and writes, and the file added to
-   `Converted` in `steps.go`. A live
+   `Converted` in `steps.go`. Its scenarios then run through both drivers, the binary and
+   the in-process one (Tests, below), the moved command needing nothing more of the
+   in-process driver than the ports in `adapters`. A live
    scenario's text never changes outside a `feat` or a `fix`; write the step for the
    sentence as it stands, or stop and say which scenario cannot be run as written. Check
    each step can fail: change an expectation in the file locally, see the step fail, and
@@ -374,8 +376,22 @@ texts, what git ignores) in the adapter's. A difference the suite finds is fixed
 side is wrong, never by leaving the case out; the fake's lists of skipped directories and
 build output are copies of `project`'s, which the suite keeps honest. The `count` slice's tests use the fake too, standard input being its `-`
 key; reading standard input, and stopping when the context is done, is `internal/stdin`'s,
-held by its own tests. The scenarios in `features/` run the built binary through godog,
-interrupting it once it waits on an open standard input to show the 130 exit. A second Ctrl-C
+held by its own tests.
+
+The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
+of package `features` behind its `Driver`. `features`' `TestFeatures` runs them against the
+built binary (`binary.go`), which proves main's wiring, the real adapters, exit codes and
+signals, interrupting it once it waits on an open standard input to show the 130 exit.
+`cmd/itos-cc`'s `TestScenarios` runs them in process: its driver, a `_test.go`, holds every
+folder and file in memory with a fake git (init, add and commit; `--changed` is what differs
+from the last commit, and every file before one), and each run calls `run` with buffers and
+porttest's fakes built from that memory, `TreeOf`, lang's `Surroundings`, snapshot's `Store`
+written back to `.metrics/`, and an itos-cc.yaml held in memory. It refuses a hand-parsed
+command and an environment variable, naming `@binary-only`, so nothing reaches the real disk.
+A scenario only one driver can run carries `@binary-only` or `@in-process-only`, never a
+copy, and the other passes it by; a step a driver cannot do fails naming the tag. godog runs
+one scenario at a time in both. itos.yaml's scenario lines run both tests, so CI and itos's
+scenario step hold every scenario both ways. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
 interrupts on every system: `count` has no cleanup for a scenario to see skipped.
 

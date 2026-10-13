@@ -25,7 +25,13 @@ only through a `Driver` (`steps.go`): a fresh folder, files written and read, gi
 itos-cc with a folder, environment, stdin and arguments. They are ordinary files of package
 `features`, so `cmd/itos-cc`'s tests can run them in process against the ports' fakes (decision
 44); `itos-cc.yaml` excludes `features/**`, so they are neither measured nor mutated.
-`TestFeatures` runs them through the binary driver (`binary.go`): it builds itos-cc once a run
+Two drivers run them, one scenario at a time each: `cmd/itos-cc`'s `TestScenarios` in process,
+its driver holding every folder and file in memory with a fake git and calling itos-cc's `run`
+against the ports' fakes, and `TestFeatures` through the binary driver (`binary.go`). A scenario
+only one driver can run carries `@binary-only` or `@in-process-only`, never a copy, and the other
+driver passes it by: the in-process driver refuses a command still hand-parsed and an
+environment variable, naming `@binary-only`. itos.yaml's scenario lines run both, so every
+scenario is held both ways. `TestFeatures` builds itos-cc once a run
 from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
 release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary
 directory, runs the binary in it and reads its exit code, its output and the files it leaves. A
@@ -66,10 +72,11 @@ Before hook keyed on the scenario's file.
 ## Running them
 
 ```sh
-go test ./features -count=1                          # every live scenario
+go test ./features -count=1                          # every live scenario, through the binary
 go test ./features -count=1 -scenarios='^@ID-CLI-'   # the live scenarios with a matching tag
 GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its coverage in $d
-itos tests smoke run scenario                        # exactly the smoke set
+go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   # in process
+itos tests smoke run scenario                        # exactly the smoke set, both ways
 ```
 
 `-scenarios` takes a regular expression over each tag, `@` included. It exists because godog's

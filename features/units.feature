@@ -65,7 +65,9 @@ Feature: Units: the functions and methods every tool measures
       | method   | demo.board.Board | onClick     | 22-22 | no      |
     And nested arrow functions, callbacks, and abstract methods are not units
 
-  @ID-UNIT-06
+  # Binary only (decision 44): its steps measure the routes with crap and
+  # mutation run, still hand-parsed, which reach the disk themselves.
+  @ID-UNIT-06 @binary-only
   Scenario: Inline route callbacks are units of their own
     Given the file "src/api/routes.js":
       """

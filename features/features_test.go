@@ -65,7 +65,7 @@ const (
 )
 
 func TestFeatures(t *testing.T) {
-	filter, unconverted, err := TagFilter(*scenarios, ".")
+	filter, unconverted, err := TagFilter(*scenarios, ".", InProcessOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,11 +85,12 @@ func TestFeatures(t *testing.T) {
 		Name:                "itos-cc",
 		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin}, interruptSteps(bin)) },
 		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    Converted,
-			Tags:     filter,
-			Strict:   true,
-			TestingT: t,
+			Format:      "pretty",
+			Paths:       Converted,
+			Tags:        filter,
+			Strict:      true,
+			Concurrency: 1,
+			TestingT:    t,
 		},
 	}
 	if suite.Run() != 0 {
