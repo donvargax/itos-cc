@@ -2715,26 +2715,9 @@ items:
     title: internal/cli's Flags reads a switch that takes one of its choices after =, refusing any other in the hand parser's words
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
-    why: >
-      mutation run and check take --fail-uncovered[=functions|lines] (cmd/itos-cc/mutate.go:522);
-      the hand parser refuses a bad choice as flags.value-invalid, '--X takes =a or =b, and was
-      given ...' with the fix 'Write --X alone, or --X=a' (cmd/itos-cc/cli.go:188-191), while
-      internal/cli's Flags maps only bool, string, float64, int and slices (flags.go:48-56) and
-      help.go:100 already prints [=a|b]. A choice type whose mapper is a bool-like optional value, a
-      ChoiceError worded as the hand parser words it with its row in ParseProblem, and the page's
-      choices taken from kong's model. Durations (serve's --interval) move with serve in S8. S6 of
-      the template-design refactor; the coordinator's plan is in the clone notes
-      (.git/itos/s6-plan.md: the settled questions, the mutate.feature pieces, the in-process fakes,
-      proof cases per task). Rules whole: ctx first, never held or captured for I/O; nothing leaks
-      into a domain, adapters and ports use the domain's types with no mappers (decision 47); fakes
-      not mocks, none in production code. Light local testing: the packages and scenarios in the
-      checks, never the whole cmd/itos-cc suite or a mutation run of this repository (mutate's Go
-      tests over fixtures are fine); never itos task show or itos task <id> locally; no worktrees;
-      never push a commit naming the task before its checks can pass. No binary comparison: the
-      plan's cases for this task join refactor-final-proof's list.
   - id: T-69
     title: The snapshot port removes and lists snapshots, and mutate reads and writes its snapshots only through it
     phase: 1

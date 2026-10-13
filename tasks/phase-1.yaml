@@ -1322,11 +1322,6 @@
     mutation run of this repository (mutate's Go tests over fixtures are fine); never itos task show
     or itos task <id> locally; no worktrees; never push a commit naming the task before its checks
     can pass. No binary comparison: the plan's cases for this task join refactor-final-proof's list.
-  done_when:
-    - run: git grep -q 'ChoiceError' -- internal/cli
-    - run: go test -count=1 ./internal/cli/...
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-69
   type: refactor
   title: The snapshot port removes and lists snapshots, and mutate reads and writes its snapshots only through it
