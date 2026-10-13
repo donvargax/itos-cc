@@ -278,7 +278,7 @@ Feature: Coverage
       When it is matched to sources
       Then it matches neither source
 
-    @ID-COV-32
+    @bug-1 @ID-COV-32
     Scenario: Separators do not matter
       Given a report written with "\" separators and sources with "/" separators, or the reverse
       When it is matched to sources
