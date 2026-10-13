@@ -48,5 +48,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0043: The pure lang asks a port for what surrounds a file, with the context first](0043-the-pure-lang-asks-a-port-for-what-surrounds-a-file-with-the-context-first.md)
 - [ADR-0044: Scenarios run in process against the ports' fakes and against the built binary](0044-scenarios-run-in-process-against-the-ports-fakes-and-against-the-built-binary.md)
 - [ADR-0045: itos-cc.yaml's exclude leaves sources out of what is measured and mutated](0045-itos-cc-yaml-s-exclude-leaves-sources-out-of-what-is-measured-and-mutated.md)
+- [ADR-0046: Coverage splits into a pure domain and a port whose adapter runs the test tools](0046-coverage-splits-into-a-pure-domain-and-a-port-whose-adapter-runs-the-test-tools.md)
 
 <!-- itos:decisions:end -->
