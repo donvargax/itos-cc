@@ -504,8 +504,8 @@ func Merge(reports ...*Report) *Report {
 	return out
 }
 
-// matcher resolves a report path to a source file: exactly when the path is
-// absolute or relative to base, otherwise by the longest run of trailing path
+// matcher resolves a report path, its separators \ or /, to a source file:
+// exactly when the path is absolute or relative to base, otherwise by the longest run of trailing path
 // components it shares with exactly one source. Report tools disagree on
 // where paths start (module paths, package directories, the working
 // directory), but the tail of the path is always the file. A path that names
@@ -527,7 +527,10 @@ func newMatcher(sources []string) *matcher {
 }
 
 func (m *matcher) match(path, base string) string {
-	path = filepath.FromSlash(strings.TrimPrefix(path, "file://"))
+	// A report names its files with the separators of the system that
+	// wrote it: \ is one on every system, so a report written on Windows
+	// matches sources on Linux and macOS.
+	path = filepath.FromSlash(strings.ReplaceAll(strings.TrimPrefix(path, "file://"), `\`, "/"))
 	exact := filepath.Join(base, path)
 	if filepath.IsAbs(path) {
 		exact = filepath.Clean(path)

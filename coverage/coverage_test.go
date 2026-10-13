@@ -230,6 +230,22 @@ func TestMatchingRefusesAmbiguousTails(t *testing.T) {
 	}
 }
 
+func TestReportPathsMatchWhicheverSeparatorTheyWereWrittenWith(t *testing.T) {
+	root := t.TempDir()
+	src := filepath.Join(root, "src", "demo", "board.ts")
+	absolute := filepath.ToSlash(src)
+	for _, path := range []string{
+		`src\demo\board.ts`, "src/demo/board.ts", // relative to base
+		`demo\board.ts`, "demo/board.ts", // by its tail
+		strings.ReplaceAll(absolute, "/", `\`), absolute, // absolute
+	} {
+		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+		if r := Build([]string{src}, root, entries); !r.Has(src) {
+			t.Errorf("the report path %s does not match %s", path, src)
+		}
+	}
+}
+
 func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
 	root := t.TempDir()
 	src, other := filepath.Join(root, "b", "main.go"), filepath.Join(root, "a", "b", "main.go")
