@@ -3043,7 +3043,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-81]
     kind: task
     why: >
       The S5 plan put it in S7; its SNAP-01 row needs mutation run's steps (T-71..T-81). SNAP-08..12
