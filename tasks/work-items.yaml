@@ -2730,3 +2730,16 @@ items:
       Landed (9d31226): a report path has every \ turned into / and then the system's form, so a
       report written with either separator matches on every system; the person (2026-10-13) checked
       it against comparing in / form and kept it.
+  - id: cov-17-shell-syntax
+    title: COV-17 runs a command only a shell can read
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      COV-17 says --coverage-command runs through the platform shell, but its command, make cover,
+      runs the same whether a shell reads it or it is executed directly, so its steps can only read
+      the announcement as a shell line and make's echo of the recipe. A row whose command uses shell
+      syntax, such as two commands joined by && or a variable, would show the shell read it. Found
+      converting coverage.feature (T-61).
