@@ -3016,7 +3016,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-80]
     kind: task
     why: >
       Piece 12 of mutate.feature (the plan's table): counted-run and worktree scenarios. Go tests
