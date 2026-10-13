@@ -2785,3 +2785,15 @@ items:
       are fine); never itos task show or itos task <id> locally; no worktrees; never push a commit
       naming the task before its checks can pass. No binary comparison: the plan's cases for this
       task join refactor-final-proof's list.
+  - id: cli-13-declares-its-tests
+    title: cli.feature's ID-CLI-13 declares its Vitest project's tests through Driver.Tests
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-70 added Driver.Tests so in-process outcomes match what a fixture's real tests do once the
+      mutation group moves (S7). ID-CLI-13 runs mutation run over a Vitest project and declares only
+      its Coverage, so the fake porttest.Workers would have no declaration for it when cli.feature
+      joins InProcess in S9; it should declare its command, and score's 1 to 0 survivor.
