@@ -91,9 +91,9 @@ type Plan struct {
 	Unattested bool
 }
 
-// Reach is the test files that reach a source, as graph.TestsImporting
-// finds them.
-type Reach func(source string) []string
+// Reach is the test files that reach a source: the coverage port's, which
+// a request carries (decision 47).
+type Reach = port.Reach
 
 // minVitest is the oldest Vitest major whose coverage is measured: the
 // current one. Its v8 provider maps coverage onto the syntax tree, so its
@@ -107,21 +107,19 @@ var markers = map[string][]string{
 	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
 }
 
-// Scope is which tests measure the sources.
-type Scope int
+// Scope is which tests measure the sources: the coverage port's, which a
+// request carries (decision 47), each named here as there.
+type Scope = port.Scope
 
 const (
 	// AllTests runs each build root's whole suite.
-	AllTests Scope = iota
+	AllTests = port.AllTests
 	// RelatedTests runs, in Go and TypeScript, only the tests that load the
-	// sources, which measures them the same as the whole suite: a test that
-	// does not load a file cannot cover it.
-	RelatedTests
+	// sources.
+	RelatedTests = port.RelatedTests
 	// OwnTests measures each Go package by its own tests only, the tests
-	// mutate kills its mutants with; TypeScript runs the related tests, and
-	// Python and Kotlin, given the tests that reach each source, those
-	// tests.
-	OwnTests
+	// mutate kills its mutants with.
+	OwnTests = port.OwnTests
 )
 
 // Plans groups sources by language and build root and returns one plan per

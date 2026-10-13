@@ -1,7 +1,9 @@
 // Package port defines what the coverage domain reaches outside itself:
 // whether a path a report names is a regular file, and which source it is
 // when the report reached it another way, and the sealed set of gaps, why
-// coverage meant to be measured was not (decision 46).
+// coverage meant to be measured was not; and the Measurer the commands
+// measure coverage through, which gives the domain's Report or a sealed
+// failure (decision 46).
 package port
 
 import "context"

@@ -1,4 +1,4 @@
-package coverage
+package coverage_test
 
 import (
 	"math"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 )
 
@@ -15,12 +16,12 @@ func approx(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
 
 // build is Build over files on no disk: a report path names a source only
 // by what it says.
-func build(t *testing.T, sources []string, base string, entries ...[]Entry) *Report {
+func build(t *testing.T, sources []string, base string, entries ...[]coverage.Entry) *coverage.Report {
 	t.Helper()
-	return Build(t.Context(), porttest.Files{}, sources, base, entries...)
+	return coverage.Build(t.Context(), porttest.Files{}, sources, base, entries...)
 }
 
-func fraction(t *testing.T, r *Report, file string, start, end int, skip ...[2]int) float64 {
+func fraction(t *testing.T, r *coverage.Report, file string, start, end int, skip ...[2]int) float64 {
 	t.Helper()
 	f, ok := r.Fraction(file, start, end, skip...)
 	if !ok {
@@ -30,7 +31,7 @@ func fraction(t *testing.T, r *Report, file string, start, end int, skip ...[2]i
 }
 
 func TestLCOVLinesAreEqualWeight(t *testing.T) {
-	entries, err := ParseLCOV(strings.NewReader(`TN:
+	entries, err := coverage.ParseLCOV(strings.NewReader(`TN:
 SF:src/demo/board.ts
 DA:2,1
 DA:3,0
@@ -76,7 +77,7 @@ BRDA:10,0,jump to line 11,-
 BRDA:10,0,jump to line 12,-
 end_of_record
 `
-	entries, err := ParseLCOV(strings.NewReader(coveragePy))
+	entries, err := coverage.ParseLCOV(strings.NewReader(coveragePy))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +115,7 @@ DA:8,1
 DA:9,1
 end_of_record
 `
-	entries, err := ParseLCOV(strings.NewReader(v8))
+	entries, err := coverage.ParseLCOV(strings.NewReader(v8))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +129,7 @@ end_of_record
 }
 
 func TestGoBlocksAreWeightedByStatements(t *testing.T) {
-	entries, err := ParseGo(strings.NewReader(`mode: set
+	entries, err := coverage.ParseGo(strings.NewReader(`mode: set
 example.com/demo/board/board.go:5.24,7.2 1 1
 example.com/demo/board/board.go:9.30,10.10 3 1
 example.com/demo/board/board.go:10.10,12.3 1 0
@@ -146,7 +147,7 @@ example.com/demo/board/board.go:10.10,12.3 1 0
 }
 
 func TestGoBlocksRepeatedByEachTestBinaryAreOneBlock(t *testing.T) {
-	entries, err := ParseGo(strings.NewReader(`mode: set
+	entries, err := coverage.ParseGo(strings.NewReader(`mode: set
 example.com/demo/board/board.go:9.30,10.10 3 0
 example.com/demo/board/board.go:10.10,12.3 1 0
 example.com/demo/board/board.go:9.30,10.10 3 1
@@ -164,16 +165,16 @@ example.com/demo/board/board.go:9.30,10.10 3 0
 
 func TestGoBlocksRetainColumnsAndUnionListedMeasurements(t *testing.T) {
 	path := "/w/gomod/board/board.go"
-	primary, err := ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.3,9.8 1 1\nexample.com/demo/board/board.go:9.12,9.17 1 0\n"))
+	primary, err := coverage.ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.3,9.8 1 1\nexample.com/demo/board/board.go:9.12,9.17 1 0\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	listed, err := ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.12,9.17 1 1\n"))
+	listed, err := coverage.ParseGo(strings.NewReader("mode: set\nexample.com/demo/board/board.go:9.12,9.17 1 1\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	r := build(t, []string{path}, "/w/gomod", primary)
-	var tests TestCoverage
+	var tests coverage.TestCoverage
 	tests.Add("listed", build(t, []string{path}, "/w/gomod", listed))
 	r.SetTests(&tests)
 	blocks := r.GoBlocks(path)
@@ -189,11 +190,11 @@ func TestGoBlocksRetainColumnsAndUnionListedMeasurements(t *testing.T) {
 }
 
 func TestReportsOfTheSameFileAreCombined(t *testing.T) {
-	unit, err := ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,1\nDA:2,0\nend_of_record\n"))
+	unit, err := coverage.ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,1\nDA:2,0\nend_of_record\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	integration, err := ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,0\nDA:2,3\nend_of_record\n"))
+	integration, err := coverage.ParseLCOV(strings.NewReader("SF:src/a.ts\nDA:1,0\nDA:2,3\nend_of_record\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +205,7 @@ func TestReportsOfTheSameFileAreCombined(t *testing.T) {
 }
 
 func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
-	entries, err := ParseJaCoCo(strings.NewReader(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+	entries, err := coverage.ParseJaCoCo(strings.NewReader(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN" "report.dtd">
 <report name="demo">
   <package name="demo/game">
@@ -230,7 +231,7 @@ func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
 }
 
 func TestMatchingRefusesAmbiguousTails(t *testing.T) {
-	entries := []Entry{{Path: "util.py", Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+	entries := []coverage.Entry{{Path: "util.py", Segments: []coverage.Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
 	r := build(t, []string{"/p/a/util.py", "/p/b/util.py"}, "/elsewhere", entries)
 	if r.Has("/p/a/util.py") || r.Has("/p/b/util.py") {
 		t.Error("a bare file name that matches two sources is not guessed")
@@ -250,7 +251,7 @@ func TestReportPathsMatchWhicheverSeparatorTheyWereWrittenWith(t *testing.T) {
 		`demo\board.ts`, "demo/board.ts", // by its tail
 		strings.ReplaceAll(absolute, "/", `\`), absolute, // absolute
 	} {
-		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+		entries := []coverage.Entry{{Path: path, Segments: []coverage.Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
 		if r := build(t, []string{src}, root, entries); !r.Has(src) {
 			t.Errorf("the report path %s does not match %s", path, src)
 		}
@@ -262,8 +263,8 @@ func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
 	src, other := filepath.Join(root, "b", "main.go"), filepath.Join(root, "a", "b", "main.go")
 	files := porttest.Files{Dir: root, Regular: []string{src, other}}
 	for _, path := range []string{"a/b/main.go", other} {
-		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-		if r := Build(t.Context(), files, []string{src}, root, entries); r.Has(src) {
+		entries := []coverage.Entry{{Path: path, Segments: []coverage.Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+		if r := coverage.Build(t.Context(), files, []string{src}, root, entries); r.Has(src) {
 			t.Errorf("%s is another file in the project, not b/main.go", path)
 		}
 	}
@@ -273,13 +274,13 @@ func TestModulePathsNameTheProjectFileTheirTailFinds(t *testing.T) {
 	root := t.TempDir()
 	src := filepath.Join(root, "metrics", "metrics.go")
 	files := porttest.Files{Dir: root, Regular: []string{src, filepath.Join(root, "graph", "metrics.go")}}
-	entry := func(path string) []Entry {
-		return []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+	entry := func(path string) []coverage.Entry {
+		return []coverage.Entry{{Path: path, Segments: []coverage.Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
 	}
-	if r := Build(t.Context(), files, []string{src}, root, entry("example.com/m/graph/metrics.go")); r.Has(src) {
+	if r := coverage.Build(t.Context(), files, []string{src}, root, entry("example.com/m/graph/metrics.go")); r.Has(src) {
 		t.Error("graph/metrics.go lent its coverage to metrics/metrics.go")
 	}
-	if r := Build(t.Context(), files, []string{src}, root, entry("example.com/m/metrics/metrics.go")); !r.Has(src) {
+	if r := coverage.Build(t.Context(), files, []string{src}, root, entry("example.com/m/metrics/metrics.go")); !r.Has(src) {
 		t.Error("the module path of metrics/metrics.go did not match it")
 	}
 }
@@ -293,12 +294,12 @@ func TestMatchingFollowsSymlinkedDirectories(t *testing.T) {
 	files := porttest.Files{Dir: dir, Regular: []string{filepath.Join(real, "lib.py"), filepath.Join(real, "other", "lib.py")},
 		Links: map[string]string{link: real}}
 	src := filepath.Join(link, "lib.py")
-	entries := []Entry{{Path: filepath.Join(real, "lib.py"), Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-	if r := Build(t.Context(), files, []string{src}, link, entries); !r.Has(src) {
+	entries := []coverage.Entry{{Path: filepath.Join(real, "lib.py"), Segments: []coverage.Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
+	if r := coverage.Build(t.Context(), files, []string{src}, link, entries); !r.Has(src) {
 		t.Error("a report that resolved the symlink still names the source")
 	}
 	entries[0].Path = filepath.Join(real, "other", "lib.py")
-	if r := Build(t.Context(), files, []string{src}, link, entries); !r.Empty() {
+	if r := coverage.Build(t.Context(), files, []string{src}, link, entries); !r.Empty() {
 		t.Error("a regular file that is no source lent its coverage to the one source of its name")
 	}
 }
@@ -313,7 +314,7 @@ func TestParseDetectsTheFormat(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		entries, err := Parse(f)
+		entries, err := coverage.Parse(f)
 		if closeErr := f.Close(); closeErr != nil {
 			t.Fatal(closeErr)
 		}
@@ -327,9 +328,9 @@ func TestParseDetectsTheFormat(t *testing.T) {
 }
 
 func TestIntegrationBlocksFoldIntoTheTestsOwnAndSayWhichCoveredThem(t *testing.T) {
-	parse := func(profile string, src Source) []Entry {
+	parse := func(profile string, src coverage.Source) []coverage.Entry {
 		t.Helper()
-		entries, err := ParseGo(strings.NewReader(profile))
+		entries, err := coverage.ParseGo(strings.NewReader(profile))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -343,13 +344,13 @@ example.com/demo/main.go:5.2,6.10 1 1
 example.com/demo/main.go:7.2,8.10 1 0
 example.com/demo/main.go:9.2,10.10 1 1
 example.com/demo/main.go:11.2,12.10 1 0
-`, InProcess)
+`, coverage.InProcess)
 	integration := parse(`mode: set
 example.com/demo/main.go:5.2,6.10 1 1
 example.com/demo/main.go:7.2,8.10 1 1
 example.com/demo/main.go:9.2,10.10 1 0
 example.com/demo/main.go:11.2,12.10 1 0
-`, Integration)
+`, coverage.Integration)
 	file := "/w/demo/main.go"
 	r := build(t, []string{file}, "/w/demo", inProcess, integration)
 	if got := fraction(t, r, file, 5, 12); !approx(got, 3.0/4) {

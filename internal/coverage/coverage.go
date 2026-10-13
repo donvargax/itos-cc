@@ -129,6 +129,10 @@ type Unmeasured struct {
 	Reason   string   `json:"reason"`
 }
 
+// Error is String: an Unmeasured is an error, so a command hands it to the
+// UI, whose coverage classifier makes it its gap's problem.
+func (u Unmeasured) Error() string { return u.String() }
+
 func (u Unmeasured) String() string {
 	switch {
 	case u.Report != "":
