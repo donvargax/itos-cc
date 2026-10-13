@@ -2633,6 +2633,12 @@ items:
       references side by side with what using the domain's type directly would look like, plus
       anything outside a domain that leaks into it, and the person decides what changes. Before the
       issue round and Dart.
+
+      Candidate from T-66 (156dee6): internal/coverage/port declares Measurer[R any], always used as
+      Measurer[*coverage.Report], because the domain imports its own port package (Files.SameFile,
+      the gaps) so the port cannot import the domain without a cycle. Compare with declaring the
+      Measurer interface in the domain package itself, or a second port package (say
+      internal/coverage/measure) that imports the domain.
   - id: bug-1
     title: A coverage report written with \ separators matches no source on Linux or macOS
     phase: 1
