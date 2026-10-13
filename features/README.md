@@ -20,11 +20,13 @@ Never here:
 ## Black-box boundary
 
 The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
-`coverage.go` and `selection.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+`coverage.go`, `selection.go` and `cli.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
 read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
-and programs left off the PATH (`Run.Without`), and what a project's own coverage tools measure
-in a folder (`Coverage`), which a Given declares before a run measures with them. They are ordinary files of package
+and programs left off the PATH (`Run.Without`), what a project's own coverage tools measure
+in a folder (`Coverage`), which a Given declares before a run measures with them, builds of
+itos-cc as a release, go install or a person's go build makes them (`Build`, run through
+`Run.Binary`), and a port held in use (`Occupy`). They are ordinary files of package
 `features`, so `cmd/itos-cc`'s tests can run them in process against the ports' fakes (decision
 44); `itos-cc.yaml` excludes `features/**`, so they are neither measured nor mutated.
 Two drivers run them, one scenario at a time each: `cmd/itos-cc`'s `TestScenarios` in process,
@@ -59,7 +61,10 @@ whatever its image has. The in-process driver records what was declared, for the
 command measuring coverage is handed once it moves. A scenario that only reads which Gradle or
 Maven command itos-cc chose runs with `gradle` and `mvn` off the PATH, so neither runs anywhere;
 one that needs a symbolic link skips where the system makes none. The in-process driver refuses
-both, naming `@binary-only`.
+both, naming `@binary-only`, and so a build of itos-cc and a port held: the binary driver builds
+into the scenario's folder with -trimpath, `go install` from a module proxy it writes there,
+the tree's files zipped beside the module cache's downloads, and holds a port of 127.0.0.1,
+skipping where the system lets a second listener take it.
 
 An interrupt is the binary driver's alone (`interrupt_test.go`), sent as each system delivers
 Ctrl-C, from one build-tagged file per system:
@@ -73,10 +78,12 @@ killed by the system's default action fails the step: it never handled the inter
 
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
-`complexity.feature`, `coverage.feature`, `file_selection.feature`, and `count.feature`, the
+`complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`, and
+`count.feature`, the
 template's sample, all of whose scenarios are `@wip`. The in-process driver runs those of
 `InProcess`: all of them but `crap.feature`, `complexity.feature`, `coverage.feature` and
-`file_selection.feature`, which join it when crap moves. Every other file converts to godog over time,
+`file_selection.feature`, which join it when crap moves, and `cli.feature`, whose help, version
+and mutation scenarios need commands that move later, which joins it in S9. Every other file converts to godog over time,
 before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
 the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
 file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
@@ -384,3 +391,25 @@ the folder the run ran in, as itos-cc names them.
 | `the file "…" is discovered` / `it is classified as …`                                | units over that file alone lists it as that kind and not the other. |
 | `a command reports on a file inside the working directory` / `the file is named by its path relative to the working directory` / `a file outside the working directory keeps its absolute path` | units --json in src over cart/total.ts and ../kt/src/main/kotlin/Shelf.kt; the first named so, the second by an absolute path, the scratch folder found in it by its name. |
 | `itos-cc.yaml holds '…'` / `the sources … and …` / `… is scored, and … is not`        | That itos-cc.yaml; the two files; crap lists the first and not the second. |
+
+`cli.feature`'s steps, in `cli.go`. A scenario that only says When I run runs in an empty folder,
+or in a project of its own: a Go module, `src/` of eight functions and `lib/billing/` of one
+(ID-CLI-05); a folder called `--tests` (06); a Go module go test measures (09); a Vitest project
+whose `src/board.ts` has 17 mutation sites, run once with mutation run and then changed by a
+comment in two functions (13, which needs Node); `x.ts`, of two sites, in a project whose test
+script would leave `test-ran` (14).
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `the usage text is printed to stdout` / `it lists the commands …`                     | The top-level help; each command named begins a line of its Commands section. |
+| `the command's usage, options, --json shape, problem rules, and exit codes are printed to stdout` / `it ends with examples and the address for issue reports` | The usage names the command the words name, then those sections in order, exit 0; examples after the exit codes, and a last line giving the address. |
+| `the binary was built …` / `the first line of stdout is "…"`                          | That build (`Build`), which every run then runs; the line, a checkout's `<next>` the release after its tag, `<time>` fourteen digits and `<commit>` its commit's first twelve characters. |
+| `it is the same as "itos-cc …"`                                                       | The run, no usage error, and that command give the same exit code and stdout, and stderr but for its numbers. |
+| `"…" is a path, not the flag`                                                         | Every unit listed is under that folder.                          |
+| `<situation>` / `the command ends`                                                    | A command for each thing the situation names, each in a folder of its own, each held to the exit code step. |
+| `stdout is one object with "schema": 1, "ok": true, and the command's own keys` / `progress and test output go to stderr` | One object, schema 1 and ok, holding each key the command's help gives its --json object; the coverage command and go test's lines on stderr alone. |
+| `stdout is:` with its text                                                            | stdout is the text exactly.                                      |
+| `a run has a problem` / `stderr says "itos-cc: <message>. <fix>"`                     | crap over a path that is not there; stderr says so of each problem of the run made with --json. |
+| `stdout names the subcommands … and …` / `stderr names the subcommands … and …`       | Each on a line of its own; each in a line of stderr naming the subcommands. |
+| `stdout says "…"` / `each survivor is a "…" problem`                                  | Containment; as many problems of the rule, made with --json, as the line says survived. |
+| `stdout lists each mutation site of … with its line, column, function, original, and replacement` / `no test command runs` | Exactly the file's sites, each line in that form; no `test-ran`, no `.metrics` and no baseline. |

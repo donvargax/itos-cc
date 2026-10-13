@@ -73,8 +73,8 @@ commits:
 # to godog (q-52, T-32): a scenario of another, the smoke set's included, is
 # logged as not run there, its Go tests in cmd/itos-cc holding it until its
 # command moves. A converted file whose command has not moved, crap's
-# (T-60), coverage's (T-61) and file selection's (T-62), runs through
-# TestFeatures alone;
+# (T-60), coverage's (T-61) and file selection's (T-62), and cli.feature
+# (T-62, until S9), runs through TestFeatures alone;
 # TestScenarios logs its scenarios as binary driver only until the move,
 # and passes when it is all a selection names.
 tests:

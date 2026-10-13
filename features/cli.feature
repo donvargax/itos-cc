@@ -43,10 +43,13 @@ Feature: Command line
       Then the first line of stdout is "itos-cc <reported>"
 
       Examples:
-        | how                                       | command   | reported |
-        | by a release with -X main.version=v1.2.3  | version   | v1.2.3   |
-        | by "go install ...@v1.2.3"                | version   | v1.2.3   |
-        | from a local checkout with "go build"     | --version | dev      |
+        | how                                                  | command   | reported                  |
+        | by a release with -X main.version=v1.2.3             | version   | v1.2.3                    |
+        | by "go install ...@v1.2.3"                           | version   | v1.2.3                    |
+        | from a local checkout with "go build"                | --version | v<next>-0.<time>-<commit> |
+        | with "go build" from a tree with no git information  | --version | dev                       |
+      # a checkout's build says the pseudo-version Go records from git: the
+      # release after its last tag, the commit's time and its commit
 
     @ID-CLI-04
     Scenario Outline: An unknown command is a usage error
@@ -83,12 +86,12 @@ Feature: Command line
         | crap --no-such-flag     | crap takes no flag --no-such-flag. Run 'itos-cc crap --help' for its flags. |
         | units -changed          | units takes no flag -changed. Did you mean --changed? …       |
         | crap --threshold        | --threshold needs a value. Give it one, such as --threshold N. |
-        | crap --top --json       | --top needs a value. …                                         |
+        | crap --top --changed    | --top needs a value. …                                         |
         | crap --threshold=abc    | --threshold needs a number, and was given "abc". Give it a number. |
         | units --tests=yes       | --tests takes no value, and was given "yes". Write --tests alone. |
         | crap --top 3 --top 5    | --top is given more than once. Give it once.                   |
         | version extra           | version takes no arguments, and was given "extra". …           |
-      # a value is never read as a flag: --top --json is a --top with no value
+      # a flag is never read as a value: --top --changed is a --top with no value
 
   Rule: One contract with scripts
 
@@ -162,7 +165,7 @@ Feature: Command line
     @mutation-group @ID-CLI-13
     Scenario: mutation run mutates
       When I run "itos-cc mutation run src/board.ts"
-      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
+      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 7, reused 8)"
       And each survivor is a "mutation.survived" problem
 
     @mutation-group @ID-CLI-14

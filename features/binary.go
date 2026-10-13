@@ -217,7 +217,11 @@ func installed(modules, name string) bool {
 // environment with r's variables set and the programs r leaves out off its
 // PATH, reading r's standard input.
 func (b binary) Run(r Run) (Result, error) {
-	cmd := exec.Command(b.bin, r.Args...)
+	bin := b.bin
+	if r.Binary != "" {
+		bin = r.Binary
+	}
+	cmd := exec.Command(bin, r.Args...)
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
 	if len(r.Without) > 0 {
@@ -237,7 +241,7 @@ func (b binary) Run(r Run) (Result, error) {
 	case errors.As(err, &exit):
 		result.Exit = exit.ExitCode()
 	default:
-		return result, fmt.Errorf("running %s: %w", b.bin, err)
+		return result, fmt.Errorf("running %s: %w", bin, err)
 	}
 	return result, nil
 }

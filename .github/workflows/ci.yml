@@ -129,15 +129,16 @@ jobs:
           echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
       # Verbose, so the log lists each test that ran. ITOS_CC_LANGUAGE_TOOLS
       # makes a missing tool fail these tests instead of skipping them. Then
-      # the godog scenarios of crap.feature and coverage.feature that need
-      # Node or Python, which every other job skips (features/README.md).
+      # the godog scenarios of crap.feature, coverage.feature and cli.feature
+      # that need Node or Python, which every other job skips
+      # (features/README.md).
       - if: matrix.os == 'ubuntu-latest'
         env:
           ITOS_CC_LANGUAGE_TOOLS: "1"
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
         run: |
           go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered|TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered|TestAFileNoTestReachesReportsItsBaselineAsNotRun|TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt|TestAPythonProjectThatWritesParallelCoverageDataIsMeasured)$' ./cmd/itos-cc
-          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12))$'
+          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12)|CLI-13)$'
 
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.

@@ -181,6 +181,18 @@ func (m *memory) Link(target, path string) error {
 	return fmt.Errorf("the in-process driver makes no symbolic link (%s to %s): tag the scenario %s", path, target, features.BinaryOnly)
 }
 
+// Build builds nothing: how a binary is built is the go command's, so a
+// scenario that needs a build is the binary driver's.
+func (m *memory) Build(dir string, b features.Build) (features.Built, error) {
+	return features.Built{}, fmt.Errorf("the in-process driver builds no binary (%s in %s): tag the scenario %s", b.How, dir, features.BinaryOnly)
+}
+
+// Occupy holds no port: the memory has none, so a scenario that needs one
+// in use is the binary driver's.
+func (m *memory) Occupy() (int, func(), error) {
+	return 0, nil, fmt.Errorf("the in-process driver holds no port: tag the scenario %s", features.BinaryOnly)
+}
+
 // Git is the fake git in dir: init makes it a repository, add stages its
 // files, every one with -A or the paths named, and commit records what is
 // staged. Anything else fails, naming the tag of a scenario that needs the

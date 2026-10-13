@@ -59,6 +59,36 @@ type Driver interface {
 	// is there. The binary driver skips the scenario (godog.ErrSkip) where
 	// the system lets it make none; the in-process driver makes none.
 	Link(target, path string) error
+	// Build builds itos-cc from this tree in the folder dir as b says, as a
+	// release, go install or a person's go build makes it, and gives the
+	// binary for a Run to name. The binary driver skips the scenario
+	// (godog.ErrSkip) where the build b names cannot be made as it says;
+	// the in-process driver builds nothing.
+	Build(dir string, b Build) (Built, error)
+	// Occupy holds a free port of 127.0.0.1 until release is called, so a
+	// command asked to listen there finds it in use. The binary driver
+	// skips the scenario (godog.ErrSkip) where the system lets a second
+	// listener take a port held; the in-process driver holds none.
+	Occupy() (port int, release func(), err error)
+}
+
+// Build is a way of building itos-cc, as a Given names it.
+type Build struct {
+	// How is the build: "release", go build stamping main.version with
+	// Version as a release does; "install", go install of the module at
+	// Version from a module proxy; "checkout", go build in a git checkout
+	// one commit past its release Version; "no-git", go build in a copy of
+	// the tree with no git information.
+	How string
+	// Version is the version the build is stamped or tagged with, "" for
+	// a build with no git information.
+	Version string
+}
+
+// Built is what a build made: the binary, and for a checkout's build the
+// full id of the commit it was built from, "" for any other.
+type Built struct {
+	Binary, Commit string
 }
 
 // Coverage is what a project's own tools measure in a folder, as a Given
@@ -84,15 +114,17 @@ type Coverage struct {
 
 // Run is one run of itos-cc: the folder it runs in, the variables the
 // scenario sets in its environment as NAME=value, the text of its standard
-// input, "" for none, its arguments, and the programs it finds on no
-// folder of the PATH, so a command naming one never runs, as Gradle and
-// Maven for a scenario that only reads which of them itos-cc chose.
+// input, "" for none, its arguments, the programs it finds on no folder
+// of the PATH, so a command naming one never runs, as Gradle and Maven for
+// a scenario that only reads which of them itos-cc chose, and the binary
+// Build made that it runs, "" for the one under test.
 type Run struct {
 	Dir     string
 	Env     []string
 	Stdin   string
 	Args    []string
 	Without []string
+	Binary  string
 }
 
 // Result is what a run of itos-cc did: its exit code and its output.
@@ -117,18 +149,20 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // dry.feature and scrap.feature, crap.feature, complexity.feature and
 // coverage.feature, and file_selection.feature, each converted before its
 // command moves so the move is held by its scenarios (T-37, T-41, T-60,
-// T-61, T-62). A file converts with its scenarios' text unchanged (q-52);
+// T-61, T-62), and cli.feature, whose help, version and mutation scenarios
+// need commands that move later (T-62). A file converts with its scenarios' text unchanged (q-52);
 // the binary driver runs every one.
 var Converted = []string{
 	"count.feature", "units.feature", "dry.feature", "scrap.feature",
 	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
+	"cli.feature",
 }
 
 // InProcess are the converted files the in-process driver runs: those of
 // the commands moved onto kong, which run against the ports' fakes. A file
 // joins it in the task that moves its command (crap's, coverage's and
-// file selection's files in T-67); until then the binary driver alone runs
-// its scenarios.
+// file selection's files in T-67, cli.feature in S9); until then the binary
+// driver alone runs its scenarios.
 var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
@@ -167,6 +201,9 @@ type world struct {
 	stdin string // the text the run reads from its standard input, "" for none
 	// without are the programs a Given leaves off every run's PATH.
 	without []string
+	// binary is the binary a Given built that every run runs, "" for the
+	// one under test.
+	binary string
 	// wrote is the source "the <language> function:" wrote, slash-separated
 	// from the scratch folder, which coverage.feature's steps measure too.
 	wrote string
@@ -390,11 +427,12 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	complexitySteps(sc, w)
 	coverageSteps(sc, w)
 	selectionSteps(sc, w)
+	cliSteps(sc, w)
 }
 
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
-	w.last, w.problem, w.without, w.wrote, w.each = nil, nil, nil, "", nil
+	w.last, w.problem, w.without, w.wrote, w.each, w.binary = nil, nil, nil, "", nil, ""
 	w.feature, w.scored, w.with, w.project = filepath.Base(s.Uri), nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
@@ -496,7 +534,7 @@ func (w *world) runEnv(dir string, env []string, args ...string) error {
 // sets, reading the scenario's standard input, and gives its exit code and
 // output.
 func (w *world) capture(dir string, env []string, args ...string) (code int, stdout, stderr string, err error) {
-	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without})
+	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without, Binary: w.binary})
 	return result.Exit, result.Stdout, result.Stderr, err
 }
 
@@ -560,9 +598,36 @@ func (w *world) report() string {
 // "..." or "…" for the rest of what it says there.
 func (w *world) stderrSays(text string) error {
 	text = strings.ReplaceAll(strings.ReplaceAll(text, `\"`, `"`), "…", "...")
+	if strings.Contains(text, "<message>") || strings.Contains(text, "<fix>") {
+		return w.saysEachProblem(text)
+	}
 	for _, o := range w.outcomes() {
 		if err := w.saysIn(o.stderr, text); err != nil {
 			return fmt.Errorf("%v\n--- the run of itos-cc %s, exit %d\n--- stdout\n%s--- stderr\n%s", err, strings.Join(o.run.args, " "), o.exit, o.stdout, o.stderr)
+		}
+	}
+	return nil
+}
+
+// saysEachProblem is whether the last run reported a problem, and its
+// stderr says text of each, <message> and <fix> in it standing for the
+// problem's, as the run made with --json gives them (lastObject).
+func (w *world) saysEachProblem(text string) error {
+	object, report, err := w.lastObject()
+	if err != nil {
+		return err
+	}
+	problems, _ := object["problems"].([]any)
+	if len(problems) == 0 {
+		return fmt.Errorf("the run reported no problem\n%s", report)
+	}
+	for _, one := range problems {
+		problem, _ := one.(map[string]any)
+		message, _ := problem["message"].(string)
+		fix, _ := problem["fix"].(string)
+		want := strings.ReplaceAll(strings.ReplaceAll(text, "<message>", message), "<fix>", fix)
+		if message == "" || fix == "" || !strings.Contains(w.stderr, want) {
+			return fmt.Errorf("stderr does not say %q\n%s", want, report)
 		}
 	}
 	return nil
