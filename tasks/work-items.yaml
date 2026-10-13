@@ -2710,3 +2710,17 @@ items:
       fakes not mocks, none in production code. Light local testing: the packages and scenarios in
       the checks, never the whole cmd/itos-cc suite or a mutation run; never itos task show locally.
       No binary comparison: the plan's cases for this task join refactor-final-proof's list.
+  - id: unrecognized-coverage-report
+    title: A --coverage-report in no known format passes a threshold
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found converting crap.feature (T-60). coverage.Load reads any file that starts with neither
+      "mode:" nor "<" as LCOV, and ParseLCOV returns no entries and no error for text with no SF
+      records, so itos-cc crap --threshold 30 --coverage-report notes.txt exits 0, every function
+      N/A, with no coverage.report-unreadable problem and no unmeasured entry. ID-CRAP-11 says a
+      threshold is not passed by code coverage could not measure; a report naming no file could be
+      refused as unreadable, or as measuring nothing.
