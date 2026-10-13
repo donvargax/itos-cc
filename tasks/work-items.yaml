@@ -2494,8 +2494,8 @@ items:
   - id: T-58
     title: The steps run itos-cc through a driver, the binary one as today
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-57]
     kind: task
     why: >
