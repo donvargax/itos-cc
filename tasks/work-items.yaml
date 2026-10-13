@@ -2524,8 +2524,8 @@ items:
   - id: T-62
     title: file_selection.feature and cli.feature run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-60]
     kind: task
     why: >
