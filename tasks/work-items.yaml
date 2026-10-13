@@ -17,6 +17,7 @@ queue:
   - T-63
   - T-64
   - T-65
+  - T-66
   - mutation-windows-ownership
 items:
   - id: T-3
