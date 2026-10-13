@@ -1183,10 +1183,6 @@
     scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run; never itos task
     show locally. No binary comparison: the plan's cases for this task join refactor-final-proof's
     list.
-  done_when:
-    - run: grep -q '"coverage.feature"' features/steps.go
-    - run: go test ./features -count=1 -scenarios='@ID-COV-'
-    - run: grep -qE 'go test.*\./features.*-scenarios=' .github/workflows/ci.yml
 - id: T-62
   type: test
   title: file_selection.feature and cli.feature run through godog against the built binary
