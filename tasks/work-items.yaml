@@ -2312,6 +2312,15 @@ items:
       --help's [=functions|lines] line; each plain and with --json. Checked at T-68 against the hand
       parser's binary over these lines: internal/cli's probe gives the same rule, message, fix and
       subject for each.
+
+      T-69 (mutation's snapshots through the snapshot port, which removes and lists them): compare
+      mutation run over an orphan whose removal empties nested folders under .metrics/mutate (the
+      line naming it, the snapshot gone, the emptied folders gone and mutate/ kept), mutation run
+      over a file whose snapshot cannot be written mid-run, such as under a read-only
+      .metrics/mutate folder (exit 70, the library's message whole, plain and with --json), and
+      mutation run --since over a renamed file, which moves its snapshot to the new path. One
+      deliberate difference: the old snapshot's folders that the move leaves empty below mutate/ are
+      now removed too, as an orphan's always were; git keeps no empty folder, so no commit shows it.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
