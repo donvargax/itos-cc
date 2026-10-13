@@ -128,16 +128,17 @@ Report issues at ` + cli.Issues + "\n")
 // and gives run this process's standard streams and adapters. No interrupt
 // cancels the context yet (docs/CLI.md). It alone exits.
 func main() {
-	os.Exit(run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr, diskAdapters()))
+	os.Exit(run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr, diskAdapters(os.Stderr)))
 }
 
 // classifiers are each domain's, which turn its sealed failures into
 // problems for internal/cli: the selection domain's, which every command
 // selects its files through, the snapshot domain's, which the commands read
-// and write .metrics/ through, and the sample count slice's, for the
+// and write .metrics/ through, the coverage domain's, which crap and
+// mutation measure coverage through, and the sample count slice's, for the
 // counting domain, until it is wired as a command or dropped. A problem
 // itos-cc's commands report is its own and needs none.
-var classifiers = []cli.Classifier{classifySelection, classifySnapshot, count.Classify}
+var classifiers = []cli.Classifier{classifySelection, classifySnapshot, classifyCoverage, count.Classify}
 
 // stdUI is the UI of this process, which the hand-parsed commands report
 // through until they move: its standard streams as they are when it is
@@ -162,7 +163,8 @@ func init() {
 // --version may come before the command too. The top-level help and
 // problems and the moved commands read stdin and write stdout and stderr,
 // and the moved commands reach the world through a; the hand-parsed ones
-// keep this process's streams and disk until they move. It builds the moved
+// keep this process's streams and disk until they move, but for crap's
+// coverage, measured through a's. It builds the moved
 // commands' parser once, which a run reads their names and help from and
 // parses their command line with; a model kong refuses is a bug, an
 // internal failure.
@@ -216,16 +218,17 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return ui.Emit(asJSON, nil, []*cli.Problem{unknownCommand(parser, name)})
 	}
 	if cmd.subs != nil {
-		return runGroup(ctx, cmd, rest)
+		return runGroup(ctx, cmd, rest, a)
 	}
-	return execute(ctx, cmd, rest)
+	return execute(ctx, cmd, rest, a)
 }
 
-// runGroup dispatches args to a subcommand of group g, run under ctx.
+// runGroup dispatches args to a subcommand of group g, run under ctx with
+// the adapters a.
 // Alone, or with -h or --help before a subcommand, it prints the group's
 // help; with --json and no subcommand it is a usage error, as itos-cc
 // --json alone is.
-func runGroup(ctx context.Context, g *command, args []string) int {
+func runGroup(ctx context.Context, g *command, args []string, a adapters) int {
 	asJSON := false
 	for _, a := range args {
 		if a == "--" {
@@ -261,7 +264,7 @@ func runGroup(ctx context.Context, g *command, args []string) int {
 	if sub == nil {
 		return stdUI().Emit(asJSON, nil, []*cli.Problem{unknownSubcommand(g, args[0])})
 	}
-	return execute(ctx, sub, args[1:])
+	return execute(ctx, sub, args[1:], a)
 }
 
 // help prints on ui's stdout the top-level help, or with a command name

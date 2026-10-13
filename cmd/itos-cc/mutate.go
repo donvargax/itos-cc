@@ -921,7 +921,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			others := unmeasuredToJudge(report, sources, mutationChecks, in.set("mutate-all"))
 			others = append(others, integrationToJudge(report, filesToJudge(sources, mutationChecks, in.set("mutate-all")))...)
 			if strictGo && measure["go"] && (missingGo || !report.Measures("go")) {
-				for _, p := range unmeasured(report) {
+				for _, p := range unmeasured(report.Missing()) {
 					if p.Subject("language") == "go" {
 						in.report(p)
 					}
@@ -1484,7 +1484,7 @@ func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutat
 				Reason: "its coverage run measured none of its files"})
 		}
 	}
-	return unmeasuredProblems(relativeUnmeasured(found))
+	return unmeasured(found)
 }
 
 // filesToJudge is each of sources whose mutants this run must judge.
@@ -1523,7 +1523,7 @@ func integrationToJudge(report *coverage.Report, files []string) []*cli.Problem 
 			}
 		}
 	}
-	return unmeasuredProblems(relativeUnmeasured(found))
+	return unmeasured(found)
 }
 
 func hasGoSource(sources []string) bool {

@@ -6,10 +6,10 @@ import (
 	"os"
 	"text/tabwriter"
 
-	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
+	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/metrics"
@@ -82,11 +82,7 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to score")
 		return result, nil
 	}
-	scope := covrun.AllTests
-	if len(in.args) > 0 || in.set("changed") {
-		scope = covrun.RelatedTests
-	}
-	report, err := loadCoverage(ctx, in, files.Sources, scope, os.Stderr, nil, nil)
+	report, err := measureCrap(ctx, in, files.Sources)
 	if err != nil {
 		return result, err
 	}
@@ -122,7 +118,7 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 		return result, nil
 	}
 	// A threshold cannot be checked for code coverage did not measure.
-	for _, p := range unmeasured(report) {
+	for _, p := range unmeasured(report.Missing()) {
 		in.report(p)
 	}
 	for _, e := range changerisk.Worst(entries) {
@@ -136,6 +132,26 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 			With("crap", *e.CRAP).With("threshold", threshold))
 	}
 	return result, nil
+}
+
+// measureCrap is the coverage of sources as in's coverage flags ask, or
+// nil with --no-coverage, measured under ctx through the coverage port
+// run was given (adapters.Coverage): with paths or --changed by the tests
+// that load them, and otherwise by every test.
+func measureCrap(ctx context.Context, in *invocation, sources []string) (*coverage.Report, error) {
+	scope := covport.AllTests
+	if len(in.args) > 0 || in.set("changed") {
+		scope = covport.RelatedTests
+	}
+	req, measure, err := coverageRequest(in, sources, scope)
+	if !measure || err != nil {
+		return nil, err
+	}
+	report, failure := in.adapters.Coverage.Measure(ctx, req)
+	if failure != nil {
+		return nil, failure
+	}
+	return report, nil
 }
 
 // scoreCrap is the changerisk domain's scores of every unit of sources by

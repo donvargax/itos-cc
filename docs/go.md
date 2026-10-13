@@ -105,20 +105,41 @@ from it, and thin slices named for their commands.
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
   content). It reads nothing. The top-level `coverage` runner, which runs each language's
-  tools, is its adapter and builds every `Report` through the domain's API, never its fields
-  (decision 47): `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the
-  setters `SetMissing`, `SetIntegrationMissing`, `MarkMeasured` and `Prove`, `List` for a
-  static inventory's lines, `Integrated` for the data of the processes the tests started, and
+  tools, builds every `Report` through the domain's API, never its fields (decision 47):
+  `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the setters
+  `SetMissing`, `SetIntegrationMissing`, `MarkMeasured` and `Prove`, `List` for a static
+  inventory's lines, `Integrated` for the data of the processes the tests started, and
   `TestCoverage.Add` with `SetTests`; the zero `Report` is empty. The runner keeps `Load`,
-  which opens a report, and `Inventory`, which runs a static inventory command.
+  which opens a report, `Disk`, the `Files` port over the disk, and `Inventory`, which runs a
+  static inventory command. An `Unmeasured` is an error, its `String`, so a command hands it
+  to the UI, whose classifier makes it its gap's problem. Its tests are package
+  `coverage_test`, since its `porttest` imports it.
 - `internal/coverage/port` declares `Files`, what the report-path matcher asks of the disk:
   `SameFile(ctx, path, among)`, whether a path names a regular file and which of the sources
   of its name it is, reached through a symlinked directory too. It declares the sealed set of
   `Gap`s an `Unmeasured` build root or report has as its `Cause`: `ToolMissing`,
-  `MeasuredNothing`, `NoReport`, `Unreadable` and `Cancelled`, each written as its name.
-  `internal/coverage/port/porttest` holds the in-memory fake of `Files`, with links standing
-  for symlinks, and `FilesContract`, the contract it and the runner's `Disk` both pass. cmd's
-  `unmeasuredProblems` is the domain's classifier, one case per gap.
+  `MeasuredNothing`, `NoReport`, `Unreadable` and `Cancelled`, each written as its name. It
+  declares `Measurer[R]`, which the commands measure coverage through (decision 46):
+  `Measure(ctx, Request)` gives the domain's `*coverage.Report`, each build root or report it
+  could not measure in its `Missing`, or a sealed `Failure` of the whole measurement:
+  `Cancelled`, the gap, once the context is done, and `Unwritable`, a run folder that could
+  not be made. `R` is always `*coverage.Report`: the port names the domain's type as a type
+  argument, since the domain imports the port for `Files` and `Gap` and Go refuses the cycle
+  an import back would make. `Request` carries what crap's coverage flags say: the
+  `Sources`, `--coverage-report`'s `Reports`, `--coverage-command`'s `Command`,
+  `--use-existing-coverage`'s `Existing`, `--all-tests`' `AllTests`, the `Scope` of tests
+  that run without it and the `Reach` of the test files that reach each source.
+  `internal/coverage/port/porttest` holds the in-memory fakes: `Files`, with links standing
+  for symlinks, and `Measurer`, which reads the reports a request names from the files it
+  holds and gives a request that names none the canned reports of its build roots; and
+  `FilesContract` and `MeasurerContract`, the contracts each and its adapter pass.
+- `internal/coveragetools` is the coverage port's adapter (decision 46). Its `Measurer`
+  wraps the top-level `coverage` runner, its process groups and the run folders under
+  `.metrics/coverage` the tools write their reports in, one for each run, the latest kept for
+  `--use-existing-coverage`, and runs `--coverage-command` through the runner's `Shell`. It
+  returns the domain's `Report` as the runner built it, with no mapper (decision 47), and
+  writes what it runs and the tools' output only to the `Log` main gives it. Its
+  `MeasureTests` measures each listed test's coverage too, mutation's until it moves.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -162,11 +183,13 @@ from it, and thin slices named for their commands.
   and hands the context and the handler, over the ports in `adapters`, to `Run` through
   kong's bindings. `main` makes the program's one `context.Background()` and passes it to
   `run(ctx, args, stdin, stdout, stderr, a)` with the process's streams and
-  `diskAdapters()`: the working directory, `workdir`'s `Tree` and `Surroundings`,
-  `metricsdir`'s `Store` and itos-cc.yaml on the disk. The top-level help, its problems and
+  `diskAdapters(os.Stderr)`: the working directory, `workdir`'s `Tree` and `Surroundings`,
+  `metricsdir`'s `Store`, `coveragetools`' `Measurer`, saying what it runs on standard
+  error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
   buffers and porttest's fakes (`TestRunWithFakes`, decision 44); the hand-parsed commands
-  keep the process's streams and disk until they move, and only `main` exits. Every command
+  keep the process's streams and disk until they move, but for crap's coverage, measured
+  through `a`'s `Coverage`, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
   calls; a moved one through the parser `run` builds once with `parserOf(ctx, …, a)`, whose
@@ -187,9 +210,12 @@ from it, and thin slices named for their commands.
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
   an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
-  library until each moves (decision 41). `crap` and `mutation` measure coverage through the
-  top-level `coverage` runner, the coverage domain's adapter, until T-66 puts it behind the
-  domain's port.
+  library until each moves (decision 41). It holds the coverage domain's classifier,
+  `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
+  `mutation` share the domain. `crap` measures coverage through the port, `adapters`'
+  `Coverage`, so a test can hand it porttest's `Measurer`; `mutation` measures through
+  `loadCoverage`, which calls `coveragetools`' `MeasureTests` directly until it moves. Both
+  build the request with `coverageRequest`, from the same flags.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -219,11 +245,17 @@ context-as-argument a context after any other parameter, tests included.
   golangci-lint does not lint `cmd`: a fake enters `cmd` only through its `_test.go` files.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
-- `infra`, `workdir` and `metricsdir`: an adapter imports nothing of ours but the port it
-  implements, `internal/workdir` the two it implements, selection's and `internal/lang`'s, and
-  the `project` library it wraps, and `internal/metricsdir` the snapshot port and the `metrics`
-  and `project` libraries it wraps; only its tests may use `porttest`. Each port's
-  adapters have a rule of their own, so none is allowed another's port or library.
+- `infra`, `workdir`, `metricsdir` and `coveragetools`: an adapter imports nothing of ours but
+  the port it implements, `internal/workdir` the two it implements, selection's and
+  `internal/lang`'s, and the `project` library it wraps, and `internal/metricsdir` the
+  snapshot port and the `metrics` and `project` libraries it wraps; only its tests may use
+  `porttest`. Each port's adapters have a rule of their own, so none is allowed another's port
+  or library. An adapter may also import the domain it serves, and a port the domain it
+  belongs to, to build or return the domain's own types with no mapper between them (decision
+  47, amending 29's adapter rule): its rule allows that domain once the adapter needs it.
+  `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
+  port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
+  `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -244,8 +276,10 @@ command from reaching into this one.
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
 - An adapter: add its folder to the `files` of the rule for its port's adapters (`infra` for
-  counting's, `workdir` for selection's, `metricsdir` for the snapshot port's), or give a new
-  port's adapters a rule of their own allowing that port and any library they wrap; add a
+  counting's, `workdir` for selection's, `metricsdir` for the snapshot port's,
+  `coveragetools` for coverage's), or give a new port's adapters a rule of their own allowing
+  that port, any library they wrap and, when it returns the domain's types, the domain it
+  serves (decision 47); add a
   `!**/internal/<name>/**` exclusion to `slices` and to `slice-fakes`. Wire it in `cmd`.
 - Any other package that is no command, such as `internal/version`: add a `slices` exclusion
   saying what it is, and the same to `slice-fakes`.
@@ -395,8 +429,11 @@ A fake stands in for its adapter only when both pass one contract suite (decisio
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
 so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
 `StoreContract(t, open)` for the snapshot `Store` (T-53), `SurroundingsContract(t, open)`
-for lang's `Surroundings` (T-54), `FilesContract(t, open)` for counting's `Files` (T-55) and
-coverage's `FilesContract(t, open)` for its `Files` (T-64).
+for lang's `Surroundings` (T-54), `FilesContract(t, open)` for counting's `Files` (T-55),
+coverage's `FilesContract(t, open)` for its `Files` (T-64) and `MeasurerContract(t, open)`
+for its `Measurer` (T-66), over the reports a request names: formats, matching, merging,
+an unreadable report, one a command did not write, and a done context. Running the
+project's own tools, and the run folders, are `internal/coveragetools`' own tests'.
 `open` lays out a fixture, a `TreeFixture` of files' text, whether git holds them and which
 changed, the snapshots' raw text by name, or files' text or bytes, and returns the port over
 it and its absolute working directory. Every fake that names paths sits at an absolute `Dir`

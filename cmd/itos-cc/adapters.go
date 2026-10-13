@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/coverage"
+	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	"github.com/donvargax/itos-cc/internal/coveragetools"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/selection"
@@ -19,7 +23,8 @@ import (
 // itos-cc.yaml. A test runs itos-cc in process with porttest's fakes and a
 // file held in memory instead, which enter cmd through its _test.go files
 // alone (decision 44). The hand-parsed commands reach the disk themselves
-// until they move.
+// until they move, but for crap's coverage, which it measures through the
+// port here.
 type adapters struct {
 	// Dir is the working directory, absolute, which the UI names the files
 	// a person reads from; "" when it cannot be told.
@@ -31,6 +36,8 @@ type adapters struct {
 	Surroundings langport.Surroundings
 	// Store is the snapshot port, the snapshots under .metrics/.
 	Store snapport.Store
+	// Coverage is the coverage port, which measures coverage for crap.
+	Coverage covport.Measurer[*coverage.Report]
 	// Config is itos-cc.yaml.
 	Config configFile
 }
@@ -44,11 +51,13 @@ type configFile interface {
 }
 
 // diskAdapters are this process's: its working directory,
-// internal/workdir's tree and surroundings, internal/metricsdir's store and
+// internal/workdir's tree and surroundings, internal/metricsdir's store,
+// internal/coveragetools' measurer, saying what it runs on log, and
 // itos-cc.yaml at the project root on the disk.
-func diskAdapters() adapters {
+func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
-	return adapters{Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{}, Config: diskConfig{}}
+	return adapters{Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+		Coverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.

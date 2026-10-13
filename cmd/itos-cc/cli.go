@@ -86,14 +86,16 @@ func (c *command) allFlags() []flagSpec {
 	return append(append([]flagSpec{}, c.flags...), jsonFlag, helpFlag)
 }
 
-// invocation is one run of a command: its parsed flags and arguments, and
-// the problems found so far.
+// invocation is one run of a command: its parsed flags and arguments, the
+// problems found so far, and the adapters run was given, which crap
+// measures coverage through.
 type invocation struct {
 	cmd      *command
 	values   map[string][]string
 	args     []string
 	json     bool
 	problems []*cli.Problem
+	adapters adapters
 }
 
 func (in *invocation) set(name string) bool { return len(in.values[name]) > 0 }
@@ -247,10 +249,12 @@ func flagNames(cmd *command) []string {
 	return names
 }
 
-// execute runs cmd with args under ctx and returns its exit code. Problems
-// print on stderr, or with --json in the one object on stdout.
-func execute(ctx context.Context, cmd *command, args []string) int {
+// execute runs cmd with args under ctx, with the adapters a, and returns
+// its exit code. Problems print on stderr, or with --json in the one object
+// on stdout.
+func execute(ctx context.Context, cmd *command, args []string, a adapters) int {
 	in, err := parse(cmd, args)
+	in.adapters = a
 	if err == errHelp {
 		fmt.Print(cmd.help())
 		return 0

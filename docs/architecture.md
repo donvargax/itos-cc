@@ -43,9 +43,15 @@ The coverage domain, `internal/coverage`, owns coverage reports and what they sa
 LCOV, Go cover profiles and JaCoCo XML, matches the paths a report names to the sources, and
 answers how much of a function the tests ran and which listed tests reach a line. It reads
 nothing: what a path a report names is on disk it asks its `Files` port, and an `Unmeasured`
-build root or report carries one of the port's sealed gaps as its cause. The top-level
-`coverage` runner, which runs each language's tools, is its adapter: it builds every `Report`
-through the domain's API and answers the port from the disk (`Disk`).
+build root or report carries one of the port's sealed gaps as its cause. The commands measure
+coverage through the port's `Measurer`, which gives a `Report` or a sealed failure for a
+request, what crap's coverage flags ask. The `internal/coveragetools` adapter implements it over
+the top-level `coverage` runner, which runs each language's tools, builds every `Report` through
+the domain's API and answers the `Files` port from the disk (`Disk`); the adapter keeps the run
+folders the tools write under `.metrics/coverage`. As decision 47 lets an adapter, it returns the
+domain's own `Report`, with no mapper. cmd's `classifyCoverage` turns each gap and failure into
+its problem, for crap, which measures through the port, and mutation, which measures through
+the adapter directly until it moves.
 
 The change-risk domain, `internal/changerisk`, scores each function by CRAP, its complexity
 weighed by how little of it the tests ran. It takes files `internal/lang` has parsed, with the

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"slices"
 	"strings"
 	"testing"
@@ -168,7 +169,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	}
 	// The commands kong parses print theirs from its model and their
 	// Contract, in the same layout.
-	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters())
+	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters(io.Discard))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +202,7 @@ func TestAPanicIsAnInternalError(t *testing.T) {
 	// Serial: it swaps os.Stdout to read what execute prints.
 	boom := &command{name: "boom", run: func(context.Context, *invocation) (any, error) { panic("oops") }}
 	var code int
-	out := stdout(t, func() { code = execute(t.Context(), boom, []string{"--json"}) })
+	out := stdout(t, func() { code = execute(t.Context(), boom, []string{"--json"}, diskAdapters(io.Discard)) })
 	if code != 70 || !strings.Contains(out, `"rule": "internal"`) || !strings.Contains(out, "boom panicked: oops") {
 		t.Errorf("exit %d, stdout %q: want exit 70 and an internal problem", code, out)
 	}
