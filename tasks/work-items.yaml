@@ -2557,7 +2557,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-60]
     kind: task
     why: >
       crap is the command of 13 of file_selection.feature's 19 scenarios, which also hold selection
