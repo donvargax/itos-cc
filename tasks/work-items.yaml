@@ -2267,6 +2267,11 @@ items:
       Compare crap over a source that cannot be read (exit 70 and its message), crap run from a
       subdirectory with and without paths (output names from the working directory, crap.json keys
       from the root), and crap on paths outside the working directory, plain and with --json.
+
+      T-65 (3acf502): changerisk's Score computes c*c*(u*u*u)+c where it used math.Pow(1-coverage,
+      3) (staticcheck QF1005); a scratch check over 10 million values found no difference, but
+      compare crap's scores and --json CRAP values over a spread of coverage fractions (0, 1,
+      thirds, values near 0.5 and 1) byte for byte.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
