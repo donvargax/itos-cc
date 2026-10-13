@@ -1524,3 +1524,27 @@
     - run: "! grep -q '// T-76:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'
     - run: "! git grep -nE '// @ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$' -- cmd/itos-cc"
+- id: T-77
+  type: test
+  title: mutate.feature's exceptions and renew scenarios run through godog against the built binary
+  why: >
+    Piece 8 of mutate.feature (the plan's table): exceptions and renew scenarios. Go tests holding
+    them today include mutation_except* and except_renew tests. Each piece (decision 39) writes
+    steps for every sentence as it stands, checks each sentence against the built binary first and
+    stops on one that cannot run as written (docs/go.md step 8), declares its fixtures' test
+    outcomes through Driver.Tests and coverage through Driver.Coverage, writes file assertions with
+    slashes, tags @binary-only only what needs real processes or tools for good, deletes its own
+    entry from features.Unstepped, deletes the Go tests in cmd/itos-cc its steps now hold
+    (docs/go.md step 11, each named in the commit, never before the steps hold the same check), adds
+    runs needing Node, Python or Kotlin to ci.yml's language-tools line, and shows every new step
+    can fail (strictness edits, counted). Reuse features/mutate.go's helpers (boardModule, goTests,
+    summaryOf, trials, sitesOf). S6 of the template-design refactor; the coordinator's plan is in
+    the clone notes (.git/itos/s6-plan.md). Rules whole: ctx first, never held or captured for I/O;
+    nothing leaks into a domain; fakes not mocks, none in production code. Light local testing: the
+    scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run of this repository
+    (scenarios mutate their own fixtures, which is fine); never itos task show or itos task <id>
+    locally; no worktrees; never push a commit naming the task before its checks can pass.
+  done_when:
+    - run: "! grep -q '// T-77:' features/steps.go"
+    - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
+    - run: "! git grep -nE '// @ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$' -- cmd/itos-cc"
