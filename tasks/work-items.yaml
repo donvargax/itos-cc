@@ -2719,3 +2719,22 @@ items:
       references side by side with what using the domain's type directly would look like, plus
       anything outside a domain that leaks into it, and the person decides what changes. Before the
       issue round and Dart.
+  - id: bug-1
+    title: A coverage report written with \ separators matches no source on Linux or macOS
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      ID-COV-32 (coverage.feature, Separators do not matter) says a report written with \ separators
+      matches sources written with /, and the reverse. coverage/coverage.go's match normalises only
+      with filepath.FromSlash and ToSlash, which change nothing on Linux and macOS, so a report
+      naming SF:src\demo\board.go (written on Windows, read in a Linux CI job) leaves
+      src/demo/board.go unmeasured: coverage comes back null (checked with the built binary while
+      converting coverage.feature, T-61). On Windows both directions match. Fix: report paths are
+      read with \ as a separator on every system, so a report from any system matches; sources keep
+      their system's separator. The coordinator settled it on 2026-10-13 for the spec as written (a
+      file whose name holds a backslash on Unix is not worth designing for). Lands red first: COV-32
+      tagged with this bug, steps held through the binary driver, then the fix with Scenarios and
+      Upgrading footers. T-61 resumes after it.
