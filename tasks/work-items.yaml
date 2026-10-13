@@ -2532,7 +2532,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-60]
     kind: task
     why: >
       The coverage split (decision 46) must be held by scenarios before it starts. COV-16, 18, 19,
