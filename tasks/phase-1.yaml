@@ -1136,3 +1136,35 @@
     local testing: the packages and scenarios named in the checks, never the whole cmd/itos-cc suite
     or a mutation run; never itos task show locally. No binary comparison; a case worth comparing
     joins refactor-final-proof's list.
+- id: T-60
+  type: test
+  title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
+  why: >
+    Decision 39: crap's feature files convert before crap moves. TestScenarios runs every Converted
+    file (cmd/itos-cc/scenarios_test.go:48) and memory.Run refuses hand-parsed commands (:209), so
+    converting crap's files now would tag every crap scenario @binary-only only to untag it at the
+    move. Instead features.InProcess lists the files the in-process driver runs, a file joining it
+    when its command moves; TagFilter takes the driver's files, still judges no-match against all of
+    Converted, and logs tags only binary-run files hold as binary driver only until its command
+    moves; @binary-only means the binary's for good. Driver.Coverage(dir, c) declares what a
+    project's own tools measure: the binary driver checks the tools are there (skip, or fail under
+    ITOS_CC_LANGUAGE_TOOLS) and links the pinned node_modules; the memory driver records it.
+    crap.feature and complexity.feature then run through the binary driver, complexity read through
+    crap --no-coverage --json, scored ones through --coverage-report over a hand-written report;
+    CRAP-02 alone is @binary-only for good. CRAP-11's report-unreadable row names dir and language
+    where the problem carries report (common.go:118-126): reword it if the product is right. Update
+    docs/go.md's moving-a-command step 8, features/README.md and itos.yaml's comment. S5 of the
+    template-design refactor; the coordinator's plan is in the clone notes (.git/itos/s5-plan.md:
+    in-process lists, which scenarios stay binary-only, the coverage code's line references,
+    refactor-final-proof cases per task). Rules whole: ctx first, never held or captured for I/O;
+    nothing leaks into a domain, while adapters and ports may use the domain's types with no mappers
+    (decision 47); fakes not mocks, none in production code. Light local testing: the packages and
+    scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run; never itos task
+    show locally. No binary comparison: the plan's cases for this task join refactor-final-proof's
+    list.
+  done_when:
+    - run: grep -q '"crap.feature"' features/steps.go
+    - run: grep -q '"complexity.feature"' features/steps.go
+    - run: grep -q 'var InProcess' features/steps.go
+    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|CPLX)-'
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@ID-CRAP-01'
