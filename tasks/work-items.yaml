@@ -2647,3 +2647,30 @@ items:
       testing: the packages and scenarios in the checks, never the whole cmd/itos-cc suite or a
       mutation run; never itos task show locally. No binary comparison: the plan's cases for this
       task join refactor-final-proof's list.
+  - id: T-66
+    title: Coverage is measured through the coverage port, its fake and adapter passing one contract suite
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Decision 46, wired into the hand-parsed crap first, as T-38 wired snapshots into dry and
+      scrap. internal/coverage/port declares Measurer.Measure(ctx, request), returning a
+      *coverage.Report or a sealed gap (decision 47: the port and adapter use the domain's type, no
+      raw results). The porttest fake holds canned Reports by root and files for named reports;
+      MeasurerContract covers named reports (formats, matching, merging, Unreadable) and a done ctx,
+      real tools staying the adapter's own tests. The adapter internal/coveragetools wraps the
+      runner, its process groups and run folders (one copy that loadCoverage also uses,
+      common.go:64-92), writes progress only to the writer main gives it, and has its own depguard
+      rule allowing internal/coverage. classifyCoverage in cmd maps each gap once for crap and
+      mutation; unmeasuredProblems (common.go:104) goes. Mutation keeps the runner library until it
+      moves. docs/go.md's boundary list gains decision 47's adapter rule. S5 of the template-design
+      refactor; the coordinator's plan is in the clone notes (.git/itos/s5-plan.md: in-process
+      lists, which scenarios stay binary-only, the coverage code's line references,
+      refactor-final-proof cases per task). Rules whole: ctx first, never held or captured for I/O;
+      nothing leaks into a domain, while adapters and ports may use the domain's types with no
+      mappers (decision 47); fakes not mocks, none in production code. Light local testing: the
+      packages and scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run;
+      never itos task show locally. No binary comparison: the plan's cases for this task join
+      refactor-final-proof's list.
