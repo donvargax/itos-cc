@@ -2341,18 +2341,9 @@ items:
     title: The snapshot port grows Remove and another project's root before mutation and serve move
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      T-38's Store has Root, Read and Write, all dry and scrap need. mutate/run.go calls
-      metrics.Remove, mutate/orphans.go and mutate/snapshot.go read with
-      metrics.ReadIn(metrics.DirOf(root)) for a root other than the working directory's, and
-      graph/build.go walks metrics.DirOf(root) and its mutate folder. Settling in the spec of the
-      first of those moves how the port grows (a Remove method, a store made for a given root,
-      listing a folder of snapshots) keeps that move from reaching metrics around the port.
-
-      Specified 2026-10-13 as T-69.
   - id: scrap-clusters-null
     title: "scrap --json gives \"clusters\": null for a file with no clusters"
     phase: 1
