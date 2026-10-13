@@ -11,6 +11,7 @@ package features
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -22,7 +23,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	gherkin "github.com/cucumber/gherkin/go/v42"
 	"github.com/cucumber/godog"
 )
 
@@ -70,7 +73,60 @@ type Driver interface {
 	// skips the scenario (godog.ErrSkip) where the system lets a second
 	// listener take a port held; the in-process driver holds none.
 	Occupy() (port int, release func(), err error)
+	// Tests declares what the project's own tests do in the folder dir,
+	// before a run of itos-cc runs them there: mutation run's baseline and
+	// its trial of each mutant. The binary driver checks the tools they run
+	// with are installed, skipping the scenario (godog.ErrSkip) when they
+	// are not, or failing it where the job says it installed them
+	// (ITOS_CC_LANGUAGE_TOOLS), as Coverage does; the real tests then decide
+	// every outcome. The in-process driver records it, for the fake that
+	// runs a project's tests once the mutation group moves. A folder with no
+	// Tests declared has no tests a run may run.
+	Tests(dir string, t Tests) error
+	// Counted says the system makes counted runs, mutation run --count,
+	// which itos-cc makes on Linux and macOS alone (#29): elsewhere both
+	// drivers skip the scenario (godog.ErrSkip).
+	Counted() error
 }
+
+// Tests is what a project's own tests do in a folder, as a Given declares
+// it.
+type Tests struct {
+	// Language is the language of the tests: go, typescript, python or
+	// kotlin.
+	Language string
+	// Command is the command itos-cc runs them with, as it announces the
+	// baseline's (itos-cc: baseline <dir>$ <command>), such as
+	// "go test -count=1 -failfast ./src" or "npm run test --silent".
+	Command string
+	// Baseline is what they print when they fail with nothing mutated, ""
+	// when they pass.
+	Baseline string
+	// Surviving are the sites whose mutants they pass, and TimingOut those
+	// whose mutants make them run past the timeout; every other mutant
+	// they run fails them, killed.
+	Surviving, TimingOut []Site
+	// Elapsed is how long one run of them takes: the baseline's, and each
+	// trial's but a timing-out one's.
+	Elapsed time.Duration
+}
+
+// Site is a mutation site as a Given names it: its file, slash-separated
+// from the folder its Tests were declared for, its line, and the text a
+// mutant replaces and what replaces it, "" for a deletion.
+type Site struct {
+	File                  string
+	Line                  int
+	Original, Replacement string
+}
+
+// countedSystems are the systems itos-cc makes counted runs on (#29), by
+// the name Go gives each.
+var countedSystems = []string{"linux", "darwin"}
+
+// CountedOn is whether itos-cc makes counted runs on the system goos, as
+// Go names it.
+func CountedOn(goos string) bool { return slices.Contains(countedSystems, goos) }
 
 // Build is a way of building itos-cc, as a Given names it.
 type Build struct {
@@ -149,13 +205,74 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // dry.feature and scrap.feature, crap.feature, complexity.feature and
 // coverage.feature, and file_selection.feature, each converted before its
 // command moves so the move is held by its scenarios (T-37, T-41, T-60,
-// T-61, T-62), and cli.feature, whose help, version and mutation scenarios
-// need commands that move later (T-62). A file converts with its scenarios' text unchanged (q-52);
-// the binary driver runs every one.
+// T-61, T-62), cli.feature, whose help, version and mutation scenarios
+// need commands that move later (T-62), and mutate.feature, converted in
+// pieces before the mutation group moves (T-70 to T-81), the scenarios of
+// the pieces not done yet listed in Unstepped. A file converts with its
+// scenarios' text unchanged (q-52); the binary driver runs every one.
 var Converted = []string{
 	"count.feature", "units.feature", "dry.feature", "scrap.feature",
 	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
-	"cli.feature",
+	"cli.feature", "mutate.feature",
+}
+
+// Unstepped are the scenarios of converted files whose steps are not
+// written yet, by their ID tag: mutate.feature's, too many for one task,
+// whose steps come a piece at a time, the Rules of each piece in the S6
+// plan's table. TagFilter treats them as scenarios of a file with no steps
+// yet: no run selects them, and a selection naming them logs them. The list
+// is written by hand, an entry for each piece left, in the plan's ranges,
+// so a piece deletes its own entry, and the last one the list (T-81); an ID
+// no converted file's scenario carries fails every selection.
+var Unstepped = slices.Concat(
+	// T-71: running, coverage, built binary, uncovered
+	ids("MUT", "07-22", "47-51", "100", "105", "117-120", "149"),
+	// T-72: listed tests
+	ids("MUT", "121-137"),
+	// T-73: differential, since
+	ids("MUT", "23-27", "37-46", "102-104"),
+	// T-74: check, stale tests
+	ids("MUT", "57-70", "106-108"),
+	// T-75: sample
+	ids("MUT", "71-84", "109-113", "147-148"),
+	// T-76: results
+	ids("MUT", "28-36", "52-56", "145", "231-241"),
+	// T-77: exceptions, renew
+	ids("MUT", "85-99", "138-144", "146", "227", "242"),
+	// T-78: language rules
+	ids("MUT", "150-155", "203-210", "213-220"),
+	// T-79: strict
+	ids("MUT", "156-164", "221-226", "228-230"),
+	// T-80: fail-fast, ownership
+	ids("MUT", "165-172", "187-202", "211"),
+	// T-81: counted, worktree
+	ids("MUT", "173-186", "212"),
+)
+
+// ids are the ID tags of area's scenarios numbered as each of ranges says,
+// a number or two joined by a dash, both included, each written with two
+// digits at least: ids("MUT", "07-09") is @ID-MUT-07, @ID-MUT-08 and
+// @ID-MUT-09.
+func ids(area string, ranges ...string) []string {
+	var tags []string
+	for _, r := range ranges {
+		first, last, _ := strings.Cut(r, "-")
+		if last == "" {
+			last = first
+		}
+		from, err := strconv.Atoi(first)
+		if err != nil {
+			panic(err)
+		}
+		to, err := strconv.Atoi(last)
+		if err != nil {
+			panic(err)
+		}
+		for n := from; n <= to; n++ {
+			tags = append(tags, fmt.Sprintf("@ID-%s-%02d", area, n))
+		}
+	}
+	return tags
 }
 
 // InProcess are the converted files the in-process driver runs: those of
@@ -181,9 +298,10 @@ type world struct {
 
 	// feature is the name of the scenario's feature file.
 	feature string
-	// scored is what "it is scored" does, a sentence of two files: set by
-	// the steps of the scenario's file, nil in any other.
-	scored func() error
+	// scored is what "it is scored" does, and noTests what "no tests are
+	// run" does, each a sentence of two files: set by the steps of the
+	// scenario's file, nil in any other.
+	scored, noTests func() error
 	// with are the words a Given adds after a scenario's own to each run
 	// its When makes, as a row of an outline says "with --flag".
 	with []string
@@ -297,8 +415,8 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	sc.Step(`^it exits with code (\d+)$`, w.exitsWith)
 	sc.Step(`^the exit code is (\d+)$`, w.exitsWith)
 	// The problem a run reports, by its rule, alone or with the flag, the
-	// argument or the key it names, and the flag its fix suggests.
-	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key) "([^"]*)"$`, w.problemIs)
+	// argument, the key or the file it names, and the flag its fix suggests.
+	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key|file) "([^"]*)"$`, w.problemIs)
 	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
 	sc.Step(`^its standard output lists "([^"]*)"$`, func(text string) error {
@@ -410,12 +528,21 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	})
 
 	// scrap.feature scores an example and crap.feature a function, each
-	// file's steps saying what scoring is in its scenarios.
+	// file's steps saying what scoring is in its scenarios, as they say what
+	// running no tests is.
 	sc.Step(`^it is scored$`, func() error {
 		if w.scored == nil {
 			return fmt.Errorf("nothing is scored in a scenario of %s", w.feature)
 		}
 		return w.scored()
+	})
+	// coverage.feature runs no test when reports are there already, and
+	// mutate.feature when mutation list lists sites.
+	sc.Step(`^no tests are run$`, func() error {
+		if w.noTests == nil {
+			return fmt.Errorf("no tests are run is no sentence of %s", w.feature)
+		}
+		return w.noTests()
 	})
 
 	// The steps of each converted feature file, after the world's, so a
@@ -428,12 +555,13 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	coverageSteps(sc, w)
 	selectionSteps(sc, w)
 	cliSteps(sc, w)
+	mutateSteps(sc, w)
 }
 
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary = nil, nil, nil, "", nil, ""
-	w.feature, w.scored, w.with, w.project = filepath.Base(s.Uri), nil, nil, ""
+	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
@@ -754,7 +882,7 @@ func (w *world) lastObject() (map[string]any, string, error) {
 }
 
 // problemIs is whether the last run reports a problem of that rule, whose
-// key, a flag, an argument or a key of itos-cc.yaml, is value; any problem
+// key, a flag, an argument, a key of itos-cc.yaml or a file, is value; any problem
 // of the rule where key is "". The plain output names no rule, so the
 // problem is read from the run made with --json (lastObject), and the plain
 // one's error output must print its message.
@@ -949,6 +1077,10 @@ type Selection struct {
 	// Unmoved are the tags it matches only in converted files the driver
 	// does not run: the binary driver's alone until their command moves.
 	Unmoved []string
+	// Unstepped are the tags it matches only on scenarios Unstepped
+	// lists, whose steps are not written yet, held by cmd/itos-cc's Go
+	// tests.
+	Unstepped []string
 }
 
 // TagFilter is what a selection selects of the feature files in dir for a
@@ -960,20 +1092,16 @@ type Selection struct {
 // runs nothing; one that matches only tags of converted files the driver
 // does not run selects nothing for it, the binary driver running those. A
 // scenario only one driver can run carries @binary-only or
-// @in-process-only, never a copy, and the other driver passes it by.
+// @in-process-only, never a copy, and the other driver passes it by. The
+// scenarios Unstepped lists are left out of every run: a tag only they
+// carry is logged, as one of a file the driver does not run is, and one
+// that others carry too selects those others alone.
 //
 // godog's own tag filter takes exact tags joined by commas; itos's run
 // templates join the IDs they select with |, as a regular expression
 // (itos.yaml's tests.scenario.run), so a selection is that expression,
 // turned here into godog's filter. A scenario tagged @wip never runs.
 func TagFilter(selection, dir string, files []string, skip string) (Selection, error) {
-	if selection == "" {
-		return Selection{Filter: "~@wip&&~" + skip}, nil
-	}
-	pattern, err := regexp.Compile(selection)
-	if err != nil {
-		return Selection{}, err
-	}
 	in := func(names []string) []string {
 		var paths []string
 		for _, name := range names {
@@ -982,6 +1110,28 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 		return paths
 	}
 	own, err := featureTags(in(files))
+	if err != nil {
+		return Selection{}, err
+	}
+	carried, err := carriers(in(Converted))
+	if err != nil {
+		return Selection{}, err
+	}
+	// leaveOut is the filter's terms leaving out the Unstepped scenarios of
+	// the driver's files among ids.
+	leaveOut := func(ids []string) string {
+		var terms strings.Builder
+		for _, id := range ids {
+			if slices.Contains(own, id) {
+				terms.WriteString("&&~" + id)
+			}
+		}
+		return terms.String()
+	}
+	if selection == "" {
+		return Selection{Filter: "~@wip&&~" + skip + leaveOut(Unstepped)}, nil
+	}
+	pattern, err := regexp.Compile(selection)
 	if err != nil {
 		return Selection{}, err
 	}
@@ -1004,9 +1154,12 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 		if !pattern.MatchString(tag) {
 			continue
 		}
+		c := carried[tag]
 		switch {
+		case c.unstepped != nil && !c.stepped:
+			sel.Unstepped = append(sel.Unstepped, tag)
 		case slices.Contains(own, tag):
-			each = append(each, tag+"&&~@wip&&~"+skip)
+			each = append(each, tag+"&&~@wip&&~"+skip+leaveOut(c.unstepped))
 		case slices.Contains(converted, tag):
 			sel.Unmoved = append(sel.Unmoved, tag)
 		default:
@@ -1035,6 +1188,55 @@ func (e *noMatch) Error() string {
 			strings.Join(e.unconverted, " ") + " are in feature files with no steps yet (q-52), held by cmd/itos-cc's Go tests"
 	}
 	return "no scenario has a tag that " + e.selection + " matches"
+}
+
+// carrier is which scenarios carry a tag: the Unstepped ones, by their ID
+// tag, and whether any other does.
+type carrier struct {
+	unstepped []string
+	stepped   bool
+}
+
+// carriers is, for every tag the scenarios of files carry, theirs or one
+// their feature, rule or examples carry, as godog reads them, which carry
+// it. It fails when an ID Unstepped lists is no scenario's of files.
+func carriers(files []string) (map[string]carrier, error) {
+	carried := map[string]carrier{}
+	for _, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+		n := 0
+		newID := func() string { n++; return strconv.Itoa(n) }
+		doc, err := gherkin.ParseGherkinDocument(bytes.NewReader(data), newID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", file, err)
+		}
+		for _, pickle := range gherkin.Pickles(*doc, file, newID) {
+			id := ""
+			for _, tag := range pickle.Tags {
+				if slices.Contains(Unstepped, tag.Name) {
+					id = tag.Name
+				}
+			}
+			for _, tag := range pickle.Tags {
+				c := carried[tag.Name]
+				if id == "" {
+					c.stepped = true
+				} else if !slices.Contains(c.unstepped, id) {
+					c.unstepped = append(c.unstepped, id)
+				}
+				carried[tag.Name] = c
+			}
+		}
+	}
+	for _, id := range Unstepped {
+		if carried[id].unstepped == nil {
+			return nil, fmt.Errorf("features.Unstepped lists %s, which no scenario of a converted file carries", id)
+		}
+	}
+	return carried, nil
 }
 
 // Every tag written in files, once each, sorted.

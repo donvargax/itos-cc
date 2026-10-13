@@ -100,14 +100,8 @@ const (
 // python: its runner's preinstalled ones are whatever version its image has.
 func (b binary) Coverage(dir string, c Coverage) error {
 	required := os.Getenv(languageToolsEnv) != ""
-	missing := func(what string) error {
-		if required {
-			return fmt.Errorf("%s is not installed, and %s says the language tools are", what, languageToolsEnv)
-		}
-		return fmt.Errorf("%w: %s is not installed", godog.ErrSkip, what)
-	}
-	if c.Language != "go" && !required && os.Getenv("CI") != "" {
-		return fmt.Errorf("%w: CI installs the %s tools on ubuntu-latest only, where it sets %s", godog.ErrSkip, c.Language, languageToolsEnv)
+	if err := languageJob(c.Language); err != nil {
+		return err
 	}
 	switch c.Language {
 	case "go":
@@ -149,6 +143,71 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		if _, err := exec.LookPath(c.Program); err != nil {
 			return missing(c.Program)
 		}
+	}
+	return nil
+}
+
+// missing is the error of a tool that is not installed: a skip, or a
+// failure under ITOS_CC_LANGUAGE_TOOLS.
+func missing(what string) error {
+	if os.Getenv(languageToolsEnv) != "" {
+		return fmt.Errorf("%s is not installed, and %s says the language tools are", what, languageToolsEnv)
+	}
+	return fmt.Errorf("%w: %s is not installed", godog.ErrSkip, what)
+}
+
+// languageJob skips a scenario needing language's tools in a CI job that
+// did not install the pinned ones, for any language but Go: its runner's
+// are whatever its image has.
+func languageJob(language string) error {
+	if language != "go" && os.Getenv(languageToolsEnv) == "" && os.Getenv("CI") != "" {
+		return fmt.Errorf("%w: CI installs the %s tools on ubuntu-latest only, where it sets %s", godog.ErrSkip, language, languageToolsEnv)
+	}
+	return nil
+}
+
+// testTools are the programs each language's tests need, beside the one
+// their command runs.
+var testTools = map[string][]string{
+	"go":         {"go"},
+	"typescript": {"node"},
+	"python":     {"python3"},
+	"kotlin":     {"java"},
+}
+
+// Tests checks the tools t's tests run with are installed: the language's
+// own, the program t's command runs when the PATH finds it, not a file of
+// the project such as ./gradlew, and pytest for a command that runs it. A
+// tool missing skips the scenario, or fails it under ITOS_CC_LANGUAGE_TOOLS,
+// and any CI job but the one that installed the pinned tools skips a
+// scenario needing other tools than Go's, as Coverage does. The tests
+// themselves then decide every outcome.
+func (binary) Tests(_ string, t Tests) error {
+	tools, ok := testTools[t.Language]
+	if !ok {
+		return fmt.Errorf("no tools known for %s's tests", t.Language)
+	}
+	if err := languageJob(t.Language); err != nil {
+		return err
+	}
+	if words := strings.Fields(t.Command); len(words) > 0 && !strings.ContainsAny(words[0], `/\`) {
+		tools = append(slices.Clone(tools), words[0])
+	}
+	for _, tool := range tools {
+		if _, err := exec.LookPath(tool); err != nil {
+			return missing(tool)
+		}
+	}
+	if strings.Contains(t.Command, "pytest") && exec.Command("python3", "-c", "import pytest").Run() != nil {
+		return missing("pytest for python3")
+	}
+	return nil
+}
+
+// Counted skips the scenario where itos-cc makes no counted run.
+func (binary) Counted() error {
+	if !CountedOn(runtime.GOOS) {
+		return fmt.Errorf("%w: itos-cc makes counted runs on Linux and macOS alone (#29)", godog.ErrSkip)
 	}
 	return nil
 }

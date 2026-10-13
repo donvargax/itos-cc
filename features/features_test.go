@@ -22,7 +22,9 @@
 // others are converted over time, and until then their scenarios are held
 // by the Go tests of cmd/itos-cc; a selection naming one of theirs logs it
 // as not run here, and a selection naming nothing else fails, as one
-// matching no tag does.
+// matching no tag does. So are the scenarios of a converted file whose
+// steps are not written yet (Unstepped), but a selection naming only them
+// passes, running nothing.
 //
 // The scenarios run itos-cc as another process, where Go records
 // coverage only for a binary built with -cover and run with GOCOVERDIR naming
@@ -72,6 +74,12 @@ func TestFeatures(t *testing.T) {
 	}
 	if len(sel.Unconverted) > 0 {
 		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
+	}
+	if len(sel.Unstepped) > 0 {
+		t.Logf("not run here, their steps not written yet (Unstepped): %s", strings.Join(sel.Unstepped, " "))
+	}
+	if sel.Filter == "" {
+		return
 	}
 	t.Cleanup(removeCallerPath)
 	root, err := moduleRoot()

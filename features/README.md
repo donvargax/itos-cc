@@ -20,13 +20,15 @@ Never here:
 ## Black-box boundary
 
 The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
-`coverage.go`, `selection.go` and `cli.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+`coverage.go`, `selection.go`, `cli.go` and `mutate.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
 read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
 and programs left off the PATH (`Run.Without`), what a project's own coverage tools measure
-in a folder (`Coverage`), which a Given declares before a run measures with them, builds of
+in a folder (`Coverage`), which a Given declares before a run measures with them, what its own
+tests do there (`Tests`), which a Given declares before a run runs them, builds of
 itos-cc as a release, go install or a person's go build makes them (`Build`, run through
-`Run.Binary`), and a port held in use (`Occupy`). They are ordinary files of package
+`Run.Binary`), a port held in use (`Occupy`), and whether the system makes counted runs
+(`Counted`). They are ordinary files of package
 `features`, so `cmd/itos-cc`'s tests can run them in process against the ports' fakes (decision
 44); `itos-cc.yaml` excludes `features/**`, so they are neither measured nor mutated.
 Two drivers run them, one scenario at a time each: `cmd/itos-cc`'s `TestScenarios` in process,
@@ -58,7 +60,18 @@ project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); and a 
 project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
 pinned tools sets; any other CI job skips the TypeScript and Python ones, its runner's tools being
 whatever its image has. The in-process driver records what was declared, for the fake measurer a
-command measuring coverage is handed once it moves. A scenario that only reads which Gradle or
+command measuring coverage is handed once it moves.
+
+A Given whose project's tests a run of itos-cc runs, mutation run's baseline and trials, declares
+what they do (`Tests`): their language and the command itos-cc runs them with, what a failing
+baseline prints, the sites whose mutants survive or time out, every other mutant they run being
+killed, and how long a run of them takes. The binary driver checks their tools as `Coverage`
+does, the language's own (`go`, `node`, `python3`, `java`) and the program the command runs where
+the PATH would find it, pytest for a command running it, skipping or failing alike, and the real
+tests then decide every outcome; the in-process driver records it, for the fake that runs a
+project's tests once the mutation group moves (S7). A folder with no `Tests` declared has no tests
+a run may run. A scenario of a counted run, `mutation run --count`, skips where itos-cc makes
+none, on any system but Linux and macOS (#29), in either driver (`Counted`). A scenario that only reads which Gradle or
 Maven command itos-cc chose runs with `gradle` and `mvn` off the PATH, so neither runs anywhere;
 one that needs a symbolic link skips where the system makes none. The in-process driver refuses
 both, naming `@binary-only`, and so a build of itos-cc and a port held: the binary driver builds
@@ -78,12 +91,18 @@ killed by the system's default action fails the step: it never handled the inter
 
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
-`complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`, and
-`count.feature`, the
-template's sample, all of whose scenarios are `@wip`. The in-process driver runs those of
-`InProcess`: all of them but `crap.feature`, `complexity.feature`, `coverage.feature` and
-`file_selection.feature`, which join it when crap moves, and `cli.feature`, whose help, version
-and mutation scenarios need commands that move later, which joins it in S9. Every other file converts to godog over time,
+`complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`,
+`mutate.feature`, and `count.feature`, the
+template's sample, all of whose scenarios are `@wip`. `mutate.feature` converts a piece at a
+time (T-70 to T-81): the scenarios of the pieces whose steps are not written yet are listed in
+`Unstepped` (`steps.go`), by their IDs, an entry for each piece, and run nowhere. A selection
+naming only them logs them as not run, their steps not written yet, and passes; a tag other
+scenarios carry too selects those others alone; and an ID `Unstepped` lists that no scenario of a
+converted file carries fails every selection. The Go tests of `cmd/itos-cc` hold those scenarios
+until their piece. The in-process driver runs those of
+`InProcess`: all of them but `cli.feature`, whose help, version and mutation scenarios need
+commands that move later, which joins it in S9, and `mutate.feature`, which joins it when the
+mutation group moves (S7). Every other file converts to godog over time,
 before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
 the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
 file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
@@ -209,7 +228,7 @@ with the program named as the built binary is.
 | `stdout is one object with "schema": 1, "ok", "…", and "…"`                           | One JSON value, an object with those keys, none of them null.    |
 | `stdout shows:` with its text                                                         | stdout is the text exactly, a path's separators read as slashes. |
 | `stderr says "…"`                                                                     | Containment, on stderr, in each run the When made; the text is everything between the first and last quote, `\"` a quote; `<dir>` in it the folder of the Given's project as itos-cc names it, `...` or `…` the rest of what it says there. |
-| `the problem is "…"`, `…, with flag "…"`, `with argument "…"`, `with key "…"`            | A problem of that rule, with that subject, in the run made again with `--json` before its words, which exits as the plain one; the plain run's stderr prints its message. |
+| `the problem is "…"`, `…, with flag "…"`, `with argument "…"`, `with key "…"`, `with file "…"` | A problem of that rule, with that subject, in the run made again with `--json` before its words, which exits as the plain one; the plain run's stderr prints its message. |
 | `the exit code is <n>`                                                                | The binary's exit status, of each run the When made.              |
 | `"…" is an empty list` / `"…" and "…" are empty lists, not null`                      | `[]` in the JSON object, never `null`.                            |
 
@@ -413,3 +432,30 @@ script would leave `test-ran` (14).
 | `stdout names the subcommands … and …` / `stderr names the subcommands … and …`       | Each on a line of its own; each in a line of stderr naming the subcommands. |
 | `stdout says "…"` / `each survivor is a "…" problem`                                  | Containment; as many problems of the rule, made with --json, as the line says survived. |
 | `stdout lists each mutation site of … with its line, column, function, original, and replacement` / `no test command runs` | Exactly the file's sites, each line in that form; no `test-ran`, no `.metrics` and no baseline. |
+
+`mutate.feature`'s steps, in `mutate.go`, for the scenarios not in `Unstepped`. A site is read as
+`mutation list` prints it, `file:line:column` and its texts, or from `--json`; what a run judged,
+from its summary on stdout and the line on stderr for each mutant it ran. The Go modules are
+`example.com/m`; ID-MUT-06 runs in a Python project whose test leaves `test-ran` if anything runs
+it. A Given whose run runs a project's tests declares them (`Tests`) and, for Go, what they cover
+(`Coverage`); one about a counted run skips where itos-cc makes none (`Counted`).
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `the sites are:` with a table                                                          | The run, a mutation list of one file, listed exactly the table's sites in order: line, original, replacement, `(deleted)` for nothing. |
+| `code outside functions, comments, strings, and type arguments hold no sites`          | The file holds each of the four with an operator, 0, 1 or boolean in it, and no site listed is in one. |
+| `a?.() becomes a(), as a?.[0] becomes a[0]`                                           | chains.ts's two optional chains each have one `?.` site, which leaves `a()` and `a[0]`. |
+| `.js, .jsx, .mjs, and .cjs files have the same sites`                                 | A copy under each extension named lists the same sites, places and functions. |
+| `each site is printed as "…"` / `no tests are run`                                    | Every line is a site of src/board.py in the format, its words standing for the site's, all four in order; no `test-ran`, no `.metrics` and no baseline. |
+| `src/app.ts has a function with a site before, inside and after an inline callback` / `its sites are listed in line and column order` / `in the order "itos-cc …" lists the file's "…"` | routes' sites on lines 2 and 7, the callback's on line 4, its tests passing every mutant; the run listed all of them by line and column; that command's object lists the file's mutants the same. |
+| `src/setup.go declares two init functions …` / `a previous run recorded both …`         | Two init functions of different bodies, each with a site; mutation run killed every mutant. |
+| `I run "itos-cc …" with nothing changed` / `the mutants of both init functions are reused, and none runs` | src/setup.go as the previous run left it; ran 0, reused every site of both, no mutant's line. |
+| `the second init function has changed since` / `the two have swapped places since, unchanged` | Its body changed; or the two swapped. |
+| `the only problem is "…", for the second init function` / `"itos-cc …" runs only the second init function's mutants` / `"itos-cc …" reuses every mutant` | One problem, of the rule, naming the function and its line; every mutant of the second ran and none other; ran 0 and every one reused. |
+| `itos-cc.yaml excludes "…"` / `the only commit since main changes …, whose mutants no test reaches` | That itos-cc.yaml; the module, its results recorded on main, then a branch whose one commit changes the fake. |
+| `stderr says "…", and the exit code is <n>` / `"itos-cc …" exits <n>`                  | Both of the run; that run's exit code. |
+| `neither "itos-cc …" nor "itos-cc …" names a site in …`                               | Each names a site, as `file:line` before its text, and never the file. |
+| `a snapshot under .metrics/mutate for …, and fresh results for every other source` / `itos-cc.yaml then excludes "…"` | A run in a git repository recorded every source, the fake's among them, and check passes; then that itos-cc.yaml. |
+| `its "…" list … with "…" "…", and the exit code is <n>` / `the snapshot is removed, and its "…" list it with "…" "…"` | The object's list names the file with that value; the Given's snapshot is gone, and the list names its source. |
+| `itos-cc.yaml excepts a survivor in … and excludes "…"` / `it reports "…" with "…" "…"` | An exception of the fake's line 7, column 9, beside the exclude; a problem of the rule with that value. |
+| `the itos-cc.yaml HEAD commits excludes "…"` / `no selected site is in …`             | Committed so, the working tree's excluding nothing, where mutation list lists the fake; the run selected sites, none in the file. |

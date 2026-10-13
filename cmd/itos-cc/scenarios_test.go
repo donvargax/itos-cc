@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"maps"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -50,6 +51,9 @@ func TestScenarios(t *testing.T) {
 	if len(sel.Unconverted) > 0 {
 		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
 	}
+	if len(sel.Unstepped) > 0 {
+		t.Logf("not run here, their steps not written yet (features.Unstepped): %s", strings.Join(sel.Unstepped, " "))
+	}
 	if len(sel.Unmoved) > 0 {
 		t.Logf("binary driver only until its command moves: %s", strings.Join(sel.Unmoved, " "))
 	}
@@ -89,6 +93,10 @@ type memory struct {
 	// coverage is what each folder's own tools measure, as the scenario
 	// declared it, by folder, which the fake measurer is handed (measurer).
 	coverage map[string]features.Coverage
+	// tests are what each folder's own tests do, as the scenario declared
+	// them, by folder, for the fake that runs a project's tests once the
+	// mutation group moves (porttest.Workers, S7).
+	tests map[string]features.Tests
 }
 
 // repo is a fake git repository: what add staged and the last commit holds,
@@ -103,7 +111,7 @@ var _ features.Driver = (*memory)(nil)
 func newMemory(t *testing.T) *memory {
 	return &memory{
 		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
-		coverage: map[string]features.Coverage{},
+		coverage: map[string]features.Coverage{}, tests: map[string]features.Tests{},
 	}
 }
 
@@ -174,6 +182,22 @@ func (m *memory) Remove(path string) error {
 // Coverage records what the project's own tools measure in dir.
 func (m *memory) Coverage(dir string, c features.Coverage) error {
 	m.coverage[filepath.Clean(dir)] = c
+	return nil
+}
+
+// Tests records what the project's own tests do in dir.
+func (m *memory) Tests(dir string, t features.Tests) error {
+	m.tests[filepath.Clean(dir)] = t
+	return nil
+}
+
+// Counted skips the scenario where itos-cc makes no counted run, in
+// process as it does in its own: the system decides, which the run here
+// shares.
+func (m *memory) Counted() error {
+	if !features.CountedOn(runtime.GOOS) {
+		return fmt.Errorf("%w: itos-cc makes counted runs on Linux and macOS alone (#29)", godog.ErrSkip)
+	}
 	return nil
 }
 

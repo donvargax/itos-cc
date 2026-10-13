@@ -415,8 +415,11 @@ follows the same steps for a command it wrote before it had the template's desig
    in `steps.go`, reaching the world only through its `Driver` and reading only what itos-cc
    prints and writes, and the file added to `Converted` in `steps.go`. The binary driver then
    runs its scenarios (Tests, below); a Given whose run measures coverage with the project's
-   own tools declares them (`Driver.Coverage`), so the binary driver skips the scenario where
-   they are not installed. The move adds the file to `InProcess`, and its scenarios run
+   own tools declares them (`Driver.Coverage`), and one whose run runs the project's tests
+   declares what they do (`Driver.Tests`): the binary driver skips the scenario where their
+   tools are not installed, and the in-process driver records it for its fakes. A file too
+   large for one task converts in pieces, the scenarios still without steps listed in
+   `features.Unstepped`, which no run selects (mutate.feature, T-70 to T-81). The move adds the file to `InProcess`, and its scenarios run
    through the in-process driver too, the moved command needing nothing more of it than the
    ports in `adapters`. Never tag a scenario `@binary-only` because its command has not
    moved: the tag says the binary's for good, as for a scenario about the real tools' commands

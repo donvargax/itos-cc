@@ -255,6 +255,8 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 		if filepath.Base(s.Uri) != "coverage.feature" || len(s.Steps) == 0 {
 			return ctx, nil
 		}
+		// no tests are run (steps.go) looks for their marks.
+		w.noTests = c.noTestsRun
 		// The scenarios that only say When I run, or that coverage is run,
 		// run in the sample.
 		first := s.Steps[0].Text
@@ -321,7 +323,6 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 
 	// Rule: The user can bring their own coverage.
 	sc.Step(`^a Go project with a coverage\.out from an earlier run$`, c.earlierRun)
-	sc.Step(`^no tests are run$`, c.noTestsRun)
 	sc.Step(`^coverage is read from the first existing report for each build root$`, c.firstExistingReport)
 	sc.Step(`^both reports are read, relative to the working directory$`, c.bothReportsRead)
 	sc.Step(`^"([^"]*)" runs through the platform shell$`, c.runsThroughShell)
