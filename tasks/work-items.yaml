@@ -2961,7 +2961,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-78]
     kind: task
     why: >
       Piece 10 of mutate.feature (the plan's table): strict-coverage scenarios. Go tests holding
