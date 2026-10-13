@@ -2326,6 +2326,8 @@ items:
       graph/build.go walks metrics.DirOf(root) and its mutate folder. Settling in the spec of the
       first of those moves how the port grows (a Remove method, a store made for a given root,
       listing a folder of snapshots) keeps that move from reaching metrics around the port.
+
+      Specified 2026-10-13 as T-69.
   - id: scrap-clusters-null
     title: "scrap --json gives \"clusters\": null for a file with no clusters"
     phase: 1
