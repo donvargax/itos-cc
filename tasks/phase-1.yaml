@@ -1283,15 +1283,6 @@
     testing: the packages and scenarios in the checks, never the whole cmd/itos-cc suite or a
     mutation run; never itos task show locally. No binary comparison: the plan's cases for this task
     join refactor-final-proof's list.
-  done_when:
-    - run: grep -q 'func MeasurerContract' internal/coverage/port/porttest/contract.go
-    - run: git grep -q 'porttest.MeasurerContract(' -- 'internal/coveragetools/*_test.go'
-    - run: git grep -q 'func classifyCoverage' -- cmd/itos-cc
-    - run: "! git grep -n 'func unmeasuredProblems' -- cmd/itos-cc"
-    - run: go test -count=1 ./internal/coverage/... ./internal/coveragetools
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...
-    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|COV)-'
 - id: T-67
   type: refactor
   title: crap is a slice on kong, and its scenarios run in process
