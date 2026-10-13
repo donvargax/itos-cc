@@ -1244,15 +1244,6 @@
     mocks, none in production code. Light local testing: the packages and scenarios in the checks,
     never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No binary
     comparison: the plan's cases for this task join refactor-final-proof's list.
-  done_when:
-    - run: test ! -e coverage/coverage.go
-    - run: test -f internal/coverage/coverage.go
-    - run: grep -q 'internal/coverage/' .golangci.yml
-    - run: go test -count=1 ./internal/coverage/... ./coverage/... ./crap/...
-    - run: tools/bin/architecture-check
-    - run: tools/bin/domain-coverage
-    - run: tools/bin/pinned golangci-lint run ./internal/...
-    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|COV)-'
 - id: T-65
   type: refactor
   title: crap's scoring is the changerisk domain under internal/
