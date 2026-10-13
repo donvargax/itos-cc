@@ -1244,3 +1244,34 @@
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios='@ID-(UNIT|DRY|SCRAP|SEL)-'
     - run: tools/bin/architecture-check
     - run: tools/bin/pinned golangci-lint run ./internal/...
+- id: T-64
+  type: refactor
+  title: coverage's Report, its queries and parsers are the internal/coverage domain
+  why: >
+    Decisions 37, 46 and 47. A git mv commit takes coverage.go, formats.go's parsers and their tests
+    and testdata to internal/coverage, then the edits: Report is built through an exported API the
+    runner (top-level coverage, an adapter) calls, since it writes Report's unexported fields today
+    (run.go:783, 837-842, 868, 879-912, 935, 994; supervised.go:57, 67, 162-175;
+    inventory.go:158-168); the matcher's os.Stat (coverage.go:547, 571) becomes a question to a
+    small port in internal/coverage/port (say Files.SameFile) with a porttest fake and a contract
+    suite against an adapter; Cause (coverage.go:116) becomes the port's sealed gaps (ToolMissing,
+    MeasuredNothing, NoReport, Unreadable) and Cancelled. Load (os.Open) and Report.Inventory (exec)
+    stay in the runner. mutate and cmd follow, JSON bytes unchanged. depguard's domain and domain-io
+    rules list the package, domain-coverage holds it to 80%, golangci-lint sees it for the first
+    time; its .metrics/mutate records move unedited. S5 of the template-design refactor; the
+    coordinator's plan is in the clone notes (.git/itos/s5-plan.md: in-process lists, which
+    scenarios stay binary-only, the coverage code's line references, refactor-final-proof cases per
+    task). Rules whole: ctx first, never held or captured for I/O; nothing leaks into a domain,
+    while adapters and ports may use the domain's types with no mappers (decision 47); fakes not
+    mocks, none in production code. Light local testing: the packages and scenarios in the checks,
+    never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No binary
+    comparison: the plan's cases for this task join refactor-final-proof's list.
+  done_when:
+    - run: test ! -e coverage/coverage.go
+    - run: test -f internal/coverage/coverage.go
+    - run: grep -q 'internal/coverage/' .golangci.yml
+    - run: go test -count=1 ./internal/coverage/... ./coverage/... ./crap/...
+    - run: tools/bin/architecture-check
+    - run: tools/bin/domain-coverage
+    - run: tools/bin/pinned golangci-lint run ./internal/...
+    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|COV)-'
