@@ -2726,3 +2726,7 @@ items:
     status: done
     depends_on: []
     kind: bug
+    why: >
+      Landed (9d31226): a report path has every \ turned into / and then the system's form, so a
+      report written with either separator matches on every system; the person (2026-10-13) checked
+      it against comparing in / form and kept it.
