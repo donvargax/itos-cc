@@ -882,7 +882,8 @@ func (w *world) lastObject() (map[string]any, string, error) {
 }
 
 // problemIs is whether the last run reports a problem of that rule, whose
-// key, a flag, an argument, a key of itos-cc.yaml or a file, is value; any problem
+// key, a flag, an argument, a key of itos-cc.yaml or a file, its
+// separators read as slashes, is value; any problem
 // of the rule where key is "". The plain output names no rule, so the
 // problem is read from the run made with --json (lastObject), and the plain
 // one's error output must print its message.
@@ -894,7 +895,13 @@ func (w *world) problemIs(rule, key, value string) error {
 	problems, _ := object["problems"].([]any)
 	for _, one := range problems {
 		problem, _ := one.(map[string]any)
-		if problem["rule"] != rule || key != "" && problem[key] != value {
+		got := problem[key]
+		if file, ok := got.(string); ok && key == "file" {
+			// A file is named in the system's form, which a scenario
+			// writes with slashes.
+			got = filepath.ToSlash(file)
+		}
+		if problem["rule"] != rule || key != "" && got != value {
 			continue
 		}
 		if message, _ := problem["message"].(string); message == "" || !strings.Contains(w.stderr, message) {
