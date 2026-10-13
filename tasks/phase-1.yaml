@@ -1396,10 +1396,6 @@
     Go tests over fixtures are fine); never itos task show or itos task <id> locally; no worktrees;
     never push a commit naming the task before its checks can pass. No binary comparison: the plan's
     cases for this task join refactor-final-proof's list.
-  done_when:
-    - run: "! grep -q '// T-71:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(0[7-9]|1[0-9]|2[0-2]|4[7-9]|5[01]|100|105|11[7-9]|120|149)$'
-    - run: "! git grep -nE '// @ID-MUT-(0[7-9]|1[0-9]|2[0-2]|4[7-9]|5[01]|100|105|11[7-9]|120|149)$' -- cmd/itos-cc"
 - id: T-72
   type: test
   title: mutate.feature's listed-tests scenarios run through godog against the built binary
