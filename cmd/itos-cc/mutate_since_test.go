@@ -84,6 +84,16 @@ func boardRepo(t *testing.T, extra map[string]string) string {
 	return dir
 }
 
+// The one mutant of Board#clear: `<` → `<=` at src/board.go:11:11.
+const clearLine, clearColumn = 11, 11
+
+// mutateCovered runs itos-cc mutation run with args and coverage measured, no
+// source file annotated, and returns what it printed.
+func mutateCovered(t *testing.T, args ...string) outcome {
+	t.Helper()
+	return itosCc(t, append([]string{"mutation", "run", "--no-annotate", "--workers", "1"}, args...)...)
+}
+
 // gitIn runs git with args in dir, a relative one in the test's directory.
 // A repository it initialises never runs git's automatic maintenance or
 // gc (noMaintenance), whichever git runs in it later.

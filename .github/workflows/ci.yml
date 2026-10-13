@@ -77,8 +77,8 @@ jobs:
       - run: go test -timeout 30m ./...
 
       # The real TypeScript, Python and Kotlin tools, so the language smoke
-      # tests and the scenarios that need them (ID-MUT-105, 208 to 210,
-      # 214, 216 to 218 and 220) run through them instead of skipping (T-13).
+      # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216
+      # to 218 and 220) run through them instead of skipping (T-13).
       # On ubuntu-latest alone, to bound CI time: elsewhere those tests
       # skip. Installed after the suite above, which runs as before.
       # Each tool is pinned: Node's by testdata/tools/node's lockfile,
@@ -137,8 +137,8 @@ jobs:
           ITOS_CC_LANGUAGE_TOOLS: "1"
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
         run: |
-          go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestAFileNoTestLoadsMutatedAloneIsEntirelyUncovered|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered|TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered|TestAFileNoTestReachesReportsItsBaselineAsNotRun|TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt|TestAPythonProjectThatWritesParallelCoverageDataIsMeasured)$' ./cmd/itos-cc
-          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12)|CLI-13|MUT-101)$'
+          go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered|TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered|TestAFileNoTestReachesReportsItsBaselineAsNotRun|TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt|TestAPythonProjectThatWritesParallelCoverageDataIsMeasured)$' ./cmd/itos-cc
+          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12)|CLI-13|MUT-(07|1[124689]|4[78]|50|10[015]))$'
 
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -14,6 +15,138 @@ import (
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
+
+// The Go module whose binary, greet, is tested only by e2e/e2e_test.go, in
+// another package: the test builds the binary and runs it with one
+// argument, so it reaches "one" and never "many", which it would not notice
+// anyway, and checks stdout only, so what main writes to stderr is never
+// checked. mutate.feature's integration-coverage scenarios (ID-MUT-117 to
+// 120) hold its coverage; the tests here use it for whole-suite freshness.
+
+const greetSource = "main.go"
+
+var greetFiles = map[string]string{
+	"go.mod": "module example.com/greet\n\ngo 1.22\n",
+	greetSource: `package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main() {
+	n := len(os.Args) - 1
+	fmt.Println(greet(n))
+	fmt.Fprintln(os.Stderr, n*2)
+}
+
+// greet tells one from many.
+func greet(n int) string {
+	if n > 1 {
+		return fmt.Sprint(n-1, " more")
+	}
+	return "one"
+}
+
+// half is never run.
+func half(i int) bool {
+	return i > 2
+}
+`,
+	"e2e/e2e_test.go": `package e2e
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestOne(t *testing.T) {
+	// Where the binary is to write its coverage, recorded for ID-MUT-120.
+	if record, dir := os.Getenv("GREET_RECORD"), os.Getenv("GOCOVERDIR"); record != "" && dir != "" {
+		f, err := os.OpenFile(record, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.WriteString(dir + "\n")
+		f.Close()
+	}
+	bin := filepath.Join(t.TempDir(), "greet.exe")
+	build := []string{"build", "-o", bin, ".."}
+	if os.Getenv("GOCOVERDIR") != "" { // cover
+		build = []string{"build", "-cover", "-o", bin, ".."}
+	}
+	if out, err := exec.Command("go", build...).CombinedOutput(); err != nil {
+		t.Fatalf("go %v: %v\n%s", build, err, out)
+	}
+	out, err := exec.Command(bin, "x").Output()
+	if err != nil {
+		t.Fatalf("greet x: %v", err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "one" {
+		t.Fatalf("greet x printed %q, want \"one\"", got)
+	}
+}
+`,
+}
+
+// greetIfLine is the line of main.go holding greet's if, n > 1: > → >=,
+// 1 → 0, which the binary runs.
+const greetIfLine = 16
+
+// greetRepo makes the module in a git repository and makes it the test's
+// directory (useDir). Without cover, its test builds the binary without -cover
+// whatever GOCOVERDIR says; inProcess adds a test in package main that calls
+// greet(3), so greet's other branch is covered in process.
+func greetRepo(t *testing.T, cover, inProcess bool) string {
+	t.Helper()
+	files := map[string]string{}
+	for name, text := range greetFiles {
+		files[name] = text
+	}
+	if !cover {
+		test := files["e2e/e2e_test.go"]
+		start := strings.Index(test, "\tif os.Getenv(\"GOCOVERDIR\") != \"\" { // cover\n")
+		end := strings.Index(test[start:], "\t}\n") + start + len("\t}\n")
+		files["e2e/e2e_test.go"] = test[:start] + test[end:]
+	}
+	if inProcess {
+		files["main_test.go"] = "package main\n\nimport \"testing\"\n\nfunc TestMany(t *testing.T) {\n" +
+			"\tif got := greet(3); got != \"2 more\" {\n\t\tt.Fatalf(\"greet(3) = %q\", got)\n\t}\n}\n"
+	}
+	return moduleRepo(t, files)
+}
+
+// moduleRepo writes files in a git repository and makes it the test's
+// directory (useDir).
+func moduleRepo(t *testing.T, files map[string]string) string {
+	t.Helper()
+	for _, tool := range []string{"git", "go"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skip(tool + " is not installed")
+		}
+	}
+	dir := t.TempDir()
+	for name, text := range files {
+		writeFile(t, filepath.Join(dir, name), text)
+	}
+	gitIn(t, dir, "init", "-q", "-b", "main")
+	gitIn(t, dir, "add", "-A")
+	gitIn(t, dir, "commit", "-qm", "base")
+	useDir(t, dir)
+	return dir
+}
+
+func mutantLine(m map[string]any) int {
+	line, _ := m["line"].(float64)
+	return int(line)
+}
+
+func describe(m map[string]any) string {
+	return fmt.Sprintf("%s:%d %v → %v %v", greetSource, mutantLine(m), m["original"], m["replacement"], m["outcome"])
+}
 
 // @ID-MUT-150
 func TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale(t *testing.T) {

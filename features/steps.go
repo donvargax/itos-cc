@@ -225,8 +225,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-71: running, coverage, built binary, uncovered
-	ids("MUT", "07-22", "47-51", "100", "105", "117-120", "149"),
 	// T-72: listed tests
 	ids("MUT", "121-137"),
 	// T-73: differential, since
@@ -765,7 +763,9 @@ func (w *world) saysEachProblem(text string) error {
 // it.
 func (w *world) saysIn(stderr, text string) error {
 	if !strings.Contains(text, "<dir>") && !strings.Contains(text, "...") {
-		if !strings.Contains(stderr, text) {
+		// A path is named in the system's form, which a scenario writes
+		// with slashes.
+		if !strings.Contains(stderr, text) && !strings.Contains(filepath.ToSlash(stderr), text) {
 			return fmt.Errorf("stderr does not say %q", text)
 		}
 		return nil

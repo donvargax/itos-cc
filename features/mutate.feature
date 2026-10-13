@@ -151,7 +151,13 @@ Feature: Mutation testing
 
   Rule: Running mutants
 
-    @ID-MUT-07
+    # Binary-only for good: which command runs a project's tests is the
+    # toolchain's question, held against the real tools, as COV-05's is.
+    # The no-pytest row predated own-tests-python (83ae772): a file's own
+    # tests run as their modules, and discover is the --all-tests form. The
+    # coordinator settled the row on 2026-10-13, and each row lists words
+    # the command holds, in order.
+    @ID-MUT-07 @binary-only
     Scenario Outline: Each file runs its narrowest test command
       Given a source file in a <language> project with <setup>
       When its mutants run
@@ -164,11 +170,13 @@ Feature: Mutation testing
         | TypeScript | jest              | the installed jest --bail --findRelatedTests on the file         |
         | TypeScript | neither installed | <pm> run test, the package manager the project declares          |
         | Python     | pytest importable | python -m pytest -q -x -p no:cacheprovider                       |
-        | Python     | no pytest         | python -m unittest discover -f                                   |
+        | Python     | no pytest         | python -m unittest -f <the file's test modules>                  |
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
         | Kotlin     | Maven             | mvn -q test                                                      |
 
-    @ID-MUT-08
+    # Binary-only for good: the command coverage runs is the real tools',
+    # as COV-03's is.
+    @ID-MUT-08 @binary-only
     Scenario: By default a file is measured and mutated by its own tests
       Given a/a.go is tested only by e2e/e2e_test.go, which imports package a
       When I run "itos-cc mutation run a/a.go"
@@ -177,7 +185,9 @@ Feature: Mutation testing
       # coverage comes from the tests that kill mutants, so a line only
       # other tests reach is uncovered, never a false survivor
 
-    @ID-MUT-09
+    # Binary-only for good: the whole suite's commands are the real tools',
+    # as COV-04's are.
+    @ID-MUT-09 @binary-only
     Scenario: The whole suite, as a nightly job
       When I run "itos-cc mutation run --all-tests a/a.go"
       Then coverage and every mutant run the whole suite of its build root: go test ./..., vitest run, jest, or gradle test
@@ -186,25 +196,31 @@ Feature: Mutation testing
       # --no-coverage too, every mutant runs and they can kill it
       And a later run without --all-tests reuses those kills for functions that have not changed while the Go module tests and support files remain unchanged
 
-    @ID-MUT-10
+    # Binary-only for good: the platform shell runs it, as COV-17's.
+    @ID-MUT-10 @binary-only
     Scenario: A custom test command
       When I run "itos-cc mutation run --test-command 'make test' src/board.go"
       Then "make test" runs through the platform shell from the file's build root
 
-    @ID-MUT-11
+    # Binary-only for good: the worker copies and their links are real
+    # folders the tests run in.
+    @ID-MUT-11 @binary-only
     Scenario: The real tree is never modified while tests run
       When I run "itos-cc mutation run src/board.ts"
       Then each worker runs mutants in its own private copy of the project
       And dependency directories such as node_modules and .venv are linked, not copied
       And the source files in the working tree are unchanged while tests run
 
-    @ID-MUT-12
+    # Binary-only for good: PYTHONPATH is what the real interpreter reads
+    # in a worker's real copy.
+    @ID-MUT-12 @binary-only
     Scenario: Python tests import the worker's copy
       Given a Python project installed in editable mode
       When its mutants run
       Then PYTHONPATH puts the worker's copy of "." and "src" first
 
-    @ID-MUT-13
+    # Binary-only for good: where the baseline runs is a worker's real copy.
+    @ID-MUT-13 @binary-only
     Scenario: The baseline proves the copy works
       When mutants are about to run for a test command
       Then that command first runs unmutated inside a worker's copy
@@ -250,7 +266,8 @@ Feature: Mutation testing
       And the problem is "mutation.baseline-failed", with file
       And the exit code is 1
 
-    @ID-MUT-17
+    # Binary-only for good: mutants running at once are real processes.
+    @ID-MUT-17 @binary-only
     Scenario: Parallel workers
       When I run "itos-cc mutation run --workers 4"
       Then up to 4 mutants run at the same time
@@ -288,7 +305,8 @@ Feature: Mutation testing
       And stderr does not say "no coverage"
       And "itos-cc mutation run --fail-uncovered src/unused.ts" lists them as uncovered and exits 1
 
-    @ID-MUT-20
+    # Binary-only for good: Gradle and Maven are left off the real PATH.
+    @ID-MUT-20 @binary-only
     Scenario: No coverage for the language at all
       Given coverage measured no Kotlin file
       When I run "itos-cc mutation run src/Board.kt"
@@ -349,9 +367,12 @@ Feature: Mutation testing
   #   own data there, so a binary a test builds wrote where nothing read it.
   #   itos-cc runs each test binary itself (go test -exec), with GOCOVERDIR
   #   the run's directory; go test's own profile is unchanged.
+  #
+  # Binary-only for good: the coverage of a process a test starts is the
+  # real binary's, written by the real go build -cover.
   Rule: Coverage from tests that run the built binary
 
-    @integration-coverage @ID-MUT-117
+    @integration-coverage @ID-MUT-117 @binary-only
     Scenario: Lines a test reaches through the built binary are covered
       Given a Go module whose only test builds its binary with go build -cover when GOCOVERDIR is set, and runs it
       And the test checks one branch of the binary's output and not another
@@ -360,21 +381,21 @@ Feature: Mutation testing
       And a mutant the test notices is killed, and one it does not notice survives
       And only the mutants on lines the binary never ran are uncovered
 
-    @integration-coverage @ID-MUT-118
+    @integration-coverage @ID-MUT-118 @binary-only
     Scenario: A project whose binary writes no coverage behaves as before
       Given a Go module whose only test builds its binary without -cover and runs it
       When I run "itos-cc mutation run --all-tests --fail-uncovered"
       Then every mutant the binary's code holds is uncovered, as before
       And the exit code is 1
 
-    @integration-coverage @ID-MUT-119
+    @integration-coverage @ID-MUT-119 @binary-only
     Scenario: Which coverage reached each mutant, as JSON
       Given the module of ID-MUT-117, with one function also called by an in-process test
       When I run "itos-cc mutation run --all-tests --json"
       Then each covered mutant has "coverage", listing "in-process", "integration" or both, as the data that covers its line
       And an uncovered mutant has no "coverage"
 
-    @integration-coverage @ID-MUT-120
+    @integration-coverage @ID-MUT-120 @binary-only
     Scenario: The binary's coverage data stays with the run
       When the coverage of ID-MUT-117 runs
       Then GOCOVERDIR names a directory under the run's own run-* directory in .metrics/coverage/
