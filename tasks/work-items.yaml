@@ -2588,26 +2588,9 @@ items:
     title: crap is a slice on kong, and its scenarios run in process
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-60, T-61, T-62, T-66]
     kind: task
-    why: >
-      docs/go.md's moving a command. CLI: cli.Selection, NoCoverage, UseExistingCoverage, AllTests,
-      CoverageCommand, CoverageReport, Threshold, Top; CoverageReport is the first cumulative flag
-      (internal/cli/flags.go:15-16) and needs sep none so a comma does not split it; Threshold tells
-      not given from 0; no source files to score still comes before coverage.command-needs-report
-      (crap.go:78, common.go:41). The Handler holds Tree, Surroundings, Store, Coverage, Name and
-      Exclude, bound in runMoved; adapters gains Coverage; the memory driver builds the porttest
-      Measurer from its recorded Driver.Coverage calls and files. crap, complexity, coverage and
-      file_selection join InProcess. cmd/itos-cc/crap.go and its .metrics/mutate record go (say so
-      in the commit); loadCoverage stays for mutation. S5 of the template-design refactor; the
-      coordinator's plan is in the clone notes (.git/itos/s5-plan.md: in-process lists, which
-      scenarios stay binary-only, the coverage code's line references, refactor-final-proof cases
-      per task). Rules whole: ctx first, never held or captured for I/O; nothing leaks into a
-      domain, while adapters and ports may use the domain's types with no mappers (decision 47);
-      fakes not mocks, none in production code. Light local testing: the packages and scenarios in
-      the checks, never the whole cmd/itos-cc suite or a mutation run; never itos task show locally.
-      No binary comparison: the plan's cases for this task join refactor-final-proof's list.
   - id: unrecognized-coverage-report
     title: A --coverage-report in no known format passes a threshold
     phase: 1

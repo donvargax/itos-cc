@@ -1303,11 +1303,3 @@
     mocks, none in production code. Light local testing: the packages and scenarios in the checks,
     never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No binary
     comparison: the plan's cases for this task join refactor-final-proof's list.
-  done_when:
-    - run: test ! -e cmd/itos-cc/crap.go
-    - run: go test -count=1 ./internal/crap/... ./internal/cli/...
-    - run: grep -qE '(^|[^s])crap\.CLI' cmd/itos-cc/moved.go
-    - run: grep -qE 'InProcess *= *\[\]string\{[^}]*"crap.feature"' features/steps.go
-    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios='@ID-(CRAP|CPLX|COV|SEL)-'
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...
