@@ -1136,9 +1136,3 @@
     local testing: the packages and scenarios named in the checks, never the whole cmd/itos-cc suite
     or a mutation run; never itos task show locally. No binary comparison; a case worth comparing
     joins refactor-final-proof's list.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$'
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@ID-DRY-1[37]'
-    - run: grep -q '@binary-only' features/units.feature
-    - run: grep -q 'TestScenarios' itos.yaml
-    - run: go test ./features -count=1 -scenarios='@ID-UNIT-06'
