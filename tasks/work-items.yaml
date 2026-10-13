@@ -2525,26 +2525,9 @@ items:
     title: file_selection.feature and cli.feature run through godog against the built binary
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-60]
     kind: task
-    why: >
-      crap is the command of 13 of file_selection.feature's 19 scenarios, which also hold selection
-      through the next task's retrofit (SEL-12 uses units); SEL-11 needs git check-ignore and is
-      @binary-only for good; SEL-17..19 (slice-6) leave their Go tests in
-      cmd/itos-cc/exclude_test.go for steps. cli.feature's CLI-05, CLI-07's crap rows and CLI-09 are
-      the only scenarios of crap's flag wording (--threshold needs a number, --top with --json, a
-      flag given twice), held today only by cli_test.go's testCommand; its mutation and version
-      scenarios run under the binary driver now, CLI-13 needing Node. cli.feature stays out of
-      InProcess until S9, metrics_snapshots.feature converts in S7. Go tests the steps now hold go,
-      each named in the commit. S5 of the template-design refactor; the coordinator's plan is in the
-      clone notes (.git/itos/s5-plan.md: in-process lists, which scenarios stay binary-only, the
-      coverage code's line references, refactor-final-proof cases per task). Rules whole: ctx first,
-      never held or captured for I/O; nothing leaks into a domain, while adapters and ports may use
-      the domain's types with no mappers (decision 47); fakes not mocks, none in production code.
-      Light local testing: the packages and scenarios in the checks, never the whole cmd/itos-cc
-      suite or a mutation run; never itos task show locally. No binary comparison: the plan's cases
-      for this task join refactor-final-proof's list.
   - id: T-63
     title: Slices share one selection command line and one parse of a selected source
     phase: 1

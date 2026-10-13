@@ -1203,10 +1203,6 @@
     testing: the packages and scenarios in the checks, never the whole cmd/itos-cc suite or a
     mutation run; never itos task show locally. No binary comparison: the plan's cases for this task
     join refactor-final-proof's list.
-  done_when:
-    - run: grep -q '"file_selection.feature"' features/steps.go
-    - run: grep -q '"cli.feature"' features/steps.go
-    - run: go test ./features -count=1 -scenarios='@ID-(SEL|CLI)-'
 - id: T-63
   type: refactor
   title: Slices share one selection command line and one parse of a selected source
