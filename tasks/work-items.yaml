@@ -2253,6 +2253,15 @@ items:
       embedded field), dry -- --changed (the word a path after --), and units over a selected file
       it cannot read (units now asks the language before the read, as dry and scrap did; every
       selected file has one, so no difference is expected).
+
+      T-64 (coverage's Report and parsers to the internal/coverage domain): the runner now builds
+      every Report through the domain's setters, the report-path matcher asks the port's Files (the
+      runner's Disk) what is on disk, and Cause is the port's sealed gaps. Compare COV-13 (failing
+      tests that leave a partial report); a selection mixing Go, TypeScript, Python and Kotlin
+      roots; --use-existing-coverage; one missing and one good --coverage-report, plain and with
+      --json (its unmeasured objects, cause and reason, byte for byte); reports reached through a
+      symlinked folder; c8's and Python's subprocess integration coverage; and mutation run
+      --fail-uncovered on Kotlin, which lists unloaded files from the module's report (Inventory).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
