@@ -1331,3 +1331,31 @@
     - run: tools/bin/architecture-check
     - run: tools/bin/pinned golangci-lint run ./internal/...
     - run: go test ./features -count=1 -scenarios='@ID-(CRAP|COV)-'
+- id: T-67
+  type: refactor
+  title: crap is a slice on kong, and its scenarios run in process
+  why: >
+    docs/go.md's moving a command. CLI: cli.Selection, NoCoverage, UseExistingCoverage, AllTests,
+    CoverageCommand, CoverageReport, Threshold, Top; CoverageReport is the first cumulative flag
+    (internal/cli/flags.go:15-16) and needs sep none so a comma does not split it; Threshold tells
+    not given from 0; no source files to score still comes before coverage.command-needs-report
+    (crap.go:78, common.go:41). The Handler holds Tree, Surroundings, Store, Coverage, Name and
+    Exclude, bound in runMoved; adapters gains Coverage; the memory driver builds the porttest
+    Measurer from its recorded Driver.Coverage calls and files. crap, complexity, coverage and
+    file_selection join InProcess. cmd/itos-cc/crap.go and its .metrics/mutate record go (say so in
+    the commit); loadCoverage stays for mutation. S5 of the template-design refactor; the
+    coordinator's plan is in the clone notes (.git/itos/s5-plan.md: in-process lists, which
+    scenarios stay binary-only, the coverage code's line references, refactor-final-proof cases per
+    task). Rules whole: ctx first, never held or captured for I/O; nothing leaks into a domain,
+    while adapters and ports may use the domain's types with no mappers (decision 47); fakes not
+    mocks, none in production code. Light local testing: the packages and scenarios in the checks,
+    never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No binary
+    comparison: the plan's cases for this task join refactor-final-proof's list.
+  done_when:
+    - run: test ! -e cmd/itos-cc/crap.go
+    - run: go test -count=1 ./internal/crap/... ./internal/cli/...
+    - run: grep -qE '(^|[^s])crap\.CLI' cmd/itos-cc/moved.go
+    - run: grep -qE 'InProcess *= *\[\]string\{[^}]*"crap.feature"' features/steps.go
+    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios='@ID-(CRAP|CPLX|COV|SEL)-'
+    - run: tools/bin/architecture-check
+    - run: tools/bin/pinned golangci-lint run ./internal/...
