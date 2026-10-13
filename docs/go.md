@@ -99,8 +99,8 @@ from it, and thin slices named for their commands.
   takes a file `internal/lang` parsed, the name its caller gives it and a coverage `Report`;
   `Measured(report, files)` is the languages the report speaks for among every file a run
   scores, so a file it never names is untested rather than unknown. It reads nothing and has
-  no port; its tests parse in memory through lang's fake. The hand-parsed `crap` reads and
-  parses each source through the selection domain's `Parse` over `internal/workdir`.
+  no port; its tests parse in memory through lang's fake. The `crap` slice reads and
+  parses each source through the selection domain's `Parse`.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
@@ -169,6 +169,20 @@ from it, and thin slices named for their commands.
   the last snapshot with the domain's `History` and records it, each file keyed from the root.
   `Run` prints each file's report, and says on stderr, with `--json` too, when the last
   snapshot was ignored or there was no test file to measure. It has no classifier.
+- `internal/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, its `Handler`
+  holding `dry`'s and the coverage port's `Measurer`, `Coverage`. Its `CLI` takes the
+  coverage flags crap always took: `--coverage-report` is the first cumulative flag, each a
+  report, a comma no separator (`sep:"none"`), and `--threshold` is a pointer, nil when it is
+  not given, so 0 is a threshold. `Select` chooses the sources, so `Run` says how many
+  itos-cc.yaml left out, and that there is none to score, before anything is measured, and
+  refuses `--coverage-command` with no `--coverage-report` only then; `Handle` measures them
+  through `Coverage`, whose progress goes to the writer cmd gave its adapter, parses each as
+  `dry` does, scores it with `internal/changerisk` under its `Name` and records `crap.json`
+  through the `Store`, each file keyed from the root. `Run` prints the worst first, warns of
+  each build root or report coverage did not measure, named from the working directory
+  (`UI.Rel`), and with `--threshold` reports each as its gap's problem through the UI's
+  classifiers, beside each function above it. It has no classifier: the coverage domain's
+  is cmd's.
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. Its `Selection`,
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
@@ -188,12 +202,11 @@ from it, and thin slices named for their commands.
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
   buffers and porttest's fakes (`TestRunWithFakes`, decision 44); the hand-parsed commands
-  keep the process's streams and disk until they move, but for crap's coverage, measured
-  through `a`'s `Coverage`, and only `main` exits. Every command
+  keep the process's streams and disk until they move, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
   calls; a moved one through the parser `run` builds once with `parserOf(ctx, …, a)`, whose
-  bindings hand it to `Run`. The handlers of `units` and `dry` hold itos-cc.yaml's
+  bindings hand it to `Run`. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's
   `exclude`, so `runMoved` reads the file through `a.Config` once the command line is parsed
   and binds them then: a file that cannot be read fails that command as `config.invalid`,
   never help or `version`. A command that stops on a signal derives its own from it
@@ -209,13 +222,14 @@ from it, and thin slices named for their commands.
   ones with the `Exclusion` it reads from itos-cc.yaml (`exclusion`). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
-  an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
+  an unreadable last one and goes on. `mutation` and `serve` still call the `metrics`
   library until each moves (decision 41). It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
-  `mutation` share the domain. `crap` measures coverage through the port, `adapters`'
-  `Coverage`, so a test can hand it porttest's `Measurer`; `mutation` measures through
-  `loadCoverage`, which calls `coveragetools`' `MeasureTests` directly until it moves. Both
-  build the request with `coverageRequest`, from the same flags.
+  `mutation` share the domain. `crap`'s handler measures coverage through the port,
+  `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the
+  request from its flags with `coverageRequest` and calls `coveragetools`' `MeasureTests`
+  directly until it moves. Both refuse `--coverage-command` with no `--coverage-report` as
+  `cli.CommandNeedsReport`.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -353,9 +367,11 @@ follows the same steps for a command it wrote before it had the template's desig
    by `strconv.ParseFloat` and an int flag by `strconv.Atoi`, as the hand parser read them,
    refusing what is none as a `cli.NumberError` in its words (`--threshold needs a number,
    and was given "abc"`; `a whole number` for an int), added when `dry` moved (T-40). A
-   command whose flags take durations or a switch's choices (`crap`, `mutation run`) first
-   gives `Flags` a mapper for that kind, with a typed refusal in the words the hand parser
-   used.
+   cumulative flag, a slice, may be given again, each time with a value its mapper judges
+   given before kong's slice decoder reads it (`crap`'s `--coverage-report`, T-67); an
+   optional number is a pointer, nil when not given (`crap`'s `--threshold`). A command
+   whose flags take durations or a switch's choices (`mutation run`) first gives `Flags` a
+   mapper for that kind, with a typed refusal in the words the hand parser used.
 6. **Failures by type, never by text.** `cli.ParseProblem` turns each failure into the
    problem `docs/CLI.md` names, by the kong fork's error types and `Flags`' own:
 
@@ -461,8 +477,13 @@ the 130 exit. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved comman
 (`InProcess`) in process, a selection naming only scenarios of the others running nothing there: its driver, a `_test.go`, holds every
 folder and file in memory with a fake git (init, add and commit; `--changed` is what differs
 from the last commit, and every file before one), and each run calls `run` with buffers and
-porttest's fakes built from that memory, `TreeOf`, lang's `Surroundings`, snapshot's `Store`
-written back to `.metrics/`, and an itos-cc.yaml held in memory. It refuses a hand-parsed
+porttest's fakes built from that memory: `TreeOf` over the whole scratch folder, files
+outside the run's folder named by `../`, lang's `Surroundings`, snapshot's `Store` written
+back to `.metrics/`, an itos-cc.yaml held in memory, and coverage's `Measurer`, which reads
+the reports a run names from the memory and gives each build root what the scenario
+declared its tools measure (`Driver.Coverage`): the LCOV report they write, nothing when
+they write none, a missing tool when none was declared, and no report left for
+`--use-existing-coverage`. It refuses a hand-parsed
 command and an environment variable, naming `@binary-only`, so nothing reaches the real disk.
 A scenario only one driver can run carries `@binary-only` or `@in-process-only`, never a
 copy, and the other passes it by; a step a driver cannot do fails naming the tag. godog runs

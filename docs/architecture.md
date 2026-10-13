@@ -55,9 +55,10 @@ the adapter directly until it moves.
 
 The change-risk domain, `internal/changerisk`, scores each function by CRAP, its complexity
 weighed by how little of it the tests ran. It takes files `internal/lang` has parsed, with the
-names its caller gives them, and a coverage `Report`, and reads nothing, so it has no port. cmd
-reads and parses each source for the hand-parsed `crap` through the selection domain's `Parse`
-over `internal/workdir`.
+names its caller gives them, and a coverage `Report`, and reads nothing, so it has no port. The
+`crap` slice, `internal/crap`, selects the sources and parses each through the selection
+domain, as `dry` does, measures their coverage through the coverage port's `Measurer`, and
+records its scores through the snapshot `Store`.
 
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain and parses each file with its `Parse`, read through the same port and named

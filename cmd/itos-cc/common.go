@@ -58,8 +58,7 @@ func coverageRequest(in *invocation, sources []string, scope covport.Scope) (cov
 	case in.set("no-coverage"):
 		return covport.Request{}, false, nil
 	case command != "" && len(reports) == 0:
-		return covport.Request{}, false, cli.NewProblem(cli.CodeUsage, "coverage.command-needs-report", "--coverage-command needs --coverage-report to say where its report lands",
-			"Add --coverage-report FILE.")
+		return covport.Request{}, false, cli.CommandNeedsReport()
 	}
 	return covport.Request{Sources: sources, Reports: reports, Command: command, Existing: in.set("use-existing-coverage"),
 		AllTests: in.set("all-tests"), Scope: scope}, true, nil

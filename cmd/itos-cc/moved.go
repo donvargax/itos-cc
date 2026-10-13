@@ -7,6 +7,7 @@ import (
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/crap"
 	"github.com/donvargax/itos-cc/internal/dry"
 	"github.com/donvargax/itos-cc/internal/scrap"
 	"github.com/donvargax/itos-cc/internal/units"
@@ -22,6 +23,7 @@ import (
 // commandLine is the moved commands' command line: one field each, its
 // slice's kong struct, its help the line usage lists it by.
 type commandLine struct {
+	Crap  crap.CLI  `cmd:"" help:"CRAP score per function: complexity × untested risk"`
 	Dry   dry.CLI   `cmd:"" help:"functions similar enough to be duplicates"`
 	Scrap scrap.CLI `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
 	Units units.CLI `cmd:"" help:"list the functions and methods every tool measures"`
@@ -31,7 +33,7 @@ type commandLine struct {
 // command line at most (cli.Parse): itos-cc's name, its flags held by
 // internal/cli's Flags, help printed by internal/cli's Help, and the
 // bindings each Run is handed, ctx among them and scrap's handler over a's
-// ports. The handlers of units and dry are not among them: they hold what
+// ports. The handlers of crap, units and dry are not among them: they hold what
 // itos-cc.yaml excludes, which runMoved reads once the line is parsed, so a
 // file that cannot be read never breaks help. kong never exits the process: help is printed before
 // it parses, and a failure is returned. A model kong refuses is the error
@@ -64,9 +66,10 @@ func moved(parser *kong.Kong) map[string]*kong.Node {
 // line, with parser, which fills c, and returns its exit code. Help, -h or
 // --help before any --, wins over anything else the line holds; a line kong
 // cannot parse is a usage problem, with --json the failure's object. Once
-// the line is parsed, units and dry read itos-cc.yaml under ctx for the
-// sources it excludes, bound into their handlers over a's ports: a file that
-// cannot be read is config.invalid. scrap reads only tests, which nothing
+// the line is parsed, crap, units and dry read itos-cc.yaml under ctx for
+// the sources it excludes, bound into their handlers over a's ports, crap's
+// measuring coverage through a's Coverage: a file that cannot be read is
+// config.invalid. scrap reads only tests, which nothing
 // excludes, so it never reads the file.
 //
 // No interrupt cancels the context parser binds yet: Ctrl-C ends the
@@ -82,15 +85,19 @@ func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)})
 	}
 	switch name := parsed.Selected().Name; name {
-	case "dry", "units":
+	case "crap", "dry", "units":
 		exclude, err := exclusionOf(ctx, a.Config)
 		if err != nil {
 			return ui.Fail(err, line.JSON)
 		}
 		parsed.Bind(units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude},
-			dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude})
-		if name == "units" {
+			dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude},
+			crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude})
+		switch name {
+		case "units":
 			return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON)
+		case "crap":
+			return callSafely(ui, parsed, name, c.Crap.Run, c.Crap.JSON)
 		}
 		return callSafely(ui, parsed, name, c.Dry.Run, c.Dry.JSON)
 	case "scrap":

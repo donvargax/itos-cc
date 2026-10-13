@@ -443,7 +443,7 @@ verdict and no exit code changes for it.
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
 | 18 | A flag changes an action, never selects another | Follows. |
-| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows: `units`, `dry` and `scrap` read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and every other command from one declared spec (`cmd/itos-cc/cli.go`), in the same words. |
+| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows: `units`, `dry`, `scrap` and `crap` read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and every other command from one declared spec (`cmd/itos-cc/cli.go`), in the same words. |
 | 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin, and the one file a command writes outside `.metrics/` is `itos-cc.yaml`, which `mutation except` edits in place. |
 | 24 | Flags in any position | Follows. |
 | 25 | Each argument checked; a bad one exits 2 | Follows: a path that is no file and no fragment of one exits 2. |
