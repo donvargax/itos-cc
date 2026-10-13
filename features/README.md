@@ -19,8 +19,8 @@ Never here:
 
 ## Black-box boundary
 
-The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go` and
-`coverage.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
+`coverage.go` and `selection.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
 read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
 and programs left off the PATH (`Run.Without`), and what a project's own coverage tools measure
@@ -73,9 +73,10 @@ killed by the system's default action fails the step: it never handled the inter
 
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
-`complexity.feature`, `coverage.feature`, and `count.feature`, the template's sample, all of whose
-scenarios are `@wip`. The in-process driver runs those of `InProcess`: all of them but
-`crap.feature`, `complexity.feature` and `coverage.feature`, which join it when crap moves. Every other file converts to godog over time,
+`complexity.feature`, `coverage.feature`, `file_selection.feature`, and `count.feature`, the
+template's sample, all of whose scenarios are `@wip`. The in-process driver runs those of
+`InProcess`: all of them but `crap.feature`, `complexity.feature`, `coverage.feature` and
+`file_selection.feature`, which join it when crap moves. Every other file converts to godog over time,
 before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
 the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
 file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
@@ -98,6 +99,10 @@ says When I run, or that coverage is run, runs in a sample Go module, `example.c
 `a/a.go` its test covers and `b/b.go` no test runs, beside `a/lcov.info` and `b/coverage.out`, a
 person's reports of each, and a Makefile whose cover target writes `cover.out`, with a second
 module, `example.com/other`, in `other/`; each test writes `test-ran` in its folder when it runs.
+`file_selection.feature`'s Background project holds a function in each file: a Go module at the
+scratch folder (`board.go` and its test), TypeScript and Python sources and tests in
+`src/billing/` and `src/cart/`, a Kotlin module in `kt/` built with Maven and no JaCoCo, and
+`testdata/board.go`, a fixture of its Go tests, not a source.
 Step patterns are global across the files, so each file's own setup is a
 Before hook keyed on the scenario's file.
 
@@ -196,8 +201,9 @@ with the program named as the built binary is.
 | `I run "itos-cc …"`, also `… without options`                                         | Runs the binary in the scratch folder with those words.          |
 | `stdout is one object with "schema": 1, "ok", "…", and "…"`                           | One JSON value, an object with those keys, none of them null.    |
 | `stdout shows:` with its text                                                         | stdout is the text exactly, a path's separators read as slashes. |
-| `stderr says "…"`                                                                     | Containment, on stderr; `<dir>` in it the folder of the Given's project as itos-cc names it, `...` the rest of what it says there. |
-| `the exit code is <n>`                                                                | The binary's exit status.                                         |
+| `stderr says "…"`                                                                     | Containment, on stderr, in each run the When made; the text is everything between the first and last quote, `\"` a quote; `<dir>` in it the folder of the Given's project as itos-cc names it, `...` or `…` the rest of what it says there. |
+| `the problem is "…"`, `…, with flag "…"`, `with argument "…"`, `with key "…"`            | A problem of that rule, with that subject, in the run made again with `--json` before its words, which exits as the plain one; the plain run's stderr prints its message. |
+| `the exit code is <n>`                                                                | The binary's exit status, of each run the When made.              |
 | `"…" is an empty list` / `"…" and "…" are empty lists, not null`                      | `[]` in the JSON object, never `null`.                            |
 
 `units.feature`'s steps, in `units.go`:
@@ -353,3 +359,28 @@ itos-cc finds and cannot run.
 | `two reports given with --coverage-report, …` / `each covers a line of a file the other does not` / `a line or block is covered when any report covered it` / `a decision counts the branches of the report that took the most` | F has the union of the lines, more than either; G the branches of the report that took most, fewer than both. |
 | `its coverage starts at line <n>, not at its first line <n>`                          | The function `the <language> function:` wrote starts on that line; a report running that line alone of all of its lines gives it one line's share of those from there. |
 | `stderr has a line "…" naming the command coverage runs` / `no line of stderr begins "…"` / `stderr has a line beginning "…" that gives the command's exit status` | The line, `<dir>` the build root of the sources named, its command's output after it; none so; one so ending in `exit status N`. |
+
+`file_selection.feature`'s steps, in `selection.go`. What a command selects is what units lists,
+its production code and with `--tests` its test code, for a command run with no paths or with
+`--changed` and for "the project's files are discovered", or the production files a run of crap
+as written lists. A file a Given names holds one function of its language; files are named from
+the folder the run ran in, as itos-cc names them.
+
+| Step                                                                                  | What it asserts                                                  |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `a project with TypeScript, Python, Kotlin, and Go sources`                           | Writes the Background project; go test measures its module.       |
+| `I run a command with no paths` / `with --changed` / `every supported file under the working directory is selected` | units over the scratch folder; each source and test of the project listed as its kind. |
+| `I run "itos-cc …" in <folder>` / `I run "itos-cc …", "itos-cc …" or "itos-cc …"`    | The run in that folder; or each run, each held to the exit code and stderr steps. |
+| `<files> are selected` / `<file> is not selected`                                     | Exactly the files listed, the production files under a folder and the one named, or every file staged; the file not selected, named from the run's folder or the scratch folder. |
+| `there is no file or directory called "…"` / `every source whose path contains "…" is selected, such as …` | Nothing called so; exactly the project's production files with the text in their path, the example among them. |
+| `no file's path under the working directory contains "…"`                              | No file the project holds has it in its path.                    |
+| `git reports … as modified, … as staged, and … as untracked`, `git reports … as modified`, `… as untracked`, `… was deleted`, `git reports no changes` | A repository whose one commit holds the project, each file at its first text, then changed as said. |
+| `a git repository with staged files and no commits`                                   | Every source and test of the project staged, nothing committed.  |
+| `the working directory is not a git repository`                                       | No .git in the scratch folder or above; skipped where one is.    |
+| `the project contains these directories, …:` / `nothing inside those directories is selected` | A TypeScript and a Python source and a TypeScript test in each; units lists files, none in them. |
+| `a directory "…" holding source files` / `its files are selected` / `not selected`    | TypeScript, Python and Go sources there, beside each manifest the row names in turn, a .gitignore git reads as ignoring it, or the Background's go.mod alone; units lists them all, or none, each time. |
+| `… is analyzed`                                                                        | The run lists a unit of the file.                                 |
+| `the files …` / `each is selected as TypeScript and parsed with the JavaScript grammar` / `neither is selected` | Each a function holding JSX and a decision; each listed as TypeScript production code, and crap gives its function complexity 2, as the JavaScript grammar parses it (TypeScript's loses the decision); or neither listed, though units lists other files. |
+| `the file "…" is discovered` / `it is classified as …`                                | units over that file alone lists it as that kind and not the other. |
+| `a command reports on a file inside the working directory` / `the file is named by its path relative to the working directory` / `a file outside the working directory keeps its absolute path` | units --json in src over cart/total.ts and ../kt/src/main/kotlin/Shelf.kt; the first named so, the second by an absolute path, the scratch folder found in it by its name. |
+| `itos-cc.yaml holds '…'` / `the sources … and …` / `… is scored, and … is not`        | That itos-cc.yaml; the two files; crap lists the first and not the second. |

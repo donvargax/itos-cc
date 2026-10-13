@@ -12,12 +12,12 @@ import (
 )
 
 // The scenarios of slice-6, itos-cc.yaml's exclude, in
-// features/file_selection.feature and features/mutate.feature, neither of
-// which godog runs yet. Each uses the module of mutate_since_test.go with a
-// fake beside it in a package of its own, src/port/porttest, which no test
-// reaches, and reads the --json objects as raw maps and the itos-cc.yaml it
-// writes as text, so the tests compile against a product that has no
-// exclude yet.
+// features/mutate.feature, which godog does not run yet; those of
+// file_selection.feature (ID-SEL-17 to 19) run through godog (T-62). Each
+// uses the module of mutate_since_test.go with a fake beside it in a
+// package of its own, src/port/porttest, which no test reaches, and reads
+// the --json objects as raw maps and the itos-cc.yaml it writes as text,
+// so the tests compile against a product that has no exclude yet.
 
 // fakeFile is the fake, a source of test support, by its path from the
 // module's root; fakeSource is the same path as itos-cc names it.
@@ -107,72 +107,6 @@ func wantExcludedOrphan(t *testing.T, what string, o outcome) {
 		}
 	}
 	t.Errorf("%s names no orphan %s, want its snapshot with \"why\": \"excluded\"\n%s\nstderr:\n%s", what, fakeSource, o.stdout, o.stderr)
-}
-
-// @ID-SEL-17
-func TestExcludeLeavesSourcesOutOfCrap(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, withFake(map[string]string{"itos-cc.yaml": excludePorttest}))
-
-	o := itosCc(t, "crap", "--no-coverage", "--json")
-	scored := map[string]bool{}
-	for _, e := range crapOf(t, o).Entries {
-		scored[filepath.Clean(e.File)] = true
-	}
-	if !scored[boardSource] {
-		t.Errorf("crap scores no function of %s\n%s", boardSource, o.stdout)
-	}
-	if scored[fakeSource] {
-		t.Errorf("crap scores %s, which itos-cc.yaml excludes\n%s", fakeSource, o.stdout)
-	}
-	if want := "itos-cc: 1 sources left out by exclude in itos-cc.yaml"; !strings.Contains(o.stderr, want) {
-		t.Errorf("stderr does not say %q:\n%s", want, o.stderr)
-	}
-	if o.code != 0 {
-		t.Errorf("exit %d, want 0\n%s", o.code, o.stderr)
-	}
-}
-
-// @ID-SEL-18
-func TestAPathOrChangedNeverSelectsAnExcludedSource(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, withFake(map[string]string{"itos-cc.yaml": excludePorttest}))
-	edit(t, fakeSource, "0 < i-f.n", "1 < i-f.n")
-
-	for _, args := range [][]string{{"--changed"}, {"porttest"}, {fakeSource}} {
-		o := itosCc(t, append([]string{"crap"}, args...)...)
-		if want := "itos-cc: no source files to score"; !strings.Contains(o.stderr, want) {
-			t.Errorf("crap %s: stderr does not say %q\nstdout:\n%s\nstderr:\n%s", strings.Join(args, " "), want, o.stdout, o.stderr)
-		}
-		if o.code != 0 {
-			t.Errorf("crap %s: exit %d, want 0", strings.Join(args, " "), o.code)
-		}
-	}
-}
-
-// @ID-SEL-19
-func TestAnExcludeGlobThatIsNoPatternIsAConfigError(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, map[string]string{"itos-cc.yaml": "exclude: [\"src/**\", \"src/[x\"]\n"})
-
-	plain := itosCc(t, "crap")
-	if plain.code != 2 {
-		t.Errorf("crap: exit %d, want 2 for a glob that is no pattern\n%s", plain.code, plain.stderr)
-	}
-	o := itosCc(t, "crap", "--json")
-	p := problemOf(t, o, "config.invalid")
-	if p == nil {
-		t.Fatalf("crap --json reports no config.invalid\n%s\nstderr:\n%s", o.stdout, o.stderr)
-	}
-	if p["key"] != "exclude[1]" {
-		t.Errorf("config.invalid %v, want \"key\": \"exclude[1]\"", p)
-	}
-	if message, _ := p["message"].(string); !strings.Contains(message, "exclude[1]") || !strings.Contains(plain.stderr, message) {
-		t.Errorf("config.invalid's message %q does not name exclude[1], or plain stderr does not print it:\n%s", message, plain.stderr)
-	}
-	if o.code != 2 {
-		t.Errorf("crap --json: exit %d, want 2", o.code)
-	}
 }
 
 // @ID-MUT-243

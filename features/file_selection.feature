@@ -82,7 +82,9 @@ Feature: Choosing which files a command looks at
     When the project's files are discovered
     Then nothing inside those directories is selected
 
-  @ID-SEL-11
+  # Binary-only for good: what git ignores is the disk adapter's question to
+  # the real git (git check-ignore), which no fake answers.
+  @ID-SEL-11 @binary-only
   Scenario Outline: Build output is skipped, a package with its name is not
     Given a directory "<directory>" holding source files
     When the project's files are discovered

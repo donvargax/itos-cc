@@ -114,19 +114,21 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // Converted are the feature files the steps run, those whose scenarios
 // have steps: count.feature, the template's sample, every scenario of it
 // @wip (T-26), units.feature, the first command moved onto kong (T-32),
-// dry.feature and scrap.feature, and crap.feature, complexity.feature and
-// coverage.feature, each converted before its command moves so the move is
-// held by its scenarios (T-37, T-41, T-60, T-61). A file converts with its
-// scenarios' text unchanged (q-52); the binary driver runs every one.
+// dry.feature and scrap.feature, crap.feature, complexity.feature and
+// coverage.feature, and file_selection.feature, each converted before its
+// command moves so the move is held by its scenarios (T-37, T-41, T-60,
+// T-61, T-62). A file converts with its scenarios' text unchanged (q-52);
+// the binary driver runs every one.
 var Converted = []string{
 	"count.feature", "units.feature", "dry.feature", "scrap.feature",
-	"crap.feature", "complexity.feature", "coverage.feature",
+	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
 }
 
 // InProcess are the converted files the in-process driver runs: those of
 // the commands moved onto kong, which run against the ports' fakes. A file
-// joins it in the task that moves its command (crap's and coverage's files
-// in T-67); until then the binary driver alone runs its scenarios.
+// joins it in the task that moves its command (crap's, coverage's and
+// file selection's files in T-67); until then the binary driver alone runs
+// its scenarios.
 var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
@@ -158,6 +160,9 @@ type world struct {
 
 	exit           int
 	stdout, stderr string
+	// each are the runs of a When that runs several commands, each of which
+	// the exit code and stderr steps hold to; nil after a run of one.
+	each []outcome
 
 	stdin string // the text the run reads from its standard input, "" for none
 	// without are the programs a Given leaves off every run's PATH.
@@ -180,6 +185,41 @@ type run struct {
 	dir  string
 	env  []string
 	args []string
+}
+
+// outcome is what one of the runs of a When did, and the run it was.
+type outcome struct {
+	run            run
+	exit           int
+	stdout, stderr string
+}
+
+// outcomes are the runs the last When made: each of a When that ran
+// several, else the one.
+func (w *world) outcomes() []outcome {
+	if w.each != nil {
+		return w.each
+	}
+	o := outcome{exit: w.exit, stdout: w.stdout, stderr: w.stderr}
+	if w.last != nil {
+		o.run = *w.last
+	}
+	return []outcome{o}
+}
+
+// runEach runs itos-cc in the scratch folder once for each command line,
+// split as a scenario wrote it, each a run the exit code and stderr steps
+// hold to; the last is the run the other steps read.
+func (w *world) runEach(lines ...string) error {
+	var each []outcome
+	for _, line := range lines {
+		if err := w.runWith(w.env(), line); err != nil {
+			return err
+		}
+		each = append(each, outcome{run: *w.last, exit: w.exit, stdout: w.stdout, stderr: w.stderr})
+	}
+	w.each = each
+	return nil
 }
 
 // Initialize gives sc every step of the converted feature files, each
@@ -219,9 +259,10 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 
 	sc.Step(`^it exits with code (\d+)$`, w.exitsWith)
 	sc.Step(`^the exit code is (\d+)$`, w.exitsWith)
-	// The problem a run reports, by its rule and the flag it names, and the
-	// flag its fix suggests.
-	sc.Step(`^the problem is "([^"]*)", with flag "([^"]*)"$`, w.problemIs)
+	// The problem a run reports, by its rule, alone or with the flag, the
+	// argument or the key it names, and the flag its fix suggests.
+	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key) "([^"]*)"$`, w.problemIs)
+	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
 	sc.Step(`^its standard output lists "([^"]*)"$`, func(text string) error {
 		if !slices.Contains(outputLines(w.stdout), text) {
@@ -298,7 +339,9 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	})
 	sc.Step(`^stdout is one object with "schema": 1, "ok", (.+)$`, w.isOneObjectWith)
 	sc.Step(`^stdout shows:$`, w.stdoutShows)
-	sc.Step(`^stderr says "([^"]*)"$`, w.stderrSays)
+	// Between its first and last quote, so a text may hold quotes of its
+	// own, written as they are or as \".
+	sc.Step(`^stderr says "(.*)"$`, w.stderrSays)
 	sc.Step(`^"([^"]*)" is an empty list$`, w.isEmptyList)
 	sc.Step(`^"([^"]*)" and "([^"]*)" are empty lists, not null$`, func(first, second string) error {
 		if err := w.isEmptyList(first); err != nil {
@@ -346,11 +389,12 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	crapSteps(sc, w)
 	complexitySteps(sc, w)
 	coverageSteps(sc, w)
+	selectionSteps(sc, w)
 }
 
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
-	w.last, w.problem, w.without, w.wrote = nil, nil, nil, ""
+	w.last, w.problem, w.without, w.wrote, w.each = nil, nil, nil, "", nil
 	w.feature, w.scored, w.with, w.project = filepath.Base(s.Uri), nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
@@ -442,7 +486,7 @@ func setEnv(env []string, name, value string) []string {
 // runEnv runs itos-cc with args in the folder dir with the variables env
 // sets, its exit code and output what the Then steps read.
 func (w *world) runEnv(dir string, env []string, args ...string) error {
-	w.last = &run{dir: dir, env: env, args: args}
+	w.last, w.each = &run{dir: dir, env: env, args: args}, nil
 	var err error
 	w.exit, w.stdout, w.stderr, err = w.capture(dir, env, args...)
 	return err
@@ -510,13 +554,26 @@ func (w *world) report() string {
 	return fmt.Sprintf("exit %d\n--- stdout\n%s--- stderr\n%s", w.exit, w.stdout, w.stderr)
 }
 
-// stderrSays is whether stderr holds text. In a text naming <dir>, that
-// stands for the folder of the project the Given made, as itos-cc names it
-// from the scratch folder, and "..." for the rest of what it says there.
+// stderrSays is whether stderr holds text, \" in it a quote, in each run
+// the When made. In a text naming <dir>, that stands for the folder of the
+// project the Given made, as itos-cc names it from the scratch folder, and
+// "..." or "…" for the rest of what it says there.
 func (w *world) stderrSays(text string) error {
+	text = strings.ReplaceAll(strings.ReplaceAll(text, `\"`, `"`), "…", "...")
+	for _, o := range w.outcomes() {
+		if err := w.saysIn(o.stderr, text); err != nil {
+			return fmt.Errorf("%v\n--- the run of itos-cc %s, exit %d\n--- stdout\n%s--- stderr\n%s", err, strings.Join(o.run.args, " "), o.exit, o.stdout, o.stderr)
+		}
+	}
+	return nil
+}
+
+// saysIn is whether stderr, a run's, holds text, read as stderrSays reads
+// it.
+func (w *world) saysIn(stderr, text string) error {
 	if !strings.Contains(text, "<dir>") && !strings.Contains(text, "...") {
-		if !strings.Contains(w.stderr, text) {
-			return fmt.Errorf("stderr does not say %q\n%s", text, w.report())
+		if !strings.Contains(stderr, text) {
+			return fmt.Errorf("stderr does not say %q", text)
 		}
 		return nil
 	}
@@ -536,8 +593,8 @@ func (w *world) stderrSays(text string) error {
 			pattern.WriteString(regexp.QuoteMeta(piece))
 		}
 	}
-	if !regexp.MustCompile(pattern.String()).MatchString(filepath.ToSlash(w.stderr)) {
-		return fmt.Errorf("stderr does not say %q, <dir> being %s\n%s", text, w.project, w.report())
+	if !regexp.MustCompile(pattern.String()).MatchString(filepath.ToSlash(stderr)) {
+		return fmt.Errorf("stderr does not say %q, <dir> being %s", text, w.project)
 	}
 	return nil
 }
@@ -546,9 +603,12 @@ func outputLines(output string) []string {
 	return strings.Split(strings.TrimSuffix(output, "\n"), "\n")
 }
 
+// exitsWith is whether each run the When made exited with code.
 func (w *world) exitsWith(code int) error {
-	if w.exit != code {
-		return fmt.Errorf("itos-cc exited %d, not %d\n%s", w.exit, code, w.report())
+	for _, o := range w.outcomes() {
+		if o.exit != code {
+			return fmt.Errorf("itos-cc %s exited %d, not %d\n--- stdout\n%s--- stderr\n%s", strings.Join(o.run.args, " "), o.exit, code, o.stdout, o.stderr)
+		}
 	}
 	return nil
 }
@@ -602,35 +662,46 @@ func (w *world) jsonNamesProblem(rule string) error {
 	return fmt.Errorf("no problem of the JSON output has the rule %q\n%s", rule, w.report())
 }
 
-// problemIs is whether the last run reports a problem of that rule naming
-// that flag. The plain output names no rule, so the run is made again with
-// --json before its words, as a script would make it, unless it had --json
-// already: that run must exit as the plain one did, and the plain one's
-// error output must print the problem's message.
-func (w *world) problemIs(rule, flag string) error {
+// lastObject is the object of the last run, made again with --json before
+// its words, as a script would make it, unless it had --json already: that
+// run must exit as the plain one did. The report is both runs'.
+func (w *world) lastObject() (map[string]any, string, error) {
 	if w.last == nil {
-		return errors.New("no run of itos-cc to read a problem of")
+		return nil, "", errors.New("no run of itos-cc to read")
 	}
 	stdout, report := w.stdout, w.report()
 	if !slices.Contains(w.last.args, "--json") {
 		code, out, errOut, err := w.capture(w.last.dir, w.last.env, append([]string{"--json"}, w.last.args...)...)
 		if err != nil {
-			return err
+			return nil, "", err
 		}
 		report = fmt.Sprintf("%s\n--- with --json, exit %d\n--- stdout\n%s--- stderr\n%s", report, code, out, errOut)
 		if code != w.exit {
-			return fmt.Errorf("with --json itos-cc exited %d, not %d as without it\n%s", code, w.exit, report)
+			return nil, "", fmt.Errorf("with --json itos-cc exited %d, not %d as without it\n%s", code, w.exit, report)
 		}
 		stdout = out
 	}
 	var object map[string]any
 	if err := json.Unmarshal([]byte(stdout), &object); err != nil {
-		return fmt.Errorf("the output with --json is not one JSON object: %v\n%s", err, report)
+		return nil, "", fmt.Errorf("the output with --json is not one JSON object: %v\n%s", err, report)
+	}
+	return object, report, nil
+}
+
+// problemIs is whether the last run reports a problem of that rule, whose
+// key, a flag, an argument or a key of itos-cc.yaml, is value; any problem
+// of the rule where key is "". The plain output names no rule, so the
+// problem is read from the run made with --json (lastObject), and the plain
+// one's error output must print its message.
+func (w *world) problemIs(rule, key, value string) error {
+	object, report, err := w.lastObject()
+	if err != nil {
+		return err
 	}
 	problems, _ := object["problems"].([]any)
 	for _, one := range problems {
 		problem, _ := one.(map[string]any)
-		if problem["rule"] != rule || problem["flag"] != flag {
+		if problem["rule"] != rule || key != "" && problem[key] != value {
 			continue
 		}
 		if message, _ := problem["message"].(string); message == "" || !strings.Contains(w.stderr, message) {
@@ -639,7 +710,10 @@ func (w *world) problemIs(rule, flag string) error {
 		w.problem = problem
 		return nil
 	}
-	return fmt.Errorf("no problem has the rule %q and the flag %q\n%s", rule, flag, report)
+	if key == "" {
+		return fmt.Errorf("no problem has the rule %q\n%s", rule, report)
+	}
+	return fmt.Errorf("no problem has the rule %q and the %s %q\n%s", rule, key, value, report)
 }
 
 // fixSuggests is whether the fix of the problem problemIs found asks
