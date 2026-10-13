@@ -3066,3 +3066,20 @@ items:
       run of this repository (scenarios mutate their own fixtures, which is fine); never itos task
       show or itos task <id> locally; no worktrees; never push a commit naming the task before its
       checks can pass.
+  - id: pytest-plugin-autoload-trials
+    title: Python mutant trials pay pytest's plugin autoload on every run
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Measured during T-71 on a one-test project: every pytest trial of mutation run took 3.5s, a
+      unittest one 0.1s. The cost is pytest itself loading the machine's installed plugins: the same
+      pytest command took 3.2s run directly in the tree and 0.22s with
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, and import pytest alone 0.14s. Each mutant pays it again, so
+      Python mutation runs, and the scenarios that run them, scale with whatever plugins the
+      interpreter has. Decide whether itos-cc, its docs or the scenario fixtures should do anything
+      about it (a documented PYTEST_ADDOPTS or autoload setting, or a pinned plugin-free fixture
+      interpreter), keeping in mind that PYTEST_DISABLE_PLUGIN_AUTOLOAD is one of the Python
+      environment inputs of a recorded outcome.
