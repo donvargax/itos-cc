@@ -2720,8 +2720,8 @@ items:
   - id: T-69
     title: The snapshot port removes and lists snapshots, and mutate reads and writes its snapshots only through it
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-68]
     kind: task
     why: >
