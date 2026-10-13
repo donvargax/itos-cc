@@ -1601,6 +1601,15 @@ items:
       (units, dry, scrap in process with fakes); each later move (S5 crap, S6-S7 mutation, S8 serve)
       adds its port's contract suite and its feature file to the in-process driver as part of the
       move.
+
+      S6-S7 planned 2026-10-13 (clone notes .git/itos/s6-plan.md): T-68 choice flags, T-69 snapshot
+      port Remove/List, mutate.feature in 12 pieces (T-70..T-81) then metrics_snapshots (T-82), then
+      the internal/mutants domain, Workers/Toolchain/Fingerprints/Reach/History/Exceptions/Fresh
+      ports, the kong flip and the mutation slice's handlers in process; graph's use of mutate stays
+      for S8. The coordinator settled Q1 (Unstepped list), Q6 (Driver.Tests), Q2 (names
+      internal/mutants, internal/mutation, internal/worktrees, internal/githistory,
+      internal/importgraph) and Q4 (Exception and Tests in the domain, decision 47); Q5
+      (saves-each-file behaviour), Q3, Q7, Q10 wait for the person.
   - id: left-out-singular-wording
     title: mutation check's left-out note reads "1 recorded mutant at sites gone"
     phase: 1
