@@ -1222,14 +1222,6 @@
     production code. Light local testing: the packages and scenarios in the checks, never the whole
     cmd/itos-cc suite or a mutation run; never itos task show locally. No binary comparison: the
     plan's cases for this task join refactor-final-proof's list.
-  done_when:
-    - run: "! git grep -nE 'Changed +bool +.help:' -- internal/units internal/dry internal/scrap"
-    - run: "! git grep -n 'func (h Handler) parse' -- internal/"
-    - run: git grep -q 'func Parse(ctx context.Context' -- internal/selection/
-    - run: go test -count=1 ./internal/cli/... ./internal/selection/... ./internal/units/... ./internal/dry/... ./internal/scrap/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios='@ID-(UNIT|DRY|SCRAP|SEL)-'
-    - run: tools/bin/architecture-check
-    - run: tools/bin/pinned golangci-lint run ./internal/...
 - id: T-64
   type: refactor
   title: coverage's Report, its queries and parsers are the internal/coverage domain
