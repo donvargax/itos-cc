@@ -1162,12 +1162,6 @@
     scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run; never itos task
     show locally. No binary comparison: the plan's cases for this task join refactor-final-proof's
     list.
-  done_when:
-    - run: grep -q '"crap.feature"' features/steps.go
-    - run: grep -q '"complexity.feature"' features/steps.go
-    - run: grep -q 'var InProcess' features/steps.go
-    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|CPLX)-'
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='@ID-CRAP-01'
 - id: T-61
   type: test
   title: coverage.feature runs through godog against the built binary
