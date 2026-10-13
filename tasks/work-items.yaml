@@ -2705,8 +2705,8 @@ items:
   - id: T-68
     title: internal/cli's Flags reads a switch that takes one of its choices after =, refusing any other in the hand parser's words
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
