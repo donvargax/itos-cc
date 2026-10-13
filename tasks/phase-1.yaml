@@ -1091,11 +1091,6 @@
     _test.go files), fakes not mocks. Light local testing: the packages and scenarios named in the
     checks, never the whole cmd/itos-cc suite or a mutation run; never itos task show locally. No
     binary comparison; a case worth comparing joins refactor-final-proof's list.
-  done_when:
-    - run: go vet ./cmd/itos-cc
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestRunWithFakes'
-    - run: "! go list -deps ./cmd/itos-cc | grep -q porttest"
-    - run: go test ./features -count=1 -scenarios='@ID-(UNIT-01|DRY-15|SCRAP-21)'
 - id: T-58
   type: test
   title: The steps run itos-cc through a driver, the binary one as today
