@@ -2907,7 +2907,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-76]
     kind: task
     why: >
       Piece 8 of mutate.feature (the plan's table): exceptions and renew scenarios. Go tests holding
