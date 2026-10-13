@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
 // Strict Go coverage judges Go files alone: a TypeScript, Python or Kotlin
@@ -40,7 +42,7 @@ func TestCheckGoCoverageJudgesGoFilesAlone(t *testing.T) {
 	t.Chdir(dir)
 
 	var asked []string
-	checks, err := CheckGoCoverage(t.Context(), selection, nil, func(_ context.Context, path string) (string, map[string]string, error) {
+	checks, err := CheckGoCoverage(t.Context(), &snapporttest.Store{RootDir: dir}, selection, nil, func(_ context.Context, path string) (string, map[string]string, error) {
 		asked = append(asked, filepath.ToSlash(path))
 		inputs, err := GoCoverageInputs(path, dir, "producer", nil)
 		return "producer", inputs, err

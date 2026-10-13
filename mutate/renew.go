@@ -8,6 +8,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -69,7 +70,7 @@ type Unrenewed struct {
 // that holds is left alone, unless its fresh results record its mutant
 // killed, which no renewal can mend. It writes nothing; the caller writes
 // the renewals (config.Renew).
-func Renew(ctx context.Context, exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string) ([]Renewal, []Unrenewed, error) {
+func Renew(ctx context.Context, store snapport.Store, exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string) ([]Renewal, []Unrenewed, error) {
 	var renewed []Renewal
 	var left []Unrenewed
 	files := map[string]*renewFile{}
@@ -86,7 +87,7 @@ func Renew(ctx context.Context, exceptions []config.Exception, sources []string,
 		if err != nil {
 			return nil, err
 		}
-		c, err := checkParsed(ctx, f, path, nil, tests, support, nil)
+		c, err := checkParsed(ctx, store, f, path, nil, tests, support, nil)
 		if err != nil {
 			f.Close()
 			return nil, err

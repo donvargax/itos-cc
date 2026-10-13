@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -281,7 +282,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checks, err := mutate.Check(t.Context(), files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
+	checks, err := mutate.Check(t.Context(), metricsdir.Store{}, files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

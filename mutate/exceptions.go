@@ -10,6 +10,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -209,7 +210,7 @@ func (e *NoSurvivorError) Error() string { return e.Reason }
 // never recorded. A site with no such survivor, whether its mutant is
 // recorded killed or uncovered, its function's results are stale or
 // missing, or there is no site there, is a *NoSurvivorError.
-func Survivor(ctx context.Context, path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
+func Survivor(ctx context.Context, store snapport.Store, path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
 	if lang.Detect(path) == nil {
 		return config.Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
 	}
@@ -221,7 +222,7 @@ func Survivor(ctx context.Context, path string, line, column int, tests func(pat
 		return config.Exception{}, err
 	}
 	defer f.Close()
-	c, err := checkParsed(ctx, f, path, nil, tests, support, nil)
+	c, err := checkParsed(ctx, store, f, path, nil, tests, support, nil)
 	if err != nil {
 		return config.Exception{}, err
 	}

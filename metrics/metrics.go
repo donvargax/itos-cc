@@ -87,14 +87,6 @@ func WriteIn(dir, name string, v any) error {
 	return rename(tmp.Name(), path)
 }
 
-// Remove deletes .metrics/name; one that is not there is no error.
-func Remove(name string) error {
-	if err := os.Remove(filepath.Join(Dir(), name)); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
 // RemoveIn deletes the snapshot name in dir, as DirOf names it, then each
 // folder that deleting it left empty, up to the folder at the top of name,
 // such as mutate, which stays, as dir does. One that is not there is no

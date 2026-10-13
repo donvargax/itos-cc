@@ -196,7 +196,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	orphans, err := orphansCovered(in)
+	orphans, err := orphansCovered(ctx, in)
 	if err != nil {
 		return result, err
 	}
@@ -211,13 +211,13 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+	checks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 	if err != nil {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
 	if languages := strictLanguagesOf(sources); failUncovered && len(languages) > 0 {
-		coverageChecks, err := mutate.CheckCoverage(ctx, sources, judge, strictCoverageInputs(languages, false, false, support))
+		coverageChecks, err := mutate.CheckCoverage(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(languages, false, false, support))
 		if err != nil {
 			return result, err
 		}

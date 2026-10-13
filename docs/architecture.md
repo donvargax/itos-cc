@@ -25,7 +25,8 @@ from any directory a command runs in. It reads, writes, removes and lists them t
 folder of them listed, with the library's own message, or the context was done. The
 `internal/metricsdir` adapter implements it over the `metrics` and `project` libraries, which
 keep every byte and the atomic rename, at the working directory's project root or at a root it
-is given; cmd's `classifySnapshot` turns its failures into problems.
+is given; cmd's `classifySnapshot` turns its failures into problems. mutation reads and writes
+its snapshots only through the port.
 
 The duplication domain, `internal/duplication`, finds functions similar enough to be
 duplicates. It takes files `internal/lang` has parsed, with the names its caller gives them, and

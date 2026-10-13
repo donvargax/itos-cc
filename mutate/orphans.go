@@ -1,13 +1,15 @@
 package mutate
 
 import (
-	"io/fs"
+	"context"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/internal/snapshot"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
 // Why a snapshot is an orphan.
@@ -31,8 +33,8 @@ type Orphan struct {
 	Why string
 }
 
-// Orphans lists the orphans among the snapshots of the project whose root
-// is root, sorted by snapshot, whose source path covers says a command's
+// Orphans lists the orphans among the snapshots store holds under mutate,
+// of the project at its root, sorted by snapshot, whose source path covers says a command's
 // paths cover: those whose source is gone, and those whose source is there
 // and excluded says is left out of what is measured, an absolute path as
 // covers takes. A snapshot's source is the file it records (recordedFile):
@@ -41,82 +43,75 @@ type Orphan struct {
 // when nothing is at its path in the working tree, as mutation run and
 // check find files: one deleted there but still committed is gone, and one
 // that sits at the path again, whatever it is, is that path's file. Only
-// regular files whose names end in .json are snapshots; a staging file of
-// a write, or anything else, is never one.
-func Orphans(root string, covers, excluded func(path string) bool) ([]Orphan, error) {
-	dir := filepath.Join(metrics.DirOf(root), "mutate")
-	if _, err := os.Lstat(dir); os.IsNotExist(err) {
-		return nil, nil
+// regular files whose names end in .json are snapshots (store's List); a
+// staging file of a write, or anything else, is never one, and neither is
+// one named .json alone.
+func Orphans(ctx context.Context, store snapport.Store, covers, excluded func(path string) bool) ([]Orphan, error) {
+	root, failure := store.Root(ctx)
+	if failure != nil {
+		return nil, failure
+	}
+	names, failure := store.List(ctx, "mutate")
+	if failure != nil {
+		return nil, failure
 	}
 	var out []Orphan
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
+	for _, name := range names {
+		if path.Base(name) == ".json" {
+			continue
 		}
-		if !d.Type().IsRegular() || !strings.HasSuffix(d.Name(), ".json") || d.Name() == ".json" {
-			return nil
-		}
-		rel, ok := underDir(dir, path)
-		if !ok {
-			return nil
-		}
-		snapshot := filepath.ToSlash(filepath.Join(metrics.Name, "mutate", rel))
+		rel := filepath.FromSlash(strings.TrimPrefix(name, "mutate/"))
+		recorded := path.Join(snapshot.Folder, name)
 		mapped := filepath.Join(root, strings.TrimSuffix(rel, ".json"))
 		if present(mapped) {
 			if excluded(mapped) && covers(mapped) {
-				out = append(out, Orphan{Path: mapped, Snapshot: snapshot, Why: OrphanExcluded})
+				out = append(out, Orphan{Path: mapped, Snapshot: recorded, Why: OrphanExcluded})
 			}
-			return nil
-		}
-		source := recordedFile(root, rel, mapped)
-		if source != mapped && present(source) {
-			if excluded(source) && covers(source) {
-				out = append(out, Orphan{Path: source, Snapshot: snapshot, Why: OrphanExcluded})
-			}
-			return nil
-		}
-		if covers(source) {
-			out = append(out, Orphan{Path: source, Snapshot: snapshot, Why: OrphanGone})
-		}
-		return nil
-	})
-	sort.Slice(out, func(i, j int) bool { return out[i].Snapshot < out[j].Snapshot })
-	return out, err
-}
-
-// RemoveOrphans removes the snapshot of each orphan of the project whose
-// root is root, then each directory under .metrics/mutate that removing
-// them left empty. It removes nothing outside .metrics/mutate.
-func RemoveOrphans(root string, orphans []Orphan) error {
-	dir := filepath.Join(metrics.DirOf(root), "mutate")
-	for _, o := range orphans {
-		path := filepath.Join(root, filepath.FromSlash(o.Snapshot))
-		if _, ok := underDir(dir, path); !ok {
 			continue
 		}
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		for parent := filepath.Dir(path); parent != dir; parent = filepath.Dir(parent) {
-			if _, ok := underDir(dir, parent); !ok || os.Remove(parent) != nil {
-				break
+		source := recordedFile(ctx, store, rel, mapped)
+		if source != mapped && present(source) {
+			if excluded(source) && covers(source) {
+				out = append(out, Orphan{Path: source, Snapshot: recorded, Why: OrphanExcluded})
 			}
+			continue
+		}
+		if covers(source) {
+			out = append(out, Orphan{Path: source, Snapshot: recorded, Why: OrphanGone})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Snapshot < out[j].Snapshot })
+	return out, nil
+}
+
+// RemoveOrphans removes the snapshot of each orphan from store, and each
+// folder under .metrics/mutate that removing them left empty (store's
+// Remove). It removes nothing outside .metrics/mutate, whatever an Orphan
+// names.
+func RemoveOrphans(ctx context.Context, store snapport.Store, orphans []Orphan) error {
+	for _, o := range orphans {
+		name, ok := strings.CutPrefix(o.Snapshot, snapshot.Folder+"/mutate/")
+		if !ok || !filepath.IsLocal(filepath.FromSlash(name)) {
+			continue
+		}
+		if failure := store.Remove(ctx, path.Join("mutate", name)); failure != nil {
+			return failure
 		}
 	}
 	return nil
 }
 
-// recordedFile is the file the snapshot at rel under .metrics/mutate
-// records, absolute: the one its "file" names, when that is a file outside
+// recordedFile is the file the snapshot at rel under .metrics/mutate, in
+// store, records, absolute: the one its "file" names, when that is a file outside
 // the root (recordedPath). Otherwise, a path from the root, a snapshot that
 // cannot be read or one that names another file (which LoadSnapshotOf
 // takes for none), it is mapped, the path the name maps to under the root.
-func recordedFile(root, rel, mapped string) string {
+func recordedFile(ctx context.Context, store snapport.Store, rel, mapped string) string {
 	var s struct {
 		File string `json:"file"`
 	}
 	name := filepath.Join("mutate", rel)
-	if ok, err := metrics.ReadIn(metrics.DirOf(root), name, &s); err == nil && ok {
+	if ok, failure := store.Read(ctx, name, &s); failure == nil && ok {
 		if path, ok := recordedPath(name, s.File); ok {
 			return path
 		}
@@ -142,13 +137,4 @@ func recordedPath(name, file string) (string, bool) {
 func present(path string) bool {
 	_, err := os.Lstat(path)
 	return !os.IsNotExist(err)
-}
-
-// underDir is path from dir, when path is beneath dir.
-func underDir(dir, path string) (string, bool) {
-	rel, err := filepath.Rel(dir, path)
-	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
-		return "", false
-	}
-	return rel, true
 }

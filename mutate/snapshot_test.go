@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
 func TestBuildCountsEveryUnit(t *testing.T) {
@@ -264,8 +265,6 @@ func TestAnOwnOutcomeOfAWholeSuiteScriptReadsAsTheWholeSuites(t *testing.T) {
 	for name, text := range map[string]string{
 		"package.json": `{"scripts": {"test": "node --test"}}`,
 		"src/a.ts":     "export function a(i: number): boolean {\n  return i === 3;\n}\n",
-		".metrics/mutate/src/a.ts.json": `{"version": 1, "file": "src/a.ts", "language": "typescript", "units": [{"name": "a", "mutants": [` +
-			`{"outcome": "killed"}, {"outcome": "killed", "scope": "make check"}, {"outcome": "survived", "scope": "listed", "tests": ["t"]}]}]}`,
 	} {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -275,7 +274,11 @@ func TestAnOwnOutcomeOfAWholeSuiteScriptReadsAsTheWholeSuites(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	snap, err := LoadSnapshotOf(t.Context(), root, "src/a.ts")
+	store := &snapporttest.Store{RootDir: root, Snapshots: map[string]string{
+		"mutate/src/a.ts.json": `{"version": 1, "file": "src/a.ts", "language": "typescript", "units": [{"name": "a", "mutants": [` +
+			`{"outcome": "killed"}, {"outcome": "killed", "scope": "make check"}, {"outcome": "survived", "scope": "listed", "tests": ["t"]}]}]}`,
+	}}
+	snap, err := LoadSnapshotOf(t.Context(), store, "src/a.ts")
 	if err != nil || snap == nil {
 		t.Fatalf("snapshot: %v, %v", snap, err)
 	}

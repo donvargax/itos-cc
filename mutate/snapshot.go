@@ -15,7 +15,8 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/metrics"
+	"github.com/donvargax/itos-cc/internal/snapshot"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -108,7 +109,7 @@ func (u UnitResult) MarshalJSON() ([]byte, error) {
 	if u.Coverage != nil && u.Coverage.Language != "" {
 		v = unitLines(u)
 	}
-	// As metrics.Write writes a snapshot: the encoder that embeds this
+	// As the snapshot store writes a snapshot: the encoder that embeds this
 	// escapes what its own settings say.
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -327,28 +328,31 @@ func SnapshotName(rel string) string {
 	return filepath.Join("mutate", filepath.ToSlash(rel)+".json")
 }
 
-// LoadSnapshot reads the snapshot of the file at rel, its path from the
-// project root, or returns nil when there is none.
-func LoadSnapshot(ctx context.Context, rel string) (*Snapshot, error) {
-	return LoadSnapshotOf(ctx, project.Root(), rel)
-}
-
-// LoadSnapshotOf is LoadSnapshot for the project whose root is root, which
-// need not be the working directory's: the snapshot at SnapshotName(rel)
-// under its .metrics, which holds while it names the file rel. One that
+// LoadSnapshotOf reads the snapshot of the file at rel, its path from the
+// root of the project whose snapshots store holds, which need not be the
+// working directory's, or returns nil when there is none: the snapshot
+// SnapshotName(rel), which holds while it names the file rel. One that
 // names another file is none, so the file's functions are missing. Every
 // reader looks a file's snapshot up here, mutation check and the
-// architecture graph alike.
+// architecture graph alike. A snapshot that cannot be read is the store's
+// failure.
 //
 // An outcome it records as its file's own tests', where those run the whole
 // suite (OwnScope), reads as ScopeAllTests, the scope that decided it: one
 // recorded before that rule has no whole-suite evidence, so it reads stale
 // once.
-func LoadSnapshotOf(ctx context.Context, root, rel string) (*Snapshot, error) {
+func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string) (*Snapshot, error) {
+	root, failure := store.Root(ctx)
+	if failure != nil {
+		return nil, failure
+	}
 	var s Snapshot
-	ok, err := metrics.ReadIn(metrics.DirOf(root), SnapshotName(rel), &s)
-	if err != nil || !ok || s.File != filepath.ToSlash(rel) {
-		return nil, err
+	ok, failure := store.Read(ctx, SnapshotName(rel), &s)
+	if failure != nil {
+		return nil, failure
+	}
+	if !ok || s.File != filepath.ToSlash(rel) {
+		return nil, nil
 	}
 	if OwnScope(ctx, filepath.Join(root, filepath.FromSlash(rel))) == ScopeAllTests {
 		for i := range s.Units {
@@ -616,7 +620,7 @@ func buildScoped(f *lang.File, rel string, tests map[string]string, sites []Site
 	if tests == nil {
 		tests = map[string]string{}
 	}
-	snap := Snapshot{Version: metrics.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Tests: tests, Units: []UnitResult{}}
+	snap := Snapshot{Version: snapshot.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Tests: tests, Units: []UnitResult{}}
 	for _, u := range f.Units {
 		snap.Units = append(snap.Units, UnitResult{
 			Namespace: u.Namespace, Name: u.Name, Hash: UnitHash(f, u),

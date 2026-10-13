@@ -72,7 +72,7 @@ func (m SampledMutant) Agrees() bool {
 // unless opt's TestCommand or AllTests is set, which then sets every
 // mutant's. A mutant of ScopeListed runs, once its own tests survive it,
 // the listed tests its outcome records, through opt's Listed, after the
-// baseline of that selection, which sets its timeout, as in Run. opt's Workers, TimeoutFactor, Judge, Tests, Listed, and Log
+// baseline of that selection, which sets its timeout, as in Run. opt's Store, Workers, TimeoutFactor, Judge, Tests, Listed, and Log
 // apply as in Run; the rest is not used.
 func Sample(ctx context.Context, files []string, count int, seed string, opt Options) (Sampled, error) {
 	var states []*fileState
@@ -99,7 +99,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		}
 		s := &fileState{file: f, sites: Sites(f)}
 		states = append(states, s)
-		c, err := checkParsed(ctx, f, path, opt.Judge, opt.Tests, opt.Support, nil)
+		c, err := checkParsed(ctx, opt.Store, f, path, opt.Judge, opt.Tests, opt.Support, nil)
 		if err != nil {
 			return Sampled{}, err
 		}

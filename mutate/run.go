@@ -13,12 +13,15 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/metrics"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
 // Options control a mutation run.
 type Options struct {
+	// Store holds the project's snapshots: each file's is read from it, and
+	// written back to it, under the run's context.
+	Store         snapport.Store
 	Workers       int
 	MutateAll     bool    // rerun killed mutants of unchanged functions too
 	TimeoutFactor float64 // a mutant may run this many times the baseline
@@ -356,10 +359,10 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		if incomplete {
 			s.result.Incomplete = true
 			if s.judgedAnew() {
-				if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
-					return nil, nil, err
+				if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.result.Snapshot); failure != nil {
+					return nil, nil, failure
 				}
-				if err := s.removeMoved(); err != nil {
+				if err := s.removeMoved(ctx, opt.Store); err != nil {
 					return nil, nil, err
 				}
 				s.result.Preserved = true
@@ -372,20 +375,20 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 			// file is left as it was: no new results, no comment. A
 			// renamed file's snapshot still moves, as it was.
 			if s.moving != nil {
-				if err := metrics.Write(SnapshotName(s.key), s.moving); err != nil {
-					return nil, nil, err
+				if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.moving); failure != nil {
+					return nil, nil, failure
 				}
 			}
-			if err := s.removeMoved(); err != nil {
+			if err := s.removeMoved(ctx, opt.Store); err != nil {
 				return nil, nil, err
 			}
 			results = append(results, *s.result)
 			continue
 		}
-		if err := metrics.Write(SnapshotName(s.key), s.result.Snapshot); err != nil {
-			return nil, nil, err
+		if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.result.Snapshot); failure != nil {
+			return nil, nil, failure
 		}
-		if err := s.removeMoved(); err != nil {
+		if err := s.removeMoved(ctx, opt.Store); err != nil {
 			return nil, nil, err
 		}
 		if opt.Annotate {
@@ -419,7 +422,7 @@ func (s *fileState) follow(ctx context.Context, opt Options, path string, snap *
 	if *snap != nil {
 		return nil
 	}
-	moving, err := LoadSnapshot(ctx, s.moved)
+	moving, err := LoadSnapshotOf(ctx, opt.Store, s.moved)
 	if err != nil {
 		return fmt.Errorf("%s: %w", SnapshotName(s.moved), err)
 	}
@@ -431,12 +434,15 @@ func (s *fileState) follow(ctx context.Context, opt Options, path string, snap *
 }
 
 // removeMoved removes the snapshot of the path the file had before a
-// rename, if any.
-func (s *fileState) removeMoved() error {
+// rename, if any, from store, and the folders that leaves empty.
+func (s *fileState) removeMoved(ctx context.Context, store snapport.Store) error {
 	if s.moved == "" {
 		return nil
 	}
-	return metrics.Remove(SnapshotName(s.moved))
+	if failure := store.Remove(ctx, SnapshotName(s.moved)); failure != nil {
+		return failure
+	}
+	return nil
 }
 
 // plan parses each file, finds its sites, and keeps the outcomes the
@@ -456,7 +462,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(ctx, path, opt.TestCommand, opt.AllTests, tests), currentSupport: opt.Support,
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
-		snap, err := LoadSnapshot(ctx, key)
+		snap, err := LoadSnapshotOf(ctx, opt.Store, key)
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}

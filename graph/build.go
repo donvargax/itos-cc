@@ -13,6 +13,7 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -280,7 +281,7 @@ func (b *Builder) snapshot(ctx context.Context, top, path string, live map[strin
 	}
 	var snap *mutate.Snapshot
 	if st != "" {
-		snap, _ = mutate.LoadSnapshotOf(ctx, top, rel)
+		snap, _ = mutate.LoadSnapshotOf(ctx, metricsdir.Store{RootDir: top}, rel)
 	}
 	b.snapshots[at] = cachedSnapshot{st, snap}
 	return snap

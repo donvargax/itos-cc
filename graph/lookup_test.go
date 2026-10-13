@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/mutate"
 )
 
@@ -65,7 +66,7 @@ func TestAMutationSnapshotNamingAnotherPathDoesNotMatch(t *testing.T) {
 	}
 
 	t.Chdir(m.root)
-	checks, err := mutate.Check(t.Context(), []string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil, nil)
+	checks, err := mutate.Check(t.Context(), metricsdir.Store{}, []string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

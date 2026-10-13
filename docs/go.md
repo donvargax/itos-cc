@@ -229,7 +229,11 @@ from it, and thin slices named for their commands.
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
-  on. `mutation` and `serve` still call the `metrics` library until each moves (decision 41). It holds the coverage domain's classifier,
+  on. The hand-parsed `mutation` commands read, write, remove and list their snapshots only
+  through the `Store` their invocation's adapters hold, which `mutate.Options` carries and
+  `mutate.LoadSnapshotOf` takes; `serve`'s graph still walks `.metrics/` with the `metrics`
+  library until it moves, reading each mutation snapshot through a `metricsdir.Store` of its
+  root (decision 41). It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
   `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the

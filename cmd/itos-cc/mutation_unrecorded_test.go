@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/mutate"
 )
@@ -29,7 +30,7 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snap, err := mutate.LoadSnapshotOf(t.Context(), wd(t), filepath.ToSlash(boardSource))
+	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(boardSource))
 	if err != nil || snap == nil {
 		t.Fatalf("the snapshot of %s: %v", boardSource, err)
 	}

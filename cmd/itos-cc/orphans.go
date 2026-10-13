@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,8 +27,9 @@ type orphanEntry struct {
 // working directory holds a fragment given, as a file's must to be chosen.
 // With no paths, whatever --changed or --since chooses, they cover the
 // working directory, the whole project when run at its root, as a run
-// without paths discovers its files there.
-func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
+// without paths discovers its files there. The snapshots are those of the
+// store the invocation's adapters hold, read under ctx.
+func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error) {
 	exclude, err := exclusion()
 	if err != nil {
 		return nil, err
@@ -53,7 +55,7 @@ func orphansCovered(in *invocation) ([]mutate.Orphan, error) {
 	if len(in.args) == 0 {
 		dirs = []string{wd}
 	}
-	orphans, err := mutate.Orphans(project.Root(), func(path string) bool {
+	orphans, err := mutate.Orphans(ctx, in.adapters.Store, func(path string) bool {
 		for _, dir := range dirs {
 			if beneath(dir, path) {
 				return true
@@ -158,13 +160,13 @@ func printOrphans(in *invocation, orphans []orphanEntry, what string) {
 
 // removeOrphans removes the orphans the paths of a mutation run cover
 // (orphansCovered), printing a line for each in plain output, and returns
-// them as the --json output lists them.
-func removeOrphans(in *invocation) ([]orphanEntry, error) {
-	orphans, err := orphansCovered(in)
+// them as the --json output lists them, under ctx.
+func removeOrphans(ctx context.Context, in *invocation) ([]orphanEntry, error) {
+	orphans, err := orphansCovered(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	if err := mutate.RemoveOrphans(project.Root(), orphans); err != nil {
+	if err := mutate.RemoveOrphans(ctx, in.adapters.Store, orphans); err != nil {
 		return nil, err
 	}
 	out := orphansJSON(orphans)

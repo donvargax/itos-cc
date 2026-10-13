@@ -156,6 +156,7 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 		return result, err
 	}
 	opt := mutate.Options{
+		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,
 		Judge:         judge,

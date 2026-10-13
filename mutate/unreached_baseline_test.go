@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
 // The Kotlin twin of @ID-MUT-231: a Kotlin file none of whose reaching
@@ -38,6 +40,7 @@ func TestAKotlinFileNoTestClassReachesReportsItsBaselineAsNotRun(t *testing.T) {
 	for _, failFast := range []bool{false, true} {
 		var results []FileResult
 		var err error
+		opt.Store = &snapporttest.Store{RootDir: dir}
 		if failFast {
 			results, _, err = RunFailFast(t.Context(), []string{src}, opt, FailFast{})
 		} else {
@@ -54,6 +57,5 @@ func TestAKotlinFileNoTestClassReachesReportsItsBaselineAsNotRun(t *testing.T) {
 				t.Errorf("fail-fast %v: %+v, want uncovered", failFast, m)
 			}
 		}
-		os.RemoveAll(filepath.Join(dir, ".metrics"))
 	}
 }

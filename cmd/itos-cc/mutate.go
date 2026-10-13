@@ -756,7 +756,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
 		reportElsewhere(in, elsewhere)
-		result.Orphans, err = removeOrphans(in)
+		result.Orphans, err = removeOrphans(ctx, in)
 		return result, err
 	}
 	// Strict coverage proves the functions of each strict language of the
@@ -790,6 +790,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		reach = tests
 	}
 	opt := mutate.Options{
+		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,
 		Workers:       in.integer("workers"),
@@ -811,11 +812,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	if strict {
 		var cached []mutate.CoverageCheck
-		mutationChecks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+		mutationChecks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 		if err != nil {
 			return result, err
 		}
-		cached, err = mutate.CheckCoverage(ctx, sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
+		cached, err = mutate.CheckCoverage(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
 		if err != nil {
 			return result, err
 		}
@@ -988,7 +989,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
 			// every mutant, and stops the run before any mutant runs.
-			checks, err := mutate.Check(ctx, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+			checks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 			if err != nil {
 				return result, err
 			}
@@ -1156,7 +1157,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	reportElsewhere(in, elsewhere)
 	// Only once the run has written what it judged: a --since run moves a
 	// renamed file's snapshot first.
-	if result.Orphans, err = removeOrphans(in); err != nil {
+	if result.Orphans, err = removeOrphans(ctx, in); err != nil {
 		return result, err
 	}
 	if stop != nil {
