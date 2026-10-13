@@ -3083,3 +3083,19 @@ items:
       about it (a documented PYTEST_ADDOPTS or autoload setting, or a pinned plugin-free fixture
       interpreter), keeping in mind that PYTEST_DISABLE_PLUGIN_AUTOLOAD is one of the Python
       environment inputs of a recorded outcome.
+  - id: windows-test-command-quotes
+    title: A --test-command with double quotes may not run as written on Windows
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Seen in T-71's CI run 38409191725 on windows-latest: mutation run --test-command 'grep -q "i >
+      5" src/board.go && sleep 0.05 || sleep 30' slept 30 seconds on every run, the unmutated
+      baseline included, so grep never matched the line it holds; on Linux and macOS it matched.
+      itos-cc runs the line as exec.Command("cmd", "/C", line) (mutate/proc_windows.go), and Go
+      escapes the line's double quotes as backslash-quote, which cmd does not read as quotes, so the
+      > inside them likely became a redirection. Not reproduced on a Windows machine.
+      --coverage-command shares the shell path. If confirmed, the fix passes the line through
+      SysProcAttr.CmdLine, and a scenario with a quoted --test-command holds it.
