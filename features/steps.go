@@ -78,10 +78,12 @@ type Driver interface {
 	// its trial of each mutant. The binary driver checks the tools they run
 	// with are installed, skipping the scenario (godog.ErrSkip) when they
 	// are not, or failing it where the job says it installed them
-	// (ITOS_CC_LANGUAGE_TOOLS), as Coverage does; the real tests then decide
-	// every outcome. The in-process driver records it, for the fake that
-	// runs a project's tests once the mutation group moves. A folder with no
-	// Tests declared has no tests a run may run.
+	// (ITOS_CC_LANGUAGE_TOOLS), as Coverage does, and skipping tests said
+	// to take under 100 milliseconds where the system runs none that fast;
+	// the real tests then decide every outcome. The in-process driver
+	// records it, for the fake that runs a project's tests once the
+	// mutation group moves. A folder with no Tests declared has no tests a
+	// run may run.
 	Tests(dir string, t Tests) error
 	// Counted says the system makes counted runs, mutation run --count,
 	// which itos-cc makes on Linux and macOS alone (#29): elsewhere both

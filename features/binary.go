@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cucumber/godog"
 )
@@ -180,12 +181,16 @@ var testTools = map[string][]string{
 // the project such as ./gradlew, and pytest for a command that runs it. A
 // tool missing skips the scenario, or fails it under ITOS_CC_LANGUAGE_TOOLS,
 // and any CI job but the one that installed the pinned tools skips a
-// scenario needing other tools than Go's, as Coverage does. The tests
-// themselves then decide every outcome.
+// scenario needing other tools than Go's, as Coverage does. Tests said to
+// run within quickRun skip where the system cannot run them that fast
+// (quickRunsOn). The tests themselves then decide every outcome.
 func (binary) Tests(_ string, t Tests) error {
 	tools, ok := testTools[t.Language]
 	if !ok {
 		return fmt.Errorf("no tools known for %s's tests", t.Language)
+	}
+	if t.Elapsed > 0 && t.Elapsed < quickRun && !quickRunsOn(runtime.GOOS) {
+		return fmt.Errorf("%w: tests said to take %s run several times longer on %s, their first run most", godog.ErrSkip, t.Elapsed, runtime.GOOS)
 	}
 	if err := languageJob(t.Language); err != nil {
 		return err
@@ -203,6 +208,17 @@ func (binary) Tests(_ string, t Tests) error {
 	}
 	return nil
 }
+
+// quickRun is the time under which tests run only as quickly as said on
+// the systems quickRunsOn names.
+const quickRun = 100 * time.Millisecond
+
+// quickRunsOn is whether the system goos, as Go names it, runs a project's
+// tests as quickly as a scenario says when that is under quickRun. On
+// Windows a test command of 50 milliseconds took 0.2 to 0.5 seconds as a
+// baseline, its trials 0.1 (CI run 38412153009), so a timeout its
+// baseline sets cannot be told from the sentence's.
+func quickRunsOn(goos string) bool { return goos != "windows" }
 
 // Counted skips the scenario where itos-cc makes no counted run.
 func (binary) Counted() error {

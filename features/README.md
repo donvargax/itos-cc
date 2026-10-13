@@ -67,8 +67,9 @@ what they do (`Tests`): their language and the command itos-cc runs them with, w
 baseline prints, the sites whose mutants survive or time out, every other mutant they run being
 killed, and how long a run of them takes. The binary driver checks their tools as `Coverage`
 does, the language's own (`go`, `node`, `python3`, `java`) and the program the command runs where
-the PATH would find it, pytest for a command running it, skipping or failing alike, and the real
-tests then decide every outcome; the in-process driver records it, for the fake that runs a
+the PATH would find it, pytest for a command running it, skipping or failing alike, skips tests
+said to take under 100 milliseconds on Windows, where their baseline takes several times that,
+and the real tests then decide every outcome; the in-process driver records it, for the fake that runs a
 project's tests once the mutation group moves (S7). A folder with no `Tests` declared has no tests
 a run may run. A scenario of a counted run, `mutation run --count`, skips where itos-cc makes
 none, on any system but Linux and macOS (#29), in either driver (`Counted`). A scenario that only reads which Gradle or
