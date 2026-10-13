@@ -52,7 +52,9 @@ linters:
         # duplication's fingerprints, and has no port either;
         # internal/coverage parses coverage reports and answers what they
         # covered, its port asking what a path a report names is on disk
-        # and holding the sealed gaps of coverage not measured (decision 46).
+        # and holding the sealed gaps of coverage not measured (decision 46);
+        # internal/changerisk scores functions by CRAP in files internal/lang
+        # parsed and a coverage Report, and has no port.
         domain:
           list-mode: lax
           files:
@@ -63,6 +65,7 @@ linters:
             - "**/internal/duplication/**"
             - "**/internal/teststructure/**"
             - "**/internal/coverage/**"
+            - "**/internal/changerisk/**"
           allow:
             - github.com/donvargax/itos-cc/internal/counting$
             - github.com/donvargax/itos-cc/internal/counting/
@@ -76,6 +79,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
+            - github.com/donvargax/itos-cc/internal/changerisk$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -90,6 +94,7 @@ linters:
             - "**/internal/duplication/**"
             - "**/internal/teststructure/**"
             - "**/internal/coverage/**"
+            - "**/internal/changerisk/**"
             - "!$test"
           deny:
             - pkg: os
@@ -124,6 +129,7 @@ linters:
             - "!**/internal/duplication/**" # a domain, with no port
             - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
+            - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra
@@ -142,6 +148,7 @@ linters:
             - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
+            - github.com/donvargax/itos-cc/internal/changerisk$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
@@ -167,6 +174,7 @@ linters:
             - "!**/internal/duplication/**" # a domain, with no port
             - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
+            - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/disk/**" # an adapter, held by infra
             - "!**/internal/stdin/**" # an adapter, held by infra
             - "!**/internal/workdir/**" # an adapter, held by infra

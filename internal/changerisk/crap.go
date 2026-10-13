@@ -1,17 +1,19 @@
-// Package crap scores functions by the CRAP formula: complexity that tests do
-// not exercise is risk.
+// Package changerisk is the domain that scores functions by the CRAP
+// formula, for the crap command: complexity that tests do not exercise is
+// risk (decision 37).
 //
 //	CRAP = CC² × (1 − coverage)³ + CC
-package crap
+//
+// It takes files internal/lang parsed, with the names its caller gives
+// them, and a coverage Report, and reads nothing, so it has no port.
+package changerisk
 
 import (
-	"context"
 	"math"
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Entry is one function's score. Coverage and CRAP are nil when no coverage
@@ -30,55 +32,52 @@ type Entry struct {
 
 // Score is the CRAP formula with coverage as a fraction from 0 to 1.
 func Score(cc int, coverage float64) float64 {
-	c := float64(cc)
-	return c*c*math.Pow(1-coverage, 3) + c
+	c, u := float64(cc), 1-coverage
+	return c*c*(u*u*u) + c
 }
 
-// Analyze scores every unit in files. With a nil report every coverage is
-// nil. A file the report never mentions counts as 0% covered when the report
-// measured other files of the same language, or a coverage run for its
-// language succeeded and wrote its report (Report.Measures), because the
-// tests ran and never loaded it; otherwise its coverage is unknown. It
-// parses under ctx, and once ctx is done returns its cause.
-func Analyze(ctx context.Context, files []string, report *coverage.Report) ([]Entry, error) {
-	// A language is measured when the report names one of its files, or its
-	// coverage run succeeded and wrote its report though it names none:
-	// either way, a file of it the report never names is untested.
+// Measured is the languages of files, the paths a run scores, whose
+// coverage report speaks for: a language is measured when the report names
+// one of its files, or its coverage run succeeded and wrote its report
+// though it names none (Report.Measures). Either way, a file of it the
+// report never names is untested. A path of no language lang knows has
+// none.
+func Measured(report *coverage.Report, files []string) map[string]bool {
 	measured := map[string]bool{}
 	for _, f := range files {
-		if name := lang.Detect(f).Name; report.Has(f) || report.Measures(name) {
-			measured[name] = true
+		spec := lang.Detect(f)
+		if spec != nil && (report.Has(f) || report.Measures(spec.Name)) {
+			measured[spec.Name] = true
 		}
 	}
+	return measured
+}
+
+// Analyze scores every unit of f, the file its caller names name, by
+// report. With a nil report every coverage is nil. A file the report never
+// mentions counts as 0% covered when its language is measured (Measured,
+// over every file the run scores), because the tests ran and never loaded
+// it; otherwise its coverage is unknown. The caller parsed f and closes it.
+func Analyze(f *lang.File, name string, report *coverage.Report, measured map[string]bool) []Entry {
 	var entries []Entry
-	for _, path := range files {
-		f, err := project.ParseFile(ctx, path)
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil, context.Cause(ctx)
-			}
-			return nil, err
+	for _, u := range f.Units {
+		e := Entry{
+			Namespace:  u.Namespace,
+			Name:       u.Name,
+			Language:   u.Language,
+			File:       name,
+			StartLine:  u.StartLine,
+			EndLine:    u.EndLine,
+			Complexity: f.Complexity(u),
 		}
-		for _, u := range f.Units {
-			e := Entry{
-				Namespace:  u.Namespace,
-				Name:       u.Name,
-				Language:   u.Language,
-				File:       project.Rel(path),
-				StartLine:  u.StartLine,
-				EndLine:    u.EndLine,
-				Complexity: f.Complexity(u),
-			}
-			if cov, ok := unitCoverage(report, measured, f, u); ok {
-				pct := round(cov*100, 1)
-				score := round(Score(e.Complexity, cov), 1)
-				e.Coverage, e.CRAP = &pct, &score
-			}
-			entries = append(entries, e)
+		if cov, ok := unitCoverage(report, measured, f, u); ok {
+			pct := round(cov*100, 1)
+			score := round(Score(e.Complexity, cov), 1)
+			e.Coverage, e.CRAP = &pct, &score
 		}
-		f.Close()
+		entries = append(entries, e)
 	}
-	return entries, nil
+	return entries
 }
 
 func unitCoverage(r *coverage.Report, measured map[string]bool, f *lang.File, u lang.Unit) (float64, bool) {

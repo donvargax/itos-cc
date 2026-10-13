@@ -94,6 +94,13 @@ from it, and thin slices named for their commands.
   takes a file `internal/lang` parsed and the name its caller gives it, and `History` merges a
   run's reports into what the last snapshot recorded, keeping the files the run did not
   measure. It reads nothing and has no port; its tests parse in memory through lang's fake.
+- `internal/changerisk` is the domain that scores functions by CRAP (decision 37), named for
+  what it is while the command keeps its name, `crap`. `Analyze(f, name, report, measured)`
+  takes a file `internal/lang` parsed, the name its caller gives it and a coverage `Report`;
+  `Measured(report, files)` is the languages the report speaks for among every file a run
+  scores, so a file it never names is untested rather than unknown. It reads nothing and has
+  no port; its tests parse in memory through lang's fake. The hand-parsed `crap` reads and
+  parses each source through the selection domain's `Parse` over `internal/workdir`.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the

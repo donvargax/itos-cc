@@ -47,6 +47,12 @@ build root or report carries one of the port's sealed gaps as its cause. The top
 `coverage` runner, which runs each language's tools, is its adapter: it builds every `Report`
 through the domain's API and answers the port from the disk (`Disk`).
 
+The change-risk domain, `internal/changerisk`, scores each function by CRAP, its complexity
+weighed by how little of it the tests ran. It takes files `internal/lang` has parsed, with the
+names its caller gives them, and a coverage `Report`, and reads nothing, so it has no port. cmd
+reads and parses each source for the hand-parsed `crap` through the selection domain's `Parse`
+over `internal/workdir`.
+
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain and parses each file with its `Parse`, read through the same port and named
 by `internal/lang`, the measure every command shares and a domain of its own. It keeps every

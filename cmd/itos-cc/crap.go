@@ -7,16 +7,18 @@ import (
 	"text/tabwriter"
 
 	covrun "github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/crap"
+	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/selection"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
 
 type crapSnapshot struct {
-	Version int          `json:"version"`
-	Entries []crap.Entry `json:"entries"`
+	Version int                `json:"version"`
+	Entries []changerisk.Entry `json:"entries"`
 }
 
 var crapCommand = &command{
@@ -66,12 +68,12 @@ as **/porttest/**, are left out, however they are chosen: a path or
 }
 
 type crapResult struct {
-	Entries    []crap.Entry          `json:"entries"`
+	Entries    []changerisk.Entry    `json:"entries"`
 	Unmeasured []coverage.Unmeasured `json:"unmeasured"`
 }
 
 func runCrap(ctx context.Context, in *invocation) (any, error) {
-	result := crapResult{Entries: []crap.Entry{}, Unmeasured: []coverage.Unmeasured{}}
+	result := crapResult{Entries: []changerisk.Entry{}, Unmeasured: []coverage.Unmeasured{}}
 	files, err := files(ctx, in)
 	if err != nil {
 		return result, err
@@ -88,13 +90,13 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	entries, err := crap.Analyze(ctx, files.Sources, report)
+	entries, err := scoreCrap(ctx, files.Sources, report)
 	if err != nil {
 		return result, err
 	}
 	// crap.json names each file from the project root, while output names
 	// it from the working directory.
-	var recorded []crap.Entry
+	var recorded []changerisk.Entry
 	for _, e := range entries {
 		e.File = project.FromRoot(e.File)
 		recorded = append(recorded, e)
@@ -103,7 +105,7 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 		return result, err
 	}
 
-	worst := crap.Worst(entries)
+	worst := changerisk.Worst(entries)
 	if n := in.integer("top"); n > 0 && n < len(worst) {
 		worst = worst[:n]
 	}
@@ -123,7 +125,7 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 	for _, p := range unmeasured(report) {
 		in.report(p)
 	}
-	for _, e := range crap.Worst(entries) {
+	for _, e := range changerisk.Worst(entries) {
 		if e.CRAP == nil || *e.CRAP <= threshold {
 			continue
 		}
@@ -136,7 +138,30 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 	return result, nil
 }
 
-func printCrapTable(entries []crap.Entry) {
+// scoreCrap is the changerisk domain's scores of every unit of sources by
+// report, each file read and parsed through the selection domain's Parse
+// over the working directory (internal/workdir), as the moved commands
+// parse what they select, and named from the working directory. A file is
+// kept open only while its units are scored. Once ctx is done it returns
+// its cause.
+func scoreCrap(ctx context.Context, sources []string, report *coverage.Report) ([]changerisk.Entry, error) {
+	measured := changerisk.Measured(report, sources)
+	var entries []changerisk.Entry
+	for _, path := range sources {
+		f, err := selection.Parse(ctx, workdir.Tree{}, workdir.Surroundings{}, path)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil, context.Cause(ctx)
+			}
+			return nil, err
+		}
+		entries = append(entries, changerisk.Analyze(f, project.Rel(path), report, measured)...)
+		f.Close()
+	}
+	return entries, nil
+}
+
+func printCrapTable(entries []changerisk.Entry) {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
 	fmt.Fprintln(w, "CRAP\tCC\tCOV%\t \t")
 	for _, e := range entries {

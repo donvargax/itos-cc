@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/crap"
+	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/mutate"
@@ -373,7 +373,7 @@ func loadOverlay(root string) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
 	dir := metrics.DirOf(root)
 	var crapSnap struct {
-		Entries []crap.Entry `json:"entries"`
+		Entries []changerisk.Entry `json:"entries"`
 	}
 	if readJSON(filepath.Join(dir, "crap.json"), &crapSnap) {
 		for _, e := range crapSnap.Entries {
@@ -426,7 +426,7 @@ func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]str
 		occurrence[k]++
 		if cov, ok := o.coverage.get(u.File, u.Namespace, u.Name, n); ok && cov >= 0 {
 			c := cov
-			score := float64(int(crap.Score(u.Complexity, c/100)*10+0.5)) / 10
+			score := float64(int(changerisk.Score(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
 		if m := mutate.OnSites(entries[i], u.hash, u.sites); m != nil {
