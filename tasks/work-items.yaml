@@ -2722,8 +2722,8 @@ items:
   - id: bug-1
     title: A coverage report written with \ separators matches no source on Linux or macOS
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
