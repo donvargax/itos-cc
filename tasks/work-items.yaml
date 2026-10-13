@@ -2697,3 +2697,17 @@ items:
       runner reads for every Go plan. With the runner behind internal/coveragetools (T-66), the
       adapter could carry it as a field main gives it, as it carries its Log, so nothing below main
       holds process-wide state and a test names the executable it measures with.
+  - id: coverage-runner-os-value
+    title: The coverage runner takes the OS as a value instead of branching on runtime.GOOS
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      docs/go.md says code that differs by OS takes the OS as a value and logic never branches on
+      runtime.GOOS, but the top-level coverage runner still does: its platform shell (shellCommand,
+      which --coverage-command and the listed tests run through since T-66), environment key folding
+      (setEnv) and supervised process groups. golangci-lint does not lint the runner, so nothing
+      holds it there; internal/coveragetools, its adapter, could hand it the OS once the runner
+      moves under internal/.
