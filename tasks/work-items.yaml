@@ -2518,8 +2518,8 @@ items:
   - id: T-61
     title: coverage.feature runs through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-60]
     kind: task
     why: >
