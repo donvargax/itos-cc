@@ -1225,7 +1225,9 @@ func (c *coverageState) holds(a covAnnouncement, spec string, lcov bool) error {
 		}
 		if provider, ok := strings.CutPrefix(rest, "with the "); ok {
 			provider = strings.TrimSuffix(provider, " provider")
-			if !strings.Contains(c.w.stderr, "Coverage enabled with "+provider) {
+			// Vitest colours its words where the environment asks for it.
+			plain := regexp.MustCompile("\x1b\\[[0-9;]*m").ReplaceAllString(c.w.stderr, "")
+			if !strings.Contains(plain, "Coverage enabled with "+provider) {
 				return fmt.Errorf("%s does not say coverage is enabled with %s", tool, provider)
 			}
 			return nil
