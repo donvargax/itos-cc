@@ -10,9 +10,10 @@ package cli
 // the kinds the command line's flags are of, each judging what follows the
 // flag before kong's own mapper reads it, and a hook before kong resets the
 // values, where the flags given are known, in kong's path of the command
-// line. Every flag is a switch (a bool, its --no- pair beside it) or takes
-// one value (a string, or a number, read as numbers.go says), and is given
-// once; a flag of another kind is added here first. A cumulative flag (a
+// line. Every flag is a switch (a bool, its --no- pair beside it, or a
+// switch of choices, as choices.go says) or takes one value (a string, or a
+// number, read as numbers.go says), and is given once; a flag of another
+// kind is added here first. A cumulative flag (a
 // slice, as kong reads one) may be given again, each time with a value of its
 // own, as crap's --coverage-report is: listMapper judges each value given
 // before kong's slice decoder reads it, which would take a flag after it
@@ -54,6 +55,8 @@ func Flags() []kong.Option {
 		kong.KindMapper(reflect.Float64, numberMapper{traced: traced}),
 		kong.KindMapper(reflect.Int, numberMapper{traced: traced, whole: true}),
 		kong.KindMapper(reflect.Slice, listMapper{kongs}),
+		kong.TypeMapper(reflect.TypeFor[*Choice](), choiceMapper{traced}),
+		kong.PostBuild(choicesNamed),
 		kong.WithBeforeReset(traced.done),
 	}
 }

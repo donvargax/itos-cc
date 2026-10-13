@@ -369,9 +369,13 @@ follows the same steps for a command it wrote before it had the template's desig
    and was given "abc"`; `a whole number` for an int), added when `dry` moved (T-40). A
    cumulative flag, a slice, may be given again, each time with a value its mapper judges
    given before kong's slice decoder reads it (`crap`'s `--coverage-report`, T-67); an
-   optional number is a pointer, nil when not given (`crap`'s `--threshold`). A command
-   whose flags take durations or a switch's choices (`mutation run`) first gives `Flags` a
-   mapper for that kind, with a typed refusal in the words the hand parser used.
+   optional number is a pointer, nil when not given (`crap`'s `--threshold`). A switch that
+   may take one of its choices after `=` is a `*cli.Choice` whose `enum` tag names them
+   (`mutation run`'s `--fail-uncovered[=functions|lines]`, T-68): nil when not given, its
+   first choice when given alone, never the next word as its value, and any other value
+   refused as a `cli.ChoiceError` in the hand parser's words; help and completion take the
+   choices from kong's model. A command whose flags take durations (`serve`) first gives
+   `Flags` a mapper for that kind, with a typed refusal in the words the hand parser used.
 6. **Failures by type, never by text.** `cli.ParseProblem` turns each failure into the
    problem `docs/CLI.md` names, by the kong fork's error types and `Flags`' own:
 
@@ -381,7 +385,7 @@ follows the same steps for a command it wrote before it had the template's desig
    | `cli.SwitchValueError`                              | `flags.switch-value`    |
    | `cli.ValueMissingError`, `kong.MissingValueError`   | `flags.value-missing`   |
    | `cli.RepeatedFlagError`                             | `flags.repeated`        |
-   | `cli.NumberError`                                   | `flags.value-invalid`, in the hand parser's words |
+   | `cli.NumberError`, `cli.ChoiceError`                | `flags.value-invalid`, in the hand parser's words |
    | `kong.InvalidValueError`, `kong.EnumError`          | `flags.value-invalid`, in kong's words until a mapper of ours words it |
    | `kong.UnexpectedArgumentError`, a command expected  | `command.unknown`       |
    | `kong.UnexpectedArgumentError`, no argument taken   | `args.unexpected`       |

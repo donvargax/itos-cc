@@ -144,6 +144,8 @@ func PageOf(node *kong.Node) (Page, error) {
 		one := HelpFlag{Name: f.Name, Short: f.Short, Help: f.Help, Repeat: f.IsCumulative()}
 		if !f.IsBool() {
 			one.Arg = f.FormatPlaceHolder()
+		} else if f.Enum != "" {
+			one.Choices = f.EnumSlice()
 		}
 		if f.HasDefault {
 			one.Default = f.Default

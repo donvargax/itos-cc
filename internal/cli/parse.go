@@ -161,7 +161,8 @@ func takesNext(node *kong.Node, word string) bool {
 //   - flags.switch-value, flags.value-missing and flags.repeated: Flags'
 //     own refusals, and kong's MissingValueError of a flag.
 //   - flags.value-invalid: a number flag's value that is no number of its
-//     kind (NumberError), in the hand parser's words; a value kong's own
+//     kind (NumberError), or a switch's value that is none of its choices
+//     (ChoiceError), in the hand parser's words; a value kong's own
 //     mapper refused, or not of its enum, in kong's words until a command
 //     meets one.
 //   - command.unknown, args.unexpected and command.missing: kong's
@@ -180,6 +181,7 @@ func ParseProblem(err error, args []string) *Problem {
 		switchValue    *SwitchValueError
 		valueMissing   *ValueMissingError
 		number         *NumberError
+		choice         *ChoiceError
 		missing        *kong.MissingValueError
 		invalid        *kong.InvalidValueError
 		enum           *kong.EnumError
@@ -214,6 +216,10 @@ func ParseProblem(err error, args []string) *Problem {
 		name, what := number.Flag.Name, number.What()
 		return NewProblem(CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s needs %s, and was given %q", name, what, number.Value),
 			fmt.Sprintf("Give it %s.", what)).With("flag", "--"+name).With("value", number.Value)
+	case errors.As(err, &choice) && choice.Flag != nil:
+		name := choice.Flag.Name
+		return NewProblem(CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s %s", name, choice.Error()),
+			fmt.Sprintf("Write --%s alone, or --%s=%s.", name, name, choice.Flag.EnumSlice()[0])).With("flag", "--"+name).With("value", choice.Value)
 	case errors.As(err, &invalid) && invalid.Value.Flag != nil:
 		return valueInvalid(node, invalid.Value, err)
 	case errors.As(err, &enum) && enum.Value.Flag != nil:
