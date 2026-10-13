@@ -2272,6 +2272,18 @@ items:
       3) (staticcheck QF1005); a scratch check over 10 million values found no difference, but
       compare crap's scores and --json CRAP values over a spread of coverage fractions (0, 1,
       thirds, values near 0.5 and 1) byte for byte.
+
+      T-66 (coverage through the port: crap measures through adapters' Coverage, mutation through
+      loadCoverage over internal/coveragetools, and classifyCoverage maps every gap and failure for
+      both): compare crap with --threshold over each gap kind, plain and with --json: a tool missing
+      (coverage.tool-missing, 3), tests that measured nothing (coverage.measured-nothing, 1),
+      --use-existing-coverage with no report (coverage.no-report, 3), a --coverage-report that is
+      not there and one that is no report (coverage.report-unreadable, 2), and without --threshold
+      the no-coverage lines on stderr and --json's unmeasured objects. Compare a failing
+      --coverage-command (its $ line and exit status on stderr, a report it did not write as
+      coverage.measured-nothing with the reason prefixed), a file where .metrics/coverage should be
+      (exit 70, the mkdir message whole) under crap and mutation run, and mutation run with a tool
+      missing, plain and with --fail-uncovered (coverage.tool-missing).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
