@@ -2253,6 +2253,14 @@ items:
       beside a manifest and one only git ignores, and mutation run in a project whose worker copy
       links node_modules or .venv; compare crap and mutation run with listed tests
       (coverage.MeasureTests) as before.
+
+      T-63 (the selection command line in internal/cli's Selection, embedded first in units', dry's
+      and scrap's kong structs, and one parse of a selected file in selection.Parse): compare units
+      --help, dry --help and scrap --help, -h, help units, help dry and help scrap, with and without
+      --json (the options' order and the usage line), units --changed=x (flags.switch-value from the
+      embedded field), dry -- --changed (the word a path after --), and units over a selected file
+      it cannot read (units now asks the language before the read, as dry and scrap did; every
+      selected file has one, so no difference is expected).
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
