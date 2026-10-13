@@ -2261,6 +2261,13 @@ items:
       --json (its unmeasured objects, cause and reason, byte for byte); reports reached through a
       symlinked folder; c8's and Python's subprocess integration coverage; and mutation run
       --fail-uncovered on Kotlin, which lists unloaded files from the module's report (Inventory).
+
+      T-65 (crap's scoring to the internal/changerisk domain): the hand-parsed crap now reads and
+      parses each source through selection's Parse over internal/workdir instead of
+      project.ParseFile, and names it with project.Rel in cmd; Score multiplies out its cube.
+      Compare crap over a source that cannot be read (exit 70 and its message), crap run from a
+      subdirectory with and without paths (output names from the working directory, crap.json keys
+      from the root), and crap on paths outside the working directory, plain and with --json.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
