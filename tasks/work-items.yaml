@@ -2527,3 +2527,28 @@ items:
       Light local testing: the packages and scenarios in the checks, never the whole cmd/itos-cc
       suite or a mutation run; never itos task show locally. No binary comparison: the plan's cases
       for this task join refactor-final-proof's list.
+  - id: T-61
+    title: coverage.feature runs through godog against the built binary
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The coverage split (decision 46) must be held by scenarios before it starts. COV-16, 18, 19,
+      20-29 and 31-37 run crap with --coverage-report over hand-written LCOV, Go profile and JaCoCo
+      text and read the values, so they need no tools and can later run in process; COV-01..15, 17,
+      30, 38 and 39 are the runner's (which commands it picks, package managers, venv and gradlew,
+      failing tests still counting, .metrics/coverage, symlinks) and stay @binary-only for good,
+      those needing Node, Python or Kotlin skipping without the tools. ci.yml's language-tools job
+      (ci.yml:130-136) gains go test ./features -scenarios=... for those. Sentences that assert
+      internals ('it is read as LCOV') get a step for each sentence as it stands; one that cannot
+      run as written is listed and stops the task for a spec fix (docs/go.md step 8). S5 of the
+      template-design refactor; the coordinator's plan is in the clone notes (.git/itos/s5-plan.md:
+      in-process lists, which scenarios stay binary-only, the coverage code's line references,
+      refactor-final-proof cases per task). Rules whole: ctx first, never held or captured for I/O;
+      nothing leaks into a domain, while adapters and ports may use the domain's types with no
+      mappers (decision 47); fakes not mocks, none in production code. Light local testing: the
+      packages and scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run;
+      never itos task show locally. No binary comparison: the plan's cases for this task join
+      refactor-final-proof's list.
