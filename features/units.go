@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -87,7 +86,7 @@ func unitSteps(sc *godog.ScenarioContext, w *world) {
 	})
 	sc.After(func(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
 		if u.alone != "" {
-			_ = os.RemoveAll(filepath.Dir(u.alone))
+			_ = w.d.Remove(filepath.Dir(u.alone))
 		}
 		return ctx, nil
 	})
@@ -131,7 +130,7 @@ func unitSteps(sc *godog.ScenarioContext, w *world) {
 	})
 	sc.Step(`^it is "([^"]*)" from a copy of that directory at another path$`, u.fromACopy)
 
-	// Sources itos-cc.yaml excludes, with the step writing it (steps_test.go).
+	// Sources itos-cc.yaml excludes, with the step writing it (steps.go).
 	sc.Step(`^no unit of (\S+) is listed$`, u.noUnitOf)
 	sc.Step(`^a unit of (\S+) is listed$`, u.aUnitOf)
 }
@@ -267,14 +266,12 @@ func (u *unitsState) onlyTestFiles() error {
 }
 
 // noSupportedFiles leaves the scratch folder with files of no supported
-// language alone.
+// language alone: what the sample wrote there is removed, each folder of
+// it whole.
 func (u *unitsState) noSupportedFiles() error {
-	entries, err := os.ReadDir(u.w.dir)
-	if err != nil {
-		return err
-	}
-	for _, e := range entries {
-		if err := os.RemoveAll(filepath.Join(u.w.dir, e.Name())); err != nil {
+	for name := range sample {
+		top, _, _ := strings.Cut(name, "/")
+		if err := u.w.d.Remove(filepath.Join(u.w.dir, top)); err != nil {
 			return err
 		}
 	}
@@ -455,10 +452,10 @@ func (u *unitsState) measure(dir, file string) (measures, error) {
 			}
 		}
 	}
-	if err := u.w.runEnv(dir, u.w.env(), u.w.bin, "mutation", "run", "--test-command", "exit 0", "--json", file); err != nil {
+	if err := u.w.runEnv(dir, u.w.env(), "mutation", "run", "--test-command", "exit 0", "--json", file); err != nil {
 		return m, err
 	}
-	raw, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", filepath.FromSlash(file)+".json"))
+	raw, err := u.w.readIn(dir, ".metrics/mutate/"+file+".json")
 	if err != nil {
 		return m, fmt.Errorf("mutation run wrote no snapshot of %s: %v\n%s", file, err, u.w.report())
 	}
@@ -475,7 +472,7 @@ func (u *unitsState) measure(dir, file string) (measures, error) {
 // runJSON runs itos-cc with args in dir and reads its --json object into
 // v, the run having succeeded.
 func (u *unitsState) runJSON(dir string, v any, args ...string) error {
-	if err := u.w.runEnv(dir, u.w.env(), u.w.bin, args...); err != nil {
+	if err := u.w.runEnv(dir, u.w.env(), args...); err != nil {
 		return err
 	}
 	if u.w.exit != 0 {
@@ -554,11 +551,7 @@ func (u *unitsState) routesOwnTheirMeasures() error {
 	indent := body[:len(body)-len(strings.TrimLeft(body, " "))]
 	lines[route.StartLine] = indent + "if (globalThis.a && globalThis.b) { return null; } " + strings.TrimLeft(body, " ")
 	changed := filepath.Join(u.w.dir, "changed")
-	path := filepath.Join(changed, filepath.FromSlash(u.file))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")), 0o600); err != nil {
+	if err := u.w.writeIn(changed, u.file, strings.Join(lines, "\n")); err != nil {
 		return err
 	}
 	after, err := u.measure(changed, u.file)
@@ -791,25 +784,25 @@ var markers = []string{"package.json", "tsconfig.json", "go.mod", ".git"}
 // project marker in it or above it. Where the temporary directory has one
 // above it the scenario cannot be set up, and is skipped.
 func (u *unitsState) aloneFolder() error {
-	parent, err := os.MkdirTemp("", "itos-cc-features-alone-")
+	parent, err := u.w.d.Folder()
 	if err != nil {
 		return err
 	}
 	u.alone = filepath.Join(parent, "here")
-	if above := markerAbove(u.alone); above != "" {
-		_ = os.RemoveAll(parent)
+	if above := u.markerAbove(u.alone); above != "" {
+		_ = u.w.d.Remove(parent)
 		u.alone = ""
 		return fmt.Errorf("%s is above the temporary directory: %w", above, godog.ErrSkip)
 	}
-	return writeIn(u.alone, "x.ts", "export function place(a: number): boolean {\n  return a > 0;\n}\n")
+	return u.w.writeIn(u.alone, "x.ts", "export function place(a: number): boolean {\n  return a > 0;\n}\n")
 }
 
 // markerAbove is the first project marker in dir or a folder above it, or
 // "".
-func markerAbove(dir string) string {
+func (u *unitsState) markerAbove(dir string) string {
 	for {
 		for _, m := range markers {
-			if _, err := os.Stat(filepath.Join(dir, m)); err == nil {
+			if u.w.d.Exists(filepath.Join(dir, m)) {
 				return filepath.Join(dir, m)
 			}
 		}
@@ -830,26 +823,26 @@ func (u *unitsState) runIn(dir, args string) error {
 	if err != nil {
 		return err
 	}
-	return u.w.runEnv(dir, u.w.env(), u.w.bin, fields...)
+	return u.w.runEnv(dir, u.w.env(), fields...)
 }
 
 // fromACopy is whether the last command, run in a copy of the folder at
 // another path, lists one unit, id.
 func (u *unitsState) fromACopy(id string) error {
-	parent, err := os.MkdirTemp("", "itos-cc-features-copy-")
+	parent, err := u.w.d.Folder()
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(parent) }()
+	defer func() { _ = u.w.d.Remove(parent) }()
 	copied := filepath.Join(parent, "elsewhere")
-	if above := markerAbove(copied); above != "" {
+	if above := u.markerAbove(copied); above != "" {
 		return fmt.Errorf("%s is above the copy: %w", above, godog.ErrSkip)
 	}
-	text, err := os.ReadFile(filepath.Join(u.alone, "x.ts"))
+	text, err := u.w.readIn(u.alone, "x.ts")
 	if err != nil {
 		return err
 	}
-	if err := writeIn(copied, "x.ts", string(text)); err != nil {
+	if err := u.w.writeIn(copied, "x.ts", string(text)); err != nil {
 		return err
 	}
 	if err := u.runIn(copied, u.args); err != nil {

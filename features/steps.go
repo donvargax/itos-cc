@@ -1,42 +1,98 @@
-// The steps. itos-cc is a black box here: each scenario gets a
-// scratch folder in a temporary directory, runs the binary TestFeatures
-// built from this tree in it, and reads its exit code and its output.
-// Nothing here imports or reads itos-cc's code, so the steps judge
-// it by its command line alone. Harvested from itos's (github.com/donvargax/
-// itos, features/steps_test.go) and the owner's itos-template's, its domain's
-// steps left behind.
+// The steps. itos-cc is a black box here: each scenario gets a fresh
+// scratch folder, runs itos-cc in it, and reads its exit code and its
+// output. The steps reach that world only through a Driver: the binary one
+// (binary.go) runs the itos-cc TestFeatures built from this tree as another
+// process on the disk, and cmd/itos-cc's tests run the same steps in
+// process (decision 44). Nothing here imports or reads itos-cc's code, so
+// the steps judge it by its command line alone. Harvested from itos's
+// (github.com/donvargax/itos, features/steps_test.go) and the owner's
+// itos-template's, its domain's steps left behind.
 package features
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/cucumber/godog"
 )
 
+// Driver is the world the steps reach: folders and files, git, and runs of
+// itos-cc. Every path it takes is absolute, in the system's form.
+type Driver interface {
+	// Folder makes a fresh, empty folder and gives its absolute path.
+	Folder() (string, error)
+	// Write writes data to the file at path, making the folders above it.
+	Write(path string, data []byte) error
+	// Read is the content of the file at path.
+	Read(path string) ([]byte, error)
+	// Mkdir makes the folder at path, whose parent is there.
+	Mkdir(path string) error
+	// Exists is whether a file or folder is at path.
+	Exists(path string) bool
+	// Remove removes the file or folder at path and everything below it.
+	Remove(path string) error
+	// Git runs git with args in the folder dir, for a fixture that needs a
+	// repository: init, add and commit.
+	Git(dir string, args ...string) error
+	// Run runs itos-cc as r says and gives what it did. Its error is a run
+	// that could not be made, never an exit code other than 0.
+	Run(r Run) (Result, error)
+}
+
+// Run is one run of itos-cc: the folder it runs in, the variables the
+// scenario sets in its environment as NAME=value, the text of its standard
+// input, "" for none, and its arguments.
+type Run struct {
+	Dir   string
+	Env   []string
+	Stdin string
+	Args  []string
+}
+
+// Result is what a run of itos-cc did: its exit code and its output.
+type Result struct {
+	Exit           int
+	Stdout, Stderr string
+}
+
+// stampedVersion is the version the binary under test is stamped with, as a
+// release's build stamps the release's, so a scenario can tell the stamp
+// from the version a build without one says.
+const stampedVersion = "1.2.3-features"
+
+// stampedCommit is the commit the binary under test is stamped with, as a
+// release's build stamps the commit it was built from, so a scenario can
+// name the commit the binary says it was built from.
+const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
+
+// Converted are the feature files the steps run, those whose scenarios
+// have steps: count.feature, the template's sample, every scenario of it
+// @wip (T-26), units.feature, the first command moved onto kong (T-32), and
+// dry.feature and scrap.feature, each converted before its command moves so
+// the move is held by its scenarios (T-37, T-41). A command that moves
+// converts its own file and adds it here, its scenarios' text unchanged
+// (q-52).
+var Converted = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
+
 // One scenario's state.
 type world struct {
-	root string // the itos-cc checkout: where go.mod is
-	bin  string // the itos-cc binary under test
-	dir  string // the scratch folder
+	d   Driver // the world the steps reach
+	dir string // the scratch folder
 
 	exit           int
 	stdout, stderr string
 
 	stdin string // the text the run reads from its standard input, "" for none
-
-	running *running // the run started with its standard input left open, nil for none
 
 	// last is the last run of itos-cc, which the problem steps run again
 	// with --json when it was run without, nil before one.
@@ -46,24 +102,36 @@ type world struct {
 	problem map[string]any
 }
 
-// run is one run of itos-cc: where, in what environment and with which
-// words.
+// run is one run of itos-cc: where, with the variables the scenario set
+// and with which words.
 type run struct {
 	dir  string
 	env  []string
 	args []string
 }
 
-func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
-	w := &world{root: root, bin: bin}
+// Initialize gives sc every step of the converted feature files, each
+// reaching the world through d.
+func Initialize(sc *godog.ScenarioContext, d Driver) {
+	initialize(sc, d)
+}
+
+// initialize is Initialize, and gives each of own sc and the scenario's
+// world, for the steps only one driver can take, before the scratch folder
+// is removed after the scenario: the binary driver's interrupt
+// (interrupt_test.go).
+func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.ScenarioContext, *world)) {
+	w := &world{d: d}
 	sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
 		return ctx, w.setUp()
 	})
+	for _, steps := range own {
+		steps(sc, w)
+	}
 	// The scenario's error is godog's already: returned here, it would be
 	// reported twice, as the hook's and as the step's.
 	sc.After(func(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
-		w.running.stop()
-		_ = os.RemoveAll(w.dir)
+		_ = w.d.Remove(w.dir)
 		return ctx, nil
 	})
 
@@ -76,10 +144,6 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 	sc.Step(`^itos-cc runs with "([^"]*)" and the environment "([^"]*)"$`, func(args, vars string) error {
 		return w.runWith(w.withEnv(vars), args)
 	})
-	// A run that waits on its input until something ends it, and the
-	// interrupt that does (interrupt_test.go).
-	sc.Step(`^itos-cc runs with "([^"]*)" and its standard input left open$`, w.startWithInputOpen)
-	sc.Step(`^it is interrupted while it waits$`, w.interruptWhileWaiting)
 
 	sc.Step(`^it exits with code (\d+)$`, w.exitsWith)
 	sc.Step(`^the exit code is (\d+)$`, w.exitsWith)
@@ -209,57 +273,13 @@ func initializeScenario(sc *godog.ScenarioContext, root, bin string) {
 func (w *world) setUp() error {
 	w.last, w.problem = nil, nil
 	var err error
-	if w.dir, err = os.MkdirTemp("", "itos-cc-features-"); err != nil {
-		return err
-	}
-	return nil
+	w.dir, err = w.d.Folder()
+	return err
 }
 
-// The folder holding go.mod, above the working directory go test gives.
-func moduleRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir, nil
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return "", errors.New("no go.mod above the working directory")
-		}
-		dir = parent
-	}
-}
-
-// The environment every command runs in: the caller's, less what would make
-// git, itos or itos-cc read anything but the scratch folder (a
-// hook's GIT_DIR, the caller's ITOS_CC_ settings, CI's), with no
-// global or system git config and a fixed identity, and the caller's PATH
-// without its claude, its itos, its itos extensions or a git that is an itos
-// (callerPath).
-func (w *world) env() []string {
-	var env []string
-	for _, kv := range os.Environ() {
-		name, _, _ := strings.Cut(kv, "=")
-		if strings.HasPrefix(name, "GIT_") || strings.HasPrefix(name, "ITOS_") ||
-			strings.HasPrefix(name, "ITOS_CC_") || strings.HasPrefix(name, "GITHUB_") ||
-			strings.HasPrefix(name, "GH_") || name == "CI" || strings.EqualFold(name, "PATH") {
-			continue
-		}
-		env = append(env, kv)
-	}
-	return append(env,
-		"GIT_CONFIG_GLOBAL="+os.DevNull,
-		"GIT_CONFIG_NOSYSTEM=1",
-		"GIT_AUTHOR_NAME=itos-cc features",
-		"GIT_AUTHOR_EMAIL=features@localhost",
-		"GIT_COMMITTER_NAME=itos-cc features",
-		"GIT_COMMITTER_EMAIL=features@localhost",
-		"PATH="+callerPath(),
-	)
-}
+// env is the variables a scenario sets in every run's environment: none.
+// The driver gives each run the rest.
+func (w *world) env() []string { return nil }
 
 // withEnv is the scenarios' environment with each NAME=value of vars, a
 // semicolon-separated list, set as given.
@@ -273,110 +293,6 @@ func (w *world) withEnv(vars string) []string {
 	return env
 }
 
-// The programs no scenario reaches on the caller's PATH: its claude, its itos
-// and its itos extensions (itos-*). An itos installed on the machine would
-// run its own policy where a scenario meant only itos-cc (itos's
-// T-087), and itos runs and lists every extension it finds, so one installed
-// on the machine would change what a scenario sees (itos's T-080).
-var hiddenAlways = []string{"claude", "itos", "itos-*"}
-
-var (
-	hiddenPathsMu sync.Mutex
-	hiddenPaths   = map[string]string{}
-	callerPathDir string
-)
-
-// callerPath is the caller's PATH with none of hiddenAlways on it, so no
-// scenario reaches the Claude Code or the itos of the machine it runs on:
-// each folder holding one is replaced by a folder of links to everything else
-// in it, or left out where links cannot be made (windows without the right to
-// make them).
-func callerPath() string { return pathHiding(hiddenAlways...) }
-
-// pathHiding is the caller's PATH with none of the programs named on it, nor
-// a git that is an itos, made once a run for each set of names. A git shim of
-// the caller's (itos git-shim install) would run the global itos for a
-// scenario's git command; it is told from the real git by the rule itos
-// itself goes by (isItos, git_test.go), so every git a scenario's commands
-// start is the real one, as the steps' own are (gitBin, itos's T-104).
-func pathHiding(names ...string) string {
-	hiddenPathsMu.Lock()
-	defer hiddenPathsMu.Unlock()
-	key := strings.Join(names, " ")
-	if text, ok := hiddenPaths[key]; ok {
-		return text
-	}
-	var folders []string
-	for i, folder := range filepath.SplitList(os.Getenv("PATH")) {
-		hidden := func(e os.DirEntry) bool {
-			return isOneOf(e, names) || isOneOf(e, []string{"git"}) && isItos(filepath.Join(folder, e.Name()))
-		}
-		entries, err := os.ReadDir(folder)
-		if err != nil || !slices.ContainsFunc(entries, hidden) {
-			folders = append(folders, folder)
-			continue
-		}
-		if callerPathDir == "" {
-			if callerPathDir, err = os.MkdirTemp("", "itos-cc-features-path-"); err != nil {
-				continue
-			}
-		}
-		links := filepath.Join(callerPathDir, strconv.Itoa(len(hiddenPaths)), strconv.Itoa(i))
-		if linkAllBut(folder, links, entries, hidden) == nil {
-			folders = append(folders, links)
-		}
-	}
-	text := strings.Join(folders, string(os.PathListSeparator))
-	hiddenPaths[key] = text
-	return text
-}
-
-// removeCallerPath removes the folders callerPath and pathHiding made.
-func removeCallerPath() {
-	if callerPathDir != "" {
-		_ = os.RemoveAll(callerPathDir)
-	}
-}
-
-// isOneOf is whether a folder's entry is a program of the names the PATH
-// would find: the name, or on windows the name with any extension, in any
-// case. A name ending in * is a prefix, so itos-* is every itos extension.
-func isOneOf(e os.DirEntry, names []string) bool {
-	name := e.Name()
-	same := func(a, b string) bool { return a == b }
-	starts := strings.HasPrefix
-	if runtime.GOOS == "windows" {
-		name = strings.TrimSuffix(name, filepath.Ext(name))
-		same = strings.EqualFold
-		starts = func(s, prefix string) bool {
-			return len(s) >= len(prefix) && strings.EqualFold(s[:len(prefix)], prefix)
-		}
-	}
-	return slices.ContainsFunc(names, func(n string) bool {
-		if prefix, ok := strings.CutSuffix(n, "*"); ok {
-			return starts(name, prefix)
-		}
-		return same(name, n)
-	})
-}
-
-// linkAllBut makes links a folder of links to every entry of folder but the
-// hidden ones.
-func linkAllBut(folder, links string, entries []os.DirEntry, hidden func(os.DirEntry) bool) error {
-	if err := os.MkdirAll(links, 0o755); err != nil {
-		return err
-	}
-	for _, e := range entries {
-		if hidden(e) {
-			continue
-		}
-		if err := os.Symlink(filepath.Join(folder, e.Name()), filepath.Join(links, e.Name())); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // When steps.
 
 // runWith runs itos-cc in the scratch folder with args, split as a
@@ -386,7 +302,7 @@ func (w *world) runWith(env []string, args string) error {
 	if err != nil {
 		return err
 	}
-	return w.runEnv(w.dir, env, w.bin, fields...)
+	return w.runEnv(w.dir, env, fields...)
 }
 
 // commandWords splits a scenario's command line without involving a shell.
@@ -443,39 +359,21 @@ func setEnv(env []string, name, value string) []string {
 	return append(out, name+"="+value)
 }
 
-// runEnv runs program in the folder dir in the environment env, its exit
-// code and output what the Then steps read.
-func (w *world) runEnv(dir string, env []string, program string, args ...string) error {
-	if program == w.bin {
-		w.last = &run{dir: dir, env: env, args: args}
-	}
+// runEnv runs itos-cc with args in the folder dir with the variables env
+// sets, its exit code and output what the Then steps read.
+func (w *world) runEnv(dir string, env []string, args ...string) error {
+	w.last = &run{dir: dir, env: env, args: args}
 	var err error
-	w.exit, w.stdout, w.stderr, err = w.capture(dir, env, program, args...)
+	w.exit, w.stdout, w.stderr, err = w.capture(dir, env, args...)
 	return err
 }
 
-// capture runs program in the folder dir in the environment env, reading
-// the scenario's standard input, and gives its exit code and output.
-func (w *world) capture(dir string, env []string, program string, args ...string) (code int, stdout, stderr string, err error) {
-	cmd := exec.Command(program, args...)
-	cmd.Dir = dir
-	cmd.Env = env
-	if w.stdin != "" {
-		cmd.Stdin = strings.NewReader(w.stdin)
-	}
-	var out, errOut strings.Builder
-	cmd.Stdout = &out
-	cmd.Stderr = &errOut
-	err = cmd.Run()
-	var exit *exec.ExitError
-	switch {
-	case err == nil:
-		return 0, out.String(), errOut.String(), nil
-	case errors.As(err, &exit):
-		return exit.ExitCode(), out.String(), errOut.String(), nil
-	default:
-		return 0, out.String(), errOut.String(), fmt.Errorf("running %s: %w", program, err)
-	}
+// capture runs itos-cc with args in the folder dir with the variables env
+// sets, reading the scenario's standard input, and gives its exit code and
+// output.
+func (w *world) capture(dir string, env []string, args ...string) (code int, stdout, stderr string, err error) {
+	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args})
+	return result.Exit, result.Stdout, result.Stderr, err
 }
 
 // Fixture steps.
@@ -487,7 +385,7 @@ func (w *world) fileContains(name string, texts ...string) error {
 		return fmt.Errorf("the file %q is given no text to contain", name)
 	}
 	body := strings.Join(texts, "\n") + "\n"
-	return os.WriteFile(filepath.Join(w.dir, name), []byte(body), 0o600)
+	return w.d.Write(filepath.Join(w.dir, name), []byte(body))
 }
 
 // fileHoldsLine writes name in the scratch folder holding one line of count
@@ -495,58 +393,35 @@ func (w *world) fileContains(name string, texts ...string) error {
 // other line.
 func (w *world) fileHoldsLine(name string, count int) error {
 	body := strings.Repeat("x", count) + "\n"
-	return os.WriteFile(filepath.Join(w.dir, name), []byte(body), 0o600)
+	return w.d.Write(filepath.Join(w.dir, name), []byte(body))
 }
 
 // emptyFolder makes a folder in the scratch directory.
 func (w *world) emptyFolder(name string) error {
-	return os.Mkdir(filepath.Join(w.dir, name), 0o755)
+	return w.d.Mkdir(filepath.Join(w.dir, name))
 }
 
 // write writes text to name, a slash-separated path in the scratch folder,
 // making the folders above it.
 func (w *world) write(name, text string) error {
-	return writeIn(w.dir, name, text)
+	return w.writeIn(w.dir, name, text)
 }
 
 // writeIn writes text to name, a slash-separated path in dir, making the
 // folders above it.
-func writeIn(dir, name, text string) error {
-	path := filepath.Join(dir, filepath.FromSlash(name))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(text), 0o600)
+func (w *world) writeIn(dir, name, text string) error {
+	return w.d.Write(filepath.Join(dir, filepath.FromSlash(name)), []byte(text))
 }
 
-// git runs the real git in the scratch folder, in the scenarios'
-// environment, for a fixture that needs a repository.
+// readIn is the text of name, a slash-separated path in dir.
+func (w *world) readIn(dir, name string) ([]byte, error) {
+	return w.d.Read(filepath.Join(dir, filepath.FromSlash(name)))
+}
+
+// git runs git with args in the scratch folder, for a fixture that needs a
+// repository.
 func (w *world) git(args ...string) error {
-	bin, err := realGit()
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command(bin, args...)
-	cmd.Dir = w.dir
-	cmd.Env = w.env()
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("git %s: %v\n%s", strings.Join(args, " "), err, out)
-	}
-	return nil
-}
-
-// realGit is the first git on the scenarios' PATH (callerPath) that is no
-// itos, the one every command a scenario starts finds.
-func realGit() (string, error) {
-	for _, folder := range filepath.SplitList(callerPath()) {
-		for _, name := range []string{"git.exe", "git"} {
-			path := filepath.Join(folder, name)
-			if info, err := os.Stat(path); err == nil && !info.IsDir() && !isItos(path) {
-				return path, nil
-			}
-		}
-	}
-	return "", errors.New("no git on the PATH")
+	return w.d.Git(w.dir, args...)
 }
 
 // Then steps.
@@ -626,7 +501,7 @@ func (w *world) problemIs(rule, flag string) error {
 	}
 	stdout, report := w.stdout, w.report()
 	if !slices.Contains(w.last.args, "--json") {
-		code, out, errOut, err := w.capture(w.last.dir, w.last.env, w.bin, append([]string{"--json"}, w.last.args...)...)
+		code, out, errOut, err := w.capture(w.last.dir, w.last.env, append([]string{"--json"}, w.last.args...)...)
 		if err != nil {
 			return err
 		}
@@ -810,4 +685,105 @@ func (w *world) jsonProblemsComplete() error {
 func numberOf(value any) int {
 	number, _ := value.(float64)
 	return int(number)
+}
+
+// TagFilter is godog's tag filter for a selection, the feature files in dir:
+// every live scenario of the Converted files without one, else the live
+// scenarios of the Converted files carrying a tag the expression matches,
+// with the tags it matches only in other files, which the steps do not
+// run. An expression that matches no tag of a converted file is an error,
+// so a selection never runs nothing.
+//
+// godog's own tag filter takes exact tags joined by commas; itos's run
+// templates join the IDs they select with |, as a regular expression
+// (itos.yaml's tests.scenario.run), so a selection is that expression,
+// turned here into godog's filter. A scenario tagged @wip never runs.
+func TagFilter(selection, dir string) (filter string, unconverted []string, err error) {
+	if selection == "" {
+		return "~@wip", nil, nil
+	}
+	pattern, err := regexp.Compile(selection)
+	if err != nil {
+		return "", nil, err
+	}
+	var files []string
+	for _, name := range Converted {
+		files = append(files, filepath.Join(dir, name))
+	}
+	tags, err := featureTags(files)
+	if err != nil {
+		return "", nil, err
+	}
+	var each []string
+	for _, tag := range tags {
+		if pattern.MatchString(tag) {
+			each = append(each, tag+"&&~@wip")
+		}
+	}
+	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
+	if err != nil {
+		return "", nil, err
+	}
+	everyTag, err := featureTags(all)
+	if err != nil {
+		return "", nil, err
+	}
+	for _, tag := range everyTag {
+		if pattern.MatchString(tag) && !slices.Contains(tags, tag) {
+			unconverted = append(unconverted, tag)
+		}
+	}
+	if len(each) == 0 {
+		return "", unconverted, &noMatch{selection, unconverted}
+	}
+	return strings.Join(each, ","), unconverted, nil
+}
+
+type noMatch struct {
+	selection   string
+	unconverted []string
+}
+
+func (e *noMatch) Error() string {
+	if len(e.unconverted) > 0 {
+		return "no scenario this harness runs has a tag that " + e.selection + " matches: " +
+			strings.Join(e.unconverted, " ") + " are in feature files with no steps yet (q-52), held by cmd/itos-cc's Go tests"
+	}
+	return "no scenario has a tag that " + e.selection + " matches"
+}
+
+// Every tag written in files, once each, sorted.
+func featureTags(files []string) ([]string, error) {
+	seen := map[string]bool{}
+	for _, file := range files {
+		f, err := os.Open(file)
+		if err != nil {
+			return nil, err
+		}
+		lines := bufio.NewScanner(f)
+		for lines.Scan() {
+			line := strings.TrimSpace(lines.Text())
+			if !strings.HasPrefix(line, "@") {
+				continue
+			}
+			for _, word := range strings.Fields(line) {
+				if strings.HasPrefix(word, "#") {
+					break
+				}
+				if strings.HasPrefix(word, "@") {
+					seen[word] = true
+				}
+			}
+		}
+		_ = f.Close()
+		if err := lines.Err(); err != nil {
+			return nil, err
+		}
+	}
+	tags := make([]string, 0, len(seen))
+	for tag := range seen {
+		tags = append(tags, tag)
+	}
+	sort.Strings(tags)
+	return tags, nil
 }

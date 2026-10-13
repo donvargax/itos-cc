@@ -1,8 +1,7 @@
 # The sources no command measures or mutates, globs from here (decision 45):
 # the ports' fakes in porttest, test support several packages' tests share,
-# and features/, whose step code becomes ordinary files of package features
-# with the two-drivers work (decision 44); until then it holds only tests,
-# which exclude never leaves out.
+# and features/, whose step code is ordinary files of package features, so
+# cmd/itos-cc's tests run the scenarios in process (decision 44).
 exclude: ["**/porttest/**", "features/**"]
 
 # The mutants no test can kill, each with why it changes no behaviour, so no

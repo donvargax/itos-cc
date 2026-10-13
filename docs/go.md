@@ -315,8 +315,9 @@ follows the same steps for a command it wrote before it had the template's desig
    commands print through the same `Page`. The help flag's text is set in `parserOf`. Help
    for `<command> --help` and `help <command>` both go through `movedHelp`.
 8. **Its scenarios run through godog.** Convert the command's feature file: its steps in
-   `features/<file>_test.go`, registered from `initializeScenario`, reading only what the
-   binary prints and writes, and the file added to `converted` in `features_test.go`. A live
+   `features/<file>.go`, registered from `Initialize` in `steps.go`, reaching the world only
+   through its `Driver` and reading only what itos-cc prints and writes, and the file added to
+   `Converted` in `steps.go`. A live
    scenario's text never changes outside a `feat` or a `fix`; write the step for the
    sentence as it stands, or stop and say which scenario cannot be run as written. Check
    each step can fail: change an expectation in the file locally, see the step fail, and

@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -132,7 +131,7 @@ func drySteps(sc *godog.ScenarioContext, w *world) {
 		return d.writeFiles(map[string]string{dir + "/notes.md": "# Notes\n", "src/cart.ts": totalTs, "src/receipt.ts": totalTs})
 	})
 
-	// Sources itos-cc.yaml excludes, with the step writing it (steps_test.go).
+	// Sources itos-cc.yaml excludes, with the step writing it (steps.go).
 	sc.Step(`^src/a\.go and src/port/porttest/fake\.go hold the same function with its names changed$`, func() error {
 		return d.writeFiles(map[string]string{"src/a.go": positiveGo, "src/port/porttest/fake.go": fakePositiveGo})
 	})
@@ -651,7 +650,7 @@ func (d *dryState) readReported() ([]dryPair, error) {
 		}
 		return object.Candidates, nil
 	}
-	raw, err := os.ReadFile(filepath.Join(w.last.dir, ".metrics", "dry.json"))
+	raw, err := w.readIn(w.last.dir, ".metrics/dry.json")
 	if err != nil {
 		return nil, fmt.Errorf("the run wrote no .metrics/dry.json: %v\n%s", err, w.report())
 	}
@@ -684,7 +683,7 @@ func (d *dryState) dryIn(dir string, args ...string) (dryObject, error) {
 	_, _ = d.reported()
 	var object dryObject
 	args = append([]string{"dry", "--json"}, args...)
-	code, stdout, stderr, err := d.w.capture(dir, d.w.env(), d.w.bin, args...)
+	code, stdout, stderr, err := d.w.capture(dir, d.w.env(), args...)
 	if err != nil {
 		return object, err
 	}
@@ -935,7 +934,7 @@ func (d *dryState) notCompared() error {
 		return err
 	}
 	for _, file := range d.files {
-		code, stdout, stderr, err := d.w.capture(d.w.last.dir, d.w.env(), d.w.bin, "units", "--json", file)
+		code, stdout, stderr, err := d.w.capture(d.w.last.dir, d.w.env(), "units", "--json", file)
 		if err != nil {
 			return err
 		}
@@ -983,17 +982,17 @@ func (d *dryState) noPairReported() error {
 	if len(got) > 0 {
 		return fmt.Errorf("reported:\n  %s\n%s", strings.Join(keys(got), "\n  "), d.w.report())
 	}
-	alone, err := os.MkdirTemp("", "itos-cc-features-dry-")
+	alone, err := d.w.d.Folder()
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.RemoveAll(alone) }()
+	defer func() { _ = d.w.d.Remove(alone) }()
 	for _, name := range d.files {
-		data, err := os.ReadFile(filepath.Join(d.w.dir, filepath.FromSlash(name)))
+		data, err := d.w.readIn(d.w.dir, name)
 		if err != nil {
 			return err
 		}
-		if err := writeIn(alone, name, string(data)); err != nil {
+		if err := d.w.writeIn(alone, name, string(data)); err != nil {
 			return err
 		}
 	}
@@ -1137,11 +1136,11 @@ func (d *dryState) otherFolder(name string, files map[string]string) ([]entry, d
 	_, _ = d.reported()
 	dir := filepath.Join(w.dir, name)
 	for file, text := range files {
-		if err := writeIn(dir, file, text); err != nil {
+		if err := w.writeIn(dir, file, text); err != nil {
 			return nil, object, err
 		}
 	}
-	code, stdout, stderr, err := w.capture(dir, w.env(), w.bin, w.last.args...)
+	code, stdout, stderr, err := w.capture(dir, w.env(), w.last.args...)
 	if err != nil {
 		return nil, object, err
 	}
@@ -1320,7 +1319,7 @@ func (d *dryState) oneEntryNotPairs(count string, text *godog.DocString) error {
 // threshold, the candidates and the groups stdout's object holds.
 func (d *dryState) snapshotHolds() error {
 	w := d.w
-	raw, err := os.ReadFile(filepath.Join(w.last.dir, ".metrics", "dry.json"))
+	raw, err := w.readIn(w.last.dir, ".metrics/dry.json")
 	if err != nil {
 		return fmt.Errorf("the run wrote no .metrics/dry.json: %v", err)
 	}

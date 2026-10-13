@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -388,7 +387,7 @@ func (d *scrapState) writeFiles(files map[string]string) error {
 // reports by file, the run having succeeded.
 func (d *scrapState) scrapIn(dir string, args ...string) (map[string]scrapReport, error) {
 	args = append([]string{"scrap", "--json"}, args...)
-	code, stdout, stderr, err := d.w.capture(dir, d.w.env(), d.w.bin, args...)
+	code, stdout, stderr, err := d.w.capture(dir, d.w.env(), args...)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +424,7 @@ func (d *scrapState) measure(files ...string) error {
 	if len(files) == 0 {
 		return errors.New("no test file to measure")
 	}
-	if err := w.runEnv(w.dir, w.env(), w.bin, append([]string{"scrap", "--json", "--verbose"}, files...)...); err != nil {
+	if err := w.runEnv(w.dir, w.env(), append([]string{"scrap", "--json", "--verbose"}, files...)...); err != nil {
 		return err
 	}
 	if w.exit != 0 {
@@ -851,7 +850,7 @@ func (d *scrapState) testFileWithSetup(list string) error {
 func (d *scrapState) setupNotSize() error {
 	without := filepath.Join(d.w.dir, "without")
 	for _, f := range d.setups {
-		if err := writeIn(without, f.file, f.without); err != nil {
+		if err := d.w.writeIn(without, f.file, f.without); err != nil {
 			return err
 		}
 	}
@@ -1320,7 +1319,7 @@ func (d *scrapState) readReported() (map[string]scrapReport, error) {
 
 // snapshot is what .metrics/scrap.json holds, by file.
 func (d *scrapState) snapshot() (map[string]scrapReport, error) {
-	raw, err := os.ReadFile(filepath.Join(d.w.dir, ".metrics", "scrap.json"))
+	raw, err := d.w.readIn(d.w.dir, ".metrics/scrap.json")
 	if err != nil {
 		return nil, fmt.Errorf("no .metrics/scrap.json: %v", err)
 	}
@@ -1947,7 +1946,7 @@ func (d *scrapState) printedWith(flag string) error {
 		return err
 	}
 	r, _ := d.its()
-	code, stdout, stderr, err := d.w.capture(d.w.last.dir, d.w.env(), d.w.bin, append(slices.Clone(d.w.last.args), flag)...)
+	code, stdout, stderr, err := d.w.capture(d.w.last.dir, d.w.env(), append(slices.Clone(d.w.last.args), flag)...)
 	if err != nil {
 		return err
 	}
@@ -2131,13 +2130,13 @@ func (d *scrapState) verdictIs(verdict string) error {
 		return fmt.Errorf("%q gives no verdict %s from %.1f", line[0], verdict, d.beforePressure)
 	}
 	again := filepath.Join(d.w.dir, "again")
-	if err := writeIn(again, pressureFile, d.before); err != nil {
+	if err := d.w.writeIn(again, pressureFile, d.before); err != nil {
 		return err
 	}
 	if _, err := d.scrapIn(again); err != nil {
 		return err
 	}
-	if err := writeIn(again, pressureFile, d.after); err != nil {
+	if err := d.w.writeIn(again, pressureFile, d.after); err != nil {
 		return err
 	}
 	reports, err := d.scrapIn(again)
@@ -2205,7 +2204,7 @@ func (d *scrapState) holdsReports(first, second string) error {
 	if _, err := d.scrapIn(d.w.dir); err != nil {
 		return err
 	}
-	raw, err := os.ReadFile(filepath.Join(d.w.dir, ".metrics", "scrap.json"))
+	raw, err := d.w.readIn(d.w.dir, ".metrics/scrap.json")
 	if err != nil {
 		return err
 	}
@@ -2234,7 +2233,7 @@ func (d *scrapState) stillHolds(file string) error {
 	if _, err := d.reported(); err != nil {
 		return err
 	}
-	raw, err := os.ReadFile(filepath.Join(d.w.dir, ".metrics", "scrap.json"))
+	raw, err := d.w.readIn(d.w.dir, ".metrics/scrap.json")
 	if err != nil {
 		return err
 	}

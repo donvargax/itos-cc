@@ -19,19 +19,26 @@ Never here:
 
 ## Black-box boundary
 
-The steps (`*_test.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat the binary as
-a black box. `TestFeatures` builds it once a run from this tree (`itos-cc.exe` on
-Windows), stamped with a known version and commit, as a release's build is stamped with the
-release's. Each scenario gets a scratch folder in a temporary directory, runs the binary in it
-and reads its exit code, its output and the files it leaves. A step judges the program by its
-command line alone: it never reads its source or calls its code to decide a result.
+The steps (`steps.go`, `units.go`, `dry.go` and `scrap.go`, Go, run by
+[godog](https://github.com/cucumber/godog)) treat itos-cc as a black box. They reach the world
+only through a `Driver` (`steps.go`): a fresh folder, files written and read, git, and runs of
+itos-cc with a folder, environment, stdin and arguments. They are ordinary files of package
+`features`, so `cmd/itos-cc`'s tests can run them in process against the ports' fakes (decision
+44); `itos-cc.yaml` excludes `features/**`, so they are neither measured nor mutated.
+`TestFeatures` runs them through the binary driver (`binary.go`): it builds itos-cc once a run
+from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
+release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary
+directory, runs the binary in it and reads its exit code, its output and the files it leaves. A
+step judges the program by its command line alone: it never reads its source or calls its code to
+decide a result.
 
 Commands run in a clean environment: no `GIT_*`, `ITOS_*`, `ITOS_CC_*`, `GITHUB_*`,
 `GH_*` or `CI` variable of the caller's, no global or system git config, a fixed author, and none
 of the caller's claude, itos or its extensions on the PATH. A `GOCOVERDIR` that exists builds the
 binary with `-cover` and collects what each run did, for itos-cc to merge with `go test`'s.
 
-An interrupt is sent as each system delivers Ctrl-C, from one build-tagged file per system:
+An interrupt is the binary driver's alone (`interrupt_test.go`), sent as each system delivers
+Ctrl-C, from one build-tagged file per system:
 `os.Interrupt` on Linux and macOS, and on Windows `CTRL_BREAK_EVENT` to the binary started in a
 process group of its own, which Go reports as the same signal. The step first writes more to the
 binary's open stdin than any pipe holds unread, so the write returns only once the binary is
@@ -40,8 +47,8 @@ killed by the system's default action fails the step: it never handled the inter
 
 ## Which files run
 
-The harness runs the feature files that have steps, the ones `converted` lists in
-`features_test.go`: `units.feature`, `dry.feature`, `scrap.feature`, and `count.feature`, the
+The harness runs the feature files that have steps, the ones `Converted` lists in
+`steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, and `count.feature`, the
 template's sample, all of whose scenarios are `@wip`. Every other file converts to godog over time, each with the command that
 moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests of `cmd/itos-cc`
 hold its scenarios. A selection that names a scenario of such a file, as the smoke set does for
@@ -154,7 +161,7 @@ with the program named as the built binary is.
 | `the exit code is <n>`                                                                | The binary's exit status.                                         |
 | `"…" is an empty list` / `"…" and "…" are empty lists, not null`                      | `[]` in the JSON object, never `null`.                            |
 
-`units.feature`'s steps, in `units_test.go`:
+`units.feature`'s steps, in `units.go`:
 
 | Step                                                                                  | What it asserts                                                  |
 | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -177,7 +184,7 @@ with the program named as the built binary is.
 | `x.ts declares function place, in a directory with no package.json, go.mod or .git in it or above it` | A folder outside every project; skipped where a marker is above the temporary directory. |
 | `it is "…" from a copy of that directory at another path`                             | The same command in a copy lists that unit alone.                 |
 
-`dry.feature`'s steps, in `dry_test.go`. "Every pair" is what `dry --json --threshold 0
+`dry.feature`'s steps, in `dry.go`. "Every pair" is what `dry --json --threshold 0
 --min-lines 1 --min-nodes 1` reports, and "the pairs reported" are those of the scenario's run, from
 its object, or from the `.metrics/dry.json` it wrote, which its text output must list. A step about
 every pair first finds in its fixture the pairs that make the sentence worth checking, and fails
@@ -205,7 +212,7 @@ when there are none.
 | `.metrics/dry.json holds the version, the threshold, the candidates, and the groups`   | A version, and stdout's threshold, candidates and groups.        |
 | `each candidate has …, and left and right sides with …` / `each group has …, and its members` | Each has every key named, `lines` the start and end lines. |
 
-`scrap.feature`'s steps, in `scrap_test.go`. A measurement is what `scrap --json --verbose` reports
+`scrap.feature`'s steps, in `scrap.go`. A measurement is what `scrap --json --verbose` reports
 of the scenario's files, and "the file's report" is that of the scenario's run, from its object, or
 from the `.metrics/scrap.json` it wrote, of which its text output must print each file's action,
 pressure, examples and scores. Where a Given states what its fixture holds (counts, scores, a

@@ -1,6 +1,7 @@
-// The features: every *.feature file in this folder, run by godog through go
-// test against the itos-cc binary built once a run from this tree,
-// each scenario a subtest of TestFeatures. Harvested from itos's
+// The features: every converted *.feature file in this folder, run by godog
+// through go test against the itos-cc binary built once a run from this
+// tree, through the binary driver (binary.go), each scenario a subtest of
+// TestFeatures. Harvested from itos's
 // (github.com/donvargax/itos, features/features_test.go) and the owner's
 // itos-template's, without either one's generator behaviour.
 //
@@ -11,12 +12,11 @@
 //	                                                   built with -cover, what
 //	                                                   the scenarios ran in <dir>
 //
-// godog's own tag filter takes exact tags joined by commas; itos's run
-// templates join the IDs they select with |, as a regular expression
-// (itos.yaml's tests.scenario.run), so -scenarios takes that expression and
-// is turned here into godog's filter. A scenario tagged @wip never runs.
+// -scenarios takes the regular expression itos's run templates join the IDs
+// they select into, which TagFilter turns into godog's filter. A scenario
+// tagged @wip never runs.
 //
-// Only the feature files in converted run here: those whose scenarios have
+// Only the feature files in Converted run here: those whose scenarios have
 // steps (q-52). The others are converted over time, each with the command
 // that moves onto kong, and until then their scenarios are held by the Go
 // tests of cmd/itos-cc; a selection naming one of theirs logs it as not run
@@ -33,24 +33,22 @@
 // writes "warning: GOCOVERDIR not set, no coverage data emitted" to its
 // stderr, which breaks every scenario that reads stderr, and only
 // GOCOVERDIR's being set guarantees every command a scenario starts has it.
-// w.env() passes it on unchanged, every environment a step runs a command in
-// is w.env() changed elsewhere (noGit, knowingNoOne, withGitConfig). Never
-// ITOS_CC_TEST_COVERDIR, which itos-cc sets alone for a listed test's first
-// coverage run and w.env() drops with every ITOS_ variable. With GOCOVERDIR
+// The binary driver's environment passes it on unchanged, every environment
+// a step runs a command in is that one with the scenario's variables set.
+// Never ITOS_CC_TEST_COVERDIR, which itos-cc sets alone for a listed test's
+// first coverage run and the driver's environment drops with every ITOS_
+// variable. With GOCOVERDIR
 // unset the build is the plain one.
 package features
 
 import (
-	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
-	"slices"
-	"sort"
 	"strings"
 	"testing"
 
@@ -59,16 +57,6 @@ import (
 
 var scenarios = flag.String("scenarios", "", "run only the live scenarios with a tag this regular expression matches")
 
-// stampedVersion is the version the binary under test is stamped with, as a
-// release's build stamps the release's, so a scenario can tell the stamp
-// from the version a build without one says.
-const stampedVersion = "1.2.3-features"
-
-// stampedCommit is the commit the binary under test is stamped with, as a
-// release's build stamps the commit it was built from, so a scenario can
-// name the commit the binary says it was built from.
-const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
-
 // versionSymbol and commitSymbol are the variables the build stamps
 // (-ldflags -X).
 const (
@@ -76,16 +64,8 @@ const (
 	commitSymbol  = "github.com/donvargax/itos-cc/internal/version.commit"
 )
 
-// converted are the feature files this harness runs, those whose scenarios
-// have steps: count.feature, the template's sample, every scenario of it
-// @wip (T-26), units.feature, the first command moved onto kong (T-32), and
-// dry.feature and scrap.feature, each converted before its command moves so
-// the move is held by its scenarios (T-37, T-41). A command that moves converts its own file and adds it
-// here, its scenarios' text unchanged (q-52).
-var converted = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature"}
-
 func TestFeatures(t *testing.T) {
-	filter, unconverted, err := tagFilter(*scenarios, ".")
+	filter, unconverted, err := TagFilter(*scenarios, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,10 +83,10 @@ func TestFeatures(t *testing.T) {
 	}
 	suite := godog.TestSuite{
 		Name:                "itos-cc",
-		ScenarioInitializer: func(sc *godog.ScenarioContext) { initializeScenario(sc, root, bin) },
+		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin}, interruptSteps(bin)) },
 		Options: &godog.Options{
 			Format:   "pretty",
-			Paths:    converted,
+			Paths:    Converted,
 			Tags:     filter,
 			Strict:   true,
 			TestingT: t,
@@ -142,97 +122,20 @@ func build(root, dir string) (string, error) {
 	return bin, nil
 }
 
-// godog's tag filter for a selection: every live scenario of the converted
-// files without one, else the live scenarios of the converted files carrying
-// a tag the expression matches, with the tags it matches only in other
-// files, which this harness does not run. An expression that matches no tag
-// of a converted file is an error, so a selection never runs nothing.
-func tagFilter(selection, dir string) (filter string, unconverted []string, err error) {
-	if selection == "" {
-		return "~@wip", nil, nil
-	}
-	pattern, err := regexp.Compile(selection)
+// The folder holding go.mod, above the working directory go test gives.
+func moduleRoot() (string, error) {
+	dir, err := os.Getwd()
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
-	var files []string
-	for _, name := range converted {
-		files = append(files, filepath.Join(dir, name))
-	}
-	tags, err := featureTags(files)
-	if err != nil {
-		return "", nil, err
-	}
-	var each []string
-	for _, tag := range tags {
-		if pattern.MatchString(tag) {
-			each = append(each, tag+"&&~@wip")
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
 		}
-	}
-	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
-	if err != nil {
-		return "", nil, err
-	}
-	everyTag, err := featureTags(all)
-	if err != nil {
-		return "", nil, err
-	}
-	for _, tag := range everyTag {
-		if pattern.MatchString(tag) && !slices.Contains(tags, tag) {
-			unconverted = append(unconverted, tag)
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", errors.New("no go.mod above the working directory")
 		}
+		dir = parent
 	}
-	if len(each) == 0 {
-		return "", unconverted, &noMatch{selection, unconverted}
-	}
-	return strings.Join(each, ","), unconverted, nil
-}
-
-type noMatch struct {
-	selection   string
-	unconverted []string
-}
-
-func (e *noMatch) Error() string {
-	if len(e.unconverted) > 0 {
-		return "no scenario this harness runs has a tag that " + e.selection + " matches: " +
-			strings.Join(e.unconverted, " ") + " are in feature files with no steps yet (q-52), held by cmd/itos-cc's Go tests"
-	}
-	return "no scenario has a tag that " + e.selection + " matches"
-}
-
-// Every tag written in files, once each, sorted.
-func featureTags(files []string) ([]string, error) {
-	seen := map[string]bool{}
-	for _, file := range files {
-		f, err := os.Open(file)
-		if err != nil {
-			return nil, err
-		}
-		lines := bufio.NewScanner(f)
-		for lines.Scan() {
-			line := strings.TrimSpace(lines.Text())
-			if !strings.HasPrefix(line, "@") {
-				continue
-			}
-			for _, word := range strings.Fields(line) {
-				if strings.HasPrefix(word, "#") {
-					break
-				}
-				if strings.HasPrefix(word, "@") {
-					seen[word] = true
-				}
-			}
-		}
-		_ = f.Close()
-		if err := lines.Err(); err != nil {
-			return nil, err
-		}
-	}
-	tags := make([]string, 0, len(seen))
-	for tag := range seen {
-		tags = append(tags, tag)
-	}
-	sort.Strings(tags)
-	return tags, nil
 }
