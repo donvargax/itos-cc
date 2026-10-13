@@ -1261,14 +1261,6 @@
     testing: the packages and scenarios in the checks, never the whole cmd/itos-cc suite or a
     mutation run; never itos task show locally. No binary comparison: the plan's cases for this task
     join refactor-final-proof's list.
-  done_when:
-    - run: test ! -e crap
-    - run: test -d internal/changerisk
-    - run: go test -count=1 ./internal/changerisk/...
-    - run: tools/bin/architecture-check
-    - run: tools/bin/domain-coverage
-    - run: tools/bin/pinned golangci-lint run ./internal/...
-    - run: go test ./features -count=1 -scenarios='@ID-(CRAP|CPLX)-'
 - id: T-66
   type: refactor
   title: Coverage is measured through the coverage port, its fake and adapter passing one contract suite

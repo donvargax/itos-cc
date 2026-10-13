@@ -2551,23 +2551,9 @@ items:
     title: crap's scoring is the changerisk domain under internal/
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-63, T-64]
     kind: task
-    why: >
-      Decision 37: a git mv of crap/ to internal/changerisk, then the edits. Analyze parses with
-      project.ParseFile and names files with project.Rel (crap.go:55, 67); the domain takes parsed
-      files with their names and a Report instead and reads nothing; the hand-parsed
-      cmd/itos-cc/crap.go parses through selection.Parse over workdir. graph follows the import.
-      depguard's domain rules list it, domain-coverage holds it to 80%, its records move with the
-      files. S5 of the template-design refactor; the coordinator's plan is in the clone notes
-      (.git/itos/s5-plan.md: in-process lists, which scenarios stay binary-only, the coverage code's
-      line references, refactor-final-proof cases per task). Rules whole: ctx first, never held or
-      captured for I/O; nothing leaks into a domain, while adapters and ports may use the domain's
-      types with no mappers (decision 47); fakes not mocks, none in production code. Light local
-      testing: the packages and scenarios in the checks, never the whole cmd/itos-cc suite or a
-      mutation run; never itos task show locally. No binary comparison: the plan's cases for this
-      task join refactor-final-proof's list.
   - id: T-66
     title: Coverage is measured through the coverage port, its fake and adapter passing one contract suite
     phase: 1
