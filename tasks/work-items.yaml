@@ -2543,8 +2543,8 @@ items:
   - id: T-65
     title: crap's scoring is the changerisk domain under internal/
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-63, T-64]
     kind: task
     why: >
