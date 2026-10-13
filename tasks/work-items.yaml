@@ -2605,7 +2605,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-61]
     kind: task
     why: >
       Decisions 37, 46 and 47. A git mv commit takes coverage.go, formats.go's parsers and their
