@@ -2008,6 +2008,11 @@ func (m *mutateState) baselineFirst() error {
 // mutant's run takes before it times out, as the feature says it.
 const timeoutAllowance = 5.0
 
+// reaping is how much longer than its timeout a timed-out run may take to
+// end, a second, and the two seconds itos-cc lets the processes it starts
+// hold its output where the system ends no process group at once.
+const reaping = 3.0
+
 // timedOut are the last run's mutants of the file that timed out, and the
 // longest of those that did not, in seconds.
 func (m *mutateState) timedOut() ([]trial, float64, error) {
@@ -2028,7 +2033,8 @@ func (m *mutateState) timedOut() ([]trial, float64, error) {
 
 // durationSetsTimeout is whether the mutant that timed out took the
 // factor times the baseline's time, plus the allowance: no less than its
-// test took, and no more than the longest other mutant's run took.
+// test took, and no more than half again the longest other mutant's run,
+// and the time a timed-out run takes to end.
 func (m *mutateState) durationSetsTimeout() error {
 	runs, err := m.mutantRuns()
 	if err != nil {
@@ -2041,7 +2047,9 @@ func (m *mutateState) durationSetsTimeout() error {
 		return err
 	}
 	factor := 10.0
-	low, high := factor*baseline+timeoutAllowance, factor*longest+timeoutAllowance+1
+	// The baseline, the first run in a fresh copy, may build what the
+	// mutants' runs find built: it may take half again the longest of them.
+	low, high := factor*baseline+timeoutAllowance, factor*longest*1.5+timeoutAllowance+reaping
 	for _, t := range out {
 		if t.elapsed < low || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not between %.1fs and %.1fs, as a baseline of %.2fs to %.1fs sets\n%s",
@@ -2065,7 +2073,10 @@ const (
 	// whose mutant it passes.
 	waitGo = "package board\n\n// Past is whether i is past five.\nfunc Past(i int) bool {\n\treturn i > 5\n}\n\n" +
 		"// Low is whether i is under three.\nfunc Low(i int) bool {\n\treturn i < 3\n}\n"
-	waitCommand = `grep -q "i > 5" src/board.go && sleep %s || sleep 30`
+	// It quotes nothing: cmd, the platform shell on Windows, gets the line
+	// as one argument whose quotes it does not read as Go escapes them.
+	// i...5 is i > 5 alone, not its mutant i >= 5.
+	waitCommand = `grep -q i...5 src/board.go && sleep %s || sleep 30`
 )
 
 // baselineTook writes a project whose tests take the time said: Python's,
@@ -2129,7 +2140,8 @@ var factorWords = map[string]float64{"two": 2, "five": 5, "ten": 10, "twenty": 2
 
 // timesOutAfter is whether every mutant the last run timed out took the
 // seconds said: no less, and no more than the factor times what the
-// longest other mutant's run took past the Given's baseline, and a second.
+// longest other mutant's run took past the Given's baseline, and the time
+// a timed-out run takes to end.
 // Where the sentence says how, it is the factor times the baseline, plus
 // the allowance.
 func (m *mutateState) timesOutAfter(text, times, allowance string) error {
@@ -2154,7 +2166,7 @@ func (m *mutateState) timesOutAfter(text, times, allowance string) error {
 	if err != nil {
 		return err
 	}
-	high := after + factor*max(0, longest-m.baseline.Seconds()) + 1
+	high := after + factor*max(0, longest-m.baseline.Seconds()) + reaping
 	for _, t := range out {
 		if t.elapsed < after || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not %ss, its baseline %s and the longest other run %.1fs\n%s",
