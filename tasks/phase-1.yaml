@@ -1574,3 +1574,27 @@
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
     - run: "! git grep -nE '// @ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$' -- cmd/itos-cc"
+- id: T-79
+  type: test
+  title: mutate.feature's strict-coverage scenarios run through godog against the built binary
+  why: >
+    Piece 10 of mutate.feature (the plan's table): strict-coverage scenarios. Go tests holding them
+    today include strict_* tests. Each piece (decision 39) writes steps for every sentence as it
+    stands, checks each sentence against the built binary first and stops on one that cannot run as
+    written (docs/go.md step 8), declares its fixtures' test outcomes through Driver.Tests and
+    coverage through Driver.Coverage, writes file assertions with slashes, tags @binary-only only
+    what needs real processes or tools for good, deletes its own entry from features.Unstepped,
+    deletes the Go tests in cmd/itos-cc its steps now hold (docs/go.md step 11, each named in the
+    commit, never before the steps hold the same check), adds runs needing Node, Python or Kotlin to
+    ci.yml's language-tools line, and shows every new step can fail (strictness edits, counted).
+    Reuse features/mutate.go's helpers (boardModule, goTests, summaryOf, trials, sitesOf). S6 of the
+    template-design refactor; the coordinator's plan is in the clone notes (.git/itos/s6-plan.md).
+    Rules whole: ctx first, never held or captured for I/O; nothing leaks into a domain; fakes not
+    mocks, none in production code. Light local testing: the scenarios in the checks, never the
+    whole cmd/itos-cc suite or a mutation run of this repository (scenarios mutate their own
+    fixtures, which is fine); never itos task show or itos task <id> locally; no worktrees; never
+    push a commit naming the task before its checks can pass.
+  done_when:
+    - run: "! grep -q '// T-79:' features/steps.go"
+    - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
+    - run: "! git grep -nE '// @ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$' -- cmd/itos-cc"
