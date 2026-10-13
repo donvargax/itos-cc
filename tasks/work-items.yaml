@@ -2283,6 +2283,14 @@ items:
       coverage.measured-nothing with the reason prefixed), a file where .metrics/coverage should be
       (exit 70, the mkdir message whole) under crap and mutation run, and mutation run with a tool
       missing, plain and with --fail-uncovered (coverage.tool-missing).
+
+      T-67 (crap on kong as internal/crap): compare --threshold 0, --threshold=-1, --top 0, --top
+      -1, --top=, -top 5, --coverage-report a,b, --coverage-report given twice,
+      --coverage-report=--json and --coverage-report --json, --coverage-command x with no sources
+      and with some, --no-coverage=x, crap --help and help crap, and --json before the command; and
+      crap in a git repository whose itos-cc.yaml excludes a source (the count on stderr before
+      coverage's progress), with --changed, from a subdirectory and on a path outside it. Compared
+      before and after at T-67 over 64 such lines, help included: every one agreed byte for byte.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
