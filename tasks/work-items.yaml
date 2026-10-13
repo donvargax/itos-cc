@@ -2528,8 +2528,8 @@ items:
   - id: T-64
     title: coverage's Report, its queries and parsers are the internal/coverage domain
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-61]
     kind: task
     why: >
