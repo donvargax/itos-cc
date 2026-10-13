@@ -2512,8 +2512,8 @@ items:
   - id: T-60
     title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
