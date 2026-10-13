@@ -2579,8 +2579,8 @@ items:
   - id: T-67
     title: crap is a slice on kong, and its scenarios run in process
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-60, T-61, T-62, T-66]
     kind: task
     why: >
