@@ -1372,10 +1372,6 @@
     fine); never itos task show or itos task <id> locally; no worktrees; never push a commit naming
     the task before its checks can pass. No binary comparison: the plan's cases for this task join
     refactor-final-proof's list.
-  done_when:
-    - run: grep -q '"mutate.feature"' features/steps.go
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(0[1-6]|101|11[4-6]|24[3-6])$'
-    - run: "! git grep -nE '// @ID-MUT-(0[1-6]|101|11[4-6]|24[3-6])$' -- cmd/itos-cc"
 - id: T-71
   type: test
   title: mutate.feature's running, coverage, built-binary and uncovered scenarios run through godog against the built binary

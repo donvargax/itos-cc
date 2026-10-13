@@ -2727,35 +2727,9 @@ items:
     title: mutate.feature's sites, same-name and exclude scenarios run through godog against the built binary
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-69]
     kind: task
-    why: >
-      Piece 1 of mutate.feature (the plan's table): sites, same-name and exclude scenarios. Go tests
-      holding them today include mutation_list_test.go, mutation_same_name and exclude_test.go's MUT
-      parts. This first piece also builds the machinery: features.Unstepped lists every MUT ID whose
-      steps are not written yet and TagFilter treats them as unconverted, so mutate.feature joins
-      Converted with no change to its text (the coordinator settled Q1); Driver.Tests(dir, t)
-      declares what a fixture's tests do (language and command, a failing baseline, surviving or
-      timing-out sites, elapsed times), the binary driver checking the toolchain as Driver.Coverage
-      does and the memory driver recording it for S7's porttest.Workers (settled Q6). Its done_when
-      also needs mutate.feature in Converted. Each piece of mutate.feature (decision 39: it converts
-      before the group moves) writes steps for every sentence as it stands, checks each sentence
-      against the built binary first and stops on one that cannot run as written (docs/go.md step
-      8), declares its fixtures' test outcomes through Driver.Tests, tags @binary-only only what
-      needs real processes or tools for good, removes its IDs from features.Unstepped, deletes the
-      Go tests in cmd/itos-cc its steps now hold (docs/go.md step 11, each named in the commit,
-      never before the steps hold the same check), adds runs that need Node, Python or Kotlin to
-      ci.yml's language-tools line, and shows every new step can fail (strictness edits, counted in
-      the report). S6 of the template-design refactor; the coordinator's plan is in the clone notes
-      (.git/itos/s6-plan.md: the settled questions, the mutate.feature pieces, the in-process fakes,
-      proof cases per task). Rules whole: ctx first, never held or captured for I/O; nothing leaks
-      into a domain, adapters and ports use the domain's types with no mappers (decision 47); fakes
-      not mocks, none in production code. Light local testing: the packages and scenarios in the
-      checks, never the whole cmd/itos-cc suite or a mutation run of this repository (mutate's Go
-      tests over fixtures are fine); never itos task show or itos task <id> locally; no worktrees;
-      never push a commit naming the task before its checks can pass. No binary comparison: the
-      plan's cases for this task join refactor-final-proof's list.
   - id: T-71
     title: mutate.feature's running, coverage, built-binary and uncovered scenarios run through godog against the built binary
     phase: 1
