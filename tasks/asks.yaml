@@ -296,3 +296,4 @@ questions:
   - id: q-63
     item: "template-adoption"
     question: "Decision 29 lets an adapter import only port packages, never the domain it serves, and every adapter rule in .golangci.yml holds that. Decision 46's coverage port gives a Report, a domain type, so its adapter would import internal/coverage. Keep 29 whole (the port speaks raw results in port types and the domain parses and assembles them, an extra task reshaping the runner), or let an adapter import the domain it serves?"
+    answer: "The person (2026-10-13): let the adapter import it. That rule was too strict: the domain leaking outward is fine, and preferred, since it avoids mappers, and parsing raw values in the domain would be worse. Nothing may leak into the domain."
