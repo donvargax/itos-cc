@@ -1975,16 +1975,9 @@ items:
     title: Every moved command repeats --changed and the path arguments in its kong struct
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      units declares Changed and Paths itself; crap, dry, scrap and mutation take the same
-      selection. A slice cannot import another, so when the second command moves the selection's
-      flags need one home (an embedded struct the slices share, maybe in internal/cli or beside the
-      selection domain) so their help and words stay the same.
-
-      Specified 2026-10-13 as T-63 (with slice-parse-source).
   - id: seed-test-timeouts
     title: The seed tests of mutation sample hold on a slow runner
     phase: 1
