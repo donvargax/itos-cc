@@ -2576,3 +2576,27 @@ items:
       Light local testing: the packages and scenarios in the checks, never the whole cmd/itos-cc
       suite or a mutation run; never itos task show locally. No binary comparison: the plan's cases
       for this task join refactor-final-proof's list.
+  - id: T-63
+    title: Slices share one selection command line and one parse of a selected source
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      Settles shared-selection-flags and slice-parse-source before crap becomes a fourth copy:
+      units.go:30, dry.go:37 and scrap.go:39 each declare Changed and the paths in their kong
+      struct, and dry.go:173 and scrap.go:160 hold the same parse (detect, read, lang.Parse) while
+      units reads first and detects later. internal/cli gains an embedded Selection struct (kong
+      tags only, importing nothing of ours), first in each command so help keeps its order; the
+      selection domain gains Parse(ctx, tree, around, path), a domain function over its existing
+      port and lang's, used by units, dry and scrap. The domain request structs keep their own
+      Changed. Fragment rules stay as they are (selection-fragment-rules). S5 of the template-design
+      refactor; the coordinator's plan is in the clone notes (.git/itos/s5-plan.md: in-process
+      lists, which scenarios stay binary-only, the coverage code's line references,
+      refactor-final-proof cases per task). Rules whole: ctx first, never held or captured for I/O;
+      nothing leaks into a domain, while adapters and ports may use the domain's types with no
+      mappers (decision 47); fakes not mocks, none in production code. Light local testing: the
+      packages and scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run;
+      never itos task show locally. No binary comparison: the plan's cases for this task join
+      refactor-final-proof's list.
