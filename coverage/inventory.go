@@ -12,6 +12,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -66,21 +67,19 @@ func typescriptInventory(dir string, files []string, out string) ([]string, stri
 	return args, filepath.Join(out, "lcov.info")
 }
 
-// Inventory lists, with language's static inventory command, the
-// executable lines of each of its sources no test loaded (Unloaded), all
-// of them unexecuted, and proves them complete (Lines). It runs no test.
-// A command that fails leaves its files without proof. execute runs each
-// command, or, when nil, it runs as Run runs coverage commands; each
-// command is logged and returned. The error joins each command's failure.
-func (r *Report) Inventory(ctx context.Context, language string, log io.Writer, execute CommandExecutor) ([]CommandExecution, error) {
+// Inventory lists in r, with language's static inventory command, the
+// executable lines of each of its sources no test loaded
+// (Report.Unloaded), all of them unexecuted, and proves them complete
+// (Report.Lines). It runs no test. A command that fails leaves its files
+// without proof. execute runs each command, or, when nil, it runs as Run
+// runs coverage commands; each command is logged and returned. The error
+// joins each command's failure.
+func Inventory(ctx context.Context, r *coverage.Report, language string, log io.Writer, execute CommandExecutor) ([]CommandExecution, error) {
 	inventory := inventories[language]
 	if r == nil || inventory == nil {
 		return nil, nil
 	}
-	byDir := map[string][]string{}
-	for _, file := range r.Unloaded(language) {
-		byDir[r.unloaded[file].Dir] = append(byDir[r.unloaded[file].Dir], file)
-	}
+	byDir := r.UnloadedByDir(language)
 	dirs := make([]string, 0, len(byDir))
 	for dir := range byDir {
 		dirs = append(dirs, dir)
@@ -126,13 +125,13 @@ func (r *Report) Inventory(ctx context.Context, language string, log io.Writer, 
 			err = cmd.Run()
 		}
 		executions = append(executions, CommandExecution{Args: slices.Clone(args), Dir: dir, Err: err})
-		var entries []Entry
+		var entries []coverage.Entry
 		switch {
 		case err != nil:
 		case report != "":
 			entries, err = Load(report)
 		default:
-			entries, err = ParseLCOV(&stdout)
+			entries, err = coverage.ParseLCOV(&stdout)
 		}
 		os.RemoveAll(out)
 		if err != nil {
@@ -140,33 +139,9 @@ func (r *Report) Inventory(ctx context.Context, language string, log io.Writer, 
 			failures = append(failures, fmt.Errorf("%s static coverage inventory in %s: %w", language, dir, err))
 			continue
 		}
-		r.list(files, dir, entries)
+		r.List(ctx, Disk{}, files, dir, entries)
 	}
 	return executions, errors.Join(failures...)
-}
-
-// list records, of files no test loaded, the executable lines entries name,
-// a report's paths relative to dir, all of them unexecuted, and proves
-// each file it names complete (Lines).
-func (r *Report) list(files []string, dir string, entries []Entry) {
-	m := newMatcher(files)
-	for _, e := range entries {
-		file := m.match(e.Path, dir)
-		if file == "" {
-			continue
-		}
-		if r.inventory == nil {
-			r.inventory = map[string][]Segment{}
-		}
-		if r.proven == nil {
-			r.proven = map[string]bool{}
-		}
-		for _, seg := range e.Segments {
-			seg.Covered = 0
-			r.inventory[file] = append(r.inventory[file], seg)
-		}
-		r.proven[file] = true
-	}
 }
 
 // classInventories are the languages whose coverage report lists every

@@ -13,6 +13,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -271,19 +273,9 @@ func (p Plan) start(ctx context.Context, env []string, log io.Writer, execute Co
 
 // noIntegration is the integration coverage p's collector could not
 // measure, logged.
-func (p Plan) noIntegration(why string, log io.Writer) Unmeasured {
+func (p Plan) noIntegration(why string, log io.Writer) coverage.Unmeasured {
 	fmt.Fprintf(log, "itos-cc: coverage: %s: going on without integration coverage: %s\n", p.Dir, why)
-	return Unmeasured{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: "no integration coverage: " + why}
-}
-
-// IntegrationMissing is each build root whose collector could not measure
-// the processes its tests start, such as a coverage.py that does not start
-// in them: its in-process coverage stands, without integration coverage.
-func (r *Report) IntegrationMissing() []Unmeasured {
-	if r == nil {
-		return nil
-	}
-	return r.integrationMissing
+	return coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: port.ToolMissing{}, Reason: "no integration coverage: " + why}
 }
 
 // removeCoverDir removes p's CoverDir, if it has one.

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -56,12 +57,6 @@ type PerTest struct {
 	All string
 	// Select runs the tests ids.
 	Select func(ids []string) string
-}
-
-// TestCoverage is each listed test's coverage.
-type TestCoverage struct {
-	ids     []string // those measured, in the list's order
-	reports map[string]*Report
 }
 
 // testCollector is how one language's collector measures the processes a
@@ -243,7 +238,7 @@ func anyWritten(collectors []testCollector, d string) bool {
 // MeasureTests runs p's tests for coverage of sources, with dir, which it
 // removes once read, for their data. It returns nil when the tests fail:
 // the tests that fail without any mutant decide no mutant.
-func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer) *TestCoverage {
+func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer) *coverage.TestCoverage {
 	os.RemoveAll(dir)
 	defer os.RemoveAll(dir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -251,7 +246,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		return nil
 	}
 	collectors, _, _ := startTestCollectors(ctx, testCollectors(ctx, p.Root, dir, sources), log, nil, false)
-	tc := &TestCoverage{reports: map[string]*Report{}}
+	tc := &coverage.TestCoverage{}
 	var ids []string
 	for _, t := range p.Tests {
 		ids = append(ids, t.ID)
@@ -293,7 +288,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		if ctx.Err() != nil {
 			return nil
 		}
-		var reports []*Report
+		var reports []*coverage.Report
 		for _, c := range collectors {
 			if !c.written(d) {
 				continue
@@ -311,13 +306,12 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 				fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", id, err)
 				continue
 			}
-			reports = append(reports, Build(sources, c.dir, entries))
+			reports = append(reports, coverage.Build(ctx, Disk{}, sources, c.dir, entries))
 		}
 		if len(reports) == 0 {
 			continue
 		}
-		tc.ids = append(tc.ids, id)
-		tc.reports[id] = Merge(reports...)
+		tc.Add(id, coverage.Merge(reports...))
 	}
 	return tc
 }
@@ -360,26 +354,4 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 	err := cmd.Run()
 	log.Write(out.Bytes())
 	return err
-}
-
-// SetTests gives r the coverage of each listed test.
-func (r *Report) SetTests(tc *TestCoverage) {
-	if r != nil {
-		r.tests = tc
-	}
-}
-
-// LineTests is the IDs of the listed tests that executed line of file, in
-// the list's order.
-func (r *Report) LineTests(file string, line int) []string {
-	if r == nil || r.tests == nil {
-		return nil
-	}
-	var out []string
-	for _, id := range r.tests.ids {
-		if covered, _ := r.tests.reports[id].LineCovered(file, line); covered {
-			out = append(out, id)
-		}
-	}
-	return out
 }

@@ -39,6 +39,14 @@ caller gives them, and merges a run's reports into the last snapshot's; it reads
 has no port. The `scrap` slice, `internal/scrap`, parses each test file with the selection
 domain's `Parse`, as `dry` does, and reads and records its snapshot through the snapshot `Store`.
 
+The coverage domain, `internal/coverage`, owns coverage reports and what they say: it parses
+LCOV, Go cover profiles and JaCoCo XML, matches the paths a report names to the sources, and
+answers how much of a function the tests ran and which listed tests reach a line. It reads
+nothing: what a path a report names is on disk it asks its `Files` port, and an `Unmeasured`
+build root or report carries one of the port's sealed gaps as its cause. The top-level
+`coverage` runner, which runs each language's tools, is its adapter: it builds every `Report`
+through the domain's API and answers the port from the disk (`Disk`).
+
 The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
 through the domain and parses each file with its `Parse`, read through the same port and named
 by `internal/lang`, the measure every command shares and a domain of its own. It keeps every

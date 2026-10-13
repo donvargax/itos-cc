@@ -18,6 +18,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -759,12 +761,12 @@ func MavenTests(classes []string) []string {
 // A file of a language whose reports list every class of their module
 // (classInventories) that no test reaches has its executable lines listed,
 // all unexecuted, from the report of a successful plan of its module.
-func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Report {
-	var reports []*Report
+func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *coverage.Report {
+	var reports []*coverage.Report
 	// classes is, by language and module, the entries of a successful
 	// report that lists every class of the module; unlisted is each
 	// Unreached plan whose files they can list, by its report's index.
-	classes := map[[2]string][]Entry{}
+	classes := map[[2]string][]coverage.Entry{}
 	unlisted := map[int]Plan{}
 	for _, p := range plans {
 		// A done context starts no command: the caller reports the stop.
@@ -780,7 +782,7 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Re
 		}
 		if p.Unsupported != "" {
 			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Unsupported)
-			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
+			reports = append(reports, p.missing(port.ToolMissing{}, p.Unsupported))
 			continue
 		}
 		for _, r := range append(p.Reports, p.Integration) {
@@ -788,7 +790,7 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Re
 		}
 		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
 		env := project.NoBytecodeEnv(os.Environ())
-		var noIntegration []Unmeasured
+		var noIntegration []coverage.Unmeasured
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
 		}
@@ -833,13 +835,13 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Re
 		if why != "" {
 			noIntegration = append(noIntegration, p.noIntegration(why, log))
 		}
-		r := load(p.Reports, integration, p.Dir, p.measures(sources), log)
-		r.integrationMissing = noIntegration
+		r := load(ctx, p.Reports, integration, p.Dir, p.measures(sources), log)
+		r.SetIntegrationMissing(noIntegration...)
 		// Told by exit status and the report alone, never by what the
 		// runner prints: a run that succeeded and wrote its report measured
 		// its language, whichever files the report names.
-		if failed == "" && len(r.missing) == 0 {
-			r.languages = map[string]bool{p.Language: true}
+		if failed == "" && len(r.Missing()) == 0 {
+			r.MarkMeasured(p.Language)
 			p.prove(r)
 			reports = append(reports, r)
 			if classInventories[p.Language] && !p.Unattested && len(p.Reports) == 1 {
@@ -851,21 +853,22 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *Re
 			}
 			continue
 		}
-		reports = append(reports, p.measured(r, MeasuredNothing, "its coverage run measured none of its files"+failed))
+		reports = append(reports, p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed))
 	}
 	for i, p := range unlisted {
 		if entries, ok := classes[[2]string{p.Language, p.Dir}]; ok {
-			reports[i].list(p.Sources, p.Dir, entries)
+			reports[i].List(ctx, Disk{}, p.Sources, p.Dir, entries)
 		}
 	}
-	return Merge(reports...)
+	return coverage.Merge(reports...)
 }
 
 // unreached is the report of an Unreached plan: its language measured, and
 // none of its sources loaded, as no test reaches them.
-func (p Plan) unreached(log io.Writer) *Report {
+func (p Plan) unreached(log io.Writer) *coverage.Report {
 	fmt.Fprintf(log, "itos-cc: coverage %s: no test reaches %s, so none runs\n", p.Dir, strings.Join(relativeTo(p.Dir, p.Sources), " "))
-	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}, languages: map[string]bool{p.Language: true}}
+	r := &coverage.Report{}
+	r.MarkMeasured(p.Language)
 	p.prove(r)
 	return r
 }
@@ -875,18 +878,19 @@ func (p Plan) unreached(log io.Writer) *Report {
 // format's line precision (Report.Lines), and which no test loaded, so it
 // names none of their lines (Report.Unloaded): none of either for an
 // Unattested plan.
-func (p Plan) prove(r *Report) {
-	r.proven, r.unloaded = map[string]bool{}, map[string]Unloaded{}
+func (p Plan) prove(r *coverage.Report) {
 	if p.Unattested {
+		r.Prove(p.Language, p.Dir, nil)
 		return
 	}
-	for _, s := range p.Sources {
-		if r.Has(s) {
-			r.proven[s] = true
-		} else {
-			r.unloaded[s] = Unloaded{Language: p.Language, Dir: p.Dir}
-		}
-	}
+	r.Prove(p.Language, p.Dir, p.Sources)
+}
+
+// missing is a report of nothing, p's build root Missing for cause, why.
+func (p Plan) missing(cause port.Gap, why string) *coverage.Report {
+	r := &coverage.Report{}
+	r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why})
+	return r
 }
 
 // measures is the sources p's report speaks for, of sources: its own
@@ -901,15 +905,15 @@ func (p Plan) measures(sources []string) []string {
 // measured is r, Missing p when r measured none of p's files: the run
 // failed, wrote an empty report, or loaded none of them. A report that
 // measured some of them leaves the rest untested, not missing.
-func (p Plan) measured(r *Report, cause Cause, why string) *Report {
+func (p Plan) measured(r *coverage.Report, cause port.Gap, why string) *coverage.Report {
 	for _, s := range p.Sources {
 		if r.Has(s) {
-			r.missing = nil
+			r.SetMissing()
 			return r
 		}
 	}
 	if len(p.Sources) > 0 {
-		r.missing = []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why}}
+		r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why})
 	}
 	return r
 }
@@ -925,14 +929,14 @@ func IgnoreDir(dir string) error {
 }
 
 // Existing reads reports already on disk, the first one found per plan.
-func Existing(plans []Plan, sources []string, log io.Writer) *Report {
-	var reports []*Report
+func Existing(ctx context.Context, plans []Plan, sources []string, log io.Writer) *coverage.Report {
+	var reports []*coverage.Report
 	for _, p := range plans {
 		if p.Unreached {
 			reports = append(reports, p.unreached(log))
 			continue
 		}
-		r := &Report{}
+		r := &coverage.Report{}
 		for _, path := range p.Existing {
 			if exists(path) {
 				// A run's integration profile goes with its report.
@@ -940,33 +944,34 @@ func Existing(plans []Plan, sources []string, log io.Writer) *Report {
 				if path == p.Reports[0] && p.Integration != "" && exists(p.Integration) {
 					integration = p.Integration
 				}
-				r = load([]string{path}, integration, p.Dir, p.measures(sources), log)
+				r = load(ctx, []string{path}, integration, p.Dir, p.measures(sources), log)
 				break
 			}
 		}
-		reports = append(reports, p.measured(r, NoReport, "no report on disk measures its files"))
+		reports = append(reports, p.measured(r, port.NoReport{}, "no report on disk measures its files"))
 	}
-	return Merge(reports...)
+	return coverage.Merge(reports...)
 }
 
 // Files reads reports named on the command line, relative to the working
 // directory.
-func Files(paths []string, sources []string, log io.Writer) *Report {
+func Files(ctx context.Context, paths []string, sources []string, log io.Writer) *coverage.Report {
 	wd, _ := os.Getwd()
-	return load(paths, "", wd, sources, log)
+	return load(ctx, paths, "", wd, sources, log)
 }
 
 // load reads the reports at paths; each that cannot be read is Missing. The
 // profile at integration, unless it is "", is read beside them as
-// Integration data; one that cannot be read is only logged.
-func load(paths []string, integration, base string, sources []string, log io.Writer) *Report {
-	var all [][]Entry
-	var missing []Unmeasured
+// Integration data, kept to what they count (Report.Integrated); one that
+// cannot be read is only logged.
+func load(ctx context.Context, paths []string, integration, base string, sources []string, log io.Writer) *coverage.Report {
+	var all [][]coverage.Entry
+	var missing []coverage.Unmeasured
 	for _, path := range paths {
 		entries, err := Load(path)
 		if err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
-			missing = append(missing, Unmeasured{Report: path, Cause: Unreadable, Reason: err.Error()})
+			missing = append(missing, coverage.Unmeasured{Report: path, Cause: port.Unreadable{}, Reason: err.Error()})
 			continue
 		}
 		all = append(all, entries)
@@ -976,40 +981,12 @@ func load(paths []string, integration, base string, sources []string, log io.Wri
 		if err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		}
-		// Integration data covers what the in-process report counts as
-		// executable in a file it names, and adds nothing to it: a
-		// collector of another tool, such as c8 beside Vitest's v8
-		// provider, names other lines, blank and brace lines among them.
-		in := Build(sources, base, all...)
-		m := newMatcher(sources)
-		for i := range entries {
-			entries[i].Source = Integration
-			if file := m.match(entries[i].Path, base); file != "" && in.Has(file) {
-				entries[i].Segments = keyedLike(entries[i].Segments, in.files[file])
-				entries[i].Branches = keyedLike(entries[i].Branches, in.branches[file])
-			}
-		}
-		all = append(all, entries)
+		in := coverage.Build(ctx, Disk{}, sources, base, all...)
+		all = append(all, in.Integrated(ctx, Disk{}, sources, base, entries))
 	}
-	r := Build(sources, base, all...)
-	r.missing = missing
+	r := coverage.Build(ctx, Disk{}, sources, base, all...)
+	r.SetMissing(missing...)
 	return r
-}
-
-// keyedLike is the segments of segs whose key one of like holds, and
-// those with no key.
-func keyedLike(segs, like []Segment) []Segment {
-	keys := map[string]bool{}
-	for _, s := range like {
-		keys[s.Key] = true
-	}
-	var out []Segment
-	for _, s := range segs {
-		if s.Key == "" || keys[s.Key] {
-			out = append(out, s)
-		}
-	}
-	return out
 }
 
 type packageJSON struct {

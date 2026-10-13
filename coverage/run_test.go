@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
 // writeFiles writes text files under dir.
@@ -193,19 +195,19 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 	unsupported := Plan{Language: "typescript", Dir: dir, Unsupported: "Vitest is not installed"}
 	var log bytes.Buffer
 	missing := Run(t.Context(), []Plan{failing, unsupported}, []string{src}, &log).Missing()
-	if len(missing) != 2 || missing[0].Cause != MeasuredNothing || !strings.Contains(missing[0].String(), "(go): its coverage run measured none of its files; go: exit status") ||
-		missing[1].Cause != ToolMissing || !strings.Contains(missing[1].Reason, "Vitest is not installed") {
+	if len(missing) != 2 || missing[0].Cause != (port.MeasuredNothing{}) || !strings.Contains(missing[0].String(), "(go): its coverage run measured none of its files; go: exit status") ||
+		missing[1].Cause != (port.ToolMissing{}) || !strings.Contains(missing[1].Reason, "Vitest is not installed") {
 		t.Errorf("missing %q, want the failed run and the missing tool", missing)
 	}
-	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != NoReport {
+	if missing := Existing(t.Context(), []Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != (port.NoReport{}) {
 		t.Errorf("existing: missing %v, want the plan with no report on disk", missing)
 	}
 	os.MkdirAll(filepath.Join(dir, "out"), 0o755)
 	os.WriteFile(failing.Reports[0], []byte("mode: set\n"), 0o644)
-	if missing := Existing([]Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != NoReport {
+	if missing := Existing(t.Context(), []Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != (port.NoReport{}) {
 		t.Errorf("existing: missing %v, want the plan whose report measures none of its files", missing)
 	}
-	if missing := Files([]string{filepath.Join(dir, "nope.info")}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != Unreadable {
+	if missing := Files(t.Context(), []string{filepath.Join(dir, "nope.info")}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != (port.Unreadable{}) {
 		t.Errorf("files: missing %v, want the unreadable report", missing)
 	}
 }
@@ -256,7 +258,7 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 		// report measured nothing.
 		if m := r.Missing(); c.measures && len(m) != 0 {
 			t.Errorf("%s: missing %v, want none: the run measured its language", c.name, m)
-		} else if !c.measures && (len(m) != 1 || m[0].Cause != MeasuredNothing) {
+		} else if !c.measures && (len(m) != 1 || m[0].Cause != (port.MeasuredNothing{})) {
 			t.Errorf("%s: missing %v, want the run that measured none of its files", c.name, m)
 		}
 	}
@@ -329,7 +331,7 @@ func TestAPlanOfItsOwnSourcesLendsNoCoverageToOthers(t *testing.T) {
 		{Language: "python", Dir: dir, Sources: sources[:1], OwnSources: true, Reports: []string{at("a.lcov")}, Existing: []string{at("a.lcov")}},
 		{Language: "python", Dir: dir, Sources: sources[1:], OwnSources: true, Reports: []string{at("b.lcov")}, Existing: []string{at("b.lcov")}},
 	}
-	r := Existing(plans, sources, &bytes.Buffer{})
+	r := Existing(t.Context(), plans, sources, &bytes.Buffer{})
 	if covered, measured := r.LineCovered(at("a.py"), 2); covered || !measured {
 		t.Errorf("a.py:2 covered %v, measured %v; want measured and not covered, as b.py's tests lend it nothing", covered, measured)
 	}

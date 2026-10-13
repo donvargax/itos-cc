@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage"
 )
 
 // Go evidence is written under go_coverage exactly as before, and the

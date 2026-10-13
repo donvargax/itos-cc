@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/coverage"
 )
 
 // A successful plan proves the lines of the files its report names, and
@@ -16,13 +18,13 @@ import (
 func TestLinesNeedAPlanThatMeasuredItsLanguage(t *testing.T) {
 	dir := t.TempDir()
 	a, b := filepath.Join(dir, "a.py"), filepath.Join(dir, "b.py")
-	entries, err := ParseLCOV(strings.NewReader("SF:a.py\nDA:2,1\nDA:3,0\nend_of_record\n"))
+	entries, err := coverage.ParseLCOV(strings.NewReader("SF:a.py\nDA:2,1\nDA:3,0\nend_of_record\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{a, b}, dir, entries)
+	r := coverage.Build(t.Context(), Disk{}, []string{a, b}, dir, entries)
 	Plan{Language: "python", Dir: dir, Sources: []string{a, b}}.prove(r)
-	if lines, ok := r.Lines(a); !ok || !reflect.DeepEqual(lines, []Line{{Line: 2, Covered: true}, {Line: 3}}) {
+	if lines, ok := r.Lines(a); !ok || !reflect.DeepEqual(lines, []coverage.Line{{Line: 2, Covered: true}, {Line: 3}}) {
 		t.Errorf("a's lines %v %v, want 2 covered and 3 not, proven", lines, ok)
 	}
 	if lines, ok := r.Lines(b); ok || lines != nil {
@@ -31,11 +33,11 @@ func TestLinesNeedAPlanThatMeasuredItsLanguage(t *testing.T) {
 	if got := r.Unloaded("python"); !reflect.DeepEqual(got, []string{b}) {
 		t.Errorf("unloaded %v, want b alone", got)
 	}
-	failed := Build([]string{a}, dir, entries)
+	failed := coverage.Build(t.Context(), Disk{}, []string{a}, dir, entries)
 	if _, ok := failed.Lines(a); ok {
 		t.Error("a report no successful plan proved proves a's lines")
 	}
-	merged := Merge(&Report{}, r)
+	merged := coverage.Merge(&coverage.Report{}, r)
 	if _, ok := merged.Lines(a); !ok || !reflect.DeepEqual(merged.Unloaded("python"), []string{b}) {
 		t.Error("merging lost what the plan proved")
 	}
@@ -54,12 +56,12 @@ func TestInventoryListsTheExecutableLinesOfUnloadedPythonFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := (Plan{Language: "python", Dir: dir, Sources: []string{lonely}, Unreached: true}).unreached(io.Discard)
-	calls, err := r.Inventory(context.Background(), "python", io.Discard, nil)
+	calls, err := Inventory(context.Background(), r, "python", io.Discard, nil)
 	if err != nil || len(calls) != 1 {
 		t.Fatalf("inventory: %v, calls %v", err, calls)
 	}
 	lines, ok := r.Lines(lonely)
-	if want := []Line{{Line: 4}, {Line: 6}}; !ok || !reflect.DeepEqual(lines, want) {
+	if want := []coverage.Line{{Line: 4}, {Line: 6}}; !ok || !reflect.DeepEqual(lines, want) {
 		t.Errorf("lonely's lines %v %v, want %v proven", lines, ok, want)
 	}
 	if got := r.Unloaded("python"); len(got) != 0 {
@@ -99,12 +101,12 @@ func TestInventoryListsTheExecutableLinesOfUnloadedTypeScriptFiles(t *testing.T)
 	}
 	lonely := filepath.Join(dir, "src", "lonely.ts")
 	r := (Plan{Language: "typescript", Dir: dir, Sources: []string{lonely}}).unreached(io.Discard)
-	calls, err := r.Inventory(context.Background(), "typescript", io.Discard, nil)
+	calls, err := Inventory(context.Background(), r, "typescript", io.Discard, nil)
 	if err != nil || len(calls) != 1 {
 		t.Fatalf("inventory: %v, calls %v", err, calls)
 	}
 	lines, ok := r.Lines(lonely)
-	if want := []Line{{Line: 2}, {Line: 3}}; !ok || !reflect.DeepEqual(lines, want) {
+	if want := []coverage.Line{{Line: 2}, {Line: 3}}; !ok || !reflect.DeepEqual(lines, want) {
 		t.Errorf("lonely's lines %v %v, want %v proven", lines, ok, want)
 	}
 }
@@ -168,10 +170,10 @@ func TestAKotlinFileNoTestReachesHasTheLinesItsModulesReportLists(t *testing.T) 
 			Commands: [][]string{{os.Args[0], "-test.run=^TestHelperCoverageCommand$"}}},
 	}
 	r := Run(t.Context(), plans, []string{calc, lonely, far}, io.Discard)
-	if lines, ok := r.Lines(calc); !ok || !reflect.DeepEqual(lines, []Line{{Line: 3}, {Line: 4, Covered: true}, {Line: 5}, {Line: 7, Covered: true}}) {
+	if lines, ok := r.Lines(calc); !ok || !reflect.DeepEqual(lines, []coverage.Line{{Line: 3}, {Line: 4, Covered: true}, {Line: 5}, {Line: 7, Covered: true}}) {
 		t.Errorf("Calc.kt's lines %v %v, want 4 and 7 covered, 3 and 5 not, proven", lines, ok)
 	}
-	if lines, ok := r.Lines(lonely); !ok || !reflect.DeepEqual(lines, []Line{{Line: 4}, {Line: 5}}) {
+	if lines, ok := r.Lines(lonely); !ok || !reflect.DeepEqual(lines, []coverage.Line{{Line: 4}, {Line: 5}}) {
 		t.Errorf("Lonely.kt's lines %v %v, want 4 and 5 unexecuted, proven", lines, ok)
 	}
 	if lines, ok := r.Lines(far); ok || lines != nil {

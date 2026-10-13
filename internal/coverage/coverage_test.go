@@ -7,9 +7,18 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 )
 
 func approx(a, b float64) bool { return math.Abs(a-b) < 1e-9 }
+
+// build is Build over files on no disk: a report path names a source only
+// by what it says.
+func build(t *testing.T, sources []string, base string, entries ...[]Entry) *Report {
+	t.Helper()
+	return Build(t.Context(), porttest.Files{}, sources, base, entries...)
+}
 
 func fraction(t *testing.T, r *Report, file string, start, end int, skip ...[2]int) float64 {
 	t.Helper()
@@ -35,7 +44,7 @@ end_of_record
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{"/p/src/demo/board.ts"}, "/p", entries)
+	r := build(t, []string{"/p/src/demo/board.ts"}, "/p", entries)
 	if got := fraction(t, r, "/p/src/demo/board.ts", 1, 5); !approx(got, 2.0/3) {
 		t.Errorf("lines 1-5 = %v, want 2/3", got)
 	}
@@ -71,7 +80,7 @@ end_of_record
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{"/p/lib.py"}, "/p", entries)
+	r := build(t, []string{"/p/lib.py"}, "/p", entries)
 	if got := fraction(t, r, "/p/lib.py", 2, 7); !approx(got, 0.5) {
 		t.Errorf("pick = %v, want 1/2 of its branches", got)
 	}
@@ -112,7 +121,7 @@ end_of_record
 	if len(entries[0].Branches) != 0 {
 		t.Errorf("branches %+v, want none", entries[0].Branches)
 	}
-	r := Build([]string{"/p/lib.mjs"}, "/p", entries)
+	r := build(t, []string{"/p/lib.mjs"}, "/p", entries)
 	if got := fraction(t, r, "/p/lib.mjs", 1, 9); !approx(got, 7.0/9) {
 		t.Errorf("pick = %v, want 7/9 of its lines", got)
 	}
@@ -127,7 +136,7 @@ example.com/demo/board/board.go:10.10,12.3 1 0
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{"/w/gomod/board/board.go"}, "/w/gomod", entries)
+	r := build(t, []string{"/w/gomod/board/board.go"}, "/w/gomod", entries)
 	if got := fraction(t, r, "/w/gomod/board/board.go", 9, 12); !approx(got, 3.0/4) {
 		t.Errorf("Place = %v, want 3/4", got)
 	}
@@ -147,7 +156,7 @@ example.com/demo/board/board.go:9.30,10.10 3 0
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{"/w/gomod/board/board.go"}, "/w/gomod", entries)
+	r := build(t, []string{"/w/gomod/board/board.go"}, "/w/gomod", entries)
 	if got := fraction(t, r, "/w/gomod/board/board.go", 9, 12); !approx(got, 3.0/4) {
 		t.Errorf("Place = %v, want 3/4: the block one binary ran is covered", got)
 	}
@@ -163,8 +172,10 @@ func TestGoBlocksRetainColumnsAndUnionListedMeasurements(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{path}, "/w/gomod", primary)
-	r.SetTests(&TestCoverage{ids: []string{"listed"}, reports: map[string]*Report{"listed": Build([]string{path}, "/w/gomod", listed)}})
+	r := build(t, []string{path}, "/w/gomod", primary)
+	var tests TestCoverage
+	tests.Add("listed", build(t, []string{path}, "/w/gomod", listed))
+	r.SetTests(&tests)
 	blocks := r.GoBlocks(path)
 	if len(blocks) != 2 {
 		t.Fatalf("blocks %+v, want two distinct same-line spans", blocks)
@@ -186,7 +197,7 @@ func TestReportsOfTheSameFileAreCombined(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := Build([]string{"/p/src/a.ts"}, "/p", unit, integration)
+	r := build(t, []string{"/p/src/a.ts"}, "/p", unit, integration)
 	if got := fraction(t, r, "/p/src/a.ts", 1, 2); !approx(got, 1) {
 		t.Errorf("covered share = %v, want 1: each line ran in one of the reports", got)
 	}
@@ -209,7 +220,7 @@ func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
 		t.Fatal(err)
 	}
 	src := "/k/src/main/kotlin/demo/game/Board.kt"
-	r := Build([]string{src}, "/k", entries)
+	r := build(t, []string{src}, "/k", entries)
 	if got := fraction(t, r, src, 15, 17); !approx(got, 6.0/8) {
 		t.Errorf("Board = %v, want 6/8", got)
 	}
@@ -220,11 +231,11 @@ func TestJaCoCoLinesAreWeightedByInstructions(t *testing.T) {
 
 func TestMatchingRefusesAmbiguousTails(t *testing.T) {
 	entries := []Entry{{Path: "util.py", Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-	r := Build([]string{"/p/a/util.py", "/p/b/util.py"}, "/elsewhere", entries)
+	r := build(t, []string{"/p/a/util.py", "/p/b/util.py"}, "/elsewhere", entries)
 	if r.Has("/p/a/util.py") || r.Has("/p/b/util.py") {
 		t.Error("a bare file name that matches two sources is not guessed")
 	}
-	r = Build([]string{"/p/a/util.py", "/p/b/util.py"}, "/p/a", entries)
+	r = build(t, []string{"/p/a/util.py", "/p/b/util.py"}, "/p/a", entries)
 	if !r.Has("/p/a/util.py") {
 		t.Error("a path relative to base resolves exactly")
 	}
@@ -240,7 +251,7 @@ func TestReportPathsMatchWhicheverSeparatorTheyWereWrittenWith(t *testing.T) {
 		strings.ReplaceAll(absolute, "/", `\`), absolute, // absolute
 	} {
 		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-		if r := Build([]string{src}, root, entries); !r.Has(src) {
+		if r := build(t, []string{src}, root, entries); !r.Has(src) {
 			t.Errorf("the report path %s does not match %s", path, src)
 		}
 	}
@@ -249,13 +260,10 @@ func TestReportPathsMatchWhicheverSeparatorTheyWereWrittenWith(t *testing.T) {
 func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
 	root := t.TempDir()
 	src, other := filepath.Join(root, "b", "main.go"), filepath.Join(root, "a", "b", "main.go")
-	for _, f := range []string{src, other} {
-		os.MkdirAll(filepath.Dir(f), 0o755)
-		os.WriteFile(f, nil, 0o644)
-	}
+	files := porttest.Files{Dir: root, Regular: []string{src, other}}
 	for _, path := range []string{"a/b/main.go", other} {
 		entries := []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-		if r := Build([]string{src}, root, entries); r.Has(src) {
+		if r := Build(t.Context(), files, []string{src}, root, entries); r.Has(src) {
 			t.Errorf("%s is another file in the project, not b/main.go", path)
 		}
 	}
@@ -264,42 +272,51 @@ func TestMatchingNeverLendsAnotherFilesCoverage(t *testing.T) {
 func TestModulePathsNameTheProjectFileTheirTailFinds(t *testing.T) {
 	root := t.TempDir()
 	src := filepath.Join(root, "metrics", "metrics.go")
-	for _, f := range []string{src, filepath.Join(root, "graph", "metrics.go")} {
-		os.MkdirAll(filepath.Dir(f), 0o755)
-		os.WriteFile(f, nil, 0o644)
-	}
+	files := porttest.Files{Dir: root, Regular: []string{src, filepath.Join(root, "graph", "metrics.go")}}
 	entry := func(path string) []Entry {
 		return []Entry{{Path: path, Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
 	}
-	if r := Build([]string{src}, root, entry("example.com/m/graph/metrics.go")); r.Has(src) {
+	if r := Build(t.Context(), files, []string{src}, root, entry("example.com/m/graph/metrics.go")); r.Has(src) {
 		t.Error("graph/metrics.go lent its coverage to metrics/metrics.go")
 	}
-	if r := Build([]string{src}, root, entry("example.com/m/metrics/metrics.go")); !r.Has(src) {
+	if r := Build(t.Context(), files, []string{src}, root, entry("example.com/m/metrics/metrics.go")); !r.Has(src) {
 		t.Error("the module path of metrics/metrics.go did not match it")
 	}
 }
 
+// A report that resolved a symlinked directory names the file the source
+// is, as the port says; the runner's Disk is held to the same on a real
+// symlink. A regular file that is no source lends it nothing.
 func TestMatchingFollowsSymlinkedDirectories(t *testing.T) {
-	real := t.TempDir()
-	link := filepath.Join(t.TempDir(), "link")
-	if err := os.Symlink(real, link); err != nil {
-		t.Skip("symlinks unavailable:", err)
-	}
-	os.WriteFile(filepath.Join(real, "lib.py"), nil, 0o644)
+	dir := t.TempDir()
+	real, link := filepath.Join(dir, "real"), filepath.Join(dir, "link")
+	files := porttest.Files{Dir: dir, Regular: []string{filepath.Join(real, "lib.py"), filepath.Join(real, "other", "lib.py")},
+		Links: map[string]string{link: real}}
 	src := filepath.Join(link, "lib.py")
 	entries := []Entry{{Path: filepath.Join(real, "lib.py"), Segments: []Segment{{Start: 1, End: 1, Total: 1, Covered: 1}}}}
-	if r := Build([]string{src}, link, entries); !r.Has(src) {
+	if r := Build(t.Context(), files, []string{src}, link, entries); !r.Has(src) {
 		t.Error("a report that resolved the symlink still names the source")
+	}
+	entries[0].Path = filepath.Join(real, "other", "lib.py")
+	if r := Build(t.Context(), files, []string{src}, link, entries); !r.Empty() {
+		t.Error("a regular file that is no source lent its coverage to the one source of its name")
 	}
 }
 
-func TestLoadDetectsTheFormat(t *testing.T) {
+func TestParseDetectsTheFormat(t *testing.T) {
 	for name, want := range map[string]string{
 		"testdata/go.out":     "example.com/demo/board/board.go",
 		"testdata/lcov.info":  "src/demo/board.ts",
 		"testdata/jacoco.xml": "demo/game/Board.kt",
 	} {
-		entries, err := Load(name)
+		f, err := os.Open(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries, err := Parse(f)
+		if closeErr := f.Close(); closeErr != nil {
+			t.Fatal(closeErr)
+		}
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -334,7 +351,7 @@ example.com/demo/main.go:9.2,10.10 1 0
 example.com/demo/main.go:11.2,12.10 1 0
 `, Integration)
 	file := "/w/demo/main.go"
-	r := Build([]string{file}, "/w/demo", inProcess, integration)
+	r := build(t, []string{file}, "/w/demo", inProcess, integration)
 	if got := fraction(t, r, file, 5, 12); !approx(got, 3.0/4) {
 		t.Errorf("fraction %v, want 3/4: a block either covers is covered, and counted once", got)
 	}
@@ -343,22 +360,6 @@ example.com/demo/main.go:11.2,12.10 1 0
 	} {
 		if got := r.LineSources(file, line); !slices.Equal(got, want) {
 			t.Errorf("line %d sources %q, want %q", line, got, want)
-		}
-	}
-}
-
-func TestExecFlagQuotesTheExecutable(t *testing.T) {
-	saved := Executable
-	defer func() { Executable = saved }()
-	for exe, want := range map[string]string{
-		"":                      "",
-		`C:\Program Files\itos`: `"C:\Program Files\itos" ` + ExecArg,
-		`/opt/it"s/itos-cc`:     `'/opt/it"s/itos-cc' ` + ExecArg,
-		`/opt/"it's"/itos-cc`:   "",
-	} {
-		Executable = exe
-		if got := execFlag(); got != want {
-			t.Errorf("execFlag() with %q = %q, want %q", exe, got, want)
 		}
 	}
 }

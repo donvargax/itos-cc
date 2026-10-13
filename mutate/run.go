@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"

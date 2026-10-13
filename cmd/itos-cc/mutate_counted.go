@@ -15,8 +15,9 @@ import (
 	"syscall"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/coverage"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -184,9 +185,9 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		return result, nil
 	}
 
-	scope := coverage.OwnTests
+	scope := covrun.OwnTests
 	if in.set("all-tests") {
-		scope = coverage.AllTests
+		scope = covrun.AllTests
 	}
 	// One owner, so preparation and trials share one run-abort cleanup
 	// deadline.

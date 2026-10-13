@@ -16,8 +16,9 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/coverage"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/graph"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -33,10 +34,10 @@ type FreshPreparation struct {
 	Seed       string
 	Algorithm  string
 	Units      []mutate.FreshUnit
-	Commands   []coverage.CommandExecution
+	Commands   []covrun.CommandExecution
 	Stages     []PreparationStage
 	Report     *coverage.Report
-	Listed     []coverage.Test
+	Listed     []covrun.Test
 	GoCoverage map[string]*mutate.GoCoverageEvidence
 	// GoCoverageMissing is each admitted Go function with executable
 	// statements that the measurement has no complete inventory of.
@@ -69,8 +70,8 @@ type PreparationStage struct {
 // freshPreparationOptions are intentionally internal. No CLI flag or legacy
 // complete-run path enables them.
 type freshPreparationOptions struct {
-	Scope    coverage.Scope
-	Executor coverage.CommandExecutor // instance-local test seam; nil uses owned Linux or macOS supervision
+	Scope    covrun.Scope
+	Executor covrun.CommandExecutor // instance-local test seam; nil uses owned Linux or macOS supervision
 	Log      io.Writer
 }
 
@@ -172,8 +173,8 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	// A Python or Kotlin file's own tests, and the coverage that decides
 	// which of its mutants run, are the tests that reach it in the frozen
 	// tree.
-	var reach coverage.Reach
-	if options.Scope == coverage.OwnTests && hasReachedUnit(plan.Units) {
+	var reach covrun.Reach
+	if options.Scope == covrun.OwnTests && hasReachedUnit(plan.Units) {
 		tests, err := graph.TestsImporting(ctx, root, plan.Files)
 		if err != nil {
 			stage("coverage-plan", "failed", err)
@@ -182,7 +183,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		reach = func(path string) []string { return tests[path] }
 	}
 	private := filepath.Join(root, ".git", "itos-preparation")
-	plans, calls, err := coverage.PlansSupervised(ctx, sources, filepath.Join(private, "coverage"), options.Scope, reach, execute)
+	plans, calls, err := covrun.PlansSupervised(ctx, sources, filepath.Join(private, "coverage"), options.Scope, reach, execute)
 	prep.Commands = append(prep.Commands, calls...)
 	if err != nil {
 		stage("coverage-plan", "failed", err)
@@ -195,7 +196,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	}
 	stage("coverage-plan", "complete", nil)
 
-	baselines, executions, err := mutate.FreshBaselineCommands(ctx, plan, options.Scope == coverage.AllTests, reach, execute)
+	baselines, executions, err := mutate.FreshBaselineCommands(ctx, plan, options.Scope == covrun.AllTests, reach, execute)
 	prep.Commands = append(prep.Commands, executions...)
 	if err != nil {
 		stage("baseline-plan", "failed", err)
@@ -215,7 +216,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 	}
 	stage("tools", "complete", nil)
 
-	var perTest *coverage.PerTest
+	var perTest *covrun.PerTest
 	if cfg.Tests != nil {
 		if err := ctx.Err(); err != nil {
 			stage("preparation", "aborted", err)
@@ -232,14 +233,14 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		for i := range listed {
 			ids[i] = listed[i].ID
 		}
-		perTest = &coverage.PerTest{Root: root, Tests: listed, Select: cfg.Tests.Select, All: cfg.Tests.All(ids)}
+		perTest = &covrun.PerTest{Root: root, Tests: listed, Select: cfg.Tests.Select, All: cfg.Tests.All(ids)}
 		stage("listed-tests", "complete", nil)
 	}
 	if err := ctx.Err(); err != nil {
 		stage("preparation", "aborted", err)
 		return prep, err
 	}
-	report, executions, coverageErr := coverage.RunSupervised(ctx, plans, sources, log, execute)
+	report, executions, coverageErr := covrun.RunSupervised(ctx, plans, sources, log, execute)
 	prep.Commands = append(prep.Commands, executions...)
 	prep.Report = report
 	if coverageErr != nil {
@@ -252,7 +253,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 			stage("preparation", "aborted", err)
 			return prep, err
 		}
-		listedCoverage, executions, listedErr := coverage.MeasureTestsSupervised(ctx, *perTest,
+		listedCoverage, executions, listedErr := covrun.MeasureTestsSupervised(ctx, *perTest,
 			filepath.Join(private, "listed-coverage"), sources, log, execute)
 		prep.Commands = append(prep.Commands, executions...)
 		if listedErr != nil {
@@ -263,7 +264,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 		stage("listed-coverage", "complete", nil)
 	}
 	if hasGoUnits(plan.Units) {
-		if options.Scope != coverage.OwnTests && options.Scope != coverage.AllTests {
+		if options.Scope != covrun.OwnTests && options.Scope != covrun.AllTests {
 			err := fmt.Errorf("unsupported strict Go measurement scope %d", options.Scope)
 			stage("strict-go-inventory", "failed", err)
 			return prep, err
@@ -274,7 +275,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 			return prep, err
 		}
 		producer := "go test -count=1 -covermode=set -coverprofile=coverage.out; scope=own"
-		if options.Scope == coverage.AllTests {
+		if options.Scope == covrun.AllTests {
 			producer = "go test -count=1 -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...; scope=all-tests"
 		}
 		var supportPatterns []string
@@ -349,7 +350,7 @@ func prepareFreshContext(ctx context.Context, plan *mutate.FreshPlan, options fr
 // resolvePreparationTools resolves, before any of them runs, the executable
 // of every coverage and baseline command and the platform shell that listed
 // tests run through. A missing one fails preparation: nothing is installed.
-func resolvePreparationTools(plans []coverage.Plan, baselines []mutate.FreshBaseline, listed bool) ([]PreparationTool, error) {
+func resolvePreparationTools(plans []covrun.Plan, baselines []mutate.FreshBaseline, listed bool) ([]PreparationTool, error) {
 	type need struct{ name, dir string }
 	var needs []need
 	for _, p := range plans {
@@ -429,7 +430,7 @@ func hasGoUnits(units []mutate.FreshUnit) bool {
 	return false
 }
 
-func listFreshTests(ctx context.Context, root, line string, log io.Writer, execute coverage.CommandExecutor) ([]coverage.Test, []coverage.CommandExecution, error) {
+func listFreshTests(ctx context.Context, root, line string, log io.Writer, execute covrun.CommandExecutor) ([]covrun.Test, []covrun.CommandExecution, error) {
 	if strings.TrimSpace(line) == "" {
 		return nil, nil, errors.New("frozen mutation.tests.list command is empty")
 	}
@@ -442,11 +443,11 @@ func listFreshTests(ctx context.Context, root, line string, log io.Writer, execu
 	var output bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &output, log
 	err := execute(ctx, cmd)
-	call := coverage.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: root, Err: err}
+	call := covrun.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: root, Err: err}
 	if err != nil {
-		return nil, []coverage.CommandExecution{call}, err
+		return nil, []covrun.CommandExecution{call}, err
 	}
-	var tests []coverage.Test
+	var tests []covrun.Test
 	seen := map[string]bool{}
 	for _, raw := range strings.Split(output.String(), "\n") {
 		id, file, _ := strings.Cut(strings.TrimRight(raw, "\r"), "\t")
@@ -455,31 +456,31 @@ func listFreshTests(ctx context.Context, root, line string, log io.Writer, execu
 			continue
 		}
 		if strings.ContainsAny(id, "\r\n\t") || seen[id] {
-			return nil, []coverage.CommandExecution{call}, fmt.Errorf("malformed or duplicate listed test ID %q", id)
+			return nil, []covrun.CommandExecution{call}, fmt.Errorf("malformed or duplicate listed test ID %q", id)
 		}
 		if file != "" {
 			if filepath.IsAbs(file) || file == ".git" || strings.HasPrefix(file, ".git/") || strings.HasPrefix(file, "../") || strings.Contains(file, "\\") {
-				return nil, []coverage.CommandExecution{call}, fmt.Errorf("listed test %q names unsupported file %q", id, file)
+				return nil, []covrun.CommandExecution{call}, fmt.Errorf("listed test %q names unsupported file %q", id, file)
 			}
 			clean := filepath.ToSlash(filepath.Clean(filepath.FromSlash(file)))
 			if clean == ".." || strings.HasPrefix(clean, "../") || clean != file {
-				return nil, []coverage.CommandExecution{call}, fmt.Errorf("listed test %q names non-canonical frozen file %q", id, file)
+				return nil, []covrun.CommandExecution{call}, fmt.Errorf("listed test %q names non-canonical frozen file %q", id, file)
 			}
 			info, err := os.Stat(filepath.Join(root, filepath.FromSlash(file)))
 			if err != nil || !info.Mode().IsRegular() {
-				return nil, []coverage.CommandExecution{call}, fmt.Errorf("listed test %q file %q is not a committed regular input: %v", id, file, err)
+				return nil, []covrun.CommandExecution{call}, fmt.Errorf("listed test %q file %q is not a committed regular input: %v", id, file, err)
 			}
 		}
 		seen[id] = true
-		tests = append(tests, coverage.Test{ID: id, File: file})
+		tests = append(tests, covrun.Test{ID: id, File: file})
 	}
 	if len(tests) == 0 {
-		return nil, []coverage.CommandExecution{call}, errors.New("frozen mutation.tests.list produced no test IDs")
+		return nil, []covrun.CommandExecution{call}, errors.New("frozen mutation.tests.list produced no test IDs")
 	}
-	return tests, []coverage.CommandExecution{call}, nil
+	return tests, []covrun.CommandExecution{call}, nil
 }
 
-func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execute coverage.CommandExecutor, calls *[]coverage.CommandExecution) (string, error) {
+func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execute covrun.CommandExecutor, calls *[]covrun.CommandExecution) (string, error) {
 	gitDir := filepath.Join(plan.FrozenRoot, ".git")
 	if err := os.RemoveAll(gitDir); err != nil {
 		return "", fmt.Errorf("remove isolated ignore-classification metadata: %w", err)
@@ -503,7 +504,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execut
 		}
 		cmd.Env = withGitConfigEnv(withoutGitOverrides(nil), activeConfig)
 		err := execute(ctx, cmd)
-		*calls = append(*calls, coverage.CommandExecution{Args: append([]string{"git"}, args...), Dir: plan.FrozenRoot, Err: err})
+		*calls = append(*calls, covrun.CommandExecution{Args: append([]string{"git"}, args...), Dir: plan.FrozenRoot, Err: err})
 		if err != nil {
 			return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
 		}
@@ -534,7 +535,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execut
 	cmd.Dir, cmd.Stdout, cmd.Stderr = plan.FrozenRoot, &head, io.Discard
 	cmd.Env = withGitConfigEnv(withoutGitOverrides(nil), configPath)
 	err := execute(ctx, cmd)
-	*calls = append(*calls, coverage.CommandExecution{Args: []string{"git", "rev-parse", "--verify", "HEAD^{commit}"}, Dir: plan.FrozenRoot, Err: err})
+	*calls = append(*calls, covrun.CommandExecution{Args: []string{"git", "rev-parse", "--verify", "HEAD^{commit}"}, Dir: plan.FrozenRoot, Err: err})
 	if err != nil {
 		return "", fmt.Errorf("verify frozen runtime HEAD: %w", err)
 	}
@@ -546,7 +547,7 @@ func installFrozenRuntimeGit(ctx context.Context, plan *mutate.FreshPlan, execut
 	cmd.Dir, cmd.Stdout, cmd.Stderr = plan.FrozenRoot, &status, io.Discard
 	cmd.Env = withGitConfigEnv(withoutGitOverrides(nil), configPath)
 	err = execute(ctx, cmd)
-	*calls = append(*calls, coverage.CommandExecution{Args: append([]string{"git"}, cmd.Args[1:]...), Dir: plan.FrozenRoot, Err: err})
+	*calls = append(*calls, covrun.CommandExecution{Args: append([]string{"git"}, cmd.Args[1:]...), Dir: plan.FrozenRoot, Err: err})
 	if err != nil {
 		return "", fmt.Errorf("verify frozen runtime worktree: %w", err)
 	}

@@ -94,6 +94,24 @@ from it, and thin slices named for their commands.
   takes a file `internal/lang` parsed and the name its caller gives it, and `History` merges a
   run's reports into what the last snapshot recorded, keeping the files the run did not
   measure. It reads nothing and has no port; its tests parse in memory through lang's fake.
+- `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
+  which lines a run covered, a function's fraction and which listed tests reach a line, its
+  queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
+  content). It reads nothing. The top-level `coverage` runner, which runs each language's
+  tools, is its adapter and builds every `Report` through the domain's API, never its fields
+  (decision 47): `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the
+  setters `SetMissing`, `SetIntegrationMissing`, `MarkMeasured` and `Prove`, `List` for a
+  static inventory's lines, `Integrated` for the data of the processes the tests started, and
+  `TestCoverage.Add` with `SetTests`; the zero `Report` is empty. The runner keeps `Load`,
+  which opens a report, and `Inventory`, which runs a static inventory command.
+- `internal/coverage/port` declares `Files`, what the report-path matcher asks of the disk:
+  `SameFile(ctx, path, among)`, whether a path names a regular file and which of the sources
+  of its name it is, reached through a symlinked directory too. It declares the sealed set of
+  `Gap`s an `Unmeasured` build root or report has as its `Cause`: `ToolMissing`,
+  `MeasuredNothing`, `NoReport`, `Unreadable` and `Cancelled`, each written as its name.
+  `internal/coverage/port/porttest` holds the in-memory fake of `Files`, with links standing
+  for symlinks, and `FilesContract`, the contract it and the runner's `Disk` both pass. cmd's
+  `unmeasuredProblems` is the domain's classifier, one case per gap.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -162,7 +180,9 @@ from it, and thin slices named for their commands.
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, and `scrap` warns about
   an unreadable last one and goes on. `crap`, `mutation` and `serve` still call the `metrics`
-  library until each moves (decision 41).
+  library until each moves (decision 41). `crap` and `mutation` measure coverage through the
+  top-level `coverage` runner, the coverage domain's adapter, until T-66 puts it behind the
+  domain's port.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -368,7 +388,8 @@ A fake stands in for its adapter only when both pass one contract suite (decisio
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
 so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
 `StoreContract(t, open)` for the snapshot `Store` (T-53), `SurroundingsContract(t, open)`
-for lang's `Surroundings` (T-54) and `FilesContract(t, open)` for counting's `Files` (T-55).
+for lang's `Surroundings` (T-54), `FilesContract(t, open)` for counting's `Files` (T-55) and
+coverage's `FilesContract(t, open)` for its `Files` (T-64).
 `open` lays out a fixture, a `TreeFixture` of files' text, whether git holds them and which
 changed, the snapshots' raw text by name, or files' text or bytes, and returns the port over
 it and its absolute working directory. Every fake that names paths sits at an absolute `Dir`

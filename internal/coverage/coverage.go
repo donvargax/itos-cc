@@ -1,16 +1,21 @@
-// Package coverage loads coverage reports in the formats each language's
-// tools write and answers how much of a line range the tests executed: how
-// many of its branches were taken where the report counts branches, and how
-// many of its lines or statements ran otherwise.
+// Package coverage is the coverage domain (decision 46): it parses coverage
+// reports in the formats each language's tools write and answers how much
+// of a line range the tests executed: how many of its branches were taken
+// where the report counts branches, and how many of its lines or statements
+// ran otherwise. It reads nothing itself: the runner that measures coverage
+// builds its Reports through the API here, and what the matcher asks of the
+// files a report names goes through its port, Files.
 package coverage
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
 // Segment is a run of lines that a report measures as one piece: one LCOV
@@ -72,7 +77,9 @@ var sourceNames = []string{"in-process", "integration"}
 
 func (s Source) String() string { return sourceNames[s] }
 
-// Report is coverage keyed by absolute source path.
+// Report is coverage keyed by absolute source path. The zero Report names
+// no file and measured no language; Build, FromLines and FromGoBlocks make
+// one of reports, and its setters record what the run that made it found.
 type Report struct {
 	files    map[string][]Segment
 	branches map[string][]Segment
@@ -112,28 +119,14 @@ type Line struct {
 	Covered bool
 }
 
-// Cause is why coverage that was meant to be measured was not.
-type Cause string
-
-const (
-	// ToolMissing: the project lacks a tool coverage needs, such as Vitest.
-	ToolMissing Cause = "tool-missing"
-	// MeasuredNothing: the coverage run ran and measured none of the files,
-	// as when the tests do not compile.
-	MeasuredNothing Cause = "measured-nothing"
-	// NoReport: --use-existing-coverage found no report measuring the files.
-	NoReport Cause = "no-report"
-	// Unreadable: a report named on the command line cannot be read.
-	Unreadable Cause = "unreadable"
-)
-
-// Unmeasured is a build root or report whose coverage was not measured.
+// Unmeasured is a build root or report whose coverage was not measured,
+// and why: Cause is one of the port's sealed gaps.
 type Unmeasured struct {
-	Dir      string `json:"dir,omitempty"`
-	Language string `json:"language,omitempty"`
-	Report   string `json:"report,omitempty"`
-	Cause    Cause  `json:"cause"`
-	Reason   string `json:"reason"`
+	Dir      string   `json:"dir,omitempty"`
+	Language string   `json:"language,omitempty"`
+	Report   string   `json:"report,omitempty"`
+	Cause    port.Gap `json:"cause"`
+	Reason   string   `json:"reason"`
 }
 
 func (u Unmeasured) String() string {
@@ -418,14 +411,15 @@ func goSpanColumns(span string) (startLine, startColumn, endLine, endColumn int,
 // Build matches each entry to one of sources and merges entries that name the
 // same file, and segments that name the same piece of it. base is the
 // directory the report's relative paths start from. Entries that match no
-// source are dropped: they are dependencies, tests, or generated code.
-func Build(sources []string, base string, entries ...[]Entry) *Report {
+// source are dropped: they are dependencies, tests, or generated code. What
+// a path names on disk, files answers.
+func Build(ctx context.Context, files port.Files, sources []string, base string, entries ...[]Entry) *Report {
 	m := newMatcher(sources)
 	r := &Report{files: map[string][]Segment{}, branches: map[string][]Segment{}}
 	seen := map[string]int{} // file, kind, and key → index into its segments
 	for _, list := range entries {
 		for _, e := range list {
-			if file := m.match(e.Path, base); file != "" {
+			if file := m.match(ctx, files, e.Path, base); file != "" {
 				r.files[file] = merged(r.files[file], e.Segments, e.Source, file+"\x00lines", seen)
 				r.branches[file] = merged(r.branches[file], e.Branches, e.Source, file+"\x00branches", seen)
 			}
@@ -511,6 +505,7 @@ func Merge(reports ...*Report) *Report {
 // directory), but the tail of the path is always the file. A path that names
 // a file on disk, as written or by a tail under base, is that file, so when
 // only some files are scored, a/b/x.go never lends its coverage to b/x.go.
+// What is on disk, the port's Files answers.
 type matcher struct {
 	sources map[string]string // cleaned path → the path as the caller gave it
 	byName  map[string][]string
@@ -526,7 +521,7 @@ func newMatcher(sources []string) *matcher {
 	return m
 }
 
-func (m *matcher) match(path, base string) string {
+func (m *matcher) match(ctx context.Context, files port.Files, path, base string) string {
 	// A report names its files with the separators of the system that
 	// wrote it: \ is one on every system, so a report written on Windows
 	// matches sources on Linux and macOS.
@@ -547,8 +542,11 @@ func (m *matcher) match(path, base string) string {
 		if s, ok := m.sources[candidate]; ok {
 			return s
 		}
-		if info, err := os.Stat(candidate); err == nil && info.Mode().IsRegular() {
-			return m.sameFile(info)
+		// A regular file there is that file: the source it is, reached
+		// through another path such as a symlinked directory's target, or
+		// none.
+		if same, regular := files.SameFile(ctx, candidate, m.byName[filepath.Base(candidate)]); regular {
+			return same
 		}
 	}
 	best, bestLen, tied := "", 0, false
@@ -565,17 +563,6 @@ func (m *matcher) match(path, base string) string {
 		return ""
 	}
 	return best
-}
-
-// sameFile is the source that info describes, reached through another path
-// such as a symlinked directory's target, or "" when it is not a source.
-func (m *matcher) sameFile(info os.FileInfo) string {
-	for _, candidate := range m.byName[info.Name()] {
-		if other, err := os.Stat(candidate); err == nil && os.SameFile(info, other) {
-			return candidate
-		}
-	}
-	return ""
 }
 
 func components(path string) []string {

@@ -9,7 +9,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 )

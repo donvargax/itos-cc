@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 )
 
 // A route's lines count toward the route alone. mount ran when the module
@@ -28,7 +29,7 @@ func TestRouteLinesAreNotTheEnclosingFunctions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := Analyze(t.Context(), []string{path}, coverage.Build([]string{path}, filepath.Dir(path), entries))
+	got, err := Analyze(t.Context(), []string{path}, coverage.Build(t.Context(), porttest.Files{}, []string{path}, filepath.Dir(path), entries))
 	if err != nil {
 		t.Fatal(err)
 	}

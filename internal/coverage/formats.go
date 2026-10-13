@@ -5,22 +5,16 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"os"
 	"path"
 	"strconv"
 	"strings"
 )
 
-// Load reads a report, choosing the format from its content: a Go cover
+// Parse reads a report, choosing the format from its content: a Go cover
 // profile starts with "mode:", JaCoCo and Kover write XML, and anything else
-// is read as LCOV.
-func Load(file string) ([]Entry, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	r := bufio.NewReader(f)
+// is read as LCOV. The runner's Load opens the file it reads.
+func Parse(report io.Reader) ([]Entry, error) {
+	r := bufio.NewReader(report)
 	head, _ := r.Peek(256)
 	text := strings.TrimSpace(string(head))
 	switch {

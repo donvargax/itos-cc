@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 	sitter "github.com/tree-sitter/go-tree-sitter"
@@ -65,10 +65,11 @@ func CoverageProducer(language string, allTests bool) string {
 const nodeSubprocesses = "subprocesses=NODE_V8_COVERAGE, c8 report"
 
 // TypeScriptCoverageProducer is the built-in producer of TypeScript's
-// strict coverage evidence by runner (coverage.TypeScriptRunner): Vitest's
-// v8 or Jest's LCOV over the related tests, or with allTests the whole
-// suite, or c8's over the test script, which is the whole suite. A project's
-// own coverage script ("script") is none: its report is unattested.
+// strict coverage evidence by runner (the coverage runner's
+// TypeScriptRunner): Vitest's v8 or Jest's LCOV over the related tests, or
+// with allTests the whole suite, or c8's over the test script, which is the
+// whole suite. A project's own coverage script ("script") is none: its
+// report is unattested.
 func TypeScriptCoverageProducer(runner string, allTests bool) string {
 	scope := "own"
 	if allTests {
@@ -99,10 +100,10 @@ func TypeScriptCoverageProducer(runner string, allTests bool) string {
 const jvmSubprocesses = "subprocesses=ITOS_CC_JACOCO_AGENT, jacococli report"
 
 // KotlinCoverageProducer is the built-in producer of Kotlin's strict
-// coverage evidence by runner (coverage.KotlinRunner): Gradle's
-// jacocoTestReport or Kover's koverXmlReport, or Maven's jacoco:report,
-// over the test classes of the module that reach the file, or with
-// allTests the module's whole suite.
+// coverage evidence by runner (the coverage runner's KotlinRunner):
+// Gradle's jacocoTestReport or Kover's koverXmlReport, or Maven's
+// jacoco:report, over the test classes of the module that reach the file,
+// or with allTests the module's whole suite.
 func KotlinCoverageProducer(runner string, allTests bool) string {
 	switch {
 	case runner == "jacoco" && allTests:

@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"strconv"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -31,14 +33,14 @@ type CommandExecution struct {
 // command outcome. Unlike Run, it is fail-closed: unsupported plans, failed
 // commands, unreadable/missing reports, and failed Go covdata conversion are
 // returned as errors. Run remains the compatibility path for complete runs.
-func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.Writer, execute CommandExecutor) (*Report, []CommandExecution, error) {
+func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.Writer, execute CommandExecutor) (*coverage.Report, []CommandExecution, error) {
 	if execute == nil {
 		return nil, nil, errors.New("supervised coverage needs a command executor")
 	}
 	if len(plans) == 0 && len(sources) > 0 {
 		return nil, nil, errors.New("supervised coverage has sources but no measurement plans")
 	}
-	var reports []*Report
+	var reports []*coverage.Report
 	var executions []CommandExecution
 	var failures []error
 	for _, p := range plans {
@@ -54,7 +56,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		if p.Unsupported != "" {
 			err := fmt.Errorf("%s: unsupported coverage scope: %s", p.Dir, p.Unsupported)
 			failures = append(failures, err)
-			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: ToolMissing, Reason: p.Unsupported}}})
+			reports = append(reports, p.missing(port.ToolMissing{}, p.Unsupported))
 			continue
 		}
 		if len(p.Commands) == 0 {
@@ -64,7 +66,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 		}
 		if len(p.Reports) == 0 {
 			failures = append(failures, fmt.Errorf("%s: coverage plan has no report", p.Dir))
-			reports = append(reports, &Report{missing: []Unmeasured{{Dir: p.Dir, Language: p.Language, Cause: Unreadable, Reason: "coverage plan has no report"}}})
+			reports = append(reports, p.missing(port.Unreadable{}, "coverage plan has no report"))
 			continue
 		}
 		for _, r := range append(append([]string{}, p.Reports...), p.Integration) {
@@ -80,7 +82,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			continue
 		}
 		env := project.NoBytecodeEnv(os.Environ())
-		var noIntegration []Unmeasured
+		var noIntegration []coverage.Unmeasured
 		if p.CollectorMissing != "" {
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
 		}
@@ -158,21 +160,19 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				planFailed = true
 			}
 		}
-		r := load(p.Reports, integration, p.Dir, p.measures(sources), log)
-		r.integrationMissing = noIntegration
-		if len(r.missing) > 0 {
-			for _, missing := range r.missing {
-				failures = append(failures, fmt.Errorf("coverage report: %s", missing.String()))
-				planFailed = true
-			}
+		r := load(ctx, p.Reports, integration, p.Dir, p.measures(sources), log)
+		r.SetIntegrationMissing(noIntegration...)
+		for _, missing := range r.Missing() {
+			failures = append(failures, fmt.Errorf("coverage report: %s", missing.String()))
+			planFailed = true
 		}
-		if len(r.files) == 0 && len(p.Sources) > 0 {
-			r = p.measured(r, MeasuredNothing, "the supervised run measured none of its files")
+		if r.Empty() && len(p.Sources) > 0 {
+			r = p.measured(r, port.MeasuredNothing{}, "the supervised run measured none of its files")
 			failures = append(failures, fmt.Errorf("%s: coverage measured none of its admitted sources", p.Language))
 			planFailed = true
 		}
 		if !planFailed {
-			r.languages = map[string]bool{p.Language: true}
+			r.MarkMeasured(p.Language)
 			p.prove(r)
 		}
 		reports = append(reports, r)
@@ -180,14 +180,14 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			break
 		}
 	}
-	merged := Merge(reports...)
+	merged := coverage.Merge(reports...)
 	return merged, executions, errors.Join(failures...)
 }
 
 // MeasureTestsSupervised measures every listed test through the same owned
 // executor used for language coverage and conversion. It fails closed when a
 // listed test has no per-ID coverage artifact or an artifact cannot be read.
-func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) (result *TestCoverage, calls []CommandExecution, resultErr error) {
+func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) (result *coverage.TestCoverage, calls []CommandExecution, resultErr error) {
 	if execute == nil {
 		return nil, nil, errors.New("supervised listed coverage needs a command executor")
 	}
@@ -202,7 +202,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, nil, fmt.Errorf("create listed coverage directory: %w", err)
 	}
-	tc := &TestCoverage{reports: map[string]*Report{}}
+	tc := &coverage.TestCoverage{}
 	ids := make([]string, 0, len(p.Tests))
 	for _, test := range p.Tests {
 		if test.ID == "" {
@@ -269,7 +269,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		if !ok {
 			return nil, executions, fmt.Errorf("listed test %s produced no per-ID coverage data", id)
 		}
-		var reports []*Report
+		var reports []*coverage.Report
 		for _, c := range collectors {
 			if !c.written(d) {
 				continue
@@ -290,10 +290,9 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			if err != nil {
 				return nil, executions, fmt.Errorf("read listed test %s coverage: %w", id, err)
 			}
-			reports = append(reports, Build(sources, c.dir, entries))
+			reports = append(reports, coverage.Build(ctx, Disk{}, sources, c.dir, entries))
 		}
-		tc.ids = append(tc.ids, id)
-		tc.reports[id] = Merge(reports...)
+		tc.Add(id, coverage.Merge(reports...))
 	}
 	return tc, executions, nil
 }

@@ -8,8 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/donvargax/itos-cc/coverage"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/coverage"
+	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -29,9 +31,9 @@ var coverageFlags = []flagSpec{
 // coverage commands run, it also measures each listed test's coverage, in
 // the run's own directory. Progress and test output go to log so stdout
 // stays the report. reach, in OwnTests, is the test files that reach each
-// source, which measure Python's and Kotlin's (coverage.Plans); nil
+// source, which measure Python's and Kotlin's (covrun.Plans); nil
 // measures them by the whole suite.
-func loadCoverage(ctx context.Context, in *invocation, sources []string, scope coverage.Scope, log io.Writer, perTest *coverage.PerTest, reach coverage.Reach) (*coverage.Report, error) {
+func loadCoverage(ctx context.Context, in *invocation, sources []string, scope covrun.Scope, log io.Writer, perTest *covrun.PerTest, reach covrun.Reach) (*coverage.Report, error) {
 	command, reports := in.str("coverage-command"), in.strs("coverage-report")
 	switch {
 	case in.set("no-coverage"):
@@ -48,27 +50,27 @@ func loadCoverage(ctx context.Context, in *invocation, sources []string, scope c
 		if err := shell(command, log); err != nil {
 			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
 		}
-		report := coverage.Files(reports, sources, log)
+		report := covrun.Files(ctx, reports, sources, log)
 		// The command was to write the report, so a report it did not
 		// write means it measured nothing.
 		missing := report.Missing()
 		for i := range missing {
-			if missing[i].Cause == coverage.Unreadable {
-				missing[i].Cause, missing[i].Reason = coverage.MeasuredNothing, "--coverage-command wrote no readable report: "+missing[i].Reason
+			if _, unreadable := missing[i].Cause.(covport.Unreadable); unreadable {
+				missing[i].Cause, missing[i].Reason = covport.MeasuredNothing{}, "--coverage-command wrote no readable report: "+missing[i].Reason
 			}
 		}
 		return report, nil
 	case len(reports) > 0:
-		return coverage.Files(reports, sources, log), nil
+		return covrun.Files(ctx, reports, sources, log), nil
 	}
 	out := filepath.Join(metrics.Dir(), "coverage")
 	if in.set("all-tests") {
-		scope = coverage.AllTests
+		scope = covrun.AllTests
 	}
 	if in.set("use-existing-coverage") {
-		return coverage.Existing(coverage.Plans(ctx, sources, out, scope, reach), sources, log), nil
+		return covrun.Existing(ctx, covrun.Plans(ctx, sources, out, scope, reach), sources, log), nil
 	}
-	if err := coverage.IgnoreDir(out); err != nil {
+	if err := covrun.IgnoreDir(out); err != nil {
 		return nil, err
 	}
 	// Each run writes its reports in a directory of its own, so runs at the
@@ -80,9 +82,9 @@ func loadCoverage(ctx context.Context, in *invocation, sources []string, scope c
 		return nil, err
 	}
 	defer os.RemoveAll(run)
-	report := coverage.Run(ctx, coverage.Plans(ctx, sources, run, scope, reach), sources, log)
+	report := covrun.Run(ctx, covrun.Plans(ctx, sources, run, scope, reach), sources, log)
 	if perTest != nil {
-		report.SetTests(coverage.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), sources, log))
+		report.SetTests(covrun.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), sources, log))
 	}
 	// A stopped run measured what it measured for that reason, not for a
 	// tool's: it is reported as the stop, and keeps no reports.
@@ -95,25 +97,30 @@ func loadCoverage(ctx context.Context, in *invocation, sources []string, scope c
 
 // unmeasured is a problem for each build root or report coverage did not
 // measure: a missing tool or report is the environment, tests that measured
-// nothing say no, and an unreadable --coverage-report is a usage error.
+// nothing say no, an unreadable --coverage-report is a usage error, and a
+// measurement an interrupt stopped is the stop (decision 31).
 func unmeasured(report *coverage.Report) []*cli.Problem {
 	return unmeasuredProblems(relativeUnmeasured(report.Missing()))
 }
 
-// unmeasuredProblems is unmeasured of the build roots and reports ms.
+// unmeasuredProblems is unmeasured of the build roots and reports ms: the
+// coverage domain's classifier, one case for each of the port's sealed
+// gaps. A gap with no case here is the 70 of a bug.
 func unmeasuredProblems(ms []coverage.Unmeasured) []*cli.Problem {
 	var out []*cli.Problem
 	for _, m := range ms {
-		var p *cli.Problem
-		switch m.Cause {
-		case coverage.ToolMissing:
+		p := cli.Internal(fmt.Errorf("coverage gap %v: %s", m.Cause, m))
+		switch m.Cause.(type) {
+		case covport.ToolMissing:
 			p = cli.NewProblem(cli.CodeEnvironment, "coverage.tool-missing", "no coverage for "+m.String(), "Install what it names, or measure with --coverage-command.")
-		case coverage.MeasuredNothing:
+		case covport.MeasuredNothing:
 			p = cli.NewProblem(cli.CodeNo, "coverage.measured-nothing", "no coverage for "+m.String(), "Run the tests and fix them, then run itos-cc again.")
-		case coverage.NoReport:
+		case covport.NoReport:
 			p = cli.NewProblem(cli.CodeEnvironment, "coverage.no-report", "no coverage for "+m.String(), "Run without --use-existing-coverage, or write the report first.")
-		default:
+		case covport.Unreadable:
 			p = cli.NewProblem(cli.CodeUsage, "coverage.report-unreadable", "no coverage for "+m.String(), "Check the --coverage-report path and its format.")
+		case covport.Cancelled:
+			p = cli.Interrupted()
 		}
 		if m.Dir != "" {
 			p.With("dir", m.Dir)

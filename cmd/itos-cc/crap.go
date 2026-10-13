@@ -6,9 +6,10 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/donvargax/itos-cc/coverage"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/crap"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -79,9 +80,9 @@ func runCrap(ctx context.Context, in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to score")
 		return result, nil
 	}
-	scope := coverage.AllTests
+	scope := covrun.AllTests
 	if len(in.args) > 0 || in.set("changed") {
-		scope = coverage.RelatedTests
+		scope = covrun.RelatedTests
 	}
 	report, err := loadCoverage(ctx, in, files.Sources, scope, os.Stderr, nil, nil)
 	if err != nil {

@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
 // The coverage package's tests find no JaCoCo jar in the machine's Gradle
@@ -198,7 +200,7 @@ func TestExecFilesNoJacococliReportsAreAMissingCollector(t *testing.T) {
 			var log bytes.Buffer
 			r := Run(t.Context(), []Plan{p}, []string{src}, &log)
 			missing := r.IntegrationMissing()
-			if got := len(missing) == 1 && missing[0].Language == "kotlin" && missing[0].Cause == ToolMissing && strings.Contains(missing[0].Reason, "jacococli"); got != c.missing {
+			if got := len(missing) == 1 && missing[0].Language == "kotlin" && missing[0].Cause == (port.ToolMissing{}) && strings.Contains(missing[0].Reason, "jacococli"); got != c.missing {
 				t.Errorf("integration missing %+v, want it naming jacococli: %v\nlog:\n%s", missing, c.missing, &log)
 			}
 			if c.missing && !strings.Contains(log.String(), "going on without integration coverage") {

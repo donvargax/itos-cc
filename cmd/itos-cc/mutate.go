@@ -12,9 +12,11 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/coverage"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/coverage"
+	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -783,7 +785,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	// Python's and Kotlin's own coverage is that of the tests that reach
 	// each file, as its own command runs them; --test-command and
 	// --all-tests keep the whole suite's.
-	var reach coverage.Reach
+	var reach covrun.Reach
 	if !in.set("test-command") && !in.set("all-tests") {
 		reach = tests
 	}
@@ -951,13 +953,13 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		// measure measures sources under ctx; a strict run fails on a
 		// coverage error rather than going without coverage.
 		measure := func(ctx context.Context, sources []string, strict bool) (*coverage.Report, error) {
-			var perTest *coverage.PerTest
+			var perTest *covrun.PerTest
 			if suite != nil {
 				listed, err := listTests(suite)
 				if err != nil {
 					return nil, err
 				}
-				perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+				perTest = &covrun.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
 				var ids []string
 				opt.Listed.Files = map[string]string{}
 				for _, t := range listed {
@@ -969,7 +971,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Coverage comes from the tests that kill mutants, so a line only
 			// other tests reach is uncovered rather than a survivor, unless
 			// a listed test reaches it.
-			report, err := loadCoverage(ctx, in, sources, coverage.OwnTests, os.Stderr, perTest, reach)
+			report, err := loadCoverage(ctx, in, sources, covrun.OwnTests, os.Stderr, perTest, reach)
 			if err != nil {
 				if strict {
 					return nil, err
@@ -1478,7 +1480,7 @@ func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutat
 			}
 		}
 		if !matched {
-			found = append(found, coverage.Unmeasured{Dir: filepath.Dir(abs), Language: spec.Name, Cause: coverage.MeasuredNothing,
+			found = append(found, coverage.Unmeasured{Dir: filepath.Dir(abs), Language: spec.Name, Cause: covport.MeasuredNothing{},
 				Reason: "its coverage run measured none of its files"})
 		}
 	}
@@ -1593,27 +1595,27 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 			}
 		case "typescript":
 			// Its producer is what measures the package: Vitest, Jest or
-			// c8 (coverage.TypeScriptRunner); --test-command changes
+			// c8 (covrun.TypeScriptRunner); --test-command changes
 			// nothing about it.
 			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
 				dir := project.FindUp(ctx, source, "package.json")
 				if dir == "" {
 					dir = filepath.Dir(source)
 				}
-				producer := mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(dir, !allTests), allTests)
+				producer := mutate.TypeScriptCoverageProducer(covrun.TypeScriptRunner(dir, !allTests), allTests)
 				inputs, err := mutate.TypeScriptCoverageInputs(ctx, source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
 		case "kotlin":
 			// Its producer is what measures the module: Gradle's JaCoCo or
-			// Kover, or Maven's JaCoCo (coverage.KotlinRunner), over the
+			// Kover, or Maven's JaCoCo (covrun.KotlinRunner), over the
 			// whole suite with --test-command too, as Python's.
 			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
 				module := project.FindUp(ctx, source, "build.gradle.kts", "build.gradle", "pom.xml")
 				if module == "" {
 					module = filepath.Dir(source)
 				}
-				producer := mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), allTests || testCommand)
+				producer := mutate.KotlinCoverageProducer(covrun.KotlinRunner(module), allTests || testCommand)
 				inputs, err := mutate.KotlinCoverageInputs(ctx, source, project.Root(), producer, support)
 				return producer, inputs, err
 			}
@@ -1628,15 +1630,15 @@ func strictCoverageInputs(languages []string, allTests, testCommand bool, suppor
 // test loaded without running a test (coverage.Report.Inventory). It
 // returns the report, Go's producer, the producer and fingerprint of each
 // source's evidence by its language, and the file of each listed test.
-func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach coverage.Reach) (*coverage.Report, string, mutate.CoverageInputs, map[string]string, error) {
-	perTest := (*coverage.PerTest)(nil)
+func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach covrun.Reach) (*coverage.Report, string, mutate.CoverageInputs, map[string]string, error) {
+	perTest := (*covrun.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
 		listed, err := listTests(suite)
 		if err != nil {
 			return nil, "", nil, nil, err
 		}
-		perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+		perTest = &covrun.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
 		var ids []string
 		for _, test := range listed {
 			ids = append(ids, test.ID)
@@ -1644,9 +1646,9 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 		}
 		perTest.All = suite.All(ids)
 	}
-	scope := coverage.OwnTests
+	scope := covrun.OwnTests
 	if in.set("all-tests") {
-		scope = coverage.AllTests
+		scope = covrun.AllTests
 	}
 	producer := mutate.CoverageProducer("go", in.set("all-tests"))
 	report, err := loadCoverage(ctx, in, sources, scope, os.Stderr, perTest, reach)
@@ -1656,7 +1658,7 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 	for _, language := range languages {
 		// A command that fails leaves its files without proof, which the
 		// run reports as missing evidence; it logged why.
-		_, _ = report.Inventory(ctx, language, os.Stderr, nil)
+		_, _ = covrun.Inventory(ctx, report, language, os.Stderr, nil)
 	}
 	// A stopped run leaves files unlisted for that reason, not for a
 	// command's failure: it is reported as the stop.
@@ -1769,7 +1771,7 @@ func listedConfig(in *invocation, cfg *config.Config) *config.Tests {
 // platform shell, and reads the tests it prints: one a line, its ID, then,
 // after a tab, optionally its file. A command that fails is
 // tests.list-failed.
-func listTests(tests *config.Tests) ([]coverage.Test, error) {
+func listTests(tests *config.Tests) ([]covrun.Test, error) {
 	root := project.Root()
 	fmt.Fprintf(os.Stderr, "itos-cc: tests %s$ %s\n", project.Rel(root), tests.List)
 	out, err := shellOutput(tests.List, root, os.Stderr)
@@ -1784,7 +1786,7 @@ func listTests(tests *config.Tests) ([]coverage.Test, error) {
 			"Make the command print the tests, one a line, and exit 0, then run again.").
 			With("command", tests.List).With("exit_code", code)
 	}
-	var listed []coverage.Test
+	var listed []covrun.Test
 	seen := map[string]bool{}
 	for _, line := range strings.Split(out, "\n") {
 		id, file, _ := strings.Cut(strings.TrimRight(line, "\r"), "\t")
@@ -1793,7 +1795,7 @@ func listTests(tests *config.Tests) ([]coverage.Test, error) {
 			continue
 		}
 		seen[id] = true
-		listed = append(listed, coverage.Test{ID: id, File: file})
+		listed = append(listed, covrun.Test{ID: id, File: file})
 	}
 	return listed, nil
 }

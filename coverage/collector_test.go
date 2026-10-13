@@ -10,6 +10,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
 func TestSetEnvReplacesAndUnsetsVariables(t *testing.T) {
@@ -128,7 +130,7 @@ func TestPythonSubprocessLinesFoldInBesideTheInProcessReport(t *testing.T) {
 			"BRDA:2,0,jump to line 3,1\nBRDA:2,0,jump to line 4,0\nend_of_record\n",
 	})
 	var log bytes.Buffer
-	r := load([]string{filepath.Join(dir, "lcov.info")}, filepath.Join(dir, "integration.info"), dir, []string{file}, &log)
+	r := load(t.Context(), []string{filepath.Join(dir, "lcov.info")}, filepath.Join(dir, "integration.info"), dir, []string{file}, &log)
 	for line, want := range map[int][]string{
 		1: {"in-process", "integration"}, 2: {"integration"}, 3: {"integration"}, 4: nil, 5: {"in-process"},
 	} {
@@ -137,7 +139,7 @@ func TestPythonSubprocessLinesFoldInBesideTheInProcessReport(t *testing.T) {
 		}
 	}
 	// Coverage is shared, so crap counts the subprocess's branch too.
-	if got := fraction(t, r, file, 1, 5); !approx(got, 0.5) {
+	if got, ok := r.Fraction(file, 1, 5); !ok || got != 0.5 {
 		t.Errorf("fraction %v, want 1/2: the decision's branch the subprocess took counts", got)
 	}
 	if covered, _ := r.LineCovered(file, 4); covered {
@@ -258,7 +260,7 @@ func TestACoveragePyThatDoesNotStartInNewProcessesSaysWhy(t *testing.T) {
 		t.Errorf("start: %v, why %q, want why naming coverage.py 7.13\n%s", err, why, log.String())
 	}
 	missing := plan.noIntegration(why, &log)
-	if missing.Cause != ToolMissing || missing.Language != "python" || !strings.Contains(log.String(), "without integration coverage") {
+	if missing.Cause != (port.ToolMissing{}) || missing.Language != "python" || !strings.Contains(log.String(), "without integration coverage") {
 		t.Errorf("missing %+v, log %q, want tool-missing for python, logged", missing, log.String())
 	}
 }
@@ -365,7 +367,7 @@ func TestIntegrationDataAddsNoLinesToAFileTheInProcessReportNames(t *testing.T) 
 		"integration.info": "SF:src/cli.ts\nDA:1,1\nDA:2,1\nDA:3,1\nDA:4,1\nDA:5,0\nDA:6,0\nend_of_record\nSF:src/main.ts\nDA:1,1\nDA:2,0\nend_of_record\n",
 	})
 	var log bytes.Buffer
-	r := load([]string{filepath.Join(dir, "lcov.info")}, filepath.Join(dir, "integration.info"), dir, []string{file, other}, &log)
+	r := load(t.Context(), []string{filepath.Join(dir, "lcov.info")}, filepath.Join(dir, "integration.info"), dir, []string{file, other}, &log)
 	for line, want := range map[int]bool{1: false, 2: true, 3: true, 4: false, 5: true, 6: false} {
 		if _, measured := r.LineCovered(file, line); measured != want {
 			t.Errorf("line %d measured %v, want %v", line, measured, want)
