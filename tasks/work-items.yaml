@@ -2530,8 +2530,8 @@ items:
   - id: T-63
     title: Slices share one selection command line and one parse of a selected source
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-62]
     kind: task
     why: >
