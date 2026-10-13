@@ -2304,6 +2304,15 @@ items:
       crap in a git repository whose itos-cc.yaml excludes a source (the count on stderr before
       coverage's progress), with --changed, from a subdirectory and on a path outside it. Compared
       before and after at T-67 over 64 such lines, help included: every one agreed byte for byte.
+
+      T-68 (a switch of choices in internal/cli, used once mutation run and check move onto kong in
+      T-91): compare mutation run --fail-uncovered=x, --fail-uncovered= (value ""), --fail-uncovered
+      lines in a directory with no file lines (the word is a path: paths.unmatched naming "lines"),
+      --fail-uncovered=lines --fail-uncovered and --fail-uncovered --fail-uncovered=x
+      (flags.repeated, before the value is judged), --fail-uncovered=LINES src, and mutation run
+      --help's [=functions|lines] line; each plain and with --json. Checked at T-68 against the hand
+      parser's binary over these lines: internal/cli's probe gives the same rule, message, fix and
+      subject for each.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
