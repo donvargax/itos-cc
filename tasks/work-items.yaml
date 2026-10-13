@@ -2740,7 +2740,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-69]
     kind: task
     why: >
       Piece 1 of mutate.feature (the plan's table): sites, same-name and exclude scenarios. Go tests
