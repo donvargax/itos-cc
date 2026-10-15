@@ -1860,3 +1860,30 @@
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
+- id: T-90
+  type: refactor
+  title: Extend coverage measurement for mutation per-test evidence and static inventory
+  why: >
+    S7 after T-89. Extend the existing coverage domain port and internal/coveragetools adapter with
+    per-test coverage and executable inventory as domain-valued operations; eliminate the legacy
+    MeasureTests callback workaround. Keep the aggregate Measure contract and strict
+    producer/input-boundary admission unchanged. Per-test coverage preserves the single
+    harness-split run through ITOS_CC_TEST_COVERDIR, fallback once per listed test,
+    process/subprocess integration evidence, test IDs and paths, missing collectors and
+    partial/failing measurements across Go, TypeScript, Python and Kotlin. Inventory preserves
+    evidence for executable functions no test loads, zero-site functions,
+    workspace/local-replacement refusal, and the difference between mutant selection and provenance
+    scope. The real adapter wraps existing runners; fakes consume scenario Coverage and Tests
+    declarations in memory and never run tools or touch disk. Port operations use domain
+    Report/TestCoverage/inventory values directly without repeated DTOs; ctx first for I/O, sealed
+    gaps/failures, no context held or recreated. Keep current Measurer type architecture unless a
+    minimal dependency correction is necessary and record it; do not preempt the later ADR47 review
+    or future T86. Extend fake/adapter contract suites for shared behavior, keep installed-tool-only
+    cases at adapters and binary scenarios, and update docs/architecture fixtures where boundaries
+    change. Preserve output/error/exit/schema semantics and current coverage fallback rather than
+    tightening policy. Focus local checks to changed coverage packages and named scenarios, broad
+    gates through hooks/CI. No per-task binary comparison, own-code mutation runs, worktrees/session
+    moves, agents, or new dependency without recorded selection.
+  done_when:
+    - run: go test ./internal/coverage/... ./internal/coveragetools/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"

@@ -3149,3 +3149,10 @@ items:
     status: todo
     depends_on: [T-88]
     kind: task
+  - id: T-90
+    title: Extend coverage measurement for mutation per-test evidence and static inventory
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
