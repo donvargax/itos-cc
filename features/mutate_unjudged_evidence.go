@@ -39,7 +39,7 @@ func unjudgedEvidenceSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMu
 }
 
 func (u *unjudgedEvidence) project(language string) error {
-	files := map[string]string{"itos-cc.yaml": "mutation:\n  tests:\n    support: ['support.feature']\n", "support.feature": "Feature: original support\n"}
+	files := map[string]string{"itos-cc.yaml": "mutation:\n  tests:\n    list: 'go version'\n    run: 'go version {pattern}'\n    ids_pattern: '{ids}'\n    join:\n      each: '{id}'\n      sep: ','\n    support: ['support.feature']\n", "support.feature": "Feature: original support\n"}
 	switch language {
 	case "Go":
 		u.file, u.test = "src/board.go", "e2e/other_test.go"
