@@ -127,6 +127,12 @@ jobs:
           echo "$MAVEN_SHA512  $archive" | sha512sum -c -
           tar -xzf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
+      # Gradle can prepend /usr/bin, shadowing the selected Go toolchain.
+      - if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
       # Verbose, so the log lists each test that ran. ITOS_CC_LANGUAGE_TOOLS
       # makes a missing tool fail these tests instead of skipping them. Then
       # the godog scenarios of crap.feature, coverage.feature, cli.feature
