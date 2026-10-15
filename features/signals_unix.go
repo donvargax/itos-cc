@@ -7,22 +7,16 @@ package features
 
 import (
 	"os"
-	"os/exec"
 	"syscall"
 )
 
 // interruptible readies cmd to be interrupted: nothing to do here, any
 // process can be sent os.Interrupt.
-func interruptible(*exec.Cmd) {}
+func interruptAttributes() *syscall.SysProcAttr { return nil }
 
 // interrupt sends the process os.Interrupt, as Ctrl-C at a terminal does.
 func interrupt(p *os.Process) error {
 	return p.Signal(os.Interrupt)
 }
 
-// killedBySignal is whether the process ended by a signal's default action,
-// so it never handled the interrupt it was sent.
-func killedBySignal(state *os.ProcessState) bool {
-	status, ok := state.Sys().(syscall.WaitStatus)
-	return ok && status.Signaled()
-}
+func consoleInterruptExit() uint32 { return 0 }

@@ -1046,3 +1046,124 @@ collector/run-directory cleanup. In particular, retain
 `TestAFailFastChangedLineRunStopsOnlyOnTheChangedLines`, and
 `TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector`.
 Pure-domain coverage guards remain for the later domain/adapter extraction.
+
+## Fail-fast and owned execution conversion (T80)
+
+The 20 IDs MUT165..167,187..189,191..202,211,248 expand to 21 cases and
+116 written steps. MUT168/190's exact former prose is retained beside its rule
+as labeled adapter-contract comments: private startup/wait/complete fault
+injections cannot be a public command scenario. Their guards remain intact.
+MUT191/199's comparative Windows and repository-documentation clauses remain
+comments; their public help checks remain executable. New MUT248 supplies the
+two actual native Windows refusals. Product behavior and exit codes are unchanged.
+
+`Start(ctx, Run)` owns only the product under test and rejects `Run.Binary`.
+`Output` is a synchronized snapshot of captured bytes; `Wait` returns the final
+result after joining. `Interrupt` and `Close` address that owned run. The memory
+driver and native Windows report this asynchronous physical capability
+unsupported before launch; synchronous `Run` still proves Windows admission.
+The existing interrupt fixture and running handle share their native signal
+leaves, preserving their provenance. No Windows tree supervisor is introduced.
+
+`FixturePeers` holds a bounded loopback listener on Linux/macOS. Native Windows
+refuses this capability before listening because forced helper exit resets its
+TCP connection rather than supplying the orderly EOF oracle. Already-canceled
+contexts take precedence; reset and cleanup errors are never accepted as EOF.
+Three factory-dependent physical capability tests omit only this typed native
+Windows refusal; portable cancellation, cleanup and admission guards still run.
+Synchronous native MUT199/248 remain required. Genuine Go tests self-reexecute
+their compiled test binary for controlled child/grandchild helpers. Each actual
+process authenticates a nonce/PID connection and atomically publishes its ready
+record, canonical worker/original root and source SHA before any release barrier.
+The connection stays open until process exit: a ping/ack proves liveness, and EOF
+after public return proves termination of these helpers. It is not an arbitrary
+process oracle. Cooperative stop is cleanup only, after public assertions; a
+separate unrelated owned counted product remains live through its assertion.
+Its real default-Go preparation is held, so cleanup interrupts and joins the
+product-owned intermediary tree as well as the observed peers. Its join and
+EOF observations precede cooperative drain, avoiding competing stop writes
+while that tree exits. Immutable
+mode/block controls and separate release markers avoid read/truncate races.
+Cancellation wakes pending observations and joins its deadline callback before
+another observation can start. Ordinary I/O/protocol/deadline errors fail.
+The world's cleanup callback stops new work, drains exact peers and joins runs
+before removing any fixture; a failed join retains the fixture for recovery.
+
+MUT167/189/191 characterize actual two-site execution order with a public fixed
+seed count-two run and correlate real source traces with actual judgments. They
+never infer order from a sorted snapshot or call internal candidate helpers.
+Only an external control and its truthful timing-out declaration change before
+the sequential interruption. The first completed progress and later live trial
+must both be observed. Product join and descendant EOF observations share the
+same cancellation-release-plus-five-second deadline. Current
+exit75/count.interrupted remains deliberate. The macOS count-one check and its
+subsequent interruption use separate owned trace observations; earlier trials
+are cleared before the interruption run.
+MUT193 measures its conservative five-second bound from survivor barrier release
+after both workers are ready, before public stop/cleanup; product join and all
+descendant/trigger EOF observations must finish within that same bound. Exact shared-budget
+identity/race assertions remain in the adapter guards.
+
+Logical fixtures declare actual Go commands, sites, baselines and traces.
+Coverage declarations use the actual public compiler's observed Go block reports;
+listed fixtures predeclare their exact inventory before public named-report setup
+verifies it. T89/T90/T100 must produce/parse the requested declared report through
+actual bound tool/report operations, never a fixture-ID result shortcut.
+MUT195 creates its exception with the public command and removes only its
+unnecessary fixture snapshot before changing that function, so valid old reuses
+cannot be mistaken for new trial admission. MUT211's JSON and text run on
+independently prepared twins with actual prior public judgments, keeping exact
+counts without restoring caches. Its aggregate failing-baseline controls run first.
+
+Two logical fixture barriers are obligations for T88/T100: B survives only after
+A2's actual Workers request has entered, and MUT197's FF_FAIL_AFTER failing listed
+baseline waits for the held own request. The future fake must derive these from
+actual bound requests/context cancellation, not scheduling delays or scripted
+expected cancellation events. No current binary result proves that future wiring.
+
+Permanent physical `@binary-only` IDs are exactly 165..167,187..189,191,193.
+Logical 192,194..202,211,248 remain eligible for later bound memory execution.
+The separate native CI invocation follows the ordinary suite on all three OSes,
+before installed-language setup, without T83's omission. Verbose raw logs and
+`T80-native-<OS>` cucumber artifacts distinguish omissions from execution; the
+existing pinned upload action is reused. Prior language selections and default
+timeouts remain unchanged. Static expected native execution is Linux15/82,
+macOS16/87 and Windows3/12; these are planning counts, not CI evidence. Local
+Unix assertion probes do not constitute Windows Godog negative execution.
+Portable wrong-fact/admission-write guards establish assertion sensitivity
+separately from the native Windows positives.
+
+Keep every legacy holder, helper and extra assertion through actual restored
+replacement CI and T101 cleanup. No adapter fault/budget guard is a CLI duplicate.
+
+| MUT | Retained holder | Exact test or shared helper |
+| --- | --- | --- |
+| 165 / 187 | mutate/command_runner_ownership_linux_test.go / command_runner_ownership_darwin_test.go | TestLinuxOwnTimeoutStopsOwnedProcessTree / TestMacOSOwnTimeoutStopsOwnedProcessTree; checkOwnTimeoutStopsOwnedTree |
+| 166 / 188 | same ownership holders | TestLinuxNormalReturnStopsOwnedDescendant / TestMacOSNormalReturnStopsOwnedDescendant; checkNormalReturnStopsOwnedDescendant |
+| 167 / 189 | same ownership holders | TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment / TestMacOSParentCancellationIsNotAMutantDeadline; cancellation/completed-first helpers |
+| 168 / 190 | Linux/Darwin/shared Unix ownership holders | TestLinuxOwnershipStartupFailureDoesNotRunCommand; TestLinuxCleanupFailureIsReturnedNotJudged; TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback; TestLinuxProbeCountsAZombieOnlyGroupEmpty |
+| 191 / count part of 248 | cmd/itos-cc/mutate_counted_macos_test.go | TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows |
+| 192 | cmd/itos-cc/mutate_fail_fast_test.go | TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants |
+| 193 | same fail-fast holder | TestInFlightJudgmentsAreCancelledAndTheirOwnedProcessesCleanedUp |
+| 194 | same fail-fast holder | TestNonActionableJudgmentsNeverStopTheRun |
+| 195 | same fail-fast holder | TestKnownPolicyFailuresStopBeforeAvoidableMutantWork |
+| 196 | same fail-fast holder | TestAFailingBaselineStopsTheRunWithoutInventingOutcomes |
+| 197 | same fail-fast holder | TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork |
+| 198 | same fail-fast holder | TestAFileTheStopCutShortPublishesNoPartialProof |
+| 199 / fail-fast part of 248 | cmd/itos-cc/mutate_fail_fast_admission_test.go | TestFailFastAdmissionBoundaries |
+| 200 | cmd/itos-cc/mutate_fail_fast_partial_test.go | TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged |
+| 201 | same partial holder | TestACancelledForcedRerunLeavesAFreshPriorCacheUsable |
+| 202 | same partial holder | TestALaterRunFinishesOnlyWhatTheStopLeft |
+| 211 | cmd/itos-cc/mutate_fail_fast_counts_test.go | TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused |
+
+The current partial fixture demonstrates reused/completed proof, cancellation and
+unattempted sites; the old blocked-selection partial-evidence branch remains an
+extra guard. MUT196 observes the actual own-baseline failure with canonical
+source traces; MUT197/211 cover its listed-selection-baseline alternative. Keep
+both failing-baseline variants, all planning strict/uncovered
+branches, exact listed/support fingerprints, source/test/support reuse branches,
+argv/environment/streams, no-unrestricted-fallback, captured-group/zombie probes,
+completed-exit races, no-run-abort-budget on success/own timeout, and shared
+cleanup-budget identity/order. Preserve `checkInterruptedCountedRun` and its extra
+SIGTERM/no-remove-while-alive controls for T81. T88 moves adapter guards intact;
+T101 must not delete them as duplicates of these public observations.
