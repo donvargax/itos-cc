@@ -2836,6 +2836,26 @@
     being adapted. T-92 separately proves the moved domain scheduler's ordering
     through held requests on its bound Workers fake; do not move Run early to
     satisfy that later task's obligation.
+    Attempt 2026-10-15 moved source in a53d88b, then preserved fail-fast
+    startup sharing in18503b2, selector fidelity in8f3446d, native leaf policy
+    in1630ad5 and unittest fail-fast requests in8093ac9. Configured CI runs
+    38822823660 and38822980655 failed internal-package lint after the old
+    runner entered its enforced boundary. The first completed job reports
+    unchecked close/removal/test-output results, intentional command/copy
+    operations, a string context key and a Mac-only helper unused on Linux.
+    These are valid lint findings, not a public behavior red or a wrong gate.
+    Revert9855d87 immediately restored the pre-extraction implementation and
+    was pushed before this record; preserve all focused evidence and source
+    history. Repair explicitly discards only historically best-effort cleanup
+    errors, checks fixture cleanup/output errors, uses a typed test context
+    key, and keeps the captured-group guard at its native test boundary.
+    Intentional caller-selected commands and copy paths, and exact0644/0755
+    permissions inside private0700 scratch, need operation-local justified
+    security annotations following existing adapter practice, never a broad
+    linter exclusion or changed behavior. Retain every prior guard and both
+    recovery stashes. Give back and retake before repairing, then rerun only
+    affected focused guards and let configured hooks/CI hold the full gates.
+
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
