@@ -2584,6 +2584,14 @@
     from a profile having the expected hit pattern. The public path oracle
     observed distinct run roots independently of those profiles. The Go test's
     temporary test.coverprofile is different and is not the owned final report.
+    The current reviewed assertion runner has one exact assertion name per
+    probe. SNAP01 and SNAP09 expand different artifact names, so their literal
+    binding probes replace only the Then expectation with one constant wrong
+    artifact path; original commands, tables, IDs and lines stay fixed, and all
+    four or three examples must reach that assertion. Common source predicates
+    are checked separately through non-outline owners. Report literal-binding
+    and source-check probes distinctly, with expanded intended failures separate
+    from probe count, and restore exact feature/source bytes and modes.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
