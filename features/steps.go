@@ -106,8 +106,8 @@ type Driver interface {
 	// (ITOS_CC_LANGUAGE_TOOLS), as Coverage does, and skipping tests said
 	// to take under 100 milliseconds where the system runs none that fast;
 	// the real tests then decide every outcome. The in-process driver
-	// records it for the bound Workers fake; its hand-parsed mutation group
-	// still refuses in-process scenarios until T-100 moves the handlers. A folder with no Tests declared has no tests a
+	// records it, for the fake that runs a project's tests once the
+	// mutation group moves. A folder with no Tests declared has no tests a
 	// run may run.
 	// Declarations upsert by directory and Command; other commands remain.
 	Tests(dir string, t Tests) error

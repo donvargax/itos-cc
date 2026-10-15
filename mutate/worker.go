@@ -1,4 +1,4 @@
-package worktrees
+package mutate
 
 import (
 	"bytes"
@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -68,7 +67,7 @@ func copyTree(ctx context.Context, src, dst string) error {
 		case d.IsDir() && path != src && linkDirs[d.Name()]:
 			return skipAfter(os.Symlink(path, target))
 		case d.IsDir():
-			return os.MkdirAll(target, 0o755) //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+			return os.MkdirAll(target, 0o755)
 		case d.Type()&fs.ModeSymlink != 0:
 			link, err := os.Readlink(path)
 			if err != nil {
@@ -94,23 +93,31 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	in, err := os.Open(src) //nolint:gosec // copying the person's selected project file is this adapter's purpose
+	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = in.Close() }()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm()) //nolint:gosec // copy into the owned worker tree while preserving the source mode
+	defer in.Close()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm())
 	if err != nil {
 		return err
 	}
 	if _, err := io.Copy(out, in); err != nil {
-		_ = out.Close()
+		out.Close()
 		return err
 	}
 	return out.Close()
 }
 
-type result = mutants.CommandResult
+// result of one test run.
+type result struct {
+	passed    bool
+	timedOut  bool
+	cancelled bool
+	elapsed   time.Duration
+	output    string
+	exitCode  int // -1 when the command gave none
+}
 
 // run executes c inside the worker's copy of c.Root, under parent. A zero
 // timeout waits as long as the tests take.
@@ -128,9 +135,9 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	}
 	var cmd *exec.Cmd
 	if c.Shell != "" {
-		cmd = shellCommand(ctx, c.Shell, platformAtBoundary(w.runner.platform))
+		cmd = shellCommand(ctx, c.Shell)
 	} else {
-		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // execute the selected test command with its unchanged argv
+		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 	}
 	cmd.Dir = dir
 	cmd.Env = project.NoBytecodeEnv(os.Environ())
@@ -162,12 +169,10 @@ func (w *worker) withMutant(ctx context.Context, root, path string, original, mu
 	}
 	rel, _ := filepath.Rel(root, path)
 	target := filepath.Join(copyRoot, rel)
-	if err := os.WriteFile(target, mutated, 0o644); err != nil { //nolint:gosec // preserve the legacy trial mode inside private worker scratch
+	if err := os.WriteFile(target, mutated, 0o644); err != nil {
 		return result{}, err
 	}
-	defer func() {
-		_ = os.WriteFile(target, original, 0o644) //nolint:gosec // restore the owned copy with the exact legacy file mode
-	}()
+	defer os.WriteFile(target, original, 0o644)
 	return fn(ctx)
 }
 

@@ -83,7 +83,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/coverage/
             - github.com/donvargax/itos-cc/internal/changerisk$
             - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/internal/mutants/porttest$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -141,7 +140,6 @@ linters:
             - "!**/internal/workdir/**" # an adapter, held by infra
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
-            - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -158,7 +156,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/coverage/
             - github.com/donvargax/itos-cc/internal/changerisk$
             - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/internal/mutants/porttest$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
@@ -191,7 +188,6 @@ linters:
             - "!**/internal/workdir/**" # an adapter, held by infra
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
-            - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -207,18 +203,6 @@ linters:
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
             - pkg: github.com/donvargax/itos-cc/internal/coverage/port/porttest
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
-            - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
-              desc: "a slice's code links no fake (T-88): only tests may import mutation's Workers fake"
-        # Mutation's model-bearing contract is at the domain root. Its fake is
-        # allowed in tests, never in the domain's production implementation.
-        mutant-fakes:
-          files:
-            - "**/internal/mutants/**"
-            - "!**/internal/mutants/porttest/**"
-            - "!$test"
-          deny:
-            - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
-              desc: "the mutation domain's production code imports no fake (T-88)"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding
@@ -302,19 +286,6 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the coveragetools adapter imports nothing of ours but the coverage domain it serves (decision 47), its port, and coverage and metrics, which it wraps (decision 46); extend the rules as docs/go.md's Adding a package says, never loosen this one"
-        # Model-bearing Workers lives beside mutants values to avoid a cycle.
-        # worktrees wraps only project tree operations and its own process I/O.
-        worktrees:
-          list-mode: lax
-          files:
-            - "**/internal/worktrees/**"
-            - "!$test"
-          allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/project$
-          deny:
-            - pkg: github.com/donvargax/itos-cc
-              desc: "the worktrees adapter imports only the mutation domain and project tree operations it wraps (T-88); no UI, other adapters or fakes"
         mocks:
           files:
             - $all

@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -50,7 +49,7 @@ func newSelections(listed *Listed, factor float64, log io.Writer) *selections {
 // baseline is the baseline of the selection ids, run in w's copy under ctx,
 // with no mutant, the first time any worker needs it: a baseline that ctx
 // cancels is an error, never a selection that fails.
-func (s *selections) baseline(ctx context.Context, w mutants.Worker, ids []string) *selection {
+func (s *selections) baseline(ctx context.Context, w *worker, ids []string) *selection {
 	key := selectionKey(ids)
 	s.mu.Lock()
 	sel := s.byKey[key]
@@ -70,27 +69,27 @@ func (s *selections) baseline(ctx context.Context, w mutants.Worker, ids []strin
 
 // run runs sel, the selection ids, in w's copy under ctx, with no mutant,
 // and records its timeout, or how it failed.
-func (s *selections) run(ctx context.Context, sel *selection, w mutants.Worker, ids []string) {
+func (s *selections) run(ctx context.Context, sel *selection, w *worker, ids []string) {
 	c := s.listed.command(ids)
 	fmt.Fprintf(s.log, "itos-cc: baseline %s$ %s\n", project.Rel(c.Dir), c)
-	r, err := w.Run(ctx, c, nil, 0)
+	r, err := w.run(ctx, c, 0)
 	if err != nil {
 		sel.err = err
 		return
 	}
-	if r.Cancelled || ctx.Err() != nil {
+	if r.cancelled || ctx.Err() != nil {
 		sel.err = fmt.Errorf("cancelled: %w", context.Cause(ctx))
 		return
 	}
 	joined := strings.Join(ids, " ")
-	if !r.Passed {
-		sel.failed = &FailedSelection{IDs: slices.Clone(ids), Command: c.Shell, ExitCode: r.ExitCode, Output: r.Output}
+	if !r.passed {
+		sel.failed = &FailedSelection{IDs: slices.Clone(ids), Command: c.Shell, ExitCode: r.exitCode, Output: r.output}
 		fmt.Fprintf(s.log, "itos-cc: baseline of %s failed: no mutant runs it\n", joined)
 		return
 	}
-	sel.timeout = timeoutOf(r.Elapsed, s.factor)
+	sel.timeout = timeoutOf(r.elapsed, s.factor)
 	fmt.Fprintf(s.log, "itos-cc: baseline of %s passed in %.1fs: a mutant running it times out after %.1fs\n",
-		joined, r.Elapsed.Seconds(), sel.timeout.Seconds())
+		joined, r.elapsed.Seconds(), sel.timeout.Seconds())
 }
 
 // timeoutAllowance is added to every mutant's timeout. A mutant's run

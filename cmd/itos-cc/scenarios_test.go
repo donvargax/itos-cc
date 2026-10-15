@@ -23,8 +23,6 @@ import (
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -362,7 +360,6 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		file.text = []byte(text)
 	}
 	a := adapters{
-		Workers:      m.workers(),
 		Dir:          dir,
 		Tree:         tree,
 		Surroundings: langporttest.Surroundings{Files: maps.Clone(m.files), Dir: dir},
@@ -629,29 +626,4 @@ func (m *memory) from(dir string) map[string]string {
 		}
 	}
 	return files
-}
-
-// workers builds the actual Workers binding from current file and command
-// declarations. Hand-parsed mutation remains refused by Run until T100.
-func (m *memory) workers() *mutantstest.Workers {
-	declarations := map[string]map[string]mutantstest.Tests{}
-	for dir, commands := range m.tests {
-		declarations[dir] = map[string]mutantstest.Tests{}
-		for command, t := range commands {
-			d := mutantstest.Tests{Baseline: t.Baseline, Elapsed: t.Elapsed}
-			for _, outcome := range []struct {
-				sites   []features.Site
-				outcome string
-			}{{t.Surviving, mutants.Survived}, {t.TimingOut, mutants.Timeout}} {
-				for _, site := range outcome.sites {
-					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutants.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome.outcome})
-				}
-			}
-			if t.Trace != nil {
-				d.Trace = &mutantstest.Trace{File: t.Trace.File, Source: t.Trace.Source, Tests: maps.Clone(t.Trace.Tests)}
-			}
-			declarations[dir][command] = d
-		}
-	}
-	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write}
 }

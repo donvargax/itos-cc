@@ -12,9 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 )
 
 // FreshTrial is one selected mutant to judge with the own-test command whose
@@ -64,7 +61,6 @@ type FreshStage struct {
 // FreshTrialOptions control RunFreshTrials.
 type FreshTrialOptions struct {
 	Workers       int
-	WorkerFactory mutants.Workers
 	TimeoutFactor float64
 	// Scope is the scope of the own-test command, RunScope's; a file whose
 	// own tests run the whole suite judges in OwnScope's.
@@ -101,21 +97,21 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	if len(trials) == 0 {
 		return results, nil
 	}
-	factory := opt.WorkerFactory
-	if factory == nil {
-		factory = worktrees.Workers{Owner: opt.Owner, Prepare: opt.Prepare}
-	}
-	count := min(max(1, opt.Workers), len(trials))
-	pool, err := factory.Open(ctx, mutants.FrozenTrials, count)
+	scratch, err := newWorkerScratch("itos-cc-fresh-")
 	if err != nil {
 		return nil, err
 	}
-	defer pool.Close(ctx)
-	workers := make([]mutants.Worker, count)
-	for i := range workers {
-		workers[i] = pool.Worker(i)
+	defer scratch.remove()
+	base := scratch.dir
+	budget := &cleanupBudget{} // one run-abort deadline, shared by every worker
+	if opt.Owner != nil {
+		budget = &opt.Owner.cleanup
 	}
-
+	workers := make([]*worker, min(max(1, opt.Workers), len(trials)))
+	for i := range workers {
+		workers[i] = &worker{dir: filepath.Join(base, fmt.Sprintf("w%d", i)), copies: map[string]string{},
+			runner: commandRunner{cleanupBudget: budget}, prepare: opt.Prepare}
+	}
 	var sels *selections
 	if opt.Listed != nil {
 		sels = newSelections(opt.Listed, opt.TimeoutFactor, log)
@@ -126,7 +122,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 	var wg sync.WaitGroup
 	for _, w := range workers {
 		wg.Add(1)
-		go func(ctx context.Context, w mutants.Worker) {
+		go func(ctx context.Context, w *worker) {
 			defer wg.Done()
 			for i := range queue {
 				r := runFreshTrial(ctx, w, plan, trials[i], opt, sels)
@@ -165,7 +161,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 // when it survives them and listed tests reach its line, the selection's
 // clean baseline, if no mutant needed it yet, and the mutant under the
 // selection. A selection whose baseline fails decides nothing.
-func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *selections) FreshTrialResult {
+func runFreshTrial(ctx context.Context, w *worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *selections) FreshTrialResult {
 	out := FreshTrialResult{Trial: trial}
 	if err := ctx.Err(); err != nil {
 		out.Err = err
@@ -191,14 +187,17 @@ func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial
 		out.Err = fmt.Errorf("frozen %s no longer holds %q at its selected site", trial.Candidate.Path, site.Original)
 		return out
 	}
+	mutated := site.Apply(src)
 	// A file no own test reaches has no own stage: the mutant survives its
 	// own tests without running them, as in a complete run, and the listed
 	// tests that reach its line judge it.
 	own := Survived
 	if !c.RunsNothing() {
 		timeout := timeoutOf(trial.Baseline.Elapsed, opt.TimeoutFactor)
-		r, err := w.Run(ctx, c, &mutants.Mutation{Path: path, Source: src, Site: site}, timeout)
-		out.Elapsed = r.Elapsed
+		r, err := w.withMutant(ctx, c.Root, path, src, mutated, func(ctx context.Context) (result, error) {
+			return w.run(ctx, c, timeout)
+		})
+		out.Elapsed = r.elapsed
 		if out.Err = stageError(ctx, r, err); out.Err != nil {
 			out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
 			return out
@@ -231,8 +230,10 @@ func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial
 		return out
 	}
 	out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "complete", Tests: ids})
-	listed, err := w.Run(ctx, sels.listed.command(ids), &mutants.Mutation{Path: path, Source: src, Site: site}, sel.timeout)
-	out.Elapsed += listed.Elapsed
+	listed, err := w.withMutant(ctx, sels.listed.Root, path, src, mutated, func(ctx context.Context) (result, error) {
+		return w.run(ctx, sels.listed.command(ids), sel.timeout)
+	})
+	out.Elapsed += listed.elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {
 		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: failedState(ctx), Tests: ids, Error: out.Err.Error()})
 		return out
@@ -263,7 +264,7 @@ func stageError(ctx context.Context, r result, err error) error {
 	switch {
 	case err != nil:
 		return err
-	case r.Cancelled || ctx.Err() != nil:
+	case r.cancelled || ctx.Err() != nil:
 		return fmt.Errorf("cancelled: %w", context.Cause(ctx))
 	}
 	return nil

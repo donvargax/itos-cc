@@ -1,4 +1,4 @@
-package worktrees
+package mutate
 
 import (
 	"bytes"
@@ -12,11 +12,9 @@ import (
 	"time"
 )
 
-type runnerContextKey string
-
 const (
-	runnerStartedPathEnv                  = "ITOS_COMMAND_RUNNER_STARTED_PATH"
-	contextValueKey      runnerContextKey = "runner-context-value"
+	runnerStartedPathEnv = "ITOS_COMMAND_RUNNER_STARTED_PATH"
+	contextValueKey      = "runner-context-value"
 )
 
 // These tests exercise capabilities introduced by T-10. They are not red
@@ -91,7 +89,7 @@ func TestCommandRunnerAcceptsInstanceLocalLifecycleOperations(t *testing.T) {
 	for _, w := range []*worker{first, second} {
 		root := t.TempDir()
 		r, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second*10)
-		if err != nil || !r.Passed {
+		if err != nil || !r.passed {
 			t.Fatalf("runner execution = %+v, err = %v", r, err)
 		}
 	}
@@ -112,7 +110,7 @@ func TestCommandRunnerKeepsPreconfiguredStreams(t *testing.T) {
 	cmd.Stderr = &stderr
 
 	r, err := w.runner.run(context.Background(), cmd, &resultOutput)
-	if err != nil || !r.Passed {
+	if err != nil || !r.passed {
 		t.Fatalf("preconfigured command = %+v, err = %v", r, err)
 	}
 	if !strings.Contains(stdout.String(), "preconfigured-stdout") {
@@ -138,12 +136,8 @@ func TestCommandRunnerContextFixtureHelper(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	case "streams":
-		if _, err := fmt.Fprintln(os.Stdout, "preconfigured-stdout"); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := fmt.Fprintln(os.Stderr, "preconfigured-stderr"); err != nil {
-			t.Fatal(err)
-		}
+		fmt.Fprintln(os.Stdout, "preconfigured-stdout")
+		fmt.Fprintln(os.Stderr, "preconfigured-stderr")
 	}
 }
 

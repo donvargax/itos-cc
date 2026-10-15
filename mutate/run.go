@@ -13,7 +13,6 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -22,9 +21,7 @@ import (
 type Options struct {
 	// Store holds the project's snapshots: each file's is read from it, and
 	// written back to it, under the run's context.
-	Store snapport.Store
-	// WorkerFactory owns private command copies; cmd supplies the real binding.
-	WorkerFactory mutants.Workers
+	Store         snapport.Store
 	Workers       int
 	MutateAll     bool    // rerun killed mutants of unchanged functions too
 	TimeoutFactor float64 // a mutant may run this many times the baseline
@@ -581,24 +578,22 @@ type job struct {
 // The worker copies are removed only once every worker returned, its
 // owned commands joined.
 func execute(ctx context.Context, states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
-	purpose := mutants.MutationRun
-	if ff != nil {
-		purpose = mutants.FailFastJudgments
-	}
-	pool, err := legacyWorkers(opt.WorkerFactory).Open(ctx, purpose, max(1, opt.Workers))
+	scratch, err := newWorkerScratch("itos-cc-mutate-")
 	if err != nil {
 		return nil, err
 	}
-	defer pool.Close(ctx)
+	defer scratch.remove()
+	base := scratch.dir
 	var st *stopper
+	var runner commandRunner
 	if ff != nil {
 		ctx, st = newStopper(ctx, opt.Log)
 		defer st.cancel(nil)
-		st.abort = pool.Abort
+		runner.cleanupBudget = st.budget
 	}
-	workers := make([]mutants.Worker, max(1, opt.Workers))
+	workers := make([]*worker, max(1, opt.Workers))
 	for i := range workers {
-		workers[i] = pool.Worker(i)
+		workers[i] = &worker{dir: fmt.Sprintf("%s/w%d", base, i), copies: map[string]string{}, runner: runner}
 	}
 
 	// One baseline per distinct command, run inside a worker's copy: passing
@@ -627,14 +622,14 @@ func execute(ctx context.Context, states []*fileState, opt Options, ff *FailFast
 			key := s.command.Key()
 			if _, done := timeouts[key]; !done && failed[key] == "" && !st.stopped() {
 				fmt.Fprintf(opt.Log, "itos-cc: baseline %s$ %s\n", project.Rel(s.command.Dir), s.command)
-				r, err := workers[0].Run(ctx, s.command, nil, 0)
+				r, err := workers[0].run(ctx, s.command, 0)
 				if err != nil {
 					return nil, err
 				}
-				if !r.Passed {
-					failed[key] = r.Output
+				if !r.passed {
+					failed[key] = r.output
 				} else {
-					timeouts[key] = timeoutOf(r.Elapsed, opt.TimeoutFactor)
+					timeouts[key] = timeoutOf(r.elapsed, opt.TimeoutFactor)
 				}
 			}
 			if out, bad := failed[key]; bad {
@@ -681,7 +676,7 @@ func execute(ctx context.Context, states []*fileState, opt Options, ff *FailFast
 	var wg sync.WaitGroup
 	for _, w := range workers {
 		wg.Add(1)
-		go func(ctx context.Context, w mutants.Worker) {
+		go func(ctx context.Context, w *worker) {
 			defer wg.Done()
 			for j := range queue {
 				r, err := runMutant(ctx, w, j, timeouts[j.state.command.Key()], sels)
@@ -774,20 +769,23 @@ type mutantRun struct {
 // baseline the first time any mutant needs it. Every command runs under
 // ctx: once a fail-fast stop cancels it, none starts, and a judgment it cut
 // short is cancelled, never killed or timed out.
-func runMutant(ctx context.Context, w mutants.Worker, j job, timeout time.Duration, sels *selections) (mutantRun, error) {
+func runMutant(ctx context.Context, w *worker, j job, timeout time.Duration, sels *selections) (mutantRun, error) {
 	if ctx.Err() != nil {
 		return mutantRun{cancelled: true}, nil
 	}
 	s := j.state
 	site := s.sites[j.site]
+	mutated := site.Apply(s.file.Src)
 	// Own tests that run nothing survive every mutant without running.
 	run, err := mutantRun{outcome: Survived, started: true}, error(nil)
 	if !s.command.RunsNothing() {
 		var r result
-		r, err = w.Run(ctx, s.command, &mutants.Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, timeout)
-		run = mutantRun{outcome: judged(r), elapsed: r.Elapsed, started: true}
-		if r.Cancelled || cancelledBy(ctx, err) {
-			return mutantRun{cancelled: true, started: true, elapsed: r.Elapsed}, nil
+		r, err = w.withMutant(ctx, s.command.Root, s.file.Path, s.file.Src, mutated, func(ctx context.Context) (result, error) {
+			return w.run(ctx, s.command, timeout)
+		})
+		run = mutantRun{outcome: judged(r), elapsed: r.elapsed, started: true}
+		if r.cancelled || cancelledBy(ctx, err) {
+			return mutantRun{cancelled: true, started: true, elapsed: r.elapsed}, nil
 		}
 	}
 	if err != nil || run.outcome != Survived || sels == nil || s.reach == nil || len(s.reach[j.site]) == 0 {
@@ -806,22 +804,24 @@ func runMutant(ctx context.Context, w mutants.Worker, j job, timeout time.Durati
 		run.failed = sel.failed
 		return run, sel.err
 	}
-	listed, err := w.Run(ctx, sels.listed.command(run.ids), &mutants.Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, sel.timeout)
-	if listed.Cancelled || cancelledBy(ctx, err) {
-		cut.elapsed += listed.Elapsed
+	listed, err := w.withMutant(ctx, sels.listed.Root, s.file.Path, s.file.Src, mutated, func(ctx context.Context) (result, error) {
+		return w.run(ctx, sels.listed.command(run.ids), sel.timeout)
+	})
+	if listed.cancelled || cancelledBy(ctx, err) {
+		cut.elapsed += listed.elapsed
 		return cut, nil
 	}
-	run.outcome, run.listed = judged(listed), listed.Elapsed
-	run.elapsed += listed.Elapsed
+	run.outcome, run.listed = judged(listed), listed.elapsed
+	run.elapsed += listed.elapsed
 	return run, err
 }
 
 // judged is the outcome of a test run on a mutant.
 func judged(r result) string {
 	switch {
-	case r.TimedOut:
+	case r.timedOut:
 		return Timeout
-	case r.Passed:
+	case r.passed:
 		return Survived
 	}
 	return Killed
