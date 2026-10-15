@@ -75,6 +75,8 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
+	listedMutationSteps(sc, m)
+
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
 	sc.Step(`^code outside functions, comments, strings, and type arguments hold no sites$`, m.noSitesOutsideCode)

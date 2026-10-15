@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -216,6 +217,11 @@ func (m *memory) Build(dir string, b features.Build) (features.Built, error) {
 // in use is the binary driver's.
 func (m *memory) Occupy() (int, func(), error) {
 	return 0, nil, fmt.Errorf("the in-process driver holds no port: tag the scenario %s", features.BinaryOnly)
+}
+
+// Graph will use the serving adapter when that command moves in S8.
+func (m *memory) Graph(_ context.Context, _ features.Run) ([]byte, error) {
+	return nil, fmt.Errorf("serve has not moved in process yet")
 }
 
 // Git is the fake git in dir: init makes it a repository, add stages its

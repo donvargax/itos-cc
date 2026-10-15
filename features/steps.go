@@ -85,6 +85,9 @@ type Driver interface {
 	// mutation group moves. A folder with no Tests declared has no tests a
 	// run may run.
 	Tests(dir string, t Tests) error
+	// Graph reads the public /api/graph of serve in r.Dir, owning and stopping
+	// its server before returning. The context bounds readiness and the request.
+	Graph(ctx context.Context, r Run) ([]byte, error)
 	// Counted says the system makes counted runs, mutation run --count,
 	// which itos-cc makes on Linux and macOS alone (#29): elsewhere both
 	// drivers skip the scenario (godog.ErrSkip).
@@ -111,6 +114,25 @@ type Tests struct {
 	// Elapsed is how long one run of them takes: the baseline's, and each
 	// trial's but a timing-out one's.
 	Elapsed time.Duration
+	// Listed describes the configured harness independently of its executable
+	// fixture: IDs and defining files, coverage by source line, whether coverage
+	// is split in one run, and each selection's timing or baseline failure.
+	Listed *ListedTests
+}
+
+// ListedTests is a fixture's public test inventory and observable outcomes.
+// Lines name source files relative to the declared project's folder.
+type ListedTests struct {
+	Files   map[string]string
+	Lines   map[string]map[int][]string
+	Split   bool
+	Elapsed map[string]time.Duration
+	Failing []string
+	// Surviving and TimingOut give each listed ID the sites its tests pass
+	// or hang on; other reached sites are killed. ListFails is the inventory
+	// command failing, before any trial.
+	Surviving, TimingOut map[string][]Site
+	ListFails            bool
 }
 
 // Site is a mutation site as a Given names it: its file, slash-separated
@@ -227,8 +249,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-72: listed tests
-	ids("MUT", "121-137"),
 	// T-73: differential, since
 	ids("MUT", "23-27", "37-46", "102-104"),
 	// T-74: check, stale tests
@@ -305,6 +325,10 @@ type world struct {
 	// with are the words a Given adds after a scenario's own to each run
 	// its When makes, as a row of an outline says "with --flag".
 	with []string
+	// variables are fixture-owned environment settings for every command.
+	variables []string
+	// prepare adds fixture run options without changing the sentence being checked.
+	prepare func([]string) []string
 	// project is the folder of the project a Given made, slash-separated
 	// from the scratch folder, which a sentence names as <dir>; "" for
 	// none.
@@ -567,9 +591,9 @@ func (w *world) setUp(s *godog.Scenario) error {
 	return err
 }
 
-// env is the variables a scenario sets in every run's environment: none.
+// env is the variables a scenario's fixture sets in every run's environment.
 // The driver gives each run the rest.
-func (w *world) env() []string { return nil }
+func (w *world) env() []string { return slices.Clone(w.variables) }
 
 // withEnv is the scenarios' environment with each NAME=value of vars, a
 // semicolon-separated list, set as given.
@@ -662,6 +686,9 @@ func (w *world) runEnv(dir string, env []string, args ...string) error {
 // sets, reading the scenario's standard input, and gives its exit code and
 // output.
 func (w *world) capture(dir string, env []string, args ...string) (code int, stdout, stderr string, err error) {
+	if w.prepare != nil {
+		args = w.prepare(slices.Clone(args))
+	}
 	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without, Binary: w.binary})
 	return result.Exit, result.Stdout, result.Stderr, err
 }

@@ -468,3 +468,22 @@ it. A Given whose run runs a project's tests declares them (`Tests`) and, for Go
 | `its "…" list … with "…" "…", and the exit code is <n>` / `the snapshot is removed, and its "…" list it with "…" "…"` | The object's list names the file with that value; the Given's snapshot is gone, and the list names its source. |
 | `itos-cc.yaml excepts a survivor in … and excludes "…"` / `it reports "…" with "…" "…"` | An exception of the fake's line 7, column 9, beside the exclude; a problem of the rule with that value. |
 | `the itos-cc.yaml HEAD commits excludes "…"` / `no selected site is in …`             | Committed so, the working tree's excluding nothing, where mutation list lists the fake; the run selected sites, none in the file. |
+
+The listed-test mutation scenarios (ID-MUT-121 through 137) use a real Go module with two
+listed IDs. Its harness builds a covered binary, records selections and the source hash,
+and either splits coverage by ID or allows the public fallback to run each ID separately.
+These fixtures pass `--no-annotate` on mutation runs to keep the recorded source hashes stable
+and use two workers unless the scenario supplies its own worker flag.
+`Tests.Listed` declares the inventory, line coverage, selection durations and failing,
+surviving or timing-out outcomes for the future memory driver. Assertions read the snapshot,
+command progress and harness records. ID-MUT-134 uses `Driver.Graph`: the binary driver starts
+`serve`, waits for its readiness message, requests `GET /api/graph`, and stops its child within
+a bounded cleanup. It never calls graph internals; the memory implementation belongs with
+S8's serving adapter.
+
+During T-83's temporary push-CI omission, the old holders in
+`cmd/itos-cc/mutate_listed_test.go` (121–129), `mutate_listed_fresh_test.go` (130–134), and
+`mutate_listed_baseline_test.go` (135–137) remain. T-101 removes only replaced tests after the
+converted scenarios actually pass CI following T-100's restoration, retaining helpers still
+used by counted scenarios. Local fixture runs establish local conversion evidence; a green
+CI selection that omits them does not establish a scenario pass.
