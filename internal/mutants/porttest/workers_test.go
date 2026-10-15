@@ -153,3 +153,47 @@ func TestBoundTraceValidatesEverySelectorAndGradleWrapperSuite(t *testing.T) {
 		t.Fatalf("whole wrapper lost unrelated inventory: %v", names)
 	}
 }
+
+func TestBoundUnittestFailFastRequestsSelectActualInventory(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "a.py")
+	trace := filepath.Join(root, "trace.jsonl")
+	own := mutants.Command{Root: root, Dir: root, Args: []string{filepath.Join(root, ".venv", "bin", "python"), "-m", "unittest", "-f", "test_a"}}
+	all := own
+	all.Args = append([]string(nil), own.Args[:3]...)
+	all.Args = append(all.Args, "discover", "-f")
+	filtered := own
+	filtered.Args = append([]string(nil), own.Args[:3]...)
+	filtered.Args = append(filtered.Args, "-k", "ATest")
+	declaration := Tests{Trace: &Trace{File: trace, Source: "a.py", Tests: map[string]string{"test_a": "ATest", "test_unrelated": "Unrelated"}}}
+	f := &Workers{Files: map[string]string{source: "actual unittest source\n"}, Tests: map[string]map[string]Tests{root: {own.String(): declaration, all.String(): declaration, filtered.String(): declaration}}}
+	p, err := f.Open(t.Context(), mutants.MutationRun, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close(t.Context())
+	for _, c := range []mutants.Command{own, all} {
+		if _, err := p.Worker(0).Run(t.Context(), c, nil, 0); err != nil {
+			t.Fatalf("actual unittest request %s: %v", c, err)
+		}
+	}
+	var names []string
+	for _, line := range strings.Split(strings.TrimSpace(f.Files[trace]), "\n") {
+		var record map[string]string
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			t.Fatal(err)
+		}
+		names = append(names, record["test"])
+		sum := sha256.Sum256([]byte(f.Files[source]))
+		if record["source_sha256"] != hex.EncodeToString(sum[:]) || record["original_root"] != root || record["cwd"] == root {
+			t.Fatalf("unittest trace not actual copied input: %v", record)
+		}
+	}
+	if !reflect.DeepEqual(names, []string{"ATest", "ATest", "Unrelated"}) {
+		t.Fatalf("unittest own/discovery selection: %v", names)
+	}
+	before := f.Files[trace]
+	if _, err := p.Worker(0).Run(t.Context(), filtered, nil, 0); err == nil || f.Files[trace] != before {
+		t.Fatal("unsupported -k changed trace or was accepted")
+	}
+}

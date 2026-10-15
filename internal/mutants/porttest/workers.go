@@ -284,12 +284,26 @@ func selectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 			a := args[i]
 			switch a {
 			case "-p":
+				if args[module] != "pytest" {
+					return nil, errors.New("unsupported unittest trace pattern")
+				}
 				i++
 				if i >= len(args) || args[i] != "no:cacheprovider" {
 					return nil, errors.New("unsupported Python trace plugin")
 				}
-			case "-q", "-x", "-v", "--disable-warnings", "--":
+			case "-q", "-v", "--":
+			case "-f":
+				if args[module] != "unittest" {
+					return nil, errors.New("unsupported pytest trace flag -f")
+				}
+			case "-x", "--disable-warnings":
+				if args[module] != "pytest" {
+					return nil, fmt.Errorf("unsupported unittest trace flag %s", a)
+				}
 			case "discover":
+				if args[module] != "unittest" {
+					return nil, errors.New("unsupported pytest trace discovery operand")
+				}
 				whole = true
 			default:
 				if strings.HasPrefix(a, "-") {
