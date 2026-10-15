@@ -56,6 +56,8 @@ jobs:
           echo "FROM=$from" >> "$GITHUB_ENV"
       - run: itos verify "$FROM" "$TO"
       - run: itos ci run "$FROM" "$TO"
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature # T-83; removed when S7 moves mutation in process (T-100).
 
   test:
     strategy:
@@ -79,10 +81,14 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
       - run: go vet ./...
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature
       # 30 minutes, not go test's default 10: cmd/itos-cc's tests take about
       # 19 on windows-latest (T-6, T-15). The limit only guards against a
       # hang; windows-test-speed is what brings that time down.
       - run: go test -timeout 30m ./...
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature
 
       # The real TypeScript, Python and Kotlin tools, so the language smoke
       # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216

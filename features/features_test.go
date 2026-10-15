@@ -72,6 +72,9 @@ func TestFeatures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(sel.Skipped) > 0 {
+		t.Logf("not run here, left out by ITOS_CC_SKIP_FEATURES: %s", strings.Join(sel.Skipped, ", "))
+	}
 	if len(sel.Unconverted) > 0 {
 		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
 	}
@@ -95,7 +98,7 @@ func TestFeatures(t *testing.T) {
 		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin: bin, root: root}, interruptSteps(bin)) },
 		Options: &godog.Options{
 			Format:      "pretty",
-			Paths:       Converted,
+			Paths:       sel.Paths,
 			Tags:        sel.Filter,
 			Strict:      true,
 			Concurrency: 1,

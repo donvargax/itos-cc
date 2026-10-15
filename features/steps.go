@@ -1077,6 +1077,10 @@ func numberOf(value any) int {
 
 // Selection is what a -scenarios expression selects for one driver.
 type Selection struct {
+	// Paths are the driver's active feature files, with dir joined to each.
+	Paths []string
+	// Skipped are the feature filenames ITOS_CC_SKIP_FEATURES leaves out.
+	Skipped []string
 	// Filter is godog's tag filter over the driver's files, "" when the
 	// expression selects none of their scenarios.
 	Filter string
@@ -1105,6 +1109,9 @@ type Selection struct {
 // scenarios Unstepped lists are left out of every run: a tag only they
 // carry is logged, as one of a file the driver does not run is, and one
 // that others carry too selects those others alone.
+// ITOS_CC_SKIP_FEATURES leaves its comma-separated filenames out of Paths;
+// their tags still match valid selections, and Skipped names them for the
+// runners to log. Carrier validation still reads every converted file.
 //
 // godog's own tag filter takes exact tags joined by commas; itos's run
 // templates join the IDs they select with |, as a regular expression
@@ -1118,7 +1125,30 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 		}
 		return paths
 	}
-	own, err := featureTags(in(files))
+	omitted := map[string]bool{}
+	for _, name := range strings.Split(os.Getenv("ITOS_CC_SKIP_FEATURES"), ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			omitted[name] = true
+		}
+	}
+	var sel Selection
+	for _, name := range files {
+		if !omitted[name] {
+			sel.Paths = append(sel.Paths, filepath.Join(dir, name))
+		}
+	}
+	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
+	if err != nil {
+		return Selection{}, err
+	}
+	var leftOut []string
+	for _, path := range all {
+		if name := filepath.Base(path); omitted[name] {
+			sel.Skipped = append(sel.Skipped, name)
+			leftOut = append(leftOut, path)
+		}
+	}
+	own, err := featureTags(sel.Paths)
 	if err != nil {
 		return Selection{}, err
 	}
@@ -1138,7 +1168,10 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 		return terms.String()
 	}
 	if selection == "" {
-		return Selection{Filter: "~@wip&&~" + skip + leaveOut(Unstepped)}, nil
+		if len(sel.Paths) > 0 {
+			sel.Filter = "~@wip&&~" + skip + leaveOut(Unstepped)
+		}
+		return sel, nil
 	}
 	pattern, err := regexp.Compile(selection)
 	if err != nil {
@@ -1148,7 +1181,7 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 	if err != nil {
 		return Selection{}, err
 	}
-	all, err := filepath.Glob(filepath.Join(dir, "*.feature"))
+	skipped, err := featureTags(leftOut)
 	if err != nil {
 		return Selection{}, err
 	}
@@ -1156,7 +1189,6 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 	if err != nil {
 		return Selection{}, err
 	}
-	var sel Selection
 	var each []string
 	matched := false
 	for _, tag := range everyTag {
@@ -1169,6 +1201,9 @@ func TagFilter(selection, dir string, files []string, skip string) (Selection, e
 			sel.Unstepped = append(sel.Unstepped, tag)
 		case slices.Contains(own, tag):
 			each = append(each, tag+"&&~@wip&&~"+skip+leaveOut(c.unstepped))
+		case slices.Contains(skipped, tag):
+			// A real tag whose file was deliberately left out is a valid
+			// selection, even when this driver has nothing left to run.
 		case slices.Contains(converted, tag):
 			sel.Unmoved = append(sel.Unmoved, tag)
 		default:

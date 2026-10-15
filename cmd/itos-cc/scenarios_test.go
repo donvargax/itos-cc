@@ -48,6 +48,9 @@ func TestScenarios(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(sel.Skipped) > 0 {
+		t.Logf("not run here, left out by ITOS_CC_SKIP_FEATURES: %s", strings.Join(sel.Skipped, ", "))
+	}
 	if len(sel.Unconverted) > 0 {
 		t.Logf("not run here, their feature files having no steps yet (q-52): %s", strings.Join(sel.Unconverted, " "))
 	}
@@ -60,16 +63,12 @@ func TestScenarios(t *testing.T) {
 	if sel.Filter == "" {
 		return
 	}
-	var paths []string
-	for _, name := range features.InProcess {
-		paths = append(paths, filepath.Join(dir, name))
-	}
 	suite := godog.TestSuite{
 		Name:                "itos-cc in process",
 		ScenarioInitializer: func(sc *godog.ScenarioContext) { features.Initialize(sc, newMemory(t)) },
 		Options: &godog.Options{
 			Format:      "pretty",
-			Paths:       paths,
+			Paths:       sel.Paths,
 			Tags:        sel.Filter,
 			Strict:      true,
 			Concurrency: 1,

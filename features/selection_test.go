@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -69,6 +70,69 @@ func TestFeatureSelectionValidatesUnsteppedIDsDespiteSkippedFiles(t *testing.T) 
 	_, err := TagFilter("", dir, Converted, InProcessOnly)
 	if err == nil || !strings.Contains(err.Error(), "features.Unstepped lists "+Unstepped[0]) {
 		t.Fatalf("missing Unstepped ID: %v; want its validation failure", err)
+	}
+}
+
+func TestFeatureSelectionUsesActivePathsForSharedTags(t *testing.T) {
+	for _, driver := range []struct {
+		name, skip string
+		files      []string
+	}{
+		{"binary", InProcessOnly, Converted},
+		{"in process", BinaryOnly, InProcess},
+	} {
+		t.Run(driver.name, func(t *testing.T) {
+			for _, pattern := range []string{"", "^@shared$", "^@ID-(COUNT|UNIT)-90$"} {
+				t.Run(pattern, func(t *testing.T) {
+					t.Setenv("ITOS_CC_SKIP_FEATURES", "count.feature")
+					sel, err := TagFilter(pattern, featureSelectionFixture(t), driver.files, driver.skip)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if !slices.Equal(sel.Skipped, []string{"count.feature"}) {
+						t.Fatalf("omissions to log: %v; want count.feature", sel.Skipped)
+					}
+					ran := runSelection(t, sel.Filter, sel.Paths)
+					if !slices.Equal(ran, []string{"active"}) {
+						t.Fatalf("scenarios ran: %v; want only active", ran)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestFeatureSelectionOmitsCommaSeparatedFiles(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", " count.feature, units.feature, count.feature, ")
+	sel, err := TagFilter("^@shared$", featureSelectionFixture(t), Converted, InProcessOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sel.Filter != "" || !slices.Equal(sel.Skipped, []string{"count.feature", "units.feature"}) {
+		t.Fatalf("skipped-only selection: filter %q, omissions %v", sel.Filter, sel.Skipped)
+	}
+}
+
+func TestFeatureSelectionRunsNothingWhenAllDriverFilesAreSkipped(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", strings.Join(Converted, ","))
+	sel, err := TagFilter("", featureSelectionFixture(t), Converted, InProcessOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sel.Filter != "" || len(sel.Paths) != 0 {
+		t.Fatalf("all files skipped: filter %q, paths %v", sel.Filter, sel.Paths)
+	}
+}
+
+func TestFeatureSelectionStillRecognizesUnsteppedOnlySelections(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", "count.feature")
+	pattern := "^" + regexp.QuoteMeta(Unstepped[0]) + "$"
+	sel, err := TagFilter(pattern, featureSelectionFixture(t), Converted, InProcessOnly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sel.Filter != "" || !slices.Equal(sel.Unstepped, []string{Unstepped[0]}) {
+		t.Fatalf("Unstepped-only selection: filter %q, unstepped %v", sel.Filter, sel.Unstepped)
 	}
 }
 

@@ -112,6 +112,14 @@ naming a scenario of a converted file not in `InProcess` logs it as binary drive
 command moves, and one naming nothing else runs nothing there and passes, the binary driver
 running it.
 
+`ITOS_CC_SKIP_FEATURES` leaves out a comma-separated list of feature filenames in both drivers;
+unset or empty leaves out none. Both drivers log the omitted filenames and run only the other
+files, including when a selected tag is shared with an omitted file. A selection naming only
+omitted scenarios passes without running them; unknown tags and invalid `Unstepped` IDs still
+fail. Push CI temporarily sets it to `mutate.feature` until S7 moves mutation in process
+(T-100 removes the setting; T-101 verifies it). The language-tools runs keep those scenarios,
+as do local runs unless the variable is explicitly set.
+
 A `units.feature` scenario runs in a sample project of TypeScript and Python, production code and
 tests, unless it writes files of its own and lists those alone. A `dry.feature` scenario that only
 says When I run runs in a sample project of TypeScript in a git repository, one file changed since
