@@ -271,8 +271,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-77: exceptions, renew
-	ids("MUT", "85-99", "138-144", "146", "227", "242"),
 	// T-78: language rules
 	ids("MUT", "150-155", "203-210", "213-220"),
 	// T-79: strict
@@ -336,6 +334,9 @@ type world struct {
 	// run" does, each a sentence of two files: set by the steps of the
 	// scenario's file, nil in any other.
 	scored, noTests func() error
+	// problemSubject adds a fixture's exact subject check to the shared
+	// "the problem is ... with ..." sentence, without a second step owner.
+	problemSubject func() error
 	// with are the words a Given adds after a scenario's own to each run
 	// its When makes, as a row of an outline says "with --flag".
 	with []string
@@ -598,6 +599,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
+	w.problemSubject = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary = nil, nil, nil, "", nil, ""
 	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
 	var err error

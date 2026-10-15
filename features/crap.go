@@ -1098,6 +1098,9 @@ func (c *crapState) problemWith(rule, list string) error {
 		if message, _ := p["message"].(string); message == "" || !strings.Contains(c.w.stderr, message) {
 			return fmt.Errorf("the error output does not print the problem's message %q\n%s", message, report)
 		}
+		if c.w.problemSubject != nil {
+			return c.w.problemSubject()
+		}
 		return nil
 	}
 	return fmt.Errorf("no problem has the rule %q\n%s", rule, report)

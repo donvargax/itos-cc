@@ -681,3 +681,75 @@ No annotated command holder for 28–36 was found; none is invented or deleted h
 For 32–33, retain `mutate/annotate_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
 for 34, retain `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
 remain alongside the new public observations.
+
+
+T-77 converts the exception and renewal scenarios (ID-MUT-85 through 99, 138 through
+144, 146, 227 and 242). Its local selection runs 25 cases and 121 steps without
+skips; 58 restored strictness edits fail at their intended checks, and the
+two existing shared problem consumers pass 12 steps without skips. The TypeScript project has fifteen real sites: fourteen
+killed by its tests and the count survivor at 7:19, beside place at 5:9. The
+separate refusal fixture records killed and uncovered sites at exactly 5:9 and
+9:3. Tests and coverage declarations match these actual commands and outcomes;
+updating a declaration replaces only its fixture-owned node_modules link.
+
+The reviewed exception comes from the public except command. MUT89 then removes
+only its source snapshot so the literal run executes fifteen mutants, without
+injecting --mutate-all. MUT90 keeps its actual cache and separately runs its
+explicit --mutate-all command. Rename fixtures use actual glob imports from the
+beginning, preserving test bytes while executing the renamed source; both the
+moved-entry metadata and the excepted outcome are asserted. An unchanged
+--since rename is unjudged: its original output is checked before a separately
+captured whole-project run proves the reviewed grid.Board#count survivor is
+excepted. That probe preserves the original When and makes no fresh-check claim
+about the transferred namespace cache. The scoped fixture
+reviews count and changes it before base, then commits only place after base.
+The Go renewal fixture commits the changed string literal, refreshes the current
+whole-project outcomes before renewal, and checks the literal whole-project
+check. Its later killed, changed-line and no-fresh-results controls preserve the
+entries and every file other than itos-cc.yaml. No new driver capability,
+mutation operator, product behavior or binary-only exclusion is added.
+
+The unaffected language-tools CI selection includes the 24 TypeScript fixture
+cases; the Go renewal case runs locally until T100 restores mutation scenarios
+in the initial CI selection. Local execution counts are distinct from any
+selection that T83 omits. T101 owns legacy cleanup after replacement CI. Keep
+all the following holders and their helpers, plus the unjudged --since
+annotation guard, renamed-and-changed/path-only guards, legacy renewal and
+renewal-argument controls. The prior unsupported < to != examples were corrected
+to the publicly listed < to <= by the coordinator before this conversion; that
+was a specification correction, not evidence of missing product behavior.
+
+| MUT | Retained holder | Exact test |
+| --- | --- | --- |
+| 85 | cmd/itos-cc/mutation_except_test.go | TestExceptingASurvivorRecordsItWithItsReason |
+| 86 | cmd/itos-cc/mutation_except_test.go | TestOnlyARecordedSurvivorCanBeExcepted |
+| 87 | cmd/itos-cc/mutation_except_test.go | TestAReasonIsRequired |
+| 88 | cmd/itos-cc/mutation_except_test.go | TestTheRestOfItosCcYamlIsKept |
+| 89 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorFailsNothing |
+| 90 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorIsReusedWhileNothingChanged |
+| 91 | cmd/itos-cc/mutation_except_test.go | TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted |
+| 92 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale |
+| 93 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseFunctionChangedIsStale |
+| 94 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseSiteIsGoneIsStale |
+| 95 | cmd/itos-cc/mutation_except_test.go | TestAnEntryDoesNotExcuseAnUncoveredMutant |
+| 96 | cmd/itos-cc/mutation_except_test.go | TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry |
+| 97 | cmd/itos-cc/mutation_except_test.go | TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked |
+| 98 | cmd/itos-cc/mutation_except_test.go | TestAnInvalidItosCcYamlIsAConfigError |
+| 99 | cmd/itos-cc/mutation_except_test.go | TestExceptedMutantsAsJSON |
+| 138 | cmd/itos-cc/mutation_annotate_test.go | TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason |
+| 139 | cmd/itos-cc/mutation_annotate_test.go | TestAStaleEntrysSurvivorIsListedAsSurvived |
+| 140 | cmd/itos-cc/mutation_annotate_test.go | TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine |
+| 141 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFailsAnEntryWhoseFileIsGone |
+| 142 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestMutationCheckOfTheWholeProjectFailsItToo |
+| 143 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestWithSinceAnEntryWhoseFileTheRangeDeletedIsGone |
+| 144 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestAnEntryWhoseFileWasRenamedHasMovedAndStillExceptsItsMutant |
+| 146 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved |
+| 227 | cmd/itos-cc/except_renew_test.go | TestARenewedExceptionFollowsItsUnchangedMutantAcrossARename |
+| 242 | cmd/itos-cc/except_renew_test.go | TestAStaleExceptionWhoseFunctionChangedNamesTheRenewalAsItsFix |
+
+Additional retained guards are outside the replacement mapping:
+
+- cmd/itos-cc/mutation_except_test.go: `TestASiteIsFileLineAndColumn`, `TestMutationExceptTakesOneSite`.
+- cmd/itos-cc/mutation_annotate_test.go: `TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged`.
+- cmd/itos-cc/mutation_except_elsewhere_test.go: `TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone`, `TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged`.
+- cmd/itos-cc/except_renew_test.go: `TestRenewingTakesNoSiteAndNoReason`, `TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule`.
