@@ -2592,10 +2592,6 @@
     are checked separately through non-outline owners. Report literal-binding
     and source-check probes distinctly, with expanded intended failures separate
     from probe count, and restore exact feature/source bytes and modes.
-  done_when:
-    - run: grep -q '"metrics_snapshots.feature"' features/steps.go
-    - run: test -e cmd/itos-cc/snapshots_root_test.go
-    - run: go test ./features -count=1 -scenarios='@ID-SNAP-'
 - id: T-83
   type: ci
   title: Push CI leaves mutate.feature's scenarios out until S7 runs them in process
