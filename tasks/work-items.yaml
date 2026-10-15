@@ -3133,3 +3133,10 @@ items:
     status: todo
     depends_on: [T-82]
     kind: task
+  - id: T-88
+    title: Run mutation workers through a domain port and the worktrees adapter
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

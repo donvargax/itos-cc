@@ -1800,3 +1800,34 @@
   done_when:
     - run: go test ./internal/mutants
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|12[6-9]|13[0-4])$"
+- id: T-88
+  type: refactor
+  title: Run mutation workers through a domain port and the worktrees adapter
+  why: >
+    S7 after T-87, current refactor only. Move worker/process/scratch I/O behind a
+    mutation-domain-owned Workers boundary and internal/worktrees adapter, taking domain types
+    directly. Keep the existing process runner and platform containment semantics intact: ordinary
+    owned descendants, one shared five-second post-abort cleanup deadline, cancellation
+    distinguished from mutant timeout and completed exit, no unrelated kills, and the
+    already-deferred native Windows work remains deferred. Preserve worker copy selection, linked
+    node_modules and .venv, baseline/trial stdout and stderr, cwd/environment/argv fidelity, elapsed
+    times, abandoned scratch cleanup and all aggregate/fail-fast defaults. Port failures are a
+    sealed typed set with context first and cancellation forwarded, never held in a value or
+    recreated; runtime platform behavior is supplied as a value, build tags only unavailable calls.
+    Keep the domain ignorant of process/filesystem implementations and UI/exit codes. Build the
+    in-memory Workers fake from features.Driver.Tests declarations, default killed unless the
+    scenario declares survival/timeout, with declared elapsed times and failing baselines; use our
+    fake not mocks and keep it out of production imports. Define a shared contract suite for fake
+    and real adapter for observable outcomes and typed failures both can exercise, platform-only
+    ownership tests stay at the adapter. Do not invent a field-copy port DTO or generic workaround
+    for a package cycle; settle a dependency direction that preserves domain values and record it in
+    package documentation before implementation. Wire the real adapter at cmd boundary without yet
+    moving the whole mutation run orchestration; no product flags/schema/snapshot behavior changes.
+    Update depguard and architecture fixtures/docs for new boundaries, and domain coverage as
+    applicable. Proof cases added to final comparison are linked dependency directories and
+    abandoned scratch; do no per-task binary comparison. Light local package/fixture checks only,
+    gates through hooks and CI, no mutation runs of this repository, no worktrees/session moves or
+    agents; preserve notices.
+  done_when:
+    - run: go test ./internal/worktrees/... ./internal/mutants/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167|168)$"
