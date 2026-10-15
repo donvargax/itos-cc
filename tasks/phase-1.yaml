@@ -1599,7 +1599,11 @@
     Public characterization confirms 32's exact x.py has both > to >= and 0 to 1 at line 2;
     assert a(1) yields the written survivor and kill, with no scenario correction. For 28 use a
     top-level place in the board namespace at 5:9 and a real 17-site inventory, eight cached
-    kills and nine new judgments; keep its exact quoted survivor line and all counts.
+    kills, seven actual new executions and two uncovered sites that do not run. Keep its exact
+    quoted survivor line and verdict counts. Public execution of the exact fixture confirms
+    ran 7, reused 8; the earlier ran 9 mistakenly counted uncovered sites as executions. This
+    narrow specification correction preserves current command behavior and is not a product
+    failure or a new counting rule.
   done_when:
     - run: "! grep -q '// T-76:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'

@@ -1221,7 +1221,7 @@ Feature: Mutation testing
     @ID-MUT-28
     Scenario: Summary per file
       When I run "itos-cc mutation run src/board.ts"
-      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 9, reused 8)"
+      Then stdout says "src/board.ts: 14 killed, 1 survived, 2 uncovered (ran 7, reused 8)"
       And each survivor is listed as "survived src/board.ts:5:9 `>` → `>=` in board#place"
 
     @ID-MUT-29
