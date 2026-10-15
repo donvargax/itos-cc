@@ -2924,7 +2924,7 @@ items:
     title: mutate.feature's language-rule scenarios run through godog against the built binary
     phase: 1
     owner: donvargax
-    status: doing
+    status: todo
     depends_on: [T-77]
     kind: task
     why: >
