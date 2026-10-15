@@ -2402,6 +2402,19 @@
     Genuine fixture Git worktrees are cleaned up through the owning fixture
     repository after all product handles have joined. No implementation
     checkout or agent worktree is created.
+    Public cleanup observations distinguish final state from private ordering.
+    MUT183 and the already converted MUT166/188/193 retain their exact former
+    join-before-removal clauses verbatim as labeled adapter-contract comments.
+    Their executable clauses observe terminated owned fixture peers and absent
+    private inputs or worker copies after the public run returns. Preserve every
+    deadline, captured-output, partial-result and unrelated-process assertion.
+    Final EOF plus absent scratch, or absence of a polling watcher's marker,
+    does not prove the exact join/removal sequence. Add no sampled watcher or
+    product fault seam to claim it does. Keep all existing ordering/lifecycle
+    guards and the old183 watcher as supplementary evidence, never T101 CLI
+    duplicates. T88/T92 must map and retain deterministic sequence guards at
+    their actual adapter and orchestration boundaries. This corrects the proof
+    layer, without changing product behavior or accepted ordering guarantees.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
@@ -2683,6 +2696,13 @@
     captured-group, zombie-only-group, completion-race and shared-budget guard when
     moving the runner here. Do not mistake removal of168 from the public scenario
     selection below for permission to delete or weaken its actual adapter tests.
+    MUT166/183/188/193 public cleanup steps assert final terminated-peer and
+    removed input/copy state; their former ordering clauses remain adapter contracts.
+    Preserve all existing lifecycle/output/cleanup guards, and record which prove
+    joining before supervisor return and before the owner releases worker inputs.
+    If no current guard reaches an ordering guarantee, add a focused deterministic
+    boundary guard that fails on premature release; do not claim a sampled
+    absence or final filesystem state establishes the private sequence.
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
@@ -2841,9 +2861,19 @@
     plus listed fail-fast cases to refactor-final-proof without running per-task binary comparisons.
     Focus local checks to the domain and named fixture scenarios, gates through configured hooks/CI
     only; no own-code mutation run, worktrees/session moves/agents or unapproved dependencies.
+    T80 classified MUT168 and MUT190 as private adapter contracts, preserving
+    their original prose and all underlying ownership guards. They are not
+    executable public scenarios, so this task's scenario selection omits those
+    nonexistent IDs. Keep their actual worktrees adapter tests in the configured
+    native all-package CI; do not substitute a public passing placeholder.
+    Preserve MUT166/183/188/193's join-before-input-removal guarantee at the actual
+    orchestration boundary. Use held requests through the bound Workers fake and
+    actual input lifetime state to prove cancellation joins work before release;
+    premature release must fail the guard. Keep deterministic adapter proofs too,
+    without treating final EOF and absent paths as proof of the internal order.
   done_when:
     - run: go test ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|168|187|188|189|190|191|192|193|194|195|196|197|198|199|200|201|202)$"
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
 - id: T-93
   type: refactor
   title: Move mutation check and list orchestration behind the domain boundary

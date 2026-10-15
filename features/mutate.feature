@@ -2679,7 +2679,9 @@ Feature: Mutation testing
       When the command scope returns
       Then the descendant has stopped and cannot continue fixture work after return
       And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
-      And all owned process/output waiters are joined before worker copy removal
+      # Adapter ordering contract for MUT166, preserved verbatim:
+      # And all owned process/output waiters are joined before worker copy removal
+      And after the run returns, its owned fixture peers have terminated and worker copies are removed
 
     @binary-only @mutation-command-ownership @ID-MUT-167
     Scenario: Parent cancellation is not a mutant deadline
@@ -2804,7 +2806,9 @@ Feature: Mutation testing
       When the command scope returns
       Then the descendant has stopped and cannot continue fixture work after return
       And the parent's actual successful exit is retained, not invented as timeout or a failed baseline
-      And all owned process/output waiters are joined before worker copy removal
+      # Adapter ordering contract for MUT188, preserved verbatim:
+      # And all owned process/output waiters are joined before worker copy removal
+      And after the run returns, its owned fixture peers have terminated and worker copies are removed
 
     @binary-only @macos-counted-run @ID-MUT-189
     Scenario: macOS parent cancellation is not a mutant deadline
@@ -3043,7 +3047,9 @@ Feature: Mutation testing
       Then the completed result remains visible
       And the unfinished judgment is cancelled or undecided, not a killed or timed-out mutant
       And no further command is admitted after the run abort
-      And all owned worker and preparation descendants and waiters finish before private input removal
+      # Adapter ordering contract for MUT183, preserved verbatim:
+      # And all owned worker and preparation descendants and waiters finish before private input removal
+      And after the interrupted run returns, its owned fixture peers have terminated and private inputs are removed
       And one shared five-second post-abort cleanup deadline applies without killing unrelated processes
 
     @mutation-counted-run @ID-MUT-184
@@ -3132,7 +3138,9 @@ Feature: Mutation testing
       When the other worker's mutant becomes an actionable survivor
       Then the running judgment is cancelled with no killed, timed-out or survived outcome
       And its owned processes are terminated and joined within one shared five-second deadline from the stop
-      And worker copies are removed only after that join
+      # Adapter ordering contract for MUT193, preserved verbatim:
+      # And worker copies are removed only after that join
+      And after the stopped run returns, its owned fixture peers have terminated and worker copies are removed
       And unrelated processes remain untouched
 
     @fail-fast-run @ID-MUT-194
