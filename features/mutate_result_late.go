@@ -15,7 +15,7 @@ import (
 
 func (r *resultMutation) lateSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a Python project with a file no test reaches$`, r.unreachedPython)
-	sc.Step(`^I run "itos-cc ([^"]*)" for (that file|its file|a file|its production file|the production file|one of its files)$`, func(args, _ string) error {
+	sc.Step(`^I run "itos-cc ([^"]*)" for (that file|the file|its file|a file|its production file|the production file|one of its files)$`, func(args, _ string) error {
 		if r.s.m.forFile != nil {
 			return r.s.m.forFile(args)
 		}

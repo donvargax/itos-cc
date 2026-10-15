@@ -103,6 +103,10 @@ type Driver interface {
 	// ObserveWrites starts observing existing paths and returns their writes
 	// or removals since then, including rewrites of identical bytes.
 	ObserveWrites(paths ...string) (func() ([]string, error), error)
+	// ObserveReads monitors only the owned paths after verifying actual reads and
+	// directory listings are observable; unsupported observation returns
+	// ErrReadObservationUnsupported, never an empty successful log.
+	ObserveReads(paths ...string) (func() ([]string, error), error)
 	// Counted says the system makes counted runs, mutation run --count,
 	// which itos-cc makes on Linux and macOS alone (#29): elsewhere both
 	// drivers skip the scenario (godog.ErrSkip).
@@ -213,6 +217,13 @@ type Coverage struct {
 	// hands its fake in place of running the tools. "" when it writes none,
 	// as when the tests do not compile.
 	Report string
+	// IntegrationReport is the actual subprocess collector report, separately
+	// from Report, in the same existing formats. Empty means no subprocess data.
+	IntegrationReport string
+	// WithoutC8 declares TypeScript's actual missing built-in collector. Binary
+	// fixtures own a facade of pinned tools excluding c8; no integration report
+	// can accompany that absence. Raw reports/no-coverage remain unaffected.
+	WithoutC8 bool
 	// Venv is whether the Python project keeps its own virtualenv in
 	// .venv, whose python is the one with pytest and coverage: the binary
 	// driver links python3 there.
@@ -280,8 +291,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-79: strict
-	ids("MUT", "156-164", "221-226", "228-230"),
 	// T-80: fail-fast, ownership
 	ids("MUT", "165-172", "187-202", "211"),
 	// T-81: counted, worktree

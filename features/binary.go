@@ -107,6 +107,9 @@ const (
 // that did not install the pinned tools skips a scenario needing node or
 // python: its runner's preinstalled ones are whatever version its image has.
 func (b binary) Coverage(dir string, c Coverage) error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
 	required := os.Getenv(languageToolsEnv) != ""
 	if err := languageJob(c.Language); err != nil {
 		return err
@@ -124,7 +127,18 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		if modules == "" {
 			return missing("vitest with @vitest/coverage-v8 (npm ci in testdata/tools/node, or " + nodeModulesEnv + ")")
 		}
-		if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
+		if strings.TrimSpace(c.IntegrationReport) != "" {
+			if _, err := os.Stat(filepath.Join(modules, "c8", "package.json")); os.IsNotExist(err) {
+				return missing("c8 for subprocess coverage")
+			} else if err != nil {
+				return err
+			}
+		}
+		if c.WithoutC8 {
+			if err := coverageWithoutC8(modules, filepath.Join(dir, "node_modules"), runtime.GOOS, required); err != nil {
+				return err
+			}
+		} else if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
 			if required {
 				return err
 			}
@@ -138,6 +152,9 @@ func (b binary) Coverage(dir string, c Coverage) error {
 			if exec.Command("python3", "-c", "import "+module).Run() != nil {
 				return missing(module + " for python3")
 			}
+		}
+		if strings.TrimSpace(c.IntegrationReport) != "" && exec.Command("python3", "-c", "import coverage; assert coverage.version_info[:2] >= (7, 13)").Run() != nil {
+			return missing("coverage.py with subprocess support (7.13 or later)")
 		}
 		if c.Venv {
 			if err := venv(dir, required); err != nil {

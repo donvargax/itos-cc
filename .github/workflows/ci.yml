@@ -151,6 +151,10 @@ jobs:
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(15[0-5]|203|204|206|213|215|219)$'
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(205|207|208|218)$'
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(209|210|214|216|217|220)$'
+          # T-79 keeps Go, strict-language and subprocess startup bounded.
+          go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(15[6-9]|16[0-2]|164|225|226)$'
+          go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(163|22[1-4])$'
+          go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(228|229|230)$'
 
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -50,5 +51,12 @@ func TestMemoryObservesAnIdenticalSnapshotWrite(t *testing.T) {
 	got, err := observe()
 	if err != nil || !slices.Equal(got, []string{file}) {
 		t.Fatalf("identical command snapshot write %v: %v", got, err)
+	}
+}
+
+func TestMemoryReadObservationIsExplicitUntilPortsMove(t *testing.T) {
+	_, err := newMemory(t).ObserveReads("/outside/marker")
+	if !errors.Is(err, features.ErrReadObservationUnsupported) {
+		t.Fatalf("unbound observation: %v", err)
 	}
 }

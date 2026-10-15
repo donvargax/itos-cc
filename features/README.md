@@ -860,7 +860,117 @@ binary; the later bound memory measurer must parse and match both reports and
 preserve their separate provenance, including actual listed-test IDs.
 `Coverage.WithoutC8` is a TypeScript-only fixture with no integration report: its
 owned `node_modules` facade links the actual pinned packages and tools except c8
-and its platform launchers. It never changes the pinned installation. Missing c8
+and its platform launchers. It never changes the pinned installation. Only typed
+permission/unsupported link failures may omit an optional fixture; all other
+link errors and every required-tools failure remain errors. Missing c8
 becomes a collector fact only when the command requests that built-in collector;
 raw-report and no-coverage commands keep their normal behavior. These logical
 coverage outcomes remain eligible for the later in-process driver.
+
+
+T79 converts MUT156..164, 221..226 and 228..230: 18 IDs, 30 expanded
+cases and 187 written steps. Every source layout declares its actual test
+command and measured Go coverprofile, LCOV or JaCoCo facts. These fixtures
+execute real Go, pytest, Vitest, Gradle and Maven commands. The integration
+cases observe real Python subprocesses, child Node processes and JVMs, then
+run separate listed-test fixtures to verify the exact IDs reaching each line.
+Their whole-suite assertions require integration provenance and actual mutant
+trials; listed output proves scope and per-line test IDs. Kotlin includes the
+main argument-index mutant as well as the four describe mutants. Missing-c8
+and missing-agent controls use fresh roots without mutation caches.
+
+Strict line fixtures save independent cold and warm non-strict observations
+without restoring or rewriting caches. Strict findings retain the cold mutant
+totals; the later non-strict comparison uses full warm problem and mutant
+records, including attribution and coverage. Only mutant reuse metadata is
+excluded from identity comparison; actual ran/reused and baseline values are
+checked separately. The Go report declarations use the public collector’s observed positive-weight
+block positions and counts, including the unloaded package. Moved source gets a
+new measurement declaration before the partial run; original stored evidence is
+not rewritten. Zero-weight rows add no executable obligation.
+The repeated-init fixture pairs saved original inventories
+by name and hash through the partial run and full measurement, checking current
+positions, producer and current inputs without exchanging the inventories.
+
+`ObserveReads` accepts nonempty actual file/directory targets. Each target must
+first demonstrate that a real read or directory listing updates its access
+time. It then resets only that access time, preserving modification time, and
+reports sorted actual observations. A later missing target or ordinary I/O
+failure is an error. Missing access metadata or a filesystem that fails its
+positive control is an explicit capability omission, never an empty passing
+read log. The current memory driver explicitly reports that its read ports
+have not moved; T89/T100 must wire observations to real bound selection,
+surroundings and toolchain reads with positive controls. No logical scenario
+gets a permanent binary-only exclusion for that staged implementation.
+
+MUT164 distinguishes ordinary in-project discovery from following a dependency.
+Its public no-replacement control already reads the same excluded in-root
+nested module. Both unsupported replacement operations must still refuse it,
+execute no test/list/coverage command, preserve the complete old artifact, and
+admit neither replacement tree into evidence. A separate genuine external
+observer remains marked through both refusals. GOWORK=off is actual Run.Env
+input. MUT224 first measures a supported plain layout through its real collector
+and proves its complete cached record reusable. It then changes only the scope
+manifest and independently updates only an existing changed manifest hash in
+that observed record. Opaque producer/environment values and all unchanged
+inputs stay intact. This adversarial fresh cache is not a claim that an
+unsupported scope was measured. All controls and cache seeding finish before
+the outside-read observation starts.
+
+MUT163 reads the actual public serve graph, including complete fresh and stale
+populations, and independently checks sampling, other-language strict coverage
+and reviewed survivor exceptions. Its temporary in-process graph deferral joins
+MUT134/153/154/207 until T112; it is not a permanent exclusion. Local Linux and
+Ubuntu installed-tool results do not establish Windows execution of these tool
+fixtures. Counted MUT226 follows the existing native counted capability policy;
+read-observation and tool omissions are reported explicitly when unavailable.
+The unaffected language-tools CI keeps every prior selection, all four MUT247
+examples and all three T78 families, then runs three bounded T79 invocations
+for Go/changed lines, strict language/scope, and subprocess integration. Default
+timeouts stay unchanged. T83's initial-matrix omission remains separate from
+actual execution in that installed-tool selection.
+
+Retain every holder below, its helpers and additional assertions until restored
+replacement CI and T101 cleanup. This mapping is not permission to remove an
+entire tagged test when it also holds an extra assertion.
+
+| MUT | Retained holder | Exact test |
+| --- | --- | --- |
+| 156 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite |
+| 157 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies |
+| 158 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks |
+| 159 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable |
+| 160 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing |
+| 160 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCheckRejectsPartialOrMisattributedEvidence |
+| 161 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCoverageFingerprintStalesOnModuleTestChange |
+| 161 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs |
+| 162 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves |
+| 163 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection |
+| 164 | cmd/itos-cc/strict_go_scope_test.go | TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace |
+| 221 | cmd/itos-cc/strict_lines_python_test.go | TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction |
+| 222 | cmd/itos-cc/strict_lines_typescript_test.go | TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction |
+| 223 | cmd/itos-cc/strict_lines_kotlin_test.go | TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction |
+| 224 | cmd/itos-cc/strict_scope_refusals_test.go | TestStrictCoverageRefusesScopesItsFingerprintsCannotProve |
+| 225 | cmd/itos-cc/strict_changed_lines_test.go | TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem |
+| 225 | cmd/itos-cc/strict_changed_lines_test.go | TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem |
+| 226 | cmd/itos-cc/strict_changed_lines_test.go | TestChangedLineStrictnessNeedsARange |
+| 226 | cmd/itos-cc/strict_changed_lines_counted_test.go | TestChangedLineStrictnessHoldsInACountedRun |
+| 228 | cmd/itos-cc/mutate_python_integration_test.go | TestLinesAPythonTestReachesThroughASubprocessAreCovered |
+| 229 | cmd/itos-cc/mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered |
+| 230 | cmd/itos-cc/mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered |
+
+Additional retained guards include unloaded-package ordering and coverage-missing
+behavior, unattested raw-report rejection, cached workspace rejection,
+out-of-inventory replacements, supported scope controls, Maven strict lines,
+fail-fast changed lines, pre-7.13 coverage.py behavior, other fingerprint inputs,
+partial/misattributed inventories, unsplit integration fallback, and actual raw
+collector/run-directory cleanup. In particular, retain
+`TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing`,
+`TestStrictGoRejectsUnattestedRawCoverageFlags`,
+`TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace`,
+`TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements`,
+`TestStrictGoScopeGuardrailsRemainSupported`,
+`TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines`,
+`TestAFailFastChangedLineRunStopsOnlyOnTheChangedLines`, and
+`TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector`.
+Pure-domain coverage guards remain for the later domain/adapter extraction.

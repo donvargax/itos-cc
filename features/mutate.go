@@ -88,6 +88,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	exceptionMutationSteps(sc, m, since)
 	unjudgedEvidenceSteps(sc, m, since)
 	languageMutationSteps(sc, m, since)
+	strictMutationSteps(sc, m, since)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)

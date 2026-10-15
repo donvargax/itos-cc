@@ -220,6 +220,9 @@ func (m *memory) Lock(ctx context.Context, path string) (func() error, error) {
 
 // Coverage records what the project's own tools measure in dir.
 func (m *memory) Coverage(dir string, c features.Coverage) error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
 	m.coverage[filepath.Clean(dir)] = c
 	return nil
 }
@@ -377,6 +380,12 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
 	}
 	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
+}
+
+// ObserveReads needs actual selection/surroundings/Toolchain read bindings,
+// supplied when mutation moves in T-89/T-100. Fixture reads are not product reads.
+func (m *memory) ObserveReads(_ ...string) (func() ([]string, error), error) {
+	return nil, fmt.Errorf("%w: memory read ports have not moved", features.ErrReadObservationUnsupported)
 }
 
 // ObserveWrites observes memory write revisions rather than byte differences.

@@ -2130,6 +2130,10 @@ Feature: Mutation testing
       And a strict Kotlin run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
+    # Fresh here is a complete matching adversarial cache, observed first from
+    # the same supported plain project. It does not claim that an unsupported
+    # scope admitted a measurement; only changed existing manifest hashes are
+    # replaced before testing the lexical refusal.
     @strict-scope-refusals @ID-MUT-224
     Scenario Outline: Strict coverage refuses <scope>
       Given a <language> project with <scope>, and fresh line coverage evidence for its judged functions
@@ -2577,6 +2581,9 @@ Feature: Mutation testing
       And other-language statement coverage, ordinary graph/sample freshness and survivor exceptions are unchanged
       And a survivor exception cannot excuse a strict Go uncovered-statement finding
 
+    # Dependency following/admission excludes ordinary discovery inside the
+    # project: the same nested module is discovered without a replace directive.
+    # The separate outside-root target is observed through both refusals.
     @strict-go-coverage @ID-MUT-164
     Scenario: Unsupported module scopes cannot reuse strict coverage evidence
       Given a Go function has fresh strict coverage evidence
