@@ -3317,5 +3317,29 @@
     plugins, as current mutation fixtures already do. Carry the actual environment
     input into Run.Env and future fake-port fingerprints. Do not change the product's
     pytest defaults, dependency caches, listed baselines or nightly mutation policy.
+    Dependency reuse is settled from the pinned godog v0.16.0 source:
+    its built-in cucumber formatter already emits JSON with feature URI,
+    scenario tags and expanded examples, step line/name/keyword and each
+    actual result status/error. Consume that report to identify expected
+    assertion failures and actual baseline/example execution. Add only an
+    optional test-harness report flag to features/features_test.go, writing
+    cucumber output to the runner-owned attempt directory alongside the
+    existing pretty output (godog supports simultaneous formatters). The
+    default harness output and selection remain unchanged; this is never
+    a flag of the product binary. Preserve raw test logs as well as the
+    original structured reports. A missing or malformed report is invalid
+    evidence. Follow actual report statuses and scenario identity; a failed
+    setup And cannot count as the expected assertion. Do not reconstruct
+    these facts by parsing colored pretty-output summaries or add another
+    reporting library, callback framework or copied godog implementation.
+    Normalize keyword whitespace and resolve And/But through the preceding
+    Given/When/Then phase; only an assertion-phase failure qualifies. Require
+    a reviewed error token alongside intended step identity to distinguish
+    the assertion from a hook or other error attached to that same step.
+    Match required expanded examples against the actual green control's
+    complete case inventory, not an inferred count from pretty summaries.
+    Godog skipping later steps after the intended assertion fails is its
+    normal failure cascade, not an omitted scenario. Distinguish that from
+    a case that never reaches the expected assertion or runs no steps.
   done_when:
     - run: go test ./tools/bin/step-strictness
