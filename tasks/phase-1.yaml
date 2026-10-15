@@ -1991,3 +1991,34 @@
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
+- id: T-95
+  type: refactor
+  title: Isolate fresh counted preparation behind its domain port and retire legacy mutate
+  why: >
+    S7 after T-94. Complete the current plan with one coarse domain-owned Fresh boundary for fresh
+    counted mutation preparation and publication, keeping immutable Git
+    freezing/materialization/process/tool details at a real adapter rather than leaking a web of
+    implementation steps into the domain. This is the coordinator choice under the person's
+    overnight authorization: an explicit domain-valued request/result and sealed failures at an
+    environment preparation boundary is cleaner than exposing each filesystem/process operation.
+    Reuse the established History/Workers/coverage/fingerprint capabilities through injection;
+    adapters do not select or import other concrete adapters. Preserve committed-source selection,
+    count/seed reproducibility and deterministic rank, frozen config/support/test inputs and
+    provenance, stage/working-copy cleanup ownership, bounded subprocess lifecycle, preparation
+    failure and interruption semantics, truthful retained partial judgments, scope admission, and
+    all existing cache/publication rules. No per-file save feature or native Windows ownership
+    implementation is included. Context first, never stored or recreated; OS behavior supplied as
+    value, no UI/JSON/exit/process implementation in domain. Provide memory Fresh behavior for
+    Givens it can faithfully exercise, retain binary-only tags for real ownership/frozen-stage tool
+    behavior as the plan requires, and add contract cases for shared observable outcomes and typed
+    failures without mocks. Move remaining top-level mutate implementation to its domain/adapters
+    and remove obsolete compatibility shims so no production caller imports legacy mutate once this
+    task completes; graph may use pure domain and injected adapters without its S8 slice move yet.
+    Preserve snapshot wire representation at adapter boundary. Update docs/architecture fixtures and
+    domain coverage. Focus local checks on moved packages and named fixture scenarios; broad gates
+    only hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new dependencies
+    without recorded selection.
+  done_when:
+    - run: go test ./internal/mutants/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
+    - run: "! git grep -n '\"github.com/donvargax/itos-cc/mutate\"' -- \"*.go\""
