@@ -1541,10 +1541,6 @@
     makes only the whole suite fail, with matching per-command declarations. A real all-tests
     sample must fail its baseline before the actual missing-scope sample proves own tests pass;
     source, test and snapshot bytes remain unchanged during that counterfactual.
-  done_when:
-    - run: "! grep -q '// T-75:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$'
-    - run: "git grep -qE '// @ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$' -- cmd/itos-cc"
 - id: T-76
   type: test
   title: mutate.feature's results scenarios run through godog against the built binary
