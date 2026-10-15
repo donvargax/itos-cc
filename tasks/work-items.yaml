@@ -3310,3 +3310,25 @@ items:
     status: todo
     depends_on: [T-115]
     kind: task
+  - id: renamed-snapshot-unit-namespace
+    title: Refresh a transferred snapshot's unit namespace after a source-only rename
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [refactor-final-proof]
+    kind: idea
+    why: >
+      Found while specifying T-77/MUT-144 with a real TypeScript fixture. Record results and a
+      reviewed Board#count survivor in src/board.ts, commit only its rename to src/grid.ts with
+      unchanged test bytes, then run mutation run --since base. That run correctly judges no
+      unchanged functions and reports the moved exception, but the transferred snapshot retains
+      board.Board as its unit namespace while current parsing uses grid.Board. A subsequent
+      whole-project mutation check --json reports count missing and excepted 0. A whole-project
+      mutation run actually judges the renamed source, produces fourteen kills and one excepted
+      survivor, and repairs the usable results. Preserve this current behavior during the refactor;
+      any namespace-transfer fix is a separately specified red-first item after final comparison,
+      not a silent S7 pairing change. Hold source-only rename, changed functions, same-name units,
+      exception applicability and recorded scope/evidence together in that later specification. T-77
+      records the fixture characterization and stable reproduction; clone-local execution artifacts
+      stay in coordinator notes. This differs from orphan-follows-worktree-rename, which concerns a
+      rename without a --since transfer.
