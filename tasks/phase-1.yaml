@@ -1786,6 +1786,21 @@
     and Gradle warms its installed cache before the frozen offline command under test.
     Language cases are measured locally by Rule before choosing bounded CI invocations;
     preserve the previous installed-tools selection and its default ten-minute timeout.
+    MUT-216's unittest example uses a real fixture-owned virtualenv: the public crap
+    custom coverage command creates it with system site packages, installs an owned .pth
+    that blocks pytest in that environment, and measures unittest test_a with coverage.
+    This exposes the actual fallback without a Driver subprocess API. Test fixtures write
+    external canonical execution observations before worker cleanup for own-test selection.
+    Own-test traces for MUT-216 and 217 retain canonical cwd, original_root and
+    source_sha256, plus test from the actual executing fixture. TestTrace.Tests is an
+    optional full inventory mapping runnable selectors (file/module or qualified class,
+    as the declared command uses them) to observed names, including unrelated tests.
+    A nil inventory preserves the earlier trace contract. Later bound Workers and
+    Measurer derive actual executed selectors from their requests and resolve this
+    inventory; whole-suite execution selects the full inventory, unsupported selectors
+    or trace shapes fail explicitly, and no scripted names or empty-success traces
+    stand in for execution. Source hashes come from actual mutated input and the
+    original root from the actual fixture. These logical selection cases stay eligible.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
