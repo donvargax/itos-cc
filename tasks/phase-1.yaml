@@ -1695,3 +1695,19 @@
     - run: grep -q 'ITOS_CC_SKIP_FEATURES' .github/workflows/ci.yml
     - run: ITOS_CC_SKIP_FEATURES=mutate.feature go test ./features -count=1 -scenarios='@ID-MUT-0[1-6]$'
     - run: go test ./features -count=1 -scenarios='@ID-MUT-0[1-6]$'
+- id: T-84
+  type: chore
+  title: Upgrade the repository pin to itos 8.4.0
+  why: >
+    The person selected the upgrade to 8.4.0 before the next implementation item on 2026-10-14. The
+    coordinator ran itos upgrade 8.4.0; its uncommitted edit changes only pin.version and
+    pin.checksums in itos.yaml. Review all crossed releases and their manual notes, keep the
+    existing scenario policy unless a required compatibility fix applies, and finish this upgrade
+    before T-83. No new scenario-moves policy, features, product edits, or mutation testing of this
+    repository. Verify the pinned version and config, commit through configured hooks, push with
+    itos push and close only after exact-head CI succeeds. Preserve the three promoted coordinator
+    drafts. Work only in this checkout, no worktrees or agents.
+  done_when:
+    - run: itos version --check
+    - run: itos config check
+    - run: test "$(itos version)" = "itos 8.4.0"

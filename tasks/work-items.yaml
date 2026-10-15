@@ -3103,3 +3103,10 @@ items:
       setting from ci.yml (note it on refactor-final-proof's neighbour, the idea
       inprocess-mutation-tests). Rules whole; light local testing; never itos task show; no
       worktrees.
+  - id: T-84
+    title: Upgrade the repository pin to itos 8.4.0
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
