@@ -217,8 +217,8 @@ func (f *renewFile) holds(e config.Exception) bool {
 // (FunctionCheck.judged), and false otherwise.
 func (f *renewFile) function(unit int) (FunctionCheck, bool) {
 	for _, fn := range f.check.Functions {
-		if fn.unit == unit {
-			return fn, fn.judged() && fn.State != Missing
+		if fn.Unit == unit {
+			return fn, fn.Judged() && fn.State != Missing
 		}
 	}
 	return FunctionCheck{}, false

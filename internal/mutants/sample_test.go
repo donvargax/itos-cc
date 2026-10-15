@@ -1,4 +1,4 @@
-package mutate
+package mutants
 
 import "testing"
 
@@ -23,11 +23,11 @@ func TestKilledAndTimeoutAgree(t *testing.T) {
 }
 
 func TestTheDrawDependsOnTheSeedAndTheMutantAlone(t *testing.T) {
-	a := rank("4813e48", "src/a.go", "m#f", "3:>>>=")
-	if b := rank("4813e48", "src/a.go", "m#f", "3:>>>="); a != b {
+	a := Rank("4813e48", "src/a.go", "m#f", "3:>>>=")
+	if b := Rank("4813e48", "src/a.go", "m#f", "3:>>>="); a != b {
 		t.Errorf("one seed and mutant ranked %s and %s", a, b)
 	}
-	if b := rank("other", "src/a.go", "m#f", "3:>>>="); a == b {
+	if b := Rank("other", "src/a.go", "m#f", "3:>>>="); a == b {
 		t.Errorf("two seeds ranked one mutant alike, %s", a)
 	}
 }

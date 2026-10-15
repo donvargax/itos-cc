@@ -3,8 +3,7 @@ package mutate
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
+
 	"errors"
 	"fmt"
 	"os"
@@ -13,18 +12,19 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"strconv"
+
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/project"
 )
 
 // FreshPlanVersion names the stable static selection algorithm. It changes
 // whenever the identity or ranking inputs change.
-const FreshPlanVersion = "fresh-plan-v2"
+const FreshPlanVersion = mutants.FreshPlanVersion
 
 // FreshPlan is a cache-independent selection of committed mutation sites.
 // FrozenRoot holds the repository's committed tracked inputs only; external
@@ -62,14 +62,6 @@ func (p *FreshPlan) ChangedLines(rel string, start, end int) bool {
 	return project.LinesOverlap(p.Changed[filepath.ToSlash(rel)], start, end)
 }
 
-// FreshUnit identifies one admitted committed function independently of its
-// mutation sites.
-type FreshUnit struct {
-	Path, Function, Identity string
-	StartLine, EndLine       int
-	Hash                     string
-}
-
 // Errors a fresh plan wraps, so a caller can tell what refused it.
 var (
 	// ErrFreshRepository: no Git repository or no resolvable HEAD commit.
@@ -85,17 +77,6 @@ var (
 	// reached through a symlink or a file.
 	ErrFreshScratch = errors.New("unusable private scratch directory")
 )
-
-// FreshCandidate identifies a static mutation site without relying on cached
-// outcomes or on the unit's display name alone.
-type FreshCandidate struct {
-	Identity     string
-	Path         string
-	Function     string
-	UnitIdentity string
-	Site         Site
-	Rank         string
-}
 
 // Close removes the plan's frozen committed-input tree.
 func (p *FreshPlan) Close() error {
@@ -184,8 +165,8 @@ func PlanFresh(ctx context.Context, repoRoot string, paths []string, since strin
 		plan.Changed = map[string][]project.LineRange{}
 		for rel, ranges := range changed {
 			for _, r := range ranges {
-				if !r.deletion {
-					plan.Changed[rel] = append(plan.Changed[rel], project.LineRange{Start: r.start, End: r.end})
+				if !r.Deletion {
+					plan.Changed[rel] = append(plan.Changed[rel], project.LineRange{Start: r.Start, End: r.End})
 				}
 			}
 		}
@@ -658,11 +639,6 @@ func makePrivateDirs(root, target string) error {
 // lineRange is a range of line numbers, both ends included; deletion
 // marks the two lines either side of a hunk that only deleted lines, which
 // admit their functions but are no line the range added or changed.
-type lineRange struct {
-	start, end int
-	deletion   bool
-}
-
 func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRange, string, error) {
 	if strings.HasPrefix(ref, "-") {
 		return nil, "", fmt.Errorf("%w: invalid --since ref %q", ErrFreshSince, ref)
@@ -720,58 +696,4 @@ func changedAt(ctx context.Context, root, ref, head string) (map[string][]lineRa
 		changed[name] = hunkRanges(string(patch))
 	}
 	return changed, base, nil
-}
-
-func hunkRanges(patch string) []lineRange {
-	var ranges []lineRange
-	for _, line := range strings.Split(patch, "\n") {
-		if !strings.HasPrefix(line, "@@ ") {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) < 3 || !strings.HasPrefix(fields[2], "+") {
-			continue
-		}
-		startText, countText, hasCount := strings.Cut(fields[2][1:], ",")
-		start, err := strconv.Atoi(startText)
-		if err != nil {
-			continue
-		}
-		count := 1
-		if hasCount {
-			count, err = strconv.Atoi(countText)
-			if err != nil {
-				continue
-			}
-		}
-		if count == 0 {
-			ranges = append(ranges, lineRange{start, start + 1, true})
-		} else {
-			ranges = append(ranges, lineRange{start, start + count - 1, false})
-		}
-	}
-	return ranges
-}
-
-func overlapsRanges(ranges []lineRange, start, end int) bool {
-	for _, r := range ranges {
-		if r.start <= end && r.end >= start {
-			return true
-		}
-	}
-	return false
-}
-
-func freshRank(seed, rel, identity string) string {
-	sum := sha256.Sum256([]byte(FreshPlanVersion + "\x00" + seed + "\x00" + filepath.ToSlash(rel) + "\x00" + identity))
-	return hex.EncodeToString(sum[:])
-}
-
-func sortFreshCandidates(candidates []FreshCandidate) {
-	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].Rank != candidates[j].Rank {
-			return candidates[i].Rank < candidates[j].Rank
-		}
-		return candidates[i].Identity < candidates[j].Identity
-	})
 }

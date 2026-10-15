@@ -140,37 +140,6 @@ type FileResult struct {
 	Cached bool
 }
 
-// MutantResult is how one mutant was decided in this run.
-type MutantResult struct {
-	Site
-	Function string // namespace#name
-	Outcome  string // Killed, Survived, Timeout, or Uncovered
-	// Reused is true when the outcome came from the snapshot without
-	// running.
-	Reused bool
-	// Scope is the scope of the tests that decided Outcome: this run's,
-	// or, reused, the one its snapshot records. See RunScope.
-	Scope string
-	// Excepted is the reason itos-cc.yaml gives when it excepts the mutant
-	// and the mutant survived; empty otherwise.
-	Excepted string
-	// Coverage names the sources of this run's coverage that executed the
-	// mutant's line, "in-process", "integration", or both; empty when
-	// coverage was not measured or did not execute it.
-	Coverage []string
-	// Tests is, with Scope ScopeListed, the IDs of the listed tests that
-	// decided Outcome.
-	Tests []string
-	// State is, in a fail-fast run, StateCompleted when Outcome is set, and
-	// otherwise why it is not; empty in other runs, where every mutant
-	// listed has its outcome.
-	State string
-}
-
-// skipped marks a site of a function not judged that has no outcome to keep:
-// it neither runs nor goes into the snapshot.
-const skipped = "skipped"
-
 type fileState struct {
 	file     *lang.File
 	rel      string // the file's path as output names it, from the working directory
@@ -354,12 +323,12 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		}
 		s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
 		s.markListedStale()
-		s.result.Snapshot.recordListed(project.Root(), opt.Support)
+		recordListed(&s.result.Snapshot, project.Root(), opt.Support)
 		markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 		if incomplete {
 			s.result.Incomplete = true
 			if s.judgedAnew() {
-				if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.result.Snapshot); failure != nil {
+				if failure := opt.Store.Write(ctx, SnapshotName(s.key), SnapshotJSON(s.result.Snapshot)); failure != nil {
 					return nil, nil, failure
 				}
 				if err := s.removeMoved(ctx, opt.Store); err != nil {
@@ -375,7 +344,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 			// file is left as it was: no new results, no comment. A
 			// renamed file's snapshot still moves, as it was.
 			if s.moving != nil {
-				if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.moving); failure != nil {
+				if failure := opt.Store.Write(ctx, SnapshotName(s.key), SnapshotJSON(*s.moving)); failure != nil {
 					return nil, nil, failure
 				}
 			}
@@ -385,7 +354,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 			results = append(results, *s.result)
 			continue
 		}
-		if failure := opt.Store.Write(ctx, SnapshotName(s.key), s.result.Snapshot); failure != nil {
+		if failure := opt.Store.Write(ctx, SnapshotName(s.key), SnapshotJSON(s.result.Snapshot)); failure != nil {
 			return nil, nil, failure
 		}
 		if err := s.removeMoved(ctx, opt.Store); err != nil {
@@ -481,7 +450,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 		}
 		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev, prevScopes := rememberedWithScopes(s.previous, f)
-		s.listedChange = s.stored.ListedChanged(project.Root(), opt.Support)
+		s.listedChange = ListedChanged(s.stored, project.Root(), opt.Support)
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {
@@ -498,7 +467,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 			judge = func(function string) bool { return names[function] }
 		}
 		s.excepted = applyExceptions(opt.Exceptions, key, f, s.sites, judge)
-		s.result.StaleExceptions = s.excepted.stale
+		s.result.StaleExceptions = s.excepted.Stale
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))
 		s.scopes = make([]string, len(s.sites))
@@ -514,20 +483,20 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 				s.outcomes[i] = skipped
 				if outcome := prev[site.Unit][site.Key()]; outcome != "" {
 					d := prevScopes[site.Unit][site.Key()]
-					s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
+					s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.Scope, d.Tests
 				}
 				continue
 			}
-			_, excepted := s.excepted.held[i]
+			_, excepted := s.excepted.Held[i]
 			d := prevScopes[site.Unit][site.Key()]
 			// A listed outcome holds while the files it rests on do.
-			restsOnChange := len(s.listedChange.files([]Mutant{{Scope: d.scope, Tests: d.tests}})) > 0
-			broadStale := len(BroadChanges(Mutant{Scope: d.scope, SuiteEvidence: d.evidence}, s.moduleTests, opt.Support)) > 0
+			restsOnChange := len(s.listedChange.Files([]Mutant{{Scope: d.Scope, Tests: d.Tests}})) > 0
+			broadStale := len(BroadChanges(Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}, s.moduleTests, opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
-				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.scope, tests: d.tests}
+				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, tests: d.Tests}
 			}
-			if outcome, ok := prev.kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
-				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.scope, d.tests
+			if outcome, ok := prev.Kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
+				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.Scope, d.Tests
 				s.reused[i] = true
 				s.result.Reused++
 			}
@@ -583,7 +552,7 @@ func (s *fileState) decided() []MutantResult {
 		if s.judged != nil && !s.judged[site.Unit] {
 			continue
 		}
-		reason, stale := s.excepted.judge(i, site, s.outcomes[i])
+		reason, stale := s.excepted.Judge(i, site, s.outcomes[i])
 		if stale != nil {
 			s.result.StaleExceptions = append(s.result.StaleExceptions, *stale)
 		}
@@ -924,12 +893,4 @@ func judged(r result) string {
 // command runs the listed tests ids.
 func (l *Listed) command(ids []string) Command {
 	return Command{Root: l.Root, Dir: l.Root, Shell: l.Select(ids)}
-}
-
-// show renders an empty replacement, a deleted operator, visibly.
-func show(s string) string {
-	if s == "" {
-		return "(deleted)"
-	}
-	return "`" + s + "`"
 }

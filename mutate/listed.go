@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
-	"sort"
 )
 
 // A kill by listed tests (ScopeListed) rests on files no import names: the
@@ -54,22 +53,10 @@ func fileHash(path string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// hasListed reports whether units hold an outcome of ScopeListed.
-func hasListed(units []UnitResult) bool {
-	for _, u := range units {
-		for _, m := range u.Mutants {
-			if m.Scope == ScopeListed {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // recordListed records in s what its listed outcomes rest on: the hash of
 // each file Listed names, now, under root, and support, the support files'
 // hashes now. A snapshot with no listed outcome records neither.
-func (s *Snapshot) recordListed(root string, support map[string]string) {
+func recordListed(s *Snapshot, root string, support map[string]string) {
 	s.ListedFiles, s.Support = nil, nil
 	if !hasListed(s.Units) {
 		return
@@ -91,67 +78,21 @@ func (s *Snapshot) recordListed(root string, support map[string]string) {
 	}
 }
 
-// ListedChange is how the files a snapshot's listed outcomes rest on differ
-// from those it recorded.
-type ListedChange struct {
-	listed  map[string]string // the file of each test, by ID
-	tests   map[string]bool   // the tests' files changed
-	support []string          // the support files changed, added, or removed, sorted
-}
-
 // ListedChanged is how the files the listed outcomes of s rest on, under
 // root, differ now from those it recorded, support being the support
 // files' hashes now (SupportHashes); nil while they are the same or s
 // records no listed outcome.
-func (s *Snapshot) ListedChanged(root string, support map[string]string) *ListedChange {
+func ListedChanged(s *Snapshot, root string, support map[string]string) *ListedChange {
 	if s == nil || !hasListed(s.Units) {
 		return nil
 	}
-	c := &ListedChange{listed: s.Listed, tests: map[string]bool{}}
+	now := map[string]string{}
 	for _, file := range s.Listed {
-		if file != "" && fileHash(filepath.Join(root, filepath.FromSlash(file))) != s.ListedFiles[file] {
-			c.tests[file] = true
+		if file != "" {
+			now[file] = fileHash(filepath.Join(root, filepath.FromSlash(file)))
 		}
 	}
-	d := compareTests(s.Support, support)
-	c.support = append(append(append(c.support, d.Changed...), d.Added...), d.Removed...)
-	sort.Strings(c.support)
-	if len(c.tests) == 0 && len(c.support) == 0 {
-		return nil
-	}
-	return c
-}
-
-// files is the files that changed among those the listed outcomes of
-// mutants rest on, sorted; nil when none did.
-func (c *ListedChange) files(mutants []Mutant) []string {
-	if c == nil {
-		return nil
-	}
-	set := map[string]bool{}
-	listed := false
-	for _, m := range mutants {
-		if m.Scope != ScopeListed {
-			continue
-		}
-		listed = true
-		for _, id := range m.Tests {
-			if f := c.listed[id]; c.tests[f] {
-				set[f] = true
-			}
-		}
-	}
-	if listed {
-		for _, f := range c.support {
-			set[f] = true
-		}
-	}
-	var out []string
-	for f := range set {
-		out = append(out, f)
-	}
-	sort.Strings(out)
-	return out
+	return s.ListedChanged(now, support)
 }
 
 // markListedStale marks Stale each entry of the snapshot a run writes that
@@ -168,7 +109,7 @@ func (s *fileState) markListedStale() {
 	}
 	units := s.result.Snapshot.Units
 	for i := range units {
-		if !judged[unitID(units[i].Namespace, units[i].Name)] && len(s.listedChange.files(units[i].Mutants)) > 0 {
+		if !judged[unitID(units[i].Namespace, units[i].Name)] && len(s.listedChange.Files(units[i].Mutants)) > 0 {
 			units[i].Stale = true
 		}
 	}

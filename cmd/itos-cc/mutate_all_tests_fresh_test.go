@@ -268,7 +268,7 @@ func broadEvidenceAt(t *testing.T, path string, line int) *mutate.SuiteEvidence 
 		t.Fatal(err)
 	}
 	var snapshot mutate.Snapshot
-	if err := json.Unmarshal(data, &snapshot); err != nil {
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, unit := range snapshot.Units {
@@ -314,7 +314,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 		t.Fatal(err)
 	}
 	var snapshot mutate.Snapshot
-	if err := json.Unmarshal(data, &snapshot); err != nil {
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	byName := map[string]*mutate.Mutant{}
@@ -357,7 +357,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	byName["TestCommand"].Scope = "go test -count=1 ./..."
 	byName["Survivor"].Scope = mutate.ScopeAllTests
 	byName["Excepted"].Scope = "go test -count=1 ./..."
-	data, err = json.Marshal(snapshot)
+	data, err = json.Marshal(mutate.SnapshotJSON(snapshot))
 	if err != nil {
 		t.Fatal(err)
 	}

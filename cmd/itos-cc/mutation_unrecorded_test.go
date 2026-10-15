@@ -46,7 +46,7 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 		u.Mutants = u.Mutants[:len(u.Mutants)-1]
 		u.Sites--
 		u.Killed--
-		data, err := json.MarshalIndent(snap, "", "  ")
+		data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}

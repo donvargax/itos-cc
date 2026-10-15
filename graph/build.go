@@ -127,7 +127,7 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 				return nil, false, err
 			}
 			snap := b.snapshot(ctx, r.top, info.abs, live)
-			infos[i] = overlay.apply(ctx, info, now, snap, snap.ListedChanged(r.top, r.support), r.top, r.support)
+			infos[i] = overlay.apply(ctx, info, now, snap, mutate.ListedChanged(snap, r.top, r.support), r.top, r.support)
 		}
 		rg := newRepoGraph(ctx, r.name, r.root, infos)
 		// A stopped build resolves no further: what it left unresolved is

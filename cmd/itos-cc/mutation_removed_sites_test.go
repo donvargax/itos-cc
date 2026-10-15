@@ -65,7 +65,7 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
 		default:
 			t.Fatalf("an added mutant %s, want survived or killed", outcome)
 		}
-		data, err := json.MarshalIndent(snap, "", "  ")
+		data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}

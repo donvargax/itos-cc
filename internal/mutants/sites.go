@@ -1,4 +1,4 @@
-// Package mutate runs mutation testing: it makes small changes to functions
+// Package mutants owns pure mutation rules: it makes small changes to functions
 // one at a time and checks that the tests notice. A mutant is killed when the
 // tests fail or time out, and survives when they still pass. A mutant on a
 // line no test executes is uncovered and is not run.

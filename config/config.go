@@ -8,6 +8,8 @@ package config
 
 import (
 	"bytes"
+	"github.com/bmatcuk/doublestar/v4"
+
 	"errors"
 	"fmt"
 	"os"
@@ -15,9 +17,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bmatcuk/doublestar/v4"
 	"go.yaml.in/yaml/v3"
 
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -30,35 +32,6 @@ func Path() string {
 	return filepath.Join(project.Root(), File)
 }
 
-// Exception is one excepted mutant: a survivor no test can kill because it
-// changes no behaviour. It is found by its function, the function's hash
-// when it was excepted, and the site's place within the function, so a
-// function that only moved keeps it.
-type Exception struct {
-	File     string `yaml:"file"`     // slash-separated, from the project root
-	Function string `yaml:"function"` // namespace#name
-	Hash     string `yaml:"hash"`     // the function's hash, as the snapshot records it
-	// LineInFunction is the site's line counted from the function's first
-	// line, which is 1.
-	LineInFunction int    `yaml:"line_in_function"`
-	Column         int    `yaml:"column"`
-	Original       string `yaml:"original"`
-	Replacement    string `yaml:"replacement"` // empty for a deletion
-	Reason         string `yaml:"reason"`
-	// LineText is the text of the site's line, less the space around it, as
-	// it was when the entry was written: what mutation except --renew
-	// matches the line against. Optional: entries written before it have
-	// none.
-	LineText string `yaml:"line_text,omitempty"`
-}
-
-// SameSite reports whether e and o except the same site: one function, one
-// place within it, one change.
-func (e Exception) SameSite(o Exception) bool {
-	return e.File == o.File && e.Function == o.Function && e.LineInFunction == o.LineInFunction &&
-		e.Column == o.Column && e.Original == o.Original && e.Replacement == o.Replacement
-}
-
 // Config is what itos-cc reads of itos-cc.yaml.
 type Config struct {
 	// Exclude are doublestar globs, slash-separated and from the project
@@ -69,46 +42,6 @@ type Config struct {
 	// Tests, when set, is how to list the project's tests and run a
 	// selection of them.
 	Tests *Tests
-}
-
-// Tests is mutation.tests: commands, run through the platform shell at the
-// project root, that list the project's tests and run a selection of them,
-// sharing only the tests' IDs and paths.
-type Tests struct {
-	// List prints one test per line: its ID and, after a tab, optionally
-	// the file that defines it.
-	List string
-	// Run runs the tests {pattern} selects.
-	Run string
-	// IDsPattern is the pattern of a selection, with {ids} the selected
-	// IDs, each written as Each, with {id} the ID, joined by Sep.
-	IDsPattern string
-	Each, Sep  string
-	// Whole, optional, runs every listed test; without it, Run selects them
-	// all.
-	Whole string
-	// Support are globs, from the project root, of the files every listed
-	// test depends on, such as the step code its checks run: a kill by
-	// listed tests holds while they are unchanged.
-	Support []string
-}
-
-// Select is the command that runs the tests ids.
-func (t *Tests) Select(ids []string) string {
-	each := make([]string, len(ids))
-	for i, id := range ids {
-		each[i] = strings.ReplaceAll(t.Each, "{id}", id)
-	}
-	pattern := strings.ReplaceAll(t.IDsPattern, "{ids}", strings.Join(each, t.Sep))
-	return strings.ReplaceAll(t.Run, "{pattern}", pattern)
-}
-
-// All is the command that runs every test, ids.
-func (t *Tests) All(ids []string) string {
-	if t.Whole != "" {
-		return t.Whole
-	}
-	return t.Select(ids)
 }
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
@@ -350,7 +283,7 @@ func Except(e Exception) (replaced bool, err error) {
 	exceptions := valueOf(valueOf(root, "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 
 	var entry yaml.Node
-	if err := entry.Encode(e); err != nil {
+	if err := entry.Encode(exceptionWire(e)); err != nil {
 		return false, err
 	}
 	for i, old := range c.Exceptions {
@@ -412,7 +345,7 @@ func Renew(renewals []Renewal) error {
 			return fmt.Errorf("%s: no entry for %s in %s to renew", File, r.Old.Function, r.Old.File)
 		}
 		var entry yaml.Node
-		if err := entry.Encode(r.New); err != nil {
+		if err := entry.Encode(exceptionWire(r.New)); err != nil {
 			return err
 		}
 		was := exceptions.Content[i]
@@ -457,3 +390,7 @@ func write(doc *yaml.Node) error {
 	}
 	return os.WriteFile(Path(), buf.Bytes(), mode)
 }
+
+// Exception and Tests are domain values; YAML stays at this boundary.
+type Exception = mutants.Exception
+type Tests = mutants.Tests

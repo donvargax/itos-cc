@@ -20,15 +20,6 @@ import (
 // selection, as a file's baseline does for its own tests. A selection that
 // fails decides none of the mutants that would run it.
 
-// FailedSelection is a selection of listed tests that fails without any
-// mutant.
-type FailedSelection struct {
-	IDs      []string // in the order the mutants name them
-	Command  string   // the shell command line that ran them
-	ExitCode int      // the command's exit code, -1 when it gave none
-	Output   string
-}
-
 // selections holds the baseline of each selection a run needed, by its set
 // of IDs, for every worker: each runs once, while the other workers that
 // need it wait for it.

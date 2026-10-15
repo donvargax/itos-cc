@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"maps"
+
 	"os"
 	"path/filepath"
 	"runtime"
@@ -91,25 +91,6 @@ func GoCoverageInputs(source, projectRoot, producer string, support map[string]s
 		"GO386=" + os.Getenv("GO386"),
 	}, "\x00"))
 	return out, nil
-}
-
-// GoCoverageChanges names every missing, added, or changed fingerprint input.
-func GoCoverageChanges(recorded, current map[string]string) []string {
-	if maps.Equal(recorded, current) {
-		return nil
-	}
-	var changed []string
-	for path, hash := range recorded {
-		if now, ok := current[path]; !ok || now != hash {
-			changed = append(changed, path)
-		}
-	}
-	for path, hash := range current {
-		if before, ok := recorded[path]; !ok || before != hash {
-			changed = append(changed, path)
-		}
-	}
-	return uniqueSorted(changed)
 }
 
 func hashText(text string) string {

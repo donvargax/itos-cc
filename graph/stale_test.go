@@ -85,7 +85,7 @@ func (m module) tests(rel ...string) map[string]string {
 // units.
 func (m module) snapshot(rel string, tests map[string]string, units []mutate.UnitResult) {
 	m.t.Helper()
-	data, err := json.Marshal(mutate.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units})
+	data, err := json.Marshal(mutate.SnapshotJSON(mutate.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units}))
 	if err != nil {
 		m.t.Fatal(err)
 	}

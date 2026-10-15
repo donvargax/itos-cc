@@ -139,7 +139,7 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 				Complete: true, Blocks: []mutate.CoverageBlock{}},
 		})
 	}
-	data, err := json.MarshalIndent(snap, "", "  ")
+	data, err := json.MarshalIndent(mutate.SnapshotJSON(snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,34 +4,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"reflect"
+
 	"slices"
 	"testing"
 )
-
-func TestBroadEvidenceAppliesToEveryBroadOutcomeAndNoNarrowOutcome(t *testing.T) {
-	oldTests := map[string]string{"app_test.go": "before"}
-	nowTests := map[string]string{"app_test.go": "after"}
-	oldSupport := map[string]string{"features/steps.go": "before"}
-	nowSupport := map[string]string{"features/steps.go": "after"}
-	mutants := []Mutant{
-		{Scope: ScopeOwn, Outcome: Killed},
-		{Scope: ScopeListed, Outcome: Killed, Tests: []string{"ID-1"}},
-		{Scope: ScopeAllTests, Outcome: Survived, SuiteEvidence: &SuiteEvidence{Tests: oldTests, Support: oldSupport}},
-		{Scope: "go test ./...", Outcome: Survived, Excepted: "equivalent", SuiteEvidence: &SuiteEvidence{Tests: oldTests, Support: oldSupport}},
-	}
-	changed := BroadChangesForUnit(mutants, nowTests, nowSupport)
-	want := []string{"app_test.go", "features/steps.go"}
-	if !reflect.DeepEqual(changed, want) {
-		t.Fatalf("broad changes %v, want %v", changed, want)
-	}
-	if got := BroadChanges(mutants[0], nowTests, nowSupport); len(got) != 0 {
-		t.Fatalf("own outcome depends on broad inputs: %v", got)
-	}
-	if got := BroadChanges(mutants[1], nowTests, nowSupport); len(got) != 0 {
-		t.Fatalf("listed outcome depends on Go module inputs: %v", got)
-	}
-}
 
 func TestSuiteTestHashesFollowEachLanguagesBuildRoot(t *testing.T) {
 	root := t.TempDir()
@@ -96,13 +72,13 @@ func TestSuiteTestHashesFollowEachLanguagesBuildRoot(t *testing.T) {
 
 func TestGoEvidenceReadsAsSuiteEvidenceAndIsWrittenUnderTheNeutralKey(t *testing.T) {
 	var m Mutant
-	if err := json.Unmarshal([]byte(`{"outcome":"killed","scope":"all-tests","go_evidence":{"tests":{"a_test.go":"h"},"support":{}}}`), &m); err != nil {
+	if err := readMutantJSON([]byte(`{"outcome":"killed","scope":"all-tests","go_evidence":{"tests":{"a_test.go":"h"},"support":{}}}`), &m); err != nil {
 		t.Fatal(err)
 	}
 	if m.SuiteEvidence == nil || m.SuiteEvidence.Tests["a_test.go"] != "h" {
 		t.Fatalf("go_evidence read as %+v, want the suite evidence", m.SuiteEvidence)
 	}
-	data, err := json.Marshal(m)
+	data, err := json.Marshal(MutantJSON(m))
 	if err != nil {
 		t.Fatal(err)
 	}

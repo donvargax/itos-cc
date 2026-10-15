@@ -115,7 +115,7 @@ func recordAs(t *testing.T, rel, function, original, outcome string) {
 	if !found {
 		t.Fatalf("the snapshot of %s records no mutant of %s in %s", rel, quote(original), function)
 	}
-	data, err := json.MarshalIndent(snap, "", "  ")
+	data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}

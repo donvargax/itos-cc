@@ -97,13 +97,8 @@ func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var snapshot struct {
-		Units []struct {
-			Name     string                     `json:"name"`
-			Coverage *mutate.GoCoverageEvidence `json:"go_coverage"`
-		} `json:"units"`
-	}
-	if err := json.Unmarshal(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, unit := range snapshot.Units {
@@ -163,14 +158,8 @@ func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	var snapshot struct {
-		Units []struct {
-			Namespace string                     `json:"namespace"`
-			Name      string                     `json:"name"`
-			Coverage  *mutate.GoCoverageEvidence `json:"go_coverage"`
-		} `json:"units"`
-	}
-	if err := json.Unmarshal(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	var branch *mutate.GoCoverageEvidence

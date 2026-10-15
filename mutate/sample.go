@@ -2,62 +2,12 @@ package mutate
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"path/filepath"
+
 	"slices"
 	"sort"
 
 	"github.com/donvargax/itos-cc/project"
 )
-
-// Sampled is a sample of cached mutants run again.
-type Sampled struct {
-	// Cached is how many mutants the sample was drawn from: those the fresh
-	// entries of the files' snapshots record as killed, timeout, or
-	// survived.
-	Cached int
-	// Files holds each file with a sampled mutant, in the order given.
-	Files []SampledFile
-}
-
-// SampledFile is one file's sampled mutants.
-type SampledFile struct {
-	Rel string
-	// BaselineFailed is true when the baseline of a scope its sampled
-	// mutants run in failed, with that baseline's output.
-	BaselineFailed bool
-	BaselineOutput string
-	// FailedSelections is each selection of listed tests a sampled mutant
-	// of the file needed that failed without any mutant: that mutant is
-	// not decided, so none of the file's is reported, as when a baseline
-	// failed.
-	FailedSelections []FailedSelection
-	// Mutants is each sampled mutant, in site order, with what its snapshot
-	// records and what it did now; empty when a baseline or a selection
-	// failed.
-	Mutants []SampledMutant
-}
-
-// SampledMutant is a mutant run again: the outcome its snapshot records
-// and the outcome it has now.
-type SampledMutant struct {
-	Site
-	Function string // namespace#name
-	Recorded string
-	Outcome  string
-	// Scope is the scope of the tests it ran with now: the one its
-	// snapshot records, unless the sample was given one.
-	Scope string
-}
-
-// Agrees reports whether the mutant's outcome now is the one recorded.
-// Killed and timeout agree: both mean the tests noticed, and a slower
-// machine turns one into the other.
-func (m SampledMutant) Agrees() bool {
-	noticed := func(o string) bool { return o == Killed || o == Timeout }
-	return m.Recorded == m.Outcome || noticed(m.Recorded) && noticed(m.Outcome)
-}
 
 // Sample runs again count mutants drawn by seed from those the fresh
 // entries of files' snapshots record as killed, timeout, or survived, all
@@ -103,7 +53,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		if err != nil {
 			return Sampled{}, err
 		}
-		s.rel, s.key, s.result = c.Rel, c.key, &FileResult{Rel: c.Rel}
+		s.rel, s.key, s.result = c.Rel, c.Key, &FileResult{Rel: c.Rel}
 		at := map[int]map[string]int{}
 		for i, site := range s.sites {
 			if at[site.Unit] == nil {
@@ -112,11 +62,11 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 			at[site.Unit][site.Key()] = i
 		}
 		for _, fn := range c.Functions {
-			if !fn.judged() {
+			if !fn.Judged() {
 				continue
 			}
 			for _, m := range fn.Mutants {
-				i, ok := at[fn.unit][m.key()]
+				i, ok := at[fn.Unit][m.Key()]
 				if !ok || (m.Outcome != Killed && m.Outcome != Timeout && m.Outcome != Survived) {
 					continue
 				}
@@ -125,7 +75,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 					scope, tests = RunScope(opt.TestCommand, opt.AllTests), nil
 				}
 				candidates = append(candidates, candidate{state: s, site: i, function: fn.Function, recorded: m.Outcome,
-					scope: scope, tests: tests, rank: rank(seed, s.key, fn.Function, m.key())})
+					scope: scope, tests: tests, rank: rank(seed, s.key, fn.Function, m.Key())})
 			}
 		}
 	}
@@ -212,13 +162,4 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		result.Files = append(result.Files, f)
 	}
 	return result, nil
-}
-
-// rank orders a candidate in the draw of seed: the SHA-256 of the seed, the
-// file's slash-separated path from the project root, the function, and the
-// site's key, which stay the same while the function is unchanged, on every
-// platform and from every directory.
-func rank(seed, rel, function, key string) string {
-	sum := sha256.Sum256([]byte(seed + "\x00" + filepath.ToSlash(rel) + "\x00" + function + "\x00" + key))
-	return hex.EncodeToString(sum[:])
 }

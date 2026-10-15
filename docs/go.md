@@ -146,6 +146,16 @@ from it, and thin slices named for their commands.
   returns the domain's `Report` as the runner built it, with no mapper (decision 47), and
   writes what it runs and the tools' output only to the `Log` main gives it. Its
   `MeasureTests` measures each listed test's coverage too, mutation's until it moves.
+- `internal/mutants` is the pure mutation domain (T-87): mutation sites and unit hashes,
+  stored-result values, pairing and freshness rules, exception judgment, executable-coverage
+  evidence and its judgment, annotation text, sampling ranks, committed-candidate values and
+  diff hunks. It reads nothing and has no representation tags or JSON/YAML methods. Tests
+  parse supplied source through lang's surroundings fake. Legacy `mutate` temporarily aliases
+  these values and delegates to their rules while execution, discovery and orchestration move
+  in later tasks. Its concrete snapshot codec preserves the stored format, including legacy
+  evidence keys and line-precision evidence; config's concrete YAML codec owns exception
+  encoding. Command discovery, the mixed fresh-plan wrapper and mixed sample execution stay
+  at those legacy boundaries until their corresponding port tasks.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
