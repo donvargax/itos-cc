@@ -2565,6 +2565,19 @@
     time. The current memory driver explicitly refuses this capability because
     it has no timestamp state; SNAP07 stays logically eligible. Its later bound
     fake must update actual entry metadata or retain that honest refusal.
+    The first complete local conversion executed seventeen expanded cases and
+    fifty steps without omissions in 11.650 seconds of Godog time (12.986 package
+    seconds). Keep ordinary matrix selection unchanged: snapshots are not part
+    of the T83 mutation omission. Add one bounded exact SNAP01..12 native report
+    invocation after T81 and before optional language tools, preserving existing
+    commands and default timeout. Preserve original cucumber JSON as a required
+    per-OS artifact using the current pinned action and separated quoted dotted
+    report filename. This makes actual native cases and typed physical omissions
+    reviewable despite ordinary all-package output suppression. It adds no tools,
+    proof tier or product behavior. Assertion probes may overlap immutable CI
+    only after final controls, coordinator review of manifest and source hashes,
+    normal baseline commit/push and exact remote verification; no other source,
+    index or documentation writes until exact probe restoration is verified.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
@@ -3254,6 +3267,11 @@
     application/documentation boundary rather than keeping dead helper stacks
     or deleting the checks as duplicate public scenarios. MUT248 supplies actual
     native Windows refusal evidence, not a replacement for those different guards.
+    SNAP07 remains logically eligible: T82's SetModTime currently returns an
+    explicit typed unsupported result from memory because its tree stores no
+    timestamps. At the actual cleanup binding, update and observe real fake
+    entry modification metadata before claiming SNAP07 in-process execution;
+    retain honest refusal until then. Never return the requested time as proof.
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
