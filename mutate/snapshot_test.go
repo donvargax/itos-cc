@@ -121,6 +121,44 @@ func TestUnjudgedFunctionsKeepTheirIndependentCoverageEvidence(t *testing.T) {
 	}
 }
 
+func TestAnUnjudgedMovedFunctionKeepsItsRecordedScopeAndEvidence(t *testing.T) {
+	before := parse(t, "x.py", "def a():\n    return True\ndef b():\n    return False\n")
+	defer before.Close()
+	after := parse(t, "x.py", "import os\n\ndef a():\n    return True\ndef b():\n    return False\n")
+	defer after.Close()
+	for _, scope := range []string{ScopeOwn, ScopeListed, ScopeAllTests, "go version", "legacy broad"} {
+		t.Run(scope, func(t *testing.T) {
+			recordedScope := scope
+			if scope == "legacy broad" {
+				recordedScope = ScopeAllTests
+			}
+			previous := buildScoped(before, "x.py", nil, Sites(before), []string{Killed, Killed}, []string{recordedScope, recordedScope}, [][]string{{"ID-A"}, {"ID-B"}})
+			old := &previous.Units[1].Mutants[0]
+			if scope == ScopeAllTests || scope == "go version" {
+				old.SuiteEvidence = &SuiteEvidence{Tests: map[string]string{"test_other.py": "original test"}, Support: map[string]string{"support.feature": "original support"}}
+			}
+			want := *old
+			built := buildScoped(after, "x.py", nil, Sites(after), []string{Killed, Killed}, []string{ScopeAllTests, ScopeAllTests}, nil)
+			built.Units[1].Mutants[0].SuiteEvidence = &SuiteEvidence{Tests: map[string]string{"test_other.py": "current test"}, Support: map[string]string{"support.feature": "current support"}}
+			units := keepUnjudged(built.Units, map[int]bool{0: true}, &previous, true)
+			if len(units) != 2 || len(units[1].Mutants) != 1 {
+				t.Fatalf("unjudged population: %+v", units)
+			}
+			got := units[1].Mutants[0]
+			if units[1].StartLine != after.Units[1].StartLine || got.Line != Sites(after)[1].Line || got.Line == want.Line {
+				t.Fatalf("unjudged result has wrong current positions: %+v", units[1])
+			}
+			want.Line, want.Column = got.Line, got.Column
+			if !reflect.DeepEqual(got, want) || units[1].Hash != previous.Units[1].Hash || units[1].Killed != 1 {
+				t.Errorf("unjudged result %+v, want original judgment %+v at current positions", units[1], want)
+			}
+			if previous.Units[1].Mutants[0].Line != Sites(before)[1].Line {
+				t.Error("keeping current positions changed the previous snapshot")
+			}
+		})
+	}
+}
+
 // byUnit gives each site of f the outcome of its function's name, and
 // skipped to those outcome does not name.
 func byUnit(f *lang.File, outcome map[string]string) []string {

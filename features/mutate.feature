@@ -1812,7 +1812,7 @@ Feature: Mutation testing
     # An independent black-box regression for bug-2, executable while T-78's
     # conversion remains shelved. This repeats the accepted preservation rule,
     # making the raw artifact difference explicit; it adds no product policy.
-    @wip @bug-2 @ID-MUT-247
+    @bug-2 @ID-MUT-247
     Scenario Outline: A partial run preserves an unjudged <language> outcome's original whole-suite evidence
       Given a committed <language> project with two functions whose whole-suite outcomes record nonempty test and support evidence
       And a non-importing test and a configured support file changed since those outcomes were recorded

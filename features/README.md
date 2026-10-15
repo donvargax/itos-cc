@@ -753,3 +753,16 @@ Additional retained guards are outside the replacement mapping:
 - cmd/itos-cc/mutation_annotate_test.go: `TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged`.
 - cmd/itos-cc/mutation_except_elsewhere_test.go: `TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone`, `TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged`.
 - cmd/itos-cc/except_renew_test.go: `TestRenewingTakesNoSiteAndNoReason`, `TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule`.
+
+MUT247 independently checks bug-2's preservation of an unjudged outcome's
+original whole-suite evidence in Go, TypeScript, Python and Kotlin source
+layouts. Each fixture actually executes the custom `go version` command with
+coverage disabled and declares that exact Go command and its surviving sites;
+these cases do not claim to run the other languages' runtimes or collectors.
+They require nonempty original test and support hashes, preserve the unjudged
+judgment and source hash, and check current evidence for the judged function
+plus stale reporting and sample exclusion. A separate bounded invocation in
+the unaffected Ubuntu language-tools step executes all four examples while
+T83 omits mutation scenarios from the initial matrix. This independent
+regression does not complete the shelved T78 conversion or replace any legacy
+holder; all retained partial-run, fail-fast and coverage guards remain.

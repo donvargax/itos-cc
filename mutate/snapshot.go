@@ -721,6 +721,18 @@ func keepUnjudged(units []UnitResult, judged map[int]bool, previous *Snapshot, t
 			was.Stale = true
 			out = append(out, was)
 		case was.Hash == u.Hash:
+			// Current positions belong to this source, but the judgment and
+			// its dependencies still belong to the run that decided it.
+			recorded := map[string]Mutant{}
+			for _, m := range was.Mutants {
+				recorded[m.key()] = m
+			}
+			for j, m := range u.Mutants {
+				if original, ok := recorded[m.key()]; ok {
+					original.Line, original.Column = m.Line, m.Column
+					u.Mutants[j] = original
+				}
+			}
 			// The run may have measured file-wide statement coverage, but an
 			// unjudged function cannot inherit its new inventory or input
 			// fingerprints. Keep the independent evidence exactly as recorded.
