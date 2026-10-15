@@ -1760,6 +1760,28 @@
     rerun can refresh it. After the scoped helper addition, prove the newly judged helper
     is fresh while each previously stale unjudged function keeps its old evidence; then
     check the final run's per-function reuse against that established population.
+    MUT-210 and 214 observe their worker copies from actual running Python fixtures,
+    since those directories are removed before Then. A conftest writes canonical cwd,
+    source mtime/size/content hash and cache presence into an external fixture-owned
+    observation file, read through Driver; no scripted execution records or direct host
+    subprocess/filesystem calls from steps. Require actual baseline and mutant records,
+    equal pinned whole-second mtime and size but changed source content for 210, and the
+    actual kill. Inventory and compare the original tree, including its owned cache bytes,
+    excluding only the product's metrics artifacts. Generate genuine original bytecode
+    through the characterized public crap setup: a custom coverage command runs coverage
+    with pytest, emits its LCOV report and then runs compileall, with --coverage-report
+    naming that actual report. Read and require the original cache files before capturing
+    the unchanged-tree inventory; clear setup observations before the command under test.
+    A public fixture oracle establishes the actual baseline and mutant at pinned second
+    1700000000 with equal size, distinct hashes and no worker cache, while the original
+    tree's genuine bytecode bytes stay unchanged. This characterizes the fixture, not
+    completed scenario execution. For 214, require original-tree
+    coverage and worker executions to be observed, no cache under default commands, and
+    an actual cache beside a worker when the literal custom pytest command runs. Assert
+    that command was passed as written. These physical interpreter-cache observations may
+    be genuinely binary-only with that precise reason; do not generate fake bytecode or
+    cache-lifecycle events in the memory driver. Keep the existing Python cache guards
+    and helpers until their actual replacement CI and T-101 cleanup.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
