@@ -2523,8 +2523,18 @@
     only location. Release actual overlapping collectors in stages and observe
     owned directories, report bytes, latest-report reuse and cleanup. Confirm the
     fixture oracle through the built product before claiming read isolation.
+    Built-in multi-module Go coverage is a candidate fixture, not an established
+    oracle. Each plan's report is loaded after that plan's commands and before
+    the next plan: two first-module reports present at readiness barriers do
+    not prove that either remains unread. Establish consumption through actual
+    independent report bytes and public per-command results. Characterize
+    mutation's normal annotation and snapshot publication while the other run
+    remains held; preserve the specified mutation run and crap commands, without
+    silently adding flags or an artificial pause at a private report read.
     SNAP07 may add a narrow context-first Driver operation setting an existing
     owned fixture path's modification time, observing the actual resulting time.
+    A narrow SetModTime operation may return the observed time from the actual
+    entry after the update; a cancelled caller is checked before any I/O.
     Use an age safely beyond a day, with a fresh run directory and unrelated kept
     report as controls. No sleeps, product clock override or generic filesystem
     framework; ordinary errors fail. Memory must change actual entry state or
