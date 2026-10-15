@@ -3311,7 +3311,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-112]
     kind: task
   - id: T-114
     title: Complete Kong dispatch and version behind a thin main entrypoint
