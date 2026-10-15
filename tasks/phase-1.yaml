@@ -1781,6 +1781,19 @@
     attribution with the installed tools; unsupported fixtures must report honest skips rather
     than fake collector passes. List every unsupported-evidence/fingerprint example actually
     executed and preserve repeated-init, partial-measurement and zero-site obligations.
+    MUT164's GOWORK=off is a real per-run product input, not a fixture-only marker. Carry
+    that Run.Env value into the actual memory Toolchain binding in T-89/T-100 rather than
+    ignoring it, permanently tagging the scenario binary-only, or returning a canned verdict.
+    MUT224's outside-root read sentence needs an honest observation. Its retained holder
+    checks access times only when metadata exposes them and otherwise logs that reads go
+    unseen; that unobserved branch is not proof of no reads. Before building a new observer,
+    settle a bounded Driver contract and demonstrate that it detects a positive read/list
+    on the filesystem used. Unavailable observations must be explicit omissions, not silent
+    passes. Any memory observation must derive from actual bound read/list port operations.
+    If the sentence cannot be held faithfully through the public boundary, stop that part
+    for a precise coordinator specification correction and preserve the underlying
+    domain/adapter read-policy guards. No fake atime results or direct internal API calls
+    from steps establish the public claim.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
@@ -2094,6 +2107,12 @@
     than running per-task binary comparisons. Light local package and named scenario checks; broad
     gates through hooks/CI, no mutation run over this repo, no worktrees/session moves/agents; no
     new dependency without recorded selection.
+    Strict-scope inputs include per-run GOWORK, notably MUT164's GOWORK=off support
+    counterexample. The memory Toolchain must observe that actual Run.Env override together
+    with its actual memory go.work/go.mod files and inventory, independently of snapshot
+    evidence. Preserve refusal and support controls, with an actual-binding regression if
+    needed. If T-79 adds read/list observations, connect them to actual memory port operations
+    rather than scripted observation events.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
@@ -2410,6 +2429,12 @@
     in the real TS fixture. Memory traces derive both from actual virtual execution/original
     project state. A path alias must not make execution in the original project look like a
     worker copy.
+    Complete the real product environment inputs through actual fake bindings: in particular
+    MUT164's Run.Env GOWORK=off must reach the bound Toolchain while an active workspace
+    without that override is refused. This differs from a fixture-only CHECK_MARKER; do not
+    replace the product override with a fixed fixture path or ignore it. Any T-79 read/list
+    observer must observe real fake-port reads/listings, with honest capability omissions
+    where the binary cannot observe them, never a hardcoded empty result.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
