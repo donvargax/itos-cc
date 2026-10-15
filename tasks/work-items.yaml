@@ -2566,6 +2566,10 @@ items:
       coordinator answered yes for the person's intent (2026-10-12: the same tests as fast tests
       with fakes); specify after measuring T-59's run. It changes Go evidence and freshness, so the
       next full run re-judges everything: land it before T-46 re-scopes the nightly.
+
+      Push CI leaves mutate.feature out (T-83, the person's call 2026-10-13) until S7 runs it in
+      process; the S7 task moving the last mutation handler in process removes ITOS_CC_SKIP_FEATURES
+      from ci.yml.
   - id: T-60
     title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
     phase: 1
