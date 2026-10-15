@@ -2887,8 +2887,8 @@ items:
   - id: T-74
     title: mutate.feature's check and stale-tests scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-73]
     kind: task
     why: >
