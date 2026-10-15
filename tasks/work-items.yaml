@@ -3229,3 +3229,10 @@ items:
     status: todo
     depends_on: [T-98]
     kind: task
+  - id: T-100
+    title: Move mutation run into the slice and run its scenarios in process
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

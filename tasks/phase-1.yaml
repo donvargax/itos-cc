@@ -2117,3 +2117,34 @@
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(8[5-9]|9[0-9]|13[8-9]|14[0-6]|227|242)$"
+- id: T-100
+  type: refactor
+  title: Move mutation run into the slice and run its scenarios in process
+  why: >
+    Continue the current S7 design from the parsed group, not futureT86. Move only the named
+    handlers and their UI presentation to internal/mutation; CLI Run assembles domain-valued Query,
+    Handle wires domain calls through injected ports, UI classifies sealed failures and selects
+    current exit codes. Domain knows no UI/I/O/JSON/exit codes; adapters remain selected at cmd.
+    Preserve output bytes/help/order/schema/lazy config loading, failures with partial data and all
+    current flags. Extend the in-memory driver with existing port fakes as handlers move, but add
+    mutate.feature to InProcess only when the whole group can run it; never use permanent
+    binary-only tags merely because a handler has not moved. Retain valid tests until
+    scenarios/domain/port contracts hold every assertion; add slice tests only for failures the
+    public scenarios cannot reach and explain that gap. Update dependency rules/accept-refuse
+    fixtures and docs; add equivalence cases to final-proof, no per-task binary comparison. Context
+    first, never held/recreated; OS as a value. Focus local checks on named packages/scenarios;
+    broad gates through hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new
+    dependencies without recorded selection. Finish normal, fail-fast and counted run handlers; cmd
+    no longer owns mutation application/presentation behavior. Complete memory
+    Driver.Tests/Coverage/import/history/exception plumbing so the same converted scenarios execute
+    through both drivers. Retain binary-only only for genuine external process ownership,
+    worker-copy links/PYTHONPATH/bytecode, real integration collectors, counted preparation stages
+    and static tool inventory that memory cannot faithfully stand in for. Every intentional skip
+    must be visible; no vacuous pass of unimplemented fake behavior. Add mutate.feature to
+    InProcess. Remove ITOS_CC_SKIP_FEATURES=mutate.feature from BOTH CI contexts introduced in T83
+    so pushCI again runs mutation scenarios through the normal merged selection; language-tools line
+    remains enabled. Show actual in-process counts/timing against binary counts with skips
+    explained.
+  done_when:
+    - run: go test ./internal/mutation/...
+    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
