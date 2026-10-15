@@ -1582,6 +1582,24 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    Settled fixture capabilities: Driver.Files(ctx, dir) returns sorted project-relative slash
+    paths of actual regular files, without traversing linked external directory trees. The binary
+    walks the fixture; memory inventories its actual file map. Share the observable inventory
+    contract, with real-only symlink behavior held at its boundary. Driver.Lock(ctx, path) holds
+    a real exclusive file lock on an owned descriptor until release closes it. Use the existing
+    pinned golang.org/x/sys, Unix Flock and Windows LockFileEx in call-only platform leaves,
+    without a new dependency or stored context. Write the fixture owner.lock marker before
+    acquiring it, open without truncate and do not rewrite through another descriptor while
+    held. Isolate TMPDIR, TMP and TEMP to the fixture's fresh folder. Real OS liveness in 234
+    is genuinely binary-only; memory explicitly refuses real locking rather than scripts it.
+    Release the owned lock before removing its fixture, including failed-step cleanup. The
+    actual parallel collector/raw-data cleanup in 233 is genuinely binary-only; a canned
+    coverage report does not exercise that collector. Counted judgment in 232 does not become
+    binary-only merely because Fresh has not moved; use Driver.Counted for platform eligibility.
+    Public characterization confirms 32's exact x.py has both > to >= and 0 to 1 at line 2;
+    assert a(1) yields the written survivor and kill, with no scenario correction. For 28 use a
+    top-level place in the board namespace at 5:9 and a real 17-site inventory, eight cached
+    kills and nine new judgments; keep its exact quoted survivor line and all counts.
   done_when:
     - run: "! grep -q '// T-76:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'
