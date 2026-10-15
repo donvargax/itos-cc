@@ -1947,6 +1947,19 @@
     Begin outside-root observation only after setup, seed writes and the per-target
     positive controls, so setup/fixture reads cannot masquerade as product reads.
     Keep the underlying scope holder and every extra fingerprint/read-policy guard.
+    MUT164's no-following sentence concerns dependency following and admission,
+    not all ordinary discovery reads inside the project. A public control with
+    the same in-root nested module present but no replacement directive returned
+    cached strict-check exit 0 with no commands, while its directory, go.mod and
+    replacement.go were read. Preserve this ordinary discovery behavior and the
+    lexical nested-module refusal; do not infer dependency following from those
+    in-root access times. Keep a separate genuine external sibling observer
+    through both unsupported replacement stages, after all owned setup and
+    positive controls. Require no outside-target reads, no test/list/coverage
+    execution, unchanged independent artifact and exact old function hash,
+    producer, blocks and inputs across the unsupported operations. Neither
+    replacement tree may be admitted as freshly measured evidence. Keep all
+    legacy scope guards and the order-sensitive unloaded-package guard.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
@@ -2382,6 +2395,14 @@
     evade the old memory driver's environment rejection. This does not introduce
     a generic no-op environment API; fixture-only CHECK_MARKER uses its separately
     specified fixed-path/declaration correction.
+    MUT164 distinguishes lexical dependency refusal from ordinary in-project
+    discovery: a same-root nested module without a replacement is read by a
+    successful cached public check. Preserve that behavior and the Lstat-only
+    replacement-scope policy without following target dependency trees. Bind
+    read observations to actual selection/surroundings/Toolchain operations,
+    with genuine external targets kept separate from ordinary in-root reads
+    and positive fake-port controls. Unsupported run/check operations neither
+    execute test/list/coverage commands nor refresh independent evidence.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
