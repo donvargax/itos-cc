@@ -2542,6 +2542,29 @@
     Keep the adapter's old/live/report cleanup guards; these are not automatic
     T101 CLI duplicates. Settle any further physical-only classification against
     actual observability, keeping logical snapshot cases eligible for memory.
+    The pre-step public oracle used literal mutation run and crap in the same
+    committed two-module Go fixture. Tests selected both branches for mutation
+    and the positive arm alone for crap through per-run fixture environment.
+    While both nested-module collectors were held, distinct run directories
+    contained first-module profiles with three hit blocks versus two. These
+    profiles were already loaded by their respective first plans. Mutation
+    released first, published normal annotations and both snapshots with four
+    kills and zero uncovered each, and removed only its run directory while
+    crap stayed live. Crap then returned 66.7 percent for both functions;
+    latest reports held its two-of-three blocks and both run directories were
+    gone. Public crap --use-existing-coverage returned the same population and
+    coverage without any collector trace delta. The multiline oracle and its
+    earlier one-line characterization are retained separately; public outcomes
+    and distinct actual profiles establish consumption, not directory names.
+    SNAP04 reuses the bounded real collector barrier with two crap commands
+    writing the same snapshot. Successful release is an owned marker observed
+    by the actual tests; FixturePeer.Stop remains cleanup only. Captured peers
+    and products join before fixture removal, and all ordinary failures fail.
+    SetModTime takes context first, checks cancellation before I/O, updates
+    an existing owned file or directory and returns stat-observed modification
+    time. The current memory driver explicitly refuses this capability because
+    it has no timestamp state; SNAP07 stays logically eligible. Its later bound
+    fake must update actual entry metadata or retain that honest refusal.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
