@@ -1,8 +1,9 @@
-package mutate
+package worktrees
 
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -15,19 +16,21 @@ func TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree(t *testing.T) {
 	if err := os.Mkdir(live, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	lock := claimMarker(filepath.Join(live, ownerMarker))
+	lock := claimMarker(filepath.Join(live, ownerMarker), runtime.GOOS)
 	if lock == nil {
 		t.Fatal("the marker could not be locked")
 	}
-	if abandoned(live) {
+	if abandoned(live, runtime.GOOS) {
 		t.Error("a directory whose marker is held is taken for abandoned")
 	}
-	removeAbandonedWorkers(tmp)
+	removeAbandonedWorkers(tmp, runtime.GOOS)
 	if _, err := os.Stat(live); err != nil {
 		t.Fatalf("a held directory was removed: %v", err)
 	}
-	lock.Close()
-	if !abandoned(live) {
+	if err := lock.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if !abandoned(live, runtime.GOOS) {
 		t.Error("a directory whose written marker no one holds is not taken for abandoned")
 	}
 
@@ -38,11 +41,11 @@ func TestWorkerDirectoriesAreAbandonedOnlyOnceTheirLockIsFree(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(settingUp, ownerMarker), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if abandoned(settingUp) {
+	if abandoned(settingUp, runtime.GOOS) {
 		t.Error("a new directory with an empty marker is taken for abandoned")
 	}
 
-	removeAbandonedWorkers(tmp)
+	removeAbandonedWorkers(tmp, runtime.GOOS)
 	if _, err := os.Stat(live); err == nil {
 		t.Error("the directory of a run that let go is left")
 	}

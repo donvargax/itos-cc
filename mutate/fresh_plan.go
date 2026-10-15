@@ -336,8 +336,8 @@ func gitAtEnv(ctx context.Context, dir string, env []string, args ...string) ([]
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	var runner commandRunner
-	result, err := runner.run(ctx, cmd, &stderr)
+	var runner OwnedExecutor
+	result, err := runner.Command(ctx, cmd)
 	if err != nil {
 		detail := strings.TrimSpace(stderr.String())
 		if detail == "" {
@@ -345,11 +345,11 @@ func gitAtEnv(ctx context.Context, dir string, env []string, args ...string) ([]
 		}
 		return nil, fmt.Errorf("git %s: %s: %w", strings.Join(args, " "), detail, err)
 	}
-	if result.cancelled {
+	if result.Cancelled {
 		return nil, fmt.Errorf("git %s cancelled: %w", strings.Join(args, " "), ctx.Err())
 	}
-	if !result.passed {
-		return nil, &gitCommandError{Args: slices.Clone(args), ExitCode: result.exitCode, Detail: strings.TrimSpace(stderr.String())}
+	if !result.Passed {
+		return nil, &gitCommandError{Args: slices.Clone(args), ExitCode: result.ExitCode, Detail: strings.TrimSpace(stderr.String())}
 	}
 	return stdout.Bytes(), nil
 }

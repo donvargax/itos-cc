@@ -155,7 +155,11 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
+	if in.adapters.Workers == nil {
+		return nil, errors.New("mutation Workers binding is missing")
+	}
 	opt := mutate.Options{
+		WorkerFactory: in.adapters.Workers,
 		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,

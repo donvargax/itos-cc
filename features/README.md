@@ -1406,3 +1406,40 @@ The complete workflow passed for that exact implementation revision: all
 three platform test jobs, all five release builds and publication. Legacy
 holders and adapter-only guarantees remain in place for T-101's mapped
 cleanup; the new scenarios are not a reason to remove unmatched checks.
+
+Worker boundary (T-88): `mutants.Workers` and its model-bearing contracts live
+beside mutation values; `worktrees.Workers` owns actual copies/processes and
+`mutants/porttest.Workers` holds the in-memory implementation. `Driver.Tests`
+selects outcomes by the actual requested directory and command. The fake applies
+the requested domain Site to actual virtual source bytes, restores them, and
+hashes the resulting copy for observations. Optional runnable test inventories
+include unrelated tests: narrow commands select actual files/classes, broad
+commands emit the full inventory, and unsupported selector shapes fail. Nested
+source traces carry their actual project-relative source identity. No scenario
+ID or prewritten event list chooses executions. Physical dependency links and
+interpreter behavior remain real-adapter observations.
+
+The memory driver constructs this binding now, but still refuses hand-parsed
+mutation commands until T-100. Its focused handler-binding guard uses disposable
+real source discovery with those same declared fake Workers; it is not evidence
+that every mutation scenario already runs entirely in memory. Missing and wrong
+handler bindings are exercised independently. Direct legacy library fixture
+callers temporarily keep a real-adapter fallback until T-92 (fresh orchestration
+until T-95); cmd requires injection and cannot silently choose that fallback.
+
+The old command runner, context, Linux/macOS ownership and scratch tests moved
+recognizably to `internal/worktrees`: argv/cwd/environment/streams/elapsed results,
+startup/cleanup failure, completed-exit precedence, unrelated processes, zombie
+handling and lock-based abandonment guards remain. All existing cmd holders stay.
+The public cleanup clauses in MUT166/183/188/193 establish final state; their
+private ordering contract is held by `TestPoolJoinsEnteredWaiterBeforeRemovingInputs`
+and its identical release-edge oracle's premature-release counterexample.
+`TestBoundWorkersShareAbortDeadline` observes deadlines inside actual bound
+supervisors: ordinary aggregate cancellation retains local command budgets,
+fail-fast mode shares even before an actionable stop (including external parent
+cancellation), explicit Abort starts its deadline before cancellation, and frozen trials
+share preparation's owner. Existing success/local-timeout guards remain.
+`Close` joins entered command cleanup and source restoration even on cancellation;
+historical scratch lock/removal failures remain best effort. Native Windows
+process-tree ownership remains deferred; normal Windows command behavior is
+preserved, not simulated by Linux execution.

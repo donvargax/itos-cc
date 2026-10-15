@@ -1,6 +1,6 @@
 //go:build linux
 
-package mutate
+package worktrees
 
 import (
 	"os"
@@ -88,7 +88,7 @@ func TestLinuxProbeCountsAZombieOnlyGroupEmpty(t *testing.T) {
 		t.Fatalf("kill(-pgid, 0) = %v, want the zombie still to hold its group", err)
 	}
 	started := time.Now()
-	if err := waitOwnedProcessGroup(pid, time.Now().Add(2*time.Second)); err != nil {
+	if err := waitOwnedProcessGroup(pid, time.Now().Add(2*time.Second), "linux"); err != nil {
 		t.Fatalf("zombie-only group: %v, want it counted empty", err)
 	}
 	if took := time.Since(started); took > time.Second {
