@@ -8,6 +8,7 @@ package features
 
 import (
 	"os"
+	"os/exec"
 	"syscall"
 
 	"golang.org/x/sys/windows"
@@ -15,8 +16,8 @@ import (
 
 // interruptible starts cmd in a process group of its own, which
 // GenerateConsoleCtrlEvent can address by the process's ID.
-func interruptAttributes() *syscall.SysProcAttr {
-	return &syscall.SysProcAttr{CreationFlags: windows.CREATE_NEW_PROCESS_GROUP}
+func interruptible(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: windows.CREATE_NEW_PROCESS_GROUP}
 }
 
 // interrupt sends CTRL_BREAK_EVENT to the process's group. CTRL_C_EVENT
@@ -28,4 +29,6 @@ func interrupt(p *os.Process) error {
 // killedBySignal is whether the process ended by the console's default
 // handler, which exits STATUS_CONTROL_C_EXIT, so it never handled the
 // interrupt it was sent.
-func consoleInterruptExit() uint32 { return uint32(windows.STATUS_CONTROL_C_EXIT) }
+func killedBySignal(state *os.ProcessState) bool {
+	return uint32(state.ExitCode()) == uint32(windows.STATUS_CONTROL_C_EXIT)
+}
