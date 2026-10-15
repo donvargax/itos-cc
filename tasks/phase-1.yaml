@@ -2198,6 +2198,16 @@
     in the real TS fixture. Memory traces derive both from actual virtual execution/original
     project state. A path alias must not make execution in the original project look like a
     worker copy.
+    T-78's own-test selection cases 216/217 extend the existing Tests.Trace declaration
+    with optional TestTrace.Tests, a full inventory mapping runnable selectors to actual
+    observed test names. Trace records keep canonical cwd/original_root/source_sha256 and
+    add optional test. Include reaching and unrelated tests. Derive emitted test names
+    from the actual bound Workers request's selected files/classes and actual fixture
+    input bytes, not a scenario ID, expected-name list or prewritten event sequence. A
+    whole-suite request executes the full inventory so accidentally broad selection is
+    observable; unsupported selectors or trace shapes are explicit errors. Preserve the
+    existing trace behavior when the optional inventory is nil and prove both selection
+    narrowing and the unrelated-test counterfactual through actual fake-port execution.
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167|168)$"
@@ -2260,6 +2270,13 @@
     tightening policy. Focus local checks to changed coverage packages and named scenarios, broad
     gates through hooks/CI. No per-task binary comparison, own-code mutation runs, worktrees/session
     moves, agents, or new dependency without recorded selection.
+    T-78's own-test trace inventory also applies when the bound Measurer executes a
+    coverage selection. Derive optional test observations from that actual request's
+    scope/selected test files or classes and the actual fixture root; use the full
+    TestTrace.Tests inventory, including unrelated runnable tests, and the existing
+    canonical cwd/original_root/source_sha256 base shape. Do not write the desired names
+    merely because measurement was requested. Whole-suite measurement selects the full
+    inventory, unsupported shapes error, and nil inventories keep prior trace behavior.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
@@ -2555,6 +2572,13 @@
     replace the product override with a fixed fixture path or ignore it. Any T-79 read/list
     observer must observe real fake-port reads/listings, with honest capability omissions
     where the binary cannot observe them, never a hardcoded empty result.
+    Bind both Workers and Measurer to the settled optional TestTrace.Tests inventory
+    for own-test scenarios 216/217. Emit the standard trace base plus optional test only
+    from actual executed request selections and actual input/root, preserving unrelated
+    runnable tests in the inventory so accidental broad execution fails. Prove these
+    cases and the whole-suite unrelated-test counterfactual against the real bound memory
+    ports; canned expected names, omitted coverage observations or empty traces cannot
+    stand for the selection policy. The T-78 ledger records the declaration contract.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
