@@ -3213,3 +3213,10 @@ items:
     status: todo
     depends_on: [T-96]
     kind: task
+  - id: T-98
+    title: Move the mutation sample handler into the mutation slice
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
