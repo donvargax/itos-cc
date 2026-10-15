@@ -2456,14 +2456,15 @@ items:
       broad snapshot normalization or unexplained differences. Preserve raw before/after artifacts
       and verify the fixed behavior against MUT-247 and MUT-207. If the baseline already preserves
       that evidence, require equality for that case.
-  - id: step-strictness-check
-    title: Automate checking that a converted feature file's steps can fail
+  - id: T-117
+    title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: task
     why: >
+      Was step-strictness-check.
       Moving a command step 8 asks that each step of a converted feature file be seen to fail with
       its expectation changed. T-37 did this by hand with a scratch script: it changed one number,
       quoted text, docstring line or table phrase of dry.feature at a time, ran that scenario alone,
