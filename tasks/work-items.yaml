@@ -3290,3 +3290,10 @@ items:
     status: todo
     depends_on: [T-106]
     kind: task
+  - id: T-108
+    title: Serve architecture through an HTTP adapter over domain services
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

@@ -2336,3 +2336,33 @@
   done_when:
     - run: go test ./internal/architecture/... ./internal/architecturefiles/...
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-"
+- id: T-108
+  type: refactor
+  title: Serve architecture through an HTTP adapter over domain services
+  why: >
+    S8 after T-107. Move top-level server HTTP/listener, JSON/SSE, watch timers, logging, static
+    assets and source I/O into internal/httpapi, against architecture-domain services and
+    source/serving boundaries rather than concrete graph/filesystem dependencies in the domain. Keep
+    graph computation/cache/freshness and graph-membership/source-whitelist policy with their
+    domain; HTTP formatting, headers, route handling, listeners and real clocks belong at the
+    adapter. Inject required capabilities at cmd, adapters do not import other concrete adapters or
+    duplicate domain models. Preserve localhost addresses/ports, JSON wire shape and Cache-Control,
+    initial version event, later updates,15-second keepalive, existing slow-client/drop semantics,
+    source404/traversal rules, text content type, static asset/SPA fallback, failed rebuild
+    retaining old publication and unchanged logging. Do not introduce new protocol/features or alter
+    Ctrl-C exit0 yet. Every external operation uses ctx first or request context; no
+    stored/recreated domain context, owned goroutines/listeners clean up under bounded lifecycle.
+    Factor the actual HTTP handler so in-process tests/drivers can exercise it with memory
+    source/assets and injected tick capability without real network/disk/processes, rather than
+    copying protocol logic in a fake. Use standard library capabilities where sufficient; no new
+    dependency without recorded selection. Give the serving/source boundary a memory counterpart and
+    common contract cases for results/failures both sides hold, real sockets/signals at
+    adapter/binary integration tests. Move only relevant package/artifacts with notices intact,
+    update architecture rules/fixtures/docs, remove legacy server imports once users are wired to
+    adapter. Keep CLI hand parsing until next task. Final-proof records HTTP/SSE/source/SPA and
+    failure-retention cases; no per-task binary comparison. Focus localchecks to adapter/domain and
+    named scenarios, broad gates hooks/CI; no own-code mutation/worktrees/sessionmoves/agents.
+    FutureT86 is separate.
+  done_when:
+    - run: go test ./internal/httpapi/... ./internal/architecture/...
+    - run: go test ./features -count=1 -scenarios="@ID-SERVE-"
