@@ -2424,6 +2424,18 @@ items:
       mutation run merely to make proof convenient; fixture mutation runs are allowed. Build old
       code in an archive/temp source tree as needed, no Git worktrees or switching the shared
       checkout. Settle the concrete fixture/case plan in the task before implementation.
+
+      Prepare an explicit final-proof case manifest covering every public command/flag and each
+      move's added cases. Inventory value kinds from both binaries' help: switches, strings,
+      cumulative values, integers, floats, durations and optional choices. Use reset fixtures at the
+      same path: plain and committed directories, subdirectories, outside/symlinked paths, supported
+      unreadable paths, malformed config and missing/malformed snapshots. Preserve identical Git
+      history, settings and seeds. Use small real pinned-language fixtures for execution/coverage
+      cases; general parser cases need no expensive tools. Retain exact argv, fixture reset recipe,
+      raw streams, process/shell status and selected artifacts. Map every required case to evidence;
+      omissions and unavailable platforms never count as agreement. Server cases use bounded
+      readiness/cleanup and fixture viewer assets. Settle final concrete manifest/platform scope
+      after T-116, before proof implementation; this note only prepares that work.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
