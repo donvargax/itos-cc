@@ -2328,6 +2328,14 @@
     evidence. Preserve refusal and support controls, with an actual-binding regression if
     needed. If T-79 adds read/list observations, connect them to actual memory port operations
     rather than scripted observation events.
+    Standard runtime environment values actually supplied by mutation fixtures,
+    including PYTEST_DISABLE_PLUGIN_AUTOLOAD as well as GOWORK, are real inputs.
+    Forward them from the current Run.Env into the bound fake Toolchain/Workers and
+    compute environment fingerprints from those actual values. Do not ignore them,
+    copy fingerprints from a stored snapshot, or mark logical cases binary-only to
+    evade the old memory driver's environment rejection. This does not introduce
+    a generic no-op environment API; fixture-only CHECK_MARKER uses its separately
+    specified fixed-path/declaration correction.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
@@ -2362,6 +2370,13 @@
     canonical cwd/original_root/source_sha256 base shape. Do not write the desired names
     merely because measurement was requested. Whole-suite measurement selects the full
     inventory, unsupported shapes error, and nil inventories keep prior trace behavior.
+    T78's Coverage.Report declarations include real Go cover profiles (mode: set),
+    LCOV and Kotlin JaCoCo XML. The current memory scenario driver reads only LCOV;
+    that is not proof of these mutation formats before the command moves. Use the
+    existing coverage domain's format-aware parser and report builders in the actual
+    bound memory Measurer, preserving Go block positions, source/root path matching
+    and Kotlin line facts. Do not silently turn an unsupported or malformed declared
+    report into an empty measured success, invent missing facts or add another DTO.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
@@ -2664,6 +2679,16 @@
     cases and the whole-suite unrelated-test counterfactual against the real bound memory
     ports; canned expected names, omitted coverage observations or empty traces cannot
     stand for the selection policy. The T-78 ledger records the declaration contract.
+    Honor Coverage.Report's actual format through the bound memory Measurer:
+    Go cover profiles, LCOV and JaCoCo XML from T78's real declarations. The old
+    LCOV-only scenario helper cannot stand in for parsing the actual Go block or
+    Kotlin line evidence. Exercise representative existing strict Go and Kotlin
+    scenarios through the real handler binding, preserving paths and missing-report
+    failures; use the existing domain parser, not a fixture-ID dispatch or canned facts.
+    Bind actual controlled runtime environment inputs such as
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD and GOWORK from Run.Env to the real fake
+    Toolchain/Workers requests and fingerprint computation. An ignored variable
+    or a blanket permanent binary-only tag is not equivalent in-process execution.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
