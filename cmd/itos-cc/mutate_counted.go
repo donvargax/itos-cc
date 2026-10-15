@@ -19,7 +19,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -280,18 +279,8 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 	if len(trials) == 0 {
 		result.Stages = append(result.Stages, PreparationStage{Name: "trials", State: "skipped"})
 	} else {
-		factory := in.adapters.Workers
-		if factory == nil {
-			return nil, errors.New("mutation Workers binding is missing")
-		}
-		if real, ok := factory.(worktrees.Workers); ok {
-			real.Owner = owner
-			real.Prepare = countedCommandEnv
-			factory = real
-		}
 		results, err := mutate.RunFreshTrials(ctx, plan, trials, mutate.FreshTrialOptions{
-			WorkerFactory: factory,
-			Workers:       in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutate.RunScope("", in.set("all-tests")),
+			Workers: in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutate.RunScope("", in.set("all-tests")),
 			Listed: listed, Prepare: countedCommandEnv, Owner: owner, Log: os.Stderr})
 		if err != nil {
 			return nil, err

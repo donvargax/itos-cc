@@ -1,4 +1,4 @@
-package worktrees
+package mutate
 
 import (
 	"errors"
@@ -53,13 +53,13 @@ type workerScratch struct {
 // temporary directory, then makes this run's, named with prefix, and locks
 // its marker. A marker it cannot lock leaves the run going, its directory
 // judged by its age alone.
-func newWorkerScratch(prefix, platform string) (*workerScratch, error) {
-	removeAbandonedWorkers(os.TempDir(), platform)
+func newWorkerScratch(prefix string) (*workerScratch, error) {
+	removeAbandonedWorkers(os.TempDir())
 	dir, err := os.MkdirTemp("", prefix)
 	if err != nil {
 		return nil, err
 	}
-	return &workerScratch{dir: dir, lock: claimMarker(filepath.Join(dir, ownerMarker), platform)}, nil
+	return &workerScratch{dir: dir, lock: claimMarker(filepath.Join(dir, ownerMarker))}, nil
 }
 
 // remove releases the lock, which Windows needs to delete the marker, and
@@ -73,14 +73,14 @@ func (s *workerScratch) remove() {
 
 // claimMarker makes the marker at path, locks it and writes the run's
 // process ID in it, and returns it held open, or nil when it could not.
-func claimMarker(path, platform string) *os.File {
+func claimMarker(path string) *os.File {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return nil
 	}
 	deadline := time.Now().Add(lockWait)
 	for {
-		held, err := tryLock(f, platform)
+		held, err := tryLock(f)
 		if err == nil && held {
 			break
 		}
@@ -99,7 +99,7 @@ func claimMarker(path, platform string) *os.File {
 
 // removeAbandonedWorkers removes each worker directory in tmp a killed run
 // left behind. Failures are ignored: the next run tries again.
-func removeAbandonedWorkers(tmp, platform string) {
+func removeAbandonedWorkers(tmp string) {
 	entries, err := os.ReadDir(tmp)
 	if err != nil {
 		return
@@ -108,7 +108,7 @@ func removeAbandonedWorkers(tmp, platform string) {
 		if !e.IsDir() || !hasWorkerPrefix(e.Name()) {
 			continue
 		}
-		if dir := filepath.Join(tmp, e.Name()); abandoned(dir, platform) {
+		if dir := filepath.Join(tmp, e.Name()); abandoned(dir) {
 			os.RemoveAll(dir)
 		}
 	}
@@ -127,7 +127,7 @@ func hasWorkerPrefix(name string) bool {
 // marker written and unlocked, or, with no marker written, nothing in it
 // changed for unmarkedAge. A marker it cannot open or lock but for not
 // being there is a live run's, or another user's, and is left alone.
-func abandoned(dir, platform string) bool {
+func abandoned(dir string) bool {
 	f, err := os.Open(filepath.Join(dir, ownerMarker))
 	if errors.Is(err, fs.ErrNotExist) {
 		return unchangedFor(dir, unmarkedAge)
@@ -135,7 +135,7 @@ func abandoned(dir, platform string) bool {
 	if err != nil {
 		return false
 	}
-	held, err := tryLock(f, platform)
+	held, err := tryLock(f)
 	if err != nil || !held {
 		f.Close()
 		return false

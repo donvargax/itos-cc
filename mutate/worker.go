@@ -1,4 +1,4 @@
-package worktrees
+package mutate
 
 import (
 	"bytes"
@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -110,7 +109,15 @@ func copyFile(src, dst string) error {
 	return out.Close()
 }
 
-type result = mutants.CommandResult
+// result of one test run.
+type result struct {
+	passed    bool
+	timedOut  bool
+	cancelled bool
+	elapsed   time.Duration
+	output    string
+	exitCode  int // -1 when the command gave none
+}
 
 // run executes c inside the worker's copy of c.Root, under parent. A zero
 // timeout waits as long as the tests take.
@@ -128,7 +135,7 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	}
 	var cmd *exec.Cmd
 	if c.Shell != "" {
-		cmd = shellCommand(ctx, c.Shell, platformAtBoundary(w.runner.platform))
+		cmd = shellCommand(ctx, c.Shell)
 	} else {
 		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
 	}
