@@ -2941,8 +2941,8 @@ items:
   - id: T-79
     title: mutate.feature's strict-coverage scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-78]
     kind: task
     why: >
