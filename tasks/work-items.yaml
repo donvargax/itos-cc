@@ -3346,3 +3346,10 @@ items:
     status: todo
     depends_on: [T-114]
     kind: task
+  - id: T-116
+    title: Remove the completed refactor's sample count application
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

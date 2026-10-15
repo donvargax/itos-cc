@@ -2481,3 +2481,28 @@
   done_when:
     - run: go test ./cmd/itos-cc -count=1 -run '^(TestRun|TestCommandName|TestWantsJSON|TestLogger)'
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
+- id: T-116
+  type: refactor
+  title: Remove the completed refactor's sample count application
+  why: >
+    Finish S9 after T-115, carrying out q-48: the sample count application was retained only as a
+    reference while porting and now goes. Remove unused internal/count, internal/counting,
+    internal/disk and internal/stdin sample code/fakes/contracts, count.feature and its smoke/driver
+    registrations, sample-only dependency rules and architecture fixtures, sample
+    classifier/adapters/imports and sample proof/exception artifacts, only after inventory confirms
+    production commands use none of them. If any real behavior still uses a sample capability,
+    preserve that needed behavior under its actual domain/adapter rather than deleting it with the
+    sample. Keep reusable template CLI/version/release tooling and third-party notices intact. Drop
+    only sample assertions from restored main tests; do not expose count as a public command or
+    remove unrelated unreadable/stdin boundary checks. Reconcile docs/go.md, README and features
+    README with actual packages and two-driver coverage, remove completed-stage temporary
+    scaffolding and stale claims. No new public behavior/flag/output/exit changes, no freshly
+    fabricated mutation results and no own-code mutation runs. Report exact removed paths/references
+    and final S0..S9 state, plus unresolved parked template/gate ideas with concrete implemented
+    commit/config evidence for coordinator reconciliation; do not manually edit work owners/statuses
+    or silently mark an idea complete. Prepare refactor-final-proof with the final product head and
+    full deliberate-difference list, but do not begin it or turn mutation proof/nightly back on in
+    this task. FutureT86 remains later. Local checks limited to named top-level CLI scenarios and
+    relevant package compile/tests, broad gates hooks/CI, no worktrees/sessionmoves/agents.
+  done_when:
+    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
