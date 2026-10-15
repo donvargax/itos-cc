@@ -3110,3 +3110,10 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: T-85
+    title: Keep the selected Go toolchain after language-tool setup
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

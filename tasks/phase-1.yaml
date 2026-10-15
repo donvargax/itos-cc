@@ -1711,3 +1711,20 @@
     - run: itos version --check
     - run: itos config check
     - run: test "$(itos version)" = "itos 8.4.0"
+- id: T-85
+  type: ci
+  title: Keep the selected Go toolchain after language-tool setup
+  why: >
+    The person approved q-64 on 2026-10-14 to fix the environment failure of upgrade CI38684291843.
+    The Ubuntu full Go tests and ci job pass, then language-tools fails before assertions because
+    pinned Gradle setup finds /usr/bin/gradle and prepends /usr/bin, shadowing selected Go1.27.2
+    with the image default1.24.13; the module requires1.27.1. Add an Ubuntu-only invocation of the
+    SAME pinned actions/setup-go after Gradle and Maven setup and immediately before language-tools
+    tests, with go-version-file go.mod and cache false. Keep initial setup-go and all checks/tests.
+    Change only .github/workflows/ci.yml, with a short reason comment if useful. No new
+    tools/dependencies, no unrelated CI tuning, no product/scenario changes or repository mutation
+    runs. Use configured hooks and actual exact-head CI as validation, not redundant workflow-shape
+    tests or broad manual gates. T-84 stays doing until this repaired head passes, then close both
+    items with verified CI. No worktrees or agents.
+  done_when:
+    - run: git diff --check
