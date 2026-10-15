@@ -292,7 +292,9 @@ var Converted = []string{
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
 	// T-80: fail-fast, ownership
-	ids("MUT", "165-172", "187-202", "211"),
+	ids("MUT", "165-167", "187-189", "191-202", "211", "248"),
+	// Deferred Windows ownership remains @wip, outside T-80.
+	ids("MUT", "169-172"),
 	// T-81: counted, worktree
 	ids("MUT", "173-186", "212"),
 )
