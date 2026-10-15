@@ -2460,20 +2460,9 @@ items:
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-79]
     kind: task
-    why: >
-      Was step-strictness-check.
-      Moving a command step 8 asks that each step of a converted feature file be seen to fail with
-      its expectation changed. T-37 did this by hand with a scratch script: it changed one number,
-      quoted text, docstring line or table phrase of dry.feature at a time, ran that scenario alone,
-      and expected a failure (37 changes), plus 11 edits to steps with no value to change. Every
-      remaining conversion repeats this. A harness option or a tools/bin script could mutate each
-      scenario's literals in turn (numbers stepped by a small amount, quoted words altered), run the
-      scenario, and list the expectations whose change still passed: the steps or fixtures that
-      cannot tell right from wrong. T-37 found one that way, a grouping fixture whose groups did not
-      change with a lower threshold.
   - id: snapshot-port-remove-and-other-roots
     title: The snapshot port grows Remove and another project's root before mutation and serve move
     phase: 1

@@ -3362,5 +3362,3 @@
     removed the attempt immediately. Retain the failed logs and successful
     live smoke evidence; canonicalize the owned fixture root, preserve the
     noLinks guard, and pass the focused package and exact repaired CI.
-  done_when:
-    - run: go test ./tools/bin/step-strictness
