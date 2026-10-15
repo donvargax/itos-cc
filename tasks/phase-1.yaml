@@ -1534,6 +1534,13 @@
     in the real TS fixture. Memory traces derive both from actual virtual execution/original
     project state. A path alias must not make execution in the original project look like a
     worker copy.
+    MUT112's fixture Makefile itself appends the canonical execution trace before invoking
+    Vitest; only its make-test declaration carries Trace. Assert the original sample When's
+    baseline and sampled mutant digests before a plain-to-JSON diagnostic rerun adds events.
+    MUT113 includes an unrelated test before recording fingerprints. An external control then
+    makes only the whole suite fail, with matching per-command declarations. A real all-tests
+    sample must fail its baseline before the actual missing-scope sample proves own tests pass;
+    source, test and snapshot bytes remain unchanged during that counterfactual.
   done_when:
     - run: "! grep -q '// T-75:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$'

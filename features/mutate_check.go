@@ -443,6 +443,9 @@ func (c *checkMutation) functionStates() error {
 
 func (c *checkMutation) plainAgrees() error {
 	w := c.s.m.w
+	if c.s.m.samplePlain != nil {
+		return c.s.m.samplePlain()
+	}
 	obj, err := w.json()
 	if err != nil {
 		return err

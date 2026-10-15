@@ -548,3 +548,68 @@ scenario CI establishes coverage. Preserve all shared helpers and unrelated guar
 | 106 | `mutation_unrecorded_test.go`: `TestASiteTheEntryNeverRecordedMakesTheFunctionStale` |
 | 107 | `mutation_unrecorded_test.go`: `TestMutationRunRunsOnlyTheSitesTheEntryNeverRecorded` |
 | 108 | `mutation_since_stale_test.go`: `TestSinceKeepsTheEntriesItDoesNotJudgeMarkedStaleWhenTheirTestsChanged` |
+
+
+The sampling/scoped scenarios (ID-MUT-71–84, 109–113, 147–148) execute 23 cases
+and 100 steps. Literal TypeScript paths use real Vitest tests and the literal
+`make test` uses a fixture Makefile. Generic fifty-mutant cases use real Go sources
+with a declared always-passing `go version` command. The pinned Node selection includes
+71–75, 83–84, 109–113 and 147–148 (16 expanded cases); the other seven cases use Go
+or require no test tool.
+
+`Driver.Tests` upserts by directory and command; another declaration of the same
+command replaces its fixture outcomes. Relative and absolute executable forms used
+by the public run/sample commands are declared explicitly. Fixed external control
+paths are embedded before fingerprints are recorded, so changing the control changes
+real test behavior without making those test bytes stale or widening memory environment
+support. The end-to-end fixture first demonstrates own tests miss the boundary mutant,
+then the actual whole suite kills it. Scope comparisons force new trials with
+`--mutate-all`, preserving the separate reuse-keeps-scope claim. MUT112 observes
+trace events emitted by the real Makefile before Vitest, checking the original sample
+before a diagnostic JSON rerun. MUT113 first proves an unrelated test is discovered
+and breaks an explicit whole-suite sample, then samples the unchanged snapshot using
+its missing-scope own-test fallback. Only an external control changes between these runs.
+
+`Tests.Trace` optionally identifies an external JSONL file and source. The real fixture
+records canonical `cwd` and `original_root` with `realpathSync`, plus
+`source_sha256`. MUT71 checks the unmutated baseline first, every independently
+computed sampled-site digest afterward, and every execution outside the canonical
+original project. It also observes source/snapshot bytes and actual write events.
+Public progress alone is not physical-copy evidence. Memory currently stores these
+declarations only; T-88/T-100 must emit observations from actual bound fake Workers
+state, select outcomes by its request command and retain a binding regression.
+No scripted trace or in-process execution pass is claimed before that wiring.
+
+`Driver.Head(ctx, dir)` observes the actual Git HEAD independently of sample output.
+The binary implementation uses Git; the current memory Git has only a commit counter
+and explicitly reports unmoved history until T-91 supplies its actual history ID.
+T-100 must wire that value when mutation scenarios join `InProcess`.
+MUT78 explicitly records seed `4813e48` before moving HEAD.
+
+All T-75 holders below remain until restored replacement scenario CI and T-101
+review. Preserve their shared helpers, extra guards and the untagged
+`TestAMismatchsFixRerunsInItsScope` quoted/listed-command guard.
+
+| ID | Existing test (all retained) |
+| --- | --- |
+| 71 | `mutation_sample_test.go`: `TestASampleWhoseOutcomesHoldPassesAndWritesNothing` |
+| 72 | `mutation_sample_test.go`: `TestARecordedKillThatNowSurvivesIsAMismatch` |
+| 73 | `mutation_sample_test.go`: `TestARecordedSurvivorThatIsNowKilledIsAMismatchToo` |
+| 74 | `mutation_sample_test.go`: `TestKilledAndTimeoutAgree` |
+| 75 | `mutation_sample_test.go`: `TestOnlyFreshMutantsThatRanAreSampled` |
+| 76 | `mutation_sample_test.go`: `TestCountSaysHowMany20ByDefault` |
+| 77 | `mutation_sample_test.go`: `TestARerunOfOneCommitSamplesTheSameMutants` |
+| 78 | `mutation_sample_test.go`: `TestSeedReproducesARun` |
+| 79 | `mutation_sample_test.go`: `TestOutsideAGitRepositoryTheSeedMustBeGiven` |
+| 80 | `mutation_sample_test.go`: `TestACountBelow1IsAUsageError` |
+| 81 | `mutation_sample_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreSampled` |
+| 82 | `mutation_sample_test.go`: `TestNothingToSample` |
+| 83 | `mutation_sample_test.go`: `TestAFailingBaselineInASample` |
+| 84 | `mutation_sample_test.go`: `TestTheSampleAsJSON` |
+| 109 | `mutation_scope_test.go`: `TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt` |
+| 110 | `mutation_scope_test.go`: `TestAReusedOutcomeKeepsItsScope` |
+| 111 | `mutation_scope_test.go`: `TestMutationSampleRerunsEachMutantWithItsRecordedScope` |
+| 112 | `mutation_scope_test.go`: `TestAScopeGivenToMutationSampleOverridesTheRecordedOne` |
+| 113 | `mutation_scope_test.go`: `TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests` |
+| 147 | `mutation_mismatch_fix_test.go`: `TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith` |
+| 148 | `mutation_mismatch_fix_test.go`: `TestAScopeGivenToSampleIsTheOneTheFixNames` |

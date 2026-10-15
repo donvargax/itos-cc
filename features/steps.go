@@ -47,6 +47,8 @@ type Driver interface {
 	// Git runs git with args in the folder dir, for a fixture that needs a
 	// repository: init, add and commit.
 	Git(dir string, args ...string) error
+	// Head observes the current Git commit independently of command output.
+	Head(ctx context.Context, dir string) (string, error)
 	// Run runs itos-cc as r says and gives what it did. Its error is a run
 	// that could not be made, never an exit code other than 0.
 	Run(r Run) (Result, error)
@@ -84,6 +86,7 @@ type Driver interface {
 	// records it, for the fake that runs a project's tests once the
 	// mutation group moves. A folder with no Tests declared has no tests a
 	// run may run.
+	// Declarations upsert by directory and Command; other commands remain.
 	Tests(dir string, t Tests) error
 	// Graph reads the public /api/graph of serve in r.Dir, owning and stopping
 	// its server before returning. The context bounds readiness and the request.
@@ -121,7 +124,15 @@ type Tests struct {
 	// fixture: IDs and defining files, coverage by source line, whether coverage
 	// is split in one run, and each selection's timing or baseline failure.
 	Listed *ListedTests
+	// Trace names the fixture's actual execution observations, not scripted
+	// calls. Each JSON line has canonical cwd/original_root and source_sha256.
+	// Source is relative to the project; File is an absolute external path
+	// embedded in the real tests.
+	Trace *TestTrace
 }
+
+// TestTrace identifies an executable fixture's execution-observation file and source.
+type TestTrace struct{ File, Source string }
 
 // ListedTests is a fixture's public test inventory and observable outcomes.
 // Lines name source files relative to the declared project's folder.
@@ -254,8 +265,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-75: sample
-	ids("MUT", "71-84", "109-113", "147-148"),
 	// T-76: results
 	ids("MUT", "28-36", "52-56", "145", "231-241"),
 	// T-77: exceptions, renew

@@ -53,9 +53,12 @@ type mutateState struct {
 	// command is the --test-command a Given's project runs its tests
 	// with, "" for its own, and factor the timeout factor a When says is
 	// the default, 0 where it says none.
-	command    string
-	factor     float64
-	quietCheck func() error
+	command       string
+	factor        float64
+	quietCheck    func() error
+	held          map[string]string
+	failingSample func() error
+	samplePlain   func() error
 }
 
 func mutateSteps(sc *godog.ScenarioContext, w *world) {
@@ -79,6 +82,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	since := sinceMutationSteps(sc, m)
 	checkMutationSteps(sc, m, since)
 	listedMutationSteps(sc, m)
+	sampleMutationSteps(sc, m, since)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
@@ -2208,6 +2212,9 @@ const failingTest = "from board import place\n\n\ndef test_place():\n    for i i
 // run's results of the file, then makes its tests fail without any
 // mutation.
 func (m *mutateState) failingBaseline(file string) error {
+	if file == "src/board.ts" && m.failingSample != nil {
+		return m.failingSample()
+	}
 	if file != "src/board.py" {
 		return fmt.Errorf("no project is written for %s", file)
 	}

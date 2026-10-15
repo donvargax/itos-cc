@@ -95,9 +95,9 @@ type memory struct {
 	// declared it, by folder, which the fake measurer is handed (measurer).
 	coverage map[string]features.Coverage
 	// tests are what each folder's own tests do, as the scenario declared
-	// them, by folder, for the fake that runs a project's tests once the
+	// them, by folder and command, for the fake that runs a project's tests once the
 	// mutation group moves (porttest.Workers, S7).
-	tests    map[string]features.Tests
+	tests    map[string]map[string]features.Tests
 	versions map[string]uint64
 }
 
@@ -113,7 +113,7 @@ var _ features.Driver = (*memory)(nil)
 func newMemory(t *testing.T) *memory {
 	return &memory{
 		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
-		coverage: map[string]features.Coverage{}, tests: map[string]features.Tests{}, versions: map[string]uint64{},
+		coverage: map[string]features.Coverage{}, tests: map[string]map[string]features.Tests{}, versions: map[string]uint64{},
 	}
 }
 
@@ -191,8 +191,21 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 
 // Tests records what the project's own tests do in dir.
 func (m *memory) Tests(dir string, t features.Tests) error {
-	m.tests[filepath.Clean(dir)] = t
+	dir = filepath.Clean(dir)
+	if m.tests[dir] == nil {
+		m.tests[dir] = map[string]features.Tests{}
+	}
+	m.tests[dir][t.Command] = t
 	return nil
+}
+
+// Head becomes the actual fake history observation in T91. A commit counter
+// is not a HEAD ID, and mutation scenarios do not run in process before T100.
+func (m *memory) Head(ctx context.Context, dir string) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	return "", fmt.Errorf("Head of %s: history observation has not moved in process (T91)", dir)
 }
 
 // Counted skips the scenario where itos-cc makes no counted run, in

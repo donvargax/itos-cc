@@ -24,6 +24,7 @@ type sinceMutation struct {
 	// Optional TypeScript fixture text and declared outcomes, shared by cached
 	// result scenarios that use these same previous-run and rerun sentences.
 	tsSource, tsTests        string
+	tsReport                 string
 	tsSurvivors, tsUncovered []string
 }
 
@@ -209,6 +210,9 @@ func (s *sinceMutation) declare() error {
 		}
 	}
 	report += "end_of_record\n"
+	if s.tsReport != "" {
+		report = s.tsReport
+	}
 	tests := Tests{Language: language, Command: command}
 	if s.ts {
 		names := s.tsSurvivors

@@ -21,7 +21,6 @@ type listedMutation struct {
 	made           bool
 	fresh          bool
 	original, held string
-	unchanged      map[string]string
 	graph          []byte
 }
 
@@ -312,18 +311,21 @@ func (l *listedMutation) freshRun() error {
 	if err := l.record(); err != nil {
 		return err
 	}
-	l.unchanged = map[string]string{}
+	l.m.held = map[string]string{}
 	for _, name := range []string{"main.go", "main_test.go", "a.feature", "b.feature", "c.feature", "features/steps_test.go", ".metrics/mutate/main.go.json"} {
-		l.unchanged[name] = l.m.read(name)
+		l.m.held[name] = l.m.read(name)
 	}
 	return nil
 }
 func (l *listedMutation) nothingChanged() error {
-	if len(l.unchanged) == 0 {
+	return l.m.fixtureUnchanged()
+}
+func (m *mutateState) fixtureUnchanged() error {
+	if len(m.held) == 0 {
 		return fmt.Errorf("no recorded fixture to compare")
 	}
-	for name, want := range l.unchanged {
-		if got := l.m.read(name); got != want {
+	for name, want := range m.held {
+		if got := m.read(name); got != want {
 			return fmt.Errorf("%s changed since the recorded run", name)
 		}
 	}
