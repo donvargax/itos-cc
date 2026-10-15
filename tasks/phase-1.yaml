@@ -1604,6 +1604,14 @@
     ran 7, reused 8; the earlier ran 9 mistakenly counted uncovered sites as executions. This
     narrow specification correction preserves current command behavior and is not a product
     failure or a new counting rule.
+    MUT237 preserves the retained holder's filesystem naming boundary without a host-OS
+    branch: preflight an ordinary owned sibling under .metrics/mutate and remove it, then
+    preflight the exact outside-source snapshot name and remove it before the public run.
+    Skip only when that exact name cannot be written despite the successful sibling and
+    the supplied source path has an embedded drive/volume colon. Name the unsupported
+    snapshot and cause. Other preflight failures and every failure after a successful
+    preflight are errors. Memory accepts its actual map path and executes; it does not
+    script a skip. This is the existing real filesystem capability limit, not a product fix.
   done_when:
     - run: "! grep -q '// T-76:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'
