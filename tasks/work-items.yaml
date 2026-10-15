@@ -3197,3 +3197,10 @@ items:
     status: todo
     depends_on: [T-94]
     kind: task
+  - id: T-96
+    title: Parse the mutation group with Kong before moving its handlers
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

@@ -2022,3 +2022,29 @@
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
     - run: "! git grep -n '\"github.com/donvargax/itos-cc/mutate\"' -- \"*.go\""
+- id: T-96
+  type: refactor
+  title: Parse the mutation group with Kong before moving its handlers
+  why: >
+    S7 after T-95. Parse the whole mutation command group with the existing pinned donvargax/kong
+    fork, defining the group/child CLI structs and contracts under one internal/mutation slice while
+    handlers still call the current cmd orchestration. These are coordinator choices under overnight
+    autonomy: one group slice keeps related command semantics together, and parser migration before
+    handler moves isolates CLI compatibility from domain wiring. Use existing cli.Selection, choice
+    enums, cumulative flags, typed numeric/value errors and shared help, with worker defaults
+    supplied as boundary values/Kong variables, not runtime-dependent domain logic. Preserve exact
+    help bytes and ordering for mutation plus run/check/list/sample/except, global --json placement,
+    group flags/errors/unknown subcommand guesses, repeat/interspersed/equals/-- argument behavior
+    and all current codes until S10. Config/tool/snapshot reads stay lazy after successful parsing
+    so help works with broken config or absent tools. Fresh command instances and one parser per
+    run; no global mutable registration, new DI library or futureT86 generated-registration work.
+    Keep adapters injected at cmd, pure domains free of parser/UI. Any old CLI edge a live scenario
+    cannot express is recorded and held by focused parser tests, not silently changed. Add every
+    subcommand help, help mutation run, mutation rn, mutation --changed run and
+    --json-before-command cases to final-proof without a per-task comparison. Update boundaries/docs
+    as needed and retain old meaningful checks until covered. Local checks focused, full gates
+    hooks/CI only; no own-code mutation/worktrees/session moves/agents or unapproved dependencies.
+  done_when:
+    - run: go test ./internal/cli/...
+    - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|06|07|09|10|11|12|14)$"
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(01|57|71|85|149|156|165|173|224|243)$"
