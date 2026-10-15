@@ -2358,6 +2358,34 @@
     Keep the old simulated-platform admission guards and actual native Windows
     248 CI evidence separate. An honest unsupported-host omission is not a claim
     that supported counted execution or interruption ran there.
+    MUT175 may use the same genuinely measured all-uncovered committed fixture
+    for its public seed-selection queries: selected static sites stay reported,
+    with zero actual trials as MUT180 requires. Verify that through real reports
+    and traces; do not add a planning flag or call an internal selector from steps.
+    While T83 omits mutation scenarios from the initial steps, add bounded T81
+    invocations in the existing three-platform matrix after T80 and before optional
+    language tools, without ITOS_CC_SKIP_FEATURES on those invocations. Select only
+    this item's IDs, preserve all prior steps and the default go-test timeout,
+    splitting measured families if needed. These are real Go fixtures, not a reason
+    to broaden installed-language policy. Report actual native passes and explicit
+    unsupported-platform omissions; a green omitted selection is not proof. T100
+    may fold this temporary T81 invocation into the ordinary suite only after that
+    suite actually runs all applicable counted/worktree cases again.
+    MUT181's real failing collector may still write a report. Extend fixture
+    Coverage facts only as needed with a declared command exit/output, alongside
+    the real report bytes. Binary behavior comes from its executable fixture;
+    T90/T100's bound fake tool writes the declared bytes and returns that actual
+    command failure, so the real Measurer and classifier reject it. Never emit a
+    canned preparation problem or accept a failed command's report as assurance.
+    Keep existing successful declarations unchanged by default.
+    MUT212 uses Driver.Link with the existing typed symlink capability classifier:
+    unsupported/permission refusals retain their causes and may omit, while
+    ordinary I/O failures fail setup. Cover this distinction with focused guards;
+    do not broaden unrelated optional-tool or platform admission behavior.
+    Permanent binary-only cases in this item are exactly MUT183's actual signal
+    and owned-process lifetime, and MUT212's real linked-worktree, host scratch
+    and symlink isolation. Keep the other thirteen logical counted cases eligible
+    for actual memory bindings; present memory gaps are not permanent omissions.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
@@ -2416,6 +2444,27 @@
     independently owned reports, latest-report reuse and cleanup where possible.
     If a further sentence cannot be observed honestly, settle its precise
     specification first and preserve the corresponding adapter guard.
+    T80's asynchronous product lifecycle currently reports
+    ErrPhysicalUnsupported on native Windows. SNAP04/06's genuine overlapping
+    process observations may omit only on that explicit capability refusal;
+    ordinary start, listener, protocol and I/O errors fail. Report exact host
+    executions and omissions, keep all logical snapshot cases runnable, and
+    retain native Windows atomic/concurrency adapter guards. This does not
+    authorize deferred Windows supervision or simulated platform execution.
+    SNAP06 must prove report consumption using independently different actual
+    measurements and each command's public result; announced paths alone prove
+    only location. Release actual overlapping collectors in stages and observe
+    owned directories, report bytes, latest-report reuse and cleanup. Confirm the
+    fixture oracle through the built product before claiming read isolation.
+    SNAP07 may add a narrow context-first Driver operation setting an existing
+    owned fixture path's modification time, observing the actual resulting time.
+    Use an age safely beyond a day, with a fresh run directory and unrelated kept
+    report as controls. No sleeps, product clock override or generic filesystem
+    framework; ordinary errors fail. Memory must change actual entry state or
+    explicitly refuse the capability, never echo an expected time as proof.
+    Keep the adapter's old/live/report cleanup guards; these are not automatic
+    T101 CLI duplicates. Settle any further physical-only classification against
+    actual observability, keeping logical snapshot cases eligible for memory.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
@@ -2539,6 +2588,29 @@
     mutation testing this repository, no worktrees/session moves or agents; no new dependencies
     without recorded selection. The coordinator splits any inseparable additional behavior rather
     than expanding this refactor.
+    Keep concrete snapshot JSON codecs in legacy mutate and exception YAML codecs
+    in config until their later adapter moves. Pure domain models have no wire
+    tags, encoding methods or encoding imports. Private fixed-schema wire structs
+    at those boundaries translate representation, without owning semantic rules
+    or introducing port DTOs, reflection mapping or a generic codec framework.
+    Preserve exact field order, omission rules, nil versus empty collections and
+    pointers, HTML escaping/newlines, go_coverage versus line_coverage, legacy
+    go_evidence reads and omission of transient Excepted values. Keep unitLines'
+    existing behavior at the codec boundary. Concrete conversions may reuse types
+    where they agree; only actual wire differences justify representation mapping.
+    Adapt full-model Store.Read and the three Snapshot Store.Write sites through
+    that codec, leaving generic snapshot-store APIs unchanged. Graph's mutation
+    loader continues through LoadSnapshotOf; explicit CLI result/stop-subject wire
+    models remain presentation-owned and byte-compatible. Audit all direct JSON
+    callers, including legacy test fixtures: aliases cannot supply methods defined
+    on nonlocal types, and bare domain marshaling must not change field names.
+    Keep existing unit/mutant format and legacy-read guards at the boundary;
+    pure rule tests move with pure values and lang fakes. Config retains parsing,
+    pointer presence, nodes/comments/unknown keys/modes, with concrete exception
+    wire conversion at both YAML writes; Config references the one domain type.
+    Move pure FreshCandidate, FreshUnit and ranking helpers now. The mixed
+    FreshPlan wrapper, scratch Close, project.Files and project.LineRange stay
+    legacy until fresh/history tasks; add no early inventory/range copy models.
   done_when:
     - run: go test ./internal/mutants
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|12[6-9]|13[0-4])$"
@@ -3021,6 +3093,10 @@
     ITOS_CC_TEST_PLATFORM inside a product binary or swallow platform errors.
     Keep the separately bounded native T80 CI scenarios after removing the
     broader T83 omission, and retain the documentation/private admission guards.
+    Fold the temporary T81 native-matrix invocation back into the ordinary suite
+    only after removing the broad T83 omission and observing all its applicable
+    counted/worktree cases there. Remove only that now-duplicate T81 invocation;
+    preserve the separately required T80 native-platform invocations unchanged.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
