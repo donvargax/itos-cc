@@ -3033,7 +3033,7 @@ items:
     title: Move pure mutation rules and models into internal/mutants
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-82]
     kind: task
   - id: T-88

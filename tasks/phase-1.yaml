@@ -2745,9 +2745,6 @@
     fileState candidate/execution closure for T-94. Move FailFast, Stop, site states
     and pure judgments, while cancellation, cleanup budget and log lifecycle remain
     with legacy orchestration until its boundary moves. Preserve their existing guards.
-  done_when:
-    - run: go test ./internal/mutants
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|12[6-9]|13[0-4])$"
 - id: T-88
   type: refactor
   title: Run mutation workers through a domain port and the worktrees adapter
