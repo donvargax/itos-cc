@@ -1811,6 +1811,14 @@
     Then assertions inspect the saved stage-specific observations, including the actual full
     run, and the final scoped-preservation assertion checks the captured partial artifacts.
     No cache is restored or force-refreshed to manufacture the ordering or counts.
+    MUT-209 proves dependency locality through actual test-emitted provenance, not
+    executable spelling. Public coverage setup records the canonical installed Vitest
+    dependency, the owned virtualenv's boardhelp module, or Kotlin Unit's code-source jar
+    in the Gradle cache. Counted preparation and trials must resolve the same actual
+    dependency target. Their source hashes must be the committed baseline and its
+    independently derived mutant; a live-only source comment makes frozen versus live
+    input observable. External fixture-owned traces use existing Driver file access,
+    and the original tree is inventoried after setup/live edits and compared after count.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
