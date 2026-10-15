@@ -2855,6 +2855,18 @@
     linter exclusion or changed behavior. Retain every prior guard and both
     recovery stashes. Give back and retake before repairing, then rerun only
     affected focused guards and let configured hooks/CI hold the full gates.
+    Attempt 2026-10-15 repair be2bc4f restored the reviewed extraction and
+    resolved the prior unchecked results, context key and native helper
+    findings. Exact run 38824109737 then reported one remaining G304 at
+    abandoned's read of the owner marker beneath its discovered worker
+    directory. Revert 06c7b1e immediately restored main and was pushed before
+    this record. Keep that original log and all prior source and guard
+    evidence. The remaining repair documents only this intentional marker
+    read with an operation-local security reason; preserve its exact path,
+    lock, read-error and best-effort cleanup behavior. Do not weaken the
+    security gate or broaden exclusions. Give back and retake before the
+    source is restored, then run the affected scratch guards and let CI
+    decide the configured full checks.
 
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
