@@ -1917,6 +1917,15 @@ items:
       Decision 38 (q-51) supersedes decision 31: move the code comments citing decision 31
       (internal/cli, internal/count, internal/disk, cmd/itos-cc/selection.go) to decision 38 in this
       slice.
+
+      Execution constraint for S10: the person requires interruption and semantic exit codes in the
+      SAME minor release. Push CI invokes release.yml automatically on feat/fix commits. Therefore
+      prepare and verify both specified features before the single product push, and let its release
+      cover both together; do not push an interrupt-only feat head and accidentally publish a
+      partial transition. Taking/recording items with prose commits beforehand is fine. Keep
+      separate red-first evidence and complete scenario coverage for each behavior. Resolve the
+      exact coordinated handoff when specifying S10 after final proof; do not change release gates
+      or silently bypass automatic release.
     refs: [q-51, q-54, q-37]
   - id: semantic-exit-codes
     title: Exit codes follow square/exit, 75 kept for retry
