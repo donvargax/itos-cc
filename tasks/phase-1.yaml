@@ -2272,6 +2272,20 @@
     scenario sentence, supervisor or gate. Recheck focused capabilities and
     exact repaired-head CI; retain the unchanged89 assertion-source evidence
     without replaying those probes solely for this factory admission fix.
+    Repaired attempt2f6ef6d passed the Windows ordinary suite and actual native
+    scenario invocation in CI38784145952, job116591667436. Its raw native log
+    contains MUT199 plus both MUT248 examples,12passedsteps and104platform
+    skippedsteps. The upload step warned that features/T80-native.json was
+    missing; the run retained only the macOS and Ubuntu structured artifacts.
+    This is an evidence-publication defect, not a native assertion failure or
+    a product-red claim. PowerShell handling of the unquoted dotted flag-value
+    token is a hypothesis, not a confirmed cause. Before closure, separate and
+    quote the report value as -scenario-report 'T80-native.json', and require
+    the existing upload step to fail on a missing artifact. Preserve always,
+    the pinned action, every selection and all timeouts. A fresh exact-head
+    run must retain all three native reports with actual execution accounting.
+    No product, scenario, EOF policy or reviewed assertion source changes;
+    retain all89 probe results without replay for this publication-only repair.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
