@@ -1457,7 +1457,14 @@
   title: mutate.feature's check and stale-tests scenarios run through godog against the built binary
   why: >
     Piece 5 of mutate.feature (the plan's table): check and stale-tests scenarios. Go tests holding
-    them today include mutation_check, mutation_test_hash and mutation_since_stale tests. Each piece
+    them today are mutation_check_test.go (57..64), mutation_test_hash_test.go (65..70),
+    mutation_unrecorded_test.go (106..107) and mutation_since_stale_test.go (108). Preserve their
+    extra moved-function, moved-survivor and no-snapshot guards and shared helpers for T-101.
+    Literal TypeScript paths use real TypeScript fixtures and declared test/coverage outcomes.
+    Reuse the existing previous-run/unchanged/rerun sentences for 66..67. The deletion case may
+    keep a second importing test so coverage remains meaningful after board.test.ts is removed;
+    60 records its survivor in place as written. Missing-site fixtures give place multiple sites.
+    Each piece
     (decision 39) writes steps for every sentence as it stands, checks each sentence against the
     built binary first and stops on one that cannot run as written (docs/go.md step 8), declares its
     fixtures' test outcomes through Driver.Tests and coverage through Driver.Coverage, writes file
