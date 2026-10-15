@@ -2942,7 +2942,9 @@ Feature: Mutation testing
       When mutation run is given a nonpositive or noninteger count, or seed without count
       Then it fails with a usage error before any mutation trial
       And counted mode requires one supported Git repository and a resolvable HEAD
-      And on an unsupported platform counted mode fails clearly before launching commands
+      # Comparative platform contract, preserved verbatim from MUT173 and
+      # executed natively on Windows by MUT248 rather than a platform override:
+      # And on an unsupported platform counted mode fails clearly before launching commands
       But existing complete and cached-sample behavior remains unchanged
 
     @mutation-counted-run @ID-MUT-174
