@@ -2805,6 +2805,37 @@
     If no current guard reaches an ordering guarantee, add a focused deterministic
     boundary guard that fails on premature release; do not claim a sampled
     absence or final filesystem state establishes the private sequence.
+    Keep Workers and its model-bearing contract types beside the existing pure
+    values in internal/mutants. Its later orchestration calls these contracts
+    without importing a child port package that imports the same domain back.
+    The real internal/worktrees adapter and the in-memory fake import those
+    domain-owned contracts and values directly. Put the fake and shared contract
+    suite under internal/mutants/porttest, with no production fake imports.
+    This is contract placement inside the existing shared domain, not the later
+    feature-owned layout. It changes no domain purity or inward dependency rule.
+    Do not move models into a new leaf package, add a forwarding-only port package,
+    copy fields into port DTOs or add generic result parameters merely to satisfy
+    a directory shape. Record this dependency direction in package documentation
+    and docs/go.md, including its model-bearing-contract exception to the usual
+    port-subpackage recipe. Boundary fixtures must accept worktrees using the
+    mutants contracts and refuse domain imports of worktrees, its fake, UI or I/O;
+    they must not broadly permit unrelated adapter or test-only imports.
+    Before the move, the command-runner lifecycle guard proves fixture release,
+    completion and final output; ownership guards prove no runnable owned child
+    remains at return. Neither alone proves an entered cleanup waiter is joined
+    before its owner releases worker inputs. The legacy two-worker CLI holder's
+    removed-while-alive marker is sampled evidence, and its fifteen-second limit
+    is not proof of a shared five-second deadline. Preserve those guards and add
+    a deterministic boundary guard holding an actual entered worker or cleanup
+    waiter, proving the owner cannot return or remove its inputs before release.
+    Exercise shared abort-budget identity through actual bound worker scopes,
+    preserving the separate guards that success and mutant-local timeout leave
+    that shared run-abort budget unused. Keep platform-only ownership checks at
+    the adapter and common lifecycle outcomes in the shared contract suite.
+    Keep this task's ordering guard at the adapter or legacy owner boundary
+    being adapted. T-92 separately proves the moved domain scheduler's ordering
+    through held requests on its bound Workers fake; do not move Run early to
+    satisfy that later task's obligation.
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
