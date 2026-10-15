@@ -2280,3 +2280,30 @@
     unapproved dependencies. FutureT86layout is not part of S8.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-SERVE-"
+- id: T-106
+  type: refactor
+  title: Move pure architecture graph rules into internal/architecture
+  why: >
+    S8 after T-105. Extract the pure architecture graph models, node/module identity and hierarchy,
+    module/import/HTTP-edge resolution from supplied facts, snapshot-overlay judgments,
+    CRAP/mutation/duplicate rollups and grades into internal/architecture. This domain name
+    describes what serve presents. Separate mixed source in place first, git-move recognizable files
+    separately, then edit; do not bulk-rename unrelated adapter libraries. Reuse internal/lang,
+    changerisk and mutants domain values/rules directly, particularly mutation FreshnessOf and exact
+    snapshot matching; no independent stale rule or copied domain DTOs. Keep real repository
+    discovery/reads/config decoding/stamps/parsing I/O and JSON encoding at the legacy adapter
+    boundary until the next task, and no filesystem/HTTP/JSON implementation/UI/exit codes in the
+    domain. Existing passive wire tags/field shapes may be preserved where this avoids an
+    unnecessary duplicate model; actual wire encoding stays outside. Move pure tests to in-memory
+    domain fixtures using existing lang fakes; preserve numeric grades, external import/path-alias
+    behavior, node IDs/order and all snapshot-schema outputs. Keep just the minimum temporary typed
+    compatibility surface needed for the old builder/server, not duplicated algorithms. Add
+    dependency/domain-io/domain-coverage rules, matching accept/refuse fixtures and docs; meet
+    domain statement coverage. Preserve notices and recorded artifact/exception moves as ADR37
+    requires without fabricating fresh mutation evidence. Add graph JSON/grades/same-name-freshness
+    cases to final-proof rather than per-task binary comparison. Focus localchecks to the domain and
+    named public scenarios, full gates hooks/CI. No own-code mutation/worktrees/sessionmoves/agents
+    or new dependency without recorded selection; futureT86 is separate.
+  done_when:
+    - run: go test ./internal/architecture/...
+    - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(01|02|03|07|15|22|2[4-9]|3[0-1]|3[4-9]|40)$"

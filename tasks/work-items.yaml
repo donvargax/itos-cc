@@ -3274,3 +3274,10 @@ items:
     status: todo
     depends_on: [T-104]
     kind: task
+  - id: T-106
+    title: Move pure architecture graph rules into internal/architecture
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
