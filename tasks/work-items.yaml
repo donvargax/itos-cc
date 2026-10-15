@@ -2460,7 +2460,7 @@ items:
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
     owner: donvargax
-    status: doing
+    status: todo
     depends_on: [T-79]
     kind: task
     why: >
