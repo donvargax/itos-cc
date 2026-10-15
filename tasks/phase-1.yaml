@@ -2141,6 +2141,77 @@
     default timeout and all retained adapter guards. Do not claim an omitted
     macOS or Windows example ran locally. Keep these native scenario runs when
     T100 removes the broader temporary omission.
+    The product-only running handle also exposes a pure synchronized Output
+    snapshot of already-captured stdout/stderr. It invents no exit status and
+    performs no I/O; Wait returns the final Result only after joining. Observe the
+    actual public first-completed progress as well as later-trial readiness before
+    counted SIGINT, rather than inferring judgment completion from a fixture exit.
+    The counted-interrupt fixture may characterize its two-site committed project
+    with a public fixed-seed count-two all-killed run before the scenario command.
+    Observe actual execution order through owned test traces and correlate public
+    results; do not infer order from a sorted artifact or use FreshCandidate/
+    seedSelecting internals. Keep committed source, tests, config and seed unchanged;
+    change only a declared owned external fixture control to block the observed
+    second site's real test, and upsert the truthful timing-out fixture facts.
+    Require sequential execution, completed first judgment and later readiness before
+    interrupting. Preserve current exit75/count.interrupted and honest partial
+    completed/active outcomes, not the later exit transition. Count that initial
+    probe as public fixture characterization, not a behavioral red or strictness.
+    Permanent binary-only cases are 165..167, 187..189, 191 and 193: actual
+    process lifetime, output handles, signals, unrelated peers and bounded cleanup.
+    Keep 192, 194..202, 211 and 248 eligible for real later memory bindings;
+    cancellation/timeout metadata in 194/197/201 remains logical and must derive
+    from actual bound Workers/context outcomes, never canned events. Static native
+    expectations are Linux 15 cases/82 written steps, macOS 16/87 and Windows
+    3/12 (199 plus the two248 examples), out of 21/116. These are planned source
+    counts, not execution evidence. Report actual passed/skipped steps and cases
+    separately; a Godog summary counting skipped scenarios as passed proves no
+    native execution of those scenarios.
+    MUT248's actual Windows positives run in native CI; do not claim a Linux skip
+    or the Unix-only assertion runner supplies Windows Godog negative execution.
+    Reuse its status/problem/no-command/artifact assertions where the local MUT199
+    refusal can exercise them, and add focused portable assertion-guard tests with
+    deliberately wrong observed facts for any 248-specific checks not so shared.
+    These guards prove assertion sensitivity, not native product execution; report
+    them separately from actual native CI cases and Godog strictness counts. This
+    bounded evidence plan adds no Windows supervisor or destructive source-editing
+    CI tier, preserves simulated-platform adapter guards, and weakens no admission
+    assertion or required native positive execution.
+    Use genuine declared Go tests for native physical fixtures; controlled children
+    can re-execute that compiled fixture test binary with the standard library.
+    Do not disguise Python or shell helpers as Go, add a generic helper-build port,
+    or broaden CI's existing installed-language policy for these process cases.
+    For MUT193's public five-second bound, begin the conservative measurement at
+    release of the actionable-survivor fixture barrier, after both workers are
+    actually ready. Finishing within release plus five seconds proves the stated
+    later stop bound without timing compilation/setup or starting the clock after
+    the stop. Keep the separate exact shared-budget identity/order adapter guards.
+    The settled liveness capability uses owned fixture connections, not numeric
+    PID signaling. Add a small Driver capability that creates an owned loopback
+    listener before product launch and supplies its fixture connection inputs through
+    the existing Run.Env. Each controlled real test child/grandchild establishes a
+    uniquely identified connection, writes its own PID and nonce in an atomic ready
+    record, and keeps the connection open for its entire lifetime. Capture the exact
+    peer and verify its record through Driver before releasing its fixture barrier.
+    A real request/acknowledgment proves the peer is live; EOF after the public
+    timeout or normal-return cleanup proves termination for this controlled fixture,
+    whose code never closes the connection early. Observe every declared descendant
+    and the separate unrelated control, not only the immediate product process.
+    Cooperative peer shutdown is cleanup only, never a way to satisfy a public
+    termination assertion. Wait/observation must not request it before the assertion;
+    the unrelated control remains live until that assertion is complete.
+    On errors and After paths, stop further product work, then cooperatively stop
+    remaining exact peers; wait for EOF and join product runs before removing fixtures.
+    Never kill a reused PID, match an executable name, interpret a missing ready
+    file as death, or claim arbitrary process identity from kill-zero. Use bounded
+    context-aware operations and the standard library; no generic subprocess API,
+    network framework or product test switch. Keep this protocol within controlled
+    test fixtures and concrete driver support, separate from product supervision.
+    Ordinary listener, handshake, read and deadline failures remain errors. Only an
+    explicitly unsupported driver reports a capability omission; genuinely physical
+    scenarios remain precisely binary-only, without weakening their retained adapter
+    guards. Record the protocol's controlled-fixture boundary and actual native
+    platform observations; it is not a general process-lifetime oracle.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
