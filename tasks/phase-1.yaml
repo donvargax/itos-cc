@@ -1688,10 +1688,6 @@
     Renewal's control comparison uses 5 rather than 0, avoiding an incidental unexcepted
     numeric survivor, and its Given refreshes the current whole-project outcomes so the
     literal whole-project check can pass without narrowing its selection.
-  done_when:
-    - run: "! grep -q '// T-77:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
-    - run: "git grep -qE '// @ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$' -- cmd/itos-cc"
 - id: T-78
   type: test
   title: mutate.feature's language-rule scenarios run through godog against the built binary
