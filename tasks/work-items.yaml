@@ -3305,3 +3305,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-113
+    title: Finish architecture and serving scenario coverage and remove legacy scaffolding
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

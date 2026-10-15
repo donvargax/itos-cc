@@ -2399,3 +2399,25 @@
   done_when:
     - run: go test ./internal/serve/... ./internal/cli/...
     - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="@ID-SERVE-"
+- id: T-113
+  type: refactor
+  title: Finish architecture and serving scenario coverage and remove legacy scaffolding
+  why: >
+    Finish S8 after T-112. Review architecture_graph.feature and serve.feature registration in both
+    drivers: no remaining graph/serve Unstepped IDs, no temporary binary-only tags or hidden empty
+    selections, permanent real process/socket/signal/tool-only cases explicitly explained. Report
+    actual scenario and example counts, steps and intentional skips from each driver. Preserve
+    meaningful adapter/domain cache/performance guards not observable publicly; remove only legacy
+    cmd/graph/server tests completely replaced by already-green public scenarios and name
+    replacement mappings. Delete now-unused legacy graph/server files and compatibility scaffolding,
+    retain reusable project/coverage adapters from earlier accepted stages rather than bulk-moving
+    unrelated libraries. Update docs/go.md dependency map and fixtures, features README coverage and
+    current-refactor proof case list to final state; each enforced package rule reflects actual
+    imports and comments. Carry notices, CONTRIBUTORS and artifact/exception moves whole, no
+    invented mutation evidence. Scenarios and flags must remain same; a behavior mismatch is a
+    separately specified red-first fix. Verify S7 temporary ITOS_CC_SKIP_FEATURES setting was
+    removed at T-100 from both push-CI steps, do not restore it. Focus local named checks and
+    leftover-reference inventory, gates via hooks/CI, no own-code
+    mutation/worktrees/sessionmoves/agents. Future T-86 feature-owned layout remains a follow-up.
+  done_when:
+    - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="@ID-(GRAPH|SERVE)-"
