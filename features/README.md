@@ -1258,3 +1258,27 @@ all adapter guards retained for T88/T92 deterministic boundary proof. Focused
 qualified to their earlier source revision. Preserve the untagged scope,
 measurement/provider, zero-site, ordering and helper guards as well as the
 T79-owned strict_changed_lines_counted_test.go226 holder.
+
+The frozen T81 implementation is `572f06a8ed7fa750d95d24e4156d743ade609a62`.
+Its final unedited control executed all fifteen cases and 99 steps, with no
+omissions. The reviewed serial plan ran 118 independent expectation edits:
+all 118 reached their intended assertion and failed; none were invalid or
+undetected. The run took 18m53.076s. The coordinator independently checked
+every original cucumber report, case/step identity and diagnostic, then
+verified all eleven source files' exact bytes and 0644 modes against that
+commit. HEAD stayed unchanged and the checkout was clean after restoration.
+These source-restoration results apply to that revision only.
+
+The manifest SHA-256 is
+`5b21b388a5a54d9f0b31b7c40b32a6bd1860a8ad0f465055e4e03029252e40a1`;
+the final runner report SHA-256 is
+`bbd76249d2450747f61e161620ddb18e25add46954895b29ada75a801a399fe5`.
+Original native observations are from
+[CI run 38800701382](https://github.com/donvargax/itos-cc/actions/runs/38800701382):
+Linux and macOS each executed all 15 cases/99 steps; Windows omitted all 15 cases/99 steps
+through the explicit counted capability, executing none of them. The same
+revision's retained T80 native reports actually exercised shared cleanup scenarios 166
+and 193 on Linux and 188 on macOS; Windows cases 199 and 248 still executed.
+No omission is counted as an executed passing case.
+The complete workflow passed for that exact revision: all three platform
+test jobs, all five release builds and publication.
