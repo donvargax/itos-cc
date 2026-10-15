@@ -1612,10 +1612,6 @@
     snapshot and cause. Other preflight failures and every failure after a successful
     preflight are errors. Memory accepts its actual map path and executes; it does not
     script a skip. This is the existing real filesystem capability limit, not a product fix.
-  done_when:
-    - run: "! grep -q '// T-76:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'
-    - run: "git grep -qE '// @ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$' -- cmd/itos-cc"
 - id: T-77
   type: test
   title: mutate.feature's exceptions and renew scenarios run through godog against the built binary
