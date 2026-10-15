@@ -2943,8 +2943,8 @@ items:
   - id: T-81
     title: mutate.feature's counted-run and worktree scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-80]
     kind: task
     why: >
