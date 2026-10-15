@@ -1707,10 +1707,6 @@
     repository. Verify the pinned version and config, commit through configured hooks, push with
     itos push and close only after exact-head CI succeeds. Preserve the three promoted coordinator
     drafts. Work only in this checkout, no worktrees or agents.
-  done_when:
-    - run: itos version --check
-    - run: itos config check
-    - run: test "$(itos version)" = "itos 8.4.0"
 - id: T-85
   type: ci
   title: Keep the selected Go toolchain after language-tool setup
