@@ -1552,7 +1552,19 @@
     Piece 7 of mutate.feature (the plan's table): results scenarios. Go tests holding them today
     include mutation_orphans, mutation_annotate and mutation_removed_sites tests. The
     mutation_unrecorded holders for 106..107 belong to T-74 and remain for T-101 cleanup; do not
-    count them as conversions in this piece. Each piece (decision 39) writes steps for every
+    count them as conversions in this piece. Map 52..56 to mutate_mutants_test, 231 to
+    mutate_unreached_baseline_test, 232 to mutate_counted_unreached_listed_test, 233 to
+    mutate_python_parallel_data_test, 234 to mutate_workers_abandoned_test, 235 and 241 to
+    mutation_removed_sites_test, 236..239 to mutation_orphans_test and 240 to
+    mutate_reused_baseline_test. Basic annotation guards, including 145, are in
+    mutate/annotate_test.go; preserve them for the domain/adapter extraction. The command
+    mutation_annotate_test.go holds 138..140 and its extra guards for T-77, not this piece. No
+    annotated command holders for 28..36 were found; do not invent replacement mappings. Retain
+    abandoned-worker extra guards for young/unmarked/foreign directories and counted trial copies.
+    For 232 use controlled fixture sites and public counted output, never production candidate
+    APIs to select its seed. For 233 keep the older-coverage compatibility and subprocess guards
+    unless replacements establish those assertions too; a current real collector pass alone is
+    not replacement evidence for older collector behavior. Each piece (decision 39) writes steps for every
     sentence as it stands, checks it against the built binary first and stops on one that cannot
     run as written (docs/go.md
     step 8), declares its fixtures' test outcomes through Driver.Tests and coverage through
@@ -1583,7 +1595,10 @@
   title: mutate.feature's exceptions and renew scenarios run through godog against the built binary
   why: >
     Piece 8 of mutate.feature (the plan's table): exceptions and renew scenarios. Go tests holding
-    them today include mutation_except* and except_renew tests. Each piece (decision 39) writes
+    them today include mutation_except_test (85..99), mutation_annotate_test (138..140),
+    mutation_except_elsewhere_test (141..144 and 146), and except_renew_test (227 and 242).
+    Preserve their extra guards and shared helpers, including the untagged annotation guard for
+    survivors of functions not judged by --since. Each piece (decision 39) writes
     steps for every sentence as it stands, checks each sentence against the built binary first and
     stops on one that cannot run as written (docs/go.md step 8), declares its fixtures' test
     outcomes through Driver.Tests and coverage through Driver.Coverage, writes file assertions with
@@ -1761,9 +1776,14 @@
     the checks, never the whole cmd/itos-cc suite or a mutation run of this repository (scenarios
     mutate their own fixtures, which is fine); never itos task show or itos task <id> locally; no
     worktrees; never push a commit naming the task before its checks can pass.
+    Retain snapshots_root_test.go and all other existing snapshot guards until replacement
+    scenarios actually pass CI, following docs/go.md step 11. This file is not part of T-83
+    mutation-feature omission. Record the exact SNAP08..12 replacement mapping for T-101 cleanup
+    and preserve any extra assertions/helpers. The completion check requires the retained holder
+    rather than premature deletion; T-101 removes it only after actual replacement CI evidence.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
-    - run: test ! -e cmd/itos-cc/snapshots_root_test.go
+    - run: test -e cmd/itos-cc/snapshots_root_test.go
     - run: go test ./features -count=1 -scenarios='@ID-SNAP-'
 - id: T-83
   type: ci
