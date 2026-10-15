@@ -2452,6 +2452,16 @@ items:
       broad snapshot normalization or unexplained differences. Preserve raw before/after artifacts
       and verify the fixed behavior against MUT-247 and MUT-207. If the baseline already preserves
       that evidence, require equality for that case.
+
+      T-87 moves pure mutation values and rules into internal/mutants while concrete snapshot codecs
+      remain at the legacy boundary. Add public mutation list and mutation check over reset Go,
+      TypeScript, Python and Kotlin fixtures, with same-name functions, listed and whole-suite
+      outcomes, reviewed exceptions and independent coverage. Compare complete stdout, stderr, exits
+      and original artifacts. Add an unchanged-snapshot rewrite case requiring exact bytes,
+      including field order, nil versus empty populations, omitted transient Excepted values, legacy
+      go_evidence reads, neutral suite_evidence writes, and go_coverage versus line_coverage.
+      Preserve the existing controlled-input and bounded-volatility rules; no per-task binary
+      comparison or new intentional-difference allowance is introduced.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
