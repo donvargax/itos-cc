@@ -3237,3 +3237,10 @@ items:
     status: todo
     depends_on: [T-101]
     kind: task
+  - id: T-103
+    title: Run graph HTTP-edge scenarios through the black-box harness
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
