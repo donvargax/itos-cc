@@ -85,6 +85,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	sample := sampleMutationSteps(sc, m, since)
 	resultMutationSteps(sc, m, since, sample)
 	exceptionMutationSteps(sc, m, since)
+	unjudgedEvidenceSteps(sc, m, since)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
