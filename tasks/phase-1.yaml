@@ -1674,6 +1674,20 @@
     counterfactual with public check. For 95 the uncovered entry is fixture configuration
     derived from the actual recorded uncovered unit/site, not a scripted test outcome;
     public except must continue refusing uncovered sites in 86.
+    MUT144's unchanged committed rename is intentionally unjudged by --since: preserve its
+    moved problem and exit 1, baseline not-run, empty judged/mutants and zero result counts.
+    Its continuing exception is observed separately by capturing public whole-project
+    mutation run --json without replacing the original When outputs. Require grid.Board#count's
+    actual 7:19 < to <= survivor with the reviewed excepted reason, fourteen killed, zero
+    survived, one excepted and zero uncovered, and no mutation.survived problem; do not
+    force --mutate-all or an auxiliary execution count. Config still names board.ts.
+    The proposed fresh-check probe was retracted before implementation: the public check
+    after this unchanged TypeScript --since rename finds the transferred old namespace's
+    results missing for grid's current namespace. That separate behavior is not fixed or
+    hidden by fallback here. MUT146 proves the ordinary whole-project judgment directly.
+    Renewal's control comparison uses 5 rather than 0, avoiding an incidental unexcepted
+    numeric survivor, and its Given refreshes the current whole-project outcomes so the
+    literal whole-project check can pass without narrowing its selection.
   done_when:
     - run: "! grep -q '// T-77:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
