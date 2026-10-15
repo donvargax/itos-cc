@@ -1494,7 +1494,9 @@
   title: mutate.feature's sample scenarios run through godog against the built binary
   why: >
     Piece 6 of mutate.feature (the plan's table): sample scenarios. Go tests holding them today
-    include mutation_sample and mutation_mismatch_fix tests. Each piece (decision 39) writes steps
+    include mutation_sample (71..84), mutation_scope (109..113) and mutation_mismatch_fix
+    (147..148) tests. Preserve the untagged listed/quoted-command escaping guard
+    TestAMismatchsFixRerunsInItsScope and shared helpers. Each piece (decision 39) writes steps
     for every sentence as it stands, checks each sentence against the built binary first and stops
     on one that cannot run as written (docs/go.md step 8), declares its fixtures' test outcomes
     through Driver.Tests and coverage through Driver.Coverage, writes file assertions with slashes,
@@ -1524,9 +1526,11 @@
   title: mutate.feature's results scenarios run through godog against the built binary
   why: >
     Piece 7 of mutate.feature (the plan's table): results scenarios. Go tests holding them today
-    include mutation_orphans, mutation_annotate, mutation_removed_sites and mutation_unrecorded
-    tests. Each piece (decision 39) writes steps for every sentence as it stands, checks each
-    sentence against the built binary first and stops on one that cannot run as written (docs/go.md
+    include mutation_orphans, mutation_annotate and mutation_removed_sites tests. The
+    mutation_unrecorded holders for 106..107 belong to T-74 and remain for T-101 cleanup; do not
+    count them as conversions in this piece. Each piece (decision 39) writes steps for every
+    sentence as it stands, checks it against the built binary first and stops on one that cannot
+    run as written (docs/go.md
     step 8), declares its fixtures' test outcomes through Driver.Tests and coverage through
     Driver.Coverage, writes file assertions with slashes, tags @binary-only only what needs real
     processes or tools for good, deletes its own entry from features.Unstepped, deletes the Go tests
@@ -1681,8 +1685,12 @@
   why: >
     Piece 12 of mutate.feature (the plan's table): counted-run and worktree scenarios. Go tests
     holding them today include mutate_counted* and strict_changed_lines_counted tests. The last
-    piece: features.Unstepped goes once only the @wip IDs it may still hold are left, or holds only
-    those with a comment. Each piece (decision 39) writes steps for every sentence as it stands,
+    mutation piece removes completed MUT IDs from features.Unstepped; any remaining mutation
+    entries are explicitly documented wip IDs. Keep generic pending-selection support for the
+    partial graph conversions in S8. Adapt the T-83 selection guard in selection_test.go, which
+    currently assumes Unstepped[0] exists, to an isolated pending fixture or a real pending ID; an
+    empty or wip-only list must not panic or weaken unknown-ID validation. Each piece (decision 39)
+    writes steps for every sentence as it stands,
     checks each sentence against the built binary first and stops on one that cannot run as written
     (docs/go.md step 8), declares its fixtures' test outcomes through Driver.Tests and coverage
     through Driver.Coverage, writes file assertions with slashes, tags @binary-only only what needs
@@ -2237,10 +2245,15 @@
     One named cross-command deferral may remain at S7 completion: MUT-134 needs serving,
     scheduled in T-112. Report it separately from genuine binary-only cases and passed
     scenarios. Keep its task/reason visible; T-112 must remove it, with no unimplemented fake
-    behavior counted as a pass.
+    behavior counted as a pass. Add metrics_snapshots.feature to InProcess now that its mutation
+    commands have moved, completing the two-driver decision left open by T-82. Source/root/format
+    scenarios run through both drivers. Raw-collector, atomic-filesystem and run-directory
+    concurrency/cleanup cases may remain documented binary-only only when they require the real
+    adapter capability; an unmoved command is no reason. Report actual scenarios, steps and
+    omissions, retaining adapter guards for claims the public CLI cannot observe.
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
 - id: T-102
   type: test
   title: Run graph node and import scenarios through the black-box harness
