@@ -2348,6 +2348,19 @@ items:
       mutation run --since over a renamed file, which moves its snapshot to the new path. One
       deliberate difference: the old snapshot's folders that the move leaves empty below mutate/ are
       now removed too, as an orphan's always were; git keeps no empty folder, so no commit shows it.
+
+      Intentional public behavior landed DURING the current refactor must be allowed explicitly in
+      the final before/after comparison: slice-6 mutation-exclude (ADR-0045, feat93d6317,
+      supporting3056ca5, releasedv0.15.0) applies itos-cc.yaml exclude to source selection for
+      commands, mutation list now reads config, dry/units print the excluded count, except --renew
+      deliberately ignores exclude and first invalid glob is reported; all are held by their
+      accepted scenarios. bug-1 (red7f9eedc, fix9d31226, releasedv0.15.1) canonicalizes
+      coverage-report path separators on every OS, so either separator matches the same source.
+      Compare unchanged selections/reports byte-for-byte and separately verify these intentional
+      differences against their scenarios; do not report them as accidental parser/port regressions
+      or silently normalize unrelated output. T-71 scenario conversions and CLI-03 version wording
+      changed tests only and add no product exception. T-83 temporary push-CI mutation skip is a
+      harness setting, removed at T-100 before final comparison; it is not a product difference.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
