@@ -1377,10 +1377,10 @@ Feature: Mutation testing
 
     @mutation-exceptions @ID-MUT-85
     Scenario: Excepting a survivor records it with its reason
-      Given a fresh run recorded the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count"
+      Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       When I run "itos-cc mutation except src/board.ts:7:19 --reason 'the loop only counts up'"
       Then itos-cc.yaml has one entry under mutation.exceptions
-      And it records src/board.ts, "Board#count", the function's hash, the site's line within the function, its column, `<`, `!=`, and the reason
+      And it records src/board.ts, "Board#count", the function's hash, the site's line within the function, its column, `<`, `<=`, and the reason
       And the exit code is 0
 
     @mutation-exceptions @ID-MUT-86
@@ -1509,12 +1509,12 @@ Feature: Mutation testing
     #   the comment never puts uncommented text in a source file.
     @annotate-excepted @ID-MUT-138
     Scenario: The summary comment counts an excepted survivor apart, with its reason
-      Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count" with reason "the loop only counts up", and every other mutant of src/board.ts is killed
+      Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count" with reason "the loop only counts up", and every other mutant of src/board.ts is killed
       When I run "itos-cc mutation run src/board.ts"
       Then src/board.ts ends with:
         """
         // itos-cc mutation: 14 killed, 0 survived, 1 excepted, 0 uncovered
-        // excepted: line 7 `<` → `!=` in count: the loop only counts up
+        // excepted: line 7 `<` → `<=` in count: the loop only counts up
         // end itos-cc mutation
         """
 
@@ -1530,7 +1530,7 @@ Feature: Mutation testing
     Scenario: A reason over several lines is written on one comment line
       Given itos-cc.yaml excepts the survivor of "Board#count" with reason "the loop\n  only counts up"
       When I run "itos-cc mutation run src/board.ts"
-      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `!=` in count: the loop only counts up"
+      Then the summary comment of src/board.ts has the line "// excepted: line 7 `<` → `<=` in count: the loop only counts up"
       And every line of the comment begins with "//"
 
     # exceptions-deleted-file: mutation run and mutation check judge the

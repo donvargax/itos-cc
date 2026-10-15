@@ -1633,6 +1633,15 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    The exception examples use the supported TypeScript < to <= mutation. The previous literal
+    < to != is absent from the public mutation list, for loops and ordinary comparisons alike;
+    the existing Go holders substituted < to <= rather than establishing that literal. Keep
+    src/board.ts:7:19, Board#count, reasons and exact summary counts, and produce that supported
+    survivor with a real fixture and test run. This is a specification correction to current
+    behavior, not a new mutator or evidence of a product failure. Do not seed an impossible
+    mutation merely to reproduce the old spelling. Check each other literal fixture and stop
+    on a mismatch before product changes; preserve annotation and renewal checks and extra
+    holder guards until their actual replacement CI passes.
   done_when:
     - run: "! grep -q '// T-77:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
