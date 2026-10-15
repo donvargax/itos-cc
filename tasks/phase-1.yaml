@@ -1530,6 +1530,10 @@
     no-changes, failing-baseline and plain/JSON sentences through shared fixture observations,
     never duplicate registrations. Existing holders and the stronger physical-copy/quoted-
     command guards remain until T101 review.
+    Trace identity uses canonical cwd and canonical original_root, realpathSync observations
+    in the real TS fixture. Memory traces derive both from actual virtual execution/original
+    project state. A path alias must not make execution in the original project look like a
+    worker copy.
   done_when:
     - run: "! grep -q '// T-75:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$'
@@ -1910,6 +1914,10 @@
     Never replay scripted trace events. Prove command-specific outcomes and trace emission
     through the handler's actual binding, with a regression that fails when that binding is
     replaced or omitted. The real fixture observes physical worker copies, not progress alone.
+    Trace identity uses canonical cwd and canonical original_root, realpathSync observations
+    in the real TS fixture. Memory traces derive both from actual virtual execution/original
+    project state. A path alias must not make execution in the original project look like a
+    worker copy.
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167|168)$"
@@ -2251,6 +2259,10 @@
     fixture to an embedded fixed path or honestly declared fixture environment without broad
     environment support or a silent pass. All eligible sampling scenarios must execute with
     these observations when mutation joins InProcess.
+    Trace identity uses canonical cwd and canonical original_root, realpathSync observations
+    in the real TS fixture. Memory traces derive both from actual virtual execution/original
+    project state. A path alias must not make execution in the original project look like a
+    worker copy.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
