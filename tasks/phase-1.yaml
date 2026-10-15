@@ -1690,11 +1690,6 @@
     S7 task that moves the last mutation handler in process removes the setting from ci.yml (note it
     on refactor-final-proof's neighbour, the idea inprocess-mutation-tests). Rules whole; light
     local testing; never itos task show; no worktrees.
-  done_when:
-    - run: grep -q ITOS_CC_SKIP_FEATURES features/steps.go
-    - run: grep -q 'ITOS_CC_SKIP_FEATURES' .github/workflows/ci.yml
-    - run: ITOS_CC_SKIP_FEATURES=mutate.feature go test ./features -count=1 -scenarios='@ID-MUT-0[1-6]$'
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-0[1-6]$'
 - id: T-84
   type: chore
   title: Upgrade the repository pin to itos 8.4.0
