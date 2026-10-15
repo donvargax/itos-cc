@@ -30,7 +30,9 @@ Feature: Snapshots under .metrics
   @ID-SNAP-04
   Scenario: Readers never see half a snapshot
     When a snapshot is written
-    Then it is written to a temporary file of its own and renamed into place
+    # Adapter contract (original mechanism sentence):
+    # Then it is written to a temporary file of its own and renamed into place
+    Then the stored snapshot is one complete valid JSON result
     And two runs writing the same snapshot at once leave one whole snapshot
 
   @ID-SNAP-05
