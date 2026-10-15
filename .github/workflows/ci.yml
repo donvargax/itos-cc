@@ -95,14 +95,14 @@ jobs:
       # Verbose steps and the structured report distinguish real native cases
       # from Godog's skipped-as-passed platform omissions; default timeout stays.
       - name: Native mutation ownership and fail-fast scenarios
-        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$' -scenario-report=T80-native.json
+        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$' -scenario-report 'T80-native.json'
       - name: Preserve native mutation scenario observations
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
         with:
           name: T80-native-${{ matrix.os }}
           path: features/T80-native.json
-          if-no-files-found: warn
+          if-no-files-found: error
 
 
       # The real TypeScript, Python and Kotlin tools, so the language smoke
