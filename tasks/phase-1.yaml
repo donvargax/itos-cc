@@ -1957,10 +1957,63 @@
     unrelated-process and cancellation observations must use a settled bounded fixture
     capability with readiness and owned cleanup, where the existing synchronous Run is
     insufficient; never sleep to guess readiness or kill by executable-name matches.
+    Read-only preparation confirms that a missing executable is not a substitute for
+    a forced ownership-establishment or cleanup failure. MUT168/190's lifecycle.start
+    and wait faults, no-unrestricted-fallback guarantee, same-supervisor identity and
+    platform-comparative private probes must remain explicit adapter contracts. The
+    coordinator correction is to classify MUT168 and MUT190 as adapter contracts,
+    preserving their exact former scenario prose as clearly labeled comments beside
+    their existing rules in mutate.feature, with original IDs retained in that prose.
+    They cease to be executable public CLI scenarios; do not renumber other IDs or add
+    a new harness tag/filter, a permanent skip, an internal Driver backdoor or product
+    fault switches. Make that classification and removal of just those pending IDs
+    together, so Unstepped never names a nonexistent public scenario. This changes
+    the test specification's layer, not the accepted supervision guarantees. Follow
+    docs/go.md's commit rule for live-scenario corrections and describe the unchanged
+    product behavior and retained proof explicitly. All remaining T80 public sentences
+    stay as written; their physical observations and the retained private guards are
+    complementary evidence, not a claim that a CLI fixture injects lifecycle faults.
+    Keep TestLinuxOwnershipStartupFailureDoesNotRunCommand,
+    TestLinuxCleanupFailureIsReturnedNotJudged, all startup/cleanup/captured-group
+    subcases of TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback, and
+    TestLinuxProbeCountsAZombieOnlyGroupEmpty unchanged. Preserve the supervisor's
+    argument/environment/stream guards and documented unsupported detaching boundary.
+    Exact completed-exit micro-window and shared-budget guards remain too. These Go
+    tests continue to run in the existing all-package platform CI and later move
+    intact to the worktrees adapter in T88; T101 cannot delete them as CLI duplicates.
+    Record the complete mapping beside the preserved prose and in features/README.md.
+    After classification this item has 19 public IDs/cases and 110 expanded steps
+    (static inventory, not execution), plus those explicitly retained adapter contracts.
+    Do not quietly drop the captured-group/unrelated-process property with private-fault
+    prose: observe it through the public timeout/normal-return cases. Likewise retain
+    exact completion-before-cancellation micro-window and waiter-join/shared-budget
+    identity/order tests at the adapter; public execution proves completed judgments
+    retained, bounded final process termination and complete captured output, without
+    claiming to reproduce an injected lifecycle race. No false assertion or permanent
+    unobservable-clause skip is a replacement for this specification correction.
+    The minimal physical lifecycle capability, if needed, is Driver.Start(ctx, Run),
+    restricted to the product binary, returning an owned running handle with bounded
+    Wait(ctx), Interrupt(ctx) and Close/cleanup. Read complete fixture-owned PID/ready
+    records through Driver before interruption. Fixtures publish those records atomically;
+    absence before readiness waits within the bound, while early exit, a malformed/partial
+    published record, a failed read or the deadline is an error, never guessed readiness
+    after sleep.
+    Settle actual liveness observation for those recorded owned identities too, capturing
+    safe ownership before releasing fixture children so cleanup cannot target a reused
+    or unrelated process ID. A second owned product run may provide the unrelated-process
+    control, without a generic arbitrary-subprocess Driver API. All error and After paths
+    must stop and join both product runs and their declared owned fixture descendants
+    before removing their directories. Keep platform behavior supplied as a value.
+    Public cancellation uses the existing counted-run SIGINT path: with one sequential
+    worker, observe a completed first trial and a later trial's readiness before interrupt,
+    then require the real partial result to retain the completed judgment. Ordinary
+    mutation currently has different default SIGINT behavior; do not change it here or
+    import S10's exit-code work. Physical process ownership observations may be genuinely
+    binary-only, with honest platform skips; logical freshness never acquires that tag.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$'
-    - run: "git grep -qE '// @ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$' -- cmd/itos-cc"
+    - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211)$'
+    - run: "git grep -qE '// @ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211)$' -- cmd/itos-cc"
 - id: T-81
   type: test
   title: mutate.feature's counted-run and worktree scenarios run through godog against the built binary
@@ -2208,9 +2261,14 @@
     observable; unsupported selectors or trace shapes are explicit errors. Preserve the
     existing trace behavior when the optional inventory is nil and prove both selection
     narrowing and the unrelated-test counterfactual through actual fake-port execution.
+    T80 classifies former MUT168/190 prose as adapter contracts, not executable
+    CLI scenarios. Preserve every corresponding private ownership/startup/cleanup,
+    captured-group, zombie-only-group, completion-race and shared-budget guard when
+    moving the runner here. Do not mistake removal of168 from the public scenario
+    selection below for permission to delete or weaken its actual adapter tests.
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167|168)$"
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
 - id: T-89
   type: refactor
   title: Give mutation toolchain facts, fingerprints and test reach through ports
