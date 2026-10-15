@@ -1436,7 +1436,8 @@ private ordering contract is held by `TestPoolJoinsEnteredWaiterBeforeRemovingIn
 and its identical release-edge oracle's premature-release counterexample.
 `TestBoundWorkersShareAbortDeadline` observes deadlines inside actual bound
 supervisors: ordinary aggregate cancellation retains local command budgets,
-explicit fail-fast Abort arms sharing before cancellation, and frozen trials
+fail-fast mode shares even before an actionable stop (including external parent
+cancellation), explicit Abort starts its deadline before cancellation, and frozen trials
 share preparation's owner. Existing success/local-timeout guards remain.
 `Close` joins entered command cleanup and source restoration even on cancellation;
 historical scratch lock/removal failures remain best effort. Native Windows

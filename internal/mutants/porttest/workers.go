@@ -44,11 +44,13 @@ type Trace struct {
 // Workers holds the actual virtual tree and each directory/command declaration.
 // Write, when set, publishes trace bytes through the driver's actual file writer.
 type Workers struct {
-	Files map[string]string
-	Tests map[string]map[string]Tests
-	Write func(path string, data []byte) error
-	mu    sync.Mutex
-	next  int
+	// Opened retains the semantic purpose of actual pool lifetimes, for binding guards.
+	Opened []mutants.WorkPurpose
+	Files  map[string]string
+	Tests  map[string]map[string]Tests
+	Write  func(path string, data []byte) error
+	mu     sync.Mutex
+	next   int
 }
 
 var _ mutants.Workers = (*Workers)(nil)
@@ -57,12 +59,13 @@ func (f *Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count i
 	if ctx.Err() != nil {
 		return nil, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
 	}
-	if purpose != mutants.MutationRun && purpose != mutants.FrozenTrials {
+	if purpose != mutants.MutationRun && purpose != mutants.FrozenTrials && purpose != mutants.FailFastJudgments {
 		return nil, failed("unknown worker purpose")
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.next++
+	f.Opened = append(f.Opened, purpose)
 	p := &pool{factory: f}
 	for i := 0; i < max(1, count); i++ {
 		p.workers = append(p.workers, &worker{pool: p, dir: filepath.Join(filepath.VolumeName(firstPath(f.Files))+string(filepath.Separator), "virtual-workers", fmt.Sprintf("%d-%d", purpose, f.next), fmt.Sprint(i)), copies: map[string]map[string]string{}})

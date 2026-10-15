@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +12,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/worktrees"
 )
 
 // FreshTrial is one selected mutant to judge with the own-test command whose

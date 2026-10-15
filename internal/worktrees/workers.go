@@ -29,7 +29,7 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	}
 	prefix := "itos-cc-mutate-"
 	switch purpose {
-	case mutants.MutationRun:
+	case mutants.MutationRun, mutants.FailFastJudgments:
 	case mutants.FrozenTrials:
 		prefix = "itos-cc-fresh-"
 	default:

@@ -472,8 +472,9 @@ result, or forwarding-only package is needed (decisions 29 and 47). Worker
 requests name the semantic `WorkPurpose`; the adapter owns the exact scratch
 prefixes. `Close` joins entered command/cleanup/restoration before removing
 inputs, including on a cancelled caller. Preserve existing cleanup budgets: ordinary
-aggregate cancellation uses local command deadlines; explicit fail-fast Abort
-arms sharing before cancellation, while frozen trials share preparation's owner
+aggregate cancellation uses local command deadlines. FailFastJudgments shares
+from startup, including external cancellation before any actionable stop; Abort
+starts the deadline before stop cancellation. Frozen trials share preparation's owner
 from creation. Success/local timeout never activates a shared abort deadline.
 Historical scratch removal remains
 best effort. The direct legacy library fixture fallback remains until T-92

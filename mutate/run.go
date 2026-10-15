@@ -581,7 +581,11 @@ type job struct {
 // The worker copies are removed only once every worker returned, its
 // owned commands joined.
 func execute(ctx context.Context, states []*fileState, opt Options, ff *FailFast) (*Stop, error) {
-	pool, err := legacyWorkers(opt.WorkerFactory).Open(ctx, mutants.MutationRun, max(1, opt.Workers))
+	purpose := mutants.MutationRun
+	if ff != nil {
+		purpose = mutants.FailFastJudgments
+	}
+	pool, err := legacyWorkers(opt.WorkerFactory).Open(ctx, purpose, max(1, opt.Workers))
 	if err != nil {
 		return nil, err
 	}

@@ -121,7 +121,8 @@ func TestBoundWorkersShareAbortDeadline(t *testing.T) {
 		purpose              mutants.WorkPurpose
 		abort, shared, owner bool
 	}{
-		{"explicit fail-fast stop", mutants.MutationRun, true, true, false},
+		{"explicit fail-fast stop", mutants.FailFastJudgments, true, true, false},
+		{"external cancellation in fail-fast mode before a stop", mutants.FailFastJudgments, false, true, false},
 		{"ordinary external cancellation", mutants.MutationRun, false, false, false},
 		{"frozen trials and preparation owner", mutants.FrozenTrials, false, true, true},
 	} {

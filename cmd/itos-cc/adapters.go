@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 	"io"
 	"os"
 	"runtime"
@@ -14,10 +12,12 @@ import (
 	"github.com/donvargax/itos-cc/internal/coveragetools"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/internal/workdir"
+	"github.com/donvargax/itos-cc/internal/worktrees"
 	"github.com/donvargax/itos-cc/project"
 )
 

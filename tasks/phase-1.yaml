@@ -2859,12 +2859,15 @@
 
     Preserve the pre-move budget distinction: ordinary aggregate execution
     without fail-fast uses local per-command cleanup after external caller
-    cancellation. Only an explicit fail-fast Abort arms its pool's shared
-    deadline before the stop cancels commands. Frozen trials and preparation's
+    cancellation. A semantic FailFastJudgments purpose shares the pool budget from startup,
+    including external cancellation before any actionable stop. Explicit Abort
+    starts that deadline before the stop cancels commands. Frozen trials and preparation's
     Owner retain their existing shared abort budget from creation. Arming and
     deadline selection are synchronized; success and mutant-local timeout do
     not activate the shared run-abort deadline. Bound-scope controls cover
-    ordinary cancellation, explicit fail-fast and frozen preparation ownership.
+    ordinary cancellation, actionable fail-fast, external cancellation in fail-fast
+    mode before a stop, and frozen preparation ownership. The actual legacy Run
+    caller must select purpose from ff!=nil; a binding guard covers both modes.
 
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...

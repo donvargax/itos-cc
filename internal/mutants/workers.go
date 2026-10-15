@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Workers opens the private copies for one run. Each pool owns one shared
-// post-abort cleanup deadline. The caller joins its work before Close; Close
+// Workers opens the private copies for one run. Fail-fast and frozen pools
+// share a post-abort cleanup deadline; ordinary runs keep local command budgets. The caller joins its work before Close; Close
 // also waits for already-entered commands before releasing their inputs.
 type Workers interface {
 	Open(ctx context.Context, purpose WorkPurpose, count int) (WorkerPool, WorkerFailure)
@@ -36,6 +36,8 @@ type WorkPurpose int
 const (
 	MutationRun WorkPurpose = iota
 	FrozenTrials
+	// FailFastJudgments shares cleanup on any parent abort, even before a stop.
+	FailFastJudgments
 )
 
 // Mutation is the source being judged, in the command's original tree.
