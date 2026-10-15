@@ -2881,8 +2881,8 @@ items:
   - id: T-75
     title: mutate.feature's sample scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-74]
     kind: task
     why: >
