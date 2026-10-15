@@ -2459,8 +2459,8 @@ items:
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-79]
     kind: task
     why: >
