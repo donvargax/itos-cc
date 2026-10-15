@@ -3181,3 +3181,10 @@ items:
     status: todo
     depends_on: [T-92]
     kind: task
+  - id: T-94
+    title: Move mutation sample and exceptions behind domain-owned boundaries
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

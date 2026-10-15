@@ -1963,3 +1963,31 @@
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
+- id: T-94
+  type: refactor
+  title: Move mutation sample and exceptions behind domain-owned boundaries
+  why: >
+    S7 after T-93, split from check/list so each change lands independently. Move mutation sample
+    and exception judgment/renewal orchestration into internal/mutants over its existing execution,
+    evidence and snapshot boundaries. Introduce the domain-owned Exceptions boundary and a real
+    config adapter for reading/updating itos-cc.yaml; annotation/source writes use a meaningful
+    typed external boundary, never direct filesystem code in the domain or slice. Ports return
+    domain values without field-copy DTOs; keep representation translation only where the external
+    format genuinely differs. Preserve sample deterministic rank/seed/count, recorded
+    scope/covering-test selection and its own baseline, stale/unrecorded/gone-site rules, mismatch
+    output facts, exception same-name/hash/site matching, rename tracking, renewal and unchanged
+    old-column behavior, excluded stale entries and existing annotation timing. This task does not
+    fix the separately recorded exception cleanup/renewal issues or change any
+    output/schema/exit/flag. All external operations take ctx first, sealed failures; no
+    held/background context or runtime.GOOS logic. Fake Exceptions/annotation stores operate wholly
+    in memory, driven by scenario files; fake/adapter contract suites hold shared results and
+    failures and config parsing tests retain raw YAML edge coverage. Legacy cmd still presents
+    sample/except until handler moves, domain emits facts rather than UI text. Update
+    import-boundary rules/fixtures/docs and retain meaningful guards until migrated scenarios/domain
+    tests hold them. Add relevant exception rename/renew/sample cases to final-proof, not per-task
+    binary comparisons. Light focused checks locally; configured hooks/CI for broad gates. No
+    mutation run over this repository/worktrees/session moves/agents or new dependency without
+    recorded selection.
+  done_when:
+    - run: go test ./internal/mutants/... ./config/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
