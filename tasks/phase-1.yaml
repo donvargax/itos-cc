@@ -2662,6 +2662,10 @@
     full deliberate-difference list, but do not begin it or turn mutation proof/nightly back on in
     this task. FutureT86 remains later. Local checks limited to named top-level CLI scenarios and
     relevant package compile/tests, broad gates hooks/CI, no worktrees/sessionmoves/agents.
+    Reconcile docs/CONFIG.md's inherited claim that the project has no own configuration with
+    the actual itos-cc.yaml loader; distinguish format policy from implemented behavior without
+    adding configuration features. Final guides must distinguish configured checks from disabled
+    proof/nightly work awaiting later tasks, rather than claim mutation proof is running.
     Reconcile template-bare-decision-citations locally as part of documentation cleanup:
     comments citing the template's decision 26 or 23 must name itos-template explicitly where
     they refer to that source, preserving source notices. Do not send external upstream messages
