@@ -2254,3 +2254,29 @@
     no GRAPH ID remains pending.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(2[2-9]|[34][0-9])$"
+- id: T-105
+  type: test
+  title: Run serving and HTTP stream scenarios through the black-box harness
+  why: >
+    S8 after T-104. Convert the12 live scenarios of features/serve.feature to strict godog steps
+    through the built binary and public HTTP/SSE behavior, before moving the command implementation.
+    Reuse/extend Driver server lifecycle and HTTP capabilities from graph-scenario work; no step
+    directly calls server/graph internals to decide a result. Cover actual localhost binding and
+    named ports/multiple roots, graph JSON/cache headers, initial/change/15-second keepalive events,
+    slow-client nonblocking behavior, source whitelist/traversal refusal, configured/default watch
+    interval, failed rebuild retaining previous graph, API guidance, SPA routes and Ctrl-C exit0
+    (130 comes only in S10). Use readiness/lifecycle signals and bounded contexts rather than
+    sleeps/repeated network polling; clean up only owned child processes/listeners on every exit.
+    Real-port/process/signal capabilities may be binary-only for good, not a temporary substitute
+    for missing in-process support. Do not download a viewer build: a minimal fixture asset
+    directory can stand in for an already built viewer. Fixed-port environmental conflicts must be
+    diagnosed honestly rather than silently changing expected URLs. Each observable assertion must
+    fail under a strictness edit; report scenario/case counts and every intentional skip. Retain
+    internal timer/cache/client scheduling guards when no CLI observation can prove them, explaining
+    the boundary, and send any genuine unobservable/stale sentence to coordinator with its guard
+    intact; no new product behavior or silent weakening. Register Converted/steps and update harness
+    docs, remove old Go tests only when every assertion has a new holder. Focus localchecks on these
+    scenarios, broad gates hooks/CI. No own-code mutation runs/worktrees/sessionmoves/agents or
+    unapproved dependencies. FutureT86layout is not part of S8.
+  done_when:
+    - run: go test ./features -count=1 -scenarios="@ID-SERVE-"

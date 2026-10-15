@@ -3253,3 +3253,10 @@ items:
     status: todo
     depends_on: [T-103]
     kind: task
+  - id: T-105
+    title: Run serving and HTTP stream scenarios through the black-box harness
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
