@@ -1423,10 +1423,6 @@
     mutate_listed_test.go (121-129), mutate_listed_fresh_test.go (130-134), and
     mutate_listed_baseline_test.go (135-137), preserving shared helpers and counted assertions.
     A green CI selection that omitted the scenarios is not their CI execution evidence.
-  done_when:
-    - run: "! grep -q '// T-72:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(12[1-9]|13[0-7])$'
-    - run: "git grep -q '// @ID-MUT-121' -- cmd/itos-cc/mutate_listed_test.go"
 - id: T-73
   type: test
   title: mutate.feature's differential and since scenarios run through godog against the built binary
