@@ -1177,3 +1177,9 @@ listed baseline remain independent. Later memory bindings must execute the
 actual requested measurement/tool conversion against the declared artifact
 and let the real classifier report failure; these facts do not script a
 preparation verdict or require a new Go metadata parser.
+
+`ListedTests.ListOutput` optionally declares exact successful list stdout,
+including malformed duplicate lines. Empty retains the ordinary inventory
+from `Files`; `ListFails` continues to describe an actual command failure.
+Only the real requested list operation returns those bytes to the existing
+parser, which determines whether the inventory is valid.

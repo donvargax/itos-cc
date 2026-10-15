@@ -2386,6 +2386,11 @@
     and owned-process lifetime, and MUT212's real linked-worktree, host scratch
     and symlink isolation. Keep the other thirteen logical counted cases eligible
     for actual memory bindings; present memory gaps are not permanent omissions.
+    Optional ListedTests.ListOutput is exact successful inventory stdout,
+    including duplicate raw lines; empty preserves output from Files. Only
+    an actual list request returns it to the existing parser. Keep ListFails
+    separate for a real unsuccessful command, and prove both failure paths
+    independently without mutation trials. No new parser or prepared verdict.
     Listed measurement facts add optional ListedTests.CoverageExit and
     CoverageOutput for the actual collection command, independently of own
     coverage and the clean listed baseline. Zero and empty preserve success.
