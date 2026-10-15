@@ -1887,3 +1887,27 @@
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
+- id: T-91
+  type: refactor
+  title: Read mutation history through a Git history port and an in-memory counterpart
+  why: >
+    S7 after T-90. Move mutation history and committed-input reads behind a domain-owned History
+    boundary and internal/githistory adapter using current Git behavior. Preserve --since
+    invalid-ref/no-repository diagnostics, immutable base/head source and test snapshots, source
+    rename matching with/without edits, same-name unit identity, changed-line comparison and
+    logical-root mapping, unborn/bare Git classification, frozen counted inputs and strict scope
+    boundaries. Context first for external work, no held/background context, sealed domain failures
+    classified at UI, no Git/OS/JSON implementation in domain. Extend cmd in-process driver's fake
+    Git with the refs, commit contents, branches and renames the Givens need, no real
+    filesystem/process/network access or scripted call mocks. Define a shared contract suite for
+    real and fake History results and typed failures, real Git-only setup/errors stay at adapter
+    tests. Wire real adapter at composition boundary and current legacy callers without moving Run
+    or all Fresh preparation yet. Avoid repeated domain/port DTOs and record dependency direction
+    before introducing a cycle workaround. Add architecture boundaries/accept-refuse fixtures and
+    docs; retain tests until scenarios/domain contracts hold equivalent checks. Add --since missing
+    ref, outside Git, and renames with/without edits to refactor-final-proof, no per-task binary
+    comparison. Local checks focused, broad gates only configured hooks/CI, no mutation run of this
+    repo/worktrees/session moves/agents/unapproved dependencies.
+  done_when:
+    - run: go test ./internal/githistory/... ./internal/mutants/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
