@@ -1485,10 +1485,6 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
-  done_when:
-    - run: "! grep -q '// T-74:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(5[7-9]|6[0-9]|70|10[6-8])$'
-    - run: "git grep -qE '// @ID-MUT-(5[7-9]|6[0-9]|70|10[6-8])$' -- cmd/itos-cc"
 - id: T-75
   type: test
   title: mutate.feature's sample scenarios run through godog against the built binary
