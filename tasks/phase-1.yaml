@@ -3354,5 +3354,13 @@
     Accept ordinary source permission bits only; refuse setuid, setgid or
     sticky bits before writes, and preserve a concurrent addition as a
     conflict rather than silently dropping it during exact restoration.
+    The first implementation 70e2c8f, pushed with specification 26a4f62,
+    passed the local package and live MUT156 smoke but failed macOS CI
+    38764010659: two direct restoration tests used t.TempDir's /var alias
+    after prepare had canonicalized the owned source to /private/var.
+    The safety guard correctly refused that symlinked path. Revert 24562fc
+    removed the attempt immediately. Retain the failed logs and successful
+    live smoke evidence; canonicalize the owned fixture root, preserve the
+    noLinks guard, and pass the focused package and exact repaired CI.
   done_when:
     - run: go test ./tools/bin/step-strictness
