@@ -1427,8 +1427,10 @@
   type: test
   title: mutate.feature's differential and since scenarios run through godog against the built binary
   why: >
-    Piece 4 of mutate.feature (the plan's table): differential and since scenarios. Go tests holding
-    them today include mutate_since and mutation_scope tests. Scenarios needing branch history run
+    Piece 4 of mutate.feature (the plan's table): differential and since scenarios. The command
+    holders in mutate_since_test.go cover 37-46 and 102-104. Pure-domain snapshot guards of
+    differential behavior 23-27 remain; mutation_scope_test.go belongs to T-75 and is untouched.
+    Keep the untagged renamed-file/new-path guard and shared helpers. Scenarios needing branch history run
     through the binary driver now; S7's fake git (T-91) brings them in process. Each piece (decision
     39) writes steps for every sentence as it stands, checks each sentence against the built binary
     first and stops on one that cannot run as written (docs/go.md step 8), declares its fixtures'
