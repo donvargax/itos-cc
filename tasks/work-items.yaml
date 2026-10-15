@@ -2949,8 +2949,8 @@ items:
   - id: T-82
     title: metrics_snapshots.feature runs through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-81]
     kind: task
     why: >
