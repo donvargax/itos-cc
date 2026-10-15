@@ -1846,10 +1846,6 @@
     Final selected execution passes all 41 cases and 249 steps without skips in
     129.231 seconds of Godog execution; 89 valid strictness probes produce 151
     intended example failures, with both temporary compile-only mistakes excluded.
-  done_when:
-    - run: "! grep -q '// T-78:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
-    - run: "git grep -qE '// @ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$' -- cmd/itos-cc"
 - id: T-79
   type: test
   title: mutate.feature's strict-coverage scenarios run through godog against the built binary
