@@ -1377,3 +1377,32 @@ all four/three expansions must fail at that assertion. Separate non-outline
 source-check probes cover shared snapshot, version and path predicates.
 Expanded intended failures and probe counts are reported separately; feature
 and source bytes/modes are restored exactly.
+
+The final unchanged control for implementation
+`159641d484608b1d21ec4cd28960501daa2abbd0` executed all seventeen cases and
+fifty steps without omissions. Seventy-one individually reviewed assertion
+probes produced seventy-six intended expanded-case failures, with zero
+invalid or undetected probes. The two outline literal-binding probes failed
+all four and all three original examples; the other sixty-nine probes changed
+source checks. Independent review of every original cucumber JSON checked
+case identity, assertion line/name and error, passed preceding steps, and
+normal skipped steps following the intended failure. All eleven owned files
+were restored to their exact committed bytes and modes. Probes took nine
+minutes and two seconds, entirely alongside the implementation's CI run.
+The version-one manifest SHA-256 is
+`c3a4b18e8ecd90dc68c4546daf1cea9fc859cf51dc203f03671a47a43a9ffd3a`;
+the final report SHA-256 is
+`4e45a931306ab11b29094dae1761d809b261ed5d4948035f9b8a2a318667b405`.
+
+Original native reports from [CI run 38809213695](https://github.com/donvargax/itos-cc/actions/runs/38809213695)
+were independently downloaded and checked. Linux and macOS each executed all
+seventeen cases and fifty steps successfully. Windows executed fifteen cases
+and forty-two steps successfully; SNAP04's three steps and SNAP06's five steps
+were explicitly omitted under the existing physical lifecycle limitation.
+SNAP07's timestamp cleanup actually ran and passed on all three platforms.
+No omitted case is counted as an executed pass.
+
+The complete workflow passed for that exact implementation revision: all
+three platform test jobs, all five release builds and publication. Legacy
+holders and adapter-only guarantees remain in place for T-101's mapped
+cleanup; the new scenarios are not a reason to remove unmatched checks.
