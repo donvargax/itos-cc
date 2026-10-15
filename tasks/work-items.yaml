@@ -3229,3 +3229,10 @@ items:
     status: todo
     depends_on: [T-100]
     kind: task
+  - id: T-102
+    title: Run graph node and import scenarios through the black-box harness
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

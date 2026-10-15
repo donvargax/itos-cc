@@ -2167,3 +2167,31 @@
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+- id: T-102
+  type: test
+  title: Run graph node and import scenarios through the black-box harness
+  why: >
+    S8 of the CURRENT template-adoption refactor, after mutation S7; futureT86 layout is separate.
+    Convert the named live scenarios of features/architecture_graph.feature to strict godog steps
+    before moving their implementation. Steps are black-box, reaching the program and fixture world
+    only through Driver capabilities; reuse the public serve GET/api/graph capability introduced for
+    MUT134 rather than calling graph/lang internals to decide results. Both fixture declarations and
+    observed assertions must match each sentence; show each new assertion can fail and report
+    strictness edits and actual scenario/case counts with intentional skips explained. Partial-file
+    conversion may use explicit pendingIDs with preserved no-match/unknown-ID validation; completed
+    IDs may not remain pending or pass vacuously. Preserve scenario IDs/behavior, keep code/fixture
+    notices. Remove only old Go tests whose every assertion is held by the new scenarios, naming
+    each replacement; retain internal caching/performance/parser contracts that cannot be observed
+    through CLI and explain that boundary. If a scenario mixes an internal claim with observable
+    behavior, bring a precise correction to coordinator with its existing guard retained, never
+    weaken it silently or create a new product behavior in a conversion. Binary-only is for genuine
+    external capabilities, never not-yet-moved code. Update features README and converted/selection
+    lists and add installed-tool runs only if genuinely required. No production restructuring yet.
+    Light local named checks only, gates hooks/CI, no own-code
+    mutation/worktrees/sessionmoves/agents or new dependency without recorded selection. This piece
+    is GRAPH01..14: multi-language node/module hierarchy and repository names, import forms
+    including dynamic Python, TypeScript aliases/extends/references, Kotlin implicit dependencies
+    and external imports. Candidate-resolution assertions can use controlled fixture arrangements
+    and observed graph results; do not expose a new diagnostic flag merely for tests.
+  done_when:
+    - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(0[1-9]|1[0-4])$"
