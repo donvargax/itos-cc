@@ -3258,3 +3258,26 @@ items:
     status: done
     depends_on: []
     kind: bug
+  - id: itos-work-process-friction
+    title: Reduce repeated validation and bookkeeping in the itos work lifecycle
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Observed during the current refactor, without changing its queue or gates. T-81 implementation
+      CI 38800701382 at 572f06a took 28m57s; its assertion probes took 18m53s and now overlap CI.
+      Earlier T-80 evidence recording created a newer task-owned documentation commit and required
+      another full CI cycle despite unchanged implementation. Task take/close/queue pushes also
+      enter this repository CI platform matrix because the test job is unconditional. Proposed
+      improvements for later specification: a validation receipt tied to implementation and required
+      checks, with recording evidence separated from invalidating proof; repository CI recognition
+      of changes confined to owner/status/queue fields, never source/scenarios/fixtures/gates;
+      atomic completion recording validated revision/CI/evidence plus close/dequeue; drafts scoped
+      to a task and fields rather than the full ledger file; one authoritative work show
+      specification rather than overlapping current ledger and older registry descriptions. Preserve
+      all valid checks and rejection of source or check changes after validation. A normal T-81 push
+      also needed a narrowly justified approval retry; generated briefs could expose exact delegated
+      push scope, an integration concern. These are process proposals, not authorization to bypass
+      gates or fold tool changes into the current refactor item.
