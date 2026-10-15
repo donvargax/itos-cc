@@ -1737,6 +1737,29 @@
     and test-command invocation cases must demonstrate the real observations their wording
     requires; any permanent binary-only reason names that external capability. Count all
     examples, including both Kotlin build systems and both Python runners.
+    MUT-205's Python row names the literal --test-command "./run.sh". If its fixture needs
+    executable bytes, use a small Driver.WriteExecutable(path, data) capability: the binary
+    driver writes the owned file and ensures its executable permission even when replacing
+    an existing ordinary file; the memory driver writes the same actual fixture bytes into
+    its file map for the later bound Workers fake. Existing standard-library file operations
+    suffice; no new library or general-purpose process/build capability. Keep ordinary Write
+    unchanged, preserve errors, and call the capability only for fixture-owned paths. Steps
+    must not chmod or execute commands themselves, silently change the literal scope, or
+    label a shell fixture as Go to avoid required-tool checks. Declare the actual Python
+    tests honestly; installed-tool selection remains the existing driver policy. A logical
+    freshness scenario does not become permanently binary-only because its fixture invokes
+    a command; its later in-process execution must reach the bound Workers port. If the
+    literal command cannot be exercised on a selected platform, report that concrete
+    limitation rather than fabricate an outcome. Prove the capability creates a genuinely
+    executable fixture on the platform used and that the memory file holds those bytes.
+    In MUT-207, establish the expected own/all-tests/test-command function population in
+    each language and require every expected unit to be present in check, public graph and
+    run observations; absent map entries must not count as a fresh graph or a non-reused
+    mutant. Sample the actual fresh population with a fixed seed and a draw large enough
+    to include it, and prove stale outcomes are excluded. Observe freshness before a full
+    rerun can refresh it. After the scoped helper addition, prove the newly judged helper
+    is fresh while each previously stale unjudged function keeps its old evidence; then
+    check the final run's per-function reuse against that established population.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
