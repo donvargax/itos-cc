@@ -1938,3 +1938,28 @@
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|168|187|188|189|190|191|192|193|194|195|196|197|198|199|200|201|202)$"
+- id: T-93
+  type: refactor
+  title: Move mutation check and list orchestration behind the domain boundary
+  why: >
+    S7 after T-92. Move remaining check/list behavior from legacy mutate and command code to
+    internal/mutants over its established selection, parsing, snapshot, fingerprint and reach
+    boundaries, keeping cmd presentation temporarily intact. Pure judgments already moved in T-87
+    remain the single rules shared by mutation check, reuse and graph; do not duplicate them in
+    adapters or UI. Preserve sites and line/column ordering, same-name unit matching,
+    stale/missing/unrecorded distinctions, broad/listed freshness, excluded files, gone sites and
+    orphans, strict function/line evidence and empty-selection behavior. Domain code does no real
+    I/O, JSON encoding/decoding, UI formatting or exit selection; typed snapshot values flow across
+    the boundary and any wire decoding remains at an adapter. Context first for all external work,
+    no stored/recreated context, no raw implementation failures escaping a sealed domain contract.
+    Existing CLI output/problems/snapshot schema/bytes remain unchanged; build no new behavior or
+    flags. Add focused domain tests with our in-memory port fakes for outcomes and injected
+    failures; keep valid guards until covered by migrated scenarios/domain tests. Real adapters
+    remain wired at cmd, which still formats check/list until their handler tasks. Update docs and
+    boundary fixtures where arrows change, meet domain coverage, add any new equivalence edge to
+    refactor-final-proof rather than comparing binaries per task. Gates only through configured
+    hooks/CI, focused local checks, no own-code mutation runs/worktrees/session moves/agents or
+    unapproved dependencies.
+  done_when:
+    - run: go test ./internal/mutants/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
