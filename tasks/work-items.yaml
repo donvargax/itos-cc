@@ -1644,6 +1644,20 @@ items:
       internal/mutants, internal/mutation, internal/worktrees, internal/githistory,
       internal/importgraph) and Q4 (Exception and Tests in the domain, decision 47); Q5
       (saves-each-file behaviour), Q3, Q7, Q10 wait for the person.
+
+      Coordinator overnight execution plan is now explicit: S7 T-87..T-101; S8 T-102..T-108 then
+      T-112 serve slice and T-113 cleanup; S9 T-114 Kong top-level/version preserving accepted
+      output, T-115 reconcile applicable main fixtures/exception, T-116 remove count sample as q-48.
+      T-109..T-111 were discarded draft reservations, not missing work. Current task ledger whys
+      supersede old plan placeholders. Q3 one internal/mutation group, Q7 parser flip before handler
+      moves, Q10 coarse Fresh boundary settled under the person's autonomous-choice authorization;
+      Q5 save-each-file stays a separate future feature, preserving publication behavior here. S10
+      final-proof follows T-116, then interruption and semantic-exit features must ship in one minor
+      release as already decided. Existing CLI contract overrides incompatible ignored template test
+      defaults; do not introduce completion/new JSON forms/version output inside a refactor. Future
+      feature-owned architecture T-86 remains after this current refactor. Before umbrella closure
+      reconcile parked ideas against actual commits/config; do not leave duplicate stale ideas as
+      hidden blockers or silently claim unfinished gates complete.
   - id: left-out-singular-wording
     title: mutation check's left-out note reads "1 recorded mutant at sites gone"
     phase: 1
