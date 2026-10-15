@@ -2133,6 +2133,33 @@
     mutation-feature omission. Record the exact SNAP08..12 replacement mapping for T-101 cleanup
     and preserve any extra assertions/helpers. The completion check requires the retained holder
     rather than premature deletion; T-101 removes it only after actual replacement CI evidence.
+    SNAP04 mixes an observable complete-snapshot result with the private
+    implementation claim that writing uses its own temporary file and rename.
+    Preserve that exact original mechanism sentence as an explicitly labeled
+    adapter-contract comment beside SNAP04, and replace just its executable Then
+    with: the stored snapshot is one complete valid JSON result. Keep its original
+    ID, title, When and concurrent-writers And unchanged. Follow docs/go.md for
+    a live specification correction and state that product behavior is unchanged.
+    Public steps must execute actual product commands and parse the actual stored
+    result; concurrent writers are real overlapping owned product runs, not two
+    sequential calls or direct library writes presented as CLI proof. Use the
+    bounded product lifecycle capability settled for T80, with owned cleanup.
+    Genuine filesystem/process concurrency may be binary-only with a precise
+    reason, without permanently tagging the logical snapshot cases.
+    Keep the atomic-write mechanism and failure proof at the metrics adapter.
+    Retain TestWritesAtTheSameTimeLeaveOneWholeSnapshot,
+    TestARenameRefusedForAMomentIsRetried, TestARenameThatCannotLandFails,
+    TestAReadRefusedForAMomentIsRetried and
+    TestOneProcessNeverRenamesOrReadsASnapshotWhileItIsRenamed, their temporary-file
+    cleanup, Windows refusal/permission and same-process reader/writer assertions.
+    They continue in existing all-package platform CI and are not T101 CLI duplicates.
+    Do not add a Driver backdoor for osRename, infer the mechanism from a successful
+    exit or claim a finite public observation proves every possible concurrent read.
+    SNAP06/07 run-directory paths and cleanup are visible filesystem behavior,
+    not automatically private claims: observe actual collector directories,
+    independently owned reports, latest-report reuse and cleanup where possible.
+    If a further sentence cannot be observed honestly, settle its precise
+    specification first and preserve the corresponding adapter guard.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
