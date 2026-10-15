@@ -1782,7 +1782,24 @@ Feature: Mutation testing
       Then it is stale and must rerun before it can be reused
       But a Go outcome recorded with the existing Go evidence key stays fresh
 
-    @whole-suite-freshness-all @ID-MUT-207
+    # bug-2: the T-78 conversion exposed a pre-existing artifact defect. A partial
+    # run can stamp current suite_evidence onto an unjudged unchanged function
+    # while stale:true still prevents reuse. ADR-0016 and this scenario require
+    # preserving the original evidence, not merely retaining that stale marker.
+    # Fix this separately from T-78, with an independent compiling public CLI
+    # regression committed and failing at its evidence assertion before product
+    # edits. Cover Go (MUT-154's precedent), TypeScript, Python and Kotlin; a
+    # missing unit, empty mutant set or nil evidence is a fixture failure.
+    # Compare recorded test/support hash maps, outcome and recorded scope before
+    # and after a --since run that judges another function. Keep the unjudged
+    # source hash, original evidence and judgment, permitting only the already
+    # specified stale marker and source-movement positions. The judged function
+    # must receive current evidence. Preserve independent executable-coverage
+    # evidence, own/listed dependencies, missing-evidence invalidation and all
+    # existing partial/fail-fast guards. Check/sample/graph still reject stale
+    # unjudged outcomes, and a later full run must judge them rather than reuse.
+    # No new flags, schema, dependencies, exit policy or broad freshness changes.
+    @bug-2 @whole-suite-freshness-all @ID-MUT-207
     Scenario: Mixed scopes and partial runs keep their own dependencies in every language
       Given TypeScript, Python and Kotlin outcomes recorded with own, all-tests and test-command scopes
       And only a non-importing test file changed beneath each build root
@@ -1790,6 +1807,27 @@ Feature: Mutation testing
       Then the own outcomes stay usable and every whole-suite outcome is stale
       And all four agree on each function's freshness
       And a --since run that judges one function never refreshes the evidence of an unjudged one
+
+
+    # An independent black-box regression for bug-2, executable while T-78's
+    # conversion remains shelved. This repeats the accepted preservation rule,
+    # making the raw artifact difference explicit; it adds no product policy.
+    @wip @bug-2 @ID-MUT-247
+    Scenario Outline: A partial run preserves an unjudged <language> outcome's original whole-suite evidence
+      Given a committed <language> project with two functions whose whole-suite outcomes record nonempty test and support evidence
+      And a non-importing test and a configured support file changed since those outcomes were recorded
+      And only one of its functions changed since "base"
+      When a --since run judges that changed function
+      Then the unjudged function keeps its original test and support evidence, recorded scope, source hash and mutant outcomes
+      And the judged function records current whole-suite evidence
+      And mutation check reports the unjudged function stale and mutation sample excludes its outcomes
+
+      Examples:
+        | language   |
+        | Go         |
+        | TypeScript |
+        | Python     |
+        | Kotlin     |
 
   # Language parity, second batch: these need the real tools T-13 brings to
   # CI (Linux only; other OSes skip them, naming the missing tool).
