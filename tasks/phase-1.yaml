@@ -1433,7 +1433,7 @@
   why: >
     Piece 4 of mutate.feature (the plan's table): differential and since scenarios. Go tests holding
     them today include mutate_since and mutation_scope tests. Scenarios needing branch history run
-    through the binary driver now; S7's fake git (T-87) brings them in process. Each piece (decision
+    through the binary driver now; S7's fake git (T-91) brings them in process. Each piece (decision
     39) writes steps for every sentence as it stands, checks each sentence against the built binary
     first and stops on one that cannot run as written (docs/go.md step 8), declares its fixtures'
     test outcomes through Driver.Tests and coverage through Driver.Coverage, writes file assertions
@@ -1448,10 +1448,16 @@
     scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run of this repository
     (scenarios mutate their own fixtures, which is fine); never itos task show or itos task <id>
     locally; no worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-73:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$'
-    - run: "! git grep -nE '// @ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$' -- cmd/itos-cc"
 - id: T-74
   type: test
   title: mutate.feature's check and stale-tests scenarios run through godog against the built binary
@@ -1472,10 +1478,16 @@
     the scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run of this
     repository (scenarios mutate their own fixtures, which is fine); never itos task show or itos
     task <id> locally; no worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-74:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(5[7-9]|6[0-9]|70|10[6-8])$'
-    - run: "! git grep -nE '// @ID-MUT-(5[7-9]|6[0-9]|70|10[6-8])$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(5[7-9]|6[0-9]|70|10[6-8])$' -- cmd/itos-cc"
 - id: T-75
   type: test
   title: mutate.feature's sample scenarios run through godog against the built binary
@@ -1496,10 +1508,16 @@
     the checks, never the whole cmd/itos-cc suite or a mutation run of this repository (scenarios
     mutate their own fixtures, which is fine); never itos task show or itos task <id> locally; no
     worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-75:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$'
-    - run: "! git grep -nE '// @ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(7[1-9]|8[0-4]|109|11[0-3]|14[78])$' -- cmd/itos-cc"
 - id: T-76
   type: test
   title: mutate.feature's results scenarios run through godog against the built binary
@@ -1521,10 +1539,16 @@
     whole cmd/itos-cc suite or a mutation run of this repository (scenarios mutate their own
     fixtures, which is fine); never itos task show or itos task <id> locally; no worktrees; never
     push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-76:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$'
-    - run: "! git grep -nE '// @ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(2[89]|3[0-6]|5[2-6]|145|23[1-9]|24[01])$' -- cmd/itos-cc"
 - id: T-77
   type: test
   title: mutate.feature's exceptions and renew scenarios run through godog against the built binary
@@ -1545,10 +1569,16 @@
     scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run of this repository
     (scenarios mutate their own fixtures, which is fine); never itos task show or itos task <id>
     locally; no worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-77:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
-    - run: "! git grep -nE '// @ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$' -- cmd/itos-cc"
 - id: T-78
   type: test
   title: mutate.feature's language-rule scenarios run through godog against the built binary
@@ -1571,10 +1601,16 @@
     the checks, never the whole cmd/itos-cc suite or a mutation run of this repository (scenarios
     mutate their own fixtures, which is fine); never itos task show or itos task <id> locally; no
     worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
-    - run: "! git grep -nE '// @ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$' -- cmd/itos-cc"
 - id: T-79
   type: test
   title: mutate.feature's strict-coverage scenarios run through godog against the built binary
@@ -1595,10 +1631,16 @@
     whole cmd/itos-cc suite or a mutation run of this repository (scenarios mutate their own
     fixtures, which is fine); never itos task show or itos task <id> locally; no worktrees; never
     push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
-    - run: "! git grep -nE '// @ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$' -- cmd/itos-cc"
 - id: T-80
   type: test
   title: mutate.feature's fail-fast and ownership scenarios run through godog against the built binary
@@ -1622,10 +1664,16 @@
     scenarios in the checks, never the whole cmd/itos-cc suite or a mutation run of this repository
     (scenarios mutate their own fixtures, which is fine); never itos task show or itos task <id>
     locally; no worktrees; never push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$'
-    - run: "! git grep -nE '// @ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$' -- cmd/itos-cc"
 - id: T-81
   type: test
   title: mutate.feature's counted-run and worktree scenarios run through godog against the built binary
@@ -1648,10 +1696,16 @@
     whole cmd/itos-cc suite or a mutation run of this repository (scenarios mutate their own
     fixtures, which is fine); never itos task show or itos task <id> locally; no worktrees; never
     push a commit naming the task before its checks can pass.
+    T-83 temporarily omits mutate.feature from initial push CI until T-100. Retain existing Go
+    holders until replacement scenarios actually pass CI, as docs/go.md step 11 requires; record
+    exact replacement mappings for T-101 cleanup, preserving unrelated assertions and helpers.
+    The completion check now requires retained holders rather than their premature removal. Run
+    selected scenarios locally without the omission and report actual scenarios, steps and
+    strictness. A green CI selection that omitted them is not scenario execution evidence.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
-    - run: "! git grep -nE '// @ID-MUT-(17[3-9]|18[0-6]|212)$' -- cmd/itos-cc"
+    - run: "git grep -qE '// @ID-MUT-(17[3-9]|18[0-6]|212)$' -- cmd/itos-cc"
 - id: T-82
   type: test
   title: metrics_snapshots.feature runs through godog against the built binary
@@ -2145,6 +2199,11 @@
     so pushCI again runs mutation scenarios through the normal merged selection; language-tools line
     remains enabled. Show actual in-process counts/timing against binary counts with skips
     explained.
+    Staged cross-command exception: MUT-134 observes both mutation and serve. Serve moves only
+    in S8. Its in-process selection may therefore defer this single scenario explicitly, with a
+    named reason and T-112 owner and a visible omission log; do not add a permanent binary-only
+    tag or swallow Driver.Graph errors. All other eligible mutation scenarios run normally.
+    T-112 removes this deferral and proves MUT-134 through both drivers.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
@@ -2169,6 +2228,10 @@
     reenable nightly/proof. S8 graph/server and S9 top-level bootstrap remain separate work, and
     futureT86 layout is not implemented here. Focused local validation only; full gates hooks/CI, no
     own-code mutation runs/worktrees/session moves/agents.
+    One named cross-command deferral may remain at S7 completion: MUT-134 needs serving,
+    scheduled in T-112. Report it separately from genuine binary-only cases and passed
+    scenarios. Keep its task/reason visible; T-112 must remove it, with no unimplemented fake
+    behavior counted as a pass.
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
@@ -2396,9 +2459,13 @@
     counts/strictness/skips and final-proof cases for durations/help/interspersed flags/errors/HTTP
     shutdown. Focus named localchecks, gates hooks/CI, no own-code
     mutation/worktrees/sessionmoves/agents or new dependency without recorded selection.
+    Complete the staged MUT-134 cross-command obligation from T-100: implement memory
+    Driver.Graph through the actual serving handler over memory ports, remove its explicit
+    in-process deferral and run MUT-134 successfully through both drivers. Include that selected
+    scenario alongside serving scenarios in checks and report its counts.
   done_when:
     - run: go test ./internal/serve/... ./internal/cli/...
-    - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="@ID-SERVE-"
+    - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="^@ID-(SERVE-.*|MUT-134)$"
 - id: T-113
   type: refactor
   title: Finish architecture and serving scenario coverage and remove legacy scaffolding
@@ -2504,5 +2571,9 @@
     full deliberate-difference list, but do not begin it or turn mutation proof/nightly back on in
     this task. FutureT86 remains later. Local checks limited to named top-level CLI scenarios and
     relevant package compile/tests, broad gates hooks/CI, no worktrees/sessionmoves/agents.
+    Reconcile template-bare-decision-citations locally as part of documentation cleanup:
+    comments citing the template's decision 26 or 23 must name itos-template explicitly where
+    they refer to that source, preserving source notices. Do not send external upstream messages
+    as part of this task. Report the evidence for coordinator registry reconciliation.
   done_when:
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
