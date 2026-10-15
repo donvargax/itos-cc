@@ -3269,6 +3269,18 @@ items:
       also needed a narrowly justified approval retry; generated briefs could expose exact delegated
       push scope, an integration concern. These are process proposals, not authorization to bypass
       gates or fold tool changes into the current refactor item.
+
+      Reported upstream on 2026-10-15 as consumer reports:
+      https://github.com/donvargax/itos/issues/71 (validated implementation evidence),
+      https://github.com/donvargax/itos/issues/72 (registry classification for CI),
+      https://github.com/donvargax/itos/issues/73 (atomic validation and closure),
+      https://github.com/donvargax/itos/issues/74 (task-scoped drafts),
+      https://github.com/donvargax/itos/issues/75 (authoritative work-show specification),
+      https://github.com/donvargax/itos/issues/76 (selective draft promotion),
+      https://github.com/donvargax/itos/issues/77 (explicit delegated push scope), and
+      https://github.com/donvargax/itos/issues/78 (early draft metadata validation). These reports
+      do not authorize weakening checks or folding upstream implementation into the current
+      refactor.
   - id: strictness-outline-targets
     title: Represent distinct assertion targets for every expanded outline example
     phase: 1
