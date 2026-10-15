@@ -12,7 +12,7 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
+func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) *sampleMutation {
 	p := &sampleMutation{s: s}
 	sc.Before(func(ctx context.Context, scenario *godog.Scenario) (context.Context, error) {
 		*p = sampleMutation{s: s}
@@ -149,6 +149,7 @@ func sampleMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	sc.Step(`^outcomes of src/board\.ts recorded with scope "own", one of them a kill the whole suite no longer makes$`, func() error { return p.falseKill("without flags") })
 	sc.Step(`^the problem is "mutation\.mismatch", with scope "([^"]*)"$`, p.scopeProblem)
 	sc.Step(`^its fix says to run "([^"]*)"$`, p.fixCommand)
+	return p
 }
 
 func (p *sampleMutation) setControl(name string, value bool) error {

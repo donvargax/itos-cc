@@ -44,6 +44,12 @@ type Driver interface {
 	Exists(path string) bool
 	// Remove removes the file or folder at path and everything below it.
 	Remove(path string) error
+	// Files inventories actual regular files under dir, sorted slash paths relative
+	// to dir, without following directory links.
+	Files(ctx context.Context, dir string) ([]string, error)
+	// Lock exclusively locks an existing file without truncating it. The returned
+	// release closes the owned descriptor. Real OS locking is binary-only.
+	Lock(ctx context.Context, path string) (release func() error, err error)
 	// Git runs git with args in the folder dir, for a fixture that needs a
 	// repository: init, add and commit.
 	Git(dir string, args ...string) error
@@ -265,8 +271,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-76: results
-	ids("MUT", "28-36", "52-56", "145", "231-241"),
 	// T-77: exceptions, renew
 	ids("MUT", "85-99", "138-144", "146", "227", "242"),
 	// T-78: language rules
@@ -1037,6 +1041,11 @@ var objectKeys = regexp.MustCompile(`^(?:and )?"[^"]+"(?:(?:, and |, | and )"[^"
 // isOneObjectWith is whether standard output is one JSON object, schema 1,
 // with ok and every key of the list ("a", "b", and "c"), none of them null.
 func (w *world) isOneObjectWith(list string) error {
+	fileShape := strings.HasSuffix(list, ", each with file, killed, survived, uncovered, ran, reused, and baseline")
+	if fileShape {
+		list = strings.TrimSuffix(list, ", each with file, killed, survived, uncovered, ran, reused, and baseline")
+	}
+
 	if !objectKeys.MatchString(list) {
 		return fmt.Errorf("%s is no list of quoted keys", list)
 	}
@@ -1056,6 +1065,24 @@ func (w *world) isOneObjectWith(list string) error {
 			return fmt.Errorf("the object lacks %q\n%s", m[1], w.report())
 		}
 	}
+	if fileShape {
+		files, ok := object["files"].([]any)
+		if !ok || len(files) == 0 {
+			return fmt.Errorf("no result files: %v", object)
+		}
+		for _, raw := range files {
+			file, ok := raw.(map[string]any)
+			if !ok {
+				return fmt.Errorf("file is not an object: %v", raw)
+			}
+			for _, key := range []string{"file", "killed", "survived", "uncovered", "ran", "reused", "baseline"} {
+				if file[key] == nil {
+					return fmt.Errorf("file lacks %s: %v", key, file)
+				}
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -183,6 +183,37 @@ func (m *memory) Remove(path string) error {
 	return nil
 }
 
+// Files inventories actual in-memory files, with the binary driver's relative paths.
+func (m *memory) Files(ctx context.Context, dir string) ([]string, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	dir = filepath.Clean(dir)
+	if !m.Exists(dir) {
+		return nil, &fs.PathError{Op: "files", Path: dir, Err: fs.ErrNotExist}
+	}
+	var files []string
+	for path := range m.files {
+		if under(path, dir) {
+			rel, err := filepath.Rel(dir, path)
+			if err != nil {
+				return nil, err
+			}
+			files = append(files, filepath.ToSlash(rel))
+		}
+	}
+	slices.Sort(files)
+	return files, nil
+}
+
+// Lock requires actual OS liveness and is never simulated in process.
+func (m *memory) Lock(ctx context.Context, path string) (func() error, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf("Lock %s requires real OS locking (@binary-only)", path)
+}
+
 // Coverage records what the project's own tools measure in dir.
 func (m *memory) Coverage(dir string, c features.Coverage) error {
 	m.coverage[filepath.Clean(dir)] = c

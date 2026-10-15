@@ -2310,14 +2310,14 @@ Feature: Mutation testing
       Then its mutant is judged by the listed test and killed, as a complete run judges it
       And no "no clean baseline was prepared" problem is reported
 
-    @python-parallel-data-fix @ID-MUT-233
+    @python-parallel-data-fix @ID-MUT-233 @binary-only
     Scenario: A Python project that writes parallel coverage data is measured
       Given a Python project whose coverage.py configuration sets parallel = true, with a test that kills its mutant
       When I run "itos-cc mutation run --json" for its file
       Then its coverage is measured, not "coverage.measured-nothing", and its mutant is killed
       And nothing of the run's data files is left in the project's tree
 
-    @mutate-workers-abandoned-fix @ID-MUT-234
+    @mutate-workers-abandoned-fix @ID-MUT-234 @binary-only
     Scenario: A later run removes the worker copies a killed run left behind
       Given worker copies a mutation run left in the temporary directory when it was killed
       And worker copies of a mutation run still going

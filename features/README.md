@@ -613,3 +613,71 @@ review. Preserve their shared helpers, extra guards and the untagged
 | 113 | `mutation_scope_test.go`: `TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests` |
 | 147 | `mutation_mismatch_fix_test.go`: `TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith` |
 | 148 | `mutation_mismatch_fix_test.go`: `TestAScopeGivenToSampleIsTheOneTheFixNames` |
+
+
+T-76's result/annotation/cleanup scenarios (ID-MUT-28–36, 52–56, 145 and
+231–241) execute 28 cases and 107 steps through the public commands. TypeScript
+sentences use actual Vitest
+projects; annotation sentences use the exact Python source and real `assert a(1)`
+tests, whose comparison survives and numeric-literal mutation is killed. The summary
+fixture has seventeen real sites, eight cached kills, seven executions and two
+uncovered sites. Its exact `board#place` survivor remains at line 5, column 9.
+The original MUT28 `ran 9` was corrected to `ran 7` by the coordinator's separate
+specification commit after the public fixture demonstrated the discrepancy; no
+product counting behavior changed.
+
+The unaffected pinned language-tools CI selection includes the twenty-five T-76
+cases needing Node or Python. MUT233 is permanently binary-only because it observes
+the actual parallel coverage collector and raw-data cleanup. Its cleanup check permits
+only `.metrics/coverage/<plan>/.coverage` retained beside the durable report; raw
+parallel `.coverage.*` files and data elsewhere must be absent. MUT234 is permanently
+binary-only because it observes a real OS lock in an isolated temporary directory;
+the marker is written before locking and its owned lock is released before cleanup,
+even after failure. Neither tag stands for unmoved code. Counted listed outcomes in
+MUT232 retain normal `Driver.Counted` platform eligibility and use one controlled
+public site and a fixed seed, without domain candidate-selection APIs.
+
+`Driver.Files(ctx, dir)` inventories actual regular files as sorted relative slash
+paths, without following directory links. Its shared contract runs for disk and
+memory; a real symlink boundary guard remains at the binary driver. `Driver.Lock`
+uses the already-pinned x/sys calls in platform leaves and owns only its descriptor,
+without retaining context. A direct binary ownership check holds exclusion,
+release/reacquisition, cancellation and unchanged marker bytes independently
+of scenario selection. Memory explicitly refuses real locking. File observations
+check changed versus unchanged annotation writes and `--no-annotate`, not only equal
+final bytes. The outside-source fixture preflights its exact snapshot name after a
+normal owned sibling succeeds. An embedded drive-colon name that the real filesystem
+cannot create is a precise capability skip; other setup and command errors remain
+failures. Memory uses its actual map path and executes that logical scenario.
+
+All existing T-76 command holders remain for restored scenario CI and T-101 review.
+Keep the annotation library guards for S7 extraction, the old-collector compatibility,
+subprocess and counted subtests of the parallel-data holder, abandoned-worker
+unmarked/young/foreign/trial-copy guards, shared-package baseline guards, removed-site
+exception guard, orphan/path/rename extras and shared helpers. The `mutation_annotate`
+138–140 holders and its extra guard belong to T-77; 106–107 belong to T-74.
+No annotated command holder for 28–36 was found; none is invented or deleted here.
+
+| ID | Existing holder (retained) |
+| --- | --- |
+| 52 | `cmd/itos-cc/mutate_mutants_test.go`: `TestEveryMutantAsJSON` |
+| 53 | `cmd/itos-cc/mutate_mutants_test.go`: `TestATimedOutMutantsOutcomeIsItsOwn` |
+| 54 | `cmd/itos-cc/mutate_mutants_test.go`: `TestMutantsTakenFromTheSnapshotSaySo` |
+| 55 | `cmd/itos-cc/mutate_mutants_test.go`: `TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed` |
+| 56 | `cmd/itos-cc/mutate_mutants_test.go`: `TestAFailingBaselineListsNoMutant` |
+| 145 | `mutate/annotate_test.go`: `TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew` |
+| 231 | `cmd/itos-cc/mutate_unreached_baseline_test.go`: `TestAFileNoTestReachesReportsItsBaselineAsNotRun` |
+| 232 | `cmd/itos-cc/mutate_counted_unreached_listed_test.go`: `TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt` |
+| 233 | `cmd/itos-cc/mutate_python_parallel_data_test.go`: `TestAPythonProjectThatWritesParallelCoverageDataIsMeasured` |
+| 234 | `cmd/itos-cc/mutate_workers_abandoned_test.go`: `TestALaterRunRemovesTheWorkerCopiesAKilledRunLeftBehind` |
+| 235 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestARecordedMutantWhoseSiteIsGoneIsLeftOut` |
+| 236 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory` |
+| 237 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists` |
+| 238 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASinceRunWhosePathsMissACommittedRenamesNewPathKeepsTheOldSnapshot` |
+| 239 | `cmd/itos-cc/mutation_orphans_test.go`: `TestARunBeforeARenameIsCommittedKeepsTheOldSnapshot` |
+| 240 | `cmd/itos-cc/mutate_reused_baseline_test.go`: `TestAFileWhoseMutantsAreAllReusedReportsItsBaselineAsNotRun` |
+| 241 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestCheckSaysHowManyRecordedMutantsItLeftOut` |
+
+For 32–33, retain `mutate/annotate_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
+for 34, retain `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
+remain alongside the new public observations.

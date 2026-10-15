@@ -665,14 +665,18 @@ func (c *crapState) typescriptProject(imported, other string) error {
 }
 
 // noProblem is whether the last run, made with --json, reports no problem
-// of rule.
+// of the named rule or message text.
 func (c *crapState) noProblem(rule string) error {
 	object, report, err := c.lastJSON()
 	if err != nil {
 		return err
 	}
+	if strings.Contains(c.w.stderr, rule) {
+		return fmt.Errorf("a %s problem is reported on stderr\n%s", rule, report)
+	}
+
 	for _, p := range object.Problems {
-		if p["rule"] == rule {
+		if p["rule"] == rule || strings.Contains(fmt.Sprint(p["message"]), rule) {
 			return fmt.Errorf("a %s problem is reported: %v\n%s", rule, p, report)
 		}
 	}
