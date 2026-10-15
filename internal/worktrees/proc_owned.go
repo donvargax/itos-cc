@@ -90,7 +90,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		if err != nil {
 			return fmt.Errorf("create owned command output pipe: %w", err)
 		}
-		if err := nativeNonblock(reader.Fd()); err != nil {
+		if err := nativeNonblock(reader.Fd(), true); err != nil {
 			_ = reader.Close()
 			_ = writer.Close()
 			return fmt.Errorf("configure owned command output pipe: %w", err)
@@ -211,7 +211,7 @@ type ownedOutputCapture struct {
 }
 
 func killOwnedProcessGroup(platform string, pgid int) error {
-	err := nativeKillGroup(pgid)
+	err := nativeSignalGroup(-pgid, syscall.SIGKILL)
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}

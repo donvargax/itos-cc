@@ -2,13 +2,11 @@
 
 package worktrees
 
-import (
-	"os"
-	"syscall"
-)
+import "syscall"
 
-const lockConflict = syscall.EWOULDBLOCK
+const nativeLockExclusive = syscall.LOCK_EX
+const nativeLockNonblocking = syscall.LOCK_NB
 
-func nativeFileLock(f *os.File) error {
-	return syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+func nativeFileLock(fd uintptr, flags uint32, _ uint32, _ uint32, _ uint32) error {
+	return syscall.Flock(int(fd), int(flags))
 }

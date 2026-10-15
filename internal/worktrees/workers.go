@@ -35,7 +35,7 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	default:
 		return nil, mutants.WorkerFailed{Cause: errors.New("unknown worker purpose")}
 	}
-	scratch, err := newWorkerScratch(prefix)
+	scratch, err := newWorkerScratch(prefix, platformAtBoundary(f.Platform))
 	if err != nil {
 		return nil, mutants.WorkerFailed{Cause: err}
 	}

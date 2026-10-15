@@ -4,8 +4,11 @@ package worktrees
 
 import "syscall"
 
-func nativeGroupAttributes() *syscall.SysProcAttr       { return &syscall.SysProcAttr{Setpgid: true} }
-func nativeKillGroup(pgid int) error                    { return syscall.Kill(-pgid, syscall.SIGKILL) }
-func nativeProbeGroup(pgid int) error                   { return syscall.Kill(-pgid, 0) }
-func nativeNonblock(fd uintptr) error                   { return syscall.SetNonblock(int(fd), true) }
+func nativeGroupAttributes(setGroup bool) *syscall.SysProcAttr {
+	return &syscall.SysProcAttr{Setpgid: setGroup}
+}
+func nativeSignalGroup(group int, signal syscall.Signal) error { return syscall.Kill(group, signal) }
+func nativeNonblock(fd uintptr, nonblocking bool) error {
+	return syscall.SetNonblock(int(fd), nonblocking)
+}
 func nativeRead(fd uintptr, buffer []byte) (int, error) { return syscall.Read(int(fd), buffer) }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/exec"
 	"runtime"
+	"syscall"
 	"time"
 )
 
@@ -18,8 +19,8 @@ func platformAtBoundary(platform string) string {
 
 func killGroup(cmd *exec.Cmd, platform string) {
 	if platform != "windows" {
-		cmd.SysProcAttr = nativeGroupAttributes()
-		cmd.Cancel = func() error { return nativeKillGroup(cmd.Process.Pid) }
+		cmd.SysProcAttr = nativeGroupAttributes(true)
+		cmd.Cancel = func() error { return nativeSignalGroup(-cmd.Process.Pid, syscall.SIGKILL) }
 	}
 	cmd.WaitDelay = 2 * time.Second
 }

@@ -14,7 +14,7 @@ import (
 // left that can run. Linux counts zombies as gone by scanning /proc, since a
 // zombie whose parent does not reap it keeps kill(-pgid, 0) succeeding.
 func ownedGroupGone(platform string, pgid int) (bool, error) {
-	err := nativeProbeGroup(pgid)
+	err := nativeSignalGroup(-pgid, 0)
 	if errors.Is(err, syscall.ESRCH) {
 		return true, nil
 	}

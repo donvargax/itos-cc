@@ -2,15 +2,12 @@
 
 package worktrees
 
-import (
-	"golang.org/x/sys/windows"
-	"os"
-	"syscall"
-)
+import "golang.org/x/sys/windows"
 
-const lockConflict = syscall.Errno(33)
+const nativeLockExclusive = windows.LOCKFILE_EXCLUSIVE_LOCK
+const nativeLockNonblocking = windows.LOCKFILE_FAIL_IMMEDIATELY
 
-func nativeFileLock(f *os.File) error {
+func nativeFileLock(fd uintptr, flags, reserved, low, high uint32) error {
 	var overlapped windows.Overlapped
-	return windows.LockFileEx(windows.Handle(f.Fd()), windows.LOCKFILE_FAIL_IMMEDIATELY|windows.LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &overlapped)
+	return windows.LockFileEx(windows.Handle(fd), flags, reserved, low, high, &overlapped)
 }
