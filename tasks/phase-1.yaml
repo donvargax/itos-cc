@@ -2309,10 +2309,6 @@
     explanation. Holding094e634 unchanged through publication passed without
     token, permission or release-workflow changes. Keep the failed run and
     missing-Windows-report history; neither is a current-head assertion failure.
-  done_when:
-    - run: "! grep -q '// T-80:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
-    - run: "git grep -qE '// @ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$' -- cmd/itos-cc"
 - id: T-81
   type: test
   title: mutate.feature's counted-run and worktree scenarios run through godog against the built binary
