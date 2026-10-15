@@ -1831,3 +1831,32 @@
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167|168)$"
+- id: T-89
+  type: refactor
+  title: Give mutation toolchain facts, fingerprints and test reach through ports
+  why: >
+    S7 after T-88. Complete the existing plan boundaries for Toolchain, Fingerprints and Reach, with
+    the pure test-command selection remaining in internal/mutants and I/O at adapters. Toolchain
+    supplies observed manifests, installed tools and execution facts; reuse existing
+    selection/lang/coverage ports where they already express the need rather than adding a
+    forwarding layer. Fingerprints supply file/input hashes and inventories with the existing strict
+    coverage provenance boundaries, not a newly broadened or narrowed mutant scope. Reach supplies
+    current transitive source/test import reach through internal/importgraph wrapping
+    graph.TestsImporting until S8 moves graph. Every port speaks domain values directly, declares
+    typed sealed failures and takes ctx first for external work; no held/background context, UI,
+    JSON, filesystem/process implementation or runtime.GOOS branch in domain logic. Resolve package
+    dependency direction without repeated DTOs or speculative generics and record the contract.
+    Supply in-memory fakes for domain/in-process testing, shared fake/adapter contract suites for
+    capabilities both can hold, real platform details at adapters; fake Reach follows declared
+    imports, Fingerprints hashes memory text, Toolchain observes memory files. Preserve
+    own-tests-first selection for all languages, Python editable PYTHONPATH, Gradle/Maven choice and
+    paths, listed support hashes, whole-suite module evidence, integration reach and strict
+    workspace/local-replacement refusal. Wire cmd with real adapters; do not yet move Run
+    orchestration or Fresh/count preparation. Add architecture rules/accept-refuse fixtures and
+    docs. Add MUT07 setup-row commands and Python editable PYTHONPATH to refactor-final-proof rather
+    than running per-task binary comparisons. Light local package and named scenario checks; broad
+    gates through hooks/CI, no mutation run over this repo, no worktrees/session moves/agents; no
+    new dependency without recorded selection.
+  done_when:
+    - run: go test ./internal/mutants/... ./internal/importgraph/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
