@@ -60,6 +60,7 @@ func (u *unjudgedEvidence) project(language string) error {
 		u.file, u.test = "src/main/kotlin/Board.kt", "src/test/kotlin/OtherTest.kt"
 		u.source = "package evidence\nfun Changed(): Boolean { return true }\nfun Kept(): Boolean { return true }\n"
 		files["build.gradle.kts"] = "plugins { kotlin(\"jvm\") version \"2.4.21\" }\n"
+		files["settings.gradle.kts"] = "rootProject.name = \"evidence\"\n"
 		files[u.test] = "package evidence\nclass OtherTest\n"
 	}
 	files[u.file] = u.source
