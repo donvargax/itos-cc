@@ -1,6 +1,4 @@
-//go:build linux
-
-package mutate
+package worktrees
 
 import (
 	"errors"
@@ -12,20 +10,19 @@ import (
 	"syscall"
 )
 
-// groupKillDeniedForZombies is false: Linux signals a group of zombies
-// without error, so EPERM from the group kill is a real failure.
-const groupKillDeniedForZombies = false
-
 // ownedGroupGone reports whether the killed process group pgid has no member
 // left that can run. Linux counts zombies as gone by scanning /proc, since a
 // zombie whose parent does not reap it keeps kill(-pgid, 0) succeeding.
-func ownedGroupGone(pgid int) (bool, error) {
-	err := syscall.Kill(-pgid, 0)
+func ownedGroupGone(platform string, pgid int) (bool, error) {
+	err := nativeSignalGroup(-pgid, 0)
 	if errors.Is(err, syscall.ESRCH) {
 		return true, nil
 	}
 	if err != nil && !errors.Is(err, syscall.EPERM) {
 		return false, err
+	}
+	if platform != "linux" {
+		return false, nil
 	}
 	running, err := ownedGroupHasRunnableProcess(pgid)
 	if err != nil {

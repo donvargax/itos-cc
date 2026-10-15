@@ -1,4 +1,4 @@
-package mutate
+package worktrees
 
 import (
 	"bytes"
@@ -13,7 +13,8 @@ import (
 // This does not change the legacy worker adapter or claim tree containment
 // beyond Linux and macOS.
 type OwnedExecutor struct {
-	cleanup cleanupBudget
+	Platform string
+	cleanup  cleanupBudget
 }
 
 // Run executes an already configured command without reconstructing its argv,
@@ -27,22 +28,30 @@ func (e *OwnedExecutor) Run(ctx context.Context, cmd *exec.Cmd) error {
 		return errors.New("owned command must not be nil")
 	}
 	var output bytes.Buffer
-	runner := commandRunner{cleanupBudget: &e.cleanup}
+	runner := commandRunner{cleanupBudget: &e.cleanup, platform: platformAtBoundary(e.Platform)}
 	r, err := runner.run(ctx, cmd, &output)
 	if err != nil {
 		return fmt.Errorf("execute %s: %w", cmd.Path, err)
 	}
-	if r.cancelled {
+	if r.Cancelled {
 		if cause := context.Cause(ctx); cause != nil {
 			return fmt.Errorf("execute %s cancelled: %w", cmd.Path, cause)
 		}
 		return fmt.Errorf("execute %s cancelled: %w", cmd.Path, ctx.Err())
 	}
-	if r.timedOut {
+	if r.TimedOut {
 		return fmt.Errorf("execute %s timed out", cmd.Path)
 	}
-	if !r.passed {
-		return fmt.Errorf("execute %s exited %d", cmd.Path, r.exitCode)
+	if !r.Passed {
+		return fmt.Errorf("execute %s exited %d", cmd.Path, r.ExitCode)
 	}
 	return nil
+}
+
+// Command runs the already configured preparation baseline and returns its
+// actual result using the same shared abort budget as subsequent trials.
+func (e *OwnedExecutor) Command(ctx context.Context, cmd *exec.Cmd) (result, error) {
+	var output bytes.Buffer
+	runner := commandRunner{cleanupBudget: &e.cleanup, platform: platformAtBoundary(e.Platform)}
+	return runner.run(ctx, cmd, &output)
 }

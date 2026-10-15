@@ -789,7 +789,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if !in.set("test-command") && !in.set("all-tests") {
 		reach = tests
 	}
+	if in.adapters.Workers == nil {
+		return result, errors.New("mutation Workers binding is missing")
+	}
 	opt := mutate.Options{
+		WorkerFactory: in.adapters.Workers,
 		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,
