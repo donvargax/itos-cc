@@ -1988,10 +1988,6 @@
     These are local execution evidence, not promises of CI runtime or omitted
     initial-matrix execution. Separate Rule/tool families keep collector startup
     and Kotlin subprocess costs outside the older serial command's timeout.
-  done_when:
-    - run: "! grep -q '// T-79:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
-    - run: "git grep -qE '// @ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$' -- cmd/itos-cc"
 - id: T-80
   type: test
   title: mutate.feature's fail-fast and ownership scenarios run through godog against the built binary
