@@ -3184,3 +3184,75 @@
     as part of this task. Report the evidence for coordinator registry reconciliation.
   done_when:
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
+
+- id: T-117
+  type: test
+  title: Reuse a manifest-driven runner for scenario assertion checks
+  why: >
+    The person approved the recommended refactor speedups on 2026-10-15. Consolidate
+    the repeated temporary strictness runners before T80, after T79 is accepted.
+    This is developer test infrastructure, not a product command or a new mutation
+    testing engine. Use the existing Go toolchain and standard library, plus an
+    already-pinned Gherkin library only if needed; no new runtime or dependency.
+    Put the small executable at tools/bin/step-strictness, following the existing
+    Go tools, and document its invocation and evidence limits in features/README.md.
+    Reuse the proven runner's serial edit/run/restore approach rather than build a
+    framework, parallel runner, automatic expectation generator or new CI tier.
+    The manifest follows docs/CONFIG.md where applicable: version 1, documented
+    required fields/defaults and a matching JSON Schema, with unknown versions,
+    unknown or duplicate keys and invalid values refused before edits. A JSON
+    manifest explicitly identifies each reviewed assertion edit, its selected
+    scenario ID, source path, original and replacement text and intended failing
+    assertion. Refuse empty edits, duplicate probe labels, unsafe or symlinked paths,
+    output paths overlapping edited files, missing targets and ambiguous matches
+    before changing source. Scope or unique surrounding text must distinguish
+    identical checks: T79's first zero-weight probe changed the unselected157 check
+    while running158, so its passing result was invalid and excluded. Restrict edits
+    to acceptance feature/step source under features; never mutate product sources.
+    The expected failure identifies the actual selected scenario and assertion,
+    not merely a nonzero exit or any And line. Establish a green control for each
+    selected scenario before edits, batching the control selection where practical.
+    Run only that probe's selected scenario for each edit, using the existing
+    TestFeatures harness and default Go test timeout, with a bounded runner deadline.
+    A detected assertion requires the intended step to be reached and fail, including
+    the required outline examples. Compile/setup/When failures, an unexpected step,
+    undefined or ambiguous steps, timeout, a skipped/omitted selection and zero
+    scenarios are invalid evidence. An unchanged passing assertion is reported as
+    undetected, never counted as success. Do not infer native-platform execution
+    from a skip. Preserve raw logs, actual subprocess status, scenario/step failures
+    and a machine-readable report distinguishing detected, undetected and invalid
+    probes, with explicit counts and original/restored source hashes. Retried
+    attempts use distinct log paths; never overwrite an earlier attempt or point
+    its record at a different run.
+    Capture the exact initial bytes and modes, including legitimate uncommitted
+    implementation work, before editing. Validate the whole manifest first, keep
+    durable recovery data outside the source tree, and restore after each probe and
+    every handled failure, deadline or interruption. Stop and join the owned runner
+    before restoring; use the caller's context and existing platform call patterns,
+    without inventing a general process supervisor or deferred Windows ownership.
+    Verify restoration by content hashes and modes. Never overwrite an unexpected
+    concurrent edit during restore; retain recovery data and report the conflict.
+    Document recovery after an uncatchable kill rather than claiming finally runs
+    under SIGKILL. Use the shared checkout with one implementing agent, no worktrees.
+    Add focused tests for wrong-step and compile/setup/skip rejection, ambiguous edit
+    targets and duplicate probe labels, undetected assertions and restoration on
+    success and handled failures.
+    Small disposable fixtures and parser transcripts are appropriate; retain a tiny
+    real smoke manifest using already-live MUT156 for end-to-end validation and
+    demonstrate at least one actual intended assertion failure and exact restoration.
+    Run the tiny real plan locally with go run ./tools/bin/step-strictness -plan
+    tools/testdata/step-strictness/smoke.json, recording the resulting evidence.
+    This is local task validation, not a ledger check that CI would execute over
+    its checkout. A synthetic transcript alone is not that end-to-end evidence.
+    Do not replay all
+    95 T79 probes merely to validate reuse, and do not add the destructive smoke
+    invocation to push gates or run it beside another writer. Existing gates and
+    timeouts stay intact. Record actual runtime and the reusable command, not an
+    unmeasured speed claim. Later conversions use the runner with their own explicit
+    probes and still require review of assertion coverage and real final green runs.
+    Keep pytest autoload suppression fixture-local where the owned tests need no
+    plugins, as current mutation fixtures already do. Carry the actual environment
+    input into Run.Env and future fake-port fingerprints. Do not change the product's
+    pytest defaults, dependency caches, listed baselines or nightly mutation policy.
+  done_when:
+    - run: go test ./tools/bin/step-strictness
