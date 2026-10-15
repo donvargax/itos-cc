@@ -2057,7 +2057,8 @@
     together, so Unstepped never names a nonexistent public scenario. This changes
     the test specification's layer, not the accepted supervision guarantees. Follow
     docs/go.md's commit rule for live-scenario corrections and describe the unchanged
-    product behavior and retained proof explicitly. All remaining T80 public sentences
+    product behavior and retained proof explicitly. Apart from the native-platform
+    and documentation corrections settled below, all remaining T80 public sentences
     stay as written; their physical observations and the retained private guards are
     complementary evidence, not a claim that a CLI fixture injects lifecycle faults.
     Keep TestLinuxOwnershipStartupFailureDoesNotRunCommand,
@@ -2069,7 +2070,8 @@
     tests continue to run in the existing all-package platform CI and later move
     intact to the worktrees adapter in T88; T101 cannot delete them as CLI duplicates.
     Record the complete mapping beside the preserved prose and in features/README.md.
-    After classification this item has 19 public IDs/cases and 110 expanded steps
+    After the 168/190 classification alone this item has 19 public IDs/cases
+    and 110 expanded steps
     (static inventory, not execution), plus those explicitly retained adapter contracts.
     Do not quietly drop the captured-group/unrelated-process property with private-fault
     prose: observe it through the public timeout/normal-return cases. Likewise retain
@@ -2097,10 +2099,56 @@
     mutation currently has different default SIGINT behavior; do not change it here or
     import S10's exit-code work. Physical process ownership observations may be genuinely
     binary-only, with honest platform skips; logical freshness never acquires that tag.
+    Native platform admission needs a further precise specification correction.
+    The old MUT191 and MUT199 holders set ITOS_CC_TEST_PLATFORM only inside
+    cmd/itos-cc/subprocess_test.go; the real product binary has no such override.
+    Do not forward that test-only variable, add product switches, stamp a fake
+    countedPlatform into a special build or describe a Linux refusal as Windows
+    execution. Preserve those old simulated-platform guards as private admission evidence.
+    In T80, keep MUT191 as the macOS execution/interruption case. Preserve its
+    exact original Windows But as a labeled comparative-contract comment pointing
+    to new MUT248. In MUT199, make only the When name the --count combination,
+    and preserve its original Windows And as the same kind of comment to MUT248.
+    Add MUT248 as a native Windows admission Scenario Outline with two examples:
+    mutation run --count 1 gives count.platform and mutation run --fail-fast gives
+    fail-fast.platform. Both retain current exit 3. Its four executable steps are
+    Given a committed eligible fixture on Windows, When that actual public command
+    runs with --json, Then the named platform problem and exit are returned, And
+    no test/list/coverage command runs and no snapshot is written. Declare actual
+    fixture Tests/Coverage and use owned execution traces and artifact observations.
+    Non-Windows hosts explicitly omit those examples; native Windows CI executes
+    them. This verifies existing refusal only, not deferred Windows ownership.
+    Remove just the moved comparative clauses from executable 191/199; retain the
+    exact former prose beside them and map it to 248. Keep all other assertions.
+    Their documentation clauses retain the public help check as executable steps;
+    preserve the original README/docs wording as labeled documentation-contract
+    comments and keep the existing repository-document assertions in
+    TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows and
+    TestFailFastAdmissionBoundaries. Repository docs are not product stdout; do not
+    paste expected docs into a fixture or read product code to decide an answer.
+    Follow docs/go.md for these live specification corrections, with unchanged
+    product behavior and complete proof mappings explicit. No other ID is renumbered.
+    Add 248 to this task pending-ID/selection bookkeeping and checks together with
+    its specification, then remove it from pending only when its steps hold.
+    A minimal Driver.Platform() string observes the actual host at each driver boundary
+    and supplies an OS value to steps; do not branch on runtime.GOOS in step logic
+    or use it to pretend that native binary execution happened elsewhere. The future
+    memory application receives its real configured platform through actual bindings.
+    After these corrections and the already settled 168/190 classification, T80 has
+    20 public IDs, 21 cases and 116 steps by static inventory; verify actual counts
+    and report per-platform executions and explicit omissions honestly.
+    Add a separate bounded T80 scenario invocation in the existing three-platform
+    CI matrix after its ordinary suite and before optional language tools. Select
+    exactly this task IDs including 248, with no ITOS_CC_SKIP_FEATURES omission,
+    so Linux/macOS physical cases and native Windows admission actually run on
+    their hosts. Preserve T83 omission on its existing steps, all old invocations,
+    default timeout and all retained adapter guards. Do not claim an omitted
+    macOS or Windows example ran locally. Keep these native scenario runs when
+    T100 removes the broader temporary omission.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
-    - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211)$'
-    - run: "git grep -qE '// @ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211)$' -- cmd/itos-cc"
+    - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
+    - run: "git grep -qE '// @ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$' -- cmd/itos-cc"
 - id: T-81
   type: test
   title: mutate.feature's counted-run and worktree scenarios run through godog against the built binary
@@ -2143,6 +2191,13 @@
     create and remove only that fixture-owned checkout through the Driver, keeping this
     implementation in the shared repository. Prove its private scratch location and both
     fixture trees' unchanged state as written; do not silently omit the worktree scenario.
+    T80 adds MUT248 for actual native Windows counted and fail-fast refusal.
+    MUT173 keeps its supported-platform admission and Git/HEAD checks, and maps
+    its exact former unsupported-platform clause as a comparative comment to
+    MUT248 rather than pretending Windows through ITOS_CC_TEST_PLATFORM.
+    Keep the old simulated-platform admission guards and actual native Windows
+    248 CI evidence separate. An honest unsupported-host omission is not a claim
+    that supported counted execution or interruption ran there.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
@@ -2801,6 +2856,11 @@
     valid in-process data; report its existing typed missing fact only for a
     built-in collector request, preserving raw-report and no-coverage workflows.
     No fixture-specific verdicts or blanket integration labels establish this.
+    Bind the actual configured platform value for counted and fail-fast
+    admission, including MUT248 native Windows refusals. Do not emulate
+    ITOS_CC_TEST_PLATFORM inside a product binary or swallow platform errors.
+    Keep the separately bounded native T80 CI scenarios after removing the
+    broader T83 omission, and retain the documentation/private admission guards.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
@@ -2834,6 +2894,13 @@
     concurrency/cleanup cases may remain documented binary-only only when they require the real
     adapter capability; an unmoved command is no reason. Report actual scenarios, steps and
     omissions, retaining adapter guards for claims the public CLI cannot observe.
+    The T80 native-admission correction retains repository documentation
+    assertions and private platform-value guards from the mixed 191/199 holders.
+    Split those retained checks from any replaced public CLI portions before
+    deleting or moving old helpers; preserve their obligations at the proper
+    application/documentation boundary rather than keeping dead helper stacks
+    or deleting the checks as duplicate public scenarios. MUT248 supplies actual
+    native Windows refusal evidence, not a replacement for those different guards.
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
