@@ -1,4 +1,4 @@
-package mutate
+package mutants
 
 import (
 	"fmt"
@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/project"
+	"github.com/donvargax/itos-cc/internal/lang/port/porttest"
 )
 
 func parse(t *testing.T, path, src string) *lang.File {
 	t.Helper()
-	f, err := lang.Parse(t.Context(), project.Surroundings{}, lang.Detect(path), path, []byte(src))
+	f, err := lang.Parse(t.Context(), porttest.Surroundings{}, lang.Detect(path), path, []byte(src))
 	if err != nil {
 		t.Fatal(err)
 	}

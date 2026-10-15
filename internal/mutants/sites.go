@@ -6,7 +6,7 @@
 // Results are cached per function in .metrics/mutate/, keyed by a hash of the
 // function's source, so a later run only retries survivors and the sites of
 // functions whose text changed.
-package mutate
+package mutants
 
 import (
 	"cmp"
