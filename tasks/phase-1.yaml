@@ -1801,6 +1801,16 @@
     or trace shapes fail explicitly, and no scripted names or empty-success traces
     stand in for execution. Source hashes come from actual mutated input and the
     original root from the actual fixture. These logical selection cases stay eligible.
+    MUT-207 saves initial check, public graph and fixed-seed sample observations before
+    changing helpers. Tests conditionally exercise a helper from their original bytes.
+    Add and commit only the new helpers and already changed unrelated tests, run scoped
+    --since, capture its actual snapshot and judged population, then re-observe check,
+    public graph and sample before the final full run. Require complete original-plus-helper
+    populations, fresh sample-eligible helpers and old stale unjudged evidence still excluded.
+    The final run's actual per-function reuse must match that post-scoped population.
+    Then assertions inspect the saved stage-specific observations, including the actual full
+    run, and the final scoped-preservation assertion checks the captured partial artifacts.
+    No cache is restored or force-refreshed to manufacture the ordering or counts.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
