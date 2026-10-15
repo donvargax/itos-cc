@@ -2212,6 +2212,39 @@
     scenarios remain precisely binary-only, without weakening their retained adapter
     guards. Record the protocol's controlled-fixture boundary and actual native
     platform observations; it is not a general process-lifetime oracle.
+    Fixture precision keeps modes immutable while commands are active. A separate
+    owned release marker opens successful-return/actionable-survivor barriers,
+    avoiding truncate/read races on control JSON. The actual Go test processes
+    self-reexecute declared children, publish canonical worker/source identities
+    before release, and hold their owned connections until process exit.
+    Native Windows Start explicitly reports unsupported before launch: synchronous
+    Run still proves 199/248 admission, without a PID-signal race or new supervisor.
+    A reset-per-world cleanup callback runs before the harness removes scratch;
+    failure to stop/join retains the fixture, rather than letting FIFO After hooks
+    delete it independently. Output snapshots stay synchronized and pure.
+    Logical 197 and the partial fixtures have actual execution dependencies:
+    FF_FAIL_AFTER delays the failing listed baseline until the held own request
+    has entered, and B waits for A2's entered judgment before surviving. T88/T100
+    must derive these barriers from actual bound Workers requests and their
+    cancellation contexts, never elapsed-time scheduling or canned event logs.
+    Tests.Trace declares logical command observations using existing canonical
+    root/source-hash facts; physical protocol records are not a fake trace mode.
+    Go coverage declarations use the actual public collector's observed block
+    spans/counts. Listed fixtures predeclare their exact measured profile before
+    a public named-report setup verifies it; T89/T90/T100 must retain the existing
+    declared report through actual requested tool/report-file writes and parsing,
+    including explicit raw-report workflows, rather than a fixture-ID shortcut.
+    MUT195 creates its exception through the public CLI, then removes only its
+    unnecessary fixture snapshot before changing the function; the known planning
+    failure is cold, without confusing valid prior reuses with new trial admission.
+    MUT211 uses independently prepared twin fixtures for JSON/text counts, with
+    actual prior runs and unchanged inputs, avoiding cache restoration to force
+    counters. Existing aggregate failing-baseline controls precede the When.
+    CI runs the exact 20-ID selection in one separate bounded native invocation
+    after each OS's ordinary suite and before installed-language setup, with verbose
+    output and cucumber JSON retained in its workspace. It has no T83 omission;
+    every prior selection/default timeout remains unchanged. The measured local
+    families fit the default ten-minute limit; no timeout increase is needed.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
