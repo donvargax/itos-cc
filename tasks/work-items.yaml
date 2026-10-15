@@ -3076,3 +3076,25 @@ items:
       > inside them likely became a redirection. Not reproduced on a Windows machine.
       --coverage-command shares the shell path. If confirmed, the fix passes the line through
       SysProcAttr.CmdLine, and a scenario with a quoted --test-command holds it.
+  - id: T-83
+    title: Push CI leaves mutate.feature's scenarios out until S7 runs them in process
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
+    why: >
+      The person (2026-10-13): CI time grows with each mutate.feature piece run through the built
+      binary (T-70's green run took Windows from about 12.5 to 16 minutes and the ci job from 26
+      seconds to 2 minutes, with 11 pieces to come), so until S7 brings them in process push CI
+      leaves them out, keeping everything else (build, lint, architecture, unit tests, every other
+      scenario) on all three systems. The features harness reads ITOS_CC_SKIP_FEATURES, a
+      comma-separated list of feature files whose scenarios both drivers leave out, logged as left
+      out by the setting; a selection naming only left-out scenarios logs and passes, as one naming
+      only Unstepped ones does, so a piece's task checks still run in CI without its scenarios.
+      ci.yml sets ITOS_CC_SKIP_FEATURES=mutate.feature for the test matrix and the ci job's scenario
+      step, not for the language-tools step's named runs. Local runs, and every agent's checks,
+      still run them. The S7 task that moves the last mutation handler in process removes the
+      setting from ci.yml (note it on refactor-final-proof's neighbour, the idea
+      inprocess-mutation-tests). Rules whole; light local testing; never itos task show; no
+      worktrees.
