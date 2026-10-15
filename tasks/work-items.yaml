@@ -2434,6 +2434,17 @@ items:
       omissions and unavailable platforms never count as agreement. Server cases use bounded
       readiness/cleanup and fixture viewer assets. Settle final concrete manifest/platform scope
       after T-116, before proof implementation; this note only prepares that work.
+
+      T-77's public TypeScript rename characterization adds a comparison case: record a Board#count
+      exception and real mutation results, commit only src/board.ts to src/grid.ts with unchanged
+      tests, then capture mutation run --since base, the transferred snapshot bytes, a whole-project
+      mutation check --json, and a subsequent whole-project mutation run --json with its updated
+      snapshot. The current scoped run is unjudged and reports the moved exception; the intervening
+      cached check exposes retained old unit namespaces, while the whole run establishes fourteen
+      kills and one excepted survivor under the new namespace. Characterize the baseline binary at
+      this edge before classifying any difference. Do not normalize namespace fields or silently fix
+      pairing during a move. The separate renamed-snapshot-unit-namespace idea records a possible
+      later behavioral fix; this note adds no intentional-difference allowance.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
