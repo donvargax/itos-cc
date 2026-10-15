@@ -1735,8 +1735,6 @@
     runs. Use configured hooks and actual exact-head CI as validation, not redundant workflow-shape
     tests or broad manual gates. T-84 stays doing until this repaired head passes, then close both
     items with verified CI. No worktrees or agents.
-  done_when:
-    - run: git diff --check
 - id: T-86
   type: refactor
   title: Refactor into feature-owned vertical slices for independent agent work
