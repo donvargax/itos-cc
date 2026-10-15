@@ -3281,6 +3281,12 @@ items:
       https://github.com/donvargax/itos/issues/78 (early draft metadata validation). These reports
       do not authorize weakening checks or folding upstream implementation into the current
       refactor.
+
+      A ninth observed friction report was filed and independently verified on 2026-10-15:
+      https://github.com/donvargax/itos/issues/79, active job and step progress during long
+      background CI watches. The watch preserved correct exact-revision status; the gap was
+      visibility while remaining platform jobs ran. No change to required checks or polling by the
+      coordinator is requested.
   - id: strictness-outline-targets
     title: Represent distinct assertion targets for every expanded outline example
     phase: 1
