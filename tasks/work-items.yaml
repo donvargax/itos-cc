@@ -3324,3 +3324,20 @@ items:
       records the fixture characterization and stable reproduction; clone-local execution artifacts
       stay in coordinator notes. This differs from orphan-follows-worktree-rename, which concerns a
       rename without a --since transfer.
+  - id: bug-2
+    title: Partial mutation runs preserve unjudged whole-suite evidence
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      While converting MUT-207, exact nonempty snapshot observations showed a partial --since run
+      rewriting suite_evidence of an unjudged unchanged unit even though stale:true still prevents
+      reuse. This violates the already accepted ADR-0016 and MUT-207 artifact contract. Preserve
+      original per-mutant evidence, scopes and judgments for unjudged units without changing public
+      stale/check/sample/graph behavior. Specify and verify a compiling public red regression before
+      the narrow product fix, separately from T-78; do not weaken the scenario or accepted policy.
+      Characterize Go, TypeScript, Python and Kotlin and preserve own/listed scopes, source-moved
+      site positions and independent executable coverage. The fix must not enable mutation runs of
+      this repository.
