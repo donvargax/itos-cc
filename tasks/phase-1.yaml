@@ -2421,3 +2421,34 @@
     mutation/worktrees/sessionmoves/agents. Future T-86 feature-owned layout remains a follow-up.
   done_when:
     - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="@ID-(GRAPH|SERVE)-"
+- id: T-114
+  type: refactor
+  title: Complete Kong dispatch and version behind a thin main entrypoint
+  why: >
+    S9 after S8 T-113, within current template-adoption refactor. Put version and top-level command
+    dispatch/help/guessing on the existing Kong fork and internal/cli boundary, completing removal
+    of the dual hand-parsed/moved routing. Keep cmd main as one process boundary constructing
+    context, streams and concrete adapters; parse once per run with fresh state and bind
+    domain-owned ports, commands lazily read config only after successful parsing, help/version
+    never read config or start tools. Reuse the template's thin entrypoint structure and existing
+    internal/version support only where its values agree with the live itos-cc contract. Preserve
+    versionString behavior: release -X main.version=v1.2.3, go install module's v-prefix, local Go
+    pseudo-version and dev without VCS; existing stdout/version JSON has no new commit line/key or
+    renamed stamp as part of a refactor. Do not blindly adopt unused template Version defaults. Keep
+    all current top-level/group/help wording/order, aliases --version/help, missing/unknown/guess
+    rules, leading --json precedence, -- behavior, panic/error objects and existing exit codes
+    exactly. Existing cli.feature acceptance cases must run both drivers with actual
+    counts/strictness and explain true permanent binary-only build/provenance cases. Remove obsolete
+    command/flag parser/invocation files only after their last users are moved and actual public
+    coverage holds every removed test; retain useful internal parse/input guards. Extend
+    architecture rules/fixtures for any justified package move, preserve
+    notices/artifacts/exceptions. No completion/__complete, --no-json/new boolean forms, changed
+    version stamp/default/output, new logging behavior or signal/semantic exits folded into this
+    refactor: those are separately specified public changes, interrupt and semantic exits only after
+    final proof. FutureT86 generated command registration is separate; existing explicit composition
+    can remain. Add newly found top-level edge cases to refactor-final-proof, no per-task binary
+    comparison. Focus local command/cli and named scenarios; broad gates hooks/CI, no own-code
+    mutation/worktrees/sessionmoves/agents or new dependency without recorded selection.
+  done_when:
+    - run: go test ./internal/cli/... ./internal/version/...
+    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
