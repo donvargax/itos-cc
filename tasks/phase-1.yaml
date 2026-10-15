@@ -1766,3 +1766,37 @@
   done_when:
     - run: tools/bin/architecture-check
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$"
+- id: T-87
+  type: refactor
+  title: Move pure mutation rules and models into internal/mutants
+  why: >
+    S7 begins only after T-82 finishes the black-box scenarios. Follow the current template-adoption
+    design, not future T-86. Extract pure mutation behavior in place first, commit recognizable git
+    moves separately, then edit the moved files. internal/mutants owns sites/keys/Apply/UnitHash,
+    outcome and snapshot models, pure snapshot building/merging/pairing/freshness (FreshnessOf,
+    OnSites, TestsChanged, BroadChanges, ListedChange supplied hashes), exception judgment,
+    Stop/FailFast/site states, pure coverage planning/judgment and evidence, sample ranking,
+    annotation text, hunk/rank helpers and test-command selection from supplied facts. Move
+    config.Exception and config.Tests and their pure methods into the domain; config becomes the
+    adapter returning those types, with no repeated field-copy models. Do not drag
+    filesystem/process/git/UI/config implementation or JSON encoding into the domain: model
+    ownership and pure rules move, representation encoding and disk operations remain at their
+    proper boundary, preserving snapshot schema/bytes and current behavior. Domain ports and
+    adapters for execution/history/fresh runs are later separate tasks; keep I/O in the legacy
+    mutate package for now and use only the minimum temporary typed compatibility surface needed by
+    its callers, not a duplicate implementation. Preserve graph/check agreement and all four
+    languages. Existing domain tests move with their rules, use lang port fakes rather than real
+    disk, and gain no artificial behavioral-red claim for a pure refactor. Add internal/mutants to
+    depguard/domain-io/domain-coverage and matching architecture fixtures; meet the established
+    domain statement-coverage gate. Update consumer imports and docs/go.md boundary list, preserving
+    third-party notices and valid tests. Same-name units, listed and whole-suite evidence retention,
+    strict-line coverage, cancellation and timeout semantics must remain unchanged. Register added
+    binary-equivalence cases (list/check all languages; a snapshot rewritten byte-for-byte) on
+    refactor-final-proof, run no per-task before/after comparison. Local validation stays focused to
+    moved pure packages plus selected neighboring scenarios; broad gates through hooks/CI only. No
+    mutation testing this repository, no worktrees/session moves or agents; no new dependencies
+    without recorded selection. The coordinator splits any inseparable additional behavior rather
+    than expanding this refactor.
+  done_when:
+    - run: go test ./internal/mutants
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|12[6-9]|13[0-4])$"

@@ -3125,3 +3125,10 @@ items:
     status: todo
     depends_on: [template-adoption, refactor-final-proof, interrupt-exit-130, semantic-exit-codes, adr-47-code-review]
     kind: task
+  - id: T-87
+    title: Move pure mutation rules and models into internal/mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
