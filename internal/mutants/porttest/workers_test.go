@@ -95,7 +95,7 @@ func TestDeclaredCommandsUseActualMutatedCopyAndSelectors(t *testing.T) {
 
 func TestTraceRejectsUnknownSelectorsAndPreservesNilInventory(t *testing.T) {
 	inventory := map[string]string{"own.ATest": "ATest", "own.BTest": "BTest"}
-	for _, args := range [][]string{{"gradle", "test", "--tests", "wrong.Test"}, {"unrecognized", "runner"}} {
+	for _, args := range [][]string{{"gradle", "test", "--tests", "wrong.Test"}, {"unrecognized", "runner"}, {"unrecognized", "runner", "own.ATest"}} {
 		if _, err := selectedTests(mutants.Command{Args: args}, inventory); err == nil {
 			t.Fatalf("unsupported selector accepted: %v", args)
 		}
@@ -103,5 +103,53 @@ func TestTraceRejectsUnknownSelectorsAndPreservesNilInventory(t *testing.T) {
 	names, err := selectedTests(mutants.Command{Args: []string{"arbitrary", "command"}}, nil)
 	if err != nil || !reflect.DeepEqual(names, []string{""}) {
 		t.Fatalf("nil inventory changed: %v %v", names, err)
+	}
+}
+
+func TestBoundTraceValidatesEverySelectorAndGradleWrapperSuite(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source.kt")
+	trace := filepath.Join(root, "trace.jsonl")
+	python := mutants.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest", "-q", "test_a.py", "missing.py"}}
+	filtered := mutants.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest", "-q", "-k", "test_a"}}
+	wrapper := mutants.Command{Root: root, Dir: root, Args: []string{"./gradlew", "test", "--fail-fast"}}
+	declarations := map[string]Tests{}
+	for _, c := range []mutants.Command{python, filtered} {
+		declarations[c.String()] = Tests{Trace: &Trace{File: trace, Source: "source.kt", Tests: map[string]string{"test_a.py": "ATest", "test_unrelated.py": "Unrelated"}}}
+	}
+	declarations[wrapper.String()] = Tests{Trace: &Trace{File: trace, Source: "source.kt", Tests: map[string]string{"own.ATest": "ATest", "own.BTest": "Unrelated"}}}
+	f := &Workers{Files: map[string]string{source: "actual source\n"}, Tests: map[string]map[string]Tests{root: declarations}}
+	pool, err := f.Open(t.Context(), mutants.MutationRun, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close(t.Context())
+	worker := pool.Worker(0)
+	for _, c := range []mutants.Command{python, filtered} {
+		if _, err := worker.Run(t.Context(), c, nil, 0); err == nil {
+			t.Fatalf("unsupported actual request emitted a partial trace: %s", c)
+		}
+		if f.Files[trace] != "" {
+			t.Fatalf("rejected selectors emitted invented executions: %s", f.Files[trace])
+		}
+	}
+	if _, err := worker.Run(t.Context(), wrapper, nil, 0); err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(f.Files[trace]), "\n")
+	var names []string
+	for _, line := range lines {
+		var record map[string]string
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			t.Fatal(err)
+		}
+		names = append(names, record["test"])
+		sum := sha256.Sum256([]byte(f.Files[source]))
+		if record["source_sha256"] != hex.EncodeToString(sum[:]) {
+			t.Fatalf("wrapper trace did not read actual input: %v", record)
+		}
+	}
+	if !reflect.DeepEqual(names, []string{"ATest", "Unrelated"}) {
+		t.Fatalf("whole wrapper lost unrelated inventory: %v", names)
 	}
 }

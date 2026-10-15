@@ -239,6 +239,17 @@ func selectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 		}
 		args = strings.Fields(c.Shell)
 	}
+
+	if !c.Suite {
+		if len(args) == 0 {
+			return nil, errors.New("trace request has no runner")
+		}
+		switch filepath.Base(args[0]) {
+		case "python", "python3", "python.exe", "python3.exe", "gradle", "gradlew", "gradlew.bat", "mvn", "mvnw", "mvnw.cmd", "go":
+		default:
+			return nil, fmt.Errorf("unsupported trace runner %s", args[0])
+		}
+	}
 	whole := c.Suite
 	var selectors []string
 	for i, a := range args {
@@ -258,35 +269,50 @@ func selectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 			selectors = append(selectors, a)
 		}
 	}
-	// The Python runner's non-option operands are actual test selectors. A
-	// misspelled file/module must not silently broaden to the whole inventory.
-	if len(selectors) == 0 && !whole {
-		module := -1
-		for i := 0; i+1 < len(args); i++ {
-			if args[i] == "-m" && (args[i+1] == "pytest" || args[i+1] == "unittest") {
-				module = i + 1
-				break
+	// Parse every Python operand, even if an earlier one was known. A
+	// misspelled second selector must not vanish behind a valid first one.
+	module := -1
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == "-m" && (args[i+1] == "pytest" || args[i+1] == "unittest") {
+			module = i + 1
+			break
+		}
+	}
+	if module >= 0 {
+		selectors = nil
+		for i := module + 1; i < len(args); i++ {
+			a := args[i]
+			switch a {
+			case "-p":
+				i++
+				if i >= len(args) || args[i] != "no:cacheprovider" {
+					return nil, errors.New("unsupported Python trace plugin")
+				}
+			case "-q", "-x", "-v", "--disable-warnings", "--":
+			case "discover":
+				whole = true
+			default:
+				if strings.HasPrefix(a, "-") {
+					return nil, fmt.Errorf("unsupported Python trace filter %s", a)
+				}
+				selectors = append(selectors, a)
 			}
 		}
-		if module >= 0 {
-			for i := module + 1; i < len(args); i++ {
-				a := args[i]
-				if a == "-p" || a == "-k" {
-					i++
-					continue
-				}
-				if !strings.HasPrefix(a, "-") {
-					selectors = append(selectors, a)
-				}
-			}
-			whole = len(selectors) == 0
-		} else {
-			// With no explicit class selector, these runners execute the suite.
-			for _, a := range args {
-				if a == "gradle" || a == "mvn" {
-					whole = true
-				}
-			}
+		if len(selectors) == 0 {
+			whole = true
+		}
+	} else if len(selectors) == 0 && !whole && len(args) > 0 {
+		// Existing Kotlin runners and wrappers execute the suite when no class
+		// selector is supplied. Recognize the executable, not an incidental word.
+		switch filepath.Base(args[0]) {
+		case "gradle", "gradlew", "gradlew.bat", "mvn", "mvnw", "mvnw.cmd":
+			whole = true
+		}
+	}
+	// A broad declaration cannot hide an explicitly unknown requested selector.
+	for _, key := range selectors {
+		if _, ok := inventory[key]; !ok {
+			return nil, fmt.Errorf("unknown runnable trace selector %s", key)
 		}
 	}
 
