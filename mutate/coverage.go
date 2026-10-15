@@ -2,12 +2,10 @@ package mutate
 
 import (
 	"context"
-
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/mutants"
-
 	"github.com/donvargax/itos-cc/project"
 )
 

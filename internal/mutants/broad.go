@@ -1,8 +1,6 @@
 package mutants
 
-import (
-	"sort"
-)
+import "sort"
 
 // HasBroadOutcome says whether units record an outcome of a broad scope,
 // whose freshness needs SuiteTestHashes.
@@ -17,13 +15,13 @@ func HasBroadOutcome(units []UnitResult) bool {
 	return false
 }
 
-func BroadScope(Scope string) bool {
-	return Scope == ScopeAllTests || Scope != "" && Scope != ScopeOwn && Scope != ScopeListed
+func BroadScope(scope string) bool {
+	return scope == ScopeAllTests || scope != "" && scope != ScopeOwn && scope != ScopeListed
 }
 
-func RecordSuiteEvidence(s *Snapshot, Tests, support map[string]string) {
-	if Tests == nil {
-		Tests = map[string]string{}
+func RecordSuiteEvidence(s *Snapshot, tests, support map[string]string) {
+	if tests == nil {
+		tests = map[string]string{}
 	}
 	if support == nil {
 		support = map[string]string{}
@@ -32,7 +30,7 @@ func RecordSuiteEvidence(s *Snapshot, Tests, support map[string]string) {
 		for j := range s.Units[i].Mutants {
 			m := &s.Units[i].Mutants[j]
 			if BroadScope(m.TestScope()) {
-				m.SuiteEvidence = &SuiteEvidence{Tests: CloneHashes(Tests), Support: CloneHashes(support)}
+				m.SuiteEvidence = &SuiteEvidence{Tests: CloneHashes(tests), Support: CloneHashes(support)}
 			}
 		}
 	}
@@ -49,28 +47,28 @@ func CloneHashes(in map[string]string) map[string]string {
 // BroadChanges is the changed evidence of a broad-scope outcome, of any
 // language: tests are SuiteTestHashes of its source now, support the
 // configured support files' hashes now.
-func BroadChanges(m Mutant, Tests, support map[string]string) []string {
+func BroadChanges(m Mutant, tests, support map[string]string) []string {
 	if !BroadScope(m.TestScope()) {
 		return nil
 	}
 	if m.SuiteEvidence == nil || m.SuiteEvidence.Tests == nil || m.SuiteEvidence.Support == nil {
 		return []string{"whole-suite evidence"}
 	}
-	return ChangedFiles(m.SuiteEvidence.Tests, Tests, m.SuiteEvidence.Support, support)
+	return ChangedFiles(m.SuiteEvidence.Tests, tests, m.SuiteEvidence.Support, support)
 }
 
 // BroadChangesForUnit returns the changed inputs of broad-scope outcomes in
 // one unit, sorted and unique.
-func BroadChangesForUnit(mutants []Mutant, Tests, support map[string]string) []string {
+func BroadChangesForUnit(mutants []Mutant, tests, support map[string]string) []string {
 	var changed []string
 	for _, m := range mutants {
-		changed = append(changed, BroadChanges(m, Tests, support)...)
+		changed = append(changed, BroadChanges(m, tests, support)...)
 	}
 	return UniqueSorted(changed)
 }
 
-func ChangedFiles(oldTests, Tests, oldSupport, support map[string]string) []string {
-	testChanges := CompareTests(oldTests, Tests)
+func ChangedFiles(oldTests, tests, oldSupport, support map[string]string) []string {
+	testChanges := CompareTests(oldTests, tests)
 	changed := append([]string{}, testChanges.Changed...)
 	changed = append(changed, testChanges.Added...)
 	changed = append(changed, testChanges.Removed...)

@@ -66,14 +66,14 @@ type Freshness struct {
 // function that only moved is fresh, the tests are those it recorded, no
 // run kept it marked stale, the files its listed outcomes rest on are
 // unchanged, and it records every site the function has.
-func FreshnessOf(entry *UnitResult, hash string, Tests *TestChange, listed *ListedChange, broad []string, sites []Site) Freshness {
+func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *ListedChange, broad []string, sites []Site) Freshness {
 	switch {
 	case entry == nil:
 		return Freshness{State: Missing}
 	case entry.Hash != hash:
 		return Freshness{State: Stale}
-	case Tests != nil:
-		return Freshness{State: Stale, Tests: Tests}
+	case tests != nil:
+		return Freshness{State: Stale, Tests: tests}
 	case entry.Stale:
 		return Freshness{State: Stale, Marked: true}
 	}

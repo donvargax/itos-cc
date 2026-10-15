@@ -2,7 +2,6 @@ package mutants
 
 import (
 	"reflect"
-
 	"testing"
 )
 

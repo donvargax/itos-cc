@@ -8,8 +8,6 @@ package config
 
 import (
 	"bytes"
-	"github.com/bmatcuk/doublestar/v4"
-
 	"errors"
 	"fmt"
 	"os"
@@ -17,6 +15,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/internal/mutants"

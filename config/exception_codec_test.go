@@ -1,8 +1,9 @@
 package config
 
 import (
-	"go.yaml.in/yaml/v3"
 	"testing"
+
+	"go.yaml.in/yaml/v3"
 )
 
 // This literal follows the pre-extraction Exception field order/tags, including

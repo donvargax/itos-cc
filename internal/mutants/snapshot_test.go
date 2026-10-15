@@ -123,15 +123,15 @@ func TestAnUnjudgedMovedFunctionKeepsItsRecordedScopeAndEvidence(t *testing.T) {
 	defer before.Close()
 	after := parse(t, "x.py", "import os\n\ndef a():\n    return True\ndef b():\n    return False\n")
 	defer after.Close()
-	for _, Scope := range []string{ScopeOwn, ScopeListed, ScopeAllTests, "go version", "legacy broad"} {
-		t.Run(Scope, func(t *testing.T) {
-			RecordedScope := Scope
-			if Scope == "legacy broad" {
+	for _, scope := range []string{ScopeOwn, ScopeListed, ScopeAllTests, "go version", "legacy broad"} {
+		t.Run(scope, func(t *testing.T) {
+			RecordedScope := scope
+			if scope == "legacy broad" {
 				RecordedScope = ScopeAllTests
 			}
 			Previous := BuildScoped(before, "x.py", nil, Sites(before), []string{Killed, Killed}, []string{RecordedScope, RecordedScope}, [][]string{{"ID-A"}, {"ID-B"}})
 			old := &Previous.Units[1].Mutants[0]
-			if Scope == ScopeAllTests || Scope == "go version" {
+			if scope == ScopeAllTests || scope == "go version" {
 				old.SuiteEvidence = &SuiteEvidence{Tests: map[string]string{"test_other.py": "original test"}, Support: map[string]string{"support.feature": "original support"}}
 			}
 			want := *old
@@ -172,8 +172,8 @@ func byUnit(f *lang.File, outcome map[string]string) []string {
 
 func TestResultsHoldOnlyWhileTheirTestsDo(t *testing.T) {
 	f := parse(t, "x.py", "def a(x):\n    return x > 0\n")
-	Tests := map[string]string{"test_x.py": "1", "test_y.py": "2"}
-	snap := Build(f, "x.py", Tests, Sites(f), []string{Killed, Killed})
+	tests := map[string]string{"test_x.py": "1", "test_y.py": "2"}
+	snap := Build(f, "x.py", tests, Sites(f), []string{Killed, Killed})
 	if Usable(&snap, map[string]string{"test_x.py": "1", "test_y.py": "2"}) == nil {
 		t.Error("the same tests: want the snapshot usable")
 	}

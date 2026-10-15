@@ -66,24 +66,24 @@ func TestAnExceptionCoversASurvivorOnly(t *testing.T) {
 	if i < 0 || len(x.Stale) != 0 {
 		t.Fatalf("held %v, stale %v, want the exception held", x.Held, x.Stale)
 	}
-	if reason, Stale := x.Judge(i, sites[i], Survived); reason != "r" || Stale != nil {
-		t.Errorf("a survivor: reason %q, stale %v, want it excepted", reason, Stale)
+	if reason, stale := x.Judge(i, sites[i], Survived); reason != "r" || stale != nil {
+		t.Errorf("a survivor: reason %q, stale %v, want it excepted", reason, stale)
 	}
 	for _, outcome := range []string{Killed, Timeout} {
-		if reason, Stale := x.Judge(i, sites[i], outcome); reason != "" || Stale == nil || Stale.Why != ExceptionKilled || Stale.Line != 2 {
-			t.Errorf("%s: reason %q, stale %+v, want the exception stale, killed", outcome, reason, Stale)
+		if reason, stale := x.Judge(i, sites[i], outcome); reason != "" || stale == nil || stale.Why != ExceptionKilled || stale.Line != 2 {
+			t.Errorf("%s: reason %q, stale %+v, want the exception stale, killed", outcome, reason, stale)
 		}
 	}
-	if reason, Stale := x.Judge(i, sites[i], Uncovered); reason != "" || Stale != nil {
-		t.Errorf("uncovered: reason %q, stale %v, want neither", reason, Stale)
+	if reason, stale := x.Judge(i, sites[i], Uncovered); reason != "" || stale != nil {
+		t.Errorf("uncovered: reason %q, stale %v, want neither", reason, stale)
 	}
 	// Another file's exceptions, and those of functions not judged, do not apply.
 	if x := ApplyExceptions([]Exception{e}, "y.py", f, sites, nil); len(x.Held)+len(x.Stale) != 0 {
 		t.Errorf("another file: %+v, want nothing", x)
 	}
-	Stale := e
-	Stale.Hash = "other"
-	if x := ApplyExceptions([]Exception{Stale}, "x.py", f, sites, func(string) bool { return false }); len(x.Held)+len(x.Stale) != 0 {
+	stale := e
+	stale.Hash = "other"
+	if x := ApplyExceptions([]Exception{stale}, "x.py", f, sites, func(string) bool { return false }); len(x.Held)+len(x.Stale) != 0 {
 		t.Errorf("a function not judged: %+v, want nothing", x)
 	}
 }

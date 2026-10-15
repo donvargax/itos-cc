@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	sitter "github.com/tree-sitter/go-tree-sitter"
+
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-
-	sitter "github.com/tree-sitter/go-tree-sitter"
 )
 
 const GoCoverageEvidenceVersion = 2

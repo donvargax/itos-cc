@@ -2,9 +2,10 @@ package mutate
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
-	"testing"
 )
 
 func parse(t *testing.T, path, src string) *lang.File {

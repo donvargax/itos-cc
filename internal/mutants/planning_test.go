@@ -165,3 +165,13 @@ func TestCommittedRanksAndDiffHunksAreIndependentOfExecution(t *testing.T) {
 		t.Fatal(ranges)
 	}
 }
+
+func TestFailedSelectionsAreRecordedOnceByTheirSelectedIDs(t *testing.T) {
+	result := FileResult{Baseline: BaselineNotRun}
+	result.AddFailed(&FailedSelection{IDs: []string{"b", "a"}, Command: "run a b", Output: "failed"})
+	result.AddFailed(&FailedSelection{IDs: []string{"a", "b"}, Command: "run b a", Output: "same selection"})
+	result.AddFailed(&FailedSelection{IDs: []string{"c"}, Command: "run c", Output: "other failure"})
+	if len(result.FailedSelections) != 2 || result.FailedSelections[0].Output != "failed" || result.FailedSelections[1].IDs[0] != "c" {
+		t.Fatal(result)
+	}
+}

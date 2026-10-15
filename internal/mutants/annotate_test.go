@@ -1,8 +1,6 @@
 package mutants
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestStripLeavesABlockFollowedByCode(t *testing.T) {
 	for _, m := range AnnotationMarkers {

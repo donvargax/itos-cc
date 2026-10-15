@@ -97,6 +97,20 @@ func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	var stored struct {
+		Units []struct {
+			Name string          `json:"name"`
+			Go   json.RawMessage `json:"go_coverage"`
+		} `json:"units"`
+	}
+	if err := json.Unmarshal(data, &stored); err != nil {
+		t.Fatal(err)
+	}
+	for _, unit := range stored.Units {
+		if (unit.Name == "Empty" || unit.Name == "CommentsOnly") && (len(unit.Go) == 0 || string(unit.Go) == "null") {
+			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
+		}
+	}
 	var snapshot mutate.Snapshot
 	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
@@ -157,6 +171,20 @@ func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing
 	data, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", "main.go.json"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	var stored struct {
+		Units []struct {
+			Name string          `json:"name"`
+			Go   json.RawMessage `json:"go_coverage"`
+		} `json:"units"`
+	}
+	if err := json.Unmarshal(data, &stored); err != nil {
+		t.Fatal(err)
+	}
+	for _, unit := range stored.Units {
+		if (unit.Name == "Branch") && (len(unit.Go) == 0 || string(unit.Go) == "null") {
+			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
+		}
 	}
 	var snapshot mutate.Snapshot
 	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {

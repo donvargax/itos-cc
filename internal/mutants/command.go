@@ -1,8 +1,6 @@
 package mutants
 
-import (
-	"strings"
-)
+import "strings"
 
 // Command runs the tests that should kill a file's mutants. Root is the tree a
 // worker copies; Dir is where the command runs, inside Root.

@@ -4,10 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-
 	"os"
 	"path/filepath"
-
 	"strings"
 
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"

@@ -2,7 +2,6 @@ package mutants
 
 import (
 	"maps"
-
 	"path/filepath"
 	"slices"
 	"sort"
@@ -218,11 +217,11 @@ func (m Mutant) TestScope() string {
 }
 
 // recordedScope is scope as a snapshot records it: ScopeOwn left out.
-func RecordedScope(Scope string) string {
-	if Scope == ScopeOwn {
+func RecordedScope(scope string) string {
+	if scope == ScopeOwn {
 		return ""
 	}
-	return Scope
+	return scope
 }
 
 func (m Mutant) Key() string {
@@ -231,8 +230,8 @@ func (m Mutant) Key() string {
 
 // testsMatch reports whether s recorded exactly tests, the same paths with
 // the same hashes. A snapshot that records no tests matches none.
-func TestsMatch(s *Snapshot, Tests map[string]string) bool {
-	return s.Tests != nil && maps.Equal(s.Tests, Tests)
+func TestsMatch(s *Snapshot, tests map[string]string) bool {
+	return s.Tests != nil && maps.Equal(s.Tests, tests)
 }
 
 // TestsChanged is how now, the hashes of the test files that import the
@@ -400,8 +399,8 @@ func RememberedWithScopes(s *Snapshot, f *lang.File) (Previous, PreviousScopes) 
 // usable is s when its results still hold for the tests that import its
 // file now, tests, and nil otherwise: results the tests may no longer earn
 // count for nothing, neither reused nor kept for a function not judged.
-func Usable(s *Snapshot, Tests map[string]string) *Snapshot {
-	if s == nil || !TestsMatch(s, Tests) {
+func Usable(s *Snapshot, tests map[string]string) *Snapshot {
+	if s == nil || !TestsMatch(s, tests) {
 		return nil
 	}
 	return s
@@ -440,18 +439,18 @@ func MarkExcepted(units []UnitResult, mutants []MutantResult) {
 // tests that import the file. A skipped site is left out, and so is one
 // with no outcome, which a fail-fast stop left undecided. Every outcome
 // records ScopeOwn; see buildScoped.
-func Build(f *lang.File, rel string, Tests map[string]string, sites []Site, outcomes []string) Snapshot {
-	return BuildScoped(f, rel, Tests, sites, outcomes, nil, nil)
+func Build(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes []string) Snapshot {
+	return BuildScoped(f, rel, tests, sites, outcomes, nil, nil)
 }
 
 // buildScoped is build with the scope each outcome was decided with, by
 // site, or ScopeOwn for every one when scopes is nil, and the listed tests
 // that decided it, by site, when ran is not nil.
-func BuildScoped(f *lang.File, rel string, Tests map[string]string, sites []Site, outcomes, scopes []string, ran [][]string) Snapshot {
-	if Tests == nil {
-		Tests = map[string]string{}
+func BuildScoped(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes, scopes []string, ran [][]string) Snapshot {
+	if tests == nil {
+		tests = map[string]string{}
 	}
-	snap := Snapshot{Version: snapshot.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Tests: Tests, Units: []UnitResult{}}
+	snap := Snapshot{Version: snapshot.Version, File: filepath.ToSlash(rel), Language: f.Spec.Name, Tests: tests, Units: []UnitResult{}}
 	for _, u := range f.Units {
 		snap.Units = append(snap.Units, UnitResult{
 			Namespace: u.Namespace, Name: u.Name, Hash: UnitHash(f, u),

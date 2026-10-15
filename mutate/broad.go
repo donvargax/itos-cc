@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"

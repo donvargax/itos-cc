@@ -46,13 +46,6 @@ func newSelections(listed *Listed, factor float64, log io.Writer) *selections {
 	return &selections{listed: listed, factor: factor, log: log, byKey: map[string]*selection{}}
 }
 
-// selectionKey names the set ids, whatever their order.
-func selectionKey(ids []string) string {
-	sorted := slices.Clone(ids)
-	slices.Sort(sorted)
-	return strings.Join(sorted, "\x00")
-}
-
 // baseline is the baseline of the selection ids, run in w's copy under ctx,
 // with no mutant, the first time any worker needs it: a baseline that ctx
 // cancels is an error, never a selection that fails.
@@ -110,13 +103,4 @@ const timeoutAllowance = 5 * time.Second
 // factor times it, plus timeoutAllowance.
 func timeoutOf(elapsed time.Duration, factor float64) time.Duration {
 	return time.Duration(float64(elapsed)*factor) + timeoutAllowance
-}
-
-// addFailed records that f, a selection some mutant of the file needed,
-// failed without a mutant, once.
-func (r *FileResult) addFailed(f *FailedSelection) {
-	key := selectionKey(f.IDs)
-	if !slices.ContainsFunc(r.FailedSelections, func(g FailedSelection) bool { return selectionKey(g.IDs) == key }) {
-		r.FailedSelections = append(r.FailedSelections, *f)
-	}
 }

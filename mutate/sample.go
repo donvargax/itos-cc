@@ -2,7 +2,6 @@ package mutate
 
 import (
 	"context"
-
 	"slices"
 	"sort"
 
@@ -136,7 +135,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 				f.BaselineFailed, f.BaselineOutput = true, r.result.BaselineOutput
 			}
 			for _, sel := range r.result.FailedSelections {
-				failed.addFailed(&sel)
+				failed.AddFailed(&sel)
 			}
 		}
 		f.FailedSelections = failed.FailedSelections

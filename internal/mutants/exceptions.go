@@ -78,10 +78,10 @@ type FileExceptions struct {
 // applyExceptions places the exceptions of the file rel, f with sites,
 // counting only those of the functions judge says to judge, all when it is
 // nil.
-func ApplyExceptions(exceptions []Exception, rel string, f *lang.File, sites []Site, Judge func(function string) bool) FileExceptions {
+func ApplyExceptions(exceptions []Exception, rel string, f *lang.File, sites []Site, judge func(function string) bool) FileExceptions {
 	out := FileExceptions{Held: map[int]Exception{}}
 	for _, e := range ExceptionsOf(exceptions, rel) {
-		if Judge != nil && !Judge(e.Function) {
+		if judge != nil && !judge(e.Function) {
 			continue
 		}
 		i, why, line := Locate(e, f, sites)
@@ -117,7 +117,7 @@ func HeldReasons(exceptions []Exception, rel string, f *lang.File, sites []Site)
 // a survivor is excepted, with the entry's reason; a mutant the tests
 // noticed makes the entry stale; and an uncovered one is neither, since an
 // exception covers survivors only.
-func (x FileExceptions) Judge(site int, s Site, outcome string) (reason string, Stale *StaleException) {
+func (x FileExceptions) Judge(site int, s Site, outcome string) (reason string, stale *StaleException) {
 	e, ok := x.Held[site]
 	if !ok {
 		return "", nil

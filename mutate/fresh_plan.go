@@ -3,7 +3,6 @@ package mutate
 import (
 	"bytes"
 	"context"
-
 	"errors"
 	"fmt"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"

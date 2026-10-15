@@ -1,13 +1,13 @@
 package mutate
 
 import (
-	"github.com/donvargax/itos-cc/internal/lang"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/lang"
 )
 
 func TestAnEntryWhoseFileIsGoneHasMovedToTheOneFileHoldingItsFunction(t *testing.T) {

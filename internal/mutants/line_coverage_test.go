@@ -2,7 +2,6 @@ package mutants
 
 import (
 	"reflect"
-
 	"strings"
 	"testing"
 
@@ -85,11 +84,11 @@ func TestKotlinLineEvidenceStartsAtTheBodysFirstStatement(t *testing.T) {
 		{Line: 15}, {Line: 19}, {Line: 21}}
 	got := map[string][]int{}
 	for _, unit := range f.Units {
-		Evidence := LineCoverageEvidence(f.Path, f, unit, lines, true, "p", nil)
-		if !Evidence.Complete {
+		evidence := LineCoverageEvidence(f.Path, f, unit, lines, true, "p", nil)
+		if !evidence.Complete {
 			t.Errorf("%s's proven evidence is incomplete", unit.Name)
 		}
-		for _, b := range Evidence.Blocks {
+		for _, b := range evidence.Blocks {
 			got[unit.Name] = append(got[unit.Name], b.Line)
 		}
 	}
@@ -97,10 +96,10 @@ func TestKotlinLineEvidenceStartsAtTheBodysFirstStatement(t *testing.T) {
 		t.Errorf("lines %v, want %v", got, want)
 	}
 	for _, unit := range f.Units {
-		Evidence := LineCoverageEvidence(f.Path, f, unit, nil, false, "p", nil)
+		evidence := LineCoverageEvidence(f.Path, f, unit, nil, false, "p", nil)
 		bodiless := unit.Name == "empty" || unit.Name == "quiet" || unit.Name == "area"
-		if Evidence.Complete != bodiless || len(Evidence.Blocks) != 0 {
-			t.Errorf("%s unmeasured: complete %v with %d lines, want complete %v with none", unit.Name, Evidence.Complete, len(Evidence.Blocks), bodiless)
+		if evidence.Complete != bodiless || len(evidence.Blocks) != 0 {
+			t.Errorf("%s unmeasured: complete %v with %d lines, want complete %v with none", unit.Name, evidence.Complete, len(evidence.Blocks), bodiless)
 		}
 	}
 }

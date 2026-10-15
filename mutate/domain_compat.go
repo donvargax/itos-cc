@@ -224,3 +224,9 @@ type lineRange = mutants.LineRange
 
 var hunkRanges = mutants.HunkRanges
 var overlapsRanges = mutants.OverlapsRanges
+
+type FileResult = mutants.FileResult
+
+const BaselineNotRun = mutants.BaselineNotRun
+
+var selectionKey = mutants.SelectionKey
