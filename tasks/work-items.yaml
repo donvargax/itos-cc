@@ -3282,3 +3282,10 @@ items:
     status: todo
     depends_on: [T-105]
     kind: task
+  - id: T-107
+    title: Build and refresh architecture through repository and snapshot ports
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
