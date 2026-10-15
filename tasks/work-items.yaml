@@ -2937,8 +2937,8 @@ items:
   - id: T-80
     title: mutate.feature's fail-fast and ownership scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-79, T-117]
     kind: task
     why: >
