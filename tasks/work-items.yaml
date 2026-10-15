@@ -3038,8 +3038,8 @@ items:
   - id: T-88
     title: Run mutation workers through a domain port and the worktrees adapter
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-87]
     kind: task
   - id: T-89
