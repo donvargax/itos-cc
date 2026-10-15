@@ -176,6 +176,7 @@ func (l *listedMutation) declare() error {
 		"return fmt.Sprint(n-1,":  {"ID-A-02"},
 		"if n == 1 {":             {"ID-A-01"},
 		"for n > 1 {":             {"ID-A-01"},
+		"return i > 2":            {"ID-A-01", "ID-A-02"},
 	} {
 		if line := lineAt(text); line > 0 {
 			lines[line] = ids
@@ -194,10 +195,13 @@ func (l *listedMutation) declare() error {
 		if s.line != lineAt("return i > 2") {
 			t.Surviving = append(t.Surviving, site)
 		}
-		if s.line == lineAt("fmt.Fprintln(os.Stderr,") {
+		if s.line == lineAt("fmt.Fprintln(os.Stderr,") || s.line == lineAt("return i > 2") {
 			for _, id := range []string{"ID-A-01", "ID-A-02"} {
 				t.Listed.Surviving[id] = append(t.Listed.Surviving[id], site)
 			}
+		}
+		if s.line == lineAt("if n > 1 {") {
+			t.Listed.Surviving["ID-A-02"] = append(t.Listed.Surviving["ID-A-02"], site)
 		}
 		if s.line == lineAt("for n > 1 {") {
 			t.Listed.TimingOut["ID-A-01"] = append(t.Listed.TimingOut["ID-A-01"], site)

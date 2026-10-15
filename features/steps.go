@@ -127,6 +127,8 @@ type ListedTests struct {
 	Lines   map[string]map[int][]string
 	Split   bool
 	Elapsed map[string]time.Duration
+	// Failing is the exact selection of IDs that fails alone; a larger
+	// selection containing those IDs may still pass.
 	Failing []string
 	// Surviving and TimingOut give each listed ID the sites its tests pass
 	// or hang on; other reached sites are killed. ListFails is the inventory
