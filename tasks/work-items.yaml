@@ -2445,6 +2445,19 @@ items:
       this edge before classifying any difference. Do not normalize namespace fields or silently fix
       pairing during a move. The separate renamed-snapshot-unit-namespace idea records a possible
       later behavioral fix; this note adds no intentional-difference allowance.
+
+      The separate bug-2 regression MUT-247 was specified during T-78 after actual public artifact
+      observations proved partial --since runs refreshed suite_evidence for unjudged outcomes
+      despite stale:true. Once its separately reviewed fix is accepted, include the four-language
+      original-evidence case in this final comparison and cite bug-2's actual red and fix commits.
+      Characterize the T-29-parent binary on identical reset fixtures before classifying any
+      difference. Extend the intentional-difference list only by the precise bug-2 correction:
+      unjudged outcomes keep their original test/support evidence while judged outcomes get current
+      evidence; stale invalidation, scopes, judgments, independent coverage and all other
+      output/artifacts retain their existing contracts. This is no allowance for namespace changes,
+      broad snapshot normalization or unexplained differences. Preserve raw before/after artifacts
+      and verify the fixed behavior against MUT-247 and MUT-207. If the baseline already preserves
+      that evidence, require equality for that case.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
