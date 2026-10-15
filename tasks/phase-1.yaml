@@ -1876,6 +1876,31 @@
     for a precise coordinator specification correction and preserve the underlying
     domain/adapter read-policy guards. No fake atime results or direct internal API calls
     from steps establish the public claim.
+    The bounded optional fixture capability is Driver.ObserveReads(paths...), analogous
+    to ObserveWrites: return an observation function yielding the sorted monitored paths
+    read or listed since the mark, or an explicit unsupported-capability error. Monitor
+    the fixture's actual out-of-root target marker files and directories, not unrelated
+    operating-system/runtime reads. In the binary driver, standard-library access-time
+    metadata can supply that observation only after a genuine read of each monitored
+    regular file and a genuine listing of each monitored directory demonstrate that the
+    filesystem updates its access time. Reset only those owned access times before the
+    mark, preserving modification times. A missing metadata field or unchanged access
+    times despite successful positive reads/listings means this observation is unsupported
+    and becomes an explicit scenario omission, never an empty successful observation.
+    Failures reading, listing, inspecting or resetting an owned path remain ordinary errors,
+    not capability omissions.
+    A coordinator filesystem oracle detected both positive reads and directory listings
+    on this host; that establishes feasibility only, not portability or completed cases.
+    Require the positive control per actual observed filesystem, a nonempty target set,
+    and a failure probe proving a real read/list after the mark is reported. No dependency,
+    global tracing facility or generic subprocess API is needed. The memory driver must
+    derive observations from actual bound port operations capable of touching the target
+    paths (selection, surroundings and Toolchain reads/listings), independently of fixture
+    assertion reads. T-89/T-100 must bind and positively test that observation; returning
+    an empty log without running those real fake-port operations is not proof. A missing
+    in-process implementation before those moves is temporary and explicit, never a
+    permanent binary-only designation for logical scope admission. Keep the retained
+    scope holder and additional adapter/domain read-policy guards until equal proof.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
