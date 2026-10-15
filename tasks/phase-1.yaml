@@ -1778,6 +1778,14 @@
     be genuinely binary-only with that precise reason; do not generate fake bytecode or
     cache-lifecycle events in the memory driver. Keep the existing Python cache guards
     and helpers until their actual replacement CI and T-101 cleanup.
+    Kotlin coverage declarations use Language kotlin and Program gradle or mvn, matching
+    the real JaCoCo-producing fixture. The binary checks Java and that existing build tool;
+    the memory driver records the actual report declaration. No dependency installer or new
+    library is added. Dependency preparation in MUT-209 uses public crap coverage commands:
+    Python establishes a real system-site-packages virtualenv and a fixture-owned dependency,
+    and Gradle warms its installed cache before the frozen offline command under test.
+    Language cases are measured locally by Rule before choosing bounded CI invocations;
+    preserve the previous installed-tools selection and its default ten-minute timeout.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
