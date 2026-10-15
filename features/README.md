@@ -852,3 +852,15 @@ embedded fixture test functions are not additional repository tests to delete.
 | 218 | cmd/itos-cc/mutate_ts_fallback_test.go | TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes |
 | 219 | cmd/itos-cc/test_support_reach_test.go | TestATestReachesAFileThroughTheTestSupportFilesItUses |
 | 220 | cmd/itos-cc/test_support_reach_test.go | TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture |
+
+Strict coverage fixtures (T-79) may declare `Coverage.IntegrationReport` separately
+from their in-process `Report`, using the same existing report formats. An empty
+integration report means no subprocess evidence. The actual collector runs in the
+binary; the later bound memory measurer must parse and match both reports and
+preserve their separate provenance, including actual listed-test IDs.
+`Coverage.WithoutC8` is a TypeScript-only fixture with no integration report: its
+owned `node_modules` facade links the actual pinned packages and tools except c8
+and its platform launchers. It never changes the pinned installation. Missing c8
+becomes a collector fact only when the command requests that built-in collector;
+raw-report and no-coverage commands keep their normal behavior. These logical
+coverage outcomes remain eligible for the later in-process driver.
