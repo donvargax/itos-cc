@@ -3063,6 +3063,12 @@ items:
       about it (a documented PYTEST_ADDOPTS or autoload setting, or a pinned plugin-free fixture
       interpreter), keeping in mind that PYTEST_DISABLE_PLUGIN_AUTOLOAD is one of the Python
       environment inputs of a recorded outcome.
+
+      The person approved fixture-only speedups on 2026-10-15 while the refactor continues. Existing
+      controlled mutation fixtures pass PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 through Run.Env; T-117
+      records continuing this where tests need no plugins and retaining the environment in actual
+      future fingerprints. This is not authorization to disable project plugins globally or change
+      product defaults. The broader product-policy part of this idea remains open.
   - id: windows-test-command-quotes
     title: A --test-command with double quotes may not run as written on Windows
     phase: 1
