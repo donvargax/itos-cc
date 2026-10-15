@@ -40,6 +40,13 @@ func (binary) Write(path string, data []byte) error {
 	return os.WriteFile(path, data, 0o600)
 }
 
+func (b binary) WriteExecutable(path string, data []byte) error {
+	if err := b.Write(path, data); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o700)
+}
+
 // Read is the content of the file at path.
 func (binary) Read(path string) ([]byte, error) {
 	return os.ReadFile(path)
@@ -136,6 +143,10 @@ func (b binary) Coverage(dir string, c Coverage) error {
 			if err := venv(dir, required); err != nil {
 				return err
 			}
+		}
+	case "kotlin":
+		if _, err := exec.LookPath("java"); err != nil {
+			return missing("java")
 		}
 	default:
 		return fmt.Errorf("no tools known for %s", c.Language)

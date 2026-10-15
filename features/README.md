@@ -56,9 +56,10 @@ A Given that declares a project's coverage tools (`Coverage`) needs them install
 driver: Go needs `go`; TypeScript `node` and a `node_modules` holding vitest and
 `@vitest/coverage-v8`, `ITOS_CC_NODE_MODULES`'s, else `testdata/tools/node`'s, else the
 viewer's, linked into the project; Python `python3` with pytest and coverage, linked into the
-project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); and a program the
+project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); Kotlin needs Java and
+the fixture's existing Gradle or Maven (`Program`) and declares its measured JaCoCo XML; and a program the
 project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
-pinned tools sets; any other CI job skips the TypeScript and Python ones, its runner's tools being
+pinned tools sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
 whatever its image has. The in-process driver records what was declared, for the fake measurer a
 command measuring coverage is handed once it moves.
 
@@ -766,3 +767,88 @@ the unaffected Ubuntu language-tools step executes all four examples while
 T83 omits mutation scenarios from the initial matrix. This independent
 regression does not complete the shelved T78 conversion or replace any legacy
 holder; all retained partial-run, fail-fast and coverage guards remain.
+
+T78 converts MUT150..155, 203..210 and 213..220: 22 IDs and 41 expanded
+examples, including both Python runners and both Kotlin build systems.
+Real pytest, unittest, Vitest, Gradle and Maven fixtures prove execution and
+coverage where the sentences require it. Logical historical scope and reach
+fixtures use valid recorded artifacts and explicitly declared real custom
+commands. A logical fixture executing `go version` declares Tests.Language as
+Go even when its source layout is another language; source coverage declarations
+retain their actual languages and reports. MUT218 records its Node built-in test script with `--no-coverage`:
+it has neither Vitest nor Jest, invokes no collector, and needs no Coverage
+declaration. Kotlin Coverage uses the existing Report field for the fixture's
+actual JaCoCo facts, with `Program` naming Gradle or Maven.
+The same Report contract carries actual LCOV and Go coverprofile data in
+other fixtures; the bound memory Measurer must parse the declared format.
+
+`WriteExecutable` writes owned fixture bytes and ensures executable permission,
+including after an ordinary-file overwrite; its shared byte contract also
+holds the memory driver. MUT205's Python example executes the literal
+`./run.sh`. Windows cmd cannot execute that literal, as the retained holder
+already records. MUT216's real unittest setup uses `.venv/bin/python`; Windows
+virtualenvs use `Scripts` instead. These local Linux and Ubuntu installed-tool
+results do not establish Windows scenario execution. Logical freshness and
+own-test selection remain eligible for the later bound memory driver.
+
+Own-test traces retain actual canonical execution roots and mutated source
+hashes, plus names emitted by the executing Python test or Kotlin test class.
+The optional `TestTrace.Tests` inventory includes every runnable selector,
+including unrelated tests. T88/T90/T100 must derive events from the actual
+bound Workers and Measurer requests, preserve nil-inventory behavior and fail
+unsupported selectors; an empty or scripted trace is not an execution result.
+
+Only MUT209, 210 and 214 gain permanent binary-only reasons: actual frozen
+exports with installed offline dependencies, interpreter bytecode, and pytest
+cache lifecycles. MUT209 compares canonical dependency provenance from setup,
+baseline and mutant execution, committed source hashes against dirty live
+source, and the original tree's bytes. MUT210 starts with genuine original
+bytecode generated through public coverage/compileall setup, then observes
+equal-size baseline and mutant contents in one pinned second without worker
+bytecode. MUT214 observes default commands without pytest cache and the
+literal custom command creating it. Original source and cache bytes are
+inventoried through Driver. These physical observations are not memory fakes.
+
+MUT153, 154 and 207 read actual public serve graphs through Driver.Graph.
+MUT207 saves initial and post-scoped check/graph/sample populations before the
+full refresh, includes fresh new helpers, and compares the final per-function
+reuse against that saved population. Its unjudged comparisons require original
+nonempty evidence and judgments while allowing stale markers and current
+source positions. Bug-2 holds the evidence-preservation fix independently in
+MUT247. The staged graph deferral for MUT134/153/154/163/207 remains explicit in
+T100/T101 until T112 proves both drivers; it is no permanent exclusion.
+
+CI keeps all prior installed-tool selections and MUT247, then adds three
+bounded invocations for T78 policy/reach, suite/coverage-scope, and
+installed/cache/own-test families, with the default timeout unchanged. T83's
+initial-matrix omission is still distinct from actual installed-tool execution.
+Keep all mapped holders, every helper and extra assertion until restored
+replacement CI and T101 cleanup. In particular,
+`TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing` in
+`uncovered_fails_closed_test.go` remains outside the replacement mapping;
+embedded fixture test functions are not additional repository tests to delete.
+
+| MUT | Retained holder | Exact test |
+| --- | --- | --- |
+| 150 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale |
+| 151 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestBroadScopeSupportFilesAreHashed |
+| 152 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence |
+| 153 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph |
+| 154 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestPartialRunKeepsUnjudgedBroadOutcomesStale |
+| 155 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules |
+| 203 | cmd/itos-cc/strict_mixed_languages_test.go | TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection |
+| 204 | cmd/itos-cc/uncovered_fails_closed_test.go | TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing |
+| 205 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale |
+| 206 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage |
+| 207 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage |
+| 208 | cmd/itos-cc/mutate_ts_coverage_scope_test.go | TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants |
+| 209 | cmd/itos-cc/mutate_counted_languages_test.go | TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline |
+| 210 | cmd/itos-cc/mutate_python_bytecode_test.go | TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled |
+| 213 | cmd/itos-cc/mutate_counted_unjudged_test.go | TestAStrictCountedRunNeedsNoMeasurementOfALanguageWithNothingToJudge |
+| 214 | cmd/itos-cc/mutate_python_pytest_cache_test.go | TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree |
+| 215 | cmd/itos-cc/transitive_reach_test.go | TestATestThatReachesAFileThroughAnotherModuleIsAmongItsTests |
+| 216 | cmd/itos-cc/mutate_python_own_tests_test.go | TestAPythonFilesOwnTestsAreTheTestsThatReachIt |
+| 217 | cmd/itos-cc/mutate_kotlin_own_tests_test.go | TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt |
+| 218 | cmd/itos-cc/mutate_ts_fallback_test.go | TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes |
+| 219 | cmd/itos-cc/test_support_reach_test.go | TestATestReachesAFileThroughTheTestSupportFilesItUses |
+| 220 | cmd/itos-cc/test_support_reach_test.go | TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture |

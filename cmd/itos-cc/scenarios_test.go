@@ -135,6 +135,10 @@ func (m *memory) Write(path string, data []byte) error {
 	return nil
 }
 
+func (m *memory) WriteExecutable(path string, data []byte) error {
+	return m.Write(path, data)
+}
+
 func (m *memory) Read(path string) ([]byte, error) {
 	text, ok := m.files[filepath.Clean(path)]
 	if !ok {

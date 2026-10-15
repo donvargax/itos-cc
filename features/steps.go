@@ -36,6 +36,9 @@ type Driver interface {
 	Folder() (string, error)
 	// Write writes data to the file at path, making the folders above it.
 	Write(path string, data []byte) error
+	// WriteExecutable writes owned fixture bytes and makes the file executable,
+	// including when it replaces an ordinary non-executable file.
+	WriteExecutable(path string, data []byte) error
 	// Read is the content of the file at path.
 	Read(path string) ([]byte, error)
 	// Mkdir makes the folder at path, whose parent is there.
@@ -138,7 +141,13 @@ type Tests struct {
 }
 
 // TestTrace identifies an executable fixture's execution-observation file and source.
-type TestTrace struct{ File, Source string }
+type TestTrace struct {
+	File, Source string
+	// Tests maps the complete runnable selector inventory to observed names.
+	// Bound commands and measurement requests select executions from it; nil
+	// keeps the source-only execution trace contract used by earlier fixtures.
+	Tests map[string]string
+}
 
 // ListedTests is a fixture's public test inventory and observable outcomes.
 // Lines name source files relative to the declared project's folder.
@@ -197,12 +206,12 @@ type Built struct {
 // declares it.
 type Coverage struct {
 	// Language is the language whose coverage command runs there: go,
-	// typescript or python.
+	// typescript, python or kotlin.
 	Language string
-	// Report is the report the command writes, as LCOV, its paths relative
-	// to the folder: what the in-process driver hands its fake in place of
-	// running the tools. "" when it writes none, as when the tests do not
-	// compile.
+	// Report is the report the command writes, as LCOV, a Go coverprofile or
+	// JaCoCo XML, its paths relative to the folder: what the in-process driver
+	// hands its fake in place of running the tools. "" when it writes none,
+	// as when the tests do not compile.
 	Report string
 	// Venv is whether the Python project keeps its own virtualenv in
 	// .venv, whose python is the one with pytest and coverage: the binary
@@ -271,8 +280,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-78: language rules
-	ids("MUT", "150-155", "203-210", "213-220"),
 	// T-79: strict
 	ids("MUT", "156-164", "221-226", "228-230"),
 	// T-80: fail-fast, ownership

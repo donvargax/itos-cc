@@ -59,6 +59,7 @@ type mutateState struct {
 	held          map[string]string
 	failingSample func() error
 	samplePlain   func() error
+	forFile       func(string) error
 }
 
 func mutateSteps(sc *godog.ScenarioContext, w *world) {
@@ -86,6 +87,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	resultMutationSteps(sc, m, since, sample)
 	exceptionMutationSteps(sc, m, since)
 	unjudgedEvidenceSteps(sc, m, since)
+	languageMutationSteps(sc, m, since)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)

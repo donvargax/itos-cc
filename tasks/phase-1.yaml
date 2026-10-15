@@ -1819,6 +1819,33 @@
     independently derived mutant; a live-only source comment makes frozen versus live
     input observable. External fixture-owned traces use existing Driver file access,
     and the original tree is inventoried after setup/live edits and compared after count.
+    The counted Gradle fixture disables its test task's up-to-date shortcut, so the
+    independent runtime trace observes coverage, clean baseline and trial executions,
+    rather than mistaking a successful Gradle command that skipped tests for execution.
+    MUT-218 explicitly records through mutation run --no-coverage, as its retained
+    holder's suiteRun does. The real Node --test script has neither Vitest nor Jest,
+    declares Tests with its actual npm command, and invokes no collector or Measurer.
+    No Coverage declaration or synthetic report is appropriate for this fixture.
+    Keep the existing installed-tools invocation unchanged and add three bounded
+    T-78 invocations with the default ten-minute timeout. The policy/reach group
+    selects 150..155,203,204,206,213,215,219; suite/coverage-scope selects 205,207,208,218;
+    installed/cache/own-test selects 209,210,214,216,217,220. All 22 IDs and 41 examples
+    remain selected. Measured local family costs include mixed 205/207 at 58.052 seconds,
+    normalized own 216/217 at 29.323 seconds, installed 209 at 24.292 seconds,
+    cache 210/214 at 5.616 seconds and reach 215/219 at 0.819 seconds, before a
+    combined final verification. Splitting
+    protects the pre-existing serial invocation's budget rather than raising its timeout.
+    Logical fixtures whose actual custom harness is go version declare Tests.Language
+    as go regardless of their source language; source Coverage declarations retain
+    their actual language and report. This removes false runtime requirements while
+    keeping every real Python, Node and Kotlin test command declared as it executes.
+    MUT-207 compares original nonempty per-mutant evidence, scope and judgment and
+    unit source hashes, permitting stale markers and current source-position metadata.
+    Bug-2 independently fixed evidence preservation after four committed public reds;
+    MUT-247 remains separate from T-78's 41 examples and its restored shared regression.
+    Final selected execution passes all 41 cases and 249 steps without skips in
+    129.231 seconds of Godog execution; 89 valid strictness probes produce 151
+    intended example failures, with both temporary compile-only mistakes excluded.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'

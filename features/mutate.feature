@@ -1862,7 +1862,8 @@ Feature: Mutation testing
       But with --all-tests the coverage script measures the whole suite as before
       And crap still measures with the coverage script
 
-    @counted-languages @ID-MUT-209
+    # Real frozen exports, installed runtime dependencies and offline build caches.
+    @binary-only @counted-languages @ID-MUT-209
     Scenario Outline: A counted run judges a <language> project through its installed tools, offline
       Given a committed <language> project with eligible mutation sites and its dependencies installed in <installed>
       When a count-one run judges it
@@ -1890,7 +1891,8 @@ Feature: Mutation testing
   # requires the kill again.
   Rule: A Python mutant always runs as mutated
 
-    @python-fresh-bytecode @ID-MUT-210
+    # Real interpreter bytecode and worker filesystem cache lifecycle.
+    @binary-only @python-fresh-bytecode @ID-MUT-210
     Scenario: A same-size Python mutant written within the baseline's second is still killed
       Given a Python project whose test kills a mutant that replaces "==" with "!="
       And the baseline and the mutant are written within the same second
@@ -1944,7 +1946,8 @@ Feature: Mutation testing
       And no stage fails and no TypeScript coverage is measured
       But when the TypeScript file has an eligible site the run fails with "count.preparation-failed" at its coverage stage, as before
 
-    @python-no-pytest-cache @ID-MUT-214
+    # Real pytest cache lifecycle in original and disposable worker trees.
+    @binary-only @python-no-pytest-cache @ID-MUT-214
     Scenario: Measuring and judging a Python project leaves no pytest cache in its tree
       Given a Python project with a pytest test that kills its mutant and no .pytest_cache directory
       When I run "itos-cc mutation run --json" for its file

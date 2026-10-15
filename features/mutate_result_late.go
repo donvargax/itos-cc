@@ -15,7 +15,12 @@ import (
 
 func (r *resultMutation) lateSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a Python project with a file no test reaches$`, r.unreachedPython)
-	sc.Step(`^I run "itos-cc ([^"]*)" for (that file|its file|a file)$`, func(args, _ string) error { return r.run(args + " " + r.file) })
+	sc.Step(`^I run "itos-cc ([^"]*)" for (that file|its file|a file|its production file|the production file|one of its files)$`, func(args, _ string) error {
+		if r.s.m.forFile != nil {
+			return r.s.m.forFile(args)
+		}
+		return r.run(args + " " + r.file)
+	})
 	sc.Step(`^its "baseline" is "not-run" and its mutants are uncovered$`, r.unreachedResult)
 	sc.Step(`^a file whose tests ran reports its baseline as "passed", as before$`, r.reachedResult)
 	sc.Step(`^a committed Python project whose file no own test reaches, but a listed test reaches one of its lines and kills its mutant$`, r.listedPython)
