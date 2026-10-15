@@ -1944,6 +1944,19 @@
     descendant-process, pipe and signal behavior remains platform-sensitive; report honest
     platform executions/skips. Keep current interrupt statuses and owned cleanup semantics;
     the separately specified S10 exit-code transition is not part of this conversion.
+    Distinguish a public command outcome from the private supervisor lifecycle. The
+    retained shared ownership tests inject lifecycle.start and lifecycle.wait failures
+    and cancel at lifecycle.complete to exercise setup/cleanup errors and completed-exit
+    precedence; these are adapter guards, not public CLI execution evidence. MUT-168 and
+    190 in particular name ownership-establishment and cleanup faults with no specified
+    public injection seam. Before claiming such a sentence converted, establish its
+    actual public observation or obtain a precise coordinator boundary correction while
+    keeping every underlying guard. Do not add product fault flags, call the supervisor
+    internally through a Driver method, run its Go tests as a pretend itos-cc command, or
+    return a passing placeholder for an unobservable clause. Real descendant, waiter,
+    unrelated-process and cancellation observations must use a settled bounded fixture
+    capability with readiness and owned cleanup, where the existing synchronous Run is
+    insufficient; never sleep to guess readiness or kill by executable-name matches.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$'
