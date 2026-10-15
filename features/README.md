@@ -1167,3 +1167,13 @@ completed-exit races, no-run-abort-budget on success/own timeout, and shared
 cleanup-budget identity/order. Preserve `checkInterruptedCountedRun` and its extra
 SIGTERM/no-remove-while-alive controls for T81. T88 moves adapter guards intact;
 T101 must not delete them as duplicates of these public observations.
+
+T81's listed-coverage fixtures declare optional `ListedTests.CoverageExit`
+and `CoverageOutput` for the actual collection command. Zero/empty keep
+successful behavior. Optional `CoverageMetadata` contains the exact invalid
+bytes that the real harness writes into its owned per-test `covmeta` file;
+nil retains ordinary Go-generated metadata. Own coverage and the clean
+listed baseline remain independent. Later memory bindings must execute the
+actual requested measurement/tool conversion against the declared artifact
+and let the real classifier report failure; these facts do not script a
+preparation verdict or require a new Go metadata parser.

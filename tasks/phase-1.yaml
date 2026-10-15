@@ -2386,6 +2386,18 @@
     and owned-process lifetime, and MUT212's real linked-worktree, host scratch
     and symlink isolation. Keep the other thirteen logical counted cases eligible
     for actual memory bindings; present memory gaps are not permanent omissions.
+    Listed measurement facts add optional ListedTests.CoverageExit and
+    CoverageOutput for the actual collection command, independently of own
+    coverage and the clean listed baseline. Zero and empty preserve success.
+    CoverageMetadata holds the actual deliberately invalid bytes written to
+    the owned per-test covmeta artifact during listed collection; nil keeps
+    normal Go-generated metadata. Collection exit and failed conversion are
+    proved separately, with no mutation trial after either. Future bound
+    Measurer and tool requests at T90/T100 must write and read the actual
+    memory artifact and return the requested command/conversion failure to
+    the real classifier, never manufacture count.preparation-failed from a
+    declaration. No Go metadata parser or converter framework is added;
+    request-specific external converter facts, if needed, are settled at T90.
     Fixture precision uses optional Coverage.CommandExit and CommandOutput to
     describe the actual tool's failed exit and diagnostic beside Report bytes;
     zero and empty retain successful existing declarations. These are command
