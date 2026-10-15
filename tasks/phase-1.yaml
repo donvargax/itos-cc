@@ -2867,6 +2867,14 @@
     security gate or broaden exclusions. Give back and retake before the
     source is restored, then run the affected scratch guards and let CI
     decide the configured full checks.
+    The pinned golangci-lint 2.14.0 run help documents a default limit of
+    three same-text findings and fifty findings per linter. The first job
+    displayed exactly three G304 findings and hid this fourth marker read.
+    Set issues.max-same-issues and issues.max-issues-per-linter to zero in
+    the root linter configuration so one CI attempt reports every finding.
+    Verify these keys against the pinned tool's configuration schema. This
+    changes diagnostics only: retain every enabled rule, exclusion and
+    failure exit policy, and do not run the broad lint gate manually.
 
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
