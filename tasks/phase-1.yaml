@@ -1971,6 +1971,23 @@
     existing skip/fail-under-installed-tools policy. Missing-c8 controls use a
     fresh mutation cache and run strict first, then non-strict. Memory records
     these actual declarations now; collector verdicts still belong to the app.
+    The strict-line as-before controls keep independent actual cold and warm
+    non-strict runs in the same root with identical inputs and command, without
+    fixture cache rewrites/restoration. Cold totals remain the strict mutant-count
+    control. Final non-strict full problem records and mutant identity, outcome,
+    scope and coverage compare the observed warm control, with current ran/reused
+    and baseline bookkeeping verified separately. A matching warm cached check
+    is observed too. Cold coverage labels may be absent on the real all-reused
+    path; do not globally normalize away provenance to hide that difference.
+    Keep T79 CI bounded by three disjoint invocations while preserving all prior
+    installed-tools selections and default ten-minute go-test timeout: Go strict
+    156..162/164 plus changed-lines 225..226; cross-mode 163 plus line/scope
+    221..224; real integration 228..230. The measured integration selection alone
+    took 132.025 seconds for 3 cases/17 steps locally, refusal 224 took 14.930
+    seconds for 5/25 and changed-lines 225..226 took 6.691 seconds for 3/17.
+    These are local execution evidence, not promises of CI runtime or omitted
+    initial-matrix execution. Separate Rule/tool families keep collector startup
+    and Kotlin subprocess costs outside the older serial command's timeout.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
