@@ -1960,6 +1960,17 @@
     producer, blocks and inputs across the unsupported operations. Neither
     replacement tree may be admitted as freshly measured evidence. Keep all
     legacy scope guards and the order-sensitive unloaded-package guard.
+    Integration fixtures declare optional Coverage.IntegrationReport in the same
+    existing report formats as Report, separately representing actual subprocess
+    coverage. Optional WithoutC8 is TypeScript-only and cannot accompany a
+    nonempty IntegrationReport. Binary fixtures own a node_modules facade of
+    actual pinned packages and .bin tools, excluding only c8, c8.cmd and c8.ps1;
+    never modify the pinned installation. Verify excluded entries, retained
+    packages/tools and unchanged original files in a focused capability check.
+    Ordinary facade I/O failures remain errors; unsupported links follow the
+    existing skip/fail-under-installed-tools policy. Missing-c8 controls use a
+    fresh mutation cache and run strict first, then non-strict. Memory records
+    these actual declarations now; collector verdicts still belong to the app.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
@@ -2444,6 +2455,16 @@
     bound memory Measurer, preserving Go block positions, source/root path matching
     and Kotlin line facts. Do not silently turn an unsupported or malformed declared
     report into an empty measured success, invent missing facts or add another DTO.
+    T79 Coverage.IntegrationReport declares a separate real subprocess report
+    in the existing Go/LCOV/JaCoCo formats. Parse both reports through the existing
+    coverage domain parser and apply Report.Integrated with actual in-process
+    inventory matching/filtering and existing merge/build APIs; never label all
+    lines integrated. Empty means no subprocess evidence, malformed nonempty
+    reports fail. Preserve actual per-test IDs from Tests.Listed.Lines and the
+    bound Measurer request. TypeScript WithoutC8 supplies typed integration
+    missing/tool facts while preserving valid in-process coverage, only when an
+    actual request invokes that built-in collector. A stored declaration alone
+    must not manufacture an error for named/existing raw reports or no-coverage.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
@@ -2756,6 +2777,13 @@
     PYTEST_DISABLE_PLUGIN_AUTOLOAD and GOWORK from Run.Env to the real fake
     Toolchain/Workers requests and fingerprint computation. An ignored variable
     or a blanket permanent binary-only tag is not equivalent in-process execution.
+    Bind T79's separate Coverage.IntegrationReport through the existing
+    format-aware coverage parser, actual line matching/filtering and Integrated
+    provenance, with malformed-report failures and actual listed-test requests.
+    WithoutC8 records actual TypeScript collector absence without discarding
+    valid in-process data; report its existing typed missing fact only for a
+    built-in collector request, preserving raw-report and no-coverage workflows.
+    No fixture-specific verdicts or blanket integration labels establish this.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
