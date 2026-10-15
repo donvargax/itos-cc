@@ -2399,6 +2399,22 @@ items:
       or silently normalize unrelated output. T-71 scenario conversions and CLI-03 version wording
       changed tests only and add no product exception. T-83 temporary push-CI mutation skip is a
       harness setting, removed at T-100 before final comparison; it is not a product difference.
+
+      Comparison setup must control inputs rather than introduce product flags: stamp both binaries
+      with the same existing main.version value for like-for-like version cases, and verify
+      unstamped/build-provenance cases separately against their explicit expected metadata. Run each
+      against reset copies of the SAME fixture Git history, path, settings and snapshot inputs, with
+      stable seeds for sample. Preserve complete raw stdout/stderr/exit and artifact evidence.
+      Mutation progress includes genuine wall-clock durations and paths of temporary workers;
+      inventory unavoidable volatile fields precisely before judging results, keep their raw values
+      and validate their format/semantics separately. A comparison report must distinguish literally
+      byte-identical cases, explicitly bounded volatile fields, intentional public changes already
+      listed, and unexplained differences; never silently strip arbitrary lines, hide
+      command/flag/JSON ordering differences, or describe a normalized transcript as byte-for-byte
+      raw agreement. No new product test switch, injected clock, external dependency or own-code
+      mutation run merely to make proof convenient; fixture mutation runs are allowed. Build old
+      code in an archive/temp source tree as needed, no Git worktrees or switching the shared
+      checkout. Settle the concrete fixture/case plan in the task before implementation.
   - id: step-strictness-check
     title: Automate checking that a converted feature file's steps can fail
     phase: 1
