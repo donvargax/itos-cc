@@ -507,3 +507,44 @@ T-101's deferred replacements from T-73 are the thirteen annotated tests in
 untagged renamed-file/new-path guard. The differential guards in `mutate/snapshot_test.go`
 stay as domain tests; `mutation_scope_test.go` belongs to T-75. All existing holders remain
 until the replacement scenarios actually pass CI after T-100 restores mutation scenarios.
+
+The cached-result scenarios (ID-MUT-57–70, 106–108) use real Vitest fixtures for every
+literal TypeScript path, and a Go module with an importing package for 70. Their
+`Driver.Tests` and `Driver.Coverage` declarations name the fixture's actual outcomes;
+the Node CI selection runs 57–69 and 106–108. The deleted-test fixture keeps a second
+importing test so coverage still measures the source after `board.test.ts` is removed.
+The survivor in 60 is in `Board#place` as written. Missing-site fixtures have several
+place sites and remove one recorded mutant from raw snapshot JSON. Test hashes are
+checked against the SHA-256 of the actual test bytes, without product internals.
+
+The quiet-check assertion observes public coverage/baseline/trial progress, the real
+fixture's marker absence, unchanged snapshot bytes and no new coverage artifacts.
+It does not declare that memory Workers write that marker. Keep 57's stronger legacy
+marker positive control until T-101 reviews its replacement; it is not established
+by an in-process scenario yet. The scenarios also retain the moved-function,
+moved-survivor and no-snapshot guards. The uncovered-mutant assertion in 61 permits
+the additional current TypeScript coverage-inventory problems while requiring the
+uncovered mutant's complete subject and exit 1.
+
+T-101's deferred replacements from T-74 remain in the following files until restored
+scenario CI establishes coverage. Preserve all shared helpers and unrelated guards.
+
+| ID | Existing test (all retained) |
+| --- | --- |
+| 57 | `mutation_check_test.go`: `TestFreshResultsWithEveryMutantKilledPass` |
+| 58 | `mutation_check_test.go`: `TestAFunctionChangedSinceItsResultsIsStale` |
+| 59 | `mutation_check_test.go`: `TestAFunctionWithNoResultsIsMissing` |
+| 60 | `mutation_check_test.go`: `TestARecordedSurvivorFailsTheCheck` |
+| 61 | `mutation_check_test.go`: `TestARecordedUncoveredMutantFailsOnlyWithFailUncovered` |
+| 62 | `mutation_check_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked` |
+| 63 | `mutation_check_test.go`: `TestAFunctionWithNoMutationSiteNeedsNoResults` |
+| 64 | `mutation_check_test.go`: `TestEachFunctionsStateAsJSON` |
+| 65 | `mutation_test_hash_test.go`: `TestTheSnapshotRecordsTheTestsThatImportTheFile` |
+| 66 | `mutation_test_hash_test.go`: `TestChangingATestThatImportsTheFileRerunsItsKills` |
+| 67 | `mutation_test_hash_test.go`: `TestDeletingATestThatImportsTheFileRerunsItsKills` |
+| 68 | `mutation_test_hash_test.go`: `TestMutationCheckCallsResultsStaleWhenTheirTestsChanged` |
+| 69 | `mutation_test_hash_test.go`: `TestASnapshotThatRecordsNoTestsIsStale` |
+| 70 | `mutation_test_hash_test.go`: `TestAGoFilesTestsAreItsPackagesAndThoseOfPackagesThatImportIt` |
+| 106 | `mutation_unrecorded_test.go`: `TestASiteTheEntryNeverRecordedMakesTheFunctionStale` |
+| 107 | `mutation_unrecorded_test.go`: `TestMutationRunRunsOnlyTheSitesTheEntryNeverRecorded` |
+| 108 | `mutation_since_stale_test.go`: `TestSinceKeepsTheEntriesItDoesNotJudgeMarkedStaleWhenTheirTestsChanged` |

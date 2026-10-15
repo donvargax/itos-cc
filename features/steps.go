@@ -254,8 +254,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-74: check, stale tests
-	ids("MUT", "57-70", "106-108"),
 	// T-75: sample
 	ids("MUT", "71-84", "109-113", "147-148"),
 	// T-76: results

@@ -53,8 +53,9 @@ type mutateState struct {
 	// command is the --test-command a Given's project runs its tests
 	// with, "" for its own, and factor the timeout factor a When says is
 	// the default, 0 where it says none.
-	command string
-	factor  float64
+	command    string
+	factor     float64
+	quietCheck func() error
 }
 
 func mutateSteps(sc *godog.ScenarioContext, w *world) {
@@ -75,7 +76,8 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
-	sinceMutationSteps(sc, m)
+	since := sinceMutationSteps(sc, m)
+	checkMutationSteps(sc, m, since)
 	listedMutationSteps(sc, m)
 
 	// Mutation sites.
@@ -2583,6 +2585,9 @@ func (m *mutateState) nothingRuns() error {
 	}
 	if m.recorded == "" && m.w.d.Exists(filepath.Join(m.w.dir, ".metrics")) {
 		return fmt.Errorf("the run left .metrics: a coverage or test command ran\n%s", m.w.report())
+	}
+	if m.quietCheck != nil {
+		return m.quietCheck()
 	}
 	return nil
 }

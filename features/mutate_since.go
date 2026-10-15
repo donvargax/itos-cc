@@ -21,9 +21,13 @@ type sinceMutation struct {
 	before             map[string]any
 	held               map[string]string
 	observe            func() ([]string, error)
+	// Optional TypeScript fixture text and declared outcomes, shared by cached
+	// result scenarios that use these same previous-run and rerun sentences.
+	tsSource, tsTests        string
+	tsSurvivors, tsUncovered []string
 }
 
-func sinceMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
+func sinceMutationSteps(sc *godog.ScenarioContext, m *mutateState) *sinceMutation {
 	s := &sinceMutation{m: m}
 	sc.Before(func(ctx context.Context, scenario *godog.Scenario) (context.Context, error) {
 		*s = sinceMutation{m: m}
@@ -99,6 +103,7 @@ func sinceMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^\.metrics/mutate/src/board\.go\.json is gone$`, s.oldGone)
 	sc.Step(`^only "Board#Place" is judged$`, func() error { return s.judgedIs([]string{s.place}) })
 	sc.Step(`^the other functions' results are kept in \.metrics/mutate/src/grid\.go\.json$`, s.renameOtherKept)
+	return s
 }
 
 const sinceBoardTS = `export class Board {
@@ -150,7 +155,14 @@ func (s *sinceMutation) project(ts bool) error {
 	files := map[string]string{}
 	if ts {
 		s.file = "src/board.ts"
-		files = map[string]string{"package.json": vitestPackage, s.file: sinceBoardTS, "src/board.test.ts": sinceBoardTestTS}
+		source, tests := s.tsSource, s.tsTests
+		if source == "" {
+			source = sinceBoardTS
+		}
+		if tests == "" {
+			tests = sinceBoardTestTS
+		}
+		files = map[string]string{"package.json": vitestPackage, s.file: source, "src/board.test.ts": tests}
 	}
 	if !ts {
 		s.file = "src/board.go"
@@ -177,20 +189,40 @@ func (s *sinceMutation) declare() error {
 		language, command = "typescript", vitestCommand+s.file
 	}
 	source := s.m.read(s.file)
+	uncovered := map[int]bool{}
+	for _, name := range s.tsUncovered {
+		sites, err := s.functionSites(name)
+		if err != nil {
+			return err
+		}
+		for _, site := range sites {
+			uncovered[site.line] = true
+		}
+	}
 	for i, line := range strings.Split(source, "\n") {
 		if strings.Contains(line, "return ") {
-			report += fmt.Sprintf("DA:%d,1\n", i+1)
+			hits := 1
+			if uncovered[i+1] {
+				hits = 0
+			}
+			report += fmt.Sprintf("DA:%d,%d\n", i+1, hits)
 		}
 	}
 	report += "end_of_record\n"
 	tests := Tests{Language: language, Command: command}
 	if s.ts {
-		sites, err := s.m.sitesWhere(s.file, func(site listedSite) bool { return sinceFunction(site, s.clear) })
-		if err != nil {
-			return err
+		names := s.tsSurvivors
+		if names == nil {
+			names = []string{s.clear}
 		}
-		for _, site := range sites {
-			tests.Surviving = append(tests.Surviving, Site{File: site.file, Line: site.line, Original: site.original, Replacement: site.replacement})
+		for _, name := range names {
+			sites, err := s.functionSites(name)
+			if err != nil {
+				return err
+			}
+			for _, site := range sites {
+				tests.Surviving = append(tests.Surviving, Site{File: site.file, Line: site.line, Original: site.original, Replacement: site.replacement})
+			}
 		}
 	}
 	if err := s.m.w.d.Coverage(s.m.w.dir, Coverage{Language: language, Report: report}); err != nil {
