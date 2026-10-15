@@ -2386,6 +2386,22 @@
     and owned-process lifetime, and MUT212's real linked-worktree, host scratch
     and symlink isolation. Keep the other thirteen logical counted cases eligible
     for actual memory bindings; present memory gaps are not permanent omissions.
+    Fixture precision uses optional Coverage.CommandExit and CommandOutput to
+    describe the actual tool's failed exit and diagnostic beside Report bytes;
+    zero and empty retain successful existing declarations. These are command
+    observations, never a prepared count.preparation-failed result. Binary
+    fixtures execute their real Go tool, including a coverage test that writes
+    a valid profile before failing. The later bound tool must write that
+    declared report and return the declared command failure to the real
+    Measurer; declaration alone must not fabricate a collector invocation.
+    Same-name seed queries use a committed multi-package Go fixture with five
+    actual sites and real zero-hit Go profiles. Public count-one runs with
+    explicit and default seeds, reversed path order and alternate seed values
+    observe deterministic identities without mutation trials; no internal
+    ranking helper or fabricated coverage replaces those observations.
+    Genuine fixture Git worktrees are cleaned up through the owning fixture
+    repository after all product handles have joined. No implementation
+    checkout or agent worktree is created.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
