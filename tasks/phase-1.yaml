@@ -2223,3 +2223,34 @@
     route/method values and edge counts as existing rules.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(1[5-9]|2[01])$"
+- id: T-104
+  type: test
+  title: Run graph metric, freshness and rebuild scenarios through the black-box harness
+  why: >
+    S8 of the CURRENT template-adoption refactor, after mutation S7; futureT86 layout is separate.
+    Convert the named live scenarios of features/architecture_graph.feature to strict godog steps
+    before moving their implementation. Steps are black-box, reaching the program and fixture world
+    only through Driver capabilities; reuse the public serve GET/api/graph capability introduced for
+    MUT134 rather than calling graph/lang internals to decide results. Both fixture declarations and
+    observed assertions must match each sentence; show each new assertion can fail and report
+    strictness edits and actual scenario/case counts with intentional skips explained. Partial-file
+    conversion may use explicit pendingIDs with preserved no-match/unknown-ID validation; completed
+    IDs may not remain pending or pass vacuously. Preserve scenario IDs/behavior, keep code/fixture
+    notices. Remove only old Go tests whose every assertion is held by the new scenarios, naming
+    each replacement; retain internal caching/performance/parser contracts that cannot be observed
+    through CLI and explain that boundary. If a scenario mixes an internal claim with observable
+    behavior, bring a precise correction to coordinator with its existing guard retained, never
+    weaken it silently or create a new product behavior in a conversion. Binary-only is for genuine
+    external capabilities, never not-yet-moved code. Update features README and converted/selection
+    lists and add installed-tool runs only if genuinely required. No production restructuring yet.
+    Light local named checks only, gates hooks/CI, no own-code
+    mutation/worktrees/sessionmoves/agents or new dependency without recorded selection. This piece
+    is GRAPH22..40 including 34..40: snapshot matching, CRAP/coverage updates, same-name functions,
+    every mutation stale/missing reason, grades/rollups, exact snapshot lookup and change versions.
+    Use raw snapshot JSON fixture text where introducing new types would spoil evidence and keep
+    graph/check agreement asserted publicly. GRAPH33's only-changed-files-parse claim is an internal
+    caching property: retain its meaningful domain/adapter guard and bring any text correction to
+    coordinator; the externally visible changed graph/version still runs through CLI. Once complete
+    no GRAPH ID remains pending.
+  done_when:
+    - run: go test ./features -count=1 -scenarios="@ID-GRAPH-(2[2-9]|[34][0-9])$"

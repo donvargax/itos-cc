@@ -3245,3 +3245,10 @@ items:
     status: todo
     depends_on: [T-102]
     kind: task
+  - id: T-104
+    title: Run graph metric, freshness and rebuild scenarios through the black-box harness
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
