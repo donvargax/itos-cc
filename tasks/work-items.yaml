@@ -1975,6 +1975,16 @@ items:
       scenario evidence before implementation; no intermediate interrupt-only or codes-only product
       push, no bypassed hooks or disabled release gate. Take/registry prose pushes may precede them.
       Keep final-proof comparison before either public exit change.
+
+      At S10 specification, explicitly cover a combined user interrupt and cleanup failure. ADR36's
+      later exit precedence keeps130 first; the separate cleanup-failed problem has its own internal
+      exit100 after migration, and partial data plus both facts remain visible. Do not silently
+      restore the older q37 ordering that put70 above count.interrupted75, or hide the cleanup
+      failure as an ordinary interrupt. A fail-fast check failure without an interrupt plus failed
+      cleanup exits100 ahead of the check's1. Include plain/JSON outcomes, per-problem exit and
+      aggregate precedence in red-first cases, retaining mutation/coverage classifications by types
+      rather than message text. Keep these code changes in the single coordinated minor-release
+      product push with interruption, after final comparison.
     refs: [q-56, q-54]
   - id: release-notes-bookkeeping
     title: Release notes list the registry's bookkeeping commits
