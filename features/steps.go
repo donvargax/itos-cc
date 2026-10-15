@@ -53,6 +53,9 @@ type Driver interface {
 	// Lock exclusively locks an existing file without truncating it. The returned
 	// release closes the owned descriptor. Real OS locking is binary-only.
 	Lock(ctx context.Context, path string) (release func() error, err error)
+	// SetModTime updates an existing owned fixture entry and returns its observed
+	// modification time. Cancellation is checked before I/O.
+	SetModTime(ctx context.Context, path string, when time.Time) (time.Time, error)
 	// Git runs git with args in the folder dir, for a fixture that needs a
 	// repository: init, add and commit.
 	Git(dir string, args ...string) error
@@ -303,7 +306,7 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 var Converted = []string{
 	"count.feature", "units.feature", "dry.feature", "scrap.feature",
 	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
-	"cli.feature", "mutate.feature",
+	"cli.feature", "mutate.feature", "metrics_snapshots.feature",
 }
 
 // Unstepped are the scenarios of converted files whose steps are not
@@ -634,6 +637,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	selectionSteps(sc, w)
 	cliSteps(sc, w)
 	mutateSteps(sc, w)
+	snapshotSteps(sc, w)
 }
 
 // setUp makes scenario s's scratch folder.

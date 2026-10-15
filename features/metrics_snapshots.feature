@@ -27,7 +27,8 @@ Feature: Snapshots under .metrics
     When any snapshot is written
     Then it has "version": 1
 
-  @ID-SNAP-04
+  # Actual overlapping owned product processes and filesystem publication.
+  @binary-only @ID-SNAP-04
   Scenario: Readers never see half a snapshot
     When a snapshot is written
     # Adapter contract (original mechanism sentence):
@@ -40,7 +41,8 @@ Feature: Snapshots under .metrics
     When coverage is run
     Then raw reports go to .metrics/coverage/, which holds a .gitignore of "*"
 
-  @ID-SNAP-06
+  # Actual concurrent external collectors and their physical report directories.
+  @binary-only @ID-SNAP-06
   Scenario: Runs at the same time keep their coverage apart
     Given an agent runs "itos-cc mutation run" while a commit hook runs "itos-cc crap"
     When both run coverage

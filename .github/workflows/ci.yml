@@ -118,6 +118,19 @@ jobs:
           if-no-files-found: error
 
 
+      # T-82 snapshot storage, real overlapping collectors and root-relative paths.
+      # Keep actual native execution/typed physical omissions in original JSON.
+      - name: Native snapshot scenarios
+        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-SNAP-' -scenario-report 'T82-native.json'
+      - name: Preserve native snapshot observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
+        with:
+          name: T82-native-${{ matrix.os }}
+          path: features/T82-native.json
+          if-no-files-found: error
+
+
       # The real TypeScript, Python and Kotlin tools, so the language smoke
       # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216
       # to 218 and 220) run through them instead of skipping (T-13).

@@ -94,7 +94,7 @@ killed by the system's default action fails the step: it never handled the inter
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
 `complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`,
-`mutate.feature`, and `count.feature`, the
+`mutate.feature`, `metrics_snapshots.feature`, and `count.feature`, the
 template's sample, all of whose scenarios are `@wip`. `mutate.feature` converts a piece at a
 time (T-70 to T-81): the scenarios of the pieces whose steps are not written yet are listed in
 `Unstepped` (`steps.go`), by their IDs, an entry for each piece, and run nowhere. A selection
@@ -104,7 +104,8 @@ converted file carries fails every selection. The Go tests of `cmd/itos-cc` hold
 until their piece. The in-process driver runs those of
 `InProcess`: all of them but `cli.feature`, whose help, version and mutation scenarios need
 commands that move later, which joins it in S9, and `mutate.feature`, which joins it when the
-mutation group moves (S7). Every other file converts to godog over time,
+mutation group moves (S7). `metrics_snapshots.feature` stays binary until T-101
+completes its two-driver decision. Every other file converts to godog over time,
 before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
 the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
 file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
@@ -1282,3 +1283,97 @@ and 193 on Linux and 188 on macOS; Windows cases 199 and 248 still executed.
 No omission is counted as an executed passing case.
 The complete workflow passed for that exact revision: all three platform
 test jobs, all five release builds and publication.
+
+## Snapshot storage scenarios (T-82)
+
+`metrics_snapshots.feature` converts all twelve IDs, seventeen expanded cases
+and fifty steps. It joins `Converted`, with `InProcess` deliberately left to
+T-101. Local runtime needs only Go and Git. No source from this repository is
+mutated: actual Go tests and collectors run in owned fixture projects.
+SNAP01 uses each literal command; SNAP03 actually writes all four command
+snapshots before checking every format version. Root-relative dry output uses
+real clones large enough for the default bounds, without hidden flags. Dry
+requests neither tests nor coverage. Other fixtures declare actual Go test
+outcomes and measured coverprofile spans, including the two-module profile's
+three positive-weight blocks.
+
+SNAP04 preserves the original temporary-file/rename sentence as an adapter
+contract comment. Its public steps read a complete stored JSON object and
+release two real collector barriers before joining either writer. Each actual
+writer reports a different complete population (both functions at 100 or 66.7
+percent); the final stored object must consistently match one of them. This
+is concurrent product execution, not proof of every possible reader or the
+private rename mechanism. SNAP04 and SNAP06 alone carry permanent binary-only
+reasons for physical publication/concurrent collector observations. Native
+Windows reports the existing typed lifecycle refusal before those cases run;
+ordinary listener, protocol, start and filesystem errors remain failures.
+
+SNAP06 runs the literal mutation and crap commands together in committed root
+and nested Go modules. Actual tests use per-run environment to reach both
+branches for mutation and only the positive branch for crap. Both nested
+collectors hold authenticated owned peer connections after completed first
+profiles exist in distinct run directories. Each peer records actual canonical
+`GOCOVERDIR`, independently pairing its owned root to those observed reports
+before hit comparisons. Reports are loaded per plan:
+this barrier makes no claim that those first profiles remain unread. Public
+mutation outcomes (four kills, no uncovered, for each file), snapshots and
+normal annotations are observed while crap remains held. Crap then reports
+66.7 percent for both functions. Each measured profile is checked against
+its actual spans/hits; staged latest reports change from all three blocks
+hit to two, public existing-report reuse preserves complete entries with
+zero collector trace delta, and both run directories disappear. Successful
+release uses separate owned marker files; peer Stop is cleanup only. Any
+error stops further product work, drains exact owned peers and joins products
+before fixture deletion; failed cleanup retains the fixture.
+
+SNAP07's context-first `SetModTime` updates an existing owned file/directory
+and returns actual stat-observed modification time. Cancellation precedes I/O;
+ordinary errors retain their causes. A 48-hour-old run directory is removed,
+while a fresh run marker and unrelated kept report remain byte-identical.
+The current memory driver honestly returns typed unsupported because it has
+no entry timestamp state. SNAP07 remains logically eligible; T-101 must bind
+real fake entry metadata or report that capability omission, without echoing
+a requested time as observation.
+
+The exact public oracle script/argv and original outputs remain in the task
+handoff (`python3 /tmp/T82-concurrent-oracle-multiline.py`, raw log and four
+JSON artifacts); the earlier one-line characterization remains separate.
+Assertions use only Driver operations, public stdout/JSON and actual artifacts.
+
+The native CI invocation selects only SNAP01..12 after T-81 and before optional
+language tools, with the existing default timeout and all prior invocations
+unchanged. Required original `T82-native.json` artifacts expose actual cases
+and per-step omissions; ordinary matrix selection also includes snapshots,
+outside T-83's mutation-only omission. Runtime counts are reported from the
+original JSON, not Godog's skipped-as-passed summary.
+
+All legacy holders remain until replacement CI and T-101's assertion-by-assertion
+cleanup. The exact root holder mapping in `cmd/itos-cc/snapshots_root_test.go` is:
+
+| ID | Retained holder |
+| --- | --- |
+| SNAP08 | `TestSnapshotsLiveAtTheProjectRootWhereverACommandRuns` |
+| SNAP09 | `TestEveryCommandsSnapshotNamesFilesFromTheRoot` |
+| SNAP10 | `TestACommandFindsTheSameResultsFromAnyDirectory` |
+| SNAP11 | `TestPathsOnTheCommandLineAndInOutputStayRelativeToTheWorkingDirectory` |
+| SNAP12 | `TestOutsideAGitRepositoryTheWorkingDirectoryIsTheRoot` |
+
+Preserve `snapshotFiles`, `noMetricsIn`, source/test helpers and any additional
+exit, survivor, no-coverage or low-bound control until independently mapped;
+new default-command fixtures do not make every old control a duplicate.
+At the metrics adapter, keep `TestWritesAtTheSameTimeLeaveOneWholeSnapshot`,
+`TestARenameRefusedForAMomentIsRetried`, `TestARenameThatCannotLandFails`,
+`TestAReadRefusedForAMomentIsRetried` and
+`TestOneProcessNeverRenamesOrReadsASnapshotWhileItIsRenamed`, including temporary
+cleanup, modes, Windows permission/refusal and same-process serialization.
+The coveragetools old/live/report cleanup and isolated-run adapter guards
+also remain; no private injection or exact ordering guard is a CLI duplicate.
+
+For assertion sensitivity, the current reviewed runner supports one exact
+assertion name per probe. SNAP01/SNAP09 therefore use reviewed literal-binding
+probes that change only the Then artifact expectation to one constant wrong
+path. Their original commands, tables and case identities stay unchanged, and
+all four/three expansions must fail at that assertion. Separate non-outline
+source-check probes cover shared snapshot, version and path predicates.
+Expanded intended failures and probe counts are reported separately; feature
+and source bytes/modes are restored exactly.
