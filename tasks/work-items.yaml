@@ -41,6 +41,7 @@ queue:
   - T-103
   - T-104
   - T-105
+  - T-106
   - T-86
   - mutation-windows-ownership
 items:
