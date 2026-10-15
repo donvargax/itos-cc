@@ -18,7 +18,7 @@ var errFailFastStop = errors.New("the run stopped at its first actionable failur
 // function, never the context, which the run passes down.
 type stopper struct {
 	cancel context.CancelCauseFunc
-	budget *cleanupBudget
+	abort  func()
 	log    io.Writer
 	mu     sync.Mutex
 	stop   *Stop
@@ -28,7 +28,7 @@ type stopper struct {
 // context, derived from parent, which its trigger cancels.
 func newStopper(parent context.Context, log io.Writer) (context.Context, *stopper) {
 	ctx, cancel := context.WithCancelCause(parent)
-	return ctx, &stopper{cancel: cancel, budget: &cleanupBudget{}, log: log}
+	return ctx, &stopper{cancel: cancel, log: log}
 }
 
 // trigger stops the run at s, unless it stopped already.
@@ -39,7 +39,9 @@ func (st *stopper) trigger(s *Stop) {
 		return
 	}
 	st.stop = s
-	st.budget.begin()
+	if st.abort != nil {
+		st.abort()
+	}
 	st.cancel(errFailFastStop)
 	announce(st.log, s)
 }

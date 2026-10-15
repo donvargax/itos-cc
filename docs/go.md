@@ -462,6 +462,24 @@ follows the same steps for a command it wrote before it had the template's desig
     tests of `cmd/itos-cc` that are the same check as a scenario; keep any that holds what no
     scenario reaches.
 
+Mutation's model-bearing `Workers` contract is declared in `internal/mutants`,
+beside the domain values it consumes and returns. This is a narrow exception to
+putting ports in a child `port` package: the domain's later orchestration must
+use it without an import cycle. `internal/worktrees` implements it and
+`internal/mutants/porttest` holds our fake and shared contract suite. Both import
+the domain directly; the domain imports neither. No model-copy DTO, generic
+result, or forwarding-only package is needed (decisions 29 and 47). Worker
+requests name the semantic `WorkPurpose`; the adapter owns the exact scratch
+prefixes. `Close` joins entered command/cleanup/restoration before removing
+inputs, including on a cancelled caller. Preserve existing cleanup budgets: ordinary
+aggregate cancellation uses local command deadlines; explicit fail-fast Abort
+arms sharing before cancellation, while frozen trials share preparation's owner
+from creation. Success/local timeout never activates a shared abort deadline.
+Historical scratch removal remains
+best effort. The direct legacy library fixture fallback remains until T-92
+(and fresh orchestration until T-95); cmd always supplies its actual Workers
+binding and refuses a missing one.
+
 ## Tests
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.

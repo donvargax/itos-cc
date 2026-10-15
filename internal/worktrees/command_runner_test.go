@@ -1,4 +1,4 @@
-package mutate
+package worktrees
 
 import (
 	"fmt"
@@ -38,7 +38,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("worker.run: %v", err)
 	}
-	if !r.passed || r.exitCode != 0 {
+	if !r.Passed || r.ExitCode != 0 {
 		t.Fatalf("result = %+v, want successful command", r)
 	}
 	copyRoot := w.copies[root]
@@ -49,7 +49,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	}
 	wantPath := strings.Join([]string{filepath.Join(copyRoot, "bin"), "prior-path"}, string(os.PathListSeparator))
 	gotDir := ""
-	for _, line := range strings.Split(r.output, "\n") {
+	for _, line := range strings.Split(r.Output, "\n") {
 		if strings.HasPrefix(line, "cwd=") {
 			gotDir = strings.TrimPrefix(line, "cwd=")
 			break
@@ -60,8 +60,8 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 		t.Errorf("command cwd = %q, want resolved worker copy directory %q (resolve error %v)", gotDir, wantDir, err)
 	}
 	for _, want := range []string{"custom=inherited-value", "path=" + wantPath, "stderr-marker"} {
-		if !strings.Contains(r.output, want) {
-			t.Errorf("combined output %q does not contain %q", r.output, want)
+		if !strings.Contains(r.Output, want) {
+			t.Errorf("combined output %q does not contain %q", r.Output, want)
 		}
 	}
 
@@ -70,7 +70,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 		shell = "echo shell-output"
 	}
 	r, err = w.run(t.Context(), Command{Root: root, Dir: root, Shell: shell}, 0)
-	if err != nil || !r.passed || !strings.Contains(r.output, "shell-output") {
+	if err != nil || !r.Passed || !strings.Contains(r.Output, "shell-output") {
 		t.Errorf("shell command result = %+v, err = %v; want captured shell output", r, err)
 	}
 }
@@ -86,28 +86,28 @@ func TestCommandRunnerPreservesLegacyResults(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "success")
 		r, err := w.run(t.Context(), base, 10*time.Second)
-		if err != nil || !r.passed || r.timedOut || r.exitCode != 0 || !strings.Contains(r.output, "success-stdout") || !strings.Contains(r.output, "success-stderr") {
+		if err != nil || !r.Passed || r.TimedOut || r.ExitCode != 0 || !strings.Contains(r.Output, "success-stdout") || !strings.Contains(r.Output, "success-stderr") {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("nonzero", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "nonzero")
 		r, err := w.run(t.Context(), base, 10*time.Second)
-		if err != nil || r.passed || r.timedOut || r.exitCode != 7 || !strings.Contains(r.output, "nonzero-output") {
+		if err != nil || r.Passed || r.TimedOut || r.ExitCode != 7 || !strings.Contains(r.Output, "nonzero-output") {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("own timeout", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "loop")
 		r, err := w.run(t.Context(), base, 60*time.Millisecond)
-		if err != nil || !r.timedOut || r.passed {
+		if err != nil || !r.TimedOut || r.Passed {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
 	t.Run("zero timeout", func(t *testing.T) {
 		t.Setenv(runnerFixtureMode, "success")
 		r, err := w.run(t.Context(), base, 0)
-		if err != nil || !r.passed || r.timedOut || r.exitCode != 0 {
+		if err != nil || !r.Passed || r.TimedOut || r.ExitCode != 0 {
 			t.Fatalf("result = %+v, err = %v", r, err)
 		}
 	})
@@ -170,7 +170,7 @@ func TestCommandRunnerPreservesLifecycleOrdering(t *testing.T) {
 	select {
 	case got := <-done:
 		consumed = true
-		if got.err != nil || !got.r.passed || !strings.Contains(got.r.output, "fixture-finished") || got.r.elapsed < 20*time.Millisecond {
+		if got.err != nil || !got.r.Passed || !strings.Contains(got.r.Output, "fixture-finished") || got.r.Elapsed < 20*time.Millisecond {
 			t.Fatalf("worker.run result = %+v, err = %v", got.r, got.err)
 		}
 	case <-time.After(3 * time.Second):

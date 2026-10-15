@@ -1,6 +1,4 @@
-//go:build linux || darwin
-
-package mutate
+package worktrees
 
 import (
 	"bytes"
@@ -19,24 +17,30 @@ const commandCleanupLimit = 5 * time.Second
 
 // ownedOutcomePrecedence says the owned supervisor judges outcomes: an actual
 // exit first, then the mutant's own timeout, then a parent's cancellation.
-func ownedOutcomePrecedence() bool { return true }
+func ownedOutcomePrecedence(platform string) bool { return platform == "linux" || platform == "darwin" }
 
 // Linux and macOS supervision owns ordinary descendants in the command's
 // process group. Commands that daemonize or escape their process group or
 // session are unsupported. Only the probe that a killed group has no live
-// member differs by platform: ownedGroupGone, in proc_linux.go and
-// proc_darwin.go.
+// member differs by platform: ownedGroupGone, in proc_inspect.go, with the platform passed as a value.
 // cleanupBudget is a run-abort-only deadline that callers may share across
 // command scopes. Normal completion and mutant-local timeouts use a local
 // cleanup budget and must not activate this shared run-abort deadline.
 type cleanupBudget struct {
-	mu       sync.Mutex
-	deadline time.Time
+	mu              sync.Mutex
+	deadline        time.Time
+	localUntilAbort bool
+	armed           bool
 }
 
 func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupBudget {
 	if shared != nil && ctx.Err() != nil && !errors.Is(context.Cause(ctx), errMutationTimeout) {
-		return shared
+		shared.mu.Lock()
+		useShared := !shared.localUntilAbort || shared.armed
+		shared.mu.Unlock()
+		if useShared {
+			return shared
+		}
 	}
 	return &cleanupBudget{}
 }
@@ -44,7 +48,12 @@ func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupB
 // begin starts the shared deadline now, if nothing started it yet: a
 // fail-fast stop starts it when it is published, so every command it
 // cancels is killed and joined within five seconds of the stop.
-func (b *cleanupBudget) begin() { b.until() }
+func (b *cleanupBudget) begin() {
+	b.until()
+	b.mu.Lock()
+	b.armed = true
+	b.mu.Unlock()
+}
 
 func (b *cleanupBudget) until() time.Time {
 	b.mu.Lock()
@@ -55,7 +64,14 @@ func (b *cleanupBudget) until() time.Time {
 	return b.deadline
 }
 
-func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *cleanupBudget) error {
+func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *cleanupBudget, platform string, observe func(time.Time)) error {
+	if !ownedOutcomePrecedence(platform) {
+		killGroup(cmd, platform)
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+		return cmd.Wait()
+	}
 	if budget == nil {
 		budget = &cleanupBudget{}
 	}
@@ -74,7 +90,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		if err != nil {
 			return fmt.Errorf("create owned command output pipe: %w", err)
 		}
-		if err := syscall.SetNonblock(int(reader.Fd()), true); err != nil {
+		if err := nativeNonblock(reader.Fd()); err != nil {
 			_ = reader.Close()
 			_ = writer.Close()
 			return fmt.Errorf("configure owned command output pipe: %w", err)
@@ -100,7 +116,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 			return err
 		}
 	}
-	killGroup(cmd)
+	killGroup(cmd, platform)
 	cmd.WaitDelay = 0
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
@@ -132,9 +148,12 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 	waitErr := cmd.Wait()
 
 	deadline := cleanupBudgetForScope(ctx, budget).until()
-	cleanupErr := killOwnedProcessGroup(cmd.Process.Pid)
+	if observe != nil {
+		observe(deadline)
+	}
+	cleanupErr := killOwnedProcessGroup(platform, cmd.Process.Pid)
 	stopReader.activate(deadline)
-	if err := waitOwnedProcessGroup(cmd.Process.Pid, deadline); err != nil {
+	if err := waitOwnedProcessGroup(cmd.Process.Pid, deadline, platform); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
 	for _, capture := range captures {
@@ -153,9 +172,9 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 	return waitErr
 }
 
-func waitOwnedProcessGroup(pgid int, deadline time.Time) error {
+func waitOwnedProcessGroup(pgid int, deadline time.Time, platform string) error {
 	for {
-		gone, err := ownedGroupGone(pgid)
+		gone, err := ownedGroupGone(platform, pgid)
 		if err != nil {
 			return fmt.Errorf("inspect owned process group %d: %w", pgid, err)
 		}
@@ -191,12 +210,12 @@ type ownedOutputCapture struct {
 	done   chan outputResult
 }
 
-func killOwnedProcessGroup(pgid int) error {
-	err := syscall.Kill(-pgid, syscall.SIGKILL)
+func killOwnedProcessGroup(platform string, pgid int) error {
+	err := nativeKillGroup(pgid)
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}
-	if errors.Is(err, syscall.EPERM) && groupKillDeniedForZombies {
+	if errors.Is(err, syscall.EPERM) && platform == "darwin" {
 		// The probe that follows still waits for the group to be gone, so a
 		// live member that refuses the signal fails cleanup at its deadline.
 		return nil
@@ -212,7 +231,7 @@ func readOwnedCommandOutput(reader *os.File, stop *cleanupSignal) ([]byte, error
 	var cleanupDeadline time.Time
 	buffer := make([]byte, 32*1024)
 	for {
-		count, err := syscall.Read(int(reader.Fd()), buffer)
+		count, err := nativeRead(reader.Fd(), buffer)
 		if count > 0 {
 			_, _ = output.Write(buffer[:count])
 		}

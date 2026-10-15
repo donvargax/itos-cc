@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/worktrees"
 	"io"
 	"os"
+	"runtime"
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
@@ -26,6 +29,8 @@ import (
 // until they move, but for crap's coverage, which it measures through the
 // port here.
 type adapters struct {
+	// Workers owns command copies and process lifetimes for mutation.
+	Workers mutants.Workers
 	// Dir is the working directory, absolute, which the UI names the files
 	// a person reads from; "" when it cannot be told.
 	Dir string
@@ -56,7 +61,7 @@ type configFile interface {
 // itos-cc.yaml at the project root on the disk.
 func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
-	return adapters{Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+	return adapters{Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 

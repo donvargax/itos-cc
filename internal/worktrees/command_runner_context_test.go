@@ -1,4 +1,4 @@
-package mutate
+package worktrees
 
 import (
 	"bytes"
@@ -89,7 +89,7 @@ func TestCommandRunnerAcceptsInstanceLocalLifecycleOperations(t *testing.T) {
 	for _, w := range []*worker{first, second} {
 		root := t.TempDir()
 		r, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, time.Second*10)
-		if err != nil || !r.passed {
+		if err != nil || !r.Passed {
 			t.Fatalf("runner execution = %+v, err = %v", r, err)
 		}
 	}
@@ -110,7 +110,7 @@ func TestCommandRunnerKeepsPreconfiguredStreams(t *testing.T) {
 	cmd.Stderr = &stderr
 
 	r, err := w.runner.run(context.Background(), cmd, &resultOutput)
-	if err != nil || !r.passed {
+	if err != nil || !r.Passed {
 		t.Fatalf("preconfigured command = %+v, err = %v", r, err)
 	}
 	if !strings.Contains(stdout.String(), "preconfigured-stdout") {

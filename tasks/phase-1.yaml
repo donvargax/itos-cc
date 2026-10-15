@@ -2836,6 +2836,36 @@
     being adapted. T-92 separately proves the moved domain scheduler's ordering
     through held requests on its bound Workers fake; do not move Run early to
     satisfy that later task's obligation.
+    T-88's concrete worker request carries the existing Command and Site plus
+    original source/path. Site.Apply supplies the actual changed copy bytes;
+    no independent mutation model or expected trace hash is introduced. The
+    domain's WorkPurpose names ordinary judgments or frozen trials; only
+    worktrees maps those purposes to the existing physical scratch prefixes.
+    The old scratch lock/removal operations remain best effort exactly as
+    before, distinct from surfaced command/copy/supervision failures. Close
+    joins entered commands, their waiters and source restoration before input
+    removal even when the caller context is done. No caller context is stored.
+    Direct legacy library fixture callers retain an explicit real-adapter
+    fallback until T-92 moves orchestration (fresh's fallback until T-95);
+    actual cmd paths require their injected Workers and fail if it is absent.
+    The feature memory driver builds command-keyed outcome/trace facts now,
+    while still refusing hand-parsed mutation runs until T-100. Its focused
+    binding regression reaches the actual handler with disposable real source
+    discovery and those same fake Workers, not a claimed all-memory mutation
+    run. Missing/wrong binding controls must fail; fake execution derives
+    source hashes from its actual private copy after Site.Apply. Optional
+    runnable inventories select from actual requested command arguments and
+    include unrelated tests in broad requests; unknown shapes fail explicitly.
+
+    Preserve the pre-move budget distinction: ordinary aggregate execution
+    without fail-fast uses local per-command cleanup after external caller
+    cancellation. Only an explicit fail-fast Abort arms its pool's shared
+    deadline before the stop cancels commands. Frozen trials and preparation's
+    Owner retain their existing shared abort budget from creation. Arming and
+    deadline selection are synchronized; success and mutant-local timeout do
+    not activate the shared run-abort deadline. Bound-scope controls cover
+    ordinary cancellation, explicit fail-fast and frozen preparation ownership.
+
   done_when:
     - run: go test ./internal/worktrees/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
