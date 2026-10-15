@@ -1183,3 +1183,10 @@ including malformed duplicate lines. Empty retains the ordinary inventory
 from `Files`; `ListFails` continues to describe an actual command failure.
 Only the real requested list operation returns those bytes to the existing
 parser, which determines whether the inventory is valid.
+
+MUT184 keeps its primary sampled report and obtains unattempted, blocked and
+cancelled observations from separate real controls. Child products join
+before fixture removal. It stays eligible in process: its later cancellation
+control must cancel the actual run context after a bound Workers request
+enters, without requiring FixturePeers, networking, PID signals or scripted
+events. MUT183 separately holds physical process lifetime observations.
