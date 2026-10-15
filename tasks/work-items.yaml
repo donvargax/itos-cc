@@ -2905,8 +2905,8 @@ items:
   - id: T-77
     title: mutate.feature's exceptions and renew scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-76]
     kind: task
     why: >
