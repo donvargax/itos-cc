@@ -1578,7 +1578,7 @@ Feature: Mutation testing
 
     @exceptions-deleted-file @ID-MUT-144
     Scenario: An entry whose file was renamed has moved, and still excepts its mutant
-      Given itos-cc.yaml excepts the survivor `<` → `!=` at src/board.ts:7:19 in "Board#count"
+      Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And a commit after "base" renamed src/board.ts to src/grid.ts, changing nothing else
       When I run "itos-cc mutation run --since base"
       Then the problem is "mutation.exception-stale", with file "src/board.ts", why "moved", and new file "src/grid.ts"
