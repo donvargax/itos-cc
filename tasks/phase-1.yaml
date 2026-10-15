@@ -1642,8 +1642,14 @@
   title: mutate.feature's language-rule scenarios run through godog against the built binary
   why: >
     Piece 9 of mutate.feature (the plan's table): language-rule scenarios. Go tests holding them
-    today include whole_suite_freshness_all, mutate_python_*, transitive_reach, test_support_reach
-    and mutate_ts_* tests. Tool-heavy: Python and TypeScript rows go on the language-tools line;
+    today are mutate_all_tests_fresh (150..155), strict_mixed_languages (203),
+    uncovered_fails_closed (204), whole_suite_freshness_all (205..207),
+    mutate_ts_coverage_scope (208), mutate_counted_languages (209), mutate_python_bytecode
+    (210), mutate_counted_unjudged (213), mutate_python_pytest_cache (214),
+    transitive_reach (215), mutate_python_own_tests (216), mutate_kotlin_own_tests (217),
+    mutate_ts_fallback (218), and test_support_reach (219..220). Keep every holder and its
+    additional assertions/helpers until replacement CI and T-101 cleanup. Tool-heavy:
+    Python, TypeScript and Kotlin cases needing installed tools go on the language-tools line;
     split by Rule and report if it runs over. Each piece (decision 39) writes steps for every
     sentence as it stands, checks each sentence against the built binary first and stops on one that
     cannot run as written (docs/go.md step 8), declares its fixtures' test outcomes through
@@ -1665,6 +1671,17 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    MUT-153, 154 and 207 explicitly observe the graph as well as mutation commands; use
+    Driver.Graph through public serve GET /api/graph and assert the actual graph judgments,
+    never call internal graph.Build or substitute a mutation-only result. Like MUT-134, these
+    execute against the binary now and need serving support in process later. Record their
+    cross-command obligation in T-100/T-101/T-112; a temporary named in-process deferral until
+    T-112 is explicit, visible and not a permanent binary-only tag or a passing fake.
+    Logical freshness/reach cases need no real language runtime when files and honestly
+    declared commands establish the sentences. Real collector/bytecode/offline dependencies
+    and test-command invocation cases must demonstrate the real observations their wording
+    requires; any permanent binary-only reason names that external capability. Count all
+    examples, including both Kotlin build systems and both Python runners.
   done_when:
     - run: "! grep -q '// T-78:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[0-5]|20[3-9]|210|21[3-9]|220)$'
@@ -1674,7 +1691,12 @@
   title: mutate.feature's strict-coverage scenarios run through godog against the built binary
   why: >
     Piece 10 of mutate.feature (the plan's table): strict-coverage scenarios. Go tests holding them
-    today include strict_* tests. Each piece (decision 39) writes steps for every sentence as it
+    today are strict_go_coverage (156..163, including its untagged raw-report flag guards),
+    strict_go_scope (164), strict_lines_python (221), strict_lines_typescript (222),
+    strict_lines_kotlin (223), strict_scope_refusals (224), strict_changed_lines (225..226),
+    strict_changed_lines_counted (226), mutate_python_integration (228),
+    mutate_typescript_integration (229), and mutate_kotlin_integration (230). Preserve all
+    additional cases and helpers until their actual replacement CI and T-101 cleanup. Each piece (decision 39) writes steps for every sentence as it
     stands, checks each sentence against the built binary first and stops on one that cannot run as
     written (docs/go.md step 8), declares its fixtures' test outcomes through Driver.Tests and
     coverage through Driver.Coverage, writes file assertions with slashes, tags @binary-only only
@@ -1695,6 +1717,15 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    MUT-163 explicitly preserves ordinary graph/sample freshness, other-language statement
+    coverage and survivor exceptions. Establish each through its public command and real
+    observable result, not an unconditional step or one flags assertion standing for all modes.
+    Its graph observation uses Driver.Graph and joins the named staged T-100/T-101 deferrals
+    until T-112 provides actual in-process serving, alongside MUT-134, 153, 154 and 207.
+    Collector integration cases 228..230 demonstrate real subprocess evidence and listed-test
+    attribution with the installed tools; unsupported fixtures must report honest skips rather
+    than fake collector passes. List every unsupported-evidence/fingerprint example actually
+    executed and preserve repeated-init, partial-measurement and zero-site obligations.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
@@ -1728,6 +1759,16 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    Exact annotated cmd holders are mutate_counted_macos (191), mutate_fail_fast
+    (192..198), mutate_fail_fast_admission (199), mutate_fail_fast_partial (200..202),
+    and mutate_fail_fast_counts (211). Ownership guards also live in mutate's Linux and
+    Darwin command_runner_ownership tests: Darwin annotates 187..190 and Linux annotates
+    190; the shared comments cover 165..168. Do not invent absent cmd-holder annotations or
+    delete adapter ownership guards merely because a scenario now exists. Preserve the
+    complete fail-fast partial-evidence, cleanup and listed-admission assertions. Real
+    descendant-process, pipe and signal behavior remains platform-sensitive; report honest
+    platform executions/skips. Keep current interrupt statuses and owned cleanup semantics;
+    the separately specified S10 exit-code transition is not part of this conversion.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-8]|18[7-9]|19[0-9]|20[0-2]|211)$'
@@ -1764,6 +1805,16 @@
     The completion check now requires retained holders rather than their premature removal. Run
     selected scenarios locally without the omission and report actual scenarios, steps and
     strictness. A green CI selection that omitted them is not scenario execution evidence.
+    Exact annotated holders are mutate_counted (173..177, 180 and 184..186),
+    mutate_counted_listed (178..179 and 181..182), mutate_counted_interrupt (183),
+    and mutate_counted_worktree (212). strict_changed_lines_counted holds 226 under T-79;
+    retain its guards here rather than claiming them as this task. All old holders stay
+    until replacement CI and T-101 cleanup. The no-worktrees rule prohibits moving the
+    implementation checkout or creating working checkouts for agents. MUT-212 itself
+    explicitly requires a linked git worktree inside the disposable fixture repository:
+    create and remove only that fixture-owned checkout through the Driver, keeping this
+    implementation in the shared repository. Prove its private scratch location and both
+    fixture trees' unchanged state as written; do not silently omit the worktree scenario.
   done_when:
     - run: "! grep -q '// T-81:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(17[3-9]|18[0-6]|212)$'
@@ -2281,11 +2332,11 @@
     so pushCI again runs mutation scenarios through the normal merged selection; language-tools line
     remains enabled. Show actual in-process counts/timing against binary counts with skips
     explained.
-    Staged cross-command exception: MUT-134 observes both mutation and serve. Serve moves only
-    in S8. Its in-process selection may therefore defer this single scenario explicitly, with a
-    named reason and T-112 owner and a visible omission log; do not add a permanent binary-only
-    tag or swallow Driver.Graph errors. All other eligible mutation scenarios run normally.
-    T-112 removes this deferral and proves MUT-134 through both drivers.
+    Staged cross-command exceptions: MUT-134, 153, 154, 163 and 207 observe both mutation and
+    serve. Serve moves only in S8. Their in-process selection may defer these named scenarios
+    explicitly, with a reason and T-112 owner and visible omission logs; do not add permanent
+    binary-only tags or swallow Driver.Graph errors. All other eligible mutation scenarios
+    run normally. T-112 removes these deferrals and proves all five through both drivers.
     T-73's Driver.ObserveWrites records real fake Store.Write revisions, including identical JSON.
     Source annotation writers move here: route every attempted successful source write through
     the memory driver's Write or an instrumented source-port adapter, even when bytes agree.
@@ -2328,10 +2379,10 @@
     reenable nightly/proof. S8 graph/server and S9 top-level bootstrap remain separate work, and
     futureT86 layout is not implemented here. Focused local validation only; full gates hooks/CI, no
     own-code mutation runs/worktrees/session moves/agents.
-    One named cross-command deferral may remain at S7 completion: MUT-134 needs serving,
-    scheduled in T-112. Report it separately from genuine binary-only cases and passed
-    scenarios. Keep its task/reason visible; T-112 must remove it, with no unimplemented fake
-    behavior counted as a pass. Add metrics_snapshots.feature to InProcess now that its mutation
+    Named cross-command deferrals may remain at S7 completion: MUT-134, 153, 154, 163 and 207
+    need serving, scheduled in T-112. Report them separately from genuine binary-only cases
+    and passed scenarios. Keep each task/reason visible; T-112 must remove them, with no
+    unimplemented fake behavior counted as a pass. Add metrics_snapshots.feature to InProcess now that its mutation
     commands have moved, completing the two-driver decision left open by T-82. Source/root/format
     scenarios run through both drivers. Raw-collector, atomic-filesystem and run-directory
     concurrency/cleanup cases may remain documented binary-only only when they require the real
@@ -2564,13 +2615,14 @@
     counts/strictness/skips and final-proof cases for durations/help/interspersed flags/errors/HTTP
     shutdown. Focus named localchecks, gates hooks/CI, no own-code
     mutation/worktrees/sessionmoves/agents or new dependency without recorded selection.
-    Complete the staged MUT-134 cross-command obligation from T-100: implement memory
-    Driver.Graph through the actual serving handler over memory ports, remove its explicit
-    in-process deferral and run MUT-134 successfully through both drivers. Include that selected
-    scenario alongside serving scenarios in checks and report its counts.
+    Complete the staged MUT-134, 153, 154, 163 and 207 cross-command obligations from T-100:
+    implement memory Driver.Graph through the actual serving handler over memory ports,
+    remove their explicit in-process deferrals and run all five successfully through both
+    drivers. Include those selected scenarios alongside serving scenarios in checks and
+    report their actual counts.
   done_when:
     - run: go test ./internal/serve/... ./internal/cli/...
-    - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="^@ID-(SERVE-.*|MUT-134)$"
+    - run: go test ./features ./cmd/itos-cc -run "^Test(Features|Scenarios)$" -count=1 -scenarios="^@ID-(SERVE-.*|MUT-(134|153|154|163|207))$"
 - id: T-113
   type: refactor
   title: Finish architecture and serving scenario coverage and remove legacy scaffolding
