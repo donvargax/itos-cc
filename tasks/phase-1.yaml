@@ -2245,6 +2245,33 @@
     output and cucumber JSON retained in its workspace. It has no T83 omission;
     every prior selection/default timeout remains unchanged. The measured local
     families fit the default ten-minute limit; no timeout increase is needed.
+    Attempt 7aa0ce3 failed exact CI38781227447 on Windows in the ordinary
+    all-package suite, before the native scenario invocation. In completed job
+    116581636391, TestFixturePeerLivenessAndOwnedExit observed wsarecv reset
+    after the owned helper's Process.Kill/Wait, and deferred Close observed
+    wsasend reset. Native forced process exit does not provide this fixture's
+    orderly TCP EOF on Windows. This was a capability/test boundary failure,
+    not a product refusal or a native MUT248 execution. The macOS job passed,
+    with actual retained native16cases/87steps and5omissions/29steps.
+    Immediate revert a3dade6 preserved specification commits920c1a7/d3a227a,
+    every legacy guard, original failed logs and all89 reviewed strictness
+    results. Restore the implementation only under a retaken repair item.
+    Repair scope explicitly restricts FixturePeers' controlled lifetime EOF
+    oracle to actual Linux/macOS, matching the existing Windows Start limit.
+    On native Windows return typed ErrPhysicalUnsupported before creating a
+    listener, after honoring an already-canceled context first. Never turn a
+    reset into EOF, suppress a deferred Close failure, or omit ordinary I/O
+    failures. A direct native capability guard asserts Windows refusal and
+    canceled-context precedence. Only the three factory-dependent physical
+    capability tests may omit when actual Platform is windows and the error
+    is that exact typed unsupported result; unsupported on Linux/macOS and
+    every other failure remain errors. Portable net.Pipe cancellation,
+    cleanup and admission sensitivity guards stay active. Synchronous native
+    MUT199/248 remain unchanged and must execute in repaired Windows CI.
+    This narrow harness admission repair changes no product behavior,
+    scenario sentence, supervisor or gate. Recheck focused capabilities and
+    exact repaired-head CI; retain the unchanged89 assertion-source evidence
+    without replaying those probes solely for this factory admission fix.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
