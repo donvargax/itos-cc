@@ -2386,6 +2386,13 @@
     and owned-process lifetime, and MUT212's real linked-worktree, host scratch
     and symlink isolation. Keep the other thirteen logical counted cases eligible
     for actual memory bindings; present memory gaps are not permanent omissions.
+    Native CI adds one separately bounded exact T81 invocation after the
+    existing T80 native report/upload and before optional language tools.
+    Preserve the default Go test timeout and every old invocation/selection.
+    Its original cucumber report uses a separated quoted dotted filename
+    and required upload, with the same pinned artifact action as T80.
+    Focused observed family costs are under 24 seconds per command; the
+    fifteen-case native group remains well within the default ten minutes.
     Optional ListedTests.ListOutput is exact successful inventory stdout,
     including duplicate raw lines; empty preserves output from Files. Only
     an actual list request returns it to the existing parser. Keep ListFails
