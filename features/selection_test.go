@@ -62,6 +62,7 @@ func TestFeatureSelectionRejectsUnknownTagsDespiteSkippedFiles(t *testing.T) {
 }
 
 func TestFeatureSelectionValidatesUnsteppedIDsDespiteSkippedFiles(t *testing.T) {
+	pendingSelectionFixture(t, "@ID-MUT-99991")
 	t.Setenv("ITOS_CC_SKIP_FEATURES", "mutate.feature")
 	dir := featureSelectionFixture(t)
 	if err := os.WriteFile(filepath.Join(dir, "mutate.feature"), []byte("Feature: Missing IDs\n"), 0o644); err != nil {
@@ -125,6 +126,7 @@ func TestFeatureSelectionRunsNothingWhenAllDriverFilesAreSkipped(t *testing.T) {
 }
 
 func TestFeatureSelectionStillRecognizesUnsteppedOnlySelections(t *testing.T) {
+	pendingSelectionFixture(t, "@ID-MUT-99992")
 	t.Setenv("ITOS_CC_SKIP_FEATURES", "count.feature")
 	pattern := "^" + regexp.QuoteMeta(Unstepped[0]) + "$"
 	sel, err := TagFilter(pattern, featureSelectionFixture(t), Converted, InProcessOnly)
@@ -183,4 +185,31 @@ func runSelection(t *testing.T, filter string, paths []string) []string {
 		t.Fatalf("fixture scenarios exited %d", code)
 	}
 	return ran
+}
+
+// Pending IDs are fixture input, independent of how many real conversions remain.
+func pendingSelectionFixture(t *testing.T, ids ...string) {
+	t.Helper()
+	before := Unstepped
+	Unstepped = ids
+	t.Cleanup(func() { Unstepped = before })
+}
+func TestFeatureSelectionWithEmptyOrWIPOnlyPending(t *testing.T) {
+	for _, pending := range [][]string{nil, {"@ID-MUT-99993"}} {
+		t.Run(fmt.Sprint(pending), func(t *testing.T) {
+			pendingSelectionFixture(t, pending...)
+			t.Setenv("ITOS_CC_SKIP_FEATURES", "")
+			dir := featureSelectionFixture(t)
+			sel, err := TagFilter("^@ID-UNIT-90$", dir, Converted, InProcessOnly)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ran := runSelection(t, sel.Filter, sel.Paths); !slices.Equal(ran, []string{"active"}) {
+				t.Fatalf("active scenario lost with pending%v: %v", pending, ran)
+			}
+			if _, err := TagFilter("^@ID-UNKNOWN-91$", dir, Converted, InProcessOnly); err == nil || !strings.Contains(err.Error(), "no scenario has a tag") {
+				t.Fatalf("unknown ID admitted with pending%v: %v", pending, err)
+			}
+		})
+	}
 }

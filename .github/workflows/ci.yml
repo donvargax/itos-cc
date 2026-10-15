@@ -105,6 +105,19 @@ jobs:
           if-no-files-found: error
 
 
+      # T-81 counted admission, judgments and real fixture worktrees.
+      # Platform omissions stay visible in the original structured report.
+      - name: Native counted mutation scenarios
+        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(17[3-9]|18[0-6]|212)$' -scenario-report 'T81-native.json'
+      - name: Preserve native counted scenario observations
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
+        with:
+          name: T81-native-${{ matrix.os }}
+          path: features/T81-native.json
+          if-no-files-found: error
+
+
       # The real TypeScript, Python and Kotlin tools, so the language smoke
       # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216
       # to 218 and 220) run through them instead of skipping (T-13).

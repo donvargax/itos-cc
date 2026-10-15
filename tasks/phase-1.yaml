@@ -2386,6 +2386,15 @@
     and owned-process lifetime, and MUT212's real linked-worktree, host scratch
     and symlink isolation. Keep the other thirteen logical counted cases eligible
     for actual memory bindings; present memory gaps are not permanent omissions.
+    After final affected controls and coordinator review of the frozen
+    assertion manifest and source hashes, commit and push the clean baseline
+    through normal hooks first. Run reviewed serial assertion probes while
+    immutable native CI proceeds, with no other edits/index changes/pushes.
+    Verify exact source bytes/modes/HEAD restoration afterward. Closure needs
+    both valid sensitivity evidence and exact full CI; do not report unrun
+    probes as passed. A real assertion correction requires a fresh normal
+    commit and exact CI. Send final evidence privately and close/push before
+    adding an owned final-evidence commit that would restart the close gate.
     MUT184 preserves its primary When JSON and uses independent real own
     baseline, listed baseline and interruption controls for unattempted,
     blocked and cancelled selected work, with no fabricated outcomes. Join

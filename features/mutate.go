@@ -90,6 +90,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	languageMutationSteps(sc, m, since)
 	strictMutationSteps(sc, m, since)
 	executionMutationSteps(sc, m, since)
+	countedMutationSteps(sc, m, since)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)

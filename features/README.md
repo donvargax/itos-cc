@@ -1168,6 +1168,42 @@ cleanup-budget identity/order. Preserve `checkInterruptedCountedRun` and its ext
 SIGTERM/no-remove-while-alive controls for T81. T88 moves adapter guards intact;
 T101 must not delete them as duplicates of these public observations.
 
+## Counted execution and worktrees (T81)
+
+MUT173..186 and212 are fifteen cases with99 written steps after the precise
+MUT173 comparative-platform correction. The Windows clause remains verbatim
+beside173 and is exercised by native248. Deferred169..172 remain explicitly
+wip; completed counted IDs leave `Unstepped`. Selection guards use isolated
+pending fixtures and retain unknown-ID failure with empty or wip-only lists.
+
+The fixtures run real committed Go sources, tests and measured compiler
+profiles. Same-name175 uses five public-listed sites and actual zero-hit
+reports. Each runnable package's TestMain emits canonical cwd/original root
+and an actual source SHA; optional trace `source` is the project-relative
+identity already named by that command's `TestTrace.Source`. Later bound
+Workers/Measurer requests must derive that identity and hash from the actual
+selected copied input, preserving older trace shapes where it is unnecessary.
+Per-command deltas distinguish clean baselines from mutations; zero eligible
+sites may genuinely execute nothing. No planner/ranking helper supplies seeds.
+
+Frozen174 leaves broken staged, unstaged and untracked bytes in place while
+actual coverage, baseline and trial traces identify HEAD's original/mutated
+source. Global176 observes one selected trial with four workers, real omitted
+subjects and fresh execution despite matching complete cache. Output184
+compares exact public identities and independently observes unfinished states.
+Proof185 retains a real annotated other-file cache and checks it separately
+from the sampled multi-site function's missing complete proof.
+
+Only183 and212 are permanently binary-only: actual SIGINT/process lifetime,
+and physical linked Git metadata/private scratch/symlink escape respectively.
+All thirteen logical cases remain eligible for future actual memory bindings.
+The separate three-OS native invocation follows T80 and precedes installed
+tools, preserving prior selections and default timeout. Required original
+`T81-native-<OS>` cucumber artifacts distinguish native execution from Godog's
+skipped-as-passed summaries. All fifteen currently omit on Windows through
+its counted capability; native248 independently proves the actual refusal.
+No logical case is permanently tagged for that temporary implementation gap.
+
 T81's listed-coverage fixtures declare optional `ListedTests.CoverageExit`
 and `CoverageOutput` for the actual collection command. Zero/empty keep
 successful behavior. Optional `CoverageMetadata` contains the exact invalid
@@ -1190,3 +1226,35 @@ before fixture removal. It stays eligible in process: its later cancellation
 control must cancel the actual run context after a bound Workers request
 enters, without requiring FixturePeers, networking, PID signals or scripted
 events. MUT183 separately holds physical process lifetime observations.
+
+Keep every legacy holder, helper and extra guard until actual replacement CI
+and T101's review. No legacy file is deleted by T81.
+
+| MUT | Retained holder under cmd/itos-cc | Exact test |
+| --- | --- | --- |
+| 173 | mutate_counted_test.go | TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries |
+| 174 | same | TestCountedExecutionEvaluatesFrozenCommittedInputs |
+| 175 | same | TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits |
+| 176 | same | TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled |
+| 177 | same | TestCountedModeLeavesCompleteAndCachedSampleContractsIntact |
+| 178 | mutate_counted_listed_test.go | TestApplicableListedIntegrationTestsFinishASingleFreshJudgment |
+| 179 | same | TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings |
+| 180 | mutate_counted_test.go | TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn |
+| 181 | mutate_counted_listed_test.go | TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance |
+| 182 | same | TestCleanBaselineFailureIsNotAMutationKill |
+| 183 | mutate_counted_interrupt_test.go | TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands; checkInterruptedCountedRun |
+| 184 | mutate_counted_test.go | TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness |
+| 185 | same | TestSampledExecutionPublishesNoPersistentCompleteProof |
+| 186 | same | TestOnlyAGenuinelySiteFreeRangeIsNotApplicable |
+| 212 | mutate_counted_worktree_test.go | TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection |
+
+Retain the original183 SIGTERM/second-signal, waiter and no-remove-while-alive
+sampled watcher extras; it is supplementary observation rather than exact
+sequence proof. The166/183/188/193 public cleanup clauses now assert final
+terminated peers and absent copies/private inputs after return. Their exact
+former join-before-removal prose remains labeled beside each scenario, with
+all adapter guards retained for T88/T92 deterministic boundary proof. Focused
+166/193 registration evidence belongs to T81; historical T80's89 probes stay
+qualified to their earlier source revision. Preserve the untagged scope,
+measurement/provider, zero-site, ordering and helper guards as well as the
+T79-owned strict_changed_lines_counted_test.go226 holder.

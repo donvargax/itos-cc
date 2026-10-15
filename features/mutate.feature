@@ -1911,7 +1911,8 @@ Feature: Mutation testing
   # fix, never an internal error. Complete runs are unchanged.
   Rule: Counted runs work in a linked git worktree
 
-    @counted-worktree-run @ID-MUT-212
+    # Physical linked Git metadata, host scratch and symlink isolation.
+    @binary-only @counted-worktree-run @ID-MUT-212
     Scenario: A count-one run in a linked worktree judges its committed selection
       Given a committed Go project and a second checkout of it made with git worktree add
       When a count-one run judges it from the linked worktree
@@ -3040,7 +3041,8 @@ Feature: Mutation testing
       And later stages do not report a baseline as passed when it never ran
       And already completed valid judgments remain visible in the current report
 
-    @mutation-counted-interrupt @ID-MUT-183
+    # Physical SIGINT and owned process lifetime; logical states stay eligible.
+    @binary-only @mutation-counted-interrupt @ID-MUT-183
     Scenario: Interruption reports partial work and cleans up owned commands
       Given a count-two selection has one completed judgment and one active judgment
       When the counted run is interrupted while the second judgment is active

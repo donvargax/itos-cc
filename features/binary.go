@@ -279,11 +279,10 @@ func venv(dir string, required bool) error {
 	return nil
 }
 
-// Link makes path a symbolic link to target, skipping the scenario where
-// the system makes none.
-func (binary) Link(target, path string) error {
+// Link makes an owned fixture link; only typed capability refusals can omit.
+func (b binary) Link(target, path string) error {
 	if err := os.Symlink(target, path); err != nil {
-		return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
+		return coverageLinkFailure(b.Platform(), os.Getenv(languageToolsEnv) != "", err)
 	}
 	return nil
 }

@@ -80,8 +80,9 @@ type Driver interface {
 	// it. A folder with no Coverage declared has no tools that measure it.
 	Coverage(dir string, c Coverage) error
 	// Link makes path a symbolic link to target, a folder or a file that
-	// is there. The binary driver skips the scenario (godog.ErrSkip) where
-	// the system lets it make none; the in-process driver makes none.
+	// is there. Only typed unsupported/permission failures can skip; ordinary
+	// I/O errors retain their cause and fail. Installed-tools mode never skips.
+	// The in-process driver makes none.
 	Link(target, path string) error
 	// Build builds itos-cc from this tree in the folder dir as b says, as a
 	// release, go install or a person's go build makes it, and gives the
@@ -178,6 +179,14 @@ type ListedTests struct {
 	// command failing, before any trial.
 	Surviving, TimingOut map[string][]Site
 	ListFails            bool
+	// ListOutput is successful raw inventory stdout; empty uses Files.
+	ListOutput string
+	// CoverageExit/Output describe the actual listed collection command result.
+	// CoverageMetadata, when nonnil, is written as the owned per-test covmeta
+	// artifact; conversion, rather than this declaration, determines failure.
+	CoverageExit     int
+	CoverageOutput   string
+	CoverageMetadata []byte
 }
 
 // Site is a mutation site as a Given names it: its file, slash-separated
@@ -227,6 +236,11 @@ type Coverage struct {
 	// hands its fake in place of running the tools. "" when it writes none,
 	// as when the tests do not compile.
 	Report string
+	// CommandExit and CommandOutput are the real coverage tool's failed exit
+	// and diagnostic, even when it wrote Report. Zero/empty preserve success.
+	// The bound tool returns this failure; the actual Measurer classifies it.
+	CommandExit   int
+	CommandOutput string
 	// IntegrationReport is the actual subprocess collector report, separately
 	// from Report, in the same existing formats. Empty means no subprocess data.
 	IntegrationReport string
@@ -303,8 +317,6 @@ var Converted = []string{
 var Unstepped = slices.Concat(
 	// Deferred Windows ownership remains @wip, outside T-80.
 	ids("MUT", "169-172"),
-	// T-81: counted, worktree
-	ids("MUT", "173-186", "212"),
 )
 
 // ids are the ID tags of area's scenarios numbered as each of ranges says,
