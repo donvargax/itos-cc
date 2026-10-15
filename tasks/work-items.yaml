@@ -3298,3 +3298,10 @@ items:
     status: todo
     depends_on: [T-107]
     kind: task
+  - id: T-112
+    title: Move serve onto Kong and its slice with in-process HTTP scenarios
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
