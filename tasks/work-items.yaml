@@ -3100,8 +3100,8 @@ items:
   - id: T-83
     title: Push CI leaves mutate.feature's scenarios out until S7 runs them in process
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     why: >
