@@ -1728,3 +1728,38 @@
     items with verified CI. No worktrees or agents.
   done_when:
     - run: git diff --check
+- id: T-86
+  type: refactor
+  title: Refactor into feature-owned vertical slices for independent agent work
+  why: >
+    The person authorized this FOLLOW-UP refactor on 2026-10-14, to start only AFTER the current
+    template-adoption refactor and its pending work finish. The goal is that an ordinary feature
+    change stays inside that feature directory, reducing shared-file edits so agents can work on
+    different features concurrently. First inventory ownership and split this umbrella into small,
+    independently landable refactor tasks with concrete checks; do not implement the whole migration
+    in one change or close this umbrella until those tasks finish. Revise or supersede ADR-0029 and
+    affected layout/boundary decisions through the decision workflow at execution time,
+    incorporating the already-requested ADR-0047 code review; do not change current refactor targets
+    now. Each feature owns its CLI/application code, feature-specific pure domain models/rules,
+    consumer-owned ports, feature-specific adapters, fakes, tests, scenarios and fixtures within its
+    own directory. Domain purity and inward dependencies still hold; directory ownership does not
+    erase those boundaries. Group commands sharing semantics into one feature, notably mutation
+    run/check/list/sample/except. Keep only substantial reusable capabilities such as language
+    parsing and coverage engines behind stable explicit APIs; permit small intentional duplication
+    rather than mandatory shared abstractions and do not duplicate whole engines merely to remove
+    imports. Eliminate handwritten central command-list/dispatch/binding edits for ordinary new
+    commands through slice-local declarations and deterministic generated assembly using the
+    existing pinned donvargax/kong fork APIs where suitable. Preserve existing help, errors, exit
+    codes, lazy config loading for help and fresh per-run parser/command state; no speculative DI
+    framework, global init registry or additional dependency without the usual recorded selection.
+    Adapt scenario discovery, dependency rules and architecture fixtures to feature-local ownership,
+    and define task path ownership plus integration handling of generated/registry/shared-capability
+    changes. The person accepts same-checkout concurrency tradeoffs; separate checkouts or worktrees
+    are not a prerequisite and no parallel agents are authorized by this task alone. Keep product
+    behavior/scenario IDs and third-party notices intact; use actual acceptance equivalence and
+    architecture fixtures rather than shallow file-presence checks. Before execution replace these
+    umbrella checks with the staged tasks verified acceptance and ownership checks. No mutation run
+    of this repository locally; preserve the current quality-gate policy and approved order.
+  done_when:
+    - run: tools/bin/architecture-check
+    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$"

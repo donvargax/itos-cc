@@ -3117,3 +3117,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-86
+    title: Refactor into feature-owned vertical slices for independent agent work
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
