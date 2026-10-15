@@ -66,6 +66,14 @@ jobs:
     steps:
       # Pinned to commits, the same versions as itos's workflows.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Gradle can prepend /usr/bin; select the other runtimes afterwards
+      # so their pinned executables keep precedence over the image defaults.
+      # "basic" caches Gradle downloads, the Kotlin plugin and JUnit.
+      - if: matrix.os == 'ubuntu-latest'
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: "9.8.1"
+          cache-provider: basic
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -109,13 +117,6 @@ jobs:
           # The Kotlin Maven example's plugins and JUnit, between runs.
           cache: maven
           cache-dependency-path: cmd/itos-cc/mutate_kotlin_own_tests_test.go
-      # Puts Gradle on PATH and caches its downloads, the Kotlin plugin and
-      # JUnit, between runs; "basic" is the open-source cache.
-      - if: matrix.os == 'ubuntu-latest'
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          gradle-version: "9.8.1"
-          cache-provider: basic
       # Maven from Maven Central, checked against Apache's published SHA-512.
       - if: matrix.os == 'ubuntu-latest'
         env:
@@ -127,12 +128,6 @@ jobs:
           echo "$MAVEN_SHA512  $archive" | sha512sum -c -
           tar -xzf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
-      # Gradle can prepend /usr/bin, shadowing the selected Go toolchain.
-      - if: matrix.os == 'ubuntu-latest'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache: false
       # Verbose, so the log lists each test that ran. ITOS_CC_LANGUAGE_TOOLS
       # makes a missing tool fail these tests instead of skipping them. Then
       # the godog scenarios of crap.feature, coverage.feature, cli.feature
