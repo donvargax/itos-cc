@@ -61,6 +61,14 @@ type Driver interface {
 	// Run runs itos-cc as r says and gives what it did. Its error is a run
 	// that could not be made, never an exit code other than 0.
 	Run(r Run) (Result, error)
+	// Platform is the actual host OS at the driver boundary, never a test override.
+	Platform() string
+	// Start runs only the product under test, returning its owned asynchronous run.
+	// Binary overrides are rejected. Native Windows and the memory driver report
+	// ErrPhysicalUnsupported before launch; ordinary synchronous Run is unaffected.
+	Start(ctx context.Context, r Run) (Running, error)
+	// FixturePeers holds a listener for controlled fixture lifetime connections.
+	FixturePeers(ctx context.Context) (FixturePeers, error)
 	// Coverage declares what the project's own tools measure in the folder
 	// dir, before a run of itos-cc measures coverage there with them. The
 	// binary driver checks the tools are installed, skipping the scenario
@@ -291,8 +299,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-80: fail-fast, ownership
-	ids("MUT", "165-167", "187-189", "191-202", "211", "248"),
 	// Deferred Windows ownership remains @wip, outside T-80.
 	ids("MUT", "169-172"),
 	// T-81: counted, worktree
@@ -355,6 +361,8 @@ type world struct {
 	// problemSubject adds a fixture's exact subject check to the shared
 	// "the problem is ... with ..." sentence, without a second step owner.
 	problemSubject func() error
+	// beforeRemove joins scenario-owned executions before any fixture deletion.
+	beforeRemove func(context.Context) error
 	// with are the words a Given adds after a scenario's own to each run
 	// its When makes, as a row of an outline says "with --flag".
 	with []string
@@ -455,8 +463,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	// The scenario's error is godog's already: returned here, it would be
 	// reported twice, as the hook's and as the step's.
 	sc.After(func(ctx context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
-		_ = w.d.Remove(w.dir)
-		return ctx, nil
+		return ctx, w.cleanUp(ctx)
 	})
 
 	// Split before anything else is expanded, so a word with a space in it
@@ -618,11 +625,27 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 // setUp makes scenario s's scratch folder.
 func (w *world) setUp(s *godog.Scenario) error {
 	w.problemSubject = nil
+	w.beforeRemove = nil
 	w.last, w.problem, w.without, w.wrote, w.each, w.binary = nil, nil, nil, "", nil, ""
 	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
 	return err
+}
+
+// A failed join retains the complete fixture for safe recovery; later hooks
+// cannot accidentally make scratch deletion independent of owned cleanup.
+func (w *world) cleanUp(ctx context.Context) error {
+	if w.beforeRemove == nil {
+		_ = w.d.Remove(w.dir)
+		return nil
+	}
+	if w.beforeRemove != nil {
+		if err := w.beforeRemove(ctx); err != nil {
+			return err
+		}
+	}
+	return w.d.Remove(w.dir)
 }
 
 // env is the variables a scenario's fixture sets in every run's environment.
