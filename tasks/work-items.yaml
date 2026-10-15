@@ -2231,7 +2231,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-116]
     kind: idea
     why: >
       The person, 2026-10-11: one byte-for-byte comparison once every command has moved (docs/go.md
