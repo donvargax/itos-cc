@@ -2578,6 +2578,12 @@
     only after final controls, coordinator review of manifest and source hashes,
     normal baseline commit/push and exact remote verification; no other source,
     index or documentation writes until exact probe restoration is verified.
+    The owned nested collector also records its actual canonical GOCOVERDIR.
+    Bind each report root to that real peer path under the original fixture's
+    coverage directory before comparing bytes; do not infer ownership merely
+    from a profile having the expected hit pattern. The public path oracle
+    observed distinct run roots independently of those profiles. The Go test's
+    temporary test.coverprofile is different and is not the owned final report.
   done_when:
     - run: grep -q '"metrics_snapshots.feature"' features/steps.go
     - run: test -e cmd/itos-cc/snapshots_root_test.go
