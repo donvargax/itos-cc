@@ -3205,3 +3205,10 @@ items:
     status: todo
     depends_on: [T-95]
     kind: task
+  - id: T-97
+    title: Move mutation list and check handlers into the mutation slice
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

@@ -2048,3 +2048,26 @@
     - run: go test ./internal/cli/...
     - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|06|07|09|10|11|12|14)$"
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(01|57|71|85|149|156|165|173|224|243)$"
+- id: T-97
+  type: refactor
+  title: Move mutation list and check handlers into the mutation slice
+  why: >
+    Continue the current S7 design from the parsed group, not futureT86. Move only the named
+    handlers and their UI presentation to internal/mutation; CLI Run assembles domain-valued Query,
+    Handle wires domain calls through injected ports, UI classifies sealed failures and selects
+    current exit codes. Domain knows no UI/I/O/JSON/exit codes; adapters remain selected at cmd.
+    Preserve output bytes/help/order/schema/lazy config loading, failures with partial data and all
+    current flags. Extend the in-memory driver with existing port fakes as handlers move, but add
+    mutate.feature to InProcess only when the whole group can run it; never use permanent
+    binary-only tags merely because a handler has not moved. Retain valid tests until
+    scenarios/domain/port contracts hold every assertion; add slice tests only for failures the
+    public scenarios cannot reach and explain that gap. Update dependency rules/accept-refuse
+    fixtures and docs; add equivalence cases to final-proof, no per-task binary comparison. Context
+    first, never held/recreated; OS as a value. Focus local checks on named packages/scenarios;
+    broad gates through hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new
+    dependencies without recorded selection. Keep site ordering, stale/missing/unrecorded
+    distinctions, strict evidence rules, exclusions and graph agreement exactly as domain defines
+    them.
+  done_when:
+    - run: go test ./internal/mutation/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
