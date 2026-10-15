@@ -1911,3 +1911,30 @@
   done_when:
     - run: go test ./internal/githistory/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
+- id: T-92
+  type: refactor
+  title: Move mutation run orchestration into the domain over its ports
+  why: >
+    S7 after T-91. Move existing mutation Run orchestration into internal/mutants over the
+    established Workers, Toolchain, Fingerprints, Reach, coverage and History ports. Domain code
+    reads no real files, runs no process/Git/tool, imports no UI/JSON/adapters and owns no exit
+    codes; dependencies flow inward and ports use domain values. It owns reuse and site judgments,
+    own-tests-first/listed fallback, selection-baseline caching by ID set, timeout derivation from
+    each baseline, strict coverage admission, broad/listed freshness, exception handling and
+    aggregate/fail-fast scheduling. Preserve one shared post-abort cleanup budget and truthful
+    partial evidence, never reinterpret a cancelled/unattempted site as killed; pass ctx first and
+    never store/create one inside logic. Progress reaches presentation as domain facts/events, not
+    formatted text or direct output. Keep snapshot publication/annotation timing, orphan removal and
+    internal-error behavior as they are; mutation-run-saves-each-file is separate behavior and must
+    not be folded into this refactor. The memory Workers fake derives outcomes/elapsed times from
+    Driver.Tests and coverage facts from Driver.Coverage, never invokes tools. Cover orchestration
+    with our port fakes, deterministic outcomes and typed failures rather than mocks or timing
+    sleeps; preserve meaningful existing guards until public scenarios/domain tests hold them.
+    Legacy cmd handler temporarily calls the new domain and retains formatting. Add
+    fixtures/rules/docs for changed dependencies, meet domain coverage, and add worker error mid-run
+    plus listed fail-fast cases to refactor-final-proof without running per-task binary comparisons.
+    Focus local checks to the domain and named fixture scenarios, gates through configured hooks/CI
+    only; no own-code mutation run, worktrees/session moves/agents or unapproved dependencies.
+  done_when:
+    - run: go test ./internal/mutants/...
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|168|187|188|189|190|191|192|193|194|195|196|197|198|199|200|201|202)$"

@@ -3165,3 +3165,10 @@ items:
     status: todo
     depends_on: [T-90]
     kind: task
+  - id: T-92
+    title: Move mutation run orchestration into the domain over its ports
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
