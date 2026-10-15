@@ -2461,6 +2461,12 @@ items:
       go_evidence reads, neutral suite_evidence writes, and go_coverage versus line_coverage.
       Preserve the existing controlled-input and bounded-volatility rules; no per-task binary
       comparison or new intentional-difference allowance is introduced.
+
+      T-88 comparison cases preserve real worker linked dependency directories (node_modules, .venv
+      and editable paths), abandoned versus live worker-lock cleanup, and unchanged baseline/trial
+      output and parent-cancel versus local-timeout judgments. Keep historical mutation records at
+      their recorded old source paths; this task neither refreshes nor relabels them. Compare these
+      observable cases only in the final whole-refactor proof, not per-task binary runs.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
