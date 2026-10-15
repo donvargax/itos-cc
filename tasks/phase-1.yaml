@@ -2734,6 +2734,17 @@
     Move pure FreshCandidate, FreshUnit and ranking helpers now. The mixed
     FreshPlan wrapper, scratch Close, project.Files and project.LineRange stay
     legacy until fresh/history tasks; add no early inventory/range copy models.
+    TestCommand is mixed discovery and execution probing, not a pure whole-file move.
+    Move Command and Key, String and RunsNothing, plus config.Tests pure methods.
+    Keep FindUp, package/tool discovery, Python interpreter and pytest probes,
+    Kotlin reactor discovery and helpers coupled to legacy coverage at the legacy
+    boundary until T-89 supplies actual Toolchain and Reach facts. Move only
+    already-isolated pure choices over supplied selectors; do not invent a large
+    tool-facts DTO, copy coverage helpers or import top-level coverage into the domain.
+    Move Sampled result values, Agrees and pure rank helpers now, leaving the mixed
+    fileState candidate/execution closure for T-94. Move FailFast, Stop, site states
+    and pure judgments, while cancellation, cleanup budget and log lifecycle remain
+    with legacy orchestration until its boundary moves. Preserve their existing guards.
   done_when:
     - run: go test ./internal/mutants
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|12[6-9]|13[0-4])$"
@@ -2805,7 +2816,10 @@
   title: Give mutation toolchain facts, fingerprints and test reach through ports
   why: >
     S7 after T-88. Complete the existing plan boundaries for Toolchain, Fingerprints and Reach, with
-    the pure test-command selection remaining in internal/mutants and I/O at adapters. Toolchain
+    test-command selection split into pure choices in internal/mutants and I/O at adapters.
+    Complete pure command policy over the actual facts supplied here; T-87 leaves discovery,
+    probes and helpers coupled to legacy coverage at their current boundary rather than inventing
+    a speculative tool-facts DTO or copying coverage helpers. Toolchain
     supplies observed manifests, installed tools and execution facts; reuse existing
     selection/lang/coverage ports where they already express the need rather than adding a
     forwarding layer. Fingerprints supply file/input hashes and inventories with the existing strict
