@@ -1940,6 +1940,20 @@ items:
       separate red-first evidence and complete scenario coverage for each behavior. Resolve the
       exact coordinated handoff when specifying S10 after final proof; do not change release gates
       or silently bypass automatic release.
+
+      S10 preparation from current code: internal/cli/interrupt.go StopOnInterrupt is the template's
+      ADR31 helper, whose second signal skips every cleanup. It must honor ADR38's exception for
+      owned process groups, while the UI stays domain-independent; bind per-run lifecycle
+      capabilities at cmd, not a global registry or a context held for later I/O. Reuse the existing
+      signal driver and deterministic signal-channel unit tests; preserve reliable readiness/cleanup
+      and avoid timing-only demonstrations of a second signal after the process already exited. Unix
+      must report once and then restore/re-raise SIGINT's default action so shell loops stop;
+      Windows reports130 directly. Verify both actual process signal status and user-visible shell
+      status honestly, not only exec.ExitError.ExitCode when it returns-1 for signals. Cleanup
+      failures keep partial evidence and a distinct mutation.cleanup-failed problem; generic child
+      cancellation/timeout must not be misclassified as a user interrupt. Native Windows ownership
+      implementation remains deferred. Exact public scenarios are specified after final proof and
+      before any product implementation.
     refs: [q-51, q-54, q-37]
   - id: semantic-exit-codes
     title: Exit codes follow square/exit, 75 kept for retry
