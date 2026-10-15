@@ -3341,5 +3341,18 @@
     Godog skipping later steps after the intended assertion fails is its
     normal failure cascade, not an omitted scenario. Distinguish that from
     a case that never reaches the expected assertion or runs no steps.
+    Bound this developer tool to Linux and macOS process execution for now.
+    Reuse the existing minimal POSIX process-group cancellation pattern and
+    stop/join before restoration; do not build a general supervisor. Windows
+    execution must fail explicitly before any source or evidence-file write,
+    with no partial supported run. Keep parser, validation and recovery tests
+    portable and test that refusal. Do not use taskkill's process-tree snapshot
+    as captured ownership or claim that WaitDelay proves child termination.
+    This limitation belongs to the assertion tool, not the product's supported
+    platforms or deferred mutation ownership. Document it; actual native
+    Windows product scenarios still run in the existing CI as specified.
+    Accept ordinary source permission bits only; refuse setuid, setgid or
+    sticky bits before writes, and preserve a concurrent addition as a
+    conflict rather than silently dropping it during exact restoration.
   done_when:
     - run: go test ./tools/bin/step-strictness
