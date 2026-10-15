@@ -1650,6 +1650,19 @@
     mutation merely to reproduce the old spelling. Check each other literal fixture and stop
     on a mismatch before product changes; preserve annotation and renewal checks and extra
     holder guards until their actual replacement CI passes.
+    Public characterization establishes a real 15-site TypeScript fixture: place at 5:9,
+    count at 7:19 with < to <=, fourteen kills and the count survivor. Use actual tests and
+    declarations, not invented snapshot outcomes. Construct the separate killed/uncovered
+    refusal fixture at its written 5:9 and 9:3 locations. For MUT89, obtain the reviewed
+    exception through the actual recorded survivor and public except command, then remove
+    only that fixture file's snapshot before the literal run. This naturally yields ran 15,
+    reused 0 and the exact 14-killed/1-excepted annotation without injecting --mutate-all.
+    MUT90 retains its real cache to contrast reuse with the explicit --mutate-all command.
+    MUT227 makes the actual Git commit after its string-literal rename, as its sentence
+    requires; the old holder's uncommitted edit does not establish that requirement. Keep
+    the renewal killed, changed-line and no-fresh-results controls and other-file guards.
+    Existing Tests, Coverage, Git, Files and ObserveWrites capabilities suffice unless a
+    concrete new need is demonstrated; no dependency or product behavior is added.
   done_when:
     - run: "! grep -q '// T-77:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
