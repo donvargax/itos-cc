@@ -2452,3 +2452,32 @@
   done_when:
     - run: go test ./internal/cli/... ./internal/version/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
+- id: T-115
+  type: refactor
+  title: Restore applicable main tests and reconcile the parked template exception
+  why: >
+    S9 after T-114. Reconcile the template fixtures parked by T-26 with the now-ported thin main,
+    preserving itos-cc's accepted public contract. Restore cmd/itos-cc/main_test.go as built tests
+    of applicable main/wiring failures, replacing its obsolete signatures/expected sample
+    commands/version defaults with current public behavior and existing injected adapters.
+    Acceptance-reachable behavior stays in cli.feature rather than duplicated main unit tests. Do
+    not implement dead logger/wantsJSON/commandName helpers just to satisfy an ignored template
+    test: map each retained assertion to a real boundary and record why genuinely irrelevant
+    template-only assertions are retired or held by existing scenarios. Do not introduce
+    completion/__complete, --no-json, new version stamp/default/commit output or changed serving log
+    format as side effects; these are public features and need separate red-first specs. Keep
+    meaningful terminal/log boundary tests only if the actual product has that boundary; restore the
+    template's x/term dependency only if used, at an already verified compatible pin, and no new
+    library choice hidden inside this task. Review the commented template main mutation exception in
+    itos-cc.yaml against the final run function and exact equivalent mutation site. Restore/renew
+    only when its equivalence rationale and actual site still hold, never copy a stale hash, create
+    new unverifiable proof, or run mutation tests over this repository; if its site/rationale no
+    longer applies, remove the obsolete parked exception and record why. Preserve unrelated active
+    exceptions, MIT source notices and CONTRIBUTORS. Report exact treatment of template-main-tests
+    and template-main-exception for coordinator registry reconciliation, not manual registry status
+    edits. Keep all current behavior/exit codes; no per-task binary comparison, add edge cases to
+    final-proof. Focus selected main boundary checks and cli scenarios, full gates hooks/CI. No
+    own-code mutation/worktrees/sessionmoves/agents; futureT86 separate.
+  done_when:
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestRun|TestCommandName|TestWantsJSON|TestLogger)'
+    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
