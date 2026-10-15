@@ -2286,6 +2286,29 @@
     run must retain all three native reports with actual execution accounting.
     No product, scenario, EOF policy or reviewed assertion source changes;
     retain all89 probe results without replay for this publication-only repair.
+    Final head094e634 passed exact CI38786410533, including every platform
+    suite, all five release builds and publication. The retained original
+    native cucumber reports each contain21cases/116steps. Actual executions
+    are Linux15cases/82steps, macOS16/87 and Windows3/12; explicit omissions
+    are respectively6/34,5/29 and18/104. Windows executes199 and both248
+    examples; macOS executes all five191steps. These are parsed step-status
+    observations, not Godog's skipped-as-passed scenario summary. The reviewed
+    primary86 and supplemental3 assertion probes detected89 intended failures,
+    with no invalid or undetected attempt; original bytes and0644 modes were
+    independently verified after both restoration phases. All legacy holders
+    and adapter extras remain for the separately mapped T101/T88 obligations.
+    Historical run38784145952 on2f6ef6d ultimately passed every test and all
+    five release builds, then failed Draft creation with HTTP403 Resource not
+    accessible by integration. Its archive selection and checksums succeeded;
+    T80-native artifacts do not match the release's itos-cc-* download pattern.
+    By publication time that target's workflow differed from default-branch
+    head094e634. GitHub documents an additional workflow-write requirement for
+    such release targets, consistent with this superseded-target failure:
+    https://docs.github.com/en/rest/releases/releases#create-a-release
+    The actual denied permission was not captured, so this remains a qualified
+    explanation. Holding094e634 unchanged through publication passed without
+    token, permission or release-workflow changes. Keep the failed run and
+    missing-Windows-report history; neither is a current-head assertion failure.
   done_when:
     - run: "! grep -q '// T-80:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
