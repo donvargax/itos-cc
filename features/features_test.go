@@ -59,6 +59,7 @@ import (
 )
 
 var scenarios = flag.String("scenarios", "", "run only the live scenarios with a tag this regular expression matches")
+var scenarioReport = flag.String("scenario-report", "", "also write Godog cucumber JSON to this file (test harness only)")
 
 // versionSymbol and commitSymbol are the variables the build stamps
 // (-ldflags -X).
@@ -93,11 +94,18 @@ func TestFeatures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	format := "pretty"
+	if *scenarioReport != "" {
+		if strings.Contains(*scenarioReport, ",") {
+			t.Fatal("scenario-report path cannot contain a Godog formatter separator (comma)")
+		}
+		format += ",cucumber:" + *scenarioReport
+	}
 	suite := godog.TestSuite{
 		Name:                "itos-cc",
 		ScenarioInitializer: func(sc *godog.ScenarioContext) { initialize(sc, binary{bin: bin, root: root}, interruptSteps(bin)) },
 		Options: &godog.Options{
-			Format:      "pretty",
+			Format:      format,
 			Paths:       sel.Paths,
 			Tags:        sel.Filter,
 			Strict:      true,
