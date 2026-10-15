@@ -2148,3 +2148,27 @@
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+- id: T-101
+  type: refactor
+  title: Finish mutation documentation and remove superseded command tests
+  why: >
+    S7 completion after T-100, current refactor only. Reconcile docs/go.md, docs/CLI.md, README
+    layout and feature-harness documentation with the actual internal/mutants domain,
+    internal/mutation group, domain-owned ports, real adapters, in-memory fakes and both scenario
+    drivers. Remove only legacy cmd tests whose every behavioral assertion is now held by public
+    scenarios or domain/port contracts, naming each removed test and its replacement coverage;
+    retain boundary/injection tests the public CLI cannot exercise with an explanation. Remove dead
+    compatibility code/imports/TODOs belonging to completed S7 without opportunistic product
+    changes. Confirm all supported mutation scenarios are converted and no longer listed Unstepped;
+    native Windows deferred scenarios remain honestly wip, genuine binary-only cases stay so, and no
+    temporary not-moved tag remains. Confirm T83 temporary skip setting is removed from push CI and
+    both drivers actually run the converted mutation scenarios, with counts/skips/timings reported.
+    Preserve third-party source comments/notices and snapshot wire bytes. Record a concise S7
+    completion report and final comparison additions on refactor-final-proof; make
+    inprocess-mutation-tests ready to specify before T46 as existing order requires, do not silently
+    reenable nightly/proof. S8 graph/server and S9 top-level bootstrap remain separate work, and
+    futureT86 layout is not implemented here. Focused local validation only; full gates hooks/CI, no
+    own-code mutation runs/worktrees/session moves/agents.
+  done_when:
+    - run: go test ./internal/mutants/... ./internal/mutation/...
+    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"

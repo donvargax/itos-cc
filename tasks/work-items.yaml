@@ -3237,3 +3237,10 @@ items:
     status: todo
     depends_on: [T-99]
     kind: task
+  - id: T-101
+    title: Finish mutation documentation and remove superseded command tests
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
