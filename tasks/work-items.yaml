@@ -3260,3 +3260,25 @@ items:
       also needed a narrowly justified approval retry; generated briefs could expose exact delegated
       push scope, an integration concern. These are process proposals, not authorization to bypass
       gates or fold tool changes into the current refactor item.
+  - id: strictness-outline-targets
+    title: Represent distinct assertion targets for every expanded outline example
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-82 found that the local tools/bin/step-strictness version-1 manifest has one exact
+      after-edit assertion name per probe. Scenario outlines can expand the same source assertion
+      line into different names: SNAP-01 has four snapshot paths and SNAP-09 three file/path
+      combinations. A source-check probe cannot currently state a separately reviewed exact target
+      name for every expanded example. T82 uses a truthful bounded workaround: temporary feature
+      Then literals become one constant wrong artifact/path identity while original commands,
+      Given/When, examples and case identities stay unchanged; every example must reach and fail its
+      intended Then. Shared source predicates are probed through non-outline scenarios separately.
+      Later refine the local runner's explicit per-example assertion identity representation with
+      backward compatibility, exact expanded case/step matching and all-example validation; do not
+      weaken matching to arbitrary text, masks or accept setup/skips as assertion failures. Specify
+      meaningful fixture tests for differing outline names and changed feature literals. This is our
+      repository's developer tool, not an itos product defect, and does not block current snapshot
+      work or authorize own-code product mutation.
