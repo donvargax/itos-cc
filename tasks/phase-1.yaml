@@ -1663,6 +1663,17 @@
     the renewal killed, changed-line and no-fresh-results controls and other-file guards.
     Existing Tests, Coverage, Git, Files and ObserveWrites capabilities suffice unless a
     concrete new need is demonstrated; no dependency or product behavior is added.
+    Rename fixtures use the test's actual import.meta.glob of the source files from the
+    beginning, so moving only board.ts to grid.ts leaves test bytes unchanged and still
+    executes them. A public source-only rename oracle proves fourteen kills and one
+    excepted mutant at the new file, plus the moved-entry problem. Declare both actual
+    related commands and the corresponding file sites; do not use an empty execution as
+    proof that the moved entry still excepts its survivor. For 97, review the count survivor,
+    change count and commit before establishing base, then commit only place after base;
+    the existing stale count entry lies outside that selected range. Verify its stale
+    counterfactual with public check. For 95 the uncovered entry is fixture configuration
+    derived from the actual recorded uncovered unit/site, not a scripted test outcome;
+    public except must continue refusing uncovered sites in 86.
   done_when:
     - run: "! grep -q '// T-77:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(8[5-9]|9[0-9]|13[89]|14[0-4]|146|227|242)$'
