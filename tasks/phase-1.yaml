@@ -1550,7 +1550,7 @@
   title: mutate.feature's results scenarios run through godog against the built binary
   why: >
     Piece 7 of mutate.feature (the plan's table): results scenarios. Go tests holding them today
-    include mutation_orphans, mutation_annotate and mutation_removed_sites tests. The
+    include mutation_orphans and mutation_removed_sites tests. The
     mutation_unrecorded holders for 106..107 belong to T-74 and remain for T-101 cleanup; do not
     count them as conversions in this piece. Map 52..56 to mutate_mutants_test, 231 to
     mutate_unreached_baseline_test, 232 to mutate_counted_unreached_listed_test, 233 to
@@ -1564,10 +1564,10 @@
     For 232 use controlled fixture sites and public counted output, never production candidate
     APIs to select its seed. For 233 keep the older-coverage compatibility and subprocess guards
     unless replacements establish those assertions too; a current real collector pass alone is
-    not replacement evidence for older collector behavior. Each piece (decision 39) writes steps for every
-    sentence as it stands, checks it against the built binary first and stops on one that cannot
-    run as written (docs/go.md
-    step 8), declares its fixtures' test outcomes through Driver.Tests and coverage through
+    not replacement evidence for older collector behavior. Each piece (decision 39) writes steps
+    for every sentence as it stands, checks it against the built binary first and stops on one
+    that cannot run as written (docs/go.md step 8), declares its fixtures' test outcomes through
+    Driver.Tests and coverage through
     Driver.Coverage, writes file assertions with slashes, tags @binary-only only what needs real
     processes or tools for good, deletes its own entry from features.Unstepped, deletes the Go tests
     in cmd/itos-cc its steps now hold (docs/go.md step 11, each named in the commit, never before
