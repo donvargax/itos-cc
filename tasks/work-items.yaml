@@ -2857,8 +2857,8 @@ items:
   - id: T-73
     title: mutate.feature's differential and since scenarios run through godog against the built binary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-72]
     kind: task
     why: >
