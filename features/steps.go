@@ -88,6 +88,9 @@ type Driver interface {
 	// Graph reads the public /api/graph of serve in r.Dir, owning and stopping
 	// its server before returning. The context bounds readiness and the request.
 	Graph(ctx context.Context, r Run) ([]byte, error)
+	// ObserveWrites starts observing existing paths and returns their writes
+	// or removals since then, including rewrites of identical bytes.
+	ObserveWrites(paths ...string) (func() ([]string, error), error)
 	// Counted says the system makes counted runs, mutation run --count,
 	// which itos-cc makes on Linux and macOS alone (#29): elsewhere both
 	// drivers skip the scenario (godog.ErrSkip).
@@ -251,8 +254,6 @@ var Converted = []string{
 // so a piece deletes its own entry, and the last one the list (T-81); an ID
 // no converted file's scenario carries fails every selection.
 var Unstepped = slices.Concat(
-	// T-73: differential, since
-	ids("MUT", "23-27", "37-46", "102-104"),
 	// T-74: check, stale tests
 	ids("MUT", "57-70", "106-108"),
 	// T-75: sample
@@ -1346,4 +1347,31 @@ func featureTags(files []string) ([]string, error) {
 	}
 	sort.Strings(tags)
 	return tags, nil
+}
+
+// stdoutSays checks literal text, or one line whose ordered pieces surround
+// the scenario's ellipsis, as mutation summaries name only their suffix.
+func (w *world) stdoutSays(text string) error {
+	if !strings.Contains(text, "…") {
+		if strings.Contains(w.stdout, text) {
+			return nil
+		}
+	} else {
+		for _, line := range outputLines(w.stdout) {
+			rest := filepath.ToSlash(line)
+			matched := true
+			for _, part := range strings.Split(text, "…") {
+				at := strings.Index(rest, part)
+				if at < 0 {
+					matched = false
+					break
+				}
+				rest = rest[at+len(part):]
+			}
+			if matched {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("stdout does not say %q\n%s", text, w.report())
 }

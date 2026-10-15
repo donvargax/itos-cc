@@ -79,12 +79,7 @@ func cliSteps(sc *godog.ScenarioContext, w *world) {
 	// The mutation group.
 	sc.Step(`^stdout names the subcommands (\w+) and (\w+)$`, c.stdoutNames)
 	sc.Step(`^stderr names the subcommands (\w+) and (\w+)$`, c.stderrNames)
-	sc.Step(`^stdout says "([^"]*)"$`, func(text string) error {
-		if !strings.Contains(w.stdout, text) {
-			return fmt.Errorf("stdout does not say %q\n%s", text, w.report())
-		}
-		return nil
-	})
+	sc.Step(`^stdout says "([^"]*)"$`, w.stdoutSays)
 	sc.Step(`^each survivor is a "([^"]*)" problem$`, c.eachSurvivor)
 	sc.Step(`^stdout lists each mutation site of (\S+) with its line, column, function, original, and replacement$`, c.listsSites)
 	sc.Step(`^no test command runs$`, c.noTestRuns)

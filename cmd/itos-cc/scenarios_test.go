@@ -25,6 +25,7 @@ import (
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
@@ -96,7 +97,8 @@ type memory struct {
 	// tests are what each folder's own tests do, as the scenario declared
 	// them, by folder, for the fake that runs a project's tests once the
 	// mutation group moves (porttest.Workers, S7).
-	tests map[string]features.Tests
+	tests    map[string]features.Tests
+	versions map[string]uint64
 }
 
 // repo is a fake git repository: what add staged and the last commit holds,
@@ -111,7 +113,7 @@ var _ features.Driver = (*memory)(nil)
 func newMemory(t *testing.T) *memory {
 	return &memory{
 		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
-		coverage: map[string]features.Coverage{}, tests: map[string]features.Tests{},
+		coverage: map[string]features.Coverage{}, tests: map[string]features.Tests{}, versions: map[string]uint64{},
 	}
 }
 
@@ -129,6 +131,7 @@ func (m *memory) Folder() (string, error) {
 
 func (m *memory) Write(path string, data []byte) error {
 	m.files[filepath.Clean(path)] = string(data)
+	m.versions[filepath.Clean(path)]++
 	return nil
 }
 
@@ -168,6 +171,7 @@ func (m *memory) Remove(path string) error {
 			if p == path || under(p, path) {
 				delete(m.dirs, p)
 				delete(m.files, p)
+				m.versions[p]++
 			}
 		}
 	}
@@ -308,7 +312,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Dir:          dir,
 		Tree:         tree,
 		Surroundings: langporttest.Surroundings{Files: maps.Clone(m.files), Dir: dir},
-		Store:        store,
+		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
 		Coverage:     m.measurer(dir),
 		Config:       file,
 	}
@@ -325,6 +329,53 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
 	}
 	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
+}
+
+// ObserveWrites observes memory write revisions rather than byte differences.
+func (m *memory) ObserveWrites(paths ...string) (func() ([]string, error), error) {
+	before := map[string]uint64{}
+	for _, path := range paths {
+		if _, err := m.Read(path); err != nil {
+			return nil, err
+		}
+		before[filepath.Clean(path)] = m.versions[filepath.Clean(path)]
+	}
+	return func() ([]string, error) {
+		var written []string
+		for _, path := range paths {
+			if m.versions[filepath.Clean(path)] != before[filepath.Clean(path)] {
+				written = append(written, path)
+			}
+		}
+		return written, nil
+	}, nil
+}
+
+// observedStore records successful writes at the moment they happen, including
+// identical JSON, instead of inferring them from the later memory writeback.
+type observedStore struct {
+	*snapporttest.Store
+	memory *memory
+	dir    string
+}
+
+func (s observedStore) Write(ctx context.Context, name string, v any) snapport.Failure {
+	if failure := s.Store.Write(ctx, name, v); failure != nil {
+		return failure
+	}
+	s.memory.versions[filepath.Join(s.dir, filepath.FromSlash(name))]++
+	return nil
+}
+
+func (s observedStore) Remove(ctx context.Context, name string) snapport.Failure {
+	_, existed := s.Store.Snapshots[filepath.ToSlash(name)]
+	if failure := s.Store.Remove(ctx, name); failure != nil {
+		return failure
+	}
+	if existed {
+		s.memory.versions[filepath.Join(s.dir, filepath.FromSlash(name))]++
+	}
+	return nil
 }
 
 // commandOf is the command args name, past the flags before it, as run

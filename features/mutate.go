@@ -75,6 +75,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
+	sinceMutationSteps(sc, m)
 	listedMutationSteps(sc, m)
 
 	// Mutation sites.

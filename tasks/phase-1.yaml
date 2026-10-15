@@ -2202,6 +2202,11 @@
     named reason and T-112 owner and a visible omission log; do not add a permanent binary-only
     tag or swallow Driver.Graph errors. All other eligible mutation scenarios run normally.
     T-112 removes this deferral and proves MUT-134 through both drivers.
+    T-73's Driver.ObserveWrites records real fake Store.Write revisions, including identical JSON.
+    Source annotation writers move here: route every attempted successful source write through
+    the memory driver's Write or an instrumented source-port adapter, even when bytes agree.
+    Do not infer an unwritten source from equal bytes during writeback. MUT102's source and
+    snapshot observer must pass in process once mutation scenarios join InProcess.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"

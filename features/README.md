@@ -487,3 +487,23 @@ During T-83's temporary push-CI omission, the old holders in
 converted scenarios actually pass CI following T-100's restoration, retaining helpers still
 used by counted scenarios. Local fixture runs establish local conversion evidence; a green
 CI selection that omits them does not establish a scenario pass.
+
+
+The differential/range scenarios (ID-MUT-23–27, 37–46, 102–104) use Go for generic
+mutation behavior and renames, and real Vitest projects for sentences naming `.ts` files.
+The rename fixture declares `Board#Place` with that exact spelling. Each fixture declares
+its coverage and test outcomes. The pinned Node CI selection runs 37–41, 46 and 102.
+
+`Driver.ObserveWrites` observes actual writes separately from bytes: the disk driver dates
+existing files in the past and checks their modification times, and the memory driver checks
+write revisions. Their shared contract includes rewriting identical bytes. Memory snapshots
+increment revisions through the actual fake Store.Write, before writeback; the source annotation
+writers move in S7 and must likewise record their writes through the memory driver's Write or
+an instrumented source port in T-100. A byte-only comparison cannot stand in for those events.
+ID-MUT-102 checks both the observed writes and the bytes of source and snapshot.
+
+T-101's deferred replacements from T-73 are the thirteen annotated tests in
+`cmd/itos-cc/mutate_since_test.go` for 37–46 and 102–104. Keep its shared helpers and the
+untagged renamed-file/new-path guard. The differential guards in `mutate/snapshot_test.go`
+stay as domain tests; `mutation_scope_test.go` belongs to T-75. All existing holders remain
+until the replacement scenarios actually pass CI after T-100 restores mutation scenarios.
