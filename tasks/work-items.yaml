@@ -3328,8 +3328,8 @@ items:
   - id: bug-2
     title: Partial mutation runs preserve unjudged whole-suite evidence
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
