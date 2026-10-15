@@ -1928,6 +1928,29 @@
     in-process implementation before those moves is temporary and explicit, never a
     permanent binary-only designation for logical scope admission. Keep the retained
     scope holder and additional adapter/domain read-policy guards until equal proof.
+    For MUT224, fresh line evidence means a complete cached record compatible
+    with current source/input fingerprints; it is not an admitted measurement
+    under a scope whose admission the scenario expressly refuses. Preserve that
+    legacy adversarial-cache intent and make it explicit beside the scenario.
+    At one fixed owned project path per example, first build the supported plain
+    layout with a real reaching test, declare its actual Tests and Coverage, and
+    run the public strict mutation command. Read its emitted unit and line_coverage:
+    require the actual source hash, complete nonempty blocks, producer and full
+    input map. Require a plain public strict check and a cached strict run to pass
+    without another collector execution. This supplies observed opaque producer
+    and environment values without calling internal fingerprint/producer APIs.
+    Next install only the scoped manifest change. Seed the adversarial raw cached
+    artifact from that observed record, preserving unit/source hash/blocks/producer,
+    environment values and every unchanged input. Replace only an explicitly
+    changed manifest's existing recorded SHA256 with an independent hash of its
+    actual new bytes. An outer workspace manifest absent from the observed nested
+    package inventory stays absent; never invent inventory keys. Keep the selected
+    runner, interpreter and build tool unchanged between the plain and scoped pair.
+    This is explicitly a seeded matching cache, never claimed actual measurement
+    of unsupported scope. Then test the real lexical refusal despite that cache.
+    Begin outside-root observation only after setup, seed writes and the per-target
+    positive controls, so setup/fixture reads cannot masquerade as product reads.
+    Keep the underlying scope holder and every extra fingerprint/read-policy guard.
   done_when:
     - run: "! grep -q '// T-79:' features/steps.go"
     - run: go test ./features -count=1 -scenarios='@ID-MUT-(15[6-9]|16[0-4]|22[1-6]|22[89]|230)$'
