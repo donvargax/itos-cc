@@ -1718,9 +1718,18 @@
     The person approved q-64 on 2026-10-14 to fix the environment failure of upgrade CI38684291843.
     The Ubuntu full Go tests and ci job pass, then language-tools fails before assertions because
     pinned Gradle setup finds /usr/bin/gradle and prepends /usr/bin, shadowing selected Go1.27.2
-    with the image default1.24.13; the module requires1.27.1. Add an Ubuntu-only invocation of the
-    SAME pinned actions/setup-go after Gradle and Maven setup and immediately before language-tools
-    tests, with go-version-file go.mod and cache false. Keep initial setup-go and all checks/tests.
+    with the image default1.24.13; the module requires1.27.1. The first repair a7abbde repeated
+    setup-go after language-tool setup. CI38685712421 reached the language tests but Python then
+    failed to find pytest: the same /usr/bin prepend also shadows the selected Python. Its other
+    jobs failed downloading the unchanged setup-go action archive, which subsequently returned
+    HTTP200. Repeating setup-go also selects go.mod's minimum1.27.1 rather than toolchain1.27.2
+    because the pinned action ignores the toolchain directive when GOTOOLCHAIN is already local.
+    Under the person's standing instruction to choose cleaner routine repairs and record the
+    decisions, move the existing Ubuntu-only Gradle setup immediately after checkout and before
+    the original setup-go, removing the duplicate setup-go. Each selected runtime then enters PATH
+    after Gradle, preserving its precedence and version. Keep the original toolchain pins,
+    go-version-file go.mod and all checks/tests; the hosted runner's existing Java runs Gradle
+    setup before the selected Java is installed for language tests.
     Change only .github/workflows/ci.yml, with a short reason comment if useful. No new
     tools/dependencies, no unrelated CI tuning, no product/scenario changes or repository mutation
     runs. Use configured hooks and actual exact-head CI as validation, not redundant workflow-shape
