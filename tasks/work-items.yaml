@@ -3138,8 +3138,8 @@ items:
   - id: T-93
     title: Move mutation check and list orchestration behind the domain boundary
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-92]
     kind: task
   - id: T-94
