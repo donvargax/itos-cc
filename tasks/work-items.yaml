@@ -3133,7 +3133,7 @@ items:
     title: Move mutation run orchestration into the domain over its ports
     phase: 1
     owner: donvargax
-    status: todo
+    status: doing
     depends_on: [T-91]
     kind: task
   - id: T-93
