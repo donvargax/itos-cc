@@ -2492,6 +2492,17 @@ items:
       environment fingerprints, and strict external replacement refusal without dependency reads.
       These are final baseline-characterized comparisons, not an intentional-difference allowance or
       a per-task binary comparison.
+
+      T-90 binds mutation's per-test measurement and static executable inventory through the
+      coverage capability. Compare actual harness-split versus once-per-listed-ID fallback runs, IDs
+      reaching distinct lines, a failed Go conversion beside valid sibling-language/ID evidence, a
+      failed collector that leaves report bytes, and unloaded Python/TypeScript functions including
+      an explicitly empty inventory, an unavailable collector and a failed inventory command.
+      Include subprocess integration filtering against the in-process inventory, missing c8 only for
+      built-in collection, and named/existing reports retaining good siblings beside an unreadable
+      report. Preserve actual commands, diagnostics, statuses and original artifacts under the
+      existing bounded-volatility rules; this adds no intentional difference or per-task binary
+      comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
