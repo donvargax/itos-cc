@@ -3285,6 +3285,22 @@
     refactor-final-proof rather than comparing binaries per task. Gates only through configured
     hooks/CI, focused local checks, no own-code mutation runs/worktrees/session moves/agents or
     unapproved dependencies.
+    Reuse the orphan behavior already extracted for run in T-92; check/list
+    must not grow a second interpretation or acquire orphan removal writes.
+    For an uncancelled orphan presence observation, existing Lstat semantics
+    count anything at the path, including a directory or dangling symlink,
+    as present; a permission or other error does not prove that it is gone.
+    A Stat-backed Exists result is not automatically this contract. Reuse an
+    established capability only if it holds these semantics, or record the
+    minimum real contract gap before implementation.
+    Preserve mapped-path presence before decoding a recorded outside-root
+    source. Only an absolute recorded source whose snapshot name agrees is
+    followed; an unreadable or malformed metadata read falls back to the
+    mapped path. Keep that permissive metadata observation separate from
+    stricter full-snapshot decoding rather than changing orphan admission.
+    JSON stays at the adapter, and existing typed mutation values remain
+    the contract. Check/list remain read-only on success and failure; run's
+    orphan removal still follows its existing publication ordering.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
