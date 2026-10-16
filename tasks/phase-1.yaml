@@ -3238,6 +3238,28 @@
     actual input lifetime state to prove cancellation joins work before release;
     premature release must fail the guard. Keep deterministic adapter proofs too,
     without treating final EOF and absent paths as proof of the internal order.
+    Before moving Run, inventory its remaining source reads, rename-existence
+    checks, snapshot codec calls and annotation writes against the actual ports.
+    Existing selection/lang operations still own discovery and parsing. Snapshot
+    publication must carry the pure Snapshot through a concrete encoding boundary:
+    keep the existing snapshot codec and generic Store semantics outside mutants,
+    not a direct default JSON encoding of the now untagged pure model. Reuse the
+    current Store where it expresses the need; settle and record only the smallest
+    missing model-bearing capability before code, without a DTO twin, leaf-model
+    package, folder-only generic or universal filesystem/process abstraction.
+    The current annotation boundary re-reads the source at publication time,
+    replaces only its summary, preserves its permission bits and skips a write
+    when bytes are identical. Keep those semantics through an actual bound source
+    writing capability, with the pure annotation rule owned once by mutants;
+    do not overwrite current source from an earlier planning copy or count an
+    identical byte rewrite as no write. Its memory counterpart records actual
+    writes for Driver.ObserveWrites, independently of desired expected artifacts.
+    Preserve the existing point at which a failed run, baseline or listed
+    selection prevents snapshot/annotation publication and the order of failures
+    during publication. This does not authorize the separate saves-each-file
+    behavior. Actual consumer missing/wrong-binding checks must rule out silent
+    legacy disk defaults after the domain move; temporary direct legacy wrappers
+    are not a second runner implementation or the domain's dependency.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
