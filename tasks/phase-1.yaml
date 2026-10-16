@@ -3011,6 +3011,42 @@
     T-92/T-95, while cmd receives actual contracts and guards injection.
     Fakes use actual memory files, declared import edges and independently
     declared executable/probe facts.
+    The graph package already imports legacy mutate; only cmd composes
+    importgraph Reach, never a mutate fallback importing graph again.
+    Move the existing pure GradleTests and MavenTests formatting functions
+    once into mutants and retain temporary forwarders in existing legacy
+    coverage, for T-90 to remove as those callers move. Python runnable-file
+    and module discovery still uses existing coverage helpers; one pure
+    Python argv constructor serves both ordinary and supervised fresh
+    commands without changing the latter's probe. Scope admission belongs
+    beside Fingerprints' provenance inventory, keeping adapters independent.
+    Driver.Tools(ctx, dir, ToolSetup) declares only otherwise unrepresentable
+    setup observations: independently installed NodeBins and an optional
+    Python interpreter/pytest-importability fact. Omitted Python is distinct
+    from explicit false; probes are keyed by actual interpreter identity and
+    caller directory, with actual fixture environment overrides. Binary
+    setup verifies NodeBin's existing Stat-only lookup and the real probe at
+    that cwd/environment, failing mismatches and distinguishing cancellation
+    from failed import. Memory creates actual installed .bin entries and
+    stores the independent probe fact; no observed probe defaults true and
+    none comes from Tests.Command or outcomes. Limit Given additions to the
+    affected setup. Shell override avoids a product probe even when setup
+    independently observed tool availability. There is no generic executable
+    registry, subprocess API or early mutation-handler promotion.
+    Optional Tests.Imports declares resolved file-to-file import/reference
+    adjacency from the actual Given source, test and support files. These
+    are never desired source-to-test reach lists, argv, traces or outcomes.
+    Memory stores root-level copies independently of command-keyed Workers
+    declarations; omitted Imports does not erase known facts and conflicting
+    declarations fail. Every requested graph node must have explicit facts,
+    including an empty adjacency for known no edges. Unknown referenced
+    paths and unsupported declarations fail rather than proving no reach.
+    Reach computes Go's package/one-hop rule and non-Go closure, applicable
+    conftest support and Kotlin references from those facts; the binary keeps
+    its actual parser until S8. An imports-only Tests declaration has no
+    Command or execution outcomes and stores root-level graph facts only;
+    it neither installs tools nor declares a runnable test command. This
+    covers selection-only fixtures without inventing their test results.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
