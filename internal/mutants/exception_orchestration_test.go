@@ -207,9 +207,17 @@ func TestDomainElsewhereUsesLexicalRootsAndLazyParse(t *testing.T) {
 	// Key naming outside the root must stay absolute, without Git/cwd discovery.
 	opt.Tree = seltest.TreeOf(filepath.Dir(f.root), map[string]string{"outside.go": runSource}, nil)
 	opt.Surroundings = &porttest.Inputs{Dir: f.root, Files: map[string]string{outside: runSource}}
-	entry.File = outside
+	entry.File = filepath.ToSlash(outside)
 	stale, _, err = mutants.Elsewhere(t.Context(), []mutants.Exception{entry}, []string{outside}, yes, no, opt)
 	if err != nil || len(stale) != 0 {
 		t.Fatalf("outside selection: %+v %v", stale, err)
+	}
+	// A recorded identity is not normalized merely because it names the same path.
+	// Assemble the spelling literally so filepath.Join cannot clean away the dot.
+	canonical := entry.File
+	entry.File = filepath.ToSlash(filepath.Dir(outside)) + "/./" + filepath.Base(outside)
+	stale, moved, err = mutants.Elsewhere(t.Context(), []mutants.Exception{entry}, []string{outside}, yes, no, opt)
+	if err != nil || len(stale) != 1 || stale[0].Why != mutants.ExceptionMoved || stale[0].File != entry.File || stale[0].NewFile != canonical || len(moved) != 1 || moved[0].File != canonical {
+		t.Fatalf("raw outside identity: %+v %+v %v", stale, moved, err)
 	}
 }
