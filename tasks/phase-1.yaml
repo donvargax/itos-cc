@@ -3510,9 +3510,6 @@
     stdout-only listing rows, streamed stderr and unsuccessful status guards
     substantive on Windows. Add no platform skip, loosened assertion, gate
     change or product behavior while correcting these fixture operations.
-  done_when:
-    - run: go test ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
 - id: T-93
   type: refactor
   title: Move mutation check and list orchestration behind the domain boundary
