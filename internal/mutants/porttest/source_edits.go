@@ -88,3 +88,37 @@ func (s *SourceEdits) RenameTarget(ctx context.Context, path string) (bool, muta
 	_, link := s.Links[path]
 	return file || link || s.Directories[path], nil
 }
+
+func (s *SourceEdits) Kind(ctx context.Context, path string) (mutants.SourceKind, mutants.InputFailure) {
+	if ctx.Err() != nil {
+		return mutants.SourceMissing, mutants.InputCancelled{Cause: context.Cause(ctx)}
+	}
+	path = filepath.Clean(path)
+	seen := map[string]bool{}
+	for {
+		if err := s.StatErrors[path]; err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				return mutants.SourceMissing, nil
+			}
+			return mutants.SourceMissing, mutants.InputFailed{Cause: err}
+		}
+		if s.Directories[path] {
+			return mutants.SourceDirectory, nil
+		}
+		if _, ok := s.Files[path]; ok {
+			return mutants.SourceNonDirectory, nil
+		}
+		target, link := s.Links[path]
+		if !link {
+			return mutants.SourceMissing, nil
+		}
+		if seen[path] {
+			return mutants.SourceMissing, mutants.InputFailed{Cause: fmt.Errorf("cyclic source link: %s", path)}
+		}
+		seen[path] = true
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(path), target)
+		}
+		path = filepath.Clean(target)
+	}
+}

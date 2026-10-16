@@ -10,18 +10,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/testtools"
 )
 
-// scopeCommand is the command that runs path's tests in scope, tests the
-// test files that reach it.
-func scopeCommand(ctx context.Context, path, scope string, tests []string) Command {
-	switch scope {
-	case ScopeOwn, ScopeListed, "":
-		return TestCommand(ctx, path, "", false, tests)
-	case ScopeAllTests:
-		return TestCommand(ctx, path, "", true, nil)
-	}
-	return TestCommand(ctx, path, scope, false, nil)
-}
-
 // SnapshotName is where the snapshot of the file at rel, its path from the
 // project root (project.FromRoot), lives under .metrics.
 func SnapshotName(rel string) string {
@@ -47,21 +35,4 @@ func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string, tools
 		tool = tools[0]
 	}
 	return mutants.LoadSnapshot(ctx, metricsdir.Mutations{Store: store}, rel, tool)
-}
-
-func scopeCommandWithTools(ctx context.Context, path, scope string, tests []string, tools mutants.Toolchain) (Command, error) {
-	if tools == nil {
-		return scopeCommand(ctx, path, scope, tests), nil
-	}
-	request := mutants.CommandRequest{Path: path, Tests: tests}
-	switch scope {
-	case ScopeOwn, ScopeListed, "":
-	case ScopeAllTests:
-		request.All = true
-		request.Tests = nil
-	default:
-		request.Shell = scope
-		request.Tests = nil
-	}
-	return mutants.ObserveCommand(ctx, tools, request)
 }

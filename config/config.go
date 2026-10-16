@@ -7,7 +7,6 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -251,61 +250,23 @@ func (r *rawTests) parse() (*Tests, error) {
 	return t, nil
 }
 
-// Except writes e into itos-cc.yaml at the project root, under
-// mutation.exceptions, in place of an entry for the same site or after the
-// others, and reports whether it replaced one. The file's other keys and
-// its comments are kept; the file is made when there is none. It refuses,
-// with an *InvalidError, to write over a file it cannot read.
-func Except(e Exception) (replaced bool, err error) {
+// Renewal aliases the genuine domain value; there is no Old/New wire twin.
+type Renewal = mutants.Renewal
+
+// Except retains the original direct-library entry point.
+func Except(e Exception) (bool, error) {
 	data, err := os.ReadFile(Path())
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return false, err
 	}
-	c, err := Parse(data)
+	updated, replaced, err := ExceptDocument(data, e)
 	if err != nil {
 		return false, err
 	}
-	var doc yaml.Node
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return false, &InvalidError{Reason: err.Error()}
-	}
-	if doc.Kind == 0 {
-		doc.Kind = yaml.DocumentNode
-	}
-	if len(doc.Content) == 0 || doc.Content[0].Kind == yaml.ScalarNode && doc.Content[0].Tag == "!!null" {
-		doc.Content = []*yaml.Node{{Kind: yaml.MappingNode, Tag: "!!map"}}
-	}
-	root := doc.Content[0]
-	if root.Kind != yaml.MappingNode {
-		return false, &InvalidError{Reason: "its top level is not a mapping"}
-	}
-	exceptions := valueOf(valueOf(root, "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
-
-	var entry yaml.Node
-	if err := entry.Encode(exceptionWire(e)); err != nil {
-		return false, err
-	}
-	for i, old := range c.Exceptions {
-		if old.SameSite(e) {
-			was := exceptions.Content[i]
-			entry.HeadComment, entry.LineComment, entry.FootComment = was.HeadComment, was.LineComment, was.FootComment
-			exceptions.Content[i] = &entry
-			return true, write(&doc)
-		}
-	}
-	exceptions.Content = append(exceptions.Content, &entry)
-	return false, write(&doc)
+	return replaced, writeDocument(Path(), updated)
 }
 
-// Renewal is an entry of itos-cc.yaml, Old, and what it is to read now,
-// New.
-type Renewal struct{ Old, New Exception }
-
-// Renew writes each renewal's New into itos-cc.yaml at the project root in
-// place of the entry that reads as its Old, keeping the entry's comments,
-// the file's other entries and keys, and its comments. It refuses, with an
-// *InvalidError, a file it cannot read, and errs, writing nothing, when an
-// Old is no entry of it.
+// Renew retains the original direct-library batch entry point.
 func Renew(renewals []Renewal) error {
 	if len(renewals) == 0 {
 		return nil
@@ -314,80 +275,18 @@ func Renew(renewals []Renewal) error {
 	if err != nil {
 		return err
 	}
-	c, err := Parse(data)
+	updated, err := RenewDocument(data, renewals)
 	if err != nil {
 		return err
 	}
-	var doc yaml.Node
-	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return &InvalidError{Reason: err.Error()}
-	}
-	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
-		return &InvalidError{Reason: "its top level is not a mapping"}
-	}
-	exceptions := valueOf(valueOf(doc.Content[0], "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
-	if len(exceptions.Content) != len(c.Exceptions) {
-		return fmt.Errorf("%s: mutation.exceptions changed while it was read", File)
-	}
-	done := make([]bool, len(c.Exceptions))
-	for _, r := range renewals {
-		i := slices.IndexFunc(c.Exceptions, func(e Exception) bool { return e == r.Old })
-		for i >= 0 && done[i] {
-			next := slices.IndexFunc(c.Exceptions[i+1:], func(e Exception) bool { return e == r.Old })
-			if next < 0 {
-				i = -1
-				break
-			}
-			i += 1 + next
-		}
-		if i < 0 {
-			return fmt.Errorf("%s: no entry for %s in %s to renew", File, r.Old.Function, r.Old.File)
-		}
-		var entry yaml.Node
-		if err := entry.Encode(exceptionWire(r.New)); err != nil {
-			return err
-		}
-		was := exceptions.Content[i]
-		entry.HeadComment, entry.LineComment, entry.FootComment = was.HeadComment, was.LineComment, was.FootComment
-		exceptions.Content[i] = &entry
-		done[i] = true
-	}
-	return write(&doc)
+	return writeDocument(Path(), updated)
 }
-
-// valueOf is the value of key in mapping m, made a node of kind when it is
-// missing or null.
-func valueOf(m *yaml.Node, key string, kind yaml.Kind) *yaml.Node {
-	tag := map[yaml.Kind]string{yaml.MappingNode: "!!map", yaml.SequenceNode: "!!seq"}[kind]
-	for i := 0; i+1 < len(m.Content); i += 2 {
-		if m.Content[i].Value == key {
-			v := m.Content[i+1]
-			if v.Kind == yaml.ScalarNode && v.Tag == "!!null" {
-				v.Kind, v.Tag, v.Value, v.Style = kind, tag, "", 0
-			}
-			return v
-		}
-	}
-	v := &yaml.Node{Kind: kind, Tag: tag}
-	m.Content = append(m.Content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}, v)
-	return v
-}
-
-func write(doc *yaml.Node) error {
-	var buf bytes.Buffer
-	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
-	if err := enc.Encode(doc); err != nil {
-		return err
-	}
-	if err := enc.Close(); err != nil {
-		return err
-	}
+func writeDocument(path string, data []byte) error {
 	mode := os.FileMode(0o644)
-	if info, err := os.Stat(Path()); err == nil {
+	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode().Perm()
 	}
-	return os.WriteFile(Path(), buf.Bytes(), mode)
+	return os.WriteFile(path, data, mode)
 }
 
 // Exception and Tests are domain values; YAML stays at this boundary.
