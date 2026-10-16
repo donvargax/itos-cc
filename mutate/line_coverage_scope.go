@@ -1,18 +1,16 @@
-package porttest
-
-// This in-memory boundary reads the same accepted declaration syntax from actual
-// Files and Links. It never follows a dependency target or scripts a verdict.
+package mutate
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // LineCoverageUnsupported names the scope of source, a file of a
@@ -38,21 +36,39 @@ import (
 // build root) beneath it, which the fingerprints leave out. Detection is
 // lexical: it reads only files beneath projectRoot, and never follows,
 // opens or lists a target outside it.
+func LineCoverageUnsupported(ctx context.Context, language, source, projectRoot string) (string, error) {
+	abs, err := filepath.Abs(source)
+	if err != nil {
+		return "", err
+	}
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return "", err
+	}
+	s := scopeReader{root: root}
+	switch language {
+	case "typescript":
+		return s.typescript(ctx, abs), nil
+	case "python":
+		return s.python(ctx, abs), nil
+	case "kotlin":
+		return s.kotlin(ctx, abs), nil
+	}
+	return "", nil
+}
+
 // scopeReader reads the files a scope is declared in, beneath the project
 // root alone.
-type scopeReader struct {
-	root   string
-	inputs *Inputs
-}
+type scopeReader struct{ root string }
 
 // read is the file at path, "" when it is not beneath the root or cannot
 // be read.
-func (s scopeReader) read(ctx context.Context, path string) string {
-	if !inside(s.root, path) {
+func (s scopeReader) read(path string) string {
+	if !beneathRoot(s.root, path) {
 		return ""
 	}
-	data, ok := s.inputs.Read(ctx, path)
-	if !ok {
+	data, err := os.ReadFile(path)
+	if err != nil {
 		return ""
 	}
 	return string(data)
@@ -71,7 +87,7 @@ func (s scopeReader) rel(path string) string {
 // resolves outside the inventory of the build root at root: outside root,
 // or through a symbolic link or a directory nested says is another build
 // root. Only paths beneath root are inspected, with Lstat.
-func (s scopeReader) outside(ctx context.Context, root, base, target string, nested func(dir string) bool) bool {
+func (s scopeReader) outside(root, base, target string, nested func(dir string) bool) bool {
 	if rooted(target) && !filepath.IsAbs(target) {
 		// On Windows, \x or /x is on the current drive and C:x relative to
 		// C:'s working directory: neither is beneath the root.
@@ -82,7 +98,7 @@ func (s scopeReader) outside(ctx context.Context, root, base, target string, nes
 		path = filepath.Join(base, filepath.FromSlash(path))
 	}
 	path = filepath.Clean(path)
-	if !inside(root, path) || !inside(s.root, path) {
+	if !beneathRoot(root, path) || !beneathRoot(s.root, path) {
 		return true
 	}
 	rel, err := filepath.Rel(root, path)
@@ -95,10 +111,11 @@ func (s scopeReader) outside(ctx context.Context, root, base, target string, nes
 	current := root
 	for _, component := range strings.Split(rel, string(filepath.Separator)) {
 		current = filepath.Join(current, component)
-		if _, linked := s.inputs.Links[current]; linked {
+		info, err := os.Lstat(current)
+		if err == nil && info.Mode()&os.ModeSymlink != 0 {
 			return true
 		}
-		if s.inputs.Exists(ctx, current) && nested != nil && nested(current) {
+		if err == nil && info.IsDir() && nested != nil && nested(current) {
 			return true
 		}
 	}
@@ -116,8 +133,8 @@ func rooted(target string) bool {
 // buildRoot is the nearest directory above source holding one of markers,
 // "" when there is none beneath the project root.
 func (s scopeReader) buildRoot(ctx context.Context, source string, markers ...string) string {
-	dir := s.inputs.nearest(ctx, source, markers...)
-	if dir == "" || !inside(s.root, dir) {
+	dir := project.FindUp(ctx, source, markers...)
+	if dir == "" || !beneathRoot(s.root, dir) {
 		return ""
 	}
 	return dir
@@ -133,10 +150,10 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 		return ""
 	}
 	for dir := pkg; ; dir = filepath.Dir(dir) {
-		if workspace := filepath.Join(dir, "pnpm-workspace.yaml"); s.inputs.regular(ctx, workspace) {
+		if workspace := filepath.Join(dir, "pnpm-workspace.yaml"); coverageFileExists(workspace) {
 			return "pnpm workspace (" + s.rel(workspace) + ")"
 		}
-		if text := s.read(ctx, filepath.Join(dir, "package.json")); text != "" {
+		if text := s.read(filepath.Join(dir, "package.json")); text != "" {
 			var manifest map[string]json.RawMessage
 			if json.Unmarshal([]byte(text), &manifest) == nil {
 				if raw, ok := manifest["workspaces"]; ok && string(raw) != "null" {
@@ -144,18 +161,18 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 				}
 			}
 		}
-		if dir == s.root || filepath.Dir(dir) == dir || !inside(s.root, filepath.Dir(dir)) {
+		if dir == s.root || filepath.Dir(dir) == dir || !beneathRoot(s.root, filepath.Dir(dir)) {
 			break
 		}
 	}
 	manifest := filepath.Join(pkg, "package.json")
 	var deps map[string]map[string]string
-	if json.Unmarshal([]byte(s.read(ctx, manifest)), &deps) != nil {
+	if json.Unmarshal([]byte(s.read(manifest)), &deps) != nil {
 		// A field that is not a map of strings fails the whole decode: read
 		// each field alone.
 		deps = map[string]map[string]string{}
 		var fields map[string]json.RawMessage
-		_ = json.Unmarshal([]byte(s.read(ctx, manifest)), &fields)
+		json.Unmarshal([]byte(s.read(manifest)), &fields)
 		for _, field := range typescriptDependencyFields {
 			var m map[string]string
 			if json.Unmarshal(fields[field], &m) == nil {
@@ -163,7 +180,7 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 			}
 		}
 	}
-	nestedPackage := func(dir string) bool { return s.inputs.regular(ctx, filepath.Join(dir, "package.json")) }
+	nestedPackage := func(dir string) bool { return coverageFileExists(filepath.Join(dir, "package.json")) }
 	for _, field := range typescriptDependencyFields {
 		names := make([]string, 0, len(deps[field]))
 		for name := range deps[field] {
@@ -177,7 +194,7 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 				return fmt.Sprintf("workspace dependency %s %q in %s", name, spec, s.rel(manifest))
 			case strings.HasPrefix(spec, "file:"), strings.HasPrefix(spec, "link:"):
 				target := strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(spec, "file:"), "link:"), "//")
-				if s.outside(ctx, pkg, pkg, target, nestedPackage) || !s.inputs.directory(ctx, filepath.Join(pkg, filepath.FromSlash(target))) {
+				if s.outside(pkg, pkg, target, nestedPackage) || !isDir(filepath.Join(pkg, filepath.FromSlash(target))) {
 					return fmt.Sprintf("local dependency %s %q in %s, outside the package root", name, spec, s.rel(manifest))
 				}
 			}
@@ -204,20 +221,20 @@ func (s scopeReader) python(ctx context.Context, source string) string {
 	}
 	nestedRoot := func(dir string) bool {
 		for _, marker := range pythonRootMarkers {
-			if s.inputs.regular(ctx, filepath.Join(dir, marker)) {
+			if coverageFileExists(filepath.Join(dir, marker)) {
 				return true
 			}
 		}
 		return false
 	}
 	refuse := func(target, file string) string {
-		if s.outside(ctx, root, root, target, nestedRoot) {
+		if s.outside(root, root, target, nestedRoot) {
 			return fmt.Sprintf("path dependency %q in %s, outside the build root", target, s.rel(file))
 		}
 		return ""
 	}
 	pyproject := filepath.Join(root, "pyproject.toml")
-	text := s.read(ctx, pyproject)
+	text := s.read(pyproject)
 	for _, m := range pyprojectPath.FindAllStringSubmatch(text, -1) {
 		if why := refuse(m[1], pyproject); why != "" {
 			return why
@@ -228,10 +245,10 @@ func (s scopeReader) python(ctx context.Context, source string) string {
 			return why
 		}
 	}
-	requirements, _ := s.inputs.glob(filepath.Join(root, "requirements*.txt"))
+	requirements, _ := filepath.Glob(filepath.Join(root, "requirements*.txt"))
 	slices.Sort(requirements)
 	for _, file := range requirements {
-		for _, line := range strings.Split(s.read(ctx, file), "\n") {
+		for _, line := range strings.Split(s.read(file), "\n") {
 			if target := requirementPath(line); target != "" {
 				if why := refuse(target, file); why != "" {
 					return why
@@ -240,29 +257,29 @@ func (s scopeReader) python(ctx context.Context, source string) string {
 		}
 	}
 	for _, venv := range []string{".venv", "venv"} {
-		sites, _ := s.inputs.glob(filepath.Join(root, venv, "lib", "python*", "site-packages"))
-		sites2, _ := s.inputs.glob(filepath.Join(root, venv, "Lib", "site-packages"))
+		sites, _ := filepath.Glob(filepath.Join(root, venv, "lib", "python*", "site-packages"))
+		sites2, _ := filepath.Glob(filepath.Join(root, venv, "Lib", "site-packages"))
 		for _, site := range append(sites, sites2...) {
-			pths, _ := s.inputs.glob(filepath.Join(site, "*.pth"))
-			finders, _ := s.inputs.glob(filepath.Join(site, "__editable__*finder.py"))
+			pths, _ := filepath.Glob(filepath.Join(site, "*.pth"))
+			finders, _ := filepath.Glob(filepath.Join(site, "__editable__*finder.py"))
 			slices.Sort(pths)
 			slices.Sort(finders)
 			for _, pth := range pths {
-				for _, line := range strings.Split(s.read(ctx, pth), "\n") {
+				for _, line := range strings.Split(s.read(pth), "\n") {
 					line = strings.TrimSpace(line)
 					if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "import ") || strings.HasPrefix(line, "import\t") {
 						continue
 					}
-					if s.outside(ctx, root, site, line, nil) {
+					if s.outside(root, site, line, nil) {
 						return fmt.Sprintf("editable install %q in %s, outside the build root", line, s.rel(pth))
 					}
 				}
 			}
 			for _, finder := range finders {
-				for _, mapping := range editableMapping.FindAllStringSubmatch(s.read(ctx, finder), -1) {
+				for _, mapping := range editableMapping.FindAllStringSubmatch(s.read(finder), -1) {
 					for _, q := range quoted.FindAllStringSubmatch(mapping[1], -1) {
 						target := q[1] + q[2]
-						if rooted(target) && s.outside(ctx, root, root, target, nil) {
+						if rooted(target) && s.outside(root, root, target, nil) {
 							return fmt.Sprintf("editable install %q in %s, outside the build root", target, s.rel(finder))
 						}
 					}
@@ -320,15 +337,15 @@ func (s scopeReader) kotlin(ctx context.Context, source string) string {
 	if module == "" {
 		return ""
 	}
-	if !s.inputs.regular(ctx, filepath.Join(module, "pom.xml")) {
+	if !coverageFileExists(filepath.Join(module, "pom.xml")) {
 		root := s.buildRoot(ctx, source, kotlinSettings...)
 		if root == "" {
 			return ""
 		}
 		for _, name := range kotlinSettings {
 			settings := filepath.Join(root, name)
-			for _, m := range includeBuild.FindAllStringSubmatch(s.read(ctx, settings), -1) {
-				if s.outside(ctx, root, root, m[1], nil) {
+			for _, m := range includeBuild.FindAllStringSubmatch(s.read(settings), -1) {
+				if s.outside(root, root, m[1], nil) {
 					return fmt.Sprintf("includeBuild(%q) in %s, outside the build root", m[1], s.rel(settings))
 				}
 			}
@@ -337,7 +354,7 @@ func (s scopeReader) kotlin(ctx context.Context, source string) string {
 	}
 	var poms []string
 	top := module
-	for dir := module; inside(s.root, dir) && s.inputs.regular(ctx, filepath.Join(dir, "pom.xml")); dir = filepath.Dir(dir) {
+	for dir := module; beneathRoot(s.root, dir) && coverageFileExists(filepath.Join(dir, "pom.xml")); dir = filepath.Dir(dir) {
 		poms = append(poms, filepath.Join(dir, "pom.xml"))
 		top = dir
 		if filepath.Dir(dir) == dir {
@@ -346,74 +363,17 @@ func (s scopeReader) kotlin(ctx context.Context, source string) string {
 	}
 	for i := len(poms) - 1; i >= 0; i-- {
 		pom := poms[i]
-		text := xmlComment.ReplaceAllString(s.read(ctx, pom), "")
+		text := xmlComment.ReplaceAllString(s.read(pom), "")
 		for _, m := range mavenModule.FindAllStringSubmatch(text, -1) {
-			if s.outside(ctx, top, filepath.Dir(pom), m[2], nil) {
+			if s.outside(top, filepath.Dir(pom), m[2], nil) {
 				return fmt.Sprintf("<%s>%s</%s> in %s, outside the build root", m[1], m[2], m[1], s.rel(pom))
 			}
 		}
 		for _, m := range relativePath.FindAllStringSubmatch(text, -1) {
-			if s.outside(ctx, top, filepath.Dir(pom), m[1], nil) {
+			if s.outside(top, filepath.Dir(pom), m[1], nil) {
 				return fmt.Sprintf("parent <relativePath>%s</relativePath> in %s, outside the build root", m[1], s.rel(pom))
 			}
 		}
 	}
 	return ""
-}
-
-var pythonRootMarkers = []string{"pyproject.toml", "setup.py", "setup.cfg"}
-var kotlinModuleMarkers = []string{"build.gradle.kts", "build.gradle", "pom.xml"}
-var kotlinSettings = []string{"settings.gradle.kts", "settings.gradle"}
-
-func (s *Inputs) regular(ctx context.Context, path string) bool {
-	if ctx.Err() != nil {
-		return false
-	}
-	_, ok := s.Files[s.absolute(path)]
-	return ok
-}
-func (s *Inputs) directory(ctx context.Context, path string) bool {
-	return s.Exists(ctx, path) && !s.regular(ctx, path)
-}
-func (s *Inputs) glob(pattern string) ([]string, error) {
-	if _, err := filepath.Match(pattern, ""); err != nil {
-		return nil, err
-	}
-	entries := map[string]bool{}
-	for path := range s.Files {
-		for p := path; ; p = filepath.Dir(p) {
-			entries[p] = true
-			if filepath.Dir(p) == p {
-				break
-			}
-		}
-	}
-	var found []string
-	for path := range entries {
-		if ok, _ := filepath.Match(pattern, path); ok {
-			found = append(found, path)
-		}
-	}
-	slices.Sort(found)
-	return found, nil
-}
-
-func (s *Inputs) Unsupported(ctx context.Context, language, source, root string) (string, mutants.InputFailure) {
-	if failure := inputStopped(ctx); failure != nil {
-		return "", failure
-	}
-	if language == "go" {
-		return s.goUnsupported(ctx, source)
-	}
-	reader := scopeReader{root: s.absolute(root), inputs: s}
-	var reason string
-	switch language {
-	case "typescript":
-		reason = reader.typescript(ctx, s.absolute(source))
-	case "python":
-		reason = reader.python(ctx, s.absolute(source))
-	case "kotlin":
-		reason = reader.kotlin(ctx, s.absolute(source))
-	}
-	return reason, inputStopped(ctx)
 }

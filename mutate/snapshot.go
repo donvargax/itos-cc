@@ -2,11 +2,14 @@ package mutate
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // scopeCommand is the command that runs path's tests in scope, tests the
@@ -40,7 +43,7 @@ func SnapshotName(rel string) string {
 // suite (OwnScope), reads as ScopeAllTests, the scope that decided it: one
 // recorded before that rule has no whole-suite evidence, so it reads stale
 // once.
-func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string, tools ...mutants.Toolchain) (*Snapshot, error) {
+func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string) (*Snapshot, error) {
 	root, failure := store.Root(ctx)
 	if failure != nil {
 		return nil, failure
@@ -54,20 +57,7 @@ func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string, tools
 	if !ok || s.File != filepath.ToSlash(rel) {
 		return nil, nil
 	}
-	var ownScope string
-	path := filepath.Join(root, filepath.FromSlash(rel))
-	if len(tools) > 0 && tools[0] != nil {
-		if spec := lang.Detect(path); spec != nil && spec.Name == "typescript" {
-			command, failure := mutants.ObserveCommand(ctx, tools[0], mutants.CommandRequest{Path: path})
-			if failure != nil {
-				return nil, failure
-			}
-			ownScope = scopeForCommand("", false, command)
-		}
-	} else {
-		ownScope = OwnScope(ctx, path)
-	}
-	if ownScope == ScopeAllTests {
+	if OwnScope(ctx, filepath.Join(root, filepath.FromSlash(rel))) == ScopeAllTests {
 		for i := range s.Units {
 			for j := range s.Units[i].Mutants {
 				if m := &s.Units[i].Mutants[j]; m.TestScope() == ScopeOwn {
@@ -79,19 +69,34 @@ func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string, tools
 	return &s, nil
 }
 
-func scopeCommandWithTools(ctx context.Context, path, scope string, tests []string, tools mutants.Toolchain) (Command, error) {
-	if tools == nil {
-		return scopeCommand(ctx, path, scope, tests), nil
+// TestHashes is what a snapshot records of the test files tests: the
+// SHA-256 of each one's content, by its slash-separated path from the
+// project root (project.FromRoot).
+func TestHashes(tests []string) (map[string]string, error) {
+	return testHashes(tests, project.FromRoot)
+}
+
+// TestHashesUnder is TestHashes for the project at root, which need not be
+// the working directory's: each test file by its slash-separated path from
+// root, as a run in that project records it.
+func TestHashesUnder(root string, tests []string) (map[string]string, error) {
+	return testHashes(tests, func(path string) string {
+		if rel, err := filepath.Rel(root, path); err == nil && !strings.HasPrefix(rel, "..") {
+			return rel
+		}
+		return path
+	})
+}
+
+func testHashes(tests []string, rel func(string) string) (map[string]string, error) {
+	out := map[string]string{}
+	for _, path := range tests {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		sum := sha256.Sum256(data)
+		out[filepath.ToSlash(rel(path))] = hex.EncodeToString(sum[:])
 	}
-	request := mutants.CommandRequest{Path: path, Tests: tests}
-	switch scope {
-	case ScopeOwn, ScopeListed, "":
-	case ScopeAllTests:
-		request.All = true
-		request.Tests = nil
-	default:
-		request.Shell = scope
-		request.Tests = nil
-	}
-	return mutants.ObserveCommand(ctx, tools, request)
+	return out, nil
 }

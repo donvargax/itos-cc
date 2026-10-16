@@ -147,27 +147,19 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests(ctx, in)
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}
-	support, err := supportNow(ctx, in, cfg)
+	support, err := supportNow(cfg)
 	if err != nil {
 		return result, err
-	}
-	if in.adapters.Toolchain == nil {
-		return result, errors.New("mutation Toolchain binding is missing")
-	}
-	if in.adapters.Fingerprints == nil {
-		return result, errors.New("mutation Fingerprints binding is missing")
 	}
 	if in.adapters.Workers == nil {
 		return nil, errors.New("mutation Workers binding is missing")
 	}
 	opt := mutate.Options{
 		WorkerFactory: in.adapters.Workers,
-		Toolchain:     in.adapters.Toolchain,
-		Fingerprints:  in.adapters.Fingerprints,
 		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,

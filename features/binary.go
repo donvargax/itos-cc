@@ -213,12 +213,6 @@ var testTools = map[string][]string{
 // run within quickRun skip where the system cannot run them that fast
 // (quickRunsOn). The tests themselves then decide every outcome.
 func (binary) Tests(_ string, t Tests) error {
-	if t.Command == "" && t.Imports != nil {
-		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
-			return fmt.Errorf("imports-only setup cannot declare execution outcomes")
-		}
-		return nil
-	}
 	tools, ok := testTools[t.Language]
 	if !ok {
 		return fmt.Errorf("no tools known for %s's tests", t.Language)

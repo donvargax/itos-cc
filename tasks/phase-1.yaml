@@ -3047,13 +3047,6 @@
     Command or execution outcomes and stores root-level graph facts only;
     it neither installs tools nor declares a runnable test command. This
     covers selection-only fixtures without inventing their test results.
-    Partial-result finalization preserves recordListed's existing best-effort
-    actual file reads even after caller cancellation. Only that finalization
-    leaf derives context.WithoutCancel(ctx) for retained listed-file hashes;
-    unreadable files still hash empty nonfatally. Ordinary current fingerprints,
-    scope admission, probes, tests and snapshot publication keep the original
-    caller context. This neither admits new work nor authorizes a write after
-    cancellation; it preserves the pre-port artifact provenance semantics.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"

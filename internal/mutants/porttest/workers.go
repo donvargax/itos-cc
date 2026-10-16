@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -50,15 +49,8 @@ type Workers struct {
 	Files  map[string]string
 	Tests  map[string]map[string]Tests
 	Write  func(path string, data []byte) error
-	// Env is the actual per-run environment, independent of test verdict facts.
-	Env      map[string]string
-	Without  []string
-	Platform string
-	// Environments are actual entered command environments for binding guards.
-	Environments []map[string]string
-
-	mu   sync.Mutex
-	next int
+	mu     sync.Mutex
+	next   int
 }
 
 var _ mutants.Workers = (*Workers)(nil)
@@ -144,42 +136,6 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 		copy[filepath.Clean(change.Path)] = string(change.Site.Apply(change.Source))
 		defer func() { copy[filepath.Clean(change.Path)] = string(change.Source) }()
 	}
-
-	environment := maps.Clone(f.Env)
-	if environment == nil {
-		environment = map[string]string{}
-	}
-	if c.PathEnv != "" {
-		var paths []string
-		for _, dir := range c.PathDirs {
-			paths = append(paths, filepath.Join(w.dir, filepath.FromSlash(dir)))
-		}
-		if inherited := environment[c.PathEnv]; inherited != "" {
-			paths = append(paths, inherited)
-		}
-		environment[c.PathEnv] = strings.Join(paths, string(filepath.ListSeparator))
-	}
-	f.Environments = append(f.Environments, environment)
-
-	if len(c.Args) > 0 && hiddenProgram(c.Args[0], f.Without, f.Platform) {
-		return mutants.CommandResult{}, failed("requested executable is absent from actual Run.Without: " + c.Args[0])
-	}
-	if c.Shell != "" && len(f.Without) > 0 {
-		if strings.ContainsAny(c.Shell, "\"'`\\;&|<>()$\n") {
-			return mutants.CommandResult{}, failed("unsupported shell Run.Without shape")
-		}
-		words := strings.Fields(c.Shell)
-		if len(words) == 0 {
-			return mutants.CommandResult{}, failed("empty shell Run.Without request")
-		}
-		if hiddenProgram(words[0], f.Without, f.Platform) {
-			if f.Platform == "windows" {
-				return mutants.CommandResult{}, failed("unsupported Windows shell Run.Without outcome")
-			}
-			return mutants.CommandResult{Passed: false, ExitCode: 127, Output: words[0] + ": command not found"}, nil
-		}
-	}
-
 	if tests.Trace != nil {
 		if err := w.trace(c, copy, tests.Trace); err != nil {
 			return mutants.CommandResult{}, mutants.WorkerFailed{Cause: err}
@@ -394,28 +350,4 @@ func selectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 		names = append(names, name)
 	}
 	return names, nil
-}
-
-// PATH hiding affects bare lookups only. Explicit installed paths remain facts.
-func hiddenProgram(program string, without []string, platform string) bool {
-	if filepath.IsAbs(program) || strings.ContainsAny(program, "/\\") {
-		return false
-	}
-	if platform == "windows" {
-		program = strings.TrimSuffix(program, filepath.Ext(program))
-		program = strings.ToLower(program)
-	}
-	for _, name := range without {
-		if platform == "windows" {
-			name = strings.ToLower(name)
-		}
-		if prefix, ok := strings.CutSuffix(name, "*"); ok {
-			if strings.HasPrefix(program, prefix) {
-				return true
-			}
-		} else if program == name {
-			return true
-		}
-	}
-	return false
 }

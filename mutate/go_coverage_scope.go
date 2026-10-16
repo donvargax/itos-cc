@@ -1,4 +1,4 @@
-package testinputs
+package mutate
 
 import (
 	"bufio"
@@ -7,14 +7,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // GoCoverageUnsupported returns the responsible workspace or local replace
 // path when source's effective Go build scope reaches beyond its inventoried
 // nearest module. It never opens a workspace or an out-of-module target.
-func GoCoverageUnsupported(runtime mutants.RuntimeInputs, source string) (string, error) {
+func GoCoverageUnsupported(source string) (string, error) {
 	abs, err := filepath.Abs(source)
 	if err != nil {
 		return "", err
@@ -23,10 +21,10 @@ func GoCoverageUnsupported(runtime mutants.RuntimeInputs, source string) (string
 	if err != nil {
 		return "", err
 	}
-	if workspace := activeGoWorkspace(runtime, module); workspace != "" {
+	if workspace := activeGoWorkspace(module); workspace != "" {
 		return workspace, nil
 	}
-	data, err := os.ReadFile(filepath.Join(module, "go.mod")) //nolint:gosec // read the selected module manifest before lexical replacement admission
+	data, err := os.ReadFile(filepath.Join(module, "go.mod"))
 	if err != nil {
 		return "", err
 	}
@@ -83,8 +81,8 @@ func nearestGoModule(dir string) (string, error) {
 	}
 }
 
-func activeGoWorkspace(runtime mutants.RuntimeInputs, module string) string {
-	setting := runtime.Env["GOWORK"]
+func activeGoWorkspace(module string) string {
+	setting := os.Getenv("GOWORK")
 	if setting == "off" {
 		return ""
 	}
