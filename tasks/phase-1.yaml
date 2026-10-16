@@ -3164,6 +3164,19 @@
     that root fake only to tests/fixture composition, as for mutants/porttest;
     production domain code still cannot import a fake or adapter. This records
     the model-bearing root exception without changing the aggregate child port.
+    Optional Coverage.InventoryReport/InventoryExit/InventoryOutput describe
+    independently observed static collector bytes and command outcome, used only
+    by actual Inventory calls for the Report's unloaded Python/TypeScript files.
+    An explicit empty-file record proves that empty population; absent bytes do
+    not. Existing measured or unrelated files and Go/Kotlin static requests gain
+    no proof from this declaration. Report.List forces inventory lines unexecuted.
+    Optional ListedTests.ConversionExit/ConversionOutput describe the external
+    Go covdata result after the actual per-ID CoverageMetadata artifact is
+    written/read. They default to success and affect that Go collector only;
+    failed conversion leaves valid sibling-language and sibling-ID evidence.
+    Collection failure remains separate, with aggregate coverage retained.
+    No opaque metadata parser or preparation verdict is introduced. The strict
+    supervised converter remains at its existing boundary until T95.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"

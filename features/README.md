@@ -1484,3 +1484,14 @@ such execution; there is no silent verdict or permanent logical binary-only tag.
 Only partial-result listed-file hash finalization derives caller WithoutCancel
 for its old best-effort actual reads. Current freshness/admission/probes and
 snapshot publication retain their original caller context.
+
+T90 measurement declarations keep static inventory independent from test coverage.
+`Coverage.InventoryReport`, `InventoryExit` and `InventoryOutput` describe actual
+Python/TypeScript collector observations and apply only to an entered inventory
+request for unloaded files. An explicit empty-file report differs from no report;
+listed lines remain unexecuted. Go/Kotlin do not acquire a new static collector.
+`ListedTests.ConversionExit` and `ConversionOutput` describe the actual Go
+covdata conversion of the owned per-ID `CoverageMetadata` artifact, after it is
+written and read. Defaults preserve success; failure removes only that collector's
+evidence, retaining valid sibling collectors and IDs. They never script the final
+preparation verdict or replace the real binary's converter.
