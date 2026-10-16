@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: Fresh counted mutation judges a bounded committed
-// selection without claiming full proof" in features/mutation.feature that the
+// selection without claiming full proof" in features/mutate.feature that the
 // mutation-counted-listed slice holds. They use the module of
 // mutate_listed_test.go, whose binary its e2e harness tests by listed test
 // ID, through selectionRepo, which makes the harness record the SHA-256 of
@@ -51,14 +51,14 @@ func sha(text string) string {
 }
 
 // at is the site of greet's main.go on line whose original text is original.
-func at(line int, original string) func(mutation.FreshCandidate) bool {
-	return func(c mutation.FreshCandidate) bool { return c.Site.Line == line && c.Site.Original == original }
+func at(line int, original string) func(mutate.FreshCandidate) bool {
+	return func(c mutate.FreshCandidate) bool { return c.Site.Line == line && c.Site.Original == original }
 }
 
 // selecting is a seedSelecting predicate: the selection is, in order, the
 // sites wants accept, and the candidates are kept in *got.
-func selecting(got *[]mutation.FreshCandidate, wants ...func(mutation.FreshCandidate) bool) func([]mutation.FreshCandidate) bool {
-	return func(s []mutation.FreshCandidate) bool {
+func selecting(got *[]mutate.FreshCandidate, wants ...func(mutate.FreshCandidate) bool) func([]mutate.FreshCandidate) bool {
+	return func(s []mutate.FreshCandidate) bool {
 		if len(s) != len(wants) {
 			return false
 		}
@@ -91,13 +91,13 @@ func siteTests(site map[string]any) []string {
 // exceptionEntry is an itos-cc.yaml exception, under mutation.exceptions,
 // for the candidate c of the plan of the repository at dir, with hash
 // instead of its function's when hash is not empty.
-func exceptionEntry(t *testing.T, dir string, c mutation.FreshCandidate, hash, reason string) string {
+func exceptionEntry(t *testing.T, dir string, c mutate.FreshCandidate, hash, reason string) string {
 	t.Helper()
-	plan, err := planFreshForTest(t.Context(), dir, nil, "", 1, "any")
+	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "any")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer releaseFreshPlan(t.Context(), plan)
+	defer plan.Close()
 	for _, u := range plan.Units {
 		if u.Identity != c.UnitIdentity {
 			continue
@@ -145,7 +145,7 @@ func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T
 	dir := wd(t)
 	// Line 17's n-1 → n+1 survives the own test, and ID-A-02 alone reaches
 	// it and kills it.
-	var chosen []mutation.FreshCandidate
+	var chosen []mutate.FreshCandidate
 	seed := seedSelecting(t, dir, 1, selecting(&chosen, at(listedManyLine, "-")))
 	clean, mutated := sha(main), sha(string(chosen[0].Site.Apply([]byte(main))))
 
@@ -197,7 +197,7 @@ func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.
 	// The complete sequence passes on line 11's n*2 → n/2: own test, then
 	// both listed tests. Line 27's mutant, drawn after it, is killed by the
 	// own test, and is still judged.
-	var pair []mutation.FreshCandidate
+	var pair []mutate.FreshCandidate
 	seed := seedSelecting(t, dir, 2, selecting(&pair, at(listedStderrLine, "*"), at(listedHalfLine, ">")))
 	o := countedRun(t, "--count", "2", "--seed", seed, "--workers", "1")
 	logOnFailure(t, &o)
@@ -222,7 +222,7 @@ func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.
 
 	// A valid matching exception: the run passes, yet the site is drawn and
 	// its trial runs.
-	var one []mutation.FreshCandidate
+	var one []mutate.FreshCandidate
 	seed = seedSelecting(t, dir, 1, selecting(&one, at(listedStderrLine, "*")))
 	commitExceptions(t, dir, exceptionEntry(t, dir, one[0], "", "stderr is diagnostics only"))
 	o = countedRun(t, "--count", "1", "--seed", seed, "--workers", "1")
@@ -244,7 +244,7 @@ func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.
 	// that runs no trial.
 	countedListedRepo(t)
 	dir = wd(t)
-	var stale []mutation.FreshCandidate
+	var stale []mutate.FreshCandidate
 	seed = seedSelecting(t, dir, 2, selecting(&stale, at(listedHalfLine, ">"), at(listedTwiceLine, "*")))
 	commitExceptions(t, dir,
 		exceptionEntry(t, dir, stale[0], "", "thought equivalent"),
@@ -346,7 +346,7 @@ func TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance
 	// No local measurement or per-scenario coverage map is needed: a fresh
 	// clone with none prepares every stage, here for an uncovered site,
 	// which runs no trial.
-	var uncovered []mutation.FreshCandidate
+	var uncovered []mutate.FreshCandidate
 	seed := seedSelecting(t, dir, 1, selecting(&uncovered, at(listedTwiceLine, "*")))
 	o := countedRun(t, "--count", "1", "--seed", seed)
 	logOnFailure(t, &o)
@@ -376,7 +376,7 @@ func TestCleanBaselineFailureIsNotAMutationKill(t *testing.T) {
 	dir := wd(t)
 	// Line 17's mutant needs ID-A-02 once it survives the own test; line
 	// 27's, drawn after it, is killed by the own test.
-	var pair []mutation.FreshCandidate
+	var pair []mutate.FreshCandidate
 	seed := seedSelecting(t, dir, 2, selecting(&pair, at(listedManyLine, "-"), at(listedHalfLine, ">")))
 	o := countedRun(t, "--count", "2", "--seed", seed, "--workers", "1")
 	logOnFailure(t, &o)

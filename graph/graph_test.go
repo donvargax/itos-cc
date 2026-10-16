@@ -11,7 +11,7 @@ import (
 
 func build(t *testing.T) *Graph {
 	t.Helper()
-	b, err := NewBuilder([]string{"testdata/shop"}, realMutationInputs())
+	b, err := NewBuilder([]string{"testdata/shop"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestTreeAndModules(t *testing.T) {
 }
 
 func TestUnchangedSourcesDoNotRebuild(t *testing.T) {
-	b, _ := NewBuilder([]string{"testdata/shop"}, realMutationInputs())
+	b, _ := NewBuilder([]string{"testdata/shop"})
 	first, _, _ := b.Build(t.Context())
 	again, changed, err := b.Build(t.Context())
 	if err != nil || changed || again.Version != first.Version {
@@ -146,7 +146,7 @@ func TestMetricsMatchTheirOwnFile(t *testing.T) {
 	write(".metrics/crap.json", `{"version":1,"entries":[
 		{"namespace":"example.com/p","name":"init","file":"a.go","complexity":1,"coverage":100,"crap":1},
 		{"namespace":"example.com/p","name":"init","file":"b.go","complexity":1,"coverage":0,"crap":2}]}`)
-	b, _ := NewBuilder([]string{root}, realMutationInputs())
+	b, _ := NewBuilder([]string{root})
 	g, _, err := b.Build(t.Context())
 	if err != nil {
 		t.Fatal(err)

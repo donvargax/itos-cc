@@ -25,7 +25,7 @@ import (
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
@@ -431,7 +431,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	var stdout, stderr bytes.Buffer
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	a := adapters{
-		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs},
+		Exceptions: func(root string) mutants.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs},
 		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),
@@ -793,9 +793,9 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 			for _, outcome := range []struct {
 				sites   []features.Site
 				outcome string
-			}{{t.Surviving, mutation.Survived}, {t.TimingOut, mutation.Timeout}} {
+			}{{t.Surviving, mutants.Survived}, {t.TimingOut, mutants.Timeout}} {
 				for _, site := range outcome.sites {
-					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome.outcome})
+					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutants.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome.outcome})
 				}
 			}
 			if t.Trace != nil {
@@ -871,7 +871,7 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 		}
 	}
 	return &mutantstest.Inputs{Dir: filepath.Clean(r.Dir), Files: m.files, Dirs: m.dirs,
-		Runtime: mutation.RuntimeInputs{GoVersion: runtime.Version(), Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
+		Runtime: mutants.RuntimeInputs{GoVersion: runtime.Version(), Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
 		Without: slices.Clone(r.Without), Probes: maps.Clone(m.toolSetup), Imports: imports}
 }
 

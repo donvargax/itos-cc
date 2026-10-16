@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 )
 
@@ -89,20 +89,20 @@ func TestMemoryIndependentSetupSurvivesCommandUpsert(t *testing.T) {
 	if failure != nil || !reflect.DeepEqual(reached[source], []string{test}) {
 		t.Fatalf("actual adjacency erased: %v %v", reached, failure)
 	}
-	request := mutation.CommandRequest{Path: source}
-	command, failure := mutation.ObserveCommand(t.Context(), input, request)
+	request := mutants.CommandRequest{Path: source}
+	command, failure := mutants.ObserveCommand(t.Context(), input, request)
 	if failure != nil || command.Args[0] != "npm" {
 		t.Fatalf("outcome inferred installed runner: %+v %v", command, failure)
 	}
 	if err := m.Tools(t.Context(), root, features.ToolSetup{NodeBins: []string{"vitest"}}); err != nil {
 		t.Fatal(err)
 	}
-	command, failure = mutation.ObserveCommand(t.Context(), m.inputs(features.Run{Dir: root}), request)
+	command, failure = mutants.ObserveCommand(t.Context(), m.inputs(features.Run{Dir: root}), request)
 	if failure != nil || !strings.Contains(command.Args[0], "vitest") {
 		t.Fatalf("actual installed entry not bound: %+v %v", command, failure)
 	}
 	delete(m.files, command.Args[0])
-	command, failure = mutation.ObserveCommand(t.Context(), m.inputs(features.Run{Dir: root}), request)
+	command, failure = mutants.ObserveCommand(t.Context(), m.inputs(features.Run{Dir: root}), request)
 	if failure != nil || command.Args[0] != "npm" {
 		t.Fatalf("removed actual entry hidden: %+v %v", command, failure)
 	}
@@ -149,7 +149,7 @@ func TestMemoryRuntimeInputsAreActualRunFacts(t *testing.T) {
 	if err := m.Tools(t.Context(), root, setup); err != nil {
 		t.Fatal(err)
 	}
-	request := mutation.CommandRequest{Path: filepath.Join(root, "a.py"), All: true}
+	request := mutants.CommandRequest{Path: filepath.Join(root, "a.py"), All: true}
 	if _, failure := normal.Observe(t.Context(), request); failure == nil {
 		t.Fatal("wrong env imported pytest")
 	}
@@ -165,7 +165,7 @@ func TestMemoryRuntimeInputsAreActualRunFacts(t *testing.T) {
 		t.Fatalf("setup cancellation: %v", err)
 	}
 	// Missing input remains a typed observation error, never a desired verdict.
-	var failed mutation.InputFailed
+	var failed mutants.InputFailed
 	_, failure = (&mutantstest.Inputs{}).TestsImporting(t.Context(), root, nil, nil)
 	if !errors.As(failure, &failed) {
 		t.Fatalf("missing graph setup: %v", failure)
@@ -186,7 +186,7 @@ func TestMemoryWorkersReceiveActualRunEnvironmentAndWithout(t *testing.T) {
 	}
 	actual := features.Run{Dir: root, Env: []string{"PYTEST_DISABLE_PLUGIN_AUTOLOAD=1", "GOWORK=off", "PYTHONPATH=editable-live-src"}}
 	workers := m.workers(actual)
-	pool, failure := workers.Open(t.Context(), mutation.MutationRun, 1)
+	pool, failure := workers.Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}
@@ -195,7 +195,7 @@ func TestMemoryWorkersReceiveActualRunEnvironmentAndWithout(t *testing.T) {
 			t.Error(failure)
 		}
 	}()
-	command := mutation.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest", "-q"}, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
+	command := mutants.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest", "-q"}, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
 	if _, failure := pool.Worker(0).Run(t.Context(), command, nil, 0); failure != nil {
 		t.Fatal(failure)
 	}
@@ -207,7 +207,7 @@ func TestMemoryWorkersReceiveActualRunEnvironmentAndWithout(t *testing.T) {
 		t.Fatalf("actual virtual-copy environment: %v", env)
 	}
 	missing := m.workers(features.Run{Dir: root, Without: []string{"python3"}})
-	absent, failure := missing.Open(t.Context(), mutation.MutationRun, 1)
+	absent, failure := missing.Open(t.Context(), mutants.MutationRun, 1)
 	if failure != nil {
 		t.Fatal(failure)
 	}

@@ -34,7 +34,7 @@ func listedHash(ctx context.Context, root, file string, fp Fingerprints) string 
 	}
 	return hashes[file]
 }
-func ListedChangedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints) *ListedChange {
+func listedChangedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints) *ListedChange {
 	if s == nil || !HasListed(s.Units) {
 		return nil
 	}

@@ -52,7 +52,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		}
 		s.stored, s.previous = snap, Usable(snap, s.tests)
 		prev, prevScopes := RememberedWithScopes(s.previous, f)
-		s.listedChange = ListedChangedWithInputs(ctx, s.stored, opt.Root, opt.Support, opt.Fingerprints)
+		s.listedChange = listedChangedWithInputs(ctx, s.stored, opt.Root, opt.Support, opt.Fingerprints)
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {

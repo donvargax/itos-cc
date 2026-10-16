@@ -72,7 +72,7 @@ func TestStrictCoverageAdmitsOnlyCompleteCurrentProducerEvidence(t *testing.T) {
 			e := CoverageEvidence{Version: EvidenceVersion(language), Language: EvidenceKey(language), File: "source", Function: "n#f", Hash: "hash", Producer: producer, Complete: true, Inputs: inputs, Blocks: []CoverageBlock{{Span: "3", Line: 3, Covered: true}}}
 			check := CoverageCheck{State: Missing, Language: language, Function: "n#f"}
 			got := CoverageFreshness(check, "source", "hash", &e, map[string]string{"source": "h", "@producer": "irrelevant here"})
-			if got.State != SnapshotFresh || got.Evidence != &e || !reflect.DeepEqual(got.Blocks, e.Blocks) {
+			if got.State != Fresh || got.Evidence != &e || !reflect.DeepEqual(got.Blocks, e.Blocks) {
 				t.Fatal(got)
 			}
 			for _, change := range []string{"incomplete", "version", "file", "function", "hash", "language"} {

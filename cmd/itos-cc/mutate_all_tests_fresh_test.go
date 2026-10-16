@@ -12,9 +12,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/graph"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/testinputs"
+	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -22,7 +20,7 @@ import (
 // another package: the test builds the binary and runs it with one
 // argument, so it reaches "one" and never "many", which it would not notice
 // anyway, and checks stdout only, so what main writes to stderr is never
-// checked. mutation.feature's integration-coverage scenarios (ID-MUT-117 to
+// checked. mutate.feature's integration-coverage scenarios (ID-MUT-117 to
 // 120) hold its coverage; the tests here use it for whole-suite freshness.
 
 const greetSource = "main.go"
@@ -263,14 +261,14 @@ func TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence(t *testing.T) {
 	}
 }
 
-func broadEvidenceAt(t *testing.T, path string, line int) *mutation.SuiteEvidence {
+func broadEvidenceAt(t *testing.T, path string, line int) *mutate.SuiteEvidence {
 	t.Helper()
 	data, err := os.ReadFile(inWD(t, path))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, unit := range snapshot.Units {
@@ -315,11 +313,11 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
-	byName := map[string]*mutation.Mutant{}
+	byName := map[string]*mutate.Mutant{}
 	for i := range snapshot.Units {
 		unit := &snapshot.Units[i]
 		if len(unit.Mutants) == 0 {
@@ -339,27 +337,27 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 	}
 	byName["Own"].Scope = ""
 	byName["Own"].SuiteEvidence = nil
-	byName["Listed"].Scope = mutation.ScopeListed
+	byName["Listed"].Scope = mutate.ScopeListed
 	byName["Listed"].Tests = []string{"ID-A-01"}
 	byName["Listed"].SuiteEvidence = nil
 	projectRoot := project.RootOf(wd(t))
 	listedDefinition := filepath.Join(projectRoot, "features", "listed.feature")
-	listedFiles, err := testinputs.TestHashes(projectRoot, []string{listedDefinition})
+	listedFiles, err := mutate.TestHashesUnder(projectRoot, []string{listedDefinition})
 	if err != nil {
 		t.Fatal(err)
 	}
-	support, err := testinputs.SupportHashes(projectRoot, []string{"features/*.feature"})
+	support, err := mutate.SupportHashes(projectRoot, []string{"features/*.feature"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	snapshot.Listed = map[string]string{"ID-A-01": "features/listed.feature"}
 	snapshot.ListedFiles = listedFiles
 	snapshot.Support = support
-	byName["AllTests"].Scope = mutation.ScopeAllTests
+	byName["AllTests"].Scope = mutate.ScopeAllTests
 	byName["TestCommand"].Scope = "go test -count=1 ./..."
-	byName["Survivor"].Scope = mutation.ScopeAllTests
+	byName["Survivor"].Scope = mutate.ScopeAllTests
 	byName["Excepted"].Scope = "go test -count=1 ./..."
-	data, err = json.Marshal(metricsdir.SnapshotJSON(snapshot))
+	data, err = json.Marshal(mutate.SnapshotJSON(snapshot))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,7 +397,7 @@ func TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph(t *testing.T) 
 		}
 	}
 	root := wd(t)
-	builder, err := graph.NewBuilder([]string{root}, graphMutationFixtureInputs())
+	builder, err := graph.NewBuilder([]string{root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -588,7 +586,7 @@ func TestPartialRunKeepsUnjudgedBroadOutcomesStale(t *testing.T) {
 		t.Fatalf("unjudged greet is %q, want stale\n%s", states[greetID], check.stdout)
 	}
 	root := wd(t)
-	builder, err := graph.NewBuilder([]string{root}, graphMutationFixtureInputs())
+	builder, err := graph.NewBuilder([]string{root})
 	if err != nil {
 		t.Fatal(err)
 	}

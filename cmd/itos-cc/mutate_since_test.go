@@ -14,11 +14,11 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: Judging the functions a range of commits changed"
-// in features/mutation.feature. Each runs mutate in a small Go module with a
+// in features/mutate.feature. Each runs mutate in a small Go module with a
 // git repository of its own: Board#place is tested, so its one mutant is
 // killed, and Board#clear is not, so its one mutant survives whenever it
 // runs. The commit tagged "base" holds the files as boardFiles writes them.
@@ -246,13 +246,13 @@ func (m mutateJSON) file(t *testing.T, file string) fileJSON {
 }
 
 // boardUnits is the snapshot of src/board.go, by namespace#name.
-func boardUnits(t *testing.T) map[string]mutation.UnitResult {
+func boardUnits(t *testing.T) map[string]mutate.UnitResult {
 	t.Helper()
-	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
-	units := map[string]mutation.UnitResult{}
+	units := map[string]mutate.UnitResult{}
 	for _, u := range snap.Units {
 		units[u.Namespace+"#"+u.Name] = u
 	}
@@ -301,7 +301,7 @@ func TestFunctionsNotJudgedKeepWhatTheirSnapshotHolds(t *testing.T) {
 
 	o := mutateRun(t, "--since", "base")
 	u := boardUnits(t)[clearID]
-	if u.Survived != 1 || len(u.Mutants) != 1 || u.Mutants[0].Outcome != mutation.Survived {
+	if u.Survived != 1 || len(u.Mutants) != 1 || u.Mutants[0].Outcome != mutate.Survived {
 		t.Errorf("clear in the snapshot: %+v, want the survivor it recorded", u)
 	}
 	if strings.Contains(o.stdout, "survived "+boardSource) || o.code != 0 {
@@ -450,7 +450,7 @@ func TestAFileWithNothingJudgedIsLeftAsItWas(t *testing.T) {
 	commitAll(t, "import fmt")
 
 	// Dated in the past, so a write shows in the modification time.
-	snapshot := inWD(t, filepath.Join(".metrics", metricsdir.MutationName(boardSource)))
+	snapshot := inWD(t, filepath.Join(".metrics", mutate.SnapshotName(boardSource)))
 	source := inWD(t, boardSource)
 	past := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	before := map[string]string{}
@@ -502,7 +502,7 @@ var gridSource = filepath.FromSlash("src/grid.go")
 // renamedBoard records fresh results for every function of src/board.go,
 // all killed, then renames it to src/grid.go in a commit after "base",
 // edited by edit when it is set. It returns the snapshot of src/board.go.
-func renamedBoard(t *testing.T, edit func()) *mutation.Snapshot {
+func renamedBoard(t *testing.T, edit func()) *mutate.Snapshot {
 	t.Helper()
 	boardRepo(t, map[string]string{
 		"src/board_test.go": boardFiles["src/board_test.go"] +
@@ -511,7 +511,7 @@ func renamedBoard(t *testing.T, edit func()) *mutation.Snapshot {
 	if o := mutateRun(t); o.code != 0 {
 		t.Fatalf("the first run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	before, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource)
+	before, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource)
 	if err != nil || before == nil {
 		t.Fatalf("no snapshot of %s: %v", boardSource, err)
 	}
@@ -530,13 +530,13 @@ func renamedBoard(t *testing.T, edit func()) *mutation.Snapshot {
 
 // gridUnits is the snapshot of src/grid.go, which must be there, by
 // namespace#name.
-func gridUnits(t *testing.T) (*mutation.Snapshot, map[string]mutation.UnitResult) {
+func gridUnits(t *testing.T) (*mutate.Snapshot, map[string]mutate.UnitResult) {
 	t.Helper()
-	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, gridSource)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, gridSource)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", gridSource, err)
 	}
-	units := map[string]mutation.UnitResult{}
+	units := map[string]mutate.UnitResult{}
 	for _, u := range snap.Units {
 		units[u.Namespace+"#"+u.Name] = u
 	}
@@ -546,7 +546,7 @@ func gridUnits(t *testing.T) (*mutation.Snapshot, map[string]mutation.UnitResult
 // noBoardSnapshot fails t when the snapshot of src/board.go is still there.
 func noBoardSnapshot(t *testing.T) {
 	t.Helper()
-	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource); err != nil || snap != nil {
+	if snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, boardSource); err != nil || snap != nil {
 		t.Errorf("the snapshot of %s is still there (%v), want it moved", boardSource, err)
 	}
 }

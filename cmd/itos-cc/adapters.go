@@ -10,12 +10,11 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/coveragetools"
-	"github.com/donvargax/itos-cc/internal/freshenv"
 	"github.com/donvargax/itos-cc/internal/githistory"
 	"github.com/donvargax/itos-cc/internal/importgraph"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -34,24 +33,21 @@ import (
 // until they move, but for crap's coverage, which it measures through the
 // port here.
 type adapters struct {
-	SnapshotReaders func(root string) mutation.MutationSnapshotReader
-	Fresh           mutation.Fresh
-	FreshWorkers    mutation.Workers
 	// Exceptions constructs a capability from an already discovered root, without I/O.
-	Exceptions     func(root string) mutation.Exceptions
-	SourceStatus   mutation.SourceStatus
-	SnapshotReader mutation.MutationSnapshotReader
-	Catalog        mutation.MutationCatalog
-	Presence       mutation.SourcePresence
-	Snapshots      mutation.MutationSnapshots
-	SourceEdits    mutation.SourceEdits
-	TestLister     mutation.TestLister
+	Exceptions     func(root string) mutants.Exceptions
+	SourceStatus   mutants.SourceStatus
+	SnapshotReader mutants.MutationSnapshotReader
+	Catalog        mutants.MutationCatalog
+	Presence       mutants.SourcePresence
+	Snapshots      mutants.MutationSnapshots
+	SourceEdits    mutants.SourceEdits
+	TestLister     mutants.TestLister
 	// Workers owns command copies and process lifetimes for mutation.
-	History      mutation.History
-	Workers      mutation.Workers
-	Toolchain    mutation.Toolchain
-	Fingerprints mutation.Fingerprints
-	Reach        mutation.Reach
+	History      mutants.History
+	Workers      mutants.Workers
+	Toolchain    mutants.Toolchain
+	Fingerprints mutants.Fingerprints
+	Reach        mutants.Reach
 	// Dir is the working directory, absolute, which the UI names the files
 	// a person reads from; "" when it cannot be told.
 	Dir string
@@ -84,13 +80,7 @@ type configFile interface {
 // itos-cc.yaml at the project root on the disk.
 func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
-	owner := &worktrees.OwnedExecutor{Platform: runtime.GOOS}
-	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
-	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
-	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: owner.Command, Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
-	return adapters{SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
-		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
-	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+	return adapters{Exceptions: func(root string) mutants.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 

@@ -16,11 +16,11 @@ import (
 	"testing"
 	"time"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: mutation run --fail-fast stops at the first
-// actionable failure" in features/mutation.feature, the fail-fast-run slice.
+// actionable failure" in features/mutate.feature, the fail-fast-run slice.
 // --fail-fast runs on Linux and macOS only, so these build only where Unix
 // process groups exist; ID-MUT-199, the admission boundaries, builds
 // everywhere. Each drives the CLI and reads its --json object as raw maps,
@@ -583,17 +583,17 @@ func listedRun(t *testing.T, args ...string) outcome {
 // function's when hash is not empty.
 func ffException(t *testing.T, dir, function, hash string) string {
 	t.Helper()
-	plan, err := planFreshForTest(t.Context(), dir, nil, "", 1, "any")
+	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "any")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var c *mutation.FreshCandidate
+	var c *mutate.FreshCandidate
 	for _, e := range plan.Eligible {
 		if strings.HasSuffix(e.Function, "#"+function) {
 			c = &e
 		}
 	}
-	releaseFreshPlan(t.Context(), plan)
+	plan.Close()
 	if c == nil {
 		t.Fatalf("no site of %s", function)
 	}

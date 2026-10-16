@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/config"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // memoryExceptions rereads current fixture bytes on EVERY update. Initial
@@ -17,9 +17,9 @@ type memoryExceptions struct {
 	root   string
 }
 
-func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (bool, mutation.ExceptionFailure) {
+func (s memoryExceptions) Except(ctx context.Context, e mutants.Exception) (bool, mutants.ExceptionFailure) {
 	if ctx.Err() != nil {
-		return false, mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+		return false, mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	path := filepath.Join(s.root, config.File)
 	data, err := s.memory.Read(path)
@@ -31,13 +31,13 @@ func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (boo
 		return false, memoryExceptionFailure(err)
 	}
 	if ctx.Err() != nil {
-		return false, mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+		return false, mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	return replaced, memoryExceptionFailure(s.memory.Write(path, updated))
 }
-func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal) mutation.ExceptionFailure {
+func (s memoryExceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
 	if ctx.Err() != nil {
-		return mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	if len(renewals) == 0 {
 		return nil
@@ -52,17 +52,17 @@ func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal
 		return memoryExceptionFailure(err)
 	}
 	if ctx.Err() != nil {
-		return mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	return memoryExceptionFailure(s.memory.Write(path, updated))
 }
-func memoryExceptionFailure(err error) mutation.ExceptionFailure {
+func memoryExceptionFailure(err error) mutants.ExceptionFailure {
 	if err == nil {
 		return nil
 	}
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
-		return mutation.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key}
+		return mutants.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}
-	return mutation.ExceptionFailed{Cause: err}
+	return mutants.ExceptionFailed{Cause: err}
 }

@@ -19,7 +19,9 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/worktrees"
+	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/project"
 )
 
 // countedPlatform is the platform counted mode and --fail-fast check: both
@@ -80,11 +82,11 @@ type countedSite struct {
 	Stages      []countedStage `json:"stages,omitempty"`
 	// selection is, for a blocked site, the listed selection that fails
 	// without any mutant.
-	selection *mutation.FailedSelection
+	selection *mutate.FailedSelection
 }
 
 // countedStage is one stage of a site's trial: "own", "listed-baseline" or
-// "listed" (mutation.FreshStage).
+// "listed" (mutate.FreshStage).
 type countedStage struct {
 	Name    string   `json:"name"`
 	State   string   `json:"state"`
@@ -153,21 +155,17 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	ctx, stop := countedSignalContext(ctx)
 	defer stop()
-	fresh := in.adapters.Fresh
-	if fresh == nil {
-		return nil, errors.New("mutation Fresh binding is missing")
-	}
-	plan, planFailure := fresh.Plan(ctx, mutation.FreshRequest{Root: root, Paths: paths, Since: in.str("since"), Count: count, Seed: in.str("seed")})
-	if planFailure != nil {
+	plan, err := mutate.PlanFresh(ctx, root, paths, in.str("since"), count, in.str("seed"))
+	if err != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: count, Assurance: "sampled", Completion: "interrupted",
 				Stop: "interrupted while planning the selection", Bounds: countedBounds}
 			reportInterrupted(ctx, in, result)
 			return result, nil
 		}
-		return nil, countedPlanError(in, planFailure)
+		return nil, countedPlanError(in, err)
 	}
-	defer fresh.Release(ctx, plan)
+	defer plan.Close()
 	s := &result.Sampling
 	*s = countedSampling{Budget: count, Eligible: len(plan.Eligible), Selected: len(plan.Selected), Omitted: len(plan.Omitted),
 		Seed: plan.Seed, Algorithm: plan.Algorithm, Commit: plan.Commit, Since: plan.SinceRef, SinceBase: plan.SinceBase,
@@ -194,13 +192,12 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	// One owner, so preparation and trials share one run-abort cleanup
 	// deadline.
-	prep, prepFailure := fresh.Prepare(ctx, plan, scope)
+	owner := &mutate.OwnedExecutor{}
+	prep, err := prepareFreshContext(ctx, plan, freshPreparationOptions{Scope: scope, Executor: owner.Run, Log: os.Stderr})
 	if prep != nil {
-		for _, stage := range prep.Stages {
-			result.Stages = append(result.Stages, PreparationStage{Name: stage.Name, State: stage.State, Error: stage.Error})
-		}
+		result.Stages = append(result.Stages, prep.Stages...)
 	}
-	if prepFailure != nil {
+	if err != nil {
 		failed := "preparation"
 		if prep != nil && len(prep.Stages) > 0 {
 			failed = prep.Stages[len(prep.Stages)-1].Name
@@ -218,7 +215,7 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		if failed == "tools" {
 			k = cli.CodeEnvironment
 		}
-		in.report(cli.NewProblem(k, "count.preparation-failed", fmt.Sprintf("counted preparation failed at %s, so no mutant was judged: %v", failed, freshPreparationMessage(prepFailure)),
+		in.report(cli.NewProblem(k, "count.preparation-failed", fmt.Sprintf("counted preparation failed at %s, so no mutant was judged: %v", failed, err),
 			"Make the committed tests and measurement succeed, then run again.").With("stage", failed))
 		printCounted(in, result)
 		return result, nil
@@ -242,22 +239,22 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		}
 	}
 
-	exceptions, exceptionErr := mutation.PlanExceptions(ctx, plan, prep.Exceptions, in.adapters.Tree, in.adapters.Surroundings)
-	if exceptionErr != nil {
-		return nil, exceptionErr
+	exceptions, err := mutate.PlanExceptions(ctx, plan, prep.Exceptions)
+	if err != nil {
+		return nil, err
 	}
 	stale := slices.Clone(exceptions.Stale)
-	var listed *mutation.Listed
+	var listed *mutate.Listed
 	if prep.Tests != nil {
-		listed = &mutation.Listed{Root: plan.FrozenRoot, Select: prep.Tests.Select}
+		listed = &mutate.Listed{Root: plan.FrozenRoot, Select: prep.Tests.Select}
 	}
-	var trials []mutation.FreshTrial
+	var trials []mutate.FreshTrial
 	var trialSites []int
 	for i, c := range plan.Selected {
 		path := filepath.Join(plan.FrozenRoot, filepath.FromSlash(c.Path))
 		site := &result.Selected[i]
 		if countedUncovered(prep.Report, path, c.Site.Line) {
-			site.State, site.Outcome = "uncovered", mutation.Uncovered
+			site.State, site.Outcome = "uncovered", mutate.Uncovered
 			continue
 		}
 		var reach []string
@@ -271,26 +268,31 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 			// mutant goes straight to the listed tests that reach its line,
 			// after their selection's clean baseline, as a complete run
 			// judges it.
-			baseline, ok = mutation.FreshBaseline{Paths: []string{c.Path}}, true
+			baseline, ok = mutate.FreshBaseline{Paths: []string{c.Path}}, true
 		}
 		if !ok {
 			site.State, site.Reason = "failed", "no clean baseline was prepared for its file"
 			continue
 		}
-		trials = append(trials, mutation.FreshTrial{Candidate: c, Baseline: baseline, Reach: reach})
+		trials = append(trials, mutate.FreshTrial{Candidate: c, Baseline: baseline, Reach: reach})
 		trialSites = append(trialSites, i)
 	}
 	if len(trials) == 0 {
 		result.Stages = append(result.Stages, PreparationStage{Name: "trials", State: "skipped"})
 	} else {
-		factory := in.adapters.FreshWorkers
+		factory := in.adapters.Workers
 		if factory == nil {
 			return nil, errors.New("mutation Workers binding is missing")
 		}
-		results, err := mutation.RunFreshTrials(ctx, plan, trials, mutation.FreshTrialOptions{
+		if real, ok := factory.(worktrees.Workers); ok {
+			real.Owner = owner
+			real.Prepare = countedCommandEnv
+			factory = real
+		}
+		results, err := mutate.RunFreshTrials(ctx, plan, trials, mutate.FreshTrialOptions{
 			WorkerFactory: factory,
-			Workers:       in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutation.RunScope("", in.set("all-tests")),
-			Listed: listed, Tree: in.adapters.Tree, Toolchain: in.adapters.Toolchain, Progress: RunProgress{Log: os.Stderr}})
+			Workers:       in.integer("workers"), TimeoutFactor: in.float("timeout-factor"), Scope: mutate.RunScope("", in.set("all-tests")),
+			Listed: listed, Prepare: countedCommandEnv, Owner: owner, Log: os.Stderr})
 		if err != nil {
 			return nil, err
 		}
@@ -376,7 +378,7 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		reportInterrupted(ctx, in, nil)
 	}
 	for _, e := range stale {
-		reportStaleExceptions(in, e.File, []mutation.StaleException{e})
+		reportStaleExceptions(in, e.File, []mutate.StaleException{e})
 	}
 	if strictGo {
 		reportCountedStrictGo(in, plan, prep, linesOnly)
@@ -480,33 +482,30 @@ func countedPaths(root string, args []string) ([]string, error) {
 }
 
 // countedPlanError is the problem a refused fresh plan reports.
-func countedPlanError(in *invocation, err mutation.FreshFailure) error {
-	switch f := err.(type) {
-	case mutation.FreshInvalid:
-		return configProblem(&config.InvalidError{Reason: f.Reason, Key: f.Key}, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
-	case mutation.FreshRefused:
-		switch f.Kind {
-		case mutation.FreshRepository:
-			return countedNoGit(err)
-		case mutation.FreshSince:
-			return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", in.str("since")),
-				"Name a commit, branch, or tag that exists, such as origin/main.").With("ref", in.str("since"))
-		case mutation.FreshPath:
-			return cli.NewProblem(cli.CodeUsage, "paths.unmatched", err.Error(), "Name committed source paths.")
-		case mutation.FreshScratch:
-			return cli.NewProblem(cli.CodeNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+err.Error(),
-				"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
-				With("stage", "scratch")
-		case mutation.FreshUnsupported:
-			return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+err.Error(),
-				"Judge paths without it, or run mutation run without --count.")
-		}
-	case mutation.FreshFailed, mutation.FreshCancelled:
+func countedPlanError(in *invocation, err error) error {
+	var invalid *config.InvalidError
+	switch {
+	case errors.As(err, &invalid):
+		return configProblem(invalid, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
+	case errors.Is(err, mutate.ErrFreshRepository):
+		return countedNoGit(err)
+	case errors.Is(err, mutate.ErrFreshSince):
+		return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", in.str("since")),
+			"Name a commit, branch, or tag that exists, such as origin/main.").With("ref", in.str("since"))
+	case errors.Is(err, mutate.ErrFreshPath):
+		return cli.NewProblem(cli.CodeUsage, "paths.unmatched", err.Error(), "Name committed source paths.")
+	case errors.Is(err, mutate.ErrFreshScratch):
+		return cli.NewProblem(cli.CodeNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+err.Error(),
+			"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
+			With("stage", "scratch")
+	case errors.Is(err, mutate.ErrFreshUnsupported):
+		return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+err.Error(),
+			"Judge paths without it, or run mutation run without --count.")
 	}
 	return err
 }
 
-func countedSubjectsOf(plan *mutation.FreshPlan) countedSubjects {
+func countedSubjectsOf(plan *mutate.FreshPlan) countedSubjects {
 	out := countedSubjects{Judged: []countedSubject{}, Omitted: []countedSubject{}}
 	judged := map[countedSubject]bool{}
 	for _, c := range plan.Selected {
@@ -550,7 +549,7 @@ func countedUncovered(report *coverage.Report, path string, line int) bool {
 	return measured && !covered
 }
 
-func baselineOf(baselines []mutation.FreshBaseline, path string) (mutation.FreshBaseline, bool) {
+func baselineOf(baselines []mutate.FreshBaseline, path string) (mutate.FreshBaseline, bool) {
 	for _, b := range baselines {
 		for _, p := range b.Paths {
 			if p == path {
@@ -558,16 +557,26 @@ func baselineOf(baselines []mutation.FreshBaseline, path string) (mutation.Fresh
 			}
 		}
 	}
-	return mutation.FreshBaseline{}, false
+	return mutate.FreshBaseline{}, false
 }
 
-func hasGoUnit(units []mutation.FreshUnit) bool {
+func hasGoUnit(units []mutate.FreshUnit) bool {
 	for _, unit := range units {
 		if strings.HasSuffix(unit.Path, ".go") {
 			return true
 		}
 	}
 	return false
+}
+
+// countedCommandEnv gives a trial the environment preparation commands
+// get: no parent Git directory, work-tree or index override, and Go
+// commands offline with the local toolchain.
+func countedCommandEnv(cmd *exec.Cmd) {
+	cmd.Env = project.NoBytecodeEnv(withoutGitOverrides(cmd.Env))
+	if strings.EqualFold(filepath.Base(cmd.Path), "go") {
+		cmd.Env = withEnvOverrides(cmd.Env, map[string]string{"GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off"})
+	}
 }
 
 // printCounted writes the plain report: the draw, each selected site, and
@@ -589,7 +598,7 @@ func printCounted(in *invocation, r *countedResult) {
 			what = site.Outcome
 		}
 		line := fmt.Sprintf("  %s %s:%d:%d %s → %s in %s", what, site.File, site.Line, site.Column, quote(site.Original), quote(site.Replacement), site.Function)
-		if site.Scope == mutation.ScopeListed {
+		if site.Scope == mutate.ScopeListed {
 			line += " by listed tests " + strings.Join(site.Tests, " ")
 		}
 		if site.Excepted != "" {
@@ -615,16 +624,16 @@ func printCounted(in *invocation, r *countedResult) {
 func reportCounted(in *invocation, r *countedResult, failUncovered func(countedSite) bool, interrupted bool) {
 	selections := map[string]bool{}
 	for _, site := range r.Selected {
-		m := mutation.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
+		m := mutate.Mutant{Line: site.Line, Column: site.Column, Original: site.Original, Replacement: site.Replacement}
 		switch {
-		case site.State == "judged" && site.Outcome == mutation.Survived && site.Excepted == "":
+		case site.State == "judged" && site.Outcome == mutate.Survived && site.Excepted == "":
 			p := countedMutantProblem(site, m, "mutation.survived", "survived", "Add a test that fails with this change.")
 			in.report(p)
 		case site.State == "uncovered" && failUncovered(site):
 			in.report(countedMutantProblem(site, m, "mutation.uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change."))
 		case site.State == "blocked" && site.selection != nil:
-			reportFailedSelections(in, []mutation.FailedSelection{*site.selection}, selections, "mutation run --count")
+			reportFailedSelections(in, []mutate.FailedSelection{*site.selection}, selections, "mutation run --count")
 		case site.State == "cancelled" || (site.State == "unattempted" && interrupted):
 			// count.interrupted reports the interruption that stopped it.
 		case site.State == "failed" || site.State == "unattempted" || site.State == "blocked":
@@ -638,7 +647,7 @@ func reportCounted(in *invocation, r *countedResult, failUncovered func(countedS
 	}
 }
 
-func countedMutantProblem(site countedSite, m mutation.Mutant, rule, verdict, fix string) *cli.Problem {
+func countedMutantProblem(site countedSite, m mutate.Mutant, rule, verdict, fix string) *cli.Problem {
 	return cli.NewProblem(cli.CodeNo, rule,
 		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", site.File, m.Line, m.Column, quote(m.Original), quote(m.Replacement), site.Function, verdict), fix).
 		With("file", site.File).With("line", m.Line).With("column", m.Column).With("function", site.Function).
@@ -650,7 +659,7 @@ func countedMutantProblem(site countedSite, m mutation.Mutant, rule, verdict, fi
 // evidence and each uncovered executable block; with linesOnly
 // (--fail-uncovered=lines), only for a function the range added or changed
 // a line of, and a block overlapping such a line.
-func reportCountedStrictGo(in *invocation, plan *mutation.FreshPlan, prep *FreshPreparation, linesOnly bool) {
+func reportCountedStrictGo(in *invocation, plan *mutate.FreshPlan, prep *FreshPreparation, linesOnly bool) {
 	for _, unit := range plan.Units {
 		if !strings.HasSuffix(unit.Path, ".go") || linesOnly && !plan.ChangedLines(unit.Path, unit.StartLine, unit.EndLine) {
 			continue

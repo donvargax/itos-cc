@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenario of "Rule: A reviewed exception can be renewed when its
-// mutant is unchanged" in features/mutation.feature that the except-renew
+// mutant is unchanged" in features/mutate.feature that the except-renew
 // slice holds. It drives the CLI and reads itos-cc.yaml and the --json
 // object as raw data, so it compiles against a product without the feature.
 // The rule's stale-fix-renew scenario, at the end, uses the module of
@@ -79,7 +80,7 @@ func renewEntries(t *testing.T) map[string]exceptionYAML {
 // renewHash is the hash the snapshot of file records for function.
 func renewHash(t *testing.T, file, function string) string {
 	t.Helper()
-	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, file)
+	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, file)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", file, err)
 	}

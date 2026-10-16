@@ -228,10 +228,6 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 			return mutants.CommandResult{Cancelled: true, ExitCode: -1}, nil
 		}
 	}
-	return declaredResult(c, tests, change, timeout)
-}
-
-func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
 	r := mutants.CommandResult{Passed: true, ExitCode: 0, Elapsed: tests.Elapsed}
 	if change == nil {
 		if tests.Baseline != "" {
@@ -265,26 +261,11 @@ func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, ti
 	}
 	return r, nil
 }
-
 func failed(message string) mutants.WorkerFailure {
 	return mutants.WorkerFailed{Cause: errors.New(message)}
 }
 
 func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace) error {
-	rel, err := filepath.Rel(c.Root, c.Dir)
-	if err != nil {
-		return err
-	}
-	cwd := filepath.Join(w.dir, rel)
-	if cwd == filepath.Clean(c.Root) {
-		return errors.New("virtual worker is the original root")
-	}
-	return w.pool.factory.observeTrace(c, copy, t, cwd)
-}
-
-// observeTrace reads actual execution bytes at the supplied execution location.
-// Preparation uses the frozen cwd; workers validate their private copy above.
-func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Trace, cwd string) error {
 	source := filepath.Join(c.Root, filepath.FromSlash(t.Source))
 	text, ok := copy[source]
 	if !ok {
@@ -295,6 +276,14 @@ func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Tra
 		return err
 	}
 	hash := sha256.Sum256([]byte(text))
+	rel, err := filepath.Rel(c.Root, c.Dir)
+	if err != nil {
+		return err
+	}
+	cwd := filepath.Join(w.dir, rel)
+	if cwd == filepath.Clean(c.Root) {
+		return errors.New("virtual worker is the original root")
+	}
 	for _, name := range names {
 		record := map[string]string{"cwd": cwd, "original_root": filepath.Clean(c.Root), "source_sha256": hex.EncodeToString(hash[:])}
 		if strings.Contains(filepath.ToSlash(t.Source), "/") {
@@ -307,6 +296,7 @@ func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Tra
 		if err != nil {
 			return err
 		}
+		f := w.pool.factory
 		data = append([]byte(f.Files[t.File]), append(data, '\n')...)
 		if f.Write != nil {
 			if err := f.Write(t.File, data); err != nil {

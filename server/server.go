@@ -34,8 +34,8 @@ type Server struct {
 }
 
 // New builds the first graph of roots, under ctx.
-func New(ctx context.Context, roots []string, ui string, logger *log.Logger, inputs graph.MutationInputs) (*Server, error) {
-	b, err := graph.NewBuilder(roots, inputs)
+func New(ctx context.Context, roots []string, ui string, logger *log.Logger) (*Server, error) {
+	b, err := graph.NewBuilder(roots)
 	if err != nil {
 		return nil, err
 	}

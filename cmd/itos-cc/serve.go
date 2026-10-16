@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/server"
 )
@@ -61,7 +60,7 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 		roots = []string{"."}
 	}
 	logger := log.New(os.Stderr, "itos-cc: ", 0)
-	srv, err := server.New(ctx, roots, in.str("ui"), logger, graph.MutationInputs{Snapshots: in.adapters.SnapshotReaders, Toolchain: in.adapters.Toolchain, Fingerprints: in.adapters.Fingerprints})
+	srv, err := server.New(ctx, roots, in.str("ui"), logger)
 	if err != nil {
 		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}

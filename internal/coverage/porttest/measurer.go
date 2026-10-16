@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -139,10 +138,70 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	}
 	r := coverage.Merge(reports...)
 	if tests != nil {
-		tc, _, _ := m.listed(ctx, groups, tests)
-		r.SetTests(tc)
+		byID := map[string][]*coverage.Report{}
+		failed, declared, split := false, false, false
+		for _, group := range orderedGroups(groups) {
+			d := m.Declarations[group]
+			declared = declared || d.Listed != nil
+			split = split || d.Split
+			failed = failed || d.ListedFailed
+		}
+		if declared {
+			m.Commands = append(m.Commands, tests.All)
+			if !failed && !split {
+				for _, test := range tests.Tests {
+					if tests.Select == nil {
+						m.log("coverage: listed selection is unavailable\n")
+						failed = true
+						break
+					}
+					m.Commands = append(m.Commands, tests.Select([]string{test.ID}))
+				}
+			}
+		}
+		for _, group := range orderedGroups(groups) {
+			d := m.Declarations[group]
+			failed = failed || d.ListedFailed
+			if d.ListedFailed {
+				continue
+			}
+			for _, test := range tests.Tests {
+				for _, collector := range slices.Sorted(maps.Keys(d.Listed)) {
+					if collector == "go" && d.Metadata != nil {
+						artifact := filepath.Join(group.Dir, ".metrics", "coverage", "virtual-listed", test.ID, "covmeta.fixture")
+						if m.Aggregate.Files == nil {
+							m.Aggregate.Files = map[string]string{}
+						}
+						m.Aggregate.Files[artifact] = string(slices.Clone(d.Metadata))
+						// The external result belongs to this actual artifact read,
+						// not to an opaque-byte parser or final application verdict.
+						artifactBytes := m.Aggregate.Files[artifact]
+						digest := sha256.Sum256([]byte(artifactBytes))
+						if m.Conversions == nil {
+							m.Conversions = map[string]string{}
+						}
+						m.Conversions[artifact] = hex.EncodeToString(digest[:])
+						if d.ConversionExit != 0 {
+							m.log("coverage: %s: Go conversion: %s (exit %d)\n", test.ID, d.ConversionOutput, d.ConversionExit)
+							continue
+						}
+					}
+					if report := d.Listed[collector][test.ID]; report != nil {
+						byID[test.ID] = append(byID[test.ID], report)
+					}
+				}
+			}
+		}
+		if declared && !failed {
+			tc := &coverage.TestCoverage{}
+			for _, test := range tests.Tests {
+				if reports := byID[test.ID]; len(reports) > 0 {
+					tc.Add(test.ID, coverage.Merge(reports...))
+				}
+			}
+			r.SetTests(tc)
+		}
 	}
-
 	if ctx.Err() != nil {
 		return nil, port.Cancelled{}
 	}
@@ -233,175 +292,4 @@ func orderedGroups(groups map[coverage.Unloaded][]string) []coverage.Unloaded {
 }
 func (m *Measurer) disk() aggregate.Files {
 	return aggregate.Files{Dir: m.Aggregate.Dir, Regular: slices.Collect(maps.Keys(m.Aggregate.Files))}
-}
-
-// MeasureFreshTests reuses actual per-ID artifact collection. Unlike ordinary
-// measurement, a failed declared collector/conversion is retained as failure.
-func (m *Measurer) MeasureFreshTests(ctx context.Context, req port.Request, tests *coverage.PerTest) (*coverage.TestCoverage, error) {
-	if ctx.Err() != nil {
-		return nil, context.Cause(ctx)
-	}
-	tc, missing, err := m.listed(ctx, m.groups(req.Sources), tests)
-	if err != nil {
-		return tc, err
-	}
-	if tc == nil {
-		return nil, errors.New("listed collection has no declared collector")
-	}
-	if len(missing) > 0 {
-		return tc, fmt.Errorf("listed test %s produced no per-ID coverage data", missing[0])
-	}
-	return tc, nil
-}
-func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]string, tests *coverage.PerTest) (*coverage.TestCoverage, []string, error) {
-	var listedErrors []error
-	byID := map[string][]*coverage.Report{}
-	failed, declared, split := false, false, false
-	for _, group := range orderedGroups(groups) {
-		d := m.Declarations[group]
-		declared = declared || d.Listed != nil
-		split = split || d.Split
-		failed = failed || d.ListedFailed
-	}
-	if declared {
-		m.Commands = append(m.Commands, tests.All)
-		if !failed && !split {
-			for _, test := range tests.Tests {
-				if tests.Select == nil {
-					listedErrors = append(listedErrors, fmt.Errorf("listed selection is unavailable"))
-					m.log("coverage: listed selection is unavailable\n")
-					failed = true
-					break
-				}
-				m.Commands = append(m.Commands, tests.Select([]string{test.ID}))
-			}
-		}
-	}
-	for _, group := range orderedGroups(groups) {
-		d := m.Declarations[group]
-		failed = failed || d.ListedFailed
-		if d.ListedFailed {
-			listedErrors = append(listedErrors, fmt.Errorf("listed collection failed"))
-			continue
-		}
-		for _, test := range tests.Tests {
-			for _, collector := range slices.Sorted(maps.Keys(d.Listed)) {
-				if collector == "go" && d.Metadata != nil {
-					artifact := filepath.Join(group.Dir, ".metrics", "coverage", "virtual-listed", test.ID, "covmeta.fixture")
-					if m.Aggregate.Files == nil {
-						m.Aggregate.Files = map[string]string{}
-					}
-					m.Aggregate.Files[artifact] = string(slices.Clone(d.Metadata))
-					// The external result belongs to this actual artifact read,
-					// not to an opaque-byte parser or final application verdict.
-					artifactBytes := m.Aggregate.Files[artifact]
-					digest := sha256.Sum256([]byte(artifactBytes))
-					if m.Conversions == nil {
-						m.Conversions = map[string]string{}
-					}
-					m.Conversions[artifact] = hex.EncodeToString(digest[:])
-					if d.ConversionExit != 0 {
-						listedErrors = append(listedErrors, fmt.Errorf("%s Go conversion: %s (exit %d)", test.ID, d.ConversionOutput, d.ConversionExit))
-						m.log("coverage: %s: Go conversion: %s (exit %d)\n", test.ID, d.ConversionOutput, d.ConversionExit)
-						continue
-					}
-				}
-				if report := d.Listed[collector][test.ID]; report != nil {
-					byID[test.ID] = append(byID[test.ID], report)
-				}
-			}
-		}
-	}
-	var missing []string
-	var tc *coverage.TestCoverage
-	if declared && !failed {
-		tc = &coverage.TestCoverage{}
-		for _, test := range tests.Tests {
-			if reports := byID[test.ID]; len(reports) > 0 {
-				tc.Add(test.ID, coverage.Merge(reports...))
-			} else {
-				missing = append(missing, test.ID)
-			}
-		}
-	}
-	if ctx.Err() != nil {
-		return nil, nil, context.Cause(ctx)
-	}
-	return tc, missing, errors.Join(listedErrors...)
-}
-
-// CollectFresh reads the same tool formats/build populations as ordinary
-// measurement, retaining useful failed-command artifacts without proving them.
-func (m *Measurer) CollectFresh(ctx context.Context, req port.Request) (*coverage.Report, error) {
-	if ctx.Err() != nil {
-		return nil, context.Cause(ctx)
-	}
-	if m.RunDirectoryFailure != nil {
-		return nil, *m.RunDirectoryFailure
-	}
-	var reports []*coverage.Report
-	var failures []error
-	groups := m.groups(req.Sources)
-	admitted := map[string]bool{}
-	for _, sources := range groups {
-		for _, source := range sources {
-			admitted[filepath.Clean(source)] = true
-		}
-	}
-	for _, source := range req.Sources {
-		if !admitted[filepath.Clean(source)] {
-			failures = append(failures, fmt.Errorf("supervised coverage has admitted source without a measurement plan: %s", source))
-		}
-	}
-
-	for _, group := range orderedGroups(groups) {
-		d, declared := m.Declarations[group]
-		planFailed := d.CommandExit != 0
-		if !declared {
-			failures = append(failures, fmt.Errorf("no collector declared for %s", group.Dir))
-			continue
-		}
-		m.Entered = append(m.Entered, group)
-		if d.CommandExit != 0 {
-			failures = append(failures, fmt.Errorf("%s coverage command: %s (exit %d)", group.Language, d.CommandOutput, d.CommandExit))
-		}
-		if d.Report == "" {
-			failures = append(failures, fmt.Errorf("%s: coverage measured none of its admitted sources", group.Language))
-			continue
-		}
-		entries, err := coverage.Parse(strings.NewReader(d.Report))
-		if err != nil {
-			failures = append(failures, err)
-			continue
-		}
-		r := coverage.Build(ctx, m.disk(), groups[group], group.Dir, entries)
-		if d.IntegrationReport != "" {
-			entries, err := coverage.Parse(strings.NewReader(d.IntegrationReport))
-			if err != nil {
-				planFailed = true
-				failures = append(failures, err)
-			} else {
-				entries = r.Integrated(ctx, m.disk(), groups[group], group.Dir, entries)
-				r = coverage.Merge(r, coverage.Build(ctx, m.disk(), groups[group], group.Dir, entries))
-			}
-		}
-		if d.WithoutC8 {
-			r.SetIntegrationMissing(coverage.Unmeasured{Dir: group.Dir, Language: group.Language, Cause: port.ToolMissing{}, Reason: "c8 is not installed"})
-		}
-		for _, missing := range r.Missing() {
-			failures = append(failures, fmt.Errorf("coverage report: %s", missing.String()))
-		}
-		if r.Empty() && len(groups[group]) > 0 {
-			failures = append(failures, fmt.Errorf("%s: coverage measured none of its admitted sources", group.Language))
-		}
-		if !planFailed && len(r.Missing()) == 0 && !r.Empty() {
-			r.MarkMeasured(group.Language)
-			r.Prove(group.Language, group.Dir, groups[group])
-		}
-		reports = append(reports, r)
-	}
-	if ctx.Err() != nil {
-		failures = append(failures, context.Cause(ctx))
-	}
-	return coverage.Merge(reports...), errors.Join(failures...)
 }

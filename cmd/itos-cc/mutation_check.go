@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 var mutationCheckCommand = &command{
@@ -189,7 +189,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	// With --fail-uncovered=lines, only the lines the range changed are
 	// judged: a function with none needs no evidence, and an uncovered
 	// block, line or mutant elsewhere fails nothing.
-	var scope mutation.LineScope
+	var scope mutate.LineScope
 	if linesOnly {
 		scope = lines
 	}
@@ -265,14 +265,14 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 		}
 		result.Files = append(result.Files, f)
 		if !in.json {
-			fmt.Printf("%s: %d fresh, %d stale, %d missing%s\n", c.Rel, count[mutation.SnapshotFresh], count[mutation.Stale], count[mutation.Missing],
+			fmt.Printf("%s: %d fresh, %d stale, %d missing%s\n", c.Rel, count[mutate.Fresh], count[mutate.Stale], count[mutate.Missing],
 				testsNote(c.Functions))
 		}
 		for _, fn := range c.Functions {
 			switch fn.State {
-			case mutation.Missing:
+			case mutate.Missing:
 				reportFunction(in, c.Rel, fn, "mutation.missing", "has no mutation results")
-			case mutation.Stale:
+			case mutate.Stale:
 				reportFunction(in, c.Rel, fn, "mutation.stale", staleBecause(fn))
 			default:
 				reportFailed(in, c.Rel, fn.Function, fn.Mutants, uncoveredFails(failUncovered, scope, c.Rel))
@@ -291,7 +291,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 // before a run that did not judge it kept its entry marked stale, or it has
 // sites they never recorded, each named as "<line>:<column> `original` →
 // `replacement`".
-func staleBecause(fn mutation.FunctionCheck) string {
+func staleBecause(fn mutate.FunctionCheck) string {
 	tests := fn.Tests
 	switch {
 	case fn.Marked:
@@ -316,7 +316,7 @@ func staleBecause(fn mutation.FunctionCheck) string {
 
 // testChanges names the test files changed, added, and removed, as
 // "changed a, b; added c".
-func testChanges(tests *mutation.TestChange) string {
+func testChanges(tests *mutate.TestChange) string {
 	var changes []string
 	for _, c := range []struct {
 		what  string
@@ -330,7 +330,7 @@ func testChanges(tests *mutation.TestChange) string {
 }
 
 // testsNote ends a file's summary line when its tests made functions stale.
-func testsNote(functions []mutation.FunctionCheck) string {
+func testsNote(functions []mutate.FunctionCheck) string {
 	for _, fn := range functions {
 		switch {
 		case fn.Tests == nil:
@@ -347,7 +347,7 @@ func testsNote(functions []mutation.FunctionCheck) string {
 // at sites it no longer holds, as "left out <file>:<line> in <function>: <n>
 // recorded mutants at sites gone, which the next mutation run drops": a
 // note, not a problem, so it fails nothing.
-func printLeftOut(in *invocation, rel string, fn mutation.FunctionCheck) {
+func printLeftOut(in *invocation, rel string, fn mutate.FunctionCheck) {
 	if in.json || fn.LeftOut == 0 {
 		return
 	}
@@ -362,7 +362,7 @@ func printLeftOut(in *invocation, rel string, fn mutation.FunctionCheck) {
 // reportFunction lists function fn of file rel on stdout, as "<what>
 // <file>:<line> in <function>", what being rule's last word, and reports it
 // as a problem of rule whose message ends with verdict.
-func reportFunction(in *invocation, rel string, fn mutation.FunctionCheck, rule, verdict string) {
+func reportFunction(in *invocation, rel string, fn mutate.FunctionCheck, rule, verdict string) {
 	what := rule[len("mutation."):]
 	if !in.json {
 		fmt.Printf("  %s %s:%d in %s\n", what, rel, fn.StartLine, fn.Function)

@@ -9,7 +9,7 @@ import (
 func TestFreshnessUsesTheRecordedJudgmentAndEveryDependency(t *testing.T) {
 	site := Site{Offset: 2, Line: 8, Column: 3, Original: ">", Replacement: ">="}
 	entry := UnitResult{Hash: "h", Sites: 1, Killed: 1, Mutants: []Mutant{{Offset: 2, Original: ">", Replacement: ">=", Outcome: Killed}}}
-	if got := FreshnessOf(&entry, "h", nil, nil, nil, []Site{site}); got.State != SnapshotFresh {
+	if got := FreshnessOf(&entry, "h", nil, nil, nil, []Site{site}); got.State != Fresh {
 		t.Fatal(got)
 	}
 	if got := FreshnessOf(nil, "h", nil, nil, nil, nil); got.State != Missing {
@@ -41,7 +41,7 @@ func TestFreshnessUsesTheRecordedJudgmentAndEveryDependency(t *testing.T) {
 	if got.State != Stale || !reflect.DeepEqual(got.Unrecorded, []Site{newSite}) {
 		t.Fatal(got)
 	}
-	if !(FunctionCheck{Freshness: got}).Judged() || !(FunctionCheck{Freshness: Freshness{State: SnapshotFresh}}).Judged() || (FunctionCheck{Freshness: Freshness{State: Stale}}).Judged() {
+	if !(FunctionCheck{Freshness: got}).Judged() || !(FunctionCheck{Freshness: Freshness{State: Fresh}}).Judged() || (FunctionCheck{Freshness: Freshness{State: Stale}}).Judged() {
 		t.Fatal("sample/except must distinguish retained judgments from missing or changed ones")
 	}
 }
@@ -135,7 +135,7 @@ func TestPartialAndReusedOutcomesKeepTheirOwnBroadEvidence(t *testing.T) {
 }
 
 func TestCoveragePlanningNeedsOnlyUncachedOrActionableWork(t *testing.T) {
-	fresh := FileCheck{Functions: []FunctionCheck{{Freshness: Freshness{State: SnapshotFresh}, Mutants: []Mutant{{Outcome: Killed}, {Outcome: Survived, Excepted: "reviewed"}}}}}
+	fresh := FileCheck{Functions: []FunctionCheck{{Freshness: Freshness{State: Fresh}, Mutants: []Mutant{{Outcome: Killed}, {Outcome: Survived, Excepted: "reviewed"}}}}}
 	if NeedsMutationCoverage([]FileCheck{fresh}, false) || !NeedsMutationCoverage([]FileCheck{fresh}, true) {
 		t.Fatal("cache planning changed")
 	}

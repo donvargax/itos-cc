@@ -67,7 +67,7 @@ func Check(ctx context.Context, files []string, opt CheckOptions) ([]FileCheck, 
 		c, err := CheckParsed(ctx, f, path, opt)
 		f.Close()
 		for i := range c.Functions {
-			if fn := &c.Functions[i]; fn.State != SnapshotFresh {
+			if fn := &c.Functions[i]; fn.State != Fresh {
 				fn.Mutants = nil
 			}
 		}

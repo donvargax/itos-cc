@@ -9,8 +9,9 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/selection"
+	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -181,8 +182,8 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	e, err := mutation.Survivor(ctx, path, line, column, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
-	var none *mutation.NoSurvivorError
+	e, err := mutants.Survivor(ctx, path, line, column, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
+	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))
 		return result, cli.NewProblem(cli.CodeUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", rel, line, column, none.Reason),
@@ -283,7 +284,7 @@ type renewResult struct {
 
 // runRenewExceptions is mutation except --renew: each entry of itos-cc.yaml
 // that no longer holds is renewed when its mutant is unchanged
-// (mutation.Renew), and only those entries are written. Every renewal is
+// (mutate.Renew), and only those entries are written. Every renewal is
 // reported, and every stale entry left as it was is
 // mutation.exception-stale, with why.
 func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
@@ -319,7 +320,7 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	renewed, left, err := mutation.Renew(ctx, cfg.Exceptions, all.Sources, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
+	renewed, left, err := mutants.Renew(ctx, cfg.Exceptions, all.Sources, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
 	if err != nil {
 		return result, mutationRunError(err)
 	}
@@ -379,17 +380,17 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 // notRenewedBecause says why --renew left a stale entry as it was.
 func notRenewedBecause(why string) string {
 	switch why {
-	case mutation.ExceptionKilled:
+	case mutate.ExceptionKilled:
 		return "the fresh results record its mutant killed"
-	case mutation.ExceptionChanged:
+	case mutate.ExceptionChanged:
 		return "no site of its change is on a line with the text it recorded: its line changed"
-	case mutation.ExceptionGone:
+	case mutate.ExceptionGone:
 		return "its file, its function, or any site of its change in it is gone"
-	case mutation.RenewNoResults:
+	case mutate.RenewNoResults:
 		return "its function has no fresh mutation results to show its mutant survived"
-	case mutation.RenewAmbiguous:
+	case mutate.RenewAmbiguous:
 		return "more than one site could be its mutant"
-	case mutation.RenewUncovered:
+	case mutate.RenewUncovered:
 		return "its mutant is recorded uncovered, which no exception excuses"
 	}
 	return why
@@ -398,26 +399,26 @@ func notRenewedBecause(why string) string {
 // notRenewedFix says what to do about a stale entry --renew left.
 func notRenewedFix(why string) string {
 	switch why {
-	case mutation.RenewNoResults:
+	case mutate.RenewNoResults:
 		return "Run 'itos-cc mutation run' on its file, then renew again."
-	case mutation.ExceptionKilled:
+	case mutate.ExceptionKilled:
 		return "Remove its entry from " + config.File + ": the tests show that the mutant changes behaviour."
-	case mutation.RenewUncovered:
+	case mutate.RenewUncovered:
 		return "Add a test that executes its line, run mutation run, then renew again, or remove its entry."
 	}
 	return "Review the mutant again: except it with 'itos-cc mutation except <file>:<line>:<column> --reason …' if it still survives and changes no behaviour, and remove the old entry from " + config.File + "."
 }
 
 // exceptionUpdateError preserves config.invalid versus original I/O/cancel causes.
-func exceptionUpdateError(failure mutation.ExceptionFailure) error {
+func exceptionUpdateError(failure mutants.ExceptionFailure) error {
 	switch f := failure.(type) {
 	case nil:
 		return nil
-	case mutation.ExceptionInvalid:
+	case mutants.ExceptionInvalid:
 		return &config.InvalidError{Reason: f.Reason, Key: f.Key}
-	case mutation.ExceptionFailed:
+	case mutants.ExceptionFailed:
 		return f.Cause
-	case mutation.ExceptionCancelled:
+	case mutants.ExceptionCancelled:
 		return f.Cause
 	}
 	return failure

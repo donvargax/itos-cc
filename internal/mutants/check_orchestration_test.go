@@ -25,7 +25,7 @@ func TestCheckUsesActualSnapshotsAndCurrentInputsWithoutWrites(t *testing.T) {
 	before := f.snapshots.Values["board.go"]
 	written := slices.Clone(f.snapshots.Written)
 	checks, err := mutants.Check(t.Context(), []string{f.path}, checkOptions(f))
-	if err != nil || len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutants.SnapshotFresh || len(checks[0].Functions[0].Mutants) == 0 {
+	if err != nil || len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutants.Fresh || len(checks[0].Functions[0].Mutants) == 0 {
 		t.Fatalf("actual fresh check: %+v %v", checks, err)
 	}
 	f.files[filepath.Join(f.root, "board_test.go")] += "// independently edited test\n"
@@ -117,7 +117,7 @@ func TestCheckBroadAndListedEvidenceUsesCurrentFacts(t *testing.T) {
 			value.Tests = map[string]string{}
 			f.snapshots.Values["board.go"] = value
 			checks, err := mutants.Check(t.Context(), []string{f.path}, opt)
-			if err != nil || checks[0].Functions[0].State != mutants.SnapshotFresh {
+			if err != nil || checks[0].Functions[0].State != mutants.Fresh {
 				t.Fatalf("independent scope evidence: %+v %v", checks, err)
 			}
 			f.files[filepath.Join(f.root, "board_test.go")] += "// edited actual dependency\n"

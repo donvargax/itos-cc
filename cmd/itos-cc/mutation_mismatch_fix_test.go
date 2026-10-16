@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of mismatch-fix-scope, at the end of the sample-recorded-scope
-// scenarios in features/mutation.feature. They use the module of
+// scenarios in features/mutate.feature. They use the module of
 // mutate_since_test.go: no test calls Board#clear, so its mutant survives
 // with the file's own tests, the whole suite, and a test command alike, and
 // a snapshot rewritten to record it killed holds a kill those tests no
@@ -59,7 +59,7 @@ func TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith(t *testing.T) {
 			if o := mutateRun(t, append(row.flags, boardSource)...); o.code != 1 {
 				t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 			}
-			recordAs(t, boardSource, clearID, "<", mutation.Killed)
+			recordAs(t, boardSource, clearID, "<", mutate.Killed)
 
 			fix := mismatchFix(t, row.scope)
 			wantFixRuns(t, fix, "itos-cc mutation run --mutate-all "+row.fix+boardSource)
@@ -74,7 +74,7 @@ func TestAScopeGivenToSampleIsTheOneTheFixNames(t *testing.T) {
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	recordAs(t, boardSource, clearID, "<", mutation.Killed)
+	recordAs(t, boardSource, clearID, "<", mutate.Killed)
 
 	fix := mismatchFix(t, "all-tests", "--all-tests")
 	wantFixRuns(t, fix, "itos-cc mutation run --mutate-all --all-tests "+boardSource)

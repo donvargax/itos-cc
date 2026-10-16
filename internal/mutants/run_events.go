@@ -13,7 +13,6 @@ import (
 type Progress interface{ Report(RunEvent) }
 
 type RunEvent struct {
-	FreshTrial               *FreshTrialResult
 	Kind                     string
 	Command                  Command
 	File                     string

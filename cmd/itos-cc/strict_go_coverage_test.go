@@ -8,8 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/mutate"
 )
 
 // @ID-MUT-156
@@ -112,8 +111,8 @@ func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
 			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
 		}
 	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, unit := range snapshot.Units {
@@ -187,11 +186,11 @@ func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing
 			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
 		}
 	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
+	var snapshot mutate.Snapshot
+	if err := mutate.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
-	var branch *mutation.GoCoverageEvidence
+	var branch *mutate.GoCoverageEvidence
 	for i := range snapshot.Units {
 		if snapshot.Units[i].Name == "Branch" {
 			branch = snapshot.Units[i].Coverage
