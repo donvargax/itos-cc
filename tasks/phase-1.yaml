@@ -2677,6 +2677,16 @@
     architecture fixtures rather than shallow file-presence checks. Before execution replace these
     umbrella checks with the staged tasks verified acceptance and ownership checks. No mutation run
     of this repository locally; preserve the current quality-gate policy and approved order.
+    Proposed design for evaluation: docs/vertical-slices-proposal.md records
+    consumer-owned localized interfaces using Go's implicit structural
+    satisfaction, with feature-owned models and no global feature-domain
+    folder. Keep cross-feature wiring outside both feature directories;
+    the original task-command import of the project slice would break strict
+    directory isolation. Exact method signatures and named return types still
+    matter, so narrow integration adapters may be needed where semantics differ.
+    Preserve pure model observations, explicit I/O ports and stable reusable
+    engine APIs. Evaluate this proposal against actual cross-feature consumers
+    during T-86; it is not an accepted replacement for the current architecture.
   done_when:
     - run: tools/bin/architecture-check
     - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$"
