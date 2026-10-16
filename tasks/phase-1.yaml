@@ -3989,6 +3989,14 @@
     Extend the shared moved-help and help-topic routing for nested commands,
     including help mutation run and extra-topic refusals. Trace the selected
     group or child on the same parser without reading configuration or tools.
+    Source-backed compatibility includes runGroup's existing group-leading
+    --json behavior: it selects JSON for group errors, but a stripped leading
+    group flag is not forwarded to a known child's execution. Thus mutation
+    --json list remains plain unless the child itself receives --json, whereas
+    --json mutation list passes JSON to the child. Repeated stripped group
+    --json flags are not new child duplicate errors. Preserve this quirk and
+    distinguish group-before-child, top-level and child JSON placements in
+    focused guards and the one final equivalence proof; a policy fix is separate.
   done_when:
     - run: go test ./internal/cli/...
     - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|05|06|07|09|10|11|12|14|15|16|17)$"
