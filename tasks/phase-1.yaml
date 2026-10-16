@@ -3329,6 +3329,28 @@
     binary comparisons. Light focused checks locally; configured hooks/CI for broad gates. No
     mutation run over this repository/worktrees/session moves/agents or new dependency without
     recorded selection.
+    Exception and Tests already belong to internal/mutants; config aliases
+    them and exceptionWire owns YAML names and optional fields. Define the
+    Exceptions capability beside its existing values, without another model,
+    child-port cycle or generic parameter added solely for package layout.
+    Preserve Except's SameSite replacement versus append, entry comments,
+    unrelated settings and comments, current file permissions and refusal
+    to overwrite an unreadable or invalid document. Keep current Parse
+    policy rather than applying a new configuration format in this refactor.
+    Renew matches the complete Old value, consumes duplicate entries once
+    each and writes nothing if any Old is absent. Preserve its single
+    batch write before success presentation, not a partial write per entry.
+    Updates reread the current document, preserving other settings changed
+    since initial selection. Do not serialize a stale whole Config over it.
+    Unit fakes own exception values; scenario bindings must update actual
+    memory configuration bytes so fixture read/write assertions observe the
+    result. Reuse one format-preserving codec at the adapter boundary; no
+    YAML nodes or parser implementation in the domain or its porttest fake.
+    Bind actual except and renew consumers to this capability, with positive
+    and missing/wrong-binding controls; constructing an unused port while
+    calling legacy config.Except/Renew is not migration. Keep any remaining
+    real discovery setup honest until handlers move, and reuse T-92's source
+    publication boundary for annotation rather than adding another writer.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
