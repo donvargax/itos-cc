@@ -2510,6 +2510,23 @@ items:
       versus an untracked move, actual HEAD default sample seed and explicit-seed bypass. Preserve
       statuses, diagnostics, map direction and original artifacts; no new intentional difference or
       per-task binary comparison.
+
+      T-92 moves ordinary mutation Run orchestration behind its bound model-valued ports. In the
+      final whole-refactor comparison, include a real worker error after work has started and a
+      listed-selection fail-fast run with held peers, retaining truthful partial outcomes and
+      join-before-input-release evidence. Compare a configured coverage command without an explicit
+      report in ordinary best-effort Run, both with pending sites and with fully reused outcomes:
+      retain the existing fallback diagnostic and continued trials for ordinary measurement failure,
+      lazy absence of unnecessary listing/measurement on reuse, strict coverage refusal, and the
+      distinct fatal tests.list-failed policy. Include failed configured listing combined with a
+      coverage command lacking a report: listing still happens first and its failure remains fatal;
+      successful listing retains its diagnostic and ID/file inventory before the coverage fallback.
+      Include snapshot publication failure before moved-key removal or annotation, and Sample
+      listed-scope, baseline-failure, read-only and stable-seed neighbors affected by the shared
+      scheduler extraction. Preserve raw streams, process/shell statuses and artifacts under the
+      existing controlled-input and bounded-volatility rules. These are baseline-characterized
+      equality cases, with no new intentional-difference allowance and no per-task binary comparison
+      or proof implementation now.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
