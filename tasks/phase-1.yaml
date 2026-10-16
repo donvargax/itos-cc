@@ -3725,6 +3725,20 @@
     The constructor performs no I/O, captures no context and adds no service
     locator or framework. Keep actual independent-store and missing/wrong-binding
     controls, subdirectory updates and no-work admission bypasses intact.
+    Attempt one published f7cd3ab failed exact workflow 38883557387 core job 116915764773.
+    Staticcheck reported two valid QF1008 findings: exception_orchestration_test.go used
+    m.Site.Key() instead of the promoted m.Key(), and sample_run.go used
+    opt.CheckOptions.bound() instead of opt.bound(). These are our source issues, not a wrong
+    gate or an itos defect. Ordinary source-only revert fea9d562aac6fcba42cda3e3310c4bf616baaaaa
+    was committed and published first, before this record; its complete tree equals the prior
+    42211cf source/spec state. The original local 50-case/229-step public report, eight binding
+    families with 67 passes, domain/config checks and retained guards remain attempt-one local
+    evidence, not a successful final-source CI claim. Other native jobs were still running when
+    the completed core job was diagnosed; review their actual terminal findings before retry
+    publication. After supported give-back and published retake, reapply only this source revert's
+    inverse and simplify the two selectors without changing behavior, assertions, gates or
+    thresholds. Preserve all prior reasons, raw evidence, historical metrics and four recovery
+    stashes. Configured hooks and exact corrected-source full CI remain required.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
