@@ -3783,8 +3783,54 @@
     only hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new dependencies
     without recorded selection.
     The Fresh contract and its domain values belong beside mutants' models,
-    with the minimum sealed failures and real/memory shared contract outcomes;
-    select its exact API after T-92 through T-94 settle actual orchestration.
+    with minimum sealed failures and real/memory shared contract outcomes.
+    The selected coarse API is Plan(ctx, FreshRequest) (*FreshPlan, FreshFailure),
+    Prepare(ctx, *FreshPlan, coverageport.Scope) (*FreshPreparation, FreshFailure),
+    and Release(ctx, *FreshPlan), all methods of mutants.Fresh. FreshRequest owns
+    the existing Root, Paths, Since, Count and Seed inputs. Plan returns the actual
+    frozen plan or a typed failure, cleaning its own partial materialization when
+    planning fails. Prepare returns actual ordered partial evidence as well as its
+    failure; it never turns a failed collector command into successful coverage.
+    Release owns the frozen export after preparation and joined trials. It is
+    deliberately best effort, preserving the existing ignored physical RemoveAll
+    failure, and invalidates the released plan just as its former Close did.
+    This is distinct from WorkerPool.Close: check and retain that port's genuine
+    typed lifetime failures rather than discarding them. No context is stored;
+    cleanup must join entered work even when the caller's context is already done.
+    Move the genuine FreshPlan, FreshBaseline, FreshPreparation, tool and stage
+    evidence values once. Use the original coverage Scope, Test and Report values,
+    not new equivalents. Move CommandExecution's genuine Args/Dir/Err observation
+    to internal/coverage and retain a top-level alias where legacy coverage runners
+    need it. Move project.Files to selection's existing Files ownership rather than
+    copying source/test fields into a new Fresh inventory; a library alias may keep
+    current callers compiling. Audit the added Excluded field's internal uses and
+    preserve all public wire representations, ordering and nil-versus-empty facts.
+    Keep ExternalBoundary wording, JSON tags and progress text in presentation.
+    Pure admission/ranking/count/seed policy stays in shared mutants/selection
+    functions called by real and memory planning, with no second fake algorithm.
+    Put physical frozen environment preparation in internal/freshenv, implementing
+    Fresh with injected capabilities. Compose actual Workers, Toolchain, History,
+    coverage and Fingerprints at cmd; no concrete adapter defaults or type asserts
+    inside domain behavior and no adapter imports selecting another concrete adapter.
+    Reuse the existing bound Tree and Surroundings for frozen source observations.
+    Trials must still read actual frozen bytes after preparation and preserve the
+    original bounds/original-text checks: replacing those reads with a plan-time
+    byte cache could hide source changes made by tools during preparation. Memory
+    bindings must expose the actual committed/frozen fixture state through those
+    same observation ports, separately from live inputs and independent tool results.
+    Preserve the fresh Python probe's project-root cwd, owned execution, actual
+    command observation and cancellation failure. Ordinary Toolchain currently probes
+    from its caller Dir and treats an unsuccessful optional probe as a negative fact;
+    do not globally replace that behavior when composing the counted binding.
+    Preserve the real command argv, probe records, baseline deduplication and fresh
+    TypeScript own-versus-suite observation. Reuse one SelectionBaselines owner.
+    FreshFailure is sealed: FreshRefused carries the existing repository/since/path/
+    scratch/unsupported refusal kind and cause; FreshInvalid carries the actual
+    settings Reason and Key; FreshFailed carries the actual stage, when any, and
+    cause; FreshCancelled preserves the caller cause. UI maps these typed facts to
+    existing problems, messages, metadata and codes, including tools versus other
+    preparation failures and invalid committed config. No message matching or new
+    exit-code behavior is introduced by this boundary migration.
     Do not turn environment preparation into a generic file/process API.
     Preserve the distinction between admitted Units (including zero-site Go
     functions), Eligible sites and Selected trials. Preparation measures the
