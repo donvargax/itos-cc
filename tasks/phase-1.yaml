@@ -3770,6 +3770,12 @@
     committed fixture state and independent collector/tool results, never
     expected stages, desired verdicts or supplied final coverage maps. Real
     process ownership and native frozen materialization stay binary fixtures.
+    Compose the shared preparation/trial cleanup owner for counted work only.
+    Workers.Open currently adopts a supplied Owner even for MutationRun, so
+    installing a counted owner on the ordinary binding changes its local
+    command cleanup budget. Preserve ordinary runs' independent budgets;
+    FrozenTrials and preparation alone share the counted abort deadline.
+    Do not make this domain migration a global change to cleanup ownership.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
