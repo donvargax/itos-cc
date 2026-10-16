@@ -4017,6 +4017,24 @@
     dependencies without recorded selection. Keep site ordering, stale/missing/unrecorded
     distinctions, strict evidence rules, exclusions and graph agreement exactly as domain defines
     them.
+    Preserve the actual repeated settings observations, not merely a snapshot loaded before
+    dispatch: check initially reads config before support, selection reads exclusion after
+    lines-mode admission, judged elsewhere exceptions read exclusion after range discovery,
+    and orphan admission reads exclusion last. Use a minimal domain-owned model-bearing
+    settings reader over the existing config codec and byte-source binding, selected at cmd.
+    Move the existing config.Config semantic value into the mutation domain and retain
+    config.Config as an alias, so the reader returns the actual root and that one genuine
+    domain value, with current Tests/Exception objects and exclude globs unchanged. Preserve
+    invalid-config key/reason versus other read failures for UI classification.
+    Do not add a Config twin, raw-byte port into the slice, host fallback, live callback bundle
+    or eager group-wide read. Reuse existing failure categories where their meaning matches.
+    Its actual disk/codec binding and memory implementation must hold the same read outcomes;
+    memory reads its current backing data, never a list of expected calls or scenario outcomes.
+    Until the remaining handlers move, the memory driver explicitly refuses run/sample/except
+    execution even though Kong now owns their command declarations. Admit moved list/check and
+    genuine parse/help-only paths through existing routing; hold a physical-decoy control so
+    an unsupported child cannot fall through to the host. Keep whole-group InProcess deferred
+    until T-100; this is harness isolation, not a new product refusal.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
