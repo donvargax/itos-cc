@@ -1,4 +1,4 @@
-package mutants
+package mutate
 
 import (
 	"slices"
@@ -16,7 +16,7 @@ func TestDecidedMutantsAreInLineOrder(t *testing.T) {
   return a < 0;
 }
 `)
-	s := &Execution{file: f, sites: Sites(f)}
+	s := &fileState{file: f, sites: Sites(f)}
 	s.outcomes = make([]string, len(s.sites))
 	s.reused = make([]bool, len(s.sites))
 	s.scopes = make([]string, len(s.sites))
@@ -50,21 +50,21 @@ func TestDecidedMutantsAreInLineOrder(t *testing.T) {
 
 // @ID-MUT-149
 func TestAMutantsTimeoutLeavesAFixedAllowanceBeyondItsBaseline(t *testing.T) {
-	if got, want := TimeoutOf(50*time.Millisecond, 10), 5500*time.Millisecond; got != want {
+	if got, want := timeoutOf(50*time.Millisecond, 10), 5500*time.Millisecond; got != want {
 		t.Errorf("a baseline of 50ms at the default factor of 10: a timeout of %v, want %v, ten times it plus 5s", got, want)
 	}
 }
 
 // @ID-MUT-14
 func TestTimeouts(t *testing.T) {
-	if got, want := TimeoutOf(3*time.Second, 10), 35*time.Second; got != want {
+	if got, want := timeoutOf(3*time.Second, 10), 35*time.Second; got != want {
 		t.Errorf("a baseline of 3s at --timeout-factor 10: a timeout of %v, want %v", got, want)
 	}
 }
 
 // @ID-MUT-15
 func TestFastSuitesStillGetTheAllowance(t *testing.T) {
-	if got, want := TimeoutOf(50*time.Millisecond, 10), 5500*time.Millisecond; got != want {
+	if got, want := timeoutOf(50*time.Millisecond, 10), 5500*time.Millisecond; got != want {
 		t.Errorf("a baseline of 50ms at the default factor of 10: a timeout of %v, want %v, the 5s allowance beyond ten times it", got, want)
 	}
 }

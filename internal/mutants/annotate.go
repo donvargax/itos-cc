@@ -89,13 +89,3 @@ func StripAnnotation(src, comment string) string {
 	}
 	return strings.TrimRight(src[:start], "\n") + "\n"
 }
-
-// Annotated replaces only the current summary, preserving the legacy trailing
-// newline policy. The source adapter compares these bytes before stat or write.
-func Annotated(source, comment, block string) string {
-	body := StripAnnotation(source, comment)
-	if block == "" {
-		return strings.TrimRight(body, "\n") + "\n"
-	}
-	return strings.TrimRight(body, "\n") + "\n\n" + block
-}

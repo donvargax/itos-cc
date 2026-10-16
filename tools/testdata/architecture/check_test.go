@@ -206,8 +206,8 @@ func TestArchitecture(t *testing.T) {
 	}{
 		{"internal/disk", "internal/counting", "infra", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "project", "metrics", "coverage"}, nil},
 		{"internal/stdin", "internal/counting", "infra", []string{"internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "project", "metrics", "coverage"}, nil},
-		{"internal/workdir", "internal/selection", "workdir", []string{"internal/counting/port", "internal/snapshot/port", "internal/coverage/port", "metrics", "coverage"}, []string{"internal/mutants"}},
-		{"internal/metricsdir", "internal/snapshot", "metricsdir", []string{"internal/counting/port", "internal/selection/port", "internal/lang/port", "internal/coverage/port", "coverage"}, []string{"internal/mutants"}},
+		{"internal/workdir", "internal/selection", "workdir", []string{"internal/counting/port", "internal/snapshot/port", "internal/coverage/port", "metrics", "coverage"}, nil},
+		{"internal/metricsdir", "internal/snapshot", "metricsdir", []string{"internal/counting/port", "internal/selection/port", "internal/lang/port", "internal/coverage/port", "coverage"}, nil},
 
 		{"internal/testtools", "internal/mutants", "testtools", []string{"internal/counting/port", "internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "metrics", "graph"}, []string{"internal/mutants", "internal/lang", "project", "coverage"}},
 		{"internal/testinputs", "internal/mutants", "testinputs", []string{"internal/counting/port", "internal/selection/port", "internal/lang/port", "internal/snapshot/port", "internal/coverage/port", "metrics", "graph"}, []string{"internal/mutants", "internal/lang", "project", "coverage"}},

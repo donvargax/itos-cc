@@ -65,17 +65,14 @@ from it, and thin slices named for their commands.
   hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
   `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk. It
-  also implements mutants' `SourceEdits`: follow-rename absence uses Stat, while
-  annotation rereads current bytes, skips identical content before stat/write, and
-  preserves the current permissions.
+  imports nothing else of ours.
 - `internal/metricsdir` is the snapshot port's adapter: the snapshots under `.metrics/` at the
   project root of the working directory, or at the root its `RootDir` names, so one `Store` for
   each root serves several projects (graph's, in S8) with no change to the port. It wraps the
   top-level `metrics` library, which writes them as indented JSON renamed into place, removes
   and lists them, and `project`, which finds the root, so
   every byte and every atomic write stays the library's, translating their errors into the
-  port's failures. Its model-bearing `Mutations` adapter owns the one concrete
-  mutation snapshot codec; legacy mutate exports delegate to it without a second schema.
+  port's failures. It imports nothing else of ours.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
   syntax and mutation rules. Every language's rules for a namespace (the markers it walks up
@@ -483,9 +480,9 @@ from startup, including external cancellation before any actionable stop; Abort
 starts the deadline before stop cancellation. Frozen trials share preparation's owner
 from creation. Success/local timeout never activates a shared abort deadline.
 Historical scratch removal remains
-best effort. The legacy Run wrapper composes explicit disk defaults only for
-remaining direct library callers; the pure Run and cmd composition never hide a
-missing binding. Fresh orchestration remains at its legacy boundary until T-95.
+best effort. The direct legacy library fixture fallback remains until T-92
+(and fresh orchestration until T-95); cmd always supplies its actual Workers
+binding and refuses a missing one.
 
 
 T-89 keeps the model-bearing `Toolchain`, `Fingerprints` and `Reach` contracts
@@ -502,9 +499,8 @@ mutants plus the actual libraries it wraps. The shared contract suites live in
 `internal/mutants/porttest`; no production binary links them.
 
 Cmd supplies all three actual bindings and rejects missing injections at a work
-boundary. Remaining direct legacy library wrappers retain explicit disk defaults;
-Run itself now owns policy in mutants, while fresh preparation stays until T-95.
-Graph's snapshot reader remains legacy until S8. Fresh/count preparation
+boundary. Direct legacy library wrappers retain their explicit disk defaults until
+T-92/T-95; graph's snapshot reader remains legacy until S8. Fresh/count preparation
 keeps its existing supervised probe until T-95. Existing coverage's pure
 Gradle/Maven formatting helpers forward to their single mutants implementation
 until the T-90 callers move. Python command discovery deliberately chooses the last
@@ -523,27 +519,6 @@ unused-query bypass. Caller-relative current-to-prior change maps remain separat
 from repository-wide prior-to-current orphan maps. Frozen export, modes and
 supervised counted preparation stay at the legacy boundary until T-95.
 The githistory rule admits only mutants and the project library it wraps.
-
-T-92 moves ordinary Run planning, reuse, scheduling, judgment and publication order
-into `internal/mutants`. Its `Options` contains actual bound ports and pure map
-queries, with caller-relative paths resolved lexically from the supplied caller
-folder. `MutationSnapshots` reads complete domain models; `metricsdir.Mutations`
-performs concrete decoding before the domain checks the recorded file and only
-then normalizes admitted TypeScript command scope. `SourceEdits` publishes the
-summary using current source bytes. Snapshot write precedes moved-snapshot removal
-and annotation; failed publication stops both. The shared `OrphanReason` policy
-keeps follow-missing Stat separate from the retained orphan adapter's Lstat checks.
-
-`TestLister` returns stdout rows separately from streamed stderr and actual exit
-reason. The testtools adapter owns execution/logging, while our fake consumes
-independent root/command facts. Run lists only pending work, before report admission
-and measurement, preserving fatal list failure versus ordinary best-effort coverage
-failure. Existing MutationMeasurer/Fingerprints bindings replace captured live I/O
-callbacks. Progress events are domain facts; legacy RunProgress alone formats them.
-Sample still draws/checks at its legacy boundary until T-94, but uses the same
-Execution scheduler, with listed IDs admitted only for recorded listed scope.
-Counted/frozen preparation remains until T-95. No mutation handler is promoted to
-the in-process feature driver before T-100.
 
 ## Tests
 
