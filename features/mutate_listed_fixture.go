@@ -109,9 +109,9 @@ func TestFeatures(t *testing.T) {
 	}
 	split := os.Getenv("ITOS_CC_TEST_COVERDIR")
 	bin := filepath.Join(t.TempDir(), "greet.exe")
-	build := []string{"build", "-o", bin, ".."}
+	build := []string{"build", "-buildvcs=false", "-o", bin, ".."}
 	if split != "" || os.Getenv("GOCOVERDIR") != "" {
-		build = []string{"build", "-cover", "-o", bin, ".."}
+		build = []string{"build", "-buildvcs=false", "-cover", "-o", bin, ".."}
 	}
 	if out, err := exec.Command("go", build...).CombinedOutput(); err != nil {
 		t.Fatalf("go %v: %v\n%s", build, err, out)

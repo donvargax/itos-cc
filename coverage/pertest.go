@@ -42,22 +42,9 @@ import (
 // COVERAGE_FILE=<dir>/<test ID>/.coverage.
 const TestCoverDirEnv = "ITOS_CC_TEST_COVERDIR"
 
-// Test is one test a project lists: its ID, and the file that defines it as
-// the list command names it, or "".
-type Test struct {
-	ID, File string
-}
-
-// PerTest is how to run a project's listed tests: shell command lines run
-// through the platform shell in Root.
-type PerTest struct {
-	Root  string
-	Tests []Test
-	// All runs every test.
-	All string
-	// Select runs the tests ids.
-	Select func(ids []string) string
-}
+// Test and PerTest are coverage-domain values, retained here for legacy runners.
+type Test = coverage.Test
+type PerTest = coverage.PerTest
 
 // testCollector is how one language's collector measures the processes a
 // listed test starts.

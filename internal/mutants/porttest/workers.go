@@ -228,7 +228,7 @@ func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace) erro
 	if !ok {
 		return fmt.Errorf("trace source is absent: %s", source)
 	}
-	names, err := selectedTests(c, t.Tests)
+	names, err := SelectedTests(c, t.Tests)
 	if err != nil {
 		return err
 	}
@@ -266,10 +266,10 @@ func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace) erro
 	return nil
 }
 
-// selectedTests supports the concrete runnable selector shapes declared by the
+// SelectedTests supports the concrete runnable selector shapes declared by the
 // fixture inventory. Unsupported requests error rather than silently emitting
 // no observations. A broad command executes the entire inventory.
-func selectedTests(c mutants.Command, inventory map[string]string) ([]string, error) {
+func SelectedTests(c mutants.Command, inventory map[string]string) ([]string, error) {
 	if inventory == nil {
 		return []string{""}, nil
 	}

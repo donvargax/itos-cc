@@ -145,7 +145,9 @@ from it, and thin slices named for their commands.
   `--use-existing-coverage`, and runs `--coverage-command` through the runner's `Shell`. It
   returns the domain's `Report` as the runner built it, with no mapper (decision 47), and
   writes what it runs and the tools' output only to the `Log` main gives it. Its
-  `MeasureTests` measures each listed test's coverage too, mutation's until it moves.
+  `MeasureListed` implements the root `MutationMeasurer` capability, retaining
+  each listed test's coverage in the same run folder. `Inventory` wraps the
+  existing static collectors, logging best-effort failures without inventing proof.
 - `internal/mutants` is the pure mutation domain (T-87): mutation sites and unit hashes,
   stored-result values, pairing and freshness rules, exception judgment, executable-coverage
   evidence and its judgment, annotation text, sampling ranks, committed-candidate values and
@@ -247,8 +249,9 @@ from it, and thin slices named for their commands.
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
   `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the
-  request from its flags with `coverageRequest` and calls `coveragetools`' `MeasureTests`
-  directly until it moves. Both refuse `--coverage-command` with no `--coverage-report` as
+  request from its flags with `coverageRequest` and calls the invocation's separate
+  `MutationCoverage.MeasureListed`. Strict coverage also calls that binding's
+  `Inventory`; neither consumer constructs a real fallback. Both refuse `--coverage-command` with no `--coverage-report` as
   `cli.CommandNeedsReport`.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is

@@ -10,8 +10,8 @@ import (
 
 func TestMemoryIntegrationDeclarations(t *testing.T) {
 	m := newMemory(t)
-	// The logical declarations are retained now; actual request-specific report
-	// parsing and collector bindings are T90/T100, not a simulated collector pass.
+	// Declaration retention is independent of the actual request-specific
+	// parsing/collector binding guards; it is not a simulated collector pass.
 	features.IntegrationDeclarationContract(t, m)
 	dir, err := m.Folder()
 	if err != nil {
