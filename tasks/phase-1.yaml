@@ -3177,6 +3177,14 @@
     Collection failure remains separate, with aggregate coverage retained.
     No opaque metadata parser or preparation verdict is introduced. The strict
     supervised converter remains at its existing boundary until T95.
+    Measurement trace observation is fixture-owned: Driver.Tests/Run admission
+    rejects independently invalid source, inventory and declared runner shapes.
+    The actual bound coverage request still selects emitted observations from
+    that full inventory and actual source bytes. A request-dependent unsupported
+    trace shape is retained by the test wrapper and returned as a Driver.Run
+    observation error after the product joins; it is never suppressed, translated
+    into Unwritable, or added to production's sealed measurement failure set.
+    The supported measurement itself delegates unchanged to the root fake.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
