@@ -1765,14 +1765,15 @@ items:
     status: dropped
     depends_on: [T-26]
     kind: idea
-  - id: pre-commit-hook
-    title: Declare the template's pre-commit hook
+  - id: T-120
+    title: Declare a fast project pre-commit hook and document clone setup
     phase: 1
     owner: null
     status: todo
     depends_on: [T-26]
-    kind: idea
+    kind: task
     why: >
+      Was pre-commit-hook.
       Set aside by T-26. go-template-itos v0.2.0 brought tools/hooks/pre-commit, which runs
       golangci-lint and govulncheck at their pinned versions on a commit that stages code, declared
       once per clone with git config hook.itos-cc-pre-commit.event pre-commit and
