@@ -2995,6 +2995,22 @@
     Never infer installed tools or successful probes from Tests.Command, its
     declared outcome, an expected command string or a scenario identity. Keep
     positive and negative controls through the actual Toolchain binding.
+    Concrete T-89 direction keeps Toolchain, Fingerprints and Reach beside
+    mutation values. Toolchain observes the build/module roots, installed
+    runner paths, package manager, interpreter/probe result and runnable
+    Python files or Kotlin classes; the pure policy constructs Command from
+    those facts, not filesystem calls or a second command model.
+    internal/testtools owns those observations and directly reuses current
+    project and coverage helpers. internal/testinputs owns test, support,
+    suite and independent-coverage fingerprints with current inventory
+    boundaries and environment values. internal/importgraph wraps the graph
+    import closure over supplied source/test inventory. Existing selection
+    and lang contracts keep discovery and parsing; do not introduce another
+    generic filesystem or subprocess port. Legacy direct-call compatibility
+    stays explicit until orchestration and frozen preparation move in
+    T-92/T-95, while cmd receives actual contracts and guards injection.
+    Fakes use actual memory files, declared import edges and independently
+    declared executable/probe facts.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
