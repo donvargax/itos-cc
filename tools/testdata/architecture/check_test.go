@@ -250,7 +250,7 @@ func TestArchitecture(t *testing.T) {
 	// snapshot domain is a domain like the others, its port a slice's to hold.
 	// internal/units, internal/dry, internal/scrap, internal/crap and internal/next are held as count is with no rule
 	// naming them, as a made project's next slice is.
-	for _, slice := range []struct{ base, other string }{{"internal/count", "internal/next"}, {"internal/next", "internal/count"}, {"internal/units", "internal/mutation", "internal/count"}, {"internal/dry", "internal/units"}, {"internal/scrap", "internal/dry"}, {"internal/crap", "internal/scrap"}, {"internal/mutation", "internal/units"}, {"internal/units", "internal/mutation"}} {
+	for _, slice := range []struct{ base, other string }{{"internal/count", "internal/next"}, {"internal/next", "internal/count"}, {"internal/units", "internal/count"}, {"internal/dry", "internal/units"}, {"internal/scrap", "internal/dry"}, {"internal/crap", "internal/scrap"}, {"internal/mutation", "internal/units"}, {"internal/units", "internal/mutation"}} {
 		for _, test := range []bool{false, true} {
 			kind := "code"
 			if test {
