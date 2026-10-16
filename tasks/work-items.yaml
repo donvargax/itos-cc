@@ -3185,7 +3185,7 @@ items:
     title: Isolate fresh counted preparation behind its domain port and retire legacy mutate
     phase: 1
     owner: donvargax
-    status: todo
+    status: doing
     depends_on: [T-94]
     kind: task
   - id: T-96
