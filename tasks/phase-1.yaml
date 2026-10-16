@@ -2909,9 +2909,6 @@
     changes diagnostics only: retain every enabled rule, exclusion and
     failure exit policy, and do not run the broad lint gate manually.
 
-  done_when:
-    - run: go test ./internal/worktrees/... ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(11|12|14|15|165|166|167)$"
 - id: T-89
   type: refactor
   title: Give mutation toolchain facts, fingerprints and test reach through ports

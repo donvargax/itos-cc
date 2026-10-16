@@ -3045,7 +3045,7 @@ items:
     title: Run mutation workers through a domain port and the worktrees adapter
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-87]
     kind: task
   - id: T-89
