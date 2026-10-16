@@ -30,19 +30,18 @@ type Measurer struct {
 }
 
 var _ port.Measurer[*coverage.Report] = Measurer{}
-var _ coverage.MutationMeasurer = Measurer{}
 
 // Measure gives the report of req, as the port says: the reports it names,
 // after its Command when it has one; with none, those an earlier run left
 // when it says Existing, and otherwise the tests' own, run now.
 func (m Measurer) Measure(ctx context.Context, req port.Request) (*coverage.Report, port.Failure) {
-	return m.MeasureListed(ctx, req, nil)
+	return m.MeasureTests(ctx, req, nil)
 }
 
-// MeasureListed is Measure, and with perTest, when it runs the tests, each
+// MeasureTests is Measure, and with perTest, when it runs the tests, each
 // listed test's coverage too, the report's LineTests, measured in its run
-// folder through the unchanged runner.
-func (m Measurer) MeasureListed(ctx context.Context, req port.Request, perTest *coverage.PerTest) (*coverage.Report, port.Failure) {
+// folder: mutation's, which measures through the runner until it moves.
+func (m Measurer) MeasureTests(ctx context.Context, req port.Request, perTest *covrun.PerTest) (*coverage.Report, port.Failure) {
 	if ctx.Err() != nil {
 		return nil, port.Cancelled{}
 	}
@@ -89,7 +88,7 @@ func (m Measurer) named(ctx context.Context, req port.Request) (*coverage.Report
 // context stopped measured what it measured for that reason, not for a
 // tool's: it is Cancelled and keeps nothing. A run folder that cannot be
 // made is Unwritable.
-func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope port.Scope, perTest *coverage.PerTest) (*coverage.Report, port.Failure) {
+func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope port.Scope, perTest *covrun.PerTest) (*coverage.Report, port.Failure) {
 	if err := covrun.IgnoreDir(out); err != nil {
 		return nil, port.Unwritable{Reason: err.Error()}
 	}
@@ -130,17 +129,4 @@ func keepLatest(run, out string) {
 		_ = os.RemoveAll(target)
 		_ = os.Rename(filepath.Join(run, e.Name()), target)
 	}
-}
-
-// Inventory preserves the runner's best-effort policy: ordinary collector
-// failures are logged, while cancellation stops the caller with its cause.
-func (m Measurer) Inventory(ctx context.Context, report *coverage.Report, language string) port.Failure {
-	if ctx.Err() != nil {
-		return port.Cancelled{}
-	}
-	_, _ = covrun.Inventory(ctx, report, language, m.Log, nil)
-	if ctx.Err() != nil {
-		return port.Cancelled{}
-	}
-	return nil
 }

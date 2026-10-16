@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,7 +13,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/coverage/port/porttest"
-	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 )
 
 // workspace lays files out, their text by slash-separated path, under a
@@ -118,41 +116,4 @@ func TestExistingCoverageWithNoReportIsMissing(t *testing.T) {
 	if strings.Contains(log.String(), "$") {
 		t.Errorf("the log says %q, want nothing run", log.String())
 	}
-}
-
-func TestRealMutationMeasurerContract(t *testing.T) {
-	covtest.MutationMeasurerContract(t, func(t *testing.T, files map[string]string) (coverage.MutationMeasurer, string) {
-		dir := workspace(t, files)
-		return Measurer{Log: io.Discard}, dir
-	})
-}
-
-func TestRealListedContract(t *testing.T) {
-	covtest.ListedContract(t, func(t *testing.T, split bool) (coverage.MutationMeasurer, string) {
-		dir := workspace(t, map[string]string{"go.mod": "module example.com/t90\n\ngo 1.22\n", "main.go": covtest.ListedMain, "harness/main.go": covtest.ListedHarness})
-		value := "false"
-		if split {
-			value = "true"
-		}
-		t.Setenv("T90_SPLIT", value)
-		// The test owns both source and target, in this native temporary root.
-		cmd := exec.CommandContext(t.Context(), "go", "build", "-buildvcs=false", "-cover", "-o", filepath.Join(dir, "app.exe"), ".")
-		cmd.Dir = dir
-		if out, err := cmd.CombinedOutput(); err != nil {
-			t.Fatalf("build real covered fixture: %v %s", err, out)
-		}
-		return Measurer{Log: io.Discard}, dir
-	})
-}
-func TestRealStaticInventoryContract(t *testing.T) {
-	covtest.StaticInventoryContract(t, func(t *testing.T) (coverage.MutationMeasurer, string) {
-		if out, err := exec.CommandContext(t.Context(), "python3", "-c", "import coverage").CombinedOutput(); err != nil {
-			if os.Getenv("ITOS_CC_LANGUAGE_TOOLS") != "" {
-				t.Fatalf("installed Python coverage unavailable: %v %s", err, out)
-			}
-			t.Skipf("Python coverage unavailable for real static inventory: %v %s", err, out)
-		}
-		dir := workspace(t, map[string]string{"pyproject.toml": "[project]\nname='t90'\nversion='1'\n", "hit.py": "hit=1\n", "miss.py": "def hidden():\n    return 1\n", "empty.py": "# no statements\n"})
-		return Measurer{Log: io.Discard}, dir
-	})
 }

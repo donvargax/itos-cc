@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"io"
 	"path/filepath"
 
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	"github.com/donvargax/itos-cc/internal/coveragetools"
 )
 
 // coverageFlags say how a command gets coverage.
@@ -20,24 +22,22 @@ var coverageFlags = []flagSpec{
 }
 
 // loadCoverage produces coverage for sources under ctx, or nil with
-// --no-coverage, through the invocation's mutation coverage capability.
+// --no-coverage, through internal/coveragetools, the coverage port's
+// adapter, as crap measures through the port: mutation's, until it moves.
 // scope is the tests that run without --all-tests. With perTest, when the
 // coverage commands run, it also measures each listed test's coverage, in
-// the run's own folder. The bound adapter owns progress and test output.
-// reach, in OwnTests, is the test files that reach each
-// source, which measure Python's and Kotlin's; nil measures
+// the run's own folder. Progress and test output go to log so stdout stays
+// the report. reach, in OwnTests, is the test files that reach each
+// source, which measure Python's and Kotlin's (covrun.Plans); nil measures
 // them by the whole suite. A stopped run is reported as ctx's cause, as
 // mutation reports a stop.
-func loadCoverage(ctx context.Context, in *invocation, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach) (*coverage.Report, error) {
+func loadCoverage(ctx context.Context, in *invocation, sources []string, scope covport.Scope, log io.Writer, perTest *covrun.PerTest, reach covport.Reach) (*coverage.Report, error) {
 	req, measure, err := coverageRequest(in, sources, scope)
 	if !measure || err != nil {
 		return nil, err
 	}
 	req.Reach = reach
-	if in.adapters.MutationCoverage == nil {
-		return nil, fmt.Errorf("mutation coverage capability is not bound")
-	}
-	report, failure := in.adapters.MutationCoverage.MeasureListed(ctx, req, perTest)
+	report, failure := coveragetools.Measurer{Log: log}.MeasureTests(ctx, req, perTest)
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)

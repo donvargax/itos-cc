@@ -88,7 +88,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/changerisk$
             - github.com/donvargax/itos-cc/internal/mutants$
             - github.com/donvargax/itos-cc/internal/mutants/porttest$
-            - github.com/donvargax/itos-cc/internal/coverage/porttest$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
@@ -167,7 +166,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/changerisk$
             - github.com/donvargax/itos-cc/internal/mutants$
             - github.com/donvargax/itos-cc/internal/mutants/porttest$
-            - github.com/donvargax/itos-cc/internal/coverage/porttest$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/internal/lang/port$
@@ -221,8 +219,6 @@ linters:
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
             - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
               desc: "a slice's code links no fake (T-88): only tests may import mutation's Workers fake"
-            - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
-              desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
         # Mutation's model-bearing contract is at the domain root. Its fake is
         # allowed in tests, never in the domain's production implementation.
         mutant-fakes:
@@ -233,16 +229,6 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
               desc: "the mutation domain's production code imports no fake (T-88)"
-        # Coverage's model-bearing capability uses a root fake; production
-        # coverage code must never import that fake.
-        coverage-fakes:
-          files:
-            - "**/*.go"
-            - "!**/porttest/**"
-            - "!$test"
-          deny:
-            - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
-              desc: "the coverage domain's production code imports no fake (T-90)"
         # The UI every slice shares, its tests too, imports nothing of ours:
         # no domain or port, no adapter, slice or cmd (q-54). cmd hands it one
         # classifier per domain, held beside that domain's slice, so adding

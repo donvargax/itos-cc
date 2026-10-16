@@ -21,7 +21,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
-	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
@@ -228,9 +227,6 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 	if err := c.Validate(); err != nil {
 		return err
 	}
-	if err := measurementOf(c).Validate(); err != nil {
-		return fmt.Errorf("coverage declaration in %s: %w", dir, err)
-	}
 	m.coverage[filepath.Clean(dir)] = c
 	return nil
 }
@@ -238,9 +234,6 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 // Tests records what the project's own tests do in dir.
 func (m *memory) Tests(dir string, t features.Tests) error {
 	dir = filepath.Clean(dir)
-	if err := m.admitCoverageTrace(dir, t); err != nil {
-		return err
-	}
 	if t.Command == "" && t.Imports != nil && (t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil) {
 		return fmt.Errorf("imports-only setup cannot declare execution outcomes")
 	}
@@ -419,7 +412,6 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 			m.readVersions[filepath.Clean(path)]++
 		}
 	}()
-	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
 	a := adapters{
 		Toolchain: input, Fingerprints: input, Reach: input,
 		Workers:      m.workers(r),
@@ -427,8 +419,8 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Tree:         tree,
 		Surroundings: input,
 		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
-		Coverage:     measurer, MutationCoverage: measurer,
-		Config: file,
+		Coverage:     m.measurer(dir),
+		Config:       file,
 	}
 	var stdout, stderr bytes.Buffer
 	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
@@ -441,9 +433,6 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	}
 	for name, text := range store.Snapshots {
 		m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
-	}
-	if measurer.observationErr != nil {
-		return features.Result{}, measurer.observationErr
 	}
 	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
 }
@@ -647,12 +636,13 @@ var markers = map[string][]string{
 // file, the reports a run names among them, and the report of each build
 // root, as the runner groups the sources by language and the nearest
 // folder holding that language's marker, or their own folder. A root whose
-// Coverage the scenario declared is measured as it says: by its actual Go,
-// LCOV or JaCoCo report, every source of its language proven, or nothing, a
+// Coverage the scenario declared is measured as it says: by the LCOV report
+// its tools write, every source of its language proven, or nothing, a
 // report its tools do not write; a root declared for none is a tool missing.
 // An earlier run left no report of any root, so reading what one left finds
 // none.
-func (m *memory) measurer(dir string) *covtest.Measurer {
+func (m *memory) measurer(dir string) covporttest.Measurer {
+	disk := covporttest.Files{Dir: dir, Regular: slices.Collect(maps.Keys(m.files))}
 	type group struct{ language, root string }
 	groups := map[group][]string{}
 	for _, path := range slices.Sorted(maps.Keys(m.files)) {
@@ -664,68 +654,31 @@ func (m *memory) measurer(dir string) *covtest.Measurer {
 		groups[g] = append(groups[g], path)
 	}
 	roots, left := map[string]*coverage.Report{}, map[string]*coverage.Report{}
-	declarations := map[coverage.Unloaded]covtest.Measurement{}
-	for g := range groups {
+	for g, sources := range groups {
 		report := &coverage.Report{}
 		declared, ok := m.coverage[g.root]
 		switch {
 		case !ok || declared.Language != g.language:
 			report.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.ToolMissing{},
 				Reason: "no tool the in-process driver declares measures it"})
+		case declared.Report == "":
+			report.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.MeasuredNothing{},
+				Reason: "its coverage run measured none of its files"})
 		default:
-			d := measurementOf(declared)
-			d.Listed = map[string]map[string]*coverage.Report{}
-			for _, tests := range m.tests[g.root] {
-				if tests.Listed == nil {
-					continue
-				}
-				d.ListedFailed = tests.Listed.CoverageExit != 0
-				d.Split = tests.Listed.Split
-				d.Metadata = slices.Clone(tests.Listed.CoverageMetadata)
-				d.ConversionExit = tests.Listed.ConversionExit
-				d.ConversionOutput = tests.Listed.ConversionOutput
-				lines := map[string]map[string][]coverage.Line{}
-				for file, byLine := range tests.Listed.Lines {
-					path := filepath.Join(g.root, filepath.FromSlash(file))
-					spec := lang.Detect(path)
-					if spec == nil {
-						continue
-					}
-					if d.Listed[spec.Name] == nil {
-						d.Listed[spec.Name] = map[string]*coverage.Report{}
-					}
-					for line, ids := range byLine {
-						for _, id := range ids {
-							if lines[id] == nil {
-								lines[id] = map[string][]coverage.Line{}
-							}
-							lines[id][path] = append(lines[id][path], coverage.Line{Line: line, Covered: true})
-						}
-					}
-				}
-				for id, files := range lines {
-					byLanguage := map[string]map[string][]coverage.Line{}
-					for file, observed := range files {
-						language := lang.Detect(file).Name
-						if byLanguage[language] == nil {
-							byLanguage[language] = map[string][]coverage.Line{}
-						}
-						byLanguage[language][file] = observed
-					}
-					for language, files := range byLanguage {
-						d.Listed[language][id] = coverage.FromLines(language, files)
-					}
-				}
+			entries, err := coverage.ParseLCOV(strings.NewReader(declared.Report))
+			if err != nil {
+				m.t.Errorf("the report declared in %s is no LCOV: %v", g.root, err)
 			}
-			declarations[coverage.Unloaded{Language: g.language, Dir: g.root}] = d
-
+			report = coverage.Build(m.t.Context(), disk, sources, g.root, entries)
+			report.MarkMeasured(g.language)
+			report.Prove(g.language, g.root, sources)
 		}
 		roots[g.root] = coverage.Merge(roots[g.root], report)
 		existing := &coverage.Report{}
 		existing.SetMissing(coverage.Unmeasured{Dir: g.root, Language: g.language, Cause: covport.NoReport{}, Reason: "no report on disk measures its files"})
 		left[g.root] = coverage.Merge(left[g.root], existing)
 	}
-	return &covtest.Measurer{Aggregate: covporttest.Measurer{Dir: dir, Files: maps.Clone(m.files), Roots: roots, Left: left}, Declarations: declarations}
+	return covporttest.Measurer{Dir: dir, Files: maps.Clone(m.files), Roots: roots, Left: left}
 }
 
 // buildRoot is the nearest folder above path holding one of names, or
@@ -865,9 +818,4 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 	return &mutantstest.Inputs{Dir: filepath.Clean(r.Dir), Files: m.files, Dirs: m.dirs,
 		Runtime: mutants.RuntimeInputs{GoVersion: runtime.Version(), Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
 		Without: slices.Clone(r.Without), Probes: maps.Clone(m.toolSetup), Imports: imports}
-}
-
-// measurementOf translates fixture artifact declarations, not application models.
-func measurementOf(c features.Coverage) covtest.Measurement {
-	return covtest.Measurement{Language: c.Language, Report: c.Report, IntegrationReport: c.IntegrationReport, CommandExit: c.CommandExit, CommandOutput: c.CommandOutput, WithoutC8: c.WithoutC8, InventoryReport: c.InventoryReport, InventoryExit: c.InventoryExit, InventoryOutput: c.InventoryOutput}
 }

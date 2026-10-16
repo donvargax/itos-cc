@@ -150,7 +150,7 @@ func TestArchitecture(t *testing.T) {
 	for _, domain := range domains {
 		ported := domain != "internal/duplication" && domain != "internal/teststructure" && domain != "internal/changerisk" && domain != "internal/mutants"
 		bases := []string{domain}
-		if domain == "internal/mutants" || domain == "internal/coverage" {
+		if domain == "internal/mutants" {
 			bases = append(bases, domain+"/porttest")
 		}
 		if ported {
@@ -187,9 +187,6 @@ func TestArchitecture(t *testing.T) {
 	}
 	add("own_fake_allowed", "internal/mutants", module+"/internal/mutants/porttest", "Value", "", true)
 	add("own_fake_refused", "internal/mutants", module+"/internal/mutants/porttest", "Value", "mutant-fakes", false)
-	add("own_fake_allowed", "internal/coverage", module+"/internal/coverage/porttest", "Value", "", true)
-	add("own_fake_refused", "internal/coverage", module+"/internal/coverage/porttest", "Value", "coverage-fakes", false)
-	add("coverage_fake_refused", "internal/mutants", module+"/internal/coverage/porttest", "Value", "coverage-fakes", false)
 	// The adapter arrow: an adapter's code imports nothing of ours but the
 	// port it implements, not a domain, another adapter, a slice, the UI,
 	// cmd, the fakes, another adapter's port or a top-level library it does

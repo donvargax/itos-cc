@@ -104,8 +104,6 @@ func (q *countedMutation) listedMode(mode string) error {
 	}
 	if mode == "bad-metadata" {
 		listed.CoverageMetadata = []byte("T81 invalid Go coverage metadata")
-		listed.ConversionExit = 1
-		listed.ConversionOutput = "decoding metadata: unexpected EOF"
 	}
 	if err = w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 ./e2e -args -tests={pattern}", Elapsed: 100 * time.Millisecond, Listed: listed, Trace: trace}); err != nil {
 		return err

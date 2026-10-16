@@ -96,11 +96,11 @@ func TestDeclaredCommandsUseActualMutatedCopyAndSelectors(t *testing.T) {
 func TestTraceRejectsUnknownSelectorsAndPreservesNilInventory(t *testing.T) {
 	inventory := map[string]string{"own.ATest": "ATest", "own.BTest": "BTest"}
 	for _, args := range [][]string{{"gradle", "test", "--tests", "wrong.Test"}, {"unrecognized", "runner"}, {"unrecognized", "runner", "own.ATest"}} {
-		if _, err := SelectedTests(mutants.Command{Args: args}, inventory); err == nil {
+		if _, err := selectedTests(mutants.Command{Args: args}, inventory); err == nil {
 			t.Fatalf("unsupported selector accepted: %v", args)
 		}
 	}
-	names, err := SelectedTests(mutants.Command{Args: []string{"arbitrary", "command"}}, nil)
+	names, err := selectedTests(mutants.Command{Args: []string{"arbitrary", "command"}}, nil)
 	if err != nil || !reflect.DeepEqual(names, []string{""}) {
 		t.Fatalf("nil inventory changed: %v %v", names, err)
 	}
