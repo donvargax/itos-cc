@@ -47,12 +47,12 @@ func historyConsumerFixture(t *testing.T) (*memory, string) {
 }
 
 // These are actual legacy consumer functions, not alternate query callbacks.
-// Lstat/config orchestration stays at its existing disk boundary until92/93;
-// every Git observation comes from the independently bound in-memory history.
+// Config/discovery admission remains at its legacy boundary; history and lazy
+// no-follow target evidence come from independent in-memory fixture state.
 func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	m, root := historyConsumerFixture(t)
 	bound := m.history(root)
-	in := &invocation{cmd: mutationRunCommand, values: map[string][]string{"since": {"base"}}, adapters: adapters{History: bound}}
+	in := &invocation{cmd: mutationRunCommand, values: map[string][]string{"since": {"base"}}, adapters: adapters{History: bound, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}}}
 	changed, renamed, err := changedSince(t.Context(), in)
 	main := filepath.Join(root, "main.go")
 	if err != nil || len(changed) != 2 || !changed[main].Functions["example/binding#Value"] || renamed[filepath.Join(root, "new.go")] != filepath.Join(root, "old.go") {
@@ -79,6 +79,30 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	if remaining, err := notRenamed(t.Context(), in, orphans); err != nil || len(remaining) != 0 {
 		t.Fatalf("bound committed+working rename ignored: %v %v", remaining, err)
 	}
+	t.Run("missing presence", func(t *testing.T) {
+		absent := *in
+		absent.adapters.Presence = nil
+		if _, err := notRenamed(t.Context(), &absent, orphans); err == nil || !strings.Contains(err.Error(), "source presence binding is missing") {
+			t.Fatalf("missing presence silently observed disk targets: %v", err)
+		}
+	})
+	t.Run("wrong presence", func(t *testing.T) {
+		// These physical targets remain on disk, so a hidden fallback would still
+		// suppress the orphans. The independent fixture has neither target now.
+		files := maps.Clone(m.files)
+		for _, name := range []string{"new.go", "tracked.go"} {
+			path := filepath.Join(root, name)
+			if _, err := os.Lstat(path); err != nil {
+				t.Fatalf("physical target decoy absent: %v", err)
+			}
+			delete(files, path)
+		}
+		wrong := *in
+		wrong.adapters.Presence = &mutantstest.SourceEdits{Files: files, Directories: m.dirs}
+		if remaining, err := notRenamed(t.Context(), &wrong, orphans); err != nil || len(remaining) != 2 {
+			t.Fatalf("wrong presence retained physical rename targets: %v %v", remaining, err)
+		}
+	})
 	in.adapters.History = nil
 	if _, _, err := changedSince(t.Context(), in); err == nil || !strings.Contains(err.Error(), "binding") {
 		t.Fatalf("missing since binding: %v", err)

@@ -532,7 +532,7 @@ performs concrete decoding before the domain checks the recorded file and only
 then normalizes admitted TypeScript command scope. `SourceEdits` publishes the
 summary using current source bytes. Snapshot write precedes moved-snapshot removal
 and annotation; failed publication stops both. The shared `OrphanReason` policy
-keeps follow-missing Stat separate from the retained orphan adapter's Lstat checks.
+keeps follow-missing Stat separate from orphan Lstat observations.
 
 `TestLister` returns stdout rows separately from streamed stderr and actual exit
 reason. The testtools adapter owns execution/logging, while our fake consumes
@@ -544,6 +544,26 @@ Sample still draws/checks at its legacy boundary until T-94, but uses the same
 Execution scheduler, with listed IDs admitted only for recorded listed scope.
 Counted/frozen preparation remains until T-95. No mutation handler is promoted to
 the in-process feature driver before T-100.
+
+T-93 moves check, strict evidence inventory, site listing and orphan judgment into
+`internal/mutants`. Check receives `MutationSnapshotReader`, never mutation write
+capabilities; `MutationSnapshots` embeds that reader. A separate `MutationCatalog`
+returns the store's regular-JSON names unchanged and observes only permissive
+recorded-file metadata through the same metricsdir adapter. Full decoding remains
+in its single concrete codec. `SourcePresence` is separate from follow-Stat
+`Missing`: Lstat directories, dangling links and ordinary errors are present,
+while lazy rename traversal requires successful `RenameTarget` evidence.
+
+`CheckParsed` keeps recorded stale-but-judged mutants for Sample, except and renew
+at their remaining legacy boundaries. Check alone hides those stale mutants.
+List returns the ordered prefix before a later source failure; cmd renders it
+before the error, whereas check admits ordinary and strict results before printing
+checked files. Actual cmd consumers use invocation-bound readers, catalog,
+presence, Tree/Surroundings and existing Toolchain/Fingerprints. Remaining direct
+legacy library entry points compose concrete defaults and delegate the same rules;
+legacy strict callback APIs remain only compatibility adapters, not domain I/O.
+The existing inward depguard/fixture inventories cover these unchanged package
+arrows; no production fake or adapter import is admitted to the domain.
 
 ## Tests
 
