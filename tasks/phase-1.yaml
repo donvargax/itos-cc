@@ -3205,6 +3205,21 @@
     order from Split/collection/conversion facts without selecting desired argv.
     Focused harness-regression assertions and existing measurement/binding guards
     cover the correction; no new CLI behavior or behavioral-red claim is made.
+    First published implementation ed617d0 failed CI38841139032. Revert
+    0cf65d3 restored source immediately before this attempt record. The new
+    broad coverage-fakes rule overlapped slice-fakes, so six existing slice
+    probes emitted a different refusal owner than their exact architecture
+    contract. Scope the new rule to the existing pure-domain path inventory,
+    excluding porttest/tests, retaining slice ownership and the cross-domain
+    refusal. Native Ubuntu also exposed an existing command-retention fixture
+    with no file for its declared trace source; create owned independent source
+    bytes before declaration while retaining every old assertion and actual
+    admission. Restore the reviewed source after supported give-back/retake,
+    apply these configuration/fixture corrections and the already specified
+    deterministic Listed/failed-empty inventory follow-ups. Preserve original
+    failed logs and native diagnostics; no check is weakened or new product
+    behavior claimed. Remaining original native job diagnostics stay observed
+    before the repaired implementation is published.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
