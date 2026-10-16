@@ -2557,6 +2557,22 @@ items:
       do not invent public flags merely to compare them. Settle these concrete cases/platform
       capabilities with the final manifest after T-116, retaining the one final proof and existing
       raw-evidence/oracle rules; no per-task binary comparison.
+
+      T-96 preservation cases for the one final binary equivalence proof, added during parser
+      migration. Exercise all five mutation child help pages, group help, help mutation run, nested
+      extra-topic refusals, and the existing flattened top-level command rows. Include mutation rn,
+      mutation --changed run, and top-level --json before mutation. Distinguish child --json from
+      stripped group-leading --json (group errors use JSON but a known child remains plain),
+      including repeated stripped group JSON flags and top-level JSON combined with group JSON.
+      These preserve the pre-refactor source behavior, not a JSON policy fix. Also exercise explicit
+      run --count=00 and --count=+0, run --seed= without count, run --count=1 --seed=, sample
+      --seed= bypassing History.Head, omitted except --reason versus --reason=, original numeric
+      spelling in range problems, literal no-coverage/no-annotate flags and refused positive
+      aliases, repeated and cumulative flags, interspersed paths, equals forms and literal arguments
+      after --. The focused parser guards are preservation checks, not newly specified behavior.
+      Retained History/Coverage binding fixtures now enter through the actual one-parser invocation
+      bridge. No per-task binary comparison; incorporate these cases into the concrete final-proof
+      manifest after all commands and adoption fixes have moved.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
