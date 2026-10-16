@@ -10,15 +10,6 @@ import (
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 )
 
-// coverageFlags say how a command gets coverage.
-var coverageFlags = []flagSpec{
-	sw("no-coverage", "skip coverage; complexity only"),
-	sw("use-existing-coverage", "read reports already on disk instead of running tests"),
-	sw("all-tests", "run the whole test suite, integration and end-to-end tests included"),
-	opt("coverage-command", stringFlag, "CMD", "", "run this shell command instead of the per-language commands (with --coverage-report)"),
-	{name: "coverage-report", typ: stringFlag, arg: "FILE", repeat: true, help: "read this LCOV, Go cover profile, or JaCoCo XML report"},
-}
-
 // loadCoverage produces coverage for sources under ctx, or nil with
 // --no-coverage, through the invocation's mutation coverage capability.
 // scope is the tests that run without --all-tests. With perTest, when the

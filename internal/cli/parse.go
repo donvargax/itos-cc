@@ -225,7 +225,7 @@ func ParseProblem(err error, args []string) *Problem {
 	case errors.As(err, &enum) && enum.Value.Flag != nil:
 		return valueInvalid(node, enum.Value, err).With("value", enum.Got)
 	case errors.As(err, &unexpected) && unexpected.ExpectedCommand:
-		return unknownCommand(node, unexpected.Arg)
+		return UnknownCommand(node, unexpected.Arg)
 	case errors.As(err, &unexpected) && len(node.Positional) == 0:
 		name := commandPath(node)
 		return NewProblem(CodeUsage, "args.unexpected", fmt.Sprintf("%s takes no arguments, and was given %q", name, unexpected.Arg),
@@ -286,11 +286,14 @@ func valueInvalid(node *kong.Node, value *kong.Value, err error) *Problem {
 		fmt.Sprintf("Run '%s %s --help' for its flags.", programOf(node), commandPath(node))).With("flag", "--"+value.Name)
 }
 
-// unknownCommand is the problem of word, no command of node's: the one
+// UnknownCommand is the problem of word, no command of node's: the one
 // meant, when one is near enough to guess.
-func unknownCommand(node *kong.Node, word string) *Problem {
+func UnknownCommand(node *kong.Node, word string) *Problem {
 	full := strings.TrimSpace(commandPath(node) + " " + word)
 	fix := fmt.Sprintf("Run '%s --help' for the commands.", strings.TrimSpace(programOf(node)+" "+commandPath(node)))
+	if node.Parent != nil {
+		fix = fmt.Sprintf("The subcommands of %s are %s. Run '%s %s --help' for them.", commandPath(node), andList(commandNames(node)), programOf(node), commandPath(node))
+	}
 	if guess := Closest(word, commandNames(node)); guess != "" {
 		fix = fmt.Sprintf("Did you mean '%s'? ", strings.TrimSpace(commandPath(node)+" "+guess)) + fix
 	}

@@ -59,7 +59,7 @@ var versionCommand = &command{
 var commands = map[string]*command{}
 
 func init() {
-	for _, c := range []*command{mutationGroup, serveCommand, versionCommand} {
+	for _, c := range []*command{serveCommand, versionCommand} {
 		commands[c.name] = c
 	}
 }
@@ -83,7 +83,13 @@ func usage(parser *kong.Kong) string {
 	nodes := moved(parser)
 	for _, name := range commandNames(parser) {
 		if node := nodes[name]; node != nil {
-			fmt.Fprintf(&b, "  %-15s %s\n", name, node.Help)
+			if len(node.Children) == 0 {
+				fmt.Fprintf(&b, "  %-15s %s\n", name, node.Help)
+			} else {
+				for _, sub := range node.Children {
+					fmt.Fprintf(&b, "  %-15s %s\n", name+" "+sub.Name, sub.Help)
+				}
+			}
 			continue
 		}
 		c := commands[name]
@@ -281,11 +287,21 @@ func help(parser *kong.Kong, ui *cli.UI, args []string, asJSON bool) int {
 		fmt.Fprint(ui.Stdout, usage(parser))
 		return 0
 	}
-	if moved(parser)[topics[0]] != nil {
-		if len(topics) > 1 {
-			return ui.Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[1])})
+	if node := moved(parser)[topics[0]]; node != nil {
+		most := 1
+		if len(node.Children) > 0 {
+			most = 2
 		}
-		return movedHelp(parser, ui, topics[0])
+		if len(topics) > most {
+			return ui.Emit(asJSON, nil, []*cli.Problem{helpTakesOne(topics[most])})
+		}
+		if len(topics) == 2 {
+			known := slices.ContainsFunc(node.Children, func(child *kong.Node) bool { return child.Name == topics[1] })
+			if !known {
+				return ui.Emit(asJSON, nil, []*cli.Problem{cli.UnknownCommand(node, topics[1])})
+			}
+		}
+		return movedHelp(parser, ui, topics...)
 	}
 	cmd := commands[topics[0]]
 	if cmd == nil {

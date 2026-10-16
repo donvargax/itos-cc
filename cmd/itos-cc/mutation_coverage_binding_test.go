@@ -20,8 +20,7 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 	hit, miss := filepath.Join(root, "hit.py"), filepath.Join(root, "miss.py")
 	d := covtest.Measurement{Language: "python", Report: "SF:hit.py\nDA:2,1\nend_of_record\n", InventoryReport: "SF:miss.py\nDA:5,1\nend_of_record\n"}
 	m := &covtest.Measurer{Aggregate: aggregate.Measurer{Dir: root, Files: map[string]string{hit: "source", miss: "source"}}, Declarations: map[coverage.Unloaded]covtest.Measurement{{Language: "python", Dir: root}: d}}
-	command := &command{name: "run", flags: coverageFlags}
-	in := &invocation{cmd: command, values: map[string][]string{}, adapters: adapters{MutationCoverage: m}}
+	in := parsedMutationFixture(t, adapters{MutationCoverage: m}, "run")
 	sources := []string{hit, miss}
 	r, err := loadCoverage(t.Context(), in, sources, port.OwnTests, nil, nil)
 	if err != nil || !r.Has(hit) || r.Has(miss) {

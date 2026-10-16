@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/kong"
+
 	"github.com/donvargax/itos-cc/internal/cli"
 )
 
@@ -173,13 +175,28 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for name, node := range moved(parser) {
+	for _, node := range movedLeaves(parser) {
+		name := node.Path()
 		page, err := cli.PageOf(node)
 		if err != nil {
 			t.Fatal(err)
 		}
 		h := page.String()
 		for _, part := range []string{"usage: itos-cc " + name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
+			if !strings.Contains(h, part) {
+				t.Errorf("%s --help lacks %q", name, part)
+			}
+		}
+	}
+	for name, node := range moved(parser) {
+		if len(node.Children) == 0 {
+			continue
+		}
+		h, err := cli.GroupHelp(node)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}
@@ -206,4 +223,24 @@ func TestAPanicIsAnInternalError(t *testing.T) {
 	if code != 70 || !strings.Contains(out, `"rule": "internal"`) || !strings.Contains(out, "boom panicked: oops") {
 		t.Errorf("exit %d, stdout %q: want exit 70 and an internal problem", code, out)
 	}
+}
+
+// movedLeaves are the executable command nodes, including group children.
+func movedLeaves(parser *kong.Kong) []*kong.Node {
+	var out []*kong.Node
+	var visit func(*kong.Node)
+	visit = func(node *kong.Node) {
+		if len(node.Children) == 0 {
+			out = append(out, node)
+			return
+		}
+		for _, child := range node.Children {
+			visit(child)
+		}
+	}
+	for _, node := range parser.Model.Children {
+		visit(node)
+	}
+	slices.SortFunc(out, func(a, b *kong.Node) int { return strings.Compare(a.Path(), b.Path()) })
+	return out
 }

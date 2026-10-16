@@ -15,9 +15,6 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
-// selectionFlags choose a command's files.
-var selectionFlags = []flagSpec{sw("changed", "only files git reports as added or modified")}
-
 // files is the command's files, as the selection domain chooses them under
 // ctx from its paths and --changed in the working directory
 // (internal/workdir), less the sources itos-cc.yaml excludes, whose count

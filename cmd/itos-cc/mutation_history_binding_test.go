@@ -52,7 +52,7 @@ func historyConsumerFixture(t *testing.T) (*memory, string) {
 func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	m, root := historyConsumerFixture(t)
 	bound := m.history(root)
-	in := &invocation{cmd: mutationRunCommand, values: map[string][]string{"since": {"base"}}, adapters: adapters{History: bound, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}}}
+	in := parsedMutationFixture(t, adapters{History: bound, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}}, "run", "--since", "base")
 	changed, renamed, err := changedSince(t.Context(), in)
 	main := filepath.Join(root, "main.go")
 	if err != nil || len(changed) != 2 || !changed[main].Functions["example/binding#Value"] || renamed[filepath.Join(root, "new.go")] != filepath.Join(root, "old.go") {

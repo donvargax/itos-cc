@@ -168,6 +168,16 @@ from it, and thin slices named for their commands.
   Release retains historical best-effort scratch cleanup; checked worker Close retains
   lifetime failures and partial trial results. Its depguard rule permits only the served
   domain and the actual config/project/coverage/language/selection libraries it wraps.
+- `internal/mutation` declares the whole mutation group and its five child command
+  structs and help contracts (T-96). Cmd supplies the worker default and creates one fresh
+  model/parser per run. Kong validates each child once; `cli.Provided` retains the actual
+  validated path's explicit flag facts and original value spellings for the cmd handlers,
+  which remain there until their scheduled moves. An explicit zero/empty flag remains
+  distinct from omission. The literal `no-coverage` and `no-annotate` names have no positive
+  aliases. Group admission preserves the old before-child help/error precedence; group
+  help and the flattened top-level rows come from the same model. Leading group `--json`
+  affects group errors but is stripped before a known child's dispatch, as before;
+  top-level and child-level JSON still reach that child.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -218,7 +228,8 @@ from it, and thin slices named for their commands.
   plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
   reach it through that domain's classifier, which cmd hands it. For the commands kong parses
   it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
-  types (`ParseProblem`) and prints help (`Help`, a command's `Page`), as "Moving a command"
+  types (`ParseProblem`), retains validated explicit/raw flag facts (`Provided`) and prints
+  leaf/group help (`Help`, `Page` and `GroupHelp`), as "Moving a command"
   below says.
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
@@ -229,7 +240,9 @@ from it, and thin slices named for their commands.
   `metricsdir`'s `Store`, `coveragetools`' `Measurer`, saying what it runs on standard
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
-  buffers and porttest's fakes (`TestRunWithFakes`, decision 44); the hand-parsed commands
+  buffers and porttest's fakes (`TestRunWithFakes`, decision 44); mutation's parser has moved,
+  while its handlers still use the process streams and their existing discovery until
+  their individual moves. The hand-parsed commands
   keep the process's streams and disk until they move, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it

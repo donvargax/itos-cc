@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"runtime"
 
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/crap"
 	"github.com/donvargax/itos-cc/internal/dry"
+	"github.com/donvargax/itos-cc/internal/mutation"
 	"github.com/donvargax/itos-cc/internal/scrap"
 	"github.com/donvargax/itos-cc/internal/units"
 )
@@ -23,10 +25,11 @@ import (
 // commandLine is the moved commands' command line: one field each, its
 // slice's kong struct, its help the line usage lists it by.
 type commandLine struct {
-	Crap  crap.CLI  `cmd:"" help:"CRAP score per function: complexity × untested risk"`
-	Dry   dry.CLI   `cmd:"" help:"functions similar enough to be duplicates"`
-	Scrap scrap.CLI `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
-	Units units.CLI `cmd:"" help:"list the functions and methods every tool measures"`
+	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
+	Crap     crap.CLI     `cmd:"" help:"CRAP score per function: complexity × untested risk"`
+	Dry      dry.CLI      `cmd:"" help:"functions similar enough to be duplicates"`
+	Scrap    scrap.CLI    `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
+	Units    units.CLI    `cmd:"" help:"list the functions and methods every tool measures"`
 }
 
 // parserOf is the parser of c, which run builds once, as it parses one
@@ -41,6 +44,7 @@ type commandLine struct {
 func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kong.Kong, error) {
 	return kong.New(c, append(cli.Flags(),
 		kong.Name("itos-cc"),
+		kong.Vars{"mutation_workers": fmt.Sprint(max(1, runtime.NumCPU()/2))},
 		kong.Help(cli.Help),
 		kong.Writers(ui.Stdout, ui.Stderr),
 		kong.Exit(func(int) {}),
@@ -77,12 +81,30 @@ func moved(parser *kong.Kong) map[string]*kong.Node {
 // one reports an interrupt (docs/CLI.md).
 func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI, a adapters, args []string) int {
 	line := cli.Read(args)
+	if args[0] == "mutation" {
+		admitted, help, problem := cli.GroupLine(moved(parser)[args[0]], args[1:])
+		if problem != nil {
+			return ui.Emit(line.JSON, nil, []*cli.Problem{problem})
+		}
+		if help {
+			return movedHelp(parser, ui, args[0])
+		}
+		args = admitted
+		line = cli.Read(args)
+	}
 	if line.Help {
-		return movedHelp(parser, ui, args[0])
+		topics := []string{args[0]}
+		if args[0] == "mutation" {
+			topics = append(topics, args[1])
+		}
+		return movedHelp(parser, ui, topics...)
 	}
 	parsed, err := cli.Parse(parser, args)
 	if err != nil {
 		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)})
+	}
+	if args[0] == "mutation" {
+		return runParsedMutation(ctx, parsed, c, a)
 	}
 	switch name := parsed.Selected().Name; name {
 	case "crap", "dry", "units":
@@ -127,8 +149,8 @@ func callSafely(ui *cli.UI, parsed *kong.Context, name string, run any, asJSON b
 
 // movedHelp prints the help of the moved command name, internal/cli's Help
 // printing it from parser's model, and returns 0.
-func movedHelp(parser *kong.Kong, ui *cli.UI, name string) int {
-	traced, err := kong.Trace(parser, []string{name})
+func movedHelp(parser *kong.Kong, ui *cli.UI, topics ...string) int {
+	traced, err := kong.Trace(parser, topics)
 	if err == nil {
 		err = traced.PrintUsage(false)
 	}
@@ -136,4 +158,47 @@ func movedHelp(parser *kong.Kong, ui *cli.UI, name string) int {
 		return ui.Fail(err, false)
 	}
 	return 0
+}
+
+// runParsedMutation bridges the one validated command model into the
+// existing handlers. The handlers move individually in T97 and later;
+// they still read explicit/raw facts separately from model defaults here.
+func runParsedMutation(ctx context.Context, parsed *kong.Context, c *commandLine, a adapters) int {
+	in := mutationInvocation(parsed, c, a)
+	command := in.cmd
+	var data any
+	var err error
+	if command.run == nil {
+		err = fmt.Errorf("no mutation handler for %q", parsed.Selected().Name)
+	} else {
+		data, err = runSafely(ctx, command, in)
+	}
+	ui := stdUI()
+	if err != nil {
+		in.problems = append(in.problems, ui.Problems(err)...)
+	}
+	return ui.Emit(in.json, data, in.problems)
+}
+
+// mutationInvocation retains handler admission during the parser-only move.
+func mutationInvocation(parsed *kong.Context, c *commandLine, a adapters) *invocation {
+	node := parsed.Selected()
+	command := &command{name: "mutation " + node.Name}
+	for _, flag := range node.Flags {
+		command.flags = append(command.flags, flagSpec{name: flag.Name, def: flag.Default})
+	}
+	in := &invocation{cmd: command, values: cli.Provided(parsed), adapters: a, json: cli.Read(parsed.Args).JSON}
+	switch node.Name {
+	case "run":
+		in.args, command.run = c.Mutation.Run.Paths, runMutate
+	case "list":
+		in.args, command.run = c.Mutation.List.Paths, runMutationList
+	case "check":
+		in.args, command.run = c.Mutation.Check.Paths, runMutationCheck
+	case "sample":
+		in.args, command.run = c.Mutation.Sample.Paths, runMutationSample
+	case "except":
+		in.args, command.run = c.Mutation.Except.Site, runMutationExcept
+	}
+	return in
 }

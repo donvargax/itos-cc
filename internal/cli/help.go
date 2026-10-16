@@ -123,6 +123,14 @@ func Help(_ kong.HelpOptions, ctx *kong.Context) error {
 	if node == nil {
 		return errors.New("help names no command")
 	}
+	if len(node.Children) > 0 {
+		page, err := GroupHelp(node)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(ctx.Stdout, page)
+		return err
+	}
 	page, err := PageOf(node)
 	if err != nil {
 		return err
@@ -140,6 +148,9 @@ func PageOf(node *kong.Node) (Page, error) {
 		return Page{}, fmt.Errorf("the command %q gives no Contract for its help", commandPath(node))
 	}
 	page := Page{Program: programOf(node), Command: commandPath(node), Synopsis: synopsis(node), Contract: documented.Contract()}
+	if alternative, ok := node.Target.Interface().(interface{ Synopsis() string }); ok {
+		page.Synopsis = alternative.Synopsis()
+	}
 	for _, f := range flagsOf(node) {
 		one := HelpFlag{Name: f.Name, Short: f.Short, Help: f.Help, Repeat: f.IsCumulative()}
 		if !f.IsBool() {
