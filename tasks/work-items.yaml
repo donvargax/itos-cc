@@ -3078,7 +3078,7 @@ items:
     title: Give mutation toolchain facts, fingerprints and test reach through ports
     phase: 1
     owner: donvargax
-    status: todo
+    status: doing
     depends_on: [T-88]
     kind: task
   - id: T-90
