@@ -3195,6 +3195,16 @@
     An independent disposable covdata oracle on the exact malformed T81 metadata
     bytes observed exit 1 and unexpected EOF; the bad-metadata declaration records
     that converter result while the binary still executes its real converter.
+    Post-publication self-review found two memory-harness gaps, independently
+    confirmed by the coordinator. A failed static collector with no report must
+    still log its declared diagnostic before returning best-effort/no proof.
+    Listed collection facts belong to the root's independently declared harness,
+    not the command-keyed Workers outcome map: retain the latest explicit root
+    setup, preserve it when a later Tests upsert omits Listed, and own deep copies
+    of its nested maps, slices and metadata. This removes command-map iteration
+    order from Split/collection/conversion facts without selecting desired argv.
+    Focused harness-regression assertions and existing measurement/binding guards
+    cover the correction; no new CLI behavior or behavioral-red claim is made.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
