@@ -3080,9 +3080,6 @@
     give the listed fixture an absolute native temp root while retaining
     exact actual hashes, missing-file empty hashes and caller cancellation.
     These are fixture-only corrections, with no product OS branch or skip.
-  done_when:
-    - run: go test ./internal/mutants/... ./internal/importgraph/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
 - id: T-90
   type: refactor
   title: Extend coverage measurement for mutation per-test evidence and static inventory
