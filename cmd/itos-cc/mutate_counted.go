@@ -376,7 +376,7 @@ func runCountedMutate(ctx context.Context, in *invocation) (any, error) {
 		reportInterrupted(ctx, in, nil)
 	}
 	for _, e := range stale {
-		reportStaleExceptions(in, e.File, []mutation.StaleException{e})
+		reportStaleExceptions(ctx, in, e.File, []mutation.StaleException{e})
 	}
 	if strictGo {
 		reportCountedStrictGo(in, plan, prep, linesOnly)

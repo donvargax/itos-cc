@@ -430,9 +430,11 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
 	var stdout, stderr bytes.Buffer
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
+	source := m.sourceEdits()
 	a := adapters{
-		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs},
-		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
+		Settings:   config.Reader{Source: memoryConfig{memory: m, root: root}},
+		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: source,
+		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: source, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: source, TestLister: m.lister(root, file.text, &stderr),
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),
 		Dir:          dir,
@@ -442,7 +444,10 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Coverage:     measurer, MutationCoverage: measurer,
 		Config: file,
 	}
-	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
+	code, legacy := runUntilLegacyMutation(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
+	if legacy != nil {
+		return features.Result{}, fmt.Errorf("mutation %s still executes in cmd; in-process execution waits for T100", legacy.parsed.Selected().Name)
+	}
 	// What the run removed from the store is gone from the memory too, and
 	// what it wrote is there.
 	for rel := range m.under(metricsDir) {

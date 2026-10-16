@@ -256,7 +256,7 @@ func TestArchitecture(t *testing.T) {
 			if test {
 				kind = "test"
 			}
-			for _, target := range []string{slice.other, "internal/disk", "internal/stdin", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage"} {
+			for _, target := range []string{slice.other, "internal/disk", "internal/stdin", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "config"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_"+kind, slice.base, module+"/"+target, "Value", "slices", test)
 			}
 			for _, target := range []string{"internal/counting", "internal/counting/port", "internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/duplication", "internal/teststructure", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/cli", "internal/lang", "internal/lang/port"} {

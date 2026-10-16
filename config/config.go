@@ -30,17 +30,9 @@ func Path() string {
 	return filepath.Join(project.Root(), File)
 }
 
-// Config is what itos-cc reads of itos-cc.yaml.
-type Config struct {
-	// Exclude are doublestar globs, slash-separated and from the project
-	// root, of the sources every command leaves out of what it measures and
-	// mutates; never of the tests.
-	Exclude    []string
-	Exceptions []Exception
-	// Tests, when set, is how to list the project's tests and run a
-	// selection of them.
-	Tests *Tests
-}
+// Config is the mutation domain's genuine settings value. This package owns
+// its representation codec, not a second semantic model.
+type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
 // the wrong type, an exclude glob that is no pattern, or an exception that

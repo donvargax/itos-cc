@@ -1,5 +1,6 @@
 // Package mutation declares the mutation command group. Kong owns parsing;
-// cmd retains the handlers until their individual slice moves.
+// List and check own their application/UI here; cmd retains the other handlers
+// until their individual slice moves.
 package mutation
 
 import "github.com/donvargax/itos-cc/internal/cli"
@@ -66,7 +67,7 @@ type List struct {
 // Check reads cached judgments, optionally requiring coverage evidence.
 type Check struct {
 	cli.Selection
-	Since         string      `placeholder:"REF" help:"check only the functions the commits since REF changed (git diff REF...HEAD)"`
+	Since         *string     `placeholder:"REF" help:"check only the functions the commits since REF changed (git diff REF...HEAD)"`
 	FailUncovered *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines; =lines, with --since, only on the lines the range changed"`
 	JSON          bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }

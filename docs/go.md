@@ -172,12 +172,24 @@ from it, and thin slices named for their commands.
   structs and help contracts (T-96). Cmd supplies the worker default and creates one fresh
   model/parser per run. Kong validates each child once; `cli.Provided` retains the actual
   validated path's explicit flag facts and original value spellings for the cmd handlers,
-  which remain there until their scheduled moves. An explicit zero/empty flag remains
+  which remain there for run, sample and except until their scheduled moves. List and
+  check now run in the slice (T-97): application queries carry selection and coverage
+  values once, and their handler coordinates the existing mutants, selection and
+  language capabilities. List presents its ordered prefix on later read failure; check
+  formats no per-file findings until ordinary and strict admission both succeed.
+  Shared mutation presentation has one owner here; remaining cmd handlers delegate
+  to it. An explicit zero/empty flag remains
   distinct from omission. The literal `no-coverage` and `no-annotate` names have no positive
   aliases. Group admission preserves the old before-child help/error precedence; group
   help and the flattened top-level rows come from the same model. Leading group `--json`
   affects group errors but is stripped before a known child's dispatch, as before;
   top-level and child-level JSON still reach that child.
+  `mutants.Config` is the existing semantic settings value; `config.Config` aliases it.
+  The model-bearing `SettingsReader` rereads actual current settings at the preserved
+  admission points. `config.Reader` uses the one existing codec over cmd-selected disk
+  or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
+  unit fake owns only semantic values. The memory driver supports these two moved
+  handlers without admitting the whole mutation feature before T-100.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`

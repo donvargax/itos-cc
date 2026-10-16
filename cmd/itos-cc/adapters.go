@@ -34,6 +34,7 @@ import (
 // until they move, but for crap's coverage, which it measures through the
 // port here.
 type adapters struct {
+	Settings        mutation.SettingsReader
 	SnapshotReaders func(root string) mutation.MutationSnapshotReader
 	Fresh           mutation.Fresh
 	FreshWorkers    mutation.Workers
@@ -88,7 +89,7 @@ func diskAdapters(log io.Writer) adapters {
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: owner.Command, Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
-	return adapters{SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
+	return adapters{Settings: config.Reader{Source: diskConfig{}}, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}

@@ -79,15 +79,15 @@ func moved(parser *kong.Kong) map[string]*kong.Node {
 // No interrupt cancels the context parser binds yet: Ctrl-C ends the
 // command by the system's default action, as it ends every command until
 // one reports an interrupt (docs/CLI.md).
-func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI, a adapters, args []string) int {
+func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI, a adapters, args []string) (int, *legacyMutation) {
 	line := cli.Read(args)
 	if args[0] == "mutation" {
 		admitted, help, problem := cli.GroupLine(moved(parser)[args[0]], args[1:])
 		if problem != nil {
-			return ui.Emit(line.JSON, nil, []*cli.Problem{problem})
+			return ui.Emit(line.JSON, nil, []*cli.Problem{problem}), nil
 		}
 		if help {
-			return movedHelp(parser, ui, args[0])
+			return movedHelp(parser, ui, args[0]), nil
 		}
 		args = admitted
 		line = cli.Read(args)
@@ -97,36 +97,43 @@ func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 		if args[0] == "mutation" {
 			topics = append(topics, args[1])
 		}
-		return movedHelp(parser, ui, topics...)
+		return movedHelp(parser, ui, topics...), nil
 	}
 	parsed, err := cli.Parse(parser, args)
 	if err != nil {
-		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)})
+		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)}), nil
 	}
 	if args[0] == "mutation" {
-		return runParsedMutation(ctx, parsed, c, a)
+		parsed.Bind(mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Dir: a.Dir})
+		switch parsed.Selected().Name {
+		case "list":
+			return callSafely(ui, parsed, "mutation list", c.Mutation.List.Run, c.Mutation.List.JSON), nil
+		case "check":
+			return callSafely(ui, parsed, "mutation check", c.Mutation.Check.Run, c.Mutation.Check.JSON), nil
+		}
+		return 0, &legacyMutation{parsed: parsed, model: c}
 	}
 	switch name := parsed.Selected().Name; name {
 	case "crap", "dry", "units":
 		exclude, err := exclusionOf(ctx, a.Config)
 		if err != nil {
-			return ui.Fail(err, line.JSON)
+			return ui.Fail(err, line.JSON), nil
 		}
 		parsed.Bind(units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude},
 			dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude},
 			crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude})
 		switch name {
 		case "units":
-			return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON)
+			return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON), nil
 		case "crap":
-			return callSafely(ui, parsed, name, c.Crap.Run, c.Crap.JSON)
+			return callSafely(ui, parsed, name, c.Crap.Run, c.Crap.JSON), nil
 		}
-		return callSafely(ui, parsed, name, c.Dry.Run, c.Dry.JSON)
+		return callSafely(ui, parsed, name, c.Dry.Run, c.Dry.JSON), nil
 	case "scrap":
-		return callSafely(ui, parsed, name, c.Scrap.Run, c.Scrap.JSON)
+		return callSafely(ui, parsed, name, c.Scrap.Run, c.Scrap.JSON), nil
 	}
 	// A command kong took that has no case here: a bug.
-	return ui.Fail(fmt.Errorf("no case runs the command %q", parsed.Command()), line.JSON)
+	return ui.Fail(fmt.Errorf("no case runs the command %q", parsed.Command()), line.JSON), nil
 }
 
 // callSafely calls run, a moved command's Run, with kong's bindings, and
@@ -158,6 +165,13 @@ func movedHelp(parser *kong.Kong, ui *cli.UI, topics ...string) int {
 		return ui.Fail(err, false)
 	}
 	return 0
+}
+
+// legacyMutation is the actual validated parser/model awaiting an unmoved
+// handler. It carries no second parse or selected-command approximation.
+type legacyMutation struct {
+	parsed *kong.Context
+	model  *commandLine
 }
 
 // runParsedMutation bridges the one validated command model into the
@@ -192,9 +206,9 @@ func mutationInvocation(parsed *kong.Context, c *commandLine, a adapters) *invoc
 	case "run":
 		in.args, command.run = c.Mutation.Run.Paths, runMutate
 	case "list":
-		in.args, command.run = c.Mutation.List.Paths, runMutationList
+		in.args = c.Mutation.List.Paths
 	case "check":
-		in.args, command.run = c.Mutation.Check.Paths, runMutationCheck
+		in.args = c.Mutation.Check.Paths
 	case "sample":
 		in.args, command.run = c.Mutation.Sample.Paths, runMutationSample
 	case "except":

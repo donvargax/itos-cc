@@ -116,15 +116,6 @@ type mutateResult struct {
 	Orphans []orphanEntry `json:"orphans,omitempty"`
 }
 
-type mutateSite struct {
-	File        string `json:"file"`
-	Line        int    `json:"line"`
-	Column      int    `json:"column"`
-	Function    string `json:"function"`
-	Original    string `json:"original"`
-	Replacement string `json:"replacement"`
-}
-
 // mutationSelection is the sources mutation run, check, and sample take:
 // the paths and --changed, and with --since the files the range changed or
 // renamed, with judge saying which of their functions it changed, renamed
@@ -258,7 +249,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	if len(sources) == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to mutate")
-		reportElsewhere(in, elsewhere)
+		reportElsewhere(ctx, in, elsewhere)
 		result.Orphans, err = removeOrphans(ctx, in)
 		return result, err
 	}
@@ -570,7 +561,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 				reportFailed(in, r.Rel, m.Function, []mutation.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
 					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
-			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+			reportStaleExceptions(ctx, in, r.Rel, r.StaleExceptions)
 			continue
 		}
 		if len(r.FailedSelections) > 0 && !r.BaselineFailed {
@@ -581,7 +572,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 				fmt.Printf("%s: listed tests its mutants run fail without any mutant; snapshot not updated\n", r.Rel)
 			}
 			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
-			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+			reportStaleExceptions(ctx, in, r.Rel, r.StaleExceptions)
 			continue
 		}
 		if r.BaselineFailed {
@@ -591,7 +582,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 			in.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
 				"Make its tests pass, then run mutation run again.").With("file", r.Rel))
-			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+			reportStaleExceptions(ctx, in, r.Rel, r.StaleExceptions)
 			continue
 		}
 		f := mutateFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: r.Baseline, Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
@@ -649,9 +640,9 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 		}
-		reportStaleExceptions(in, r.Rel, r.StaleExceptions)
+		reportStaleExceptions(ctx, in, r.Rel, r.StaleExceptions)
 	}
-	reportElsewhere(in, elsewhere)
+	reportElsewhere(ctx, in, elsewhere)
 	// Only once the run has written what it judged: a --since run moves a
 	// renamed file's snapshot first.
 	if result.Orphans, err = removeOrphans(ctx, in); err != nil {
@@ -824,14 +815,6 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 	return mutation.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, mutationCheckOptions(in, nil, nil, nil, nil))
 }
 
-// reportElsewhere reports each exception of exceptionsElsewhere, each under
-// the file it names.
-func reportElsewhere(in *invocation, stale []mutation.StaleException) {
-	for _, e := range stale {
-		reportStaleExceptions(in, project.Rel(project.AtRoot(e.File)), []mutation.StaleException{e})
-	}
-}
-
 // reportFailedSelections reports each selection of listed tests in failed
 // that reported does not hold yet as tests.selection-failed, showing its
 // output in plain output, and adds it to reported. cmd is the command to
@@ -852,17 +835,6 @@ func reportFailedSelections(in *invocation, failed []mutation.FailedSelection, r
 			fmt.Sprintf("Make them pass when they run alone, as that command runs them, then run %s again.", cmd)).
 			With("ids", f.IDs).With("command", f.Command).With("exit_code", f.ExitCode))
 	}
-}
-
-// exceptedIn counts the survivors of mutants that itos-cc.yaml excepts.
-func exceptedIn(mutants []mutation.Mutant) int {
-	n := 0
-	for _, m := range mutants {
-		if m.Excepted != "" {
-			n++
-		}
-	}
-	return n
 }
 
 // loadExceptions is the survivors itos-cc.yaml excepts. A file that cannot
@@ -1049,44 +1021,6 @@ func hasGoSource(sources []string) bool {
 	return false
 }
 
-// strictLanguagesOf is each language of sources whose functions strict
-// coverage proves executed (mutation.StrictCoverage), Go first, then in
-// name order.
-func strictLanguagesOf(sources []string) []string {
-	var out []string
-	for _, source := range sources {
-		if spec := lang.Detect(source); spec != nil && mutation.StrictCoverage(spec.Name) && !slices.Contains(out, spec.Name) {
-			out = append(out, spec.Name)
-		}
-	}
-	slices.SortFunc(out, func(a, b string) int {
-		switch {
-		case a == b:
-			return 0
-		case a == "go":
-			return -1
-		case b == "go":
-			return 1
-		}
-		return strings.Compare(a, b)
-	})
-	return out
-}
-
-// languageName is how messages name language.
-func languageName(language string) string {
-	switch language {
-	case "go":
-		return "Go"
-	case "typescript":
-		return "TypeScript"
-	}
-	if language == "" {
-		return language
-	}
-	return strings.ToUpper(language[:1]) + language[1:]
-}
-
 // strictCoverageInputs is, by each of languages, the producer and current
 // input fingerprint of a source's strict coverage evidence, measured with
 // the tests that reach it, or with allTests the whole suite. With
@@ -1193,49 +1127,8 @@ func reportStrictCoverage(in *invocation, results []mutation.FileResult, scope m
 	}
 }
 
-// coverageInventory is what messages call language's evidence: Go's block
-// inventory, another language's line inventory.
-func coverageInventory(language string) string {
-	if language == "go" {
-		return "Go coverage inventory"
-	}
-	return languageName(language) + " line coverage inventory"
-}
-
-// executableUnit is what messages call the unit of language's evidence.
-func executableUnit(language string) string {
-	if language == "go" {
-		return "executable Go coverage block"
-	}
-	return "executable " + languageName(language) + " line"
-}
-
-// coverageEvidenceName is what messages call language's evidence.
-func coverageEvidenceName(language string) string {
-	if language == "go" {
-		return "Go coverage"
-	}
-	return languageName(language) + " line coverage"
-}
-
 func reportCoverageProblem(in *invocation, file, function string, line int, rule, message string) {
 	reportLanguageCoverageProblem(in, "go", file, function, line, rule, message)
-}
-
-// reportLanguageCoverageProblem reports a strict coverage problem of rule
-// about function of file, of language, at line.
-func reportLanguageCoverageProblem(in *invocation, language, file, function string, line int, rule, message string) {
-	if !in.json {
-		fmt.Printf("  %s %s:%d in %s\n", strings.TrimPrefix(rule, "mutation."), file, line, function)
-	}
-	fix := "Add a test that executes the uncovered " + languageName(language) + " code, then run mutation run again."
-	if rule == "mutation.coverage-unsupported" {
-		fix = "Strict coverage cannot prove inputs beyond the inventoried root: keep them inside it, or judge this code without --fail-uncovered."
-	}
-	p := cli.NewProblem(cli.CodeNo, rule, fmt.Sprintf("%s:%d in %s %s", file, line, function, message), fix).
-		With("file", file).With("function", function).With("line", line)
-	p.Shown = true
-	in.report(p)
 }
 
 // listedConfig is the tests itos-cc.yaml lists, when the mutants of this run
@@ -1288,40 +1181,6 @@ func mutationPath(dir, path string) string {
 	return filepath.Join(dir, path)
 }
 
-// reportFailed reports each mutant of function that fails: a survivor that
-// itos-cc.yaml does not except, and an uncovered mutant on a line for which
-// failUncovered, when set, says so (uncoveredFails).
-func reportFailed(in *invocation, rel, function string, mutants []mutation.Mutant, failUncovered func(line int) bool) {
-	for _, m := range mutants {
-		switch {
-		case m.Outcome == mutation.Survived && m.Excepted == "":
-			reportMutant(in, rel, function, m, "mutation.survived", "survived", "survived",
-				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except %s:%d:%d --reason …'.",
-					rel, m.Line, m.Column))
-		case m.Outcome == mutation.Uncovered && failUncovered != nil && failUncovered(m.Line):
-			reportMutant(in, rel, function, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
-				"Add a test that executes this line and fails with this change.")
-		}
-	}
-}
-
-// reportMutant lists mutant m of function in file rel on stdout, as "<what>
-// <file>:<line>:<column> <original> → <replacement> in <function>", and
-// reports it as a problem of rule whose message ends with verdict.
-func reportMutant(in *invocation, rel, function string, m mutation.Mutant, rule, what, verdict, fix string) {
-	if !in.json {
-		fmt.Printf("  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
-			quote(m.Original), quote(m.Replacement), function)
-	}
-	p := cli.NewProblem(cli.CodeNo, rule,
-		fmt.Sprintf("%s:%d:%d: %s → %s in %s %s", rel, m.Line, m.Column, quote(m.Original), quote(m.Replacement), function, verdict),
-		fix).
-		With("file", rel).With("line", m.Line).With("column", m.Column).With("function", function).
-		With("original", m.Original).With("replacement", m.Replacement)
-	p.Shown = true
-	in.report(p)
-}
-
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
@@ -1353,117 +1212,12 @@ func changedSince(ctx context.Context, in *invocation) (map[string]mutation.Chan
 	return nil, nil, failure
 }
 
-type mutationListResult struct {
-	Sites []mutateSite `json:"sites"`
-}
-
-// runMutationList lists the mutation sites of the chosen sources.
-func runMutationList(ctx context.Context, in *invocation) (any, error) {
-	result := mutationListResult{Sites: []mutateSite{}}
-	files, err := files(ctx, in)
-	if err != nil {
-		return result, err
-	}
-	if len(files.Sources) == 0 {
-		fmt.Fprintln(os.Stderr, "itos-cc: no source files to list")
-		return result, nil
-	}
-	sites, err := mutation.List(ctx, files.Sources, in.adapters.Tree, in.adapters.Surroundings, in.adapters.Dir)
-	for _, s := range sites {
-		site := mutateSite{File: s.File, Line: s.Line, Column: s.Column, Function: s.Function, Original: s.Original, Replacement: s.Replacement}
-		result.Sites = append(result.Sites, site)
-		if !in.json {
-			fmt.Printf("%s:%d:%d %s → %s in %s\n", site.File, site.Line, site.Column, quote(site.Original), quote(site.Replacement), site.Function)
-		}
-	}
-	return result, err
-}
-
-func quote(s string) string {
-	if s == "" {
-		return "(deleted)"
-	}
-	return "`" + s + "`"
-}
-
 func tail(s string, lines int) string {
 	parts := strings.Split(strings.TrimRight(s, "\n"), "\n")
 	if len(parts) > lines {
 		parts = parts[len(parts)-lines:]
 	}
 	return strings.Join(parts, "\n")
-}
-
-// reportStaleExceptions lists each exception of file rel that no longer
-// holds on stdout, as "exception-stale <file>:<line>:<column> <original> →
-// <replacement> in <function> (<why>)", the place left out when its
-// function or its file is gone, and "(moved to <file>)" when its function
-// is in another file now, and reports it as mutation.exception-stale.
-func reportStaleExceptions(in *invocation, rel string, stale []mutation.StaleException) {
-	for _, e := range stale {
-		at := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column)
-		if e.Line == 0 {
-			at = rel
-		}
-		change := fmt.Sprintf("%s → %s in %s", quote(e.Original), quote(e.Replacement), e.Function)
-		var newFile string
-		if e.Why == mutation.ExceptionMoved {
-			newFile = project.Rel(project.AtRoot(e.NewFile))
-		}
-		if !in.json {
-			why := e.Why
-			if newFile != "" {
-				why += " to " + newFile
-			}
-			fmt.Printf("  exception-stale %s %s (%s)\n", at, change, why)
-		}
-		var message, fix string
-		switch e.Why {
-		case mutation.ExceptionKilled:
-			message = fmt.Sprintf("%s: %s is excepted in %s, but the tests now kill it", at, change, config.File)
-			fix = "Remove its entry from " + config.File + ": the tests show that the mutant changes behaviour."
-		case mutation.ExceptionChanged:
-			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, config.File, change)
-			fix = fmt.Sprintf("Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. "+
-				"If it is not renewed and the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …'; otherwise remove its entry from %s.", at, config.File)
-		case mutation.ExceptionGone:
-			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, config.File, change)
-			if e.Line == 0 {
-				message = fmt.Sprintf("%s: the entry in %s for %s names a function the file no longer has", at, config.File, change)
-				if _, err := os.Stat(project.AtRoot(e.File)); err != nil {
-					message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone", at, config.File, change)
-				}
-			}
-			fix = "Remove its entry from " + config.File + "."
-		case mutation.ExceptionExcluded:
-			message = fmt.Sprintf("%s: the entry in %s for %s names a source that its exclude leaves out, which no command mutates", at, config.File, change)
-			fix = "Remove its entry from " + config.File + "."
-		case mutation.ExceptionMoved:
-			message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone; its function is in %s now, where the entry still excepts the mutant",
-				at, config.File, change, newFile)
-			fix = fmt.Sprintf("Change the entry's file in %s from %s to %s, where its function is now.", config.File, e.File, e.NewFile)
-		}
-		p := cli.NewProblem(cli.CodeNo, "mutation.exception-stale", message, fix)
-		for key, value := range staleSubject(rel, e) {
-			p.With(key, value)
-		}
-		p.Shown = true
-		in.report(p)
-	}
-}
-
-// staleSubject is the subject of the mutation.exception-stale problem of e,
-// an exception of the file rel.
-func staleSubject(rel string, e mutation.StaleException) map[string]any {
-	subject := map[string]any{"file": rel, "function": e.Function, "column": e.Column,
-		"original": e.Original, "replacement": e.Replacement, "why": e.Why}
-	if e.Line != 0 {
-		subject["line"] = e.Line
-	}
-	if e.Why == mutation.ExceptionMoved {
-		subject["new_file"] = project.Rel(project.AtRoot(e.NewFile))
-	}
-	return subject
 }
 
 func sourcePath(dir, path string) string {

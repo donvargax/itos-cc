@@ -67,7 +67,7 @@ func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {
 		stderr.Reset()
 		code := 0
 		out, log := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &stdout, &stderr, a) })
-		return code, out + log
+		return code, out + stdout.String() + log + stderr.String()
 	}
 	if code, out := invoke(base, "mutation", "run", "--json", "--no-coverage", "--no-annotate", "--test-command", "go version", "board.ts"); code != 1 || !strings.Contains(out, "mutation.survived") {
 		t.Fatalf("actual public setup: %d %s", code, out)

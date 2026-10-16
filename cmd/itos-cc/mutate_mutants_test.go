@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 )
 
 // The scenarios of "Rule: Results" that list every mutant in --json, in
@@ -56,10 +58,10 @@ func (o outcome) rawFiles(t *testing.T) []map[string]any {
 }
 
 // scanned is the sites mutation list lists in file.
-func scanned(t *testing.T, file string) []mutateSite {
+func scanned(t *testing.T, file string) []mutationslice.Site {
 	t.Helper()
 	var scan struct {
-		Sites []mutateSite `json:"sites"`
+		Sites []mutationslice.Site `json:"sites"`
 	}
 	o := itosCc(t, "mutation", "list", "--json", file)
 	if err := json.Unmarshal([]byte(o.stdout), &scan); err != nil {
@@ -95,6 +97,8 @@ func (b *Board) clear(i int) bool {
 		"src/board_test.go": `package board
 
 import "testing"
+
+ mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 
 func TestPlace(t *testing.T) {
 	var b Board
@@ -167,6 +171,8 @@ func Settle(still bool) {
 		"src/wait/wait_test.go": `package wait
 
 import "testing"
+
+ mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 
 func TestSettle(t *testing.T) {
 	Settle(true)

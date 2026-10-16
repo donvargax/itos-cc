@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,8 +18,12 @@ import (
 const runSourceForRead = "package board\nfunc Value(x int) bool { return x > 1 }\n"
 
 func compactRead(out string) string {
+	var raw json.RawMessage
+	if err := json.NewDecoder(strings.NewReader(out)).Decode(&raw); err != nil {
+		return out
+	}
 	var compact bytes.Buffer
-	if err := json.Compact(&compact, []byte(out)); err != nil {
+	if err := json.Compact(&compact, raw); err != nil {
 		return out
 	}
 	return compact.String()
@@ -30,7 +35,7 @@ func invokeRead(t *testing.T, f *mutationRunFixture, a adapters, args ...string)
 	f.stderr.Reset()
 	code := 0
 	out, log := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &f.stdout, &f.stderr, a) })
-	return code, out + log + f.stderr.String()
+	return code, out + f.stdout.String() + log + f.stderr.String()
 }
 
 func TestMutationCheckUsesActualReadOnlyBindings(t *testing.T) {
@@ -49,6 +54,10 @@ func TestMutationCheckUsesActualReadOnlyBindings(t *testing.T) {
 		name, token string
 		change      func(*adapters)
 	}{
+		{"missing settings", "settings binding is missing", func(a *adapters) { a.Settings = nil }},
+		{"wrong settings", "independent settings unavailable", func(a *adapters) {
+			a.Settings = &mutantstest.Settings{Failure: mutation.InputFailed{Cause: errors.New("independent settings unavailable")}}
+		}},
 		{"missing reader", "snapshots reader binding is missing", func(a *adapters) { a.SnapshotReader = nil }},
 		{"wrong reader", "actual unreadable model", func(a *adapters) {
 			a.SnapshotReader = &mutantstest.Snapshots{RootDir: f.root, Failures: map[string]snapport.Failure{"board.go": &snapport.Unreadable{Reason: "actual unreadable model"}}}
@@ -81,11 +90,14 @@ func TestMutationCheckUsesActualReadOnlyBindings(t *testing.T) {
 
 func TestMutationListUsesBoundTreeAndRendersPrefixBeforeLaterReadFailure(t *testing.T) {
 	f := newMutationRunFixture(t)
-	// Legacy selection still sees the physical fixture; the actual domain read
-	// sees independently held bytes. The second selected source is absent there.
+	// Physical bytes are a decoy. The bound inventory admits the later source,
+	// but its independently held bytes cannot be read.
 	if err := os.WriteFile(filepath.Join(f.root, "z.go"), []byte("package board\nfunc Z() int { return 2 }\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	tree := f.adapters.Tree.(seltest.Tree)
+	tree.Sources = append(tree.Sources, "z.go")
+	f.adapters.Tree = tree
 	args := []string{"mutation", "list", "--json", "."}
 	if code, out := invokeRead(t, f, f.adapters, args...); code != 70 || !strings.Contains(compactRead(out), `"file":"board.go"`) || !strings.Contains(compactRead(out), "fake") {
 		t.Fatalf("ordered JSON prefix: %d %s", code, out)
@@ -152,3 +164,16 @@ func TestMutationOrphansUseActualCatalogAndIndependentPresence(t *testing.T) {
 }
 
 var _ mutation.SourcePresence = (*mutantstest.SourceEdits)(nil)
+
+func TestMutationListRequiresActualSettingsBinding(t *testing.T) {
+	f := newMutationRunFixture(t)
+	a := f.adapters
+	a.Settings = nil
+	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 70 || !strings.Contains(out, "settings binding is missing") {
+		t.Fatalf("missing settings fell back: %d %s", code, out)
+	}
+	a.Settings = &mutantstest.Settings{Root: f.root, Value: mutation.Config{Exclude: []string{"board.go"}}}
+	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 0 || !strings.Contains(compactRead(out), `"sites":[]`) || !strings.Contains(out, "1 sources left out by exclude") {
+		t.Fatalf("independently bound settings ignored: %d %s", code, out)
+	}
+}

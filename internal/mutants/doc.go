@@ -1,6 +1,6 @@
 // Package mutants owns pure mutation values and rules. Its model-bearing
 // Workers, Toolchain, Fingerprints, Reach, History, MutationSnapshots,
-// SourceEdits and TestLister contracts live beside those values: orchestration can use the port
+// SourceEdits, TestLister and SettingsReader contracts live beside those values: orchestration can use the port
 // without a domain-to-child-port-to-domain cycle. The worktrees adapter and
 // porttest fake import this package directly (decisions 29 and 47). The domain
 // Worker requests name semantic run purposes, never physical scratch prefixes.
@@ -26,5 +26,8 @@
 // is reused by scenario memory bytes. SourceStatus observes following-Stat kind,
 // independently of SourcePresence, and each operation applies its own policy.
 // Sample owns no publication capability and reuses the one execution scheduler.
+// Config is the one semantic settings value, aliased by config.Config. Its reader
+// supplies current root/settings at each actual admission point; the existing
+// config codec and disk or memory bytes remain outside this package.
 // The domain imports no implementation and contains no process/filesystem I/O.
 package mutants
