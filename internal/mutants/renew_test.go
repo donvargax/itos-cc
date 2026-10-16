@@ -1,9 +1,7 @@
-package mutate
+package mutants
 
 import (
 	"testing"
-
-	"github.com/donvargax/itos-cc/config"
 )
 
 func TestARenewalMatchesTheMutantOnItsLineOrAtItsPlace(t *testing.T) {
@@ -11,7 +9,7 @@ func TestARenewalMatchesTheMutantOnItsLineOrAtItsPlace(t *testing.T) {
 	// The function starts at line 4 now; the entry was written when its
 	// site was at line_in_function 3, column 7, on "if n > 0 {".
 	src := []byte("package p\n\n// F.\nfunc F(n int) int {\n\tname := 1\n\tif n > 0 {\n\t\treturn n\n\t}\n\tif n > 0 { // again\n\t\treturn 2\n\t}\n\treturn name\n}\n")
-	entry := config.Exception{LineInFunction: 3, Column: 7, Original: ">", Replacement: ">=", LineText: "if n > 0 {"}
+	entry := Exception{LineInFunction: 3, Column: 7, Original: ">", Replacement: ">=", LineText: "if n > 0 {"}
 	legacy := entry
 	legacy.LineText = ""
 	at := func(line, column int) Mutant {
@@ -19,7 +17,7 @@ func TestARenewalMatchesTheMutantOnItsLineOrAtItsPlace(t *testing.T) {
 	}
 	for _, c := range []struct {
 		name       string
-		e          config.Exception
+		e          Exception
 		start      int
 		mutants    []Mutant
 		line       int
@@ -28,7 +26,7 @@ func TestARenewalMatchesTheMutantOnItsLineOrAtItsPlace(t *testing.T) {
 		{"on its line, at its place", entry, 4, []Mutant{at(6, 7), at(9, 7)}, 6, MatchLine, ""},
 		// A line added above moved it: its text finds it.
 		{"moved down a line", entry, 3, []Mutant{at(6, 7), at(9, 7)}, 6, MatchLine, ""},
-		{"its line changed", config.Exception{LineInFunction: 3, Column: 7, Original: ">", Replacement: ">=", LineText: "if n > 1 {"}, 4,
+		{"its line changed", Exception{LineInFunction: 3, Column: 7, Original: ">", Replacement: ">=", LineText: "if n > 1 {"}, 4,
 			[]Mutant{at(6, 7), at(9, 7)}, 0, "", ExceptionChanged},
 		{"two sites on lines of its text, neither at its place", entry, 1, []Mutant{at(6, 7), {Line: 6, Column: 9, Original: ">", Replacement: ">="}}, 0, "", RenewAmbiguous},
 		{"no site of its change", entry, 4, []Mutant{{Line: 6, Column: 7, Original: ">", Replacement: "<"}}, 0, "", ExceptionGone},

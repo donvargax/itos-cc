@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
+
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
@@ -430,6 +431,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	var stdout, stderr bytes.Buffer
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	a := adapters{
+		Exceptions: func(root string) mutants.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs},
 		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),

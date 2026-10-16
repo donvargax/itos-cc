@@ -16,10 +16,15 @@
 // Check, CheckCoverage, List and Orphans own read-only orchestration through
 // MutationSnapshotReader, MutationCatalog and SourcePresence. Catalog metadata
 // remains permissive at the adapter; full snapshot decoding has one codec.
-// CheckParsed is shared with the retained Sample/exception boundaries, keeping
+// Sample, Survivor, Renew and Elsewhere own sampling and exception judgment.
+// CheckParsed is shared by these domain operations, keeping
 // stale-but-judged outcomes distinct from Check's presentation filter. List
 // returns an ordered prefix on a later failure; Check presentation admits all
 // results first. RenameTarget requires successful no-follow evidence, while
 // Present conservatively refuses to call ordinary Lstat errors absence.
+// Exceptions updates the current document through config; its single YAML codec
+// is reused by scenario memory bytes. SourceStatus observes following-Stat kind,
+// independently of SourcePresence, and each operation applies its own policy.
+// Sample owns no publication capability and reuses the one execution scheduler.
 // The domain imports no implementation and contains no process/filesystem I/O.
 package mutants

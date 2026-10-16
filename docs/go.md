@@ -540,8 +540,8 @@ independent root/command facts. Run lists only pending work, before report admis
 and measurement, preserving fatal list failure versus ordinary best-effort coverage
 failure. Existing MutationMeasurer/Fingerprints bindings replace captured live I/O
 callbacks. Progress events are domain facts; legacy RunProgress alone formats them.
-Sample still draws/checks at its legacy boundary until T-94, but uses the same
-Execution scheduler, with listed IDs admitted only for recorded listed scope.
+Sample draws/checks in the domain and uses the same Execution scheduler, with
+listed IDs admitted only for recorded listed scope.
 Counted/frozen preparation remains until T-95. No mutation handler is promoted to
 the in-process feature driver before T-100.
 
@@ -555,7 +555,7 @@ in its single concrete codec. `SourcePresence` is separate from follow-Stat
 while lazy rename traversal requires successful `RenameTarget` evidence.
 
 `CheckParsed` keeps recorded stale-but-judged mutants for Sample, except and renew
-at their remaining legacy boundaries. Check alone hides those stale mutants.
+in the domain. Check alone hides those stale mutants.
 List returns the ordered prefix before a later source failure; cmd renders it
 before the error, whereas check admits ordinary and strict results before printing
 checked files. Actual cmd consumers use invocation-bound readers, catalog,
@@ -564,6 +564,31 @@ legacy library entry points compose concrete defaults and delegate the same rule
 legacy strict callback APIs remain only compatibility adapters, not domain I/O.
 The existing inward depguard/fixture inventories cover these unchanged package
 arrows; no production fake or adapter import is admitted to the domain.
+
+T-94 moves Sample, Survivor, Renew and Elsewhere into mutants. Sample receives
+read-only CheckOptions and execution bindings, never snapshot writes. It keeps
+recorded scopes and seed ranking, reusing the one scheduler and selection-baseline
+cache. Renewal and Unrenewed are genuine domain values; legacy mutate/config aliases
+retain direct library callers without a second model or algorithm.
+
+`Exceptions.Except` and `Exceptions.Renew` update the current document. The existing
+config package implements them at an explicit RootDir, sharing one format-preserving
+YAML transform with memory scenario bytes. Initial Config selects entries; updates
+reread current bytes, preserve comments/settings/permissions, and consume complete
+Old entries once, validate the whole batch, then write once. Invalid document
+reason/key stays distinct from ordinary I/O and cancellation causes. CLI supplies a
+pure root-to-Exceptions constructor only after existing root discovery, preserving
+lazy help/version startup. Unit fakes own copied exception values and no codec.
+
+`SourceStatus.Kind` observes following-Stat missing/directory/non-directory facts,
+independently of conservative orphan Present and successful RenameTarget Lstat.
+Survivor admits syntax first and maps ordinary Stat failure to its no-survivor reason;
+Renew permits moved search for missing/directory/unsupported sources and propagates
+other Stat failures. Elsewhere uses explicit root/caller paths and lexical pure
+judge/exclusion queries, requesting parsing only for actual orphan work. Existing
+boundary lists already admit these inward arrows and refuse domain-to-config or
+workdir dependencies; no new adapter package or rule exception is required.
+
 
 ## Tests
 

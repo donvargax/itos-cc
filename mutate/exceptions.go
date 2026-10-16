@@ -2,141 +2,29 @@ package mutate
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/project"
 )
 
-// Elsewhere judges the exceptions whose file is none of sources, of those
-// judge says to judge by the file they name. One whose function, by its
-// name less its namespace and by its hash, exactly one of sources holds
-// has moved there: it is stale, ExceptionMoved, naming that file, and
-// moved holds it as it reads there, so a run or a check still excepts its
-// mutant. The namespace is left out because a file's path can be part of
-// it, as in TypeScript. One whose file excluded says itos-cc.yaml leaves
-// out, by the path an entry names it by, is stale as ExceptionExcluded,
-// with no line, wherever its function is. Any other is stale as
-// ExceptionGone, with no line. Neither changes itos-cc.yaml.
-func Elsewhere(ctx context.Context, exceptions []config.Exception, sources []string, judge, excluded func(file string) bool) (stale []StaleException, moved []config.Exception, err error) {
-	selected := map[string]bool{}
-	for _, path := range sources {
-		selected[project.FromRoot(path)] = true
-	}
-	var orphans []config.Exception
-	for _, e := range exceptions {
-		switch {
-		case selected[e.File] || !judge(e.File):
-		case excluded(e.File):
-			stale = append(stale, StaleException{Exception: e, Why: ExceptionExcluded})
-		default:
-			orphans = append(orphans, e)
-		}
-	}
-	if len(orphans) == 0 {
-		return stale, nil, nil
-	}
-	// Where each orphan's function is now: one entry per file holding it.
-	found := make([][]config.Exception, len(orphans))
-	for _, path := range sources {
-		f, err := project.ParseFile(ctx, path)
-		if err != nil {
-			return nil, nil, err
-		}
-		key := project.FromRoot(path)
-		for i, e := range orphans {
-			_, name, _ := strings.Cut(e.Function, "#")
-			for _, u := range f.Units {
-				if u.Name == name && UnitHash(f, u) == e.Hash {
-					there := e
-					there.File, there.Function = key, unitID(u.Namespace, u.Name)
-					found[i] = append(found[i], there)
-					break
-				}
-			}
-		}
-		f.Close()
-	}
-	for i, e := range orphans {
-		if len(found[i]) != 1 {
-			stale = append(stale, StaleException{Exception: e, Why: ExceptionGone})
-			continue
-		}
-		stale = append(stale, StaleException{Exception: e, Why: ExceptionMoved, NewFile: found[i][0].File})
-		moved = append(moved, found[i][0])
-	}
-	return stale, moved, stopped(ctx, nil)
+// Elsewhere retains concrete setup for legacy callers, using the domain rule.
+func Elsewhere(ctx context.Context, exceptions []config.Exception, sources []string, judge, excluded func(string) bool) ([]StaleException, []config.Exception, error) {
+	return mutants.Elsewhere(ctx, exceptions, sources, judge, excluded, legacyCheckOptions(nil, nil, nil, nil, nil, nil, nil))
 }
 
-// NoSurvivorError is a site Survivor cannot except: Reason says why.
-type NoSurvivorError struct{ Reason string }
+type NoSurvivorError = mutants.NoSurvivorError
 
-func (e *NoSurvivorError) Error() string { return e.Reason }
-
-// Survivor is the exception, less its reason, for the survivor that the
-// fresh entry of the snapshot of the file at path records at line and
-// column, fresh as Check judges it with tests, or stale only for sites it
-// never recorded. A site with no such survivor, whether its mutant is
-// recorded killed or uncovered, its function's results are stale or
-// missing, or there is no site there, is a *NoSurvivorError.
-func Survivor(ctx context.Context, store snapport.Store, path string, line, column int, tests func(path string) []string, support map[string]string) (config.Exception, error) {
+func Survivor(ctx context.Context, store snapport.Store, path string, line, column int, tests func(string) []string, support map[string]string) (config.Exception, error) {
 	return SurvivorWithInputs(ctx, store, path, line, column, tests, support, nil, nil)
 }
-
-// SurvivorWithInputs uses the supplied actual observation bindings.
-func SurvivorWithInputs(ctx context.Context, store snapport.Store, path string, line, column int, tests func(path string) []string, support map[string]string, tools mutants.Toolchain, fingerprints mutants.Fingerprints) (config.Exception, error) {
-	if lang.Detect(path) == nil {
-		return config.Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
-	}
-	if info, err := os.Stat(path); err != nil || info.IsDir() {
-		return config.Exception{}, &NoSurvivorError{"there is no such file"}
-	}
-	f, err := project.ParseFile(ctx, path)
-	if err != nil {
-		return config.Exception{}, err
-	}
-	defer f.Close()
-	c, err := checkParsed(ctx, store, f, path, nil, tests, support, nil, tools, fingerprints)
-	if err != nil {
-		return config.Exception{}, err
-	}
-	for _, s := range Sites(f) {
-		if s.Line != line || s.Column != column {
-			continue
-		}
-		u := f.Units[s.Unit]
-		for _, fn := range c.Functions {
-			if fn.Unit != s.Unit {
-				continue
-			}
-			switch {
-			case fn.State == Missing:
-				return config.Exception{}, &NoSurvivorError{fn.Function + " has no mutation results"}
-			case !fn.Judged():
-				return config.Exception{}, &NoSurvivorError{fn.Function + " changed since its mutation results, or the tests that import its file did"}
-			}
-			for _, m := range fn.Mutants {
-				if m.Key() != s.Key() {
-					continue
-				}
-				if m.Outcome != Survived {
-					return config.Exception{}, &NoSurvivorError{fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", m.Outcome)}
-				}
-				return config.Exception{File: c.Key, Function: fn.Function, Hash: UnitHash(f, u),
-					LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
-					LineText: LineText(f.Src, s.Line)}, nil
-			}
-			return config.Exception{}, &NoSurvivorError{"the results of " + fn.Function + " record no mutant there"}
-		}
-	}
-	return config.Exception{}, &NoSurvivorError{"there is no mutation site there"}
+func SurvivorWithInputs(ctx context.Context, store snapport.Store, path string, line, column int, tests func(string) []string, support map[string]string, tools mutants.Toolchain, fingerprints mutants.Fingerprints) (config.Exception, error) {
+	e, err := mutants.Survivor(ctx, path, line, column, legacyCheckOptions(store, nil, tests, support, nil, tools, fingerprints), workdir.SourceEdits{})
+	return e, runError(err)
 }
 
 // FreshExceptions is how a project's exceptions bear on the selection of a
