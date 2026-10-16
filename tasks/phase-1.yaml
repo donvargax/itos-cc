@@ -3397,6 +3397,47 @@
     Bind listing through a narrow model-valued capability, settling its actual
     owner/API before code, with declaration-driven memory evidence and actual
     missing/wrong-binding controls; no live-shell callback hidden in the domain.
+    The concrete T-92 contract direction is recorded before product changes.
+    Model-bearing MutationSnapshots belongs beside Snapshot in mutants and
+    supplies Root, Read, Write and Remove with the existing snapshot-port
+    failures. Read returns a fully decoded Snapshot or absence; domain admission
+    retains the recorded root/decode/file/toolchain order. Existing metricsdir
+    owns the one concrete mutation codec and implements this capability over
+    the current generic Store. Move the codec once and retain thin legacy
+    SnapshotJSON, UnitJSON, MutantJSON and ReadSnapshotJSON delegates where
+    callers need them. Preserve physical names, failure context, byte order,
+    legacy keys, nil/empty distinctions and atomic writes. Keep the independent
+    literal byte guards, Go coverage-key checks and legacy suite-evidence guard;
+    move rightful private codec tests rather than copying private wire models.
+    SourceEdits belongs to mutants with context-first Missing and Annotate
+    operations, implemented by workdir and the actual memory tree. Missing
+    retains Stat/IsNotExist follow semantics; other stat errors do not prove
+    absence. Annotate rereads current bytes and uses one pure annotation
+    replacement rule, comparing equality before stat/write and preserving
+    permissions. Its memory implementation observes actual writes. Separately
+    extract the pure orphan reason from observed presence, exclusion and scope
+    values once for T-93 reuse. Orphan observation remains Lstat-based at its
+    current boundary, with mapped-path/recorded-file admission and conservative
+    errors intact; strict snapshot decoding is not permissive orphan metadata.
+    TestLister belongs to mutants and accepts the existing Command value. Its
+    listing-specific result carries stdout, exit status and the unchanged
+    command failure reason; it must not reuse CommandResult's combined output.
+    Nonzero or failed-start listing results retain tests.list-failed, including
+    the current -1 when no exit status exists. Cancellation forwards its cause
+    through InputFailure. The real testtools adapter streams stderr immediately
+    to its composed log while returning stdout alone. The fake reads independent
+    root listing facts; actual requests select and parse those observations.
+    Shared guards distinguish stdout ID rows from stderr diagnostics and retain
+    unsuccessful-command reasons, first-ID-wins and optional-file parsing.
+    Run options carry the bound MutationMeasurer and its existing request,
+    optional premeasured Report, configured Test/PerTest values and TestLister
+    instead of the Coverage I/O callback. Listing remains lazy for ordinary
+    pending work and fills the same shared Listed.Files inventory. Replace the
+    CoverageInputs I/O callback too: existing bound Toolchain and Fingerprints
+    observe producer/runtime inputs from the actual root, command mode, support
+    and source. Keep pure cached-evidence/map queries as pure functions. Bound
+    adapters own logging and domain events carry progress facts to presentation;
+    no captured UI/input closure or direct legacy disk fallback enters Run.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
