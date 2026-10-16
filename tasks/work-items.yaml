@@ -3367,7 +3367,7 @@ items:
   - id: T-118
     title: Observe joined fixture peers before cooperative cleanup
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
