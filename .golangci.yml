@@ -292,12 +292,13 @@ linters:
             - "**/internal/workdir/**"
             - "!$test"
           allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the workdir adapter imports nothing of ours but the selection port, lang's port and project, which it wraps (decision 29); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "the workdir adapter imports only the selection/lang ports, mutation source-edit contract and project, which it wraps (T-92); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/metricsdir implements the snapshot port over metrics, the
         # top-level library that writes .metrics/ as indented JSON renamed
         # into place, and project, which finds the root it lives at
@@ -309,12 +310,13 @@ linters:
             - "**/internal/metricsdir/**"
             - "!$test"
           allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
             - github.com/donvargax/itos-cc/internal/snapshot/port$
             - github.com/donvargax/itos-cc/metrics$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the metricsdir adapter imports nothing of ours but the snapshot port and metrics and project, which it wraps (decision 41); extend the rules as docs/go.md's Adding a package says, never loosen this one"
+              desc: "the metricsdir adapter imports only the snapshot port, mutation model/codec, metrics and project, which it wraps (T-92); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # internal/coveragetools implements the coverage port over coverage,
         # the top-level runner of each language's tools, its process groups
         # and run folders, and metrics, which says where .metrics/ is for

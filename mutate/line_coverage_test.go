@@ -1,58 +1,12 @@
 package mutate
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
-	"strings"
 	"testing"
 )
-
-// Go evidence is written under go_coverage exactly as before, and the
-// evidence of a line-precision language under line_coverage, each reading
-// back as the unit's Coverage.
-func TestUnitCoverageEvidenceKeepsGoKeyAndWritesLinesBesideIt(t *testing.T) {
-	goUnit := UnitResult{Namespace: "main", Name: "a", Mutants: []Mutant{{Original: ">", Replacement: ">="}},
-		Coverage: &CoverageEvidence{Version: goCoverageEvidenceVersion, File: "main.go", Function: "main#a", Complete: true,
-			Blocks: []CoverageBlock{{Span: "3.20,3.30", Line: 3, Column: 20, Weight: 1, Covered: true}}}}
-	type plain unitResultWire
-	before, err := json.Marshal(plain(unitResultWireOf(goUnit)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	after, err := json.Marshal(UnitJSON(goUnit))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(after) != string(before) {
-		t.Errorf("Go unit written as\n%s\nwant as before\n%s", after, before)
-	}
-	pyUnit := UnitResult{Namespace: "calc", Name: "dormant", Mutants: []Mutant{},
-		Coverage: &CoverageEvidence{Version: lineCoverageEvidenceVersion, Language: "python", File: "calc.py", Function: "calc#dormant", Complete: true,
-			Blocks: []CoverageBlock{{Span: "8", Line: 8, Weight: 1}}}}
-	data, err := json.Marshal(UnitJSON(pyUnit))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(data), `"line_coverage":{"version":1,"language":"python"`) || strings.Contains(string(data), "go_coverage") {
-		t.Errorf("Python unit written as %s, want its evidence under line_coverage", data)
-	}
-	for _, unit := range []UnitResult{goUnit, pyUnit} {
-		data, err := json.Marshal(UnitJSON(unit))
-		if err != nil {
-			t.Fatal(err)
-		}
-		var read UnitResult
-		if err := readUnitJSON(data, &read); err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(read, unit) {
-			t.Errorf("%s read back as %+v, want %+v", data, read, unit)
-		}
-	}
-}
 
 // Python evidence rests on every Python file and configuration file of the
 // build root, without itos-cc's own summary comment, and leaves out

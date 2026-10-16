@@ -2,6 +2,7 @@ package testtools_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,6 +17,15 @@ import (
 // runtime. It makes caller cwd, argv, environment and unsuccessful import
 // observations independent of a requested test command.
 func TestMain(m *testing.M) {
+	if len(os.Args) > 1 && (os.Args[1] == "--T92-list" || os.Args[1] == "--T92-list-fails") {
+		fmt.Fprint(os.Stdout, " first \t tests/a.py \r\nfirst\twrong.py\nsecond\r\n")
+		fmt.Fprintln(os.Stderr, "independent diagnostic")
+		if os.Args[1] == "--T92-list-fails" {
+			os.Exit(7)
+		}
+		os.Exit(0)
+	}
+
 	if os.Getenv("T89_PROBE_HELPER") == "1" {
 		cwd, err := os.Getwd()
 		if err != nil {

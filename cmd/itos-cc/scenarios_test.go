@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"path/filepath"
@@ -15,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
-
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
@@ -23,6 +23,7 @@ import (
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
@@ -426,7 +427,10 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		}
 	}()
 	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
+	var stdout, stderr bytes.Buffer
+	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	a := adapters{
+		Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),
 		Dir:          dir,
@@ -436,7 +440,6 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Coverage:     measurer, MutationCoverage: measurer,
 		Config: file,
 	}
-	var stdout, stderr bytes.Buffer
 	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
 	// What the run removed from the store is gone from the memory too, and
 	// what it wrote is there.
@@ -873,4 +876,27 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 // measurementOf translates fixture artifact declarations, not application models.
 func measurementOf(c features.Coverage) covtest.Measurement {
 	return covtest.Measurement{Language: c.Language, Report: c.Report, IntegrationReport: c.IntegrationReport, CommandExit: c.CommandExit, CommandOutput: c.CommandOutput, WithoutC8: c.WithoutC8, InventoryReport: c.InventoryReport, InventoryExit: c.InventoryExit, InventoryOutput: c.InventoryOutput}
+}
+
+// lister composes only the independently retained root setup with the actual
+// configured command. It never infers inventory from command-keyed outcomes.
+func (m *memory) lister(root string, text []byte, log io.Writer) *mutantstest.Lister {
+	facts := map[string]map[string]mutantstest.Listing{}
+	cfg, err := config.Parse(text)
+	if err == nil && cfg.Tests != nil {
+		if setup, ok := m.listed[root]; ok && setup != nil {
+			value := mutantstest.Listing{Stdout: setup.ListOutput}
+			if value.Stdout == "" {
+				for _, id := range slices.Sorted(maps.Keys(setup.Files)) {
+					value.Stdout += id + "\t" + setup.Files[id] + "\n"
+				}
+			}
+			if setup.ListFails {
+				value.ExitCode = 1
+				value.Reason = "exit status 1"
+			}
+			facts[root] = map[string]mutantstest.Listing{cfg.Tests.List: value}
+		}
+	}
+	return &mutantstest.Lister{Listings: facts, Log: log}
 }
