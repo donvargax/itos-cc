@@ -3465,6 +3465,12 @@
     T-92 is temporarily given back only for that independent repair, with all
     direction and implementation recovery preserved; resume after its verified
     full-green published closure, with a supported retake-first transition.
+    Frozen trials also share the listed-selection baseline cache and timeout
+    rule. Keep its actual owner once in mutants, with the narrow baseline
+    result/command access that legacy fresh trials need until T-95; frozen
+    materialization, preparation and trial orchestration remain at that boundary.
+    Retained query callbacks normalize relative paths lexically against the
+    already supplied absolute caller directory; they never consult process cwd.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
