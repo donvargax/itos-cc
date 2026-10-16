@@ -3786,7 +3786,12 @@
     with minimum sealed failures and real/memory shared contract outcomes.
     The selected coarse API is Plan(ctx, FreshRequest) (*FreshPlan, FreshFailure),
     Prepare(ctx, *FreshPlan, coverageport.Scope) (*FreshPreparation, FreshFailure),
-    and Release(ctx, *FreshPlan), all methods of mutants.Fresh. FreshRequest owns
+    and Release(ctx, *FreshPlan), all methods of mutants.Fresh. The pre-existing
+    snapshot-state constant Fresh collides with that port name in Go: rename the
+    constant to SnapshotFresh and update its consumers, preserving the exact
+    "fresh" wire value, freshness policy and assertions. Reserve Fresh for the
+    new port; do not add a forwarding package or duplicate freshness model.
+    FreshRequest owns
     the existing Root, Paths, Since, Count and Seed inputs. Plan returns the actual
     frozen plan or a typed failure, cleaning its own partial materialization when
     planning fails. Prepare returns actual ordered partial evidence as well as its
@@ -3809,9 +3814,41 @@
     Pure admission/ranking/count/seed policy stays in shared mutants/selection
     functions called by real and memory planning, with no second fake algorithm.
     Put physical frozen environment preparation in internal/freshenv, implementing
-    Fresh with injected capabilities. Compose actual Workers, Toolchain, History,
+    Fresh with injected capabilities. Compose actual Workers, Toolchain,
     coverage and Fingerprints at cmd; no concrete adapter defaults or type asserts
     inside domain behavior and no adapter imports selecting another concrete adapter.
+    History stays bound at its genuine query consumers. The coarse physical Fresh
+    adapter keeps owned Git metadata, mode/blob export, scratch and pinned diff
+    operations through its injected owned executor. Existing History returns owned
+    bytes and query facts, not export modes or scratch handles; its ordinary *At
+    implementation does not provide counted process supervision. Do not replace
+    owned Git commands with unsupervised queries or keep a decorative unused History
+    field merely to claim injection. Memory Fresh consumes actual immutable history
+    fixture state, with the same shared pure admission and selection policy.
+    Keep mutants/porttest codec-free. Its Fresh construction may receive one pure
+    DecodeConfig function from actual frozen bytes to the existing exclusion globs,
+    *Tests, []Exception and *FreshInvalid. Composition implements it with the one
+    existing config.Parse codec, forwarding its actual Reason and Key; no Config
+    twin, pre-parsed desired settings, host reads, context capture or scenario-ID
+    branching. A missing file supplies nil bytes, as config.Read already does.
+    Require this binding when the fake plans/prepares and derive every setting
+    from that plan's actual immutable committed configuration, separately from live
+    bytes. Keep the production Fresh port unchanged. Shared guards distinguish
+    committed invalid/live valid and committed valid/live invalid configuration,
+    plus absent settings, exclusions and configured test/exception values.
+    To bind Fresh through a real command invocation without scripted Plan returns,
+    the memory adapter may project independently declared collector, command and
+    probe observations from the logical project root into its actual owned frozen
+    export. Rebase root-owned semantic directory/path keys and resolve relative
+    artifact/command facts against the actual export; never guess scratch counters.
+    Keep absolute external tool identities and literal user shell/environment or
+    raw artifact content unchanged. Do not use blanket string replacement, copy
+    live config/source/test bytes into the frozen tree, or select desired stages,
+    final reports or verdicts by scenario identity. Actual requests choose those
+    independent observations; traces record the actual frozen/worker execution cwd
+    and bytes. Keep live facts and each plan's projected observations separate so
+    release removes only that plan's state and cannot change other plans or live
+    inputs. No production port or configuration model is added by this fake seam.
     Reuse the existing bound Tree and Surroundings for frozen source observations.
     Trials must still read actual frozen bytes after preparation and preserve the
     original bounds/original-text checks: replacing those reads with a plan-time
@@ -3858,6 +3895,32 @@
     command cleanup budget. Preserve ordinary runs' independent budgets;
     FrozenTrials and preparation alone share the counted abort deadline.
     Do not make this domain migration a global change to cleanup ownership.
+    Retiring mutate also removes graph's legacy observation defaults. Keep this
+    bounded to existing mutation freshness observations, ahead of the later S8
+    graph move. graph.NewBuilder takes roots and a MutationInputs binding bundle
+    containing Snapshots func(root string) MutationSnapshotReader, Toolchain and
+    Fingerprints, all existing mutants capabilities. No copied model, new process
+    API or generic provider registry. Server.New receives and passes that bundle;
+    cmd and actual retained graph/server fixtures compose the real bindings.
+    The snapshot factory is pure construction from an already discovered project
+    root and performs no eager reads. Missing bindings fail explicitly rather than
+    selecting metricsdir/testtools/testinputs inside graph or server. Preserve
+    per-project roots, snapshot cache stamps, read/admission-before-TypeScript
+    normalization, actual current test/listed/support/suite hashes and their
+    existing best-effort failure policy. Caller context reaches observations;
+    do not rewrite graph discovery, overlay rules, caching, scheduling or output
+    in this retirement. Add actual binding guards and preserve graph/check
+    agreement and retained stale-snapshot assertions.
+    Retirement identified an obsolete private wrapper-only assertion:
+    TestListedFinalizationRetainsActualHashesAfterCallerCancellation calls only
+    legacy recordListedWithInputs, which detaches with WithoutCancel; actual Run
+    already uses T-92's caller-context domain implementation. Retire that unused
+    wrapper/helper assertion explicitly, not as equivalent coverage of detachment.
+    Preserve its valid actual-byte hash, missing-file empty hash, support and
+    current-observation cancellation/cause guards in domain tests using the caller
+    context. Keep the actual caller-cancel/no-publication and fail-fast parent-live
+    listed guards. Do not restore detached domain observations or retain a test-only
+    production shim to preserve dead behavior. Record each old/new test obligation.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
