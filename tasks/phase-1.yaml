@@ -3921,6 +3921,29 @@
     context. Keep the actual caller-cancel/no-publication and fail-fast parent-live
     listed guards. Do not restore detached domain observations or retain a test-only
     production shim to preserve dead behavior. Record each old/new test obligation.
+    Attempt source65e4540 and reviewed spec heads4d90182/7e8dac8 were published
+    at7e8dac82857e4617297546d403414fa9db2e4976. Exact workflow38897405629
+    core job116961095695 failed eleven valid existing lint checks in moved code.
+    Eight command-policy fixture MkdirAll/WriteFile errors were unchecked;
+    freshenv preparation's helper switch needs the equivalent tagged form,
+    testinputs broad-inventory comparison needs the equivalent De Morgan form,
+    and G703 flags freshenv fileExists's existence-only os.Stat observation.
+    The source-only ordinary revert30e1231ab55604d8425268640dba72b14071db7c
+    was committed and published first, before this attempt record, preserving
+    every later contract and proof note. This is our moved-code repair, not an
+    itos defect. Prior domain/shared/binding/retained outcomes remain local-phase
+    evidence; the original MUT179 failure remains unexplained and the isolated
+    and original-selection diagnostic passes are not a causal correction or
+    final native proof. The original workflow's other jobs were still active
+    when core diagnostics were recorded; review their actual terminal findings
+    before corrected-source republication. Reapply only the source revert after
+    supported give-back and a published retake. Check the eight actual fixture
+    setup errors and simplify the two equivalent conditions without weakening
+    assertions. Inspect G703's actual existence-only callsites and supported
+    external/symlink interpreter semantics before settling its narrow repair;
+    do not add new containment restrictions, conceal the sink or use blanket
+    suppression. Retain all thresholds, rules, meaningful guards and raw
+    evidence. Focus on affected checks; broad gates remain configured CI.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
