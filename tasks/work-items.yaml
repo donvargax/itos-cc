@@ -2482,6 +2482,17 @@ items:
       validator for these controls, or run own-source mutation, change product flags or compare
       binaries per refactor task. This prepares the later proof: settle its concrete final
       manifest/platform scope after T-116 as already required.
+
+      T-89 moves command observations and provenance behind Toolchain, Fingerprints and Reach.
+      Compare every MUT07 setup row and its actual reported command, including absent versus
+      installed Vitest/Jest, package scripts, Python pytest versus unittest, shell override without
+      an unused product probe, last-existing .venv/venv command interpreter versus first-existing
+      coverage interpreter, nested caller cwd for the pytest probe, and actual editable PYTHONPATH
+      with copied source before the inherited live-install path. Include ordinary optional
+      malformed/absent manifest and failed-probe fallbacks, per-run GOWORK=off and Python auto-load
+      environment fingerprints, and strict external replacement refusal without dependency reads.
+      These are final baseline-characterized comparisons, not an intentional-difference allowance or
+      a per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
