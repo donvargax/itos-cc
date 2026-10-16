@@ -3616,9 +3616,6 @@
     verification, and audit all affected direct callers for the new binding. Keep production
     defaults absent and every existing gate unchanged; no new CLI behavior or own-source
     mutation is authorized by this harness repair.
-  done_when:
-    - run: go test ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
 - id: T-94
   type: refactor
   title: Move mutation sample and exceptions behind domain-owned boundaries

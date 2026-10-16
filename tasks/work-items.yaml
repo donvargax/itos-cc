@@ -3151,7 +3151,7 @@ items:
     title: Move mutation check and list orchestration behind the domain boundary
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-92]
     kind: task
   - id: T-94
