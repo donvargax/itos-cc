@@ -3150,6 +3150,20 @@
     Inventory command failure still leaves files without proof and is logged;
     cancellation still stops the actual caller. Do not make its formerly best-effort
     failure fatal or manufacture proof from syntax when a collector has no inventory.
+    The concrete root contract is MutationMeasurer, composing the unchanged
+    aggregate Measurer[*Report] with MeasureListed(ctx, Request, *PerTest) and
+    Inventory(ctx, *Report, language). Inventory mutates the existing Report
+    through its domain API; ordinary collector failures stay logged and leave
+    no proof, while cancellation returns the existing sealed Cancelled failure.
+    Invocation MutationCoverage supplies this capability independently from
+    aggregate Coverage; neither mutation consumer constructs a real fallback.
+    Test and PerTest move once into internal/coverage; legacy coverage aliases
+    preserve the existing runner and pure selection constructor until its callers
+    move. The root-owned fake and shared suite live in internal/coverage/porttest,
+    reusing the existing aggregate fake directly. The narrow package rules admit
+    that root fake only to tests/fixture composition, as for mutants/porttest;
+    production domain code still cannot import a fake or adapter. This records
+    the model-bearing root exception without changing the aggregate child port.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"

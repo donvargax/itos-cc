@@ -636,3 +636,12 @@ as the code proof asks of any change, and commit `.metrics/mutate/` with the cha
 covering a function's body; one whose function holds the project's name, such as `cmd`'s `run`,
 goes stale, and its reviewed reason is re-applied with `itos-cc mutation except` when that
 function next changes.
+
+T-90 keeps coverage's aggregate `port.Measurer[*Report]` unchanged. Its new
+model-bearing `MutationMeasurer` contract belongs beside `Report` and
+`TestCoverage`, composing aggregate measurement with `MeasureListed` and
+`Inventory`. `Test` and `PerTest` are domain values; `PerTest.Select` constructs
+a command without I/O. The root-owned fake and shared suite belong in
+`internal/coverage/porttest` and reuse the child aggregate fake. This is the
+same narrow model-bearing recipe exception as mutation's root contracts,
+not permission for production domain code to import fakes or adapters.
