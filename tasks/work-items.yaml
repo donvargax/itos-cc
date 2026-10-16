@@ -2502,6 +2502,15 @@ items:
       report. Preserve actual commands, diagnostics, statuses and original artifacts under the
       existing bounded-volatility rules; this adds no intentional difference or per-task binary
       comparison.
+
+      T-91 routes actual history observations through the bound History. Compare --since with a
+      missing ref and outside Git, divergent branches using ref...HEAD, caller-subdirectory
+      namespaces and committed HEAD bytes despite uncommitted edits, unchanged renames and renamed
+      edits, pure deletions and same-name Kept hashes. Include deleted-file exceptions with and
+      without explicit paths, repository-wide committed and staged working rename snapshot retention
+      versus an untracked move, actual HEAD default sample seed and explicit-seed bypass. Preserve
+      statuses, diagnostics, map direction and original artifacts; no new intentional difference or
+      per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
