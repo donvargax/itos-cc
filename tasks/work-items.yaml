@@ -2540,6 +2540,24 @@ items:
       remain read-only on success and failure. The comparison follows the existing final
       case/platform manifest and runs once after all current refactor and adoption-gate source
       changes, before either S10 exit-code feature; do not compare binaries per task.
+
+      T-94 final comparison additions (current refactor, no intentional behavior difference):
+      compare cached mutation sample with fixed seeds/counts over recorded own/listed/whole and
+      explicit-shell scopes, including baseline failure, stale-but-judged recorded sites,
+      gone/unrecorded sites and actual mismatch output. Preserve raw streams/status and confirm no
+      sample snapshot/source writes. Compare except append/SameSite replacement and renewal batches
+      over reset YAML with unrelated settings/comments, permissions and duplicate complete-Old
+      entries; include missing/invalid/unreadable document policies and no partial success
+      presentation. Exercise Survivor versus renewal following-Stat admission using supported files,
+      directories, missing paths, unsupported syntax and supported native symlink/error fixtures;
+      preserve their distinct no-survivor versus abort policies and report unavailable platform
+      cases explicitly. Compare orphan/moved/excluded exception selection from
+      root/subdirectory/outside-root paths and --since renames without namespace normalization.
+      Existing help/version and no-work admission remain lazy. Missing/wrong injected port bindings
+      and private current-document concurrency contracts remain focused application/adapter tests;
+      do not invent public flags merely to compare them. Settle these concrete cases/platform
+      capabilities with the final manifest after T-116, retaining the one final proof and existing
+      raw-evidence/oracle rules; no per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
