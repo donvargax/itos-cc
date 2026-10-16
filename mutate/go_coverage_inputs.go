@@ -1,4 +1,4 @@
-package testinputs
+package mutate
 
 import (
 	"crypto/sha256"
@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // GoCoverageInputs fingerprints the conservative nearest-module input
 // boundary for independently measured executable coverage.
-func GoCoverageInputs(runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+func GoCoverageInputs(source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
 	abs, err := filepath.Abs(source)
 	if err != nil {
 		return nil, err
@@ -32,13 +32,13 @@ func GoCoverageInputs(runtime mutants.RuntimeInputs, source, projectRoot, produc
 	}
 	out := map[string]string{}
 	addFile := func(path string) error {
-		data, readErr := os.ReadFile(path) //nolint:gosec // fingerprint actual files inside the selected module inventory
+		data, readErr := os.ReadFile(path)
 		if readErr != nil {
 			return readErr
 		}
 		if strings.HasSuffix(path, ".go") {
 			if spec := lang.Detect(path); spec != nil && spec.Name == "go" {
-				data = []byte(mutants.StripAnnotation(string(data), spec.Comment))
+				data = []byte(StripAnnotation(string(data), spec.Comment))
 			}
 		}
 		rel, relErr := filepath.Rel(projectRoot, path)
@@ -82,12 +82,12 @@ func GoCoverageInputs(runtime mutants.RuntimeInputs, source, projectRoot, produc
 	}
 	out["@producer"] = hashText(producer)
 	out["@go-env"] = hashText(strings.Join([]string{
-		runtime.GoVersion, runtime.Platform, runtime.Architecture,
-		"GOOS=" + runtime.Env["GOOS"], "GOARCH=" + runtime.Env["GOARCH"],
-		"CGO_ENABLED=" + runtime.Env["CGO_ENABLED"], "GOFLAGS=" + runtime.Env["GOFLAGS"],
-		"GOEXPERIMENT=" + runtime.Env["GOEXPERIMENT"], "GOTOOLCHAIN=" + runtime.Env["GOTOOLCHAIN"],
-		"GOAMD64=" + runtime.Env["GOAMD64"], "GOARM=" + runtime.Env["GOARM"],
-		"GO386=" + runtime.Env["GO386"],
+		runtime.Version(), runtime.GOOS, runtime.GOARCH,
+		"GOOS=" + os.Getenv("GOOS"), "GOARCH=" + os.Getenv("GOARCH"),
+		"CGO_ENABLED=" + os.Getenv("CGO_ENABLED"), "GOFLAGS=" + os.Getenv("GOFLAGS"),
+		"GOEXPERIMENT=" + os.Getenv("GOEXPERIMENT"), "GOTOOLCHAIN=" + os.Getenv("GOTOOLCHAIN"),
+		"GOAMD64=" + os.Getenv("GOAMD64"), "GOARM=" + os.Getenv("GOARM"),
+		"GO386=" + os.Getenv("GO386"),
 	}, "\x00"))
 	return out, nil
 }

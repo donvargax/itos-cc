@@ -173,7 +173,7 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	support, err := supportNow(ctx, in, cfg)
+	support, err := supportNow(cfg)
 	if err != nil {
 		return result, err
 	}
@@ -207,20 +207,17 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 		printOrphans(in, result.Orphans, "is an orphan, which mutation run removes")
 		return result, nil
 	}
-	if err := mutationInputsBound(in.adapters); err != nil {
-		return result, err
-	}
-	tests, err := importingTests(ctx, in)
+	tests, err := importingTests(ctx)
 	if err != nil {
 		return result, err
 	}
-	checks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
+	checks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 	if err != nil {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
 	if languages := strictLanguagesOf(sources); failUncovered && len(languages) > 0 {
-		coverageChecks, err := mutate.CheckCoverageWithInputs(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(in, languages, false, false, support), in.adapters.Toolchain, in.adapters.Fingerprints)
+		coverageChecks, err := mutate.CheckCoverage(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(languages, false, false, support))
 		if err != nil {
 			return result, err
 		}

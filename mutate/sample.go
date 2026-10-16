@@ -48,7 +48,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		}
 		s := &fileState{file: f, sites: Sites(f)}
 		states = append(states, s)
-		c, err := checkParsed(ctx, opt.Store, f, path, opt.Judge, opt.Tests, opt.Support, nil, opt.Toolchain, opt.Fingerprints)
+		c, err := checkParsed(ctx, opt.Store, f, path, opt.Judge, opt.Tests, opt.Support, nil)
 		if err != nil {
 			return Sampled{}, err
 		}
@@ -102,11 +102,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 			if opt.Tests != nil {
 				tests = opt.Tests(s.file.Path)
 			}
-			command, err := scopeCommandWithTools(ctx, s.file.Path, c.scope, tests, opt.Toolchain)
-			if err != nil {
-				return result, err
-			}
-			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: command,
+			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: scopeCommand(ctx, s.file.Path, c.scope, tests),
 				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites)),
 				scopes: make([]string, len(s.sites)), ran: make([][]string, len(s.sites))}
 			if c.scope == ScopeListed {

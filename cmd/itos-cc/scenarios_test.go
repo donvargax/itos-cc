@@ -22,6 +22,7 @@ import (
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
+	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
@@ -98,11 +99,8 @@ type memory struct {
 	// tests are what each folder's own tests do, as the scenario declared
 	// them, by folder and command, for the fake that runs a project's tests once the
 	// mutation group moves (porttest.Workers, S7).
-	tests        map[string]map[string]features.Tests
-	versions     map[string]uint64
-	toolSetup    map[mutantstest.PytestProbe]bool
-	readVersions map[string]uint64
-	imports      map[string]map[string][]string
+	tests    map[string]map[string]features.Tests
+	versions map[string]uint64
 }
 
 // repo is a fake git repository: what add staged and the last commit holds,
@@ -117,7 +115,7 @@ var _ features.Driver = (*memory)(nil)
 func newMemory(t *testing.T) *memory {
 	return &memory{
 		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
-		coverage: map[string]features.Coverage{}, tests: map[string]map[string]features.Tests{}, versions: map[string]uint64{}, readVersions: map[string]uint64{}, toolSetup: map[mutantstest.PytestProbe]bool{}, imports: map[string]map[string][]string{},
+		coverage: map[string]features.Coverage{}, tests: map[string]map[string]features.Tests{}, versions: map[string]uint64{},
 	}
 }
 
@@ -234,53 +232,6 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 // Tests records what the project's own tests do in dir.
 func (m *memory) Tests(dir string, t features.Tests) error {
 	dir = filepath.Clean(dir)
-	if t.Command == "" && t.Imports != nil && (t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil) {
-		return fmt.Errorf("imports-only setup cannot declare execution outcomes")
-	}
-
-	if t.Imports != nil {
-		if m.imports[dir] == nil {
-			m.imports[dir] = map[string][]string{}
-		}
-		normalized := map[string][]string{}
-		for file, edges := range t.Imports {
-			path := filepath.Join(dir, filepath.FromSlash(file))
-			if filepath.IsAbs(file) {
-				path = filepath.Clean(file)
-			}
-			if _, known := m.files[path]; !known {
-				return fmt.Errorf("unknown import declaration file %s", file)
-			}
-			for _, edge := range edges {
-				target := filepath.Join(dir, filepath.FromSlash(edge))
-				if filepath.IsAbs(edge) {
-					target = filepath.Clean(edge)
-				}
-				if _, known := m.files[target]; !known {
-					return fmt.Errorf("unknown referenced import file %s", edge)
-				}
-				normalized[path] = append(normalized[path], target)
-			}
-			if _, exists := normalized[path]; !exists {
-				normalized[path] = []string{}
-			}
-			slices.Sort(normalized[path])
-			if old, known := m.imports[dir][path]; known && !slices.Equal(old, normalized[path]) {
-				return fmt.Errorf("conflicting import adjacency for %s", file)
-			}
-		}
-		for file, edges := range normalized {
-			m.imports[dir][file] = slices.Clone(edges)
-		}
-	}
-	dir = filepath.Clean(dir)
-	if t.Command == "" && t.Imports != nil {
-		if t.Baseline != "" || len(t.Surviving) > 0 || len(t.TimingOut) > 0 || t.Elapsed != 0 || t.Trace != nil || t.Listed != nil {
-			return fmt.Errorf("imports-only setup cannot declare execution outcomes")
-		}
-		return nil
-	}
-
 	if m.tests[dir] == nil {
 		m.tests[dir] = map[string]features.Tests{}
 	}
@@ -386,6 +337,12 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	if name := commandOf(r.Args); commands[name] != nil {
 		return features.Result{}, fmt.Errorf("itos-cc %s is hand-parsed and reaches the disk itself: tag the scenario %s", strings.Join(r.Args, " "), features.BinaryOnly)
 	}
+	if len(r.Env) > 0 {
+		return features.Result{}, fmt.Errorf("the in-process driver sets no environment (%s): tag the scenario %s", strings.Join(r.Env, " "), features.BinaryOnly)
+	}
+	if len(r.Without) > 0 {
+		return features.Result{}, fmt.Errorf("the in-process driver has no PATH to leave %s off: tag the scenario %s", strings.Join(r.Without, " "), features.BinaryOnly)
+	}
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)
 	if git == nil {
@@ -404,20 +361,11 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	if text, ok := m.files[filepath.Join(root, config.File)]; ok {
 		file.text = []byte(text)
 	}
-	input := m.inputs(r)
-	observations := &selporttest.Observations{}
-	tree.Observations = observations
-	defer func() {
-		for _, path := range append(append(input.Reads, input.Lists...), append(observations.Reads, observations.Lists...)...) {
-			m.readVersions[filepath.Clean(path)]++
-		}
-	}()
 	a := adapters{
-		Toolchain: input, Fingerprints: input, Reach: input,
-		Workers:      m.workers(r),
+		Workers:      m.workers(),
 		Dir:          dir,
 		Tree:         tree,
-		Surroundings: input,
+		Surroundings: langporttest.Surroundings{Files: maps.Clone(m.files), Dir: dir},
 		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
 		Coverage:     m.measurer(dir),
 		Config:       file,
@@ -437,54 +385,10 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
 }
 
-// ObserveReads marks actual bound port operations. Positive controls use those
-// same virtual reads/discovery; fixture assertions through Driver.Read do not.
-func (m *memory) ObserveReads(paths ...string) (func() ([]string, error), error) {
-	if len(paths) == 0 {
-		return nil, fmt.Errorf("read observation needs nonempty targets")
-	}
-	before := map[string]uint64{}
-	for _, path := range paths {
-		path = filepath.Clean(path)
-		if _, file := m.files[path]; file {
-			input := m.inputs(features.Run{Dir: filepath.Dir(path)})
-			if _, ok := input.Read(m.t.Context(), path); !ok {
-				return nil, fmt.Errorf("positive read failed: %s", path)
-			}
-			for _, read := range input.Reads {
-				m.readVersions[read]++
-			}
-		} else if m.Exists(path) {
-			tree := selporttest.TreeOf(path, m.from(path), nil)
-			observations := &selporttest.Observations{}
-			tree.Observations = observations
-			if _, _, failure := tree.Discover(m.t.Context(), []string{path}); failure != nil {
-				return nil, failure
-			}
-			if !slices.Contains(observations.Lists, path) {
-				return nil, fmt.Errorf("positive listing failed: %s", path)
-			}
-			for _, listed := range observations.Lists {
-				m.readVersions[listed]++
-			}
-		} else {
-			return nil, &fs.PathError{Op: "observe reads", Path: path, Err: fs.ErrNotExist}
-		}
-		before[path] = m.readVersions[path]
-	}
-	return func() ([]string, error) {
-		var read []string
-		for path, revision := range before {
-			if !m.Exists(path) {
-				return nil, &fs.PathError{Op: "observe reads", Path: path, Err: fs.ErrNotExist}
-			}
-			if m.readVersions[path] != revision {
-				read = append(read, path)
-			}
-		}
-		slices.Sort(read)
-		return read, nil
-	}, nil
+// ObserveReads needs actual selection/surroundings/Toolchain read bindings,
+// supplied when mutation moves in T-89/T-100. Fixture reads are not product reads.
+func (m *memory) ObserveReads(_ ...string) (func() ([]string, error), error) {
+	return nil, fmt.Errorf("%w: memory read ports have not moved", features.ErrReadObservationUnsupported)
 }
 
 // ObserveWrites observes memory write revisions rather than byte differences.
@@ -729,7 +633,7 @@ func (m *memory) from(dir string) map[string]string {
 
 // workers builds the actual Workers binding from current file and command
 // declarations. Hand-parsed mutation remains refused by Run until T100.
-func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
+func (m *memory) workers() *mutantstest.Workers {
 	declarations := map[string]map[string]mutantstest.Tests{}
 	for dir, commands := range m.tests {
 		declarations[dir] = map[string]mutantstest.Tests{}
@@ -749,73 +653,5 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 			declarations[dir][command] = d
 		}
 	}
-	var run features.Run
-	if len(runs) > 0 {
-		run = runs[0]
-	}
-	env := map[string]string{}
-	for _, value := range run.Env {
-		key, text, _ := strings.Cut(value, "=")
-		env[key] = text
-	}
-	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write, Env: env, Without: slices.Clone(run.Without), Platform: m.Platform()}
-}
-
-// Tools records independently declared tool/probe setup, never Tests.Command.
-func (m *memory) Tools(ctx context.Context, dir string, setup features.ToolSetup) error {
-	if cause := context.Cause(ctx); cause != nil {
-		return cause
-	}
-	for _, name := range setup.NodeBins {
-		if filepath.Base(name) != name {
-			return fmt.Errorf("invalid fixture NodeBin %q", name)
-		}
-		bin := name
-		if m.Platform() == "windows" {
-			bin += ".cmd"
-		}
-		if err := m.Write(filepath.Join(dir, "node_modules", ".bin", bin), nil); err != nil {
-			return err
-		}
-	}
-	if setup.Python != nil && setup.Python.Interpreter == "" {
-		return fmt.Errorf("Python setup probe needs its actual interpreter identity")
-	}
-	if setup.Python != nil {
-		env := map[string]string{}
-		for _, value := range setup.Env {
-			key, text, _ := strings.Cut(value, "=")
-			env[key] = text
-		}
-		key := mutantstest.ProbeKey(setup.Python.Interpreter, dir, env)
-		if old, ok := m.toolSetup[key]; ok && old != setup.Python.Importable {
-			return fmt.Errorf("conflicting Python probe setup for %s", key.Interpreter)
-		}
-		m.toolSetup[key] = setup.Python.Importable
-	}
-	return nil
-}
-
-// inputs supplies independent tool/import/runtime facts to actual bound ports.
-// It never derives availability or reach from a Workers outcome declaration.
-func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
-	env := map[string]string{}
-	for _, value := range r.Env {
-		key, text, _ := strings.Cut(value, "=")
-		env[key] = text
-	}
-	imports := map[string][]string(nil)
-	for root, edges := range m.imports {
-		if filepath.Clean(r.Dir) == root || under(filepath.Clean(r.Dir), root) {
-			if imports == nil {
-				imports = map[string][]string{}
-			}
-			for path, targets := range edges {
-				imports[path] = slices.Clone(targets)
-			}
-		}
-	}
-	return &mutantstest.Inputs{Dir: filepath.Clean(r.Dir), Files: m.files, Dirs: m.dirs,
-		Runtime: mutants.RuntimeInputs{GoVersion: runtime.Version(), Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
-		Without: slices.Clone(r.Without), Probes: maps.Clone(m.toolSetup), Imports: imports}
+	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write}
 }

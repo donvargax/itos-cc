@@ -481,30 +481,6 @@ best effort. The direct legacy library fixture fallback remains until T-92
 (and fresh orchestration until T-95); cmd always supplies its actual Workers
 binding and refuses a missing one.
 
-
-T-89 keeps the model-bearing `Toolchain`, `Fingerprints` and `Reach` contracts
-beside those values too. `internal/testtools` observes actual manifests, installed
-runner entries, interpreter probes and runnable files/classes; pure mutants policy
-constructs `Command`. `internal/testinputs` owns current test/support/suite and
-independent-coverage inventories, including lexical unsupported-scope admission.
-It wraps the existing coverage library for unchanged Kotlin runner/wrapper
-fingerprints, as testtools does for runnable-file/class observations.
-`internal/importgraph` wraps the existing graph import resolver until S8. Only cmd
-composes Reach: legacy graph already imports mutate, so mutate cannot import that
-adapter without a cycle. Each adapter has its own depguard rule, accepting only
-mutants plus the actual libraries it wraps. The shared contract suites live in
-`internal/mutants/porttest`; no production binary links them.
-
-Cmd supplies all three actual bindings and rejects missing injections at a work
-boundary. Direct legacy library wrappers retain their explicit disk defaults until
-T-92/T-95; graph's snapshot reader remains legacy until S8. Fresh/count preparation
-keeps its existing supervised probe until T-95. Existing coverage's pure
-Gradle/Maven formatting helpers forward to their single mutants implementation
-until the T-90 callers move. Python command discovery deliberately chooses the last
-existing `.venv`/`venv` interpreter; coverage inputs choose the first. Pytest import
-probes use the caller cwd, separately from the command root, and actual runtime
-environment inputs are supplied at composition rather than read by the fake.
-
 ## Tests
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.

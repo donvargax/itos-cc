@@ -28,11 +28,6 @@ func CheckGoCoverage(ctx context.Context, store snapport.Store, files []string, 
 // not: it has no verdict here, and current is never asked about it. Each
 // file's snapshot is read from store.
 func CheckCoverage(ctx context.Context, store snapport.Store, files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs) ([]CoverageCheck, error) {
-	return CheckCoverageWithInputs(ctx, store, files, judge, current, nil, nil)
-}
-
-// CheckCoverageWithInputs uses the caller's actual observation bindings.
-func CheckCoverageWithInputs(ctx context.Context, store snapport.Store, files []string, judge func(path, function, hash string) bool, current map[string]CoverageInputs, tools mutants.Toolchain, fingerprints mutants.Fingerprints) ([]CoverageCheck, error) {
 	var out []CoverageCheck
 	for _, path := range files {
 		f, err := project.ParseFile(ctx, path)
@@ -45,9 +40,7 @@ func CheckCoverageWithInputs(ctx context.Context, store snapport.Store, files []
 		}
 		language := f.Spec.Name
 		unsupported := ""
-		if fingerprints != nil {
-			unsupported, err = fingerprints.Unsupported(ctx, language, path, project.Root())
-		} else if language == "go" {
+		if language == "go" {
 			unsupported, err = GoCoverageUnsupported(path)
 		} else {
 			unsupported, err = LineCoverageUnsupported(ctx, language, path, project.Root())
@@ -57,7 +50,7 @@ func CheckCoverageWithInputs(ctx context.Context, store snapport.Store, files []
 			return out, err
 		}
 		key := project.FromRoot(path)
-		snap, err := LoadSnapshotOf(ctx, store, key, tools)
+		snap, err := LoadSnapshotOf(ctx, store, key)
 		if err != nil {
 			f.Close()
 			return out, fmt.Errorf("%s: %w", SnapshotName(key), err)
@@ -114,14 +107,9 @@ func CheckCoverageWithInputs(ctx context.Context, store snapport.Store, files []
 // function no longer holds is left out, of its mutants and its counts
 // (OnSites), and a fresh function counts them in LeftOut.
 func Check(ctx context.Context, store snapport.Store, files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) ([]FileCheck, error) {
-	return CheckWithInputs(ctx, store, files, judge, tests, support, exceptions, nil, nil)
-}
-
-// CheckWithInputs retains Check with explicit bound observations.
-func CheckWithInputs(ctx context.Context, store snapport.Store, files []string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception, tools mutants.Toolchain, fingerprints mutants.Fingerprints) ([]FileCheck, error) {
 	var out []FileCheck
 	for _, path := range files {
-		c, err := checkFile(ctx, store, path, judge, tests, support, exceptions, tools, fingerprints)
+		c, err := checkFile(ctx, store, path, judge, tests, support, exceptions)
 		if err != nil {
 			return out, err
 		}
@@ -130,13 +118,13 @@ func CheckWithInputs(ctx context.Context, store snapport.Store, files []string, 
 	return out, stopped(ctx, nil)
 }
 
-func checkFile(ctx context.Context, store snapport.Store, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception, tools mutants.Toolchain, fingerprints mutants.Fingerprints) (FileCheck, error) {
+func checkFile(ctx context.Context, store snapport.Store, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
 	f, err := project.ParseFile(ctx, path)
 	if err != nil {
 		return FileCheck{}, err
 	}
 	defer f.Close()
-	c, err := checkParsed(ctx, store, f, path, judge, tests, support, exceptions, tools, fingerprints)
+	c, err := checkParsed(ctx, store, f, path, judge, tests, support, exceptions)
 	for i := range c.Functions {
 		if fn := &c.Functions[i]; fn.State != Fresh {
 			fn.Mutants = nil
@@ -149,10 +137,10 @@ func checkFile(ctx context.Context, store snapport.Store, path string, judge fun
 // Mutants of a function Stale only for sites its entry never recorded
 // (judged), so mutation sample and mutation except, which read only the
 // mutants an entry records, judge it as before; checkFile drops them.
-func checkParsed(ctx context.Context, store snapport.Store, f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception, tools mutants.Toolchain, fingerprints mutants.Fingerprints) (FileCheck, error) {
+func checkParsed(ctx context.Context, store snapport.Store, f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception) (FileCheck, error) {
 	key := project.FromRoot(path)
 	result := FileCheck{Rel: project.Rel(path), Key: key, Functions: []FunctionCheck{}}
-	snap, err := LoadSnapshotOf(ctx, store, key, tools)
+	snap, err := LoadSnapshotOf(ctx, store, key)
 	if err != nil {
 		return result, fmt.Errorf("%s: %w", SnapshotName(key), err)
 	}
@@ -160,31 +148,21 @@ func checkParsed(ctx context.Context, store snapport.Store, f *lang.File, path s
 	if tests != nil {
 		paths = tests(path)
 	}
-	var now map[string]string
-	if fingerprints != nil {
-		now, err = fingerprints.Tests(ctx, project.Root(), paths)
-	} else {
-		now, err = TestHashes(paths)
-	}
+	now, err := TestHashes(paths)
 	if err != nil {
 		return result, err
 	}
 	var changed *TestChange
 	var moduleTests map[string]string
 	if snap != nil && HasBroadOutcome(snap.Units) {
-		if fingerprints != nil {
-			moduleTests, err = fingerprints.Suite(ctx, path, project.Root())
-		} else {
-			moduleTests, err = SuiteTestHashes(ctx, path, project.Root())
-		}
-		if err != nil {
+		if moduleTests, err = SuiteTestHashes(ctx, path, project.Root()); err != nil {
 			return result, err
 		}
 	}
 	if snap != nil {
 		changed = snap.TestsChanged(now)
 	}
-	listed := listedChangedWithInputs(ctx, snap, project.Root(), support, fingerprints)
+	listed := ListedChanged(snap, project.Root(), support)
 	var entries []UnitResult
 	if snap != nil {
 		entries = snap.Units
