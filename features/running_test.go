@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -346,5 +347,81 @@ func TestFixturePeersNativeAdmission(t *testing.T) {
 	}
 	if err := peer.Close(ctx); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// fixtureWrites observes actual writes to the authenticated connection. It
+// forwards the real operation, rather than scripting expected protocol calls.
+type fixtureWrites struct {
+	net.Conn
+	writes atomic.Int32
+}
+
+func (c *fixtureWrites) Write(data []byte) (int, error) {
+	c.writes.Add(1)
+	return c.Conn.Write(data)
+}
+
+// A successfully joined owned helper can leave unread EOF at cleanup. Sending
+// STOP first is unnecessary and can turn that orderly exit into a TCP reset.
+func TestFixturePeerJoinedCleanupObservesEOFBeforeStop(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	pool, err := (binary{}).FixturePeers(ctx)
+	requireFixturePeerFactory(t, err)
+	cleaned := false
+	defer func() {
+		if !cleaned {
+			if err := pool.Close(ctx); err != nil {
+				t.Error(err)
+			}
+		}
+	}()
+	file := filepath.Join(t.TempDir(), "ready.json")
+	cmd := exec.Command(os.Args[0], "-test.run=^TestFixturePeerProcess$")
+	cmd.Env = append(os.Environ(), append(pool.Environment(), "T80_CAP_READY="+file)...)
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	if err = cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	joined := false
+	defer func() {
+		if !joined {
+			_ = cmd.Process.Kill()
+			_ = cmd.Wait()
+		}
+	}()
+	peer, err := pool.Capture(ctx, file)
+	if err != nil {
+		t.Fatalf("capture: %v; %s", err, output.String())
+	}
+	if err = cmd.Process.Kill(); err != nil {
+		t.Fatal(err)
+	}
+	_ = cmd.Wait()
+	joined = true
+	connection := peer.(*fixtureConnection)
+	observed := &fixtureWrites{Conn: connection.conn}
+	listener := pool.(*peerListener)
+	listener.mu.Lock()
+	delete(listener.connections, connection.conn)
+	connection.conn = observed
+	listener.connections[observed] = true
+	listener.mu.Unlock()
+	// The completion fact follows the actual helper Wait above. No EOF has been
+	// read and no cleanup command has been sent on this connection yet.
+	q := mutationExecution{peers: pool, owned: &ownershipExecution{returned: true, peers: []FixturePeer{peer}}}
+	err = q.cleanup(ctx)
+	cleaned = true
+	if writes := observed.writes.Load(); writes != 0 {
+		t.Fatalf("joined cleanup wrote %d late commands before consuming EOF; cleanup=%v", writes, err)
+	}
+	if err != nil {
+		t.Fatalf("joined cleanup: %v", err)
+	}
+	if !connection.ended {
+		t.Fatal("joined cleanup did not observe strict EOF")
 	}
 }
