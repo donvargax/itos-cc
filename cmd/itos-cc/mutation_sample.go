@@ -165,22 +165,27 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if in.adapters.Workers == nil {
 		return nil, errors.New("mutation Workers binding is missing")
 	}
-	opt := mutants.SampleOptions{
-		CheckOptions:  mutationCheckOptions(in, judge, tests, support, nil),
+	opt := mutate.Options{
 		WorkerFactory: in.adapters.Workers,
+		Toolchain:     in.adapters.Toolchain,
+		Fingerprints:  in.adapters.Fingerprints,
+		Store:         in.adapters.Store,
+		Support:       support,
+		Tests:         tests,
+		Judge:         judge,
 		Workers:       in.integer("workers"),
 		TimeoutFactor: in.float("timeout-factor"),
 		TestCommand:   in.str("test-command"),
 		AllTests:      in.set("all-tests"),
-		Progress:      mutate.RunProgress{Log: os.Stderr},
+		Log:           os.Stderr,
 	}
 	// An outcome the listed tests decided runs them again, after its own.
 	if cfg.Tests != nil && !opt.AllTests && opt.TestCommand == "" {
 		opt.Listed = &mutate.Listed{Root: project.Root(), Select: cfg.Tests.Select}
 	}
-	sampled, err := mutants.Sample(ctx, sources, count, result.Seed, opt)
+	sampled, err := mutate.Sample(ctx, sources, count, result.Seed, opt)
 	if err != nil {
-		return result, mutationRunError(err)
+		return result, err
 	}
 	if sampled.Cached == 0 {
 		fmt.Fprintln(os.Stderr, "itos-cc: no cached mutant to sample")

@@ -17,7 +17,6 @@ import (
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/snapshot"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -699,9 +698,6 @@ func importingTests(ctx context.Context, in *invocation) (func(path string) []st
 	if in.adapters.Reach == nil {
 		return nil, errors.New("mutation Reach binding is missing")
 	}
-	if in.adapters.Tree == nil {
-		return nil, errors.New("mutation source tree binding is missing")
-	}
 	sources, testFiles, failure := in.adapters.Tree.Discover(ctx, []string{root})
 	if failure != nil {
 		return nil, failure
@@ -1277,7 +1273,7 @@ func describeStop(s *mutate.Stop) string {
 // exceptionsElsewhere is each exception of itos-cc.yaml for a file that is
 // none of sources and that the command judges all the same, stale, and the
 // entries of those whose function moved to one of sources, as they read
-// there (mutants.Elsewhere). With no paths, no --changed, and no --since, it
+// there (mutate.Elsewhere). With no paths, no --changed, and no --since, it
 // judges every entry for a file under the working directory; with --since,
 // each whose file the range deleted, unless paths narrow it, or renamed to
 // one of sources, renamed giving the path each had at the ref; with paths
@@ -1287,15 +1283,13 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 	if len(exceptions) == 0 {
 		return nil, nil, nil
 	}
-	root, dir := project.Root(), in.adapters.Dir
-	key := func(path string) string { return snapshot.Key(root, sourcePath(dir, path)) }
 	var judge func(file string) bool
 	switch {
 	case in.set("since"):
 		removed := map[string]bool{}
 		for _, path := range sources {
 			if old := renamed(path); old != "" {
-				removed[key(old)] = true
+				removed[project.FromRoot(old)] = true
 			}
 		}
 		if len(in.args) == 0 {
@@ -1307,13 +1301,17 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 				return nil, nil, err
 			}
 			for _, path := range deleted {
-				removed[key(path)] = true
+				removed[project.FromRoot(path)] = true
 			}
 		}
 		judge = func(file string) bool { return removed[file] }
 	case len(in.args) == 0 && !in.set("changed"):
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, nil, err
+		}
 		judge = func(file string) bool {
-			rel, err := filepath.Rel(dir, sourcePath(root, file))
+			rel, err := filepath.Rel(wd, project.AtRoot(file))
 			return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 		}
 	default:
@@ -1323,7 +1321,7 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 	if err != nil {
 		return nil, nil, err
 	}
-	return mutants.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, mutationCheckOptions(in, nil, nil, nil, nil))
+	return mutate.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(project.AtRoot(file)) })
 }
 
 // reportElsewhere reports each exception of exceptionsElsewhere, each under
@@ -1966,11 +1964,4 @@ func staleSubject(rel string, e mutate.StaleException) map[string]any {
 		subject["new_file"] = project.Rel(project.AtRoot(e.NewFile))
 	}
 	return subject
-}
-
-func sourcePath(dir, path string) string {
-	if filepath.IsAbs(path) {
-		return filepath.Clean(path)
-	}
-	return filepath.Join(dir, path)
 }

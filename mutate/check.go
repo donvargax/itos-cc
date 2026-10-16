@@ -40,6 +40,13 @@ func CheckWithInputs(ctx context.Context, store snapport.Store, files []string, 
 	return result, runError(err)
 }
 
+// checkParsed is shared with legacy Sample/except/renew. It preserves the
+// domain's stale-but-judged outcomes rather than Check's presentation filter.
+func checkParsed(ctx context.Context, store snapport.Store, f *lang.File, path string, judge func(path, function, hash string) bool, tests func(path string) []string, support map[string]string, exceptions []config.Exception, tools mutants.Toolchain, fingerprints mutants.Fingerprints) (FileCheck, error) {
+	result, err := mutants.CheckParsed(ctx, f, path, legacyCheckOptions(store, judge, tests, support, exceptions, tools, fingerprints))
+	return result, runError(err)
+}
+
 func CheckGoCoverage(ctx context.Context, store snapport.Store, files []string, judge func(path, function, hash string) bool, current CoverageInputs) ([]CoverageCheck, error) {
 	return CheckCoverage(ctx, store, files, judge, map[string]CoverageInputs{"go": current})
 }

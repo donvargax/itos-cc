@@ -9,7 +9,6 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
@@ -163,8 +162,7 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	root := project.Root()
-	if exclude := (selection.Exclusion{Root: root, Globs: cfg.Exclude}); exclude.Excludes(absOrSame(path)) {
+	if exclude := (selection.Exclusion{Root: project.Root(), Globs: cfg.Exclude}); exclude.Excludes(absOrSame(path)) {
 		rel := project.Rel(absOrSame(path))
 		return result, cli.NewProblem(cli.CodeUsage, "exception.excluded",
 			fmt.Sprintf("%s:%d:%d is in %s, a source the exclude of %s leaves out, so none of its mutants is judged or excepted", rel, line, column, rel, config.File),
@@ -182,7 +180,7 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	e, err := mutants.Survivor(ctx, path, line, column, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
+	e, err := mutate.SurvivorWithInputs(ctx, in.adapters.Store, path, line, column, tests, support, in.adapters.Toolchain, in.adapters.Fingerprints)
 	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))
@@ -191,18 +189,10 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 			With("file", rel).With("line", line).With("column", column)
 	}
 	if err != nil {
-		return result, mutationRunError(err)
+		return result, err
 	}
 	e.Reason = reason
-	if in.adapters.Exceptions == nil {
-		return result, errors.New("mutation Exceptions binding is missing")
-	}
-	writer := in.adapters.Exceptions(root)
-	if writer == nil {
-		return result, errors.New("mutation Exceptions binding is missing")
-	}
-	replaced, failure := writer.Except(ctx, e)
-	err = exceptionUpdateError(failure)
+	replaced, err := config.Except(e)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
 		return result, configProblem(invalid, "Fix it, then except the site again.")
@@ -315,23 +305,19 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	root := project.Root()
-	all, err := project.Discover(ctx, []string{root})
+	all, err := project.Discover(ctx, []string{project.Root()})
 	if err != nil {
 		return result, err
 	}
-	renewed, left, err := mutants.Renew(ctx, cfg.Exceptions, all.Sources, mutationCheckOptions(in, nil, tests, support, nil), in.adapters.SourceStatus)
+	renewed, left, err := mutate.RenewWithInputs(ctx, in.adapters.Store, cfg.Exceptions, all.Sources, tests, support, in.adapters.Toolchain, in.adapters.Fingerprints)
 	if err != nil {
-		return result, mutationRunError(err)
+		return result, err
 	}
-	if in.adapters.Exceptions == nil {
-		return result, errors.New("mutation Exceptions binding is missing")
+	var writes []config.Renewal
+	for _, r := range renewed {
+		writes = append(writes, config.Renewal{Old: r.Old, New: r.New})
 	}
-	writer := in.adapters.Exceptions(root)
-	if writer == nil {
-		return result, errors.New("mutation Exceptions binding is missing")
-	}
-	err = exceptionUpdateError(writer.Renew(ctx, renewed))
+	err = config.Renew(writes)
 	var invalid *config.InvalidError
 	if errors.As(err, &invalid) {
 		return result, configProblem(invalid, "Fix it, then renew again.")
@@ -407,19 +393,4 @@ func notRenewedFix(why string) string {
 		return "Add a test that executes its line, run mutation run, then renew again, or remove its entry."
 	}
 	return "Review the mutant again: except it with 'itos-cc mutation except <file>:<line>:<column> --reason …' if it still survives and changes no behaviour, and remove the old entry from " + config.File + "."
-}
-
-// exceptionUpdateError preserves config.invalid versus original I/O/cancel causes.
-func exceptionUpdateError(failure mutants.ExceptionFailure) error {
-	switch f := failure.(type) {
-	case nil:
-		return nil
-	case mutants.ExceptionInvalid:
-		return &config.InvalidError{Reason: f.Reason, Key: f.Key}
-	case mutants.ExceptionFailed:
-		return f.Cause
-	case mutants.ExceptionCancelled:
-		return f.Cause
-	}
-	return failure
 }

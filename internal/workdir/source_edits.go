@@ -56,21 +56,3 @@ func (SourceEdits) RenameTarget(ctx context.Context, path string) (bool, mutants
 	_, err := os.Lstat(path)
 	return err == nil, nil
 }
-
-// Kind follows links and accepts any non-directory, as exception renewal did.
-func (SourceEdits) Kind(ctx context.Context, path string) (mutants.SourceKind, mutants.InputFailure) {
-	if ctx.Err() != nil {
-		return mutants.SourceMissing, mutants.InputCancelled{Cause: context.Cause(ctx)}
-	}
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return mutants.SourceMissing, nil
-	}
-	if err != nil {
-		return mutants.SourceMissing, mutants.InputFailed{Cause: err}
-	}
-	if info.IsDir() {
-		return mutants.SourceDirectory, nil
-	}
-	return mutants.SourceNonDirectory, nil
-}
