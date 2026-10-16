@@ -3095,7 +3095,7 @@ items:
     title: Extend coverage measurement for mutation per-test evidence and static inventory
     phase: 1
     owner: donvargax
-    status: doing
+    status: todo
     depends_on: [T-89]
     kind: task
   - id: T-91
