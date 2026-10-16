@@ -3185,6 +3185,16 @@
     observation error after the product joins; it is never suppressed, translated
     into Unwritable, or added to production's sealed measurement failure set.
     The supported measurement itself delegates unchanged to the root fake.
+    The first named binary control passed 19/20 cases; MUT123's final snapshot
+    assertion failed because its later clean selected baseline's owned helper
+    go build failed automatic VCS stamping with exit 128. The diagnostic preserved
+    successful aggregate and fallback collection. Both fixture build branches
+    use -buildvcs=false, retaining -cover and all actual product commands,
+    source/ID observations and baseline-failure handling. This removes irrelevant
+    fixture executable metadata rather than changing worker Git or CLI policy.
+    An independent disposable covdata oracle on the exact malformed T81 metadata
+    bytes observed exit 1 and unexpected EOF; the bad-metadata declaration records
+    that converter result while the binary still executes its real converter.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
