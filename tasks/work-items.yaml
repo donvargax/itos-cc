@@ -3110,7 +3110,7 @@ items:
     title: Read mutation history through a Git history port and an in-memory counterpart
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-90]
     kind: task
   - id: T-92

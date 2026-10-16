@@ -3312,10 +3312,6 @@
     operations, using real fixture text for line comparisons and rename
     matching; it never runs Git or returns expected-call scripts. No new
     dependency, generic Git executor or tree-export framework is introduced.
-  done_when:
-    - run: go test ./internal/githistory/... ./internal/mutants/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(77|78|238|239)$"
 - id: T-92
   type: refactor
   title: Move mutation run orchestration into the domain over its ports
