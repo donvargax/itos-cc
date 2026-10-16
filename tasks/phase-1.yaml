@@ -3471,6 +3471,28 @@
     materialization, preparation and trial orchestration remain at that boundary.
     Retained query callbacks normalize relative paths lexically against the
     already supplied absolute caller directory; they never consult process cwd.
+    The first published extraction 870d630, with proof-note head 996abd6,
+    failed exact workflow 38857472438 core job 116832061175 in the existing
+    internal-package lint gate. Its four valid source findings were an unchecked
+    WorkerPool.Close at run.go:613, unchecked helper fmt.Fprint at probe_test.go:21,
+    a 646-counted-line run.go above the 600-line policy, and a test helper with
+    context after testing.T at run_join_test.go:47. Restore source first in
+    f3bc63a, preserving proof notes, all prior contracts and the three stashes.
+    Passing focused evidence remains attempt-one partial evidence, not full CI:
+    thirty native-applicable cases passed 138 steps, four macOS cases omitted
+    26 steps on Linux before the final caller-context correction; affected
+    final-source cases 126 and 197 passed ten steps, and focused boundary,
+    Sample, held-join and publication guards passed. The historical 80.6 percent
+    domain profile predates that final correction. Remaining native jobs of the
+    failed workflow were still running at this repair record.
+    Before reapplication, split genuine domain planning and execution into
+    focused files in the same package to meet the existing length policy,
+    with one scheduler and no new abstraction. Put context first in the test
+    helper and callers, and check actual helper output errors. Handle the typed
+    WorkerPool.Close failure at the domain boundary while retaining a primary
+    run failure and cleanup/join ordering. Real worktrees.Close still returns
+    nil and historical scratch removal remains best effort; do not turn that
+    cleanup into a newly fatal command-line behavior or bypass the lint gate.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
