@@ -3444,6 +3444,17 @@
     access needed by Sample. Keep its draw, checks, grouping and read-only policy
     legacy until T-94, without a second scheduler or semantic DTO. Retain and
     exercise listed-scope, baseline-failure, read-only and seed neighbor guards.
+    During T-92 design and unpushed implementation, the independent spec-only
+    c5ef771 workflow 38850524767 failed macOS job 116810496982 in MUT184's
+    after-scenario cleanup: three authenticated helper sockets reset when late
+    cooperative STOP messages preceded observation of their already-joined exits.
+    That published source is byte-identical to the previously green T-91 source;
+    no T-92 product work was published or caused this failure. Preserve the raw
+    incident and all T-92 WIP in recovery stash 856243934ec3f0f4a332adec915ae0338de09f67
+    while a separate named test task repairs the existing fixture cleanup.
+    T-92 is temporarily given back only for that independent repair, with all
+    direction and implementation recovery preserved; resume after its verified
+    full-green published closure, with a supported retake-first transition.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
