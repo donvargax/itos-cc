@@ -186,12 +186,28 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	expectedNames := []string{"mutation run", "mutation list", "mutation check", "mutation sample", "mutation except"}
+	if len(expected) != len(expectedNames)+1 {
+		t.Fatalf("golden must hold the group and all five children, got %d pages", len(expected))
+	}
+	var actualNames []string
+	for _, node := range moved(parser)["mutation"].Children {
+		actualNames = append(actualNames, "mutation "+node.Name)
+	}
+	if !slices.Equal(actualNames, expectedNames) {
+		t.Fatalf("mutation child population/order changed: %q, want %q", actualNames, expectedNames)
+	}
+	visited := map[string]int{}
 	for _, node := range movedLeaves(parser) {
 		name := node.Path()
-		want, ok := expected[name]
-		if !ok {
+		if !strings.HasPrefix(name, "mutation ") {
 			continue
 		}
+		want, ok := expected[name]
+		if !ok {
+			t.Fatalf("unexpected mutation leaf %q", name)
+		}
+		visited[name]++
 		page, err := cli.PageOf(node)
 		if err != nil {
 			t.Fatal(err)
@@ -203,6 +219,14 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 		}
 		if got := page.String(); got != want {
 			t.Errorf("%s help changed\ngot:\n%s\nwant:\n%s", name, got, want)
+		}
+	}
+	for _, name := range expectedNames {
+		if _, ok := expected[name]; !ok {
+			t.Fatalf("missing golden page %q", name)
+		}
+		if visited[name] != 1 {
+			t.Fatalf("golden page %q visited %d times, want once", name, visited[name])
 		}
 	}
 	group, err := cli.GroupHelp(moved(parser)["mutation"])
