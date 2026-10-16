@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenarios of graph-snapshot-lookup: each builds a Go module in a git
@@ -15,7 +15,7 @@ import (
 
 // kotlinModule is the module, its git repository made, with init's entry as
 // a run that killed every mutant records it.
-func kotlinModule(t *testing.T) (module, []mutate.UnitResult) {
+func kotlinModule(t *testing.T) (module, []mutants.UnitResult) {
 	t.Helper()
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
@@ -66,11 +66,11 @@ func TestAMutationSnapshotNamingAnotherPathDoesNotMatch(t *testing.T) {
 	}
 
 	t.Chdir(m.root)
-	checks, err := mutate.Check(t.Context(), metricsdir.Store{}, []string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil, nil)
+	checks, err := checkGraphSnapshot(t.Context(), metricsdir.Store{}, []string{filepath.Join(m.root, "lang", "kotlin.go")}, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutate.Missing {
+	if len(checks) != 1 || len(checks[0].Functions) != 1 || checks[0].Functions[0].State != mutants.Missing {
 		t.Errorf("mutation check: %+v, want init missing", checks)
 	}
 }

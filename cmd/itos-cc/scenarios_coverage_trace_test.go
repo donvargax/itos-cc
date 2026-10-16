@@ -19,7 +19,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 )
 
@@ -84,7 +84,7 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 				continue
 			}
 			seen[key] = true
-			c := mutants.Command{Root: root, Dir: root, Suite: true}
+			c := mutation.Command{Root: root, Dir: root, Suite: true}
 			if req.Scope == port.OwnTests && !req.AllTests && req.Reach != nil {
 				var tests []string
 				for _, selected := range req.Sources {
@@ -99,8 +99,8 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 						return fmt.Errorf("coverage trace unknown selected test %s", path)
 					}
 				}
-				var failure mutants.InputFailure
-				c, failure = mutants.ObserveCommand(ctx, m.inputs, mutants.CommandRequest{Path: source, Tests: tests})
+				var failure mutation.InputFailure
+				c, failure = mutation.ObserveCommand(ctx, m.inputs, mutation.CommandRequest{Path: source, Tests: tests})
 				if failure != nil {
 					return failure
 				}
@@ -155,7 +155,7 @@ func (m *memory) admitCoverageTrace(root string, t features.Tests) error {
 					files = append(files, path)
 				}
 			}
-			facts, failure := m.inputs(features.Run{Dir: root}).Observe(m.t.Context(), mutants.CommandRequest{Path: source, Tests: files})
+			facts, failure := m.inputs(features.Run{Dir: root}).Observe(m.t.Context(), mutation.CommandRequest{Path: source, Tests: files})
 			if failure != nil {
 				return failure
 			}
@@ -169,7 +169,7 @@ func (m *memory) admitCoverageTrace(root string, t features.Tests) error {
 		}
 		return fmt.Errorf("trace inventory selector has no actual file/class: %s", key)
 	}
-	_, err := mutantstest.SelectedTests(mutants.Command{Shell: t.Command, Suite: true}, trace.Tests)
+	_, err := mutantstest.SelectedTests(mutation.Command{Shell: t.Command, Suite: true}, trace.Tests)
 	return err
 }
 
@@ -325,14 +325,14 @@ func (m *memoryCoverage) observeListed(tests *coverage.PerTest, command string) 
 			continue
 		}
 		seen[trace.File] = true
-		c := mutants.Command{Root: tests.Root, Dir: tests.Root, Shell: command, Suite: command == tests.All}
+		c := mutation.Command{Root: tests.Root, Dir: tests.Root, Shell: command, Suite: command == tests.All}
 		if err := m.emit(tests.Root, c, trace); err != nil {
 			return err
 		}
 	}
 	return nil
 }
-func (m *memoryCoverage) emit(root string, c mutants.Command, trace *features.TestTrace) error {
+func (m *memoryCoverage) emit(root string, c mutation.Command, trace *features.TestTrace) error {
 	names, err := mutantstest.SelectedTests(c, trace.Tests)
 	if err != nil {
 		return fmt.Errorf("coverage trace: %w", err)

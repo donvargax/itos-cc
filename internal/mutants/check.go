@@ -7,9 +7,9 @@ import (
 
 // States of a function's cached results against its source now.
 const (
-	Fresh   = "fresh"   // the snapshot records the function as it is
-	Stale   = "stale"   // the function, or the tests that import its file, changed since the snapshot recorded it, or it has a site the snapshot never recorded
-	Missing = "missing" // the snapshot does not record the function
+	SnapshotFresh = "fresh"   // the snapshot records the function as it is
+	Stale         = "stale"   // the function, or the tests that import its file, changed since the snapshot recorded it, or it has a site the snapshot never recorded
+	Missing       = "missing" // the snapshot does not record the function
 )
 
 // CoverageCheck is one current function's independent coverage verdict.
@@ -32,7 +32,7 @@ type GoCoverageCheck = CoverageCheck
 // Freshness is how a function's cached results hold against the function
 // as it is now, as mutation check calls them.
 type Freshness struct {
-	State string // Fresh, Stale, or Missing
+	State string // SnapshotFresh, Stale, or Missing
 	// Tests is how the tests that import the file changed since the
 	// snapshot, when that alone makes the function Stale; nil otherwise.
 	Tests *TestChange
@@ -86,7 +86,7 @@ func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *List
 	if u := Unrecorded(entry.Mutants, sites); len(u) > 0 {
 		return Freshness{State: Stale, Unrecorded: u}
 	}
-	return Freshness{State: Fresh}
+	return Freshness{State: SnapshotFresh}
 }
 
 // unrecorded is each of sites, in line order, that recorded has no mutant
@@ -188,12 +188,12 @@ type FunctionCheck struct {
 	Freshness
 	// Entry is the snapshot's entry for the function, zero when Missing.
 	Entry UnitResult
-	// Mutants is what Entry records when Fresh, in site order, each at its
+	// Mutants is what Entry records when fresh, in site order, each at its
 	// site's line and column now, a survivor itos-cc.yaml excepts with its
 	// reason; nil otherwise.
 	Mutants []Mutant
 	// LeftOut is how many mutants the function's entry records at sites it
-	// no longer holds, which OnSites left out of Entry, when Fresh; 0
+	// no longer holds, which OnSites left out of Entry, when fresh; 0
 	// otherwise. The next mutation run drops them from the entry.
 	LeftOut int
 	Unit    int // the function's index in its file's units
@@ -208,7 +208,7 @@ func NeedsMutationCoverage(checks []FileCheck, mutateAll bool) bool {
 	}
 	for _, file := range checks {
 		for _, function := range file.Functions {
-			if function.State != Fresh {
+			if function.State != SnapshotFresh {
 				return true
 			}
 			for _, mutant := range function.Mutants {
@@ -222,11 +222,11 @@ func NeedsMutationCoverage(checks []FileCheck, mutateAll bool) bool {
 }
 
 // judged is true while Entry's mutants hold for the sites it records: the
-// function is Fresh, or Stale only for sites Entry never recorded. Mutation
+// function is fresh, or Stale only for sites Entry never recorded. Mutation
 // sample and mutation except read only those mutants, so they judge such a
 // function as they did before check called it stale.
 func (c FunctionCheck) Judged() bool {
-	return c.State == Fresh || len(c.Unrecorded) > 0
+	return c.State == SnapshotFresh || len(c.Unrecorded) > 0
 }
 
 // CoverageFreshness judges an admitted function's evidence against current inputs.

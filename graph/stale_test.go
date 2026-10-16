@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -43,22 +44,22 @@ func (m module) write(rel, text string) {
 
 // recorded is each function of the source file rel as a run that killed
 // every mutant records it: its hash, and a mutant for each of its sites.
-func (m module) recorded(rel string) []mutate.UnitResult {
+func (m module) recorded(rel string) []mutants.UnitResult {
 	m.t.Helper()
 	f, err := project.ParseFile(m.t.Context(), filepath.Join(m.root, rel))
 	if err != nil {
 		m.t.Fatal(err)
 	}
 	defer f.Close()
-	sites := mutate.Sites(f)
-	var out []mutate.UnitResult
+	sites := mutants.Sites(f)
+	var out []mutants.UnitResult
 	for i, u := range f.Units {
-		e := mutate.UnitResult{Namespace: u.Namespace, Name: u.Name, Hash: mutate.UnitHash(f, u),
-			StartLine: u.StartLine, EndLine: u.EndLine, Mutants: []mutate.Mutant{}}
+		e := mutants.UnitResult{Namespace: u.Namespace, Name: u.Name, Hash: mutants.UnitHash(f, u),
+			StartLine: u.StartLine, EndLine: u.EndLine, Mutants: []mutants.Mutant{}}
 		for _, s := range sites {
 			if s.Unit == i {
-				e.Mutants = append(e.Mutants, mutate.Mutant{Line: s.Line, Column: s.Column, Offset: s.Offset,
-					Original: s.Original, Replacement: s.Replacement, Outcome: mutate.Killed})
+				e.Mutants = append(e.Mutants, mutants.Mutant{Line: s.Line, Column: s.Column, Offset: s.Offset,
+					Original: s.Original, Replacement: s.Replacement, Outcome: mutants.Killed})
 			}
 		}
 		e.Killed, e.Sites = len(e.Mutants), len(e.Mutants)
@@ -74,7 +75,7 @@ func (m module) tests(rel ...string) map[string]string {
 	for _, r := range rel {
 		paths = append(paths, filepath.Join(m.root, r))
 	}
-	h, err := mutate.TestHashesUnder(m.root, paths)
+	h, err := testinputs.TestHashes(m.root, paths)
 	if err != nil {
 		m.t.Fatal(err)
 	}
@@ -83,9 +84,9 @@ func (m module) tests(rel ...string) map[string]string {
 
 // snapshot writes the snapshot of the source file rel, recording tests and
 // units.
-func (m module) snapshot(rel string, tests map[string]string, units []mutate.UnitResult) {
+func (m module) snapshot(rel string, tests map[string]string, units []mutants.UnitResult) {
 	m.t.Helper()
-	data, err := json.Marshal(mutate.SnapshotJSON(mutate.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units}))
+	data, err := json.Marshal(metricsdir.SnapshotJSON(mutants.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units}))
 	if err != nil {
 		m.t.Fatal(err)
 	}
@@ -95,7 +96,7 @@ func (m module) snapshot(rel string, tests map[string]string, units []mutate.Uni
 // build builds the module's graph afresh.
 func (m module) build() *Graph {
 	m.t.Helper()
-	b, err := NewBuilder([]string{m.root})
+	b, err := NewBuilder([]string{m.root}, realMutationInputs())
 	if err != nil {
 		m.t.Fatal(err)
 	}
@@ -131,7 +132,7 @@ const posTest = "package p\n\nimport \"testing\"\n\nfunc TestPos(t *testing.T) {
 // posModuleRecorded is a module whose a.go holds Pos and a_test.go tests
 // it, with the snapshot a run that killed every mutant of Pos writes, less
 // what edit takes from Pos's entry.
-func posModuleRecorded(t *testing.T, edit func(*mutate.UnitResult)) module {
+func posModuleRecorded(t *testing.T, edit func(*mutants.UnitResult)) module {
 	m := newModule(t)
 	m.write("a.go", "package p\n\nfunc Pos(i int) bool { return i > 0 }\n")
 	m.write("a_test.go", posTest)
@@ -144,9 +145,9 @@ func posModuleRecorded(t *testing.T, edit func(*mutate.UnitResult)) module {
 // @ID-GRAPH-34
 func TestMutationResultsWhoseTestsChangedAreStale(t *testing.T) {
 	// The snapshot records Pos as it is and a_test.go as it was written.
-	m := posModuleRecorded(t, func(*mutate.UnitResult) {})
+	m := posModuleRecorded(t, func(*mutants.UnitResult) {})
 
-	b, err := NewBuilder([]string{m.root})
+	b, err := NewBuilder([]string{m.root}, realMutationInputs())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +223,7 @@ func TestTheGraphAndMutationCheckAgreeOnFunctionsSharingAName(t *testing.T) {
 
 // @ID-GRAPH-36
 func TestAFunctionWhoseEntryLacksOneOfItsSitesIsStale(t *testing.T) {
-	m := posModuleRecorded(t, func(e *mutate.UnitResult) {
+	m := posModuleRecorded(t, func(e *mutants.UnitResult) {
 		if len(e.Mutants) < 2 {
 			t.Fatalf("Pos has %d sites, want at least 2", len(e.Mutants))
 		}
@@ -245,7 +246,7 @@ func TestAFunctionWhoseEntryLacksOneOfItsSitesIsStale(t *testing.T) {
 func TestAnEntryKeptMarkedStaleIsStale(t *testing.T) {
 	// A run with --since that did not judge Pos kept its entry, marked, and
 	// recorded the tests as they are.
-	m := posModuleRecorded(t, func(e *mutate.UnitResult) { e.Stale = true })
+	m := posModuleRecorded(t, func(e *mutants.UnitResult) { e.Stale = true })
 	if _, u := posModule(t, m.build()); !u.Mutated || !u.Stale {
 		t.Errorf("Pos whose entry is marked stale: %+v, want its results, stale", u)
 	}
@@ -282,7 +283,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	checks, err := mutate.Check(t.Context(), metricsdir.Store{}, files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
+	checks, err := checkGraphSnapshot(t.Context(), metricsdir.Store{}, files.Sources, nil, func(path string) []string { return importing[path] }, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,8 +294,8 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 		}
 	}
 	// Each reason check knows, as check calls it.
-	want := map[string]string{"Fresh": mutate.Fresh, "Changed": mutate.Stale, "Unrecorded": mutate.Stale, "Marked": mutate.Stale,
-		"Missing": mutate.Missing, "TestsChanged": mutate.Stale, "TestsUnrecorded": mutate.Stale, "NoSnapshot": mutate.Missing}
+	want := map[string]string{"Fresh": mutants.SnapshotFresh, "Changed": mutants.Stale, "Unrecorded": mutants.Stale, "Marked": mutants.Stale,
+		"Missing": mutants.Missing, "TestsChanged": mutants.Stale, "TestsUnrecorded": mutants.Stale, "NoSnapshot": mutants.Missing}
 	for name, w := range want {
 		if state[name] != w {
 			t.Fatalf("mutation check calls %s %q, want %q: %v", name, state[name], w, state)
@@ -303,10 +304,10 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 
 	for name, s := range state {
 		_, u := unit(t, g, name)
-		if u.Stale != (s == mutate.Stale) {
+		if u.Stale != (s == mutants.Stale) {
 			t.Errorf("%s: graph stale=%v, check calls it %s", name, u.Stale, s)
 		}
-		if u.Mutated != (s != mutate.Missing) {
+		if u.Mutated != (s != mutants.Missing) {
 			t.Errorf("%s: graph has results=%v, check calls it %s", name, u.Mutated, s)
 		}
 	}

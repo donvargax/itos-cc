@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/snapshot"
+	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -23,14 +25,14 @@ type orphanEntry struct {
 }
 
 // orphansCovered are the snapshots whose source file is gone, or there but
-// excluded by itos-cc.yaml (mutate.Orphans), that the paths of mutation run
+// excluded by itos-cc.yaml (mutation.Orphans), that the paths of mutation run
 // or check cover: those under a directory given, or whose path from the
 // working directory holds a fragment given, as a file's must to be chosen.
 // With no paths, whatever --changed or --since chooses, they cover the
 // working directory, the whole project when run at its root, as a run
 // without paths discovers its files there. The snapshots are those of the
 // store the invocation's adapters hold, read under ctx.
-func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error) {
+func orphansCovered(ctx context.Context, in *invocation) ([]mutation.Orphan, error) {
 	exclude, err := exclusion()
 	if err != nil {
 		return nil, err
@@ -56,7 +58,7 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 	if len(in.args) == 0 {
 		dirs = []string{wd}
 	}
-	orphans, err := mutants.Orphans(ctx, in.adapters.Catalog, in.adapters.Presence, func(path string) bool {
+	orphans, err := mutation.Orphans(ctx, in.adapters.Catalog, in.adapters.Presence, func(path string) bool {
 		for _, dir := range dirs {
 			if beneath(dir, path) {
 				return true
@@ -91,8 +93,8 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 // orphan one, and so does an excluded source, which is there. Outside a
 // git repository, or when git fails, no orphan can be judged, and none is:
 // each is kept, never named nor removed.
-func notRenamed(ctx context.Context, in *invocation, orphans []mutate.Orphan) ([]mutate.Orphan, error) {
-	return mutants.NotRenamed(ctx, orphans, in.adapters.History, in.adapters.Presence, in.str("since"), in.set("since"))
+func notRenamed(ctx context.Context, in *invocation, orphans []mutation.Orphan) ([]mutation.Orphan, error) {
+	return mutation.NotRenamed(ctx, orphans, in.adapters.History, in.adapters.Presence, in.str("since"), in.set("since"))
 }
 
 // beneath reports whether path is inside dir.
@@ -102,7 +104,7 @@ func beneath(dir, path string) bool {
 }
 
 // orphansJSON is each orphan as the --json output lists it.
-func orphansJSON(orphans []mutate.Orphan) []orphanEntry {
+func orphansJSON(orphans []mutation.Orphan) []orphanEntry {
 	var out []orphanEntry
 	for _, o := range orphans {
 		out = append(out, orphanEntry{File: project.Rel(o.Path), Snapshot: o.Snapshot, Why: o.Why})
@@ -129,10 +131,27 @@ func removeOrphans(ctx context.Context, in *invocation) ([]orphanEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := mutate.RemoveOrphans(ctx, in.adapters.Store, orphans); err != nil {
+	if err := removeOrphanSnapshots(ctx, in.adapters.Store, orphans); err != nil {
 		return nil, err
 	}
 	out := orphansJSON(orphans)
 	printOrphans(in, out, "was an orphan, and is removed")
 	return out, nil
+}
+
+// RemoveOrphans removes the snapshot of each orphan from store, and each
+// folder under .metrics/mutate that removing them left empty (store's
+// Remove). It removes nothing outside .metrics/mutate, whatever an Orphan
+// names.
+func removeOrphanSnapshots(ctx context.Context, store snapport.Store, orphans []mutation.Orphan) error {
+	for _, o := range orphans {
+		name, ok := strings.CutPrefix(o.Snapshot, snapshot.Folder+"/mutate/")
+		if !ok || !filepath.IsLocal(filepath.FromSlash(name)) {
+			continue
+		}
+		if failure := store.Remove(ctx, path.Join("mutate", name)); failure != nil {
+			return failure
+		}
+	}
+	return nil
 }

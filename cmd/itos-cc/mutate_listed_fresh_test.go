@@ -183,7 +183,7 @@ func TestTheGraphAgrees(t *testing.T) {
 	writeFile(t, "a.feature", "Feature: a, edited\n")
 	root := wd(t)
 
-	b, err := graph.NewBuilder([]string{root})
+	b, err := graph.NewBuilder([]string{root}, graphMutationFixtureInputs())
 	if err != nil {
 		t.Fatal(err)
 	}

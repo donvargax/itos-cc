@@ -13,11 +13,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenarios of "Rule: Fresh counted mutation judges a bounded committed
-// selection without claiming full proof" in features/mutate.feature that the
+// selection without claiming full proof" in features/mutation.feature that the
 // mutation-counted-run slice holds. Each reads the --json object as raw maps,
 // so the steps compile against a product that has no counted mode yet. Local
 // trials stay sparse: most fixtures have no test reaching the selected site,
@@ -105,16 +105,16 @@ func gitOut(t *testing.T, dir string, args ...string) string {
 
 // seedSelecting finds, statically and without running a test, a seed whose
 // count-site selection want accepts.
-func seedSelecting(t *testing.T, repo string, count int, want func([]mutate.FreshCandidate) bool) string {
+func seedSelecting(t *testing.T, repo string, count int, want func([]mutation.FreshCandidate) bool) string {
 	t.Helper()
 	for i := 0; i < 500; i++ {
 		seed := fmt.Sprintf("seed-%d", i)
-		plan, err := mutate.PlanFresh(t.Context(), repo, nil, "", count, seed)
+		plan, err := planFreshForTest(t.Context(), repo, nil, "", count, seed)
 		if err != nil {
 			t.Fatal(err)
 		}
 		ok := want(plan.Selected)
-		if err := plan.Close(); err != nil {
+		if err := releaseFreshPlan(t.Context(), plan); err != nil {
 			t.Fatal(err)
 		}
 		if ok {
@@ -125,8 +125,8 @@ func seedSelecting(t *testing.T, repo string, count int, want func([]mutate.Fres
 	return ""
 }
 
-func inFunction(function string) func(mutate.FreshCandidate) bool {
-	return func(c mutate.FreshCandidate) bool { return strings.HasSuffix(c.Function, "#"+function) }
+func inFunction(function string) func(mutation.FreshCandidate) bool {
+	return func(c mutation.FreshCandidate) bool { return strings.HasSuffix(c.Function, "#"+function) }
 }
 
 // tree is every regular file under dir but .git, with its bytes.
@@ -333,7 +333,7 @@ func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
 
 	// Static checks, no trial: every eligible site is fully identified, and
 	// another seed can be checked to draw another site.
-	plan, err := mutate.PlanFresh(t.Context(), dir, nil, "", 1, "fixed")
+	plan, err := planFreshForTest(t.Context(), dir, nil, "", 1, "fixed")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,11 +342,11 @@ func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
 		identities[c.Identity] = true
 	}
 	fixed := plan.Selected[0].Identity
-	plan.Close()
+	releaseFreshPlan(t.Context(), plan)
 	if len(identities) != 5 {
 		t.Fatalf("eligible identities %v, want 5 distinct sites across same-name units", identities)
 	}
-	seedSelecting(t, dir, 1, func(s []mutate.FreshCandidate) bool { return s[0].Identity != fixed })
+	seedSelecting(t, dir, 1, func(s []mutation.FreshCandidate) bool { return s[0].Identity != fixed })
 
 	first := countedRun(t, "--count", "1", "--seed", "fixed").counted(t)
 	reordered := countedRun(t, "--count", "1", "--seed", "fixed", "b", "a").counted(t)
@@ -356,8 +356,8 @@ func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
 	if first.Selected[0]["identity"] != fixed || reordered.Selected[0]["identity"] != fixed {
 		t.Errorf("selected %v and %v, want the planned %s whatever the path order", first.Selected[0]["identity"], reordered.Selected[0]["identity"], fixed)
 	}
-	if first.Sampling["seed"] != "fixed" || first.Sampling["algorithm"] != mutate.FreshPlanVersion {
-		t.Errorf("sampling = %+v, want seed fixed and algorithm %s", first.Sampling, mutate.FreshPlanVersion)
+	if first.Sampling["seed"] != "fixed" || first.Sampling["algorithm"] != mutation.FreshPlanVersion {
+		t.Errorf("sampling = %+v, want seed fixed and algorithm %s", first.Sampling, mutation.FreshPlanVersion)
 	}
 	if first.number("executed") != 0 {
 		t.Errorf("untested selection executed %d trials, want 0", first.number("executed"))
@@ -393,7 +393,7 @@ func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing
 	writeFile(t, filepath.Join(dir, "a", "a.go"), "package a\n\nfunc Less(x, y int) bool { return x < y }\n\nfunc Twice(x int) int { return x * 2 }\n")
 	gitIn(t, dir, "add", "a/a.go")
 	gitIn(t, dir, "commit", "-qm", "twice")
-	seed := seedSelecting(t, dir, 1, func(s []mutate.FreshCandidate) bool { return inFunction("Less")(s[0]) })
+	seed := seedSelecting(t, dir, 1, func(s []mutation.FreshCandidate) bool { return inFunction("Less")(s[0]) })
 
 	o := countedRun(t, "--count", "1", "--seed", seed, "--workers", "4")
 	c := o.counted(t)
@@ -524,7 +524,7 @@ func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t 
 		"main.go": "package main\n\nfunc Compare(n int) bool { return n > 5 }\n\nfunc Half(i int) bool { return i > 2 }\n\nfunc Third(i int) int { return i / 3 }\n\nfunc main() {}\n",
 	}))
 	head := gitOut(t, dir, "rev-parse", "HEAD")
-	seed := seedSelecting(t, dir, 2, func(s []mutate.FreshCandidate) bool {
+	seed := seedSelecting(t, dir, 2, func(s []mutation.FreshCandidate) bool {
 		return slices.ContainsFunc(s, inFunction("Compare")) && !slices.ContainsFunc(s, inFunction("Third"))
 	})
 	o := countedRun(t, "--count", "2", "--seed", seed, "--workers", "1")
@@ -538,7 +538,7 @@ func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t 
 			t.Errorf("sampling.%s = %v, want %d", key, c.Sampling[key], n)
 		}
 	}
-	if c.Sampling["commit"] != head || c.Sampling["seed"] != seed || c.Sampling["algorithm"] != mutate.FreshPlanVersion {
+	if c.Sampling["commit"] != head || c.Sampling["seed"] != seed || c.Sampling["algorithm"] != mutation.FreshPlanVersion {
 		t.Errorf("provenance = %+v", c.Sampling)
 	}
 	if c.Sampling["assurance"] != "sampled" || c.Sampling["completion"] != "completed" {

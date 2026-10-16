@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -52,7 +52,7 @@ type Unit struct {
 	Duplicates int      `json:"duplicates"`
 
 	hash  string
-	sites []mutate.Site // its mutation sites, which a fresh entry records
+	sites []mutants.Site // its mutation sites, which a fresh entry records
 }
 
 // Edge is a dependency between modules. An import edge counts From's import

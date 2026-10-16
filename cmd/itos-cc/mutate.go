@@ -16,9 +16,9 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/snapshot"
-	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -633,8 +633,8 @@ type mutateSite struct {
 // which lines of a source the range added or changed, as HEAD has them
 // (project.ChangedFunctions.Lines). judge, renamed and lines are nil
 // without --since.
-func mutationSelection(ctx context.Context, in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutate.LineScope, err error) {
-	var since map[string]mutants.ChangedFunctions
+func mutationSelection(ctx context.Context, in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutation.LineScope, err error) {
+	var since map[string]mutation.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
 		if since, moves, err = changedSince(ctx, in); err != nil {
@@ -683,7 +683,7 @@ func changedLinesOnly(in *invocation) (bool, error) {
 // path fails: never without --fail-uncovered (nil), and with it on every
 // line, or with --fail-uncovered=lines on a line the --since range added or
 // changed (scope).
-func uncoveredFails(failUncovered bool, scope mutate.LineScope, path string) func(line int) bool {
+func uncoveredFails(failUncovered bool, scope mutation.LineScope, path string) func(line int) bool {
 	if !failUncovered {
 		return nil
 	}
@@ -749,7 +749,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	// With --fail-uncovered=lines, strict coverage and uncovered mutants
 	// are judged on the lines the range changed alone; evidence is still
 	// measured and recorded for whole functions.
-	var scope mutate.LineScope
+	var scope mutation.LineScope
 	if linesOnly {
 		scope = lines
 	}
@@ -764,7 +764,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		return result, err
 	}
 	// Strict coverage proves the functions of each strict language of the
-	// selection (mutate.StrictCoverage) executed.
+	// selection (mutation.StrictCoverage) executed.
 	var strictLanguages []string
 	if in.set("fail-uncovered") {
 		strictLanguages = strictLanguagesOf(sources)
@@ -814,13 +814,12 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if !in.set("no-coverage") && in.adapters.MutationCoverage == nil {
 		return result, errors.New("mutation coverage capability is not bound")
 	}
-	opt := mutate.Options{
-		Snapshots: in.adapters.Snapshots, Source: in.adapters.SourceEdits, Tree: in.adapters.Tree, Surroundings: in.adapters.Surroundings,
+	opt := mutation.Options{
+		Store: in.adapters.Snapshots, Source: in.adapters.SourceEdits, Tree: in.adapters.Tree, Surroundings: in.adapters.Surroundings,
 		Root: project.Root(), Dir: in.adapters.Dir,
 		WorkerFactory: in.adapters.Workers,
 		Toolchain:     in.adapters.Toolchain,
 		Fingerprints:  in.adapters.Fingerprints,
-		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,
 		Workers:       in.integer("workers"),
@@ -829,7 +828,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		TestCommand:   in.str("test-command"),
 		AllTests:      in.set("all-tests"),
 		Annotate:      !in.set("no-annotate"),
-		Log:           os.Stderr,
+		Progress:      RunProgress{Log: os.Stderr},
 		Judge:         judge,
 		Renamed:       renamed,
 		// An entry whose function moved to another file still excepts
@@ -838,10 +837,10 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	suite := listedConfig(in, cfg)
 	if suite != nil {
-		opt.Listed = &mutate.Listed{Root: project.Root(), List: suite.List, All: suite.All, Select: suite.Select}
+		opt.Listed = &mutation.Listed{Root: project.Root(), List: suite.List, All: suite.All, Select: suite.Select}
 	}
 	if strict {
-		var cached []mutate.CoverageCheck
+		var cached []mutation.CoverageCheck
 		mutationChecks, err := checkMutations(ctx, in, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
 		if err != nil {
 			return result, err
@@ -861,7 +860,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		if unsupported {
 			return result, nil
 		}
-		canReuse := !mutate.NeedsMutationCoverage(mutationChecks, in.set("mutate-all"))
+		canReuse := !mutation.NeedsMutationCoverage(mutationChecks, in.set("mutate-all"))
 		allFresh := canReuse
 		for _, check := range cached {
 			if check.State != "fresh" {
@@ -869,7 +868,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 		if allFresh {
-			byFunction := map[string]*mutate.CoverageEvidence{}
+			byFunction := map[string]*mutation.CoverageEvidence{}
 			byFile := map[string][]coverage.GoBlock{}
 			byLines := map[string]map[string][]coverage.Line{}
 			for _, check := range cached {
@@ -888,7 +887,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					})
 				}
 			}
-			opt.CachedCoverage = func(path, function, _ string) *mutate.CoverageEvidence {
+			opt.CachedCoverage = func(path, function, _ string) *mutation.CoverageEvidence {
 				return byFunction[project.Rel(path)+"\x00"+function]
 			}
 			var report *coverage.Report
@@ -914,8 +913,8 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 			for i, source := range sources {
 				spec := lang.Detect(source)
-				if spec != nil && (!mutate.StrictCoverage(spec.Name) ||
-					i < len(mutationChecks) && mutate.NeedsMutationCoverage(mutationChecks[i:i+1], in.set("mutate-all"))) {
+				if spec != nil && (!mutation.StrictCoverage(spec.Name) ||
+					i < len(mutationChecks) && mutation.NeedsMutationCoverage(mutationChecks[i:i+1], in.set("mutate-all"))) {
 					measure[spec.Name] = true
 				}
 			}
@@ -925,14 +924,14 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					measured = append(measured, source)
 				}
 			}
-			kept := map[string]*mutate.CoverageEvidence{}
+			kept := map[string]*mutation.CoverageEvidence{}
 			for _, check := range cached {
 				if !measure[check.Language] {
 					kept[check.File+"\x00"+check.Function] = check.Evidence
 				}
 			}
 			if len(kept) > 0 {
-				opt.CachedCoverage = func(path, function, _ string) *mutate.CoverageEvidence {
+				opt.CachedCoverage = func(path, function, _ string) *mutation.CoverageEvidence {
 					return kept[project.Rel(path)+"\x00"+function]
 				}
 			}
@@ -981,7 +980,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 	} else if !in.set("no-coverage") {
-		opt.Measurement = &mutants.RunMeasurement{Measurer: in.adapters.MutationCoverage, Lister: in.adapters.TestLister,
+		opt.Measurement = &mutation.RunMeasurement{Measurer: in.adapters.MutationCoverage, Lister: in.adapters.TestLister,
 			Request: covport.Request{Reports: in.strs("coverage-report"), Command: in.str("coverage-command"), Existing: in.set("use-existing-coverage"), AllTests: in.set("all-tests"), Scope: covport.OwnTests, Reach: reach}}
 
 		if in.set("fail-uncovered") && !rawCoverage(in) {
@@ -992,8 +991,8 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			if err != nil {
 				return result, err
 			}
-			if mutate.NeedsMutationCoverage(checks, in.set("mutate-all")) {
-				report, err := mutate.MeasureCoverage(ctx, opt, sources, true)
+			if mutation.NeedsMutationCoverage(checks, in.set("mutate-all")) {
+				report, err := opt.Measure(ctx, sources, true)
 				if err != nil {
 					return result, mutationRunError(err)
 				}
@@ -1013,19 +1012,19 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	// Uncovered mutants never run, so without it a function no test
 	// executes passes.
 	failUncovered := in.set("fail-uncovered")
-	var results []mutate.FileResult
-	var stop *mutate.Stop
+	var results []mutation.FileResult
+	var stop *mutation.Stop
 	if failFast {
-		ff := mutate.FailFast{FailUncovered: failUncovered, Lines: scope}
+		ff := mutation.FailFast{FailUncovered: failUncovered, Lines: scope}
 		if len(elsewhere) > 0 {
 			// Known before anything runs: an entry of a file the run does
 			// not select that no longer holds.
 			e := elsewhere[0]
-			ff.Known = &mutate.Stop{Rule: "mutation.exception-stale", File: project.Rel(project.AtRoot(e.File)), Exception: &e}
+			ff.Known = &mutation.Stop{Rule: "mutation.exception-stale", File: project.Rel(project.AtRoot(e.File)), Exception: &e}
 		}
-		results, stop, err = mutate.RunFailFast(ctx, sources, opt, ff)
+		results, stop, err = mutation.RunFailFast(ctx, sources, opt, ff)
 	} else {
-		results, err = mutate.Run(ctx, sources, opt)
+		results, err = mutation.Run(ctx, sources, opt)
 	}
 	if err != nil {
 		return result, mutationRunError(err)
@@ -1069,7 +1068,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 			reportFailedSelections(in, r.FailedSelections, reported, "mutation run")
 			for _, m := range r.Mutants {
-				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
+				reportFailed(in, r.Rel, m.Function, []mutation.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
 					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 			reportStaleExceptions(in, r.Rel, r.StaleExceptions)
@@ -1104,7 +1103,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		for _, id := range r.Judged {
 			judged[id] = true
 		}
-		var units []mutate.UnitResult
+		var units []mutation.UnitResult
 		for _, u := range r.Snapshot.Units {
 			if r.Judged == nil || judged[u.Namespace+"#"+u.Name] {
 				units = append(units, u)
@@ -1147,7 +1146,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		}
 		if r.Incomplete {
 			for _, m := range r.Mutants {
-				reportFailed(in, r.Rel, m.Function, []mutate.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
+				reportFailed(in, r.Rel, m.Function, []mutation.Mutant{{Line: m.Line, Column: m.Column, Original: m.Original,
 					Replacement: m.Replacement, Outcome: m.Outcome, Excepted: m.Excepted}}, uncoveredFails(failUncovered, scope, r.Rel))
 			}
 		}
@@ -1172,15 +1171,15 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 
 // snapshotKept says, in plain output, what became of the snapshot of a file
 // a fail-fast stop left incomplete.
-func snapshotKept(r mutate.FileResult) string {
+func snapshotKept(r mutation.FileResult) string {
 	if r.Preserved {
 		return "snapshot keeps what was judged, source not annotated"
 	}
 	return "snapshot not updated"
 }
 
-// jsonMutants is the --json form of mutants.
-func jsonMutants(mutants []mutate.MutantResult) []mutateMutant {
+// jsonMutants is the --json form of mutation.
+func jsonMutants(mutants []mutation.MutantResult) []mutateMutant {
 	out := []mutateMutant{}
 	for _, m := range mutants {
 		out = append(out, mutateMutant{Line: m.Line, Column: m.Column, Function: m.Function,
@@ -1192,33 +1191,33 @@ func jsonMutants(mutants []mutate.MutantResult) []mutateMutant {
 
 // countMutants counts the outcomes of mutants in f, as a file's units count
 // them: a timed-out mutant is killed, and an excepted survivor excepted.
-func countMutants(f *mutateFile, mutants []mutate.MutantResult) {
+func countMutants(f *mutateFile, mutants []mutation.MutantResult) {
 	for _, m := range mutants {
 		switch {
-		case m.Outcome == mutate.Killed || m.Outcome == mutate.Timeout:
+		case m.Outcome == mutation.Killed || m.Outcome == mutation.Timeout:
 			f.Killed++
-		case m.Outcome == mutate.Survived && m.Excepted != "":
+		case m.Outcome == mutation.Survived && m.Excepted != "":
 			f.Excepted++
-		case m.Outcome == mutate.Survived:
+		case m.Outcome == mutation.Survived:
 			f.Survived++
-		case m.Outcome == mutate.Uncovered:
+		case m.Outcome == mutation.Uncovered:
 			f.Uncovered++
 		}
 	}
 }
 
 // workOf counts mutants by their fail-fast state.
-func workOf(mutants []mutate.MutantResult) *mutateWork {
+func workOf(mutants []mutation.MutantResult) *mutateWork {
 	w := &mutateWork{}
 	for _, m := range mutants {
 		switch m.State {
-		case mutate.StateCompleted:
+		case mutation.StateCompleted:
 			w.Completed++
-		case mutate.StateCancelled:
+		case mutation.StateCancelled:
 			w.Cancelled++
-		case mutate.StateUnattempted:
+		case mutation.StateUnattempted:
 			w.Unattempted++
-		case mutate.StateBlocked:
+		case mutation.StateBlocked:
 			w.Blocked++
 		}
 	}
@@ -1229,7 +1228,7 @@ func workOf(mutants []mutate.MutantResult) *mutateWork {
 // baseline or a selection of listed tests it needed failed, "completed"
 // when every selected mutant has its outcome, else "stopped" when the stop
 // came once its work began, and "unattempted" when it came before.
-func failFastState(r mutate.FileResult, w *mutateWork) string {
+func failFastState(r mutation.FileResult, w *mutateWork) string {
 	switch {
 	case r.BaselineFailed || len(r.FailedSelections) > 0:
 		return "blocked"
@@ -1242,7 +1241,7 @@ func failFastState(r mutate.FileResult, w *mutateWork) string {
 }
 
 // stopSubject is the subject of the problem the stop's failure reports.
-func stopSubject(s *mutate.Stop) map[string]any {
+func stopSubject(s *mutation.Stop) map[string]any {
 	switch {
 	case s.Site != nil:
 		return map[string]any{"file": s.File, "line": s.Site.Line, "column": s.Site.Column, "function": s.Function,
@@ -1258,7 +1257,7 @@ func stopSubject(s *mutate.Stop) map[string]any {
 }
 
 // describeStop names the stop's failure in plain output.
-func describeStop(s *mutate.Stop) string {
+func describeStop(s *mutation.Stop) string {
 	switch {
 	case s.Site != nil:
 		return fmt.Sprintf("%s:%d:%d %s → %s in %s", s.File, s.Site.Line, s.Site.Column, quote(s.Site.Original), quote(s.Site.Replacement), s.Function)
@@ -1277,13 +1276,13 @@ func describeStop(s *mutate.Stop) string {
 // exceptionsElsewhere is each exception of itos-cc.yaml for a file that is
 // none of sources and that the command judges all the same, stale, and the
 // entries of those whose function moved to one of sources, as they read
-// there (mutants.Elsewhere). With no paths, no --changed, and no --since, it
+// there (mutation.Elsewhere). With no paths, no --changed, and no --since, it
 // judges every entry for a file under the working directory; with --since,
 // each whose file the range deleted, unless paths narrow it, or renamed to
 // one of sources, renamed giving the path each had at the ref; with paths
 // or --changed alone, none. An entry it judges whose file itos-cc.yaml
 // excludes is stale as excluded.
-func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutate.StaleException, []config.Exception, error) {
+func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []config.Exception, sources []string, renamed func(path string) string) ([]mutation.StaleException, []config.Exception, error) {
 	if len(exceptions) == 0 {
 		return nil, nil, nil
 	}
@@ -1323,14 +1322,14 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 	if err != nil {
 		return nil, nil, err
 	}
-	return mutants.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, mutationCheckOptions(in, nil, nil, nil, nil))
+	return mutation.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, mutationCheckOptions(in, nil, nil, nil, nil))
 }
 
 // reportElsewhere reports each exception of exceptionsElsewhere, each under
 // the file it names.
-func reportElsewhere(in *invocation, stale []mutate.StaleException) {
+func reportElsewhere(in *invocation, stale []mutation.StaleException) {
 	for _, e := range stale {
-		reportStaleExceptions(in, project.Rel(project.AtRoot(e.File)), []mutate.StaleException{e})
+		reportStaleExceptions(in, project.Rel(project.AtRoot(e.File)), []mutation.StaleException{e})
 	}
 }
 
@@ -1338,7 +1337,7 @@ func reportElsewhere(in *invocation, stale []mutate.StaleException) {
 // that reported does not hold yet as tests.selection-failed, showing its
 // output in plain output, and adds it to reported. cmd is the command to
 // run again.
-func reportFailedSelections(in *invocation, failed []mutate.FailedSelection, reported map[string]bool, cmd string) {
+func reportFailedSelections(in *invocation, failed []mutation.FailedSelection, reported map[string]bool, cmd string) {
 	for _, f := range failed {
 		key := strings.Join(slices.Sorted(slices.Values(f.IDs)), " ")
 		if reported[key] {
@@ -1357,7 +1356,7 @@ func reportFailedSelections(in *invocation, failed []mutate.FailedSelection, rep
 }
 
 // exceptedIn counts the survivors of mutants that itos-cc.yaml excepts.
-func exceptedIn(mutants []mutate.Mutant) int {
+func exceptedIn(mutants []mutation.Mutant) int {
 	n := 0
 	for _, m := range mutants {
 		if m.Excepted != "" {
@@ -1452,7 +1451,7 @@ func flagPresent(in *invocation, flag string) bool {
 
 // rawCoverage says whether coverage comes from reports the run is given or
 // told to read, not from the per-language commands. Every language strict
-// coverage proves (mutate.StrictCoverage) refuses them under
+// coverage proves (mutation.StrictCoverage) refuses them under
 // --fail-uncovered, so only a language it does not prove reaches this.
 func rawCoverage(in *invocation) bool {
 	return in.set("use-existing-coverage") || in.str("coverage-command") != "" || len(in.strs("coverage-report")) > 0
@@ -1465,7 +1464,7 @@ func rawCoverage(in *invocation) bool {
 // problem unmeasured gives it, as Go does (ADR-0017). A file of a language
 // measured elsewhere in the run is uncovered instead, as before, and a file
 // with nothing to judge needs no coverage.
-func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutate.FileCheck, mutateAll bool) []*cli.Problem {
+func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutation.FileCheck, mutateAll bool) []*cli.Problem {
 	var found []coverage.Unmeasured
 	seen := map[int]bool{}
 	for i, source := range sources {
@@ -1473,7 +1472,7 @@ func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutat
 		if spec == nil || spec.Name == "go" || i >= len(checks) {
 			continue
 		}
-		if !mutate.NeedsMutationCoverage(checks[i:i+1], mutateAll) || report.Has(source) || report.Measures(spec.Name) {
+		if !mutation.NeedsMutationCoverage(checks[i:i+1], mutateAll) || report.Has(source) || report.Measures(spec.Name) {
 			continue
 		}
 		abs, err := filepath.Abs(source)
@@ -1504,10 +1503,10 @@ func unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutat
 }
 
 // filesToJudge is each of sources whose mutants this run must judge.
-func filesToJudge(sources []string, checks []mutate.FileCheck, mutateAll bool) []string {
+func filesToJudge(sources []string, checks []mutation.FileCheck, mutateAll bool) []string {
 	var out []string
 	for i, source := range sources {
-		if i < len(checks) && mutate.NeedsMutationCoverage(checks[i:i+1], mutateAll) {
+		if i < len(checks) && mutation.NeedsMutationCoverage(checks[i:i+1], mutateAll) {
 			out = append(out, source)
 		}
 	}
@@ -1552,12 +1551,12 @@ func hasGoSource(sources []string) bool {
 }
 
 // strictLanguagesOf is each language of sources whose functions strict
-// coverage proves executed (mutate.StrictCoverage), Go first, then in
+// coverage proves executed (mutation.StrictCoverage), Go first, then in
 // name order.
 func strictLanguagesOf(sources []string) []string {
 	var out []string
 	for _, source := range sources {
-		if spec := lang.Detect(source); spec != nil && mutate.StrictCoverage(spec.Name) && !slices.Contains(out, spec.Name) {
+		if spec := lang.Detect(source); spec != nil && mutation.StrictCoverage(spec.Name) && !slices.Contains(out, spec.Name) {
 			out = append(out, spec.Name)
 		}
 	}
@@ -1594,11 +1593,11 @@ func languageName(language string) string {
 // the tests that reach it, or with allTests the whole suite. With
 // testCommand, Python's is the whole suite's too: its coverage plans then
 // run every test, as for --all-tests, while Go's own tests measure Go.
-func strictCoverageInputs(in *invocation, languages []string, allTests, testCommand bool, support map[string]string) map[string]mutate.CoverageInputs {
-	out := map[string]mutate.CoverageInputs{}
+func strictCoverageInputs(in *invocation, languages []string, allTests, testCommand bool, support map[string]string) map[string]coverageInputs {
+	out := map[string]coverageInputs{}
 	for _, language := range languages {
 		out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
-			return mutants.CoverageInputsFor(ctx, in.adapters.Toolchain, in.adapters.Fingerprints, source, project.Root(), allTests, testCommand, support)
+			return mutation.CoverageInputsFor(ctx, in.adapters.Toolchain, in.adapters.Fingerprints, source, project.Root(), allTests, testCommand, support)
 		}
 	}
 	return out
@@ -1610,7 +1609,7 @@ func strictCoverageInputs(in *invocation, languages []string, allTests, testComm
 // test loaded without running a test (coverage.Report.Inventory). It
 // returns the report, Go's producer, the producer and fingerprint of each
 // source's evidence by its language, and the file of each listed test.
-func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach covrun.Reach) (*coverage.Report, string, mutate.CoverageInputs, map[string]string, error) {
+func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach covrun.Reach) (*coverage.Report, string, coverageInputs, map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
@@ -1630,7 +1629,7 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 	if in.set("all-tests") {
 		scope = covrun.AllTests
 	}
-	producer := mutate.CoverageProducer("go", in.set("all-tests"))
+	producer := mutation.CoverageProducer("go", in.set("all-tests"))
 	report, err := loadCoverage(ctx, in, sources, scope, perTest, reach)
 	if err != nil {
 		return nil, "", nil, nil, err
@@ -1664,10 +1663,10 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 // strict language a run decided, a function without complete evidence
 // and each uncovered executable block or line; with scope, of those only a
 // function with a line scope judges, and a block or line it judges.
-func reportStrictCoverage(in *invocation, results []mutate.FileResult, scope mutate.LineScope) {
+func reportStrictCoverage(in *invocation, results []mutation.FileResult, scope mutation.LineScope) {
 	for _, result := range results {
 		language := result.Snapshot.Language
-		if !mutate.StrictCoverage(language) {
+		if !mutation.StrictCoverage(language) {
 			continue
 		}
 		if result.BaselineFailed || len(result.FailedSelections) > 0 {
@@ -1758,25 +1757,25 @@ func listedConfig(in *invocation, cfg *config.Config) *config.Tests {
 // tests.list-failed.
 func listTests(ctx context.Context, in *invocation, tests *config.Tests) ([]covrun.Test, error) {
 	root := project.Root()
-	command := mutants.Command{Root: root, Dir: root, Shell: tests.List}
-	mutate.RunProgress{Log: os.Stderr}.Report(mutants.RunEvent{Kind: "listing", Command: command})
-	listed, err := mutants.ListedTests(ctx, in.adapters.TestLister, command)
+	command := mutation.Command{Root: root, Dir: root, Shell: tests.List}
+	RunProgress{Log: os.Stderr}.Report(mutation.RunEvent{Kind: "listing", Command: command})
+	listed, err := mutation.ListedTests(ctx, in.adapters.TestLister, command)
 	return listed, mutationRunError(err)
 }
 
 func mutationRunError(err error) error {
-	var read mutants.SnapshotReadFailure
+	var read mutation.SnapshotReadFailure
 	if errors.As(err, &read) {
-		return fmt.Errorf("%s: %w", mutate.SnapshotName(read.Key), read.Cause)
+		return fmt.Errorf("%s: %w", metricsdir.MutationName(read.Key), read.Cause)
 	}
 
-	var listing mutants.ListingFailed
+	var listing mutation.ListingFailed
 	if errors.As(err, &listing) {
 		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
 			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", config.File, listing.Reason, listing.Command),
 			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
 	}
-	var required mutants.CoverageReportRequired
+	var required mutation.CoverageReportRequired
 	if errors.As(err, &required) {
 		return cli.CommandNeedsReport()
 	}
@@ -1793,14 +1792,14 @@ func mutationPath(dir, path string) string {
 // reportFailed reports each mutant of function that fails: a survivor that
 // itos-cc.yaml does not except, and an uncovered mutant on a line for which
 // failUncovered, when set, says so (uncoveredFails).
-func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant, failUncovered func(line int) bool) {
+func reportFailed(in *invocation, rel, function string, mutants []mutation.Mutant, failUncovered func(line int) bool) {
 	for _, m := range mutants {
 		switch {
-		case m.Outcome == mutate.Survived && m.Excepted == "":
+		case m.Outcome == mutation.Survived && m.Excepted == "":
 			reportMutant(in, rel, function, m, "mutation.survived", "survived", "survived",
 				fmt.Sprintf("Add a test that fails with this change. If no test can, as the change changes no behaviour, except it with 'itos-cc mutation except %s:%d:%d --reason …'.",
 					rel, m.Line, m.Column))
-		case m.Outcome == mutate.Uncovered && failUncovered != nil && failUncovered(m.Line):
+		case m.Outcome == mutation.Uncovered && failUncovered != nil && failUncovered(m.Line):
 			reportMutant(in, rel, function, m, "mutation.uncovered", "uncovered", "is uncovered: no test executes its line",
 				"Add a test that executes this line and fails with this change.")
 		}
@@ -1810,7 +1809,7 @@ func reportFailed(in *invocation, rel, function string, mutants []mutate.Mutant,
 // reportMutant lists mutant m of function in file rel on stdout, as "<what>
 // <file>:<line>:<column> <original> → <replacement> in <function>", and
 // reports it as a problem of rule whose message ends with verdict.
-func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, what, verdict, fix string) {
+func reportMutant(in *invocation, rel, function string, m mutation.Mutant, rule, what, verdict, fix string) {
 	if !in.json {
 		fmt.Printf("  %s %s:%d:%d %s → %s in %s\n", what, rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), function)
@@ -1827,7 +1826,7 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
-func changedSince(ctx context.Context, in *invocation) (map[string]mutants.ChangedFunctions, map[string]string, error) {
+func changedSince(ctx context.Context, in *invocation) (map[string]mutation.ChangedFunctions, map[string]string, error) {
 	if in.set("changed") {
 		return nil, nil, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
 			"Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
@@ -1841,15 +1840,15 @@ func changedSince(ctx context.Context, in *invocation) (map[string]mutants.Chang
 		return changed, renamed, nil
 	}
 	switch failure := failure.(type) {
-	case mutants.BadReference:
+	case mutation.BadReference:
 		return nil, nil, cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
 			"Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").With("ref", ref)
-	case mutants.NoRepository:
+	case mutation.NoRepository:
 		return nil, nil, cli.NewProblem(cli.CodeEnvironment, "since.no-git", "--since needs a git repository: "+failure.Reason,
 			"Run it inside a git repository, or name the paths instead.")
-	case mutants.HistoryCancelled:
+	case mutation.HistoryCancelled:
 		return nil, nil, failure.Cause
-	case mutants.HistoryFailed:
+	case mutation.HistoryFailed:
 		return nil, nil, failure.Cause
 	}
 	return nil, nil, failure
@@ -1870,7 +1869,7 @@ func runMutationList(ctx context.Context, in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to list")
 		return result, nil
 	}
-	sites, err := mutants.List(ctx, files.Sources, in.adapters.Tree, in.adapters.Surroundings, in.adapters.Dir)
+	sites, err := mutation.List(ctx, files.Sources, in.adapters.Tree, in.adapters.Surroundings, in.adapters.Dir)
 	for _, s := range sites {
 		site := mutateSite{File: s.File, Line: s.Line, Column: s.Column, Function: s.Function, Original: s.Original, Replacement: s.Replacement}
 		result.Sites = append(result.Sites, site)
@@ -1901,7 +1900,7 @@ func tail(s string, lines int) string {
 // <replacement> in <function> (<why>)", the place left out when its
 // function or its file is gone, and "(moved to <file>)" when its function
 // is in another file now, and reports it as mutation.exception-stale.
-func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleException) {
+func reportStaleExceptions(in *invocation, rel string, stale []mutation.StaleException) {
 	for _, e := range stale {
 		at := fmt.Sprintf("%s:%d:%d", rel, e.Line, e.Column)
 		if e.Line == 0 {
@@ -1909,7 +1908,7 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 		}
 		change := fmt.Sprintf("%s → %s in %s", quote(e.Original), quote(e.Replacement), e.Function)
 		var newFile string
-		if e.Why == mutate.ExceptionMoved {
+		if e.Why == mutation.ExceptionMoved {
 			newFile = project.Rel(project.AtRoot(e.NewFile))
 		}
 		if !in.json {
@@ -1921,14 +1920,14 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 		}
 		var message, fix string
 		switch e.Why {
-		case mutate.ExceptionKilled:
+		case mutation.ExceptionKilled:
 			message = fmt.Sprintf("%s: %s is excepted in %s, but the tests now kill it", at, change, config.File)
 			fix = "Remove its entry from " + config.File + ": the tests show that the mutant changes behaviour."
-		case mutate.ExceptionChanged:
+		case mutation.ExceptionChanged:
 			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, config.File, change)
 			fix = fmt.Sprintf("Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. "+
 				"If it is not renewed and the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …'; otherwise remove its entry from %s.", at, config.File)
-		case mutate.ExceptionGone:
+		case mutation.ExceptionGone:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, config.File, change)
 			if e.Line == 0 {
 				message = fmt.Sprintf("%s: the entry in %s for %s names a function the file no longer has", at, config.File, change)
@@ -1937,10 +1936,10 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 				}
 			}
 			fix = "Remove its entry from " + config.File + "."
-		case mutate.ExceptionExcluded:
+		case mutation.ExceptionExcluded:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a source that its exclude leaves out, which no command mutates", at, config.File, change)
 			fix = "Remove its entry from " + config.File + "."
-		case mutate.ExceptionMoved:
+		case mutation.ExceptionMoved:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone; its function is in %s now, where the entry still excepts the mutant",
 				at, config.File, change, newFile)
 			fix = fmt.Sprintf("Change the entry's file in %s from %s to %s, where its function is now.", config.File, e.File, e.NewFile)
@@ -1956,13 +1955,13 @@ func reportStaleExceptions(in *invocation, rel string, stale []mutate.StaleExcep
 
 // staleSubject is the subject of the mutation.exception-stale problem of e,
 // an exception of the file rel.
-func staleSubject(rel string, e mutate.StaleException) map[string]any {
+func staleSubject(rel string, e mutation.StaleException) map[string]any {
 	subject := map[string]any{"file": rel, "function": e.Function, "column": e.Column,
 		"original": e.Original, "replacement": e.Replacement, "why": e.Why}
 	if e.Line != 0 {
 		subject["line"] = e.Line
 	}
-	if e.Why == mutate.ExceptionMoved {
+	if e.Why == mutation.ExceptionMoved {
 		subject["new_file"] = project.Rel(project.AtRoot(e.NewFile))
 	}
 	return subject

@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenario of "Rule: Fresh counted mutation judges a bounded committed
-// selection without claiming full proof" in features/mutate.feature that the
+// selection without claiming full proof" in features/mutation.feature that the
 // mutation-counted-interrupt slice holds. It builds itos-cc and runs it as a
 // subprocess, so a signal reaches a real process, over a module of two
 // sites: Compare's, which its test kills at once, and Gate's, whose mutant
@@ -168,7 +168,7 @@ func checkInterruptedCountedRun(t *testing.T) {
 	gate := t.TempDir()
 	// Compare's site first, then Gate's, one worker: the first judgment is
 	// complete once the second one starts.
-	seed := seedSelecting(t, dir, 2, func(s []mutate.FreshCandidate) bool {
+	seed := seedSelecting(t, dir, 2, func(s []mutation.FreshCandidate) bool {
 		return inFunction("Compare")(s[0]) && inFunction("Gate")(s[1])
 	})
 

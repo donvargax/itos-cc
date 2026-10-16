@@ -3,9 +3,10 @@ package mutants
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/snapshot"
-	"path/filepath"
 )
 
 // CheckParsed is checkFile of f, the file at path, parsed. It leaves the
@@ -44,7 +45,7 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 	if snap != nil {
 		changed = snap.TestsChanged(now)
 	}
-	listed := listedChangedWithInputs(ctx, snap, opt.Root, opt.Support, opt.Fingerprints)
+	listed := ListedChangedWithInputs(ctx, snap, opt.Root, opt.Support, opt.Fingerprints)
 	var entries []UnitResult
 	if snap != nil {
 		entries = snap.Units
@@ -87,7 +88,7 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 			broad = UniqueSorted(broad)
 		}
 		c.Freshness = FreshnessOf(e, hashes[i], changed, listed, broad, sites[i])
-		if c.State == Fresh {
+		if c.State == SnapshotFresh {
 			c.LeftOut = leftOut
 		}
 		if c.Judged() {

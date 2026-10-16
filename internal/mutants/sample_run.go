@@ -11,7 +11,7 @@ import (
 // Sample runs again count mutants drawn by seed from those the fresh
 // entries of files' snapshots record as killed, timeout, or survived, all
 // of them when there are fewer, after each test command's baseline, in a
-// worker's copy as Run does. Fresh is as Check judges it, save that an
+// worker's copy as Run does. Freshness is as Check judges it, save that an
 // entry Stale only for sites it never recorded offers the mutants it
 // records. It runs no coverage and writes nothing. The draw depends only
 // on the seed and on each candidate's file, function, and site, so one

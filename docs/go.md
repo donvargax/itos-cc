@@ -75,7 +75,7 @@ from it, and thin slices named for their commands.
   and lists them, and `project`, which finds the root, so
   every byte and every atomic write stays the library's, translating their errors into the
   port's failures. Its model-bearing `Mutations` adapter owns the one concrete
-  mutation snapshot codec; legacy mutate exports delegate to it without a second schema.
+  mutation snapshot codec; all consumers use its concrete read/write boundaries without a second schema.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
   syntax and mutation rules. Every language's rules for a namespace (the markers it walks up
@@ -155,12 +155,19 @@ from it, and thin slices named for their commands.
   stored-result values, pairing and freshness rules, exception judgment, executable-coverage
   evidence and its judgment, annotation text, sampling ranks, committed-candidate values and
   diff hunks. It reads nothing and has no representation tags or JSON/YAML methods. Tests
-  parse supplied source through lang's surroundings fake. Legacy `mutate` temporarily aliases
-  these values and delegates to their rules while execution, discovery and orchestration move
-  in later tasks. Its concrete snapshot codec preserves the stored format, including legacy
-  evidence keys and line-precision evidence; config's concrete YAML codec owns exception
-  encoding. Command discovery, the mixed fresh-plan wrapper and mixed sample execution stay
-  at those legacy boundaries until their corresponding port tasks.
+  parse supplied source through lang's surroundings fake. Ordinary and counted scheduling,
+  check/list/sample/exception policy and fresh admission live here over model-bearing ports.
+  `metricsdir` owns the concrete snapshot codec, including legacy evidence keys and line
+  precision; config owns the exception YAML codec. The legacy `mutate` package is retired.
+- `internal/freshenv` implements mutation's coarse `Fresh` Plan/Prepare/Release contract.
+  It owns immutable Git export, native mode and symlink admission, scratch materialization,
+  installed-dependency links and ordered supervised preparation. Cmd injects its owned
+  executor and existing observation adapters. The domain shares path selection, source
+  admission, baseline deduplication and trial scheduling with the memory implementation.
+  Pure planning uses committed settings; trials reread actual frozen bytes after preparation.
+  Release retains historical best-effort scratch cleanup; checked worker Close retains
+  lifetime failures and partial trial results. Its depguard rule permits only the served
+  domain and the actual config/project/coverage/language/selection libraries it wraps.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -245,17 +252,17 @@ from it, and thin slices named for their commands.
   a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
   on. The hand-parsed `mutation` commands read, write, remove and list their snapshots only
-  through the `Store` their invocation's adapters hold, which `mutate.Options` carries and
-  `mutate.LoadSnapshotOf` takes; `serve`'s graph still walks `.metrics/` with the `metrics`
-  library until it moves, reading each mutation snapshot through a `metricsdir.Store` of its
-  root (decision 41). It holds the coverage domain's classifier,
+  through invocation-bound domain readers, catalogs and publication capabilities. `serve`'s
+  graph still walks `.metrics/` with the `metrics` library until S8, but receives a root-specific
+  snapshot reader and current Toolchain/Fingerprints from cmd. It selects no concrete
+  observation adapters, and reads a complete admitted snapshot before TypeScript probes. It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
   `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the
   request from its flags with `coverageRequest` and calls the invocation's separate
   `MutationCoverage.MeasureListed`. Strict coverage also calls that binding's
-  `Inventory`; neither consumer constructs a real fallback. Both refuse `--coverage-command` with no `--coverage-report` as
-  `cli.CommandNeedsReport`.
+  `Inventory`; neither consumer constructs a real fallback. Report admission retains `cli.CommandNeedsReport`: strict admission is fatal, while ordinary
+  Run preserves its logged best-effort fallback after configured listing.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -483,9 +490,8 @@ from startup, including external cancellation before any actionable stop; Abort
 starts the deadline before stop cancellation. Frozen trials share preparation's owner
 from creation. Success/local timeout never activates a shared abort deadline.
 Historical scratch removal remains
-best effort. The legacy Run wrapper composes explicit disk defaults only for
-remaining direct library callers; the pure Run and cmd composition never hide a
-missing binding. Fresh orchestration remains at its legacy boundary until T-95.
+best effort. The pure Run and actual cmd composition never hide a missing binding. Counted preparation
+uses its own shared owner; ordinary mutation workers retain independent budgets.
 
 
 T-89 keeps the model-bearing `Toolchain`, `Fingerprints` and `Reach` contracts
@@ -496,16 +502,15 @@ independent-coverage inventories, including lexical unsupported-scope admission.
 It wraps the existing coverage library for unchanged Kotlin runner/wrapper
 fingerprints, as testtools does for runnable-file/class observations.
 `internal/importgraph` wraps the existing graph import resolver until S8. Only cmd
-composes Reach: legacy graph already imports mutate, so mutate cannot import that
+composes Reach: graph imports the mutation domain, so the domain cannot import that
 adapter without a cycle. Each adapter has its own depguard rule, accepting only
 mutants plus the actual libraries it wraps. The shared contract suites live in
 `internal/mutants/porttest`; no production binary links them.
 
 Cmd supplies all three actual bindings and rejects missing injections at a work
-boundary. Remaining direct legacy library wrappers retain explicit disk defaults;
-Run itself now owns policy in mutants, while fresh preparation stays until T-95.
-Graph's snapshot reader remains legacy until S8. Fresh/count preparation
-keeps its existing supervised probe until T-95. Existing coverage's pure
+boundary. Graph receives read-only mutation inputs from composition while retaining its
+existing discovery/cache until S8. Fresh/count preparation keeps its separately supervised
+root-cwd Python probe; ordinary optional probing keeps the caller cwd. Existing coverage's pure
 Gradle/Maven formatting helpers forward to their single mutants implementation
 until the T-90 callers move. Python command discovery deliberately chooses the last
 existing `.venv`/`venv` interpreter; coverage inputs choose the first. Pytest import
@@ -521,7 +526,7 @@ exceptions and both committed/working orphan rename queries. A missing binding
 fails at the actual consumer; explicit seeds and narrowed paths retain their
 unused-query bypass. Caller-relative current-to-prior change maps remain separate
 from repository-wide prior-to-current orphan maps. Frozen export, modes and
-supervised counted preparation stay at the legacy boundary until T-95.
+supervised counted preparation are owned by freshenv's coarse Fresh boundary.
 The githistory rule admits only mutants and the project library it wraps.
 
 T-92 moves ordinary Run planning, reuse, scheduling, judgment and publication order
@@ -539,10 +544,10 @@ reason. The testtools adapter owns execution/logging, while our fake consumes
 independent root/command facts. Run lists only pending work, before report admission
 and measurement, preserving fatal list failure versus ordinary best-effort coverage
 failure. Existing MutationMeasurer/Fingerprints bindings replace captured live I/O
-callbacks. Progress events are domain facts; legacy RunProgress alone formats them.
+callbacks. Progress events are domain facts; cmd's RunProgress alone formats them.
 Sample draws/checks in the domain and uses the same Execution scheduler, with
 listed IDs admitted only for recorded listed scope.
-Counted/frozen preparation remains until T-95. No mutation handler is promoted to
+Counted/frozen preparation uses Fresh. No mutation handler is promoted to
 the in-process feature driver before T-100.
 
 T-93 moves check, strict evidence inventory, site listing and orphan judgment into
@@ -558,18 +563,17 @@ while lazy rename traversal requires successful `RenameTarget` evidence.
 in the domain. Check alone hides those stale mutants.
 List returns the ordered prefix before a later source failure; cmd renders it
 before the error, whereas check admits ordinary and strict results before printing
-checked files. Actual cmd consumers use invocation-bound readers, catalog,
-presence, Tree/Surroundings and existing Toolchain/Fingerprints. Remaining direct
-legacy library entry points compose concrete defaults and delegate the same rules;
-legacy strict callback APIs remain only compatibility adapters, not domain I/O.
+checked files. Actual cmd and graph consumers use invocation-bound readers, catalog,
+presence, Tree/Surroundings and existing Toolchain/Fingerprints. No legacy mutation
+entry point remains, and no domain callback performs hidden I/O.
 The existing inward depguard/fixture inventories cover these unchanged package
 arrows; no production fake or adapter import is admitted to the domain.
 
 T-94 moves Sample, Survivor, Renew and Elsewhere into mutants. Sample receives
 read-only CheckOptions and execution bindings, never snapshot writes. It keeps
 recorded scopes and seed ranking, reusing the one scheduler and selection-baseline
-cache. Renewal and Unrenewed are genuine domain values; legacy mutate/config aliases
-retain direct library callers without a second model or algorithm.
+cache. Renewal and Unrenewed are genuine domain values; config's compatibility aliases
+retain its codec callers without a second model or algorithm.
 
 `Exceptions.Except` and `Exceptions.Renew` update the current document. The existing
 config package implements them at an explicit RootDir, sharing one format-preserving

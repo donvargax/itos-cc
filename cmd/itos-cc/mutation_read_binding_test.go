@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -151,4 +151,4 @@ func TestMutationOrphansUseActualCatalogAndIndependentPresence(t *testing.T) {
 	}
 }
 
-var _ mutants.SourcePresence = (*mutantstest.SourceEdits)(nil)
+var _ mutation.SourcePresence = (*mutantstest.SourceEdits)(nil)
