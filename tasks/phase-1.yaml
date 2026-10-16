@@ -3179,6 +3179,28 @@
     until this task supplies real fake-history state. Do not derive the expected HEAD from
     mutation sample output. Wire this observation and verify it independently of sample's
     seed.
+    Keep the two existing committed-history consumers distinct: ordinary --since
+    uses ref...HEAD under the caller's working directory with HEAD source bytes,
+    while counted preparation uses a once-resolved base and pinned head at the
+    logical repository root. Preserve three-dot/merge-base behavior and relative
+    path mapping; do not replace either range with a working-tree or two-dot diff.
+    Retain pure-deletion function admission separately from added/changed line
+    ranges, unchanged rename entries with no changed functions, renamed edits,
+    and Kept hashes for same-name units. Move model-bearing mutation contracts
+    beside their values in internal/mutants, with porttest fakes and inward
+    githistory dependencies, following T88/T89 rather than creating a child cycle.
+    The fake history holds immutable commit trees, refs and parent relationships
+    derived from the Givens' actual staging/commit/branch operations. Later edits
+    or staging must not mutate already captured commits. Its Head observation
+    comes from that same independent state; neither sample output nor a desired
+    seed supplies it. Shared contracts exercise branching history, immutable
+    committed bytes and these range distinctions, not a script of expected calls.
+    Wire actual --since and default-sample-seed consumers through their bound
+    History and verify missing/wrong bindings. Keep frozen-tree materialization
+    and counted orchestration at their existing boundary until T95; history
+    values must not smuggle scratch files, subprocess handles or held contexts
+    into the domain. Preserve committed symlink/gitlink refusal and modes at the
+    current export boundary rather than following their targets in the fake.
   done_when:
     - run: go test ./internal/githistory/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
