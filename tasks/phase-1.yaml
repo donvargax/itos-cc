@@ -3128,6 +3128,28 @@
     missing/tool facts while preserving valid in-process coverage, only when an
     actual request invokes that built-in collector. A stored declaration alone
     must not manufacture an error for named/existing raw reports or no-coverage.
+    Concrete ownership and binding settlement for T90: keep the existing aggregate
+    port.Measurer[*Report] and its callers intact. The new model-bearing per-test
+    and inventory capability belongs beside Report/TestCoverage in internal/coverage,
+    composing the aggregate contract where needed. The domain already imports its
+    child port for Files/Gap, so do not add another result type parameter, duplicate
+    model, leaf-model package or move all existing ports merely to avoid that cycle.
+    Record the narrow package-rule correction before implementation; it does not
+    decide the later ADR47 review. Move the existing pure Test/PerTest values once
+    to their domain owner and use temporary legacy aliases where actual callers
+    still need them. PerTest.Select is pure command construction, not an I/O callback;
+    preserve it rather than inventing another command-template framework.
+    Wire actual mutation loadCoverage and strictCoverage inventory calls through
+    the invocation's bound capabilities. Guard the real consumers with independent
+    fake evidence and missing/wrong-binding counterexamples; a new interface that
+    production still bypasses is not completion. Disposable real source discovery
+    may remain until handlers move, stated honestly rather than claimed all-memory.
+    Keep aggregate malformed/unreadable named reports as Unreadable gaps, or
+    MeasuredNothing with --coverage-command, retaining other good reports. Rejecting
+    malformed fixture declarations must not introduce a new fatal CLI failure.
+    Inventory command failure still leaves files without proof and is logged;
+    cancellation still stops the actual caller. Do not make its formerly best-effort
+    failure fatal or manufacture proof from syntax when a collector has no inventory.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"
