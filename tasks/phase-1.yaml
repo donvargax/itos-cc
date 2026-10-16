@@ -4613,6 +4613,3 @@
     controls and platform omissions reported honestly. No own-source mutation, new dependency,
     agents/worktrees or per-task binary comparison. T94 WIP is safely preserved separately; complete
     and publish this repair before supported T94 retake and restoration of its own paths.
-  done_when:
-    - run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
-      timeout: 600

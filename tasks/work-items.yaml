@@ -3407,6 +3407,6 @@ items:
     title: Bound native ownership timeout fixtures independently of baseline duration
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
