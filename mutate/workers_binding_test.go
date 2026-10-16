@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/mutants/porttest"
 )
@@ -24,12 +23,15 @@ func TestExecutionBindsWorkerPurposeFromActualRunMode(t *testing.T) {
 			root := t.TempDir()
 			path := filepath.Join(root, "a.go")
 			c := Command{Root: root, Dir: root, Args: []string{"fixture-tests"}}
-			factory := &porttest.Workers{Files: map[string]string{path: "a"}, Tests: map[string]map[string]porttest.Tests{root: {c.String(): {}}}}
-			state := &fileState{file: &lang.File{Path: path, Src: []byte("a"), Units: []lang.Unit{{Name: "A"}}}, rel: "a.go", command: c, sites: []Site{{Start: 0, End: 1, Line: 1, Original: "a", Replacement: "b"}}, outcomes: []string{""}, result: &FileResult{}}
-			stop, err := execute(t.Context(), []*fileState{state}, Options{WorkerFactory: factory, Workers: 1, Log: io.Discard}, tc.ff)
-			if err != nil || stop != nil || state.outcomes[0] != Killed || state.result.Ran != 1 {
-				t.Fatalf("actual execution: %+v %v %v ran%d", stop, err, state.outcomes, state.result.Ran)
+			factory := &porttest.Workers{Files: map[string]string{path: "package a\nfunc A(x int) bool { return x > 1 }\n"}, Tests: map[string]map[string]porttest.Tests{root: {c.String(): {}}}}
+			// The fixture supplies one actual mutation site through the parsed source below.
+			state := mutants.NewExecution(parse(t, path, "package a\nfunc A(x int) bool { return x > 1 }\n"), "a.go", "a.go", c)
+			state.Pending(0, nil)
+			stop, err := mutants.Execute(t.Context(), []*mutants.Execution{state}, domainOptions(Options{WorkerFactory: factory, Workers: 1, Log: io.Discard}), tc.ff)
+			if err != nil || stop != nil || state.Outcome(0) != Killed || state.Result().Ran != 1 {
+				t.Fatalf("actual execution: %+v %v outcome%s ran%d", stop, err, state.Outcome(0), state.Result().Ran)
 			}
+
 			if len(factory.Opened) != 1 || factory.Opened[0] != tc.purpose {
 				t.Fatalf("actual run requested %v, want %v", factory.Opened, tc.purpose)
 			}

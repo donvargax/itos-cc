@@ -64,12 +64,15 @@ func (d Measurement) Validate() error {
 // Aggregate retains named/existing report behavior; Declarations apply only to
 // actual built-in measurement/inventory requests, never named reports.
 type Measurer struct {
-	Aggregate    aggregate.Measurer
-	Declarations map[coverage.Unloaded]Measurement
-	Log          io.Writer
-	Commands     []string
-	Entered      []coverage.Unloaded
-	Conversions  map[string]string
+	// RunDirectoryFailure models an unavailable private collection directory.
+	// Context cancellation takes precedence; no collector operation enters.
+	RunDirectoryFailure *port.Unwritable
+	Aggregate           aggregate.Measurer
+	Declarations        map[coverage.Unloaded]Measurement
+	Log                 io.Writer
+	Commands            []string
+	Entered             []coverage.Unloaded
+	Conversions         map[string]string
 }
 
 var _ coverage.MutationMeasurer = (*Measurer)(nil)
@@ -84,6 +87,9 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	}
 	if len(req.Reports) > 0 || req.Existing || m.Declarations == nil {
 		return m.Aggregate.Measure(ctx, req)
+	}
+	if m.RunDirectoryFailure != nil {
+		return nil, *m.RunDirectoryFailure
 	}
 	groups := m.groups(req.Sources)
 	var reports []*coverage.Report
