@@ -310,7 +310,7 @@ func TestFixtureRemovalRequiresSuccessfulOwnedCleanup(t *testing.T) {
 	}
 }
 
-// These three tests need the physical forced-exit EOF oracle. Native Windows
+// These tests need the physical forced-exit EOF oracle. Native Windows
 // refuses that capability; ordinary errors and unsupported Unix admission fail.
 func requireFixturePeerFactory(t *testing.T, err error) {
 	t.Helper()

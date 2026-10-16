@@ -355,6 +355,14 @@ func (q *mutationExecution) cleanup(ctx context.Context) error {
 			}
 		}
 	}
+	// A completed owned command has already joined its helpers. Consume their
+	// strict EOF before cooperative Close can send STOP into closing sockets.
+	// Logical counted controls need this cleanup even without a public EOF step.
+	if q.owned != nil && q.owned.returned {
+		for _, peer := range q.owned.peers {
+			failures = append(failures, peer.EOF(cleanup))
+		}
+	}
 	if q.peers != nil {
 		failures = append(failures, q.peers.Close(cleanup))
 	}
