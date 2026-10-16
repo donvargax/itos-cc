@@ -3368,6 +3368,35 @@
     behavior. Actual consumer missing/wrong-binding checks must rule out silent
     legacy disk defaults after the domain move; temporary direct legacy wrappers
     are not a second runner implementation or the domain's dependency.
+    Snapshot read admission retains its current order: obtain the store root,
+    decode the complete stored record, and treat an absent record or one
+    naming another file as no snapshot before observing current command
+    policy. Only an admitted TypeScript record needs the current toolchain
+    observation that upgrades legacy own-scope outcomes to whole-suite
+    scope. A missing or mismatched record must not start that probe.
+    Keep this domain policy separate from concrete decoding; a model-valued
+    storage operation must not silently turn runner discovery into a codec
+    effect. Preserve store-failure and post-read command-failure precedence.
+    Shared guards use independently declared snapshot and tool facts, not
+    expected query scripts or default JSON of the untagged domain model.
+    As settled in T-49, fail-fast cancellation derives from the caller's
+    context and may retain only its cancel function, never the context.
+    Do not invent a Background/TODO root, context payload or captured I/O
+    closure during extraction. Keep WithoutCancel confined to existing real
+    cleanup; ordinary observations and publication receive the caller context.
+    Preserve the owned-work stop without adding another lifetime framework.
+    Ordinary Run still parses current selected source through selection/lang.
+    History supplies committed --since admission, not a replacement live tree.
+    Pinned counted inputs remain at their existing boundary until T-95.
+    Inventory configured test listing as well as measurement. It currently runs
+    lazily when ordinary pending work first needs coverage, and fills the same
+    listed-ID/file inventory later used in selections and snapshots. Preserve
+    first-ID-wins parsing, optional filenames and CRLF/whitespace treatment.
+    A failed list stays tests.list-failed and stops before trials/publication;
+    ordinary best-effort measurement failure keeps its different fallback.
+    Bind listing through a narrow model-valued capability, settling its actual
+    owner/API before code, with declaration-driven memory evidence and actual
+    missing/wrong-binding controls; no live-shell callback hidden in the domain.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
