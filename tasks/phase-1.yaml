@@ -3493,6 +3493,23 @@
     run failure and cleanup/join ordering. Real worktrees.Close still returns
     nil and historical scratch removal remains best effort; do not turn that
     cleanup into a newly fatal command-line behavior or bypass the lint gate.
+    The repaired source aa23f4d passed the core lint job but exact workflow
+    38858684786 failed Windows job 116835813176 in two retained fixture guards.
+    The held other-worker fail-fast case could not read native other/other.go
+    from the fake at run_join_test.go:94. RealListingContract's success and
+    unsuccessful-command cases passed an escaped quoted native helper path
+    that cmd.exe did not recognize as an executable. Later artifact failures
+    followed the package-suite failure; they are not separate gate defects.
+    Restore source first in published 02639c3, leaving the entire tree equal
+    to the pre-reapplication ecd652c, including all earlier ledger contracts,
+    repair history, proof cases and the three stashes. Preserve both attempts'
+    original logs and distinguish focused passes from full native CI success.
+    Before the next repair, honor the existing fake path-key contract in the
+    held fixture and native helper invocation/quoting in the real listing
+    fixture. Keep actual entered mutated work, held join/release observations,
+    stdout-only listing rows, streamed stderr and unsuccessful status guards
+    substantive on Windows. Add no platform skip, loosened assertion, gate
+    change or product behavior while correcting these fixture operations.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
