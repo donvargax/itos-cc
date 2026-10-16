@@ -3291,6 +3291,27 @@
     Include the focused public neighbors ID-MUT-77/78 for actual HEAD and
     explicit-seed reproduction, and ID-MUT-238/239 for committed and staged
     rename snapshot retention, alongside the existing --since checks.
+    Concrete T91 boundary direction: mutants owns History beside its models,
+    with Head, Resolve, ReadCommitted, ChangedSince, DeletedSince,
+    RenamesSince and RenamesUncommitted operations, each taking caller ctx
+    first. The adapter is bound to the actual caller Dir; committed reads
+    name root-relative paths and return owned bytes, never materialized
+    paths or process handles. ChangedFunctions moves once beside the
+    existing LineRange, with a project compatibility alias for old callers.
+    Sealed history failures distinguish no repository, invalid reference,
+    cancellation carrying the original cause, and an actual query failure
+    carrying its unchanged reason. Cmd translates those at the existing
+    usage/environment boundaries; orphan query failures remain conservative.
+    internal/githistory wraps explicit context/directory variants of the
+    existing project Git queries. Project imports only pure domain values,
+    so it does not delegate back into its adapter or create a cycle; its
+    existing direct wrappers and guards remain during legacy migration.
+    Counted gitAt, export/materialization, supported modes and symlink/gitlink
+    admission remain at their supervised legacy boundary until T95. The
+    fake owns immutable trees and parents from actual stage/commit/branch
+    operations, using real fixture text for line comparisons and rename
+    matching; it never runs Git or returns expected-call scripts. No new
+    dependency, generic Git executor or tree-export framework is introduced.
   done_when:
     - run: go test ./internal/githistory/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
