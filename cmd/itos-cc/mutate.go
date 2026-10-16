@@ -13,7 +13,6 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	covrun "github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
@@ -695,13 +694,16 @@ func uncoveredFails(failUncovered bool, scope mutate.LineScope, path string) fun
 // (graph.TestsImporting), as the graph of the project under the project root
 // resolves imports, whatever command runs the mutants and wherever it runs:
 // what a snapshot records the hashes of. It reads under ctx.
-func importingTests(ctx context.Context) (func(path string) []string, error) {
+func importingTests(ctx context.Context, in *invocation) (func(path string) []string, error) {
 	root := project.Root()
-	all, err := project.Discover(ctx, []string{root})
-	if err != nil {
-		return nil, err
+	if in.adapters.Reach == nil {
+		return nil, errors.New("mutation Reach binding is missing")
 	}
-	tests, err := graph.TestsImporting(ctx, root, all)
+	sources, testFiles, failure := in.adapters.Tree.Discover(ctx, []string{root})
+	if failure != nil {
+		return nil, failure
+	}
+	tests, err := in.adapters.Reach.TestsImporting(ctx, root, sources, testFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -774,11 +776,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 	}
-	tests, err := importingTests(ctx)
+	tests, err := importingTests(ctx, in)
 	if err != nil {
 		return result, err
 	}
-	support, err := supportNow(cfg)
+	support, err := supportNow(ctx, in, cfg)
 	if err != nil {
 		return result, err
 	}
@@ -789,11 +791,19 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if !in.set("test-command") && !in.set("all-tests") {
 		reach = tests
 	}
+	if in.adapters.Toolchain == nil {
+		return result, errors.New("mutation Toolchain binding is missing")
+	}
+	if in.adapters.Fingerprints == nil {
+		return result, errors.New("mutation Fingerprints binding is missing")
+	}
 	if in.adapters.Workers == nil {
 		return result, errors.New("mutation Workers binding is missing")
 	}
 	opt := mutate.Options{
 		WorkerFactory: in.adapters.Workers,
+		Toolchain:     in.adapters.Toolchain,
+		Fingerprints:  in.adapters.Fingerprints,
 		Store:         in.adapters.Store,
 		Support:       support,
 		Tests:         tests,
@@ -816,11 +826,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	if strict {
 		var cached []mutate.CoverageCheck
-		mutationChecks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+		mutationChecks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
 		if err != nil {
 			return result, err
 		}
-		cached, err = mutate.CheckCoverage(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(strictLanguages, false, false, support))
+		cached, err = mutate.CheckCoverageWithInputs(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(in, strictLanguages, false, false, support), in.adapters.Toolchain, in.adapters.Fingerprints)
 		if err != nil {
 			return result, err
 		}
@@ -993,7 +1003,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
 			// every mutant, and stops the run before any mutant runs.
-			checks, err := mutate.Check(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+			checks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
 			if err != nil {
 				return result, err
 			}
@@ -1414,13 +1424,28 @@ func configProblem(invalid *config.InvalidError, fix string) *cli.Problem {
 	return p
 }
 
+// mutationInputsBound guards actual command composition. Direct legacy callers
+// retain their documented defaults until orchestration moves; handlers do not.
+func mutationInputsBound(a adapters) error {
+	if a.Toolchain == nil {
+		return errors.New("mutation Toolchain binding is missing")
+	}
+	if a.Fingerprints == nil {
+		return errors.New("mutation Fingerprints binding is missing")
+	}
+	return nil
+}
+
 // supportNow is the hashes of the support files of the tests cfg lists,
 // now: what a kill by listed tests rests on, with the files of its tests.
-func supportNow(cfg *config.Config) (map[string]string, error) {
+func supportNow(ctx context.Context, in *invocation, cfg *config.Config) (map[string]string, error) {
 	if cfg.Tests == nil {
 		return nil, nil
 	}
-	return mutate.SupportHashes(project.Root(), cfg.Tests.Support)
+	if in.adapters.Fingerprints == nil {
+		return nil, errors.New("mutation Fingerprints binding is missing")
+	}
+	return in.adapters.Fingerprints.Support(ctx, project.Root(), cfg.Tests.Support)
 }
 
 func flagConflict(flag, message string) error {
@@ -1583,47 +1608,30 @@ func languageName(language string) string {
 // the tests that reach it, or with allTests the whole suite. With
 // testCommand, Python's is the whole suite's too: its coverage plans then
 // run every test, as for --all-tests, while Go's own tests measure Go.
-func strictCoverageInputs(languages []string, allTests, testCommand bool, support map[string]string) map[string]mutate.CoverageInputs {
+func strictCoverageInputs(in *invocation, languages []string, allTests, testCommand bool, support map[string]string) map[string]mutate.CoverageInputs {
 	out := map[string]mutate.CoverageInputs{}
 	for _, language := range languages {
-		producer := mutate.CoverageProducer(language, allTests || testCommand && language != "go")
-		switch language {
-		case "go":
-			out[language] = func(_ context.Context, source string) (string, map[string]string, error) {
-				inputs, err := mutate.GoCoverageInputs(source, project.Root(), producer, support)
-				return producer, inputs, err
+		out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
+			if in.adapters.Fingerprints == nil {
+				return "", nil, errors.New("mutation Fingerprints binding is missing")
 			}
-		case "python":
-			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
-				inputs, err := mutate.PythonCoverageInputs(ctx, source, project.Root(), producer, support)
-				return producer, inputs, err
-			}
-		case "typescript":
-			// Its producer is what measures the package: Vitest, Jest or
-			// c8 (covrun.TypeScriptRunner); --test-command changes
-			// nothing about it.
-			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
-				dir := project.FindUp(ctx, source, "package.json")
-				if dir == "" {
-					dir = filepath.Dir(source)
+			producer := mutate.CoverageProducer(language, allTests || testCommand && language != "go")
+			if language == "typescript" || language == "kotlin" {
+				if in.adapters.Toolchain == nil {
+					return "", nil, errors.New("mutation Toolchain binding is missing")
 				}
-				producer := mutate.TypeScriptCoverageProducer(covrun.TypeScriptRunner(dir, !allTests), allTests)
-				inputs, err := mutate.TypeScriptCoverageInputs(ctx, source, project.Root(), producer, support)
-				return producer, inputs, err
-			}
-		case "kotlin":
-			// Its producer is what measures the module: Gradle's JaCoCo or
-			// Kover, or Maven's JaCoCo (covrun.KotlinRunner), over the
-			// whole suite with --test-command too, as Python's.
-			out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
-				module := project.FindUp(ctx, source, "build.gradle.kts", "build.gradle", "pom.xml")
-				if module == "" {
-					module = filepath.Dir(source)
+				runner, failure := in.adapters.Toolchain.CoverageRunner(ctx, source, !allTests)
+				if failure != nil {
+					return "", nil, failure
 				}
-				producer := mutate.KotlinCoverageProducer(covrun.KotlinRunner(module), allTests || testCommand)
-				inputs, err := mutate.KotlinCoverageInputs(ctx, source, project.Root(), producer, support)
-				return producer, inputs, err
+				if language == "typescript" {
+					producer = mutate.TypeScriptCoverageProducer(runner, allTests)
+				} else {
+					producer = mutate.KotlinCoverageProducer(runner, allTests || testCommand)
+				}
 			}
+			inputs, failure := in.adapters.Fingerprints.Coverage(ctx, source, project.Root(), producer, support)
+			return producer, inputs, failure
 		}
 	}
 	return out
@@ -1670,7 +1678,7 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 	if ctx.Err() != nil {
 		return nil, "", nil, nil, context.Cause(ctx)
 	}
-	inputs := strictCoverageInputs(languages, in.set("all-tests"), in.set("test-command"), support)
+	inputs := strictCoverageInputs(in, languages, in.set("all-tests"), in.set("test-command"), support)
 	fingerprint := func(ctx context.Context, source string) (string, map[string]string, error) {
 		if spec := lang.Detect(source); spec != nil && inputs[spec.Name] != nil {
 			return inputs[spec.Name](ctx, source)

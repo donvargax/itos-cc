@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"io/fs"
 	"path/filepath"
 	"slices"
 	"testing"
@@ -54,9 +55,16 @@ func TestMemoryObservesAnIdenticalSnapshotWrite(t *testing.T) {
 	}
 }
 
-func TestMemoryReadObservationIsExplicitUntilPortsMove(t *testing.T) {
-	_, err := newMemory(t).ObserveReads("/outside/marker")
-	if !errors.Is(err, features.ErrReadObservationUnsupported) {
-		t.Fatalf("unbound observation: %v", err)
+// T89 binds actual read/list ports. Retain concrete refusal for an unavailable
+// target rather than the former temporary until-ports-move sentinel.
+func TestMemoryReadObservationRejectsMissingTargets(t *testing.T) {
+	m := newMemory(t)
+	dir, err := m.Folder()
+	if err != nil {
+		t.Fatal(err)
+	}
+	observation, err := m.ObserveReads(filepath.Join(dir, "missing-marker"))
+	if !errors.Is(err, fs.ErrNotExist) || observation != nil {
+		t.Fatalf("missing target observation installed=%t: %v", observation != nil, err)
 	}
 }

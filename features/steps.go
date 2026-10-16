@@ -111,6 +111,9 @@ type Driver interface {
 	// run may run.
 	// Declarations upsert by directory and Command; other commands remain.
 	Tests(dir string, t Tests) error
+	// Tools observes independently declared installed entries and interpreter
+	// import capability; it never derives availability from test outcomes.
+	Tools(ctx context.Context, dir string, setup ToolSetup) error
 	// Graph reads the public /api/graph of serve in r.Dir, owning and stopping
 	// its server before returning. The context bounds readiness and the request.
 	Graph(ctx context.Context, r Run) ([]byte, error)
@@ -156,6 +159,23 @@ type Tests struct {
 	// Source is relative to the project; File is an absolute external path
 	// embedded in the real tests.
 	Trace *TestTrace
+	// Imports is optional resolved file-to-file import/reference adjacency,
+	// project-relative, independent of commands/outcomes. Nil leaves graph
+	// setup unavailable; explicit empty lists mean known no edges.
+	Imports map[string][]string
+}
+
+// ToolSetup describes setup facts beyond ordinary file contents. Python nil
+// leaves a probe undeclared; Importable false is an explicit observed failure.
+type ToolSetup struct {
+	NodeBins []string
+	Python   *PythonProbe
+	Env      []string
+}
+
+type PythonProbe struct {
+	Interpreter string
+	Importable  bool
 }
 
 // TestTrace identifies an executable fixture's execution-observation file and source.

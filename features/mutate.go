@@ -1436,7 +1436,7 @@ const (
 
 // sourceInProject writes a project of language with what has says, its
 // source file and a test that reaches it, and declares what its tests do.
-func (m *mutateState) sourceInProject(language, has string) error {
+func (m *mutateState) sourceInProject(ctx context.Context, language, has string) error {
 	m.language, m.has = language, has
 	w := m.w
 	files := map[string]string{}
@@ -1499,10 +1499,38 @@ func (m *mutateState) sourceInProject(language, has string) error {
 			return err
 		}
 	}
-	if tests != nil {
-		return w.d.Tests(w.dir, *tests)
+	if tests == nil {
+		tests = &Tests{}
 	}
-	return nil
+	if tests != nil {
+		tests.Imports = map[string][]string{}
+		for name := range files {
+			if slices.Contains([]string{".go", ".ts", ".py", ".kt"}, filepath.Ext(name)) {
+				tests.Imports[name] = []string{}
+			}
+		}
+		switch language {
+		case "TypeScript":
+			if _, exists := files["src/board.test.ts"]; exists {
+				tests.Imports["src/board.test.ts"] = []string{m.file}
+			}
+		case "Python":
+			tests.Imports["tests/test_board.py"] = []string{m.file}
+		case "Kotlin":
+			tests.Imports["src/test/kotlin/board/BoardTest.kt"] = []string{m.file}
+		}
+		if err := w.d.Tests(w.dir, *tests); err != nil {
+			return err
+		}
+	}
+	setup := ToolSetup{Env: w.env()}
+	if language == "TypeScript" && (has == "vitest" || has == "jest") {
+		setup.NodeBins = []string{has}
+	}
+	if language == "Python" {
+		setup.Python = &PythonProbe{Interpreter: "python3", Importable: has == "pytest importable"}
+	}
+	return w.d.Tools(ctx, w.dir, setup)
 }
 
 // itsMutantsRun runs mutation run over the file the Given wrote, without
