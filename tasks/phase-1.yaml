@@ -3680,6 +3680,42 @@
     Survivor checks unsupported syntax before Stat and treats a directory
     or ordinary Stat error as its existing no-survivor reason; Renew's
     different ordinary-error policy must not be generalized between them.
+    The minimum Exceptions port has Except(ctx, Exception) returning bool and
+    ExceptionFailure, and Renew(ctx, []Renewal) returning ExceptionFailure.
+    Do not add a Read method: the initial cfg.Exceptions already selects the
+    entries to judge, and an extra read would be unused or change concurrent
+    selection timing. Read-current remains inside each update operation.
+    Move the genuine Renewal with Old, New, Line and Match and Unrenewed into
+    mutants once; config.Renewal temporarily aliases the same value, so cmd
+    passes the original renewals without an Old/New field-copy slice.
+    Keep the real Exceptions adapter in the existing config package with an
+    explicit RootDir, reusing its exceptionWire and format-preserving node
+    transforms. Add no second codec or forwarding-only adapter package.
+    The scenario binding reads current memory configuration bytes, applies
+    those same concrete transforms and writes through memory.Write. Its
+    captured heldConfig text is not a current-document writer. Unit fakes
+    operate on independent copied exception values and hold SameSite and
+    complete-Old duplicate consumption semantics without importing YAML.
+    ExceptionFailure is sealed with ExceptionInvalid carrying Reason and Key,
+    ExceptionFailed carrying Cause, and ExceptionCancelled carrying Cause.
+    Translate only actual Parse/type/shape failures into ExceptionInvalid;
+    original read/write/encoding/missing-Old errors remain ordinary I/O through
+    ExceptionFailed and preserve their original cause/text at presentation.
+    Add SourceStatus.Kind(ctx, path) returning SourceKind and InputFailure on
+    the same real and fake SourceEdits. SourceMissing, SourceDirectory and
+    SourceNonDirectory describe following-Stat observations; NonDirectory is
+    not restricted to regular files. A missing path has no failure; other
+    Stat errors retain InputFailed, cancellation InputCancelled and its cause.
+    Keep fake following-Stat facts independent from T-93's no-follow facts.
+    Renew and Survivor apply their distinct admission/error policies above;
+    neither substitutes conservative Present or successful RenameTarget.
+    Elsewhere receives explicit root and caller-directory facts. Normalize
+    exception/source keys lexically before its judge and exclusion queries;
+    no query passed into the domain may rediscover cwd or Git through
+    project.AtRoot or FromRoot. Preserve outside-root absolute paths and
+    existing selection/exclusion semantics. Keep no-exception/no-orphan and
+    narrow-path bypasses lazy: a source parser binding is required only when
+    a source is actually parsed, never for an unused observation.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
@@ -3770,6 +3806,11 @@
     including zero forms, and preserve literal no-coverage/no-annotate names
     without adding positive aliases. Hold these cases with focused parser
     guards and final proof, using the one parser's provided/raw-value facts.
+    Preserve top-level help's existing flattened mutation subcommand list
+    when Kong owns the group; a single group-summary row changes that help.
+    Extend the shared moved-help and help-topic routing for nested commands,
+    including help mutation run and extra-topic refusals. Trace the selected
+    group or child on the same parser without reading configuration or tools.
   done_when:
     - run: go test ./internal/cli/...
     - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|06|07|09|10|11|12|14)$"
@@ -4483,3 +4524,69 @@
     safely stashed until this separate test task is full-green, closed and published, then retake
     T92 before restoring its exact owned work. No own-code mutation, new dependency,
     agents/worktrees, gate weakening or published rewrite.
+- id: T-119
+  type: ci
+  title: Enforce Go lint across the completed refactor module
+  why: >
+    Complete the parked gate-golangci-lint requirement after T-116 and before
+    refactor-final-proof. ADR-0033 requires each adopted gate to have its own
+    task. The current active itos.yaml runs pinned golangci-lint only over
+    internal, which is not evidence that cmd, top-level libraries and tools
+    pass the module-wide check requested by the adoption. Widen the actual
+    configured push-CI command to tools/bin/pinned golangci-lint run ./...,
+    retaining the pinned tool and every valid existing rule and architecture
+    fixture. Fix findings in their owning code; no blanket directory/test
+    exclusions, weakened length or context rules, suppression of valid
+    findings, or replacement with a narrower green command. New package
+    arrows follow the completed layout and existing documented extension
+    procedure, with accepted/refused fixtures for any changed boundary.
+    Preserve public behavior, raw errors and output, snapshot/config bytes,
+    notices, contributors and harvested-source credits. Any behavior change
+    is separate specified work, not a lint cleanup. Keep focused affected
+    checks meaningful and run broad gates through their configured hooks and
+    CI rather than a repeated manual preflight. The final exact pushed head
+    must show the module-wide lint command actually passing; presence of the
+    configuration or an earlier internal-only pass does not establish it.
+    Record the completed-source head for final equivalence proof so that
+    any fixes here are included in that one comparison. Do not start final
+    proof or own-source mutation, change nightly T-46, or implement T-86.
+  done_when:
+    - run: tools/bin/pinned golangci-lint run ./...
+- id: T-120
+  type: ci
+  title: Declare a fast project pre-commit hook and document clone setup
+  why: >
+    Complete the parked pre-commit-hook requirement after T-119 and before
+    refactor-final-proof, separately from the module-wide lint gate as
+    ADR-0033 requires. A present tools/hooks/pre-commit script is not a
+    declared project hook: the observed clone declares only itos commit-msg
+    and pre-push, and README has no project hook setup recipe. Reconcile the
+    inherited full-module lint and network vulnerability checks with the
+    current check-tier policy. The project pre-commit hook performs only a
+    fast deterministic check of the staged Go formatting; full-module lint
+    stays in configured push CI, and all valid active CI/pre-push checks,
+    including the existing govulncheck step, stay enabled. Do not add another
+    full-module or network gate to every commit, or silently move or disable
+    a currently valid gate. Document the actual placement and its reason,
+    distinguishing the inherited template script from the project's hook.
+    Check the staged blob, not unstaged working-tree content. Reject an
+    unformatted staged Go file even if the working copy was fixed, and
+    accept a formatted staged blob with unrelated unstaged edits. Deleted
+    paths, non-Go/prose-only commits and existing unrelated unformatted Go
+    files must not trigger extra work. Preserve paths with spaces. Report
+    relevant paths and leave index/worktree bytes untouched; no automatic
+    staging, rewriting or commit bypass. Preserve third-party notices and
+    harvested-source credits when adapting the script. Add the smallest
+    fixture check tools/bin/pre-commit-check exercising accepted/refused
+    real Git commits in an owned temporary repository, including actual
+    hook invocation, staged-versus-unstaged controls and a spaced path.
+    This developer check mutates fixture files only, never our own sources.
+    Declare the project hook in this clone through supported local git
+    hook configuration while preserving itos's hooks and other settings.
+    Document exact repeatable per-clone declaration/verification in README;
+    do not claim other clones are configured or rely on script existence.
+    Record actual declaration and functional evidence before closure.
+    No public CLI, release, mutation-proof or future T-86 changes belong here.
+  done_when:
+    - run: tools/bin/pre-commit-check
+    - run: sh -n tools/hooks/pre-commit
