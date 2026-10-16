@@ -3709,9 +3709,11 @@
     Keep fake following-Stat facts independent from T-93's no-follow facts.
     Renew and Survivor apply their distinct admission/error policies above;
     neither substitutes conservative Present or successful RenameTarget.
-    Elsewhere receives explicit root and caller-directory facts. Normalize
-    exception/source keys lexically before its judge and exclusion queries;
-    no query passed into the domain may rediscover cwd or Git through
+    Elsewhere receives explicit root and caller-directory facts. Replace
+    existing root-relative conversions with lexical equivalents for queries,
+    preserving raw recorded exception identities in range membership lookups;
+    do not canonicalize a formerly unmatched stored key into a new match.
+    No query passed into the domain may rediscover cwd or Git through
     project.AtRoot or FromRoot. Preserve outside-root absolute paths and
     existing selection/exclusion semantics. Keep no-exception/no-orphan and
     narrow-path bypasses lazy: a source parser binding is required only when
