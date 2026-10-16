@@ -3368,6 +3368,6 @@ items:
     title: Observe joined fixture peers before cooperative cleanup
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

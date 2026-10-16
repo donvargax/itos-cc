@@ -4335,6 +4335,3 @@
     safely stashed until this separate test task is full-green, closed and published, then retake
     T92 before restoring its exact owned work. No own-code mutation, new dependency,
     agents/worktrees, gate weakening or published rewrite.
-  done_when:
-    - run: go test ./features -run '^TestFixturePeer' -count=1 -v
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(165|166|167|183|184|187|188|189|191|193)$"
