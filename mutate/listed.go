@@ -1,57 +1,14 @@
 package mutate
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"os"
+	"context"
 	"path/filepath"
+
+	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/testinputs"
 )
 
-// A kill by listed tests (ScopeListed) rests on files no import names: the
-// file that defines each of its tests, as the list command named it
-// (Snapshot.Listed), and the support files every listed test depends on
-// (mutation.tests.support). A snapshot that records such an outcome records
-// the hashes of both, and the outcome holds while they are unchanged. No
-// list command runs to judge it: deleting a test changes its file.
-
-// SupportHashes is the SHA-256 of each file under root that globs, from
-// root, match, by its slash-separated path from root; nil without globs.
-func SupportHashes(root string, globs []string) (map[string]string, error) {
-	if len(globs) == 0 {
-		return nil, nil
-	}
-	out := map[string]string{}
-	for _, glob := range globs {
-		paths, err := filepath.Glob(filepath.Join(root, filepath.FromSlash(glob)))
-		if err != nil {
-			return nil, err
-		}
-		for _, path := range paths {
-			if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
-				continue
-			}
-			rel, err := filepath.Rel(root, path)
-			if err != nil {
-				return nil, err
-			}
-			if out[filepath.ToSlash(rel)] == "" {
-				out[filepath.ToSlash(rel)] = fileHash(path)
-			}
-		}
-	}
-	return out, nil
-}
-
-// fileHash is the SHA-256 of the file at path, or "" when it cannot be
-// read.
-func fileHash(path string) string {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	sum := sha256.Sum256(data)
-	return hex.EncodeToString(sum[:])
-}
+func fileHash(path string) string { return testinputs.FileHash(path) }
 
 // recordListed records in s what its listed outcomes rest on: the hash of
 // each file Listed names, now, under root, and support, the support files'
@@ -111,6 +68,63 @@ func (s *fileState) markListedStale() {
 	for i := range units {
 		if !judged[unitID(units[i].Namespace, units[i].Name)] && len(s.listedChange.Files(units[i].Mutants)) > 0 {
 			units[i].Stale = true
+		}
+	}
+}
+
+// listedHash preserves the old best-effort unreadable-file result without
+// turning optional cleanup or freshness observations into newly fatal errors.
+func listedHash(ctx context.Context, root, file string, fp mutants.Fingerprints) string {
+	if fp == nil {
+		return fileHash(filepath.Join(root, filepath.FromSlash(file)))
+	}
+	hashes, failure := fp.Tests(ctx, root, []string{filepath.Join(root, filepath.FromSlash(file))})
+	if failure != nil {
+		return ""
+	}
+	return hashes[file]
+}
+func listedChangedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp mutants.Fingerprints) *ListedChange {
+	if fp == nil {
+		return ListedChanged(s, root, support)
+	}
+	if s == nil || !hasListed(s.Units) {
+		return nil
+	}
+	now := map[string]string{}
+	for _, file := range s.Listed {
+		if file != "" {
+			now[file] = listedHash(ctx, root, file, fp)
+		}
+	}
+	return s.ListedChanged(now, support)
+}
+func recordListedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp mutants.Fingerprints) {
+	// Legacy finalization read these files even on an externally stopped run.
+	// Keep only those retained best-effort hashes uncancelled; publication and
+	// ordinary current observations still receive their original caller ctx.
+	ctx = context.WithoutCancel(ctx)
+	if fp == nil {
+		recordListed(s, root, support)
+		return
+	}
+	s.ListedFiles, s.Support = nil, nil
+	if !hasListed(s.Units) {
+		return
+	}
+	for _, file := range s.Listed {
+		if file == "" {
+			continue
+		}
+		if s.ListedFiles == nil {
+			s.ListedFiles = map[string]string{}
+		}
+		s.ListedFiles[file] = listedHash(ctx, root, file, fp)
+	}
+	if len(support) > 0 {
+		s.Support = map[string]string{}
+		for path, hash := range support {
+			s.Support[path] = hash
 		}
 	}
 }

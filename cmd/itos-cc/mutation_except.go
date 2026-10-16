@@ -169,15 +169,18 @@ func runMutationExcept(ctx context.Context, in *invocation) (any, error) {
 			fmt.Sprintf("Except a survivor of a source mutation run judges, or take %s out of exclude in %s first.", rel, config.File)).
 			With("file", rel)
 	}
-	support, err := supportNow(cfg)
+	if err := mutationInputsBound(in.adapters); err != nil {
+		return result, err
+	}
+	support, err := supportNow(ctx, in, cfg)
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests(ctx)
+	tests, err := importingTests(ctx, in)
 	if err != nil {
 		return result, err
 	}
-	e, err := mutate.Survivor(ctx, in.adapters.Store, path, line, column, tests, support)
+	e, err := mutate.SurvivorWithInputs(ctx, in.adapters.Store, path, line, column, tests, support, in.adapters.Toolchain, in.adapters.Fingerprints)
 	var none *mutate.NoSurvivorError
 	if errors.As(err, &none) {
 		rel := project.Rel(absOrSame(path))
@@ -291,11 +294,14 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if len(cfg.Exceptions) == 0 {
 		return result, nil
 	}
-	support, err := supportNow(cfg)
+	if err := mutationInputsBound(in.adapters); err != nil {
+		return result, err
+	}
+	support, err := supportNow(ctx, in, cfg)
 	if err != nil {
 		return result, err
 	}
-	tests, err := importingTests(ctx)
+	tests, err := importingTests(ctx, in)
 	if err != nil {
 		return result, err
 	}
@@ -303,7 +309,7 @@ func runRenewExceptions(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	renewed, left, err := mutate.Renew(ctx, in.adapters.Store, cfg.Exceptions, all.Sources, tests, support)
+	renewed, left, err := mutate.RenewWithInputs(ctx, in.adapters.Store, cfg.Exceptions, all.Sources, tests, support, in.adapters.Toolchain, in.adapters.Fingerprints)
 	if err != nil {
 		return result, err
 	}

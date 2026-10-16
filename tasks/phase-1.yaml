@@ -3047,6 +3047,13 @@
     Command or execution outcomes and stores root-level graph facts only;
     it neither installs tools nor declares a runnable test command. This
     covers selection-only fixtures without inventing their test results.
+    Partial-result finalization preserves recordListed's existing best-effort
+    actual file reads even after caller cancellation. Only that finalization
+    leaf derives context.WithoutCancel(ctx) for retained listed-file hashes;
+    unreadable files still hash empty nonfatally. Ordinary current fingerprints,
+    scope admission, probes, tests and snapshot publication keep the original
+    caller context. This neither admits new work nor authorizes a write after
+    cancellation; it preserves the pre-port artifact provenance semantics.
     Attempt dc9d9ffe26606320e229b68b317bf75105e08f57 passed the named
     public 35-case/202-step selection and focused contracts, but exact CI
     38832592601 refused staticcheck QF1001 at porttest/tools.go:236 for a

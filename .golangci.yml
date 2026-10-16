@@ -146,6 +146,9 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
+            - "!**/internal/testtools/**" # mutation tool observations
+            - "!**/internal/testinputs/**" # mutation input fingerprints
+            - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -196,6 +199,9 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
+            - "!**/internal/testtools/**" # mutation tool observations
+            - "!**/internal/testinputs/**" # mutation input fingerprints
+            - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -319,6 +325,45 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the worktrees adapter imports only the mutation domain and project tree operations it wraps (T-88); no UI, other adapters or fakes"
+        # T-89: each concrete observation adapter owns only its declared I/O.
+        testtools:
+          list-mode: lax
+          files:
+            - "**/internal/testtools/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/coverage$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the testtools adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
+        testinputs:
+          list-mode: lax
+          files:
+            - "**/internal/testinputs/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/coverage$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the testinputs adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
+        importgraph:
+          list-mode: lax
+          files:
+            - "**/internal/importgraph/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/graph$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the importgraph adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
         mocks:
           files:
             - $all

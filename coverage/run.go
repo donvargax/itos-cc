@@ -21,6 +21,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -728,25 +729,11 @@ func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 	return plan
 }
 
-// GradleTests is the --tests filter of a Gradle test task that runs
-// classes, test classes by fully qualified name.
-func GradleTests(classes []string) []string {
-	var out []string
-	for _, class := range classes {
-		out = append(out, "--tests", class)
-	}
-	return out
-}
+// GradleTests forwards the pure filter formatter until T-90 moves these callers.
+func GradleTests(classes []string) []string { return mutants.GradleTests(classes) }
 
-// MavenTests is the properties that have Surefire run classes, test classes
-// by fully qualified name, in each module of a build that holds any of
-// them, and none in one that holds none; nothing when classes is nil.
-func MavenTests(classes []string) []string {
-	if classes == nil {
-		return nil
-	}
-	return []string{"-Dtest=" + strings.Join(classes, ","), "-Dsurefire.failIfNoSpecifiedTests=false"}
-}
+// MavenTests forwards the same existing nil-aware Surefire formatter.
+func MavenTests(classes []string) []string { return mutants.MavenTests(classes) }
 
 // Run executes each plan and returns the coverage of sources. A plan whose
 // commands fail still contributes any report it wrote, because failing tests

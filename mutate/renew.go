@@ -8,6 +8,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -71,6 +72,11 @@ type Unrenewed struct {
 // killed, which no renewal can mend. It writes nothing; the caller writes
 // the renewals (config.Renew).
 func Renew(ctx context.Context, store snapport.Store, exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string) ([]Renewal, []Unrenewed, error) {
+	return RenewWithInputs(ctx, store, exceptions, sources, tests, support, nil, nil)
+}
+
+// RenewWithInputs uses the supplied actual observation bindings.
+func RenewWithInputs(ctx context.Context, store snapport.Store, exceptions []config.Exception, sources []string, tests func(path string) []string, support map[string]string, tools mutants.Toolchain, fingerprints mutants.Fingerprints) ([]Renewal, []Unrenewed, error) {
 	var renewed []Renewal
 	var left []Unrenewed
 	files := map[string]*renewFile{}
@@ -87,7 +93,7 @@ func Renew(ctx context.Context, store snapport.Store, exceptions []config.Except
 		if err != nil {
 			return nil, err
 		}
-		c, err := checkParsed(ctx, store, f, path, nil, tests, support, nil)
+		c, err := checkParsed(ctx, store, f, path, nil, tests, support, nil, tools, fingerprints)
 		if err != nil {
 			f.Close()
 			return nil, err

@@ -1443,3 +1443,44 @@ share preparation's owner. Existing success/local-timeout guards remain.
 historical scratch lock/removal failures remain best effort. Native Windows
 process-tree ownership remains deferred; normal Windows command behavior is
 preserved, not simulated by Linux execution.
+
+Mutation observations (T-89): mutants owns `Toolchain`, `Fingerprints` and
+`Reach`, with concrete testtools/testinputs/importgraph adapters. Tool choices
+consume independent current facts. `Driver.Tools` verifies installed NodeBin
+entries using the existing Stat-only lookup and optionally observes whether the
+actual interpreter can import pytest from the fixture caller directory with its
+environment. Omitted probe facts differ from explicit failed imports. Memory
+creates the declared `.bin` entries and keys probe facts by interpreter, caller
+cwd and Python environment; it never infers availability from `Tests.Command`
+or verdicts. Shell override avoids a product probe even if fixture setup observed
+one. The real self-reexec probe guard proves executable/cwd/environment wiring;
+it does not claim a Python runtime was installed for that guard.
+
+Optional `Tests.Imports` holds resolved file-to-file import/reference adjacency
+from actual fixture bytes, including explicit no-edge files. These are not
+source-to-expected-test lists. Imports-only setup declares neither command nor
+outcomes. Root facts survive omitted upserts and conflicting or unknown paths
+fail. The memory Reach computes Go's package/one-hop rule and other languages'
+transitive closure, Python's applicable conftest files and Kotlin references.
+Shared real/fake contracts hold all four languages, external relative support
+paths, actual discovery exclusions and changed environment fingerprints.
+
+Memory composes these ports from actual files and `Run.Env`/`Run.Without`; no
+host environment supplies fake facts. Actual entered Workers receive those
+values and prepend their own copied Python directories before inherited editable
+PYTHONPATH. Source and directory read observations derive from actual bound
+selection/surroundings/input operations; fixture assertion reads are excluded,
+positive controls use those same ports, and removed targets fail observation.
+The driver still refuses hand-parsed mutation until T-100. The focused actual
+handler guards use disposable real legacy discovery/config alongside the bound
+memory ports; they do not prove full in-memory mutation execution yet.
+
+PATH omissions affect only bare executable lookups; explicit installed paths
+remain available. The fake holds simple POSIX missing-command shell exit127
+separately from a direct-start failure. Compound shell hiding and uncharacterized
+Windows missing-command shell outcomes fail explicitly as unsupported fake
+requests. T-100 must settle any needed Windows shell binding before admitting
+such execution; there is no silent verdict or permanent logical binary-only tag.
+Only partial-result listed-file hash finalization derives caller WithoutCancel
+for its old best-effort actual reads. Current freshness/admission/probes and
+snapshot publication retain their original caller context.

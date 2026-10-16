@@ -25,6 +25,10 @@ type Options struct {
 	Store snapport.Store
 	// WorkerFactory owns private command copies; cmd supplies the real binding.
 	WorkerFactory mutants.Workers
+	// Toolchain and Fingerprints are actual observation bindings. Direct legacy
+	// fixtures retain real defaults until T-92; cmd must supply both.
+	Toolchain     mutants.Toolchain
+	Fingerprints  mutants.Fingerprints
 	Workers       int
 	MutateAll     bool    // rerun killed mutants of unchanged functions too
 	TimeoutFactor float64 // a mutant may run this many times the baseline
@@ -263,7 +267,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		}
 		s.result.Snapshot.Listed = listedOf(s.result.Snapshot.Units, files, s.stored)
 		s.markListedStale()
-		recordListed(&s.result.Snapshot, project.Root(), opt.Support)
+		recordListedWithInputs(ctx, &s.result.Snapshot, project.Root(), opt.Support, opt.Fingerprints)
 		markExcepted(s.result.Snapshot.Units, s.result.Mutants)
 		if incomplete {
 			s.result.Incomplete = true
@@ -331,7 +335,7 @@ func (s *fileState) follow(ctx context.Context, opt Options, path string, snap *
 	if *snap != nil {
 		return nil
 	}
-	moving, err := LoadSnapshotOf(ctx, opt.Store, s.moved)
+	moving, err := LoadSnapshotOf(ctx, opt.Store, s.moved, opt.Toolchain)
 	if err != nil {
 		return fmt.Errorf("%s: %w", SnapshotName(s.moved), err)
 	}
@@ -368,29 +372,50 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 		if opt.Tests != nil {
 			tests = opt.Tests(path)
 		}
-		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: TestCommand(ctx, path, opt.TestCommand, opt.AllTests, tests), currentSupport: opt.Support,
+		command := TestCommand
+		var c Command
+		if opt.Toolchain != nil {
+			c, err = mutants.ObserveCommand(ctx, opt.Toolchain, mutants.CommandRequest{Path: path, Shell: opt.TestCommand, All: opt.AllTests, Tests: tests})
+			if err != nil {
+				f.Close()
+				return states, err
+			}
+		} else {
+			c = command(ctx, path, opt.TestCommand, opt.AllTests, tests)
+		}
+		s := &fileState{file: f, rel: rel, key: key, sites: Sites(f), command: c, currentSupport: opt.Support,
 			result: &FileResult{Rel: rel}}
 		states = append(states, s)
-		snap, err := LoadSnapshotOf(ctx, opt.Store, key)
+		snap, err := LoadSnapshotOf(ctx, opt.Store, key, opt.Toolchain)
 		if err != nil {
 			return states, fmt.Errorf("%s: %w", SnapshotName(key), err)
 		}
 		if err := s.follow(ctx, opt, path, &snap); err != nil {
 			return states, err
 		}
-		if s.tests, err = TestHashes(tests); err != nil {
+		if opt.Fingerprints != nil {
+			s.tests, err = opt.Fingerprints.Tests(ctx, project.Root(), tests)
+		} else {
+			s.tests, err = TestHashes(tests)
+		}
+		if err != nil {
 			return states, err
 		}
 		// Only a broad-scope outcome, judged now or recorded before,
 		// depends on the build root's tests.
-		if broadScope(FileScope(ctx, path, opt.TestCommand, opt.AllTests)) || snap != nil && HasBroadOutcome(snap.Units) {
-			if s.moduleTests, err = SuiteTestHashes(ctx, path, project.Root()); err != nil {
+		if broadScope(scopeForCommand(opt.TestCommand, opt.AllTests, s.command)) || snap != nil && HasBroadOutcome(snap.Units) {
+			if opt.Fingerprints != nil {
+				s.moduleTests, err = opt.Fingerprints.Suite(ctx, path, project.Root())
+			} else {
+				s.moduleTests, err = SuiteTestHashes(ctx, path, project.Root())
+			}
+			if err != nil {
 				return states, err
 			}
 		}
 		s.stored, s.previous = snap, usable(snap, s.tests)
 		prev, prevScopes := rememberedWithScopes(s.previous, f)
-		s.listedChange = ListedChanged(s.stored, project.Root(), opt.Support)
+		s.listedChange = listedChangedWithInputs(ctx, s.stored, project.Root(), opt.Support, opt.Fingerprints)
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {
@@ -413,7 +438,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*fileState, error
 		s.scopes = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
 		s.fresh = make([]freshOutcome, len(s.sites))
-		scope := FileScope(ctx, path, opt.TestCommand, opt.AllTests)
+		scope := scopeForCommand(opt.TestCommand, opt.AllTests, s.command)
 		for i, site := range s.sites {
 			// A kept outcome keeps the scope it was decided with.
 			s.scopes[i] = scope

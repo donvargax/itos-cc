@@ -1,4 +1,4 @@
-package mutate
+package testinputs
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -101,10 +102,10 @@ func rootCoverageInputs(ctx context.Context, source, projectRoot string, inv roo
 }
 
 // envInput hashes the values of keys in the environment, beside more.
-func envInput(more string, keys ...string) string {
+func envInput(runtime mutants.RuntimeInputs, more string, keys ...string) string {
 	env := []string{more}
 	for _, key := range keys {
-		env = append(env, key+"="+os.Getenv(key))
+		env = append(env, key+"="+runtime.Env[key])
 	}
 	return hashText(strings.Join(env, "\x00"))
 }
@@ -119,7 +120,7 @@ func envInput(more string, keys ...string) string {
 // (pyvenv.cfg), hidden, __pycache__, node_modules or another build root is
 // left out. A build root above the project root is not followed: the
 // project root stands for it.
-func PythonCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+func PythonCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
 	out, root, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		markers: pythonRootMarkers,
 		source:  func(name string) bool { return strings.HasSuffix(name, ".py") },
@@ -138,7 +139,7 @@ func PythonCoverageInputs(ctx context.Context, source, projectRoot, producer str
 			break
 		}
 	}
-	out["@python-env"] = envInput(interpreter, "PYTHONPATH", "PYTHONSAFEPATH", "VIRTUAL_ENV", "COVERAGE_RCFILE", "PYTEST_ADDOPTS", "PYTEST_PLUGINS", "PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+	out["@python-env"] = envInput(runtime, interpreter, "PYTHONPATH", "PYTHONSAFEPATH", "VIRTUAL_ENV", "COVERAGE_RCFILE", "PYTEST_ADDOPTS", "PYTEST_PLUGINS", "PYTEST_DISABLE_PLUGIN_AUTOLOAD")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}
@@ -173,7 +174,7 @@ func typescriptConfig(name string) bool {
 // directories, nested packages and the root's dist, build, out and coverage
 // outputs are left out. A package root above the project root is not
 // followed: the project root stands for it.
-func TypeScriptCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+func TypeScriptCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
 	out, _, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		markers: []string{"package.json"},
 		source:  func(name string) bool { return slices.Contains(typescriptSources, filepath.Ext(name)) },
@@ -185,7 +186,7 @@ func TypeScriptCoverageInputs(ctx context.Context, source, projectRoot, producer
 	if err != nil {
 		return nil, err
 	}
-	out["@node-env"] = envInput("", "NODE_OPTIONS", "NODE_ENV", "NODE_PATH", "TS_NODE_PROJECT")
+	out["@node-env"] = envInput(runtime, "", "NODE_OPTIONS", "NODE_ENV", "NODE_PATH", "TS_NODE_PROJECT")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}
@@ -253,7 +254,7 @@ func KotlinBuildRoot(ctx context.Context, source string) string {
 // root with settings of its own other than buildSrc or a build the root's
 // settings name (includeBuild), are left out. A build root above the
 // project root is not followed: the project root stands for it.
-func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+func KotlinCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
 	build := KotlinBuildRoot(ctx, source)
 	if build != "" && !beneathRoot(projectRoot, build) {
 		build = projectRoot
@@ -263,7 +264,7 @@ func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer str
 		if build == "" {
 			break
 		}
-		if data, err := os.ReadFile(filepath.Join(build, name)); err == nil {
+		if data, err := os.ReadFile(filepath.Join(build, name)); err == nil { //nolint:gosec // fingerprint actual files within the admitted language build inventory
 			settings += string(data)
 		}
 	}
@@ -306,7 +307,7 @@ func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer str
 			runner = "gradlew"
 		}
 	}
-	out["@jvm-env"] = envInput(runner, "JAVA_HOME", "GRADLE_OPTS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS")
+	out["@jvm-env"] = envInput(runtime, runner, "JAVA_HOME", "GRADLE_OPTS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}
@@ -318,12 +319,12 @@ func KotlinCoverageInputs(ctx context.Context, source, projectRoot, producer str
 // summary comment itos-cc writes, so a run's own summary does not stale
 // its evidence.
 func addCoverageInput(inputs map[string]string, projectRoot, path string) error {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // fingerprint actual files within the admitted language build inventory
 	if err != nil {
 		return err
 	}
 	if spec := lang.Detect(path); spec != nil {
-		data = []byte(StripAnnotation(string(data), spec.Comment))
+		data = []byte(mutants.StripAnnotation(string(data), spec.Comment))
 	}
 	rel, err := filepath.Rel(projectRoot, path)
 	if err != nil {

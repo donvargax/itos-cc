@@ -18,7 +18,12 @@ import (
 // it starting with ../, as the disk holds files outside the working
 // directory too, the changed ones, and configured failures. It walks, names and skips as
 // internal/workdir's Tree does on the disk, which TreeContract holds.
+// Observations records actual fake-port reads and directory walks, independently
+// of expected selection results or fixture assertion reads.
+type Observations struct{ Reads, Lists []string }
+
 type Tree struct {
+	Observations *Observations
 	// Dir is the working directory, absolute: a relative path resolves
 	// against it, and every path Discover gives is under the root it was
 	// given. TreeOf sets it.
@@ -99,6 +104,7 @@ func (t Tree) Discover(ctx context.Context, roots []string) (sources, tests []st
 			return nil, nil, failure
 		}
 		abs := t.abs(root)
+		t.observeWalk(abs)
 		if !t.Exists(ctx, root) {
 			return nil, nil, &port.Unwalkable{Reason: "stat " + abs + ": no such file or directory in the fake"}
 		}
@@ -146,6 +152,9 @@ func (t Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
 	}
 	if rel, ok := t.rel(t.abs(path)); ok {
 		if text, ok := t.Contents[rel]; ok {
+			if t.Observations != nil {
+				t.Observations.Reads = append(t.Observations.Reads, t.abs(path))
+			}
 			return []byte(text), nil
 		}
 	}
@@ -204,6 +213,7 @@ func (t Tree) walk(root string, list []string) []string {
 		path := t.path(f)
 		rel, err := filepath.Rel(root, path)
 		if path == root || err == nil && filepath.IsLocal(rel) && !t.skips(root, rel) {
+
 			out = append(out, path)
 		}
 	}
@@ -244,4 +254,36 @@ func (t Tree) isBuildOutput(dir string) bool {
 func sorted(list []string) []string {
 	slices.Sort(list)
 	return slices.Compact(list)
+}
+
+func underRoot(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	return err == nil && filepath.IsLocal(rel)
+}
+
+// observeWalk follows the actual virtual directory inventory, including folders
+// containing only unsupported files, while applying the same traversal policy.
+// Selected source/test results alone cannot establish which folders were listed.
+func (t Tree) observeWalk(root string) {
+	if t.Observations == nil {
+		return
+	}
+	if rel, ok := t.rel(root); ok && t.isFile(rel) {
+		return
+	}
+	t.Observations.Lists = append(t.Observations.Lists, root)
+	files := append(slices.Clone(t.Sources), t.Tests...)
+	for path := range t.Contents {
+		files = append(files, path)
+	}
+	listed := map[string]bool{root: true}
+	for _, name := range files {
+		for dir := filepath.Dir(t.abs(name)); dir != root && underRoot(root, dir); dir = filepath.Dir(dir) {
+			rel, err := filepath.Rel(root, filepath.Join(dir, "probe"))
+			if err == nil && !t.skips(root, rel) && !listed[dir] {
+				t.Observations.Lists = append(t.Observations.Lists, dir)
+				listed[dir] = true
+			}
+		}
+	}
 }
