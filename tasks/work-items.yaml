@@ -1736,14 +1736,15 @@ items:
       it is commented out with the reason above it. When the refactor ports the template's main.go,
       the entry is uncommented if its function and hash match, or renewed with itos-cc mutation
       except --renew if the port changed it; never left to go stale.
-  - id: gate-golangci-lint
-    title: Run golangci-lint with the template's .golangci.yml in CI
+  - id: T-119
+    title: Enforce Go lint across the completed refactor module
     phase: 1
     owner: null
     status: todo
     depends_on: [T-26]
-    kind: idea
+    kind: task
     why: >
+      Was gate-golangci-lint.
       Set aside by T-26. go-template-itos v0.2.0 brought .golangci.yml (its linters and the depguard
       arrows of the template's layout) and tools/bin/pinned, which downloads golangci-lint at a
       pinned release and checks its SHA-256. CI does not run it yet: itos-cc's packages were not
