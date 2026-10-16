@@ -26,6 +26,7 @@ type Tests struct {
 	Elapsed  time.Duration
 	Verdicts []Verdict
 	Trace    *Trace
+	Hold     *WorkGate
 }
 
 // Verdict is a declared exception to the default killed mutant.
@@ -46,10 +47,15 @@ type Trace struct {
 // Write, when set, publishes trace bytes through the driver's actual file writer.
 type Workers struct {
 	// Opened retains the semantic purpose of actual pool lifetimes, for binding guards.
-	Opened []mutants.WorkPurpose
-	Files  map[string]string
-	Tests  map[string]map[string]Tests
-	Write  func(path string, data []byte) error
+	// Lifetimes observe actual pool join/release, independent of result fields.
+	Lifetimes []*InputLifetime
+	OnRelease func(InputState) error
+	// ReleaseFailure models an unavailable owned-input release after actual join.
+	ReleaseFailure mutants.WorkerFailure
+	Opened         []mutants.WorkPurpose
+	Files          map[string]string
+	Tests          map[string]map[string]Tests
+	Write          func(path string, data []byte) error
 	// Env is the actual per-run environment, independent of test verdict facts.
 	Env      map[string]string
 	Without  []string
@@ -74,7 +80,8 @@ func (f *Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count i
 	defer f.mu.Unlock()
 	f.next++
 	f.Opened = append(f.Opened, purpose)
-	p := &pool{factory: f}
+	p := &pool{factory: f, lifetime: &InputLifetime{}}
+	f.Lifetimes = append(f.Lifetimes, p.lifetime)
 	for i := 0; i < max(1, count); i++ {
 		p.workers = append(p.workers, &worker{pool: p, dir: filepath.Join(filepath.VolumeName(firstPath(f.Files))+string(filepath.Separator), "virtual-workers", fmt.Sprintf("%d-%d", purpose, f.next), fmt.Sprint(i)), copies: map[string]map[string]string{}})
 	}
@@ -88,20 +95,40 @@ func firstPath(files map[string]string) string {
 }
 
 type pool struct {
-	factory *Workers
-	workers []*worker
-	closed  bool
+	factory  *Workers
+	workers  []*worker
+	closed   bool
+	mu       sync.Mutex
+	active   sync.WaitGroup
+	lifetime *InputLifetime
 }
 
 func (p *pool) Worker(index int) mutants.Worker { return p.workers[index] }
 func (p *pool) Abort()                          {} // no physical cleanup clock; actual context cancellation governs requests
 func (p *pool) Close(context.Context) mutants.WorkerFailure {
+	p.mu.Lock()
+	p.closed = true
+	p.mu.Unlock()
+	p.active.Wait()
+	p.lifetime.mu.Lock()
+	p.lifetime.state.JoinReturned = true
+	p.lifetime.mu.Unlock()
 	p.factory.mu.Lock()
 	defer p.factory.mu.Unlock()
-	p.closed = true
+	if p.factory.OnRelease != nil {
+		if err := p.factory.OnRelease(p.lifetime.State()); err != nil {
+			return mutants.WorkerFailed{Cause: err}
+		}
+	}
+	if p.factory.ReleaseFailure != nil {
+		return p.factory.ReleaseFailure
+	}
 	for _, w := range p.workers {
 		w.copies = nil
 	}
+	p.lifetime.mu.Lock()
+	p.lifetime.state.Released = true
+	p.lifetime.mu.Unlock()
 	return nil
 }
 
@@ -115,12 +142,19 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 	if ctx.Err() != nil {
 		return mutants.CommandResult{}, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
 	}
-	f := w.pool.factory
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if w.pool.closed {
+	p := w.pool
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
 		return mutants.CommandResult{}, failed("worker pool is closed")
 	}
+	p.active.Add(1)
+	p.mu.Unlock()
+	defer p.active.Done()
+	f := p.factory
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	tests, ok := f.Tests[filepath.Clean(c.Dir)][c.String()]
 	if !ok {
 		return mutants.CommandResult{}, failed("no tests declared for " + c.Dir + "$ " + c.String())
@@ -183,6 +217,15 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 	if tests.Trace != nil {
 		if err := w.trace(c, copy, tests.Trace); err != nil {
 			return mutants.CommandResult{}, mutants.WorkerFailed{Cause: err}
+		}
+	}
+	if gate := tests.Hold; gate != nil && (change != nil || !gate.MutationsOnly) {
+		entry := Invocation{Command: c, Changed: change != nil, Files: maps.Clone(copy)}
+		f.mu.Unlock()
+		cancelled := gate.wait(ctx, entry)
+		f.mu.Lock()
+		if cancelled {
+			return mutants.CommandResult{Cancelled: true, ExitCode: -1}, nil
 		}
 	}
 	r := mutants.CommandResult{Passed: true, ExitCode: 0, Elapsed: tests.Elapsed}

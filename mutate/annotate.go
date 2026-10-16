@@ -2,9 +2,9 @@ package mutate
 
 import (
 	"os"
-	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // annotate replaces the summary comment at the end of path with one for
@@ -16,12 +16,7 @@ func annotate(path string, spec *lang.Spec, snap Snapshot, excepted map[string]s
 	if err != nil {
 		return err
 	}
-	body := StripAnnotation(string(src), spec.Comment)
-	block := Annotation(snap, spec.Comment, excepted)
-	updated := strings.TrimRight(body, "\n") + "\n\n" + block
-	if block == "" {
-		updated = strings.TrimRight(body, "\n") + "\n"
-	}
+	updated := mutants.Annotated(string(src), spec.Comment, Annotation(snap, spec.Comment, excepted))
 	if updated == string(src) {
 		return nil
 	}

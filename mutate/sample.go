@@ -2,9 +2,10 @@ package mutate
 
 import (
 	"context"
-	"slices"
 	"sort"
 
+	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -24,14 +25,20 @@ import (
 // baseline of that selection, which sets its timeout, as in Run. opt's Store, Workers, TimeoutFactor, Judge, Tests, Listed, and Log
 // apply as in Run; the rest is not used.
 func Sample(ctx context.Context, files []string, count int, seed string, opt Options) (Sampled, error) {
-	var states []*fileState
+	type sampleSource struct {
+		file     *lang.File
+		sites    []Site
+		rel, key string
+	}
+
+	var states []*sampleSource
 	defer func() {
 		for _, s := range states {
 			s.file.Close()
 		}
 	}()
 	type candidate struct {
-		state    *fileState
+		state    *sampleSource
 		site     int
 		function string
 		recorded string
@@ -46,13 +53,13 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		if err != nil {
 			return Sampled{}, err
 		}
-		s := &fileState{file: f, sites: Sites(f)}
+		s := &sampleSource{file: f, sites: Sites(f)}
 		states = append(states, s)
 		c, err := checkParsed(ctx, opt.Store, f, path, opt.Judge, opt.Tests, opt.Support, nil, opt.Toolchain, opt.Fingerprints)
 		if err != nil {
 			return Sampled{}, err
 		}
-		s.rel, s.key, s.result = c.Rel, c.Key, &FileResult{Rel: c.Rel}
+		s.rel, s.key = c.Rel, c.Key
 		at := map[int]map[string]int{}
 		for i, site := range s.sites {
 			if at[site.Unit] == nil {
@@ -87,12 +94,12 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 	// Each file's drawn mutants run in one state per scope, with that
 	// scope's command, so execute runs each command's baseline once.
 	type scoped struct {
-		state *fileState
+		state *sampleSource
 		scope string
 	}
-	runs := map[scoped]*fileState{}
-	var order []*fileState
-	drawn := map[*fileState][]candidate{}
+	runs := map[scoped]*mutants.Execution{}
+	var order []*mutants.Execution
+	drawn := map[*sampleSource][]candidate{}
 	for _, c := range candidates {
 		k := scoped{c.state, c.scope}
 		r := runs[k]
@@ -106,22 +113,18 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 			if err != nil {
 				return result, err
 			}
-			r = &fileState{file: s.file, rel: s.rel, key: s.key, sites: s.sites, command: command,
-				result: &FileResult{Rel: s.rel}, outcomes: slices.Repeat([]string{skipped}, len(s.sites)),
-				scopes: make([]string, len(s.sites)), ran: make([][]string, len(s.sites))}
-			if c.scope == ScopeListed {
-				r.reach = make([][]string, len(s.sites))
-			}
+			r = mutants.NewExecution(s.file, s.rel, s.key, command)
 			runs[k] = r
 			order = append(order, r)
 		}
-		r.outcomes[c.site] = ""
-		if r.reach != nil {
-			r.reach[c.site] = c.tests
+		ids := c.tests
+		if c.scope != ScopeListed {
+			ids = nil
 		}
+		r.Pending(c.site, ids)
 		drawn[c.state] = append(drawn[c.state], c)
 	}
-	if _, err := execute(ctx, order, opt, nil); err != nil {
+	if _, err := mutants.Execute(ctx, order, domainOptions(opt), nil); err != nil {
 		return result, stopped(ctx, err)
 	}
 	if err := stopped(ctx, nil); err != nil {
@@ -135,10 +138,10 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 		failed := &FileResult{}
 		for _, c := range drawn[s] {
 			r := runs[scoped{s, c.scope}]
-			if r.result.BaselineFailed && !f.BaselineFailed {
-				f.BaselineFailed, f.BaselineOutput = true, r.result.BaselineOutput
+			if r.Result().BaselineFailed && !f.BaselineFailed {
+				f.BaselineFailed, f.BaselineOutput = true, r.Result().BaselineOutput
 			}
-			for _, sel := range r.result.FailedSelections {
+			for _, sel := range r.Result().FailedSelections {
 				failed.AddFailed(&sel)
 			}
 		}
@@ -148,7 +151,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Opt
 			continue
 		}
 		for _, c := range drawn[s] {
-			outcome := runs[scoped{s, c.scope}].outcomes[c.site]
+			outcome := runs[scoped{s, c.scope}].Outcome(c.site)
 			f.Mutants = append(f.Mutants, SampledMutant{Site: s.sites[c.site], Function: c.function, Recorded: c.recorded,
 				Outcome: outcome, Scope: c.scope})
 		}
