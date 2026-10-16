@@ -3072,6 +3072,14 @@
     preserving new actual read/list, assertion-read exclusion and removed-
     target controls. This completes the already specified capability,
     without restoring a fake no-op or claiming a new product-behavior red.
+    The completed original Windows job also exposed two test-fixture
+    portability errors: an observed short-path cwd differed textually from
+    its long canonical spelling, and the listed-hash fixture's drive-less
+    root was not absolute. Compare actual probe directories by Stat/SameFile
+    while retaining argv/environment/importability/interpreter assertions;
+    give the listed fixture an absolute native temp root while retaining
+    exact actual hashes, missing-file empty hashes and caller cancellation.
+    These are fixture-only corrections, with no product OS branch or skip.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
