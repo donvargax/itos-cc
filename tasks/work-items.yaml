@@ -2526,6 +2526,18 @@ items:
       existing controlled-input and bounded-volatility rules. These are baseline-characterized
       equality cases, with no new intentional-difference allowance and no per-task binary comparison
       or proof implementation now.
+
+      T-93 (Move mutation check and list orchestration behind the domain boundary): compare mutation
+      list over an earlier valid source followed by a source that cannot be read or parsed, in plain
+      and JSON modes, retaining the same ordered prefix before the failure. Contrast mutation check
+      over mixed valid/later-failing sources and ordinary or strict evidence admission: no earlier
+      formatted checks are presented before all admission succeeds. Include supported native
+      store-relative snapshot names, POSIX literal-backslash names, permissive orphan file metadata
+      versus malformed full snapshots, and agreeing absolute recorded sources outside the root,
+      preserving actual platform limitations rather than claiming skipped cases ran. Check/list
+      remain read-only on success and failure. The comparison follows the existing final
+      case/platform manifest and runs once after all current refactor and adoption-gate source
+      changes, before either S10 exit-code feature; do not compare binaries per task.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
