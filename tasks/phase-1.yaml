@@ -3997,10 +3997,6 @@
     --json flags are not new child duplicate errors. Preserve this quirk and
     distinguish group-before-child, top-level and child JSON placements in
     focused guards and the one final equivalence proof; a policy fix is separate.
-  done_when:
-    - run: go test ./internal/cli/...
-    - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|05|06|07|09|10|11|12|14|15|16|17)$"
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(01|57|71|85|149|156|165|173|224|243)$"
 - id: T-97
   type: refactor
   title: Move mutation list and check handlers into the mutation slice

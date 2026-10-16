@@ -3207,7 +3207,7 @@ items:
     title: Parse the mutation group with Kong before moving its handlers
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-95]
     kind: task
   - id: T-97
