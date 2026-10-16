@@ -4299,3 +4299,32 @@
     removed the attempt immediately. Retain the failed logs and successful
     live smoke evidence; canonicalize the owned fixture root, preserve the
     noLinks guard, and pass the focused package and exact repaired CI.
+
+- id: T-118
+  type: test
+  title: Observe joined fixture peers before cooperative cleanup
+  why: >
+    The specification-only c5ef771 workflow 38850524767, macOS job 116810496982, failed only in
+    MUT184 after-scenario cleanup with three TCP connection-reset errors. Its product source is
+    identical to the previously green T91 source. MUT184's interrupted control actually joins its
+    product and captures three authenticated helpers, but its logical assertions do not consume
+    their EOF. mutationExecution.cleanup currently calls cooperative peer Close, which writes late
+    STOP before reading those already-ended sockets. After the existing unrelated-control join/EOF
+    and before peers.Close, when owned is nonnil and owned.returned, observe strict EOF on every
+    captured owned peer under the existing cleanup context. This is fixture cleanup only, with no
+    feature prose, product behavior, protocol API, new timeout or public termination claim. Keep
+    bounded cooperative Stop for live/error setup and preserve every EOF/reset/protocol/deadline
+    failure; never treat reset or timeout as EOF or swallow Close errors. Add a real
+    authenticated-helper regression guard against the current cleanup API that compiles and fails
+    the no-late-STOP assertion before the helper fix, preserving raw red evidence and committing
+    that test first. The helper must actually exit and be joined; observe actual connection writes
+    rather than expected-call mocks or sleeps. Retain strict EOF/Ping/authentication/protocol
+    negatives and live Stop/cancellation-join guards. Run focused peer tests and native MUT184 plus
+    interruption/ownership neighbors, reporting actual native passes and typed platform omissions
+    separately. Broader gates run only through normal hooks and exact full CI. Keep all T92 source
+    safely stashed until this separate test task is full-green, closed and published, then retake
+    T92 before restoring its exact owned work. No own-code mutation, new dependency,
+    agents/worktrees, gate weakening or published rewrite.
+  done_when:
+    - run: go test ./features -run '^TestFixturePeer' -count=1 -v
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(165|166|167|183|184|187|188|189|191|193)$"

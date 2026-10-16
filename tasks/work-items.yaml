@@ -3364,3 +3364,10 @@ items:
       meaningful fixture tests for differing outline names and changed feature literals. This is our
       repository's developer tool, not an itos product defect, and does not block current snapshot
       work or authorize own-code product mutation.
+  - id: T-118
+    title: Observe joined fixture peers before cooperative cleanup
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
