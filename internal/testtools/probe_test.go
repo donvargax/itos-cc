@@ -93,11 +93,16 @@ func TestActualProbeUsesCallerCwdEnvironmentAndLastInterpreter(t *testing.T) {
 		if err := json.Unmarshal(data, &observed); err != nil {
 			t.Fatal(err)
 		}
-		canonical, err := filepath.EvalSymlinks(caller)
+		actualDir, err := os.Stat(observed.Cwd)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if observed.Cwd != canonical || !reflect.DeepEqual(observed.Args, []string{"-c", "import pytest"}) || observed.Pythonpath != "independent-import-path" {
+		callerDir, err := os.Stat(caller)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Native short/long path spellings can differ for the same directory.
+		if !os.SameFile(actualDir, callerDir) || !reflect.DeepEqual(observed.Args, []string{"-c", "import pytest"}) || observed.Pythonpath != "independent-import-path" {
 			t.Fatalf("actual probe request: %+v", observed)
 		}
 	}

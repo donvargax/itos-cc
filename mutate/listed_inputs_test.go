@@ -14,7 +14,7 @@ import (
 )
 
 func TestListedFinalizationRetainsActualHashesAfterCallerCancellation(t *testing.T) {
-	root := filepath.Join(string(filepath.Separator), "listed-project")
+	root := t.TempDir()
 	text := "package board\n// actual retained test bytes\n"
 	path := filepath.Join(root, "board_test.go")
 	inputs := &porttest.Inputs{Dir: root, Files: map[string]string{path: text}}
