@@ -3272,9 +3272,29 @@
     values must not smuggle scratch files, subprocess handles or held contexts
     into the domain. Preserve committed symlink/gitlink refusal and modes at the
     current export boundary rather than following their targets in the fake.
+    Inventory every actual history caller before finalizing the contract,
+    including DeletedSince in exceptionsElsewhere and both RenamesSince and
+    RenamesUncommitted in notRenamed, as well as ChangedSince and sampleSeed.
+    Bind those queries through History while their orchestration stays in
+    its current place until T-92/T-93. Preserve the maps' distinct meanings:
+    ChangedSince's rename map names current-to-prior files under the caller;
+    orphan rename queries name prior-to-current files across the whole
+    repository. Do not derive the latter from the narrowed changed-file map.
+    The working rename query compares HEAD with tracked working/index state,
+    recognizing a staged git mv or added target but not a plain untracked mv.
+    Deleted-file exception checks run only when no explicit paths narrow
+    --since. Ordinary orphan Git-query failure judges no orphan, without
+    a new public error. Keep the existing mapped-path/exclusion/presence
+    decisions, including Lstat semantics, at their current boundary until
+    their own orchestration task. These are existing behaviors, not new
+    history syntax, filesystem ports or early handler moves.
+    Include the focused public neighbors ID-MUT-77/78 for actual HEAD and
+    explicit-seed reproduction, and ID-MUT-238/239 for committed and staged
+    rename snapshot retention, alongside the existing --since checks.
   done_when:
     - run: go test ./internal/githistory/... ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(2[3-7]|3[7-9]|4[0-6]|10[2-4])$"
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-(77|78|238|239)$"
 - id: T-92
   type: refactor
   title: Move mutation run orchestration into the domain over its ports
