@@ -3748,6 +3748,11 @@
     Correct this fixture without normalizing raw recorded identities in production lookups or
     weakening the assertion. A local Unix pass does not establish the Windows outcome; require
     the exact corrected-source Windows CI result as well as all configured full-CI checks.
+    After preserving the completed core and Windows failure logs, cancel the obsolete failed
+    workflow's remaining work rather than duplicate it beside the corrected-source run. Review
+    its terminal outcomes honestly: cancelled or unexecuted checks establish no pass. This
+    retires attempt one only; every configured check and all three platforms must still pass
+    for the exact corrected head before T-94 can close. No gate or assertion is bypassed.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
