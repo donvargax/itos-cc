@@ -3716,6 +3716,15 @@
     existing selection/exclusion semantics. Keep no-exception/no-orphan and
     narrow-path bypasses lazy: a source parser binding is required only when
     a source is actually parsed, never for an unused observation.
+    Preserve lazy startup while binding the real Exceptions adapter: constructing
+    diskAdapters before parsing must not discover a Git root or run Git for help,
+    version or an invocation that never needs exception updates. Keep the concrete
+    config.Exceptions RootDir explicit. Bind it with a pure root-to-Exceptions
+    constructor in CLI composition, called only after the existing command has
+    obtained its project root; the domain receives the resulting capability.
+    The constructor performs no I/O, captures no context and adds no service
+    locator or framework. Keep actual independent-store and missing/wrong-binding
+    controls, subdirectory updates and no-work admission bypasses intact.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
