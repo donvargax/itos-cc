@@ -3598,6 +3598,24 @@
     writes/removals leave state unchanged. Hold this lifecycle through one shared real/fake
     contract and independent fake failure states; this is harness conformance, not new CLI
     behavior.
+    The first source attempt, 388e60d and 22fdb42 with proof note 9bfcd58, was published as
+    9bfcd58. Workflow 38868646788 failed Ubuntu job 116867257185 at
+    TestMutationHistoryConsumersRequireActualBindings, mutation_history_binding_test.go:80.
+    That retained T-91 fixture supplied History alone to notRenamed and omitted the newly
+    required SourcePresence binding; the committed/working rename control returned mutation
+    source presence binding is missing. This is our fixture wiring omission, not a wrong gate
+    or an itos defect. Artifact preservation failures followed the stopped test step and are
+    cascades. Local 36-case/158-step public passes, 83.1 percent domain coverage and focused
+    guard passes remain honest local-stage evidence, not full CI success. Source-only revert
+    25100adc78d40ebfe6eddf4f964b08f1b04c8daf restored and published the pre-source
+    implementation FIRST, preserving every contract and the proof note. Before republication,
+    bind independent SourcePresence from the history fixture actual m.files and m.dirs,
+    preserving its committed/staged rename, wrong/missing History, no-Git and cancellation
+    assertions and actual physical target decoys. Add missing and wrong Presence controls
+    proving no host fallback, include this retained history consumer in focused retry
+    verification, and audit all affected direct callers for the new binding. Keep production
+    defaults absent and every existing gate unchanged; no new CLI behavior or own-source
+    mutation is authorized by this harness repair.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
