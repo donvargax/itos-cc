@@ -13,5 +13,13 @@
 // Run owns scheduling, reuse, judgments and publication over these bindings.
 // Progress reports model facts; the caller presents them. Snapshot codecs live
 // in metricsdir; source annotation I/O lives in workdir and listing in testtools.
+// Check, CheckCoverage, List and Orphans own read-only orchestration through
+// MutationSnapshotReader, MutationCatalog and SourcePresence. Catalog metadata
+// remains permissive at the adapter; full snapshot decoding has one codec.
+// CheckParsed is shared with the retained Sample/exception boundaries, keeping
+// stale-but-judged outcomes distinct from Check's presentation filter. List
+// returns an ordered prefix on a later failure; Check presentation admits all
+// results first. RenameTarget requires successful no-follow evidence, while
+// Present conservatively refuses to call ordinary Lstat errors absence.
 // The domain imports no implementation and contains no process/filesystem I/O.
 package mutants

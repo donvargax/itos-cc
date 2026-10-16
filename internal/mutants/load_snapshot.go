@@ -10,7 +10,7 @@ import (
 
 // LoadSnapshot admits a complete decoded record before observing current command
 // policy. Missing or mismatched records never start a runner probe.
-func LoadSnapshot(ctx context.Context, store MutationSnapshots, key string, tools Toolchain) (*Snapshot, error) {
+func LoadSnapshot(ctx context.Context, store MutationSnapshotReader, key string, tools Toolchain) (*Snapshot, error) {
 	root, failure := store.Root(ctx)
 	if failure != nil {
 		return nil, failure

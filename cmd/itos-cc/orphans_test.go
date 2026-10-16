@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/workdir"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,11 +29,11 @@ func TestAnOrphanRenamedToAFileIsKept(t *testing.T) {
 		{"p.ts", false}, // p → q → p, a cycle to a path where nothing is
 		{"z.ts", false}, // no rename: deleted, or moved where git does not see it
 	} {
-		if got := renamedToAFile(at(c.name), since, uncommitted); got != c.want {
+		if got, err := mutants.RenamedToAFile(t.Context(), at(c.name), since, uncommitted, workdir.SourceEdits{}); err != nil || got != c.want {
 			t.Errorf("renamedToAFile(%s) = %v, want %v", c.name, got, c.want)
 		}
 	}
-	if renamedToAFile(at("a.ts"), nil, nil) {
+	if got, err := mutants.RenamedToAFile(t.Context(), at("a.ts"), nil, nil, workdir.SourceEdits{}); err != nil || got {
 		t.Errorf("renamedToAFile with no renames = true, want false")
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"maps"
 	"slices"
+	"sort"
+	"strings"
 
 	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -12,11 +14,16 @@ import (
 // Snapshots holds independent model values; encoding is exclusively concrete.
 // Reads/writes own their nested values so later fixture edits cannot change history.
 type Snapshots struct {
-	RootDir                    string
-	Values                     map[string]mutants.Snapshot
-	Failures                   map[string]snapport.Failure
-	WriteFailures              map[string]snapport.Failure
-	RootFailure                snapport.Failure
+	RootDir       string
+	Values        map[string]mutants.Snapshot
+	Failures      map[string]snapport.Failure
+	WriteFailures map[string]snapport.Failure
+	RootFailure   snapport.Failure
+	// CatalogFiles are independent permissive metadata, keyed by store-relative names.
+	CatalogFiles               map[string]string
+	CatalogFailures            map[string]snapport.Failure
+	ListFailure                snapport.Failure
+	MetadataReads              []string
 	ReadKeys, Written, Removed []string
 }
 
@@ -93,4 +100,33 @@ func cloneSnapshot(value mutants.Snapshot) mutants.Snapshot {
 		}
 	}
 	return value
+}
+
+func (s *Snapshots) List(ctx context.Context) ([]string, snapport.Failure) {
+	if ctx.Err() != nil {
+		return nil, &snapport.Cancelled{}
+	}
+	if s.ListFailure != nil {
+		return nil, s.ListFailure
+	}
+	var names []string
+	for name := range s.CatalogFiles {
+		if strings.HasPrefix(name, "mutate/") && strings.HasSuffix(name, ".json") {
+			names = append(names, name)
+		}
+	}
+	for name := range s.CatalogFailures {
+		if _, ok := s.CatalogFiles[name]; !ok && strings.HasPrefix(name, "mutate/") && strings.HasSuffix(name, ".json") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names, nil
+}
+func (s *Snapshots) RecordedFile(ctx context.Context, name string) (string, snapport.Failure) {
+	if ctx.Err() != nil {
+		return "", &snapport.Cancelled{}
+	}
+	s.MetadataReads = append(s.MetadataReads, name)
+	return s.CatalogFiles[name], s.CatalogFailures[name]
 }

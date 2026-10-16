@@ -40,3 +40,19 @@ func (SourceEdits) Annotate(ctx context.Context, path, comment, block string) mu
 	}
 	return nil
 }
+
+func (SourceEdits) Present(ctx context.Context, path string) (bool, mutants.InputFailure) {
+	if ctx.Err() != nil {
+		return false, mutants.InputCancelled{Cause: context.Cause(ctx)}
+	}
+	_, err := os.Lstat(path)
+	return !os.IsNotExist(err), nil
+}
+
+func (SourceEdits) RenameTarget(ctx context.Context, path string) (bool, mutants.InputFailure) {
+	if ctx.Err() != nil {
+		return false, mutants.InputCancelled{Cause: context.Cause(ctx)}
+	}
+	_, err := os.Lstat(path)
+	return err == nil, nil
+}

@@ -6,11 +6,16 @@ import (
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
-// MutationSnapshots stores complete model values. Concrete codecs and physical
-// snapshot names belong to the adapter; admission remains domain policy.
-type MutationSnapshots interface {
+// MutationSnapshotReader observes complete model values without write authority.
+// Concrete codecs and physical names belong to the adapter.
+type MutationSnapshotReader interface {
 	Root(ctx context.Context) (string, snapport.Failure)
 	Read(ctx context.Context, key string) (*Snapshot, snapport.Failure)
+}
+
+// MutationSnapshots adds publication to the read-only contract.
+type MutationSnapshots interface {
+	MutationSnapshotReader
 	Write(ctx context.Context, key string, snapshot Snapshot) snapport.Failure
 	Remove(ctx context.Context, key string) snapport.Failure
 }
@@ -54,4 +59,20 @@ func OrphanReason(present, excluded, covered bool) string {
 		return OrphanExcluded
 	}
 	return ""
+}
+
+// MutationCatalog inventories regular JSON records using store-relative names.
+// RecordedFile observes only permissive file metadata, not a complete snapshot.
+type MutationCatalog interface {
+	Root(ctx context.Context) (string, snapport.Failure)
+	List(ctx context.Context) ([]string, snapport.Failure)
+	RecordedFile(ctx context.Context, name string) (string, snapport.Failure)
+}
+
+// SourcePresence observes Lstat presence. Only not-exist is absent; directories,
+// dangling links and ordinary observation errors do not prove a source gone.
+type SourcePresence interface {
+	Present(ctx context.Context, path string) (bool, InputFailure)
+	// RenameTarget requires successful Lstat evidence, unlike conservative Present.
+	RenameTarget(ctx context.Context, path string) (bool, InputFailure)
 }

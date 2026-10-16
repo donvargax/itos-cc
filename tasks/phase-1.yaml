@@ -3582,6 +3582,14 @@
     stale-but-judged mutants differ from checkFile's filtering. Retain their
     listed-scope, baseline-failure, read-only and deterministic-seed guards,
     strict zero-site inventory, codec evidence and actual binding controls.
+    SourcePresence also exposes RenameTarget(ctx, path) returning bool and InputFailure,
+    meaning successful Lstat evidence only. Ordinary Lstat errors return false without
+    failure, while caller cancellation retains InputCancelled and its cause. The same real and
+    fake SourceEdits implement it; independent fake Lstat errors, directories and dangling
+    links remain distinct from follow-Stat Missing. Domain rename traversal invokes this
+    observation lazily, preserving since-first priority, cycle termination and the existing
+    success-only target test; do not pre-scan irrelevant targets or substitute conservative
+    Present.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
