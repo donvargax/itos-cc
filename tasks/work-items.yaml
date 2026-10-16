@@ -3190,8 +3190,8 @@ items:
   - id: T-96
     title: Parse the mutation group with Kong before moving its handlers
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-95]
     kind: task
   - id: T-97
