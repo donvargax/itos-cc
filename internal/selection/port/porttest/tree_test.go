@@ -3,6 +3,7 @@ package porttest
 import (
 	"errors"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/selection/port"
@@ -94,5 +95,27 @@ func TestTreeHoldsFilesOutsideItsDirectory(t *testing.T) {
 	}
 	if sources, _, failure := tree.Discover(t.Context(), []string{"../lib"}); failure != nil || len(sources) != 1 || sources[0] != outside {
 		t.Errorf("Discover(../lib) = %q, %v; want %s", sources, failure, outside)
+	}
+}
+
+func TestDiscoveryObservesTraversedDirectoriesAndSuccessfulReads(t *testing.T) {
+	root := filepath.Join(string(filepath.Separator), "project")
+	tree := TreeOf(root, map[string]string{"a.go": "package a\n", "ordinary/only.txt": "not a supported source", "node_modules/hidden/a.go": "package hidden\n", "package.json": "{}", "build/output/a.go": "package output\n"}, nil)
+	observations := &Observations{}
+	tree.Observations = observations
+	if _, _, failure := tree.Discover(t.Context(), []string{root}); failure != nil {
+		t.Fatal(failure)
+	}
+	if !slices.Contains(observations.Lists, filepath.Join(root, "ordinary")) || slices.Contains(observations.Lists, filepath.Join(root, "node_modules")) || slices.Contains(observations.Lists, filepath.Join(root, "build")) {
+		t.Fatalf("actual directory walk observations: %v", observations.Lists)
+	}
+	if _, failure := tree.Read(t.Context(), filepath.Join(root, "a.go")); failure != nil {
+		t.Fatal(failure)
+	}
+	if !slices.Equal(observations.Reads, []string{filepath.Join(root, "a.go")}) {
+		t.Fatalf("actual source reads: %v", observations.Reads)
+	}
+	if _, failure := tree.Read(t.Context(), filepath.Join(root, "absent")); failure == nil || len(observations.Reads) != 1 {
+		t.Fatal("failed read invented a successful observation")
 	}
 }
