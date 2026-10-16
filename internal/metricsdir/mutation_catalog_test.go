@@ -55,3 +55,14 @@ func TestRecordedFileIsPermissiveAndSeparateFromFullSnapshotDecode(t *testing.T)
 		t.Fatal("malformed file metadata accepted")
 	}
 }
+
+func TestRealMutationCatalogLifecycleContract(t *testing.T) {
+	porttest.MutationCatalogLifecycleContract(t, func(t *testing.T, initial mutants.Snapshot) (porttest.MutationCatalogStore, string) {
+		root := t.TempDir()
+		store := metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
+		if failure := store.Write(t.Context(), "a.go", initial); failure != nil {
+			t.Fatal(failure)
+		}
+		return store, root
+	})
+}

@@ -3,6 +3,7 @@ package porttest
 import (
 	"context"
 	"maps"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -59,6 +60,12 @@ func (s *Snapshots) Write(ctx context.Context, key string, value mutants.Snapsho
 		s.Values = map[string]mutants.Snapshot{}
 	}
 	s.Values[key] = cloneSnapshot(value)
+	name := mutationCatalogName(key)
+	if s.CatalogFiles == nil {
+		s.CatalogFiles = map[string]string{}
+	}
+	s.CatalogFiles[name] = value.File
+	delete(s.CatalogFailures, name)
 	s.Written = append(s.Written, key)
 	return nil
 }
@@ -70,6 +77,9 @@ func (s *Snapshots) Remove(ctx context.Context, key string) snapport.Failure {
 		return failure
 	}
 	delete(s.Values, key)
+	name := mutationCatalogName(key)
+	delete(s.CatalogFiles, name)
+	delete(s.CatalogFailures, name)
 	s.Removed = append(s.Removed, key)
 	return nil
 }
@@ -109,16 +119,23 @@ func (s *Snapshots) List(ctx context.Context) ([]string, snapport.Failure) {
 	if s.ListFailure != nil {
 		return nil, s.ListFailure
 	}
-	var names []string
+	set := map[string]bool{}
+	for key := range s.Values {
+		set[mutationCatalogName(key)] = true
+	}
 	for name := range s.CatalogFiles {
 		if strings.HasPrefix(name, "mutate/") && strings.HasSuffix(name, ".json") {
-			names = append(names, name)
+			set[name] = true
 		}
 	}
 	for name := range s.CatalogFailures {
-		if _, ok := s.CatalogFiles[name]; !ok && strings.HasPrefix(name, "mutate/") && strings.HasSuffix(name, ".json") {
-			names = append(names, name)
+		if strings.HasPrefix(name, "mutate/") && strings.HasSuffix(name, ".json") {
+			set[name] = true
 		}
+	}
+	var names []string
+	for name := range set {
+		names = append(names, name)
 	}
 	sort.Strings(names)
 	return names, nil
@@ -128,5 +145,22 @@ func (s *Snapshots) RecordedFile(ctx context.Context, name string) (string, snap
 		return "", &snapport.Cancelled{}
 	}
 	s.MetadataReads = append(s.MetadataReads, name)
-	return s.CatalogFiles[name], s.CatalogFailures[name]
+	if failure := s.CatalogFailures[name]; failure != nil {
+		return "", failure
+	}
+	if file, ok := s.CatalogFiles[name]; ok {
+		return file, nil
+	}
+	for key, value := range s.Values {
+		if mutationCatalogName(key) == name {
+			return value.File, nil
+		}
+	}
+	return "", nil
+}
+
+// Only complete model keys acquire a canonical physical name. Existing raw
+// catalog entries keep their names verbatim and are never mapped back to keys.
+func mutationCatalogName(key string) string {
+	return filepath.ToSlash(filepath.Join("mutate", filepath.ToSlash(key)+".json"))
 }

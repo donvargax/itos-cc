@@ -3590,6 +3590,14 @@
     observation lazily, preserving since-first priority, cycle termination and the existing
     success-only target test; do not pre-scan irrelevant targets or substitute conservative
     Present.
+    The same model-valued Snapshots fake must expose already-held Values and successful
+    Write/Remove operations coherently through its catalog. Derive canonical names only for
+    model keys and new writes; preserve raw CatalogFiles names and permissive malformed
+    metadata observations without round-tripping inventory through source keys. A successful
+    overwrite replaces the old metadata of that physical name; failed or cancelled
+    writes/removals leave state unchanged. Hold this lifecycle through one shared real/fake
+    contract and independent fake failure states; this is harness conformance, not new CLI
+    behavior.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"

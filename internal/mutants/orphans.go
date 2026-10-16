@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/snapshot"
 )
 
 // Orphan is a snapshot under .metrics/mutate whose source file is gone:
@@ -58,7 +60,7 @@ func Orphans(ctx context.Context, store MutationCatalog, presence SourcePresence
 			continue
 		}
 		rel := filepath.FromSlash(strings.TrimPrefix(name, "mutate/"))
-		recorded := path.Join(".metrics", name)
+		recorded := path.Join(snapshot.Folder, name)
 		mapped := filepath.Join(root, strings.TrimSuffix(rel, ".json"))
 		exists, err := presence.Present(ctx, mapped)
 		if err != nil {
