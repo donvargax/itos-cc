@@ -68,7 +68,7 @@ func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
 	}
 	// The lines a hunk added or changed, its new side: the pure deletion
 	// after line 10 has none, and judges no line.
-	if got, want := changedLines(got["plain.py"]), []LineRange{{3, 5}}; !slices.Equal(got, want) {
+	if got, want := changedLines(got["plain.py"]), []LineRange{{Start: 3, End: 5}}; !slices.Equal(got, want) {
 		t.Errorf("changedLines(plain.py) = %v, want %v", got, want)
 	}
 }
@@ -108,7 +108,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	if !slices.Equal(functions, []string{"b"}) {
 		t.Errorf("functions %q, want [b]", functions)
 	}
-	if lines := got[abs].Lines; !slices.Equal(lines, []LineRange{{6, 6}}) || !got[abs].Changes(5, 6) || got[abs].Changes(1, 5) {
+	if lines := got[abs].Lines; !slices.Equal(lines, []LineRange{{Start: 6, End: 6}}) || !got[abs].Changes(5, 6) || got[abs].Changes(1, 5) {
 		t.Errorf("lines %v, want b's second line alone, HEAD's line 6", lines)
 	}
 

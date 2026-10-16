@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // ErrBadRef is returned by ChangedSince for a ref git cannot resolve to a
@@ -47,19 +48,33 @@ func Head() (string, error) {
 // functions sharing a name are told apart (see ChangedFunctions). It reads
 // under ctx: once ctx is done it starts no command and returns its cause.
 func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
+	return ChangedSinceAt(ctx, "", ref, hash)
+}
+
+// ChangedSinceAt is the same query under an explicit caller directory.
+func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
 	if ctx.Err() != nil {
 		return nil, nil, context.Cause(ctx)
 	}
-	if out, err := exec.Command("git", "rev-parse", "--git-dir").CombinedOutput(); err != nil {
+	if out, err := historyCommand(ctx, dir, "rev-parse", "--git-dir").CombinedOutput(); err != nil {
+		if ctx.Err() != nil {
+			return nil, nil, context.Cause(ctx)
+		}
 		return nil, nil, &NoGitError{gitError(out, err)}
 	}
 	// A ref is never read as an option of the git commands below.
-	if strings.HasPrefix(ref, "-") || exec.Command("git", "rev-parse", "--verify", "--quiet", ref+"^{commit}").Run() != nil {
+	if strings.HasPrefix(ref, "-") || historyCommand(ctx, dir, "rev-parse", "--verify", "--quiet", ref+"^{commit}").Run() != nil {
+		if ctx.Err() != nil {
+			return nil, nil, context.Cause(ctx)
+		}
 		return nil, nil, ErrBadRef
 	}
 	// -M finds renames whatever diff.renames says.
-	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-color", "--no-ext-diff",
+	out, err := historyCommand(ctx, dir, "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-color", "--no-ext-diff",
 		"--no-textconv", "--src-prefix=a/", "--dst-prefix=b/", "--relative", "--diff-filter=AMR", ref+"...HEAD").Output()
+	if ctx.Err() != nil {
+		return nil, nil, context.Cause(ctx)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
 	}
@@ -70,12 +85,12 @@ func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Un
 		if spec == nil {
 			continue
 		}
-		abs, err := filepath.Abs(filepath.FromSlash(name))
+		abs, err := historyAbs(dir, filepath.FromSlash(name))
 		if err != nil {
 			return nil, nil, err
 		}
 		if old, ok := renames[name]; ok {
-			if renamed[abs], err = filepath.Abs(filepath.FromSlash(old)); err != nil {
+			if renamed[abs], err = historyAbs(dir, filepath.FromSlash(old)); err != nil {
 				return nil, nil, err
 			}
 		}
@@ -84,38 +99,25 @@ func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Un
 		if ctx.Err() != nil {
 			return nil, nil, context.Cause(ctx)
 		}
-		src, err := exec.Command("git", "cat-file", "blob", "HEAD:./"+name).Output()
+		src, err := historyCommand(ctx, dir, "cat-file", "blob", "HEAD:./"+name).Output()
+		if ctx.Err() != nil {
+			return nil, nil, context.Cause(ctx)
+		}
 		if err != nil {
 			return nil, nil, fmt.Errorf("git cat-file HEAD:./%s: %s", name, gitError(nil, err))
 		}
-		f, err := lang.Parse(ctx, Surroundings{}, spec, abs, src)
+		f, err := lang.Parse(ctx, historySurroundings{Dir: dir}, spec, abs, src)
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil, nil, context.Cause(ctx)
 			}
 			return nil, nil, err
 		}
-		c := ChangedFunctions{Functions: map[string]bool{}, Lines: changedLines(lines)}
-		named := map[string]int{}
-		for _, u := range f.Units {
-			named[u.Namespace+"#"+u.Name]++
-			if overlaps(lines, u.StartLine, u.EndLine) {
-				c.Functions[u.Namespace+"#"+u.Name] = true
-			}
+		ranges := make([]mutants.LineRange, 0, len(lines))
+		for _, r := range lines {
+			ranges = append(ranges, mutants.LineRange{Start: r.start, End: r.end, Deletion: r.deletion})
 		}
-		for _, u := range f.Units {
-			id := u.Namespace + "#" + u.Name
-			if hash == nil || named[id] < 2 || !c.Functions[id] || overlaps(lines, u.StartLine, u.EndLine) {
-				continue
-			}
-			if c.Kept == nil {
-				c.Kept = map[string]map[string]bool{}
-			}
-			if c.Kept[id] == nil {
-				c.Kept[id] = map[string]bool{}
-			}
-			c.Kept[id][hash(f, u)] = true
-		}
+		c := mutants.ChangedFunctionsOf(f, ranges, hash)
 		f.Close()
 		changed[abs] = c
 	}
@@ -128,8 +130,28 @@ func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Un
 // changes only. A file renamed is not deleted: ChangedSince maps it to the
 // path it had. ref must be one ChangedSince accepted.
 func DeletedSince(ref string) ([]string, error) {
+	return deletedSinceCommand(ref)
+}
+
+// DeletedSinceAt reads the committed deletion inventory under caller ctx/dir.
+func DeletedSinceAt(ctx context.Context, dir, ref string) ([]string, error) {
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	out, err := historyCommand(ctx, dir, "-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color", "--relative", "--diff-filter=D", ref+"...HEAD").Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	return deletedNames(out, err, dir, ref)
+}
+
+func deletedSinceCommand(ref string) ([]string, error) {
 	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color",
 		"--relative", "--diff-filter=D", ref+"...HEAD").Output()
+	return deletedNames(out, err, "", ref)
+}
+
+func deletedNames(out []byte, err error, dir, ref string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
 	}
@@ -138,7 +160,7 @@ func DeletedSince(ref string) ([]string, error) {
 		if name == "" || lang.Detect(name) == nil {
 			continue
 		}
-		abs, err := filepath.Abs(filepath.FromSlash(name))
+		abs, err := historyAbs(dir, filepath.FromSlash(name))
 		if err != nil {
 			return nil, err
 		}
@@ -147,47 +169,13 @@ func DeletedSince(ref string) ([]string, error) {
 	return deleted, nil
 }
 
-// ChangedFunctions is what a range of commits changed in one file.
-type ChangedFunctions struct {
-	// Functions holds the namespace#name of each function whose lines the
-	// range touched.
-	Functions map[string]bool
-	// Kept holds, for a name in Functions that several functions of the
-	// file share, the hash of each of them the range left alone, as HEAD
-	// has it.
-	Kept map[string]map[string]bool
-	// Lines holds the lines of HEAD's version of the file that the range
-	// added or changed, the new side of each hunk, in diff order. A pure
-	// deletion has no new side, so it adds no range here, though it still
-	// makes the functions either side of it changed.
-	Lines []LineRange
-}
+// ChangedFunctions and LineRange are pure mutation values, retained here for
+// existing callers while their orchestration moves.
+type ChangedFunctions = mutants.ChangedFunctions
+type LineRange = mutants.LineRange
 
-// LineRange is a range of line numbers, both ends included.
-type LineRange struct{ Start, End int }
-
-// Changes reports whether the range added or changed any of the lines
-// from start to end, both included, of HEAD's version of the file.
-func (c ChangedFunctions) Changes(start, end int) bool {
-	return LinesOverlap(c.Lines, start, end)
-}
-
-// LinesOverlap reports whether any of ranges holds a line from start to
-// end, both included.
 func LinesOverlap(ranges []LineRange, start, end int) bool {
-	for _, r := range ranges {
-		if r.Start <= end && r.End >= start {
-			return true
-		}
-	}
-	return false
-}
-
-// Judges reports whether the function named function, whose text has hash,
-// is one the range changed: by its name, and among functions sharing it, by
-// its hash, so of several init functions only those the range touched are.
-func (c ChangedFunctions) Judges(function, hash string) bool {
-	return c.Functions[function] && !c.Kept[function][hash]
+	return mutants.OverlapsRanges(ranges, start, end)
 }
 
 // lines is a range of line numbers, both ends included; deletion marks
@@ -203,7 +191,7 @@ func changedLines(ranges []lines) []LineRange {
 	var out []LineRange
 	for _, r := range ranges {
 		if !r.deletion {
-			out = append(out, LineRange{r.start, r.end})
+			out = append(out, LineRange{Start: r.start, End: r.end})
 		}
 	}
 	return out

@@ -10,6 +10,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/coveragetools"
+	"github.com/donvargax/itos-cc/internal/githistory"
 	"github.com/donvargax/itos-cc/internal/importgraph"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
@@ -33,6 +34,7 @@ import (
 // port here.
 type adapters struct {
 	// Workers owns command copies and process lifetimes for mutation.
+	History      mutants.History
 	Workers      mutants.Workers
 	Toolchain    mutants.Toolchain
 	Fingerprints mutants.Fingerprints
@@ -69,7 +71,7 @@ type configFile interface {
 // itos-cc.yaml at the project root on the disk.
 func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
-	return adapters{Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+	return adapters{History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 

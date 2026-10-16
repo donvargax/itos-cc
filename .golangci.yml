@@ -150,6 +150,7 @@ linters:
             - "!**/internal/testtools/**" # mutation tool observations
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
+            - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -204,6 +205,7 @@ linters:
             - "!**/internal/testtools/**" # mutation tool observations
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
+            - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -374,6 +376,17 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the testinputs adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
+        githistory:
+          list-mode: lax
+          files:
+            - "**/internal/githistory/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/project$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the githistory adapter imports only mutation's History values and the Git library it wraps (T-91); no UI, other adapters or fakes"
         importgraph:
           list-mode: lax
           files:

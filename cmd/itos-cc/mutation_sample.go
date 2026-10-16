@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -136,7 +137,7 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return result, err
 	}
-	if result.Seed, err = sampleSeed(in); err != nil {
+	if result.Seed, err = sampleSeed(ctx, in); err != nil {
 		return result, err
 	}
 	if len(sources) == 0 {
@@ -233,17 +234,28 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 }
 
 // sampleSeed is --seed, or the HEAD commit's id.
-func sampleSeed(in *invocation) (string, error) {
+func sampleSeed(ctx context.Context, in *invocation) (string, error) {
 	if in.set("seed") {
 		return in.str("seed"), nil
 	}
-	id, err := project.Head()
-	var noGit *project.NoGitError
-	if errors.As(err, &noGit) {
-		return "", cli.NewProblem(cli.CodeEnvironment, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+noGit.Reason,
-			"Run it inside a git repository, or give the seed with --seed.")
+	if in.adapters.History == nil {
+		return "", fmt.Errorf("mutation history binding is missing")
 	}
-	return id, err
+	id, failure := in.adapters.History.Head(ctx)
+	if failure == nil {
+		return id, nil
+	}
+	switch failure := failure.(type) {
+	case mutants.NoRepository:
+		return "", cli.NewProblem(cli.CodeEnvironment, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+failure.Reason, "Run it inside a git repository, or give the seed with --seed.")
+	case mutants.BadReference:
+		return "", failure
+	case mutants.HistoryCancelled:
+		return "", failure.Cause
+	case mutants.HistoryFailed:
+		return "", failure.Cause
+	}
+	return "", failure
 }
 
 // reportMismatch lists sampled mutant m of file rel on stdout, as "mismatch

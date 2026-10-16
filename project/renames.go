@@ -1,6 +1,7 @@
 package project
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -39,6 +40,10 @@ func renames(rev string) (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("git diff %s: %s", rev, gitError(nil, err))
 	}
+	return renamedPaths(out, rev, root)
+}
+
+func renamedPaths(out []byte, rev, root string) (map[string]string, error) {
 	moves := map[string]string{}
 	fields := strings.Split(string(out), "\x00")
 	for i := 0; i+2 < len(fields); i += 3 {
@@ -48,4 +53,37 @@ func renames(rev string) (map[string]string, error) {
 		moves[filepath.Join(root, filepath.FromSlash(fields[i+1]))] = filepath.Join(root, filepath.FromSlash(fields[i+2]))
 	}
 	return moves, nil
+}
+
+// RenamesSinceAt and RenamesUncommittedAt use the same repository-wide map
+// under a caller directory/context, independently of --since file narrowing.
+func RenamesSinceAt(ctx context.Context, dir, ref string) (map[string]string, error) {
+	return renamesAt(ctx, dir, ref+"...HEAD")
+}
+func RenamesUncommittedAt(ctx context.Context, dir string) (map[string]string, error) {
+	return renamesAt(ctx, dir, "HEAD")
+}
+func renamesAt(ctx context.Context, dir, rev string) (map[string]string, error) {
+	if _, err := HeadAt(ctx, dir); err != nil {
+		return nil, err
+	}
+	rootOut, err := historyCommand(ctx, dir, "rev-parse", "--show-cdup").Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	if err != nil {
+		return nil, err
+	}
+	root, err := historyAbs(dir, filepath.FromSlash(strings.TrimSpace(string(rootOut))))
+	if err != nil {
+		return nil, err
+	}
+	out, err := historyCommand(ctx, dir, "diff", "--name-status", "-z", "-M", "--no-color", "--no-relative", "--diff-filter=R", rev, "--").Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("git diff %s: %s", rev, gitError(nil, err))
+	}
+	return renamedPaths(out, rev, root)
 }

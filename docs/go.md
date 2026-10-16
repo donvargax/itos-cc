@@ -508,6 +508,18 @@ existing `.venv`/`venv` interpreter; coverage inputs choose the first. Pytest im
 probes use the caller cwd, separately from the command root, and actual runtime
 environment inputs are supplied at composition rather than read by the fake.
 
+T-91 adds the model-bearing `History` contract beside these values.
+`internal/githistory` wraps the existing project Git queries with an explicit
+caller directory and context; `internal/mutants/porttest` holds immutable
+commit trees, refs and parents captured from actual fixture setup. Cmd binds
+all five existing query consumers: `--since`, default sample seed, deleted-file
+exceptions and both committed/working orphan rename queries. A missing binding
+fails at the actual consumer; explicit seeds and narrowed paths retain their
+unused-query bypass. Caller-relative current-to-prior change maps remain separate
+from repository-wide prior-to-current orphan maps. Frozen export, modes and
+supervised counted preparation stay at the legacy boundary until T-95.
+The githistory rule admits only mutants and the project library it wraps.
+
 ## Tests
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.
@@ -548,8 +560,8 @@ file against the built binary (`binary.go`), which proves main's wiring, the rea
 tools, exit codes and signals, interrupting it once it waits on an open standard input to show
 the 130 exit. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
 (`InProcess`) in process, a selection naming only scenarios of the others running nothing there: its driver, a `_test.go`, holds every
-folder and file in memory with a fake git (init, add and commit; `--changed` is what differs
-from the last commit, and every file before one), and each run calls `run` with buffers and
+folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
+renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
 porttest's fakes built from that memory: `TreeOf` over the whole scratch folder, files
 outside the run's folder named by `../`, lang's `Surroundings`, snapshot's `Store` written
 back to `.metrics/`, an itos-cc.yaml held in memory, and coverage's `Measurer`, which reads

@@ -109,12 +109,8 @@ type memory struct {
 	imports      map[string]map[string][]string
 }
 
-// repo is a fake git repository: what add staged and the last commit holds,
-// by path relative to its folder, slash-separated.
-type repo struct {
-	index, committed map[string]string
-	commits          int
-}
+// repo is independent staged/committed Git state owned by the History fake.
+type repo = mutantstest.HistoryRepository
 
 var _ features.Driver = (*memory)(nil)
 
@@ -305,13 +301,14 @@ func (m *memory) Tests(dir string, t features.Tests) error {
 	return nil
 }
 
-// Head becomes the actual fake history observation in T91. A commit counter
-// is not a HEAD ID, and mutation scenarios do not run in process before T100.
+// Head observes the same independent immutable history bound to actual runs.
 func (m *memory) Head(ctx context.Context, dir string) (string, error) {
-	if err := ctx.Err(); err != nil {
-		return "", err
-	}
-	return "", fmt.Errorf("Head of %s: history observation has not moved in process (T91)", dir)
+	value, failure := m.history(dir).Head(ctx)
+	return value, failure
+}
+func (m *memory) history(dir string) mutantstest.History {
+	root, repository := m.repoOf(filepath.Clean(dir))
+	return mutantstest.History{Root: root, Dir: filepath.Clean(dir), Repository: repository, Working: m.files}
 }
 
 // Counted skips the scenario where itos-cc makes no counted run, in
@@ -347,49 +344,48 @@ func (m *memory) Graph(_ context.Context, _ features.Run) ([]byte, error) {
 	return nil, fmt.Errorf("serve has not moved in process yet")
 }
 
-// Git is the fake git in dir: init makes it a repository, add stages its
-// files, every one with -A or the paths named, and commit records what is
-// staged. Anything else fails, naming the tag of a scenario that needs the
-// real one.
+// Git applies the Given's actual setup operations to the independent History
+// state. Commands still unsupported by the memory fixture fail explicitly.
 func (m *memory) Git(dir string, args ...string) error {
 	dir = filepath.Clean(dir)
-	verb, rest := "", []string(nil)
-	if len(args) > 0 {
-		verb, rest = args[0], args[1:]
-	}
-	if verb == "init" {
-		m.repos[dir] = &repo{index: map[string]string{}, committed: map[string]string{}}
-		return nil
-	}
-	root, r := m.repoOf(dir)
-	switch {
-	case r == nil:
-		return fmt.Errorf("git %s: %s is no repository of the in-process driver", verb, dir)
-	case verb == "add":
-		all := slices.Contains(rest, "-A") || slices.Contains(rest, ".")
-		var named []string
-		for _, a := range rest {
-			if !strings.HasPrefix(a, "-") && a != "." {
-				named = append(named, filepath.ToSlash(a))
+	if len(args) > 0 && args[0] == "init" {
+		repository := mutantstest.NewHistoryRepository()
+		for i := 1; i < len(args); i++ {
+			switch args[i] {
+			case "-q", "--quiet":
+			case "-b", "--initial-branch":
+				if i+1 == len(args) {
+					return fmt.Errorf("fixture Git initial branch missing")
+				}
+				i++
+				repository.Branch = args[i]
+				repository.Branches = map[string]bool{args[i]: true}
+			default:
+				return fmt.Errorf("unsupported fixture Git init argument %s", args[i])
 			}
 		}
-		for rel := range r.index {
-			if all || slices.Contains(named, rel) {
-				delete(r.index, rel)
-			}
-		}
-		for rel, text := range m.under(root) {
-			if all || slices.Contains(named, rel) {
-				r.index[rel] = text
-			}
-		}
-		return nil
-	case verb == "commit":
-		r.committed = maps.Clone(r.index)
-		r.commits++
+		m.repos[dir] = repository
 		return nil
 	}
-	return fmt.Errorf("git %s: the in-process driver's git does init, add and commit; tag the scenario %s", strings.Join(args, " "), features.BinaryOnly)
+	root, repository := m.repoOf(dir)
+	if repository == nil {
+		return fmt.Errorf("git in %s: no fixture repository", dir)
+	}
+	before := maps.Clone(m.files)
+	if err := repository.Git(root, dir, m.files, args...); err != nil {
+		return err
+	}
+	for path, text := range m.files {
+		if previous, ok := before[path]; !ok || previous != text {
+			m.versions[path]++
+		}
+	}
+	for path := range before {
+		if _, present := m.files[path]; !present {
+			m.versions[path]++
+		}
+	}
+	return nil
 }
 
 // Run runs itos-cc through run, in process, against porttest's fakes over
@@ -431,7 +427,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	}()
 	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
 	a := adapters{
-		Toolchain: input, Fingerprints: input, Reach: input,
+		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),
 		Dir:          dir,
 		Tree:         tree,
@@ -592,9 +588,9 @@ func (m *memory) changed(dir, root string, r *repo) []string {
 	if r == nil {
 		return nil
 	}
-	base := r.committed
-	if r.commits == 0 {
-		base = map[string]string{}
+	base := map[string]string{}
+	if head, failure := m.history(dir).Head(m.t.Context()); failure == nil {
+		base = r.Commits[head].Files
 	}
 	var out []string
 	for rel, text := range m.under(root) {

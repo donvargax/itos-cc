@@ -1525,3 +1525,16 @@ a command upsert omitting it leaves it intact. Retained nested maps, ID slices
 and metadata bytes are owned copies; command-keyed Workers outcomes remain
 independent. A failed static collector still logs its diagnostic when no
 report was written and supplies no inventory proof.
+
+T-91 binds mutation history through `mutants.History`. The memory Driver's
+Git setup captures independent staged bytes, immutable commit trees, refs,
+parents and tracked working renames; `Head` observes that same state. It does
+not take an expected sample seed. Shared real/fake contracts cover divergent
+three-dot ranges, caller-directory namespaces, committed bytes despite later
+edits, both rename directions, pure deletions and same-name hash pairing.
+The bounded fixture setup supports the Givens' add/commit/branch/checkout/tag/mv
+operations and errors on unsupported shapes; it runs no Git executable.
+Legacy mutation handlers still refuse in-process execution until T-100.
+Frozen export/materialization, modes and symlink/gitlink admission remain at
+the supervised counted boundary until T-95. All original project history
+holders and counted export guards remain; they are not deleted as duplicates.

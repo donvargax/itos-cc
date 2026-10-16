@@ -17,6 +17,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -633,7 +634,7 @@ type mutateSite struct {
 // (project.ChangedFunctions.Lines). judge, renamed and lines are nil
 // without --since.
 func mutationSelection(ctx context.Context, in *invocation) (sources []string, judge func(path, function, hash string) bool, renamed func(path string) string, lines mutate.LineScope, err error) {
-	var since map[string]project.ChangedFunctions
+	var since map[string]mutants.ChangedFunctions
 	var moves map[string]string
 	if in.set("since") {
 		if since, moves, err = changedSince(ctx, in); err != nil {
@@ -1312,7 +1313,10 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 			}
 		}
 		if len(in.args) == 0 {
-			deleted, err := project.DeletedSince(in.str("since"))
+			if in.adapters.History == nil {
+				return nil, nil, fmt.Errorf("mutation history binding is missing")
+			}
+			deleted, err := in.adapters.History.DeletedSince(ctx, in.str("since"))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1855,23 +1859,32 @@ func reportMutant(in *invocation, rel, function string, m mutate.Mutant, rule, w
 // changedSince is the functions the commits since --since's ref changed, by
 // file. --changed is refused beside it: it judges whole files of the working
 // tree, --since functions of commits, and together they would judge neither.
-func changedSince(ctx context.Context, in *invocation) (map[string]project.ChangedFunctions, map[string]string, error) {
+func changedSince(ctx context.Context, in *invocation) (map[string]mutants.ChangedFunctions, map[string]string, error) {
 	if in.set("changed") {
 		return nil, nil, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree",
 			"Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
 	}
 	ref := in.str("since")
-	changed, renamed, err := project.ChangedSince(ctx, ref, mutate.UnitHash)
-	var noGit *project.NoGitError
-	switch {
-	case errors.Is(err, project.ErrBadRef):
+	if in.adapters.History == nil {
+		return nil, nil, fmt.Errorf("mutation history binding is missing")
+	}
+	changed, renamed, failure := in.adapters.History.ChangedSince(ctx, ref)
+	if failure == nil {
+		return changed, renamed, nil
+	}
+	switch failure := failure.(type) {
+	case mutants.BadReference:
 		return nil, nil, cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref),
 			"Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").With("ref", ref)
-	case errors.As(err, &noGit):
-		return nil, nil, cli.NewProblem(cli.CodeEnvironment, "since.no-git", "--since needs a git repository: "+noGit.Reason,
+	case mutants.NoRepository:
+		return nil, nil, cli.NewProblem(cli.CodeEnvironment, "since.no-git", "--since needs a git repository: "+failure.Reason,
 			"Run it inside a git repository, or name the paths instead.")
+	case mutants.HistoryCancelled:
+		return nil, nil, failure.Cause
+	case mutants.HistoryFailed:
+		return nil, nil, failure.Cause
 	}
-	return changed, renamed, err
+	return nil, nil, failure
 }
 
 type mutationListResult struct {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/mutate"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -78,7 +79,7 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 	if err != nil || len(orphans) == 0 {
 		return orphans, err
 	}
-	return notRenamed(in, orphans), nil
+	return notRenamed(ctx, in, orphans)
 }
 
 // notRenamed are the orphans git shows no rename of to a file that
@@ -90,15 +91,24 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 // orphan one, and so does an excluded source, which is there. Outside a
 // git repository, or when git fails, no orphan can be judged, and none is:
 // each is kept, never named nor removed.
-func notRenamed(in *invocation, orphans []mutate.Orphan) []mutate.Orphan {
-	uncommitted, err := project.RenamesUncommitted()
+func notRenamed(ctx context.Context, in *invocation, orphans []mutate.Orphan) ([]mutate.Orphan, error) {
+	if in.adapters.History == nil {
+		return nil, fmt.Errorf("mutation history binding is missing")
+	}
+	uncommitted, err := in.adapters.History.RenamesUncommitted(ctx)
 	if err != nil {
-		return nil
+		if cancelled, ok := err.(mutants.HistoryCancelled); ok {
+			return nil, cancelled.Cause
+		}
+		return nil, nil
 	}
 	var since map[string]string
 	if in.set("since") {
-		if since, err = project.RenamesSince(in.str("since")); err != nil {
-			return nil
+		if since, err = in.adapters.History.RenamesSince(ctx, in.str("since")); err != nil {
+			if cancelled, ok := err.(mutants.HistoryCancelled); ok {
+				return nil, cancelled.Cause
+			}
+			return nil, nil
 		}
 	}
 	var out []mutate.Orphan
@@ -107,7 +117,7 @@ func notRenamed(in *invocation, orphans []mutate.Orphan) []mutate.Orphan {
 			out = append(out, o)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // renamedToAFile reports whether the renames of path, in the range (since)
