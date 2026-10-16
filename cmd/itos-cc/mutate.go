@@ -838,11 +838,11 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	if strict {
 		var cached []mutate.CoverageCheck
-		mutationChecks, err := checkMutations(ctx, in, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+		mutationChecks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
 		if err != nil {
 			return result, err
 		}
-		cached, err = checkMutationCoverage(ctx, in, sources, judge, strictLanguages, support)
+		cached, err = mutate.CheckCoverageWithInputs(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(in, strictLanguages, false, false, support), in.adapters.Toolchain, in.adapters.Fingerprints)
 		if err != nil {
 			return result, err
 		}
@@ -984,7 +984,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
 			// every mutant, and stops the run before any mutant runs.
-			checks, err := checkMutations(ctx, in, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+			checks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
 			if err != nil {
 				return result, err
 			}
@@ -1596,7 +1596,26 @@ func strictCoverageInputs(in *invocation, languages []string, allTests, testComm
 	out := map[string]mutate.CoverageInputs{}
 	for _, language := range languages {
 		out[language] = func(ctx context.Context, source string) (string, map[string]string, error) {
-			return mutants.CoverageInputsFor(ctx, in.adapters.Toolchain, in.adapters.Fingerprints, source, project.Root(), allTests, testCommand, support)
+			if in.adapters.Fingerprints == nil {
+				return "", nil, errors.New("mutation Fingerprints binding is missing")
+			}
+			producer := mutate.CoverageProducer(language, allTests || testCommand && language != "go")
+			if language == "typescript" || language == "kotlin" {
+				if in.adapters.Toolchain == nil {
+					return "", nil, errors.New("mutation Toolchain binding is missing")
+				}
+				runner, failure := in.adapters.Toolchain.CoverageRunner(ctx, source, !allTests)
+				if failure != nil {
+					return "", nil, failure
+				}
+				if language == "typescript" {
+					producer = mutate.TypeScriptCoverageProducer(runner, allTests)
+				} else {
+					producer = mutate.KotlinCoverageProducer(runner, allTests || testCommand)
+				}
+			}
+			inputs, failure := in.adapters.Fingerprints.Coverage(ctx, source, project.Root(), producer, support)
+			return producer, inputs, failure
 		}
 	}
 	return out
@@ -1763,11 +1782,6 @@ func listTests(ctx context.Context, in *invocation, tests *config.Tests) ([]covr
 }
 
 func mutationRunError(err error) error {
-	var read mutants.SnapshotReadFailure
-	if errors.As(err, &read) {
-		return fmt.Errorf("%s: %w", mutate.SnapshotName(read.Key), read.Cause)
-	}
-
 	var listing mutants.ListingFailed
 	if errors.As(err, &listing) {
 		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
@@ -1868,15 +1882,24 @@ func runMutationList(ctx context.Context, in *invocation) (any, error) {
 		fmt.Fprintln(os.Stderr, "itos-cc: no source files to list")
 		return result, nil
 	}
-	sites, err := mutants.List(ctx, files.Sources, in.adapters.Tree, in.adapters.Surroundings, in.adapters.Dir)
-	for _, s := range sites {
-		site := mutateSite{File: s.File, Line: s.Line, Column: s.Column, Function: s.Function, Original: s.Original, Replacement: s.Replacement}
-		result.Sites = append(result.Sites, site)
-		if !in.json {
-			fmt.Printf("%s:%d:%d %s → %s in %s\n", site.File, site.Line, site.Column, quote(site.Original), quote(site.Replacement), site.Function)
+	for _, path := range files.Sources {
+		f, err := project.ParseFile(ctx, path)
+		if err != nil {
+			return result, err
 		}
+		for _, s := range slices.SortedStableFunc(slices.Values(mutate.Sites(f)), mutate.LineOrder) {
+			u := f.Units[s.Unit]
+			site := mutateSite{File: project.Rel(path), Line: s.Line, Column: s.Column,
+				Function: u.Namespace + "#" + u.Name, Original: s.Original, Replacement: s.Replacement}
+			result.Sites = append(result.Sites, site)
+			if !in.json {
+				fmt.Printf("%s:%d:%d %s → %s in %s\n", site.File, site.Line, site.Column,
+					quote(site.Original), quote(site.Replacement), site.Function)
+			}
+		}
+		f.Close()
 	}
-	return result, err
+	return result, nil
 }
 
 func quote(s string) string {

@@ -29,14 +29,3 @@ func (m Mutations) Write(ctx context.Context, key string, s mutants.Snapshot) sn
 func (m Mutations) Remove(ctx context.Context, key string) snapport.Failure {
 	return m.Store.Remove(ctx, MutationName(key))
 }
-
-func (m Mutations) List(ctx context.Context) ([]string, snapport.Failure) {
-	return m.Store.List(ctx, "mutate")
-}
-func (m Mutations) RecordedFile(ctx context.Context, name string) (string, snapport.Failure) {
-	var metadata struct {
-		File string `json:"file"`
-	}
-	_, failure := m.Store.Read(ctx, name, &metadata)
-	return metadata.File, failure
-}

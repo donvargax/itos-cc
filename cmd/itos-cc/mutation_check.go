@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -211,20 +210,17 @@ func runMutationCheck(ctx context.Context, in *invocation) (any, error) {
 	if err := mutationInputsBound(in.adapters); err != nil {
 		return result, err
 	}
-	if in.adapters.Tree == nil || in.adapters.Surroundings == nil {
-		return result, errors.New("mutation source tree binding is missing")
-	}
 	tests, err := importingTests(ctx, in)
 	if err != nil {
 		return result, err
 	}
-	checks, err := checkMutations(ctx, in, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...))
+	checks, err := mutate.CheckWithInputs(ctx, in.adapters.Store, sources, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), in.adapters.Toolchain, in.adapters.Fingerprints)
 	if err != nil {
 		return result, err
 	}
 	failUncovered := in.set("fail-uncovered")
 	if languages := strictLanguagesOf(sources); failUncovered && len(languages) > 0 {
-		coverageChecks, err := checkMutationCoverage(ctx, in, sources, judge, languages, support)
+		coverageChecks, err := mutate.CheckCoverageWithInputs(ctx, in.adapters.Store, sources, judge, strictCoverageInputs(in, languages, false, false, support), in.adapters.Toolchain, in.adapters.Fingerprints)
 		if err != nil {
 			return result, err
 		}

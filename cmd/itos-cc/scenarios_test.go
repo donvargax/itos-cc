@@ -430,7 +430,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	var stdout, stderr bytes.Buffer
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	a := adapters{
-		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs}, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
+		Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: &mutantstest.SourceEdits{Files: m.files, Directories: m.dirs, Write: m.Write}, TestLister: m.lister(root, file.text, &stderr),
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      m.workers(r),
 		Dir:          dir,

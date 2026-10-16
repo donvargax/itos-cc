@@ -56,7 +56,7 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 	if len(in.args) == 0 {
 		dirs = []string{wd}
 	}
-	orphans, err := mutants.Orphans(ctx, in.adapters.Catalog, in.adapters.Presence, func(path string) bool {
+	orphans, err := mutate.Orphans(ctx, in.adapters.Store, func(path string) bool {
 		for _, dir := range dirs {
 			if beneath(dir, path) {
 				return true
@@ -92,7 +92,54 @@ func orphansCovered(ctx context.Context, in *invocation) ([]mutate.Orphan, error
 // git repository, or when git fails, no orphan can be judged, and none is:
 // each is kept, never named nor removed.
 func notRenamed(ctx context.Context, in *invocation, orphans []mutate.Orphan) ([]mutate.Orphan, error) {
-	return mutants.NotRenamed(ctx, orphans, in.adapters.History, in.adapters.Presence, in.str("since"), in.set("since"))
+	if in.adapters.History == nil {
+		return nil, fmt.Errorf("mutation history binding is missing")
+	}
+	uncommitted, err := in.adapters.History.RenamesUncommitted(ctx)
+	if err != nil {
+		if cancelled, ok := err.(mutants.HistoryCancelled); ok {
+			return nil, cancelled.Cause
+		}
+		return nil, nil
+	}
+	var since map[string]string
+	if in.set("since") {
+		if since, err = in.adapters.History.RenamesSince(ctx, in.str("since")); err != nil {
+			if cancelled, ok := err.(mutants.HistoryCancelled); ok {
+				return nil, cancelled.Cause
+			}
+			return nil, nil
+		}
+	}
+	var out []mutate.Orphan
+	for _, o := range orphans {
+		if o.Why == mutate.OrphanExcluded || !renamedToAFile(o.Path, since, uncommitted) {
+			out = append(out, o)
+		}
+	}
+	return out, nil
+}
+
+// renamedToAFile reports whether the renames of path, in the range (since)
+// and then in the working tree (uncommitted), each map of an old absolute
+// path to a new one, lead to a path where something is.
+func renamedToAFile(path string, since, uncommitted map[string]string) bool {
+	seen := map[string]bool{path: true}
+	for {
+		next, ok := since[path]
+		if !ok {
+			if next, ok = uncommitted[path]; !ok {
+				return false
+			}
+		}
+		if seen[next] {
+			return false
+		}
+		if _, err := os.Lstat(next); err == nil {
+			return true
+		}
+		seen[next], path = true, next
+	}
 }
 
 // beneath reports whether path is inside dir.
