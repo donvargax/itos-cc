@@ -3548,6 +3548,40 @@
     JSON stays at the adapter, and existing typed mutation values remain
     the contract. Check/list remain read-only on success and failure; run's
     orphan removal still follows its existing publication ordering.
+    List currently emits each earlier file's sites before a later parse
+    failure. Preserve that ordered partial result and let the existing CLI
+    render the same prefix before reporting the failure. Check has its own
+    admission and presentation order; do not transfer list's partial-output
+    policy to check or discard list's prefix during a bulk domain call.
+    Preserve no-source returns, empty arrays and stable source/line/column
+    ordering. Use mixed good/bad source guards for this edge and record it
+    for final equivalence proof rather than comparing binaries per task.
+    Check uses a narrow MutationSnapshotReader with context-first Root and
+    Read returning the existing root string or Snapshot and snapport.Failure.
+    MutationSnapshots embeds that reader and retains its existing Write and
+    Remove methods. Add a separate MutationCatalog with context-first Root,
+    List returning []string and snapport.Failure, and RecordedFile taking a
+    store-relative snapshot name and returning string and snapport.Failure.
+    The same metricsdir.Mutations and our model-valued fake satisfy these
+    contracts; check/list receive no snapshot write capability. Catalog List
+    delegates to the existing regular-json listing under mutate and retains
+    its store-relative names. Do not round-trip every listed name through a
+    canonical source key, including POSIX backslash and outside-root names.
+    RecordedFile decodes only existing file metadata at the concrete edge;
+    absence returns empty without failure, and unreadable/malformed metadata
+    uses existing typed snapshot failures and the established fallback.
+    Add SourcePresence with Present(ctx, path) returning bool and InputFailure,
+    on the existing workdir.SourceEdits and our fake. An uncancelled real
+    observation uses Lstat and treats only not-exist as absent; cancellation
+    retains its cause. Keep fake Lstat observations independent of Missing's
+    Stat observations, including dangling links and ordinary errors.
+    Do not substitute conservative presence for renamedToAFile's current
+    successful-Lstat evidence at a rename target. Its ordinary errors do not
+    establish a target, and rename-chain cycle/priority rules stay unchanged.
+    Preserve checkParsed's Sample, exceptParsed and renew consumers: their
+    stale-but-judged mutants differ from checkFile's filtering. Retain their
+    listed-scope, baseline-failure, read-only and deterministic-seed guards,
+    strict zero-site inventory, codec evidence and actual binding controls.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
@@ -3598,6 +3632,23 @@
     calling legacy config.Except/Renew is not migration. Keep any remaining
     real discovery setup honest until handlers move, and reuse T-92's source
     publication boundary for annotation rather than adding another writer.
+    Renewal currently admits an existing supported non-directory source
+    through Stat, following symlinks. A directory, missing path or existing
+    unsupported source instead permits the moved-function search; another
+    Stat error aborts before any exception update. Preserve this distinction
+    through an actual bound source observation. Neither orphan Lstat presence
+    nor the rename-follow Missing boolean alone answers that question.
+    Record the minimum remaining observation contract after T-93 before
+    building it, and retain this admission/failure edge in focused guards
+    and final proof. Do not introduce new path or cleanup behavior here.
+    Preserve actual config failure classification: Parse/type/shape errors
+    retain their InvalidError reason/key facts for config.invalid, while
+    ordinary read/write failures retain their current I/O classification.
+    A missing document is empty for Read and permits Except creation, but
+    nonempty Renew still fails that read; empty Renew performs no I/O.
+    Survivor checks unsupported syntax before Stat and treats a directory
+    or ordinary Stat error as its existing no-survivor reason; Renew's
+    different ordinary-error policy must not be generalized between them.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
@@ -3678,6 +3729,16 @@
     --json-before-command cases to final-proof without a per-task comparison. Update boundaries/docs
     as needed and retain old meaningful checks until covered. Local checks focused, full gates
     hooks/CI only; no own-code mutation/worktrees/session moves/agents or unapproved dependencies.
+    Preserve provided-flag facts separately from empty or zero typed values.
+    Explicit run --count 0 enters counted validation, never ordinary run;
+    run --seed= without count retains its missing-count conflict, while
+    run --count 1 --seed= refuses the empty seed. Sample --seed= instead
+    supplies its empty seed without asking History.Head. Except with an
+    omitted reason differs from --reason= in its problem rule and value.
+    Keep original numeric spelling where range errors report the flag value,
+    including zero forms, and preserve literal no-coverage/no-annotate names
+    without adding positive aliases. Hold these cases with focused parser
+    guards and final proof, using the one parser's provided/raw-value facts.
   done_when:
     - run: go test ./internal/cli/...
     - run: go test ./features -count=1 -scenarios="@ID-CLI-(01|02|04|06|07|09|10|11|12|14)$"
@@ -4171,6 +4232,12 @@
     can remain. Add newly found top-level edge cases to refactor-final-proof, no per-task binary
     comparison. Focus local command/cli and named scenarios; broad gates hooks/CI, no own-code
     mutation/worktrees/sessionmoves/agents or new dependency without recorded selection.
+    Resolve cli-13-declares-its-tests when cli.feature joins InProcess.
+    Its existing Vitest fixture declares Coverage alone; declare its actual
+    test command and source verdicts through Driver.Tests before the cached
+    run, preserving the score conditional's 1-to-0 survivor and both runs'
+    rerun/reuse counts through the bound Workers. No fixture-ID verdict or
+    silent omission may stand in for this existing acceptance behavior.
   done_when:
     - run: go test ./internal/cli/... ./internal/version/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
@@ -4234,6 +4301,14 @@
     comments citing the template's decision 26 or 23 must name itos-template explicitly where
     they refer to that source, preserving source notices. Do not send external upstream messages
     as part of this task. Report the evidence for coordinator registry reconciliation.
+    Reconcile the remaining gate ideas at their actual scope: current CI
+    lint covers internal only, while gate-golangci-lint asks for the module;
+    a present pre-commit script is not a declared project hook. Keep any
+    unfinished gate as separately named work before umbrella completion.
+    Resolve the inherited hook's check placement against current configured
+    tiers before enabling it; preserve valid active checks and never infer
+    a full-module pass from the narrower internal pass. The older in-process
+    mutation idea does not authorize own-source mutation or changing T-46.
   done_when:
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
 
