@@ -3736,9 +3736,18 @@
     evidence, not a successful final-source CI claim. Other native jobs were still running when
     the completed core job was diagnosed; review their actual terminal findings before retry
     publication. After supported give-back and published retake, reapply only this source revert's
-    inverse and simplify the two selectors without changing behavior, assertions, gates or
-    thresholds. Preserve all prior reasons, raw evidence, historical metrics and four recovery
-    stashes. Configured hooks and exact corrected-source full CI remain required.
+    inverse and simplify the two selectors without changing production behavior, weakening
+    assertions, gates or thresholds. Preserve all prior reasons, raw evidence, historical metrics
+    and four recovery stashes. Configured hooks and exact corrected-source full CI remain required.
+    The same attempt's completed Windows job 116915765109 also exposed a new fixture error in
+    TestDomainElsewhereUsesLexicalRootsAndLazyParse: it supplied a native backslash outside path
+    as a stored exception key while expecting the canonical slash-separated key to match.
+    Both prior project.FromRoot and current snapshot.Key return slash-separated absolute keys
+    outside the root. Supply filepath.ToSlash(outside) to the existing no-stale assertion and
+    add a noncanonical stored-key control that remains distinct and reports the actual move.
+    Correct this fixture without normalizing raw recorded identities in production lookups or
+    weakening the assertion. A local Unix pass does not establish the Windows outcome; require
+    the exact corrected-source Windows CI result as well as all configured full-CI checks.
   done_when:
     - run: go test ./internal/mutants/... ./config/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-9]|9[0-9]|10[9]|11[0-3]|12[7]|13[8-9]|14[0-8]|227|242)$"
