@@ -2960,6 +2960,41 @@
     with genuine external targets kept separate from ordinary in-root reads
     and positive fake-port controls. Unsupported run/check operations neither
     execute test/list/coverage commands nor refresh independent evidence.
+    Follow T-88's model-bearing contract direction for mutation-owned contracts
+    that refer to mutation-owned values: place them beside those values in
+    internal/mutants, with adapters and our porttest fakes importing them inward.
+    Reuse existing selection, lang and coverage contracts directly where they
+    already express the operation. Do not create a child-port import cycle,
+    forwarding-only package, duplicate result model or generic parameter solely
+    for a directory recipe. Record any additional real dependency correction
+    before implementation and keep strict accept/refuse architecture fixtures.
+    Tool discovery, manifest parsing, installed-tool checks and interpreter probes
+    stay at the I/O boundary; pure policy constructs the existing Command from
+    observed facts. Preserve current precedence and override behavior, including
+    a Python shell override avoiding the unused pytest probe, the actual virtual
+    environment interpreter choice, installed Vitest/Jest versus script choice,
+    and Maven reactor selection. Current pythonInterpreter takes the last existing
+    interpreter in .venv then venv order, whereas PythonCoverageInputs takes the
+    first. Preserve both observations rather than unifying their preferences in
+    this refactor. Do not change a preexisting preference while
+    moving it. The existing pytest import probe inherits the caller working
+    directory; Command.Root and Command.Dir do not set its cwd. Preserve that
+    distinction with actual Run.Dir facts, including nested project roots.
+    Do not copy legacy coverage helpers into the domain to avoid
+    supplying the actual test files or classes those helpers observe.
+    An absent optional manifest or tool, or an unsuccessful optional probe that
+    currently chooses a fallback, remains an observed negative fact rather than
+    a newly fatal validation failure. Preserve caller cancellation and failures
+    that already surface; typed port errors must not silently tighten policy.
+    Tool availability and probe facts must be independent of the command the
+    scenario expects the policy to choose. Use the actual Run.Without inventory,
+    memory manifests and executable entries, and explicit tool-setup declarations
+    where execution facts cannot be represented by file contents. Extend the
+    existing Given setup narrowly if such a fact is missing, with binary setup
+    observing the real capability and the fake consuming its independent input.
+    Never infer installed tools or successful probes from Tests.Command, its
+    declared outcome, an expected command string or a scenario identity. Keep
+    positive and negative controls through the actual Toolchain binding.
   done_when:
     - run: go test ./internal/mutants/... ./internal/importgraph/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(07|12|150|151|152|153|154|155|203|204|205|206|207|208|209|210)$"
