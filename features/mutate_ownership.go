@@ -142,6 +142,9 @@ func (q *mutationExecution) startOwned(ctx context.Context, args ...string) (Run
 }
 func (q *mutationExecution) ownedArgs(counted bool) []string {
 	args := []string{"mutation", "run", "--json", "--no-annotate", "--workers", "1"}
+	if !counted && q.owned.mode == "timeout" {
+		args = append(args, "--timeout-factor", "0.01")
+	}
 	if !counted {
 		args = append(args, "--no-coverage", "--test-command", q.command)
 	}
