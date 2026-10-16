@@ -3452,6 +3452,30 @@
     domain coverage. Focus local checks on moved packages and named fixture scenarios; broad gates
     only hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new dependencies
     without recorded selection.
+    The Fresh contract and its domain values belong beside mutants' models,
+    with the minimum sealed failures and real/memory shared contract outcomes;
+    select its exact API after T-92 through T-94 settle actual orchestration.
+    Do not turn environment preparation into a generic file/process API.
+    Preserve the distinction between admitted Units (including zero-site Go
+    functions), Eligible sites and Selected trials. Preparation measures the
+    admitted judged-language scope; no-site non-Go inputs require no tool.
+    No eligible sites skip preparation unless strict Go inventory is required.
+    Preserve ordered actual stages and partial evidence on failure, stopping
+    before baseline/trials after failed preparation. Ordinary best-effort
+    per-test conversion from T-90 must not replace supervised fail-closed
+    conversion here: a profile left by a failed command cannot erase failure.
+    Freeze configuration and support/test/source bytes from the pinned commit;
+    live installed dependencies and tools remain an explicit outside boundary.
+    Preserve isolated runtime Git HEAD/index, removal of caller Git overrides,
+    offline Go/Gradle/Maven policy and no-bytecode environment through injected
+    execution. Do not install dependencies, download tools or trust live config.
+    Counted mode writes no snapshot, annotation or reusable coverage cache.
+    Keep preparation and trials under their shared abort/cleanup owner, join
+    entered work before frozen input removal, and retain actual stage and
+    interruption findings. Fake preparation derives evidence from immutable
+    committed fixture state and independent collector/tool results, never
+    expected stages, desired verdicts or supplied final coverage maps. Real
+    process ownership and native frozen materialization stay binary fixtures.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(17[3-9]|18[0-6]|212|221|222|223|224|225|226)$"
