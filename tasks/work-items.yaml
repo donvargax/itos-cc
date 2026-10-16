@@ -3292,6 +3292,12 @@ items:
       background CI watches. The watch preserved correct exact-revision status; the gap was
       visibility while remaining platform jobs ran. No change to required checks or polling by the
       coordinator is requested.
+
+      Also reported the actual T-88 mandatory red-main repair/retry round trip as
+      https://github.com/donvargax/itos/issues/80 on 2026-10-15: a reviewable source-revert plan and
+      supported retry bookkeeping, preserving immediate main restoration, ordinary history and all
+      gates. This is upstream workflow feedback, not authorization for a local bypass or new
+      implementation scope.
   - id: strictness-outline-targets
     title: Represent distinct assertion targets for every expanded outline example
     phase: 1
