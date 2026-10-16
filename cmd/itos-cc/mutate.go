@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -654,11 +655,12 @@ func mutationSelection(ctx context.Context, in *invocation) (sources []string, j
 			sources = append(sources, f)
 		}
 	}
-	callerDir := in.adapters.Dir
 	return sources, func(path, function, hash string) bool { return since[path].Judges(function, hash) },
 		func(path string) string { return moves[path] },
 		func(path string, start, end int) bool {
-			path = mutationPath(callerDir, path)
+			if abs, err := filepath.Abs(path); err == nil {
+				path = abs
+			}
 			return since[path].Changes(start, end)
 		}, nil
 }
@@ -706,9 +708,10 @@ func importingTests(ctx context.Context, in *invocation) (func(path string) []st
 	if err != nil {
 		return nil, err
 	}
-	callerDir := in.adapters.Dir
 	return func(path string) []string {
-		path = mutationPath(callerDir, path)
+		if abs, err := filepath.Abs(path); err == nil {
+			path = abs
+		}
 		return tests[path]
 	}, nil
 }
@@ -774,9 +777,6 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 		}
 	}
-	if in.adapters.Tree == nil || in.adapters.Surroundings == nil {
-		return result, errors.New("mutation source tree binding is missing")
-	}
 	tests, err := importingTests(ctx, in)
 	if err != nil {
 		return result, err
@@ -801,18 +801,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	if in.adapters.Workers == nil {
 		return result, errors.New("mutation Workers binding is missing")
 	}
-	if in.adapters.Snapshots == nil {
-		return result, errors.New("mutation snapshots binding is missing")
-	}
-	if in.adapters.SourceEdits == nil {
-		return result, errors.New("mutation source edits binding is missing")
-	}
-	if !in.set("no-coverage") && in.adapters.MutationCoverage == nil {
-		return result, errors.New("mutation coverage capability is not bound")
-	}
 	opt := mutate.Options{
-		Snapshots: in.adapters.Snapshots, Source: in.adapters.SourceEdits, Tree: in.adapters.Tree, Surroundings: in.adapters.Surroundings,
-		Root: project.Root(), Dir: in.adapters.Dir,
 		WorkerFactory: in.adapters.Workers,
 		Toolchain:     in.adapters.Toolchain,
 		Fingerprints:  in.adapters.Fingerprints,
@@ -834,7 +823,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	}
 	suite := listedConfig(in, cfg)
 	if suite != nil {
-		opt.Listed = &mutate.Listed{Root: project.Root(), List: suite.List, All: suite.All, Select: suite.Select}
+		opt.Listed = &mutate.Listed{Root: project.Root(), Select: suite.Select}
 	}
 	if strict {
 		var cached []mutate.CoverageCheck
@@ -896,7 +885,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					report = coverage.Merge(report, coverage.FromLines(language, byLines[language]))
 				}
 			}
-			opt.Coverage = report
+			opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 		} else {
 			// A strict language whose every judged function has fresh
 			// evidence and whose mutants all hold is not measured again:
@@ -932,7 +921,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					return kept[project.Rel(path)+"\x00"+function]
 				}
 			}
-			report, measuredProducer, _, listedFiles, err := strictCoverage(ctx, in, strictLanguages, measured, suite, support, reach)
+			report, measuredProducer, currentInputs, listedFiles, err := strictCoverage(ctx, in, strictLanguages, measured, suite, support, reach)
 			if err != nil {
 				return result, err
 			}
@@ -970,16 +959,47 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			}
 			opt.StatementCoverage = report
 			opt.CoverageProducer = measuredProducer
-			opt.RecordCoverageInputs = true
-			opt.Coverage = report
+			opt.CoverageInputs = currentInputs
+			opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 			if opt.Listed != nil {
 				opt.Listed.Files = listedFiles
 			}
 		}
 	} else if !in.set("no-coverage") {
-		opt.Measurement = &mutants.RunMeasurement{Measurer: in.adapters.MutationCoverage, Lister: in.adapters.TestLister,
-			Request: covport.Request{Reports: in.strs("coverage-report"), Command: in.str("coverage-command"), Existing: in.set("use-existing-coverage"), AllTests: in.set("all-tests"), Scope: covport.OwnTests, Reach: reach}}
-
+		// measure measures sources under ctx; a strict run fails on a
+		// coverage error rather than going without coverage.
+		measure := func(ctx context.Context, sources []string, strict bool) (*coverage.Report, error) {
+			var perTest *covrun.PerTest
+			if suite != nil {
+				listed, err := listTests(suite)
+				if err != nil {
+					return nil, err
+				}
+				perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+				var ids []string
+				opt.Listed.Files = map[string]string{}
+				for _, t := range listed {
+					ids = append(ids, t.ID)
+					opt.Listed.Files[t.ID] = t.File
+				}
+				perTest.All = suite.All(ids)
+			}
+			// Coverage comes from the tests that kill mutants, so a line only
+			// other tests reach is uncovered rather than a survivor, unless
+			// a listed test reaches it.
+			report, err := loadCoverage(ctx, in, sources, covrun.OwnTests, perTest, reach)
+			if err != nil {
+				if strict {
+					return nil, err
+				}
+				fmt.Fprintln(os.Stderr, "itos-cc: coverage:", err)
+				return nil, nil
+			}
+			return report, nil
+		}
+		opt.Coverage = func(ctx context.Context, sources []string) (*coverage.Report, error) {
+			return measure(ctx, sources, false)
+		}
 		if in.set("fail-uncovered") && !rawCoverage(in) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
@@ -989,9 +1009,9 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 				return result, err
 			}
 			if mutate.NeedsMutationCoverage(checks, in.set("mutate-all")) {
-				report, err := mutate.MeasureCoverage(ctx, opt, sources, true)
+				report, err := measure(ctx, sources, true)
 				if err != nil {
-					return result, mutationRunError(err)
+					return result, err
 				}
 				others := unmeasuredToJudge(report, sources, checks, in.set("mutate-all"))
 				others = append(others, integrationToJudge(report, filesToJudge(sources, checks, in.set("mutate-all")))...)
@@ -1001,7 +1021,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 					}
 					return result, nil
 				}
-				opt.Coverage = report
+				opt.Coverage = func(context.Context, []string) (*coverage.Report, error) { return report, nil }
 			}
 		}
 	}
@@ -1024,7 +1044,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 		results, err = mutate.Run(ctx, sources, opt)
 	}
 	if err != nil {
-		return result, mutationRunError(err)
+		return result, err
 	}
 	if strict {
 		reportStrictCoverage(in, results, scope)
@@ -1153,7 +1173,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 	// Only once the run has written what it judged: a --since run moves a
 	// renamed file's snapshot first.
 	if result.Orphans, err = removeOrphans(ctx, in); err != nil {
-		return result, mutationRunError(err)
+		return result, err
 	}
 	if stop != nil {
 		result.Stop = &mutateStop{Stopped: true, Rule: stop.Rule, Subject: stopSubject(stop)}
@@ -1631,7 +1651,7 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
-		listed, err := listTests(ctx, in, suite)
+		listed, err := listTests(suite)
 		if err != nil {
 			return nil, "", nil, nil, err
 		}
@@ -1773,33 +1793,33 @@ func listedConfig(in *invocation, cfg *config.Config) *config.Tests {
 // platform shell, and reads the tests it prints: one a line, its ID, then,
 // after a tab, optionally its file. A command that fails is
 // tests.list-failed.
-func listTests(ctx context.Context, in *invocation, tests *config.Tests) ([]covrun.Test, error) {
+func listTests(tests *config.Tests) ([]covrun.Test, error) {
 	root := project.Root()
-	command := mutants.Command{Root: root, Dir: root, Shell: tests.List}
-	mutate.RunProgress{Log: os.Stderr}.Report(mutants.RunEvent{Kind: "listing", Command: command})
-	listed, err := mutants.ListedTests(ctx, in.adapters.TestLister, command)
-	return listed, mutationRunError(err)
-}
-
-func mutationRunError(err error) error {
-	var listing mutants.ListingFailed
-	if errors.As(err, &listing) {
-		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
-			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", config.File, listing.Reason, listing.Command),
-			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
+	fmt.Fprintf(os.Stderr, "itos-cc: tests %s$ %s\n", project.Rel(root), tests.List)
+	out, err := shellOutput(tests.List, root, os.Stderr)
+	if err != nil {
+		code := -1
+		var exit *exec.ExitError
+		if errors.As(err, &exit) {
+			code = exit.ExitCode()
+		}
+		return nil, cli.NewProblem(cli.CodeNo, "tests.list-failed",
+			fmt.Sprintf("the list command of mutation.tests in %s failed (%v), so no mutant was judged: %s", config.File, err, tests.List),
+			"Make the command print the tests, one a line, and exit 0, then run again.").
+			With("command", tests.List).With("exit_code", code)
 	}
-	var required mutants.CoverageReportRequired
-	if errors.As(err, &required) {
-		return cli.CommandNeedsReport()
+	var listed []covrun.Test
+	seen := map[string]bool{}
+	for _, line := range strings.Split(out, "\n") {
+		id, file, _ := strings.Cut(strings.TrimRight(line, "\r"), "\t")
+		id, file = strings.TrimSpace(id), filepath.ToSlash(strings.TrimSpace(file))
+		if id == "" || seen[id] {
+			continue
+		}
+		seen[id] = true
+		listed = append(listed, covrun.Test{ID: id, File: file})
 	}
-	return err
-}
-
-func mutationPath(dir, path string) string {
-	if filepath.IsAbs(path) {
-		return filepath.Clean(path)
-	}
-	return filepath.Join(dir, path)
+	return listed, nil
 }
 
 // reportFailed reports each mutant of function that fails: a survivor that

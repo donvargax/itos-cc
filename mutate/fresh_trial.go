@@ -116,9 +116,9 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 		workers[i] = pool.Worker(i)
 	}
 
-	var sels *mutants.SelectionBaselines
+	var sels *selections
 	if opt.Listed != nil {
-		sels = mutants.NewSelectionBaselines(opt.Listed, opt.TimeoutFactor, RunProgress{Log: log})
+		sels = newSelections(opt.Listed, opt.TimeoutFactor, log)
 	}
 	queue := make(chan int)
 	var mu sync.Mutex
@@ -165,7 +165,7 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 // when it survives them and listed tests reach its line, the selection's
 // clean baseline, if no mutant needed it yet, and the mutant under the
 // selection. A selection whose baseline fails decides nothing.
-func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *mutants.SelectionBaselines) FreshTrialResult {
+func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial FreshTrial, opt FreshTrialOptions, sels *selections) FreshTrialResult {
 	out := FreshTrialResult{Trial: trial}
 	if err := ctx.Err(); err != nil {
 		out.Err = err
@@ -203,7 +203,7 @@ func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial
 			out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
 			return out
 		}
-		own = mutants.Judged(r)
+		own = judged(r)
 		out.Stages = append(out.Stages, FreshStage{Name: "own", State: "complete", Outcome: own})
 	}
 	if own != Survived || len(trial.Reach) == 0 {
@@ -218,26 +218,26 @@ func runFreshTrial(ctx context.Context, w mutants.Worker, plan *FreshPlan, trial
 		return out
 	}
 	ids := slices.Clone(trial.Reach)
-	timeout, failed, selectionErr := sels.Baseline(ctx, w, ids)
+	sel := sels.baseline(ctx, w, ids)
 	switch {
-	case selectionErr != nil:
-		out.Err = selectionErr
-		out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: failedState(ctx), Tests: ids, Error: selectionErr.Error()})
+	case sel.err != nil:
+		out.Err = sel.err
+		out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: failedState(ctx), Tests: ids, Error: sel.err.Error()})
 		return out
-	case failed != nil:
-		out.FailedSelection = failed
+	case sel.failed != nil:
+		out.FailedSelection = sel.failed
 		out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "failed", Tests: ids,
-			Error: fmt.Sprintf("the listed tests fail without any mutant (exit %d)", failed.ExitCode)})
+			Error: fmt.Sprintf("the listed tests fail without any mutant (exit %d)", sel.failed.ExitCode)})
 		return out
 	}
 	out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "complete", Tests: ids})
-	listed, err := w.Run(ctx, opt.Listed.Command(ids), &mutants.Mutation{Path: path, Source: src, Site: site}, timeout)
+	listed, err := w.Run(ctx, sels.listed.command(ids), &mutants.Mutation{Path: path, Source: src, Site: site}, sel.timeout)
 	out.Elapsed += listed.Elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {
 		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: failedState(ctx), Tests: ids, Error: out.Err.Error()})
 		return out
 	}
-	out.Outcome, out.Scope, out.Tests = mutants.Judged(listed), ScopeListed, ids
+	out.Outcome, out.Scope, out.Tests = judged(listed), ScopeListed, ids
 	out.Stages = append(out.Stages, FreshStage{Name: "listed", State: "complete", Outcome: out.Outcome, Tests: ids})
 	return out
 }

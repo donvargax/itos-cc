@@ -8,15 +8,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
 // Why a snapshot is an orphan.
 const (
-	OrphanGone     = mutants.OrphanGone     // nothing is at its source's path
-	OrphanExcluded = mutants.OrphanExcluded // its source is there, and itos-cc.yaml excludes it
+	OrphanGone     = "gone"     // nothing is at its source's path
+	OrphanExcluded = "excluded" // its source is there, and itos-cc.yaml excludes it
 )
 
 // Orphan is a snapshot under .metrics/mutate whose source file is gone:
@@ -65,19 +64,19 @@ func Orphans(ctx context.Context, store snapport.Store, covers, excluded func(pa
 		recorded := path.Join(snapshot.Folder, name)
 		mapped := filepath.Join(root, strings.TrimSuffix(rel, ".json"))
 		if present(mapped) {
-			if mutants.OrphanReason(true, excluded(mapped), covers(mapped)) == OrphanExcluded {
+			if excluded(mapped) && covers(mapped) {
 				out = append(out, Orphan{Path: mapped, Snapshot: recorded, Why: OrphanExcluded})
 			}
 			continue
 		}
 		source := recordedFile(ctx, store, rel, mapped)
 		if source != mapped && present(source) {
-			if mutants.OrphanReason(true, excluded(source), covers(source)) == OrphanExcluded {
+			if excluded(source) && covers(source) {
 				out = append(out, Orphan{Path: source, Snapshot: recorded, Why: OrphanExcluded})
 			}
 			continue
 		}
-		if mutants.OrphanReason(false, false, covers(source)) == OrphanGone {
+		if covers(source) {
 			out = append(out, Orphan{Path: source, Snapshot: recorded, Why: OrphanGone})
 		}
 	}

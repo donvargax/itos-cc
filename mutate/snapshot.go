@@ -4,10 +4,9 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
-	"github.com/donvargax/itos-cc/internal/testtools"
 )
 
 // scopeCommand is the command that runs path's tests in scope, tests the
@@ -42,11 +41,42 @@ func SnapshotName(rel string) string {
 // recorded before that rule has no whole-suite evidence, so it reads stale
 // once.
 func LoadSnapshotOf(ctx context.Context, store snapport.Store, rel string, tools ...mutants.Toolchain) (*Snapshot, error) {
-	var tool mutants.Toolchain = testtools.Toolchain{}
-	if len(tools) > 0 && tools[0] != nil {
-		tool = tools[0]
+	root, failure := store.Root(ctx)
+	if failure != nil {
+		return nil, failure
 	}
-	return mutants.LoadSnapshot(ctx, metricsdir.Mutations{Store: store}, rel, tool)
+	var encoded snapshotWire
+	ok, failure := store.Read(ctx, SnapshotName(rel), &encoded)
+	if failure != nil {
+		return nil, failure
+	}
+	s := encoded.domain()
+	if !ok || s.File != filepath.ToSlash(rel) {
+		return nil, nil
+	}
+	var ownScope string
+	path := filepath.Join(root, filepath.FromSlash(rel))
+	if len(tools) > 0 && tools[0] != nil {
+		if spec := lang.Detect(path); spec != nil && spec.Name == "typescript" {
+			command, failure := mutants.ObserveCommand(ctx, tools[0], mutants.CommandRequest{Path: path})
+			if failure != nil {
+				return nil, failure
+			}
+			ownScope = scopeForCommand("", false, command)
+		}
+	} else {
+		ownScope = OwnScope(ctx, path)
+	}
+	if ownScope == ScopeAllTests {
+		for i := range s.Units {
+			for j := range s.Units[i].Mutants {
+				if m := &s.Units[i].Mutants[j]; m.TestScope() == ScopeOwn {
+					m.Scope = ScopeAllTests
+				}
+			}
+		}
+	}
+	return &s, nil
 }
 
 func scopeCommandWithTools(ctx context.Context, path, scope string, tests []string, tools mutants.Toolchain) (Command, error) {

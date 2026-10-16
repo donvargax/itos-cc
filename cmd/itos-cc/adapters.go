@@ -33,9 +33,6 @@ import (
 // until they move, but for crap's coverage, which it measures through the
 // port here.
 type adapters struct {
-	Snapshots   mutants.MutationSnapshots
-	SourceEdits mutants.SourceEdits
-	TestLister  mutants.TestLister
 	// Workers owns command copies and process lifetimes for mutation.
 	History      mutants.History
 	Workers      mutants.Workers
@@ -74,7 +71,7 @@ type configFile interface {
 // itos-cc.yaml at the project root on the disk.
 func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
-	return adapters{Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+	return adapters{History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 

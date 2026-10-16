@@ -1,10 +1,10 @@
-package mutants
+package mutate
 
-func (s *Execution) markBroadStale() {
+func (s *fileState) markBroadStale() {
 	if s.judged == nil || s.stored == nil {
 		return
 	}
-	ids, hashes := FileKeys(s.file)
+	ids, hashes := fileKeys(s.file)
 	for i, entry := range EntriesOf(ids, hashes, s.stored.Units) {
 		if s.judged[i] || entry < 0 {
 			continue
