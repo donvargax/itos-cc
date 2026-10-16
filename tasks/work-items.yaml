@@ -1770,7 +1770,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-26]
+    depends_on: [T-119]
     kind: task
     why: >
       Was pre-commit-hook.
