@@ -4590,3 +4590,29 @@
   done_when:
     - run: tools/bin/pre-commit-check
     - run: sh -n tools/hooks/pre-commit
+- id: T-121
+  type: test
+  title: Bound native ownership timeout fixtures independently of baseline duration
+  why: >
+    A spec-only push at ddf6b91 surfaced native macOS workflow 38874803995 job 116887159857 failing
+    MUT187, ownedRemoved: owned cleanup exceeded bounded return. Its committed product is identical
+    to d3f3e2e, whose full workflow 38871215262 passed. This is an independently surfaced fixture
+    setup gap, not a new T94 product regression or an itos defect; artifact upload failures are
+    cascades. The actual timeout wait took10.235 seconds, while owned peer EOF and the recorded
+    timeout outcome passed. Native baseline duration is measured runtime, not the Tests
+    declaration's nominal100ms. With the default timeout factor10, the mutant deadline is10 times
+    that runtime plus5 seconds; the existing10second return guard starts before that deadline
+    expires. Give ONLY the ordinary timeout fixture its existing positive public flag
+    --timeout-factor 0.01, leaving counted, success, cancellation and fail-fast parameters
+    unchanged. Preserve every existing10second/EOF/tree identity/
+    worker-removal/source-restoration/unrelated-process/timeout-outcome assertion. Do not increase
+    thresholds, add retries/skips or implementation-mirroring argument tests, change product
+    behavior or gates, or alter feature text. Existing actual native ownership scenarios hold this
+    fixture repair. Record original red CI and phase-labelled focused raw reports; require actual165
+    execution locally on Linux and actual187 on macOS in exact source CI, with all applicable
+    controls and platform omissions reported honestly. No own-source mutation, new dependency,
+    agents/worktrees or per-task binary comparison. T94 WIP is safely preserved separately; complete
+    and publish this repair before supported T94 retake and restoration of its own paths.
+  done_when:
+    - run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$'
+      timeout: 600

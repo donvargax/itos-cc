@@ -3402,3 +3402,10 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: T-121
+    title: Bound native ownership timeout fixtures independently of baseline duration
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
