@@ -21,13 +21,7 @@ import (
 // mutation package that supplies Linux process ownership.
 type CommandExecutor func(context.Context, *exec.Cmd) error
 
-// CommandExecution records an actual command attempt. A failed setup, start,
-// wait, or cleanup is represented by Err and never inferred from a report.
-type CommandExecution struct {
-	Args []string
-	Dir  string
-	Err  error
-}
+type CommandExecution = coverage.CommandExecution
 
 // RunSupervised measures plans with an explicit executor and returns every
 // command outcome. Unlike Run, it is fail-closed: unsupported plans, failed

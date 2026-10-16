@@ -313,7 +313,7 @@ func suiteReuse(t *testing.T, o outcome) map[string]bool {
 // whether it marks it stale, by suiteKey.
 func graphStale(t *testing.T, dir string) map[string]bool {
 	t.Helper()
-	builder, err := graph.NewBuilder([]string{dir})
+	builder, err := graph.NewBuilder([]string{dir}, graphMutationFixtureInputs())
 	if err != nil {
 		t.Fatal(err)
 	}

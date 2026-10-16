@@ -13,11 +13,11 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenarios of "Rule: Re-running a sample of cached results" in
-// features/mutate.feature. Most use the module of mutate_since_test.go,
+// features/mutation.feature. Most use the module of mutate_since_test.go,
 // whose snapshots a mutation run writes first; mutation sample then re-runs
 // some of their mutants and compares. A snapshot that should disagree with
 // the tests is rewritten by hand, as the cache the command is there to catch
@@ -86,7 +86,7 @@ func (o outcome) sampled(t *testing.T) []sampledJSON {
 // written by hand would be.
 func recordAs(t *testing.T, rel, function, original, outcome string) {
 	t.Helper()
-	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, rel)
+	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, rel)
 	if err != nil || snap == nil {
 		t.Fatalf("no snapshot of %s: %v", rel, err)
 	}
@@ -103,11 +103,11 @@ func recordAs(t *testing.T, rel, function, original, outcome string) {
 				m.Outcome, found = outcome, true
 			}
 			switch m.Outcome {
-			case mutate.Killed, mutate.Timeout:
+			case mutation.Killed, mutation.Timeout:
 				u.Killed++
-			case mutate.Survived:
+			case mutation.Survived:
 				u.Survived++
-			case mutate.Uncovered:
+			case mutation.Uncovered:
 				u.Uncovered++
 			}
 		}
@@ -115,7 +115,7 @@ func recordAs(t *testing.T, rel, function, original, outcome string) {
 	if !found {
 		t.Fatalf("the snapshot of %s records no mutant of %s in %s", rel, quote(original), function)
 	}
-	data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
+	data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +287,7 @@ func TestARecordedKillThatNowSurvivesIsAMismatch(t *testing.T) {
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for the survivors\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	recordAs(t, boardSource, placeID, ">", mutate.Killed)
+	recordAs(t, boardSource, placeID, ">", mutation.Killed)
 
 	o := mutationSample(t, "--json", boardSource)
 	m := o.json(t)
@@ -309,7 +309,7 @@ func TestARecordedSurvivorThatIsNowKilledIsAMismatchToo(t *testing.T) {
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	recordAs(t, boardSource, placeID, ">", mutate.Survived)
+	recordAs(t, boardSource, placeID, ">", mutation.Survived)
 
 	o := mutationSample(t, "--json", boardSource)
 	m := o.json(t)
@@ -371,13 +371,13 @@ func TestClear(t *testing.T) {
 	if o := mutateRun(t, "--timeout-factor", "1", boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed or timed out\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	if got := recorded(t, placeID, "!"); got != mutate.Timeout {
+	if got := recorded(t, placeID, "!"); got != mutation.Timeout {
 		t.Fatalf("place's mutant of ! is recorded %s, want timeout", got)
 	}
 	// Recorded killed, it now times out; and a recorded timeout is now
 	// killed.
-	recordAs(t, boardSource, placeID, "!", mutate.Killed)
-	recordAs(t, boardSource, clearID, "<", mutate.Timeout)
+	recordAs(t, boardSource, placeID, "!", mutation.Killed)
+	recordAs(t, boardSource, clearID, "<", mutation.Timeout)
 
 	o := mutationSample(t, "--json", "--timeout-factor", "1", boardSource)
 	if m := o.json(t); len(m.Problems) != 0 {
@@ -505,7 +505,7 @@ func TestSeedReproducesARun(t *testing.T) {
 	if seed == nil {
 		t.Fatalf("no seed in:\n%s", first.stdout)
 	}
-	edit(t, "README.md", "# sample\n", "# sample\n\nFifty mutants.\n")
+	edit(t, "README.md", "# sample\n", "# sample\n\nFifty mutation.\n")
 	commitAll(t, "describe the sample")
 	// At the new HEAD, the draw is another.
 	moved := mutationSample(t, "--json", "--test-command", passing)
@@ -651,7 +651,7 @@ func TestTheSampleAsJSON(t *testing.T) {
 	if o := mutateRun(t, boardSource); o.code != 1 {
 		t.Fatalf("the run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	recordAs(t, boardSource, placeID, ">", mutate.Survived)
+	recordAs(t, boardSource, placeID, ">", mutation.Survived)
 
 	o := mutationSample(t, "--json", boardSource)
 	var top map[string]any

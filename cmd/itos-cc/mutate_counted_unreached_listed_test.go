@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenario of "Rule: Mutation results say what happened, and leave
-// nothing stale behind" in features/mutate.feature that the
+// nothing stale behind" in features/mutation.feature that the
 // counted-unreached-listed-fix slice holds. calc.py has one mutation site,
 // mid's == 5. No own test reaches it: e2e_mid.py loads calc with importlib,
 // by a name the graph does not see, the way an end-to-end test reaches code,
@@ -53,8 +53,8 @@ func TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt(t *testing.
 	gitIn(t, dir, "add", ".")
 	gitIn(t, dir, "commit", "-qm", "calc")
 	useDir(t, dir)
-	var chosen []mutate.FreshCandidate
-	seed := seedSelecting(t, dir, 1, selecting(&chosen, func(c mutate.FreshCandidate) bool {
+	var chosen []mutation.FreshCandidate
+	seed := seedSelecting(t, dir, 1, selecting(&chosen, func(c mutation.FreshCandidate) bool {
 		return c.Path == "calc.py" && c.Site.Original == "==" && c.Site.Replacement == "!="
 	}))
 

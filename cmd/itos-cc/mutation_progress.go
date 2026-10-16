@@ -1,0 +1,70 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/donvargax/itos-cc/internal/cli"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/project"
+)
+
+// RunProgress presents domain observations in the existing progress format.
+type RunProgress struct{ Log io.Writer }
+
+func (p RunProgress) Report(e mutation.RunEvent) {
+	log := p.Log
+	if log == nil {
+		return
+	}
+	switch e.Kind {
+	case "fresh-trial":
+		r := e.FreshTrial
+		said := r.Outcome
+		own := "no own test reaches its file"
+		if r.RanOwn() {
+			own = "survived its own tests"
+		}
+		switch {
+		case r.Err != nil:
+			said = "not judged: " + r.Err.Error()
+		case r.FailedSelection != nil:
+			said = fmt.Sprintf("%s, then not judged: %s fail without any mutant", own, strings.Join(r.FailedSelection.IDs, " "))
+		case r.Scope == mutation.ScopeListed:
+			said = fmt.Sprintf("%s, then %s with %s", own, r.Outcome, strings.Join(r.Tests, " "))
+		}
+		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", e.Done, e.Total, e.File, e.Site.Line, mutation.Show(e.Site.Original), mutation.Show(e.Site.Replacement), said, r.Elapsed.Seconds())
+	case "nothing":
+		_, _ = fmt.Fprintln(log, "itos-cc: no mutations to test")
+	case "stop":
+		_, _ = fmt.Fprintf(log, "itos-cc: --fail-fast: stopping at %s in %s; no further command starts\n", e.Stop.Rule, e.Stop.File)
+	case "no-coverage":
+		_, _ = fmt.Fprintf(log, "itos-cc: no coverage for %s; running every mutant\n", e.File)
+	case "baseline":
+		_, _ = fmt.Fprintf(log, "itos-cc: baseline %s$ %s\n", project.Rel(e.Command.Dir), e.Command)
+	case "listing":
+		_, _ = fmt.Fprintf(log, "itos-cc: tests %s$ %s\n", project.Rel(e.Command.Dir), e.Command)
+	case "coverage-failed":
+		failure := e.Failure
+		if _, ok := failure.(mutation.CoverageReportRequired); ok {
+			failure = cli.CommandNeedsReport()
+		}
+		_, _ = fmt.Fprintln(log, "itos-cc: coverage:", failure)
+	case "selection-failed":
+		_, _ = fmt.Fprintf(log, "itos-cc: baseline of %s failed: no mutant runs it\n", strings.Join(e.IDs, " "))
+	case "selection-passed":
+		_, _ = fmt.Fprintf(log, "itos-cc: baseline of %s passed in %.1fs: a mutant running it times out after %.1fs\n", strings.Join(e.IDs, " "), e.Elapsed.Seconds(), e.Timeout.Seconds())
+	case "cancelled":
+		_, _ = fmt.Fprintf(log, "itos-cc: %s:%d %s → %s cancelled: %v (%.1fs)\n", e.File, e.Site.Line, mutation.Show(e.Site.Original), mutation.Show(e.Site.Replacement), e.Failure, e.Elapsed.Seconds())
+	case "judged", "selection-blocked":
+		said, took := e.Outcome, fmt.Sprintf("%.1fs", e.Elapsed.Seconds())
+		if e.Kind == "selection-blocked" {
+			said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(e.IDs, " "))
+		} else if e.IDs != nil {
+			said = fmt.Sprintf("survived its own tests, then %s with %s", e.Outcome, strings.Join(e.IDs, " "))
+			took += fmt.Sprintf(", the listed tests %.1fs", e.Listed.Seconds())
+		}
+		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", e.Done, e.Total, e.File, e.Site.Line, mutation.Show(e.Site.Original), mutation.Show(e.Site.Replacement), said, took)
+	}
+}

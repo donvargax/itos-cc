@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -165,20 +164,20 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 	if in.adapters.Workers == nil {
 		return nil, errors.New("mutation Workers binding is missing")
 	}
-	opt := mutants.SampleOptions{
+	opt := mutation.SampleOptions{
 		CheckOptions:  mutationCheckOptions(in, judge, tests, support, nil),
 		WorkerFactory: in.adapters.Workers,
 		Workers:       in.integer("workers"),
 		TimeoutFactor: in.float("timeout-factor"),
 		TestCommand:   in.str("test-command"),
 		AllTests:      in.set("all-tests"),
-		Progress:      mutate.RunProgress{Log: os.Stderr},
+		Progress:      RunProgress{Log: os.Stderr},
 	}
 	// An outcome the listed tests decided runs them again, after its own.
 	if cfg.Tests != nil && !opt.AllTests && opt.TestCommand == "" {
-		opt.Listed = &mutate.Listed{Root: project.Root(), Select: cfg.Tests.Select}
+		opt.Listed = &mutation.Listed{Root: project.Root(), Select: cfg.Tests.Select}
 	}
-	sampled, err := mutants.Sample(ctx, sources, count, result.Seed, opt)
+	sampled, err := mutation.Sample(ctx, sources, count, result.Seed, opt)
 	if err != nil {
 		return result, mutationRunError(err)
 	}
@@ -209,7 +208,7 @@ func runMutationSample(ctx context.Context, in *invocation) (any, error) {
 			continue
 		}
 		out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}
-		var differ []mutate.SampledMutant
+		var differ []mutation.SampledMutant
 		for _, m := range f.Mutants {
 			out.Mutants = append(out.Mutants, sampledMutant{Line: m.Line, Column: m.Column, Function: m.Function,
 				Original: m.Original, Replacement: m.Replacement, Recorded: m.Recorded, Outcome: m.Outcome, Scope: m.Scope})
@@ -241,13 +240,13 @@ func sampleSeed(ctx context.Context, in *invocation) (string, error) {
 		return id, nil
 	}
 	switch failure := failure.(type) {
-	case mutants.NoRepository:
+	case mutation.NoRepository:
 		return "", cli.NewProblem(cli.CodeEnvironment, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+failure.Reason, "Run it inside a git repository, or give the seed with --seed.")
-	case mutants.BadReference:
+	case mutation.BadReference:
 		return "", failure
-	case mutants.HistoryCancelled:
+	case mutation.HistoryCancelled:
 		return "", failure.Cause
-	case mutants.HistoryFailed:
+	case mutation.HistoryFailed:
 		return "", failure.Cause
 	}
 	return "", failure
@@ -257,7 +256,7 @@ func sampleSeed(ctx context.Context, in *invocation) (string, error) {
 // <file>:<line>:<column> <original> → <replacement> in <function>:
 // recorded <outcome>, now <outcome>", and reports it as mutation.mismatch,
 // with the scope it ran with and a fix that re-runs it there.
-func reportMismatch(in *invocation, rel string, m mutate.SampledMutant) {
+func reportMismatch(in *invocation, rel string, m mutation.SampledMutant) {
 	if !in.json {
 		fmt.Printf("  mismatch %s:%d:%d %s → %s in %s: recorded %s, now %s\n", rel, m.Line, m.Column,
 			quote(m.Original), quote(m.Replacement), m.Function, m.Recorded, m.Outcome)
@@ -283,8 +282,8 @@ func reportMismatch(in *invocation, rel string, m mutate.SampledMutant) {
 func rerunIn(scope, rel string) string {
 	flags := ""
 	switch scope {
-	case mutate.ScopeOwn, mutate.ScopeListed, "":
-	case mutate.ScopeAllTests:
+	case mutation.ScopeOwn, mutation.ScopeListed, "":
+	case mutation.ScopeAllTests:
 		flags = "--all-tests "
 	default:
 		flags = "--test-command " + shellQuote(scope) + " "

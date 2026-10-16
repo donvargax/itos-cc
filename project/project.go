@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/selection"
 )
 
 // skipDirs are never walked: dependencies, caches, and fixtures that are
@@ -70,10 +71,7 @@ func IsBuildOutputWithIgnore(ctx context.Context, dir string, ignored func(ctx c
 
 // Files are the supported source files under some roots, split into
 // production code and test code. Paths are absolute and sorted.
-type Files struct {
-	Sources []string
-	Tests   []string
-}
+type Files = selection.Files
 
 // Discover walks roots (files or directories) under ctx and classifies
 // every file in a supported language. A root that names a file is taken

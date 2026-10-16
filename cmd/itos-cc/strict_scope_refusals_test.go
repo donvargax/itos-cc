@@ -12,12 +12,14 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/mutate"
+	"github.com/donvargax/itos-cc/internal/metricsdir"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/project"
 )
 
 // The scenario outline of "Rule: Strict runs prove executable line coverage
-// in every language" in features/mutate.feature that the
+// in every language" in features/mutation.feature that the
 // strict-scope-refusals slice holds. No language tool runs: each project's
 // judged function has no mutation site, and its strict line evidence is
 // seeded fresh, bound to the fingerprints its language computes now, so a
@@ -113,37 +115,37 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 	var inputs map[string]string
 	switch f.Spec.Name {
 	case "typescript":
-		producer = mutate.TypeScriptCoverageProducer(coverage.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
-		inputs, err = mutate.TypeScriptCoverageInputs(t.Context(), source, root, producer, nil)
+		producer = mutation.TypeScriptCoverageProducer(coverage.TypeScriptRunner(project.FindUp(t.Context(), source, "package.json"), true), false)
+		inputs, err = testinputs.TypeScriptCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	case "python":
-		producer = mutate.CoverageProducer("python", false)
-		inputs, err = mutate.PythonCoverageInputs(t.Context(), source, root, producer, nil)
+		producer = mutation.CoverageProducer("python", false)
+		inputs, err = testinputs.PythonCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	case "kotlin":
 		module := project.FindUp(t.Context(), source, "build.gradle.kts", "build.gradle", "pom.xml")
-		producer = mutate.KotlinCoverageProducer(coverage.KotlinRunner(module), false)
-		inputs, err = mutate.KotlinCoverageInputs(t.Context(), source, root, producer, nil)
+		producer = mutation.KotlinCoverageProducer(coverage.KotlinRunner(module), false)
+		inputs, err = testinputs.KotlinCoverageInputs(t.Context(), testinputs.CurrentRuntime(), source, root, producer, nil)
 	default:
 		t.Fatalf("no strict line evidence for %s", f.Spec.Name)
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	snap := mutate.Snapshot{Version: 1, File: rel, Language: f.Spec.Name, Units: []mutate.UnitResult{}}
+	snap := mutation.Snapshot{Version: 1, File: rel, Language: f.Spec.Name, Units: []mutation.UnitResult{}}
 	for _, unit := range f.Units {
-		hash := mutate.UnitHash(f, unit)
-		snap.Units = append(snap.Units, mutate.UnitResult{
+		hash := mutation.UnitHash(f, unit)
+		snap.Units = append(snap.Units, mutation.UnitResult{
 			Namespace: unit.Namespace, Name: unit.Name, Hash: hash, StartLine: unit.StartLine, EndLine: unit.EndLine,
-			Mutants: []mutate.Mutant{},
-			Coverage: &mutate.CoverageEvidence{Version: 1, Language: f.Spec.Name, File: rel,
+			Mutants: []mutation.Mutant{},
+			Coverage: &mutation.CoverageEvidence{Version: 1, Language: f.Spec.Name, File: rel,
 				Function: unit.Namespace + "#" + unit.Name, Hash: hash, Producer: producer, Inputs: maps.Clone(inputs),
-				Complete: true, Blocks: []mutate.CoverageBlock{}},
+				Complete: true, Blocks: []mutation.CoverageBlock{}},
 		})
 	}
-	data, err := json.MarshalIndent(mutate.SnapshotJSON(snap), "", "  ")
+	data, err := json.MarshalIndent(metricsdir.SnapshotJSON(snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, filepath.Join(root, ".metrics", filepath.FromSlash(mutate.SnapshotName(rel))), string(data)+"\n")
+	writeFile(t, filepath.Join(root, ".metrics", filepath.FromSlash(metricsdir.MutationName(rel))), string(data)+"\n")
 }
 
 // accessTime is the time the file at path was last read, as the file

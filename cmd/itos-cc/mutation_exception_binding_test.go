@@ -12,13 +12,13 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
-func exceptionBindingFixture(t *testing.T) (*mutationRunFixture, adapters, mutants.Exception) {
+func exceptionBindingFixture(t *testing.T) (*mutationRunFixture, adapters, mutation.Exception) {
 	t.Helper()
 	f := newMutationRunFixture(t)
 	if code, out := f.invoke(t, f.adapters, "--no-coverage", "--no-annotate"); code != 0 {
@@ -27,7 +27,7 @@ func exceptionBindingFixture(t *testing.T) (*mutationRunFixture, adapters, mutan
 	snap := f.snapshots.Values["board.go"]
 	for i := range snap.Units {
 		for j := range snap.Units[i].Mutants {
-			snap.Units[i].Mutants[j].Outcome = mutants.Survived
+			snap.Units[i].Mutants[j].Outcome = mutation.Survived
 		}
 	}
 	f.snapshots.Values["board.go"] = snap
@@ -39,15 +39,15 @@ func exceptionBindingFixture(t *testing.T) (*mutationRunFixture, adapters, mutan
 	if failure != nil {
 		t.Fatal(failure)
 	}
-	opt := mutants.CheckOptions{Tests: func(path string) []string { return reach[path] }, Root: f.root, Dir: f.root, Store: f.snapshots, Tree: a.Tree, Surroundings: a.Surroundings, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints}
+	opt := mutation.CheckOptions{Tests: func(path string) []string { return reach[path] }, Root: f.root, Dir: f.root, Store: f.snapshots, Tree: a.Tree, Surroundings: a.Surroundings, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints}
 	m := snap.Units[0].Mutants[0]
-	e, err := mutants.Survivor(t.Context(), path, m.Line, m.Column, opt, f.edits)
+	e, err := mutation.Survivor(t.Context(), path, m.Line, m.Column, opt, f.edits)
 	if err != nil {
 		t.Fatal(err)
 	}
 	e.Reason = "independently reviewed"
 	store := &mutantstest.Exceptions{}
-	a.Exceptions = func(string) mutants.Exceptions { return store }
+	a.Exceptions = func(string) mutation.Exceptions { return store }
 	return f, a, e
 }
 func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
@@ -56,7 +56,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	invoke := func(a adapters, args ...string) (int, string) { return invokeRead(t, f, a, args...) }
 	except := []string{"mutation", "except", site, "--reason", entry.Reason, "--json"}
 	store := base.Exceptions(f.root).(*mutantstest.Exceptions)
-	if code, out := invoke(base, except...); code != 0 || !reflect.DeepEqual(store.Entries, []mutants.Exception{entry}) {
+	if code, out := invoke(base, except...); code != 0 || !reflect.DeepEqual(store.Entries, []mutation.Exception{entry}) {
 		t.Fatalf("bound except: %d %s %+v", code, out, store.Entries)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, config.File)); !os.IsNotExist(err) {
@@ -73,7 +73,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(f.root, config.File), data, 0600); err != nil {
 		t.Fatal(err)
 	}
-	store.Entries = []mutants.Exception{old}
+	store.Entries = []mutation.Exception{old}
 	renew := []string{"mutation", "except", "--renew", "--json"}
 	if code, out := invoke(base, renew...); code != 0 || len(store.Entries) != 1 || store.Entries[0] != entry {
 		t.Fatalf("bound renew: %d %s %+v", code, out, store.Entries)
@@ -94,13 +94,13 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 			}{
 				{"missing exceptions", "Exceptions binding is missing", 70, func(a *adapters) { a.Exceptions = nil }},
 				{"wrong exceptions", "actual document read denied", 70, func(a *adapters) {
-					a.Exceptions = func(string) mutants.Exceptions {
-						return &mutantstest.Exceptions{Failure: mutants.ExceptionFailed{Cause: errors.New("actual document read denied")}}
+					a.Exceptions = func(string) mutation.Exceptions {
+						return &mutantstest.Exceptions{Failure: mutation.ExceptionFailed{Cause: errors.New("actual document read denied")}}
 					}
 				}},
 				{"invalid exceptions", "config.invalid", 2, func(a *adapters) {
-					a.Exceptions = func(string) mutants.Exceptions {
-						return &mutantstest.Exceptions{Failure: mutants.ExceptionInvalid{Reason: "wrong independent document shape", Key: "mutation"}}
+					a.Exceptions = func(string) mutation.Exceptions {
+						return &mutantstest.Exceptions{Failure: mutation.ExceptionInvalid{Reason: "wrong independent document shape", Key: "mutation"}}
 					}
 				}},
 				{"missing status", "source status binding is missing", 70, func(a *adapters) { a.SourceStatus = nil }},
@@ -174,7 +174,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
 	path := filepath.Join(root, config.File)
-	old := mutants.Exception{File: "a.go", Function: "p#F", Hash: "old", LineInFunction: 1, Column: 2, Original: ">", Replacement: ">=", Reason: "reviewed"}
+	old := mutation.Exception{File: "a.go", Function: "p#F", Hash: "old", LineInFunction: 1, Column: 2, Original: ">", Replacement: ">=", Reason: "reviewed"}
 	original, _, err := config.ExceptDocument(nil, old)
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +189,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	}
 	next := old
 	next.Hash = "new"
-	if failure := store.Renew(t.Context(), []mutants.Renewal{{Old: old, New: next}}); failure != nil {
+	if failure := store.Renew(t.Context(), []mutation.Renewal{{Old: old, New: next}}); failure != nil {
 		t.Fatal(failure)
 	}
 	actual, err := m.Read(path)
@@ -197,12 +197,12 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, err := config.Parse(actual)
-	if err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutants.Exception{next}) || !strings.Contains(string(actual), "AFTER initial selection") || !reflect.DeepEqual(cfg.Exclude, []string{"vendor/**"}) {
+	if err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{next}) || !strings.Contains(string(actual), "AFTER initial selection") || !reflect.DeepEqual(cfg.Exclude, []string{"vendor/**"}) {
 		t.Fatalf("current memory document lost: %s %v", actual, err)
 	}
 	// A failed complete-Old batch never publishes an earlier renewal.
 	before := string(actual)
-	failure := store.Renew(t.Context(), []mutants.Renewal{{Old: next, New: old}, {Old: old, New: next}})
+	failure := store.Renew(t.Context(), []mutation.Renewal{{Old: next, New: old}, {Old: old, New: next}})
 	after, err := m.Read(path)
 	if failure == nil || err != nil || string(after) != before {
 		t.Fatalf("partial memory batch: %s %v %v", after, failure, err)
@@ -215,7 +215,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, err = config.Parse(actual)
-	if failure != nil || !replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutants.Exception{updated}) || !strings.Contains(string(actual), "AFTER initial selection") {
+	if failure != nil || !replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{updated}) || !strings.Contains(string(actual), "AFTER initial selection") {
 		t.Fatalf("current memory replacement: %s %v %v", actual, failure, err)
 	}
 	missing := memoryExceptions{memory: m, root: filepath.Join(root, "new-project")}
@@ -225,7 +225,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, err = config.Parse(actual)
-	if failure != nil || replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutants.Exception{old}) {
+	if failure != nil || replaced || err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{old}) {
 		t.Fatalf("missing memory creation: %s %v %v", actual, failure, err)
 	}
 }

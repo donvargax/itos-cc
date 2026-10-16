@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/metrics"
-	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: Mutation results say what happened, and leave
-// nothing stale behind" in features/mutate.feature that the
+// nothing stale behind" in features/mutation.feature that the
 // check-removed-operator-sites-fix slice holds, the reverse of
 // mutation_unrecorded_test.go's, and the check-left-out-count slice. They use the module of
 // mutate_since_test.go with killedTests, and stand for an operator a newer
@@ -23,20 +23,20 @@ import (
 // removedSiteRepo runs every mutant of src/board.go, all killed, then adds
 // to Board#place's entry a survivor at a site the function no longer holds,
 // and returns that mutant.
-func removedSiteRepo(t *testing.T) mutate.Mutant {
+func removedSiteRepo(t *testing.T) mutation.Mutant {
 	t.Helper()
-	return removedSiteRepoWith(t, mutate.Survived)
+	return removedSiteRepoWith(t, mutation.Survived)
 }
 
 // removedSiteRepoWith is removedSiteRepo with the added mutant's outcome
 // outcome, counted in the entry's counts.
-func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
+func removedSiteRepoWith(t *testing.T, outcome string) mutation.Mutant {
 	t.Helper()
 	boardRepo(t, killedTests)
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(boardSource))
+	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(boardSource))
 	if err != nil || snap == nil {
 		t.Fatalf("the snapshot of %s: %v", boardSource, err)
 	}
@@ -45,7 +45,7 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
 		if u.Namespace+"#"+u.Name != placeID {
 			continue
 		}
-		var gone *mutate.Mutant
+		var gone *mutation.Mutant
 		for j := range u.Mutants {
 			if m := u.Mutants[j]; m.Original == ">" && m.Replacement == ">=" {
 				m.Replacement, m.Outcome = "<", outcome
@@ -58,26 +58,26 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutate.Mutant {
 		u.Mutants = append(u.Mutants, *gone)
 		u.Sites++
 		switch outcome {
-		case mutate.Survived:
+		case mutation.Survived:
 			u.Survived++
-		case mutate.Killed:
+		case mutation.Killed:
 			u.Killed++
 		default:
 			t.Fatalf("an added mutant %s, want survived or killed", outcome)
 		}
-		data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
+		data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}
-		writeFile(t, filepath.Join(metrics.Name, mutate.SnapshotName(filepath.ToSlash(boardSource))), string(data)+"\n")
+		writeFile(t, filepath.Join(metrics.Name, metricsdir.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
 		return *gone
 	}
 	t.Fatalf("no entry of %s in %+v", placeID, snap.Units)
-	return mutate.Mutant{}
+	return mutation.Mutant{}
 }
 
 // isMutant is whether m is at gone's place with its change.
-func isMutant(m mutantJSON, gone mutate.Mutant) bool {
+func isMutant(m mutantJSON, gone mutation.Mutant) bool {
 	return m.Line == gone.Line && m.Column == gone.Column && m.Original == gone.Original && m.Replacement == gone.Replacement
 }
 
@@ -99,7 +99,7 @@ func TestARecordedMutantWhoseSiteIsGoneIsLeftOut(t *testing.T) {
 			continue
 		}
 		place++
-		if fn.State != mutate.Fresh || fn.Survived != 0 || fn.Killed != 1 {
+		if fn.State != mutation.SnapshotFresh || fn.Survived != 0 || fn.Killed != 1 {
 			t.Errorf("place in mutation check %+v, want fresh with 1 killed and no survivor", fn)
 		}
 	}
@@ -116,7 +116,7 @@ func TestARecordedMutantWhoseSiteIsGoneIsLeftOut(t *testing.T) {
 		switch {
 		case isMutant(m, gone):
 			t.Errorf("mutation run lists %+v, a mutant whose site is gone", m)
-		case m.Function == placeID && (!m.Reused || m.Outcome != mutate.Killed):
+		case m.Function == placeID && (!m.Reused || m.Outcome != mutation.Killed):
 			t.Errorf("place's mutant %+v, want it reused, killed", m)
 		}
 	}
@@ -154,7 +154,7 @@ func TestAnExceptionOfARemovedSiteIsGone(t *testing.T) {
 // @ID-MUT-241
 func TestCheckSaysHowManyRecordedMutantsItLeftOut(t *testing.T) {
 	t.Parallel()
-	removedSiteRepoWith(t, mutate.Killed)
+	removedSiteRepoWith(t, mutation.Killed)
 
 	o := mutationCheck(t, "--json", boardSource)
 	var out struct {

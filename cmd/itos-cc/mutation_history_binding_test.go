@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
-	"github.com/donvargax/itos-cc/mutate"
 )
 
 func historyConsumerFixture(t *testing.T) (*memory, string) {
@@ -67,7 +67,7 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	}
 	exceptions := []config.Exception{{File: "gone.go", Function: "example/binding#Gone", Hash: "independent obsolete hash"}}
 	stale, _, err := exceptionsElsewhere(t.Context(), in, exceptions, nil, func(string) string { return "" })
-	if err != nil || len(stale) != 1 || stale[0].Why != mutate.ExceptionGone {
+	if err != nil || len(stale) != 1 || stale[0].Why != mutation.ExceptionGone {
 		t.Fatalf("bound deleted exception not judged: %v %v", stale, err)
 	}
 	for _, path := range []string{"new.go", "tracked.go"} {
@@ -75,7 +75,7 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	orphans := []mutate.Orphan{{Path: filepath.Join(root, "old.go"), Why: mutate.OrphanGone}, {Path: filepath.Join(root, "staged.go"), Why: mutate.OrphanGone}}
+	orphans := []mutation.Orphan{{Path: filepath.Join(root, "old.go"), Why: mutation.OrphanGone}, {Path: filepath.Join(root, "staged.go"), Why: mutation.OrphanGone}}
 	if remaining, err := notRenamed(t.Context(), in, orphans); err != nil || len(remaining) != 0 {
 		t.Fatalf("bound committed+working rename ignored: %v %v", remaining, err)
 	}

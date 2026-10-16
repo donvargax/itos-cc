@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/mutate"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // The scenario of "Rule: Mutation results say what happened, and leave
-// nothing stale behind" in features/mutate.feature that the
+// nothing stale behind" in features/mutation.feature that the
 // python-parallel-data-fix slice holds. A coverage.py configuration that
 // sets [run] parallel = true, or patch = subprocess, which forces it, has
 // coverage run write .coverage.<host>.<pid>.<random> beside the data file
@@ -189,8 +189,8 @@ func TestAPythonProjectThatWritesParallelCoverageDataIsMeasured(t *testing.T) {
 		gitIn(t, dir, "init", "-q")
 		gitIn(t, dir, "add", ".")
 		gitIn(t, dir, "commit", "-qm", "calc")
-		var chosen []mutate.FreshCandidate
-		seed := seedSelecting(t, dir, 1, selecting(&chosen, func(c mutate.FreshCandidate) bool {
+		var chosen []mutation.FreshCandidate
+		seed := seedSelecting(t, dir, 1, selecting(&chosen, func(c mutation.FreshCandidate) bool {
 			return c.Path == "calc.py" && c.Site.Original == "==" && c.Site.Replacement == "!="
 		}))
 

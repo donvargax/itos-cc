@@ -9,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: Mutation results say what happened, and leave
-// nothing stale behind" in features/mutate.feature that the
+// nothing stale behind" in features/mutation.feature that the
 // renamed-snapshot-left-behind-fix, outside-root-snapshot-kept-fix and
 // renamed-orphan-kept-fix slices hold. They use the module of
 // mutate_since_test.go with killedTests. The first writes beside
@@ -142,7 +141,7 @@ func TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory(t *test
 	if string(boardAfter) != string(boardBefore) {
 		t.Errorf("mutation run src rewrote %s, want it kept as it was:\nbefore\n%s\nafter\n%s", board, boardBefore, boardAfter)
 	}
-	if snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, "src/board.go"); err != nil || snap == nil {
+	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, "src/board.go"); err != nil || snap == nil {
 		t.Errorf("the snapshot of src/board.go after mutation run src: %v, %v, want it kept", snap, err)
 	}
 
@@ -173,7 +172,7 @@ func TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists(t *testin
 	file := filepath.Join(outside, boardSource)
 	// The run names the file by its absolute path (project.FromRootOf), so
 	// its snapshot is .metrics/mutate/<absolute path>.json.
-	snapshot := filepath.ToSlash(filepath.Join(".metrics", mutate.SnapshotName(filepath.ToSlash(file))))
+	snapshot := filepath.ToSlash(filepath.Join(".metrics", metricsdir.MutationName(filepath.ToSlash(file))))
 	if runtime.GOOS == "windows" {
 		// A drive's colon is no part of a directory's name on Windows, so
 		// no snapshot can sit at that name there.
@@ -187,7 +186,7 @@ func TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists(t *testin
 	if o := mutateRun(t, file); o.code != 0 {
 		t.Fatalf("mutation run %s: exit %d, want every mutant killed\n%s%s", file, o.code, o.stdout, o.stderr)
 	}
-	if snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
+	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
 		t.Fatalf("the snapshot of %s after its run: %v, %v, want one at %s", file, snap, err, snapshot)
 	}
 
@@ -241,7 +240,7 @@ func renamedOld(t *testing.T) string {
 // lib/new.ts.
 func movedToNew(t *testing.T, old string) {
 	t.Helper()
-	if snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, "lib/new.ts"); err != nil || snap == nil {
+	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, "lib/new.ts"); err != nil || snap == nil {
 		t.Errorf("the snapshot of lib/new.ts: %v, %v, want the one of src/old.ts moved there", snap, err)
 	}
 	if snapshotThere(t, old) {

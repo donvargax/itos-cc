@@ -11,25 +11,25 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
-type unavailableTools struct{ mutants.Toolchain }
+type unavailableTools struct{ mutation.Toolchain }
 
-func (unavailableTools) Observe(context.Context, mutants.CommandRequest) (mutants.ToolFacts, mutants.InputFailure) {
-	return mutants.ToolFacts{}, mutants.InputFailed{Cause: errors.New("actual tool observation unavailable")}
+func (unavailableTools) Observe(context.Context, mutation.CommandRequest) (mutation.ToolFacts, mutation.InputFailure) {
+	return mutation.ToolFacts{}, mutation.InputFailed{Cause: errors.New("actual tool observation unavailable")}
 }
 
-type unavailableFingerprints struct{ mutants.Fingerprints }
+type unavailableFingerprints struct{ mutation.Fingerprints }
 
-func (unavailableFingerprints) Tests(context.Context, string, []string) (map[string]string, mutants.InputFailure) {
-	return nil, mutants.InputFailed{Cause: errors.New("actual fingerprint observation unavailable")}
+func (unavailableFingerprints) Tests(context.Context, string, []string) (map[string]string, mutation.InputFailure) {
+	return nil, mutation.InputFailed{Cause: errors.New("actual fingerprint observation unavailable")}
 }
 
-type unavailableReach struct{ mutants.Reach }
+type unavailableReach struct{ mutation.Reach }
 
-func (unavailableReach) TestsImporting(context.Context, string, []string, []string) (map[string][]string, mutants.InputFailure) {
-	return nil, mutants.InputFailed{Cause: errors.New("actual reach observation unavailable")}
+func (unavailableReach) TestsImporting(context.Context, string, []string, []string) (map[string][]string, mutation.InputFailure) {
+	return nil, mutation.InputFailed{Cause: errors.New("actual reach observation unavailable")}
 }
 
 // Hand-parsed mutation still reads legacy discovery/config until T100. This

@@ -151,6 +151,7 @@ linters:
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/githistory/**" # mutation committed history
+            - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -206,6 +207,7 @@ linters:
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/githistory/**" # mutation committed history
+            - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
@@ -389,6 +391,25 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the githistory adapter imports only mutation's History values and the Git library it wraps (T-91); no UI, other adapters or fakes"
+        freshenv:
+          list-mode: lax
+          files:
+            - "**/internal/freshenv/**"
+            - "!$test"
+          allow:
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/coverage$
+            - github.com/donvargax/itos-cc/internal/coverage/port$
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/port$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/config$
+            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/coverage$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "freshenv imports only its mutation contract and the observed libraries/codecs it wraps (T-95); cmd supplies other adapters and owned executors"
         importgraph:
           list-mode: lax
           files:

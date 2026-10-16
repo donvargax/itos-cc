@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/metrics"
-	"github.com/donvargax/itos-cc/mutate"
 )
 
 // The scenarios of "Rule: Checking cached results without running" in
-// features/mutate.feature about a site the snapshot entry never recorded.
+// features/mutation.feature about a site the snapshot entry never recorded.
 // They use the module of mutate_since_test.go with killedTests, Board#place
 // given a second and a third site its test kills too, and stand for an
 // operator a newer itos-cc adds by deleting one of place's mutants from
@@ -21,7 +21,7 @@ import (
 
 // unrecordedRepo runs every mutant of src/board.go, all killed, then deletes
 // one of Board#place's mutants from its entry, and returns that mutant.
-func unrecordedRepo(t *testing.T) mutate.Mutant {
+func unrecordedRepo(t *testing.T) mutation.Mutant {
 	t.Helper()
 	boardRepo(t, killedTests)
 	edit(t, boardSource, "return i > 5\n", "return i > 5 && i < 9\n")
@@ -30,7 +30,7 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 	if o := mutateRun(t, boardSource); o.code != 0 {
 		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
 	}
-	snap, err := mutate.LoadSnapshotOf(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(boardSource))
+	snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(boardSource))
 	if err != nil || snap == nil {
 		t.Fatalf("the snapshot of %s: %v", boardSource, err)
 	}
@@ -46,15 +46,15 @@ func unrecordedRepo(t *testing.T) mutate.Mutant {
 		u.Mutants = u.Mutants[:len(u.Mutants)-1]
 		u.Sites--
 		u.Killed--
-		data, err := json.MarshalIndent(mutate.SnapshotJSON(*snap), "", "  ")
+		data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}
-		writeFile(t, filepath.Join(metrics.Name, mutate.SnapshotName(filepath.ToSlash(boardSource))), string(data)+"\n")
+		writeFile(t, filepath.Join(metrics.Name, metricsdir.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
 		return gone
 	}
 	t.Fatalf("no entry of %s in %+v", placeID, snap.Units)
-	return mutate.Mutant{}
+	return mutation.Mutant{}
 }
 
 // @ID-MUT-106
