@@ -3438,6 +3438,12 @@
     and source. Keep pure cached-evidence/map queries as pure functions. Bound
     adapters own logging and domain events carry progress facts to presentation;
     no captured UI/input closure or direct legacy disk fallback enters Run.
+    Sample currently draws/checks legacy candidates and shares the same private
+    execution state and scheduler. Move that genuine state/scheduler once;
+    expose only a constructor, pending-site admission and observed result/outcome
+    access needed by Sample. Keep its draw, checks, grouping and read-only policy
+    legacy until T-94, without a second scheduler or semantic DTO. Retain and
+    exercise listed-scope, baseline-failure, read-only and seed neighbor guards.
   done_when:
     - run: go test ./internal/mutants/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(13|14|15|16|17|18|19|20|21|22|124|125|126|135|136|137|165|166|167|187|188|189|191|192|193|194|195|196|197|198|199|200|201|202)$"
