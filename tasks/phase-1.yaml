@@ -3220,6 +3220,10 @@
     failed logs and native diagnostics; no check is weakened or new product
     behavior claimed. Remaining original native job diagnostics stay observed
     before the repaired implementation is published.
+    The original workflow subsequently completed failed; macOS and Windows
+    reproduced only that same missing-source fixture, with no additional named
+    failures. The original architecture and common native fixture diagnostics
+    are complete; repaired source still requires independent exact full CI.
   done_when:
     - run: go test ./internal/coverage/... ./internal/coveragetools/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(122|123|124|125|156|157|158|159|160|161|162|163|164)$"

@@ -1495,3 +1495,33 @@ covdata conversion of the owned per-ID `CoverageMetadata` artifact, after it is
 written and read. Defaults preserve success; failure removes only that collector's
 evidence, retaining valid sibling collectors and IDs. They never script the final
 preparation verdict or replace the real binary's converter.
+
+T90 binds mutation coverage through the invocation's separate `MutationCoverage`
+capability; aggregate `Coverage` remains the existing port. The real adapter
+wraps the unchanged collectors, per-ID split/fallback run, and best-effort
+Python/TypeScript inventory. `Test`/`PerTest` now belong to the coverage domain;
+legacy aliases keep fresh/supervised preparation unchanged until T95.
+The memory binding parses declared Go/LCOV/JaCoCo bytes and independent static
+reports, filters subprocess data through the in-process inventory and preserves
+per-ID sibling evidence. It observes actual request scope/reach and current
+source bytes using the full runnable trace inventory, including unrelated tests.
+Unknown fixture sources/selectors fail admission; unexpected request-dependent
+observation errors return from `Driver.Run` without changing product failures.
+The hand-parsed mutation handler still refuses memory scenarios until T100;
+focused consumer controls use disposable real discovery only, with actual
+measurement supplied by the fake. No feature is promoted to `InProcess` here.
+Shared named-report/cancellation guards are distinct from successful shared
+Go split/fallback and Python static-inventory contracts. The real Go fixture
+builds a covered executable in its native temporary root. The Python contract
+reports an actual missing-tool omission unless installed-tools mode requires it.
+All existing listed/integration/strict inventory and supervised/fresh guards
+remain, including declaration retention and contradiction checks; supervised
+conversion policy is still owned by T95. Original snapshot/coverage artifacts
+and historical mutation records retain their recorded identities.
+
+Listed measurement setup belongs to the fixture root. A later explicit
+`Tests.Listed` declaration replaces that root setup deterministically, while
+a command upsert omitting it leaves it intact. Retained nested maps, ID slices
+and metadata bytes are owned copies; command-keyed Workers outcomes remain
+independent. A failed static collector still logs its diagnostic when no
+report was written and supplies no inventory proof.

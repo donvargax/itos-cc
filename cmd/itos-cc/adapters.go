@@ -49,6 +49,8 @@ type adapters struct {
 	Store snapport.Store
 	// Coverage is the coverage port, which measures coverage for crap.
 	Coverage covport.Measurer[*coverage.Report]
+	// MutationCoverage supplies listed evidence and executable inventories.
+	MutationCoverage coverage.MutationMeasurer
 	// Config is itos-cc.yaml.
 	Config configFile
 }
@@ -68,7 +70,7 @@ type configFile interface {
 func diskAdapters(log io.Writer) adapters {
 	dir, _ := os.Getwd()
 	return adapters{Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
-		Coverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
+		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.

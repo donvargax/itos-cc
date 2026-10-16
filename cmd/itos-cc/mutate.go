@@ -974,7 +974,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 				if err != nil {
 					return nil, err
 				}
-				perTest = &covrun.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+				perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
 				var ids []string
 				opt.Listed.Files = map[string]string{}
 				for _, t := range listed {
@@ -986,7 +986,7 @@ func runMutate(ctx context.Context, in *invocation) (any, error) {
 			// Coverage comes from the tests that kill mutants, so a line only
 			// other tests reach is uncovered rather than a survivor, unless
 			// a listed test reaches it.
-			report, err := loadCoverage(ctx, in, sources, covrun.OwnTests, os.Stderr, perTest, reach)
+			report, err := loadCoverage(ctx, in, sources, covrun.OwnTests, perTest, reach)
 			if err != nil {
 				if strict {
 					return nil, err
@@ -1644,14 +1644,14 @@ func strictCoverageInputs(in *invocation, languages []string, allTests, testComm
 // returns the report, Go's producer, the producer and fingerprint of each
 // source's evidence by its language, and the file of each listed test.
 func strictCoverage(ctx context.Context, in *invocation, languages []string, sources []string, suite *config.Tests, support map[string]string, reach covrun.Reach) (*coverage.Report, string, mutate.CoverageInputs, map[string]string, error) {
-	perTest := (*covrun.PerTest)(nil)
+	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
 		listed, err := listTests(suite)
 		if err != nil {
 			return nil, "", nil, nil, err
 		}
-		perTest = &covrun.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
+		perTest = &coverage.PerTest{Root: project.Root(), Tests: listed, Select: suite.Select}
 		var ids []string
 		for _, test := range listed {
 			ids = append(ids, test.ID)
@@ -1664,14 +1664,19 @@ func strictCoverage(ctx context.Context, in *invocation, languages []string, sou
 		scope = covrun.AllTests
 	}
 	producer := mutate.CoverageProducer("go", in.set("all-tests"))
-	report, err := loadCoverage(ctx, in, sources, scope, os.Stderr, perTest, reach)
+	report, err := loadCoverage(ctx, in, sources, scope, perTest, reach)
 	if err != nil {
 		return nil, "", nil, nil, err
 	}
 	for _, language := range languages {
 		// A command that fails leaves its files without proof, which the
 		// run reports as missing evidence; it logged why.
-		_, _ = covrun.Inventory(ctx, report, language, os.Stderr, nil)
+		if in.adapters.MutationCoverage == nil {
+			return nil, "", nil, nil, fmt.Errorf("mutation coverage capability is not bound")
+		}
+		if failure := in.adapters.MutationCoverage.Inventory(ctx, report, language); failure != nil && ctx.Err() != nil {
+			return nil, "", nil, nil, context.Cause(ctx)
+		}
 	}
 	// A stopped run leaves files unlisted for that reason, not for a
 	// command's failure: it is reported as the stop.

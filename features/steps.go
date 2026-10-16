@@ -210,6 +210,10 @@ type ListedTests struct {
 	CoverageExit     int
 	CoverageOutput   string
 	CoverageMetadata []byte
+	// ConversionExit/Output are the actual external Go covdata conversion
+	// result for the per-ID metadata artifact; other collectors remain valid.
+	ConversionExit   int
+	ConversionOutput string
 }
 
 // Site is a mutation site as a Given names it: its file, slash-separated
@@ -271,6 +275,11 @@ type Coverage struct {
 	// fixtures own a facade of pinned tools excluding c8; no integration report
 	// can accompany that absence. Raw reports/no-coverage remain unaffected.
 	WithoutC8 bool
+	// InventoryReport is independent static collector output for unloaded
+	// Python/TypeScript files; empty means no inventory was obtained.
+	InventoryReport string
+	InventoryExit   int
+	InventoryOutput string
 	// Venv is whether the Python project keeps its own virtualenv in
 	// .venv, whose python is the one with pytest and coverage: the binary
 	// driver links python3 there.

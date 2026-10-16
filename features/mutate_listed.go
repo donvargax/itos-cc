@@ -367,7 +367,7 @@ func snapshotEntries(snap map[string]any) []map[string]any {
 func (l *listedMutation) entries() ([]map[string]any, error) {
 	snap, err := l.snapshot()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("listed snapshot: %w; actual run:\n%s", err, l.m.w.report())
 	}
 	entries := snapshotEntries(snap)
 	want := listedMutants

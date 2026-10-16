@@ -16,6 +16,9 @@ func TestMemoryTestDeclarationsKeepCommandsIndependent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := m.Write(filepath.Join(dir, "src", "board.ts"), []byte("export function board() { return true; }\n")); err != nil {
+		t.Fatal(err)
+	}
 	own := features.Tests{Language: "typescript", Command: "vitest related src/board.ts", Baseline: "old"}
 	all := features.Tests{Language: "typescript", Command: "make test", Trace: &features.TestTrace{File: filepath.Join(dir, "trace"), Source: "src/board.ts"}}
 	for _, tests := range []features.Tests{own, all} {
