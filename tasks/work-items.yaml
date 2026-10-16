@@ -2466,6 +2466,22 @@ items:
       output and parent-cancel versus local-timeout judgments. Keep historical mutation records at
       their recorded old source paths; this task neither refreshes nor relabels them. Compare these
       observable cases only in the final whole-refactor proof, not per-task binary runs.
+
+      The final comparison needs controls of its actual comparison oracle, in addition to executing
+      the binaries. Before proof implementation, the concrete case manifest names nonzero required
+      cases for every public command, exact argv/reset recipes and required artifacts. The runner
+      must reject a missing required case, a duplicate case ID, an omitted/unexecuted case or
+      missing raw evidence; none counts as agreement. Exercise the same oracle used by the real
+      comparison on tiny captured-evidence fixtures: identical stdout/stderr/status/artifact bytes
+      pass, while independent changes to each stream, exit status, snapshot bytes/field order and
+      nil-versus-empty populations fail. A bounded volatile field is accepted only at its declared
+      case and location, with raw evidence retained and its format/semantics checked; malformed
+      values or changes outside that boundary fail. Intentional differences are case-specific and
+      linked to the already recorded accepted behavior changes, not an allow-anything branch.
+      Namespace changes remain outside any blanket allowance. Do not substitute a separate toy
+      validator for these controls, or run own-source mutation, change product flags or compare
+      binaries per refactor task. This prepares the later proof: settle its concrete final
+      manifest/platform scope after T-116 as already required.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
