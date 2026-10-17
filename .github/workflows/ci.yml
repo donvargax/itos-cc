@@ -1,13 +1,16 @@
 name: CI
 
 # For every push to main and pull request: the ci job holds the pushed
-# commits to itos's rules and runs itos.yaml's plan, ci.steps (T-29), and
-# the test job runs the tests on Linux, macOS and Windows.
-# On a push to main, once the ci and test jobs pass, the release job
-# cuts the release in the same run (release.yml, T-28): the version from the
-# commits since the last tag (tools/bin/release-version), each platform built
-# on its own runner, the archives attested and published with their notes, or
-# nothing when nothing calls for a release. A pushed tag starts nothing:
+# commits to itos's rules and runs itos.yaml's plan, ci.steps (T-29); the
+# test job runs the tests on Linux, macOS and Windows, and the languages job
+# runs those that need the real TypeScript, Python and Kotlin tools, both
+# skipped when the scope job finds the push's range prose-only (T-122).
+# On a push to main, once the ci, test and languages jobs pass, or the
+# latter two were skipped as prose-only, the release job cuts the release in
+# the same run (release.yml, T-28): the version from the commits since the
+# last tag (tools/bin/release-version), each platform built on its own
+# runner, the archives attested and published with their notes, or nothing
+# when nothing calls for a release. A pushed tag starts nothing:
 # release.yml's manual run is the fallback, for a tag or a commit main's CI
 # passed.
 on:
@@ -59,34 +62,100 @@ jobs:
         env:
           ITOS_CC_SKIP_FEATURES: mutate.feature # T-83; removed when S7 moves mutation in process (T-100).
 
+  # Whether the push's range touches only prose, so the test and languages
+  # jobs can skip it (T-122): a take, queue or close commit changing only
+  # tasks/ ran the whole matrix, about 22 minutes, for nothing it could
+  # break. The ci job's range, from itos ci range with the same head and
+  # base, and itos ci scope's answer over it, the one rule for what is prose
+  # (ci.prose.paths), never matched again here. No range to start from (no
+  # green run) runs everything. Go is not set up: the launcher and git are
+  # all it needs, so the tests start about as soon as they did.
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
+      - name: Scope
+        id: scope
+        env:
+          TO: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          out=$(itos ci range --json --head "$TO" --base "$BASE")
+          from=$(jq -er '.from | strings' <<<"$out")
+          echo "FROM=$from"
+          docs_only=false
+          if [ -n "$from" ]; then
+            out=$(itos ci scope --json "$from" "$TO")
+            docs_only=$(jq -r 'if (.docs_only | type) == "boolean" then .docs_only else error("no docs_only") end' <<<"$out")
+          fi
+          echo "docs_only=$docs_only"
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+
+  # The tests on each system, every package of go test ./... in one of four
+  # parts that run side by side (T-122): on windows-latest go test ./...
+  # took 13.3 minutes, cmd/itos-cc alone 12.6 of them and features 7.7
+  # (run 38911387674), so cmd/itos-cc's tests are split in two by name,
+  # features is a part of its own, and the others part takes go vet, every
+  # other package and the native scenario steps. The same parts on every
+  # system, so each package runs on each system as it did.
   test:
+    needs: scope
+    if: needs.scope.outputs.docs_only != 'true'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        part: [cmd-a, cmd-b, features, others]
     runs-on: ${{ matrix.os }}
     steps:
       # Pinned to commits, the same versions as itos's workflows.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # Gradle can prepend /usr/bin; select the other runtimes afterwards
-      # so their pinned executables keep precedence over the image defaults.
-      # "basic" caches Gradle downloads, the Kotlin plugin and JUnit.
-      - if: matrix.os == 'ubuntu-latest'
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          gradle-version: "9.8.1"
-          cache-provider: basic
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
-      - run: go vet ./...
+      - if: matrix.part == 'others'
+        run: go vet ./...
         env:
           ITOS_CC_SKIP_FEATURES: mutate.feature
-      # 30 minutes, not go test's default 10: cmd/itos-cc's tests take about
-      # 19 on windows-latest (T-6, T-15). The limit only guards against a
-      # hang; windows-test-speed is what brings that time down.
-      - run: go test -timeout 30m ./...
+      # 30 minutes, not go test's default 10: cmd/itos-cc's tests took about
+      # 19 on windows-latest (T-6, T-15), 12.6 in run 38911387674. The limit
+      # only guards against a hang; windows-test-speed and the parts above
+      # are what bring that time down. cmd-a takes the tests whose names
+      # start Test and A to E, about half the package's test time, and
+      # cmd-b, with -skip on the same pattern, every other test, example
+      # and fuzz seed, so each runs in exactly one of them.
+      - if: matrix.part == 'cmd-a'
+        run: go test -timeout 30m -run '^Test[A-E]' ./cmd/itos-cc
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature
+      - if: matrix.part == 'cmd-b'
+        run: go test -timeout 30m -skip '^Test[A-E]' ./cmd/itos-cc
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature
+      - if: matrix.part == 'features'
+        run: go test -timeout 30m ./features
+        env:
+          ITOS_CC_SKIP_FEATURES: mutate.feature
+      # Every package of ./... but the two the parts above test, listed by
+      # go list so a new package is never left out.
+      - name: Other packages
+        id: packages
+        if: matrix.part == 'others'
+        shell: bash
+        run: |
+          module=$(go list -m)
+          packages=$(go list ./... | grep -v -x -F -e "$module/cmd/itos-cc" -e "$module/features" | tr '\n' ' ')
+          echo "$packages"
+          echo "list=$packages" >> "$GITHUB_OUTPUT"
+      - if: matrix.part == 'others'
+        run: go test -timeout 30m ${{ steps.packages.outputs.list }}
         env:
           ITOS_CC_SKIP_FEATURES: mutate.feature
 
@@ -95,9 +164,10 @@ jobs:
       # Verbose steps and the structured report distinguish real native cases
       # from Godog's skipped-as-passed platform omissions; default timeout stays.
       - name: Native mutation ownership and fail-fast scenarios
+        if: matrix.part == 'others'
         run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(16[5-7]|18[7-9]|19[1-9]|20[0-2]|211|248)$' -scenario-report 'T80-native.json'
       - name: Preserve native mutation scenario observations
-        if: always()
+        if: always() && matrix.part == 'others'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
         with:
           name: T80-native-${{ matrix.os }}
@@ -108,9 +178,10 @@ jobs:
       # T-81 counted admission, judgments and real fixture worktrees.
       # Platform omissions stay visible in the original structured report.
       - name: Native counted mutation scenarios
+        if: matrix.part == 'others'
         run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(17[3-9]|18[0-6]|212)$' -scenario-report 'T81-native.json'
       - name: Preserve native counted scenario observations
-        if: always()
+        if: always() && matrix.part == 'others'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
         with:
           name: T81-native-${{ matrix.os }}
@@ -121,42 +192,73 @@ jobs:
       # T-82 snapshot storage, real overlapping collectors and root-relative paths.
       # Keep actual native execution/typed physical omissions in original JSON.
       - name: Native snapshot scenarios
+        if: matrix.part == 'others'
         run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-SNAP-' -scenario-report 'T82-native.json'
       - name: Preserve native snapshot observations
-        if: always()
+        if: always() && matrix.part == 'others'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
         with:
           name: T82-native-${{ matrix.os }}
           path: features/T82-native.json
           if-no-files-found: error
 
-
-      # The real TypeScript, Python and Kotlin tools, so the language smoke
-      # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216
-      # to 218 and 220) run through them instead of skipping (T-13).
-      # On ubuntu-latest alone, to bound CI time: elsewhere those tests
-      # skip. Installed after the suite above, which runs as before.
-      # Each tool is pinned: Node's by testdata/tools/node's lockfile,
-      # Python's by testdata/tools/python/requirements.txt, and the JDK,
-      # Gradle and Maven here; the Kotlin fixtures pin their plugins.
-      - if: matrix.os == 'ubuntu-latest'
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+  # The real TypeScript, Python and Kotlin tools, so the language smoke
+  # tests and the scenarios that need them (ID-MUT-208 to 210, 214, 216
+  # to 218 and 220) run through them instead of skipping (T-13).
+  # On ubuntu-latest alone, to bound CI time: elsewhere those tests
+  # skip. A job of its own beside the test matrix, no longer a step run
+  # after ubuntu-latest's go test (T-122): that step took 15.4 minutes, so
+  # its commands are split into shards by their measured times, each
+  # command and scenario selector in exactly one, each shard setting up
+  # the tools its tests need, the Kotlin ones only where a Kotlin test or
+  # scenario runs.
+  # Each tool is pinned: Node's by testdata/tools/node's lockfile,
+  # Python's by testdata/tools/python/requirements.txt, and the JDK,
+  # Gradle and Maven here; the Kotlin fixtures pin their plugins.
+  languages:
+    needs: scope
+    if: needs.scope.outputs.docs_only != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        # tests: the Go tests (3.8 minutes); scenarios-a and scenarios-b:
+        # the scenarios of crap.feature, coverage.feature, cli.feature and
+        # mutate.feature that need Node or Python, split by their times
+        # (3.3 and 3.1); families: the T-78 and T-79 families (5 minutes).
+        include:
+          - { shard: tests, kotlin: true }
+          - { shard: scenarios-a, kotlin: true }
+          - { shard: scenarios-b, kotlin: false }
+          - { shard: families, kotlin: true }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Gradle can prepend /usr/bin; select the other runtimes afterwards
+      # so their pinned executables keep precedence over the image defaults.
+      # "basic" caches Gradle downloads, the Kotlin plugin and JUnit.
+      - if: matrix.kotlin
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: "9.8.1"
+          cache-provider: basic
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: testdata/tools/node/package-lock.json
-      - if: matrix.os == 'ubuntu-latest'
-        working-directory: testdata/tools/node
+      - working-directory: testdata/tools/node
         run: npm ci
-      - if: matrix.os == 'ubuntu-latest'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.14"
           cache: pip
           cache-dependency-path: testdata/tools/python/requirements.txt
-      - if: matrix.os == 'ubuntu-latest'
-        run: python3 -m pip install -r testdata/tools/python/requirements.txt
-      - if: matrix.os == 'ubuntu-latest'
+      - run: python3 -m pip install -r testdata/tools/python/requirements.txt
+      - if: matrix.kotlin
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -165,7 +267,7 @@ jobs:
           cache: maven
           cache-dependency-path: cmd/itos-cc/mutate_kotlin_own_tests_test.go
       # Maven from Maven Central, checked against Apache's published SHA-512.
-      - if: matrix.os == 'ubuntu-latest'
+      - if: matrix.kotlin
         env:
           MAVEN_VERSION: "3.9.16"
           MAVEN_SHA512: 831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6
@@ -176,17 +278,36 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
       # Verbose, so the log lists each test that ran. ITOS_CC_LANGUAGE_TOOLS
-      # makes a missing tool fail these tests instead of skipping them. Then
-      # the godog scenarios of crap.feature, coverage.feature, cli.feature
-      # and mutate.feature that need Node or Python, which every other job
-      # skips (features/README.md).
-      - if: matrix.os == 'ubuntu-latest'
+      # makes a missing tool fail these tests instead of skipping them.
+      - if: matrix.shard == 'tests'
         env:
           ITOS_CC_LANGUAGE_TOOLS: "1"
           ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
         run: |
           go test -count=1 -v -run '^(TestLanguageToolSmoke.*|TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled|TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree|TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants|TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline|TestAPythonFilesOwnTestsAreTheTestsThatReachIt|TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture|TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt|TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes|TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction|TestAStrictKotlinRunBuiltWithMavenProvesTheSameLines|TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestLinesAPythonTestReachesThroughASubprocessAreCovered|TestACoveragePyThatCannotMeasureSubprocessesIsAMissingCollector|TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered|TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered|TestAFileNoTestReachesReportsItsBaselineAsNotRun|TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt|TestAPythonProjectThatWritesParallelCoverageDataIsMeasured)$' ./cmd/itos-cc
-          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12)|CLI-13|MUT-(07|1[124689]|3[7-9]|4[01678]|50|5[7-9]|6[0-9]|7[1-5]|8[34]|10[0125-8]|109|11[0-3]|14[78]|2[89]|3[0-5]|5[2-6]|145|23[1-3]|23[5-9]|241|8[5-9]|9[0-9]|13[89]|14[0-4]|146|242))$'
+      # The godog scenarios of crap.feature, coverage.feature, cli.feature
+      # and mutate.feature that need Node or Python, which every other job
+      # skips (features/README.md), in two halves of the one selector they
+      # had. The first keeps its run of the features package's other tests;
+      # the second, like the families, runs TestFeatures alone. Every
+      # scenario naming Kotlin, Gradle or Maven is in the first.
+      - if: matrix.shard == 'scenarios-a'
+        env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: |
+          go test ./features -count=1 -v -scenarios='^@ID-(CRAP-(04|14)|COV-(02|05|07|10|12)|CLI-13|MUT-(07|1[124689]|7[1-5]|10[0125-8]|109|14[78]|145|13[89]|14[0-4]|146|242))$'
+      - if: matrix.shard == 'scenarios-b'
+        env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: |
+          go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(3[7-9]|4[01678]|50|5[7-9]|6[0-9]|8[34]|11[0-3]|2[89]|3[0-5]|5[2-6]|23[1-3]|23[5-9]|241|8[5-9]|9[0-9])$'
+      - if: matrix.shard == 'families'
+        env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: |
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-247$'
           # T-78 families stay bounded independently of the prior conversions.
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(15[0-5]|203|204|206|213|215|219)$'
@@ -199,9 +320,17 @@ jobs:
 
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.
+  # A prose-only range skips the test and languages jobs, and a job needing
+  # a skipped one is skipped too, so the condition says what passing is:
+  # ci passed, and test and languages passed or were skipped because scope
+  # found the range prose-only. Its release then cuts nothing, as before.
   release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [ci, test]
+    if: >-
+      !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.ci.result == 'success' && needs.scope.result == 'success'
+      && (needs.test.result == 'success' || needs.test.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
+      && (needs.languages.result == 'success' || needs.languages.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
+    needs: [scope, ci, test, languages]
     # What release.yml's jobs ask for: the release and its assets, the OIDC
     # token Sigstore signs with, and the attestations.
     permissions:
