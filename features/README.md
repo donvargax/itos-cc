@@ -1378,10 +1378,13 @@ and per-step omissions; ordinary matrix selection also includes snapshots,
 outside T-83's mutation-only omission. Runtime counts are reported from the
 original JSON, not Godog's skipped-as-passed summary.
 
-All legacy holders remain until replacement CI and T-101's assertion-by-assertion
-cleanup. The exact root holder mapping in `cmd/itos-cc/snapshots_root_test.go` is:
+T-101 removed `cmd/itos-cc/snapshots_root_test.go` once these scenarios ran
+green through both drivers. Each test's root location, root-relative names and
+relative output are its scenario's assertions; its exit-code preconditions are
+ID-MUT-29's (a survivor exits 1) and the crap, dry and scrap features', and its
+crap `--no-coverage` is ID-COV-19's. The mapping was:
 
-| ID | Retained holder |
+| ID | Removed holder |
 | --- | --- |
 | SNAP08 | `TestSnapshotsLiveAtTheProjectRootWhereverACommandRuns` |
 | SNAP09 | `TestEveryCommandsSnapshotNamesFilesFromTheRoot` |
@@ -1389,9 +1392,9 @@ cleanup. The exact root holder mapping in `cmd/itos-cc/snapshots_root_test.go` i
 | SNAP11 | `TestPathsOnTheCommandLineAndInOutputStayRelativeToTheWorkingDirectory` |
 | SNAP12 | `TestOutsideAGitRepositoryTheWorkingDirectoryIsTheRoot` |
 
-Preserve `snapshotFiles`, `noMetricsIn`, source/test helpers and any additional
-exit, survivor, no-coverage or low-bound control until independently mapped;
-new default-command fixtures do not make every old control a duplicate.
+Its own helpers, `snapshotFiles`, `noMetricsIn` and `inSrc`, went with it,
+used nowhere else; the shared module and source helpers stay for their other
+users.
 At the metrics adapter, keep `TestWritesAtTheSameTimeLeaveOneWholeSnapshot`,
 `TestARenameRefusedForAMomentIsRetried`, `TestARenameThatCannotLandFails`,
 `TestAReadRefusedForAMomentIsRetried` and
