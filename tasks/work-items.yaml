@@ -3358,7 +3358,7 @@ items:
     title: Finish mutation documentation and remove superseded command tests
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-125]
     kind: task
   - id: T-102

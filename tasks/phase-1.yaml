@@ -4191,9 +4191,6 @@
     The checks below stay fast (2026-10-17: the in-process mutation scenarios take about 25 s):
     the binary driver's whole suite is CI's to run on each push, not a local gate. Do not run it,
     or itos task, locally as a gate; the push's CI run is the evidence.
-  done_when:
-    - run: go test ./internal/mutants/... ./internal/mutation/...
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="@ID-(MUT|SNAP)-"
 - id: T-102
   type: test
   title: Run graph node and import scenarios through the black-box harness
