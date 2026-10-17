@@ -62,6 +62,7 @@ func (l *languageMutation) reachProject(p languageReachProject) error {
 			return err
 		}
 	}
+	l.m.w.imports(p.edges)
 	return nil
 }
 func (l *languageMutation) recordReach() error {

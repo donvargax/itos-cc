@@ -15,7 +15,7 @@ func (q *mutationExecution) listedProject(selected ...string) error {
 		return err
 	}
 	w := q.m.w
-	q.command = "go test -count=1 -failfast ."
+	q.command = "go test -count=1 -failfast ./."
 	q.source = map[string]string{"main.go": executionListedMain}
 	for name, text := range executionListedFiles {
 		if name == "itos-cc.yaml" {

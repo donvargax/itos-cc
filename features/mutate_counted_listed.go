@@ -70,7 +70,7 @@ func (q *countedMutation) listedMode(mode string) error {
 		return err
 	}
 	site := Site{File: "subject.go", Line: 3, Original: ">", Replacement: ">="}
-	trace := &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "subject.go", Tests: map[string]string{"main_test.go": "own", "e2e/e2e_test.go": "listed"}}
+	trace := &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "subject.go", Tests: map[string]string{"main_test.go": "own", "e2e/e2e_test.go": "listed"}, Coverage: true}
 	own := Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Surviving: []Site{site}, Trace: trace}
 	if mode == "own-kill" {
 		own.Surviving = nil

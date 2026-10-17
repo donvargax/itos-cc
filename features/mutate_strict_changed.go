@@ -116,6 +116,8 @@ func (q *strictMutation) changedProject(language string) error {
 			q.testFile = file
 		}
 	}
+	// The test imports the judged file.
+	q.m.w.imports(map[string][]string{q.testFile: {q.file}})
 	if err := q.changedDeclarations(false); err != nil {
 		return err
 	}
@@ -146,7 +148,13 @@ func (q *strictMutation) changedDeclarations(added bool) error {
 	if err := q.m.w.d.Coverage(q.m.w.dir, c); err != nil {
 		return err
 	}
-	return q.m.w.d.Tests(q.m.w.dir, t)
+	if err := q.m.w.d.Tests(q.m.w.dir, t); err != nil {
+		return err
+	}
+	if q.language == "python" {
+		return q.m.pythonProbe(true)
+	}
+	return nil
 }
 func (q *strictMutation) changedCommit() error {
 	e := q.changed

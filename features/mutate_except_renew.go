@@ -72,7 +72,7 @@ func (e *exceptionMutation) declareRenew(killSign bool) error {
 	if err := e.s.m.w.d.Coverage(e.s.m.w.dir, Coverage{Language: "go", Report: report}); err != nil {
 		return err
 	}
-	for _, command := range []string{"go test -count=1 -failfast .", "go test -count=1 -failfast ./..."} {
+	for _, command := range []string{"go test -count=1 -failfast ./.", "go test -count=1 -failfast ./..."} {
 		t.Command = command
 		if err := e.s.m.w.d.Tests(e.s.m.w.dir, t); err != nil {
 			return err

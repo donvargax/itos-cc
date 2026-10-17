@@ -44,7 +44,7 @@ type countedMutation struct {
 func countedMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
 	q := &countedMutation{}
 	sc.Before(func(ctx context.Context, scenario *godog.Scenario) (context.Context, error) {
-		*q = countedMutation{e: &mutationExecution{m: m, s: s, command: "go test -count=1 -failfast ."}, seed: "T81-fixed", saved: map[string]countedObservation{}, texts: map[string]Result{}}
+		*q = countedMutation{e: &mutationExecution{m: m, s: s, command: "go test -count=1 -failfast ./."}, seed: "T81-fixed", saved: map[string]countedObservation{}, texts: map[string]Result{}}
 		for _, tag := range scenario.Tags {
 			if strings.HasPrefix(tag.Name, "@ID-MUT-") {
 				q.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
@@ -123,7 +123,7 @@ func (q *countedMutation) setMode(mode string) error {
 	if err = w.d.Write(filepath.Join(q.e.outside, "counted-control.json"), data); err != nil {
 		return err
 	}
-	t := Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "main.go"}}
+	t := Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "main.go", Coverage: true}}
 	site := Site{File: "main.go", Line: 3, Original: ">", Replacement: ">="}
 	if mode == "survive" {
 		t.Surviving = []Site{site}
@@ -198,7 +198,7 @@ func (q *countedMutation) otherProject(source string) (*countedMutation, error) 
 	}
 	q.e.extraDirs = append(q.e.extraDirs, dir)
 	w := &world{d: d, dir: dir}
-	o := &countedMutation{e: &mutationExecution{m: &mutateState{w: w}, command: "go test -count=1 -failfast ."}, seed: q.seed, saved: map[string]countedObservation{}, texts: map[string]Result{}}
+	o := &countedMutation{e: &mutationExecution{m: &mutateState{w: w}, command: "go test -count=1 -failfast ./."}, seed: q.seed, saved: map[string]countedObservation{}, texts: map[string]Result{}}
 	if err = o.project(source); err != nil {
 		return nil, err
 	}

@@ -279,7 +279,7 @@ var (
 )
 
 func (m *mutateState) pythonSample() error {
-	return m.writeAll(pythonSample)
+	return m.writeProject(map[string][]string{"tests/test_board.py": {"src/board.py"}}, pythonSample)
 }
 
 // writeAll writes each file of files, by its slash-separated path from
@@ -290,6 +290,22 @@ func (m *mutateState) writeAll(files map[string]string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// pythonProbe declares whether python3 imports pytest in the scratch
+// folder, as the run asks it before choosing a Python test command.
+func (m *mutateState) pythonProbe(importable bool) error {
+	return m.w.d.Tools(context.Background(), m.w.dir, ToolSetup{Env: m.w.env(), Python: &PythonProbe{Interpreter: "python3", Importable: importable}})
+}
+
+// writeProject writes files, as writeAll does, and declares the import
+// edges among them (imports).
+func (m *mutateState) writeProject(edges map[string][]string, files map[string]string) error {
+	if err := m.writeAll(files); err != nil {
+		return err
+	}
+	m.w.imports(edges)
 	return nil
 }
 
@@ -1499,26 +1515,17 @@ func (m *mutateState) sourceInProject(ctx context.Context, language, has string)
 			return err
 		}
 	}
-	if tests == nil {
-		tests = &Tests{}
+	switch language {
+	case "TypeScript":
+		if _, exists := files["src/board.test.ts"]; exists {
+			w.imports(map[string][]string{"src/board.test.ts": {m.file}})
+		}
+	case "Python":
+		w.imports(map[string][]string{"tests/test_board.py": {m.file}})
+	case "Kotlin":
+		w.imports(map[string][]string{"src/test/kotlin/board/BoardTest.kt": {m.file}})
 	}
 	if tests != nil {
-		tests.Imports = map[string][]string{}
-		for name := range files {
-			if slices.Contains([]string{".go", ".ts", ".py", ".kt"}, filepath.Ext(name)) {
-				tests.Imports[name] = []string{}
-			}
-		}
-		switch language {
-		case "TypeScript":
-			if _, exists := files["src/board.test.ts"]; exists {
-				tests.Imports["src/board.test.ts"] = []string{m.file}
-			}
-		case "Python":
-			tests.Imports["tests/test_board.py"] = []string{m.file}
-		case "Kotlin":
-			tests.Imports["src/test/kotlin/board/BoardTest.kt"] = []string{m.file}
-		}
 		if err := w.d.Tests(w.dir, *tests); err != nil {
 			return err
 		}
@@ -1635,7 +1642,7 @@ const (
 // e2eModule writes the module and declares what its tests do and cover.
 func (m *mutateState) e2eModule() error {
 	m.file = "a/a.go"
-	if err := m.writeAll(map[string]string{"go.mod": mutateModule, m.file: e2eSource, "e2e/e2e_test.go": e2eTest}); err != nil {
+	if err := m.writeProject(map[string][]string{"e2e/e2e_test.go": {m.file}}, map[string]string{"go.mod": mutateModule, m.file: e2eSource, "e2e/e2e_test.go": e2eTest}); err != nil {
 		return err
 	}
 	if m.w.d.Exists(filepath.Join(m.w.dir, "a", "a_test.go")) || !strings.Contains(e2eTest, "\"example.com/m/a\"") {
@@ -2138,7 +2145,7 @@ func (m *mutateState) baselineTook(n int, unit string) error {
 		// board.py is at the root, where coverage, which sets no
 		// PYTHONPATH, imports it.
 		m.file = "board.py"
-		if err := m.writeAll(map[string]string{
+		if err := m.writeProject(map[string][]string{"tests/test_board.py": {m.file}}, map[string]string{
 			"pyproject.toml": pyproject, m.file: waitPy, "pytest.py": noPytest,
 			"tests/test_board.py": fmt.Sprintf(waitTest, seconds),
 		}); err != nil {
@@ -2147,8 +2154,12 @@ func (m *mutateState) baselineTook(n int, unit string) error {
 		if err := m.w.d.Coverage(m.w.dir, Coverage{Language: "python", Report: "SF:board.py\nDA:2,1\nDA:4,1\nDA:8,1\nend_of_record\n"}); err != nil {
 			return err
 		}
-		return m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: "python3 -m unittest -f tests.test_board", Elapsed: took,
-			TimingOut: []Site{{m.file, 2, ">", ">="}}})
+		if err := m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: "python3 -m unittest -f tests.test_board", Elapsed: took,
+			TimingOut: []Site{{m.file, 2, ">", ">="}}}); err != nil {
+			return err
+		}
+		// pytest.py shadows pytest, which python3 cannot import here.
+		return m.pythonProbe(false)
 	}
 	m.file, m.command = "src/board.go", fmt.Sprintf(waitCommand, seconds)
 	if err := m.writeAll(map[string]string{"go.mod": mutateModule, m.file: waitGo}); err != nil {
@@ -2255,7 +2266,7 @@ func (m *mutateState) failingBaseline(file string) error {
 		return fmt.Errorf("no project is written for %s", file)
 	}
 	m.file = file
-	if err := m.writeAll(map[string]string{"pyproject.toml": pyproject, file: pyBoard, "tests/test_board.py": pytestBoard}); err != nil {
+	if err := m.writeProject(map[string][]string{"tests/test_board.py": {file}}, map[string]string{"pyproject.toml": pyproject, file: pyBoard, "tests/test_board.py": pytestBoard}); err != nil {
 		return err
 	}
 	if err := m.w.d.Coverage(m.w.dir, Coverage{Language: "python", Report: "SF:src/board.py\nDA:2,1\nend_of_record\n"}); err != nil {
@@ -2263,6 +2274,9 @@ func (m *mutateState) failingBaseline(file string) error {
 	}
 	command := "python3 -m pytest -q -x -p no:cacheprovider tests/test_board.py"
 	if err := m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: command}); err != nil {
+		return err
+	}
+	if err := m.pythonProbe(true); err != nil {
 		return err
 	}
 	if code, stdout, stderr, err := m.w.capture(m.w.dir, m.w.env(), "mutation", "run", filepath.FromSlash(file)); err != nil || code != 0 {
@@ -2428,7 +2442,7 @@ export function place(i: number): number {
 // cover, and checks the line holds a site in a function no test calls.
 func (m *mutateState) lineNeverExecuted(line int) error {
 	m.file = "src/board.ts"
-	if err := m.writeAll(map[string]string{"package.json": vitestPackage, m.file: placeBoardTS, "src/board.test.ts": placeBoardTestTS}); err != nil {
+	if err := m.writeProject(map[string][]string{"src/board.test.ts": {m.file}}, map[string]string{"package.json": vitestPackage, m.file: placeBoardTS, "src/board.test.ts": placeBoardTestTS}); err != nil {
 		return err
 	}
 	if err := m.w.d.Coverage(m.w.dir, Coverage{Language: "typescript",
@@ -2454,7 +2468,7 @@ func (m *mutateState) lineNeverExecuted(line int) error {
 // its tests.
 func (m *mutateState) untestedBoard() error {
 	m.file = "src/board.ts"
-	return m.writeAll(map[string]string{"package.json": vitestPackage, m.file: placeBoardTS, "src/board.test.ts": placeBoardTestTS})
+	return m.writeProject(map[string][]string{"src/board.test.ts": {m.file}}, map[string]string{"package.json": vitestPackage, m.file: placeBoardTS, "src/board.test.ts": placeBoardTestTS})
 }
 
 // executedKilled checks every site of the file but those of functions no
@@ -2503,7 +2517,7 @@ func (m *mutateState) unusedProject(file string) error {
 	m.file = file
 	test := "import { expect, test } from \"vitest\";\nimport { place } from \"./board\";\n\n" +
 		"test(\"place\", () => {\n  expect(place(5)).toBe(false);\n  expect(place(6)).toBe(true);\n});\n"
-	if err := m.writeAll(map[string]string{
+	if err := m.writeProject(map[string][]string{"src/board.test.ts": {"src/board.ts"}}, map[string]string{
 		"package.json": vitestPackage, "src/board.ts": "export function place(i: number): boolean {\n  return i > 5;\n}\n",
 		file: unusedTS, "src/board.test.ts": test,
 	}); err != nil {
@@ -2553,7 +2567,7 @@ func (m *mutateState) kotlinUnmeasured() error {
 		return errors.New("the pom declares JaCoCo")
 	}
 	m.w.without = append(m.w.without, "gradle", "mvn")
-	return m.writeAll(map[string]string{"pom.xml": pom, m.file: ktSource, "src/test/kotlin/board/BoardTest.kt": ktTest})
+	return m.writeProject(map[string][]string{"src/test/kotlin/board/BoardTest.kt": {m.file}}, map[string]string{"pom.xml": pom, m.file: ktSource, "src/test/kotlin/board/BoardTest.kt": ktTest})
 }
 
 // halfCovered writes the board module whose test calls place alone, so

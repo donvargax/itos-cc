@@ -213,3 +213,41 @@ func TestFeatureSelectionWithEmptyOrWIPOnlyPending(t *testing.T) {
 		})
 	}
 }
+
+// Deferred scenarios leave the in-process selection, by default and when a
+// selection names them, and are reported; the binary driver's keeps them.
+func TestDeferredScenariosLeaveOnlyTheirDriversSelection(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", "")
+	dir := featureSelectionFixture(t)
+	deferred := map[string]string{"@ID-COUNT-90": "a reason naming its owner"}
+	for _, c := range []struct {
+		pattern   string
+		ran, left []string
+	}{
+		{"", []string{"active"}, []string{"@ID-COUNT-90"}},
+		{"^@ID-(COUNT|UNIT)-90$", []string{"active"}, []string{"@ID-COUNT-90"}},
+		{"^@ID-UNIT-90$", []string{"active"}, nil},
+		{"^@ID-COUNT-90$", nil, []string{"@ID-COUNT-90"}},
+	} {
+		t.Run(c.pattern, func(t *testing.T) {
+			sel, err := TagFilter(c.pattern, dir, Converted, InProcessOnly)
+			if err != nil {
+				t.Fatal(err)
+			}
+			kept := runSelection(t, sel.Filter, sel.Paths)
+			sel, left, err := Defer(sel, c.pattern, dir, deferred)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !slices.Equal(left, c.left) {
+				t.Fatalf("deferred left out %v; want %v", left, c.left)
+			}
+			if ran := runSelection(t, sel.Filter, sel.Paths); !slices.Equal(ran, c.ran) {
+				t.Fatalf("scenarios ran: %v; want %v (without deferral %v)", ran, c.ran, kept)
+			}
+		})
+	}
+	if _, _, err := Defer(Selection{}, "", dir, map[string]string{"@ID-GONE-90": "stale"}); err == nil || !strings.Contains(err.Error(), "@ID-GONE-90") {
+		t.Fatalf("a deferral no scenario carries: %v; want its failure", err)
+	}
+}

@@ -57,7 +57,7 @@ var listedFiles = map[string]string{
 	"main_test.go": `package main
 
 import (
-    "fmt"
+    "encoding/json"
     "os"
     "testing"
 )
@@ -66,7 +66,7 @@ func TestHalf(t *testing.T) {
     if record := os.Getenv("GREET_RECORD"); record != "" {
         f, err := os.OpenFile(record, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
         if err != nil { t.Fatal(err) }
-        fmt.Fprintf(f, "own coverdir=%s\n", os.Getenv("ITOS_CC_TEST_COVERDIR"))
+        if err := json.NewEncoder(f).Encode(map[string]string{"test": "own", "coverdir": os.Getenv("ITOS_CC_TEST_COVERDIR")}); err != nil { t.Fatal(err) }
         f.Close()
     }
 	if !half(3) || half(2) {
@@ -77,6 +77,8 @@ func TestHalf(t *testing.T) {
 	"e2e/e2e_test.go": `package e2e
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -104,7 +106,10 @@ func TestFeatures(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Fprintf(f, "run tests=%s coverdir=%s\n", *selected, os.Getenv("ITOS_CC_TEST_COVERDIR"))
+		src, _ := os.ReadFile(filepath.Join("..", "main.go"))
+		if err := json.NewEncoder(f).Encode(map[string]string{"test": "run", "tests": *selected, "coverdir": os.Getenv("ITOS_CC_TEST_COVERDIR"), "source_sha256": fmt.Sprintf("%x", sha256.Sum256(src))}); err != nil {
+			t.Fatal(err)
+		}
 		f.Close()
 	}
 	split := os.Getenv("ITOS_CC_TEST_COVERDIR")
@@ -150,7 +155,7 @@ func main() {
 	if record := os.Getenv("GREET_RECORD"); record != "" {
 		f, err := os.OpenFile(record, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err == nil {
-			fmt.Fprintln(f, "list")
+			fmt.Fprintln(f, "{\"test\":\"list\"}")
 			f.Close()
 		}
 	}

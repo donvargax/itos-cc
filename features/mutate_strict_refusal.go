@@ -188,11 +188,15 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		c.Program = "mvn"
 		c.Report = `<report><package name=""><sourcefile name="Label.kt"><line nr="2" mi="0" ci="1"/></sourcefile></package></report>`
 		t.Command = "mvn -q test -Dtest=LabelTest -Dsurefire.failIfNoSpecifiedTests=false"
+		// Maven measures and tests the module where its own pom.xml is.
+		measureDir = filepath.Join(w.dir, "app")
 		inputSource = q.file
 	default:
 		return fmt.Errorf("unknown unsupported scope %s", scope)
 	}
 	inputSource = q.file
+	// The test imports, or in Kotlin references, the judged file.
+	q.m.w.imports(map[string][]string{q.testFile: {q.file}})
 	for file, text := range files {
 		if err := w.write(file, text); err != nil {
 			return err
@@ -208,6 +212,11 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 	}
 	if err := w.d.Tests(measureDir, t); err != nil {
 		return err
+	}
+	if language == "python" {
+		if err := q.m.pythonProbe(true); err != nil {
+			return err
+		}
 	}
 	a, log, code, err := q.capture("mutation run --fail-uncovered --json " + q.file)
 	if err != nil {

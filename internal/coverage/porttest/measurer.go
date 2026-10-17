@@ -31,8 +31,10 @@ type Measurement struct {
 	InventoryExit                       int
 	InventoryOutput                     string
 	// Listed holds each test's measured report, independently of the request.
-	Listed           map[string]map[string]*coverage.Report
-	ListedFailed     bool
+	Listed       map[string]map[string]*coverage.Report
+	ListedFailed bool
+	// ListedOutput is what the failed listed collection printed.
+	ListedOutput     string
 	Split            bool
 	Metadata         []byte
 	ConversionExit   int
@@ -101,10 +103,13 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 		r := &coverage.Report{}
 		// A declared collector operation entered even if it failed or wrote
 		// nothing. Execution observation is separate from successful evidence.
-		if declared {
+		if declared && !unreached(req, group, sources) {
 			m.Entered = append(m.Entered, group)
 		}
 		switch {
+		case declared && unreached(req, group, sources):
+			r.MarkMeasured(group.Language)
+			r.Prove(group.Language, root, sources)
 		case !declared:
 			r.SetMissing(coverage.Unmeasured{Dir: root, Language: group.Language, Cause: port.ToolMissing{}, Reason: "no collector declared"})
 		case d.CommandExit != 0:
@@ -129,6 +134,7 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 				r = coverage.Merge(r, coverage.Build(ctx, m.disk(), sources, root, integrated))
 			}
 			if d.WithoutC8 {
+				m.log("coverage: %s: going on without integration coverage: c8 is not installed\n", root)
 				r.SetIntegrationMissing(coverage.Unmeasured{Dir: root, Language: d.Language, Cause: port.ToolMissing{}, Reason: "c8 is not installed"})
 			}
 			r.MarkMeasured(d.Language)
@@ -188,9 +194,39 @@ func (m *Measurer) Inventory(ctx context.Context, report *coverage.Report, langu
 	return nil
 }
 
+// unreached is whether req measures sources, of group's build root, by
+// their own tests, which none reaches, where their language runs only the
+// tests that reach them: Python's and Kotlin's.
+func unreached(req port.Request, group coverage.Unloaded, sources []string) bool {
+	if req.Scope != port.OwnTests || req.AllTests || req.Reach == nil || group.Language != "python" && group.Language != "kotlin" {
+		return false
+	}
+	for _, source := range sources {
+		if len(req.Reach(source)) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// relative is paths from dir, slash-separated.
+func relative(dir string, paths []string) []string {
+	var out []string
+	for _, path := range paths {
+		if rel, err := filepath.Rel(dir, path); err == nil {
+			out = append(out, filepath.ToSlash(rel))
+		} else {
+			out = append(out, path)
+		}
+	}
+	return out
+}
+
+// log says what the measurement does on Log, as the real collectors say
+// it on itos-cc's stderr.
 func (m *Measurer) log(format string, args ...any) {
 	if m.Log != nil {
-		_, _ = fmt.Fprintf(m.Log, format, args...)
+		_, _ = fmt.Fprintf(m.Log, "itos-cc: "+format, args...)
 	}
 }
 
@@ -265,6 +301,7 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 	}
 	if declared {
 		m.Commands = append(m.Commands, tests.All)
+		m.log("coverage %s$ %s\n", tests.Root, tests.All)
 		if !failed && !split {
 			for _, test := range tests.Tests {
 				if tests.Select == nil {
@@ -274,6 +311,7 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 					break
 				}
 				m.Commands = append(m.Commands, tests.Select([]string{test.ID}))
+				m.log("coverage %s$ %s\n", tests.Root, tests.Select([]string{test.ID}))
 			}
 		}
 	}
@@ -281,6 +319,7 @@ func (m *Measurer) listed(ctx context.Context, groups map[coverage.Unloaded][]st
 		d := m.Declarations[group]
 		failed = failed || d.ListedFailed
 		if d.ListedFailed {
+			m.log("coverage: %s: listed collection: %s\n", group.Dir, d.ListedOutput)
 			listedErrors = append(listedErrors, fmt.Errorf("listed collection failed"))
 			continue
 		}
@@ -361,8 +400,20 @@ func (m *Measurer) CollectFresh(ctx context.Context, req port.Request) (*coverag
 			failures = append(failures, fmt.Errorf("no collector declared for %s", group.Dir))
 			continue
 		}
+		// A Python or Kotlin build root whose own sources no test reaches
+		// runs nothing: its language is measured and none of its sources
+		// loaded, as the collector's unreached plan reports them.
+		if unreached(req, group, groups[group]) {
+			m.log("coverage %s: no test reaches %s, so none runs\n", group.Dir, strings.Join(relative(group.Dir, groups[group]), " "))
+			r := &coverage.Report{}
+			r.MarkMeasured(group.Language)
+			r.Prove(group.Language, group.Dir, groups[group])
+			reports = append(reports, r)
+			continue
+		}
 		m.Entered = append(m.Entered, group)
 		if d.CommandExit != 0 {
+			m.log("coverage: %s: %s (exit %d)\n", group.Dir, d.CommandOutput, d.CommandExit)
 			failures = append(failures, fmt.Errorf("%s coverage command: %s (exit %d)", group.Language, d.CommandOutput, d.CommandExit))
 		}
 		if d.Report == "" {

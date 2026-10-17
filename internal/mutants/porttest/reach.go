@@ -34,6 +34,15 @@ func (s *Inputs) TestsImporting(ctx context.Context, root string, sources, tests
 		if _, failure := s.required(ctx, path); failure != nil {
 			return nil, failure
 		}
+		// The resolver reads the manifest of a Go file's module, which
+		// names the module its import paths are resolved against.
+		if spec := lang.Detect(path); spec != nil && spec.Name == "go" {
+			if module := s.nearest(ctx, path, "go.mod"); module != "" {
+				if _, failure := s.required(ctx, filepath.Join(module, "go.mod")); failure != nil {
+					return nil, failure
+				}
+			}
+		}
 		edges, known := s.Imports[s.absolute(path)]
 		if !known {
 			return nil, inputError(fmt.Errorf("no declared import adjacency for %s", path))

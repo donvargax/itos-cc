@@ -1,6 +1,7 @@
 package features
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -53,6 +54,8 @@ func (l *languageMutation) ownPython(runner string) error {
 			return err
 		}
 	}
+	// test_c imports a and u by importlib, which resolves no import.
+	w.imports(map[string][]string{"test_a.py": {"a.py"}, "test_b.py": {"b.py"}})
 	w.variables = append(w.variables, "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1")
 	if err := w.d.Coverage(w.dir, Coverage{Language: "python", Report: "SF:a.py\nDA:1,1\nDA:2,1\nDA:4,1\nDA:5,0\nend_of_record\n"}); err != nil {
 		return err
@@ -75,7 +78,14 @@ func (l *languageMutation) ownPython(runner string) error {
 			return err
 		}
 	}
-	return w.d.Tests(w.dir, Tests{Language: "python", Command: command, Trace: &TestTrace{File: l.trace, Source: l.file, Tests: ownPythonInventory(runner)}})
+	if err := w.d.Tests(w.dir, Tests{Language: "python", Command: command, Trace: &TestTrace{File: l.trace, Source: l.file, Tests: ownPythonInventory(runner)}}); err != nil {
+		return err
+	}
+	if runner == "unittest" {
+		// The project's own virtualenv hides pytest.
+		return w.d.Tools(context.Background(), w.dir, ToolSetup{Env: w.env(), Python: &PythonProbe{Interpreter: filepath.Join(w.dir, ".venv", "bin", "python"), Importable: false}})
+	}
+	return l.m.pythonProbe(true)
 }
 func (l *languageMutation) onlyOwnTests(name string) error {
 	records, err := l.pythonTrace()
@@ -186,6 +196,13 @@ func (l *languageMutation) ownKotlin(build string) error {
 			return err
 		}
 	}
+	// ATest uses A, in its package, without importing it; CTest loads A
+	// by reflection, which resolves no reference.
+	w.imports(map[string][]string{
+		"src/test/kotlin/own/ATest.kt": {l.file, "src/test/kotlin/own/Record.kt"},
+		"src/test/kotlin/own/BTest.kt": {"src/main/kotlin/own/B.kt", "src/test/kotlin/own/Record.kt"},
+		"src/test/kotlin/own/CTest.kt": {"src/test/kotlin/own/Record.kt"},
+	})
 	program := "gradle"
 	command := "gradle -p . test --fail-fast --tests own.ATest"
 	if build == "maven" {
@@ -212,11 +229,15 @@ func (l *languageMutation) ownConftest() error {
 			return err
 		}
 	}
+	w.imports(map[string][]string{"tests/conftest.py": {"a.py"}})
 	w.variables = append(w.variables, "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1")
 	if err := w.d.Coverage(w.dir, Coverage{Language: "python", Report: "SF:a.py\nDA:1,1\nDA:2,1\nend_of_record\n"}); err != nil {
 		return err
 	}
-	return w.d.Tests(w.dir, Tests{Language: "python", Command: "python3 -m pytest -q -x -p no:cacheprovider tests/test_a.py"})
+	if err := w.d.Tests(w.dir, Tests{Language: "python", Command: "python3 -m pytest -q -x -p no:cacheprovider tests/test_a.py"}); err != nil {
+		return err
+	}
+	return l.m.pythonProbe(true)
 }
 func (l *languageMutation) conftestJudgment() error {
 	a, err := l.object()

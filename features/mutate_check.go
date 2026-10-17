@@ -542,7 +542,7 @@ func (c *checkMutation) imports() error {
 	if err := c.project(); err != nil {
 		return err
 	}
-	return c.s.m.writeAll(map[string]string{
+	return c.s.m.writeProject(map[string][]string{"src/other.test.ts": {"src/other.ts"}}, map[string]string{
 		"src/other.ts":      "export function other(i: number) { return i > 5; }\n",
 		"src/other.test.ts": "import {expect,test} from 'vitest';\nimport {other} from './other';\ntest('other',()=>expect(other(6)).toBe(true));\n",
 	})
@@ -613,7 +613,7 @@ func (c *checkMutation) goProject() error {
 }
 
 func (c *checkMutation) appImports() error {
-	return c.s.m.writeAll(map[string]string{
+	return c.s.m.writeProject(map[string][]string{"app/app.go": {"src/board.go"}}, map[string]string{
 		"app/app.go":      "package app\nimport board \"example.com/m/src\"\nfunc New() *board.Board { return &board.Board{} }\n",
 		"app/app_test.go": "package app\nimport \"testing\"\nfunc TestNew(t *testing.T) { if New()==nil { t.Fatal(\"no board\") } }\n",
 	})

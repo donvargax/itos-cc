@@ -36,8 +36,8 @@ func (s memoryConfig) Read(context.Context) (string, []byte, error) {
 	return s.root, data, err
 }
 
-// This direct driver guard reaches the moved handlers before mutate.feature is
-// admitted wholesale at T-125. A contradictory physical document detects fallback:
+// This direct driver guard reaches the moved handlers beside the scenarios of
+// mutate.feature. A contradictory physical document detects fallback:
 // the process works in the physical root, so project.Root and the disk config
 // binding would find the invalid document there.
 func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *testing.T) {
@@ -188,11 +188,11 @@ func TestMemorySourceStatusIncludesActualImplicitDirectories(t *testing.T) {
 
 // The physical decoy: the process works in a root whose disk holds an invalid
 // document, so a run that fell through to the host would read it
-// (config.invalid on stdout) or rewrite it. The memory refuses a validated
-// mutation run explicitly, before anything runs, until T-125; except runs in
-// process and reads the memory's settings beside the same decoy, and help
-// and parse errors of both answer as ever.
-func TestMemoryRefusesOnlyValidatedMutationRun(t *testing.T) {
+// (config.invalid on stdout) or rewrite it. A mutation run and except run in
+// process against the memory, wherever --json is put, reading the memory's
+// settings beside the same decoy, and help and parse errors of both answer
+// as ever.
+func TestMemoryRunsMutationRunInProcess(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
 	physical := filepath.Join(root, config.File)
@@ -204,12 +204,16 @@ func TestMemoryRefusesOnlyValidatedMutationRun(t *testing.T) {
 	if err := m.Write(filepath.Join(root, "board.go"), []byte("package board\nfunc Value() int { return 1 }\n")); err != nil {
 		t.Fatal(err)
 	}
+	if err := m.Tests(root, features.Tests{Language: "go", Command: "go test -count=1 -failfast ./.", Imports: map[string][]string{"board.go": {}}}); err != nil {
+		t.Fatal(err)
+	}
 	for _, child := range []string{"run", "except"} {
 		t.Run(child, func(t *testing.T) {
 			if child == "run" {
 				for _, args := range [][]string{{"mutation", child, "--json"}, {"--json", "mutation", child}, {"mutation", "--json", child, "--count", "1"}} {
-					if result, err := m.Run(features.Run{Dir: root, Args: args}); err == nil || !strings.Contains(err.Error(), "only from T-125") || result.Stdout != "" {
-						t.Fatalf("%q was not explicitly refused: %+v %v", args, result, err)
+					result, err := m.Run(features.Run{Dir: root, Args: args})
+					if err != nil || result.Exit == 70 || strings.Contains(result.Stdout+result.Stderr, "config.invalid") {
+						t.Fatalf("%q did not run in process against the memory: %+v %v", args, result, err)
 					}
 				}
 			} else {

@@ -33,7 +33,7 @@ func (unavailableReach) TestsImporting(context.Context, string, []string, []stri
 }
 
 // Run reads the disk's discovery/config through cmd's adapters here, in
-// process, until T-125 runs mutate.feature there. This disposable public
+// process, beside the memory driver's mutate.feature. This disposable public
 // fixture reaches the exact command composition with actual memory
 // observation/Workers bindings, without running a host test command.
 func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {

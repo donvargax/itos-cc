@@ -13,6 +13,9 @@ import (
 type Listing struct {
 	Stdout, Stderr, Reason string
 	ExitCode               int
+	// Record, when set, is what the list command does beside its output
+	// each time it runs: the record its harness writes of the run.
+	Record func() error
 }
 type Lister struct {
 	Listings map[string]map[string]Listing
@@ -26,6 +29,11 @@ func (l *Lister) List(ctx context.Context, c mutants.Command) (mutants.TestListi
 	fact, ok := l.Listings[c.Root][c.String()]
 	if !ok {
 		return mutants.TestListing{}, mutants.InputFailed{Cause: fmt.Errorf("no declared listing command %s in %s", c, c.Root)}
+	}
+	if fact.Record != nil {
+		if err := fact.Record(); err != nil {
+			return mutants.TestListing{}, mutants.InputFailed{Cause: err}
+		}
 	}
 	if l.Log != nil && fact.Stderr != "" {
 		if _, err := io.WriteString(l.Log, fact.Stderr); err != nil {

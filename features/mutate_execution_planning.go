@@ -130,7 +130,7 @@ func (q *mutationExecution) uncoveredContinues() error {
 	if err := q.m.w.write("main_test.go", fixture); err != nil {
 		return err
 	}
-	command := "go test -count=1 -failfast ."
+	command := "go test -count=1 -failfast ./."
 	if err := q.m.w.d.Tests(q.m.w.dir, Tests{Language: "go", Command: command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.outside, "trace.jsonl"), Source: "main.go"}}); err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (q *mutationExecution) coldProject(source string) (*mutationExecution, erro
 	}
 	q.extraDirs = append(q.extraDirs, dir)
 	w := &world{d: q.m.w.d, dir: dir}
-	child := &mutationExecution{m: &mutateState{w: w}, command: "go test -count=1 -failfast ."}
+	child := &mutationExecution{m: &mutateState{w: w}, command: "go test -count=1 -failfast ./."}
 	err = child.project(map[string]string{"main.go": source})
 	if child.outside != "" {
 		q.extraDirs = append(q.extraDirs, child.outside)

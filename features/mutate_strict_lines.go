@@ -97,6 +97,8 @@ func (q *strictMutation) lineProject(language string) error {
 	default:
 		return fmt.Errorf("unknown strict language %s", language)
 	}
+	// The test imports, or in Kotlin references, the judged file alone.
+	q.m.w.imports(map[string][]string{q.testFile: {q.file}})
 	for file, text := range files {
 		if err := q.m.w.write(file, text); err != nil {
 			return err
@@ -107,6 +109,11 @@ func (q *strictMutation) lineProject(language string) error {
 	}
 	if err := q.m.w.d.Tests(q.m.w.dir, t); err != nil {
 		return err
+	}
+	if language == "python" {
+		if err := q.m.pythonProbe(true); err != nil {
+			return err
+		}
 	}
 	a, _, code, err := q.capture("mutation run --json " + q.paths())
 	if err != nil {

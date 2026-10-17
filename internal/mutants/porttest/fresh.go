@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -28,8 +29,12 @@ type Fresh struct {
 	DecodeConfig func([]byte) ([]string, *mutants.Tests, []mutants.Exception, *mutants.FreshInvalid)
 	Inputs       *Inputs
 	Tree         *selt.Tree
-	sequence     uint64
-	plans        map[*mutants.FreshPlan]bool
+	// Measured, when set, observes each collection preparation completes
+	// in a plan's frozen inputs: its own tests', or the listed tests' when
+	// listed is not nil, as their harness observes the runs it makes.
+	Measured func(ctx context.Context, p *mutants.FreshPlan, listed *coverage.PerTest) error
+	sequence uint64
+	plans    map[*mutants.FreshPlan]bool
 }
 
 var _ mutants.Fresh = (*Fresh)(nil)
@@ -67,6 +72,11 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 		return nil, err.(mutants.FreshFailure)
 	}
 	committed := f.History.Repository.Commits[head].Files
+	// Only regular committed files are exported: a committed symbolic link
+	// is refused rather than followed or materialized.
+	if links := slices.Sorted(maps.Keys(f.History.Repository.Commits[head].Links)); len(links) > 0 {
+		return nil, mutants.FreshRefused{Kind: mutants.FreshUnsupported, Cause: fmt.Errorf("unsupported committed scope: committed symlink %q", links[0])}
+	}
 	var changed map[string][]mutants.LineRange
 	base := ""
 	if r.Since != "" {
@@ -192,6 +202,12 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 		f.plans = map[*mutants.FreshPlan]bool{}
 	}
 	f.plans[plan] = true
+	if f.Commands != nil {
+		if f.Commands.Originals == nil {
+			f.Commands.Originals = map[string]string{}
+		}
+		f.Commands.Originals[filepath.Clean(frozen)] = filepath.Clean(root)
+	}
 	f.projectObservations(plan)
 	return plan, nil
 }
@@ -201,6 +217,9 @@ func (f *Fresh) Release(_ context.Context, p *mutants.FreshPlan) {
 	}
 	root := p.FrozenRoot
 	f.releaseObservations(root)
+	if f.Commands != nil {
+		delete(f.Commands.Originals, filepath.Clean(root))
+	}
 	for name := range f.Inputs.Files {
 		if inside(root, name) {
 			delete(f.Inputs.Files, name)

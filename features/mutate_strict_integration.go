@@ -41,7 +41,7 @@ func (q *strictMutation) integrationProject(language string, without bool) error
 		q.file = "src/cli.ts"
 		q.testFile = "src/cli.test.ts"
 		ifLine = 4
-		command = "node_modules/.bin/vitest run"
+		command = "node_modules/.bin/vitest run --bail=1"
 		c.Report = "SF:src/cli.ts\nDA:4,0\nDA:5,0\nDA:7,0\nend_of_record\n"
 		c.IntegrationReport = "SF:src/cli.ts\nDA:4,1\nDA:5,1\nDA:7,0\nend_of_record\n"
 		if without {
@@ -57,7 +57,7 @@ func (q *strictMutation) integrationProject(language string, without bool) error
 		q.file = "src/main/kotlin/board/Main.kt"
 		q.testFile = "src/test/kotlin/board/MainTest.kt"
 		ifLine = 4
-		command = "gradle -p . test --fail-fast"
+		command = "gradle test --fail-fast"
 		c.Program = "gradle"
 		c.Report = `<report><package name="board"><sourcefile name="Main.kt"><line nr="4" mi="1" ci="0"/><line nr="5" mi="1" ci="0"/><line nr="7" mi="1" ci="0"/><line nr="11" mi="1" ci="0"/></sourcefile></package></report>`
 		c.IntegrationReport = `<report><package name="board"><sourcefile name="Main.kt"><line nr="4" mi="0" ci="1"/><line nr="5" mi="0" ci="1"/><line nr="7" mi="1" ci="0"/><line nr="11" mi="0" ci="1"/></sourcefile></package></report>`
@@ -78,6 +78,11 @@ func (q *strictMutation) integrationProject(language string, without bool) error
 	t := Tests{Language: language, Command: command, Surviving: []Site{{File: q.file, Line: ifLine, Original: ">", Replacement: ">="}}}
 	if err := q.m.w.d.Tests(q.m.w.dir, t); err != nil {
 		return err
+	}
+	if language == "python" {
+		if err := q.m.pythonProbe(true); err != nil {
+			return err
+		}
 	}
 	if language == "kotlin" {
 		// This explicit public setup command resolves the build's pinned agent/CLI

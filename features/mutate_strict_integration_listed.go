@@ -86,8 +86,25 @@ func (q *strictMutation) listedIntegrationRun() error {
 	if language == "kotlin" {
 		inventory.Lines[q.file][11] = []string{first, second}
 	}
+	// The list command prints tests.txt's lines, in their order.
+	inventory.ListOutput = files["tests.txt"]
 	for _, command := range commands {
 		if err := q.m.w.d.Tests(q.m.w.dir, Tests{Language: language, Command: command, Surviving: []Site{surviving}, Listed: inventory}); err != nil {
+			return err
+		}
+	}
+	if language == "typescript" {
+		// Vitest's related tests of the CLI are its own tests: no test
+		// imports it, so every mutant passes them.
+		sites, err := q.m.sitesOf(q.file)
+		if err != nil {
+			return err
+		}
+		own := Tests{Language: language, Command: "node_modules/.bin/vitest related --run --bail=1 " + q.file}
+		for _, site := range sites {
+			own.Surviving = append(own.Surviving, Site{File: q.file, Line: site.line, Original: site.original, Replacement: site.replacement})
+		}
+		if err := q.m.w.d.Tests(q.m.w.dir, own); err != nil {
 			return err
 		}
 	}

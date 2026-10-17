@@ -173,6 +173,11 @@ func (s *sinceMutation) project(ts bool) error {
 	if err := s.m.writeAll(files); err != nil {
 		return err
 	}
+	edges := map[string][]string{}
+	if ts {
+		edges["src/board.test.ts"] = []string{s.file}
+	}
+	w.imports(edges)
 	if err := s.declare(); err != nil {
 		return err
 	}

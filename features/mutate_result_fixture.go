@@ -33,7 +33,8 @@ func (r *resultMutation) ts(file, source, tests string, surviving, uncovered []s
 	s.clear = "Board#clear"
 	s.m.file = file
 	r.file = file
-	if err := s.m.writeAll(map[string]string{"package.json": vitestPackage, file: source, strings.TrimSuffix(file, ".ts") + ".test.ts": tests}); err != nil {
+	test := strings.TrimSuffix(file, ".ts") + ".test.ts"
+	if err := s.m.writeProject(map[string][]string{test: {file}}, map[string]string{"package.json": vitestPackage, file: source, test: tests}); err != nil {
 		return err
 	}
 	sites, err := s.m.sitesOf(file)
@@ -102,7 +103,7 @@ func (r *resultMutation) summaryFixture() error {
 	for i := 1; i <= 2; i++ {
 		source += fmt.Sprintf("export function u%d(i: number): boolean { return i>5; }\n", i)
 	}
-	if err := r.ts("src/board.ts", source, tests, []string{"place"}, []string{"u1", "u2"}); err != nil {
+	if err := r.ts("src/board.ts", source, tests, []string{"board#place"}, []string{"board#u1", "board#u2"}); err != nil {
 		return err
 	}
 	if err := r.run("mutation run --json src/board.ts"); err != nil {
@@ -137,7 +138,7 @@ func (r *resultMutation) python(file, source, testfile, test string, parallel bo
 	if parallel {
 		config += "\n[tool.coverage.run]\nparallel = true\n"
 	}
-	if err := r.s.m.writeAll(map[string]string{"pyproject.toml": config, file: source, testfile: test}); err != nil {
+	if err := r.s.m.writeProject(map[string][]string{testfile: {file}}, map[string]string{"pyproject.toml": config, file: source, testfile: test}); err != nil {
 		return err
 	}
 	report := "SF:" + file + "\nDA:2,1\nend_of_record\n"
@@ -149,6 +150,9 @@ func (r *resultMutation) python(file, source, testfile, test string, parallel bo
 		t.Surviving = []Site{{File: file, Line: 2, Original: ">", Replacement: ">="}}
 	}
 	if err := w.d.Tests(w.dir, t); err != nil {
+		return err
+	}
+	if err := r.s.m.pythonProbe(true); err != nil {
 		return err
 	}
 	for _, args := range [][]string{{"init", "-q", "-b", "main"}, {"add", "."}, {"commit", "-qm", "python fixture"}} {

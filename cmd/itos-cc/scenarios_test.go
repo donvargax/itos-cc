@@ -19,7 +19,6 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
-	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
@@ -54,6 +53,13 @@ func TestScenarios(t *testing.T) {
 	sel, err := features.TagFilter(*scenarios, dir, features.InProcess, features.BinaryOnly)
 	if err != nil {
 		t.Fatal(err)
+	}
+	sel, deferred, err := features.Defer(sel, *scenarios, dir, features.Deferred)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tag := range deferred {
+		t.Logf("not run here, the binary driver's for now (features.Deferred): %s %s", tag, features.Deferred[tag])
 	}
 	if len(sel.Skipped) > 0 {
 		t.Logf("not run here, left out by ITOS_CC_SKIP_FEATURES: %s", strings.Join(sel.Skipped, ", "))
@@ -110,6 +116,8 @@ type memory struct {
 	toolSetup    map[mutantstest.PytestProbe]bool
 	readVersions map[string]uint64
 	imports      map[string]map[string][]string
+	// links are the symbolic links Link made, by path, to their targets.
+	links map[string]string
 }
 
 // repo is independent staged/committed Git state owned by the History fake.
@@ -120,7 +128,7 @@ var _ features.Driver = (*memory)(nil)
 func newMemory(t *testing.T) *memory {
 	return &memory{
 		t: t, files: map[string]string{}, dirs: map[string]bool{}, repos: map[string]*repo{},
-		coverage: map[string]features.Coverage{}, listed: map[string]*features.ListedTests{}, tests: map[string]map[string]features.Tests{}, versions: map[string]uint64{}, readVersions: map[string]uint64{}, toolSetup: map[mutantstest.PytestProbe]bool{}, imports: map[string]map[string][]string{},
+		coverage: map[string]features.Coverage{}, listed: map[string]*features.ListedTests{}, tests: map[string]map[string]features.Tests{}, versions: map[string]uint64{}, readVersions: map[string]uint64{}, toolSetup: map[mutantstest.PytestProbe]bool{}, imports: map[string]map[string][]string{}, links: map[string]string{},
 	}
 }
 
@@ -191,6 +199,22 @@ func (m *memory) Remove(path string) error {
 			delete(m.repos, p)
 		}
 	}
+	for p := range m.links {
+		if p == path || under(p, path) {
+			delete(m.links, p)
+		}
+	}
+	// A file removed resolves no import: its adjacency, and every edge to
+	// it, go with it.
+	for _, edges := range m.imports {
+		for file, targets := range edges {
+			if file == path || under(file, path) {
+				delete(edges, file)
+				continue
+			}
+			edges[file] = slices.DeleteFunc(targets, func(target string) bool { return target == path || under(target, path) })
+		}
+	}
 	return nil
 }
 
@@ -234,6 +258,18 @@ func (m *memory) Coverage(dir string, c features.Coverage) error {
 		return fmt.Errorf("coverage declaration in %s: %w", dir, err)
 	}
 	m.coverage[filepath.Clean(dir)] = c
+	if c.Language == "typescript" {
+		// The binary driver links the pinned node_modules into dir
+		// (testdata/tools/node): its installed entries are vitest's and
+		// c8's, c8's left out of a project said to lack it.
+		bins := []string{"vitest", "c8"}
+		if c.WithoutC8 {
+			bins = bins[:1]
+		}
+		if err := m.Tools(m.t.Context(), dir, features.ToolSetup{NodeBins: bins}); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -301,6 +337,13 @@ func (m *memory) Tests(dir string, t features.Tests) error {
 		t.Listed = ownListed(t.Listed)
 	}
 	m.tests[dir][t.Command] = t
+	// A program named by a path relative to dir is the same program by
+	// its absolute path, which itos-cc runs an installed tool by
+	// (project.NodeBin): both name one command, which this declares.
+	if words := strings.Fields(t.Command); len(words) > 0 && strings.ContainsAny(words[0], `/\`) && !filepath.IsAbs(words[0]) {
+		words[0] = filepath.Join(dir, filepath.FromSlash(words[0]))
+		m.tests[dir][strings.Join(words, " ")] = t
+	}
 	return nil
 }
 
@@ -324,10 +367,19 @@ func (m *memory) Counted() error {
 	return nil
 }
 
-// Link makes no link: the memory holds no symbolic links, so a scenario
-// that needs one is the binary driver's.
+// Link makes path a symbolic link to target, a file the memory holds: it
+// reads as its target, and git stages and commits it as a link. The memory
+// links no folder, so a scenario that needs one is the binary driver's.
 func (m *memory) Link(target, path string) error {
-	return fmt.Errorf("the in-process driver makes no symbolic link (%s to %s): tag the scenario %s", path, target, features.BinaryOnly)
+	target, path = filepath.Clean(target), filepath.Clean(path)
+	text, ok := m.files[target]
+	if !ok {
+		return fmt.Errorf("the in-process driver makes no symbolic link to a folder (%s to %s): tag the scenario %s", path, target, features.BinaryOnly)
+	}
+	m.files[path] = text
+	m.links[path] = target
+	m.versions[path]++
+	return nil
 }
 
 // Build builds nothing: how a binary is built is the go command's, so a
@@ -375,6 +427,12 @@ func (m *memory) Git(dir string, args ...string) error {
 		return fmt.Errorf("git in %s: no fixture repository", dir)
 	}
 	before := maps.Clone(m.files)
+	repository.WorkingLinks = map[string]bool{}
+	for path := range m.links {
+		if rel, err := filepath.Rel(root, path); err == nil && filepath.IsLocal(rel) {
+			repository.WorkingLinks[filepath.ToSlash(rel)] = true
+		}
+	}
 	if err := repository.Git(root, dir, m.files, args...); err != nil {
 		return err
 	}
@@ -402,9 +460,6 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	if name := commandOf(r.Args); commands[name] != nil {
 		return features.Result{}, fmt.Errorf("itos-cc %s is hand-parsed and reaches the disk itself: tag the scenario %s", strings.Join(r.Args, " "), features.BinaryOnly)
 	}
-	if validatedMutationRun(m.t.Context(), r.Args) {
-		return features.Result{}, fmt.Errorf("itos-cc %s: mutation run runs in process only from T-125; the memory's fakes cannot stand in for it yet", strings.Join(r.Args, " "))
-	}
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)
 	if git == nil {
@@ -431,22 +486,28 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 			m.readVersions[filepath.Clean(path)]++
 		}
 	}()
-	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
 	var stdout, stderr bytes.Buffer
+	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
+	measurer.base.Log = &stderr
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	source := m.sourceEdits()
+	workers := m.workers(r)
+	m.listedSelections(workers, file.text)
+	lister := m.lister(root, file.text, &stderr)
+	c := m.counted(dir, &tree, input, measurer.base, workers, lister)
 	a := adapters{
 		Settings:   config.Reader{Source: memoryConfig{memory: m, root: root}},
 		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: source,
-		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: source, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: source, TestLister: m.lister(root, file.text, &stderr),
+		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: source, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: source, TestLister: lister,
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
-		Workers:      m.workers(r),
+		Workers:      workers,
 		Dir:          dir,
-		Tree:         tree,
+		Tree:         &tree,
 		Surroundings: input,
 		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
 		Coverage:     measurer, MutationCoverage: measurer,
 		Config: file,
+		Fresh:  c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Interruptible: c.Interruptible, Platform: c.Platform,
 	}
 	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
 	// What the run removed from the store is gone from the memory too, and
@@ -578,39 +639,6 @@ func commandOf(args []string) string {
 	return ""
 }
 
-// validatedMutationRun says whether args are a mutation run command line
-// the real parser validates, as run reads it: one the memory's fakes cannot
-// stand in for until T-125, which Run refuses before anything runs. Help
-// and a line the parser refuses are none, and run as every other command
-// line does.
-func validatedMutationRun(ctx context.Context, args []string) bool {
-	asJSON := false
-	for len(args) > 0 && strings.HasPrefix(args[0], "-") && args[0] != "--" {
-		if args[0] != "--json" {
-			return false
-		}
-		asJSON, args = true, args[1:]
-	}
-	if len(args) == 0 || args[0] != "mutation" {
-		return false
-	}
-	var c commandLine
-	parser, err := parserOf(ctx, &c, &cli.UI{Stdout: io.Discard, Stderr: io.Discard}, adapters{})
-	if err != nil {
-		return false
-	}
-	rest := args[1:]
-	if asJSON {
-		rest = append(rest, "--json")
-	}
-	admitted, help, problem := cli.GroupLine(moved(parser)["mutation"], rest)
-	if problem != nil || help || cli.Read(admitted).Help {
-		return false
-	}
-	parsed, err := cli.Parse(parser, admitted)
-	return err == nil && parsed.Selected().Name == "run"
-}
-
 // repoOf is the fake repository dir is in, and its folder: the nearest at
 // or above dir, as git finds its top level; nil when there is none.
 func (m *memory) repoOf(dir string) (string, *repo) {
@@ -727,6 +755,7 @@ func (m *memory) measurer(dir string) *covtest.Measurer {
 			if listed := m.listed[g.root]; listed != nil {
 				d.Listed = map[string]map[string]*coverage.Report{}
 				d.ListedFailed = listed.CoverageExit != 0
+				d.ListedOutput = listed.CoverageOutput
 				d.Split = listed.Split
 				d.Metadata = slices.Clone(listed.CoverageMetadata)
 				d.ConversionExit = listed.ConversionExit
@@ -806,23 +835,21 @@ func scratchOf(dir string) string {
 	return dir
 }
 
-// from is every file of the scratch folder dir is in, as the disk holds
-// it around a run there, by path relative to dir, slash-separated, ../
-// leading out of it.
+// from is every file the memory holds, as the disk holds it around a run
+// in dir, the scratch folder dir is in and every other folder the scenario
+// made, by path relative to dir, slash-separated, ../ leading out of it.
 func (m *memory) from(dir string) map[string]string {
 	files := map[string]string{}
 	for path, text := range m.files {
-		if under(path, scratchOf(dir)) {
-			if rel, err := filepath.Rel(dir, path); err == nil {
-				files[filepath.ToSlash(rel)] = text
-			}
+		if rel, err := filepath.Rel(dir, path); err == nil {
+			files[filepath.ToSlash(rel)] = text
 		}
 	}
 	return files
 }
 
 // workers builds the actual Workers binding from current file and command
-// declarations. A validated mutation run remains refused by Run until T-125.
+// declarations, the run's environment, its left-off programs and platform.
 func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	declarations := map[string]map[string]mutantstest.Tests{}
 	for dir, commands := range m.tests {
@@ -838,7 +865,7 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 				}
 			}
 			if t.Trace != nil {
-				d.Trace = &mutantstest.Trace{File: t.Trace.File, Source: t.Trace.Source, Tests: maps.Clone(t.Trace.Tests)}
+				d.Trace = &mutantstest.Trace{File: t.Trace.File, Source: t.Trace.Source, Tests: maps.Clone(t.Trace.Tests), Coverage: t.Trace.Coverage, CoverDir: t.Trace.CoverDir}
 			}
 			declarations[dir][command] = d
 		}
@@ -904,8 +931,13 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 			if imports == nil {
 				imports = map[string][]string{}
 			}
+			// A file no longer there, removed or moved by git, resolves
+			// no import, and none resolves to it.
 			for path, targets := range edges {
-				imports[path] = slices.Clone(targets)
+				if _, ok := m.files[path]; !ok {
+					continue
+				}
+				imports[path] = slices.DeleteFunc(slices.Clone(targets), func(target string) bool { _, ok := m.files[target]; return !ok })
 			}
 		}
 	}
@@ -935,6 +967,11 @@ func (m *memory) lister(root string, text []byte, log io.Writer) *mutantstest.Li
 			if setup.ListFails {
 				value.ExitCode = 1
 				value.Reason = "exit status 1"
+			}
+			if trace := setup.ListTrace; trace != "" {
+				value.Record = func() error {
+					return m.Write(trace, append([]byte(m.files[trace]), []byte(`{"test":"list"}`+"\n")...))
+				}
 			}
 			facts[root] = map[string]mutantstest.Listing{cfg.Tests.List: value}
 		}

@@ -21,6 +21,8 @@ import (
 type HistoryCommit struct {
 	Files   map[string]string
 	Parents []string
+	// Links are the files committed as symbolic links, by path.
+	Links map[string]bool
 }
 
 // HistoryRepository is independent fixture Git state. Setup operations snapshot
@@ -32,7 +34,14 @@ type HistoryRepository struct {
 	Branch   string
 	Detached string
 	Index    map[string]string
-	sequence uint64
+	// Config is the repository's own settings, as git config sets them:
+	// housekeeping a fixture turns off, which no history query reads.
+	Config map[string]string
+	// WorkingLinks are the working tree's symbolic links, by root-relative
+	// slash path, which git add stages as links; IndexLinks those staged.
+	WorkingLinks map[string]bool
+	IndexLinks   map[string]bool
+	sequence     uint64
 }
 
 func NewHistoryRepository() *HistoryRepository {
@@ -59,7 +68,7 @@ func (r *HistoryRepository) Commit(message string) string {
 	if parent := r.head(); parent != "" {
 		parents = []string{parent}
 	}
-	r.Commits[id] = HistoryCommit{Files: maps.Clone(r.Index), Parents: parents}
+	r.Commits[id] = HistoryCommit{Files: maps.Clone(r.Index), Parents: parents, Links: maps.Clone(r.IndexLinks)}
 	if r.Branch != "" {
 		r.Refs[r.Branch] = id
 	} else {

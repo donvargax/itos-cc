@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
@@ -28,11 +29,18 @@ func (f *Fresh) projectObservations(p *mutants.FreshPlan) {
 		if _, held := f.Inputs.Imports[projected]; held {
 			continue
 		}
-		edges = slices.Clone(edges)
-		for i, edge := range edges {
-			edges[i] = f.projectedPath(p, edge)
+		// Only committed bytes are frozen: a live file the commit lacks has
+		// no frozen adjacency, and resolves no frozen import.
+		if _, frozen := f.Inputs.Files[projected]; !frozen {
+			continue
 		}
-		f.Inputs.Imports[projected] = edges
+		var kept []string
+		for _, edge := range edges {
+			if _, frozen := f.Inputs.Files[f.projectedPath(p, edge)]; frozen {
+				kept = append(kept, f.projectedPath(p, edge))
+			}
+		}
+		f.Inputs.Imports[projected] = append([]string{}, kept...)
 	}
 	for key, outcome := range maps.Clone(f.Inputs.Probes) {
 		next := key
@@ -53,7 +61,10 @@ func (f *Fresh) projectObservations(p *mutants.FreshPlan) {
 			if d.Listed != nil {
 				d.Listed = maps.Clone(d.Listed)
 				for collector, reports := range d.Listed {
-					d.Listed[collector] = maps.Clone(reports)
+					d.Listed[collector] = map[string]*coverage.Report{}
+					for id, report := range reports {
+						d.Listed[collector][id] = f.projectedReport(p, collector, report)
+					}
 				}
 			}
 			f.Coverage.Declarations[next] = d
@@ -75,6 +86,23 @@ func (f *Fresh) projectObservations(p *mutants.FreshPlan) {
 			}
 		}
 	}
+}
+
+// projectedReport is a listed test's report of the live sources, as it
+// measures their committed bytes in p's frozen inputs: the same lines, by
+// each frozen source's path.
+func (f *Fresh) projectedReport(p *mutants.FreshPlan, language string, report *coverage.Report) *coverage.Report {
+	lines := map[string][]coverage.Line{}
+	for _, source := range p.Files.Sources {
+		rel, err := filepath.Rel(p.FrozenRoot, source)
+		if err != nil {
+			continue
+		}
+		if measured, ok := report.Lines(filepath.Join(p.Root, rel)); ok {
+			lines[source] = measured
+		}
+	}
+	return coverage.FromLines(language, lines)
 }
 
 func cloneFreshCommands(commands map[string]Tests) map[string]Tests {

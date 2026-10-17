@@ -1852,7 +1852,9 @@ Feature: Mutation testing
   #   installed" boundary names these per language.
   Rule: Language parity with Go for TypeScript coverage scope and counted runs
 
-    @ts-coverage-scope @ID-MUT-208
+    # Binary-only for good: the coverage command and the folder it writes
+    # into are the real collector's.
+    @ts-coverage-scope @ID-MUT-208 @binary-only
     Scenario: TypeScript coverage comes from the related tests that judge the mutants
       Given a Vitest project with a coverage script that runs the whole suite
       And src/a.ts has a line that only an unrelated test, which does not import it, executes
@@ -2012,8 +2014,13 @@ Feature: Mutation testing
       But a Python file no test reaches has its mutants reported uncovered, and no test command runs for it
 
       Examples:
+        | runner |
+        | pytest |
+
+      # Binary-only for good: its virtualenv is one a real command makes.
+      @binary-only
+      Examples:
         | runner   |
-        | pytest   |
         | unittest |
 
     @own-tests-kotlin @ID-MUT-217
@@ -3021,7 +3028,9 @@ Feature: Mutation testing
       And fail-uncovered fails that judgment
       And strict Go still checks executable zero-site functions and exempts empty bodies
 
-    @mutation-counted-listed @ID-MUT-181
+    # Binary-only for good: its per-test coverage metadata is what the real
+    # collector writes, and its preparation stages run the real commands.
+    @mutation-counted-listed @ID-MUT-181 @binary-only
     Scenario: Counted preparation never converts failed measurement into successful assurance
       Given fresh counted preparation requires list, coverage or provider commands
       When a required command fails, or its report is missing or malformed
@@ -3054,7 +3063,9 @@ Feature: Mutation testing
       And after the interrupted run returns, its owned fixture peers have terminated and private inputs are removed
       And one shared five-second post-abort cleanup deadline applies without killing unrelated processes
 
-    @mutation-counted-run @ID-MUT-184
+    # Binary-only for good: the product runs as a process of its own, which
+    # the scenario stops while selected work runs.
+    @mutation-counted-run @ID-MUT-184 @binary-only
     Scenario: Machine and text output distinguish sampled work from population completeness
       Given a counted selection omits some sites and may stop before all selected work completes
       When its report is emitted
@@ -3168,7 +3179,9 @@ Feature: Mutation testing
       And the affected mutants have no invented killed, timed-out or survived outcome
       And no stage reports a baseline as passed that never ran
 
-    @fail-fast-run @ID-MUT-197
+    # Binary-only for good: the stop cancels a mutant still running in a
+    # process the run owns.
+    @fail-fast-run @ID-MUT-197 @binary-only
     Scenario: Output distinguishes completed work from cancelled and unattempted work
       Given a fail-fast run that stops with completed, cancelled, unattempted and blocked work
       When its report is emitted as JSON and as text
@@ -3226,7 +3239,9 @@ Feature: Mutation testing
   # fail-fast-partial: ADR-0022 for the files fail-fast-run leaves unwritten.
   Rule: A fail-fast stop keeps the valid judgments of the files it cut short
 
-    @fail-fast-partial @ID-MUT-200
+    # Binary-only for good: the stop cancels mutants still running in
+    # processes the run owns, as for the next two.
+    @fail-fast-partial @ID-MUT-200 @binary-only
     Scenario: Valid judgments in a stopped file are preserved, unfinished sites stay unjudged
       Given a fail-fast run judges some mutants of a file and the stop cancels or leaves the rest
       When it returns
@@ -3235,14 +3250,14 @@ Feature: Mutation testing
       And mutation check still fails the functions with missing valid site entries
       And the file's annotated source bytes are unchanged
 
-    @fail-fast-partial @ID-MUT-201
+    @fail-fast-partial @ID-MUT-201 @binary-only
     Scenario: A cancelled forced rerun leaves a fresh prior cache usable
       Given a file with fresh complete mutation results
       When a fail-fast --mutate-all rerun of it is cancelled by a stop elsewhere
       Then its prior fresh results still satisfy mutation check
       And the run's report says its own work was incomplete, separately from the cache's completeness
 
-    @fail-fast-partial @ID-MUT-202
+    @fail-fast-partial @ID-MUT-202 @binary-only
     Scenario: A later run finishes only what the stop left
       Given a stopped fail-fast run preserved some judgments of a file
       When the same run is repeated with unchanged inputs

@@ -134,11 +134,6 @@ func (l *listedMutation) project() error {
 		return args
 	}
 	for name, text := range listedFiles {
-		if name == "e2e/e2e_test.go" {
-			text = strings.Replace(text, "import (\n", "import (\n\t\"crypto/sha256\"\n", 1)
-			text = strings.Replace(text, `fmt.Fprintf(f, "run tests=%s coverdir=%s\n", *selected, os.Getenv("ITOS_CC_TEST_COVERDIR"))`, `src, _ := os.ReadFile(filepath.Join("..", "main.go"))
-        fmt.Fprintf(f, "run tests=%s coverdir=%s main=%x\n", *selected, os.Getenv("ITOS_CC_TEST_COVERDIR"), sha256.Sum256(src))`, 1)
-		}
 		if err := w.write(name, text); err != nil {
 			return err
 		}
@@ -181,7 +176,7 @@ func (l *listedMutation) declare() error {
 			lines[line] = ids
 		}
 	}
-	t := Tests{Language: "go", Command: "go test -count=1 -failfast .", Elapsed: time.Second, Listed: &ListedTests{
+	t := Tests{Language: "go", Command: "go test -count=1 -failfast ./.", Elapsed: time.Second, Listed: &ListedTests{
 		Files: map[string]string{"ID-A-01": "a.feature", "ID-A-02": ""}, Lines: map[string]map[int][]string{"main.go": lines}, Split: !strings.Contains(l.m.read("e2e/e2e_test.go"), `split := ""`), Elapsed: map[string]time.Duration{"ID-A-01": time.Second, "ID-A-02": time.Second},
 		Surviving: map[string][]Site{}, TimingOut: map[string][]Site{},
 	}}
@@ -221,10 +216,32 @@ func (l *listedMutation) declare() error {
 	if !strings.Contains(l.m.read("itos-cc.yaml"), "tests:") {
 		t.Listed = nil
 	}
+	// The harness records each run of its programs in listed.log: the own
+	// tests' of package main, the listed tests' of e2e, the list command's.
+	trace := &TestTrace{File: filepath.Join(l.m.records, "listed.log"), Source: "main.go", Tests: map[string]string{"main_test.go": "own", "e2e/e2e_test.go": "run"}, CoverDir: true}
+	t.Trace = trace
+	if t.Listed != nil {
+		t.Listed.ListTrace = trace.File
+	}
 	if err := w.d.Tests(w.dir, t); err != nil {
 		return err
 	}
-	return w.d.Coverage(w.dir, Coverage{Language: "go", Report: fmt.Sprintf("TN:\nSF:main.go\nDA:%d,1\nend_of_record\n", lineAt("return i > 2"))})
+	if t.Listed != nil {
+		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 ./e2e -args -tests={pattern}", Trace: trace}); err != nil {
+			return err
+		}
+	}
+	// The own test, TestHalf, runs half alone: Go's coverage lists every
+	// other line holding a mutant unexecuted.
+	report := "TN:\nSF:main.go\n"
+	for _, line := range []int{listedArgsLine, listedStderrLine, listedIfLine, listedManyLine, listedOneLine, lineAt("return i > 2"), listedTwiceLine} {
+		hits := 0
+		if line == lineAt("return i > 2") {
+			hits = 1
+		}
+		report += fmt.Sprintf("DA:%d,%d\n", line, hits)
+	}
+	return w.d.Coverage(w.dir, Coverage{Language: "go", Report: report + "end_of_record\n"})
 }
 
 var listedLineTests = map[int][]string{
@@ -334,12 +351,26 @@ func (m *mutateState) fixtureUnchanged() error {
 func (l *listedMutation) edit(name string) error {
 	return l.m.w.write(name, l.m.read(name)+"\n// changed\n")
 }
-func (l *listedMutation) records() ([]string, error) {
+
+// records are what the harness's programs recorded of their runs, a JSON
+// object each, in order: the list command's, "test" "list", the own
+// tests', "own", and the listed tests', "run", with the IDs it ran
+// ("tests"), the coverage directory it was given ("coverdir") and the
+// digest of the main.go it ran ("source_sha256").
+func (l *listedMutation) records() ([]map[string]any, error) {
 	data, err := l.m.w.d.Read(filepath.Join(l.m.records, "listed.log"))
 	if err != nil {
 		return nil, err
 	}
-	return outputLines(strings.ReplaceAll(string(data), "\r\n", "\n")), nil
+	var out []map[string]any
+	for _, line := range outputLines(strings.ReplaceAll(string(data), "\r\n", "\n")) {
+		var record map[string]any
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			return nil, fmt.Errorf("harness record %q: %w", line, err)
+		}
+		out = append(out, record)
+	}
+	return out, nil
 }
 func (l *listedMutation) clearRecords() error {
 	return l.m.w.d.Write(filepath.Join(l.m.records, "listed.log"), nil)
@@ -411,13 +442,13 @@ func (l *listedMutation) listOnce() error {
 		return err
 	}
 	n := 0
-	for _, line := range lines {
-		if line == "list" {
+	for _, record := range lines {
+		if record["test"] == "list" {
 			n++
 		}
 	}
 	if n != 1 {
-		return fmt.Errorf("list ran %d times, want once: %q", n, lines)
+		return fmt.Errorf("list ran %d times, want once: %v", n, lines)
 	}
 	return nil
 }
@@ -577,15 +608,15 @@ func (l *listedMutation) noListRuns() error {
 		return err
 	}
 	own := 0
-	for _, line := range lines {
-		if strings.HasPrefix(line, "own ") {
+	for _, record := range lines {
+		if record["test"] == "own" {
 			own++
-			if line != "own coverdir=" {
-				return fmt.Errorf("own tests saw ITOS_CC_TEST_COVERDIR: %q", line)
+			if record["coverdir"] != "" {
+				return fmt.Errorf("own tests saw ITOS_CC_TEST_COVERDIR: %v", record)
 			}
 		}
-		if line == "list" || strings.HasPrefix(line, "run ") && !strings.Contains(line, " coverdir= main=") {
-			return fmt.Errorf("unexpected listed invocation %q", line)
+		if record["test"] == "list" || record["test"] == "run" && record["coverdir"] != "" {
+			return fmt.Errorf("unexpected listed invocation %v", record)
 		}
 	}
 	if own == 0 {
@@ -633,9 +664,9 @@ func (l *listedMutation) nothingJudged() error {
 	if err != nil {
 		return err
 	}
-	for _, line := range lines {
-		if strings.HasPrefix(line, "run ") {
-			return fmt.Errorf("harness ran after list failure")
+	for _, record := range lines {
+		if record["test"] == "run" {
+			return fmt.Errorf("harness ran after list failure: %v", record)
 		}
 	}
 	return l.m.w.exitsWith(1)
@@ -766,19 +797,21 @@ func (l *listedMutation) baselineCount(id string, before bool) error {
 	if err != nil {
 		return err
 	}
-	prefix := "run tests=" + id + " coverdir= main="
-	clean := prefix + fmt.Sprintf("%x", sha256.Sum256([]byte(l.original)))
+	clean := fmt.Sprintf("%x", sha256.Sum256([]byte(l.original)))
 	n, at, mutated := 0, -1, -1
-	for i, line := range lines {
-		if line == clean {
+	for i, record := range lines {
+		if record["test"] != "run" || record["tests"] != id || record["coverdir"] != "" {
+			continue
+		}
+		if record["source_sha256"] == clean {
 			n++
 			at = i
-		} else if strings.HasPrefix(line, prefix) && mutated < 0 {
+		} else if mutated < 0 {
 			mutated = i
 		}
 	}
 	if n != 1 || (before && (mutated < 0 || at > mutated)) {
-		return fmt.Errorf("%s unmutated runs %d at %d, first mutant %d: %q", id, n, at, mutated, lines)
+		return fmt.Errorf("%s unmutated runs %d at %d, first mutant %d: %v", id, n, at, mutated, lines)
 	}
 	if id == "ID-A-02" {
 		return l.listedKilled()

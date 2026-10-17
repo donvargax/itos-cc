@@ -120,6 +120,10 @@ func (b *broadLanguage) goProject(two bool) error {
 			return err
 		}
 	}
+	// The file's own tests, its package's, beside the whole suite's.
+	if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast ./."}); err != nil {
+		return err
+	}
 	if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast ./..."}); err != nil {
 		return err
 	}

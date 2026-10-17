@@ -14,8 +14,8 @@ import (
 	"github.com/donvargax/itos-cc/features"
 )
 
-// Mutation is not in the in-process scenario selection until T-125. This focused
-// handler regression uses real disposable source discovery and the very Workers
+// Beside the in-process scenarios of mutate.feature, this focused handler
+// regression uses real disposable source discovery and the very Workers
 // binding built from memory.Driver.Tests; no test command reaches the host.
 func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
 	root, err := filepath.EvalSymlinks(t.TempDir())

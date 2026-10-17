@@ -179,11 +179,21 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 	if err != nil {
 		return stop("coverage", err)
 	}
+	if f.Measured != nil {
+		if err := f.Measured(ctx, p, nil); err != nil {
+			return stop("coverage", err)
+		}
+	}
 	stage("coverage", "complete", nil)
 	if perTest != nil {
 		tc, err := f.Coverage.MeasureFreshTests(ctx, req, perTest)
 		if err != nil {
 			return stop("listed-coverage", err)
+		}
+		if f.Measured != nil {
+			if err := f.Measured(ctx, p, perTest); err != nil {
+				return stop("listed-coverage", err)
+			}
 		}
 		report.SetTests(tc)
 		stage("listed-coverage", "complete", nil)
@@ -262,7 +272,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 				return stop("baseline", fmt.Errorf("no tests declared for %s$ %s", c.Dir, c.String()))
 			}
 			if facts.Trace != nil {
-				if err := f.Commands.observeTrace(c, maps.Clone(f.Inputs.Files), facts.Trace, c.Dir); err != nil {
+				if err := f.Commands.observeTrace(c, maps.Clone(f.Inputs.Files), facts.Trace, c.Dir, f.Commands.original(c.Root), harnessFields(facts, nil)); err != nil {
 					return stop("baseline", err)
 				}
 			}

@@ -187,6 +187,13 @@ func (u *languageSuites) project(language, root string, multi, nonImporting bool
 	if err := w.d.Tests(dir, Tests{Language: language, Command: p.command}); err != nil {
 		return p, err
 	}
+	// --all-tests runs the whole suite as itos-cc words it, where the
+	// --test-command above words it another way.
+	if all := map[string]string{"typescript": "node_modules/.bin/vitest run --bail=1", "kotlin": "gradle test --fail-fast"}[language]; all != "" {
+		if err := w.d.Tests(dir, Tests{Language: language, Command: all}); err != nil {
+			return p, err
+		}
+	}
 	if language == "python" && nonImporting {
 		if err := w.d.WriteExecutable(filepath.Join(dir, "run.sh"), []byte("#!/bin/sh\nexec python3 -m pytest -q -p no:cacheprovider\n")); err != nil {
 			return p, err

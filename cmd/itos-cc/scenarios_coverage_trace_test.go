@@ -39,6 +39,10 @@ func (m *memoryCoverage) Measure(ctx context.Context, req port.Request) (*covera
 	return m.MeasureListed(ctx, req, nil)
 }
 func (m *memoryCoverage) MeasureListed(ctx context.Context, req port.Request, tests *coverage.PerTest) (*coverage.Report, port.Failure) {
+	m.observationErr = errors.Join(m.observationErr, m.command(req))
+	if len(req.Reports) == 0 && !req.Existing {
+		m.announce(ctx, req)
+	}
 	before := len(m.base.Entered)
 	beforeCommands := len(m.base.Commands)
 	r, failure := m.base.MeasureListed(ctx, req, tests)
@@ -52,6 +56,106 @@ func (m *memoryCoverage) MeasureListed(ctx context.Context, req port.Request, te
 	}
 	return r, failure
 }
+
+// command runs a --coverage-command as the project's own tools run it in
+// the nearest folder at or above the working directory whose tools the
+// scenario declared: they write the report they measure, as declared, where
+// the request says the command's report lands. A command in a folder whose
+// tools write no declared report writes none, which measured nothing.
+func (m *memoryCoverage) command(req port.Request) error {
+	if req.Command == "" || len(req.Reports) != 1 {
+		return nil
+	}
+	dir := m.base.Aggregate.Dir
+	if m.base.Log != nil {
+		_, _ = fmt.Fprintf(m.base.Log, "itos-cc: coverage $ %s\n", req.Command)
+	}
+	for d := dir; ; d = filepath.Dir(d) {
+		if declared, ok := m.memory.coverage[d]; ok {
+			// The tools say what a failing run printed, and the shell its
+			// exit status, as a real run does.
+			if declared.CommandExit != 0 && m.base.Log != nil {
+				_, _ = fmt.Fprintf(m.base.Log, "%s\nitos-cc: coverage: exit status %d\n", declared.CommandOutput, declared.CommandExit)
+			}
+			if declared.Report == "" {
+				return nil
+			}
+			path := req.Reports[0]
+			if !filepath.IsAbs(path) {
+				path = filepath.Join(dir, filepath.FromSlash(path))
+			}
+			if err := m.memory.Write(path, []byte(declared.Report)); err != nil {
+				return err
+			}
+			m.base.Aggregate.Files[filepath.Clean(path)] = declared.Report
+			return nil
+		}
+		if filepath.Dir(d) == d {
+			return nil
+		}
+	}
+}
+
+// announce says, on the run's stderr, what each build root's own tools run
+// to measure req's sources, as the collector says it before it runs them:
+// the tests of the sources' own scope, or the whole suite's, by the command
+// their runner runs them with, or that no test reaches them. A root whose
+// tools the scenario declared none of, or whose runner the memory cannot
+// tell, says nothing.
+func (m *memoryCoverage) announce(ctx context.Context, req port.Request) {
+	if m.base.Log == nil {
+		return
+	}
+	type group struct{ language, root string }
+	var order []group
+	sources := map[group][]string{}
+	for _, source := range req.Sources {
+		spec := lang.Detect(source)
+		if spec == nil || markers[spec.Name] == nil {
+			continue
+		}
+		g := group{spec.Name, m.memory.buildRoot(source, markers[spec.Name])}
+		if declared, ok := m.memory.coverage[g.root]; !ok || declared.Language != g.language {
+			continue
+		}
+		if sources[g] == nil {
+			order = append(order, g)
+		}
+		sources[g] = append(sources[g], source)
+	}
+	for _, g := range order {
+		request := mutation.CommandRequest{Path: sources[g][0], All: req.Scope != port.OwnTests || req.AllTests || req.Reach == nil}
+		if !request.All {
+			for _, source := range sources[g] {
+				request.Tests = append(request.Tests, req.Reach(source)...)
+			}
+			slices.Sort(request.Tests)
+			request.Tests = slices.Compact(request.Tests)
+		}
+		c, failure := mutation.ObserveCommand(ctx, m.inputs, request)
+		if failure != nil {
+			continue
+		}
+		if c.RunsNothing() {
+			var rel []string
+			for _, source := range sources[g] {
+				rel = append(rel, relTo(g.root, source))
+			}
+			_, _ = fmt.Fprintf(m.base.Log, "itos-cc: coverage %s: no test reaches %s, so none runs\n", g.root, strings.Join(rel, " "))
+			continue
+		}
+		_, _ = fmt.Fprintf(m.base.Log, "itos-cc: coverage %s$ %s\n", g.root, c.String())
+	}
+}
+
+// relTo is path from dir, slash-separated, or path when it is not below.
+func relTo(dir, path string) string {
+	if rel, err := filepath.Rel(dir, path); err == nil && filepath.IsLocal(rel) {
+		return filepath.ToSlash(rel)
+	}
+	return path
+}
+
 func (m *memoryCoverage) Inventory(ctx context.Context, r *coverage.Report, language string) port.Failure {
 	return m.base.Inventory(ctx, r, language)
 }
@@ -71,10 +175,18 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 		if !ok || declared.Language != spec.Name {
 			continue
 		}
+		// Only the tests the collector runs observe: those its language's
+		// test runner runs, never another program's, such as a make target
+		// declared beside them. A runner the memory cannot tell, such as a
+		// Python interpreter no probe declares, rules none out.
+		runner := ""
+		if run, failure := mutation.ObserveCommand(ctx, m.inputs, mutation.CommandRequest{Path: source, All: true}); failure == nil {
+			runner = run.String()
+		}
 		for _, command := range slices.Sorted(maps.Keys(m.memory.tests[root])) {
 			fixture := m.memory.tests[root][command]
 			trace := fixture.Trace
-			if trace == nil {
+			if trace == nil || runner != "" && !sameProgram(command, runner) {
 				continue
 			}
 			// A given may describe several command modes with one trace. One
@@ -108,13 +220,24 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 					continue
 				}
 			}
-			if err := m.emit(root, c, trace); err != nil {
+			fields := map[string]any{}
+			if trace.CoverDir {
+				fields["coverdir"] = ""
+			}
+			if err := m.emit(root, c, trace, fields); err != nil {
 				return err
 			}
 
 		}
 	}
 	return nil
+}
+
+// sameProgram is whether two command lines run one program, the first word
+// of each, as declared and as chosen.
+func sameProgram(declared, chosen string) bool {
+	d, c := strings.Fields(declared), strings.Fields(chosen)
+	return len(d) > 0 && len(c) > 0 && (d[0] == c[0] || filepath.Base(d[0]) == filepath.Base(c[0]))
 }
 
 func (m *memory) admitCoverageTrace(root string, t features.Tests) error {
@@ -326,13 +449,28 @@ func (m *memoryCoverage) observeListed(tests *coverage.PerTest, command string) 
 		}
 		seen[trace.File] = true
 		c := mutation.Command{Root: tests.Root, Dir: tests.Root, Shell: command, Suite: command == tests.All}
-		if err := m.emit(tests.Root, c, trace); err != nil {
+		// The listed collection gives its harness a coverage directory,
+		// and selects every listed test, or one of them.
+		fields := map[string]any{}
+		if trace.CoverDir {
+			fields["coverdir"] = filepath.Join(tests.Root, ".metrics", "coverage", "virtual-listed")
+			var ids []string
+			for _, test := range tests.Tests {
+				ids = append(ids, test.ID)
+				if tests.Select != nil && command != tests.All && tests.Select([]string{test.ID}) == command {
+					ids = []string{test.ID}
+					break
+				}
+			}
+			fields["tests"] = strings.Join(ids, ",")
+		}
+		if err := m.emit(tests.Root, c, trace, fields); err != nil {
 			return err
 		}
 	}
 	return nil
 }
-func (m *memoryCoverage) emit(root string, c mutation.Command, trace *features.TestTrace) error {
+func (m *memoryCoverage) emit(root string, c mutation.Command, trace *features.TestTrace, fields map[string]any) error {
 	names, err := mutantstest.SelectedTests(c, trace.Tests)
 	if err != nil {
 		return fmt.Errorf("coverage trace: %w", err)
@@ -344,7 +482,11 @@ func (m *memoryCoverage) emit(root string, c mutation.Command, trace *features.T
 	}
 	digest := sha256.Sum256([]byte(text))
 	for _, name := range names {
-		record := map[string]string{"cwd": filepath.Clean(c.Dir), "original_root": root, "source_sha256": hex.EncodeToString(digest[:])}
+		record := map[string]any{"cwd": filepath.Clean(c.Dir), "original_root": root, "source_sha256": hex.EncodeToString(digest[:])}
+		if trace.Coverage {
+			record["coverage"] = true
+		}
+		maps.Copy(record, fields)
 		if strings.Contains(filepath.ToSlash(trace.Source), "/") {
 			record["source"] = filepath.ToSlash(trace.Source)
 		}

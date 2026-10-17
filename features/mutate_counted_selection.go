@@ -89,7 +89,7 @@ func (q *countedMutation) sameNames() error {
 	}
 	for i, pkg := range []string{".", "./a", "./b"} {
 		source := []string{"main.go", "a/value.go", "b/value.go"}[i]
-		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast " + pkg, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: source}}); err != nil {
+		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast " + pkg, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: source, Coverage: true}}); err != nil {
 			return err
 		}
 	}
@@ -333,7 +333,7 @@ func (q *countedMutation) siteFree() error {
 	if err := w.d.Git(w.dir, "commit", "-qm", "site-free tests"); err != nil {
 		return err
 	}
-	if err := w.d.Tests(w.dir, Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "main.go"}}); err != nil {
+	if err := w.d.Tests(w.dir, Tests{Language: "go", Command: q.e.command, Elapsed: 100 * time.Millisecond, Trace: &TestTrace{File: filepath.Join(q.e.outside, "trace.jsonl"), Source: "main.go", Coverage: true}}); err != nil {
 		return err
 	}
 	return q.auditProfile(countedSiteFreeProfile)

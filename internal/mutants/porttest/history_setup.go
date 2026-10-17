@@ -46,6 +46,7 @@ func (r *HistoryRepository) Git(root, dir string, working map[string]string, arg
 		for path := range r.Index {
 			if matches(path) {
 				delete(r.Index, path)
+				delete(r.IndexLinks, path)
 			}
 		}
 		for abs, text := range working {
@@ -59,11 +60,26 @@ func (r *HistoryRepository) Git(root, dir string, working map[string]string, arg
 			path := filepath.ToSlash(rel)
 			if matches(path) {
 				r.Index[path] = text
+				if r.WorkingLinks[path] {
+					if r.IndexLinks == nil {
+						r.IndexLinks = map[string]bool{}
+					}
+					r.IndexLinks[path] = true
+				}
 			}
 		}
 		return nil
 	}
 	switch verb {
+	case "config":
+		if len(rest) != 2 || strings.HasPrefix(rest[0], "-") {
+			return fmt.Errorf("unsupported fixture Git config shape %q", rest)
+		}
+		if r.Config == nil {
+			r.Config = map[string]string{}
+		}
+		r.Config[rest[0]] = rest[1]
+		return nil
 	case "add":
 		all := slices.Contains(rest, "-A") || slices.Contains(rest, "--all")
 		var names []string
@@ -108,6 +124,17 @@ func (r *HistoryRepository) Git(root, dir string, working map[string]string, arg
 		r.Commit(message)
 		return nil
 	case "tag", "branch":
+		if len(rest) == 2 && (rest[0] == "-d" || rest[0] == "--delete") {
+			if _, exists := r.Refs[rest[1]]; !exists || r.Branches[rest[1]] != (verb == "branch") {
+				return fmt.Errorf("fixture Git %s not found: %s", verb, rest[1])
+			}
+			if verb == "branch" && r.Branch == rest[1] {
+				return fmt.Errorf("fixture Git cannot delete the current branch %s", rest[1])
+			}
+			delete(r.Refs, rest[1])
+			delete(r.Branches, rest[1])
+			return nil
+		}
 		force := false
 		var names []string
 		for _, arg := range rest {

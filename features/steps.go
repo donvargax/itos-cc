@@ -106,9 +106,9 @@ type Driver interface {
 	// (ITOS_CC_LANGUAGE_TOOLS), as Coverage does, and skipping tests said
 	// to take under 100 milliseconds where the system runs none that fast;
 	// the real tests then decide every outcome. The in-process driver
-	// records it for the bound Workers fake; its hand-parsed mutation group
-	// still refuses in-process scenarios until T-100 moves the handlers. A folder with no Tests declared has no tests a
-	// run may run.
+	// records it for the bound Workers fake. A folder with no Tests declared
+	// has no tests a run may run. Imports alone, with no Command, declares
+	// the files' import adjacency, which the world does before each run.
 	// Declarations upsert by directory and Command; other commands remain.
 	Tests(dir string, t Tests) error
 	// Tools observes independently declared installed entries and interpreter
@@ -185,6 +185,13 @@ type TestTrace struct {
 	// Bound commands and measurement requests select executions from it; nil
 	// keeps the source-only execution trace contract used by earlier fixtures.
 	Tests map[string]string
+	// Coverage says each record tells whether its run measured coverage, as
+	// a Go harness checking testing.CoverMode records it.
+	Coverage bool
+	// CoverDir says each record tells the ITOS_CC_TEST_COVERDIR its run was
+	// given, and the listed IDs it ran ("tests"), as a listed harness
+	// records them.
+	CoverDir bool
 }
 
 // ListedTests is a fixture's public test inventory and observable outcomes.
@@ -204,6 +211,9 @@ type ListedTests struct {
 	ListFails            bool
 	// ListOutput is successful raw inventory stdout; empty uses Files.
 	ListOutput string
+	// ListTrace is the file the list command records each of its runs in,
+	// a JSON line whose "test" is "list"; "" when it records none.
+	ListTrace string
 	// CoverageExit/Output describe the actual listed collection command result.
 	// CoverageMetadata, when nonnil, is written as the owned per-test covmeta
 	// artifact; conversion, rather than this declaration, determines failure.
@@ -382,7 +392,7 @@ func ids(area string, ranges ...string) []string {
 // joins it in the task that moves its command (crap's, coverage's,
 // complexity's and file selection's files in T-67, cli.feature in S9); until
 // then the binary driver alone runs its scenarios.
-var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature"}
+var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real
@@ -416,6 +426,9 @@ type world struct {
 	variables []string
 	// prepare adds fixture run options without changing the sentence being checked.
 	prepare func([]string) []string
+	// edges are the import edges the fixture declared (imports), by slash
+	// path from the scratch folder.
+	edges map[string][]string
 	// project is the folder of the project a Given made, slash-separated
 	// from the scratch folder, which a sentence names as <dir>; "" for
 	// none.
@@ -673,7 +686,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 func (w *world) setUp(s *godog.Scenario) error {
 	w.problemSubject = nil
 	w.beforeRemove = nil
-	w.last, w.problem, w.without, w.wrote, w.each, w.binary = nil, nil, nil, "", nil, ""
+	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges = nil, nil, nil, "", nil, "", nil
 	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
@@ -792,6 +805,9 @@ func (w *world) runEnv(dir string, env []string, args ...string) error {
 func (w *world) capture(dir string, env []string, args ...string) (code int, stdout, stderr string, err error) {
 	if w.prepare != nil {
 		args = w.prepare(slices.Clone(args))
+	}
+	if err := w.declareAdjacency(context.Background()); err != nil {
+		return 0, "", "", err
 	}
 	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without, Binary: w.binary})
 	return result.Exit, result.Stdout, result.Stderr, err

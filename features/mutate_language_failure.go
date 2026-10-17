@@ -289,8 +289,11 @@ func (l *languageMutation) unjudgedCountProject() error {
 	if err := w.d.Coverage(w.dir, Coverage{Language: "go", Report: "mode: set\nexample.com/board/board.go:2.22,2.39 1 1\n"}); err != nil {
 		return err
 	}
-	if err := w.d.Tests(w.dir, Tests{Language: "go", Command: "go test -count=1 -failfast ./..."}); err != nil {
-		return err
+	// The file's own tests, its package's, beside the whole module's.
+	for _, command := range []string{"go test -count=1 -failfast ./.", "go test -count=1 -failfast ./..."} {
+		if err := w.d.Tests(w.dir, Tests{Language: "go", Command: command}); err != nil {
+			return err
+		}
 	}
 	if err := w.git("init", "-q"); err != nil {
 		return err

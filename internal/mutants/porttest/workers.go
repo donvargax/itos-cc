@@ -25,6 +25,13 @@ type Tests struct {
 	Baseline string
 	Elapsed  time.Duration
 	Verdicts []Verdict
+	// Reached, when not nil, are the lines the tests execute, by file
+	// relative to the root: a mutant on any other line passes them, as
+	// tests that never run it cannot notice it.
+	Reached map[string][]int
+	// Selected are the IDs of the listed tests the command selects, which
+	// its harness records it ran.
+	Selected []string
 	Trace    *Trace
 	Hold     *WorkGate
 }
@@ -41,6 +48,13 @@ type Verdict struct {
 type Trace struct {
 	File, Source string
 	Tests        map[string]string
+	// Coverage says each record tells whether its run measured coverage,
+	// as a harness checking testing.CoverMode records it: a test run
+	// measures none.
+	Coverage bool
+	// CoverDir says each record tells the ITOS_CC_TEST_COVERDIR its run
+	// was given, as a listed harness records it: a test run is given none.
+	CoverDir bool
 }
 
 // Workers holds the actual virtual tree and each directory/command declaration.
@@ -62,6 +76,11 @@ type Workers struct {
 	Platform string
 	// Environments are actual entered command environments for binding guards.
 	Environments []map[string]string
+	// Originals are the original project roots of the private roots a
+	// command may run from, such as a fresh plan's frozen inputs, by the
+	// private root: a trace names the original, as an executed test names
+	// the project it was written in.
+	Originals map[string]string
 
 	mu   sync.Mutex
 	next int
@@ -215,7 +234,7 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 	}
 
 	if tests.Trace != nil {
-		if err := w.trace(c, copy, tests.Trace); err != nil {
+		if err := w.trace(c, copy, tests.Trace, harnessFields(tests, environment)); err != nil {
 			return mutants.CommandResult{}, mutants.WorkerFailed{Cause: err}
 		}
 	}
@@ -247,6 +266,10 @@ func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, ti
 	if err != nil {
 		return r, mutants.WorkerFailed{Cause: err}
 	}
+	if tests.Reached != nil && !slices.Contains(tests.Reached[filepath.ToSlash(rel)], change.Site.Line) {
+		r.Passed, r.ExitCode = true, 0
+		return r, nil
+	}
 	for _, v := range tests.Verdicts {
 		if filepath.ToSlash(rel) == filepath.ToSlash(v.Path) && v.Site.Line == change.Site.Line && v.Site.Original == change.Site.Original && v.Site.Replacement == change.Site.Replacement {
 			switch v.Outcome {
@@ -270,7 +293,21 @@ func failed(message string) mutants.WorkerFailure {
 	return mutants.WorkerFailed{Cause: errors.New(message)}
 }
 
-func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace) error {
+// harnessFields are what a listed harness records of a run beside the
+// standard trace: the IDs it selected, and the coverage directory it was
+// given where its trace says so.
+func harnessFields(tests Tests, environment map[string]string) map[string]any {
+	fields := map[string]any{}
+	if len(tests.Selected) > 0 {
+		fields["tests"] = strings.Join(tests.Selected, ",")
+	}
+	if tests.Trace != nil && tests.Trace.CoverDir {
+		fields["coverdir"] = environment["ITOS_CC_TEST_COVERDIR"]
+	}
+	return fields
+}
+
+func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace, fields map[string]any) error {
 	rel, err := filepath.Rel(c.Root, c.Dir)
 	if err != nil {
 		return err
@@ -279,12 +316,20 @@ func (w *worker) trace(c mutants.Command, copy map[string]string, t *Trace) erro
 	if cwd == filepath.Clean(c.Root) {
 		return errors.New("virtual worker is the original root")
 	}
-	return w.pool.factory.observeTrace(c, copy, t, cwd)
+	return w.pool.factory.observeTrace(c, copy, t, cwd, w.pool.factory.original(c.Root), fields)
+}
+
+// original is the original project root of root, a command's.
+func (f *Workers) original(root string) string {
+	if original, ok := f.Originals[filepath.Clean(root)]; ok {
+		return original
+	}
+	return filepath.Clean(root)
 }
 
 // observeTrace reads actual execution bytes at the supplied execution location.
 // Preparation uses the frozen cwd; workers validate their private copy above.
-func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Trace, cwd string) error {
+func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Trace, cwd, original string, fields map[string]any) error {
 	source := filepath.Join(c.Root, filepath.FromSlash(t.Source))
 	text, ok := copy[source]
 	if !ok {
@@ -296,7 +341,11 @@ func (f *Workers) observeTrace(c mutants.Command, copy map[string]string, t *Tra
 	}
 	hash := sha256.Sum256([]byte(text))
 	for _, name := range names {
-		record := map[string]string{"cwd": cwd, "original_root": filepath.Clean(c.Root), "source_sha256": hex.EncodeToString(hash[:])}
+		record := map[string]any{"cwd": cwd, "original_root": original, "source_sha256": hex.EncodeToString(hash[:])}
+		if t.Coverage {
+			record["coverage"] = false
+		}
+		maps.Copy(record, fields)
 		if strings.Contains(filepath.ToSlash(t.Source), "/") {
 			record["source"] = filepath.ToSlash(t.Source)
 		}
@@ -346,6 +395,9 @@ func SelectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 		default:
 			return nil, fmt.Errorf("unsupported trace runner %s", args[0])
 		}
+	}
+	if len(args) > 0 && filepath.Base(args[0]) == "go" {
+		return goSelected(args, inventory)
 	}
 	whole := c.Suite
 	var selectors []string
@@ -445,6 +497,45 @@ func SelectedTests(c mutants.Command, inventory map[string]string) ([]string, er
 			return nil, fmt.Errorf("unknown runnable trace selector %s", key)
 		}
 		names = append(names, name)
+	}
+	return names, nil
+}
+
+// goSelected is the tests go test runs, those of the test files of the
+// packages it names, by their inventory keys, file paths from the root:
+// every one for ./..., and its own for a package folder. The arguments after
+// -args are the tests' own, which select nothing here.
+func goSelected(args []string, inventory map[string]string) ([]string, error) {
+	var packages []string
+	for _, a := range args[1:] {
+		if a == "-args" {
+			break
+		}
+		if a == "test" || strings.HasPrefix(a, "-") {
+			continue
+		}
+		packages = append(packages, a)
+	}
+	var keys []string
+	for _, pkg := range packages {
+		if pkg == "./..." {
+			keys = slices.Collect(maps.Keys(inventory))
+			break
+		}
+		dir := filepath.ToSlash(filepath.Clean(filepath.FromSlash(pkg)))
+		for key := range inventory {
+			if filepath.ToSlash(filepath.Dir(filepath.FromSlash(key))) == dir {
+				keys = append(keys, key)
+			}
+		}
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("unsupported trace selector in %s", strings.Join(args, " "))
+	}
+	slices.Sort(keys)
+	var names []string
+	for _, key := range slices.Compact(keys) {
+		names = append(names, inventory[key])
 	}
 	return names, nil
 }

@@ -5,12 +5,16 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 )
 
 func listedSetupFixture(t *testing.T) (*memory, string) {
@@ -157,4 +161,112 @@ func TestListedSetupCopyPreservesNilAndEmptyCollections(t *testing.T) {
 			t.Fatalf("copy changed absent/empty facts: got %#v want %#v", copy, original)
 		}
 	}
+}
+
+// listedSelections declares, beside the commands the scenario declared, the
+// run command of mutation.tests selecting each set of the listed tests a
+// root's harness lists, in their listed order, as the harness behaves:
+// each selection takes the time its tests take, fails without a mutant
+// when it is the set said to fail alone, and runs a mutant only on the
+// lines its tests reach, where the first of them, in order, to notice it
+// kills it, to hang on it times it out, and none leaves it surviving.
+func (m *memory) listedSelections(w *mutantstest.Workers, text []byte) {
+	cfg, err := config.Parse(text)
+	if err != nil || cfg.Tests == nil {
+		return
+	}
+	for dir, listed := range m.listed {
+		if listed == nil || listed.ListFails {
+			continue
+		}
+		ids := listedOrder(listed)
+		if len(ids) > 12 {
+			continue
+		}
+		if w.Tests[dir] == nil {
+			w.Tests[dir] = map[string]mutantstest.Tests{}
+		}
+		for mask := 1; mask < 1<<len(ids); mask++ {
+			var selected []string
+			for i, id := range ids {
+				if mask&(1<<i) != 0 {
+					selected = append(selected, id)
+				}
+			}
+			command := cfg.Tests.Select(selected)
+			if _, declared := w.Tests[dir][command]; declared {
+				continue
+			}
+			t := listedSelection(listed, selected)
+			// The run command itself, {pattern} unexpanded, declares the
+			// trace every selection of it records.
+			if template, ok := w.Tests[dir][cfg.Tests.Run]; ok {
+				t.Trace = template.Trace
+			}
+			w.Tests[dir][command] = t
+		}
+	}
+}
+
+// listedOrder is the order the harness lists its tests in: its list
+// output's, else by ID.
+func listedOrder(listed *features.ListedTests) []string {
+	if listed.ListOutput == "" {
+		return slices.Sorted(maps.Keys(listed.Files))
+	}
+	var ids []string
+	for _, line := range strings.Split(strings.ReplaceAll(listed.ListOutput, "\r\n", "\n"), "\n") {
+		if id, _, _ := strings.Cut(line, "\t"); strings.TrimSpace(id) != "" {
+			ids = append(ids, strings.TrimSpace(id))
+		}
+	}
+	return ids
+}
+
+// listedSelection is what the run command selecting the tests selected
+// does, as listed declares each of them.
+func listedSelection(listed *features.ListedTests, selected []string) mutantstest.Tests {
+	t := mutantstest.Tests{Reached: map[string][]int{}, Selected: slices.Clone(selected)}
+	for _, id := range selected {
+		t.Elapsed += listed.Elapsed[id]
+	}
+	if failing := slices.Sorted(slices.Values(listed.Failing)); len(failing) > 0 && slices.Equal(failing, slices.Sorted(slices.Values(selected))) {
+		t.Baseline = "the selection " + strings.Join(selected, ",") + " fails without any mutant"
+	}
+	for file, lines := range listed.Lines {
+		for line, ids := range lines {
+			if slices.ContainsFunc(ids, func(id string) bool { return slices.Contains(selected, id) }) {
+				t.Reached[file] = append(t.Reached[file], line)
+			}
+		}
+		slices.Sort(t.Reached[file])
+	}
+	var sites []features.Site
+	for _, id := range selected {
+		for _, site := range append(slices.Clone(listed.Surviving[id]), listed.TimingOut[id]...) {
+			if !slices.Contains(sites, site) {
+				sites = append(sites, site)
+			}
+		}
+	}
+	for _, site := range sites {
+		outcome := mutation.Survived
+		for _, id := range selected {
+			if !slices.Contains(listed.Lines[site.File][site.Line], id) {
+				continue
+			}
+			if slices.Contains(listed.TimingOut[id], site) {
+				outcome = mutation.Timeout
+				break
+			}
+			if !slices.Contains(listed.Surviving[id], site) {
+				outcome = mutation.Killed
+				break
+			}
+		}
+		if outcome != mutation.Killed {
+			t.Verdicts = append(t.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome})
+		}
+	}
+	return t
 }
