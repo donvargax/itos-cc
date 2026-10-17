@@ -71,17 +71,14 @@ func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, so
 // folder. The binding owns progress and test output. reach, in OwnTests, is
 // the test files that reach each source, which measure Python's and
 // Kotlin's; nil measures them by the whole suite. A stopped run is
-// reported as ctx's cause, as mutation reports a stop. --coverage-command
-// without --coverage-report, which says where its report lands, is refused.
+// reported as ctx's cause, as mutation reports a stop. Its one caller,
+// strict coverage, has refused every raw coverage flag before it
+// (StrictCoverageFlag), --coverage-command among them.
 func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach) (*coverage.Report, error) {
-	command := given(q.CoverageCommand)
-	switch {
-	case q.NoCoverage:
+	if q.NoCoverage {
 		return nil, nil
-	case command != "" && len(q.CoverageReports) == 0:
-		return nil, ranInto(mutants.CoverageReportRequired{})
 	}
-	req := covport.Request{Sources: sources, Reports: reports(q.CoverageReports), Command: command, Existing: q.UseExistingCoverage,
+	req := covport.Request{Sources: sources, Reports: reports(q.CoverageReports), Command: given(q.CoverageCommand), Existing: q.UseExistingCoverage,
 		AllTests: q.AllTests, Scope: scope, Reach: reach}
 	if h.Coverage == nil {
 		return nil, fmt.Errorf("mutation coverage capability is not bound")

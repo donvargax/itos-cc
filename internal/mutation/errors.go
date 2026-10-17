@@ -157,9 +157,8 @@ func sinceError(failure mutants.HistoryFailure, ref string) error {
 }
 
 // RunError words the domain's run failures as cmd's run and sample's
-// handler word them: a snapshot that cannot be read, the listed tests'
-// list command failing and a coverage command given no report. Any other
-// error is err.
+// handler word them: a snapshot that cannot be read and the listed tests'
+// list command failing. Any other error is err.
 func RunError(err error) error {
 	if worded := runFailure(err); worded != nil {
 		return worded
@@ -179,10 +178,6 @@ func runFailure(err error) error {
 		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
 			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", "itos-cc.yaml", listing.Reason, listing.Command),
 			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
-	}
-	var required mutants.CoverageReportRequired
-	if errors.As(err, &required) {
-		return cli.CommandNeedsReport()
 	}
 	return nil
 }
