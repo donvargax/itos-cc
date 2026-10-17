@@ -3662,8 +3662,8 @@ items:
   - id: T-127
     title: Split CI into a push gate and a full-suite CD workflow that cuts the release
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-128
