@@ -4995,3 +4995,25 @@
     after, from at least three source pushes.
   done_when:
     - run: go test ./features -count=1 -run '^TestFeatures$' -scenarios="@ID-MUT-(0[1-6]|101)$"
+- id: T-130
+  type: refactor
+  title: Review the legacy T-79, T-80 and T-81 holders T-101 left whole
+  why: >
+    Split from T-101 on 2026-10-17. T-101 removed 114 legacy cmd/itos-cc tests whose every assertion
+    a scenario or a domain or port contract holds, and kept the rest with a Kept: comment each, but
+    it never reviewed these holders, which stay whole: T-79's 225 (two tests), 226 (two tests), 228,
+    229 and 230, and every T-80 and T-81 holder. Review each the same way: remove a test only when
+    every one of its behavioral assertions is held elsewhere, naming the scenario or contract that
+    holds each; keep a test with a Kept: comment naming the assertion nothing else makes; never
+    delete coverage to tidy a layout. T-101's ledger entry holds the rule for T-80: its
+    native-admission correction keeps the repository-documentation assertions and the private
+    platform-value guards of the mixed 191/199 holders. Split those from any public-CLI portions a
+    scenario replaces before deleting or moving old helpers, keeping each obligation at its proper
+    application or documentation boundary rather than a dead helper stack. MUT-248 supplies native
+    Windows refusal evidence, not a replacement for those guards. Remove helpers and files left
+    without callers. Update the removal tables in features/README.md's S7 completion section and
+    give the counts exactly. No product change, no new dependency, no own-code mutation run. Checks
+    stay fast; CI judges the whole suite.
+  done_when:
+    - run: go test ./internal/mutants/... ./internal/mutation/...
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="@ID-(MUT|SNAP)-"

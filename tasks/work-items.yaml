@@ -3673,3 +3673,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-130
+    title: Review the legacy T-79, T-80 and T-81 holders T-101 left whole
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
