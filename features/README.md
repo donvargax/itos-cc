@@ -607,11 +607,15 @@ writers move in S7 and must likewise record their writes through the memory driv
 an instrumented source port in T-125. A byte-only comparison cannot stand in for those events.
 ID-MUT-102 checks both the observed writes and the bytes of source and snapshot.
 
-T-101's deferred replacements from T-73 are the thirteen annotated tests in
-`cmd/itos-cc/mutate_since_test.go` for 37–46 and 102–104. Keep its shared helpers and the
-untagged renamed-file/new-path guard. The differential guards in `mutate/snapshot_test.go`
-stay as domain tests; `mutation_scope_test.go` belongs to T-75. All existing holders remain
-until the replacement scenarios actually pass CI after T-125 restores mutation scenarios.
+T-101 removed T-73's thirteen annotated tests in `cmd/itos-cc/mutate_since_test.go`, for
+37–46 and 102–104, once the scenarios ran green through both drivers. Each assertion is its
+scenario's, with these held elsewhere: the snapshot recording no entry for a function never
+judged (37's comment) is `internal/mutants`' `TestFunctionsNotJudgedKeepTheirRecord`; a
+`--since` run recording its judged function's kill is 104's; an empty `judged` under `--json`
+is 103's; and the first runs' survivor exit 1 is ID-MUT-29's. The file keeps the shared
+module helpers and the untagged renamed-file/new-path guard, which no scenario reaches; the
+helpers only the removed tests used went with them. The differential guards in
+`internal/mutants/snapshot_test.go` stay as domain tests.
 
 The cached-result scenarios (ID-MUT-57–70, 106–108) use real Vitest fixtures for every
 literal TypeScript path, and a Go module with an importing package for 70. Their
