@@ -60,8 +60,8 @@ driver: Go needs `go`; TypeScript `node` and a `node_modules` holding vitest and
 viewer's, linked into the project; Python `python3` with pytest and coverage, linked into the
 project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); Kotlin needs Java and
 the fixture's existing Gradle or Maven (`Program`) and declares its measured JaCoCo XML; and a program the
-project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
-pinned tools sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
+project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which `cd.yml`'s languages job, the one that installs the
+pinned tools, sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
 whatever its image has. The in-process driver hands what was declared to the fake measurer a
 command measuring coverage is given.
 
@@ -143,7 +143,7 @@ A step a driver cannot do for a reason outside the program, such as a missing to
 makes no symbolic link, or a capability the memory does not hold (`ErrPhysicalUnsupported`),
 skips its scenario with that reason, wrapped around `godog.ErrSkip`, and never passes in its
 place. godog's summary counts a skipped scenario as passed, so the in-process run logs each one
-with its reason; the binary driver's native CI runs keep godog's cucumber JSON, which tells an
+with its reason; the binary driver's native runs in `cd.yml` keep godog's cucumber JSON, which tells an
 omission from an execution.
 
 `ITOS_CC_SKIP_FEATURES` leaves out a comma-separated list of feature filenames in both drivers;

@@ -20,13 +20,14 @@ by the project's own CI. The file alone does not make Renovate run: the automati
 unverified until the Renovate app is installed and a request has landed.
 
 Fresh mutation records are required when code or relevant test imports change. Record them
-from the push's range start, the nearest ancestor with a green CI run, since `itos ci run`
+from the push's range start, the nearest ancestor with a green `ci.yml` run, since `itos ci run`
 judges the proof from there.
 
 git-cliff publishes a `.sha512` file per archive rather than a checksums file: move its pin by
 checking each archive against that file first, then pinning the archive's SHA-256.
 
-The release job in `ci.yml` runs only on a push to `main`, after the commits and test jobs pass,
-and cuts a release when the commits since the last tag call for one: the five archives, each
+The release job in `cd.yml` runs only on a push to `main`, after its commits, test and languages
+jobs pass on every system (decision 48; `ci.yml`, the Linux push gate, never releases), and cuts
+a release when the commits since the last tag call for one: the five archives, each
 built on its own platform's runner, and `checksums.txt`, the archives attested, published with
 the notes `tools/bin/release-notes` writes.

@@ -57,10 +57,10 @@ go build -o itos-cc ./cmd/itos-cc
 go test ./...
 ```
 
-Releases are cut by CI: on a push to `main` whose tests pass on Linux, macOS,
-and Windows, `.github/workflows/release.yml` computes the version from the
-commits since the last `vX.Y.Z` tag and builds each platform on its own
-runner. To cross-compile Linux and Windows binaries locally instead, use
+Releases are cut by CD (see [CI](#ci)): on a push to `main` whose tests pass on
+Linux, macOS, and Windows in `.github/workflows/cd.yml`,
+`.github/workflows/release.yml` computes the version from the commits since
+the last `vX.Y.Z` tag and builds each platform on its own runner. To cross-compile Linux and Windows binaries locally instead, use
 [zig](https://ziglang.org) as the C compiler:
 
 ```bash
@@ -976,6 +976,30 @@ then the template's sample `count` command (`internal/count`, `internal/counting
 `internal/disk`, `internal/stdin`) stays as a reference, wired to no command.
 [CONTRIBUTORS.md](CONTRIBUTORS.md) records where the harvested infrastructure came from. `itos go`
 coordinates the work; an implementing agent uses `itos guide work`.
+
+## CI
+
+Every push to `main` and every pull request starts two workflows side by side, as two separate
+runs ([decision 48](docs/decisions/0048-ci-is-a-fast-linux-push-gate-and-cd-runs-the-full-suite-on-every-system-and-cuts-the-release.md)):
+
+- [`ci.yml`](.github/workflows/ci.yml) is the push gate, the run `itos push`, `itos ci watch` and
+  `itos work done` wait on. It runs on Linux alone and ends in a few minutes: the commit rules
+  and `itos.yaml`'s plan (`itos ci run`, whose one scenario run takes the smoke set and the
+  scenarios the push's range names through both drivers), and the Go tests of every package,
+  the in-process driver's whole suite among them. It cuts no release.
+- [`cd.yml`](.github/workflows/cd.yml) runs everything: the same commit rules and plan, every
+  Go test on Linux, macOS and Windows, every scenario through both drivers, the native mutation
+  and snapshot scenario runs, and the tests that need the real TypeScript, Python and Kotlin
+  tools. On a push to `main`, once all of them pass, it cuts the release
+  ([`release.yml`](.github/workflows/release.yml)). It is the only workflow that does, so a
+  green `ci.yml` alone never publishes.
+
+A push whose range touches only prose runs no tests in either workflow and cuts nothing; with no
+green run to start from, both run everything. A green `ci.yml` no longer means every test
+passed: itos watches `ci.yml` alone until [itos#84](https://github.com/donvargax/itos/issues/84)
+lets it watch a second workflow, so the coordinator watches each `cd.yml` run with
+`gh run watch <id>` in the background and hands a red one to a fresh agent as repair work, ahead
+of new items. [`nightly.yml`](.github/workflows/nightly.yml) runs mutation testing once a night.
 
 ## License
 

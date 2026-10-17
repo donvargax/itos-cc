@@ -726,8 +726,8 @@ skips with a typed reason (`features.ErrPhysicalUnsupported`), which the in-proc
 `features.Deferred` names the scenarios of `InProcess` files the in-process driver leaves to
 the binary for now, each with why and the work that owns it: the five mutation scenarios
 that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
-T-108, T-112, T-113). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so CI and itos's
-scenario step hold every scenario both ways. A second Ctrl-C
+T-108, T-112, T-113). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so `cd.yml`
+holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
 interrupts on every system: `count` has no cleanup for a scenario to see skipped.
 
@@ -739,13 +739,17 @@ files of `.` under a path that is there or holding one that is not. Every run se
 `RAPID_CHECKS=1`: one new random case per property, as fast as an example test, with the
 seed printed on failure. This project has no scheduled high-count run.
 
-Tests run on Linux, macOS and Windows in CI's platform jobs. The import-boundary self-test
-runs there as well, because it checks paths and diagnostics that differ by platform.
+CI has two tiers (decision 48). `ci.yml`, the push gate itos waits on, runs on Linux alone:
+the plan below, with the smoke set and the scenarios the push's range names through both
+drivers, and the Go tests of every package, the in-process driver's whole suite among them.
+`cd.yml`, on the same push, runs every test on Linux, macOS and Windows in its platform jobs,
+every scenario through both drivers, and the release after them. The import-boundary
+self-test, `tools/bin/architecture-check`, runs in the plan of both.
 
 ## Quality checks
 
-`itos.yaml`'s CI plan runs these checks in order, and its generated rules in `AGENTS.md`
-list them exactly:
+`itos.yaml`'s CI plan, which the ci jobs of `ci.yml` and `cd.yml` both run, runs these checks
+in order, and its generated rules in `AGENTS.md` list them exactly:
 
 - `gofmt` over `cmd`, `internal` and `features`, `go build`, `go vet`, `go mod verify`
   against `go.sum`, and `go mod tidy -diff` so the module files match the code.
@@ -770,7 +774,7 @@ list them exactly:
 Changed-code proof is judged in CI. Before pushing code, run
 `tools/bin/pinned itos-cc mutation run --since <base> --fail-uncovered --all-tests
 --no-annotate cmd internal`, where the base is the push's range start, the nearest ancestor
-with a green CI run (`itos ci range --head HEAD` prints it, given GITHUB_REPOSITORY and
+with a green `ci.yml` run (`itos ci range --head HEAD` prints it, given GITHUB_REPOSITORY and
 GITHUB_TOKEN), and commit `.metrics/mutate/`. When a push's range touches `cmd/**/*.go` or
 `internal/**/*.go`, `itos ci run` runs `itos.yaml`'s `proof.code` check from that base as a
 static step, before the tests, and fails while a mutant survives, is uncovered or has no
@@ -793,9 +797,9 @@ CI plan and code-proof gate. `itos-template new` prints the setup steps that ado
 `itos init --policy itos-policy.yaml` gives the project its own `itos.yaml` and a fresh ledger,
 keeping its smoke set, then the policy file is removed. The last step,
 `itos init --agent-rules`, rewrites `AGENTS.md`'s rules to describe the project's own config.
-From then on the workflow runs the Go steps, the scenarios and the Linux, macOS and Windows
-tests on the project's own `main`, and the release job after them, as `docs/CLI.md`
-describes.
+From then on `ci.yml` runs the Go steps, the selected scenarios and the Linux tests on the
+project's own `main`, and `cd.yml` every test on Linux, macOS and Windows and the release job
+after them (decision 48), as `docs/CLI.md` describes.
 
 The project starts with no mutation records: the template's are taken over its own names and
 stay behind. Setup makes the render commit the point judging starts from, so the first push
