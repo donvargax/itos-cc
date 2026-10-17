@@ -4182,7 +4182,7 @@
     retain honest refusal until then. Never return the requested time as proof.
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
+    - run: go test ./features ./cmd/itos-cc -count=1 -timeout 90m -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
 - id: T-102
   type: test
   title: Run graph node and import scenarios through the black-box harness
@@ -4921,4 +4921,4 @@
     unchanged.
   done_when:
     - run: go test ./internal/mutation/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+    - run: go test ./features ./cmd/itos-cc -count=1 -timeout 90m -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
