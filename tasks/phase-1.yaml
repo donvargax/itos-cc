@@ -4090,6 +4090,19 @@
     dependencies without recorded selection. Keep exception identity, original
     YAML/write/renew/rename behavior, annotations and stale/excluded findings unchanged; the
     separate exception-renewal/cleanup issues are not fixes in this refactor.
+
+    Reuse what T-97 and T-98 built rather than parallel plumbing: mutants.SettingsReader through
+    config.Reader selected at cmd, the slice Handler's ports, its sealed Failure set worded in the
+    UI, the shared presentation and the cli.Provided-backed written-value binding. Read settings at
+    except's own original observation points. The order recorded before T-97, to hold unless the
+    current cmd source shows otherwise (the source wins, say so in the commit): --renew's branches
+    come before ordinary reason validation; an absent and an empty --reason stay distinct; a site
+    argument is parsed from the right so a Windows drive letter's colon is no separator; config and
+    exclusion come before the bindings; a renew with no exceptions returns early without touching
+    them; writes go through the actual Exceptions writer and discovery through the Tree port, with
+    YAML layout, identity, rename and annotation unchanged. Once except moves, the memory driver
+    refuses only run, with the decoy control kept effective. Never edit inside embedded fixture
+    source or golden strings, and run the pinned golangci-lint over ./internal/... before pushing.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(8[5-9]|9[0-9]|13[8-9]|14[0-6]|227|242)$"
