@@ -1,7 +1,9 @@
 name: Release
 
-# The release, cut by CI (T-28): ci.yml calls this on a push to main, after its
-# ci and test jobs pass, in the same run, so nothing is tested twice.
+# The release, cut by CD (T-28, T-127): cd.yml calls this on a push to main,
+# after its ci, test and languages jobs pass on every system, in the same
+# run, so nothing is tested twice. ci.yml, the Linux push gate, never calls
+# it (decision 48).
 #
 # Harvested from go-template-itos's .github/workflows/release.yml, which took
 # it from itos's, keeping its version, notes, attestation and publishing, and
@@ -48,20 +50,21 @@ name: Release
 #
 # By hand (workflow_dispatch), a fallback not meant to be needed: the release
 # of a given tag, or of a commit, its version computed as above, published only
-# when main's CI passed on exactly that commit (T-22's check).
+# when main's CD, cd.yml, passed on exactly that commit (T-22's check); a green
+# ci.yml run is not enough, as it ran the tests on Linux alone.
 on:
   workflow_call:
   workflow_dispatch:
     inputs:
       ref:
-        description: A vX.Y.Z tag, or a commit main's CI passed, to release
+        description: A vX.Y.Z tag, or a commit main's CD passed, to release
         required: true
         type: string
 
 permissions:
   contents: read
 
-# One release at a time, never cancelled. Called from ci.yml, its release job
+# One release at a time, never cancelled. Called from cd.yml, its release job
 # holds the release group, so this group is the run's own; run by hand, this
 # takes the release group itself.
 concurrency:
@@ -71,7 +74,7 @@ concurrency:
 jobs:
   version:
     runs-on: ubuntu-latest
-    # actions: read, for a run by hand to find main's CI run of its commit.
+    # actions: read, for a run by hand to find main's CD run of its commit.
     permissions:
       contents: read
       actions: read
@@ -80,7 +83,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       last: ${{ steps.version.outputs.last }}
     steps:
-      # Every action pinned to a commit, as ci.yml pins them.
+      # Every action pinned to a commit, as ci.yml and cd.yml pin them.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # the tags and the commits since the last one
@@ -106,28 +109,29 @@ jobs:
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       # Run by hand, T-22's check: the commit was tested when it was pushed to
-      # main, and testing it again proves nothing new. One main's CI did not
-      # pass, or never ran on, cannot publish. A run still going is waited
-      # for. Called from ci.yml, the run is main's CI itself, past its tests.
-      - name: Require a green main CI run of this commit
+      # main, and testing it again proves nothing new. One main's CD did not
+      # pass, or never ran on, cannot publish; cd.yml's run, not ci.yml's,
+      # which tests on Linux alone. A run still going is waited for. Called
+      # from cd.yml, the run is main's CD itself, past its tests.
+      - name: Require a green main CD run of this commit
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ steps.commit.outputs.sha }}
         run: |
-          run=$(gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&branch=main&event=push&per_page=1" --jq '.workflow_runs[0].id // empty')
+          run=$(gh api "repos/$GH_REPO/actions/workflows/cd.yml/runs?head_sha=$SHA&branch=main&event=push&per_page=1" --jq '.workflow_runs[0].id // empty')
           if [ -z "$run" ]; then
-            echo "::error::main's CI never ran on $SHA; release a commit main's CI passed"
+            echo "::error::main's CD never ran on $SHA; release a commit main's CD passed"
             exit 1
           fi
           gh run watch "$run" --exit-status >/dev/null || true
           conclusion=$(gh api "repos/$GH_REPO/actions/runs/$run" --jq .conclusion)
           if [ "$conclusion" != success ]; then
-            echo "::error::main's CI run $run on $SHA ended $conclusion; release a commit main's CI passed"
+            echo "::error::main's CD run $run on $SHA ended $conclusion; release a commit main's CD passed"
             exit 1
           fi
-          echo "main's CI passed on $SHA: https://github.com/$GH_REPO/actions/runs/$run"
+          echo "main's CD passed on $SHA: https://github.com/$GH_REPO/actions/runs/$run"
       - name: Version
         id: version
         env:

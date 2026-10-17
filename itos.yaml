@@ -112,7 +112,8 @@ ci:
   # first failure stopping the run. Taken from itos-policy.yaml, the
   # template's own plan, with the gates this code already passes, and its
   # scenario step (T-32); RAPID_CHECKS go test, mutation sample and proof
-  # (q-53) come later. The test matrix on three systems stays in ci.yml.
+  # (q-53) come later. ci.yml's and cd.yml's ci jobs both run it; the Go
+  # tests and every scenario on three systems are cd.yml's (decision 48).
   steps:
     - { run: itos config check, cost: static }
     - { run: tools/bin/doc-caps, cost: static }
@@ -143,7 +144,16 @@ ci:
     steps:
       - itos config check
       - tools/bin/doc-caps
-  # itos ci watch, and the CI check of itos work done, read the push's run of
-  # ci.yml on GitHub.
+  # Where a push's range starts: the nearest first parent with a green run
+  # of ci.yml, the push gate (T-127, decision 48). cd.yml's scope job reads a
+  # copy of this config naming cd.yml, for its own last green run.
+  range:
+    provider: github
+    github: { workflow: ci.yml }
+  # itos push, itos ci watch, and the CI check of itos work done, read the
+  # push's run of ci.yml on GitHub, the push gate, never cd.yml's: until
+  # itos#84 lets itos watch a second workflow, the coordinator watches cd.yml
+  # with gh run watch (decision 48).
   watch:
     provider: github
+    github: { workflow: ci.yml }
