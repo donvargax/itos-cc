@@ -4519,6 +4519,13 @@
     run, preserving the score conditional's 1-to-0 survivor and both runs'
     rerun/reuse counts through the bound Workers. No fixture-ID verdict or
     silent omission may stand in for this existing acceptance behavior.
+
+    T-114 now follows T-101: T-102 to T-108, T-112 and T-113 are deferred because serve leaves this
+    repository to become its own web app (the person's decision, 2026-10-17). Serve and the graph
+    stay on their legacy handler and packages, unchanged in behaviour, help, flags, exits and
+    output. Route the serve command from the Kong dispatch to that handler as it is, the one
+    command still on it, and keep its old parse path only as far as serve needs it. Do not move,
+    refactor or specify serve or graph here, and do not delete scaffolding only they still use.
   done_when:
     - run: go test ./internal/cli/... ./internal/version/...
     - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
