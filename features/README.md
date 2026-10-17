@@ -586,12 +586,13 @@ command progress and harness records. ID-MUT-134 uses `Driver.Graph`: the binary
 a bounded cleanup. It never calls graph internals; the memory implementation belongs with
 S8's serving adapter.
 
-During T-83's temporary push-CI omission, the old holders in
-`cmd/itos-cc/mutate_listed_test.go` (121–129), `mutate_listed_fresh_test.go` (130–134), and
-`mutate_listed_baseline_test.go` (135–137) remain. T-101 removes only replaced tests after the
-converted scenarios actually pass CI following T-125's restoration, retaining helpers still
-used by counted scenarios. Local fixture runs establish local conversion evidence; a green
-CI selection that omits them does not establish a scenario pass.
+T-101 removed the old holders in `cmd/itos-cc/mutate_listed_test.go` (121–129),
+`mutate_listed_fresh_test.go` (130–134) and `mutate_listed_baseline_test.go` (135–137) once the
+converted scenarios ran green through both drivers (134 through the binary alone, deferred with
+serve): each assertion is its scenario's. Their harness evidence of a run selecting ID-A-02 is
+ID-MUT-136's record of that selection's own run, and a functions entry's stale state goes with
+its `mutation.stale` problem (ID-MUT-64). The three files keep the module and helpers the counted
+tests share; the helpers only the removed tests used went with them.
 
 
 The differential/range scenarios (ID-MUT-23–27, 37–46, 102–104) use Go for generic
