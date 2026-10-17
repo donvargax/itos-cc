@@ -3462,6 +3462,6 @@ items:
     title: Cut CI time per push by skipping tests on prose-only ranges and parallelizing the slow test steps
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

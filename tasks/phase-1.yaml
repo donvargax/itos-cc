@@ -4852,7 +4852,3 @@
     the run green; target under about 10 minutes for a source push and under about 3 for a
     prose-only one, and say plainly if a target is missed and why. Recorded 2026-10-17 by the
     person's request; queued before T-98.
-  done_when:
-    - run: grep -q 'itos ci scope' .github/workflows/ci.yml
-    - run: grep -Eq '^  languages:' .github/workflows/ci.yml
-    - run: grep -q 'TestAPythonProjectThatWritesParallelCoverageDataIsMeasured' .github/workflows/ci.yml
