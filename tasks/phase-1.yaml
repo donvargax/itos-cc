@@ -4160,9 +4160,14 @@
     futureT86 layout is not implemented here. Focused local validation only; full gates hooks/CI, no
     own-code mutation runs/worktrees/session moves/agents.
     Named cross-command deferrals may remain at S7 completion: MUT-134, 153, 154, 163 and 207
-    need serving, scheduled in T-112. Report them separately from genuine binary-only cases
-    and passed scenarios. Keep each task/reason visible; T-112 must remove them, with no
-    unimplemented fake behavior counted as a pass. Add metrics_snapshots.feature to InProcess now that its mutation
+    observe serve, which stays on its legacy handler until it leaves for its own web app (T-102
+    to T-108, T-112 and T-113 are deferred). Report them separately from genuine binary-only
+    cases and passed scenarios. Keep each reason visible, with the deferred serve work as owner
+    and no unimplemented fake behavior counted as a pass.
+    T-100 left these to this cleanup: cmd's shell.go (shellOutput, shellCmd) is dead; docs/go.md
+    still names a cmd snapshots helper that no longer exists; the slice's loadCoverage keeps a
+    "command needs a report" branch that strict coverage cannot reach, because the flag refusal
+    comes first. Remove what is dead; keep a branch only for a caller that reaches it. Add metrics_snapshots.feature to InProcess now that its mutation
     commands have moved, completing the two-driver decision left open by T-82. Source/root/format
     scenarios run through both drivers. Raw-collector, atomic-filesystem and run-directory
     concurrency/cleanup cases may remain documented binary-only only when they require the real
@@ -4183,6 +4188,7 @@
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -timeout 90m -run "^Test(Features|Scenarios)$" -scenarios="@ID-(MUT|SNAP)-"
+      timeout: 5400
 - id: T-102
   type: test
   title: Run graph node and import scenarios through the black-box harness
@@ -4919,6 +4925,14 @@
     omission and observing all its applicable counted/worktree cases there. Remove only that
     now-duplicate T81 invocation; preserve the separately required T80 native-platform invocations
     unchanged.
+    Where T-100 left it: the memory driver refuses a validated mutation run with an explicit check
+    of its own, validatedMutationRun in cmd/itos-cc/scenarios_test.go. The memory adapters lack
+    the Handler's Fresh, FreshWorkers, Repository, PhysicalDir, Interruptible and Platform
+    bindings. Supply memory versions through actual fakes (a porttest Fresh, the fake repository
+    root, a context derivation that installs no signal handling, the configured platform value),
+    then delete validatedMutationRun and the refusal TestMemoryRefusesOnlyValidatedMutationRun
+    checks, keeping its --json placement cases where they still hold.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features ./cmd/itos-cc -count=1 -timeout 90m -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+      timeout: 5400
