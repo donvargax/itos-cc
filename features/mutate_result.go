@@ -194,7 +194,7 @@ func (r *resultMutation) survivorLine(want string) error {
 	var got []string
 	for _, line := range strings.Split(r.s.m.w.stdout, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "survived ") {
-			got = append(got, strings.TrimSpace(line))
+			got = append(got, filepath.ToSlash(strings.TrimSpace(line)))
 		}
 	}
 	if !slices.Equal(got, []string{want}) {
@@ -240,7 +240,7 @@ func (r *resultMutation) jsonSurvivors() error {
 			return fmt.Errorf("unexpected problem: %v", problem)
 		}
 		n++
-		if problem["file"] != r.file || !slices.ContainsFunc(sites, func(site listedSite) bool {
+		if filepath.ToSlash(fmt.Sprint(problem["file"])) != r.file || !slices.ContainsFunc(sites, func(site listedSite) bool {
 			return problem["line"] == float64(site.line) && problem["column"] == float64(site.column) && problem["function"] == site.function && problem["original"] == site.original && problem["replacement"] == site.replacement
 		}) {
 			return fmt.Errorf("survivor subject differs from public sites: %v", problem)

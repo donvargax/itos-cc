@@ -659,6 +659,10 @@ func (p *sampleMutation) commandIs(command string) error {
 	got := ""
 	if len(runs) == 1 {
 		got = strings.TrimPrefix(filepath.ToSlash(runs[0].command), filepath.ToSlash(p.s.m.w.dir)+"/")
+		// Windows runs an installed tool by its .cmd shim.
+		if program, rest, _ := strings.Cut(got, " "); strings.HasSuffix(program, ".cmd") {
+			got = strings.TrimSuffix(program, ".cmd") + " " + rest
+		}
 	}
 	if len(runs) != 1 || got != command {
 		return fmt.Errorf("sample baselines %v, want %s", runs, command)
@@ -756,7 +760,7 @@ func (p *sampleMutation) fixCommand(command string) error {
 		return err
 	}
 	problems := checkProblems(obj)
-	if len(problems) != 1 || !strings.Contains(fmt.Sprint(problems[0]["fix"]), "run '"+command+"'") {
+	if len(problems) != 1 || !strings.Contains(filepath.ToSlash(fmt.Sprint(problems[0]["fix"])), "run '"+command+"'") {
 		return fmt.Errorf("mismatch fix does not run %s: %v", command, problems)
 	}
 	return nil

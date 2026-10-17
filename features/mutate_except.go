@@ -197,9 +197,15 @@ func (e *exceptionMutation) oneEntry() error {
 	}
 	return nil
 }
+// exceptionFields is whether a holds each field of want, its paths with
+// their separators made slashes, as Windows names them with backslashes.
 func exceptionFields(a, want map[string]any) error {
 	for key, v := range want {
-		if !reflect.DeepEqual(a[key], v) {
+		got := a[key]
+		if text, ok := got.(string); ok && (key == "file" || key == "new_file") {
+			got = filepath.ToSlash(text)
+		}
+		if !reflect.DeepEqual(got, v) {
 			return fmt.Errorf("%s is %v, want %v in %v", key, a[key], v, a)
 		}
 	}

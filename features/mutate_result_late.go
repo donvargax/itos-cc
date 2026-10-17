@@ -381,7 +381,7 @@ func (r *resultMutation) orphanNamed() error {
 		return fmt.Errorf("orphan output %v", obj)
 	}
 	orphan := orphans[0].(map[string]any)
-	if orphan["file"] != "src/old.ts" || orphan["snapshot"] != ".metrics/mutate/src/old.ts.json" || orphan["why"] != "gone" || !strings.Contains(r.s.m.w.stdout, ".metrics/mutate/src/old.ts.json") {
+	if filepath.ToSlash(fmt.Sprint(orphan["file"])) != "src/old.ts" || orphan["snapshot"] != ".metrics/mutate/src/old.ts.json" || orphan["why"] != "gone" || !strings.Contains(r.s.m.w.stdout, ".metrics/mutate/src/old.ts.json") {
 		return fmt.Errorf("orphan metadata %v", orphan)
 	}
 	return nil
@@ -607,7 +607,7 @@ func (r *resultMutation) leftOutLine() error {
 		return err
 	}
 	want := fmt.Sprintf("  left out %s:2 in %s: 1 recorded mutant at sites gone, which the next mutation run drops\n", r.file, sites[0].function)
-	if code != 0 || !strings.Contains(out, want) || strings.Count(out, "left out ") != 1 {
+	if code != 0 || !strings.Contains(filepath.ToSlash(out), want) || strings.Count(out, "left out ") != 1 {
 		return fmt.Errorf("left-out note exit%d: %s%s; want %s", code, out, stderr, want)
 	}
 	return nil
