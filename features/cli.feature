@@ -36,7 +36,10 @@ Feature: Command line
         | mutation run src/a.go -h |
         | units --changed --help   |
 
-    @ID-CLI-03
+    # Binary-only for good: each row builds itos-cc as a release, go install
+    # or a person's go build makes it, and what a binary reports comes from
+    # that build's stamp and the module version Go records in it.
+    @ID-CLI-03 @binary-only
     Scenario Outline: Reporting the version
       Given the binary was built <how>
       When I run "itos-cc <command>"
@@ -108,6 +111,12 @@ Feature: Command line
         | a usage or config error: a bad flag, path, or report             | 2    |
         | the environment lacks something: a tool, a report, a git repository | 3    |
         | an error itos-cc could not classify                              | 70   |
+
+      # The binary driver's alone until T-112 (features.Deferred): serve
+      # stays on its legacy handler, which listens on the real network.
+      @T-112
+      Examples:
+        | situation                                                        | code |
         | a temporary failure, such as serve's port being in use           | 75   |
       # with problems of several kinds: 2, then 70, 3, 75, and 1
 

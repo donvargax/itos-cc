@@ -284,3 +284,32 @@ func TestFailedInventoryWithoutReportStillLogsItsActualDiagnostic(t *testing.T) 
 		t.Fatalf("actual failed collector diagnostic lost: %q", log.String())
 	}
 }
+
+// A collector whose command succeeds prints what its tools print, as the
+// real collectors pass it on; one whose command fails says its failure
+// instead, and an undeclared root prints nothing.
+func TestMeasurementPrintsTheToolsOutputWhenItsCommandSucceeds(t *testing.T) {
+	m, root, sources := fixture(t, "go", map[string]string{"a.go": "source"}, Measurement{Report: "mode: set\nexample/a.go:2.1,2.9 1 1\n", Output: "ok  \texample\t0.002s\n"})
+	var log bytes.Buffer
+	m.Log = &log
+	if _, failure := m.Measure(t.Context(), port.Request{Sources: sources}); failure != nil {
+		t.Fatal(failure)
+	}
+	if log.String() != "ok  \texample\t0.002s\n" {
+		t.Fatalf("logged %q, want the tool's output alone", log.String())
+	}
+	log.Reset()
+	if _, err := m.CollectFresh(t.Context(), port.Request{Sources: sources}); err != nil || log.String() != "ok  \texample\t0.002s\n" {
+		t.Fatalf("a fresh collection: %v, logged %q; want the tool's output", err, log.String())
+	}
+	d := m.Declarations[coverage.Unloaded{Language: "go", Dir: root}]
+	d.CommandExit, d.CommandOutput = 1, "FAIL example"
+	m.Declarations[coverage.Unloaded{Language: "go", Dir: root}] = d
+	log.Reset()
+	if _, failure := m.Measure(t.Context(), port.Request{Sources: sources}); failure != nil {
+		t.Fatal(failure)
+	}
+	if strings.Contains(log.String(), "ok  ") || !strings.Contains(log.String(), "FAIL example (exit 1)") {
+		t.Fatalf("a failed command logged %q, want its failure alone", log.String())
+	}
+}

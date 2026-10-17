@@ -26,10 +26,14 @@ type Measurement struct {
 	Language, Report, IntegrationReport string
 	CommandExit                         int
 	CommandOutput                       string
-	WithoutC8                           bool
-	InventoryReport                     string
-	InventoryExit                       int
-	InventoryOutput                     string
+	// Output is what the collector's command prints when it succeeds, as
+	// its tools print it, such as go test's ok line: the fake writes it on
+	// Log, where the real collectors pass a tool's output on.
+	Output          string
+	WithoutC8       bool
+	InventoryReport string
+	InventoryExit   int
+	InventoryOutput string
 	// Listed holds each test's measured report, independently of the request.
 	Listed       map[string]map[string]*coverage.Report
 	ListedFailed bool
@@ -105,6 +109,9 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 		// nothing. Execution observation is separate from successful evidence.
 		if declared && !unreached(req, group, sources) {
 			m.Entered = append(m.Entered, group)
+			if d.CommandExit == 0 {
+				m.output(d.Output)
+			}
 		}
 		switch {
 		case declared && unreached(req, group, sources):
@@ -227,6 +234,13 @@ func relative(dir string, paths []string) []string {
 func (m *Measurer) log(format string, args ...any) {
 	if m.Log != nil {
 		_, _ = fmt.Fprintf(m.Log, "itos-cc: "+format, args...)
+	}
+}
+
+// output writes text, what a tool printed, on Log as the tool printed it.
+func (m *Measurer) output(text string) {
+	if m.Log != nil && text != "" {
+		_, _ = io.WriteString(m.Log, text)
 	}
 }
 
@@ -412,6 +426,9 @@ func (m *Measurer) CollectFresh(ctx context.Context, req port.Request) (*coverag
 			continue
 		}
 		m.Entered = append(m.Entered, group)
+		if d.CommandExit == 0 {
+			m.output(d.Output)
+		}
 		if d.CommandExit != 0 {
 			m.log("coverage: %s: %s (exit %d)\n", group.Dir, d.CommandOutput, d.CommandExit)
 			failures = append(failures, fmt.Errorf("%s coverage command: %s (exit %d)", group.Language, d.CommandOutput, d.CommandExit))

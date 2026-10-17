@@ -251,3 +251,45 @@ func TestDeferredScenariosLeaveOnlyTheirDriversSelection(t *testing.T) {
 		t.Fatalf("a deferral no scenario carries: %v; want its failure", err)
 	}
 }
+
+// A deferral by the tag of an Examples block leaves out its rows alone, and
+// is told for a selection by its scenario's ID as well as by its own tag,
+// never left out silently. count.feature's scenario, the fixture's other,
+// runs "skipped" too.
+func TestDeferredExamplesLeaveOnlyTheirRows(t *testing.T) {
+	t.Setenv("ITOS_CC_SKIP_FEATURES", "")
+	dir := featureSelectionFixture(t)
+	outline := "Feature: Active file\n  @ID-UNIT-91\n  Scenario Outline: Rows\n    Given the <which> fixture runs\n\n" +
+		"    Examples:\n      | which  |\n      | active |\n\n" +
+		"    # The binary driver's alone.\n    @T-90\n    Examples:\n      | which   |\n      | skipped |\n"
+	if err := os.WriteFile(filepath.Join(dir, "units.feature"), []byte(outline), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	deferred := map[string]string{"@T-90": "a reason naming its owner"}
+	for _, c := range []struct {
+		pattern   string
+		ran, left []string
+	}{
+		{"", []string{"skipped", "active"}, []string{"@T-90"}},
+		{"^@ID-UNIT-91$", []string{"active"}, []string{"@T-90"}},
+		{"^@T-90$", nil, []string{"@T-90"}},
+		{"^@ID-COUNT-90$", []string{"skipped"}, nil},
+	} {
+		t.Run(c.pattern, func(t *testing.T) {
+			sel, err := TagFilter(c.pattern, dir, Converted, InProcessOnly)
+			if err != nil {
+				t.Fatal(err)
+			}
+			sel, left, err := Defer(sel, c.pattern, dir, deferred)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !slices.Equal(left, c.left) {
+				t.Fatalf("deferred left out %v; want %v", left, c.left)
+			}
+			if ran := runSelection(t, sel.Filter, sel.Paths); !slices.Equal(ran, c.ran) {
+				t.Fatalf("scenarios ran: %v; want %v", ran, c.ran)
+			}
+		})
+	}
+}

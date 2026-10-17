@@ -38,10 +38,10 @@ import (
 // features, through a driver that keeps every folder and file in memory
 // with a fake git, and runs itos-cc through run with buffers and porttest's
 // fakes built from that memory. The binary driver (features.TestFeatures)
-// runs the same scenarios against the built binary, and alone those of the
-// converted files whose command has not moved, a selection naming only
-// theirs running nothing here; a scenario only one of them can run, for
-// good, carries its tag, never a copy.
+// runs the same scenarios against the built binary, every converted file's
+// now, and alone those features.Deferred leaves to it until their owner's
+// work, which a selection here logs with their reasons; a scenario only one
+// of them can run, for good, carries its tag, never a copy.
 //
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$'                       every live scenario
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios=<regexp>   those with a tag it matches
@@ -625,6 +625,8 @@ func (m *memory) ObserveWrites(paths ...string) (func() ([]string, error), error
 
 // observedStore records successful writes at the moment they happen, including
 // identical JSON, instead of inferring them from the later memory writeback.
+// A file where the .metrics folder should be holds no snapshot, as on the
+// disk, where making the folder fails: a write there is Unwritable.
 type observedStore struct {
 	*snapporttest.Store
 	memory *memory
@@ -632,6 +634,9 @@ type observedStore struct {
 }
 
 func (s observedStore) Write(ctx context.Context, name string, v any) snapport.Failure {
+	if _, file := s.memory.files[s.dir]; file && ctx.Err() == nil {
+		return &snapport.Unwritable{Name: name, Reason: fmt.Sprintf("mkdir %s: not a directory", s.dir)}
+	}
 	if failure := s.Store.Write(ctx, name, v); failure != nil {
 		return failure
 	}
@@ -973,7 +978,7 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 
 // measurementOf translates fixture artifact declarations, not application models.
 func measurementOf(c features.Coverage) covtest.Measurement {
-	return covtest.Measurement{Language: c.Language, Report: c.Report, IntegrationReport: c.IntegrationReport, CommandExit: c.CommandExit, CommandOutput: c.CommandOutput, WithoutC8: c.WithoutC8, InventoryReport: c.InventoryReport, InventoryExit: c.InventoryExit, InventoryOutput: c.InventoryOutput}
+	return covtest.Measurement{Language: c.Language, Report: c.Report, IntegrationReport: c.IntegrationReport, CommandExit: c.CommandExit, CommandOutput: c.CommandOutput, Output: c.Output, WithoutC8: c.WithoutC8, InventoryReport: c.InventoryReport, InventoryExit: c.InventoryExit, InventoryOutput: c.InventoryOutput}
 }
 
 // lister composes only the independently retained root setup with the actual

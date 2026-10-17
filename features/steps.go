@@ -278,6 +278,11 @@ type Coverage struct {
 	// The bound tool returns this failure; the actual Measurer classifies it.
 	CommandExit   int
 	CommandOutput string
+	// Output is what the command prints when it succeeds, as its tools
+	// print it, such as go test's ok line, which itos-cc passes on to its
+	// stderr: the in-process driver hands it to its fake measurer, which
+	// prints it there; the binary driver's real tools print their own.
+	Output string
 	// IntegrationReport is the actual subprocess collector report, separately
 	// from Report, in the same existing formats. Empty means no subprocess data.
 	IntegrationReport string
@@ -392,8 +397,9 @@ func ids(area string, ranges ...string) []string {
 // joins it in the task that moves its command (crap's, coverage's,
 // complexity's and file selection's files in T-67, mutate.feature in T-125,
 // metrics_snapshots.feature once mutation's commands had moved, in T-101,
-// cli.feature in S9); until then the binary driver alone runs its scenarios.
-var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature"}
+// cli.feature once version and the top-level dispatch had, in T-114); until
+// then the binary driver alone runs its scenarios.
+var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature", "cli.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real

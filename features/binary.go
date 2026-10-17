@@ -138,7 +138,7 @@ func (b binary) Coverage(dir string, c Coverage) error {
 			if err := coverageWithoutC8(modules, filepath.Join(dir, "node_modules"), runtime.GOOS, required); err != nil {
 				return err
 			}
-		} else if err := os.Symlink(modules, filepath.Join(dir, "node_modules")); err != nil {
+		} else if err := linkModules(modules, filepath.Join(dir, "node_modules")); err != nil {
 			if required {
 				return err
 			}
@@ -174,6 +174,16 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		}
 	}
 	return nil
+}
+
+// linkModules links path to modules: a link there to them already is the
+// one an earlier declaration made, as a Given that changes its project
+// declares what the tools measure in it again.
+func linkModules(modules, path string) error {
+	if target, err := os.Readlink(path); err == nil && target == modules {
+		return nil
+	}
+	return os.Symlink(modules, path)
 }
 
 // missing is the error of a tool that is not installed: a skip, or a
