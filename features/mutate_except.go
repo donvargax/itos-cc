@@ -197,6 +197,7 @@ func (e *exceptionMutation) oneEntry() error {
 	}
 	return nil
 }
+
 // exceptionFields is whether a holds each field of want, its paths with
 // their separators made slashes, as Windows names them with backslashes.
 func exceptionFields(a, want map[string]any) error {
