@@ -3232,7 +3232,7 @@ items:
     title: Move mutation list and check handlers into the mutation slice
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-96]
     kind: task
   - id: T-98

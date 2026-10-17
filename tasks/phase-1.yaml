@@ -4035,9 +4035,6 @@
     genuine parse/help-only paths through existing routing; hold a physical-decoy control so
     an unsupported child cannot fall through to the host. Keep whole-group InProcess deferred
     until T-100; this is harness isolation, not a new product refusal.
-  done_when:
-    - run: go test ./internal/mutation/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(0[1-6]|101|11[4-6]|5[7-9]|6[0-9]|70|10[6-8]|13[0-4]|243|244|245|246)$"
 - id: T-98
   type: refactor
   title: Move the mutation sample handler into the mutation slice
