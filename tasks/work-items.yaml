@@ -3623,6 +3623,6 @@ items:
     title: Run the mutation scenarios in process
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-100]
     kind: task

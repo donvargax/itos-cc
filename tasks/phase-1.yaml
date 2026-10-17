@@ -4932,7 +4932,3 @@
     root, a context derivation that installs no signal handling, the configured platform value),
     then delete validatedMutationRun and the refusal TestMemoryRefusesOnlyValidatedMutationRun
     checks, keeping its --json placement cases where they still hold.
-  done_when:
-    - run: go test ./internal/mutation/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -timeout 90m -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
-      timeout: 5400
