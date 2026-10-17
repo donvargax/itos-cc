@@ -282,7 +282,11 @@ from it, and thin slices named for their commands.
   it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
   types (`ParseProblem`), retains validated explicit/raw flag facts (`Provided`) and prints
   leaf/group help (`Help`, `Page` and `GroupHelp`), as "Moving a command"
-  below says.
+  below says. Before any command reads its line, `Dispatch` reads the whole of it against
+  kong's model of every command: the flags before a command (`--json`, `-h`, `--help`, and
+  `--version`, the `version` command), the top-level help, `help <command>` and the guess for
+  an unknown command, and `Usage` prints the top-level help from the same model (T-114). It
+  holds the `version` command too, its version the one cmd works out (`Build`).
 - `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
   `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
   and hands the context and the handler, over the ports in `adapters`, to `Run` through
@@ -291,28 +295,30 @@ from it, and thin slices named for their commands.
   `diskAdapters(os.Stderr)`: the working directory, `workdir`'s `Tree` and `Surroundings`,
   `metricsdir`'s `Store`, `coveragetools`' `Measurer`, saying what it runs on standard
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
-  the moved commands use the streams and adapters given, so a test runs them in process with
-  buffers and porttest's fakes (`TestRunWithFakes`, decision 44); mutation's parser has moved,
-  and all five of its handlers use the streams and adapters given (T-97 to T-100). The
-  hand-parsed commands
-  keep the process's streams and disk until they move, and only `main` exits. Every command
-  runs under the context: a hand-parsed one through
-  `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
-  calls; a moved one through the parser `run` builds once with `parserOf(ctx, …, a)`, whose
-  bindings hand it to `Run`. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's
-  `exclude`, so `runMoved` reads the file through `a.Config` once the command line is parsed
+  every command but `serve` use the streams and adapters given, so a test runs them in process
+  with buffers and porttest's fakes (`TestRunWithFakes`, decision 44). `serve`, its moves
+  deferred while it leaves for a web app of its own, alone stays on its legacy handler and hand
+  parser (`cli.go`, `serve.go`) and keeps the process's streams and disk, and only `main`
+  exits. `run` builds the parser of every command once, with fresh state, with
+  `parserOf(ctx, …, a)`, and `internal/cli`'s `Dispatch` reads the line against its model;
+  `dispatch` (`dispatch.go`) then hands `serve`'s line, as it was written, to `execute` and
+  `runSafely`, which run its `run(ctx, in)`, and parses every other's once, whose bindings hand
+  the context to its `Run`. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's
+  `exclude`, so `dispatch` reads the file through `a.Config` once the command line is parsed
   and binds them then: a file that cannot be read fails that command as `config.invalid`,
-  never help or `version`. A command that stops on a signal derives its own from it
+  never help or `version`, and `version`'s version (`versionString`, release stamps
+  `-X main.version`) is bound then too. A command that stops on a signal derives its own from it
   (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`, which
   cmd binds into the slice's handler as `Interruptible`), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
   `main` makes a context of its own, and none is held in a value or captured by a closure
   that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
   does. A done context starts no command. It is the only place
-  that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
-  every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
+  that knows every package. Every command is a node of its one kong model, `commandLine`, its
+  fields in their names' order, which the guess weighs a tie by; `serve`'s node only names it
+  to the top-level help and the guess. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
-  selects its files; no hand-parsed command selects files any more (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
+  selects its files; `serve`, on the hand parser, selects none (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it; `dry`'s and `scrap`'s handlers write through `adapters`' `Store`, `internal/metricsdir`'s
   on the disk: a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
@@ -445,15 +451,15 @@ follows the same steps for a command it wrote before it had the template's desig
    one slice that uses the domain (`count.Classify`). A domain several commands share keeps
    its classifier in cmd (`classifySelection`), since no slice may import another; the
    moved slice then needs none. internal/cli never holds one.
-4. **Routing in cmd.** In `cmd/itos-cc/moved.go`, add the slice's struct to `commandLine`,
-   its `help` tag the line the top-level help lists, its handler to `parserOf`'s bindings
-   (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s do, bound in `runMoved`
-   once the line is parsed), built over the ports in `adapters` and never over an adapter
-   itself, a port it needs added there and to `diskAdapters`,
-   and a case to `runMoved` that calls its `Run` through `callSafely`. Remove the old
-   `command` from `main.go`'s list and delete its file. `run` sends a moved command to kong
-   and every other to the hand parser; the top-level help, `help <command>` and the guess
-   for an unknown command know both. A group, such as `mutation`, moves whole, and
+4. **Routing in cmd.** In `cmd/itos-cc/dispatch.go`, add the slice's struct to `commandLine`,
+   in its name's order, its `help` tag the line the top-level help lists, its handler to
+   `parserOf`'s bindings (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s
+   do, bound in `dispatch` once the line is parsed), built over the ports in `adapters` and
+   never over an adapter itself, a port it needs added there and to `diskAdapters`,
+   and a case to `dispatch` that calls its `Run` through `callSafely`. A command still on the
+   hand parser leaves `legacy` and the in-process driver's refusal with its old file;
+   `serve` is the last (T-112). The top-level help, `help <command>` and the guess for an
+   unknown command read the one model (`cli.Dispatch`). A group, such as `mutation`, moves whole, and
    `ParseProblem`'s `command.unknown` then takes the group's wording, which names its
    subcommands.
 5. **The command line.** `cli.Read` finds `--json` and help (`-h` or `--help` anywhere
@@ -501,7 +507,7 @@ follows the same steps for a command it wrote before it had the template's desig
    `cli.Page`, from kong's model (its flags, the command's own and then the program's, and
    its arguments for the usage line) and its `Contract`, in the layout the hand-parsed
    commands print through the same `Page`. The help flag's text is set in `parserOf`. Help
-   for `<command> --help` and `help <command>` both go through `movedHelp`.
+   for `<command> --help` and `help <command>` both go through `modelHelp`.
 8. **Its scenarios run through godog.** Convert the command's feature file before the move,
    so its scenarios hold it: its steps in `features/<file>.go`, registered from `Initialize`
    in `steps.go`, reaching the world only through its `Driver` and reading only what itos-cc
@@ -704,7 +710,7 @@ of package `features` behind its `Driver`. `features`' `TestFeatures` runs every
 file against the built binary (`binary.go`), which proves main's wiring, the real adapters and
 tools, exit codes and signals, interrupting it once it waits on an open standard input to show
 the 130 exit. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
-(`InProcess`) in process, a selection naming only scenarios of the others running nothing there: its driver, a `_test.go`, holds every
+(`InProcess`), every converted file since `cli.feature` joined it (T-114), in process: its driver, a `_test.go`, holds every
 folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
 renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
 porttest's fakes built from that memory: `TreeOf` over the whole scratch folder, files
@@ -713,20 +719,22 @@ back to `.metrics/`, an itos-cc.yaml held in memory, and coverage's `Measurer`, 
 the reports a run names from the memory and gives each build root what the scenario
 declared its tools measure (`Driver.Coverage`): the LCOV report they write, nothing when
 they write none, a missing tool when none was declared, and no report left for
-`--use-existing-coverage`. A mutation run is handed mutation's fakes
+`--use-existing-coverage`, writing what their command prints on success where the collectors
+pass it on. A mutation run is handed mutation's fakes
 (`internal/mutants/porttest`) over the same memory: `Workers` running each mutant as the
 scenario declared the folder's tests do (`Driver.Tests`), the `History` of the fake Git,
 `Toolchain`, `Fingerprints` and `Reach` from the files, the run's `Run.Env` and the import
 adjacency the world declares before each run (`features/imports.go`), the listed tests'
 `Lister`, coverage's `MutationMeasurer`, and a counted run's `Fresh` over the fake
-repository. It refuses a hand-parsed command, naming `@binary-only`, so nothing reaches the
-real disk. A scenario only one driver can run carries `@binary-only` or `@in-process-only`,
+repository. It refuses `serve`, still on its legacy handler, so nothing reaches the real disk
+or network. A scenario only one driver can run carries `@binary-only` or `@in-process-only`,
 never a copy, and the other passes it by; a step a driver cannot do fails naming the tag, or
 skips with a typed reason (`features.ErrPhysicalUnsupported`), which the in-process run logs.
 `features.Deferred` names the scenarios of `InProcess` files the in-process driver leaves to
 the binary for now, each with why and the work that owns it: the five mutation scenarios
 that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
-T-108, T-112, T-113). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so `cd.yml`
+T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-code row that
+runs `serve` on a port in use (T-112). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so `cd.yml`
 holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
 interrupts on every system: `count` has no cleanup for a scenario to see skipped.

@@ -39,9 +39,9 @@ driver runs every converted file; the in-process driver only those of the comman
 kong, the ones `InProcess` lists in `steps.go`, a file joining it when its command moves. A
 scenario only one driver can run, for good, carries `@binary-only` or `@in-process-only`, never a
 copy, and the other driver passes it by; `@binary-only` never means "not moved yet". The
-in-process driver refuses a command still hand-parsed (`serve`, `version`), naming
-`@binary-only`; a run's variables (`Run.Env`) reach the fakes as the environment facts the real
-adapters read. itos.yaml's scenario lines run both, so every scenario of a moved command is held
+in-process driver refuses `serve`, the one command still on its legacy handler, which reaches
+the real disk and network, naming `features.Deferred`; a run's variables (`Run.Env`) reach the
+fakes as the environment facts the real adapters read. itos.yaml's scenario lines run both, so every scenario of a moved command is held
 both ways. `TestFeatures` builds itos-cc once a run
 from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
 release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary
@@ -63,7 +63,10 @@ the fixture's existing Gradle or Maven (`Program`) and declares its measured JaC
 project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which `cd.yml`'s languages job, the one that installs the
 pinned tools, sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
 whatever its image has. The in-process driver hands what was declared to the fake measurer a
-command measuring coverage is given.
+command measuring coverage is given, which writes on stderr what the command prints when it
+succeeds (`Output`, such as go test's `ok` line), as the real collectors pass a tool's output
+on. A Given that changes its project and runs again declares what the tools measure in it again,
+the report lines moved with its text; the binary driver keeps the `node_modules` link it made.
 
 A Given whose project's tests a run of itos-cc runs, mutation run's baseline and trials, declares
 what they do (`Tests`): their language and the command itos-cc runs them with, what a failing
@@ -121,23 +124,27 @@ selection that names a scenario of such a file, as the smoke set does for every 
 not run here and runs the rest; one that names nothing a converted file holds fails, as one
 matching no tag does.
 
-The in-process driver runs those of `InProcess`: all of them but `cli.feature`, whose help,
-version and mutation scenarios need commands that move later, which joins it in S9.
-`mutate.feature` joined it when the mutation group moved (T-125), and
-`metrics_snapshots.feature` once the mutation commands it runs had moved (T-101). In process, a
+The in-process driver runs those of `InProcess`, every one of them now. `mutate.feature` joined
+it when the mutation group moved (T-125), `metrics_snapshots.feature` once the mutation commands
+it runs had moved (T-101), and `cli.feature` once `version` and the top-level dispatch had moved
+onto the one kong model (T-114). Its `ID-CLI-03` is `@binary-only` for good, each row building
+itos-cc as a release, `go install` or a checkout's `go build` makes it. In process, a
 selection naming a scenario of a converted file not in `InProcess` logs it as binary driver only
 until its command moves, and one naming nothing else runs nothing there and passes, the binary
 driver running it.
 
-`Deferred` (`deferred.go`) names, by ID tag, the scenarios of `InProcess` files that the
-in-process driver leaves to the binary driver for now, each with why, naming the work that owns
-it. Unlike `@binary-only`, which a scenario only the binary can run carries for good, an entry
-goes once its owner's work lets the scenario run in process. Today it names ID-MUT-134, 153, 154,
-163 and 207, which observe `serve` (`Driver.Graph`) as well as mutation: `serve` stays on its
-legacy handler, its moves (T-102 to T-108, T-112 and T-113) deferred while it leaves for its own
-web app. `Defer` takes them out of the in-process selection, which logs each one it matches with
-its reason; a tag `Deferred` lists that no scenario of a feature file carries fails the run, so an
-entry cannot outlive its scenario. The binary driver runs every one of them.
+`Deferred` (`deferred.go`) names, by ID tag, or by the tag of the Examples block holding the
+rows it leaves, the scenarios of `InProcess` files that the in-process driver leaves to the
+binary driver for now, each with why, naming the work that owns it. Unlike `@binary-only`, which
+a scenario only the binary can run carries for good, an entry goes once its owner's work lets the
+scenario run in process. Today it names ID-MUT-134, 153, 154, 163 and 207, which observe `serve`
+(`Driver.Graph`) as well as mutation, and `@T-112`, the Examples block of ID-CLI-08 whose row
+runs `serve` on a port in use: `serve` stays on its legacy handler, listening on the real
+network, its moves (T-102 to T-108, T-112 and T-113) deferred while it leaves for its own web
+app. `Defer` takes them out of the in-process selection, which logs each one it matches, by its
+own tag or its scenario's, with its reason; a tag `Deferred` lists that no scenario of a feature
+file carries fails the run, so an entry cannot outlive its scenario. The binary driver runs every
+one of them.
 
 A step a driver cannot do for a reason outside the program, such as a missing tool, a system that
 makes no symbolic link, or a capability the memory does not hold (`ErrPhysicalUnsupported`),
@@ -1645,3 +1652,15 @@ both. It did not review the T-79 changed-line and integration holders (225, 226,
 or the T-80 and T-81 holders, which stay whole. cmd's dead shell helpers and the slice's
 unreachable report refusal went with no product change.
 
+## S9 dispatch (T-114)
+
+Every command is a node of one kong model, which `internal/cli`'s `Dispatch` reads a whole
+command line against; `version` is a kong command, and `serve` alone keeps its legacy handler,
+its node only naming it. `cli.feature` joined `InProcess`. On 2026-10-17 the in-process driver
+ran 36 of its cases, 115 steps, all passing, and the binary driver all 41, 130 steps. The five it
+leaves out are `ID-CLI-03`'s four rows, `@binary-only` for good since each builds itos-cc, and
+`ID-CLI-08`'s row that runs `serve` on a port in use, deferred to T-112 by its Examples block's
+tag. `ID-CLI-13` declares its Vitest tests and the LCOV Vitest writes before each of its two
+runs, so score's survivor and the cached run's 7 rerun and 8 reused come through the bound
+`Workers` (cli-13-declares-its-tests). The binary driver's `ID-CLI-13` needs the TypeScript tools,
+skipping where they are not installed, as every TypeScript case does.
