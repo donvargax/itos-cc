@@ -6,8 +6,10 @@ import (
 	"testing"
 )
 
-// The scenarios of annotate-excepted, at the end of "Rule: Equivalent
-// mutants excepted, each with a reason" in features/mutate.feature. They use
+// Beside annotate-excepted, at the end of "Rule: Equivalent mutants
+// excepted, each with a reason" in features/mutate.feature, whose ID-MUT-138
+// to 140 hold their old tests whole (T-101): a guard that the summary of a
+// --since run excepts the survivors of functions it did not judge. It uses
 // the module of mutate_since_test.go, as the other scenarios of that rule
 // do: Board#place's one mutant is killed, and Board#clear's one mutant,
 // `<` → `<=` at src/board.go:11:11, survives whenever it runs and stands for
@@ -38,75 +40,6 @@ func summaryComment(t *testing.T) string {
 		t.Fatalf("%s ends with no summary comment:\n%s", boardSource, src)
 	}
 	return src[at:]
-}
-
-// @ID-MUT-138
-func TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	writeExceptions(t, "", clearException(t, "clear is never called"))
-
-	if o := annotatedRun(t, boardSource); o.code != 0 {
-		t.Fatalf("exit %d, want 0: clear's survivor is excepted\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	data, _ := os.ReadFile(inWD(t, boardSource))
-	want := "}\n\n// itos-cc mutation: 1 killed, 0 survived, 1 excepted, 0 uncovered\n" +
-		"// excepted: line 11 `<` → `<=` in clear: clear is never called\n" +
-		"// end itos-cc mutation\n"
-	if !strings.HasSuffix(string(data), want) {
-		t.Errorf("%s:\n%s\nwant it to end with:\n%s", boardSource, data, want)
-	}
-}
-
-// @ID-MUT-139
-func TestAStaleEntrysSurvivorIsListedAsSurvived(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	writeExceptions(t, "", clearException(t, "clear is never called"))
-	// clear changed, and its mutant at the entry's site still survives.
-	edit(t, boardSource, "i < 3", "i < 4")
-
-	o := annotatedRun(t, "--json", boardSource)
-	if m := mutantOf(t, o, clearID); m.Outcome != "survived" || m.Line != clearLine || m.Column != clearColumn {
-		t.Fatalf("clear's mutant %+v, want it to survive at the entry's site", m)
-	}
-	comment := summaryComment(t)
-	for _, want := range []string{
-		"// itos-cc mutation: 1 killed, 1 survived, 0 uncovered\n",
-		"\n// survived: line 11 `<` → `<=` in clear\n",
-	} {
-		if !strings.Contains(comment, want) {
-			t.Errorf("the summary comment:\n%s\nwant it to hold %q", comment, want)
-		}
-	}
-	if strings.Contains(comment, "excepted") {
-		t.Errorf("the summary comment:\n%s\nwant no \"excepted\" count and no \"excepted:\" line", comment)
-	}
-}
-
-// @ID-MUT-140
-func TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	writeExceptions(t, "", clearException(t, "clear is\n  never called"))
-
-	if o := annotatedRun(t, boardSource); o.code != 0 {
-		t.Fatalf("exit %d, want 0: clear's survivor is excepted\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	comment := summaryComment(t)
-	lines := strings.Split(strings.TrimSuffix(comment, "\n"), "\n")
-	const want = "// excepted: line 11 `<` → `<=` in clear: clear is never called"
-	if !strings.Contains(comment, "\n"+want+"\n") {
-		t.Errorf("the summary comment:\n%s\nwant the line %q", comment, want)
-	}
-	for _, l := range lines {
-		if !strings.HasPrefix(l, "//") {
-			t.Errorf("the summary comment:\n%s\nholds the line %q, which does not begin with \"//\"", comment, l)
-		}
-	}
 }
 
 // Under --since, the functions not judged keep their outcomes, and the

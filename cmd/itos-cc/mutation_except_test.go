@@ -11,8 +11,10 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// The scenarios of "Rule: Equivalent mutants excepted, each with a reason"
-// in features/mutate.feature. They use the module of mutate_since_test.go:
+// Tests of "Rule: Equivalent mutants excepted, each with a reason" in
+// features/mutate.feature. ID-MUT-85, 87, 88, 92 and 96 hold their old tests
+// whole (T-101); each test left holds an assertion no scenario does. They
+// use the module of mutate_since_test.go:
 // Board#place's one mutant is killed by TestPlace, and Board#clear's one
 // mutant, `<` → `<=` at src/board.go:11:11, survives whenever it runs, since
 // no test calls clear. It stands for the equivalent mutant. The scenarios
@@ -121,23 +123,8 @@ func noItosCcYAML(t *testing.T) {
 	}
 }
 
-// @ID-MUT-85
-func TestExceptingASurvivorRecordsItWithItsReason(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-
-	o := mutationExcept(t, boardSource+":"+clearSite, "--reason", "clear is never called")
-	want := []exceptionYAML{clearException(t, "clear is never called")}
-	if o.code != 0 {
-		t.Fatalf("exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if got := readExceptions(t); !slices.Equal(got, want) {
-		t.Errorf("mutation.exceptions:\n%+v\nwant:\n%+v", got, want)
-	}
-}
-
-// @ID-MUT-86
+// @ID-MUT-86. Kept: a site where no mutant is, which no scenario excepts
+// (T-101).
 func TestOnlyARecordedSurvivorCanBeExcepted(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -162,54 +149,8 @@ func TestOnlyARecordedSurvivorCanBeExcepted(t *testing.T) {
 	noItosCcYAML(t)
 }
 
-// @ID-MUT-87
-func TestAReasonIsRequired(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-
-	o := mutationExcept(t, "--json", boardSource+":"+clearSite)
-	wantProblem(t, o.json(t).problem("flags.value-missing"), map[string]any{"flag": "--reason"}, o.stdout)
-	if o.code != 2 {
-		t.Errorf("no --reason: exit %d, want 2", o.code)
-	}
-	o = mutationExcept(t, "--json", boardSource+":"+clearSite, "--reason", "")
-	wantProblem(t, o.json(t).problem("flags.value-invalid"), map[string]any{"flag": "--reason", "value": ""}, o.stdout)
-	if o.code != 2 {
-		t.Errorf("--reason '': exit %d, want 2", o.code)
-	}
-	noItosCcYAML(t)
-}
-
-// @ID-MUT-88
-func TestTheRestOfItosCcYamlIsKept(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	const comment = "# Equivalent mutants, each reviewed like code.\n"
-	writeExceptions(t, comment+"other:\n  kept: true\n", clearException(t, "first"))
-
-	o := mutationExcept(t, boardSource+":"+clearSite, "--reason", "reworded")
-	if o.code != 0 {
-		t.Fatalf("exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	want := []exceptionYAML{clearException(t, "reworded")}
-	if got := readExceptions(t); !slices.Equal(got, want) {
-		t.Errorf("mutation.exceptions:\n%+v\nwant the one entry, reworded:\n%+v", got, want)
-	}
-	data, _ := os.ReadFile(inWD(t, "itos-cc.yaml"))
-	if !strings.HasPrefix(string(data), comment) {
-		t.Errorf("itos-cc.yaml:\n%s\nwant it to start with the comment %q", data, comment)
-	}
-	var file struct {
-		Other map[string]bool `yaml:"other"`
-	}
-	if err := yaml.Unmarshal(data, &file); err != nil || !file.Other["kept"] || len(file.Other) != 1 {
-		t.Errorf("other: %v (%v), want {kept: true}\n%s", file.Other, err, data)
-	}
-}
-
-// @ID-MUT-89
+// @ID-MUT-89. Kept: the run lists no excepted survivor as "survived", which
+// the scenario does not assert (T-101).
 func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -232,7 +173,8 @@ func TestAnExceptedSurvivorFailsNothing(t *testing.T) {
 	}
 }
 
-// @ID-MUT-90
+// @ID-MUT-90. Kept: the reason --json gives the mutant --mutate-all runs
+// again, which no scenario asserts (T-101).
 func TestAnExceptedSurvivorIsReusedWhileNothingChanged(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -262,7 +204,8 @@ func TestAnExceptedSurvivorIsReusedWhileNothingChanged(t *testing.T) {
 	}
 }
 
-// @ID-MUT-91
+// @ID-MUT-91. Kept: the rerun mutant's outcome and reason under --json,
+// which the scenario does not assert (T-101).
 func TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -282,24 +225,8 @@ func TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted(t *te
 	}
 }
 
-// @ID-MUT-92
-func TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	writeExceptions(t, "", clearException(t, "clear is never called"))
-	// TestClear now kills it.
-	writeFile(t, filepath.FromSlash("src/board_test.go"), killedTests["src/board_test.go"])
-
-	o := mutateRun(t, "--json", boardSource)
-	wantProblem(t, o.json(t).problem("mutation.exception-stale"), map[string]any{"file": boardSource, "function": clearID,
-		"line": float64(clearLine), "column": float64(clearColumn), "original": "<", "replacement": "<=", "why": "killed"}, o.stdout)
-	if o.code != 1 {
-		t.Errorf("exit %d, want 1", o.code)
-	}
-}
-
-// @ID-MUT-93
+// @ID-MUT-93. Kept: moving the function leaves its entry holding, which the
+// scenario only comments (T-101).
 func TestAnEntryWhoseFunctionChangedIsStale(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -323,7 +250,8 @@ func TestAnEntryWhoseFunctionChangedIsStale(t *testing.T) {
 	}
 }
 
-// @ID-MUT-94
+// @ID-MUT-94. Kept: the site gone from a function still there, where the
+// scenario deletes the function (T-101).
 func TestAnEntryWhoseSiteIsGoneIsStale(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -347,7 +275,8 @@ func TestAnEntryWhoseSiteIsGoneIsStale(t *testing.T) {
 	}
 }
 
-// @ID-MUT-95
+// @ID-MUT-95. Kept: the uncovered mutant counted uncovered and excepted 0,
+// which the scenario does not assert (T-101).
 func TestAnEntryDoesNotExcuseAnUncoveredMutant(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -380,26 +309,8 @@ func TestAnEntryDoesNotExcuseAnUncoveredMutant(t *testing.T) {
 	}
 }
 
-// @ID-MUT-96
-func TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	survivorRun(t)
-	writeExceptions(t, "", clearException(t, "clear is never called"))
-
-	if o := mutationCheck(t, boardSource); o.code != 0 {
-		t.Errorf("exit %d, want 0: clear's survivor is excepted\n%s%s", o.code, o.stdout, o.stderr)
-	}
-
-	edit(t, boardSource, "i < 3", "i < 4")
-	o := mutationCheck(t, "--json", boardSource)
-	wantProblem(t, o.json(t).problem("mutation.exception-stale"), map[string]any{"file": boardSource, "function": clearID, "why": "changed"}, o.stdout)
-	if o.code != 1 {
-		t.Errorf("after clear changed: exit %d, want 1", o.code)
-	}
-}
-
-// @ID-MUT-97
+// @ID-MUT-97. Kept: mutation check --since leaves the entry unchecked and
+// exits 0, which the scenario does not assert (T-101).
 func TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -424,7 +335,8 @@ func TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked(t *testing.T) {
 	wantProblem(t, o.json(t).problem("mutation.exception-stale"), map[string]any{"function": clearID, "why": "changed"}, o.stdout)
 }
 
-// @ID-MUT-98
+// @ID-MUT-98. Kept: no mutant runs, and mutation check refuses a file that
+// is no YAML, which the scenario does not assert (T-101).
 func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -449,7 +361,8 @@ func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
 	}
 }
 
-// @ID-MUT-99
+// @ID-MUT-99. Kept: only an excepted mutant has "excepted", with ok and
+// exit 0, which the scenario does not assert (T-101).
 func TestExceptedMutantsAsJSON(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)

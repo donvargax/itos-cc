@@ -842,37 +842,42 @@ renewal-argument controls. The prior unsupported < to != examples were corrected
 to the publicly listed < to <= by the coordinator before this conversion; that
 was a specification correction, not evidence of missing product behavior.
 
-| MUT | Retained holder | Exact test |
-| --- | --- | --- |
-| 85 | cmd/itos-cc/mutation_except_test.go | TestExceptingASurvivorRecordsItWithItsReason |
-| 86 | cmd/itos-cc/mutation_except_test.go | TestOnlyARecordedSurvivorCanBeExcepted |
-| 87 | cmd/itos-cc/mutation_except_test.go | TestAReasonIsRequired |
-| 88 | cmd/itos-cc/mutation_except_test.go | TestTheRestOfItosCcYamlIsKept |
-| 89 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorFailsNothing |
-| 90 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorIsReusedWhileNothingChanged |
-| 91 | cmd/itos-cc/mutation_except_test.go | TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted |
-| 92 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale |
-| 93 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseFunctionChangedIsStale |
-| 94 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseSiteIsGoneIsStale |
-| 95 | cmd/itos-cc/mutation_except_test.go | TestAnEntryDoesNotExcuseAnUncoveredMutant |
-| 96 | cmd/itos-cc/mutation_except_test.go | TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry |
-| 97 | cmd/itos-cc/mutation_except_test.go | TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked |
-| 98 | cmd/itos-cc/mutation_except_test.go | TestAnInvalidItosCcYamlIsAConfigError |
-| 99 | cmd/itos-cc/mutation_except_test.go | TestExceptedMutantsAsJSON |
-| 138 | cmd/itos-cc/mutation_annotate_test.go | TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason |
-| 139 | cmd/itos-cc/mutation_annotate_test.go | TestAStaleEntrysSurvivorIsListedAsSurvived |
-| 140 | cmd/itos-cc/mutation_annotate_test.go | TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine |
-| 141 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFailsAnEntryWhoseFileIsGone |
-| 142 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestMutationCheckOfTheWholeProjectFailsItToo |
-| 143 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestWithSinceAnEntryWhoseFileTheRangeDeletedIsGone |
-| 144 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestAnEntryWhoseFileWasRenamedHasMovedAndStillExceptsItsMutant |
-| 146 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved |
-| 227 | cmd/itos-cc/except_renew_test.go | TestARenewedExceptionFollowsItsUnchangedMutantAcrossARename |
-| 242 | cmd/itos-cc/except_renew_test.go | TestAStaleExceptionWhoseFunctionChangedNamesTheRenewalAsItsFix |
+T-101 reviewed these holders once the scenarios ran green through both drivers; each kept one
+holds what no scenario asserts. An except's exit 0 and recorded fields are ID-MUT-85's, a run with
+an excepted survivor exiting 0 is 89's, a check failing a changed entry before renewal is 96's,
+and the summary comment's blank line before it is `internal/workdir`'s `TestAnnotateReplacesItsOwnBlock`.
+
+| MUT | Holder | Exact test | T-101 |
+| --- | --- | --- | --- |
+| 85 | cmd/itos-cc/mutation_except_test.go | TestExceptingASurvivorRecordsItWithItsReason | removed |
+| 86 | cmd/itos-cc/mutation_except_test.go | TestOnlyARecordedSurvivorCanBeExcepted | kept: a site where no mutant is |
+| 87 | cmd/itos-cc/mutation_except_test.go | TestAReasonIsRequired | removed |
+| 88 | cmd/itos-cc/mutation_except_test.go | TestTheRestOfItosCcYamlIsKept | removed |
+| 89 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorFailsNothing | kept: no excepted survivor listed as survived |
+| 90 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedSurvivorIsReusedWhileNothingChanged | kept: the reason on the mutant --mutate-all reruns |
+| 91 | cmd/itos-cc/mutation_except_test.go | TestAfterItsTestsChangeAnExceptedMutantThatStillSurvivesStaysExcepted | kept: the rerun mutant's outcome and reason |
+| 92 | cmd/itos-cc/mutation_except_test.go | TestAnExceptedMutantThatIsNowKilledMakesItsEntryStale | removed |
+| 93 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseFunctionChangedIsStale | kept: a moved function's entry holds |
+| 94 | cmd/itos-cc/mutation_except_test.go | TestAnEntryWhoseSiteIsGoneIsStale | kept: a site gone from a function still there |
+| 95 | cmd/itos-cc/mutation_except_test.go | TestAnEntryDoesNotExcuseAnUncoveredMutant | kept: the counts, uncovered and excepted 0 |
+| 96 | cmd/itos-cc/mutation_except_test.go | TestMutationCheckPassesAnExceptedSurvivorAndFailsAStaleEntry | removed |
+| 97 | cmd/itos-cc/mutation_except_test.go | TestWithSinceOnlyTheJudgedFunctionsEntriesAreChecked | kept: check --since |
+| 98 | cmd/itos-cc/mutation_except_test.go | TestAnInvalidItosCcYamlIsAConfigError | kept: no mutant runs; check of a file that is no YAML |
+| 99 | cmd/itos-cc/mutation_except_test.go | TestExceptedMutantsAsJSON | kept: only an excepted mutant has "excepted" |
+| 138 | cmd/itos-cc/mutation_annotate_test.go | TestTheSummaryCommentCountsAnExceptedSurvivorApartWithItsReason | removed |
+| 139 | cmd/itos-cc/mutation_annotate_test.go | TestAStaleEntrysSurvivorIsListedAsSurvived | removed |
+| 140 | cmd/itos-cc/mutation_annotate_test.go | TestAReasonOverSeveralLinesIsWrittenOnOneCommentLine | removed |
+| 141 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFailsAnEntryWhoseFileIsGone | removed |
+| 142 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestMutationCheckOfTheWholeProjectFailsItToo | removed |
+| 143 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestWithSinceAnEntryWhoseFileTheRangeDeletedIsGone | removed |
+| 144 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestAnEntryWhoseFileWasRenamedHasMovedAndStillExceptsItsMutant | removed |
+| 146 | cmd/itos-cc/mutation_except_elsewhere_test.go | TestARunOfTheWholeProjectFindsARenamedFilesEntryMoved | removed |
+| 227 | cmd/itos-cc/except_renew_test.go | TestARenewedExceptionFollowsItsUnchangedMutantAcrossARename | removed |
+| 242 | cmd/itos-cc/except_renew_test.go | TestAStaleExceptionWhoseFunctionChangedNamesTheRenewalAsItsFix | kept: the fix names the site and itos-cc.yaml |
 
 Additional retained guards are outside the replacement mapping:
 
-- cmd/itos-cc/mutation_except_test.go: `TestASiteIsFileLineAndColumn`, `TestMutationExceptTakesOneSite`.
+- cmd/itos-cc/mutation_except_test.go: `TestMutationExceptTakesOneSite`; `internal/mutation/except_test.go`: `TestASiteIsFileLineAndColumn`.
 - cmd/itos-cc/mutation_annotate_test.go: `TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged`.
 - cmd/itos-cc/mutation_except_elsewhere_test.go: `TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone`, `TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged`.
 - cmd/itos-cc/except_renew_test.go: `TestRenewingTakesNoSiteAndNoReason`, `TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule`.
