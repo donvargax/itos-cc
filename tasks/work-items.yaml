@@ -2609,6 +2609,24 @@ items:
       T-113; the person's decision, 2026-10-17): they move to their own web app later. Their code
       stays as it is, so the proof still covers their existing cases as unchanged legacy behaviour,
       with no new serve or graph cases.
+
+      T-99 (mutation except and --renew into internal/mutation; its refusals worded by the slice UI,
+      writes through the cmd-selected Exceptions writer, renew's discovery through the Tree):
+      compare mutation except, plain and with --json, for no --reason, --reason= and a blank
+      --reason, no site, two sites and malformed sites (a.go, a.go:11, :1:1, a.go:0:1, a.go:1:x);
+      --renew with --reason or --reason= and with a site; no itos-cc.yaml, one that is not YAML, one
+      with an empty exclude glob (config.invalid with its key) and one that is a directory (internal
+      70); a site in an excluded source (exception.excluded, named from the working directory, also
+      given as ./ or from a subfolder); a site in a file that is no source, a missing file, a
+      function with no or stale results, a killed and an uncovered mutant and no site at the column
+      (exception.no-survivor); a fresh survivor excepted and excepted again (the YAML's comments,
+      other keys, layout and line_text kept), and an itos-cc.yaml that turns invalid or unwritable
+      at the write; --renew with no entry (nothing observed beyond the settings), with entries
+      renewed across a rename, a literal edit and a renamed module, and left killed, changed, gone,
+      ambiguous, no-results and uncovered (exit 1, only renewals written); a failing list command of
+      mutation.tests and an unreadable snapshot during except and renew; run's annotations and
+      check's excepted counts after an except. Also list's, check's and sample's refusals, whose
+      classifier now takes the UI's Rel. No per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
