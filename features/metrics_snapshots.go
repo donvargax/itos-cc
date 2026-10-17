@@ -136,7 +136,12 @@ func (q *snapshotState) project(dry bool) error {
 		return nil
 	}
 	dir := filepath.Join(w.dir, filepath.Dir(q.source))
-	if err := w.d.Tests(dir, Tests{Language: "go", Command: "go test -count=1 -failfast .", Elapsed: 100 * time.Millisecond}); err != nil {
+	// itos-cc runs the tests of a module's root package as ./.
+	command := "go test -count=1 -failfast ."
+	if dir == w.dir {
+		command = "go test -count=1 -failfast ./."
+	}
+	if err := w.d.Tests(dir, Tests{Language: "go", Command: command, Elapsed: 100 * time.Millisecond}); err != nil {
 		return err
 	}
 	if dir != w.dir {
@@ -397,7 +402,7 @@ func (q *snapshotState) agedDirectory(ctx context.Context) error {
 	}
 	observed, err := q.w.d.SetModTime(ctx, filepath.Join(q.w.dir, ".metrics/coverage/run-aged"), time.Now().Add(-48*time.Hour))
 	if errors.Is(err, ErrPhysicalUnsupported) {
-		return godog.ErrSkip
+		return fmt.Errorf("%w: %v", godog.ErrSkip, err)
 	}
 	if err != nil {
 		return err

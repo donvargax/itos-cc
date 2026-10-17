@@ -77,8 +77,11 @@ func TestScenarios(t *testing.T) {
 		return
 	}
 	suite := godog.TestSuite{
-		Name:                "itos-cc in process",
-		ScenarioInitializer: func(sc *godog.ScenarioContext) { features.Initialize(sc, newMemory(t)) },
+		Name: "itos-cc in process",
+		ScenarioInitializer: func(sc *godog.ScenarioContext) {
+			features.Initialize(sc, newMemory(t))
+			logSkips(t, sc)
+		},
 		Options: &godog.Options{
 			Format:      "pretty",
 			Paths:       sel.Paths,
@@ -91,6 +94,23 @@ func TestScenarios(t *testing.T) {
 	if suite.Run() != 0 {
 		t.Fatal("a scenario failed")
 	}
+}
+
+// logSkips logs why a scenario skipped in process, as the step that skipped
+// it said (godog.ErrSkip wrapped with its reason), since godog's pretty
+// output shows the skipped steps alone: a skip is never silent here.
+func logSkips(t *testing.T, sc *godog.ScenarioContext) {
+	var scenario string
+	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {
+		scenario = s.Name
+		return ctx, nil
+	})
+	sc.StepContext().After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+		if status == godog.StepSkipped && err != nil {
+			t.Logf("skipped in process: %s, at %q: %v", scenario, st.Text, err)
+		}
+		return ctx, err
+	})
 }
 
 // memory is the in-process driver: one scenario's folders and files, held

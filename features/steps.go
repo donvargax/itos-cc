@@ -390,9 +390,10 @@ func ids(area string, ranges ...string) []string {
 // InProcess are the converted files the in-process driver runs: those of
 // the commands moved onto kong, which run against the ports' fakes. A file
 // joins it in the task that moves its command (crap's, coverage's,
-// complexity's and file selection's files in T-67, cli.feature in S9); until
-// then the binary driver alone runs its scenarios.
-var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature"}
+// complexity's and file selection's files in T-67, mutate.feature in T-125,
+// metrics_snapshots.feature once mutation's commands had moved, in T-101,
+// cli.feature in S9); until then the binary driver alone runs its scenarios.
+var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real

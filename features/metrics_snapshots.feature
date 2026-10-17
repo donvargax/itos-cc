@@ -36,7 +36,9 @@ Feature: Snapshots under .metrics
     Then the stored snapshot is one complete valid JSON result
     And two runs writing the same snapshot at once leave one whole snapshot
 
-  @ID-SNAP-05
+  # Binary-only for good: the raw reports and the folder they land in are
+  # what the real collectors write.
+  @binary-only @ID-SNAP-05
   Scenario: Raw coverage is not committed
     When coverage is run
     Then raw reports go to .metrics/coverage/, which holds a .gitignore of "*"
