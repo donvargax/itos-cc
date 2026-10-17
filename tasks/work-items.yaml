@@ -3630,3 +3630,15 @@ items:
     status: done
     depends_on: [T-100]
     kind: task
+  - id: mutation-group-json
+    title: mutation --json <subcommand> drops the group's --json
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      itos-cc mutation --json gives command.missing as JSON (docs/CLI.md), but mutation --json list
+      and mutation --json run answer in plain text, as v0.15.8 already did; only --json after the
+      subcommand or before the group prints the object. Decide whether the group's --json reaches
+      the subcommand, then specify it in features/cli.feature. Found by T-125's agent.
