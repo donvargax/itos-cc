@@ -37,13 +37,16 @@ func (s memoryConfig) Read(context.Context) (string, []byte, error) {
 }
 
 // This direct driver guard reaches the moved handlers before mutate.feature is
-// admitted wholesale at T100. A contradictory physical document detects fallback.
+// admitted wholesale at T100. A contradictory physical document detects fallback:
+// the process works in the physical root, so project.Root and the disk config
+// binding would find the invalid document there.
 func TestMemoryMutationListAndCheckUseCurrentIndependentBytes(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, config.File), []byte("exclude: [\"\"]\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	t.Chdir(root)
 	for name, text := range map[string]string{"go.mod": "module memory.test/board\n", "board.go": "package board\nfunc Value(x int) bool { return x > 1 }\n", "board_test.go": "package board\n"} {
 		if err := m.Write(filepath.Join(root, name), []byte(text)); err != nil {
 			t.Fatal(err)
@@ -120,6 +123,9 @@ func TestMemorySourceStatusIncludesActualImplicitDirectories(t *testing.T) {
 	}
 }
 
+// The physical decoy: the process works in a root whose disk holds an invalid
+// document, so a run, sample or except that fell through to the host would
+// read it (config.invalid on stdout) or rewrite it.
 func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
@@ -128,6 +134,7 @@ func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
 	if err := os.WriteFile(physical, physicalBytes, 0600); err != nil {
 		t.Fatal(err)
 	}
+	t.Chdir(root)
 	if err := m.Write(filepath.Join(root, "board.go"), []byte("package board\nfunc Value() int { return 1 }\n")); err != nil {
 		t.Fatal(err)
 	}
