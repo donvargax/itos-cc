@@ -2627,6 +2627,37 @@ items:
       mutation.tests and an unreadable snapshot during except and renew; run's annotations and
       check's excepted counts after an except. Also list's, check's and sample's refusals, whose
       classifier now takes the UI's Rel. No per-task binary comparison.
+
+      T-100 (mutation run, ordinary, fail-fast and counted, into internal/mutation; its refusals
+      worded by the slice UI, settings reread at run's four points, the counted report handed to the
+      UI while the run owns its frozen inputs, the legacy seam removed): compare mutation run, plain
+      and with --json, for --fail-uncovered=lines without --since, alone, beside --count 1 and
+      beside an invalid itos-cc.yaml (the refusal comes first); --seed x without --count, --count 0,
+      --count=00, --count=+0, --count=1 --seed=, and each counted conflict given empty where it
+      takes a value (--coverage-command=, --test-command=, --coverage-report=) and as a switch
+      (--changed, --no-coverage, --use-existing-coverage, --mutate-all, --fail-fast);
+      --fail-uncovered beside --no-coverage; --fail-fast and --count with ITOS_CC_TEST_PLATFORM set
+      to windows (the platform refusals; --fail-fast's result object has files [] and no stop or
+      work). Compare an explicit empty --since= against none, --test-command= (reach left to the
+      whole suite, the listed tests still run) and --coverage-command= with and without
+      --coverage-report under --fail-uncovered over Go (flags.conflict naming Go) and over a
+      language strict coverage does not prove (the logged command-needs-report fallback). Compare no
+      itos-cc.yaml, one that is not YAML, one with an empty exclude glob and one that is a
+      directory, each before the selection, beside exceptions that judge an entry elsewhere and in
+      the no-source return with orphans; exclude leaving every source out (the count line, then no
+      source files to mutate, the stale entries and the orphans removed, in that order); a stale
+      entry of a deleted file under --since with and without paths, and a known fail-fast stop on it
+      (its file named from the working directory, run from a subfolder). Compare strict coverage
+      stopping before any mutant: an unsupported coverage scope, Go measuring nothing with and
+      without a missing root, another language measuring nothing, and integration coverage missing;
+      a run whose orphan removal fails after files were judged (the files listed, no orphans and no
+      stop line, the failure beside them). Compare a counted run outside Git, with a path outside
+      the repository and through a symlinked working directory, a plan Fresh refuses (bad --since, a
+      scratch symlink, an unsupported scope, an invalid committed itos-cc.yaml), preparation failing
+      at tools and at another stage, SIGINT while planning, while preparing and while judging (exit
+      75 count.interrupted, plain and --json, the partial report printed before the frozen inputs
+      go), and a blocked listed selection; and each of run, run --fail-fast and run --count with
+      top-level, group-leading and child --json.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
