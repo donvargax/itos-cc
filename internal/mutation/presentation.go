@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
@@ -132,4 +133,34 @@ func (p *Presentation) StaleSubject(rel string, e mutants.StaleException) map[st
 		subject["new_file"] = p.UI.Rel(sourcePath(p.Root, e.NewFile))
 	}
 	return subject
+}
+
+// FailedSelections reports each selection of listed tests in failed that
+// reported does not hold yet as tests.selection-failed, showing its output
+// in plain output, and adds it to reported. command is the one to run again.
+func (p *Presentation) FailedSelections(failed []mutants.FailedSelection, reported map[string]bool, command string) {
+	for _, f := range failed {
+		key := strings.Join(slices.Sorted(slices.Values(f.IDs)), " ")
+		if reported[key] {
+			continue
+		}
+		reported[key] = true
+		ids := strings.Join(f.IDs, " ")
+		if !p.JSON {
+			_, _ = fmt.Fprintf(p.UI.Stdout, "listed tests %s fail without any mutant\n%s\n", ids, Tail(f.Output, 20))
+		}
+		p.report(cli.NewProblem(cli.CodeNo, "tests.selection-failed",
+			fmt.Sprintf("the listed tests %s fail without any mutant, so no mutant that would run them was judged: %s", ids, f.Command),
+			fmt.Sprintf("Make them pass when they run alone, as that command runs them, then run %s again.", command)).
+			With("ids", f.IDs).With("command", f.Command).With("exit_code", f.ExitCode))
+	}
+}
+
+// Tail is the last lines of s, its trailing newlines dropped.
+func Tail(s string, lines int) string {
+	parts := strings.Split(strings.TrimRight(s, "\n"), "\n")
+	if len(parts) > lines {
+		parts = parts[len(parts)-lines:]
+	}
+	return strings.Join(parts, "\n")
 }

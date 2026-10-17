@@ -23,12 +23,20 @@ type SinceUnavailable struct {
 	Failure mutants.HistoryFailure
 }
 
+// SeedUnavailable is sample's omitted --seed, whose HEAD commit History
+// could not give.
+type SeedUnavailable struct {
+	Failure mutants.HistoryFailure
+}
+
 func (LinesWithoutSince) failure() {}
 func (SinceWithChanged) failure()  {}
 func (SinceUnavailable) failure()  {}
+func (SeedUnavailable) failure()   {}
 
 func (LinesWithoutSince) Error() string { return "--fail-uncovered=lines without --since" }
 func (SinceWithChanged) Error() string  { return "--since beside --changed" }
 func (f SinceUnavailable) Error() string {
 	return "--since " + f.Ref + ": " + f.Failure.Error()
 }
+func (f SeedUnavailable) Error() string { return "HEAD for the seed: " + f.Failure.Error() }

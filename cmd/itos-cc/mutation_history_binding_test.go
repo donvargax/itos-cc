@@ -58,13 +58,6 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	if err != nil || len(changed) != 2 || !changed[main].Functions["example/binding#Value"] || renamed[filepath.Join(root, "new.go")] != filepath.Join(root, "old.go") {
 		t.Fatalf("actual bound since: %v %v %v", changed, renamed, err)
 	}
-	head, err := m.Head(t.Context(), root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if seed, err := sampleSeed(t.Context(), in); err != nil || seed != head {
-		t.Fatalf("default seed not independent HEAD: %q %v", seed, err)
-	}
 	exceptions := []config.Exception{{File: "gone.go", Function: "example/binding#Gone", Hash: "independent obsolete hash"}}
 	stale, _, err := exceptionsElsewhere(t.Context(), in, exceptions, nil, func(string) string { return "" })
 	if err != nil || len(stale) != 1 || stale[0].Why != mutation.ExceptionGone {
@@ -107,20 +100,12 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	if _, _, err := changedSince(t.Context(), in); err == nil || !strings.Contains(err.Error(), "binding") {
 		t.Fatalf("missing since binding: %v", err)
 	}
-	if _, err := sampleSeed(t.Context(), in); err == nil {
-		t.Fatal("default seed silently read disk HEAD")
-	}
 	if _, _, err := exceptionsElsewhere(t.Context(), in, exceptions, nil, func(string) string { return "" }); err == nil {
 		t.Fatal("deleted exception silently read disk Git")
 	}
 	if _, err := notRenamed(t.Context(), in, orphans); err == nil {
 		t.Fatal("rename silently read disk Git")
 	}
-	in.values["seed"] = []string{"explicit independent seed"}
-	if seed, err := sampleSeed(t.Context(), in); err != nil || seed != "explicit independent seed" {
-		t.Fatal("explicit seed demanded unused HEAD binding")
-	}
-	delete(in.values, "seed")
 	in.args = []string{"main.go"}
 	if stale, _, err := exceptionsElsewhere(t.Context(), in, exceptions, nil, func(string) string { return "" }); err != nil || len(stale) != 0 {
 		t.Fatal("explicit paths demanded unused deleted query")
@@ -134,9 +119,6 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	in.adapters.History = mutantstest.History{Root: root, Dir: root, Repository: wrong, Working: m.files}
 	if changed, _, err := changedSince(t.Context(), in); err != nil || len(changed) != 0 {
 		t.Fatalf("wrong since binding retained correct changes: %v %v", changed, err)
-	}
-	if seed, err := sampleSeed(t.Context(), in); err != nil || seed == head {
-		t.Fatal("wrong HEAD binding retained real seed")
 	}
 	if stale, _, err := exceptionsElsewhere(t.Context(), in, exceptions, nil, func(string) string { return "" }); err != nil || len(stale) != 0 {
 		t.Fatal("wrong deleted binding retained stale exception")
@@ -160,9 +142,6 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 	cancel(cause)
 	if _, _, err := changedSince(ctx, in); !errors.Is(err, cause) {
 		t.Fatalf("since lost caller cause: %v", err)
-	}
-	if _, err := sampleSeed(ctx, in); !errors.Is(err, cause) {
-		t.Fatalf("seed lost caller cause: %v", err)
 	}
 	if _, _, err := exceptionsElsewhere(ctx, in, exceptions, nil, func(string) string { return "" }); !errors.Is(err, cause) {
 		t.Fatalf("deletions lost caller cause: %v", err)

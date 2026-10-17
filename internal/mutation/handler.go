@@ -26,6 +26,7 @@ type Handler struct {
 	Toolchain    mutants.Toolchain
 	Fingerprints mutants.Fingerprints
 	Reach        mutants.Reach
+	Workers      mutants.Workers
 	Dir          string
 }
 

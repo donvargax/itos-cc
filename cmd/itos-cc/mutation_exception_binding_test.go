@@ -156,8 +156,18 @@ func TestMutationSampleUsesActualReadAndExecutionBindings(t *testing.T) {
 		{"wrong reader", "actual sample reader denied", func(a *adapters) {
 			a.SnapshotReader = &mutantstest.Snapshots{RootDir: f.root, RootFailure: &snapport.Unreadable{Reason: "actual sample reader denied"}}
 		}},
+		{"missing settings", "settings binding is missing", func(a *adapters) { a.Settings = nil }},
+		{"wrong settings", "independent settings unavailable", func(a *adapters) {
+			a.Settings = &mutantstest.Settings{Failure: mutation.InputFailed{Cause: errors.New("independent settings unavailable")}}
+		}},
 		{"missing tree", "source tree binding is missing", func(a *adapters) { a.Tree = nil }},
-		{"wrong tree", "outside the requested inventory", func(a *adapters) { a.Tree = seltest.TreeOf(f.root, map[string]string{}, nil) }},
+		// The selection reads the bound tree too: it lists board.go, whose
+		// bytes that tree does not hold, while the disk does.
+		{"wrong tree", "fake", func(a *adapters) {
+			tree := seltest.TreeOf(f.root, map[string]string{"board.go": runSourceForRead, "board_test.go": "package board\n", "go.mod": "module example.test/board\n"}, nil)
+			delete(tree.Contents, "board.go")
+			a.Tree = tree
+		}},
 		{"missing workers", "Workers binding is missing", func(a *adapters) { a.Workers = nil }},
 		{"wrong workers", "no tests declared", func(a *adapters) { a.Workers = &mutantstest.Workers{Files: f.memory.files} }},
 	} {

@@ -172,17 +172,24 @@ from it, and thin slices named for their commands.
   structs and help contracts (T-96). Cmd supplies the worker default and creates one fresh
   model/parser per run. Kong validates each child once; `cli.Provided` retains the actual
   validated path's explicit flag facts and original value spellings for the cmd handlers,
-  which remain there for run, sample and except until their scheduled moves. List and
-  check now run in the slice (T-97): application queries carry selection and coverage
-  values once, and their handler coordinates the existing mutants, selection and
-  language capabilities. List presents its ordered prefix on later read failure; check
-  formats no per-file findings until ordinary and strict admission both succeed. The
+  which remain there for run and except until their scheduled moves. List and
+  check run in the slice (T-97), and sample (T-98): application queries carry selection,
+  coverage and sampling values once, and their handler coordinates the existing mutants,
+  selection and language capabilities. List presents its ordered prefix on later read
+  failure; check formats no per-file findings until ordinary and strict admission both
+  succeed. Sample observes in the old cmd order: its selection, then the seed (an
+  explicit one, even empty, never reads `History.Head`), the no-source return, settings,
+  reach, the listed tests' support files and the bindings, then the domain's draw; the
+  sources exclude left out reach stderr through its query's `SampleProgress` before any
+  run progress, and the missing `Workers` binding alone emits no result object. Its
+  `Run` refuses a `--count` below 1 before anything is observed, quoting the value as
+  written from the `Written` flags cmd binds (`cli.Provided`). The
   handler builds no problem and picks no exit code: it returns the slice's sealed
-  `Failure` (`LinesWithoutSince`, `SinceWithChanged`, `SinceUnavailable` with its ref)
-  at the cmd handler's admission point, and `Run`'s classifier words it, beside the
-  settings, history and snapshot-read failures, in the bytes and codes cmd gave them.
-  Shared mutation presentation has one owner here; remaining cmd handlers delegate
-  to it. An explicit zero/empty flag remains
+  `Failure` (`LinesWithoutSince`, `SinceWithChanged`, `SinceUnavailable` with its ref,
+  `SeedUnavailable`) at the cmd handler's admission point, and `Run`'s classifier words
+  it, beside the settings, history, snapshot-read and run failures (`RunError`), in the
+  bytes and codes cmd gave them. Shared mutation presentation, the progress lines
+  (`Progress`) among it, has one owner here; remaining cmd handlers delegate to it. An explicit zero/empty flag remains
   distinct from omission. The literal `no-coverage` and `no-annotate` names have no positive
   aliases. Group admission preserves the old before-child help/error precedence; group
   help and the flattened top-level rows come from the same model. Leading group `--json`
@@ -192,12 +199,13 @@ from it, and thin slices named for their commands.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
-  unit fake owns only semantic values. The memory driver supports these two moved
+  unit fake owns only semantic values. The memory driver supports these three moved
   handlers without admitting the whole mutation feature before T-100. `run` hands a
-  validated run, sample or except back to the cmd dispatcher
+  validated run or except back to the cmd dispatcher
   (`runUntilLegacyMutation`); the memory driver refuses it by name, never reaching the
   host, and its tests hold that with a physical decoy: an invalid itos-cc.yaml in the
-  process's working directory that a fall-through would read.
+  process's working directory that a fall-through would read, beside which the moved
+  three read the memory's.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -261,9 +269,9 @@ from it, and thin slices named for their commands.
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
   buffers and porttest's fakes (`TestRunWithFakes`, decision 44); mutation's parser has moved,
-  and its list and check handlers use the streams and adapters given (T-97), while run,
-  sample and except still use the process streams and their existing discovery until
-  their individual moves. The hand-parsed commands
+  and its list, check and sample handlers use the streams and adapters given (T-97,
+  T-98), while run and except still use the process streams and their existing
+  discovery until their individual moves. The hand-parsed commands
   keep the process's streams and disk until they move, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
@@ -580,7 +588,8 @@ reason. The testtools adapter owns execution/logging, while our fake consumes
 independent root/command facts. Run lists only pending work, before report admission
 and measurement, preserving fatal list failure versus ordinary best-effort coverage
 failure. Existing MutationMeasurer/Fingerprints bindings replace captured live I/O
-callbacks. Progress events are domain facts; cmd's RunProgress alone formats them.
+callbacks. Progress events are domain facts; the slice's `Progress` alone formats them,
+cmd's run delegating to it.
 Sample draws/checks in the domain and uses the same Execution scheduler, with
 listed IDs admitted only for recorded listed scope.
 Counted/frozen preparation uses Fresh. No mutation handler is promoted to

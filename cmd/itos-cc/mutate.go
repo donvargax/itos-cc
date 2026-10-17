@@ -15,8 +15,8 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -816,25 +816,11 @@ func exceptionsElsewhere(ctx context.Context, in *invocation, exceptions []confi
 }
 
 // reportFailedSelections reports each selection of listed tests in failed
-// that reported does not hold yet as tests.selection-failed, showing its
-// output in plain output, and adds it to reported. cmd is the command to
-// run again.
+// that reported does not hold yet, through the slice's shared presentation.
 func reportFailedSelections(in *invocation, failed []mutation.FailedSelection, reported map[string]bool, cmd string) {
-	for _, f := range failed {
-		key := strings.Join(slices.Sorted(slices.Values(f.IDs)), " ")
-		if reported[key] {
-			continue
-		}
-		reported[key] = true
-		ids := strings.Join(f.IDs, " ")
-		if !in.json {
-			fmt.Printf("listed tests %s fail without any mutant\n%s\n", ids, tail(f.Output, 20))
-		}
-		in.report(cli.NewProblem(cli.CodeNo, "tests.selection-failed",
-			fmt.Sprintf("the listed tests %s fail without any mutant, so no mutant that would run them was judged: %s", ids, f.Command),
-			fmt.Sprintf("Make them pass when they run alone, as that command runs them, then run %s again.", cmd)).
-			With("ids", f.IDs).With("command", f.Command).With("exit_code", f.ExitCode))
-	}
+	p := presentationFor(in)
+	p.FailedSelections(failed, reported, cmd)
+	in.problems = append(in.problems, p.Problems...)
 }
 
 // loadExceptions is the survivors itos-cc.yaml excepts. A file that cannot
@@ -1155,24 +1141,9 @@ func listTests(ctx context.Context, in *invocation, tests *config.Tests) ([]covr
 	return listed, mutationRunError(err)
 }
 
-func mutationRunError(err error) error {
-	var read mutation.SnapshotReadFailure
-	if errors.As(err, &read) {
-		return fmt.Errorf("%s: %w", metricsdir.MutationName(read.Key), read.Cause)
-	}
-
-	var listing mutation.ListingFailed
-	if errors.As(err, &listing) {
-		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
-			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", config.File, listing.Reason, listing.Command),
-			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
-	}
-	var required mutation.CoverageReportRequired
-	if errors.As(err, &required) {
-		return cli.CommandNeedsReport()
-	}
-	return err
-}
+// mutationRunError words the domain's run failures through the slice,
+// which sample shares, until run moves.
+func mutationRunError(err error) error { return mutationslice.RunError(err) }
 
 func mutationPath(dir, path string) string {
 	if filepath.IsAbs(path) {
@@ -1210,14 +1181,6 @@ func changedSince(ctx context.Context, in *invocation) (map[string]mutation.Chan
 		return nil, nil, failure.Cause
 	}
 	return nil, nil, failure
-}
-
-func tail(s string, lines int) string {
-	parts := strings.Split(strings.TrimRight(s, "\n"), "\n")
-	if len(parts) > lines {
-		parts = parts[len(parts)-lines:]
-	}
-	return strings.Join(parts, "\n")
 }
 
 func sourcePath(dir, path string) string {

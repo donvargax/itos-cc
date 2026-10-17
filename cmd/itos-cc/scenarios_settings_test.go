@@ -40,7 +40,7 @@ func (s memoryConfig) Read(context.Context) (string, []byte, error) {
 // admitted wholesale at T100. A contradictory physical document detects fallback:
 // the process works in the physical root, so project.Root and the disk config
 // binding would find the invalid document there.
-func TestMemoryMutationListAndCheckUseCurrentIndependentBytes(t *testing.T) {
+func TestMemoryMutationListCheckAndSampleUseCurrentIndependentBytes(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, config.File), []byte("exclude: [\"\"]\n"), 0600); err != nil {
@@ -55,9 +55,9 @@ func TestMemoryMutationListAndCheckUseCurrentIndependentBytes(t *testing.T) {
 	if err := m.Tests(root, features.Tests{Imports: map[string][]string{"board.go": {}, "board_test.go": {"board.go"}}}); err != nil {
 		t.Fatal(err)
 	}
-	invoke := func(child string) features.Result {
+	invoke := func(child string, flags ...string) features.Result {
 		t.Helper()
-		result, err := m.Run(features.Run{Dir: root, Args: []string{"mutation", child, "--json", "board.go"}})
+		result, err := m.Run(features.Run{Dir: root, Args: append(append([]string{"mutation", child, "--json"}, flags...), "board.go")})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,6 +69,28 @@ func TestMemoryMutationListAndCheckUseCurrentIndependentBytes(t *testing.T) {
 	if got := invoke("check"); got.Exit != 1 || !strings.Contains(got.Stdout, "mutation.missing") || !strings.Contains(compactRead(got.Stdout), `"function":"memory.test/board#Value"`) {
 		t.Fatalf("memory check ignored current source/model: %+v", got)
 	}
+	// The memory holds no repository, so the seed must be given; the bound
+	// workers and snapshots hold no cached mutant to sample.
+	if got := invoke("sample"); got.Exit != 3 || !strings.Contains(got.Stdout, "sample.no-git") || strings.Contains(got.Stdout, "config.invalid") {
+		t.Fatalf("memory sample read a HEAD or the physical config: %+v", got)
+	}
+	if got := invoke("sample", "--seed", "fixed"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"files":[]`) || !strings.Contains(compactRead(got.Stdout), `"seed":"fixed"`) || !strings.Contains(got.Stderr, "no cached mutant to sample") {
+		t.Fatalf("memory sample ignored current source/model: %+v", got)
+	}
+	// Once the memory holds a commit, an omitted seed is its HEAD, which the
+	// physical folder, outside any repository, has none of.
+	for _, args := range [][]string{{"init", "-q"}, {"add", "-A"}, {"commit", "-qm", "independent base"}} {
+		if err := m.Git(root, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	head, err := m.Head(t.Context(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := invoke("sample"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"seed":"`+head+`"`) {
+		t.Fatalf("memory sample did not seed with the bound HEAD %s: %+v", head, got)
+	}
 	path := filepath.Join(root, config.File)
 	if err := m.Write(path, []byte("exclude: [board.go]\n")); err != nil {
 		t.Fatal(err)
@@ -76,13 +98,16 @@ func TestMemoryMutationListAndCheckUseCurrentIndependentBytes(t *testing.T) {
 	if got := invoke("list"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"sites":[]`) || !strings.Contains(got.Stderr, "1 sources left out by exclude") || !strings.Contains(got.Stderr, "no source files to list") {
 		t.Fatalf("current memory exclusions not observed: %+v", got)
 	}
+	if got := invoke("sample", "--seed", "fixed"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"files":[]`) || !strings.Contains(got.Stderr, "1 sources left out by exclude") || !strings.Contains(got.Stderr, "no source files to sample") {
+		t.Fatalf("current memory exclusions not observed by sample: %+v", got)
+	}
 	if m.readVersions[path] == 0 {
 		t.Fatal("settings byte observation was not bound")
 	}
 	if err := m.Write(path, []byte("exclude: [\"\"]\n")); err != nil {
 		t.Fatal(err)
 	}
-	for _, child := range []string{"list", "check"} {
+	for _, child := range []string{"list", "check", "sample"} {
 		if got := invoke(child); got.Exit != 2 || !strings.Contains(got.Stdout, "config.invalid") || !strings.Contains(compactRead(got.Stdout), `"key":"exclude[0]"`) {
 			t.Fatalf("current invalid memory document ignored by %s: %+v", child, got)
 		}
@@ -124,8 +149,9 @@ func TestMemorySourceStatusIncludesActualImplicitDirectories(t *testing.T) {
 }
 
 // The physical decoy: the process works in a root whose disk holds an invalid
-// document, so a run, sample or except that fell through to the host would
-// read it (config.invalid on stdout) or rewrite it.
+// document, so a run or except that fell through to the host would read it
+// (config.invalid on stdout) or rewrite it. Sample has moved, and reads the
+// memory's settings beside the same decoy above.
 func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
@@ -138,7 +164,7 @@ func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
 	if err := m.Write(filepath.Join(root, "board.go"), []byte("package board\nfunc Value() int { return 1 }\n")); err != nil {
 		t.Fatal(err)
 	}
-	for _, child := range []string{"run", "sample", "except"} {
+	for _, child := range []string{"run", "except"} {
 		t.Run(child, func(t *testing.T) {
 			if result, err := m.Run(features.Run{Dir: root, Args: []string{"mutation", child, "--json"}}); err == nil || !strings.Contains(err.Error(), "still executes in cmd") || result.Stdout != "" {
 				t.Fatalf("unmoved execution was not explicitly refused: %+v %v", result, err)

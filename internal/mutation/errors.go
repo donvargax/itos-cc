@@ -37,6 +37,23 @@ func failureError(failure Failure) error {
 		return cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree", "Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
 	case SinceUnavailable:
 		return sinceError(failure.Failure, failure.Ref)
+	case SeedUnavailable:
+		return seedError(failure.Failure)
+	}
+	return failure
+}
+
+// seedError words the HEAD commit sample could not seed its draw with.
+func seedError(failure mutants.HistoryFailure) error {
+	switch failure := failure.(type) {
+	case mutants.NoRepository:
+		return cli.NewProblem(cli.CodeEnvironment, "sample.no-git", "mutation sample seeds its draw with the HEAD commit's id, so with no --seed it needs a git repository with a commit: "+failure.Reason, "Run it inside a git repository, or give the seed with --seed.")
+	case mutants.BadReference:
+		return failure
+	case mutants.HistoryCancelled:
+		return failure.Cause
+	case mutants.HistoryFailed:
+		return failure.Cause
 	}
 	return failure
 }
@@ -55,6 +72,55 @@ func sinceError(failure mutants.HistoryFailure, ref string) error {
 	return failure
 }
 
+// RunError words the domain's run failures as cmd's run and sample's
+// handler word them: a snapshot that cannot be read, the listed tests'
+// list command failing and a coverage command given no report. Any other
+// error is err.
+func RunError(err error) error {
+	if worded := runFailure(err); worded != nil {
+		return worded
+	}
+	return err
+}
+
+// runFailure is err worded as RunError words it, or nil when err is none of
+// the run failures.
+func runFailure(err error) error {
+	var read mutants.SnapshotReadFailure
+	if errors.As(err, &read) {
+		return snapshotReadError(read)
+	}
+	var listing mutants.ListingFailed
+	if errors.As(err, &listing) {
+		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
+			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", "itos-cc.yaml", listing.Reason, listing.Command),
+			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
+	}
+	var required mutants.CoverageReportRequired
+	if errors.As(err, &required) {
+		return cli.CommandNeedsReport()
+	}
+	return nil
+}
+
+// sampleError words what sample's handler returns: the slice's failures,
+// the domain's run failures, then settings failures, in the words, subject
+// and exit code the cmd handler gave them.
+func sampleError(err error) error {
+	var failure Failure
+	if errors.As(err, &failure) {
+		return failureError(failure)
+	}
+	if worded := runFailure(err); worded != nil {
+		return worded
+	}
+	var settings mutants.SettingsFailure
+	if errors.As(err, &settings) {
+		return settingsError(settings)
+	}
+	return err
+}
+
 func readError(err error) error {
 	if err == nil {
 		return nil
@@ -65,11 +131,17 @@ func readError(err error) error {
 	}
 	var read mutants.SnapshotReadFailure
 	if errors.As(err, &read) {
-		return fmt.Errorf("%s: %w", filepath.Join("mutate", filepath.ToSlash(read.Key)+".json"), read.Cause)
+		return snapshotReadError(read)
 	}
 	var settings mutants.SettingsFailure
 	if errors.As(err, &settings) {
 		return settingsError(settings)
 	}
 	return err
+}
+
+// snapshotReadError names the snapshot that could not be read from
+// .metrics, as metricsdir names it, with why.
+func snapshotReadError(read mutants.SnapshotReadFailure) error {
+	return fmt.Errorf("%s: %w", filepath.Join("mutate", filepath.ToSlash(read.Key)+".json"), read.Cause)
 }

@@ -1,9 +1,9 @@
 // Package mutation declares the mutation command group. Kong owns parsing;
-// List and check own their application/UI here; cmd retains the other handlers
-// until their individual slice moves. Their handler reads settings through
-// mutants' SettingsReader at each original admission point and returns refusals
-// as the sealed Failure set, which Run's classifier words with the exit codes
-// cmd gave them.
+// list, check and sample own their application/UI here; cmd retains run and
+// except until their individual slice moves. Their handler reads settings
+// through mutants' SettingsReader at each original admission point and
+// returns refusals as the sealed Failure set, which Run's classifier words
+// with the exit codes cmd gave them.
 package mutation
 
 import "github.com/donvargax/itos-cc/internal/cli"
@@ -75,12 +75,13 @@ type Check struct {
 	JSON          bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
-// Sample declares the recorded-result sampling command.
+// Sample declares the recorded-result sampling command. Since and Seed are
+// nil when omitted, so an explicit empty one stays distinct.
 type Sample struct {
 	cli.Selection
-	Since         string  `placeholder:"REF" help:"sample only the functions the commits since REF changed (git diff REF...HEAD)"`
+	Since         *string `placeholder:"REF" help:"sample only the functions the commits since REF changed (git diff REF...HEAD)"`
 	Count         int     `placeholder:"N" default:"20" help:"how many mutants to run, at least 1"`
-	Seed          string  `placeholder:"TEXT" help:"seed the draw with TEXT instead of the HEAD commit's id"`
+	Seed          *string `placeholder:"TEXT" help:"seed the draw with TEXT instead of the HEAD commit's id"`
 	Workers       int     `placeholder:"N" default:"${mutation_workers}" help:"mutants run at the same time"`
 	TimeoutFactor float64 `placeholder:"N" default:"10" help:"a mutant times out after N times the baseline duration, plus 5s"`
 	TestCommand   string  `placeholder:"CMD" help:"shell command that runs the tests for every mutant, instead of its recorded scope"`

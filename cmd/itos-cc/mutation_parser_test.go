@@ -255,6 +255,42 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 	}
 }
 
+// Sample's query takes its seed and range from the model: an explicit empty
+// one is there, empty, and an omitted one is not, so only that one is read
+// from HEAD, as the handler's seed holds.
+func TestMutationSampleModelKeepsExplicitEmptySeedAndSince(t *testing.T) {
+	for _, tc := range []struct {
+		args              []string
+		seed, since       *string
+		count             int
+		written, spelling string
+	}{
+		{[]string{"sample"}, nil, nil, 20, "count", ""},
+		{[]string{"sample", "--seed=", "--since="}, new(""), new(""), 20, "seed", ""},
+		{[]string{"sample", "--seed", "s", "--since", "base", "--count=00"}, new("s"), new("base"), 0, "count", "00"},
+	} {
+		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
+			var c commandLine
+			parser, err := parserOf(t.Context(), &c, &cli.UI{Stdout: io.Discard, Stderr: io.Discard}, adapters{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			parsed, err := cli.Parse(parser, append([]string{"mutation"}, tc.args...))
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := c.Mutation.Sample
+			same := func(a, b *string) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
+			if !same(got.Seed, tc.seed) || !same(got.Since, tc.since) || got.Count != tc.count {
+				t.Fatalf("sample model: seed=%v since=%v count=%d", got.Seed, got.Since, got.Count)
+			}
+			if written := cli.Provided(parsed)[tc.written]; tc.spelling != "" && (len(written) != 1 || written[0] != tc.spelling) {
+				t.Fatalf("written %s: %q, want %q", tc.written, written, tc.spelling)
+			}
+		})
+	}
+}
+
 func TestMutationTypedModelUsesTheValidatedFlags(t *testing.T) {
 	var c commandLine
 	parser, err := parserOf(t.Context(), &c, &cli.UI{Stdout: io.Discard, Stderr: io.Discard}, adapters{})
@@ -296,18 +332,23 @@ func TestMutationParsedAdmissionKeepsEmptyAndZeroRefusals(t *testing.T) {
 		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
 			args := append([]string{"--json", "mutation"}, tc.args...)
 			var code int
-			out, errOut := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), io.Discard, io.Discard, adapters{}) })
-			var result struct{ Problems []struct{ Rule, Flag string } }
+			var given bytes.Buffer
+			out, errOut := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &given, io.Discard, adapters{}) })
+			// Moved children answer on the streams given, the others on the process's.
+			out += given.String()
+			var result struct {
+				Problems []struct{ Rule, Flag, Value string }
+			}
 			if err := json.Unmarshal([]byte(out), &result); err != nil {
 				t.Fatalf("exit=%d stdout=%q stderr=%q: %v", code, out, errOut, err)
 			}
 			if code != 2 || len(result.Problems) != 1 || result.Problems[0].Rule != tc.rule || result.Problems[0].Flag != tc.flag {
 				t.Fatalf("lost actual admission: exit=%d result=%+v", code, result)
 			}
+			// The refused count is quoted back as it was written.
+			if _, written, ok := strings.Cut(tc.args[len(tc.args)-1], "--count="); ok && result.Problems[0].Value != written {
+				t.Fatalf("count spelling lost: %+v", result.Problems[0])
+			}
 		})
-	}
-	sample := parsedMutationFixture(t, adapters{}, "sample", "--seed=")
-	if seed, err := sampleSeed(t.Context(), sample); err != nil || seed != "" {
-		t.Fatalf("explicit empty sample seed demanded HEAD: %q %v", seed, err)
 	}
 }

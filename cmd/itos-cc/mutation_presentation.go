@@ -19,6 +19,7 @@ func coverageInventory(s string) string           { return mutationslice.Coverag
 func executableUnit(s string) string              { return mutationslice.ExecutableUnit(s) }
 func exceptedIn(items []mutation.Mutant) int      { return mutationslice.ExceptedIn(items) }
 func strictLanguagesOf(sources []string) []string { return mutationslice.StrictLanguages(sources) }
+func tail(s string, lines int) string             { return mutationslice.Tail(s, lines) }
 func reportFailed(in *invocation, rel, function string, items []mutation.Mutant, failUncovered func(int) bool) {
 	p := presentationFor(in)
 	p.Failed(rel, function, items, failUncovered)
