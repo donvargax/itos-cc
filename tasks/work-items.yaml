@@ -3659,3 +3659,10 @@ items:
       and mutation --json run answer in plain text, as v0.15.8 already did; only --json after the
       subcommand or before the group prints the object. Decide whether the group's --json reaches
       the subcommand, then specify it in features/cli.feature. Found by T-125's agent.
+  - id: T-127
+    title: Split CI into a push gate and a full-suite CD workflow that cuts the release
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
