@@ -97,7 +97,8 @@ func noMeasuredNothing(t *testing.T, o outcome, file string) {
 	}
 }
 
-// @ID-MUT-233
+// @ID-MUT-233. Kept: coverage.py before 7.14, patch = subprocess and the
+// counted run are cases the binary-only scenario does not hold (T-101).
 func TestAPythonProjectThatWritesParallelCoverageDataIsMeasured(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "python")

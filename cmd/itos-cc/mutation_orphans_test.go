@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -80,7 +79,10 @@ func snapshotThere(t *testing.T, name string) bool {
 	return err == nil
 }
 
-// @ID-MUT-236
+// @ID-MUT-236. Kept: an orphan the paths do not cover stays until a run
+// covering it, the folder it empties goes, and the run names what it removed,
+// which the scenario does not assert; ID-MUT-237 to 239 hold their old tests
+// whole (T-101).
 func TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, killedTests)
@@ -156,149 +158,4 @@ func TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory(t *test
 	if !snapshotThere(t, board) {
 		t.Errorf("mutation run removed %s, a snapshot whose file exists", board)
 	}
-}
-
-// @ID-MUT-237
-func TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	outside := t.TempDir()
-	for name, text := range boardFiles {
-		writeFile(t, filepath.Join(outside, filepath.FromSlash(name)), text)
-	}
-	for name, text := range killedTests {
-		writeFile(t, filepath.Join(outside, filepath.FromSlash(name)), text)
-	}
-	file := filepath.Join(outside, boardSource)
-	// The run names the file by its absolute path (project.FromRootOf), so
-	// its snapshot is .metrics/mutate/<absolute path>.json.
-	snapshot := filepath.ToSlash(filepath.Join(".metrics", metricsdir.MutationName(filepath.ToSlash(file))))
-	if runtime.GOOS == "windows" {
-		// A drive's colon is no part of a directory's name on Windows, so
-		// no snapshot can sit at that name there.
-		if err := os.MkdirAll(filepath.Dir(inWD(t, filepath.FromSlash(snapshot))), 0o755); err != nil {
-			t.Skipf("no snapshot can be named %s here: %v", snapshot, err)
-		}
-	}
-
-	// Given a snapshot that mutation run wrote for a file outside the
-	// project root, which still exists.
-	if o := mutateRun(t, file); o.code != 0 {
-		t.Fatalf("mutation run %s: exit %d, want every mutant killed\n%s%s", file, o.code, o.stdout, o.stderr)
-	}
-	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, filepath.ToSlash(file)); err != nil || snap == nil || !snapshotThere(t, snapshot) {
-		t.Fatalf("the snapshot of %s after its run: %v, %v, want one at %s", file, snap, err, snapshot)
-	}
-
-	// mutation check at the project root names no orphan.
-	o := mutationCheck(t, "--json")
-	if got := o.orphansOf(t); got != nil {
-		t.Errorf("mutation check: \"orphans\" %v, want the key missing: the snapshot's file exists\n%s", *got, o.stdout)
-	}
-	if o = mutationCheck(t); strings.Contains(o.stdout, snapshot) {
-		t.Errorf("mutation check names %s, want no orphan named\n%s", snapshot, o.stdout)
-	}
-
-	// mutation run at the project root keeps that snapshot.
-	o = mutateRun(t, "--json")
-	if o.code != 0 {
-		t.Errorf("mutation run: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if got := o.orphansOf(t); got != nil {
-		t.Errorf("mutation run: \"orphans\" %v, want the key missing: the snapshot's file exists\n%s", *got, o.stdout)
-	}
-	if !snapshotThere(t, snapshot) {
-		t.Errorf("after mutation run at the project root, %s is gone, want the snapshot of a file that exists kept", snapshot)
-	}
-}
-
-// oldTS is src/old.ts, a TypeScript file of the board module: renamed
-// unchanged, it is no change, so a --since run judges none of its
-// functions and runs no Node, but moves its snapshot.
-const oldTS = "export function old(i: number): boolean {\n  return i > 5;\n}\n"
-
-// renamedOld makes the board module, with every mutant killed, src/old.ts
-// and a raw snapshot of it, then renames src/old.ts to lib/new.ts with git
-// mv, staged and not committed. It returns the old snapshot's name.
-func renamedOld(t *testing.T) string {
-	t.Helper()
-	extra := map[string]string{"src/old.ts": oldTS}
-	for name, text := range killedTests {
-		extra[name] = text
-	}
-	boardRepo(t, extra)
-	const snapshot = ".metrics/mutate/src/old.ts.json"
-	writeFile(t, filepath.FromSlash(snapshot), orphanSnapshot("src/old.ts"))
-	if err := os.MkdirAll(inWD(t, "lib"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	gitIn(t, ".", "mv", "src/old.ts", "lib/new.ts")
-	return snapshot
-}
-
-// movedToNew fails t unless the snapshot of src/old.ts has moved to
-// lib/new.ts.
-func movedToNew(t *testing.T, old string) {
-	t.Helper()
-	if snap, err := loadMutationSnapshot(t.Context(), metricsdir.Store{RootDir: wd(t)}, "lib/new.ts"); err != nil || snap == nil {
-		t.Errorf("the snapshot of lib/new.ts: %v, %v, want the one of src/old.ts moved there", snap, err)
-	}
-	if snapshotThere(t, old) {
-		t.Errorf("%s is still there, want it moved to lib/new.ts", old)
-	}
-}
-
-// @ID-MUT-238
-func TestASinceRunWhosePathsMissACommittedRenamesNewPathKeepsTheOldSnapshot(t *testing.T) {
-	t.Parallel()
-	old := renamedOld(t)
-	gitIn(t, ".", "commit", "-qm", "rename src/old.ts to lib/new.ts")
-
-	o := mutateRun(t, "--json", "--since", "HEAD~1", "src")
-	if o.code != 0 {
-		t.Errorf("mutation run --since HEAD~1 src: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if !snapshotThere(t, old) {
-		t.Errorf("after mutation run --since HEAD~1 src, %s is gone, want it kept: git shows src/old.ts renamed to lib/new.ts, which exists", old)
-	}
-	if got := o.orphansOf(t); got != nil {
-		t.Errorf("mutation run --since HEAD~1 src: \"orphans\" %v, want the key missing\n%s", *got, o.stdout)
-	}
-
-	o = mutateRun(t, "--json", "--since", "HEAD~1", "lib")
-	if o.code != 0 {
-		t.Errorf("mutation run --since HEAD~1 lib: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	movedToNew(t, old)
-}
-
-// @ID-MUT-239
-func TestARunBeforeARenameIsCommittedKeepsTheOldSnapshot(t *testing.T) {
-	t.Parallel()
-	old := renamedOld(t)
-
-	o := mutateRun(t, "--json", "src")
-	if o.code != 0 {
-		t.Errorf("mutation run src: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if !snapshotThere(t, old) {
-		t.Errorf("after mutation run src, %s is gone, want it kept: git shows src/old.ts renamed to lib/new.ts, staged", old)
-	}
-	if got := o.orphansOf(t); got != nil {
-		t.Errorf("mutation run src: \"orphans\" %v, want the key missing\n%s", *got, o.stdout)
-	}
-	o = mutationCheck(t, "--json", "src")
-	if got := o.orphansOf(t); got != nil {
-		t.Errorf("mutation check src: \"orphans\" %v, want the key missing\n%s", *got, o.stdout)
-	}
-	if o = mutationCheck(t, "src"); strings.Contains(o.stdout, old) {
-		t.Errorf("mutation check src names %s, want no orphan named\n%s", old, o.stdout)
-	}
-
-	gitIn(t, ".", "commit", "-qm", "rename src/old.ts to lib/new.ts")
-	o = mutateRun(t, "--json", "--since", "HEAD~1", "lib")
-	if o.code != 0 {
-		t.Errorf("mutation run --since HEAD~1 lib: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	movedToNew(t, old)
 }

@@ -772,36 +772,37 @@ normal owned sibling succeeds. An embedded drive-colon name that the real filesy
 cannot create is a precise capability skip; other setup and command errors remain
 failures. Memory uses its actual map path and executes that logical scenario.
 
-All existing T-76 command holders remain for restored scenario CI and T-101 review.
-Keep the annotation library guards for S7 extraction, the old-collector compatibility,
-subprocess and counted subtests of the parallel-data holder, abandoned-worker
-unmarked/young/foreign/trial-copy guards, shared-package baseline guards, removed-site
-exception guard, orphan/path/rename extras and shared helpers. The `mutation_annotate`
-138–140 holders and its extra guard belong to T-77; 106–107 belong to T-74.
-No annotated command holder for 28–36 was found; none is invented or deleted here.
+T-101 reviewed T-76's command holders once the scenarios ran green through both drivers. Kept,
+each for what no scenario asserts: 52's exact keys of a mutant; 231's one run over a reached and
+an unreached file; 232's skipped preparation baseline and listed trial stages; 233's
+coverage.py-before-7.14, `patch = subprocess` and counted cases; 235's `--json` listing without
+the gone mutant; and 236's uncovered orphan kept, emptied folder removed and removed orphans
+named. The extra guards stay: abandoned-worker unmarked/young/foreign/trial-copy, the shared
+package baseline, and the removed-site exception. The run exit codes the scenarios leave out are
+ID-MUT-29's, and a timed-out mutant counted killed (53) exits 0 by the same rule.
 
-| ID | Existing holder (retained) |
-| --- | --- |
-| 52 | `cmd/itos-cc/mutate_mutants_test.go`: `TestEveryMutantAsJSON` |
-| 53 | `cmd/itos-cc/mutate_mutants_test.go`: `TestATimedOutMutantsOutcomeIsItsOwn` |
-| 54 | `cmd/itos-cc/mutate_mutants_test.go`: `TestMutantsTakenFromTheSnapshotSaySo` |
-| 55 | `cmd/itos-cc/mutate_mutants_test.go`: `TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed` |
-| 56 | `cmd/itos-cc/mutate_mutants_test.go`: `TestAFailingBaselineListsNoMutant` |
-| 145 | `mutate/annotate_test.go`: `TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew` |
-| 231 | `cmd/itos-cc/mutate_unreached_baseline_test.go`: `TestAFileNoTestReachesReportsItsBaselineAsNotRun` |
-| 232 | `cmd/itos-cc/mutate_counted_unreached_listed_test.go`: `TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt` |
-| 233 | `cmd/itos-cc/mutate_python_parallel_data_test.go`: `TestAPythonProjectThatWritesParallelCoverageDataIsMeasured` |
-| 234 | `cmd/itos-cc/mutate_workers_abandoned_test.go`: `TestALaterRunRemovesTheWorkerCopiesAKilledRunLeftBehind` |
-| 235 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestARecordedMutantWhoseSiteIsGoneIsLeftOut` |
-| 236 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory` |
-| 237 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists` |
-| 238 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASinceRunWhosePathsMissACommittedRenamesNewPathKeepsTheOldSnapshot` |
-| 239 | `cmd/itos-cc/mutation_orphans_test.go`: `TestARunBeforeARenameIsCommittedKeepsTheOldSnapshot` |
-| 240 | `cmd/itos-cc/mutate_reused_baseline_test.go`: `TestAFileWhoseMutantsAreAllReusedReportsItsBaselineAsNotRun` |
-| 241 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestCheckSaysHowManyRecordedMutantsItLeftOut` |
+| ID | Holder | T-101 |
+| --- | --- | --- |
+| 52 | `cmd/itos-cc/mutate_mutants_test.go`: `TestEveryMutantAsJSON` | kept |
+| 53 | `cmd/itos-cc/mutate_mutants_test.go`: `TestATimedOutMutantsOutcomeIsItsOwn` | removed |
+| 54 | `cmd/itos-cc/mutate_mutants_test.go`: `TestMutantsTakenFromTheSnapshotSaySo` | removed |
+| 55 | `cmd/itos-cc/mutate_mutants_test.go`: `TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed` | removed |
+| 56 | `cmd/itos-cc/mutate_mutants_test.go`: `TestAFailingBaselineListsNoMutant` | removed |
+| 145 | `internal/workdir/annotation_legacy_test.go`: `TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew` | adapter, kept |
+| 231 | `cmd/itos-cc/mutate_unreached_baseline_test.go`: `TestAFileNoTestReachesReportsItsBaselineAsNotRun` | kept |
+| 232 | `cmd/itos-cc/mutate_counted_unreached_listed_test.go`: `TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt` | kept |
+| 233 | `cmd/itos-cc/mutate_python_parallel_data_test.go`: `TestAPythonProjectThatWritesParallelCoverageDataIsMeasured` | kept |
+| 234 | `cmd/itos-cc/mutate_workers_abandoned_test.go`: `TestALaterRunRemovesTheWorkerCopiesAKilledRunLeftBehind` | removed |
+| 235 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestARecordedMutantWhoseSiteIsGoneIsLeftOut` | kept |
+| 236 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotWhoseSourceIsGoneIsRemovedByTheNextRunOverItsDirectory` | kept |
+| 237 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists` | removed |
+| 238 | `cmd/itos-cc/mutation_orphans_test.go`: `TestASinceRunWhosePathsMissACommittedRenamesNewPathKeepsTheOldSnapshot` | removed |
+| 239 | `cmd/itos-cc/mutation_orphans_test.go`: `TestARunBeforeARenameIsCommittedKeepsTheOldSnapshot` | removed |
+| 240 | `cmd/itos-cc/mutate_reused_baseline_test.go`: `TestAFileWhoseMutantsAreAllReusedReportsItsBaselineAsNotRun` | removed |
+| 241 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestCheckSaysHowManyRecordedMutantsItLeftOut` | removed |
 
-For 32–33, retain `mutate/annotate_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
-for 34, retain `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
+For 32–33, retain `internal/workdir/annotation_legacy_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
+for 34, retain `internal/mutants/annotate_test.go`'s `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
 remain alongside the new public observations.
 
 

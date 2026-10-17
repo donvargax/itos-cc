@@ -12,9 +12,9 @@ import (
 	"time"
 )
 
-// The scenario of "Rule: Mutation results say what happened, and leave
-// nothing stale behind" in features/mutate.feature that the
-// mutate-workers-abandoned-fix slice holds. A mutation run keeps its worker
+// Beside ID-MUT-234, which holds the mutate-workers-abandoned-fix slice's
+// old test whole (T-101): the guards of which worker copies a run removes,
+// which the scenario does not reach. A mutation run keeps its worker
 // copies in a directory of the temporary directory named itos-cc-mutate-
 // (itos-cc-fresh- for a counted run's trials) and holds an exclusive lock
 // on the file owner.lock in it, written after the lock is taken, for as
@@ -145,38 +145,6 @@ func staleUnmarked(t *testing.T, tmp, name string, age time.Duration) string {
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-// @ID-MUT-234
-func TestALaterRunRemovesTheWorkerCopiesAKilledRunLeftBehind(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	tmp := workerTemp(t)
-
-	// Given worker copies a mutation run left in the temporary directory
-	// when it was killed
-	killed := killedWorkers(t, tmp, "itos-cc-mutate-1000001")
-
-	// And worker copies of a mutation run still going
-	live := liveWorkers(t, tmp, "itos-cc-mutate-1000002")
-
-	// When I run "itos-cc mutation run" for a file
-	o := mutateCovered(t, "--no-coverage", boardSource)
-	if o.code > 1 {
-		t.Logf("exit %d\nstdout:\n%s\nstderr:\n%s", o.code, o.stdout, o.stderr)
-	}
-
-	// Then the killed run's worker copies are removed
-	if exists(killed) {
-		t.Errorf("the killed run's worker copies %s are left behind", killed)
-	}
-
-	// And the running one's are left alone
-	for _, p := range []string{filepath.Join(live, ownerMarker), filepath.Join(live, "w0", "src", "board.go"), filepath.Join(live, "w1", "src", "board.go")} {
-		if !exists(p) {
-			t.Errorf("%s of the run still going was removed", p)
-		}
-	}
 }
 
 // Beside the scenario: a worker directory of an itos-cc before the marker

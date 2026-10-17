@@ -14,19 +14,3 @@ func changeBoardTest(t *testing.T) {
 	t.Helper()
 	appendTo(t, filepath.FromSlash("src/board_test.go"), "\n// TestClear checks clear.\n")
 }
-
-// reusedOf is the mutants of function that a --json run took from the
-// snapshot, of all those it lists.
-func reusedOf(t *testing.T, o outcome, function string) (reused, listed int) {
-	t.Helper()
-	for _, m := range o.json(t).file(t, boardSource).mutants(t) {
-		if m.Function != function {
-			continue
-		}
-		listed++
-		if m.Reused {
-			reused++
-		}
-	}
-	return reused, listed
-}

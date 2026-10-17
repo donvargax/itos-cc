@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
@@ -81,7 +79,9 @@ func isMutant(m mutantJSON, gone mutation.Mutant) bool {
 	return m.Line == gone.Line && m.Column == gone.Column && m.Original == gone.Original && m.Replacement == gone.Replacement
 }
 
-// @ID-MUT-235
+// @ID-MUT-235. Kept: the run's --json leaves out the mutant whose site is
+// gone and lists the others reused, which the scenario does not assert;
+// ID-MUT-241 holds its old test whole (T-101).
 func TestARecordedMutantWhoseSiteIsGoneIsLeftOut(t *testing.T) {
 	t.Parallel()
 	gone := removedSiteRepo(t)
@@ -148,53 +148,5 @@ func TestAnExceptionOfARemovedSiteIsGone(t *testing.T) {
 	wantProblem(t, o.json(t).problem("mutation.exception-stale"), map[string]any{"file": boardSource, "function": placeID, "why": "gone"}, o.stdout)
 	if o.code != 1 {
 		t.Errorf("mutation check: exit %d, want 1 for the stale exception", o.code)
-	}
-}
-
-// @ID-MUT-241
-func TestCheckSaysHowManyRecordedMutantsItLeftOut(t *testing.T) {
-	t.Parallel()
-	removedSiteRepoWith(t, mutation.Killed)
-
-	o := mutationCheck(t, "--json", boardSource)
-	var out struct {
-		Files []struct {
-			File      string           `json:"file"`
-			Functions []map[string]any `json:"functions"`
-		} `json:"files"`
-	}
-	if err := json.Unmarshal([]byte(o.stdout), &out); err != nil {
-		t.Fatalf("stdout is not one JSON object: %v\n%s\nstderr:\n%s", err, o.stdout, o.stderr)
-	}
-	var place int
-	for _, f := range out.Files {
-		for _, fn := range f.Functions {
-			leftOut, has := fn["left_out"]
-			switch {
-			case f.File == boardSource && fn["function"] == placeID:
-				place++
-				if leftOut != float64(1) {
-					t.Errorf("place in mutation check %v, want \"left_out\" 1", fn)
-				}
-			case has:
-				t.Errorf("%s's %v has \"left_out\", want it only on place", f.File, fn)
-			}
-		}
-	}
-	if place != 1 {
-		t.Errorf("mutation check lists place %d times, want once\n%s", place, o.stdout)
-	}
-	if o.code != 0 {
-		t.Errorf("mutation check: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-
-	o = mutationCheck(t, boardSource)
-	want := fmt.Sprintf("  left out %s:%d in %s: 1 recorded mutant at sites gone, which the next mutation run drops\n",
-		boardSource, boardUnits(t)[placeID].StartLine, placeID)
-	if !strings.Contains(o.stdout, want) || strings.Count(o.stdout, "left out ") != 1 {
-		t.Errorf("mutation check prints\n%s\nwant one line %q", o.stdout, want)
-	}
-	if o.code != 0 {
-		t.Errorf("mutation check: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
 	}
 }

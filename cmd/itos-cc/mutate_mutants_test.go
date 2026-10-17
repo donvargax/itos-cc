@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"maps"
-	"path/filepath"
 	"slices"
 	"testing"
 
@@ -70,7 +69,9 @@ func scanned(t *testing.T, file string) []mutationslice.Site {
 	return scan.Sites
 }
 
-// @ID-MUT-52
+// @ID-MUT-52. Kept: each mutant holds exactly its keys, "coverage" beside
+// them once the tests executed it, where the scenario asserts only that each
+// is there. ID-MUT-53 to 56 hold their old tests whole (T-101).
 func TestEveryMutantAsJSON(t *testing.T) {
 	t.Parallel()
 	// Board#full is executed but its test cannot tell > from >=, so its
@@ -142,121 +143,5 @@ func TestFull(t *testing.T) {
 				t.Errorf("mutant keys %q, want %q", keys, want)
 			}
 		}
-	}
-}
-
-// @ID-MUT-53
-func TestATimedOutMutantsOutcomeIsItsOwn(t *testing.T) {
-	t.Parallel()
-	// Deleting the ! makes Settle sleep an hour where its test expects it
-	// to return at once, so the mutant can only time out, on every
-	// platform. A sleep rather than a busy loop: Windows kills the test
-	// command but not the test binary it started, which then idles rather
-	// than spins until its own timeout.
-	wait := filepath.FromSlash("src/wait/wait.go")
-	boardRepo(t, map[string]string{
-		"src/wait/wait.go": `package wait
-
-import "time"
-
-// Settle waits for a board that is not still.
-func Settle(still bool) {
-	if !still {
-		time.Sleep(time.Hour)
-	}
-}
-`,
-		"src/wait/wait_test.go": `package wait
-
-import "testing"
-
-func TestSettle(t *testing.T) {
-	Settle(true)
-}
-`,
-	})
-	if sites := scanned(t, wait); len(sites) != 1 || sites[0].Original != "!" {
-		t.Fatalf("sites %+v, want the one ! of Settle", sites)
-	}
-
-	// The timeout is then the baseline's duration plus 5s.
-	o := mutateRun(t, "--json", "--timeout-factor", "1", wait)
-	f := o.json(t).file(t, wait)
-	got := f.mutants(t)
-	if len(got) != 1 || got[0].Outcome != "timeout" {
-		t.Fatalf("mutants %+v, want the one mutant timed out\nstderr:\n%s", got, o.stderr)
-	}
-	if f.Killed != 1 || o.code != 0 {
-		t.Errorf("killed %d, exit %d, want the timed-out mutant counted as killed and exit 0", f.Killed, o.code)
-	}
-}
-
-// @ID-MUT-54
-func TestMutantsTakenFromTheSnapshotSaySo(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	if o := mutateRun(t); o.code != 1 {
-		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	edit(t, boardSource, "i < 3", "i < 4")
-
-	o := mutateRun(t, "--json", boardSource)
-	byFunction := map[string][]mutantJSON{}
-	for _, m := range o.json(t).file(t, boardSource).mutants(t) {
-		byFunction[m.Function] = append(byFunction[m.Function], m)
-	}
-	place, clear := byFunction[placeID], byFunction[clearID]
-	if len(place) == 0 || len(clear) == 0 {
-		t.Fatalf("mutants %+v, want those of %s and %s", byFunction, placeID, clearID)
-	}
-	for _, m := range place {
-		if m.Outcome != "killed" || !m.Reused {
-			t.Errorf("place's mutant %+v, want killed and reused: place has not changed", m)
-		}
-	}
-	for _, m := range clear {
-		if m.Reused {
-			t.Errorf("clear's mutant %+v, want it not reused: clear changed", m)
-		}
-	}
-}
-
-// @ID-MUT-55
-func TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	// A first run records clear's survivor, which a run not judging clear
-	// keeps in the snapshot but must not list.
-	if o := mutateRun(t); o.code != 1 {
-		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	changePlace(t)
-
-	o := mutateRun(t, "--since", "base", "--json")
-	got := o.json(t).file(t, boardSource).mutants(t)
-	if len(got) == 0 {
-		t.Fatalf("no mutants listed, want those of %s\n%s", placeID, o.stdout)
-	}
-	for _, m := range got {
-		if m.Function != placeID {
-			t.Errorf("mutant %+v listed, want only those of %s, the function judged", m, placeID)
-		}
-	}
-}
-
-// @ID-MUT-56
-func TestAFailingBaselineListsNoMutant(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, map[string]string{
-		"src/board_test.go": "package board\n\nimport \"testing\"\n\nfunc TestBroken(t *testing.T) {\n\tt.Fatal(\"broken\")\n}\n",
-	})
-
-	o := mutateRun(t, "--json", boardSource)
-	files := o.rawFiles(t)
-	if len(files) != 1 || files[0]["baseline"] != "failed" {
-		t.Fatalf("files %v, want %s with a failed baseline\n%s", files, boardSource, o.stdout)
-	}
-	if list, ok := files[0]["mutants"].([]any); !ok || len(list) != 0 {
-		t.Errorf("mutants %#v, want []\n%s", files[0]["mutants"], o.stdout)
 	}
 }

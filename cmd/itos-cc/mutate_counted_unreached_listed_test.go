@@ -37,7 +37,8 @@ var countedUnreachedFiles = map[string]string{
 		"    join:\n      each: \"{id}\"\n      sep: \" or \"\n",
 }
 
-// @ID-MUT-232
+// @ID-MUT-232. Kept: preparation's skipped own baseline and the trial's
+// listed stages, which the scenario does not assert (T-101).
 func TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

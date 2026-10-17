@@ -14,7 +14,9 @@ import (
 // and coverage, and skips, naming the missing one, without them; CI runs it
 // on ubuntu-latest (T-13).
 
-// @ID-MUT-231
+// @ID-MUT-231. Kept: one run over both files reports the unreached file's
+// baseline not run while the other's ran, where the scenario runs each file
+// on its own (T-101).
 func TestAFileNoTestReachesReportsItsBaselineAsNotRun(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "python")
