@@ -4813,3 +4813,49 @@
     controls and platform omissions reported honestly. No own-source mutation, new dependency,
     agents/worktrees or per-task binary comparison. T94 WIP is safely preserved separately; complete
     and publish this repair before supported T94 retake and restoration of its own paths.
+- id: T-122
+  type: ci
+  title: Cut CI time per push by skipping tests on prose-only ranges and parallelizing the slow test steps
+  why: >
+    Every push runs the whole test matrix, about 22 minutes on the critical path, even a prose-only
+    take, queue or close commit that changes only tasks/ (c857b28's run 38915572729 took 21 minutes
+    while its ci job took 26 seconds). Each refactor item makes about three pushes, so CI time
+    dominates the loop. Measured on run 38911387674 (8f77daa): ubuntu test 22 min, of which go test
+    ./... 3.5 min and the installed language tools step 15.4 min run one after the other; windows go
+    test ./... 13.3 min; macos 12 min; ci job 2.4 min. Do three things and nothing else. (1)
+    Prose-only: add a small scope job that computes the same range as the ci job (itos ci range with
+    the same head and base) and asks itos ci scope FROM TO; the test matrix and the new language
+    jobs skip when it says docs_only=true. An empty FROM (no green run to start from) runs
+    everything, never skips. Never reimplement ci.prose.paths matching in shell or YAML paths
+    filters: itos ci scope is the one rule. The scope job must add no more than about a minute
+    before the test jobs start on a source push. The ci job stays as it is, verify and its prose
+    plan included. A run whose test jobs were skipped must still conclude success, so itos ci watch
+    and itos work done read it green, and the release job must still run on a range that is not
+    prose-only and cut nothing on a prose-only one exactly as today; check how needs treats skipped
+    jobs and use explicit conditions on the release job if needed, never dropping ci or a test job
+    from its needs. (2) Language tools: move the real TypeScript, Python, Kotlin and Maven step out
+    of test (ubuntu-latest) into its own job named languages, running beside the matrix rather than
+    after go test, sharded so the slowest shard is well under the current 15 minutes (for example by
+    language, with the Kotlin/Maven and Go-startup families split as their timings say). Every Go
+    test name and every scenario selector the current step runs must run in exactly one shard with
+    the same environment (ITOS_CC_LANGUAGE_TOOLS, ITOS_CC_NODE_MODULES, pinned tool versions,
+    caches, Maven SHA-512 check); write the old-to-new selector map in the commit body and verify
+    the union equals the old list, none dropped. Each shard sets up only the tools its tests need.
+    (3) Windows: measure from run 38911387674's log (go test -json or the per-package times) which
+    packages dominate windows go test ./..., then split go test into parallel jobs or matrix entries
+    along that measurement so no test job's critical path exceeds about 10 minutes; every package
+    still runs on every OS it runs on today, with the same ITOS_CC_SKIP_FEATURES and timeout, and
+    the native scenario steps and their artifact uploads keep running on all three systems. No test,
+    scenario, check or platform may be removed, skipped on source ranges or weakened; only order,
+    parallelism and the prose-only skip change. Keep the workflow's comments in its style, naming
+    why each job exists, and update the existing comments that the change makes untrue. Pinned
+    action SHAs stay pinned; no new third-party action without a recorded selection. Verify on the
+    real CI after the push: report the source push's run with its critical path and each job's time,
+    and a prose-only push's run (the item's close commit counts) showing the test jobs skipped and
+    the run green; target under about 10 minutes for a source push and under about 3 for a
+    prose-only one, and say plainly if a target is missed and why. Recorded 2026-10-17 by the
+    person's request; queued before T-98.
+  done_when:
+    - run: grep -q 'itos ci scope' .github/workflows/ci.yml
+    - run: grep -Eq '^  languages:' .github/workflows/ci.yml
+    - run: grep -q 'TestAPythonProjectThatWritesParallelCoverageDataIsMeasured' .github/workflows/ci.yml
