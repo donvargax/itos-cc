@@ -4105,7 +4105,7 @@
     source or golden strings, and run the pinned golangci-lint over ./internal/... before pushing.
 - id: T-100
   type: refactor
-  title: Move mutation run into the slice and run its scenarios in process
+  title: Move mutation run into the mutation slice
   why: >
     Continue the current S7 design from the parsed group, not futureT86. Move only the named
     handlers and their UI presentation to internal/mutation; CLI Run assembles domain-valued Query,
