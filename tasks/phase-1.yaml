@@ -4055,6 +4055,21 @@
     dependencies without recorded selection. Keep deterministic count/seed/ranking, recorded
     own/listed/whole scope execution, selection baselines, mismatch fixes and stale/unrecorded
     behavior unchanged.
+
+    Reuse what T-97 built rather than parallel plumbing: mutants.SettingsReader through
+    config.Reader selected at cmd, the slice Handler's existing ports, its sealed Failure set
+    classified in the UI, and its shared presentation. Read settings at sample's own original
+    observation points, not once before dispatch. The observation order recorded before T-97, to
+    hold unless the current cmd source shows otherwise (the source wins, say so in the commit):
+    --count is validated before selection, selection before the seed, an explicit empty --seed
+    differs from an omitted one and bypasses History.Head, the seed is settled before the
+    no-source return, then config, reach, support and the bindings; the missing-workers failure
+    alone returns no result object. Keep recorded scopes, deterministic ranking, the actual
+    progress and failure order, and no writes. Once sample moves, the memory driver refuses only
+    run and except, with the physical-decoy control kept effective (the test process works in the
+    decoy folder). Never edit inside embedded fixture source or golden strings when changing
+    imports, and run the pinned golangci-lint over ./internal/... before pushing: T-97's first
+    commit broke both.
   done_when:
     - run: go test ./internal/mutation/...
     - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-4]|10[9]|11[0-3]|127|147|148)$"
