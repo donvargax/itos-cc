@@ -50,5 +50,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0045: itos-cc.yaml's exclude leaves sources out of what is measured and mutated](0045-itos-cc-yaml-s-exclude-leaves-sources-out-of-what-is-measured-and-mutated.md)
 - [ADR-0046: Coverage splits into a pure domain and a port whose adapter runs the test tools](0046-coverage-splits-into-a-pure-domain-and-a-port-whose-adapter-runs-the-test-tools.md)
 - [ADR-0047: Adapters may import the domain they serve; nothing outside the domain is imported into it](0047-adapters-may-import-the-domain-they-serve-nothing-outside-the-domain-is-imported-into-it.md)
+- [ADR-0048: CI is a fast Linux push gate and CD runs the full suite on every system and cuts the release](0048-ci-is-a-fast-linux-push-gate-and-cd-runs-the-full-suite-on-every-system-and-cuts-the-release.md)
 
 <!-- itos:decisions:end -->
