@@ -3283,6 +3283,13 @@ items:
     status: todo
     depends_on: [T-101]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-103
     title: Run graph HTTP-edge scenarios through the black-box harness
     phase: 1
@@ -3290,6 +3297,13 @@ items:
     status: todo
     depends_on: [T-102]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-104
     title: Run graph metric, freshness and rebuild scenarios through the black-box harness
     phase: 1
@@ -3297,6 +3311,13 @@ items:
     status: todo
     depends_on: [T-103]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-105
     title: Run serving and HTTP stream scenarios through the black-box harness
     phase: 1
@@ -3304,6 +3325,13 @@ items:
     status: todo
     depends_on: [T-104]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-106
     title: Move pure architecture graph rules into internal/architecture
     phase: 1
@@ -3311,6 +3339,13 @@ items:
     status: todo
     depends_on: [T-105]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-107
     title: Build and refresh architecture through repository and snapshot ports
     phase: 1
@@ -3318,6 +3353,13 @@ items:
     status: todo
     depends_on: [T-106]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-108
     title: Serve architecture through an HTTP adapter over domain services
     phase: 1
@@ -3325,6 +3367,13 @@ items:
     status: todo
     depends_on: [T-107]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-112
     title: Move serve onto Kong and its slice with in-process HTTP scenarios
     phase: 1
@@ -3332,6 +3381,13 @@ items:
     status: todo
     depends_on: [T-108]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-113
     title: Finish architecture and serving scenario coverage and remove legacy scaffolding
     phase: 1
@@ -3339,6 +3395,13 @@ items:
     status: todo
     depends_on: [T-112]
     kind: task
+    deferred: >
+      Serve leaves this repository to become its own web app, and the architecture graph is
+      reachable only through serve today. The graph scenario, architecture domain, HTTP adapter and
+      serve moves would refactor what is about to move, so they wait until the refactor is done and
+      the web app, with whatever export of the graph it needs, is specified. The person decided this
+      on 2026-10-17. T-114 now follows T-101, and serve keeps running on its legacy handler,
+      unchanged.
   - id: T-114
     title: Complete Kong dispatch and version behind a thin main entrypoint
     phase: 1
