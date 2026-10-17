@@ -2683,6 +2683,12 @@ items:
       TypeScript-only selection (the logged coverage: --coverage-command needs --coverage-report
       line, the run going on without coverage); and crap --coverage-command 'x' alone
       (coverage.command-needs-report, exit 2).
+
+      T-101, a correction to its note above: every language itos-cc reads is strict under
+      --fail-uncovered, so a TypeScript-only selection refuses a raw coverage flag as Go does.
+      Compare instead mutation run --fail-uncovered --coverage-command 'x' over a selection holding
+      no source (no flag refused, no source files to mutate, exit 0), beside the strict refusals and
+      the non-strict logged fallback the note lists.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
