@@ -2657,6 +2657,16 @@ items:
       75 count.interrupted, plain and --json, the partial report printed before the frozen inputs
       go), and a blocked listed selection; and each of run, run --fail-fast and run --count with
       top-level, group-leading and child --json.
+
+      T-125 (the mutation scenarios in process): compare --json between the mutation group and its
+      subcommand, mutation --json list and mutation --json run --count 1 outside a Git repository,
+      which the refactored binary answers in plain text (count.no-git on stderr, exit 3) where
+      --json after the subcommand prints the JSON object; the baseline command a Go file's own tests
+      are announced with at a module's root (go test -count=1 -failfast ./.) and a TypeScript file's
+      with Vitest installed (its absolute node_modules/.bin/vitest path); the order of the IDs a
+      listed selection's run command names, which follows the list command's output rather than the
+      IDs sorted; and the coverage line a Python or Kotlin file no test reaches logs (no test
+      reaches <file>, so none runs).
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
