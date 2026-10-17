@@ -34,7 +34,9 @@ that checks the intended behavior, then implement it. A failing setup or syntax 
 not evidence that the behavior is missing.
 
 Unit tests exercise the domain with our own fakes and stubs of its ports. Assert outcomes
-and returned failures, not a script of expected calls. Do not use mocking libraries.
+and returned failures, not a script of expected calls. Do not use mocking libraries: they
+exist to make call assertions easy, and a double they generate with canned answers is only a
+stub, where our fakes keep state and port contracts hold them to the real adapters.
 Properties belong with the domain behavior they describe; state the assumptions that
 make a property valid rather than making the implementation fit an invalid property.
 
