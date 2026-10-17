@@ -700,33 +700,41 @@ and explicitly reports unmoved history until T-91 supplies its actual history ID
 T-125 must wire that value when mutation scenarios join `InProcess`.
 MUT78 explicitly records seed `4813e48` before moving HEAD.
 
-All T-75 holders below remain until restored replacement scenario CI and T-101
-review. Preserve their shared helpers, extra guards and the untagged
-`TestAMismatchsFixRerunsInItsScope` quoted/listed-command guard.
+T-101 reviewed T-75's holders once the scenarios ran green through both drivers. Four stay,
+each for an assertion no scenario makes: 77's `--json` seed being the HEAD commit's id (the
+scenario reads the plain output's), 84's exact set of a sampled mutant's eight keys (the scenario
+asserts each is there), 109's own-tests outcome leaving `scope` out of the snapshot (the
+scenario reads a missing scope and `own` alike) and 110's reused scope in `mutation run --json`
+(the scenario reads the snapshot's). Elsewhere: a new HEAD drawing another sample (78's
+precondition) is the slice's `TestSampleSeedsFromTheBoundHistoryOnlyWhenOmitted` with the
+domain's `TestTheDrawDependsOnTheSeedAndTheMutantAlone`; a mismatch's file, function and exit 1
+(147, 148) are ID-MUT-72's and 73's; a sample with no mismatch exiting 0 (111) is 71's and 74's;
+and the fixtures' survivor exit 1 is ID-MUT-29's. `TestAMismatchsFixRerunsInItsScope` lives in
+`internal/mutation/sample_test.go`.
 
-| ID | Existing test (all retained) |
-| --- | --- |
-| 71 | `mutation_sample_test.go`: `TestASampleWhoseOutcomesHoldPassesAndWritesNothing` |
-| 72 | `mutation_sample_test.go`: `TestARecordedKillThatNowSurvivesIsAMismatch` |
-| 73 | `mutation_sample_test.go`: `TestARecordedSurvivorThatIsNowKilledIsAMismatchToo` |
-| 74 | `mutation_sample_test.go`: `TestKilledAndTimeoutAgree` |
-| 75 | `mutation_sample_test.go`: `TestOnlyFreshMutantsThatRanAreSampled` |
-| 76 | `mutation_sample_test.go`: `TestCountSaysHowMany20ByDefault` |
-| 77 | `mutation_sample_test.go`: `TestARerunOfOneCommitSamplesTheSameMutants` |
-| 78 | `mutation_sample_test.go`: `TestSeedReproducesARun` |
-| 79 | `mutation_sample_test.go`: `TestOutsideAGitRepositoryTheSeedMustBeGiven` |
-| 80 | `mutation_sample_test.go`: `TestACountBelow1IsAUsageError` |
-| 81 | `mutation_sample_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreSampled` |
-| 82 | `mutation_sample_test.go`: `TestNothingToSample` |
-| 83 | `mutation_sample_test.go`: `TestAFailingBaselineInASample` |
-| 84 | `mutation_sample_test.go`: `TestTheSampleAsJSON` |
-| 109 | `mutation_scope_test.go`: `TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt` |
-| 110 | `mutation_scope_test.go`: `TestAReusedOutcomeKeepsItsScope` |
-| 111 | `mutation_scope_test.go`: `TestMutationSampleRerunsEachMutantWithItsRecordedScope` |
-| 112 | `mutation_scope_test.go`: `TestAScopeGivenToMutationSampleOverridesTheRecordedOne` |
-| 113 | `mutation_scope_test.go`: `TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests` |
-| 147 | `mutation_mismatch_fix_test.go`: `TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith` |
-| 148 | `mutation_mismatch_fix_test.go`: `TestAScopeGivenToSampleIsTheOneTheFixNames` |
+| ID | Holder | T-101 |
+| --- | --- | --- |
+| 71 | `mutation_sample_test.go`: `TestASampleWhoseOutcomesHoldPassesAndWritesNothing` | removed |
+| 72 | `mutation_sample_test.go`: `TestARecordedKillThatNowSurvivesIsAMismatch` | removed |
+| 73 | `mutation_sample_test.go`: `TestARecordedSurvivorThatIsNowKilledIsAMismatchToo` | removed |
+| 74 | `mutation_sample_test.go`: `TestKilledAndTimeoutAgree` | removed |
+| 75 | `mutation_sample_test.go`: `TestOnlyFreshMutantsThatRanAreSampled` | removed |
+| 76 | `mutation_sample_test.go`: `TestCountSaysHowMany20ByDefault` | removed |
+| 77 | `mutation_sample_test.go`: `TestARerunOfOneCommitSamplesTheSameMutants` | kept |
+| 78 | `mutation_sample_test.go`: `TestSeedReproducesARun` | removed |
+| 79 | `mutation_sample_test.go`: `TestOutsideAGitRepositoryTheSeedMustBeGiven` | removed |
+| 80 | `mutation_sample_test.go`: `TestACountBelow1IsAUsageError` | removed |
+| 81 | `mutation_sample_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreSampled` | removed |
+| 82 | `mutation_sample_test.go`: `TestNothingToSample` | removed |
+| 83 | `mutation_sample_test.go`: `TestAFailingBaselineInASample` | removed |
+| 84 | `mutation_sample_test.go`: `TestTheSampleAsJSON` | kept |
+| 109 | `mutation_scope_test.go`: `TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt` | kept |
+| 110 | `mutation_scope_test.go`: `TestAReusedOutcomeKeepsItsScope` | kept |
+| 111 | `mutation_scope_test.go`: `TestMutationSampleRerunsEachMutantWithItsRecordedScope` | removed |
+| 112 | `mutation_scope_test.go`: `TestAScopeGivenToMutationSampleOverridesTheRecordedOne` | removed |
+| 113 | `mutation_scope_test.go`: `TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests` | removed |
+| 147 | `mutation_mismatch_fix_test.go`: `TestAMismatchsFixRerunsTheMutantInTheScopeItWasSampledWith` | removed |
+| 148 | `mutation_mismatch_fix_test.go`: `TestAScopeGivenToSampleIsTheOneTheFixNames` | removed |
 
 
 T-76's result/annotation/cleanup scenarios (ID-MUT-28–36, 52–56, 145 and

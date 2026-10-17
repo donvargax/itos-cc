@@ -5,36 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 )
 
-// The scenarios of "Rule: Re-running a sample of cached results" about the
-// scope of the tests that decided each outcome, in features/mutate.feature.
-// They use the module of mutate_since_test.go, whose own suite and whole
-// suite are a test or two each, so --all-tests stays small.
-
-// e2eFiles make Board#place's mutant one that only a test of another
-// package kills: the package's own test tests nothing, and e2e/e2e_test.go
-// calls place through Place, which has no mutation site.
-var e2eFiles = map[string]string{
-	"src/board_test.go": "package board\n\nimport \"testing\"\n\nfunc TestBoard(t *testing.T) {}\n",
-	"src/export.go":     "package board\n\n// Place places on a new board.\nfunc Place(i int) bool {\n\tvar b Board\n\treturn b.place(i)\n}\n",
-	"e2e/e2e_test.go": `package e2e
-
-import (
-	"testing"
-
-	board "example.com/m/src"
-)
-
-func TestPlace(t *testing.T) {
-	if board.Place(5) || !board.Place(6) {
-		t.Fatal("place")
-	}
-}
-`,
-}
+// Tests of "Rule: Re-running a sample of cached results" about the scope of
+// the tests that decided each outcome, in features/mutate.feature, over the
+// module of mutate_since_test.go, whose own suite and whole suite are a test
+// or two each, so --all-tests stays small. ID-MUT-111 to 113 hold their old
+// tests whole (T-101); each test left holds an assertion no scenario does.
 
 // recordedScopes is the "scope" of each mutant of src/board.go's snapshot,
 // by function, as the file holds it: "" where the key is left out.
@@ -81,45 +59,9 @@ func wantScopes(t *testing.T, scope string) {
 	}
 }
 
-// baselines is the command of each baseline a run says on stderr it ran.
-func baselines(stderr string) []string {
-	var out []string
-	for _, l := range strings.Split(stderr, "\n") {
-		if rest, ok := strings.CutPrefix(l, "itos-cc: baseline "); ok {
-			if _, command, ok := strings.Cut(rest, "$ "); ok {
-				out = append(out, command)
-			}
-		}
-	}
-	return out
-}
-
-// stripScopes rewrites src/board.go's snapshot without the "scope" of any
-// mutant, as one written before outcomes recorded it.
-func stripScopes(t *testing.T) {
-	t.Helper()
-	name := inWD(t, filepath.Join(".metrics", "mutate", "src", "board.go.json"))
-	data, err := os.ReadFile(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var snap map[string]any
-	if err := json.Unmarshal(data, &snap); err != nil {
-		t.Fatal(err)
-	}
-	for _, u := range snap["units"].([]any) {
-		for _, m := range u.(map[string]any)["mutants"].([]any) {
-			delete(m.(map[string]any), "scope")
-		}
-	}
-	out, err := json.MarshalIndent(snap, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, name, string(out)+"\n")
-}
-
-// @ID-MUT-109
+// @ID-MUT-109. Kept: an outcome of the file's own tests leaves "scope" out
+// of the snapshot, which no scenario asserts; the scenario reads a missing
+// scope and "own" alike.
 func TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, killedTests)
@@ -139,7 +81,8 @@ func TestEachRecordedOutcomeKeepsTheScopeOfTheTestsThatDecidedIt(t *testing.T) {
 	wantScopes(t, "")
 }
 
-// @ID-MUT-110
+// @ID-MUT-110. Kept: a reused outcome's scope in mutation run --json, which
+// no scenario asserts; the scenario reads the snapshot's.
 func TestAReusedOutcomeKeepsItsScope(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, killedTests)
@@ -163,75 +106,5 @@ func TestAReusedOutcomeKeepsItsScope(t *testing.T) {
 	}
 	if got := recordedScopes(t)[placeID]; len(got) == 0 || slices.ContainsFunc(got, func(s string) bool { return s != "all-tests" }) {
 		t.Errorf("place's mutants record scopes %q, want each \"all-tests\"", got)
-	}
-}
-
-// @ID-MUT-111
-func TestMutationSampleRerunsEachMutantWithItsRecordedScope(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, e2eFiles)
-	if o := mutateRun(t, "--all-tests", boardSource); o.code != 1 {
-		t.Fatalf("the --all-tests run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if got := recorded(t, placeID, ">"); got != "killed" {
-		t.Fatalf("place's mutant recorded %s, want killed by e2e/e2e_test.go", got)
-	}
-
-	o := mutationSample(t, "--json", "--count", "100", boardSource)
-	if got := baselines(o.stderr); !slices.Equal(got, []string{"go test -count=1 -failfast ./..."}) {
-		t.Errorf("baselines %q, want the whole suite's alone\n%s", got, o.stderr)
-	}
-	var place bool
-	for _, m := range o.sampled(t) {
-		if m.Function == placeID {
-			place = true
-			if m.Outcome != "killed" {
-				t.Errorf("place's mutant %+v, want it killed by the whole suite", m)
-			}
-		}
-	}
-	if !place {
-		t.Errorf("place's mutant was not sampled\n%s", o.stdout)
-	}
-	if p := o.json(t).problem("mutation.mismatch"); p != nil {
-		t.Errorf("mismatch %v, want none", p)
-	}
-	if o.code != 0 {
-		t.Errorf("exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-}
-
-// @ID-MUT-112
-func TestAScopeGivenToMutationSampleOverridesTheRecordedOne(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
-		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-
-	o := mutationSample(t, "--json", "--test-command", passing, boardSource)
-	if got := baselines(o.stderr); !slices.Equal(got, []string{passing}) {
-		t.Errorf("baselines %q, want %q alone\n%s", got, passing, o.stderr)
-	}
-	if len(o.sampled(t)) == 0 {
-		t.Errorf("nothing sampled\n%s", o.stdout)
-	}
-}
-
-// @ID-MUT-113
-func TestAnOutcomeWithNoRecordedScopeWasDecidedByTheFilesOwnTests(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	if o := mutateRun(t, "--all-tests", boardSource); o.code != 0 {
-		t.Fatalf("the --all-tests run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	stripScopes(t)
-
-	o := mutationSample(t, "--json", boardSource)
-	if got := baselines(o.stderr); !slices.Equal(got, []string{"go test -count=1 -failfast ./src"}) {
-		t.Errorf("baselines %q, want the file's own tests' alone\n%s", got, o.stderr)
-	}
-	if len(o.sampled(t)) == 0 {
-		t.Errorf("nothing sampled\n%s", o.stdout)
 	}
 }
