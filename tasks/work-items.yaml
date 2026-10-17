@@ -2666,6 +2666,11 @@ items:
       listed selection's run command names, which follows the list command's output rather than the
       IDs sorted; and the coverage line a Python or Kotlin file no test reaches logs (no test
       reaches <file>, so none runs).
+
+      Checked 2026-10-17: v0.15.8 also answers mutation --json list and mutation --json run --count
+      1 in plain text, so that case holds the release's behavior and is no regression of the
+      refactor. Whether a group's --json should reach its subcommand is the idea
+      mutation-group-json.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
