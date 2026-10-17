@@ -2604,6 +2604,11 @@ items:
       snapshot that cannot be read and a failing list command of mutation.tests. Also mutation run's
       progress, tests.selection-failed, tests.list-failed and unreadable-snapshot lines, which cmd
       now prints through the slice. No per-task binary comparison.
+
+      Serve and the architecture graph are deferred out of this refactor (T-102 to T-108, T-112,
+      T-113; the person's decision, 2026-10-17): they move to their own web app later. Their code
+      stays as it is, so the proof still covers their existing cases as unchanged legacy behaviour,
+      with no new serve or graph cases.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
