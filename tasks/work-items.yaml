@@ -2671,6 +2671,18 @@ items:
       1 in plain text, so that case holds the release's behavior and is no regression of the
       refactor. Whether a group's --json should reach its subcommand is the idea
       mutation-group-json.
+
+      T-101 (S7 complete: the mutation group runs in internal/mutation over the internal/mutants
+      domain, mutate.feature and metrics_snapshots.feature through both drivers, five
+      serve-observing scenarios deferred to the binary until serve's web app; mutation run's
+      unreachable report refusal and its run-failure wording removed): compare mutation run
+      --fail-uncovered over a strict Go source with --coverage-command 'x' and no --coverage-report,
+      with --coverage-command '' (explicitly empty), and with --coverage-command 'x'
+      --coverage-report r (each flags.conflict naming the first raw coverage flag, exit 2, nothing
+      measured); the same three without --fail-uncovered, and with --fail-uncovered over a
+      TypeScript-only selection (the logged coverage: --coverage-command needs --coverage-report
+      line, the run going on without coverage); and crap --coverage-command 'x' alone
+      (coverage.command-needs-report, exit 2).
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
