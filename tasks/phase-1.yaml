@@ -4121,81 +4121,26 @@
     first, never held/recreated; OS as a value. Focus local checks on named packages/scenarios;
     broad gates through hooks/CI. No own-code mutation runs, worktrees/session moves/agents or new
     dependencies without recorded selection. Finish normal, fail-fast and counted run handlers; cmd
-    no longer owns mutation application/presentation behavior. Complete memory
-    Driver.Tests/Coverage/import/history/exception plumbing so the same converted scenarios execute
-    through both drivers. Retain binary-only only for genuine external process ownership,
-    worker-copy links/PYTHONPATH/bytecode, real integration collectors, counted preparation stages
-    and static tool inventory that memory cannot faithfully stand in for. Every intentional skip
-    must be visible; no vacuous pass of unimplemented fake behavior. Add mutate.feature to
-    InProcess. Remove ITOS_CC_SKIP_FEATURES=mutate.feature from BOTH CI contexts introduced in T83
-    so pushCI again runs mutation scenarios through the normal merged selection; language-tools line
-    remains enabled. Show actual in-process counts/timing against binary counts with skips
-    explained.
-    Staged cross-command exceptions: MUT-134, 153, 154, 163 and 207 observe both mutation and
-    serve. Serve moves only in S8. Their in-process selection may defer these named scenarios
-    explicitly, with a reason and T-112 owner and visible omission logs; do not add permanent
-    binary-only tags or swallow Driver.Graph errors. All other eligible mutation scenarios
-    run normally. T-112 removes these deferrals and proves all five through both drivers.
-    T-73's Driver.ObserveWrites records real fake Store.Write revisions, including identical JSON.
-    Source annotation writers move here: route every attempted successful source write through
-    the memory driver's Write or an instrumented source-port adapter, even when bytes agree.
-    Do not infer an unwritten source from equal bytes during writeback. MUT102's source and
-    snapshot observer must pass in process once mutation scenarios join InProcess.
-    Complete T75's per-(directory, Command) Tests upserts and optional JSONL Trace through the
-    actual bound fake Workers. Require baseline-before-trials, actual command-selected
-    outcomes, actual copied-source digests and execution locations outside the original
-    fixture; retain an actual-binding negative regression, no scripted trace. Complete
-    Driver.Head from T91's history state and prove seed selection independently. T74's
-    CHECK_MARKER is a fixture environment variable not yet supported by memory.Run: adapt that
-    fixture to an embedded fixed path or honestly declared fixture environment without broad
-    environment support or a silent pass. All eligible sampling scenarios must execute with
-    these observations when mutation joins InProcess.
-    Trace identity uses canonical cwd and canonical original_root, realpathSync observations
-    in the real TS fixture. Memory traces derive both from actual virtual execution/original
-    project state. A path alias must not make execution in the original project look like a
-    worker copy.
-    Complete the real product environment inputs through actual fake bindings: in particular
-    MUT164's Run.Env GOWORK=off must reach the bound Toolchain while an active workspace
-    without that override is refused. This differs from a fixture-only CHECK_MARKER; do not
-    replace the product override with a fixed fixture path or ignore it. Any T-79 read/list
-    observer must observe real fake-port reads/listings, with honest capability omissions
-    where the binary cannot observe them, never a hardcoded empty result.
-    Bind both Workers and Measurer to the settled optional TestTrace.Tests inventory
-    for own-test scenarios 216/217. Emit the standard trace base plus optional test only
-    from actual executed request selections and actual input/root, preserving unrelated
-    runnable tests in the inventory so accidental broad execution fails. Prove these
-    cases and the whole-suite unrelated-test counterfactual against the real bound memory
-    ports; canned expected names, omitted coverage observations or empty traces cannot
-    stand for the selection policy. The T-78 ledger records the declaration contract.
-    Honor Coverage.Report's actual format through the bound memory Measurer:
-    Go cover profiles, LCOV and JaCoCo XML from T78's real declarations. The old
-    LCOV-only scenario helper cannot stand in for parsing the actual Go block or
-    Kotlin line evidence. Exercise representative existing strict Go and Kotlin
-    scenarios through the real handler binding, preserving paths and missing-report
-    failures; use the existing domain parser, not a fixture-ID dispatch or canned facts.
-    Bind actual controlled runtime environment inputs such as
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD and GOWORK from Run.Env to the real fake
-    Toolchain/Workers requests and fingerprint computation. An ignored variable
-    or a blanket permanent binary-only tag is not equivalent in-process execution.
-    Bind T79's separate Coverage.IntegrationReport through the existing
-    format-aware coverage parser, actual line matching/filtering and Integrated
-    provenance, with malformed-report failures and actual listed-test requests.
-    WithoutC8 records actual TypeScript collector absence without discarding
-    valid in-process data; report its existing typed missing fact only for a
-    built-in collector request, preserving raw-report and no-coverage workflows.
-    No fixture-specific verdicts or blanket integration labels establish this.
-    Bind the actual configured platform value for counted and fail-fast
-    admission, including MUT248 native Windows refusals. Do not emulate
-    ITOS_CC_TEST_PLATFORM inside a product binary or swallow platform errors.
-    Keep the separately bounded native T80 CI scenarios after removing the
-    broader T83 omission, and retain the documentation/private admission guards.
-    Fold the temporary T81 native-matrix invocation back into the ordinary suite
-    only after removing the broad T83 omission and observing all its applicable
-    counted/worktree cases there. Remove only that now-duplicate T81 invocation;
-    preserve the separately required T80 native-platform invocations unchanged.
+    no longer owns mutation application/presentation behavior.
+
+    Split on 2026-10-17: this item is the move alone, proved through the binary driver; T-125 makes
+    the same scenarios run in process. Reuse what T-97 to T-99 built rather than parallel plumbing:
+    mutants.SettingsReader through config.Reader selected at cmd, the slice Handler's ports, its
+    sealed Failure set worded in the UI, the shared presentation (RunProgress, the failed-selection
+    report, Tail, RunError, already moved by T-98) and the mutation.Written binding. Read settings
+    at run's own original observation points, found in the current cmd source and listed in the
+    commit. Once run moves, remove the legacy seam (runUntilLegacyMutation, legacyMutation,
+    runParsedMutation and the mutation invocation bridge). The memory driver keeps refusing run
+    until T-125, now as an explicit check of its own rather than through the removed seam, with the
+    decoy control kept effective: its fakes cannot yet stand in for run. mutate.feature stays out
+    of InProcess and ITOS_CC_SKIP_FEATURES stays in CI until T-125.
+    Keep external process ownership, worker copies, counted preparation, fail-fast cancellation,
+    interrupt handling, annotations and snapshot writes behaving and observed exactly as now.
+    Never edit inside embedded fixture source or golden strings, and run the pinned golangci-lint
+    over ./internal/... and the architecture fixtures before pushing.
   done_when:
     - run: go test ./internal/mutation/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
+    - run: go test ./features -count=1 -scenarios="@ID-MUT-"
 - id: T-101
   type: refactor
   title: Finish mutation documentation and remove superseded command tests
