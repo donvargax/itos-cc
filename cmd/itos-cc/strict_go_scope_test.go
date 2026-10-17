@@ -68,7 +68,8 @@ func requireUnsupportedCoverage(t *testing.T, o outcome, filename string) {
 	}
 }
 
-// @ID-MUT-164
+// @ID-MUT-164. Kept: the coverage-unsupported problem's file and line,
+// which the scenario does not assert (T-101).
 func TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace(t *testing.T) {
 	t.Parallel()
 	dir, _ := freshStrictScopeEvidence(t)

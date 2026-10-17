@@ -1064,43 +1064,43 @@ for Go/changed lines, strict language/scope, and subprocess integration. Default
 timeouts stay unchanged. T83's initial-matrix omission remains separate from
 actual execution in that installed-tool selection.
 
-Retain every holder below, its helpers and additional assertions until restored
-replacement CI and T101 cleanup. This mapping is not permission to remove an
-entire tagged test when it also holds an extra assertion.
+T-101 reviewed 156 to 164 and 221 to 224 once the scenarios ran green through both drivers; the
+raw coverage flag guard, `TestStrictGoRejectsUnattestedRawCoverageFlags`, went with them, ID-MUT-163
+holding each flag's refusal through the binary, where serve's deferral leaves it. Each kept holder
+holds what no scenario asserts. T-101 left 225, 226 and 228 to 230 unreviewed; they stay whole.
 
-| MUT | Retained holder | Exact test |
-| --- | --- | --- |
-| 156 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite |
-| 157 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies |
-| 158 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks |
-| 159 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable |
-| 160 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing |
-| 160 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCheckRejectsPartialOrMisattributedEvidence |
-| 161 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCoverageFingerprintStalesOnModuleTestChange |
-| 161 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs |
-| 162 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves |
-| 163 | cmd/itos-cc/strict_go_coverage_test.go | TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection |
-| 164 | cmd/itos-cc/strict_go_scope_test.go | TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace |
-| 221 | cmd/itos-cc/strict_lines_python_test.go | TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction |
-| 222 | cmd/itos-cc/strict_lines_typescript_test.go | TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction |
-| 223 | cmd/itos-cc/strict_lines_kotlin_test.go | TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction |
-| 224 | cmd/itos-cc/strict_scope_refusals_test.go | TestStrictCoverageRefusesScopesItsFingerprintsCannotProve |
-| 225 | cmd/itos-cc/strict_changed_lines_test.go | TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem |
-| 225 | cmd/itos-cc/strict_changed_lines_test.go | TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem |
-| 226 | cmd/itos-cc/strict_changed_lines_test.go | TestChangedLineStrictnessNeedsARange |
-| 226 | cmd/itos-cc/strict_changed_lines_counted_test.go | TestChangedLineStrictnessHoldsInACountedRun |
-| 228 | cmd/itos-cc/mutate_python_integration_test.go | TestLinesAPythonTestReachesThroughASubprocessAreCovered |
-| 229 | cmd/itos-cc/mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered |
-| 230 | cmd/itos-cc/mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered |
+| MUT | Holder under cmd/itos-cc | Exact test | T-101 |
+| --- | --- | --- | --- |
+| 156 | strict_go_coverage_test.go | TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite | removed |
+| 157 | strict_go_coverage_test.go | TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies | removed |
+| 158 | strict_go_coverage_test.go | TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks | removed |
+| 159 | strict_go_coverage_test.go | TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable | removed |
+| 160 | strict_go_coverage_test.go | TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing | kept: the marker's positive control |
+| 160 | strict_go_coverage_test.go | TestStrictGoCheckRejectsPartialOrMisattributedEvidence | kept: another function's evidence of the same module |
+| 161 | strict_go_coverage_test.go | TestStrictGoCoverageFingerprintStalesOnModuleTestChange | kept: the own test named, then remeasured |
+| 161 | strict_go_coverage_test.go | TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs | kept: inputs the scenario does not vary |
+| 162 | strict_go_coverage_test.go | TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves | removed |
+| 163 | strict_go_coverage_test.go | TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection | removed (through the binary) |
+| 164 | strict_go_scope_test.go | TestStrictGoRunRejectsCachedEvidenceWithActiveWorkspace | kept: the problem's file and line |
+| 221 | strict_lines_python_test.go | TestAStrictPythonRunProvesEveryExecutableLineOfEveryJudgedFunction | kept: the stale findings' functions and lines |
+| 222 | strict_lines_typescript_test.go | TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction | kept: the stale findings' functions and lines |
+| 223 | strict_lines_kotlin_test.go | TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction | kept: the stale findings' functions and lines |
+| 224 | strict_scope_refusals_test.go | TestStrictCoverageRefusesScopesItsFingerprintsCannotProve | kept: the refusal's line |
+| 225 | strict_changed_lines_test.go | TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | not reviewed |
+| 225 | strict_changed_lines_test.go | TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | not reviewed |
+| 226 | strict_changed_lines_test.go | TestChangedLineStrictnessNeedsARange | not reviewed |
+| 226 | strict_changed_lines_counted_test.go | TestChangedLineStrictnessHoldsInACountedRun | not reviewed |
+| 228 | mutate_python_integration_test.go | TestLinesAPythonTestReachesThroughASubprocessAreCovered | not reviewed |
+| 229 | mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered | not reviewed |
+| 230 | mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered | not reviewed |
 
 Additional retained guards include unloaded-package ordering and coverage-missing
-behavior, unattested raw-report rejection, cached workspace rejection,
+behavior, cached workspace rejection,
 out-of-inventory replacements, supported scope controls, Maven strict lines,
 fail-fast changed lines, pre-7.13 coverage.py behavior, other fingerprint inputs,
 partial/misattributed inventories, unsplit integration fallback, and actual raw
 collector/run-directory cleanup. In particular, retain
 `TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing`,
-`TestStrictGoRejectsUnattestedRawCoverageFlags`,
 `TestStrictGoCheckRejectsCachedEvidenceWithActiveWorkspace`,
 `TestStrictGoRunAndCheckRejectOutOfInventoryLocalReplacements`,
 `TestStrictGoScopeGuardrailsRemainSupported`,

@@ -52,7 +52,8 @@ func logRun(t *testing.T, o *outcome) {
 	})
 }
 
-// @ID-MUT-222
+// @ID-MUT-222. Kept: the coverage-stale findings' functions and lines after
+// the test change, where the scenario counts two naming the test (T-101).
 func TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testing.T) {
 	t.Parallel()
 	modules := languageTools(t, "typescript")

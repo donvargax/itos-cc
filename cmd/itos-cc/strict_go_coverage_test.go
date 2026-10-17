@@ -4,127 +4,14 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
 )
 
-// @ID-MUT-156
-func TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite(t *testing.T) {
-	t.Parallel()
-	source := "main.go"
-	moduleRepo(t, map[string]string{
-		"go.mod":       "module example.com/strict\n\ngo 1.22\n",
-		"main.go":      "package main\n\nfunc Compare(n int) bool { return n > 5 }\nfunc Choose(b bool) string { if b { return \"miss\" }; return \"hit\" }\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestChoose(t *testing.T) { if Compare(5) { t.Fatal(\"Compare\") }; if Choose(false) != \"hit\" { t.Fatal(\"Choose\") } }\n",
-	})
-
-	o := mutateCovered(t, "--fail-uncovered", "--json", source)
-	m := o.json(t)
-	p := m.problem("mutation.uncovered-statement")
-	wantProblem(t, p, map[string]any{"file": source, "function": "example.com/strict#Choose", "line": float64(4)}, o.stdout)
-	if _, has := p["original"]; has {
-		t.Errorf("statement problem invents original %v", p["original"])
-	}
-	if _, has := p["replacement"]; has {
-		t.Errorf("statement problem invents replacement %v", p["replacement"])
-	}
-	if len(m.Files) != 1 || m.Files[0].Killed != 1 || m.Files[0].Survived != 0 || m.Files[0].Uncovered != 0 {
-		t.Errorf("strict statement finding changed the one killed mutant's counts: %+v", m.Files)
-	}
-	if o.code != 1 {
-		t.Errorf("strict uncovered executable block exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	snapshotPath := inWD(t, filepath.Join(".metrics", "mutate", "main.go.json"))
-	before, err := os.ReadFile(snapshotPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	check := itosCc(t, "mutation", "check", "--fail-uncovered", "--json", source)
-	var checkProblem map[string]any
-	for _, candidate := range check.json(t).Problems {
-		if candidate["rule"] == "mutation.uncovered-statement" && candidate["function"] == "example.com/strict#Choose" {
-			checkProblem = candidate
-			break
-		}
-	}
-	wantProblem(t, checkProblem, map[string]any{"file": source, "function": "example.com/strict#Choose", "line": float64(4)}, check.stdout)
-	if check.code != 1 || strings.Contains(check.stderr, "coverage ") || strings.Contains(check.stderr, "tests ") {
-		t.Errorf("cached strict check must return the same verdict without commands, exit=%d\n%s%s", check.code, check.stdout, check.stderr)
-	}
-	after, err := os.ReadFile(snapshotPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(before) != string(after) {
-		t.Error("cached strict check wrote the snapshot")
-	}
-}
-
-// @ID-MUT-157
-func TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies(t *testing.T) {
-	t.Parallel()
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":       "module example.com/strictzero\n\ngo 1.22\n",
-		"main.go":      "package main\n\nfunc Dormant(flag bool) string { if flag { return \"yes\" }; return \"no\" }\nfunc Empty() {}\nfunc CommentsOnly() { // no executable work\n}\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestEmpty(t *testing.T) { Empty(); CommentsOnly() }\n",
-	})
-	o := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
-	if o.code != 1 {
-		t.Fatalf("uncovered zero-site function exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	var dormant, empty, comments int
-	for _, problem := range o.json(t).Problems {
-		if problem["rule"] != "mutation.uncovered-statement" {
-			continue
-		}
-		switch problem["function"] {
-		case "example.com/strictzero#Dormant":
-			dormant++
-		case "example.com/strictzero#Empty":
-			empty++
-		case "example.com/strictzero#CommentsOnly":
-			comments++
-		}
-	}
-	if dormant == 0 || empty != 0 || comments != 0 {
-		t.Errorf("strict findings: Dormant=%d Empty=%d CommentsOnly=%d; want uncovered zero-site code only\n%s", dormant, empty, comments, o.stdout)
-	}
-	path := filepath.Join(dir, ".metrics", "mutate", "main.go.json")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var stored struct {
-		Units []struct {
-			Name string          `json:"name"`
-			Go   json.RawMessage `json:"go_coverage"`
-		} `json:"units"`
-	}
-	if err := json.Unmarshal(data, &stored); err != nil {
-		t.Fatal(err)
-	}
-	for _, unit := range stored.Units {
-		if (unit.Name == "Empty" || unit.Name == "CommentsOnly") && (len(unit.Go) == 0 || string(unit.Go) == "null") {
-			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
-		}
-	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
-		t.Fatal(err)
-	}
-	for _, unit := range snapshot.Units {
-		if unit.Name == "Empty" || unit.Name == "CommentsOnly" {
-			if unit.Coverage == nil || !unit.Coverage.Complete || len(unit.Coverage.Blocks) != 0 {
-				t.Errorf("empty function %s evidence = %+v, want complete empty inventory", unit.Name, unit.Coverage)
-			}
-		}
-	}
-}
-
+// Strict Go coverage tests of features/mutate.feature's strict-go-coverage
+// rule. ID-MUT-156 to 159, 162 and 163 hold their old tests whole, the raw
+// coverage flag refusals among them (T-101); each test left holds what no
+// scenario asserts, beside this guard of an unloaded package's function.
 func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.T) {
 	t.Parallel()
 	moduleRepo(t, map[string]string{
@@ -148,74 +35,9 @@ func TestStrictGoReportsExecutableFunctionInUnloadedPackageAsMissing(t *testing.
 	}
 }
 
-// @ID-MUT-158
-func TestStrictGoKeepsSameLineSpansSeparateAndAttributesClosureBlocks(t *testing.T) {
-	t.Parallel()
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":       "module example.com/strictspans\n\ngo 1.22\n",
-		"main.go":      "package main\n\nfunc Branch(call bool) int { if call { return 1 }; return 2 }\nfunc Outer(call bool) int { f := func() int { return 7 }; if call { return f() }; return 0 }\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestBranch(t *testing.T) { if Branch(true) != 1 { t.Fatal(\"Branch\") }; if Outer(false) != 0 { t.Fatal(\"Outer\") } }\n",
-	})
-	o := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
-	if o.code != 1 {
-		t.Fatalf("uncovered spans exit %d, want 1\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	var outerFinding bool
-	for _, problem := range o.json(t).Problems {
-		if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictspans#Outer" {
-			outerFinding = true
-		}
-	}
-	if !outerFinding {
-		t.Errorf("unexecuted function literal block was not attributed to Outer:\n%s", o.stdout)
-	}
-	data, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", "main.go.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var stored struct {
-		Units []struct {
-			Name string          `json:"name"`
-			Go   json.RawMessage `json:"go_coverage"`
-		} `json:"units"`
-	}
-	if err := json.Unmarshal(data, &stored); err != nil {
-		t.Fatal(err)
-	}
-	for _, unit := range stored.Units {
-		if (unit.Name == "Branch") && (len(unit.Go) == 0 || string(unit.Go) == "null") {
-			t.Fatalf("%s has no persisted go_coverage evidence: %s", unit.Name, data)
-		}
-	}
-	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
-		t.Fatal(err)
-	}
-	var branch *mutation.GoCoverageEvidence
-	for i := range snapshot.Units {
-		if snapshot.Units[i].Name == "Branch" {
-			branch = snapshot.Units[i].Coverage
-		}
-	}
-	if branch == nil {
-		t.Fatal("Branch has no persisted coverage evidence")
-	}
-	var covered, uncovered int
-	spans := map[string]bool{}
-	for _, block := range branch.Blocks {
-		spans[block.Span] = true
-		if block.Covered {
-			covered++
-		} else {
-			uncovered++
-		}
-	}
-	if len(spans) < 2 || covered == 0 || uncovered == 0 {
-		t.Errorf("same-line block inventory has %d spans, %d covered, %d uncovered; want distinct covered and uncovered spans", len(spans), covered, uncovered)
-	}
-}
-
-// @ID-MUT-160
+// @ID-MUT-160. Kept: the marker its test writes is first shown to be
+// written, so its absence proves check ran no test, which the scenario cannot
+// show (T-101).
 func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing(t *testing.T) {
 	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
@@ -289,39 +111,8 @@ func TestStrictGoCheckRejectsLegacySnapshotWithoutCoverageEvidenceAndRunsNothing
 	}
 }
 
-// @ID-MUT-159
-func TestStrictGoRunMeasuresMissingEvidenceWhenMutantsAreReusable(t *testing.T) {
-	t.Parallel()
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":       "module example.com/strictreuse\n\ngo 1.22\n",
-		"main.go":      "package main\n\nfunc Positive(n int) bool { return n > 0 }\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestPositive(t *testing.T) { if !Positive(1) || Positive(0) { t.Fatal(\"Positive\") } }\n",
-	})
-	if o := mutateRun(t, "--json", "main.go"); o.code != 0 {
-		t.Fatalf("initial non-strict run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	o := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
-	if o.code != 0 {
-		t.Fatalf("strict run from fresh reusable mutants: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if !strings.Contains(o.stderr, "coverage ") || !strings.Contains(o.stderr, "no mutations to test") {
-		t.Errorf("strict run must measure missing coverage while reusing all mutants:\n%s", o.stderr)
-	}
-	data, err := os.ReadFile(filepath.Join(dir, ".metrics", "mutate", "main.go.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var snapshot map[string]any
-	if err := json.Unmarshal(data, &snapshot); err != nil {
-		t.Fatal(err)
-	}
-	units, _ := snapshot["units"].([]any)
-	if len(units) == 0 || units[0].(map[string]any)["go_coverage"] == nil {
-		t.Errorf("strict run failed to persist missing independent evidence:\n%s", data)
-	}
-}
-
-// @ID-MUT-161
+// @ID-MUT-161. Kept: a change to the package's own test named by the
+// coverage-stale message, then remeasured (T-101).
 func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
@@ -352,7 +143,8 @@ func TestStrictGoCoverageFingerprintStalesOnModuleTestChange(t *testing.T) {
 	}
 }
 
-// @ID-MUT-161
+// @ID-MUT-161. Kept: inputs the scenario does not vary: an added or removed
+// source, go.sum and itos-cc.yaml (T-101).
 func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -439,7 +231,8 @@ const strictFingerprintConfig = `mutation:
     support: ['support/**']
 `
 
-// @ID-MUT-160
+// @ID-MUT-160. Kept: another function's evidence of the same module
+// refused, where the scenario refuses an unrelated module's (T-101).
 func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 	t.Parallel()
 	dir := moduleRepo(t, map[string]string{
@@ -493,136 +286,6 @@ func TestStrictGoCheckRejectsPartialOrMisattributedEvidence(t *testing.T) {
 			// Restore the fixture before the next case.
 			if err := os.WriteFile(path, data, 0o644); err != nil {
 				t.Fatal(err)
-			}
-		})
-	}
-}
-
-// @ID-MUT-162
-func TestStrictGoPartialJudgmentPreservesUnjudgedEvidenceAndRemeasuresMoves(t *testing.T) {
-	t.Parallel()
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":       "module example.com/strictpartial\n\ngo 1.22\n",
-		"main.go":      "package main\n\nfunc Edited(n int) bool { return n > 0 }\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n",
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || Edited(0) || Stable(1) != 3 { t.Fatal(\"functions\") } }\n",
-	})
-	if o := mutateCovered(t, "--fail-uncovered", "--json", "main.go"); o.code != 1 {
-		t.Fatalf("initial strict run: exit %d, want uncovered Stable block\n%s%s", o.code, o.stdout, o.stderr)
-	} else {
-		var found bool
-		for _, problem := range o.json(t).Problems {
-			if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictpartial#Stable" {
-				found = true
-			}
-		}
-		if !found {
-			t.Fatalf("initial strict run did not report Stable's uncovered block:\n%s", o.stdout)
-		}
-	}
-	gitIn(t, dir, "branch", "base")
-	path := filepath.Join(dir, ".metrics", "mutate", "main.go.json")
-	readUnits := func() []map[string]any {
-		t.Helper()
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var snapshot struct {
-			Units []map[string]any `json:"units"`
-		}
-		if err := json.Unmarshal(data, &snapshot); err != nil {
-			t.Fatal(err)
-		}
-		return snapshot.Units
-	}
-	before := readUnits()
-	var stableBefore any
-	for _, unit := range before {
-		if unit["name"] == "Stable" {
-			stableBefore = unit["go_coverage"]
-		}
-	}
-	if stableBefore == nil {
-		t.Fatal("Stable has no initial independent inventory")
-	}
-	writeFile(t, filepath.Join(dir, "main.go"), "package main\n\nfunc Edited(n int) bool { return n >= 0 }\n\n// Stable moves while its body stays the same.\nfunc Stable(n int) int { if n > 0 { return 3 }; return 4 }\nfunc init() { _ = Stable }\nfunc init() { _ = Edited }\nfunc main() {}\n")
-	writeFile(t, filepath.Join(dir, "main_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestFunctions(t *testing.T) { if !Edited(1) || !Edited(0) || Stable(1) != 3 { t.Fatal(\"functions\") } }\n")
-	gitIn(t, dir, "add", "main.go", "main_test.go")
-	gitIn(t, dir, "commit", "-qm", "change selected function")
-	partial := mutateCovered(t, "--fail-uncovered", "--since", "base", "--json", "main.go")
-	if partial.code != 0 {
-		t.Fatalf("partial strict run: exit %d\n%s%s", partial.code, partial.stdout, partial.stderr)
-	}
-	var stableAfter any
-	for _, unit := range readUnits() {
-		if unit["name"] == "Stable" {
-			stableAfter = unit["go_coverage"]
-		}
-	}
-	if !reflect.DeepEqual(stableBefore, stableAfter) {
-		t.Errorf("unjudged Stable evidence was refreshed: before=%v after=%v", stableBefore, stableAfter)
-	}
-	full := mutateCovered(t, "--fail-uncovered", "--json", "main.go")
-	if full.code != 1 {
-		t.Fatalf("full run after movement: exit %d, want uncovered Stable block\n%s%s", full.code, full.stdout, full.stderr)
-	}
-	var movedLine int
-	for _, problem := range full.json(t).Problems {
-		if problem["rule"] == "mutation.uncovered-statement" && problem["function"] == "example.com/strictpartial#Stable" {
-			movedLine = int(problem["line"].(float64))
-		}
-	}
-	if movedLine != 6 {
-		t.Errorf("moved Stable uncovered finding line %d, want current line 6\n%s", movedLine, full.stdout)
-	}
-	var initHashes = map[string]bool{}
-	var initUnits int
-	for _, unit := range readUnits() {
-		if unit["name"] != "init" {
-			continue
-		}
-		initUnits++
-		evidence := unit["go_coverage"].(map[string]any)
-		if evidence["function_hash"] != unit["hash"] {
-			t.Errorf("repeated init evidence hash %v does not pair to unit hash %v", evidence["function_hash"], unit["hash"])
-		}
-		initHashes[unit["hash"].(string)] = true
-	}
-	if initUnits != 2 || len(initHashes) != 2 {
-		t.Errorf("repeated init inventories: %d units, %d identities; want two separately paired entries", initUnits, len(initHashes))
-	}
-}
-
-// @ID-MUT-163
-func TestStrictGoNoCoverageIsAUsageConflictEvenWithNoSelection(t *testing.T) {
-	t.Parallel()
-	inEmptyDir(t)
-	o := itosCc(t, "mutation", "run", "--no-coverage", "--fail-uncovered", "--json")
-	wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": "--no-coverage"}, o.stdout)
-	if o.code != 2 {
-		t.Errorf("strict no-coverage exit %d, want 2\n%s%s", o.code, o.stdout, o.stderr)
-	}
-}
-
-func TestStrictGoRejectsUnattestedRawCoverageFlags(t *testing.T) {
-	t.Parallel()
-	moduleRepo(t, map[string]string{
-		"go.mod":  "module example.com/strictflags\n\ngo 1.22\n",
-		"main.go": "package main\n\nfunc main() {}\n",
-	})
-	for _, args := range [][]string{
-		{"--coverage-report", "coverage.out"},
-		{"--use-existing-coverage"},
-		{"--coverage-command", "go test -coverprofile=coverage.out"},
-	} {
-		t.Run(strings.Join(args, "_"), func(t *testing.T) {
-			command := []string{"mutation", "run", "--fail-uncovered", "--json"}
-			command = append(command, args...)
-			command = append(command, "main.go")
-			o := itosCc(t, command...)
-			wantProblem(t, o.json(t).problem("flags.conflict"), map[string]any{"flag": args[0]}, o.stdout)
-			if o.code != 2 {
-				t.Errorf("strict raw coverage flag %v exit %d, want 2\n%s%s", args, o.code, o.stdout, o.stderr)
 			}
 		})
 	}

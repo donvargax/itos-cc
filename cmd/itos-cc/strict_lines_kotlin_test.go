@@ -59,7 +59,8 @@ func requireNoGradleRun(t *testing.T, o outcome, what string) {
 	}
 }
 
-// @ID-MUT-223
+// @ID-MUT-223. Kept: the coverage-stale findings' functions and lines after
+// the test change, where the scenario counts two naming the test (T-101).
 func TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "kotlin")

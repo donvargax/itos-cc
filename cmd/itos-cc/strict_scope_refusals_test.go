@@ -178,7 +178,8 @@ func strictCommands(source string) map[string][]string {
 	}
 }
 
-// @ID-MUT-224
+// @ID-MUT-224. Kept: the refusal's line, which the scenario does not assert
+// (T-101).
 func TestStrictCoverageRefusesScopesItsFingerprintsCannotProve(t *testing.T) {
 	t.Parallel()
 	for _, example := range scopeExamples {
