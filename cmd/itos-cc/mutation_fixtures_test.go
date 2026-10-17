@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/donvargax/itos-cc/graph"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -20,9 +19,4 @@ func planFreshForTest(ctx context.Context, root string, paths []string, since st
 func releaseFreshPlan(ctx context.Context, p *mutation.FreshPlan) error {
 	diskAdapters(io.Discard).Fresh.Release(ctx, p)
 	return nil
-}
-
-func graphMutationFixtureInputs() graph.MutationInputs {
-	a := diskAdapters(io.Discard)
-	return graph.MutationInputs{Snapshots: a.SnapshotReaders, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints}
 }

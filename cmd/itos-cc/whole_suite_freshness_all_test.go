@@ -6,11 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 	"testing"
-
-	"github.com/donvargax/itos-cc/graph"
 )
 
 // The scenarios of "Rule: Language parity with Go for strict coverage and
@@ -202,21 +199,6 @@ func suiteCommand(dir string) string {
 	return path
 }
 
-// changeTest edits the project's test file, which imports no source.
-func (l suiteLanguage) changeTest(t *testing.T, dir, mark string) {
-	t.Helper()
-	path := filepath.Join(dir, l.root, filepath.FromSlash(l.test))
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	comment := "// "
-	if l.name == "python" {
-		comment = "# "
-	}
-	writeFile(t, path, string(data)+comment+mark+"\n")
-}
-
 // suiteRun runs mutation run --json, without coverage, with args.
 func suiteRun(t *testing.T, args ...string) outcome {
 	t.Helper()
@@ -309,29 +291,6 @@ func suiteReuse(t *testing.T, o outcome) map[string]bool {
 	return out
 }
 
-// graphStale is, for each function the graph's builder finds under dir,
-// whether it marks it stale, by suiteKey.
-func graphStale(t *testing.T, dir string) map[string]bool {
-	t.Helper()
-	builder, err := graph.NewBuilder([]string{dir}, graphMutationFixtureInputs())
-	if err != nil {
-		t.Fatal(err)
-	}
-	g, _, err := builder.Build(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	out := map[string]bool{}
-	for _, node := range g.Nodes {
-		for _, unit := range node.Units {
-			if unit.Mutated {
-				out[suiteKey(unit.File, unit.Name)] = unit.Stale
-			}
-		}
-	}
-	return out
-}
-
 // snapshotEdit rewrites the raw snapshot of source with edit applied to
 // each recorded mutant.
 func snapshotEdit(t *testing.T, dir, source string, edit func(map[string]any)) {
@@ -360,76 +319,9 @@ func snapshotEdit(t *testing.T, dir, source string, edit func(map[string]any)) {
 	}
 }
 
-// recordedEvidence is the whole-suite evidence of every mutant the
-// snapshot of source records, one entry each, nil where it has none.
-func recordedEvidence(t *testing.T, dir, source string) []map[string]any {
-	t.Helper()
-	var out []map[string]any
-	snapshotEdit(t, dir, source, func(m map[string]any) { out = append(out, wholeSuiteEvidence(m)) })
-	return out
-}
-
-// @ID-MUT-205
-func TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale(t *testing.T) {
-	t.Parallel()
-	for _, example := range []struct {
-		language suiteLanguage
-		scope    []string
-	}{
-		{suiteTypeScript, []string{"--all-tests"}},
-		{suitePython, []string{"--test-command", "./run.sh"}},
-		{suiteKotlin, []string{"--all-tests"}},
-	} {
-		l := example.language
-		t.Run(l.name, func(t *testing.T) {
-			if example.scope[0] == "--test-command" && runtime.GOOS == "windows" {
-				t.Skip(`"./run.sh" cannot run through cmd, Windows's platform shell`)
-			}
-			// Given a <language> project whose test <test> does not import
-			// the production file
-			dir := moduleRepo(t, l.files(map[string][]string{"cli": {"above"}}))
-			l.placeStubs(t, suiteRunner(t), dir)
-			source, test := l.source("cli"), l.root+"/"+l.test
-
-			// And a mutation run with <scope> recorded an outcome for that
-			// file with whole-suite evidence
-			first := suiteRun(t, append(slices.Clone(example.scope), filepath.FromSlash(source))...)
-			if f := first.json(t).file(t, filepath.FromSlash(source)); f.Ran == 0 {
-				t.Fatalf("the whole-suite run judged nothing:\n%s%s", first.stdout, first.stderr)
-			}
-			for _, evidence := range recordedEvidence(t, dir, source) {
-				tests, _ := evidence["tests"].(map[string]any)
-				if tests[test] == nil {
-					t.Errorf("the whole-suite outcome records evidence %v, want it to hold %s", evidence, test)
-				}
-			}
-
-			// And only that test file changed since
-			l.changeTest(t, dir, "changed")
-
-			// When I run "itos-cc mutation check --json" for the production
-			// file
-			states, stale, check := suiteCheck(t, source)
-			// Then its function is stale and the "mutation.stale" message
-			// names the changed test file
-			key := source + "#above"
-			if states[key] != "stale" || !strings.Contains(stale[key], test) {
-				t.Errorf("after %s changed: %s is %q with message %q, want stale naming it\n%s", test, key, states[key], stale[key], check.stdout)
-			}
-			// And no test, list or coverage command runs
-			requireNoCommand(t, check)
-
-			// When I run mutation run with <scope> for the production file
-			again := suiteRun(t, append(slices.Clone(example.scope), filepath.FromSlash(source))...)
-			// Then the outcome runs again rather than being reused
-			if reused := suiteReuse(t, again); reused[key] {
-				t.Errorf("the whole-suite outcome was reused after %s changed\n%s", test, again.stdout)
-			}
-		})
-	}
-}
-
-// @ID-MUT-206
+// @ID-MUT-206. Kept: Python's and Kotlin's legacy evidence going stale, and
+// fresh outcomes reused by a run, which the scenario does not assert for
+// every language; ID-MUT-205 and 207 hold their old tests whole (T-101).
 func TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage(t *testing.T) {
 	t.Parallel()
 	// Given whole-suite outcomes in a TypeScript, a Python and a Kotlin
@@ -555,116 +447,5 @@ func TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage(t *t
 	}
 	if reuse := suiteReuse(t, suiteRun(t, "--all-tests", filepath.FromSlash(goSource))); !reuse[goSource+"#Above"] {
 		t.Errorf("Go outcome with go_evidence was not reused: %v", reuse)
-	}
-}
-
-// @ID-MUT-207
-func TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage(t *testing.T) {
-	t.Parallel()
-	// Given TypeScript, Python and Kotlin outcomes recorded with own,
-	// all-tests and test-command scopes
-	files := map[string]string{}
-	for _, l := range suiteLanguages {
-		for name, text := range l.files(map[string][]string{"own": {"own"}, "whole": {"first", "second"}, "command": {"command"}}) {
-			files[name] = text
-		}
-	}
-	// A Python or Kotlin file's own tests are the tests that reach it:
-	// own.py's is test_own.py, and own.kt's the class OwnTest, which no
-	// step changes.
-	files["py/tests/test_own.py"] = "from own import own\n\n\ndef test_own():\n    assert own(2, 1)\n"
-	files["kt/src/test/kotlin/OwnTest.kt"] = "import kotlin.test.Test\n\nclass OwnTest {\n    @Test\n    fun own() {\n        own(2, 1)\n    }\n}\n"
-	dir := moduleRepo(t, files)
-	runner := suiteRunner(t)
-	for _, l := range suiteLanguages {
-		l.placeStubs(t, runner, dir)
-	}
-	base := gitOut(t, dir, "rev-parse", "HEAD")
-	var own, whole, command, all []string
-	for _, l := range suiteLanguages {
-		own, whole, command = append(own, l.source("own")), append(whole, l.source("whole")), append(command, l.source("command"))
-	}
-	all = append(append(append(all, own...), whole...), command...)
-	suiteRun(t, osPaths(own)...)
-	suiteRun(t, append([]string{"--all-tests"}, osPaths(whole)...)...)
-	suiteRun(t, append([]string{"--test-command", suiteCommand(dir)}, osPaths(command)...)...)
-
-	// And only a non-importing test file changed beneath each build root
-	for _, l := range suiteLanguages {
-		l.changeTest(t, dir, "changed")
-	}
-	gitIn(t, dir, "add", "-A", "--", "ts/e2e", "py/tests", "kt/src/test")
-	gitIn(t, dir, "commit", "-qm", "change the tests")
-
-	// When their freshness is checked by mutation check, mutation run,
-	// mutation sample and the graph
-	want := map[string]string{}
-	for _, source := range own {
-		want[source+"#own"] = "fresh"
-	}
-	for _, source := range whole {
-		want[source+"#first"], want[source+"#second"] = "stale", "stale"
-	}
-	for _, source := range command {
-		want[source+"#command"] = "stale"
-	}
-	agree := func(stage string, want map[string]string) {
-		t.Helper()
-		// Then the own outcomes stay usable and every whole-suite outcome
-		// is stale
-		states, _, check := suiteCheck(t, all...)
-		requireNoCommand(t, check)
-		stale := graphStale(t, dir)
-		sample := itosCc(t, "mutation", "sample", "--workers", "1", "--count", "1000", "--seed", "whole-suite", "--json")
-		sampled := map[string]bool{}
-		for _, m := range sample.sampled(t) {
-			sampled[suiteKey(m.File, m.Function)] = true
-		}
-		// And all four agree on each function's freshness
-		for key, state := range want {
-			if states[key] != state {
-				t.Errorf("%s: mutation check calls %s %q, want %s\n%s", stage, key, states[key], state, check.stdout)
-			}
-			if stale[key] != (state == "stale") {
-				t.Errorf("%s: the graph marks %s stale=%v, want %s as mutation check", stage, key, stale[key], state)
-			}
-			if sampled[key] != (state == "fresh") {
-				t.Errorf("%s: mutation sample drew %s=%v, want only fresh outcomes drawn, and every one with 1000 to draw", stage, key, sampled[key])
-			}
-		}
-	}
-	agree("after the test change", want)
-
-	// And a --since run that judges one function never refreshes the
-	// evidence of an unjudged one
-	for _, l := range suiteLanguages {
-		path := filepath.Join(dir, filepath.FromSlash(l.source("whole")))
-		data, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		writeFile(t, path, strings.Replace(string(data), l.function("first"), l.function("first")+"\n"+l.function("helper"), 1))
-	}
-	gitIn(t, dir, "add", "-A", "--", "ts/src", "py/src", "kt/src/main")
-	gitIn(t, dir, "commit", "-qm", "add helpers")
-	partial := suiteRun(t, append([]string{"--all-tests", "--since", base}, osPaths(whole)...)...)
-	partialReuse := suiteReuse(t, partial)
-	for _, source := range whole {
-		if partialReuse[source+"#second"] {
-			t.Errorf("the --since run reused unjudged %s#second", source)
-		}
-		want[source+"#helper"] = "fresh"
-	}
-	agree("after the --since run", want)
-
-	// The run itself agrees: a plain run reuses exactly what is fresh.
-	reuse := suiteReuse(t, suiteRun(t, osPaths(all)...))
-	for key, state := range want {
-		if strings.HasSuffix(key, "#helper") {
-			continue
-		}
-		if reuse[key] != (state == "fresh") {
-			t.Errorf("mutation run reused %s=%v, want %s as mutation check", key, reuse[key], state)
-		}
 	}
 }

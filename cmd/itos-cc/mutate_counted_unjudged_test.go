@@ -35,7 +35,9 @@ const (
 	judgedLabel   = "export function label(name: string): boolean {\n  return name.length > 3;\n}\n"
 )
 
-// @ID-MUT-213
+// @ID-MUT-213. Kept: the strict Go inventory stage complete and the one
+// selected mutant main.go's, judged killed, which the scenario does not assert
+// (T-101).
 func TestAStrictCountedRunNeedsNoMeasurementOfALanguageWithNothingToJudge(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

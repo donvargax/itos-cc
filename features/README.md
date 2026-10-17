@@ -956,30 +956,36 @@ replacement CI and T101 cleanup. In particular,
 `uncovered_fails_closed_test.go` remains outside the replacement mapping;
 embedded fixture test functions are not additional repository tests to delete.
 
-| MUT | Retained holder | Exact test |
-| --- | --- | --- |
-| 150 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale |
-| 151 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestBroadScopeSupportFilesAreHashed |
-| 152 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence |
-| 153 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph |
-| 154 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestPartialRunKeepsUnjudgedBroadOutcomesStale |
-| 155 | cmd/itos-cc/mutate_all_tests_fresh_test.go | TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules |
-| 203 | cmd/itos-cc/strict_mixed_languages_test.go | TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection |
-| 204 | cmd/itos-cc/uncovered_fails_closed_test.go | TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing |
-| 205 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale |
-| 206 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage |
-| 207 | cmd/itos-cc/whole_suite_freshness_all_test.go | TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage |
-| 208 | cmd/itos-cc/mutate_ts_coverage_scope_test.go | TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants |
-| 209 | cmd/itos-cc/mutate_counted_languages_test.go | TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline |
-| 210 | cmd/itos-cc/mutate_python_bytecode_test.go | TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled |
-| 213 | cmd/itos-cc/mutate_counted_unjudged_test.go | TestAStrictCountedRunNeedsNoMeasurementOfALanguageWithNothingToJudge |
-| 214 | cmd/itos-cc/mutate_python_pytest_cache_test.go | TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree |
-| 215 | cmd/itos-cc/transitive_reach_test.go | TestATestThatReachesAFileThroughAnotherModuleIsAmongItsTests |
-| 216 | cmd/itos-cc/mutate_python_own_tests_test.go | TestAPythonFilesOwnTestsAreTheTestsThatReachIt |
-| 217 | cmd/itos-cc/mutate_kotlin_own_tests_test.go | TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt |
-| 218 | cmd/itos-cc/mutate_ts_fallback_test.go | TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes |
-| 219 | cmd/itos-cc/test_support_reach_test.go | TestATestReachesAFileThroughTheTestSupportFilesItUses |
-| 220 | cmd/itos-cc/test_support_reach_test.go | TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture |
+T-101 reviewed T-78's holders once the scenarios ran green through both drivers; 153, 154 and
+207 read the graph through the binary alone, deferred with serve. A check running no command,
+which some old holders also asserted, is ID-MUT-57's and 151's, and a precondition of a check
+before a change is the scenario's own stale-after-change. Files left with no test went; the
+others keep the helpers the counted tests share.
+
+| MUT | Holder under cmd/itos-cc | Exact test | T-101 |
+| --- | --- | --- | --- |
+| 150 | mutate_all_tests_fresh_test.go | TestBinaryOnlyEndToEndTestChangeMakesBroadScopeKillStale | removed |
+| 151 | mutate_all_tests_fresh_test.go | TestBroadScopeSupportFilesAreHashed | removed |
+| 152 | mutate_all_tests_fresh_test.go | TestPlainRunReusesBroadScopeKillsAndKeepsTheirEvidence | kept: a reused kill's scope in --json |
+| 153 | mutate_all_tests_fresh_test.go | TestMixedRecordedScopesKeepTheirOwnFreshnessAndMatchTheGraph | removed (graph through the binary) |
+| 154 | mutate_all_tests_fresh_test.go | TestPartialRunKeepsUnjudgedBroadOutcomesStale | removed (graph through the binary) |
+| 155 | mutate_all_tests_fresh_test.go | TestGoBroadScopeIncludesBuildTaggedTestsButExcludesNestedModules | removed |
+| 203 | strict_mixed_languages_test.go | TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection | kept: the strict runs' TypeScript and evidence checks |
+| 204 | uncovered_fails_closed_test.go | TestStrictRunsFailClosedWhenAnotherLanguageMeasuredNothing | removed |
+| 205 | whole_suite_freshness_all_test.go | TestANonImportingTestChangeMakesAnotherLanguagesWholeSuiteOutcomeStale | removed |
+| 206 | whole_suite_freshness_all_test.go | TestBuildRootsSupportFilesAndLegacyEvidenceAreExplicitForEveryLanguage | kept: legacy evidence and reuse in every language |
+| 207 | whole_suite_freshness_all_test.go | TestMixedScopesAndPartialRunsKeepTheirOwnDependenciesInEveryLanguage | removed (graph through the binary) |
+| 208 | mutate_ts_coverage_scope_test.go | TestTypeScriptCoverageComesFromTheRelatedTestsThatJudgeTheMutants | removed |
+| 209 | mutate_counted_languages_test.go | TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline | kept: each runner narrowed |
+| 210 | mutate_python_bytecode_test.go | TestASameSizePythonMutantWrittenWithinTheBaselinesSecondIsStillKilled | removed |
+| 213 | mutate_counted_unjudged_test.go | TestAStrictCountedRunNeedsNoMeasurementOfALanguageWithNothingToJudge | kept: the strict Go inventory stage and the selected mutant |
+| 214 | mutate_python_pytest_cache_test.go | TestMeasuringAndJudgingAPythonProjectLeavesNoPytestCacheInItsTree | removed |
+| 215 | transitive_reach_test.go | TestATestThatReachesAFileThroughAnotherModuleIsAmongItsTests | removed |
+| 216 | mutate_python_own_tests_test.go | TestAPythonFilesOwnTestsAreTheTestsThatReachIt | removed |
+| 217 | mutate_kotlin_own_tests_test.go | TestAKotlinFilesOwnTestsAreTheTestClassesThatReachIt | removed |
+| 218 | mutate_ts_fallback_test.go | TestATypeScriptTestScriptWithoutVitestOrJestRecordsWholeSuiteOutcomes | removed |
+| 219 | test_support_reach_test.go | TestATestReachesAFileThroughTheTestSupportFilesItUses | removed |
+| 220 | test_support_reach_test.go | TestAPythonMutantReachedOnlyThroughConftestIsJudgedByTheTestThatUsesTheFixture | removed |
 
 Strict coverage fixtures (T-79) may declare `Coverage.IntegrationReport` separately
 from their in-process `Report`, using the same existing report formats. An empty

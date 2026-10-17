@@ -182,7 +182,8 @@ func liveStatus(t *testing.T, dir string) string {
 	return gitOut(t, dir, "status", "--porcelain=v1", "--untracked-files=all", "--ignored")
 }
 
-// @ID-MUT-209
+// @ID-MUT-209. Kept: each language's runner narrowed to the test that
+// reaches the file, which the scenario asserts for Kotlin alone (T-101).
 func TestACountedRunJudgesAProjectOfEachLanguageThroughItsInstalledToolsOffline(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

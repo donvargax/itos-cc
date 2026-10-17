@@ -132,7 +132,8 @@ func requireCompleteGoEvidence(t *testing.T, dir string) {
 	}
 }
 
-// @ID-MUT-203
+// @ID-MUT-203. Kept: the strict runs leaving TypeScript unjudged and the Go
+// evidence complete after them, which the scenario does not assert (T-101).
 func TestStrictGoCoverageIgnoresTheOtherLanguagesOfAMixedSelection(t *testing.T) {
 	t.Parallel()
 	// Given a project with a Go module and a TypeScript file that has no
