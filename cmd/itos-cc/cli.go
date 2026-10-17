@@ -3,9 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
-	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -13,9 +10,11 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 )
 
-// The command line's own flag parser and help. Every command reports
-// through internal/cli: its problems, the --json object, the plain lines
-// and the exit code.
+// The hand parser and help of serve, the one command still on its legacy
+// handler: dispatch hands it serve's command line as it was written, and it
+// reports through internal/cli, its problems, the --json object, the plain
+// lines and the exit code, as every command does. It reads only what serve
+// takes: switches, strings, whole numbers and durations, each given once.
 
 // flagType is what a flag's value must parse as. A switch takes none.
 type flagType int
@@ -24,30 +23,19 @@ const (
 	switchFlag flagType = iota
 	stringFlag
 	intFlag
-	floatFlag
 	durationFlag
 )
 
-// flagSpec declares one long flag. Every command's flags are parsed from
-// these, so every rule about flags holds in every command.
+// flagSpec declares one long flag, which parse reads by it.
 type flagSpec struct {
-	name   string
-	typ    flagType
-	arg    string // the value's placeholder in help, such as N
-	def    string // the default, shown in help when set
-	repeat bool   // may be given more than once
-	// choices, on a switch, are the values it may take after =, as in
-	// --fail-uncovered=lines; alone, it is "true". Never the next argument.
-	choices []string
-	help    string
+	name string
+	typ  flagType
+	arg  string // the value's placeholder in help, such as N
+	def  string // the default, shown in help when set
+	help string
 }
 
 func sw(name, help string) flagSpec { return flagSpec{name: name, help: help} }
-
-// swChoice is a switch that may also take one of choices after =.
-func swChoice(name string, choices []string, help string) flagSpec {
-	return flagSpec{name: name, choices: choices, help: help}
-}
 
 func opt(name string, typ flagType, arg, def, help string) flagSpec {
 	return flagSpec{name: name, typ: typ, arg: arg, def: def, help: help}
@@ -59,7 +47,8 @@ var (
 	helpFlag = sw("help", "print this help")
 )
 
-// command is one subcommand: its help, its flags, and what it does.
+// command is a command on the hand parser: its help, its flags, and what it
+// does.
 type command struct {
 	name     string
 	summary  string // one line in the top-level help
@@ -71,10 +60,6 @@ type command struct {
 	rules    []string  // the problem rules it reports, "rule: meaning"
 	examples []string
 	run      func(context.Context, *invocation) (any, error)
-	// subs makes the command a group, a noun whose subcommands are the
-	// actions: mutation run, mutation list. A group has no run of its own;
-	// alone it prints its help.
-	subs []*command
 }
 
 type exitDoc struct {
@@ -87,8 +72,8 @@ func (c *command) allFlags() []flagSpec {
 }
 
 // invocation is one run of a command: its parsed flags and arguments, the
-// problems found so far, and the adapters run was given, which crap
-// measures coverage through.
+// problems found so far, and the adapters run was given, which serve reads
+// its snapshots and toolchain through.
 type invocation struct {
 	cmd      *command
 	values   map[string][]string
@@ -97,8 +82,6 @@ type invocation struct {
 	problems []*cli.Problem
 	adapters adapters
 }
-
-func (in *invocation) set(name string) bool { return len(in.values[name]) > 0 }
 
 func (in *invocation) str(name string) string {
 	if v := in.values[name]; len(v) > 0 {
@@ -112,17 +95,10 @@ func (in *invocation) str(name string) string {
 	return ""
 }
 
-func (in *invocation) strs(name string) []string { return in.values[name] }
-
 // The typed readers cannot fail: parse checked every value.
 func (in *invocation) integer(name string) int {
 	n, _ := strconv.Atoi(in.str(name))
 	return n
-}
-
-func (in *invocation) float(name string) float64 {
-	f, _ := strconv.ParseFloat(in.str(name), 64)
-	return f
 }
 
 func (in *invocation) duration(name string) time.Duration {
@@ -136,8 +112,7 @@ var errHelp = cli.NewProblem(0, "help", "help", "")
 // parse reads args against the command's flags: --flag value and
 // --flag=value, flags in any position, -- to end them, and -h or --help
 // anywhere for help. It refuses an unknown flag, a value missing or of the
-// wrong type, a value given to a switch, unless it is one of the switch's
-// choices, given after =, and a once-only flag given twice.
+// wrong type, a value given to a switch, and a flag given twice.
 func parse(cmd *command, args []string) (*invocation, error) {
 	in := &invocation{cmd: cmd, values: map[string][]string{}}
 	specs := map[string]flagSpec{}
@@ -178,23 +153,19 @@ func parse(cmd *command, args []string) (*invocation, error) {
 			}
 			return in, p.With("flag", a)
 		}
-		if len(in.values[name]) > 0 && !f.repeat {
+		if len(in.values[name]) > 0 {
 			return in, cli.NewProblem(cli.CodeUsage, "flags.repeated", fmt.Sprintf("--%s is given more than once", name),
 				"Give it once.").With("flag", "--"+name)
 		}
 		switch {
-		case f.typ == switchFlag && hasValue && len(f.choices) > 0 && !slices.Contains(f.choices, value):
-			return in, cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--%s takes %s, and was given %q", name, choiceList(f.choices), value),
-				fmt.Sprintf("Write --%s alone, or --%s=%s.", name, name, f.choices[0])).With("flag", "--"+name).With("value", value)
-		case f.typ == switchFlag && hasValue && len(f.choices) > 0:
 		case f.typ == switchFlag && hasValue:
 			return in, cli.NewProblem(cli.CodeUsage, "flags.switch-value", fmt.Sprintf("--%s takes no value, and was given %q", name, value),
 				fmt.Sprintf("Write --%s alone.", name)).With("flag", "--"+name)
 		case f.typ == switchFlag:
 			value = "true"
 		case !hasValue && (i+1 == len(args) || (strings.HasPrefix(args[i+1], "-") && args[i+1] != "-")):
-			// An option's value is never read as a flag: --top --json is a
-			// --top with no value.
+			// An option's value is never read as a flag: --port --json is a
+			// --port with no value.
 			return in, cli.NewProblem(cli.CodeUsage, "flags.value-missing", fmt.Sprintf("--%s needs a value", name),
 				fmt.Sprintf("Give it one, such as --%s %s.", name, f.arg)).With("flag", "--"+name)
 		case !hasValue:
@@ -209,15 +180,6 @@ func parse(cmd *command, args []string) (*invocation, error) {
 	return in, nil
 }
 
-// choiceList names a switch's choices, as "=a or =b".
-func choiceList(choices []string) string {
-	var out []string
-	for _, c := range choices {
-		out = append(out, "="+c)
-	}
-	return strings.Join(out, " or ")
-}
-
 func checkValue(f flagSpec, value string) error {
 	var err error
 	what := ""
@@ -225,9 +187,6 @@ func checkValue(f flagSpec, value string) error {
 	case intFlag:
 		_, err = strconv.Atoi(value)
 		what = "a whole number"
-	case floatFlag:
-		_, err = strconv.ParseFloat(value, 64)
-		what = "a number"
 	case durationFlag:
 		_, err = time.ParseDuration(value)
 		what = "a duration such as 500ms or 2s"
@@ -291,97 +250,15 @@ func (c *command) help() string {
 	return page.String()
 }
 
-func writeFlags(w io.Writer, flags []flagSpec) { cli.WriteFlags(w, helpFlags(flags)) }
-
 // helpFlags are flags as help lists them, help's own with -h.
 func helpFlags(flags []flagSpec) []cli.HelpFlag {
 	var out []cli.HelpFlag
 	for _, f := range flags {
-		one := cli.HelpFlag{Name: f.name, Arg: f.arg, Default: f.def, Choices: f.choices, Repeat: f.repeat, Help: f.help}
+		one := cli.HelpFlag{Name: f.name, Arg: f.arg, Default: f.def, Help: f.help}
 		if f.name == "help" {
 			one.Short = 'h'
 		}
 		out = append(out, one)
 	}
 	return out
-}
-
-// andList joins words as "a", "a and b", or "a, b, and c".
-func andList(words []string) string {
-	switch len(words) {
-	case 0:
-		return ""
-	case 1:
-		return words[0]
-	case 2:
-		return words[0] + " and " + words[1]
-	}
-	return strings.Join(words[:len(words)-1], ", ") + ", and " + words[len(words)-1]
-}
-
-func sortedNames(m map[string]*command) []string {
-	var names []string
-	for n := range m {
-		names = append(names, n)
-	}
-	sort.Strings(names)
-	return names
-}
-
-// sub is the group's subcommand named name, or nil.
-func (c *command) sub(name string) *command {
-	for _, s := range c.subs {
-		if s.verb() == name {
-			return s
-		}
-	}
-	return nil
-}
-
-// verb is a subcommand's own name: run for "mutation run".
-func (c *command) verb() string {
-	return c.name[strings.LastIndex(c.name, " ")+1:]
-}
-
-func (c *command) subNames() []string {
-	var names []string
-	for _, s := range c.subs {
-		names = append(names, s.verb())
-	}
-	return names
-}
-
-// groupHelp is a group's help: its usage, what it is for, its subcommands,
-// and where each one's contract is.
-func (c *command) groupHelp() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "usage: itos-cc %s <subcommand> [options] [path ...]\n\n%s\n\nSubcommands:\n", c.name, strings.TrimSpace(c.about))
-	width := 0
-	for _, s := range c.subs {
-		width = max(width, len(s.verb()))
-	}
-	for _, s := range c.subs {
-		fmt.Fprintf(&b, "  %-*s  %s\n", width, s.verb(), s.summary)
-	}
-	fmt.Fprintf(&b, `
-Run 'itos-cc %[1]s <subcommand> --help', or 'itos-cc help %[1]s <subcommand>',
-for a subcommand's options, --json output, problem rules, and exit codes.
-
-Output with --json and no subcommand, one object on stdout:
-  {"schema": 1, "ok": false, "problems": [{"rule": "command.missing", …}]}
-
-Problem rules:
-  command.unknown  no subcommand by that name: command
-  command.missing  --json with no subcommand
-
-Exit codes:
-  0   help printed
-  2   a usage error: an unknown subcommand or flag, or --json with no subcommand
-`, c.name)
-	b.WriteString("\nExamples:\n")
-	for _, e := range c.examples {
-		fmt.Fprintf(&b, "  %s\n", e)
-	}
-	fmt.Fprintf(&b, "\nReport issues at %s\n", cli.Issues)
-	return b.String()
 }

@@ -5,25 +5,24 @@ import (
 	"testing"
 )
 
-// runVersion runs the version command, --json or not, over a build of that
-// version and commit whose text is text, holds it to exit 0, and returns
-// what it wrote on stdout and stderr.
-func runVersion(t *testing.T, asJSON bool, text, version, commit string) (stdout, stderr string) {
+// runVersion runs the version command, --json or not, over a build that
+// says it is build, holds it to exit 0, and returns what it wrote on stdout
+// and stderr.
+func runVersion(t *testing.T, asJSON bool, build Build) (stdout, stderr string) {
 	t.Helper()
 	var out, errs strings.Builder
 	ui := &UI{In: strings.NewReader(""), Stdout: &out, Stderr: &errs}
-	if code := (Version{JSON: asJSON}).Run(ui, text, version, commit); code != 0 {
+	if code := (Version{JSON: asJSON}).Run(ui, build); code != 0 {
 		t.Fatalf("Run exit = %d, want 0", code)
 	}
 	return out.String(), errs.String()
 }
 
-// Without --json, version prints the text --version prints, whole, and
-// nothing on stderr.
-func TestVersionPrintsTheText(t *testing.T) {
-	text := "itos-cc 1.4.0\ncommit 0123abc"
-	stdout, stderr := runVersion(t, false, text, "1.4.0", "0123abc")
-	if want := text + "\n"; stdout != want {
+// Without --json, version prints one line, itos-cc and the version, and
+// nothing on stderr: no commit line, whatever the build knows.
+func TestVersionPrintsOneLine(t *testing.T) {
+	stdout, stderr := runVersion(t, false, "v1.2.3")
+	if want := "itos-cc v1.2.3\n"; stdout != want {
 		t.Errorf("standard output = %q, want %q", stdout, want)
 	}
 	if stderr != "" {
@@ -31,12 +30,11 @@ func TestVersionPrintsTheText(t *testing.T) {
 	}
 }
 
-// With --json, one object: schema 1, ok, the version and the
-// commit, and nothing on stderr.
-func TestVersionJSONIsOneObjectWithTheVersionAndCommit(t *testing.T) {
-	stdout, stderr := runVersion(t, true, "itos-cc 1.4.0\ncommit 0123abc", "1.4.0", "0123abc")
-	want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"version\": \"1.4.0\",\n  \"commit\": \"0123abc\"\n}\n"
-	if stdout != want {
+// With --json, the one object every command prints, its keys in the order
+// every object has them: ok, schema and the version, no commit key.
+func TestVersionJSONIsTheObjectOfTheVersion(t *testing.T) {
+	stdout, stderr := runVersion(t, true, "dev")
+	if want := "{\n  \"ok\": true,\n  \"schema\": 1,\n  \"version\": \"dev\"\n}\n"; stdout != want {
 		t.Errorf("standard output = %q, want %q", stdout, want)
 	}
 	if stderr != "" {
@@ -44,26 +42,18 @@ func TestVersionJSONIsOneObjectWithTheVersionAndCommit(t *testing.T) {
 	}
 }
 
-// A build that knows no commit leaves the key out, as its text has no second
-// line: never an empty commit a script would read as one.
-func TestVersionJSONLeavesTheCommitOutWhenTheBuildKnowsNone(t *testing.T) {
-	stdout, _ := runVersion(t, true, "itos-cc (devel)", "(devel)", "")
-	if want := "{\n  \"schema\": 1,\n  \"ok\": true,\n  \"version\": \"(devel)\"\n}\n"; stdout != want {
-		t.Errorf("standard output = %q, want %q", stdout, want)
-	}
-}
-
-// version's help gives the shape of its object and its exit codes, the
-// contract a script reads.
-func TestVersionHelpNamesItsJSONShapeAndExitCodes(t *testing.T) {
-	help := Version{}.Help()
+// version's help page, in the layout every command's has: the text it
+// prints, its --json key, its exit codes and examples.
+func TestVersionHelpGivesItsContract(t *testing.T) {
+	page := Page{Program: "itos-cc", Command: "version", Synopsis: "[options]", Contract: Version{}.Contract()}.String()
 	for _, want := range []string{
-		"--json prints one object: schema 1, ok true, version, and commit when the build knows it.",
-		"0  success",
-		"2  the command line is wrong",
+		"usage: itos-cc version [options]\n\nPrints \"itos-cc <version>\". --version is the same.\n",
+		`{"schema": 1, "ok": true|false, "version",`,
+		"  0   success\n  2   a usage error: a bad flag or an argument\n  70  ",
+		"  itos-cc version\n  itos-cc --version --json\n",
 	} {
-		if !strings.Contains(help, want) {
-			t.Errorf("the help does not say %q\n%s", want, help)
+		if !strings.Contains(page, want) {
+			t.Errorf("the help does not say %q\n%s", want, page)
 		}
 	}
 }

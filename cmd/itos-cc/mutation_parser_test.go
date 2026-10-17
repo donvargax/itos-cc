@@ -71,7 +71,7 @@ func parsedMutationFixture(t *testing.T, a adapters, args ...string) parsedMutat
 	if err != nil {
 		t.Fatal(err)
 	}
-	admitted, help, problem := cli.GroupLine(moved(parser)["mutation"], args)
+	admitted, help, problem := cli.GroupLine(commandNodes(parser)["mutation"], args)
 	if problem != nil || help {
 		t.Fatalf("fixture admission: help=%v problem=%v", help, problem)
 	}
@@ -240,14 +240,14 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 		t.Fatalf("golden must hold the group and all five children, got %d pages", len(expected))
 	}
 	var actualNames []string
-	for _, node := range moved(parser)["mutation"].Children {
+	for _, node := range commandNodes(parser)["mutation"].Children {
 		actualNames = append(actualNames, "mutation "+node.Name)
 	}
 	if !slices.Equal(actualNames, expectedNames) {
 		t.Fatalf("mutation child population/order changed: %q, want %q", actualNames, expectedNames)
 	}
 	visited := map[string]int{}
-	for _, node := range movedLeaves(parser) {
+	for _, node := range modelLeaves(parser) {
 		name := node.Path()
 		if !strings.HasPrefix(name, "mutation ") {
 			continue
@@ -278,7 +278,7 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 			t.Fatalf("golden page %q visited %d times, want once", name, visited[name])
 		}
 	}
-	group, err := cli.GroupHelp(moved(parser)["mutation"])
+	group, err := cli.GroupHelp(commandNodes(parser)["mutation"])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,10 +286,10 @@ func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 		t.Fatalf("group help changed\ngot:\n%s\nwant:\n%s", group, expected["mutation"])
 	}
 	// The group stays flattened in the top-level page, in original child order.
-	top := usage(parser)
+	top := cli.Usage(parser.Model)
 	prior := -1
 	for _, name := range []string{"run", "list", "check", "sample", "except"} {
-		node := moved(parser)["mutation"]
+		node := commandNodes(parser)["mutation"]
 		for _, child := range node.Children {
 			if child.Name != name {
 				continue

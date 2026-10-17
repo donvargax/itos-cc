@@ -2,45 +2,43 @@ package cli
 
 import "fmt"
 
-// Version is the version command: whether it prints the text --version
-// prints, or the one object a script reads. --version is kong's flag, an
-// action that prints the text alone, so only the command takes --json.
+// Version is the version command's command line: whether it prints the
+// version as a person reads it, or the one object a script reads. It takes
+// no arguments; --version before any command is the same command (Dispatch).
 type Version struct {
-	JSON bool `name:"json" negatable:"" env:"ITOS_CC_JSON" help:"Print one JSON object instead of the version."`
+	JSON bool `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
-// Help is version's own help: the shape of its --json object and the exit
-// codes it can return, as count's help gives its own. A scenario checks the
-// wording and a script reads it.
-//
-// The block is indented, so it is preformatted and holds its lines whole at
-// any terminal width; only the sentence above it is re-wrapped.
-func (Version) Help() string {
-	return "\nThe version is for a person to read; a script reads --json and the exit code.\n\n" +
-		"    --json prints one object: schema 1, ok true, version, and commit when the build knows it.\n" +
-		"    Exit codes:\n" +
-		"      0  success\n" +
-		"      2  the command line is wrong\n"
-}
+// Build is the version the binary says it is, which cmd works out from how
+// it was built and binds for Version's Run: what a release stamped, the
+// module version go install recorded, a checkout's pseudo-version, or dev.
+type Build string
 
-// build is the one object --json prints, the contract a script reads: the
-// version the binary says it is and the commit it was built from, the key
-// left out when the build knows none, as the text then has no second line.
-type build struct {
-	Schema  int    `json:"schema"`
-	OK      bool   `json:"ok"`
-	Version string `json:"version"`
-	Commit  string `json:"commit,omitempty"`
-}
-
-// Run prints what the binary says it is: text, as --version prints it, or
-// with --json the object of version and commit, commit "" when the build
-// knows none. It cannot fail.
-func (v Version) Run(ui *UI, text, version, commit string) int {
-	if v.JSON {
-		ui.JSON(build{Schema: 1, OK: true, Version: version, Commit: commit})
-		return 0
+// Contract is what version's help says beyond its flags: the text it
+// prints, the key --json adds and the exit codes it can return.
+func (Version) Contract() Contract {
+	return Contract{
+		About: `Prints "itos-cc <version>". --version is the same.`,
+		JSON:  `"version"`,
+		Exits: []Exit{
+			{Code: 0, Meaning: "success"},
+			{Code: 2, Meaning: "a usage error: a bad flag or an argument"},
+		},
+		Examples: []string{"itos-cc version", "itos-cc --version --json"},
 	}
-	_, _ = fmt.Fprintln(ui.Stdout, text)
-	return 0
+}
+
+// version is the object --json prints beside schema and ok.
+type version struct {
+	Version string `json:"version"`
+}
+
+// Run prints the version the binary says it is, build: the line
+// "itos-cc <version>", or with --json the object of its version alone. It
+// cannot fail.
+func (v Version) Run(ui *UI, build Build) int {
+	if !v.JSON {
+		_, _ = fmt.Fprintln(ui.Stdout, "itos-cc", string(build))
+	}
+	return ui.Emit(v.JSON, version{Version: string(build)}, nil)
 }

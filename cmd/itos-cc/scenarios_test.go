@@ -480,11 +480,12 @@ func (m *memory) Git(dir string, args ...string) error {
 // snapshots under .metrics/ at its project root and the itos-cc.yaml there.
 // The snapshots the run writes go back into the memory. The run's
 // variables reach the fakes as the environment facts the real adapters
-// read (inputs). A command still hand-parsed would reach the real disk, so
-// it is refused, naming the tag of a scenario only the binary can run.
+// read (inputs). serve, still on its legacy handler, would reach the real
+// disk and network, so it is refused: a scenario that runs it is the binary
+// driver's until serve's work (features.Deferred).
 func (m *memory) Run(r features.Run) (features.Result, error) {
-	if name := commandOf(r.Args); commands[name] != nil {
-		return features.Result{}, fmt.Errorf("itos-cc %s is hand-parsed and reaches the disk itself: tag the scenario %s", strings.Join(r.Args, " "), features.BinaryOnly)
+	if name := commandOf(r.Args); legacy[name] != nil {
+		return features.Result{}, fmt.Errorf("itos-cc %s is on its legacy handler and reaches the disk and network itself: list the scenario in features.Deferred", strings.Join(r.Args, " "))
 	}
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)
@@ -650,12 +651,10 @@ func (s observedStore) Remove(ctx context.Context, name string) snapport.Failure
 }
 
 // commandOf is the command args name, past the flags before it, as run
-// reads them; --version is the version command.
+// reads them.
 func commandOf(args []string) string {
 	for _, a := range args {
 		switch {
-		case a == "--version":
-			return "version"
 		case a == "--":
 			return ""
 		case !strings.HasPrefix(a, "-"):

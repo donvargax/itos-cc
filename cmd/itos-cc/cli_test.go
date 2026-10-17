@@ -6,69 +6,57 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
 )
 
+// testCommand takes what serve's flags are: a switch, a string, a whole
+// number and a duration, the kinds the hand parser reads.
 var testCommand = &command{
 	name: "probe",
 	flags: []flagSpec{
-		sw("changed", ""),
-		swChoice("strict", []string{"functions", "lines"}, ""),
-		opt("top", intFlag, "N", "", ""),
-		opt("threshold", floatFlag, "N", "", ""),
-		{name: "report", typ: stringFlag, arg: "FILE", repeat: true},
+		sw("quiet", ""),
+		opt("ui", stringFlag, "DIR", "", ""),
+		opt("port", intFlag, "N", "7070", ""),
+		opt("interval", durationFlag, "D", "500ms", ""),
 	},
 }
 
 func TestFlagsAreReadByTheirSpec(t *testing.T) {
 	t.Parallel()
-	in, err := parse(testCommand, []string{"a", "--top", "3", "--threshold=2.5", "b", "--report", "x", "--report=y", "--changed", "--", "--top"})
+	in, err := parse(testCommand, []string{"a", "--port", "3", "--interval=2s", "b", "--ui", "x", "--quiet", "--", "--port"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if in.integer("top") != 3 || in.float("threshold") != 2.5 || !in.set("changed") ||
-		!slices.Equal(in.strs("report"), []string{"x", "y"}) || !slices.Equal(in.args, []string{"a", "b", "--top"}) {
+	if in.integer("port") != 3 || in.duration("interval") != 2*time.Second || in.str("ui") != "x" || in.str("quiet") != "true" ||
+		!slices.Equal(in.args, []string{"a", "b", "--port"}) {
 		t.Errorf("values %v args %q", in.values, in.args)
 	}
-}
-
-func TestASwitchWithChoicesTakesOneAfterEqualsOrNone(t *testing.T) {
-	t.Parallel()
-	for args, want := range map[string]string{"--strict": "true", "--strict=lines": "lines", "--strict=functions": "functions"} {
-		in, err := parse(testCommand, append(strings.Fields(args), "a"))
-		if err != nil || !in.set("strict") || in.str("strict") != want || !slices.Equal(in.args, []string{"a"}) {
-			t.Errorf("%s: %v, value %q, args %q; want %q and the argument kept", args, err, in.str("strict"), in.args, want)
-		}
-	}
-	// The next argument is never its value.
-	if in, err := parse(testCommand, []string{"--strict", "lines"}); err != nil || in.str("strict") != "true" || !slices.Equal(in.args, []string{"lines"}) {
-		t.Errorf("--strict lines: %v, value %q, args %q; want a bare switch and an argument", err, in.str("strict"), in.args)
-	}
-	_, err := parse(testCommand, []string{"--strict=all"})
-	if p, ok := err.(*cli.Problem); !ok || p.Rule != "flags.value-invalid" || p.Code != cli.CodeUsage || !strings.Contains(p.Message, "=functions or =lines") {
-		t.Errorf("--strict=all: %v, want flags.value-invalid naming its choices", err)
-	}
-	var help strings.Builder
-	writeFlags(&help, testCommand.flags)
-	if !strings.Contains(help.String(), "--strict[=functions|lines]") {
-		t.Errorf("help:\n%s\nwant --strict[=functions|lines]", help.String())
+	// A flag not given is its default.
+	in, err = parse(testCommand, nil)
+	if err != nil || in.integer("port") != 7070 || in.duration("interval") != 500*time.Millisecond || in.str("ui") != "" {
+		t.Errorf("defaults: %v, values %v", err, in.values)
 	}
 }
 
 func TestBadFlagsAreUsageErrors(t *testing.T) {
 	t.Parallel()
 	for args, rule := range map[string]string{
-		"--bogus":         "flags.unknown",
-		"-changed":        "flags.unknown",
-		"--top":           "flags.value-missing",
-		"--top --changed": "flags.value-missing",
-		"--top=x":         "flags.value-invalid",
-		"--changed=yes":   "flags.switch-value",
-		"--top 1 --top 2": "flags.repeated",
-		"--threshold 1e":  "flags.value-invalid",
+		"--bogus":             "flags.unknown",
+		"-quiet":              "flags.unknown",
+		"--port":              "flags.value-missing",
+		"--port --quiet":      "flags.value-missing",
+		"--port=x":            "flags.value-invalid",
+		"--interval 5":        "flags.value-invalid",
+		"--quiet=yes":         "flags.switch-value",
+		"--port 1 --port 2":   "flags.repeated",
+		"--quiet --quiet":     "flags.repeated",
+		"--ui a --ui=b":       "flags.repeated",
+		"--json --json":       "flags.repeated",
+		"--interval=1s --top": "flags.unknown",
 	} {
 		_, err := parse(testCommand, strings.Fields(args))
 		p, ok := err.(*cli.Problem)
@@ -76,15 +64,15 @@ func TestBadFlagsAreUsageErrors(t *testing.T) {
 			t.Errorf("%s: %v, want %s, a usage error", args, err, rule)
 		}
 	}
-	_, err := parse(testCommand, []string{"-changed"})
-	if p := err.(*cli.Problem); !strings.Contains(p.Fix, "Did you mean --changed?") {
+	_, err := parse(testCommand, []string{"-quiet"})
+	if p := err.(*cli.Problem); !strings.Contains(p.Fix, "Did you mean --quiet?") {
 		t.Errorf("fix %q, want the flag that was meant", p.Fix)
 	}
 }
 
 func TestHelpAnywhereButAfterDashDash(t *testing.T) {
 	t.Parallel()
-	if _, err := parse(testCommand, []string{"a", "--top", "1", "-h"}); err != errHelp {
+	if _, err := parse(testCommand, []string{"a", "--port", "1", "-h"}); err != errHelp {
 		t.Errorf("-h after other flags: %v, want help", err)
 	}
 	if _, err := parse(testCommand, []string{"--", "-h"}); err == errHelp {
@@ -150,6 +138,17 @@ func TestDispatch(t *testing.T) {
 		{[]string{"help", "units", "extra"}, 2, ""},
 		{[]string{"--json", "unit"}, 2, `"Did you mean 'units'?`},
 		{[]string{"--json", "units", "-changed"}, 2, `"Did you mean --changed?`},
+		{nil, 0, "  serve           live architecture graph"},
+		{nil, 0, "  version         print the version"},
+		{[]string{"help", "serve"}, 0, "usage: itos-cc serve [options] [repo ...]"},
+		{[]string{"help", "serve", "extra"}, 2, ""},
+		{[]string{"--json", "serve", "--port", "x"}, 2, `"flags.value-invalid"`},
+		{[]string{"--json", "serv"}, 2, `"Did you mean 'serve'?`},
+		{[]string{"help", "version"}, 0, "usage: itos-cc version [options]"},
+		{[]string{"version", "-h", "extra"}, 0, "usage: itos-cc version [options]"},
+		{[]string{"--json", "version", "--bogus"}, 2, `"flags.unknown"`},
+		{[]string{"--json", "--version"}, 0, `"version"`},
+		{[]string{"--json", "vresion"}, 2, `"Did you mean 'version'?`},
 	} {
 		o := itosCc(t, c.args...)
 		code, out := o.code, o.stdout
@@ -161,34 +160,38 @@ func TestDispatch(t *testing.T) {
 
 func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	t.Parallel()
-	for _, c := range leaves() {
+	contract := []string{"Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues}
+	// serve, on its legacy handler, prints its own, in the same layout.
+	for _, c := range legacy {
 		h := c.help()
-		for _, part := range []string{"usage: itos-cc " + c.name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
+		for _, part := range append([]string{"usage: itos-cc " + c.name}, contract...) {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", c.name, part)
 			}
 		}
 	}
-	// The commands kong parses print theirs from its model and their
-	// Contract, in the same layout.
+	// Every other command prints its from kong's model and its Contract.
 	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters(io.Discard))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, node := range movedLeaves(parser) {
+	for _, node := range modelLeaves(parser) {
 		name := node.Path()
+		if legacy[name] != nil {
+			continue
+		}
 		page, err := cli.PageOf(node)
 		if err != nil {
 			t.Fatal(err)
 		}
 		h := page.String()
-		for _, part := range []string{"usage: itos-cc " + name, "Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues} {
+		for _, part := range append([]string{"usage: itos-cc " + name}, contract...) {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}
 		}
 	}
-	for name, node := range moved(parser) {
+	for name, node := range commandNodes(parser) {
 		if len(node.Children) == 0 {
 			continue
 		}
@@ -202,15 +205,27 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 			}
 		}
 	}
-	for name, g := range commands {
-		if g.subs == nil {
-			continue
-		}
-		h := g.groupHelp()
-		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", cli.Issues} {
-			if !strings.Contains(h, part) {
-				t.Errorf("%s --help lacks %q", name, part)
-			}
+}
+
+// The model names every command once, in their names' order, which the
+// guess for an unknown command weighs a tie by, and the line the top-level
+// help lists serve by is its legacy handler's summary.
+func TestTheModelNamesEveryCommandInOrder(t *testing.T) {
+	t.Parallel()
+	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), adapters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, node := range parser.Model.Children {
+		names = append(names, node.Name)
+	}
+	if want := []string{"crap", "dry", "mutation", "scrap", "serve", "units", "version"}; !slices.Equal(names, want) {
+		t.Errorf("the model's commands are %q, want %q", names, want)
+	}
+	for name, cmd := range legacy {
+		if node := commandNodes(parser)[name]; node == nil || node.Help != cmd.summary {
+			t.Errorf("the model lists %s as %v, want its summary %q", name, node, cmd.summary)
 		}
 	}
 }
@@ -225,8 +240,8 @@ func TestAPanicIsAnInternalError(t *testing.T) {
 	}
 }
 
-// movedLeaves are the executable command nodes, including group children.
-func movedLeaves(parser *kong.Kong) []*kong.Node {
+// modelLeaves are the executable command nodes, including group children.
+func modelLeaves(parser *kong.Kong) []*kong.Node {
 	var out []*kong.Node
 	var visit func(*kong.Node)
 	visit = func(node *kong.Node) {
