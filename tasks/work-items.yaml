@@ -2572,6 +2572,24 @@ items:
       Retained History/Coverage binding fixtures now enter through the actual one-parser invocation
       bridge. No per-task binary comparison; incorporate these cases into the concrete final-proof
       manifest after all commands and adoption fixes have moved.
+
+      T-97 (mutation list and check into internal/mutation; settings reread through mutants'
+      SettingsReader over the one config codec; check refusals worded by the slice UI): compare
+      mutation list and mutation check, plain and with --json, with no itos-cc.yaml, one that is not
+      YAML, one with an empty exclude glob (config.invalid with its key) and one that is a directory
+      (an ordinary read failure, internal 70). Compare exclude leaving sources out (the count line
+      on stderr, then no source files to list or check), list over two sources whose second cannot
+      be read (the ordered prefix beside the 70), and both run from a subdirectory with and without
+      paths. For check: --fail-uncovered=lines without --since beside an invalid itos-cc.yaml
+      (config.invalid wins, read first) and beside mutation.tests support files (support is read
+      before the refusal); --since nosuch, --since outside git, --since with --changed, an explicit
+      empty --since= and --since REF with and without paths (deleted-file exceptions read only
+      without paths); stale exceptions of every why, a function gone and a file gone (now
+      Tree.Exists rather than os.Stat), moved ones named from the working directory; orphans gone
+      and excluded under a directory, a fragment and no path; --fail-uncovered over Go and
+      TypeScript strict evidence missing, stale and unsupported. Also mutation run, sample and
+      except survivor, uncovered, coverage and stale-exception lines, which cmd now prints through
+      the slice's shared presentation. No per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
