@@ -3468,7 +3468,7 @@ items:
     title: Cancel a superseded run's test and language jobs
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-124

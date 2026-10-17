@@ -4880,8 +4880,6 @@
     release job keeps its own never-cancelled group, and an older run whose tests were cancelled
     cuts no release because its release condition needs them to pass. The ci and scope jobs are
     cheap and keep running. Recorded 2026-10-17 at the person's request.
-  done_when:
-    - run: "grep -q 'cancel-in-progress: true' .github/workflows/ci.yml"
 - id: T-124
   type: docs
   title: Say why mocking libraries are banned
