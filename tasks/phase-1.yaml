@@ -4904,3 +4904,79 @@
     keystroke away. Fakes with state, held to the real adapters by shared port contracts, are what
     the tests use; even no-write checks read the fake's state. One sentence so agents read it as
     intent, not a tool list. Recorded 2026-10-17 at the person's request.
+- id: T-125
+  type: refactor
+  title: Run the mutation scenarios in process
+  why: >
+    Split from T-100 on 2026-10-17: T-100 moves the run handlers into the slice; this item makes the
+    converted mutation scenarios run through the in-memory driver as well as the binary. T-100's S7
+    rules hold here unchanged: the domain knows no UI or I/O, adapters are chosen at cmd, our fakes
+    and never mocks or scripted calls, no own-code mutation runs, no new dependencies, targeted
+    local checks with broad gates through hooks and CI, equivalence cases added to
+    refactor-final-proof. Complete memory Driver.Tests/Coverage/import/history/exception plumbing so
+    the same converted scenarios execute through both drivers. Retain binary-only only for genuine
+    external process ownership, worker-copy links/PYTHONPATH/bytecode, real integration collectors,
+    counted preparation stages and static tool inventory that memory cannot faithfully stand in for.
+    Every intentional skip must be visible; no vacuous pass of unimplemented fake behavior. Add
+    mutate.feature to InProcess. Remove ITOS_CC_SKIP_FEATURES=mutate.feature from every CI job that
+    sets it (the ci job and each test part since T-122) so pushCI again runs mutation scenarios
+    through the normal merged selection; language-tools line remains enabled. Show actual in-process
+    counts/timing against binary counts with skips explained. Staged cross-command exceptions:
+    MUT-134, 153, 154, 163 and 207 observe both mutation and serve. Serve stays on its legacy
+    handler: its moves (T-102 to T-108, T-112, T-113) are deferred because serve leaves for its own
+    web app. Their in-process selection defers these five named scenarios explicitly, with that
+    reason, the deferred serve work as owner and visible omission logs; they keep running through
+    the binary driver. Do not add permanent binary-only tags or swallow Driver.Graph errors. All
+    other eligible mutation scenarios run normally. T-73's Driver.ObserveWrites records real fake
+    Store.Write revisions, including identical JSON. Source annotation writers move here: route
+    every attempted successful source write through the memory driver's Write or an instrumented
+    source-port adapter, even when bytes agree. Do not infer an unwritten source from equal bytes
+    during writeback. MUT102's source and snapshot observer must pass in process once mutation
+    scenarios join InProcess. Complete T75's per-(directory, Command) Tests upserts and optional
+    JSONL Trace through the actual bound fake Workers. Require baseline-before-trials, actual
+    command-selected outcomes, actual copied-source digests and execution locations outside the
+    original fixture; retain an actual-binding negative regression, no scripted trace. Complete
+    Driver.Head from T91's history state and prove seed selection independently. T74's CHECK_MARKER
+    is a fixture environment variable not yet supported by memory.Run: adapt that fixture to an
+    embedded fixed path or honestly declared fixture environment without broad environment support
+    or a silent pass. All eligible sampling scenarios must execute with these observations when
+    mutation joins InProcess. Trace identity uses canonical cwd and canonical original_root,
+    realpathSync observations in the real TS fixture. Memory traces derive both from actual virtual
+    execution/original project state. A path alias must not make execution in the original project
+    look like a worker copy. Complete the real product environment inputs through actual fake
+    bindings: in particular MUT164's Run.Env GOWORK=off must reach the bound Toolchain while an
+    active workspace without that override is refused. This differs from a fixture-only
+    CHECK_MARKER; do not replace the product override with a fixed fixture path or ignore it. Any
+    T-79 read/list observer must observe real fake-port reads/listings, with honest capability
+    omissions where the binary cannot observe them, never a hardcoded empty result. Bind both
+    Workers and Measurer to the settled optional TestTrace.Tests inventory for own-test scenarios
+    216/217. Emit the standard trace base plus optional test only from actual executed request
+    selections and actual input/root, preserving unrelated runnable tests in the inventory so
+    accidental broad execution fails. Prove these cases and the whole-suite unrelated-test
+    counterfactual against the real bound memory ports; canned expected names, omitted coverage
+    observations or empty traces cannot stand for the selection policy. The T-78 ledger records the
+    declaration contract. Honor Coverage.Report's actual format through the bound memory Measurer:
+    Go cover profiles, LCOV and JaCoCo XML from T78's real declarations. The old LCOV-only scenario
+    helper cannot stand in for parsing the actual Go block or Kotlin line evidence. Exercise
+    representative existing strict Go and Kotlin scenarios through the real handler binding,
+    preserving paths and missing-report failures; use the existing domain parser, not a fixture-ID
+    dispatch or canned facts. Bind actual controlled runtime environment inputs such as
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD and GOWORK from Run.Env to the real fake Toolchain/Workers
+    requests and fingerprint computation. An ignored variable or a blanket permanent binary-only tag
+    is not equivalent in-process execution. Bind T79's separate Coverage.IntegrationReport through
+    the existing format-aware coverage parser, actual line matching/filtering and Integrated
+    provenance, with malformed-report failures and actual listed-test requests. WithoutC8 records
+    actual TypeScript collector absence without discarding valid in-process data; report its
+    existing typed missing fact only for a built-in collector request, preserving raw-report and
+    no-coverage workflows. No fixture-specific verdicts or blanket integration labels establish
+    this. Bind the actual configured platform value for counted and fail-fast admission, including
+    MUT248 native Windows refusals. Do not emulate ITOS_CC_TEST_PLATFORM inside a product binary or
+    swallow platform errors. Keep the separately bounded native T80 CI scenarios after removing the
+    broader T83 omission, and retain the documentation/private admission guards. Fold the temporary
+    T81 native-matrix invocation back into the ordinary suite only after removing the broad T83
+    omission and observing all its applicable counted/worktree cases there. Remove only that
+    now-duplicate T81 invocation; preserve the separately required T80 native-platform invocations
+    unchanged.
+  done_when:
+    - run: go test ./internal/mutation/...
+    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$" -scenarios="@ID-MUT-"
