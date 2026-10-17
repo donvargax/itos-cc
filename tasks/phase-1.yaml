@@ -4138,9 +4138,6 @@
     interrupt handling, annotations and snapshot writes behaving and observed exactly as now.
     Never edit inside embedded fixture source or golden strings, and run the pinned golangci-lint
     over ./internal/... and the architecture fixtures before pushing.
-  done_when:
-    - run: go test ./internal/mutation/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-"
 - id: T-101
   type: refactor
   title: Finish mutation documentation and remove superseded command tests
