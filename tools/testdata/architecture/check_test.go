@@ -145,7 +145,9 @@ func TestArchitecture(t *testing.T) {
 	// they take files internal/lang parsed, their tests parsing them through
 	// lang's fake, as internal/changerisk, which scores them with a coverage
 	// Report, does. internal/coverage asks its port what a path a report
-	// names is on disk (decision 46).
+	// names is on disk (decision 46). config, the settings codec whose
+	// Reader implements mutants' SettingsReader and aliases its Config
+	// (T-97), is outside every domain too.
 	domains := []string{"internal/counting", "internal/selection", "internal/lang", "internal/snapshot", "internal/duplication", "internal/teststructure", "internal/changerisk", "internal/mutants", "internal/coverage"}
 	for _, domain := range domains {
 		ported := domain != "internal/duplication" && domain != "internal/teststructure" && domain != "internal/changerisk" && domain != "internal/mutants"
@@ -162,7 +164,7 @@ func TestArchitecture(t *testing.T) {
 				if test {
 					kind = "test"
 				}
-				for _, target := range []string{"internal/disk", "internal/stdin", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/count", "internal/dry", "internal/scrap", "internal/crap", "internal/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage"} {
+				for _, target := range []string{"internal/disk", "internal/stdin", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/count", "internal/dry", "internal/scrap", "internal/crap", "internal/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "config"} {
 					add(strings.ReplaceAll(target, "/", "_")+"_"+kind, base, module+"/"+target, "Value", "domain", test)
 				}
 				add("domain_allowed_"+kind, base, module+"/"+domain, "Value", "", test)
@@ -249,7 +251,8 @@ func TestArchitecture(t *testing.T) {
 	// libraries an adapter wraps, a package that is no command or cmd. The
 	// snapshot domain is a domain like the others, its port a slice's to hold.
 	// internal/units, internal/dry, internal/scrap, internal/crap and internal/next are held as count is with no rule
-	// naming them, as a made project's next slice is.
+	// naming them, as a made project's next slice is. internal/mutation reads
+	// settings through mutants' SettingsReader, never the config codec (T-97).
 	for _, slice := range []struct{ base, other string }{{"internal/count", "internal/next"}, {"internal/next", "internal/count"}, {"internal/units", "internal/count"}, {"internal/dry", "internal/units"}, {"internal/scrap", "internal/dry"}, {"internal/crap", "internal/scrap"}, {"internal/mutation", "internal/units"}, {"internal/units", "internal/mutation"}} {
 		for _, test := range []bool{false, true} {
 			kind := "code"

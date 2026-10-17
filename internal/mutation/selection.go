@@ -3,9 +3,7 @@ package mutation
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
@@ -14,7 +12,7 @@ func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources [
 	var moves map[string]string
 	if q.Since != nil {
 		if q.Changed {
-			return nil, nil, nil, nil, 0, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--since and --changed cannot be combined: --since judges the functions of commits, --changed whole files of the working tree", "Drop --changed; commit the work to judge it with --since.").With("flag", "--changed")
+			return nil, nil, nil, nil, 0, SinceWithChanged{}
 		}
 		if h.History == nil {
 			return nil, nil, nil, nil, 0, errors.New("mutation history binding is missing")
@@ -22,7 +20,7 @@ func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources [
 		var failure mutants.HistoryFailure
 		since, moves, failure = h.History.ChangedSince(ctx, *q.Since)
 		if failure != nil {
-			return nil, nil, nil, nil, 0, sinceError(failure, *q.Since)
+			return nil, nil, nil, nil, 0, SinceUnavailable{Ref: *q.Since, Failure: failure}
 		}
 	}
 	files, err := h.files(ctx, q)
@@ -39,19 +37,6 @@ func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources [
 	}
 	dir := h.Dir
 	return sources, func(path, function, hash string) bool { return since[path].Judges(function, hash) }, func(path string) string { return moves[path] }, func(path string, start, end int) bool { return since[sourcePath(dir, path)].Changes(start, end) }, files.Excluded, nil
-}
-func sinceError(failure mutants.HistoryFailure, ref string) error {
-	switch failure := failure.(type) {
-	case mutants.BadReference:
-		return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", ref), "Name a branch, tag, or commit, such as origin/main; fetch a remote one first.").With("ref", ref)
-	case mutants.NoRepository:
-		return cli.NewProblem(cli.CodeEnvironment, "since.no-git", "--since needs a git repository: "+failure.Reason, "Run it inside a git repository, or name the paths instead.")
-	case mutants.HistoryCancelled:
-		return failure.Cause
-	case mutants.HistoryFailed:
-		return failure.Cause
-	}
-	return failure
 }
 func (h Handler) importingTests(ctx context.Context, root string) (func(string) []string, error) {
 	if h.Reach == nil {

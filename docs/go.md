@@ -176,7 +176,11 @@ from it, and thin slices named for their commands.
   check now run in the slice (T-97): application queries carry selection and coverage
   values once, and their handler coordinates the existing mutants, selection and
   language capabilities. List presents its ordered prefix on later read failure; check
-  formats no per-file findings until ordinary and strict admission both succeed.
+  formats no per-file findings until ordinary and strict admission both succeed. The
+  handler builds no problem and picks no exit code: it returns the slice's sealed
+  `Failure` (`LinesWithoutSince`, `SinceWithChanged`, `SinceUnavailable` with its ref)
+  at the cmd handler's admission point, and `Run`'s classifier words it, beside the
+  settings, history and snapshot-read failures, in the bytes and codes cmd gave them.
   Shared mutation presentation has one owner here; remaining cmd handlers delegate
   to it. An explicit zero/empty flag remains
   distinct from omission. The literal `no-coverage` and `no-annotate` names have no positive
@@ -189,7 +193,11 @@ from it, and thin slices named for their commands.
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
   unit fake owns only semantic values. The memory driver supports these two moved
-  handlers without admitting the whole mutation feature before T-100.
+  handlers without admitting the whole mutation feature before T-100. `run` hands a
+  validated run, sample or except back to the cmd dispatcher
+  (`runUntilLegacyMutation`); the memory driver refuses it by name, never reaching the
+  host, and its tests hold that with a physical decoy: an invalid itos-cc.yaml in the
+  process's working directory that a fall-through would read.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -253,7 +261,8 @@ from it, and thin slices named for their commands.
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
   buffers and porttest's fakes (`TestRunWithFakes`, decision 44); mutation's parser has moved,
-  while its handlers still use the process streams and their existing discovery until
+  and its list and check handlers use the streams and adapters given (T-97), while run,
+  sample and except still use the process streams and their existing discovery until
   their individual moves. The hand-parsed commands
   keep the process's streams and disk until they move, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
@@ -301,13 +310,15 @@ context-as-argument a context after any other parameter, tests included.
 `.golangci.yml` holds these arrows with depguard:
 
 - `domain`: the domains, their ports and their tests import nothing of ours but the domains and
-  their port subpackages, and never kong.
+  their port subpackages, and never kong. `config` imports `internal/mutants`, whose `Config`
+  it aliases and whose `SettingsReader` its `Reader` implements, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
 - `slices`: a slice imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
   with its port and, in its tests, the port's fake, so never another slice, an adapter, the `project` library
-  an adapter wraps and lang's disk side, or `cmd`. Its files are every package under `internal/` except the ones the
+  an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
+  through mutants' `SettingsReader`, T-97), or `cmd`. Its files are every package under `internal/` except the ones the
   rule lists as something else, so a new command's slice is held with no edit. A slice's tests
   are in its own package, since the rule cannot tell a package's import of itself from another's.
 - `slice-fakes`: a slice's own code imports no `porttest`, which only its tests may use (T-56).

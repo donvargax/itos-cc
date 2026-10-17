@@ -5,7 +5,6 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
@@ -27,6 +26,9 @@ type CheckFound struct {
 	NoSources bool
 }
 
+// Check observes in the cmd handler's order: settings, then test support,
+// then the lines-without-since refusal, then selection. A refusal is a
+// Failure the UI words; the handler builds no problem and picks no exit code.
 func (h Handler) Check(ctx context.Context, q CheckQuery) (CheckFound, error) {
 	found := CheckFound{}
 	root, cfg, err := h.settings(ctx)
@@ -46,7 +48,7 @@ func (h Handler) Check(ctx context.Context, q CheckQuery) (CheckFound, error) {
 		}
 	}
 	if q.LinesOnly && q.Since == nil {
-		return found, cli.NewProblem(cli.CodeUsage, "flags.conflict", "--fail-uncovered=lines judges only the lines a --since range changed, and was given without --since", "Add --since REF, such as --since origin/main, or write --fail-uncovered alone to judge whole functions.").With("flag", "--fail-uncovered=lines")
+		return found, LinesWithoutSince{}
 	}
 	sources, judge, renamed, lines, excluded, err := h.selectSources(ctx, q.SelectionQuery)
 	if err != nil {

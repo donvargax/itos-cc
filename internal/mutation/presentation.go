@@ -115,7 +115,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 		}
 		problem := cli.NewProblem(cli.CodeNo, "mutation.exception-stale", message, fix)
 		for key, value := range p.StaleSubject(rel, e) {
-			problem.With(key, value)
+			problem = problem.With(key, value)
 		}
 		problem.Shown = true
 		p.report(problem)
