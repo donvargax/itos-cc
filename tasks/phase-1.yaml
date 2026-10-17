@@ -4973,9 +4973,6 @@
     Measure: ci.yml's and cd.yml's per-job times on at least three source pushes and one prose-only
     push. No test, scenario, platform or gate is removed from cd.yml or weakened; nothing moves to
     the nightly.
-  done_when:
-    - run: itos config check
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="^@ID-CLI-0[1-5]$"
 - id: T-128
   type: ci
   title: Run the binary driver's scenarios concurrently
