@@ -98,8 +98,6 @@ func (b *Board) clear(i int) bool {
 
 import "testing"
 
- mutationslice "github.com/donvargax/itos-cc/internal/mutation"
-
 func TestPlace(t *testing.T) {
 	var b Board
 	if b.place(5) || !b.place(6) {
@@ -171,8 +169,6 @@ func Settle(still bool) {
 		"src/wait/wait_test.go": `package wait
 
 import "testing"
-
- mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 
 func TestSettle(t *testing.T) {
 	Settle(true)
