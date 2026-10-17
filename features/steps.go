@@ -1493,7 +1493,7 @@ func featureTags(files []string) ([]string, error) {
 // the scenario's ellipsis, as mutation summaries name only their suffix.
 func (w *world) stdoutSays(text string) error {
 	if !strings.Contains(text, "…") {
-		if strings.Contains(w.stdout, text) {
+		if strings.Contains(w.stdout, text) || strings.Contains(filepath.ToSlash(w.stdout), text) {
 			return nil
 		}
 	} else {

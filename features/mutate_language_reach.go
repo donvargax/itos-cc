@@ -3,6 +3,7 @@ package features
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/cucumber/godog"
@@ -134,7 +135,7 @@ func (l *languageMutation) reachStale(p languageReachProject) error {
 	}
 	found := false
 	for _, pbl := range checkProblems(a) {
-		if pbl["rule"] == "mutation.stale" && pbl["file"] == p.b && strings.Contains(fmt.Sprint(pbl["message"]), p.reaching) {
+		if pbl["rule"] == "mutation.stale" && filepath.ToSlash(fmt.Sprint(pbl["file"])) == p.b && strings.Contains(fmt.Sprint(pbl["message"]), p.reaching) {
 			found = true
 		}
 	}

@@ -145,7 +145,7 @@ func sameGoFindings(a, b map[string]any) error {
 	filter := func(o map[string]any) []map[string]any {
 		out := []map[string]any{}
 		for _, p := range checkProblems(o) {
-			if p["file"] == "gomod/entry.go" {
+			if filepath.ToSlash(fmt.Sprint(p["file"])) == "gomod/entry.go" {
 				out = append(out, p)
 			}
 		}

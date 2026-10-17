@@ -340,9 +340,15 @@ func (m *memory) Tests(dir string, t features.Tests) error {
 	// A program named by a path relative to dir is the same program by
 	// its absolute path, which itos-cc runs an installed tool by
 	// (project.NodeBin): both name one command, which this declares.
+	// On Windows a program named without its extension is the installed
+	// .cmd shim of it, as an npm install writes one beside it.
 	if words := strings.Fields(t.Command); len(words) > 0 && strings.ContainsAny(words[0], `/\`) && !filepath.IsAbs(words[0]) {
 		words[0] = filepath.Join(dir, filepath.FromSlash(words[0]))
 		m.tests[dir][strings.Join(words, " ")] = t
+		if m.Platform() == "windows" && filepath.Ext(words[0]) == "" {
+			words[0] += ".cmd"
+			m.tests[dir][strings.Join(words, " ")] = t
+		}
 	}
 	return nil
 }
