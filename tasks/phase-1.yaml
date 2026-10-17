@@ -4867,3 +4867,18 @@
     the run green; target under about 10 minutes for a source push and under about 3 for a
     prose-only one, and say plainly if a target is missed and why. Recorded 2026-10-17 by the
     person's request; queued before T-98.
+- id: T-123
+  type: ci
+  title: Cancel a superseded run's test and language jobs
+  why: >
+    T-122 runs about 19 jobs at once per source push, near the free plan's 20 concurrent jobs and 5
+    macOS ones, so two overlapping pushes queue each other's jobs. A newer push's run already covers
+    the older run's commits: itos ci range starts at the last green run, and itos push, ci watch and
+    work done follow the newer run when one is cancelled (itos#17). So the test and languages jobs
+    get job-level concurrency per ref and matrix entry with cancel-in-progress true. It is not set
+    at workflow level, because that would cancel a release job halfway through publishing; the
+    release job keeps its own never-cancelled group, and an older run whose tests were cancelled
+    cuts no release because its release condition needs them to pass. The ci and scope jobs are
+    cheap and keep running. Recorded 2026-10-17 at the person's request.
+  done_when:
+    - run: "grep -q 'cancel-in-progress: true' .github/workflows/ci.yml"
