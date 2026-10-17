@@ -1218,6 +1218,9 @@ replacement CI and T101 cleanup. No adapter fault/budget guard is a CLI duplicat
 | 202 | same partial holder | TestALaterRunFinishesOnlyWhatTheStopLeft |
 | 211 | cmd/itos-cc/mutate_fail_fast_counts_test.go | TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused |
 
+T-101 did not review these T-80 holders; each stays whole until a later review maps it
+assertion by assertion.
+
 The current partial fixture demonstrates reused/completed proof, cancellation and
 unattempted sites; the old blocked-selection partial-evidence branch remains an
 extra guard. MUT196 observes the actual own-baseline failure with canonical
@@ -1309,6 +1312,9 @@ and T101's review. No legacy file is deleted by T81.
 | 185 | same | TestSampledExecutionPublishesNoPersistentCompleteProof |
 | 186 | same | TestOnlyAGenuinelySiteFreeRangeIsNotApplicable |
 | 212 | mutate_counted_worktree_test.go | TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection |
+
+T-101 did not review these T-81 holders; each stays whole until a later review maps it
+assertion by assertion.
 
 Retain the original183 SIGTERM/second-signal, waiter and no-remove-while-alive
 sampled watcher extras; it is supplementary observation rather than exact
@@ -1614,3 +1620,28 @@ The memory driver refused a validated mutation run until T-125 admitted it.
 Frozen export/materialization, modes and symlink/gitlink admission remain at
 the supervised counted boundary until T-95. All original project history
 holders and counted export guards remain; they are not deleted as duplicates.
+
+## S7 completion (T-101)
+
+The mutation group runs in its slice, `internal/mutation`, over the `internal/mutants` domain
+and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`.
+`mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
+leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership
+scenarios, and no scenario carries a tag that stands for unmoved code.
+
+On 2026-10-17 the in-process driver ran 437 cases and 1825 steps of its nine files, all
+passing but SNAP07's three steps, which skip with the memory's typed reason, and MUT248's
+eight native Windows steps, which skip off Windows; mutation and snapshots alone were 252
+cases and 1203 steps. It leaves out the 45 `@binary-only` cases of mutate.feature and the 3 of
+metrics_snapshots.feature, each tagged with why, and the five `features.Deferred` cases,
+ID-MUT-134, 153, 154, 163 and 207, which observe serve and wait on its own web app (T-102 to
+T-108, T-112, T-113). The binary driver runs 574 cases of the ten converted files, its
+language-tool cases skipping where their tools are not installed and running in the language
+jobs.
+
+T-101 removed the legacy cmd tests whose every assertion a scenario or a domain test holds,
+and kept each that holds one no scenario does, with why beside it; the tables above name
+both. It did not review the T-79 changed-line and integration holders (225, 226, 228 to 230)
+or the T-80 and T-81 holders, which stay whole. cmd's dead shell helpers and the slice's
+unreachable report refusal went with no product change.
+

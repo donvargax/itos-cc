@@ -478,10 +478,10 @@ func (m *memory) Git(dir string, args ...string) error {
 // Run runs itos-cc through run, in process, against porttest's fakes over
 // the memory at r.Dir: the tree of its files, what surrounds them, the
 // snapshots under .metrics/ at its project root and the itos-cc.yaml there.
-// The snapshots the run writes go back into the memory. A command still
-// hand-parsed would reach the real disk, and a variable set in the
-// environment reaches nothing here, so either is refused, naming the tag
-// of a scenario only the binary can run.
+// The snapshots the run writes go back into the memory. The run's
+// variables reach the fakes as the environment facts the real adapters
+// read (inputs). A command still hand-parsed would reach the real disk, so
+// it is refused, naming the tag of a scenario only the binary can run.
 func (m *memory) Run(r features.Run) (features.Result, error) {
 	if name := commandOf(r.Args); commands[name] != nil {
 		return features.Result{}, fmt.Errorf("itos-cc %s is hand-parsed and reaches the disk itself: tag the scenario %s", strings.Join(r.Args, " "), features.BinaryOnly)
