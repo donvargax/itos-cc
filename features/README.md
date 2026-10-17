@@ -635,28 +635,33 @@ moved-survivor and no-snapshot guards. The uncovered-mutant assertion in 61 perm
 the additional current TypeScript coverage-inventory problems while requiring the
 uncovered mutant's complete subject and exit 1.
 
-T-101's deferred replacements from T-74 remain in the following files until restored
-scenario CI establishes coverage. Preserve all shared helpers and unrelated guards.
+T-101 reviewed T-74's holders once the scenarios ran green through both drivers, and removed
+each whose every assertion a scenario or domain test holds. Three stay in
+`mutation_check_test.go`, each for an assertion no scenario makes: 57's marker, first shown to
+be written when anything runs the tests, so its absence proves check ran none (the scenario's
+marker has no positive control, and the memory's Workers write none); 59's missing problem's
+line; and 60's plain listing of a survivor by check. 58's stale problem's line is ID-MUT-115's,
+and the fixtures' survivor exit 1 ID-MUT-29's.
 
-| ID | Existing test (all retained) |
-| --- | --- |
-| 57 | `mutation_check_test.go`: `TestFreshResultsWithEveryMutantKilledPass` |
-| 58 | `mutation_check_test.go`: `TestAFunctionChangedSinceItsResultsIsStale` |
-| 59 | `mutation_check_test.go`: `TestAFunctionWithNoResultsIsMissing` |
-| 60 | `mutation_check_test.go`: `TestARecordedSurvivorFailsTheCheck` |
-| 61 | `mutation_check_test.go`: `TestARecordedUncoveredMutantFailsOnlyWithFailUncovered` |
-| 62 | `mutation_check_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked` |
-| 63 | `mutation_check_test.go`: `TestAFunctionWithNoMutationSiteNeedsNoResults` |
-| 64 | `mutation_check_test.go`: `TestEachFunctionsStateAsJSON` |
-| 65 | `mutation_test_hash_test.go`: `TestTheSnapshotRecordsTheTestsThatImportTheFile` |
-| 66 | `mutation_test_hash_test.go`: `TestChangingATestThatImportsTheFileRerunsItsKills` |
-| 67 | `mutation_test_hash_test.go`: `TestDeletingATestThatImportsTheFileRerunsItsKills` |
-| 68 | `mutation_test_hash_test.go`: `TestMutationCheckCallsResultsStaleWhenTheirTestsChanged` |
-| 69 | `mutation_test_hash_test.go`: `TestASnapshotThatRecordsNoTestsIsStale` |
-| 70 | `mutation_test_hash_test.go`: `TestAGoFilesTestsAreItsPackagesAndThoseOfPackagesThatImportIt` |
-| 106 | `mutation_unrecorded_test.go`: `TestASiteTheEntryNeverRecordedMakesTheFunctionStale` |
-| 107 | `mutation_unrecorded_test.go`: `TestMutationRunRunsOnlyTheSitesTheEntryNeverRecorded` |
-| 108 | `mutation_since_stale_test.go`: `TestSinceKeepsTheEntriesItDoesNotJudgeMarkedStaleWhenTheirTestsChanged` |
+| ID | Holder | T-101 |
+| --- | --- | --- |
+| 57 | `mutation_check_test.go`: `TestFreshResultsWithEveryMutantKilledPass` | kept |
+| 58 | `mutation_check_test.go`: `TestAFunctionChangedSinceItsResultsIsStale` | removed |
+| 59 | `mutation_check_test.go`: `TestAFunctionWithNoResultsIsMissing` | kept |
+| 60 | `mutation_check_test.go`: `TestARecordedSurvivorFailsTheCheck` | kept |
+| 61 | `mutation_check_test.go`: `TestARecordedUncoveredMutantFailsOnlyWithFailUncovered` | removed |
+| 62 | `mutation_check_test.go`: `TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked` | removed |
+| 63 | `mutation_check_test.go`: `TestAFunctionWithNoMutationSiteNeedsNoResults` | removed |
+| 64 | `mutation_check_test.go`: `TestEachFunctionsStateAsJSON` | removed |
+| 65 | `mutation_test_hash_test.go`: `TestTheSnapshotRecordsTheTestsThatImportTheFile` | removed |
+| 66 | `mutation_test_hash_test.go`: `TestChangingATestThatImportsTheFileRerunsItsKills` | removed |
+| 67 | `mutation_test_hash_test.go`: `TestDeletingATestThatImportsTheFileRerunsItsKills` | removed |
+| 68 | `mutation_test_hash_test.go`: `TestMutationCheckCallsResultsStaleWhenTheirTestsChanged` | removed |
+| 69 | `mutation_test_hash_test.go`: `TestASnapshotThatRecordsNoTestsIsStale` | removed |
+| 70 | `mutation_test_hash_test.go`: `TestAGoFilesTestsAreItsPackagesAndThoseOfPackagesThatImportIt` | removed |
+| 106 | `mutation_unrecorded_test.go`: `TestASiteTheEntryNeverRecordedMakesTheFunctionStale` | removed |
+| 107 | `mutation_unrecorded_test.go`: `TestMutationRunRunsOnlyTheSitesTheEntryNeverRecorded` | removed |
+| 108 | `mutation_since_stale_test.go`: `TestSinceKeepsTheEntriesItDoesNotJudgeMarkedStaleWhenTheirTestsChanged` | removed |
 
 
 The sampling/scoped scenarios (ID-MUT-71–84, 109–113, 147–148) execute 23 cases

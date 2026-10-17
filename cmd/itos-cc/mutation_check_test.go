@@ -11,11 +11,12 @@ import (
 	"testing"
 )
 
-// The scenarios of "Rule: Checking cached results without running" in
-// features/mutate.feature. They use the module of mutate_since_test.go,
-// whose snapshots a mutation run writes first; mutation check then reads
-// them. With killedTests, TestClear kills Board#clear's one mutant too, so
-// every mutant of src/board.go is killed.
+// Tests of "Rule: Checking cached results without running" in
+// features/mutate.feature, over the module of mutate_since_test.go, whose
+// snapshots a mutation run writes first; mutation check then reads them.
+// With killedTests, TestClear kills Board#clear's one mutant too, so every
+// mutant of src/board.go is killed. The scenarios hold ID-MUT-58 and 61 to
+// 64 whole (T-101); each test left holds an assertion no scenario does.
 
 const (
 	resetID = "example.com/m/src.Board#reset"
@@ -121,7 +122,10 @@ func wantProblem(t *testing.T, p map[string]any, want map[string]any, stdout str
 	}
 }
 
-// @ID-MUT-57
+// @ID-MUT-57. Kept: the marker its tests write when anything runs them is
+// first shown to work, so its absence after check proves no test ran; the
+// scenario's marker has no such positive control, and the memory's Workers
+// write none.
 func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	t.Parallel()
 	dir := boardRepo(t, killedTests)
@@ -161,32 +165,8 @@ func TestFreshResultsWithEveryMutantKilledPass(t *testing.T) {
 	}
 }
 
-// @ID-MUT-58
-func TestAFunctionChangedSinceItsResultsIsStale(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	if o := mutateRun(t, boardSource); o.code != 0 {
-		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	// A move is not a change.
-	moveDown(t)
-	if o := mutationCheck(t, "--json", boardSource); o.code != 0 {
-		t.Fatalf("after a move: exit %d, want 0: a moved function is fresh\n%s", o.code, o.stdout)
-	}
-
-	edit(t, boardSource, "// past five\n", "// past five, and not at five\n")
-	o := mutationCheck(t, "--json", boardSource)
-	m := o.json(t)
-	wantProblem(t, m.problem("mutation.stale"), map[string]any{"file": boardSource, "line": 6.0, "function": placeID}, o.stdout)
-	if !slices.Equal(m.rules(), []string{"mutation.stale"}) {
-		t.Errorf("problems %v, want only place stale", m.Problems)
-	}
-	if o.code != 1 {
-		t.Errorf("exit %d, want 1", o.code)
-	}
-}
-
-// @ID-MUT-59
+// @ID-MUT-59. Kept: the missing problem's line, the added function's own,
+// is asserted by no scenario.
 func TestAFunctionWithNoResultsIsMissing(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, killedTests)
@@ -212,7 +192,8 @@ func TestAFunctionWithNoResultsIsMissing(t *testing.T) {
 	}
 }
 
-// @ID-MUT-60
+// @ID-MUT-60. Kept: check's plain listing of a survivor, as mutation run
+// prints it, is asserted by no scenario.
 func TestARecordedSurvivorFailsTheCheck(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)
@@ -236,121 +217,5 @@ func TestARecordedSurvivorFailsTheCheck(t *testing.T) {
 		"function": clearID, "original": "<", "replacement": "<="}, o.stdout)
 	if !slices.Equal(m.rules(), []string{"mutation.survived"}) || o.code != 1 {
 		t.Errorf("exit %d, problems %v, want clear's survivor alone and exit 1", o.code, m.Problems)
-	}
-}
-
-// @ID-MUT-61
-func TestARecordedUncoveredMutantFailsOnlyWithFailUncovered(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	if o := mutateCovered(t, boardSource); o.code != 0 {
-		t.Fatalf("the run: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if u := boardUnits(t)[clearID]; u.Uncovered != 1 {
-		t.Fatalf("clear in the snapshot: %+v, want its one mutant uncovered", u)
-	}
-
-	if o := mutationCheck(t, boardSource); o.code != 0 {
-		t.Errorf("without --fail-uncovered: exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	o := mutationCheck(t, "--fail-uncovered", "--json", boardSource)
-	m := o.json(t)
-	wantProblem(t, m.problem("mutation.uncovered"), map[string]any{"file": boardSource, "line": float64(clearLine),
-		"column": float64(clearColumn), "function": clearID, "original": "<", "replacement": "<="}, o.stdout)
-	if o.code != 1 {
-		t.Errorf("with --fail-uncovered: exit %d, want 1", o.code)
-	}
-}
-
-// @ID-MUT-62
-func TestWithSinceOnlyTheFunctionsTheRangeChangedAreChecked(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, nil)
-	if o := mutateRun(t); o.code != 1 {
-		t.Fatalf("the first run: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	changePlace(t)
-	if o := mutateRun(t, "--since", "base"); o.code != 0 {
-		t.Fatalf("the run since base: exit %d, want place killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if u := boardUnits(t)[clearID]; u.Survived != 1 {
-		t.Fatalf("clear in the snapshot: %+v, want its recorded survivor", u)
-	}
-	// Without --since, clear's survivor fails the check.
-	if o := mutationCheck(t); o.code != 1 {
-		t.Fatalf("without --since: exit %d, want 1 for clear's survivor\n%s%s", o.code, o.stdout, o.stderr)
-	}
-
-	o := mutationCheck(t, "--since", "base")
-	if o.code != 0 {
-		t.Errorf("exit %d, want 0: clear is not in the range\n%s%s", o.code, o.stdout, o.stderr)
-	}
-}
-
-// @ID-MUT-63
-func TestAFunctionWithNoMutationSiteNeedsNoResults(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	if o := mutateRun(t, boardSource); o.code != 0 {
-		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	appendTo(t, boardSource, "\nfunc (b *Board) size() int {\n\treturn 7\n}\n")
-	for _, s := range scanned(t, boardSource) {
-		if s.Function == sizeID {
-			t.Fatalf("size has the site %+v, want none", s)
-		}
-	}
-	if u, ok := boardUnits(t)[sizeID]; ok {
-		t.Fatalf("size in the snapshot: %+v, want no entry", u)
-	}
-
-	o := mutationCheck(t, boardSource)
-	if o.code != 0 {
-		t.Errorf("exit %d, want 0\n%s%s", o.code, o.stdout, o.stderr)
-	}
-}
-
-// @ID-MUT-64
-func TestEachFunctionsStateAsJSON(t *testing.T) {
-	t.Parallel()
-	boardRepo(t, killedTests)
-	if o := mutateRun(t, boardSource); o.code != 0 {
-		t.Fatalf("the run: exit %d, want every mutant killed\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	edit(t, boardSource, "// past five\n", "// past five, and not at five\n")
-	appendTo(t, boardSource, resetSource)
-
-	o := mutationCheck(t, "--json", boardSource)
-	functions := o.checkFunctions(t)[boardSource]
-	want := []checkFunctionJSON{
-		{Function: placeID, State: "stale", Killed: 1},
-		{Function: clearID, State: "fresh", Killed: 1},
-		{Function: resetID, State: "missing"},
-	}
-	if !slices.Equal(functions, want) {
-		t.Errorf("functions of %s:\n%+v\nwant:\n%+v\n%s", boardSource, functions, want, o.stdout)
-	}
-	m := o.json(t)
-	if !slices.Equal(m.rules(), []string{"mutation.stale", "mutation.missing"}) {
-		t.Fatalf("problems %v, want place stale and reset missing", m.Problems)
-	}
-
-	plain := mutationCheck(t, boardSource)
-	var listed []string
-	for _, l := range strings.SplitAfter(plain.stdout, "\n") {
-		if strings.HasPrefix(l, "  ") {
-			listed = append(listed, l)
-		}
-	}
-	var fromJSON []string
-	for _, p := range m.Problems {
-		fromJSON = append(fromJSON, fmt.Sprintf("  %s %s:%v in %s\n",
-			strings.TrimPrefix(p["rule"].(string), "mutation."), p["file"], p["line"], p["function"]))
-	}
-	if !slices.Equal(listed, fromJSON) {
-		t.Errorf("plain output lists:\n%q\nwant the problems of --json:\n%q", listed, fromJSON)
-	}
-	if plain.code != o.code || o.code != 1 {
-		t.Errorf("exit %d plain, %d with --json, want 1 both", plain.code, o.code)
 	}
 }
