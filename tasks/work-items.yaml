@@ -2688,6 +2688,22 @@ items:
       Compare instead mutation run --fail-uncovered --coverage-command 'x' over a selection holding
       no source (no flag refused, no source files to mutate, exit 0), beside the strict refusals and
       the non-strict logged fallback the note lists.
+
+      T-114 (version and the top-level dispatch on one kong model, serve routed whole to its legacy
+      handler): main's hand-written loop for the flags before a command, the top-level help, 'help
+      <command>' and the guess became internal/cli's Dispatch and Usage over the model, and version
+      became a kong command printing its help from a Contract. Compare the version lines kong now
+      parses: version --help, version -h extra, help version, help version extra, --json help
+      version extra, version --json, --json --version, --version --json (the object's key order ok,
+      schema, version), version extra, version extra --json, version --json=yes, version --json
+      --json, version --json=, version -x, version --he, version --top 3, version -, version --
+      --json, version --version, --version --version and --version extra. Compare the leading flags'
+      order: --version --help, --help --version, --version --bogus, --bogus --json, --json --bogus,
+      --json alone and --json help. Compare the guess, whose candidates are now the model's names in
+      its fields' sorted order: vresion, versio, serv, crapp, unit, mutate, -- crap and help -h.
+      Compare serve through its new route: serve --help and serve -h (printed on the process's
+      stdout), help serve, help serve extra, serve --port x, serve --json --port x, --json serve
+      --port x, serve --bogus and serve --interval 5.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
