@@ -3489,8 +3489,8 @@ items:
   - id: T-114
     title: Complete Kong dispatch and version behind a thin main entrypoint
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-101]
     kind: task
   - id: T-115
