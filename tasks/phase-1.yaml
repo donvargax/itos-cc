@@ -4942,33 +4942,37 @@
     starts. T-125 turned the mutation scenarios back on in every CI job, and a source push's CI went
     from 7 minutes (run 39053537357) to 18 (run 39068574573): the features part took 17.5 min on
     Windows, 11 on macOS and 7.7 on Ubuntu, against 1 to 2 before. Pushes, and every implementing
-    agent, wait on that run. Split CI from CD. ci.yml is the push gate itos push, itos ci watch and
-    itos work done wait on; cd.yml runs everything and cuts the release. Both trigger on the same
-    push and run in parallel, as two runs: cd.yml is not called from ci.yml (a reusable workflow or
-    needs would keep ci.yml's run open until CD finished) and not chained by workflow_run
-    (default-branch context, GITHUB_SHA not the pushed commit, a start only after CI). ci.yml keeps
-    the ci job (itos ci run: verify, the static and late steps and its merged scenario run of the
-    smoke set plus the scenarios the range names), the Go unit tests of every package, and the
-    in-process driver's whole suite (about 25 s), on all three systems; the binary driver runs there
-    only the smoke set and the scenarios the range names, as itos ci scope already selects. Aim for
-    about 7 minutes on the slowest system. cd.yml runs what ci.yml runs today and more: every
-    scenario through the binary on all three systems, the languages shards, the native T80 and T82
-    invocations, then release.yml as today (release / version, build, publish) only when all of
-    cd.yml's jobs passed, with T-122's explicit release conditions kept: a prose-only range runs no
-    tests and cuts nothing in either workflow, and an empty FROM runs everything. Move each step,
-    nothing dropped: write the old-to-new map of every job, step, selector and environment variable
-    (ITOS_CC_LANGUAGE_TOOLS, ITOS_CC_NODE_MODULES, the pinned tools, caches, the Maven SHA-512
-    check, timeouts) in the commit body and check the union equals today's ci.yml. Keep T-123's
-    job-level cancel-in-progress in both workflows and the release's own never-cancelled group, so a
-    newer push never cancels a publish. Both workflows' jobs run at the same time: keep their sum
-    within GitHub's free concurrency (20 jobs, 5 on macOS), or show from the runs that CD queueing
-    behind CI leaves CI's time intact. itos.yaml's ci.watch.github.workflow names ci.yml explicitly;
-    the nightly is unchanged. Until itos#84 lets itos watch a second workflow, the coordinator
-    watches cd.yml's run with gh run watch in the background and treats a red one as repair work:
-    say so in README's CI section, and describe both tiers in the docs that describe CI today,
-    naming the decision record. Measure: ci.yml's and cd.yml's per-job times on at least three
-    source pushes, and one prose-only push. No test, scenario, platform or gate is removed or
-    weakened; nothing moves to the nightly.
+    agent, wait on that run. Split CI from CD. ci.yml is the push gate that itos push, itos ci watch
+    and itos work done wait on. It stays as fast as possible while still showing the pushed work is
+    mostly right; edge cases, other systems and the whole binary suite are cd.yml's, an accepted
+    trade-off. cd.yml runs everything and is the only workflow that cuts a release. Both trigger on
+    the same push and run in parallel, as two runs: cd.yml is not called from ci.yml (a reusable
+    workflow or needs would keep ci.yml's run open until CD finished) and is not chained by
+    workflow_run (default-branch context, GITHUB_SHA not the pushed commit, a start only after CI).
+    ci.yml runs on ubuntu-latest only, with no Windows or macOS job. It keeps the ci job (itos ci
+    run: verify, the static and late steps, and its merged scenario run of the smoke set plus the
+    scenarios the range names), the Go unit tests of every package, and the in-process driver's
+    whole suite (about 25 s); the binary driver runs only the smoke set and the scenarios the range
+    names, as itos ci scope already selects. Aim for a few minutes. cd.yml runs everything today's
+    ci.yml runs, on all three systems: every Go test, every scenario through both drivers, the
+    languages shards, and the native T80 and T82 invocations. It then runs release.yml as today
+    (release / version, build, publish), only when all of cd.yml's jobs passed. Keep T-122's
+    explicit release conditions: a prose-only range runs no tests and cuts nothing in either
+    workflow, and an empty FROM runs everything. The release moves out of ci.yml entirely, so a
+    green ci.yml can never publish. Move each step, nothing dropped: write the old-to-new map of
+    every job, step, selector and environment variable (ITOS_CC_LANGUAGE_TOOLS,
+    ITOS_CC_NODE_MODULES, the pinned tools, caches, the Maven SHA-512 check, timeouts) in the commit
+    body, and check that cd.yml's union equals today's ci.yml. Keep T-123's job-level
+    cancel-in-progress in both workflows and the release's own never-cancelled group, so a newer
+    push never cancels a publish. Only cd.yml runs macOS jobs: keep them at 5 or fewer at once,
+    GitHub's macOS limit on every plan short of Enterprise, which the person's plan has. itos.yaml's
+    ci.watch.github.workflow names ci.yml explicitly; the nightly is unchanged. Until itos#84 lets
+    itos watch a second workflow, the coordinator watches cd.yml's run with gh run watch in the
+    background and treats a red one as repair work, handed to a fresh agent. Say so in README's CI
+    section, and describe both tiers in the docs that describe CI today, naming the decision record.
+    Measure: ci.yml's and cd.yml's per-job times on at least three source pushes and one prose-only
+    push. No test, scenario, platform or gate is removed from cd.yml or weakened; nothing moves to
+    the nightly.
   done_when:
     - run: itos config check
     - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="^@ID-CLI-0[1-5]$"
