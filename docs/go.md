@@ -223,12 +223,13 @@ from it, and thin slices named for their commands.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
-  unit fake owns only semantic values. The memory driver runs list, check, sample and
-  except over its fakes without admitting the whole mutation feature before T-125. Its
-  fakes cannot stand in for run yet, so it refuses a validated `mutation run` explicitly,
-  through the real parser, before anything runs, never reaching the host, and its tests
-  hold that with a physical decoy: an invalid itos-cc.yaml in the process's working
-  directory that a fall-through would read, beside which except reads the memory's.
+  unit fake owns only semantic values. The memory driver runs all five children over its
+  fakes (T-125), binding a counted run as the disk adapters bind it: porttest's `Fresh`
+  over the fake repository, the same `Workers` for its trials, the fake repository's
+  root, a context of the run's own that installs no signal handling, and the configured
+  platform value. Its tests hold that nothing reaches the host with a physical decoy: an
+  invalid itos-cc.yaml in the process's working directory that a fall-through would read,
+  beside which run and except read the memory's.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -312,8 +313,8 @@ from it, and thin slices named for their commands.
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
   selects its files; no hand-parsed command selects files any more (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
-  it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
-  a snapshot that cannot be written is the internal 70 it always was, its message whole with
+  it; `dry`'s and `scrap`'s handlers write through `adapters`' `Store`, `internal/metricsdir`'s
+  on the disk: a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
   on. The `mutation` slice reads, writes, removes and lists its snapshots only through
   the handler's bound readers, catalog, publication capability and store. `serve`'s
@@ -325,8 +326,10 @@ from it, and thin slices named for their commands.
   `adapters`' `Coverage`; `mutation run` measures through its handler's `loadCoverage`,
   which builds the request from its query and calls the separate `MutationCoverage`
   binding's `MeasureListed`. Strict coverage also calls that binding's
-  `Inventory`; neither consumer constructs a real fallback. Report admission retains `cli.CommandNeedsReport`: strict admission is fatal, while ordinary
-  Run preserves its logged best-effort fallback after configured listing.
+  `Inventory`; neither consumer constructs a real fallback. Strict coverage refuses
+  `--coverage-command`, as every raw coverage flag, before it measures
+  (`StrictCoverageFlag`); an ordinary run given a coverage command and no report logs
+  `cli.CommandNeedsReport`'s words after configured listing and goes on without coverage.
 - `internal/version` says what the build is, and `internal/release` is the library of the
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
@@ -508,7 +511,8 @@ follows the same steps for a command it wrote before it had the template's desig
    declares what they do (`Driver.Tests`): the binary driver skips the scenario where their
    tools are not installed, and the in-process driver records it for its fakes. A file too
    large for one task converts in pieces, the scenarios still without steps listed in
-   `features.Unstepped`, which no run selects (mutate.feature, T-70 to T-81). The move adds the file to `InProcess`, and its scenarios run
+   `features.Unstepped`, which no run selects (mutate.feature, T-70 to T-81, its @wip
+   Windows ownership scenarios still listed). The move adds the file to `InProcess`, and its scenarios run
    through the in-process driver too, the moved command needing nothing more of it than the
    ports in `adapters`. Never tag a scenario `@binary-only` because its command has not
    moved: the tag says the binary's for good, as for a scenario about the real tools' commands
@@ -614,8 +618,8 @@ callbacks. Progress events are domain facts; the slice's `Progress` alone format
 cmd's run delegating to it.
 Sample draws/checks in the domain and uses the same Execution scheduler, with
 listed IDs admitted only for recorded listed scope.
-Counted/frozen preparation uses Fresh. mutate.feature joins the in-process
-feature driver only at T-125.
+Counted/frozen preparation uses Fresh. mutate.feature joined the in-process
+feature driver at T-125, and metrics_snapshots.feature at T-101.
 
 T-93 moves check, strict evidence inventory, site listing and orphan judgment into
 `internal/mutants`. Check receives `MutationSnapshotReader`, never mutation write
@@ -709,11 +713,20 @@ back to `.metrics/`, an itos-cc.yaml held in memory, and coverage's `Measurer`, 
 the reports a run names from the memory and gives each build root what the scenario
 declared its tools measure (`Driver.Coverage`): the LCOV report they write, nothing when
 they write none, a missing tool when none was declared, and no report left for
-`--use-existing-coverage`. It refuses a hand-parsed
-command and an environment variable, naming `@binary-only`, so nothing reaches the real disk.
-A scenario only one driver can run carries `@binary-only` or `@in-process-only`, never a
-copy, and the other passes it by; a step a driver cannot do fails naming the tag. godog runs
-one scenario at a time in both. itos.yaml's scenario lines run both tests, so CI and itos's
+`--use-existing-coverage`. A mutation run is handed mutation's fakes
+(`internal/mutants/porttest`) over the same memory: `Workers` running each mutant as the
+scenario declared the folder's tests do (`Driver.Tests`), the `History` of the fake Git,
+`Toolchain`, `Fingerprints` and `Reach` from the files, the run's `Run.Env` and the import
+adjacency the world declares before each run (`features/imports.go`), the listed tests'
+`Lister`, coverage's `MutationMeasurer`, and a counted run's `Fresh` over the fake
+repository. It refuses a hand-parsed command, naming `@binary-only`, so nothing reaches the
+real disk. A scenario only one driver can run carries `@binary-only` or `@in-process-only`,
+never a copy, and the other passes it by; a step a driver cannot do fails naming the tag, or
+skips with a typed reason (`features.ErrPhysicalUnsupported`), which the in-process run logs.
+`features.Deferred` names the scenarios of `InProcess` files the in-process driver leaves to
+the binary for now, each with why and the work that owns it: the five mutation scenarios
+that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
+T-108, T-112, T-113). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so CI and itos's
 scenario step hold every scenario both ways. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
 interrupts on every system: `count` has no cleanup for a scenario to see skipped.

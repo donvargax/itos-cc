@@ -20,7 +20,8 @@ Never here:
 ## Black-box boundary
 
 The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
-`coverage.go`, `selection.go`, `cli.go` and `mutate.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
+`coverage.go`, `selection.go`, `cli.go`, `metrics_snapshots.go`, and `mutate.go` with its
+pieces, `mutate_*.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
 read, symbolic links (`Link`), git, runs of itos-cc with a folder, environment, stdin, arguments
 and programs left off the PATH (`Run.Without`), what a project's own coverage tools measure
@@ -38,8 +39,9 @@ driver runs every converted file; the in-process driver only those of the comman
 kong, the ones `InProcess` lists in `steps.go`, a file joining it when its command moves. A
 scenario only one driver can run, for good, carries `@binary-only` or `@in-process-only`, never a
 copy, and the other driver passes it by; `@binary-only` never means "not moved yet". The
-in-process driver refuses a command still hand-parsed and an environment variable, naming
-`@binary-only`. itos.yaml's scenario lines run both, so every scenario of a moved command is held
+in-process driver refuses a command still hand-parsed (`serve`, `version`), naming
+`@binary-only`; a run's variables (`Run.Env`) reach the fakes as the environment facts the real
+adapters read. itos.yaml's scenario lines run both, so every scenario of a moved command is held
 both ways. `TestFeatures` builds itos-cc once a run
 from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
 release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary
@@ -60,8 +62,8 @@ project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); Kotlin
 the fixture's existing Gradle or Maven (`Program`) and declares its measured JaCoCo XML; and a program the
 project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which the CI job that installs the
 pinned tools sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
-whatever its image has. The in-process driver records what was declared, for the fake measurer a
-command measuring coverage is handed once it moves.
+whatever its image has. The in-process driver hands what was declared to the fake measurer a
+command measuring coverage is given.
 
 A Given whose project's tests a run of itos-cc runs, mutation run's baseline and trials, declares
 what they do (`Tests`): their language and the command itos-cc runs them with, what a failing
@@ -70,9 +72,10 @@ killed, and how long a run of them takes. The binary driver checks their tools a
 does, the language's own (`go`, `node`, `python3`, `java`) and the program the command runs where
 the PATH would find it, pytest for a command running it, skipping or failing alike, skips tests
 said to take under 100 milliseconds on Windows, where their baseline takes several times that,
-and the real tests then decide every outcome; the in-process driver records it, for the fake that runs a
-project's tests once the mutation group moves (S7). A folder with no `Tests` declared has no tests
-a run may run. A scenario of a counted run, `mutation run --count`, skips where itos-cc makes
+and the real tests then decide every outcome; the in-process driver hands it to mutation's fake
+`Workers`, which run each mutant as declared, the outcome chosen by the requested folder and
+command. A folder with no `Tests` declared has no tests a run may run, and the fake refuses an
+undeclared command, so a fixture names the command itos-cc actually runs. A scenario of a counted run, `mutation run --count`, skips where itos-cc makes
 none, on any system but Linux and macOS (#29), in either driver (`Counted`). A scenario that only reads which Gradle or
 Maven command itos-cc chose runs with `gradle` and `mvn` off the PATH, so neither runs anywhere;
 one that needs a symbolic link skips where the system makes none. The in-process driver refuses
@@ -80,6 +83,17 @@ both, naming `@binary-only`, and so a build of itos-cc and a port held: the bina
 into the scenario's folder with -trimpath, `go install` from a module proxy it writes there,
 the tree's files zipped beside the module cache's downloads, and holds a port of 127.0.0.1,
 skipping where the system lets a second listener take it.
+
+Before each run the world declares the import adjacency of the scratch folder (`imports.go`):
+every source and test of a language itos-cc reads, outside the folders no selection walks into
+(hidden ones, `node_modules`, `vendor`, `venv`, `__pycache__` and `testdata`), each with the files
+a fixture said it imports (`world.imports`) and none otherwise, an edge to a file no longer there
+dropped. It hands that to `Driver.Tests` as `Tests.Imports`, alone, with no command or outcome.
+The binary driver checks only that such a declaration declares nothing else, since the real
+resolver reads the same edges from the files' text; the in-process driver gives it to mutation's
+`Reach` fake, which computes each language's reach from it: Go's package and one hop, the other
+languages' transitive closure, Python's applicable `conftest.py` and Kotlin's references. A
+fixture whose files import one another declares those edges, so both drivers see the same reach.
 
 An interrupt is the binary driver's alone (`interrupt_test.go`), sent as each system delivers
 Ctrl-C, from one build-tagged file per system:
@@ -95,32 +109,49 @@ The harness runs the feature files that have steps, the ones `Converted` lists i
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
 `complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`,
 `mutate.feature`, `metrics_snapshots.feature`, and `count.feature`, the
-template's sample, all of whose scenarios are `@wip`. `mutate.feature` converts a piece at a
-time (T-70 to T-81): the scenarios of the pieces whose steps are not written yet are listed in
-`Unstepped` (`steps.go`), by their IDs, an entry for each piece, and run nowhere. A selection
-naming only them logs them as not run, their steps not written yet, and passes; a tag other
-scenarios carry too selects those others alone; and an ID `Unstepped` lists that no scenario of a
-converted file carries fails every selection. The Go tests of `cmd/itos-cc` hold those scenarios
-until their piece. The in-process driver runs those of
-`InProcess`: all of them but `cli.feature`, whose help, version and mutation scenarios need
-commands that move later, which joins it in S9, and `mutate.feature`, which joins it when the
-mutation group moves (S7). `metrics_snapshots.feature` stays binary until T-101
-completes its two-driver decision. Every other file converts to godog over time,
-before or with the command that moves onto kong (q-52), its scenarios' text unchanged; until then
-the Go tests of `cmd/itos-cc` hold its scenarios. A selection that names a scenario of such a
-file, as the smoke set does for every file, logs it as not run here and runs the rest; one that
-names nothing a converted file holds fails, as one matching no tag does. In process, a selection
-naming a scenario of a converted file not in `InProcess` logs it as binary driver only until its
-command moves, and one naming nothing else runs nothing there and passes, the binary driver
-running it.
+template's sample, all of whose scenarios are `@wip`. `mutate.feature` converted a piece at a
+time (T-70 to T-81); the scenarios still without steps are listed in `Unstepped` (`steps.go`), by
+their IDs, and run nowhere: today the four `@wip` Windows ownership scenarios, ID-MUT-169 to 172,
+deferred outside T-80. A selection naming only them logs them as not run, their steps not written
+yet, and passes; a tag other scenarios carry too selects those others alone; and an ID `Unstepped`
+lists that no scenario of a converted file carries fails every selection. Every other file
+converts to godog over time, before or with the command that moves onto kong (q-52), its
+scenarios' text unchanged; until then the Go tests of `cmd/itos-cc` hold its scenarios. A
+selection that names a scenario of such a file, as the smoke set does for every file, logs it as
+not run here and runs the rest; one that names nothing a converted file holds fails, as one
+matching no tag does.
+
+The in-process driver runs those of `InProcess`: all of them but `cli.feature`, whose help,
+version and mutation scenarios need commands that move later, which joins it in S9.
+`mutate.feature` joined it when the mutation group moved (T-125), and
+`metrics_snapshots.feature` once the mutation commands it runs had moved (T-101). In process, a
+selection naming a scenario of a converted file not in `InProcess` logs it as binary driver only
+until its command moves, and one naming nothing else runs nothing there and passes, the binary
+driver running it.
+
+`Deferred` (`deferred.go`) names, by ID tag, the scenarios of `InProcess` files that the
+in-process driver leaves to the binary driver for now, each with why, naming the work that owns
+it. Unlike `@binary-only`, which a scenario only the binary can run carries for good, an entry
+goes once its owner's work lets the scenario run in process. Today it names ID-MUT-134, 153, 154,
+163 and 207, which observe `serve` (`Driver.Graph`) as well as mutation: `serve` stays on its
+legacy handler, its moves (T-102 to T-108, T-112 and T-113) deferred while it leaves for its own
+web app. `Defer` takes them out of the in-process selection, which logs each one it matches with
+its reason; a tag `Deferred` lists that no scenario of a feature file carries fails the run, so an
+entry cannot outlive its scenario. The binary driver runs every one of them.
+
+A step a driver cannot do for a reason outside the program, such as a missing tool, a system that
+makes no symbolic link, or a capability the memory does not hold (`ErrPhysicalUnsupported`),
+skips its scenario with that reason, wrapped around `godog.ErrSkip`, and never passes in its
+place. godog's summary counts a skipped scenario as passed, so the in-process run logs each one
+with its reason; the binary driver's native CI runs keep godog's cucumber JSON, which tells an
+omission from an execution.
 
 `ITOS_CC_SKIP_FEATURES` leaves out a comma-separated list of feature filenames in both drivers;
 unset or empty leaves out none. Both drivers log the omitted filenames and run only the other
 files, including when a selected tag is shared with an omitted file. A selection naming only
 omitted scenarios passes without running them; unknown tags and invalid `Unstepped` IDs still
-fail. Push CI temporarily sets it to `mutate.feature` until S7 moves mutation in process
-(T-125 removes the setting; T-101 verifies it). The language-tools runs keep those scenarios,
-as do local runs unless the variable is explicitly set.
+fail. No CI job sets it: push CI left `mutate.feature` out with it from T-83 until T-125 moved
+the mutation scenarios in process, and T-101 confirmed the setting gone.
 
 A `units.feature` scenario runs in a sample project of TypeScript and Python, production code and
 tests, unless it writes files of its own and lists those alone. A `dry.feature` scenario that only
@@ -1287,8 +1318,8 @@ test jobs, all five release builds and publication.
 ## Snapshot storage scenarios (T-82)
 
 `metrics_snapshots.feature` converts all twelve IDs, seventeen expanded cases
-and fifty steps. It joins `Converted`, with `InProcess` deliberately left to
-T-101. Local runtime needs only Go and Git. No source from this repository is
+and fifty steps. It joined `Converted`, with `InProcess` deliberately left to
+T-101, which added it (below). Local runtime needs only Go and Git. No source from this repository is
 mutated: actual Go tests and collectors run in owned fixture projects.
 SNAP01 uses each literal command; SNAP03 actually writes all four command
 snapshots before checking every format version. Root-relative dry output uses
@@ -1330,10 +1361,10 @@ SNAP07's context-first `SetModTime` updates an existing owned file/directory
 and returns actual stat-observed modification time. Cancellation precedes I/O;
 ordinary errors retain their causes. A 48-hour-old run directory is removed,
 while a fresh run marker and unrelated kept report remain byte-identical.
-The current memory driver honestly returns typed unsupported because it has
-no entry timestamp state. SNAP07 remains logically eligible; T-101 must bind
-real fake entry metadata or report that capability omission, without echoing
-a requested time as observation.
+The memory driver honestly returns typed unsupported because its tree records
+no entry modification time. SNAP07 remains logically eligible: T-101 reports
+that capability omission (below) rather than echoing a requested time as an
+observation.
 
 The exact public oracle script/argv and original outputs remain in the task
 handoff (`python3 /tmp/T82-concurrent-oracle-multiline.py`, raw log and four
@@ -1407,6 +1438,18 @@ three platform test jobs, all five release builds and publication. Legacy
 holders and adapter-only guarantees remain in place for T-101's mapped
 cleanup; the new scenarios are not a reason to remove unmatched checks.
 
+T-101 adds `metrics_snapshots.feature` to `InProcess`. The source, root and
+format scenarios, SNAP01 to 03 and 08 to 12, run through both drivers, the
+memory's mutation run handed the same declared Go tests, whose root-package
+command the fixture names as itos-cc runs it (`./.`). SNAP04, 05 and 06 are
+`@binary-only` for good: atomic publication under concurrent writers, the raw
+reports and the folder the real collectors write under `.metrics/coverage/`,
+and concurrent collectors' run directories, none of which a fake writes. SNAP07
+stays eligible and skips in process with the memory's typed reason, logged by
+the run, until the memory tree records modification times and a fake of the
+coverage runner's cleanup reads them. In process the file runs fourteen cases
+and forty steps, thirty-seven passing and SNAP07's three skipped.
+
 Worker boundary (T-88): `mutants.Workers` and its model-bearing contracts live
 beside mutation values; `worktrees.Workers` owns actual copies/processes and
 `mutants/porttest.Workers` holds the in-memory implementation. `Driver.Tests`
@@ -1419,8 +1462,8 @@ source traces carry their actual project-relative source identity. No scenario
 ID or prewritten event list chooses executions. Physical dependency links and
 interpreter behavior remain real-adapter observations.
 
-The memory driver constructs this binding now, but still refuses a validated
-mutation run until T-125. Its focused handler-binding guard uses disposable
+The memory driver constructed this binding then, but refused a validated
+mutation run until T-125 admitted it. Its focused handler-binding guard uses disposable
 real source discovery with those same declared fake Workers; it is not evidence
 that every mutation scenario already runs entirely in memory. Missing and wrong
 handler bindings are exercised independently. Direct legacy library fixture
@@ -1471,7 +1514,7 @@ values and prepend their own copied Python directories before inherited editable
 PYTHONPATH. Source and directory read observations derive from actual bound
 selection/surroundings/input operations; fixture assertion reads are excluded,
 positive controls use those same ports, and removed targets fail observation.
-The driver still refuses a validated mutation run until T-125. The focused actual
+The driver refused a validated mutation run until T-125 admitted it. The focused actual
 handler guards use disposable real discovery/config alongside the bound
 memory ports; they do not prove full in-memory mutation execution yet.
 
@@ -1507,7 +1550,7 @@ per-ID sibling evidence. It observes actual request scope/reach and current
 source bytes using the full runnable trace inventory, including unrelated tests.
 Unknown fixture sources/selectors fail admission; unexpected request-dependent
 observation errors return from `Driver.Run` without changing product failures.
-The memory driver still refuses a validated mutation run until T-125;
+The memory driver refused a validated mutation run until T-125 admitted it;
 focused consumer controls use disposable real discovery only, with actual
 measurement supplied by the fake. No feature is promoted to `InProcess` here.
 Shared named-report/cancellation guards are distinct from successful shared
@@ -1534,7 +1577,7 @@ three-dot ranges, caller-directory namespaces, committed bytes despite later
 edits, both rename directions, pure deletions and same-name hash pairing.
 The bounded fixture setup supports the Givens' add/commit/branch/checkout/tag/mv
 operations and errors on unsupported shapes; it runs no Git executable.
-The memory driver still refuses a validated mutation run until T-125.
+The memory driver refused a validated mutation run until T-125 admitted it.
 Frozen export/materialization, modes and symlink/gitlink admission remain at
 the supervised counted boundary until T-95. All original project history
 holders and counted export guards remain; they are not deleted as duplicates.
