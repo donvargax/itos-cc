@@ -14,7 +14,7 @@ import (
 	"github.com/donvargax/itos-cc/features"
 )
 
-// Mutation is not in the in-process scenario selection until T100. This focused
+// Mutation is not in the in-process scenario selection until T-125. This focused
 // handler regression uses real disposable source discovery and the very Workers
 // binding built from memory.Driver.Tests; no test command reaches the host.
 func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
@@ -45,8 +45,10 @@ func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
 	args := []string{"mutation", "run", "--json", "--no-coverage", "--no-annotate", "--mutate-all", "board.go"}
 	invoke := func() (int, string, string) {
 		var code int
+		stdout.Reset()
+		stderr.Reset()
 		out, log := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &stdout, &stderr, a) })
-		return code, out, log
+		return code, out + stdout.String(), log + stderr.String()
 	}
 	code, out, log := invoke()
 	var actual map[string]any

@@ -171,16 +171,16 @@ from it, and thin slices named for their commands.
 - `internal/mutation` declares the whole mutation group and its five child command
   structs and help contracts (T-96). Cmd supplies the worker default and creates one fresh
   model/parser per run. Kong validates each child once; `cli.Provided` retains the actual
-  validated path's explicit flag facts and original value spellings for the cmd handlers,
-  which remain there for run until its scheduled move. List and
-  check run in the slice (T-97), sample (T-98) and except (T-99): application queries carry
+  validated path's explicit flag facts and original value spellings, which cmd binds as
+  `Written`. Every child runs in the slice: list and
+  check (T-97), sample (T-98), except (T-99) and run (T-100): application queries carry
   selection, coverage, sampling and exception values once, and their handler coordinates the
   existing mutants, selection and language capabilities. List presents its ordered prefix on later read
   failure; check formats no per-file findings until ordinary and strict admission both
   succeed. Sample observes in the old cmd order: its selection, then the seed (an
   explicit one, even empty, never reads `History.Head`), the no-source return, settings,
   reach, the listed tests' support files and the bindings, then the domain's draw; the
-  sources exclude left out reach stderr through its query's `SampleProgress` before any
+  sources exclude left out reach stderr through its query's `SelectionProgress` before any
   run progress, and the missing `Workers` binding alone emits no result object. Its
   `Run` refuses a `--count` below 1 before anything is observed, quoting the value as
   written from the `Written` flags cmd binds (`cli.Provided`). Except's `Run` takes
@@ -190,13 +190,30 @@ from it, and thin slices named for their commands.
   the site's exclusion, then the bindings, the listed tests' support files and reach, then the
   domain's survivor, and writes the entry through the `Exceptions` writer cmd selects for the
   settings' root; `Renew` returns before any binding when the settings hold no entry, then
-  discovers every source through the `Tree` and writes only the renewals. The
+  discovers every source through the `Tree` and writes only the renewals. Run's `Run`
+  refuses what its flags alone refuse (`--fail-uncovered=lines` without `--since`, then a
+  counted run's flags and platform, or `--no-coverage` beside `--fail-uncovered` and
+  `--fail-fast`'s platform, the `Platform` value cmd detects) before anything is observed,
+  reading which flags were given from `Written`, and assembles one `RunQuery` or
+  `CountedQuery`. Its handler reads settings at run's own four points: its admission, the
+  selection's exclude, the exceptions' exclude and the orphans' exclude; then the
+  exceptions of files it does not select, strict coverage's flag refusal, reach, the
+  listed tests' support files and the bindings, strict coverage's checks and measurement
+  through `Coverage`, the run through the `Snapshots` and `SourceEdits` writers and the
+  orphans it removes from `Metrics`. `Counted` reads no settings: it asks cmd's `Repository`
+  and `PhysicalDir`, derives its own context through `Interruptible` (cmd's
+  `countedSignalContext`), then plans, prepares and judges through `Fresh` and
+  `FreshWorkers`, handing its report to its query's `CountedProgress` while it still owns
+  the frozen inputs and catches interrupts. The
   handler builds no problem and picks no exit code: it returns the slice's sealed
   `Failure` (`LinesWithoutSince`, `SinceWithChanged`, `SinceUnavailable` with its ref,
-  `SeedUnavailable`, `SiteExcluded`, `NoSurvivor`) at the cmd handler's admission point, and `Run`'s classifier words
+  `SeedUnavailable`, `SiteExcluded`, `NoSurvivor`, `StrictCoverageFlag`, `CountedNoGit`,
+  `OutsideRepository`, `CountedPlanFailed`) at the cmd handler's admission point, and `Run`'s classifier words
   it, beside the settings, history, snapshot-read and run failures (`RunError`) and the
-  `Exceptions` writer's, in the bytes and codes cmd gave them. Shared mutation presentation, the progress lines
-  (`Progress`) among it, has one owner here; remaining cmd handlers delegate to it. An explicit zero/empty flag remains
+  `Exceptions` writer's, in the bytes and codes cmd gave them; a run failure is worded as
+  one (`RunError`) only where cmd's handler worded it so. Coverage gaps reach the coverage
+  domain's classifier the UI holds (`GapProblems`). Shared mutation presentation, the progress lines
+  (`Progress`) among it, has one owner here. An explicit zero/empty flag remains
   distinct from omission. The literal `no-coverage` and `no-annotate` names have no positive
   aliases. Group admission preserves the old before-child help/error precedence; group
   help and the flattened top-level rows come from the same model. Leading group `--json`
@@ -206,13 +223,12 @@ from it, and thin slices named for their commands.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
-  unit fake owns only semantic values. The memory driver supports these four moved
-  handlers without admitting the whole mutation feature before T-100. `run` hands a
-  validated run back to the cmd dispatcher
-  (`runUntilLegacyMutation`); the memory driver refuses it by name, never reaching the
-  host, and its tests hold that with a physical decoy: an invalid itos-cc.yaml in the
-  process's working directory that a fall-through would read, beside which the moved
-  four read the memory's.
+  unit fake owns only semantic values. The memory driver runs list, check, sample and
+  except over its fakes without admitting the whole mutation feature before T-125. Its
+  fakes cannot stand in for run yet, so it refuses a validated `mutation run` explicitly,
+  through the real parser, before anything runs, never reaching the host, and its tests
+  hold that with a physical decoy: an invalid itos-cc.yaml in the process's working
+  directory that a fall-through would read, beside which except reads the memory's.
 - `internal/count` is the `count` command's slice, named for the command. Its kong struct and
   `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
   only calls the domain through the port, are the application. `Run` assembling the `Query`
@@ -276,9 +292,8 @@ from it, and thin slices named for their commands.
   error, and itos-cc.yaml on the disk. The top-level help, its problems and
   the moved commands use the streams and adapters given, so a test runs them in process with
   buffers and porttest's fakes (`TestRunWithFakes`, decision 44); mutation's parser has moved,
-  and its list, check, sample and except handlers use the streams and adapters given
-  (T-97, T-98, T-99), while run still uses the process streams and its existing
-  discovery until its move. The hand-parsed commands
+  and all five of its handlers use the streams and adapters given (T-97 to T-100). The
+  hand-parsed commands
   keep the process's streams and disk until they move, and only `main` exits. Every command
   runs under the context: a hand-parsed one through
   `execute` and `runSafely` to its `run(ctx, in)`, which passes it on first to what it
@@ -287,7 +302,8 @@ from it, and thin slices named for their commands.
   `exclude`, so `runMoved` reads the file through `a.Config` once the command line is parsed
   and binds them then: a file that cannot be read fails that command as `config.invalid`,
   never help or `version`. A command that stops on a signal derives its own from it
-  (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`), and
+  (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`, which
+  cmd binds into the slice's handler as `Interruptible`), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
   `main` makes a context of its own, and none is held in a value or captured by a closure
   that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
@@ -295,21 +311,20 @@ from it, and thin slices named for their commands.
   that knows every package. It routes a command moved onto kong (`moved.go`) through kong and
   every other through its own parser (`cli.go`) until it moves. Until every command is a slice,
   it also holds the selection domain's classifier, `classifySelection`, since every command
-  selects its files, and `files`, which calls the domain through `workdir` for the hand-parsed
-  ones with the `Exclusion` it reads from itos-cc.yaml (`exclusion`). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
+  selects its files; no hand-parsed command selects files any more (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it, and `snapshots`, the `Store` `internal/metricsdir` gives `dry`'s and `scrap`'s handlers:
   a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
-  on. The hand-parsed `mutation` commands read, write, remove and list their snapshots only
-  through invocation-bound domain readers, catalogs and publication capabilities. `serve`'s
+  on. The `mutation` slice reads, writes, removes and lists its snapshots only through
+  the handler's bound readers, catalog, publication capability and store. `serve`'s
   graph still walks `.metrics/` with the `metrics` library until S8, but receives a root-specific
   snapshot reader and current Toolchain/Fingerprints from cmd. It selects no concrete
   observation adapters, and reads a complete admitted snapshot before TypeScript probes. It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
-  `adapters`' `Coverage`; `mutation` measures through `loadCoverage`, which builds the
-  request from its flags with `coverageRequest` and calls the invocation's separate
-  `MutationCoverage.MeasureListed`. Strict coverage also calls that binding's
+  `adapters`' `Coverage`; `mutation run` measures through its handler's `loadCoverage`,
+  which builds the request from its query and calls the separate `MutationCoverage`
+  binding's `MeasureListed`. Strict coverage also calls that binding's
   `Inventory`; neither consumer constructs a real fallback. Report admission retains `cli.CommandNeedsReport`: strict admission is fatal, while ordinary
   Run preserves its logged best-effort fallback after configured listing.
 - `internal/version` says what the build is, and `internal/release` is the library of the
@@ -599,8 +614,8 @@ callbacks. Progress events are domain facts; the slice's `Progress` alone format
 cmd's run delegating to it.
 Sample draws/checks in the domain and uses the same Execution scheduler, with
 listed IDs admitted only for recorded listed scope.
-Counted/frozen preparation uses Fresh. No mutation handler is promoted to
-the in-process feature driver before T-100.
+Counted/frozen preparation uses Fresh. mutate.feature joins the in-process
+feature driver only at T-125.
 
 T-93 moves check, strict evidence inventory, site listing and orphan judgment into
 `internal/mutants`. Check receives `MutationSnapshotReader`, never mutation write

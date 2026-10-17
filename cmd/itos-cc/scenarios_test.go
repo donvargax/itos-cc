@@ -19,6 +19,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/features"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
@@ -401,6 +402,9 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	if name := commandOf(r.Args); commands[name] != nil {
 		return features.Result{}, fmt.Errorf("itos-cc %s is hand-parsed and reaches the disk itself: tag the scenario %s", strings.Join(r.Args, " "), features.BinaryOnly)
 	}
+	if validatedMutationRun(m.t.Context(), r.Args) {
+		return features.Result{}, fmt.Errorf("itos-cc %s: mutation run runs in process only from T-125; the memory's fakes cannot stand in for it yet", strings.Join(r.Args, " "))
+	}
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)
 	if git == nil {
@@ -444,10 +448,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Coverage:     measurer, MutationCoverage: measurer,
 		Config: file,
 	}
-	code, legacy := runUntilLegacyMutation(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
-	if legacy != nil {
-		return features.Result{}, fmt.Errorf("mutation %s still executes in cmd; in-process execution waits for T100", legacy.parsed.Selected().Name)
-	}
+	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
 	// What the run removed from the store is gone from the memory too, and
 	// what it wrote is there.
 	for rel := range m.under(metricsDir) {
@@ -575,6 +576,39 @@ func commandOf(args []string) string {
 		}
 	}
 	return ""
+}
+
+// validatedMutationRun says whether args are a mutation run command line
+// the real parser validates, as run reads it: one the memory's fakes cannot
+// stand in for until T-125, which Run refuses before anything runs. Help
+// and a line the parser refuses are none, and run as every other command
+// line does.
+func validatedMutationRun(ctx context.Context, args []string) bool {
+	asJSON := false
+	for len(args) > 0 && strings.HasPrefix(args[0], "-") && args[0] != "--" {
+		if args[0] != "--json" {
+			return false
+		}
+		asJSON, args = true, args[1:]
+	}
+	if len(args) == 0 || args[0] != "mutation" {
+		return false
+	}
+	var c commandLine
+	parser, err := parserOf(ctx, &c, &cli.UI{Stdout: io.Discard, Stderr: io.Discard}, adapters{})
+	if err != nil {
+		return false
+	}
+	rest := args[1:]
+	if asJSON {
+		rest = append(rest, "--json")
+	}
+	admitted, help, problem := cli.GroupLine(moved(parser)["mutation"], rest)
+	if problem != nil || help || cli.Read(admitted).Help {
+		return false
+	}
+	parsed, err := cli.Parse(parser, admitted)
+	return err == nil && parsed.Selected().Name == "run"
 }
 
 // repoOf is the fake repository dir is in, and its folder: the nearest at
@@ -788,7 +822,7 @@ func (m *memory) from(dir string) map[string]string {
 }
 
 // workers builds the actual Workers binding from current file and command
-// declarations. Hand-parsed mutation remains refused by Run until T100.
+// declarations. A validated mutation run remains refused by Run until T-125.
 func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	declarations := map[string]map[string]mutantstest.Tests{}
 	for dir, commands := range m.tests {

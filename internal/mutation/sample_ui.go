@@ -48,14 +48,14 @@ func (w Written) spelling(name, value string) string {
 	return value
 }
 
-// sampleProgress shows sample's observations as they happen on stderr: the
-// sources exclude left out, then the run's progress.
-type sampleProgress struct {
+// selectionProgress shows the observations of sample and run as they
+// happen on stderr: the sources exclude left out, then the run's progress.
+type selectionProgress struct {
 	Progress
 	ui *cli.UI
 }
 
-func (p sampleProgress) Excluded(n int) { sayExcluded(p.ui, n) }
+func (p selectionProgress) Excluded(n int) { sayExcluded(p.ui, n) }
 
 // Run refuses a --count below 1 before anything is observed, assembles the
 // query once, then presents the sample, or the result object as far as it
@@ -72,7 +72,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, written Written)
 		SelectionQuery: SelectionQuery{Paths: c.Paths, Changed: c.Changed, Since: c.Since},
 		Count:          c.Count, Seed: c.Seed, Workers: c.Workers, TimeoutFactor: c.TimeoutFactor,
 		TestCommand: c.TestCommand, AllTests: c.AllTests,
-		Progress: sampleProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
+		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	result.Seed = found.Seed
 	if errors.Is(err, errNoWorkers) {

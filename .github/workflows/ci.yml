@@ -60,7 +60,7 @@ jobs:
       - run: itos verify "$FROM" "$TO"
       - run: itos ci run "$FROM" "$TO"
         env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature # T-83; removed when S7 moves mutation in process (T-100).
+          ITOS_CC_SKIP_FEATURES: mutate.feature # T-83; removed when S7 moves mutation in process (T-125).
 
   # Whether the push's range touches only prose, so the test and languages
   # jobs can skip it (T-122): a take, queue or close commit changing only

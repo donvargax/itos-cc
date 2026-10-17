@@ -58,8 +58,73 @@ func failureError(failure Failure, rel func(string) string) error {
 		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", file, failure.Line, failure.Column, failure.Reason),
 			fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", file)).
 			With("file", file).With("line", failure.Line).With("column", failure.Column)
+	case StrictCoverageFlag:
+		return flagConflict(failure.Flag, failure.Flag+" is not admitted with strict "+LanguageName(failure.Language)+" coverage; use a fresh built-in or listed measurement")
+	case CountedNoGit:
+		return countedNoGit(failure.Cause)
+	case OutsideRepository:
+		return cli.NewProblem(cli.CodeUsage, "paths.unmatched", fmt.Sprintf("%q is outside the repository that --count judges", failure.Argument),
+			"Name paths inside the repository.").With("argument", failure.Argument)
+	case CountedPlanFailed:
+		return countedPlanError(failure.Failure, failure.Since)
 	}
 	return failure
+}
+
+// flagConflict is flag given beside another it cannot be, as message says.
+func flagConflict(flag, message string) *cli.Problem {
+	return cli.NewProblem(cli.CodeUsage, "flags.conflict", message, "Drop the incompatible flag and run again.").With("flag", flag)
+}
+
+// countedNoGit is a counted run with no Git repository to judge, err saying
+// why.
+func countedNoGit(err error) *cli.Problem {
+	return cli.NewProblem(cli.CodeEnvironment, "count.no-git", "mutation run --count needs a Git repository with a commit at HEAD: "+err.Error(),
+		"Run it inside a Git repository, after committing the code to judge.")
+}
+
+// countedPlanError words the fresh plan Fresh refused, since the --since
+// ref as written; a failure or a cancellation is itself.
+func countedPlanError(failure mutants.FreshFailure, since string) error {
+	switch f := failure.(type) {
+	case mutants.FreshInvalid:
+		return configInvalid(f.Reason, f.Key, "Fix it in a commit: a counted run reads the itos-cc.yaml HEAD holds; exclude lists globs of sources from the project root, such as **/porttest/**.")
+	case mutants.FreshRefused:
+		switch f.Kind {
+		case mutants.FreshRepository:
+			return countedNoGit(failure)
+		case mutants.FreshSince:
+			return cli.NewProblem(cli.CodeUsage, "since.bad-ref", fmt.Sprintf("--since %s: not a commit in this repository", since),
+				"Name a commit, branch, or tag that exists, such as origin/main.").With("ref", since)
+		case mutants.FreshPath:
+			return cli.NewProblem(cli.CodeUsage, "paths.unmatched", failure.Error(), "Name committed source paths.")
+		case mutants.FreshScratch:
+			return cli.NewProblem(cli.CodeNo, "count.preparation-failed", "counted preparation failed at scratch, so no mutant was judged: "+failure.Error(),
+				"Let itos-cc make its private directory where git rev-parse --git-path itos names it, under this checkout or its git directory: remove a symlink or file in its place, then run again.").
+				With("stage", "scratch")
+		case mutants.FreshUnsupported:
+			return cli.NewProblem(cli.CodeUsage, "count.unsupported-scope", "mutation run --count cannot judge this repository's committed inputs: "+failure.Error(),
+				"Judge paths without it, or run mutation run without --count.")
+		}
+	case mutants.FreshFailed, mutants.FreshCancelled:
+	}
+	return failure
+}
+
+// freshPreparationMessage says why counted preparation failed, the
+// committed config's invalid reason as cmd worded it.
+func freshPreparationMessage(failure mutants.FreshFailure) string {
+	switch f := failure.(type) {
+	case mutants.FreshInvalid:
+		return "read frozen committed config: itos-cc.yaml: " + f.Reason
+	case mutants.FreshRefused:
+		return f.Cause.Error()
+	case mutants.FreshFailed:
+		return f.Cause.Error()
+	case mutants.FreshCancelled:
+		return f.Cause.Error()
+	}
+	return ""
 }
 
 // seedError words the HEAD commit sample could not seed its draw with.
@@ -120,6 +185,54 @@ func runFailure(err error) error {
 		return cli.CommandNeedsReport()
 	}
 	return nil
+}
+
+// runFailed marks an error the run's UI words as a run failure (RunError),
+// where cmd's handler worded it so: what the domain's check, measurement,
+// listing, run and orphan removal return once the run reaches them.
+type runFailed struct{ err error }
+
+func (f runFailed) Error() string { return f.err.Error() }
+func (f runFailed) Unwrap() error { return f.err }
+
+// ranInto marks err, when there is one, as a run failure.
+func ranInto(err error) error {
+	if err == nil {
+		return nil
+	}
+	return runFailed{err: err}
+}
+
+// runError words what run's handler returns: the slice's failures, then a
+// run failure where the handler marked one, then settings failures, in the
+// words, subject and exit code the cmd handler gave them.
+func runError(err error, rel func(string) string) error {
+	var failure Failure
+	if errors.As(err, &failure) {
+		return failureError(failure, rel)
+	}
+	var failed runFailed
+	if errors.As(err, &failed) {
+		if worded := runFailure(failed.err); worded != nil {
+			return worded
+		}
+		err = failed.err
+	}
+	var settings mutants.SettingsFailure
+	if errors.As(err, &settings) {
+		return settingsError(settings)
+	}
+	return err
+}
+
+// countedError words what a counted run's handler returns: the slice's
+// failures, and any other error as itself, as the cmd handler gave it.
+func countedError(err error, rel func(string) string) error {
+	var failure Failure
+	if errors.As(err, &failure) {
+		return failureError(failure, rel)
+	}
+	return err
 }
 
 // sampleError words what sample's handler returns: the slice's failures,

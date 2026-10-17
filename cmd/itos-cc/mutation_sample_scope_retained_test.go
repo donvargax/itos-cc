@@ -10,6 +10,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 	snaptest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
@@ -36,7 +37,7 @@ func TestSampleIgnoresListedIDsOnNonListedRecordedOutcome(t *testing.T) {
 	}
 	workers := &porttest.Workers{Files: files, Tests: map[string]map[string]porttest.Tests{root: {command.String(): {}}}}
 	store := &snaptest.Store{RootDir: root}
-	opt := mutants.Options{Store: metricsdir.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Root: root, Dir: root, WorkerFactory: workers, Toolchain: inputs, Fingerprints: inputs, Workers: 1, TimeoutFactor: 10, Progress: RunProgress{Log: io.Discard}}
+	opt := mutants.Options{Store: metricsdir.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Root: root, Dir: root, WorkerFactory: workers, Toolchain: inputs, Fingerprints: inputs, Workers: 1, TimeoutFactor: 10, Progress: mutationslice.Progress{Log: io.Discard}}
 	if _, err := mutants.Run(t.Context(), []string{path}, opt); err != nil {
 		t.Fatal(err)
 	}

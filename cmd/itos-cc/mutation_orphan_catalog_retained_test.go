@@ -10,6 +10,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
@@ -72,7 +73,7 @@ func TestOrphansAreSnapshotsWhoseSourceIsGone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := removeOrphanSnapshots(t.Context(), metricsdir.Store{RootDir: root}, under); err != nil {
+	if err := mutationslice.RemoveOrphans(t.Context(), metricsdir.Store{RootDir: root}, under); err != nil {
 		t.Fatal(err)
 	}
 	for _, name := range []string{"src/gone.ts", "src/with space.ts"} {
@@ -102,7 +103,7 @@ func TestRemovingOrphansStaysInsideTheSnapshots(t *testing.T) {
 	}
 	orphans = append(orphans, mutation.Orphan{Snapshot: "outside.json"}, mutation.Orphan{Snapshot: ".metrics/crap.json"},
 		mutation.Orphan{Snapshot: ".metrics/mutate/../crap.json"}, mutation.Orphan{Snapshot: ".metrics/mutate"})
-	if err := removeOrphanSnapshots(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
+	if err := mutationslice.RemoveOrphans(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
 		t.Fatal(err)
 	}
 	if retainedThere(t, root, ".metrics/mutate/a") {
@@ -140,7 +141,7 @@ func TestOrphanNamesMapBackAsTheyAre(t *testing.T) {
 	if got, want := retainedSnapshotsOf(orphans), []string{`.metrics/mutate/src\c.ts.json`}; !slices.Equal(got, want) {
 		t.Fatalf("orphans %v, want %v", got, want)
 	}
-	if err := removeOrphanSnapshots(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
+	if err := mutationslice.RemoveOrphans(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
 		t.Fatal(err)
 	}
 	if retainedThere(t, root, `.metrics/mutate/src\c.ts.json`) || !retainedThere(t, root, `.metrics/mutate/src/a\b.ts.json`) || !retainedThere(t, root, "target.json") {
@@ -239,7 +240,7 @@ func TestTheSnapshotOfAnExcludedSourceIsAnOrphan(t *testing.T) {
 	if !slices.Equal(orphans, want) {
 		t.Errorf("orphans %v, want %v", orphans, want)
 	}
-	if err := removeOrphanSnapshots(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
+	if err := mutationslice.RemoveOrphans(t.Context(), metricsdir.Store{RootDir: root}, orphans); err != nil {
 		t.Fatal(err)
 	}
 	if retainedThere(t, root, ".metrics/mutate/src/porttest/fake.go.json") || !retainedThere(t, root, "src/porttest/fake.go") {

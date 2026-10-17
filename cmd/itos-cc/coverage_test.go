@@ -8,6 +8,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
@@ -89,11 +90,12 @@ func TestAnErrorOfNoKindIsNotCoverages(t *testing.T) {
 	}
 }
 
-// unmeasured is a problem for each root or report a report did not
-// measure, in its order, through classifyCoverage, each root's directory
-// from the working directory.
+// The slice's GapProblems is a problem for each root or report a report
+// did not measure, in its order, through classifyCoverage, which cmd hands
+// the UI, each root's directory from the working directory.
 func TestUnmeasuredClassifiesEachGap(t *testing.T) {
-	problems := unmeasured([]coverage.Unmeasured{
+	ui := stdUI()
+	problems := mutationslice.GapProblems(ui, []coverage.Unmeasured{
 		{Dir: absOrSame("web"), Language: "typescript", Cause: covport.ToolMissing{}, Reason: "no vitest"},
 		{Report: "lcov.info", Cause: covport.Unreadable{}, Reason: "gone"},
 	})

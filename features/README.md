@@ -119,7 +119,7 @@ unset or empty leaves out none. Both drivers log the omitted filenames and run o
 files, including when a selected tag is shared with an omitted file. A selection naming only
 omitted scenarios passes without running them; unknown tags and invalid `Unstepped` IDs still
 fail. Push CI temporarily sets it to `mutate.feature` until S7 moves mutation in process
-(T-100 removes the setting; T-101 verifies it). The language-tools runs keep those scenarios,
+(T-125 removes the setting; T-101 verifies it). The language-tools runs keep those scenarios,
 as do local runs unless the variable is explicitly set.
 
 A `units.feature` scenario runs in a sample project of TypeScript and Python, production code and
@@ -558,7 +558,7 @@ S8's serving adapter.
 During T-83's temporary push-CI omission, the old holders in
 `cmd/itos-cc/mutate_listed_test.go` (121–129), `mutate_listed_fresh_test.go` (130–134), and
 `mutate_listed_baseline_test.go` (135–137) remain. T-101 removes only replaced tests after the
-converted scenarios actually pass CI following T-100's restoration, retaining helpers still
+converted scenarios actually pass CI following T-125's restoration, retaining helpers still
 used by counted scenarios. Local fixture runs establish local conversion evidence; a green
 CI selection that omits them does not establish a scenario pass.
 
@@ -573,14 +573,14 @@ existing files in the past and checks their modification times, and the memory d
 write revisions. Their shared contract includes rewriting identical bytes. Memory snapshots
 increment revisions through the actual fake Store.Write, before writeback; the source annotation
 writers move in S7 and must likewise record their writes through the memory driver's Write or
-an instrumented source port in T-100. A byte-only comparison cannot stand in for those events.
+an instrumented source port in T-125. A byte-only comparison cannot stand in for those events.
 ID-MUT-102 checks both the observed writes and the bytes of source and snapshot.
 
 T-101's deferred replacements from T-73 are the thirteen annotated tests in
 `cmd/itos-cc/mutate_since_test.go` for 37–46 and 102–104. Keep its shared helpers and the
 untagged renamed-file/new-path guard. The differential guards in `mutate/snapshot_test.go`
 stay as domain tests; `mutation_scope_test.go` belongs to T-75. All existing holders remain
-until the replacement scenarios actually pass CI after T-100 restores mutation scenarios.
+until the replacement scenarios actually pass CI after T-125 restores mutation scenarios.
 
 The cached-result scenarios (ID-MUT-57–70, 106–108) use real Vitest fixtures for every
 literal TypeScript path, and a Go module with an importing package for 70. Their
@@ -650,14 +650,14 @@ records canonical `cwd` and `original_root` with `realpathSync`, plus
 computed sampled-site digest afterward, and every execution outside the canonical
 original project. It also observes source/snapshot bytes and actual write events.
 Public progress alone is not physical-copy evidence. Memory currently stores these
-declarations only; T-88/T-100 must emit observations from actual bound fake Workers
+declarations only; T-88/T-125 must emit observations from actual bound fake Workers
 state, select outcomes by its request command and retain a binding regression.
 No scripted trace or in-process execution pass is claimed before that wiring.
 
 `Driver.Head(ctx, dir)` observes the actual Git HEAD independently of sample output.
 The binary implementation uses Git; the current memory Git has only a commit counter
 and explicitly reports unmoved history until T-91 supplies its actual history ID.
-T-100 must wire that value when mutation scenarios join `InProcess`.
+T-125 must wire that value when mutation scenarios join `InProcess`.
 MUT78 explicitly records seed `4813e48` before moving HEAD.
 
 All T-75 holders below remain until restored replacement scenario CI and T-101
@@ -784,7 +784,7 @@ entries and every file other than itos-cc.yaml. No new driver capability,
 mutation operator, product behavior or binary-only exclusion is added.
 
 The unaffected language-tools CI selection includes the 24 TypeScript fixture
-cases; the Go renewal case runs locally until T100 restores mutation scenarios
+cases; the Go renewal case runs locally until T125 restores mutation scenarios
 in the initial CI selection. Local execution counts are distinct from any
 selection that T83 omits. T101 owns legacy cleanup after replacement CI. Keep
 all the following holders and their helpers, plus the unjudged --since
@@ -867,7 +867,7 @@ own-test selection remain eligible for the later bound memory driver.
 Own-test traces retain actual canonical execution roots and mutated source
 hashes, plus names emitted by the executing Python test or Kotlin test class.
 The optional `TestTrace.Tests` inventory includes every runnable selector,
-including unrelated tests. T88/T90/T100 must derive events from the actual
+including unrelated tests. T88/T90/T125 must derive events from the actual
 bound Workers and Measurer requests, preserve nil-inventory behavior and fail
 unsupported selectors; an empty or scripted trace is not an execution result.
 
@@ -889,7 +889,7 @@ reuse against that saved population. Its unjudged comparisons require original
 nonempty evidence and judgments while allowing stale markers and current
 source positions. Bug-2 holds the evidence-preservation fix independently in
 MUT247. The staged graph deferral for MUT134/153/154/163/207 remains explicit in
-T100/T101 until T112 proves both drivers; it is no permanent exclusion.
+T125/T101 until T112 proves both drivers; it is no permanent exclusion.
 
 CI keeps all prior installed-tool selections and MUT247, then adds three
 bounded invocations for T78 policy/reach, suite/coverage-scope, and
@@ -972,7 +972,7 @@ reports sorted actual observations. A later missing target or ordinary I/O
 failure is an error. Missing access metadata or a filesystem that fails its
 positive control is an explicit capability omission, never an empty passing
 read log. The current memory driver explicitly reports that its read ports
-have not moved; T89/T100 must wire observations to real bound selection,
+have not moved; T89/T125 must wire observations to real bound selection,
 surroundings and toolchain reads with positive controls. No logical scenario
 gets a permanent binary-only exclusion for that staged implementation.
 
@@ -1108,7 +1108,7 @@ identity/race assertions remain in the adapter guards.
 Logical fixtures declare actual Go commands, sites, baselines and traces.
 Coverage declarations use the actual public compiler's observed Go block reports;
 listed fixtures predeclare their exact inventory before public named-report setup
-verifies it. T89/T90/T100 must produce/parse the requested declared report through
+verifies it. T89/T90/T125 must produce/parse the requested declared report through
 actual bound tool/report operations, never a fixture-ID result shortcut.
 MUT195 creates its exception with the public command and removes only its
 unnecessary fixture snapshot before changing that function, so valid old reuses
@@ -1116,7 +1116,7 @@ cannot be mistaken for new trial admission. MUT211's JSON and text run on
 independently prepared twins with actual prior public judgments, keeping exact
 counts without restoring caches. Its aggregate failing-baseline controls run first.
 
-Two logical fixture barriers are obligations for T88/T100: B survives only after
+Two logical fixture barriers are obligations for T88/T125: B survives only after
 A2's actual Workers request has entered, and MUT197's FF_FAIL_AFTER failing listed
 baseline waits for the held own request. The future fake must derive these from
 actual bound requests/context cancellation, not scheduling delays or scripted
@@ -1419,8 +1419,8 @@ source traces carry their actual project-relative source identity. No scenario
 ID or prewritten event list chooses executions. Physical dependency links and
 interpreter behavior remain real-adapter observations.
 
-The memory driver constructs this binding now, but still refuses hand-parsed
-mutation commands until T-100. Its focused handler-binding guard uses disposable
+The memory driver constructs this binding now, but still refuses a validated
+mutation run until T-125. Its focused handler-binding guard uses disposable
 real source discovery with those same declared fake Workers; it is not evidence
 that every mutation scenario already runs entirely in memory. Missing and wrong
 handler bindings are exercised independently. Direct legacy library fixture
@@ -1471,15 +1471,15 @@ values and prepend their own copied Python directories before inherited editable
 PYTHONPATH. Source and directory read observations derive from actual bound
 selection/surroundings/input operations; fixture assertion reads are excluded,
 positive controls use those same ports, and removed targets fail observation.
-The driver still refuses hand-parsed mutation until T-100. The focused actual
-handler guards use disposable real legacy discovery/config alongside the bound
+The driver still refuses a validated mutation run until T-125. The focused actual
+handler guards use disposable real discovery/config alongside the bound
 memory ports; they do not prove full in-memory mutation execution yet.
 
 PATH omissions affect only bare executable lookups; explicit installed paths
 remain available. The fake holds simple POSIX missing-command shell exit127
 separately from a direct-start failure. Compound shell hiding and uncharacterized
 Windows missing-command shell outcomes fail explicitly as unsupported fake
-requests. T-100 must settle any needed Windows shell binding before admitting
+requests. T-125 must settle any needed Windows shell binding before admitting
 such execution; there is no silent verdict or permanent logical binary-only tag.
 Only partial-result listed-file hash finalization derives caller WithoutCancel
 for its old best-effort actual reads. Current freshness/admission/probes and
@@ -1507,7 +1507,7 @@ per-ID sibling evidence. It observes actual request scope/reach and current
 source bytes using the full runnable trace inventory, including unrelated tests.
 Unknown fixture sources/selectors fail admission; unexpected request-dependent
 observation errors return from `Driver.Run` without changing product failures.
-The hand-parsed mutation handler still refuses memory scenarios until T100;
+The memory driver still refuses a validated mutation run until T-125;
 focused consumer controls use disposable real discovery only, with actual
 measurement supplied by the fake. No feature is promoted to `InProcess` here.
 Shared named-report/cancellation guards are distinct from successful shared
@@ -1534,7 +1534,7 @@ three-dot ranges, caller-directory namespaces, committed bytes despite later
 edits, both rename directions, pure deletions and same-name hash pairing.
 The bounded fixture setup supports the Givens' add/commit/branch/checkout/tag/mv
 operations and errors on unsupported shapes; it runs no Git executable.
-Legacy mutation handlers still refuse in-process execution until T-100.
+The memory driver still refuses a validated mutation run until T-125.
 Frozen export/materialization, modes and symlink/gitlink admission remain at
 the supervised counted boundary until T-95. All original project history
 holders and counted export guards remain; they are not deleted as duplicates.

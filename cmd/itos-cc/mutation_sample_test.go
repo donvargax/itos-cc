@@ -14,6 +14,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 )
 
 // The scenarios of "Rule: Re-running a sample of cached results" in
@@ -113,7 +114,7 @@ func recordAs(t *testing.T, rel, function, original, outcome string) {
 		}
 	}
 	if !found {
-		t.Fatalf("the snapshot of %s records no mutant of %s in %s", rel, quote(original), function)
+		t.Fatalf("the snapshot of %s records no mutant of %s in %s", rel, mutationslice.Quote(original), function)
 	}
 	data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
 	if err != nil {
@@ -131,7 +132,7 @@ func recorded(t *testing.T, function, original string) string {
 			return m.Outcome
 		}
 	}
-	t.Fatalf("the snapshot records no mutant of %s in %s", quote(original), function)
+	t.Fatalf("the snapshot records no mutant of %s in %s", mutationslice.Quote(original), function)
 	return ""
 }
 
@@ -692,7 +693,7 @@ func TestTheSampleAsJSON(t *testing.T) {
 	var fromJSON []string
 	for _, p := range m.Problems {
 		fromJSON = append(fromJSON, fmt.Sprintf("  mismatch %s:%v:%v %s → %s in %s: recorded %s, now %s\n",
-			p["file"], p["line"], p["column"], quote(p["original"].(string)), quote(p["replacement"].(string)),
+			p["file"], p["line"], p["column"], mutationslice.Quote(p["original"].(string)), mutationslice.Quote(p["replacement"].(string)),
 			p["function"], p["recorded"], p["outcome"]))
 	}
 	if !slices.Equal(listed, fromJSON) {

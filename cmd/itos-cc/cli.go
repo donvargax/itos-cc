@@ -130,8 +130,6 @@ func (in *invocation) duration(name string) time.Duration {
 	return d
 }
 
-func (in *invocation) report(p *cli.Problem) { in.problems = append(in.problems, p) }
-
 // errHelp is returned by parse when help was asked for.
 var errHelp = cli.NewProblem(0, "help", "help", "")
 

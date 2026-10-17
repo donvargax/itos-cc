@@ -19,12 +19,13 @@ type SampleQuery struct {
 	TimeoutFactor float64
 	TestCommand   string
 	AllTests      bool
-	Progress      SampleProgress
+	Progress      SelectionProgress
 }
 
-// SampleProgress receives sample's observations while it works: how many
-// sources exclude left out, once the selection is made, and each run event.
-type SampleProgress interface {
+// SelectionProgress receives the observations of sample and run while they
+// work: how many sources exclude left out, once the selection is made, and
+// each run event.
+type SelectionProgress interface {
 	mutants.Progress
 	Excluded(n int)
 }

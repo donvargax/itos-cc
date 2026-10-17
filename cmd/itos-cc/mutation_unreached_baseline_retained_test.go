@@ -8,6 +8,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/internal/testtools"
@@ -39,7 +40,7 @@ func TestAKotlinFileNoTestClassReachesReportsItsBaselineAsNotRun(t *testing.T) {
 	t.Chdir(dir)
 	src := filepath.Join(dir, "src", "main", "kotlin", "a", "A.kt")
 	helper := filepath.Join(dir, "src", "test", "kotlin", "a", "Helper.kt")
-	opt := mutation.Options{Workers: 1, Root: dir, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, WorkerFactory: worktrees.Workers{}, Progress: RunProgress{Log: io.Discard}, Tests: func(string) []string { return []string{helper} }}
+	opt := mutation.Options{Workers: 1, Root: dir, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, WorkerFactory: worktrees.Workers{}, Progress: mutationslice.Progress{Log: io.Discard}, Tests: func(string) []string { return []string{helper} }}
 	if c, _ := mutation.ObserveCommand(t.Context(), opt.Toolchain, mutation.CommandRequest{Path: src, Tests: []string{helper}}); !c.RunsNothing() {
 		t.Fatalf("A.kt's own tests run %q, want nothing: Helper.kt declares no test class", c)
 	}

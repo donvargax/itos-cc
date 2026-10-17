@@ -58,6 +58,13 @@ func (h Handler) orphans(ctx context.Context, q SelectionQuery) ([]mutants.Orpha
 	if err != nil || len(found) == 0 {
 		return found, err
 	}
+	return h.notRenamed(ctx, q, found)
+}
+
+// notRenamed are the orphans of found that History shows no rename of to a
+// file that is there: renamed in the --since range, when there is one, or
+// in the working tree against HEAD.
+func (h Handler) notRenamed(ctx context.Context, q SelectionQuery, found []mutants.Orphan) ([]mutants.Orphan, error) {
 	ref := ""
 	if q.Since != nil {
 		ref = *q.Since

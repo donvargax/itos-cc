@@ -175,22 +175,11 @@ func init() {
 // parses their command line with; a model kong refuses is a bug, an
 // internal failure.
 func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, a adapters) int {
-	code, legacy := runUntilLegacyMutation(ctx, args, stdin, stdout, stderr, a)
-	if legacy != nil {
-		return runParsedMutation(ctx, legacy.parsed, legacy.model, a)
-	}
-	return code
-}
-
-// runUntilLegacyMutation shares actual parsing and moved execution with the
-// memory driver. Only a validated, unmoved mutation handler is returned; help
-// and parse failures never enter it. This seam disappears with the last move.
-func runUntilLegacyMutation(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer, a adapters) (int, *legacyMutation) {
 	ui := &cli.UI{In: stdin, Stdout: stdout, Stderr: stderr, Classifiers: classifiers, Dir: a.Dir}
 	var c commandLine
 	parser, err := parserOf(ctx, &c, ui, a)
 	if err != nil {
-		return ui.Fail(err, cli.Read(args).JSON), nil
+		return ui.Fail(err, cli.Read(args).JSON)
 	}
 	var leading []string
 	for len(args) > 0 && strings.HasPrefix(args[0], "-") && args[0] != "--" {
@@ -203,41 +192,41 @@ func runUntilLegacyMutation(ctx context.Context, args []string, stdin io.Reader,
 			asJSON = true
 		case "-h", "--help":
 			fmt.Fprint(ui.Stdout, usage(parser))
-			return 0, nil
+			return 0
 		case "--version":
 			args = append([]string{"version"}, args...)
 		default:
 			p := cli.NewProblem(cli.CodeUsage, "flags.unknown", fmt.Sprintf("itos-cc takes no flag %s before a command", a),
 				"Put a command's flags after its name; run 'itos-cc --help' for the commands.").With("flag", a)
-			return ui.Emit(asJSON, nil, []*cli.Problem{p}), nil
+			return ui.Emit(asJSON, nil, []*cli.Problem{p})
 		}
 	}
 	if len(args) == 0 {
 		if asJSON {
 			p := cli.NewProblem(cli.CodeUsage, "command.missing", "no command given", "Name a command; run 'itos-cc --help' for them.")
-			return ui.Emit(true, nil, []*cli.Problem{p}), nil
+			return ui.Emit(true, nil, []*cli.Problem{p})
 		}
 		fmt.Fprint(ui.Stdout, usage(parser))
-		return 0, nil
+		return 0
 	}
 	name, rest := args[0], args[1:]
 	if asJSON {
 		rest = append(rest, "--json")
 	}
 	if name == "help" {
-		return help(parser, ui, rest, asJSON), nil
+		return help(parser, ui, rest, asJSON)
 	}
 	if moved(parser)[name] != nil {
 		return runMoved(ctx, parser, &c, ui, a, append([]string{name}, rest...))
 	}
 	cmd, ok := commands[name]
 	if !ok {
-		return ui.Emit(asJSON, nil, []*cli.Problem{unknownCommand(parser, name)}), nil
+		return ui.Emit(asJSON, nil, []*cli.Problem{unknownCommand(parser, name)})
 	}
 	if cmd.subs != nil {
-		return runGroup(ctx, cmd, rest, a), nil
+		return runGroup(ctx, cmd, rest, a)
 	}
-	return execute(ctx, cmd, rest, a), nil
+	return execute(ctx, cmd, rest, a)
 }
 
 // runGroup dispatches args to a subcommand of group g, run under ctx with

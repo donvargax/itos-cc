@@ -32,9 +32,10 @@ func (unavailableReach) TestsImporting(context.Context, string, []string, []stri
 	return nil, mutation.InputFailed{Cause: errors.New("actual reach observation unavailable")}
 }
 
-// Hand-parsed mutation still reads legacy discovery/config until T100. This
-// disposable public fixture reaches the exact command composition with actual
-// memory observation/Workers bindings, without running a host test command.
+// Run reads the disk's discovery/config through cmd's adapters here, in
+// process, until T-125 runs mutate.feature there. This disposable public
+// fixture reaches the exact command composition with actual memory
+// observation/Workers bindings, without running a host test command.
 func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {
 	root, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {

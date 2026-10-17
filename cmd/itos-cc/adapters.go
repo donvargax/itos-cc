@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"runtime"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/coveragetools"
@@ -69,6 +71,16 @@ type adapters struct {
 	MutationCoverage coverage.MutationMeasurer
 	// Config is itos-cc.yaml.
 	Config configFile
+	// Repository and PhysicalDir are what a counted mutation run starts
+	// from: the top of the Git repository holding the working directory,
+	// and the working directory, both physical. Interruptible derives its
+	// own context, which SIGINT or SIGTERM cancels.
+	Repository    func(ctx context.Context) (string, error)
+	PhysicalDir   func(ctx context.Context) (string, error)
+	Interruptible func(ctx context.Context) (context.Context, func())
+	// Platform is the system itos-cc runs on, which mutation run's --count
+	// and --fail-fast check (countedPlatform).
+	Platform string
 }
 
 // configFile is itos-cc.yaml as the moved commands read it.
@@ -92,7 +104,8 @@ func diskAdapters(log io.Writer) adapters {
 	return adapters{Settings: config.Reader{Source: diskConfig{}}, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
-		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{}}
+		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{},
+		Repository: countedRoot, PhysicalDir: physicalDir, Interruptible: countedSignalContext, Platform: countedPlatform}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.
@@ -119,4 +132,20 @@ func exclusionOf(ctx context.Context, file configFile) (selection.Exclusion, err
 		return selection.Exclusion{}, invalidConfig(err)
 	}
 	return selection.Exclusion{Root: root, Globs: cfg.Exclude}, nil
+}
+
+// invalidConfig is err, from reading itos-cc.yaml, as a person reads it: a
+// file that cannot be read as a config is config.invalid, saying what each
+// key needs, and any other error is err.
+func invalidConfig(err error) error {
+	var invalid *config.InvalidError
+	if errors.As(err, &invalid) {
+		p := cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(),
+			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", config.File)
+		if invalid.Key != "" {
+			p.With("key", invalid.Key)
+		}
+		return p
+	}
+	return err
 }

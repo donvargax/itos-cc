@@ -7,16 +7,63 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
 )
 
 // These parser-boundary observations cannot be inferred from a successful
-// command: the legacy handlers intentionally distinguish omitted flags from
-// explicit empty/zero values and report the caller's original number text.
-func parsedMutationFixture(t *testing.T, a adapters, args ...string) *invocation {
+// command: the handlers intentionally distinguish omitted flags from
+// explicit empty/zero values and report the caller's original number text,
+// read from the flags the validated line gave (cli.Provided, bound as
+// mutation.Written) beside kong's defaults.
+type parsedMutation struct {
+	values   map[string][]string
+	defaults map[string]string
+	args     []string
+	json     bool
+}
+
+func (p parsedMutation) set(name string) bool      { return len(p.values[name]) > 0 }
+func (p parsedMutation) strs(name string) []string { return p.values[name] }
+func (p parsedMutation) str(name string) string {
+	if v := p.values[name]; len(v) > 0 {
+		return v[len(v)-1]
+	}
+	return p.defaults[name]
+}
+func (p parsedMutation) integer(name string) int {
+	n, _ := strconv.Atoi(p.str(name))
+	return n
+}
+
+// parsedMutationOf is the validated line of parsed, which filled c.
+func parsedMutationOf(parsed *kong.Context, c *commandLine) parsedMutation {
+	node := parsed.Selected()
+	p := parsedMutation{values: cli.Provided(parsed), defaults: map[string]string{}, json: cli.Read(parsed.Args).JSON}
+	for _, flag := range node.Flags {
+		p.defaults[flag.Name] = flag.Default
+	}
+	switch node.Name {
+	case "run":
+		p.args = c.Mutation.Run.Paths
+	case "list":
+		p.args = c.Mutation.List.Paths
+	case "check":
+		p.args = c.Mutation.Check.Paths
+	case "sample":
+		p.args = c.Mutation.Sample.Paths
+	case "except":
+		p.args = c.Mutation.Except.Site
+	}
+	return p
+}
+
+func parsedMutationFixture(t *testing.T, a adapters, args ...string) parsedMutation {
 	t.Helper()
 	var c commandLine
 	ui := &cli.UI{Stdout: io.Discard, Stderr: io.Discard}
@@ -32,7 +79,7 @@ func parsedMutationFixture(t *testing.T, a adapters, args ...string) *invocation
 	if err != nil {
 		t.Fatal(err)
 	}
-	return mutationInvocation(parsed, &c, a)
+	return parsedMutationOf(parsed, &c)
 }
 
 func TestMutationParserKeepsProvidedValuesAndSpellings(t *testing.T) {
@@ -144,8 +191,7 @@ func TestMutationGroupHelpRoutingAndErrorPrecedence(t *testing.T) {
 
 func TestMutationGroupJSONPlacementRetainsLegacyDispatch(t *testing.T) {
 	// Invalid count stops before configuration or tools, but reaches the actual
-	// child handler and its retained range error. stdout capture follows the
-	// legacy handler's process streams until those handlers move.
+	// child handler and its retained range error, on the streams given.
 	for _, tc := range []struct {
 		args []string
 		json bool
@@ -156,7 +202,10 @@ func TestMutationGroupJSONPlacementRetainsLegacyDispatch(t *testing.T) {
 		{[]string{"--json", "mutation", "run", "--count=00"}, true},
 	} {
 		var code int
-		output, errOutput := captured(t, func() { code = run(t.Context(), tc.args, strings.NewReader(""), io.Discard, io.Discard, adapters{}) })
+		var given, givenErr bytes.Buffer
+		output, errOutput := captured(t, func() { code = run(t.Context(), tc.args, strings.NewReader(""), &given, &givenErr, adapters{}) })
+		output += given.String()
+		errOutput += givenErr.String()
 		if code != 2 {
 			t.Fatalf("%q exit=%d out=%q err=%q", tc.args, code, output, errOutput)
 		}
@@ -305,7 +354,7 @@ func TestMutationTypedModelUsesTheValidatedFlags(t *testing.T) {
 	if got.Count != 1 || got.TimeoutFactor != 10 || !got.NoAnnotate || got.JSON || got.FailUncovered == nil || *got.FailUncovered != "lines" || !slices.Equal(got.Paths, []string{"first.go", "--json"}) || !slices.Equal(got.CoverageReport, []string{"a,b.info", "other.info"}) {
 		t.Fatalf("wrong typed model: %+v", got)
 	}
-	in := mutationInvocation(parsed, &c, adapters{})
+	in := parsedMutationOf(parsed, &c)
 	if in.str("count") != "01" || in.str("timeout-factor") != "1e1" || in.json {
 		t.Fatalf("typed conversion erased raw/provided facts: %+v", in)
 	}
@@ -334,7 +383,7 @@ func TestMutationParsedAdmissionKeepsEmptyAndZeroRefusals(t *testing.T) {
 			var code int
 			var given bytes.Buffer
 			out, errOut := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &given, io.Discard, adapters{}) })
-			// Moved children answer on the streams given, the others on the process's.
+			// Every mutation child answers on the streams given.
 			out += given.String()
 			var result struct {
 				Problems []struct{ Rule, Flag, Value string }

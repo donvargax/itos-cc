@@ -1,9 +1,8 @@
 // Package mutation declares the mutation command group. Kong owns parsing;
-// list, check, sample and except own their application/UI here; cmd retains
-// run until its slice move. Their handler reads settings
-// through mutants' SettingsReader at each original admission point and
-// returns refusals as the sealed Failure set, which Run's classifier words
-// with the exit codes cmd gave them.
+// run, list, check, sample and except own their application/UI here. Their
+// handler reads settings through mutants' SettingsReader at each original
+// admission point and returns refusals as the sealed Failure set, which
+// Run's classifier words with the exit codes cmd gave them.
 package mutation
 
 import "github.com/donvargax/itos-cc/internal/cli"

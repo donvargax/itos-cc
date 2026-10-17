@@ -7,7 +7,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // classifyCoverage is the coverage domain's classifier, which cmd hands to
@@ -73,28 +72,4 @@ func measureProblem(failure covport.Failure) *cli.Problem {
 		p = cli.Internal(e)
 	}
 	return p
-}
-
-// unmeasured is a problem for each of ms, a report's Missing, by
-// classifyCoverage, its directories relative to the working directory.
-func unmeasured(ms []coverage.Unmeasured) []*cli.Problem {
-	var out []*cli.Problem
-	for _, m := range relativeUnmeasured(ms) {
-		problems, _ := classifyCoverage(m)
-		out = append(out, problems...)
-	}
-	return out
-}
-
-// relativeUnmeasured is ms, a report's Missing, with directories relative
-// to the working directory, as every other path itos-cc prints is.
-func relativeUnmeasured(ms []coverage.Unmeasured) []coverage.Unmeasured {
-	out := []coverage.Unmeasured{}
-	for _, m := range ms {
-		if m.Dir != "" {
-			m.Dir = project.Rel(m.Dir)
-		}
-		out = append(out, m)
-	}
-	return out
 }

@@ -37,7 +37,7 @@ func (s memoryConfig) Read(context.Context) (string, []byte, error) {
 }
 
 // This direct driver guard reaches the moved handlers before mutate.feature is
-// admitted wholesale at T100. A contradictory physical document detects fallback:
+// admitted wholesale at T-125. A contradictory physical document detects fallback:
 // the process works in the physical root, so project.Root and the disk config
 // binding would find the invalid document there.
 func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *testing.T) {
@@ -188,9 +188,11 @@ func TestMemorySourceStatusIncludesActualImplicitDirectories(t *testing.T) {
 
 // The physical decoy: the process works in a root whose disk holds an invalid
 // document, so a run that fell through to the host would read it
-// (config.invalid on stdout) or rewrite it. Sample and except have moved, and
-// read the memory's settings beside the same decoy above.
-func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
+// (config.invalid on stdout) or rewrite it. The memory refuses a validated
+// mutation run explicitly, before anything runs, until T-125; except runs in
+// process and reads the memory's settings beside the same decoy, and help
+// and parse errors of both answer as ever.
+func TestMemoryRefusesOnlyValidatedMutationRun(t *testing.T) {
 	m := newMemory(t)
 	root := t.TempDir()
 	physical := filepath.Join(root, config.File)
@@ -205,8 +207,10 @@ func TestMemoryRefusesOnlyParsedUnmovedMutationExecution(t *testing.T) {
 	for _, child := range []string{"run", "except"} {
 		t.Run(child, func(t *testing.T) {
 			if child == "run" {
-				if result, err := m.Run(features.Run{Dir: root, Args: []string{"mutation", child, "--json"}}); err == nil || !strings.Contains(err.Error(), "still executes in cmd") || result.Stdout != "" {
-					t.Fatalf("unmoved execution was not explicitly refused: %+v %v", result, err)
+				for _, args := range [][]string{{"mutation", child, "--json"}, {"--json", "mutation", child}, {"mutation", "--json", child, "--count", "1"}} {
+					if result, err := m.Run(features.Run{Dir: root, Args: args}); err == nil || !strings.Contains(err.Error(), "only from T-125") || result.Stdout != "" {
+						t.Fatalf("%q was not explicitly refused: %+v %v", args, result, err)
+					}
 				}
 			} else {
 				// Except runs in process: a renewal reads the memory's

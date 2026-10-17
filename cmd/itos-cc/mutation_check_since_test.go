@@ -8,10 +8,10 @@ import (
 )
 
 // mutation check's --since admission moved into internal/mutation (T-97),
-// worded by its UI, while mutation run's stays in cmd until run moves. No
-// scenario runs check into these refusals, so these hold the moved copy to
-// run's problems, word for word and with the same subject, and to its exit
-// code and plain lines.
+// worded by its UI, and mutation run's joined it there (T-100). No scenario
+// runs check into these refusals, so these hold check to run's problems,
+// word for word and with the same subject, and to its exit code and plain
+// lines.
 func TestCheckSinceRefusalsMatchRun(t *testing.T) {
 	t.Parallel()
 	boardRepo(t, nil)

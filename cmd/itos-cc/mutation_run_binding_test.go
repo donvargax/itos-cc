@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
+	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -64,7 +66,7 @@ func (f *mutationRunFixture) invoke(t *testing.T, a adapters, flags ...string) (
 	args = append(args, "board.go")
 	code := 0
 	out, log := captured(t, func() { code = run(t.Context(), args, strings.NewReader(""), &f.stdout, &f.stderr, a) })
-	return code, out + log + f.stderr.String()
+	return code, out + f.stdout.String() + log + f.stderr.String()
 }
 func TestMutationRunUsesActualModelAndSourceBindings(t *testing.T) {
 	f := newMutationRunFixture(t)
@@ -97,7 +99,17 @@ func TestMutationRunUsesActualModelAndSourceBindings(t *testing.T) {
 			a.Snapshots = &mutantstest.Snapshots{RootFailure: &snapport.Unreadable{Reason: "snapshot unavailable"}}
 		}},
 		{"wrong edits", "annotation source is absent", func(a *adapters) { a.SourceEdits = &mutantstest.SourceEdits{Files: map[string]string{}} }},
-		{"wrong tree", "outside the requested inventory", func(a *adapters) { a.Tree = seltest.TreeOf(f.root, map[string]string{}, nil) }},
+		// The selection reads the bound tree too (T-100): it lists board.go,
+		// whose bytes that tree does not hold, while the disk does.
+		{"wrong tree", "fake", func(a *adapters) {
+			tree := seltest.TreeOf(f.root, map[string]string{"go.mod": "module example.test/board\n", "board.go": "package board\nfunc Value(x int) bool { return x > 1 }\n", "board_test.go": "package board\n"}, nil)
+			delete(tree.Contents, "board.go")
+			a.Tree = tree
+		}},
+		{"missing settings", "settings binding is missing", func(a *adapters) { a.Settings = nil }},
+		{"wrong settings", "independent settings unavailable", func(a *adapters) {
+			a.Settings = &mutantstest.Settings{Failure: mutants.InputFailed{Cause: errors.New("independent settings unavailable")}}
+		}},
 	} {
 		t.Run(binding.name, func(t *testing.T) {
 			a := f.adapters
@@ -147,7 +159,7 @@ func TestMutationRunListingFailureUsesBoundListerBeforeTrials(t *testing.T) {
 		out, log := captured(t, func() {
 			code = run(t.Context(), []string{"mutation", "run", "--json", "--no-annotate", "board.go"}, strings.NewReader(""), &f.stdout, &f.stderr, a)
 		})
-		return code, out + log + f.stderr.String()
+		return code, out + f.stdout.String() + log + f.stderr.String()
 	}
 	f.adapters.TestLister = lister
 	if code, out := invoke(f.adapters); code != 1 || !strings.Contains(out, "tests.list-failed") || !strings.Contains(out, "exit status 7") || !strings.Contains(out, "actual list diagnostic") {
