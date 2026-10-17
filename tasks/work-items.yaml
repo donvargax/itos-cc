@@ -2589,6 +2589,22 @@ items:
       TypeScript strict evidence missing, stale and unsupported. Also mutation run, sample and
       except survivor, uncovered, coverage and stale-exception lines, which cmd now prints through
       the slice's shared presentation. No per-task binary comparison.
+
+      T-98 (mutation sample into internal/mutation; its seed and refusals worded by the slice UI;
+      progress, failed-selection and run-failure wording shared from the slice): compare mutation
+      sample, plain and with --json, for --count 0, --count=00, --count=+0 and --count -1 (value
+      quoted as written, no result beyond seed "" and files []), --since with --changed, --since
+      nosuch, --since outside git and an explicit empty --since=; an omitted --seed inside and
+      outside git (sample.no-git, 3), --seed= and --seed TEXT outside git; no itos-cc.yaml, one that
+      is not YAML, one with an empty exclude glob (config.invalid with its key) and one that is a
+      directory (internal 70); exclude leaving some sources out (the count line on stderr before
+      every progress line) and all of them (then no source files to sample, with the seed); no
+      cached mutant; a sample that holds, a kill now surviving and a survivor now killed in each
+      recorded scope (own, listed, all-tests, a --test-command line with a single quote) and with
+      --all-tests or --test-command given; a failing baseline and a failing listed selection; a
+      snapshot that cannot be read and a failing list command of mutation.tests. Also mutation run's
+      progress, tests.selection-failed, tests.list-failed and unreadable-snapshot lines, which cmd
+      now prints through the slice. No per-task binary comparison.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
