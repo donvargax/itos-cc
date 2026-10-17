@@ -4890,5 +4890,3 @@
     keystroke away. Fakes with state, held to the real adapters by shared port contracts, are what
     the tests use; even no-write checks read the fake's state. One sentence so agents read it as
     intent, not a tool list. Recorded 2026-10-17 at the person's request.
-  done_when:
-    - run: grep -q 'call assertions' docs/engineering.md
