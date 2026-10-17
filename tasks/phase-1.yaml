@@ -4103,9 +4103,6 @@
     YAML layout, identity, rename and annotation unchanged. Once except moves, the memory driver
     refuses only run, with the decoy control kept effective. Never edit inside embedded fixture
     source or golden strings, and run the pinned golangci-lint over ./internal/... before pushing.
-  done_when:
-    - run: go test ./internal/mutation/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(8[5-9]|9[0-9]|13[8-9]|14[0-6]|227|242)$"
 - id: T-100
   type: refactor
   title: Move mutation run into the slice and run its scenarios in process

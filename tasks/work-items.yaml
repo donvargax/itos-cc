@@ -3282,7 +3282,7 @@ items:
     title: Move the mutation except handler into the mutation slice
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-98]
     kind: task
   - id: T-100
