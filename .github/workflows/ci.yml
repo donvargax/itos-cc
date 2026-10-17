@@ -104,9 +104,17 @@ jobs:
   # features is a part of its own, and the others part takes go vet, every
   # other package and the native scenario steps. The same parts on every
   # system, so each package runs on each system as it did.
+  # A newer push's run cancels this job of an older run on the same ref
+  # (T-123): about 19 jobs run at once, near the 20 the plan allows, and the
+  # newer run's range, from the last green run, covers the older commits;
+  # itos follows the newer run when one is cancelled. Per job, not per
+  # workflow, so a release already publishing is never cancelled.
   test:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    concurrency:
+      group: test-${{ github.ref }}-${{ matrix.os }}-${{ matrix.part }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -215,9 +223,13 @@ jobs:
   # Each tool is pinned: Node's by testdata/tools/node's lockfile,
   # Python's by testdata/tools/python/requirements.txt, and the JDK,
   # Gradle and Maven here; the Kotlin fixtures pin their plugins.
+  # A newer push's run cancels an older one's shard, as for test (T-123).
   languages:
     needs: scope
     if: needs.scope.outputs.docs_only != 'true'
+    concurrency:
+      group: languages-${{ github.ref }}-${{ matrix.shard }}
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
