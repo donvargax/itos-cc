@@ -4486,9 +4486,6 @@
     output. Route the serve command from the Kong dispatch to that handler as it is, the one
     command still on it, and keep its old parse path only as far as serve needs it. Do not move,
     refactor or specify serve or graph here, and do not delete scaffolding only they still use.
-  done_when:
-    - run: go test ./internal/cli/... ./internal/version/...
-    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
 - id: T-115
   type: refactor
   title: Restore applicable main tests and reconcile the parked template exception
