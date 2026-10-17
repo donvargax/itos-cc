@@ -4882,3 +4882,15 @@
     cheap and keep running. Recorded 2026-10-17 at the person's request.
   done_when:
     - run: "grep -q 'cancel-in-progress: true' .github/workflows/ci.yml"
+- id: T-124
+  type: docs
+  title: Say why mocking libraries are banned
+  why: >
+    docs/engineering.md bans mocking libraries and scripts of expected calls, but not why the
+    library ban exists. The point is to keep call assertions out: a generated double that returns
+    canned values is only a stub, and once a library is in the module its EXPECT style is one
+    keystroke away. Fakes with state, held to the real adapters by shared port contracts, are what
+    the tests use; even no-write checks read the fake's state. One sentence so agents read it as
+    intent, not a tool list. Recorded 2026-10-17 at the person's request.
+  done_when:
+    - run: grep -q 'call assertions' docs/engineering.md

@@ -3471,3 +3471,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-124
+    title: Say why mocking libraries are banned
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
