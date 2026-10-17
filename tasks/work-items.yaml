@@ -3666,3 +3666,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-128
+    title: Run the binary driver's scenarios concurrently
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

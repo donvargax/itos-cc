@@ -4972,3 +4972,22 @@
   done_when:
     - run: itos config check
     - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="^@ID-CLI-0[1-5]$"
+- id: T-128
+  type: ci
+  title: Run the binary driver's scenarios concurrently
+  why: >
+    After T-127, cd.yml runs every scenario through the built binary on all three systems, one at a
+    time (features/features_test.go sets godog Concurrency 1): about 17.5 min on Windows, 11 on
+    macOS and 7.7 on Ubuntu in run 39068574573. Nobody waits on it, but it holds back each release
+    and costs runner minutes. Run the binary driver's scenarios concurrently. The ledger's earlier
+    'godog runs with concurrency 1' was written for the in-process pilot; change it for the binary
+    driver only, and only where each scenario is isolated: its own temporary folders, its own
+    process for the product, no process-wide state in the steps such as os.Chdir, os.Setenv or
+    shared package variables. Find and fix any shared state, or keep a scenario serial with a stated
+    reason. Size the concurrency from the runner's CPUs, not a constant tuned to one machine. Prove
+    stability by repeated green cd.yml runs on all three systems, never a single green run, and by a
+    local run at the CI concurrency. Every scenario keeps running on every system; nothing is
+    skipped, tagged binary-only or moved to the nightly. Report cd.yml's per-job times before and
+    after, from at least three source pushes.
+  done_when:
+    - run: go test ./features -count=1 -run '^TestFeatures$' -scenarios="@ID-MUT-(0[1-6]|101)$"
