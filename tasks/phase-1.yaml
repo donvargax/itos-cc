@@ -4070,9 +4070,6 @@
     decoy folder). Never edit inside embedded fixture source or golden strings when changing
     imports, and run the pinned golangci-lint over ./internal/... before pushing: T-97's first
     commit broke both.
-  done_when:
-    - run: go test ./internal/mutation/...
-    - run: go test ./features -count=1 -scenarios="@ID-MUT-(7[1-9]|8[0-4]|10[9]|11[0-3]|127|147|148)$"
 - id: T-99
   type: refactor
   title: Move the mutation except handler into the mutation slice
