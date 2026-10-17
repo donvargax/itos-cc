@@ -72,12 +72,12 @@ commits:
 # takes only exact tags. The harnesses run only the feature files converted
 # to godog (q-52, T-32): a scenario of another, the smoke set's included, is
 # logged as not run there. TestScenarios runs the converted files of the
-# moved commands (features.InProcess), mutate.feature (T-125) and
-# metrics_snapshots.feature (T-101) among them; cli.feature runs through
-# TestFeatures alone until S9, TestScenarios logging its scenarios as
-# binary driver only and passing when they are all a selection names. The
-# scenarios features.Deferred lists, the mutation ones that also observe
-# serve, run through TestFeatures alone until serve's work, TestScenarios
+# moved commands (features.InProcess), every converted file since
+# cli.feature joined it (T-114), mutate.feature (T-125) and
+# metrics_snapshots.feature (T-101) among them. The scenarios
+# features.Deferred lists, the mutation ones that also observe serve and
+# cli.feature's row that runs serve on a port in use, run through
+# TestFeatures alone until serve's work, TestScenarios
 # logging each with its reason; and the @wip Windows ownership scenarios
 # whose steps are not written yet (features.Unstepped) are logged as not
 # run in both.
