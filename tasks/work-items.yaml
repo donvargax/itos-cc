@@ -3236,8 +3236,8 @@ items:
   - id: T-98
     title: Move the mutation sample handler into the mutation slice
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-97]
     kind: task
   - id: T-99
