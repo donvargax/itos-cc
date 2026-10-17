@@ -59,8 +59,6 @@ jobs:
           echo "FROM=$from" >> "$GITHUB_ENV"
       - run: itos verify "$FROM" "$TO"
       - run: itos ci run "$FROM" "$TO"
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature # T-83; removed when S7 moves mutation in process (T-125).
 
   # Whether the push's range touches only prose, so the test and languages
   # jobs can skip it (T-122): a take, queue or close commit changing only
@@ -130,8 +128,6 @@ jobs:
           cache-dependency-path: go.sum
       - if: matrix.part == 'others'
         run: go vet ./...
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature
       # 30 minutes, not go test's default 10: cmd/itos-cc's tests took about
       # 19 on windows-latest (T-6, T-15), 12.6 in run 38911387674. The limit
       # only guards against a hang; windows-test-speed and the parts above
@@ -141,16 +137,10 @@ jobs:
       # and fuzz seed, so each runs in exactly one of them.
       - if: matrix.part == 'cmd-a'
         run: go test -timeout 30m -run '^Test[A-E]' ./cmd/itos-cc
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature
       - if: matrix.part == 'cmd-b'
         run: go test -timeout 30m -skip '^Test[A-E]' ./cmd/itos-cc
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature
       - if: matrix.part == 'features'
         run: go test -timeout 30m ./features
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature
       # Every package of ./... but the two the parts above test, listed by
       # go list so a new package is never left out.
       - name: Other packages
@@ -164,8 +154,6 @@ jobs:
           echo "list=$packages" >> "$GITHUB_OUTPUT"
       - if: matrix.part == 'others'
         run: go test -timeout 30m ${{ steps.packages.outputs.list }}
-        env:
-          ITOS_CC_SKIP_FEATURES: mutate.feature
 
 
       # T-80 native admission and owned-process behavior, independently of T-83.
@@ -180,20 +168,6 @@ jobs:
         with:
           name: T80-native-${{ matrix.os }}
           path: features/T80-native.json
-          if-no-files-found: error
-
-
-      # T-81 counted admission, judgments and real fixture worktrees.
-      # Platform omissions stay visible in the original structured report.
-      - name: Native counted mutation scenarios
-        if: matrix.part == 'others'
-        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(17[3-9]|18[0-6]|212)$' -scenario-report 'T81-native.json'
-      - name: Preserve native counted scenario observations
-        if: always() && matrix.part == 'others'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
-        with:
-          name: T81-native-${{ matrix.os }}
-          path: features/T81-native.json
           if-no-files-found: error
 
 
