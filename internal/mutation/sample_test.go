@@ -41,7 +41,7 @@ func TestSampleSeedsFromTheBoundHistoryOnlyWhenOmitted(t *testing.T) {
 	cancel(cause)
 	_, err := h.seed(ctx, nil)
 	var unavailable SeedUnavailable
-	if !errors.As(err, &unavailable) || !errors.Is(sampleError(err), cause) {
+	if !errors.As(err, &unavailable) || !errors.Is(sampleError(err, func(path string) string { return path }), cause) {
 		t.Fatalf("seed lost the caller's cause: %v", err)
 	}
 	if _, ok := unavailable.Failure.(mutants.HistoryCancelled); !ok {

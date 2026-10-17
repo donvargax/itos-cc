@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -129,13 +128,6 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	wrong.SourceStatus = &mutantstest.SourceEdits{StatErrors: map[string]error{filepath.Join(f.root, "board.go"): errors.New("actual following Stat denied")}}
 	if code, out := invoke(wrong, renew...); code != 70 || !strings.Contains(out, "actual following Stat denied") {
 		t.Fatalf("wrong renewal Stat ignored: %d %s", code, out)
-	}
-	// Source/config errors keep existing exception-specific policies and causes.
-	cause := errors.New("update caller cancelled")
-	ctx, cancel := context.WithCancelCause(t.Context())
-	cancel(cause)
-	if _, failure := store.Except(ctx, entry); !errors.Is(exceptionUpdateError(failure), cause) {
-		t.Fatalf("cancel cause: %v", failure)
 	}
 }
 func TestMutationSampleUsesActualReadAndExecutionBindings(t *testing.T) {

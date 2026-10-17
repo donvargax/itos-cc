@@ -79,7 +79,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, written Written)
 		return ui.Emit(c.JSON, nil, ui.Problems(err))
 	}
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err)))
+		return ui.Emit(c.JSON, result, ui.Problems(sampleError(err, ui.Rel)))
 	}
 	if found.NoSources {
 		ui.Line("no source files to sample")

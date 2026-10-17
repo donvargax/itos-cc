@@ -104,7 +104,7 @@ func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)}), nil
 	}
 	if args[0] == "mutation" {
-		parsed.Bind(mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Dir: a.Dir},
+		parsed.Bind(mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Exceptions: a.Exceptions, Dir: a.Dir},
 			mutation.Written(cli.Provided(parsed)))
 		switch parsed.Selected().Name {
 		case "list":
@@ -113,6 +113,8 @@ func runMoved(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 			return callSafely(ui, parsed, "mutation check", c.Mutation.Check.Run, c.Mutation.Check.JSON), nil
 		case "sample":
 			return callSafely(ui, parsed, "mutation sample", c.Mutation.Sample.Run, c.Mutation.Sample.JSON), nil
+		case "except":
+			return callSafely(ui, parsed, "mutation except", c.Mutation.Except.Run, c.Mutation.Except.JSON), nil
 		}
 		return 0, &legacyMutation{parsed: parsed, model: c}
 	}
@@ -178,8 +180,8 @@ type legacyMutation struct {
 }
 
 // runParsedMutation bridges the one validated command model into the
-// existing handlers, run and except. The handlers move individually;
-// they still read explicit/raw facts separately from model defaults here.
+// existing handler, run's, until it moves too; it still reads explicit/raw
+// facts separately from model defaults here.
 func runParsedMutation(ctx context.Context, parsed *kong.Context, c *commandLine, a adapters) int {
 	in := mutationInvocation(parsed, c, a)
 	command := in.cmd
@@ -215,7 +217,7 @@ func mutationInvocation(parsed *kong.Context, c *commandLine, a adapters) *invoc
 	case "sample":
 		in.args = c.Mutation.Sample.Paths
 	case "except":
-		in.args, command.run = c.Mutation.Except.Site, runMutationExcept
+		in.args = c.Mutation.Except.Site
 	}
 	return in
 }

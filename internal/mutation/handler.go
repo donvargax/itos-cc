@@ -27,7 +27,10 @@ type Handler struct {
 	Fingerprints mutants.Fingerprints
 	Reach        mutants.Reach
 	Workers      mutants.Workers
-	Dir          string
+	// Exceptions makes the writer of the settings at a root, which except
+	// and renew update; cmd selects it.
+	Exceptions func(root string) mutants.Exceptions
+	Dir        string
 }
 
 // SelectionQuery retains the selection's explicit optional ref, including empty.

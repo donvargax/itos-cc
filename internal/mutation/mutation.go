@@ -1,6 +1,6 @@
 // Package mutation declares the mutation command group. Kong owns parsing;
-// list, check and sample own their application/UI here; cmd retains run and
-// except until their individual slice moves. Their handler reads settings
+// list, check, sample and except own their application/UI here; cmd retains
+// run until its slice move. Their handler reads settings
 // through mutants' SettingsReader at each original admission point and
 // returns refusals as the sealed Failure set, which Run's classifier words
 // with the exit codes cmd gave them.
@@ -89,9 +89,10 @@ type Sample struct {
 	JSON          bool    `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 
-// Except accepts a site or renews the current exception entries.
+// Except accepts a site or renews the current exception entries. Reason is
+// nil when omitted, so an explicit empty one stays distinct.
 type Except struct {
-	Reason string   `placeholder:"TEXT" help:"why no test can kill the mutant; required, but with --renew"`
+	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but with --renew"`
 	Renew  bool     `help:"renew each stale entry whose mutant is unchanged, after mutation run, keeping its reason"`
 	JSON   bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 	Site   []string `arg:"" optional:"" name:"site" help:"the recorded survivor’s file, line and column"`

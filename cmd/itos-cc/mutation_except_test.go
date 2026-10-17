@@ -478,28 +478,6 @@ func TestExceptedMutantsAsJSON(t *testing.T) {
 	}
 }
 
-func TestASiteIsFileLineAndColumn(t *testing.T) {
-	t.Parallel()
-	for arg, want := range map[string]struct {
-		path         string
-		line, column int
-		ok           bool
-	}{
-		"src/board.go:11:11":   {"src/board.go", 11, 11, true},
-		`C:\src\board.go:7:19`: {`C:\src\board.go`, 7, 19, true},
-		"src/board.go:11":      {},
-		"src/board.go":         {},
-		":1:1":                 {},
-		"src/board.go:0:1":     {},
-		"src/board.go:1:x":     {},
-	} {
-		path, line, column, ok := parseSite(arg)
-		if path != want.path || line != want.line || column != want.column || ok != want.ok {
-			t.Errorf("%q: %q %d %d %v, want %+v", arg, path, line, column, ok, want)
-		}
-	}
-}
-
 func TestMutationExceptTakesOneSite(t *testing.T) {
 	t.Parallel()
 	inEmptyDir(t)

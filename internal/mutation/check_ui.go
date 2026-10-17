@@ -42,7 +42,7 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	}
 	sayExcluded(ui, found.Excluded)
 	if err != nil {
-		return ui.Emit(c.JSON, result, ui.Problems(readError(err)))
+		return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
 	}
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
 	if found.NoSources {
