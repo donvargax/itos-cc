@@ -112,7 +112,6 @@ jobs:
       fail-fast: false
       matrix:
         part: [cmd-a, cmd-b, others]
-    name: test (${{ matrix.part }})
     runs-on: ubuntu-latest
     steps:
       # Pinned to commits, the same versions as itos's workflows.
