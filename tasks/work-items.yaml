@@ -3607,3 +3607,15 @@ items:
       lists exceptions with their reasons and mutants), what a finding becomes. Specify with the
       person.
     refs: ["#39"]
+  - id: count-unjudged
+    title: mutation run --count --since --unjudged judges every site of a range over several bounded runs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #43. The person (2026-10-18): option A, --count N --since REF --unjudged reads the
+      snapshots and skips sites already judged, deliberately reversing #27's cache-blind counted
+      design for this flag. Helped by mutation-run-saves-each-file. Wave 3.
+    refs: ["#43"]
