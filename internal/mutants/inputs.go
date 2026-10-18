@@ -72,7 +72,9 @@ func (f InputFailed) Unwrap() error { return f.Cause }
 // RuntimeInputs are actual runtime/environment observations at the caller's
 // boundary. Fingerprints use only their existing language-specific key sets.
 // Memory receives Run.Env overrides rather than consulting the host process.
+// No Go version is among them: Go evidence records the project toolchain's,
+// as go env resolves it in the module, never the one itos-cc was built with.
 type RuntimeInputs struct {
-	GoVersion, Platform, Architecture string
-	Env                               map[string]string
+	Platform, Architecture string
+	Env                    map[string]string
 }

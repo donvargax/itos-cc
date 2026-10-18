@@ -330,7 +330,15 @@ unchanged. Kotlin evidence is bound to its whole build root, every module
 of a multi-module build included. Python, TypeScript and Kotlin evidence is
 written under a
 unit's `line_coverage` key, with its `"language"`; Go evidence stays under
-`go_coverage`. Strict run and check refuse active Go
+`go_coverage`. Go evidence is bound to its nearest module's `go.mod` and
+`go.sum` and the Go files git tracks beneath it that a build can include,
+read from the working tree: never under `testdata`, in a directory or file
+whose name starts with `_` or `.`, nor in a nested module; outside a git
+repository, the Go files those rules take from the disk. It is bound to the
+Go environment as `go env` resolves it in the module, `GOTOOLCHAIN` aside,
+which only says how the version was chosen, and to the project toolchain's
+`GOVERSION`, so evidence recorded in one checkout stays fresh in another,
+CI's included. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
 including excluded nested modules; `GOWORK=off` remains supported. They
 refuse, likewise, npm, yarn and pnpm workspaces, `workspace:` dependencies

@@ -69,7 +69,7 @@ type retainedGoInputs struct {
 
 func (f *retainedGoInputs) Coverage(ctx context.Context, source, _, _ string, _ map[string]string) (map[string]string, mutation.InputFailure) {
 	*f.asked = append(*f.asked, filepath.ToSlash(source))
-	hashes, err := testinputs.GoCoverageInputs(testinputs.CurrentRuntime(), source, f.root, "producer", nil)
+	hashes, err := testinputs.GoCoverageInputs(ctx, testinputs.CurrentRuntime(), source, f.root, "producer", nil)
 	if err != nil {
 		return nil, mutation.InputFailed{Cause: err}
 	}

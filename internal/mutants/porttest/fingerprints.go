@@ -166,6 +166,33 @@ func (s *Inputs) envHash(more string, keys ...string) string {
 	}
 	return inputHash(strings.Join(values, "\x00"))
 }
+
+// goSkips is whether go's directory rules leave out a directory or file of
+// this name.
+func goSkips(name string) bool {
+	return name == "testdata" || strings.HasPrefix(name, "_") || strings.HasPrefix(name, ".")
+}
+
+// memoryGoVersion is GOVERSION as the memory's one Go toolchain resolves it.
+const memoryGoVersion = "go-memory"
+
+// goEnv is the Go environment as go env resolves it for the memory's one
+// toolchain, in the adapter's order: a variable the run sets, else its
+// default, GOOS and GOARCH the platform's. GOTOOLCHAIN only says how the
+// version was chosen, so it is no part of it.
+func (s *Inputs) goEnv() []string {
+	defaults := map[string]string{"GOHOSTOS": s.Runtime.Platform, "GOHOSTARCH": s.Runtime.Architecture, "GOOS": s.Runtime.Platform, "GOARCH": s.Runtime.Architecture}
+	env := []string{"GOVERSION=" + memoryGoVersion}
+	for _, key := range []string{"GOHOSTOS", "GOHOSTARCH", "GOOS", "GOARCH", "CGO_ENABLED", "GOFLAGS", "GOEXPERIMENT", "GOAMD64", "GOARM", "GO386"} {
+		value := s.Runtime.Env[key]
+		if value == "" || key == "GOHOSTOS" || key == "GOHOSTARCH" {
+			value = defaults[key]
+		}
+		env = append(env, key+"="+value)
+	}
+	return env
+}
+
 func tsConfig(name string) bool {
 	return slices.Contains([]string{"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "yarn.lock", "bun.lock", "bun.lockb", ".babelrc", ".swcrc", "jest.config.json", "vitest.workspace.json"}, name) || strings.HasPrefix(name, "tsconfig") && strings.HasSuffix(name, ".json")
 }
@@ -180,7 +207,7 @@ func (s *Inputs) admittedPath(ctx context.Context, language, root, path, setting
 		dir = filepath.Join(dir, part)
 		switch language {
 		case "go":
-			if s.Exists(ctx, filepath.Join(dir, "go.mod")) {
+			if goSkips(part) || s.Exists(ctx, filepath.Join(dir, "go.mod")) {
 				return false
 			}
 		case "python":
@@ -246,7 +273,10 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 		include := false
 		switch language {
 		case "go":
-			include = strings.HasSuffix(name, ".go") || name == "go.mod" || name == "go.sum"
+			// go.mod and go.sum are the module's own; a Go file counts when
+			// a build can include it, and, in a repository, when git tracks it.
+			include = top && (name == "go.mod" || name == "go.sum") ||
+				strings.HasSuffix(name, ".go") && !goSkips(name) && (s.Tracked == nil || s.Tracked[path])
 		case "python":
 			include = strings.HasSuffix(name, ".py") || top && slices.Contains([]string{"pyproject.toml", "setup.cfg", "tox.ini", "pytest.ini", ".coveragerc"}, name)
 		case "typescript":
@@ -277,7 +307,7 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 	out["@producer"] = inputHash(producer)
 	switch language {
 	case "go":
-		out["@go-env"] = s.envHash(strings.Join([]string{s.Runtime.GoVersion, s.Runtime.Platform, s.Runtime.Architecture}, "\x00"), "GOOS", "GOARCH", "CGO_ENABLED", "GOFLAGS", "GOEXPERIMENT", "GOTOOLCHAIN", "GOAMD64", "GOARM", "GO386")
+		out["@go-env"] = inputHash(strings.Join(s.goEnv(), "\x00"))
 	case "python":
 		out["@python-env"] = s.envHash(s.interpreter(ctx, root, true), "PYTHONPATH", "PYTHONSAFEPATH", "VIRTUAL_ENV", "COVERAGE_RCFILE", "PYTEST_ADDOPTS", "PYTEST_PLUGINS", "PYTEST_DISABLE_PLUGIN_AUTOLOAD")
 	case "typescript":

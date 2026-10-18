@@ -13,13 +13,15 @@ import (
 )
 
 // CurrentRuntime is captured at the real process boundary, never by memory.
+// The Go version is not itos-cc's own: Go evidence asks the project's
+// toolchain (go env GOVERSION).
 func CurrentRuntime() mutants.RuntimeInputs {
 	env := map[string]string{}
 	for _, v := range os.Environ() {
 		k, value, _ := strings.Cut(v, "=")
 		env[k] = value
 	}
-	return mutants.RuntimeInputs{GoVersion: runtime.Version(), Platform: runtime.GOOS, Architecture: runtime.GOARCH, Env: env}
+	return mutants.RuntimeInputs{Platform: runtime.GOOS, Architecture: runtime.GOARCH, Env: env}
 }
 
 type Fingerprints struct{ Runtime mutants.RuntimeInputs }
@@ -63,7 +65,7 @@ func (f Fingerprints) Coverage(ctx context.Context, source, root, producer strin
 	if spec := lang.Detect(source); spec != nil {
 		switch spec.Name {
 		case "go":
-			out, err = GoCoverageInputs(f.Runtime, source, root, producer, support)
+			out, err = GoCoverageInputs(ctx, f.Runtime, source, root, producer, support)
 		case "python":
 			out, err = PythonCoverageInputs(ctx, f.Runtime, source, root, producer, support)
 		case "typescript":

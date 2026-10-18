@@ -41,7 +41,8 @@ scenario only one driver can run, for good, carries `@binary-only` or `@in-proce
 copy, and the other driver passes it by; `@binary-only` never means "not moved yet". The
 in-process driver refuses `serve`, the one command still on its legacy handler, which reaches
 the real disk and network, naming `features.Deferred`; a run's variables (`Run.Env`) reach the
-fakes as the environment facts the real adapters read. itos.yaml's scenario lines run both, so every scenario of a moved command is held
+fakes as the environment facts the real adapters read, each `NAME=value` set and each `NAME`
+alone unset, in both drivers, so a scenario can run with a variable CI exports unset. itos.yaml's scenario lines run both, so every scenario of a moved command is held
 both ways. `TestFeatures` builds itos-cc once a run
 from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
 release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary

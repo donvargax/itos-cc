@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -74,6 +75,36 @@ func TestChangedBeforeTheFirstCommit(t *testing.T) {
 	}
 	if want := []string{"staged.py"}; !slices.Equal(got, want) {
 		t.Errorf("Changed() = %q, want %q", got, want)
+	}
+}
+
+func TestTrackedListsTheIndexBeneathADirectory(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	repo := t.TempDir()
+	git(t, repo, "init", "-q")
+	for _, name := range []string{"top.go", "sub/a.go", "sub/año nuevo.go", "sub/gone.go"} {
+		write(t, filepath.Join(repo, name), "package x\n")
+	}
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "init")
+	write(t, filepath.Join(repo, "sub", "untracked.go"), "package x\n")
+	if err := os.Remove(filepath.Join(repo, "sub", "gone.go")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := TrackedAt(t.Context(), filepath.Join(repo, "sub"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"a.go", "año nuevo.go", "gone.go"}; !slices.Equal(got, want) {
+		t.Errorf("TrackedAt(sub) = %q, want %q", got, want)
+	}
+	for _, dir := range []string{t.TempDir(), filepath.Join(repo, ".git")} {
+		var noGit *NoGitError
+		if _, err := TrackedAt(t.Context(), dir); !errors.As(err, &noGit) {
+			t.Errorf("TrackedAt(%s) = %v, want a NoGitError", dir, err)
+		}
 	}
 }
 

@@ -15,7 +15,7 @@ func memoryInputFixture(t *testing.T, files map[string]string, imports map[strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	input := &Inputs{Dir: root, Files: map[string]string{}, Runtime: mutants.RuntimeInputs{GoVersion: runtime.Version(), Platform: runtime.GOOS, Architecture: runtime.GOARCH, Env: maps.Clone(env)}}
+	input := &Inputs{Dir: root, Files: map[string]string{}, Runtime: mutants.RuntimeInputs{Platform: runtime.GOOS, Architecture: runtime.GOARCH, Env: maps.Clone(env)}}
 	for name, text := range files {
 		input.Files[filepath.Join(root, filepath.FromSlash(name))] = text
 	}

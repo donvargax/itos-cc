@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -100,4 +101,39 @@ func ReadCommittedAt(ctx context.Context, dir, ref, path string) ([]byte, error)
 		return nil, context.Cause(ctx)
 	}
 	return out, err
+}
+
+// TrackedAt lists the files git tracks beneath dir, the paths its index
+// holds, slash-separated and relative to dir. Git lists them NUL-terminated,
+// so a name with spaces or non-ASCII letters arrives unquoted. A tracked
+// file deleted from the working tree is still listed. Outside a work tree,
+// or with no git to ask, it returns a *NoGitError.
+func TrackedAt(ctx context.Context, dir string) ([]string, error) {
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	out, err := historyCommand(ctx, dir, "rev-parse", "--is-inside-work-tree").Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	if err != nil {
+		return nil, &NoGitError{gitError(nil, err)}
+	}
+	if strings.TrimSpace(string(out)) != "true" {
+		return nil, &NoGitError{dir + " is in no work tree"}
+	}
+	out, err = historyCommand(ctx, dir, "ls-files", "-z", "--cached").Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("git ls-files in %s: %s", dir, gitError(nil, err))
+	}
+	var paths []string
+	for _, name := range strings.Split(string(out), "\x00") {
+		if name != "" {
+			paths = append(paths, name)
+		}
+	}
+	return paths, nil
 }

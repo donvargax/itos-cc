@@ -2701,7 +2701,7 @@ Feature: Mutation testing
     # rules take from the disk.
     # The fixture's go.mod names a Go no newer than the one installed, so
     # local and auto resolve the same toolchain and nothing is downloaded.
-    @wip @slice-10 @ID-MUT-254
+    @slice-10 @ID-MUT-254
     Scenario Outline: Strict Go evidence stays fresh when only how the same Go is chosen differs
       Given fresh strict coverage evidence for an unchanged Go function, recorded with <recorded>
       When I run mutation check with --fail-uncovered --json for the function's file, with <checked>
@@ -2715,7 +2715,7 @@ Feature: Mutation testing
         | GOTOOLCHAIN=local | GOTOOLCHAIN unset            |
         | GOOS unset        | GOOS set to the system's own |
 
-    @wip @slice-10 @ID-MUT-255
+    @slice-10 @ID-MUT-255
     Scenario Outline: A Go file no build of the checkout includes is no input of strict Go evidence
       Given fresh strict coverage evidence for an unchanged Go function, its snapshot committed
       And a Go file <file> was added, <how>

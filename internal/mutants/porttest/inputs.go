@@ -16,10 +16,13 @@ import (
 // are independent setup facts, never inferred from Workers' declared commands.
 // Reads/Lists record actual port operations; fixture assertion reads do not.
 type Inputs struct {
-	Dir          string
-	Files        map[string]string
-	Dirs         map[string]bool
-	Links        map[string]string
+	Dir   string
+	Files map[string]string
+	Dirs  map[string]bool
+	Links map[string]string
+	// Tracked are the files git tracks, by absolute path; nil outside a
+	// repository, where every file on the disk is a candidate input.
+	Tracked      map[string]bool
 	Runtime      mutants.RuntimeInputs
 	Without      []string
 	Probes       map[PytestProbe]bool

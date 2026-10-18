@@ -1,9 +1,13 @@
 package testinputs_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"maps"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/mutants/porttest"
@@ -30,4 +34,60 @@ func TestRealFingerprintsContract(t *testing.T) {
 		runtime.Env = maps.Clone(env)
 		return porttest.InputBindings{Root: root, Fingerprints: testinputs.Fingerprints{Runtime: runtime}}
 	})
+}
+
+// What only a real repository can hold: in one, the Go files are those git
+// tracks, read from the working tree, so an untracked or ignored file is no
+// input, nor a tracked one deleted, and a committed testdata file still
+// none.
+func TestGoCoverageInputsInARepositoryAreTheTrackedFiles(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not installed")
+	}
+	root := t.TempDir()
+	for name, text := range map[string]string{
+		"go.mod": "module board\n", "a.go": "package board\n", "gone.go": "package board\n",
+		"sub/b.go": "package sub\n", "testdata/fixture.go": "package fixture\n", ".gitignore": "dist/\n",
+	} {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, args := range [][]string{{"init", "-q"}, {"add", "-A"}, {"-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base"}} {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = root
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	for _, name := range []string{"untracked.go", "dist/x.go"} {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte("package x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Remove(filepath.Join(root, "gone.go")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "a.go"), []byte("package board\n\nvar A = 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := testinputs.GoCoverageInputs(t.Context(), testinputs.CurrentRuntime(), filepath.Join(root, "a.go"), root, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"@go-env", "@producer", "a.go", "go.mod", "itos-cc.yaml", "sub/b.go"}; !slices.Equal(slices.Sorted(maps.Keys(got)), want) {
+		t.Errorf("inputs %v, want the keys %v", slices.Sorted(maps.Keys(got)), want)
+	}
+	sum := sha256.Sum256([]byte("package board\n\nvar A = 1\n"))
+	if got["a.go"] != hex.EncodeToString(sum[:]) {
+		t.Errorf("a.go hashed %s, not its working tree's bytes", got["a.go"])
+	}
 }

@@ -152,8 +152,10 @@ func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T
 		edit func(t *testing.T, dir string)
 		want string
 	}{
+		// In a repository a Go file is an input once git tracks it.
 		{name: "added source", want: "extra.go", edit: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "extra.go"), "package main\n\nvar Extra = 1\n")
+			gitIn(t, dir, "add", "extra.go")
 		}},
 		{name: "changed module source", want: "other.go", edit: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "other.go"), "package main\n\nvar Other = 2\n")
@@ -165,6 +167,7 @@ func TestStrictGoCoverageFingerprintTracksModuleAndConfiguredInputs(t *testing.T
 		}},
 		{name: "added module test", want: "other_test.go", edit: func(t *testing.T, dir string) {
 			writeFile(t, filepath.Join(dir, "other_test.go"), "package main\n\nimport \"testing\"\n\nfunc TestOther(t *testing.T) {}\n")
+			gitIn(t, dir, "add", "other_test.go")
 		}},
 		{name: "module configuration", want: "go.mod", edit: func(t *testing.T, dir string) {
 			path := filepath.Join(dir, "go.mod")

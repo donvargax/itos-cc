@@ -8,6 +8,7 @@ import (
 	"maps"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -55,7 +56,11 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 	})
 	t.Run("Go provenance and nested module boundary", func(t *testing.T) {
 		source := "package board\nfunc Value() int { return 1 }\n"
-		files := map[string]string{"go.mod": "module board\n", "a.go": source, "a_test.go": "package board\n", "nested/go.mod": "module other\n", "nested/ignored.go": "package other\n", "ignored.txt": "not an input\n"}
+		// Outside a repository the files are those go's directory rules
+		// take from the disk: never testdata, nor a directory or file whose
+		// name starts with _ or ., nor a nested module.
+		files := map[string]string{"go.mod": "module board\n", "a.go": source, "a_test.go": "package board\n", "nested/go.mod": "module other\n", "nested/ignored.go": "package other\n", "ignored.txt": "not an input\n",
+			"testdata/fixture.go": "package fixture\n", "_scratch/x.go": "package x\n", ".hidden/x.go": "package x\n", "_x.go": "package board\n", ".x.go": "package board\n"}
 		b := makeInput(t, files, nil, nil)
 		inputs, failure := b.Fingerprints.Coverage(t.Context(), filepath.Join(b.Root, "a.go"), b.Root, "actual producer", map[string]string{"features/a.feature": "provided-support-hash"})
 		if failure != nil {
@@ -73,6 +78,15 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 		changed, failure := other.Fingerprints.Coverage(t.Context(), filepath.Join(other.Root, "a.go"), other.Root, "actual producer", map[string]string{"features/a.feature": "provided-support-hash"})
 		if failure != nil || changed["@go-env"] == inputs["@go-env"] || changed["a.go"] != inputs["a.go"] {
 			t.Fatalf("actual GOFLAGS fingerprint: %v -> %v (%v)", inputs, changed, failure)
+		}
+		// The environment is what go env resolves, so how the same Go is
+		// chosen, or a default given explicitly, is the same environment.
+		for _, env := range []map[string]string{{"GOTOOLCHAIN": "local"}, {"GOOS": runtime.GOOS}} {
+			same := makeInput(t, files, nil, env)
+			resolved, failure := same.Fingerprints.Coverage(t.Context(), filepath.Join(same.Root, "a.go"), same.Root, "actual producer", map[string]string{"features/a.feature": "provided-support-hash"})
+			if failure != nil || resolved["@go-env"] != inputs["@go-env"] {
+				t.Fatalf("resolved Go environment with %v: %v -> %v (%v)", env, inputs, resolved, failure)
+			}
 		}
 		suite, failure := b.Fingerprints.Suite(t.Context(), filepath.Join(b.Root, "a.go"), b.Root)
 		if failure != nil || !reflect.DeepEqual(suite, map[string]string{"a_test.go": contractHash(files["a_test.go"])}) {

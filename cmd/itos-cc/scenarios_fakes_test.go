@@ -348,8 +348,17 @@ func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
 			}
 		}
 	}
-	return &mutantstest.Inputs{Dir: filepath.Clean(r.Dir), Files: m.files, Dirs: m.dirs,
-		Runtime: mutation.RuntimeInputs{GoVersion: runtime.Version(), Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
+	// What git tracks is the index of the fake repository the run's
+	// folder is in, and nil in none.
+	var tracked map[string]bool
+	if root, git := m.repoOf(filepath.Clean(r.Dir)); git != nil {
+		tracked = map[string]bool{}
+		for path := range git.Index {
+			tracked[filepath.Join(root, filepath.FromSlash(path))] = true
+		}
+	}
+	return &mutantstest.Inputs{Dir: filepath.Clean(r.Dir), Files: m.files, Dirs: m.dirs, Tracked: tracked,
+		Runtime: mutation.RuntimeInputs{Platform: m.Platform(), Architecture: runtime.GOARCH, Env: env},
 		Without: slices.Clone(r.Without), Probes: maps.Clone(m.toolSetup), Imports: imports}
 }
 
