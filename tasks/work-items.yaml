@@ -3811,3 +3811,18 @@ items:
       function hash, same reaching tests; no less sound than reusing a kill, which also ignores
       callees), or keep the behaviour and correct the help and the comment. A public change,
       specified in mutate.feature.
+  - id: mutation-sample-risk-weighted
+    title: mutation sample spends its budget on the kills most likely to be stale
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the mutation explainer's review, 2026-10-17. A cached kill is keyed on its function's
+      text and the tests that reach the file, never on the code the function calls, so a callee
+      change in another file can leave a kill that would now survive. mutation sample draws
+      uniformly by seed. Weight the draw towards kills whose function's package (or the packages it
+      imports in the module) changed since the kill was recorded, so a fixed --count catches stale
+      kills sooner, keeping the draw deterministic for a given seed and commit. A public change of
+      sample's selection, specified in mutate.feature beside MUT-71..84.
