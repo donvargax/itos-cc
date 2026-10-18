@@ -113,6 +113,13 @@ jobs:
   # system, so each package runs on each system as it did. The only macOS
   # jobs of any workflow but the release's builds: four at once, under the
   # five GitHub runs at a time.
+  # The features part's binary driver runs as many scenarios at once as the
+  # runner has CPUs (T-128, features/README.md), four here on Ubuntu and
+  # Windows and three on macOS, no setting of this workflow's: it took 17.5
+  # to 18.1 minutes on Windows, 8.8 to 11.8 on macOS and 7.6 to 8 on Ubuntu
+  # one scenario at a time (runs 39097433982, 39097875789, 39102423311),
+  # and 9.5 and 12.8, 7.1 and 8.4, and 4.1 and 4 at once (runs 39113993739,
+  # 39115097770).
   # A newer push's run cancels this job of an older run on the same ref
   # (T-123): the newer run's range, from this workflow's last green run,
   # covers the older commits. Per job, not per workflow, so a release already
