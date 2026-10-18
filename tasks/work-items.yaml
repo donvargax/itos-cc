@@ -3682,3 +3682,16 @@ items:
       (internal/mutation/run_contract.go:131-135, counted_ui.go:209). Missing: a stderr warning
       naming uncommitted in-scope changes. Wave 1.
     refs: ["#41"]
+  - id: mutation-tests-command
+    title: A command prints what mutation.tests.list resolves to
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #42. The mutation group has run, list, check, sample, except
+      (internal/mutation/mutation.go:12-16). Add one (for example mutation tests --json) that runs
+      the configured list as mutation run does and prints the IDs, count and refused lines. Wave 3,
+      after S10's exit codes.
+    refs: ["#42"]
