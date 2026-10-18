@@ -54,6 +54,14 @@ Commands run in a clean environment: no `GIT_*`, `ITOS_*`, `ITOS_CC_*`, `GITHUB_
 of the caller's claude, itos or its extensions on the PATH. A `GOCOVERDIR` that exists builds the
 binary with `-cover` and collects what each run did, for itos-cc to merge with `go test`'s.
 
+`ITOS_CC_FEATURES_BINARY` names an itos-cc binary built elsewhere, which `TestFeatures` runs in
+place of the one it builds, as T-132 runs today's scenarios against the binary of the commit
+before the refactor. The build is skipped then, `GOCOVERDIR` or not, and the binary runs as it
+is, stamped as whoever built it chose. Only the binary changes: the steps, the fixtures they read
+from this tree and the builds a step makes itself (`Build`, from this tree) stay this tree's, so
+`ID-CLI-03` still builds today's itos-cc. The binary never sees the variable, the environment
+dropping every `ITOS_CC_` one. Unset or empty, the binary is built as above.
+
 A Given that declares a project's coverage tools (`Coverage`) needs them installed for the binary
 driver: Go needs `go`; TypeScript `node` and a `node_modules` holding vitest and
 `@vitest/coverage-v8`, `ITOS_CC_NODE_MODULES`'s, else `testdata/tools/node`'s, else the
@@ -190,6 +198,7 @@ Before hook keyed on the scenario's file.
 go test ./features -count=1                          # every live scenario, through the binary
 go test ./features -count=1 -scenarios='^@ID-CLI-'   # the live scenarios with a matching tag
 GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its coverage in $d
+ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin
 go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   # in process
 itos tests smoke run scenario                        # exactly the smoke set, both ways
 ```

@@ -11,6 +11,10 @@
 //	GOCOVERDIR=<dir> go test ./features -count=1       either, itos-cc
 //	                                                   built with -cover, what
 //	                                                   the scenarios ran in <dir>
+//	ITOS_CC_FEATURES_BINARY=<file> go test ./features -count=1
+//	                                                   either, against the
+//	                                                   itos-cc binary at <file>,
+//	                                                   built by no one here
 //
 // -scenarios takes the regular expression itos's run templates join the IDs
 // they select into, which TagFilter turns into godog's filter. A scenario
@@ -42,6 +46,14 @@
 // first coverage run and the driver's environment drops with every ITOS_
 // variable. With GOCOVERDIR
 // unset the build is the plain one.
+//
+// ITOS_CC_FEATURES_BINARY names a binary built elsewhere for the scenarios
+// to run instead of the one built from this tree, such as the binary of an
+// older commit a refactor's proof compares (T-132). The build is then
+// skipped whatever GOCOVERDIR says, and the binary runs as it is. Only the
+// binary changes: the steps, the fixtures they read from this tree and the
+// builds a step makes itself (Build, from this tree) stay this tree's.
+// Unset or empty, the binary is built as above.
 package features
 
 import (
@@ -90,7 +102,7 @@ func TestFeatures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bin, err := build(root, t.TempDir())
+	bin, err := underTest(root, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,6 +128,31 @@ func TestFeatures(t *testing.T) {
 	if suite.Run() != 0 {
 		t.Fatal("a scenario failed")
 	}
+}
+
+// prebuiltEnv names the binary the scenarios run instead of building one.
+const prebuiltEnv = "ITOS_CC_FEATURES_BINARY"
+
+// underTest is the binary the scenarios run: the one prebuiltEnv names,
+// made absolute, since each run starts in its scenario's folder, else the
+// one build makes from the module at root in dir.
+func underTest(root, dir string) (string, error) {
+	named := os.Getenv(prebuiltEnv)
+	if named == "" {
+		return build(root, dir)
+	}
+	bin, err := filepath.Abs(named)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", prebuiltEnv, err)
+	}
+	info, err := os.Stat(bin)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", prebuiltEnv, err)
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("%s: %s is not a regular file", prebuiltEnv, bin)
+	}
+	return bin, nil
 }
 
 // build builds cmd/itos-cc from the module at root into dir,
