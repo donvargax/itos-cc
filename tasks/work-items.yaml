@@ -3631,3 +3631,16 @@ items:
       internal/lang/golang.go:52-53). The person (2026-10-18): a mutation.operators key turns them
       on, off by default so no function goes stale (q-13); Go first, other languages later. Wave 3.
     refs: ["#24"]
+  - id: summary-location
+    title: mutation.summary chooses where the survivor summary goes, metrics by default
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #57. The person (2026-10-18): a key mutation.summary: source|metrics|none, default
+      metrics (a breaking change, called out in Upgrading): metrics writes .metrics/mutate/<file>.md
+      and leaves the source untouched. --no-annotate maps onto none or is retired in the spec.
+      Related: annotate-function-name.
+    refs: ["#57"]
