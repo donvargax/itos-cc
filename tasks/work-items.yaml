@@ -2345,6 +2345,11 @@ items:
       unused-parameter, 2 redefines-builtin-id, 1 exported); over the architecture fixtures they
       would also ask for package and exported-name comments. Whether to enable some, all or none of
       them is a gate decision of its own (ADR-0033).
+
+      The scope above is out of date. Since T-119 golangci-lint runs over the whole module, ./...
+      (itos.yaml), not ./internal/..., so the count of 10 issues was taken over a narrower tree and
+      has not been taken again. .golangci.yml still lists only context-as-argument and
+      file-length-limit under revive (lines 439-446).
   - id: dart-support
     title: itos-cc supports Dart
     phase: 1
