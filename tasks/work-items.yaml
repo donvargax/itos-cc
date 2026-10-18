@@ -1753,15 +1753,9 @@ items:
     title: Template code cites itos-template's decisions by bare number, which read as this repository's
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-26]
     kind: idea
-    why: >
-      T-26 adopted go-template-itos files whose comments cite itos-template's own decisions bare:
-      decision 26 in features/interrupt_*_test.go and decision 23 in internal/release read as this
-      repository's ADR-0026 and ADR-0023, which are about other things. Prefix them (itos-template's
-      decision N) here and upstream in go-template-itos so updates stay clean, or settle it in the
-      template-adoption refactor.
   - id: nightly-checkout-node20
     title: nightly.yml still pins actions/checkout v4.4.0 (Node 20)
     phase: 1
