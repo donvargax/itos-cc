@@ -10,7 +10,6 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/count"
 )
 
 // version is set at release time with -ldflags '-X main.version=…'. A binary
@@ -40,11 +39,10 @@ func main() {
 // classifiers are each domain's, which turn its sealed failures into
 // problems for internal/cli: the selection domain's, which every command
 // selects its files through, the snapshot domain's, which the commands read
-// and write .metrics/ through, the coverage domain's, which crap and
-// mutation measure coverage through, and the sample count slice's, for the
-// counting domain, until it is wired as a command or dropped. A problem
-// itos-cc's commands report is its own and needs none.
-var classifiers = []cli.Classifier{classifySelection, classifySnapshot, classifyCoverage, count.Classify}
+// and write .metrics/ through, and the coverage domain's, which crap and
+// mutation measure coverage through. A problem itos-cc's commands report is
+// its own and needs none.
+var classifiers = []cli.Classifier{classifySelection, classifySnapshot, classifyCoverage}
 
 // stdUI is the UI of this process, which serve, the one command still on
 // its legacy handler, reports through: its standard streams as they are

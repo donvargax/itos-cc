@@ -43,7 +43,7 @@ linters:
         # cmd, nor the top-level libraries an adapter wraps); the kong rule
         # below keeps kong out of them. Their tests run them against
         # porttest's fakes. domain-coverage reads this list: each glob's
-        # folder is a domain package it measures (./internal/counting), its
+        # folder is a domain package it measures (./internal/selection), its
         # port subpackages not measured, so the floor holds behaviour, not
         # the ports and fakes. internal/selection chooses every command's
         # files; internal/lang names the units every command measures, its
@@ -63,7 +63,6 @@ linters:
         domain:
           list-mode: lax
           files:
-            - "**/internal/counting/**"
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
@@ -73,8 +72,6 @@ linters:
             - "**/internal/changerisk/**"
             - "**/internal/mutants/**"
           allow:
-            - github.com/donvargax/itos-cc/internal/counting$
-            - github.com/donvargax/itos-cc/internal/counting/
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/lang$
@@ -96,7 +93,6 @@ linters:
         # net. Its tests may read a fixture.
         domain-io:
           files:
-            - "**/internal/counting/**"
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
@@ -132,7 +128,6 @@ linters:
           list-mode: lax
           files:
             - "**/internal/**"
-            - "!**/internal/counting/**" # a domain and its ports
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
@@ -141,9 +136,7 @@ linters:
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/mutants/**" # pure mutation rules and models
-            - "!**/internal/disk/**" # an adapter, held by infra
-            - "!**/internal/stdin/**" # an adapter, held by infra
-            - "!**/internal/workdir/**" # an adapter, held by infra
+            - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
@@ -156,8 +149,6 @@ linters:
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
           allow:
-            - github.com/donvargax/itos-cc/internal/counting$
-            - github.com/donvargax/itos-cc/internal/counting/
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
@@ -188,7 +179,6 @@ linters:
         slice-fakes:
           files:
             - "**/internal/**"
-            - "!**/internal/counting/**" # a domain and its ports
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
@@ -197,9 +187,7 @@ linters:
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/mutants/**" # pure mutation rules and models
-            - "!**/internal/disk/**" # an adapter, held by infra
-            - "!**/internal/stdin/**" # an adapter, held by infra
-            - "!**/internal/workdir/**" # an adapter, held by infra
+            - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
@@ -213,8 +201,6 @@ linters:
             - "!**/internal/release/**" # the release tools' library
             - "!$test"
           deny:
-            - pkg: github.com/donvargax/itos-cc/internal/counting/port/porttest
-              desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
             - pkg: github.com/donvargax/itos-cc/internal/selection/port/porttest
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
             - pkg: github.com/donvargax/itos-cc/internal/lang/port/porttest
@@ -241,7 +227,6 @@ linters:
         # coverage code must never import that fake.
         coverage-fakes:
           files:
-            - "**/internal/counting/**"
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
@@ -270,20 +255,8 @@ linters:
         # them and, once its rule allows it (decision 47), the domain it
         # serves: not another domain, another adapter, a slice, the UI or porttest's
         # fakes, which its tests alone may use. Each adapter is listed, and
-        # excluded from the slices above. cmd hands internal/stdin the disk
-        # adapter as its fallback. An adapter of another port has a rule of
-        # its own, so no adapter is allowed another's port or library.
-        infra:
-          list-mode: lax
-          files:
-            - "**/internal/disk/**"
-            - "**/internal/stdin/**"
-            - "!$test"
-          allow:
-            - github.com/donvargax/itos-cc/internal/counting/port$
-          deny:
-            - pkg: github.com/donvargax/itos-cc
-              desc: "an adapter imports nothing of ours but the ports it implements (decision 29), cmd wiring the rest; if it implements another port, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # excluded from the slices above. Each port's adapters have a rule of
+        # their own, so no adapter is allowed another's port or library.
         # internal/workdir implements the selection port over project, the
         # top-level library that walks a tree and asks git, and lang's port
         # over project's answers from the disk (T-35): both ports and project
@@ -427,21 +400,20 @@ linters:
             - $all
           deny:
             - pkg: github.com/golang/mock
-              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/counting/port/porttest does"
+              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/selection/port/porttest does"
             - pkg: go.uber.org/mock
-              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/counting/port/porttest does"
+              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/selection/port/porttest does"
             - pkg: github.com/stretchr/testify/mock
-              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/counting/port/porttest does"
+              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/selection/port/porttest does"
             - pkg: github.com/vektra/mockery
-              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/counting/port/porttest does"
+              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/selection/port/porttest does"
             - pkg: github.com/maxbrunsfeld/counterfeiter
-              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/counting/port/porttest does"
+              desc: "no mocking library: write an in-memory fake or stub of the port in its porttest package, as internal/selection/port/porttest does"
         # Properties are unit tests of the domain: rapid comes in only in the
         # domain package's own tests, not its code, its ports or porttest.
         rapid:
           files:
             - $all
-            - "!**/internal/counting/*_test.go"
             - "!**/internal/selection/*_test.go"
           deny:
             - pkg: pgregory.net/rapid

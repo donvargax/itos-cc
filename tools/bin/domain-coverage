@@ -6,7 +6,7 @@
 # The domain packages are read from depguard's domain rule in .golangci.yml,
 # its files list, the one list of them: a new domain package is measured
 # once it is added there, never named twice. A package is a glob's folder,
-# **/internal/counting/** being ./internal/counting, its port subpackages
+# **/internal/selection/** being ./internal/selection, its port subpackages
 # (the port and porttest) not measured.
 #
 # Measured as go test -cover counts: the statements of a package's blocks

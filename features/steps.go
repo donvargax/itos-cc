@@ -337,8 +337,7 @@ const stampedVersion = "1.2.3-features"
 const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 
 // Converted are the feature files the steps run, those whose scenarios
-// have steps: count.feature, the template's sample, every scenario of it
-// @wip (T-26), units.feature, the first command moved onto kong (T-32),
+// have steps: units.feature, the first command moved onto kong (T-32),
 // dry.feature and scrap.feature, crap.feature, complexity.feature and
 // coverage.feature, and file_selection.feature, each converted before its
 // command moves so the move is held by its scenarios (T-37, T-41, T-60,
@@ -348,7 +347,7 @@ const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 // the pieces not done yet listed in Unstepped. A file converts with its
 // scenarios' text unchanged (q-52); the binary driver runs every one.
 var Converted = []string{
-	"count.feature", "units.feature", "dry.feature", "scrap.feature",
+	"units.feature", "dry.feature", "scrap.feature",
 	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
 	"cli.feature", "mutate.feature", "metrics_snapshots.feature",
 }
@@ -399,7 +398,7 @@ func ids(area string, ranges ...string) []string {
 // metrics_snapshots.feature once mutation's commands had moved, in T-101,
 // cli.feature once version and the top-level dispatch had, in T-114); until
 // then the binary driver alone runs its scenarios.
-var InProcess = []string{"count.feature", "units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature", "cli.feature"}
+var InProcess = []string{"units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature", "cli.feature"}
 
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real
@@ -447,7 +446,6 @@ type world struct {
 	// the exit code and stderr steps hold to; nil after a run of one.
 	each []outcome
 
-	stdin string // the text the run reads from its standard input, "" for none
 	// without are the programs a Given leaves off every run's PATH.
 	without []string
 	// binary is the binary a Given built that every run runs, "" for the
@@ -607,9 +605,6 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	})
 
 	// The --json object, as a script reads it.
-	sc.Step(`^its JSON output names the problem "([^"]*)"$`, w.jsonNamesProblem)
-	sc.Step(`^its JSON output gives file "([^"]*)", (\d+) lines and (\d+) words$`, w.jsonGivesCounts)
-	sc.Step(`^its JSON output gives each problem a rule, a message and a fix$`, w.jsonProblemsComplete)
 	sc.Step(`^its JSON output gives the stamped version and commit$`, w.jsonGivesBuild)
 	sc.Step(`^its standard output is one line$`, w.stdoutIsOneLine)
 
@@ -635,23 +630,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 		return w.isEmptyList(second)
 	})
 
-	// The fixtures a scenario asks for. godog takes one parameter per
-	// capturing group and none variadic, so the second text is its own
-	// group, empty where the scenario names one.
-	sc.Step(`^the file "([^"]*)" contains "([^"]*)"(?:, "([^"]*)")?$`, func(name, first, second string) error {
-		texts := []string{first}
-		if second != "" {
-			texts = append(texts, second)
-		}
-		return w.fileContains(name, texts...)
-	})
-	sc.Step(`^the file "([^"]*)" holds a line of (\d+) characters$`, w.fileHoldsLine)
-	sc.Step(`^standard input holds "([^"]*)"$`, func(text string) error {
-		w.stdin = text
-		return nil
-	})
-	sc.Step(`^an empty folder "([^"]*)"$`, w.emptyFolder)
-	// itos-cc.yaml, the project's settings at the root of the scratch
+	// The fixtures a scenario asks for: itos-cc.yaml, the project's settings at the root of the scratch
 	// folder, leaving out of what is measured the sources a glob names.
 	sc.Step(`^itos-cc\.yaml excludes "([^"]*)"$`, func(glob string) error {
 		return w.write("itos-cc.yaml", "exclude: ["+strconv.Quote(glob)+"]\n")
@@ -816,34 +795,11 @@ func (w *world) capture(dir string, env []string, args ...string) (code int, std
 	if err := w.declareAdjacency(context.Background()); err != nil {
 		return 0, "", "", err
 	}
-	result, err := w.d.Run(Run{Dir: dir, Env: env, Stdin: w.stdin, Args: args, Without: w.without, Binary: w.binary})
+	result, err := w.d.Run(Run{Dir: dir, Env: env, Args: args, Without: w.without, Binary: w.binary})
 	return result.Exit, result.Stdout, result.Stderr, err
 }
 
 // Fixture steps.
-
-// fileContains writes name in the scratch folder, one line per text the
-// scenario named, each ending in the newline a text file's last line has.
-func (w *world) fileContains(name string, texts ...string) error {
-	if len(texts) == 0 || texts[0] == "" {
-		return fmt.Errorf("the file %q is given no text to contain", name)
-	}
-	body := strings.Join(texts, "\n") + "\n"
-	return w.d.Write(filepath.Join(w.dir, name), []byte(body))
-}
-
-// fileHoldsLine writes name in the scratch folder holding one line of count
-// characters, long enough to beat a token limit a reader might have, and no
-// other line.
-func (w *world) fileHoldsLine(name string, count int) error {
-	body := strings.Repeat("x", count) + "\n"
-	return w.d.Write(filepath.Join(w.dir, name), []byte(body))
-}
-
-// emptyFolder makes a folder in the scratch directory.
-func (w *world) emptyFolder(name string) error {
-	return w.d.Mkdir(filepath.Join(w.dir, name))
-}
 
 // write writes text to name, a slash-separated path in the scratch folder,
 // making the folders above it.
@@ -995,22 +951,6 @@ func (w *world) json() (map[string]any, error) {
 	return object, nil
 }
 
-// jsonNamesProblem is whether the object's problems list one with that rule.
-func (w *world) jsonNamesProblem(rule string) error {
-	object, err := w.json()
-	if err != nil {
-		return err
-	}
-	problems, _ := object["problems"].([]any)
-	for _, one := range problems {
-		problem, _ := one.(map[string]any)
-		if problem["rule"] == rule {
-			return nil
-		}
-	}
-	return fmt.Errorf("no problem of the JSON output has the rule %q\n%s", rule, w.report())
-}
-
 // lastObject is the object of the last run, made again with --json before
 // its words, as a script would make it, unless it had --json already: that
 // run must exit as the plain one did. The report is both runs'.
@@ -1085,32 +1025,6 @@ func (w *world) fixSuggests(flag string) error {
 	}
 	if !strings.Contains(w.stderr, fix) {
 		return fmt.Errorf("the error output does not print the problem's fix %q\n%s", fix, w.report())
-	}
-	return nil
-}
-
-// jsonGivesCounts is whether the success object's file is file, its lines
-// the count and its words the count.
-func (w *world) jsonGivesCounts(file string, lines, words int) error {
-	object, err := w.json()
-	if err != nil {
-		return err
-	}
-	if object["ok"] != true {
-		return fmt.Errorf("the JSON output's ok is %v, not true\n%s", object["ok"], w.report())
-	}
-	for _, want := range []struct {
-		key  string
-		got  any
-		want any
-	}{
-		{"file", object["file"], file},
-		{"lines", numberOf(object["lines"]), lines},
-		{"words", numberOf(object["words"]), words},
-	} {
-		if want.got != want.want {
-			return fmt.Errorf("the JSON output's %s is %v, not %v\n%s", want.key, want.got, want.want, w.report())
-		}
 	}
 	return nil
 }
@@ -1221,35 +1135,6 @@ func (w *world) isEmptyList(key string) error {
 		return fmt.Errorf("%q is %v, not an empty list\n%s", key, object[key], w.report())
 	}
 	return nil
-}
-
-// jsonProblemsComplete is whether the object's problems all carry a rule, a
-// message and a fix, and there is one.
-func (w *world) jsonProblemsComplete() error {
-	object, err := w.json()
-	if err != nil {
-		return err
-	}
-	problems, _ := object["problems"].([]any)
-	if len(problems) == 0 {
-		return fmt.Errorf("the JSON output lists no problem\n%s", w.report())
-	}
-	for i, one := range problems {
-		problem, _ := one.(map[string]any)
-		for _, key := range []string{"rule", "message", "fix"} {
-			if text, _ := problem[key].(string); text == "" {
-				return fmt.Errorf("problem %d of the JSON output has no %s\n%s", i+1, key, w.report())
-			}
-		}
-	}
-	return nil
-}
-
-// numberOf is the number a decoded JSON value holds, a float64 as encoding/
-// json decodes every number into.
-func numberOf(value any) int {
-	number, _ := value.(float64)
-	return int(number)
 }
 
 // Selection is what a -scenarios expression selects for one driver.

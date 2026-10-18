@@ -9,11 +9,11 @@ import (
 
 // These tests feed StopOnInterrupt interrupts of their own, os.Interrupt
 // on every system, so they show on Linux, macOS and Windows alike what each
-// interrupt does. The scenarios interrupt the built binary, but they cannot
-// show the second interrupt: count has no cleanup, so once the first has
-// cancelled its read it exits 130 within a moment, and a second interrupt
-// either finds it gone or ends it with the same 130 a prompt stop gives. No
-// run can tell which ended it, so the double interrupt is held here.
+// interrupt does. A scenario interrupting the built binary cannot show the
+// second interrupt: a command with no cleanup exits 130 within a moment of
+// the first, and a second interrupt either finds it gone or ends it with the
+// same 130 a prompt stop gives. No run can tell which ended it, so the
+// double interrupt is held here.
 
 // stopper is StopOnInterrupt running on fake interrupts: the codes its exit
 // was called with, and whether it returned. startStopper returns the context

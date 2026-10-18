@@ -31,8 +31,8 @@ import (
 //     usage error's line and exit 2 are @ID-CLI-07's;
 //   - __complete's and completion's are the template's: itos-cc has no such
 //     command;
-//   - count's line past a reader's token limit is the sample's, which no
-//     itos-cc command runs;
+//   - count's line past a reader's token limit was the template's sample
+//     count app's, which no itos-cc command ran and T-116 removed;
 //   - version's stamp is @ID-CLI-03's, from the binary as each build makes
 //     it, and the commit its object carried is the template's: itos-cc's
 //     prints its version alone.

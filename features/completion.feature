@@ -1,7 +1,8 @@
 # Every scenario here is @wip (T-26): they ask the completion of the template's sample count
-# app, which itos-cc's command line does not have yet, so its binary cannot pass them. They wait
-# for the refactor that ports the template's CLI (template-adoption); @wip keeps them out of
-# every run and out of the smoke rule until then.
+# app, which T-116 removed, so itos-cc's binary cannot pass them. itos-cc has no completion
+# command (docs/CLI.md lists shell completion among the rules it does not follow yet); work that
+# specifies one rewrites these for itos-cc's own commands. @wip keeps them out of every run and
+# out of the smoke rule until then.
 @phase-1
 Feature: Shell completion
   itos-cc completes on bash, zsh, fish and PowerShell.
