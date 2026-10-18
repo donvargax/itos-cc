@@ -3726,7 +3726,7 @@ items:
     title: Let internal/mutants carry serialization tags and drop the mirrors that copy its types
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-137

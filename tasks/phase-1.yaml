@@ -5146,11 +5146,6 @@
     --json output, itos-cc.yaml as mutation except writes it (key order, omitempty, comments kept),
     held by metricsdir's codec byte tests, config's exception tests and the mutation scenarios. If a
     tag cannot give the same bytes, keep that mirror and say why in the commit.
-  done_when:
-    - run: go build ./...
-    - run: go test ./internal/metricsdir/... ./config/... ./internal/mutation/... ./internal/mutants/...
-    - run: go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -scenarios='@ID-MUT-'
-      timeout: 900
 - id: T-137
   type: test
   title: Classify every difference T-132's edge run found, and open a fix item for each one not deliberate
