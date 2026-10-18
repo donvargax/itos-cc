@@ -2594,39 +2594,13 @@ items:
       The format sniffing above moved. It is now internal/coverage's Parse
       (internal/coverage/formats.go:16-28), which the runner's coverage.Load (coverage/disk.go:36)
       calls, and it still reads a report that starts with neither "mode:" nor "<" as LCOV.
-  - id: adr-47-code-review
+  - id: T-140
     title: Review decision 47 against the refactored code with the person
     phase: 1
     owner: null
     status: todo
     depends_on: [slice-7]
-    kind: idea
-    why: >
-      The person (2026-10-13): once the refactor is finished, check the latest decision, 47
-      (adapters and ports may import the domain they serve; nothing leaks into the domain), against
-      the codebase, comparing code. What the person wants to see is whether the code adds adapters
-      or mappers only to keep the domain from flowing out: a port speaking raw or duplicate types
-      the domain then parses, a struct copied field by field between a domain type and a port or
-      adapter type, an adapter layer that exists only to translate. Candidates written before 47
-      include snapshot's Store taking v any and lang's port taking bytes. A session with the person,
-      not an agent's task: the coordinator lists every such translation with file and line
-      references side by side with what using the domain's type directly would look like, plus
-      anything outside a domain that leaks into it, and the person decides what changes. Before the
-      issue round and Dart.
-
-      Candidate from T-66 (156dee6): internal/coverage/port declares Measurer[R any], always used as
-      Measurer[*coverage.Report], because the domain imports its own port package (Files.SameFile,
-      the gaps) so the port cannot import the domain without a cycle. Compare with declaring the
-      Measurer interface in the domain package itself, or a second port package (say
-      internal/coverage/measure) that imports the domain.
-
-      The Measurer candidate above is settled. T-135 (c1f2225) declared Measurer as a plain
-      interface in the coverage domain, beside MutationMeasurer
-      (internal/coverage/measurement.go:35), so internal/coverage/port no longer declares Measurer[R
-      any]. T-136 (2ed51e9) tagged mutants' leaf types and removed the mirrors that only copied
-      them, in metricsdir, config's exceptions and the mutation slice (q-70). The older candidates
-      remain, snapshot's Store taking v any (internal/snapshot/port/store.go:79 and 82) and lang's
-      port reading bytes (internal/lang/port/surroundings.go:22).
+    kind: task
   - id: bug-1
     title: A coverage report written with \ separators matches no source on Linux or macOS
     phase: 1
@@ -2881,7 +2855,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [template-adoption, T-132, slice-8, slice-7, adr-47-code-review]
+    depends_on: [template-adoption, T-132, slice-8, slice-7, T-140]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
