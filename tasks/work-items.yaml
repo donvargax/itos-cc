@@ -3429,14 +3429,15 @@ items:
       sample_ui.go:110). A rerun with every mutant reused prints no mutations to test
       (internal/mutants/run.go:203, progress.go:42-43; ID-MUT-22). Wave 2.
     refs: ["#21", "#49"]
-  - id: mutant-resource-caps
+  - id: slice-24
     title: Each mutant's output and memory are capped by default, sized from the baseline, over a cap a visible kill
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was mutant-resource-caps.
       Issues #47 and #54. A mutant whose test loops writing output fills unbounded buffers
       (internal/worktrees/worker.go:150-153, proc_owned.go:229-236) and can take the runner down; a
       failing baseline prints only its last 20 lines (run_ui.go:255,284, sample_ui.go:110) and
