@@ -182,3 +182,33 @@ Feature: Choosing which files a command looks at
     When I run "itos-cc crap"
     Then the problem is "config.invalid", with key "exclude[1]"
     And the exit code is 80
+
+  # bug-4: config.Read's error reached the classifier unwrapped, so a file
+  # that could not be read was "a bug in itos-cc", exit 100, though docs/CLI.md
+  # (row 38) and slice-6's Upgrading say it is config.invalid, exit 80, naming
+  # the file. A directory in the file's place is what cannot be read here,
+  # the same on every system, where a file's permissions are not. Each
+  # command reads the file before it selects anything, so none needs a path.
+  # scrap reads only tests and never reads the file.
+  @wip @bug-4 @ID-SEL-20
+  Scenario Outline: An itos-cc.yaml that cannot be read is a config error
+    Given itos-cc.yaml is a directory, so it cannot be read
+    When I run "itos-cc <command>"
+    Then the problem is "config.invalid", with file "itos-cc.yaml"
+    And the exit code is 80
+
+    Examples:
+      | command            |
+      | crap --no-coverage |
+      | dry                |
+      | units              |
+      | mutation list      |
+      | mutation run       |
+      | mutation check     |
+      | mutation sample    |
+
+  @wip @bug-4 @ID-SEL-21
+  Scenario: scrap never reads itos-cc.yaml
+    Given itos-cc.yaml is a directory, so it cannot be read
+    When I run "itos-cc scrap"
+    Then the exit code is 0
