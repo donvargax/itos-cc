@@ -26,3 +26,7 @@ Keeps ADR-0031's exit 130, single report line and internal/cli machinery, with i
 ## More Information
 
 Supersedes ADR-0031.
+
+The internal exit is 100 since decision 36 (square/exit, answered the same day), so q-37's
+mutation.cleanup-failed exits 100, not 70, as slice-7 and slice-8 ship it (ID-MUT-250) and
+docs/CLI.md says.

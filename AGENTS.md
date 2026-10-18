@@ -27,7 +27,8 @@ with `itos work`; never edit owners or statuses by hand.
 ## Code boundaries
 
 - Keep thin entry points over domain-owned behavior through ports. The domain knows no UI,
-  filesystem implementation, JSON or exit codes. Use our fakes in its tests, never mocks.
+  filesystem implementation, encoding or exit codes; struct tags used only for serialization
+  are allowed (decision 50). Use our fakes in its tests, never mocks.
 - Look for a library before building what one likely solves; settle the choice in the spec.
 - Code differing by OS takes the OS as a value. Build tags hold only a call unavailable on one
   OS, with no mutation site; never branch on runtime.GOOS inside logic.

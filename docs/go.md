@@ -150,7 +150,8 @@ a `context.Context` first (decision 30); pure logic takes none.
 - `internal/mutants` is the pure mutation domain (T-87): mutation sites and unit hashes,
   stored-result values, pairing and freshness rules, exception judgment, executable-coverage
   evidence and its judgment, annotation text, sampling ranks, committed-candidate values and
-  diff hunks. It reads nothing and has no representation tags or JSON/YAML methods. Tests
+  diff hunks. It reads nothing and holds no encoding or decoding logic; like every domain it may carry struct
+  tags used only for serialization (decision 50). Tests
   parse supplied source through lang's surroundings fake. Ordinary and counted scheduling,
   check/list/sample/exception policy and fresh admission live here over model-bearing ports.
   `metricsdir` owns the concrete snapshot codec, including legacy evidence keys and line
@@ -779,8 +780,8 @@ The Go tests of every package are not a plan step: `ci.yml`'s test job runs them
 
 Mutation proof is off, and nothing here claims a mutation result for a push. The plan has no
 `proof.code` step and no `itos-cc mutation sample` (q-53): whether itos-cc sets itos's
-`proof.code` is the idea p1-itos-proof-code, waiting on T-46, and it turns on only after
-refactor-final-proof. The nightly mutation workflow, `nightly.yml`, is disabled on GitHub
+`proof.code` is the idea p1-itos-proof-code, waiting on T-46 alone now that the refactor's
+final proof (T-132) is done. The nightly mutation workflow, `nightly.yml`, is disabled on GitHub
 (`gh workflow disable Nightly`) until T-46 makes a whole run finish and commit its results.
 `.metrics/mutate/` holds the results committed before both were turned off.
 

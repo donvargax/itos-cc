@@ -71,7 +71,9 @@ The mutation group's slice, `internal/mutation`, runs its five commands over the
 inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`).
 cmd routes every command through one kong model but `serve`, which keeps its legacy handler.
 
-The domains know no command-line flags, JSON or exit codes. A slice carries its command's
+The domains know no command-line flags, encoding or exit codes: a domain may carry struct tags
+used only for serialization on its own types, and imports no encoding package and holds no
+encoding or decoding logic (decision 50). A slice carries its command's
 domain values to the domains through their ports and measures nothing itself. `internal/cli`,
 the UI every command shares, imports no domain: it holds the problem, its rule,
 message, fix and subject keys, prints them as the JSON object or as text lines, and picks the
