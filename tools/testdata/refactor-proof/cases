@@ -33,8 +33,8 @@ t40-10 | mixed | p | - | itos-cc dry --threshold -
 t40-11 | mixed | p | - | itos-cc dry --min-lines 1_000
 t40-12 | mixed | p | - | itos-cc dry --min-lines +7
 t40-13 | mixed | p | - | itos-cc dry --threshold 1e3
-t40-14 | mixed | p | - | itos-cc dry --help
-t40-15 | mixed | p | - | itos-cc help dry
+t40-14 | mixed | p | - | itos-cc dry --help | deliberate (2): dry's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t40-15 | mixed | p | - | itos-cc help dry | deliberate (2): dry's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
 t40-16 | mixed | p | - | itos-cc dry --threshold abc --bogus
 t40-17 | mixed | p | - | itos-cc dry --bogus --threshold abc
 t40-18 | mixed | p | - | itos-cc dry --threshold -1 --json
@@ -46,8 +46,8 @@ t42-01 | scrap | p | - | ! chmod 000 py/test_a.py ;; itos-cc scrap
 t42-02 | scrap | p | .metrics/scrap.json | itos-cc scrap py ;; itos-cc scrap ts
 t42-03 | scrap | p | .metrics/scrap.json | itos-cc scrap ;; itos-cc scrap py --json
 t42-04 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": "py/test_a.py", "average_score": 1}, {"file": "py/test_a.py", "average_score": 2}]}\n' > .metrics/scrap.json ;; itos-cc scrap
-t42-05 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": 7}]}\n' > .metrics/scrap.json ;; itos-cc scrap | deliberate: the ignoring line words the wrong-typed value by its key and JSON kinds, naming no Go type (bug-3)
-t42-06 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": "none"}\n' > .metrics/scrap.json ;; itos-cc scrap --json | deliberate: the ignoring line words the wrong-typed value by its key and JSON kinds, naming no Go type (bug-3)
+t42-05 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": 7}]}\n' > .metrics/scrap.json ;; itos-cc scrap | fixed by bug-3: T-42 (d1108ce) and T-43 (03cc47f) renamed the Go types the ignoring line named, scrapSnapshot to recorded and scrap.FileReport to teststructure.FileReport; bug-3 words the value by its key and JSON kinds instead (03b4d42)
+t42-06 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": "none"}\n' > .metrics/scrap.json ;; itos-cc scrap --json | fixed by bug-3: T-42 (d1108ce) and T-43 (03cc47f) renamed the Go types the ignoring line named, scrapSnapshot to recorded and scrap.FileReport to teststructure.FileReport; bug-3 words the value by its key and JSON kinds instead (03b4d42)
 
 # T-43: scrap on kong.
 t43-01 | scrap | p | - | itos-cc scrap --verbose=x
@@ -63,8 +63,8 @@ t43-08 | scrap | p | - | ! chmod 000 ts/b.test.ts ;; itos-cc scrap --json
 t47-01 | empty | p | - | itos-cc
 t47-02 | empty | p | - | itos-cc --help
 t47-03 | empty | p | - | itos-cc --json
-t47-04 | empty | p | - | itos-cc help dry
-t47-05 | empty | p | - | itos-cc help units --json
+t47-04 | empty | p | - | itos-cc help dry | deliberate (2): dry's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t47-05 | empty | p | - | itos-cc help units --json | deliberate (2): units' help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
 t47-06 | empty | p | - | itos-cc help dry extra
 t47-07 | empty | p | - | itos-cc dri
 t47-08 | empty | p | - | itos-cc dri --json
@@ -100,14 +100,14 @@ t50-08 | mixed | p | - | ! mkdir -p locked && cp board.go locked/l.go && chmod 0
 t50-09 | mixed | p | - | itos-cc units linked ignored dist
 
 # T-63: the selection command line embedded in units', dry's and scrap's.
-t63-01 | empty | p | - | itos-cc units --help
-t63-02 | empty | p | - | itos-cc units -h
-t63-03 | empty | p | - | itos-cc help units
-t63-04 | empty | p | - | itos-cc units --help --json
-t63-05 | empty | p | - | itos-cc dry -h --json
+t63-01 | empty | p | - | itos-cc units --help | deliberate (2): units' help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t63-02 | empty | p | - | itos-cc units -h | deliberate (2): units' help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t63-03 | empty | p | - | itos-cc help units | deliberate (2): units' help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t63-04 | empty | p | - | itos-cc units --help --json | deliberate (2): units' help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t63-05 | empty | p | - | itos-cc dry -h --json | deliberate (2): dry's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
 t63-06 | empty | p | - | itos-cc scrap -h --json
 t63-07 | empty | p | - | itos-cc help scrap --json
-t63-08 | empty | p | - | itos-cc help dry --json
+t63-08 | empty | p | - | itos-cc help dry --json | deliberate (2): dry's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
 t63-09 | mixed | p | - | itos-cc units --changed=x
 t63-10 | mixed | p | - | itos-cc units --changed=x --json
 t63-11 | mixed | p | - | itos-cc dry -- --changed
@@ -165,13 +165,13 @@ t67-10 | go | p | - | itos-cc crap --coverage-report --json
 t67-11 | empty | p | - | itos-cc crap --coverage-command x
 t67-12 | go | p | - | itos-cc crap --coverage-command x
 t67-13 | go | p | - | itos-cc crap --no-coverage=x
-t67-14 | empty | p | - | itos-cc crap --help
-t67-15 | empty | p | - | itos-cc help crap
+t67-14 | empty | p | - | itos-cc crap --help | deliberate (2): crap's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t67-15 | empty | p | - | itos-cc help crap | deliberate (2): crap's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
 t67-16 | go | p | - | itos-cc --json crap --no-coverage
-t67-17 | go | p | - | ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc crap
-t67-18 | go | p | - | ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml && printf '\n// c\n' >> board.go && printf '\n// c\n' >> sub/sub.go ;; itos-cc crap --changed
+t67-17 | go | p | - | ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc crap | deliberate (2): crap leaves out the sources exclude names, saying how many on stderr (slice-6)
+t67-18 | go | p | - | ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml && printf '\n// c\n' >> board.go && printf '\n// c\n' >> sub/sub.go ;; itos-cc crap --changed | deliberate (2): crap --changed leaves out an excluded changed source, its coverage run measuring only the rest (slice-6)
 t67-19 | go | p/sub | - | ! printf 'exclude: ["board.go"]\n' > ../itos-cc.yaml ;; itos-cc crap
-t67-20 | go | p/sub | - | ! printf 'exclude: ["board.go"]\n' > ../itos-cc.yaml ;; itos-cc crap --no-coverage ../board.go $W/o/outside.go
+t67-20 | go | p/sub | - | ! printf 'exclude: ["board.go"]\n' > ../itos-cc.yaml ;; itos-cc crap --no-coverage ../board.go $W/o/outside.go | deliberate (2): a path naming an excluded source selects nothing, from a subdirectory too, while a path outside the root stays (slice-6)
 
 # T-68: a switch of choices.
 t68-01 | go | p | - | itos-cc mutation run --fail-uncovered=x
@@ -180,14 +180,14 @@ t68-03 | go | p | - | itos-cc mutation run --fail-uncovered lines
 t68-04 | go | p | - | itos-cc mutation run --fail-uncovered=lines --fail-uncovered
 t68-05 | go | p | - | itos-cc mutation run --fail-uncovered --fail-uncovered=x
 t68-06 | go | p | - | itos-cc mutation run --fail-uncovered=LINES src
-t68-07 | empty | p | - | itos-cc mutation run --help
+t68-07 | empty | p | - | itos-cc mutation run --help | deliberate (2): mutation run's help says --since drops excluded sources first and an excluded source's snapshot is an orphan, why excluded, and adds excluded to mutation.exception-stale and the key to config.invalid (slice-6)
 t68-08 | go | p | - | itos-cc mutation run --fail-uncovered=x --json
 t68-09 | go | p | - | itos-cc mutation run --fail-uncovered= --json
 t68-10 | go | p | - | itos-cc mutation run --fail-uncovered lines --json
 t68-11 | go | p | - | itos-cc mutation run --fail-uncovered=lines --fail-uncovered --json
 t68-12 | go | p | - | itos-cc mutation run --fail-uncovered --fail-uncovered=x --json
 t68-13 | go | p | - | itos-cc mutation run --fail-uncovered=LINES src --json
-t68-14 | empty | p | - | itos-cc mutation run --help --json
+t68-14 | empty | p | - | itos-cc mutation run --help --json | deliberate (2): mutation run's help says --since drops excluded sources first and an excluded source's snapshot is an orphan, why excluded, and adds excluded to mutation.exception-stale and the key to config.invalid (slice-6)
 
 # T-69: snapshots through the snapshot port.
 t69-01 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 ;; ! mkdir -p .metrics/mutate/deep/er && cp .metrics/mutate/board.go.json .metrics/mutate/deep/er/gone.go.json ;; itos-cc mutation run --workers 1
@@ -211,18 +211,18 @@ t97-01 | go | p | - | ! printf 'package proof\n\nfunc Zed( {\n' > zz.go ;; itos-
 t97-02 | go | p | - | ! printf 'package proof\n\nfunc Zed( {\n' > zz.go ;; itos-cc mutation list --json board.go zz.go
 t97-03 | go | p | - | ! cp board.go zz.go && chmod 000 zz.go ;; itos-cc mutation list board.go zz.go
 t97-04 | go | p | - | ! printf 'package proof\n\nfunc Zed( {\n' > zz.go ;; itos-cc mutation check board.go zz.go
-t97-05 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation list
-t97-06 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation check --json
-t97-07 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation list --json
-t97-08 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation check
-t97-09 | go | p | - | ! mkdir itos-cc.yaml ;; itos-cc mutation list
+t97-05 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation list | deliberate (2): mutation list reads itos-cc.yaml, so one that is not YAML is config.invalid, exit 2 (slice-6)
+t97-06 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation check --json | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
+t97-07 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation list --json | deliberate (2): mutation list reads itos-cc.yaml, and an empty exclude glob is config.invalid naming exclude[0], exit 2 (slice-6)
+t97-08 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation check | deliberate (2): an empty exclude glob is config.invalid naming exclude[0], exit 2 (slice-6)
+t97-09 | go | p | - | ! mkdir itos-cc.yaml ;; itos-cc mutation list | fixed by bug-4: slice-6 made mutation list read itos-cc.yaml, and a directory in its place exited 70 as internal; bug-4 makes it config.invalid (7df78f1)
 t97-10 | go | p | - | ! mkdir itos-cc.yaml ;; itos-cc mutation check --json
-t97-11 | go | p | - | ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation list
-t97-12 | go | p | - | ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation check --json
+t97-11 | go | p | - | ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation list | deliberate (2): exclude leaving every source out gives its count, then no source files to list (slice-6)
+t97-12 | go | p | - | ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation check --json | deliberate (2): exclude leaving every source out gives its count, then no source files to check, exit 0 (slice-6)
 t97-13 | go | p/sub | - | itos-cc mutation list ;; itos-cc mutation list sub.go ../board.go
 t97-14 | go | p/sub | - | itos-cc mutation run --workers 1 ;; itos-cc mutation check ;; itos-cc mutation check sub.go ../board.go
-t97-15 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation check --fail-uncovered=lines
-t97-16 | go | p | - | ! printf 'mutation:\n  tests:\n    support: ["testdata/**"]\n' > itos-cc.yaml ;; itos-cc mutation check --fail-uncovered=lines
+t97-15 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation check --fail-uncovered=lines | deliberate (2): an empty exclude glob is config.invalid, read before the --fail-uncovered=lines refusal as every config.invalid was (slice-6)
+t97-16 | go | p | - | ! printf 'mutation:\n  tests:\n    support: ["testdata/**"]\n' > itos-cc.yaml ;; itos-cc mutation check --fail-uncovered=lines | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
 t97-17 | go | p | - | itos-cc mutation check --since nosuch
 t97-18 | gonogit | p | - | itos-cc mutation check --since HEAD
 t97-19 | go | p | - | itos-cc mutation check --since HEAD --changed
@@ -231,19 +231,19 @@ t97-21 | go | p | - | itos-cc mutation run --workers 1 ;; ! git add -A && git co
 t97-22 | go | p | - | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason 'proof' ;; ! printf '\n// edit\n' >> board.go && sed -i 's/n > 0/n > 1/' board.go ;; itos-cc mutation check ;; itos-cc mutation check --json
 t97-23 | go | p | - | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason 'proof' ;; ! rm board.go ;; itos-cc mutation check ;; itos-cc mutation check sub
 t97-24 | go | p | - | itos-cc mutation run --workers 1 ;; ! rm -r sub ;; itos-cc mutation check ;; itos-cc mutation check sub ;; itos-cc mutation check board.go
-t97-25 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc mutation check ;; itos-cc mutation check su
+t97-25 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc mutation check ;; itos-cc mutation check su | deliberate (2): check names an excluded source's snapshot an orphan, why excluded, and judges nothing for it, so with only it chosen it exits 0 (slice-6)
 t97-26 | ts | p | - | itos-cc mutation run --workers 1 ;; itos-cc mutation check --fail-uncovered ;; ! sed -i 's/n + 1/n + 2/' src/board.ts ;; itos-cc mutation check --fail-uncovered --json
 t97-27 | go | p | - | itos-cc mutation run --workers 1 ;; itos-cc mutation check --fail-uncovered ;; itos-cc mutation check --fail-uncovered=lines --since HEAD
 
 # T-96: the mutation group on kong.
-t96-01 | empty | p | - | itos-cc mutation --help
-t96-02 | empty | p | - | itos-cc mutation list --help
-t96-03 | empty | p | - | itos-cc mutation check --help
-t96-04 | empty | p | - | itos-cc mutation sample --help
-t96-05 | empty | p | - | itos-cc mutation except --help
-t96-06 | empty | p | - | itos-cc help mutation run
+t96-01 | empty | p | - | itos-cc mutation --help | deliberate (2): the mutation group's help says the sources exclude names are none of its commands' (slice-6)
+t96-02 | empty | p | - | itos-cc mutation list --help | deliberate (2): mutation list's help says the sources exclude names are left out, lists config.invalid with its key and words exit 2 as a usage or config error (slice-6)
+t96-03 | empty | p | - | itos-cc mutation check --help | deliberate (2): mutation check's help names exceptions and orphans of excluded sources, the orphans' why key, and config.invalid's key (slice-6)
+t96-04 | empty | p | - | itos-cc mutation sample --help | deliberate (2): mutation sample's help gives config.invalid its key for an exclude glob (slice-6)
+t96-05 | empty | p | - | itos-cc mutation except --help | deliberate (2): mutation except's help adds exception.excluded, config.invalid's key and an excluded source to exit 2 (slice-6)
+t96-06 | empty | p | - | itos-cc help mutation run | deliberate (2): mutation run's help says --since drops excluded sources first and an excluded source's snapshot is an orphan, why excluded, and adds excluded to mutation.exception-stale and the key to config.invalid (slice-6)
 t96-07 | empty | p | - | itos-cc help mutation run extra
-t96-08 | empty | p | - | itos-cc help mutation
+t96-08 | empty | p | - | itos-cc help mutation | deliberate (2): the mutation group's help says the sources exclude names are none of its commands' (slice-6)
 t96-09 | empty | p | - | itos-cc mutation rn
 t96-10 | empty | p | - | itos-cc mutation --changed run
 t96-11 | empty | p | - | itos-cc --json mutation
@@ -284,17 +284,17 @@ t98-10 | gonogit | p | - | itos-cc mutation sample
 t98-11 | gonogit | p | - | itos-cc mutation sample --json
 t98-12 | gonogit | p | - | itos-cc mutation sample --seed=
 t98-13 | gonogit | p | - | itos-cc mutation sample --seed proof
-t98-14 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation sample
-t98-15 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation sample --json
+t98-14 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation sample | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
+t98-15 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation sample --json | deliberate (2): an empty exclude glob is config.invalid naming exclude[0], exit 2; the selection reads the config before the seed is drawn, so seed is "" (slice-6)
 t98-16 | go | p | - | ! mkdir itos-cc.yaml ;; itos-cc mutation sample
-t98-17 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc mutation sample --count 3 --workers 1 ;; ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation sample --count 3 --workers 1
+t98-17 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["sub/**"]\n' > itos-cc.yaml ;; itos-cc mutation sample --count 3 --workers 1 ;; ! printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation sample --count 3 --workers 1 | deliberate (2): sample leaves out excluded sources and their cached mutants, and with every source excluded has no source files to sample (slice-6)
 t98-18 | go | p | - | itos-cc mutation sample --count 3
 t98-19 | go | p | - | itos-cc mutation run --workers 1 ;; ! sed -i 's/!Pos(5) || Pos(-5)/!Pos(5) || Pos(-5) || Pos(0)/' board_test.go ;; itos-cc mutation sample --count 9 --seed proof --workers 1 ;; itos-cc mutation sample --count 9 --seed proof --workers 1 --json
 t98-20 | go | p | - | itos-cc mutation run --workers 1 --all-tests ;; itos-cc mutation sample --count 9 --seed proof --workers 1
 t98-21 | go | p | - | itos-cc mutation run --workers 1 --test-command "go test ./... # it's" ;; itos-cc mutation sample --count 9 --seed proof --workers 1
 t98-22 | go | p | - | itos-cc mutation run --workers 1 ;; ! sed -i 's/t.Fatal("Add")/t.Fatal("Add")\n\t}\n\tif true {\n\t\tt.Fatal("broken")/' board_test.go ;; itos-cc mutation sample --count 9 --seed proof --workers 1
 t98-23 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'not json' > .metrics/mutate/board.go.json ;; itos-cc mutation sample --count 9 --seed proof --workers 1
-t98-24 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'mutation:\n  tests:\n    list: "exit 4"\n' > itos-cc.yaml ;; itos-cc mutation sample --count 9 --seed proof --workers 1
+t98-24 | go | p | - | itos-cc mutation run --workers 1 ;; ! printf 'mutation:\n  tests:\n    list: "exit 4"\n' > itos-cc.yaml ;; itos-cc mutation sample --count 9 --seed proof --workers 1 | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
 
 # T-99: except and --renew on the slice.
 t99-01 | go | p | - | itos-cc mutation except board.go:5:11
@@ -309,11 +309,11 @@ t99-09 | go | p | - | itos-cc mutation except a.go:1:x --reason proof
 t99-10 | go | p | - | itos-cc mutation except --renew --reason proof
 t99-11 | go | p | - | itos-cc mutation except --renew --reason=
 t99-12 | go | p | - | itos-cc mutation except --renew board.go:5:11
-t99-13 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof
-t99-14 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof --json
+t99-13 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
+t99-14 | go | p | - | ! printf 'exclude: [""]\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof --json | deliberate (2): an empty exclude glob is config.invalid naming exclude[0], before the site is judged (slice-6)
 t99-15 | go | p | - | ! mkdir itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof
-t99-16 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["board.go"]\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except ./board.go:5:11 --reason proof
-t99-17 | go | p/sub | itos-cc.yaml | ! printf 'exclude: ["board.go"]\n' > ../itos-cc.yaml ;; itos-cc mutation except ../board.go:5:11 --reason proof --json
+t99-16 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'exclude: ["board.go"]\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except ./board.go:5:11 --reason proof | deliberate (2): mutation except refuses a site in an excluded source as exception.excluded, exit 2, writing nothing (slice-6)
+t99-17 | go | p/sub | itos-cc.yaml | ! printf 'exclude: ["board.go"]\n' > ../itos-cc.yaml ;; itos-cc mutation except ../board.go:5:11 --reason proof --json | deliberate (2): mutation except refuses a site in an excluded source as exception.excluded where it judged no results (slice-6)
 t99-18 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; itos-cc mutation except go.mod:1:1 --reason proof ;; itos-cc mutation except nothere.go:1:1 --reason proof ;; itos-cc mutation except board.go:10:11 --reason proof ;; itos-cc mutation except board.go:15:7 --reason proof ;; itos-cc mutation except board.go:5:2 --reason proof
 t99-19 | go | p | itos-cc.yaml | itos-cc mutation except board.go:5:11 --reason proof
 t99-20 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf '# the settings\nexclude: ["nothing/**"] # none\n\n# more\nother: 1\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason 'proof: the first' ;; itos-cc mutation except board.go:5:11 --reason 'proof: the second' ;; itos-cc mutation except board.go:5:13 --reason "proof's third" --json ;; itos-cc mutation run --workers 1 ;; itos-cc mutation check
@@ -321,7 +321,7 @@ t99-21 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'e
 t99-22 | go | p | itos-cc.yaml | itos-cc mutation except --renew
 t99-23 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except sub/sub.go:5:10 --reason proof ;; ! git add -A && git commit -qm results && git mv board.go field.go && sed -i 's/n > 0/n > 0 \&\& true/' field.go && printf 'module example.com/renamed\n\ngo 1.22\n' > go.mod && sed -i 's/n == 0/n == 0 || false/' sub/sub.go ;; itos-cc mutation except --renew ;; itos-cc mutation except --renew --json
 t99-24 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason proof ;; ! sed -i 's/!Pos(5) || Pos(-5)/!Pos(5) || Pos(-5) || Pos(0)/' board_test.go ;; itos-cc mutation except --renew ;; ! rm board.go board_test.go ;; itos-cc mutation except --renew --json
-t99-25 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'mutation:\n  tests:\n    list: "exit 4"\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except --renew
+t99-25 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'mutation:\n  tests:\n    list: "exit 4"\n' > itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except --renew | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
 t99-26 | go | p | itos-cc.yaml | itos-cc mutation run --workers 1 ;; ! printf 'not json' > .metrics/mutate/board.go.json ;; itos-cc mutation except board.go:5:11 --reason proof ;; itos-cc mutation except --renew
 
 # T-100: run on the slice. The platform refusals of --fail-fast and --count
@@ -347,8 +347,8 @@ t100-20 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 --test-com
 t100-21 | go | p | - | itos-cc mutation run --workers 1 --fail-uncovered --coverage-command= board.go
 t100-22 | go | p | - | itos-cc mutation run --workers 1 --fail-uncovered --coverage-command= --coverage-report c.out board.go
 t100-23 | ts | p | - | itos-cc mutation run --workers 1 --fail-uncovered --coverage-command=
-t100-24 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason proof ;; ! printf 'exclude: [' >> itos-cc.yaml ;; itos-cc mutation run --workers 1
-t100-25 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 ;; ! mkdir -p .metrics/mutate/old && cp .metrics/mutate/board.go.json .metrics/mutate/old/gone.go.json && printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation run --workers 1
+t100-24 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 ;; itos-cc mutation except board.go:5:11 --reason proof ;; ! printf 'exclude: [' >> itos-cc.yaml ;; itos-cc mutation run --workers 1 | deliberate (2): config.invalid's fix begins with what exclude lists (slice-6)
+t100-25 | go | p | .metrics/mutate | itos-cc mutation run --workers 1 ;; ! mkdir -p .metrics/mutate/old && cp .metrics/mutate/board.go.json .metrics/mutate/old/gone.go.json && printf 'exclude: ["**"]\n' > itos-cc.yaml ;; itos-cc mutation run --workers 1 | deliberate (2): exclude leaving every source out gives no source files to mutate, and run removes the excluded sources' snapshots as orphans, exit 0 (slice-6)
 t100-26 | go | p/sub | .metrics/mutate | itos-cc mutation run --workers 1 ;; itos-cc mutation except ../board.go:5:11 --reason proof ;; ! git add -A && git commit -qm results && git rm -q ../board.go ../board_test.go && git commit -qm gone ;; itos-cc mutation run --workers 1 --since HEAD~1 ;; itos-cc mutation run --workers 1 --since HEAD~1 sub.go ;; itos-cc mutation run --workers 1 --fail-fast --since HEAD~1
 t100-27 | go | p | - | itos-cc mutation run --workers 1 --fail-uncovered=functions --coverage-command 'go test ./...' --coverage-report c.out
 t100-28 | go | p | - | itos-cc mutation run --workers 1 --fail-uncovered nothere
@@ -358,7 +358,7 @@ t100-31 | gonogit | p | - | itos-cc mutation run --count 1 --json
 t100-32 | go | p | - | itos-cc mutation run --count 1 $W/o/outside.go
 t100-33 | go | p | - | ! ln -s p $W/link ;; itos-cc mutation run --count 1 $W/link/board.go
 t100-34 | go | p | - | itos-cc mutation run --count 1 --since nosuch
-t100-35 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml && git add -A && git commit -qm bad ;; itos-cc mutation run --count 1
+t100-35 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml && git add -A && git commit -qm bad ;; itos-cc mutation run --count 1 | deliberate (2): a counted run reads the committed itos-cc.yaml while planning, so an invalid one is config.invalid, exit 2, to fix in a commit (slice-6)
 t100-36 | go | p | - | nopath:go itos-cc mutation run --count 1
 t100-37 | go | p | - | itos-cc --json mutation run --count 1 ;; itos-cc mutation --json run --count 1 ;; itos-cc mutation run --count 1 --json
 t100-38 | go | p | - | itos-cc --json mutation run --fail-fast --workers 1 board.go ;; itos-cc mutation --json run --fail-fast --workers 1 board.go
@@ -430,8 +430,8 @@ t115-02 | mixed | p | - | itos-cc units --json=true
 t115-03 | empty | p | - | itos-cc version --json=false
 t115-04 | empty | p | - | itos-cc --json -- crapp
 t115-05 | empty | p | - | itos-cc -- --json crapp
-t115-06 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc crap --no-coverage ;; itos-cc dry ;; itos-cc units ;; itos-cc crap --help ;; itos-cc scrap ;; itos-cc version
-t115-07 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc crap --no-coverage --json ;; itos-cc dry --json ;; itos-cc units --json
+t115-06 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc crap --no-coverage ;; itos-cc dry ;; itos-cc units ;; itos-cc crap --help ;; itos-cc scrap ;; itos-cc version | fixed by bug-4: slice-6 made crap, dry and units read itos-cc.yaml, and one that exists but cannot be read exited 70 as internal; bug-4 makes it config.invalid (7df78f1); crap --help's exclude wording is deliberate (2) (slice-6)
+t115-07 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc crap --no-coverage --json ;; itos-cc dry --json ;; itos-cc units --json | fixed by bug-4: slice-6 made crap, dry and units read itos-cc.yaml, and one that exists but cannot be read exited 70 as internal; bug-4 makes it config.invalid (7df78f1)
 
 # T-116: count, the template's sample command, was never itos-cc's.
 t116-01 | empty | p | - | ! printf 'a b\n' > notes.txt ;; itos-cc count notes.txt
