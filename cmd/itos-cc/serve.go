@@ -75,7 +75,7 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 		return nil, cli.NewProblem(cli.CodeTemporary, "serve.port-in-use", fmt.Sprintf("cannot listen on %s: %v", addr, err),
 			"Stop what uses the port, or choose another with --port.").With("port", in.integer("port"))
 	}
-	httpServer := &http.Server{Handler: srv.Handler()}
+	httpServer := &http.Server{Handler: srv.Handler()} //nolint:gosec // serves 127.0.0.1 alone, for the person's own viewer; a header timeout would change how serve treats a slow client
 	go shutdownWhenDone(ctx, httpServer)
 	logger.Printf("serving %v on http://%s", roots, addr)
 	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
@@ -93,5 +93,7 @@ func shutdownWhenDone(ctx context.Context, srv *http.Server) {
 	<-ctx.Done()
 	shutdown, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
-	srv.Shutdown(shutdown)
+	// The command ends either way: what Shutdown could not end in its 2
+	// seconds ends with the process.
+	_ = srv.Shutdown(shutdown)
 }

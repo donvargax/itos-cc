@@ -133,7 +133,9 @@ func TestMetricsMatchTheirOwnFile(t *testing.T) {
 	root := t.TempDir()
 	write := func(rel, text string) {
 		p := filepath.Join(root, rel)
-		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(p, []byte(text), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -210,10 +212,12 @@ func TestContainersAreGradedByTheirShareOfRisk(t *testing.T) {
 
 func TestTSConfigAliases(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "tsconfig.json"), []byte(`{
+	if err := os.WriteFile(filepath.Join(dir, "tsconfig.json"), []byte(`{
 		// comment with "quotes" and a // inside
 		"compilerOptions": { "baseUrl": "src", "paths": { "@app/*": ["app/*", "legacy/*"], "@app/core": ["core/index"], }, },
-	}`), 0o644)
+	}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	a := loadTSAliases(dir)
 	rels := func(spec string) []string {
 		var out []string

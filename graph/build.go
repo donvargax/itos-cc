@@ -228,7 +228,9 @@ func metricStamps(root string) []string {
 		p := filepath.Join(dir, name)
 		out = append(out, p+"\x00"+stamp(p))
 	}
-	filepath.WalkDir(filepath.Join(dir, "mutate"), func(p string, d os.DirEntry, err error) error {
+	// The callback never stops the walk, a missing folder included, so it
+	// returns no error.
+	_ = filepath.WalkDir(filepath.Join(dir, "mutate"), func(p string, d os.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
 			out = append(out, p+"\x00"+stamp(p))
 		}
@@ -477,6 +479,6 @@ func supportHashes(ctx context.Context, inputs mutants.Fingerprints, root string
 }
 
 func readJSON(path string, v any) bool {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // a manifest or snapshot of a repository the person named
 	return err == nil && json.Unmarshal(data, v) == nil
 }

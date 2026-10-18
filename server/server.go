@@ -104,7 +104,7 @@ func (s *Server) Handler() http.Handler {
 		mux.Handle("GET /", spa(s.ui))
 	} else {
 		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintln(w, "itos-cc API: /api/graph, /api/events, /api/source. Start the viewer, or pass --ui viewer/dist.")
+			_, _ = fmt.Fprintln(w, "itos-cc API: /api/graph, /api/events, /api/source. Start the viewer, or pass --ui viewer/dist.") // the client has gone if the write fails; there is no one left to tell
 		})
 	}
 	return mux
@@ -116,7 +116,7 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
-	w.Write(body)
+	_, _ = w.Write(body) // the client has gone if the write fails; there is no one left to tell
 }
 
 // events streams the graph version: once on connect, then on every change.
@@ -139,7 +139,7 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 		s.mu.Unlock()
 	}()
 	send := func(v int) {
-		fmt.Fprintf(w, "event: version\ndata: %d\n\n", v)
+		_, _ = fmt.Fprintf(w, "event: version\ndata: %d\n\n", v) // a client gone ends the stream through its request's context
 		flusher.Flush()
 	}
 	send(version)
@@ -152,7 +152,7 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) {
 		case v := <-ch:
 			send(v)
 		case <-keepalive.C:
-			fmt.Fprint(w, ": keepalive\n\n")
+			_, _ = fmt.Fprint(w, ": keepalive\n\n") // a client gone ends the stream through its request's context
 			flusher.Flush()
 		}
 	}
@@ -170,15 +170,15 @@ func (s *Server) source(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	f, err := os.Open(filepath.Join(root, filepath.FromSlash(file)))
+	f, err := os.Open(filepath.Join(root, filepath.FromSlash(file))) //nolint:gosec // only a file the built graph lists, under its repository's root, as checked above
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read alone: closing it loses nothing
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	io.Copy(w, f)
+	_, _ = io.Copy(w, f) // the client has gone if the write fails; there is no one left to tell
 }
 
 // spa serves a built single-page app, falling back to its index.html for
@@ -186,7 +186,7 @@ func (s *Server) source(w http.ResponseWriter, r *http.Request) {
 func spa(dir string) http.Handler {
 	files := http.FileServer(http.Dir(dir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(r.URL.Path))); err != nil {
+		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(r.URL.Path))); err != nil { //nolint:gosec // ServeMux has cleaned the rooted request path, so the join stays in dir; only existence is asked
 			http.ServeFile(w, r, filepath.Join(dir, "index.html"))
 			return
 		}

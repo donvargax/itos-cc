@@ -128,7 +128,7 @@ func (a *tsAliases) resolve(spec string) []string {
 // readJSONC reads JSON with comments and trailing commas, which tsconfig
 // files allow.
 func readJSONC(file string, v any) bool {
-	data, err := os.ReadFile(file)
+	data, err := os.ReadFile(file) //nolint:gosec // a tsconfig file of a repository the person named
 	if err != nil {
 		return false
 	}
@@ -170,7 +170,7 @@ func dropComments(src []byte) []byte {
 			return end - i - 1
 		case src[i] == '/' && i+1 < len(src) && src[i+1] == '*':
 			end := i + 2
-			for end+1 < len(src) && !(src[end] == '*' && src[end+1] == '/') {
+			for end+1 < len(src) && (src[end] != '*' || src[end+1] != '/') {
 				end++
 			}
 			*out = append(*out, ' ')

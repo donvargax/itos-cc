@@ -44,7 +44,7 @@ func httpEdges(repos []*repoGraph) []Edge {
 				found[k] = e
 			}
 			e.Count++
-			e.Via = appendUnique(e.Via, s.Endpoint.String())
+			e.Via = appendUnique(e.Via, s.String())
 		}
 	}
 	var out []Edge
