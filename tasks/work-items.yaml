@@ -3738,3 +3738,16 @@ items:
       the configured list as mutation run does and prints the IDs, count and refused lines. Wave 3,
       after S10's exit codes.
     refs: ["#42"]
+  - id: go-suite-tracked-tests
+    title: Go whole-suite evidence hashes only the test files git tracks
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found specifying slice-10 (2026-10-18): GoModuleTestHashes (ADR-0016) walks the module's
+      _test.go files on disk as #37's strict inputs did, untracked and ignored ones included, so an
+      --all-tests outcome recorded in one checkout can read stale in another. Apply slice-10's rule
+      (tracked files a build can include; go's directory rules outside git) to whole-suite evidence.
+    refs: ["#37"]
