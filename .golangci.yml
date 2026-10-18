@@ -254,8 +254,9 @@ linters:
         # An adapter implements the ports and imports nothing of ours but
         # them and, once its rule allows it (decision 47), the domain it
         # serves, and the shared pure domains its rule names (lang,
-        # selection), which read nothing, as freshenv, testtools and
-        # testinputs use them: not another domain, another adapter, a slice,
+        # selection, coverage), which read nothing, as freshenv, testtools and
+        # testinputs use them, freshenv reading Go coverage blocks through
+        # coverage: not another domain, another adapter, a slice,
         # the UI or porttest's fakes, which its tests alone may use. Each
         # adapter is listed, and excluded from the slices above. Each port's
         # adapters have a rule of their own, so no adapter is allowed
