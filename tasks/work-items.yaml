@@ -2697,6 +2697,32 @@ items:
       object); and crap, dry and units with an itos-cc.yaml that exists but cannot be read (exit 70,
       the read error as an internal problem), beside their --help, scrap and version, which never
       read it and succeed.
+
+      T-116 (prepared, not begun): the product head after T-116 is 8e52067 (98c36c2 removed the
+      template's sample count app, internal/count, internal/counting, internal/disk, internal/stdin
+      and features/count.feature; 8e52067 changed comments only, and its docs commit touches prose
+      alone). T-119 and T-120 come before this comparison and may fix code, so the refactored side
+      is the head after them, which T-119 records; the baseline stays T-29's parent, 51f3952. T-116
+      adds no public difference: count was a command of neither binary, so compare itos-cc count
+      notes.txt, itos-cc count, itos-cc count --help, itos-cc help count and the top-level help (an
+      unknown command, exit 2, and no count row) with no allowance. The full list of deliberate
+      differences this comparison allows, each verified against its own scenarios and never by
+      normalizing output: (1) units ---changed refused as flags.unknown, exit 2 (slice-5); (2)
+      slice-6, mutation-exclude (ADR-0045, feat 93d6317, supporting 3056ca5, v0.15.0):
+      itos-cc.yaml's exclude leaves sources out of command selection, mutation list reads the
+      config, dry and units print the excluded count, except --renew ignores exclude, and the first
+      invalid glob is reported; (3) bug-1 (red 7f9eedc, fix 9d31226, v0.15.1): coverage-report path
+      separators match on every system; (4) bug-2 (red 1ea197c and 287518e, fix e6151b6): a partial
+      --since run keeps unjudged outcomes' original test and support evidence while judged outcomes
+      take current evidence, nothing else changing; (5) T-69: a --since rename move removes the
+      folders it empties below .metrics/mutate/, as an orphan's removal always did; (6) T-48: serve
+      stopped by SIGINT during a rebuild ends that build early and logs nothing, where it once
+      finished it. Not differences: T-71 and ID-CLI-03 changed tests only, and T-83's push-CI skip
+      was a harness setting T-100 removed. T-125's mutation --json list and mutation --json run
+      --count 1 outside Git answer in plain text in v0.15.8 too; characterize the baseline before
+      classifying that case (mutation-group-json). Exit 130 on interrupt and the semantic exit codes
+      land after this comparison and are no part of it. Mutation proof and the nightly run stay off
+      until this item is done.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
