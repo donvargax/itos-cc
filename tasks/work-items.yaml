@@ -2266,6 +2266,12 @@ items:
       once all its judged mutants are decided would keep every finished file; how a stopped run
       reports and exits ties to interrupt-exit-130 and ADR-0022's preserved files. Product behaviour
       with scenarios; its natural place is the mutation move (S6, S7).
+
+      The path above is out of date. mutate/run.go is now internal/mutants/run.go, which calls
+      execute (internal/mutants/run_execute.go) at line 199 and writes each file's snapshot after
+      it, a fail-fast stop's Preserved files included (lines 287-313). The mutation move (S6, S7)
+      finished without this, so it is now a behaviour change of its own, a slice with scenarios, and
+      T-46 still names it as one way to make the nightly finish.
   - id: port-contract-suites
     title: Each port's fake and adapter pass one contract suite
     phase: 1
