@@ -5253,6 +5253,15 @@
     any]. T-136 (2ed51e9) tagged mutants' leaf types and removed the mirrors that only copied them,
     in metricsdir, config's exceptions and the mutation slice (q-70). The older candidates remain,
     snapshot's Store taking v any (internal/snapshot/port/store.go:79 and 82) and lang's port
-    reading bytes (internal/lang/port/surroundings.go:22).
+    reading bytes (internal/lang/port/surroundings.go:22). The review was held on 2026-10-18 from
+    the coordinator's inventory of ten findings, A47-1 to A47-10 (the review page
+    https://claude.ai/artifact/UCKzFRMhjWLuf58SqE6ufH, private to the person). The person decided
+    A47-1, which T-135 did, and A47-3, which became decision 50 (q-70) and T-136, and left the rest
+    to the coordinator: A47-9's forwarders and A47-10's rule text went into T-135 and T-138; the
+    snapshot Store's v any (A47-5), lang's bytes (A47-6) and TestLister's raw stdout (A47-7) stay,
+    none leading to a mapper or a type assertion and each a rule its domain owns; workdir's
+    forwarding Surroundings (A47-9) and cmd reading itos-cc.yaml twice (A47-8) stay as low value.
+    Nothing leaks into a domain: no domain, port or porttest package imports an adapter, slice, cmd,
+    the CLI, kong, the filesystem, the network or itos-cc's exit codes.
   done_when:
     - run: itos config check
