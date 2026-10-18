@@ -3321,3 +3321,21 @@ items:
       of .metrics/mutate/*.json is named from that unit or mutant ("name should be a string, not a
       number") rather than from the snapshot's top (units[2].name). Give the codec's own decoding
       the outer path, or rebuild it from the decoder's offset, so the key path is whole.
+  - id: p1-counted-live-tool-caches
+    title: A counted run's tools write the live project's node_modules caches
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-128. A counted run links the live project's node_modules into its frozen export
+      (freshenv.linkInstalledDependencies), so Vitest run there writes its results cache,
+      node_modules/.vite/vitest/<hash>/results.json, into the live project through the link. The
+      TypeScript row of 'A counted run judges a project through its installed tools, offline'
+      asserts the live working tree is left unchanged, and passed only because the scenario's
+      node_modules was a link to the shared installation, outside the tree its inventory walks; with
+      a real node_modules folder holding .vite, the check fails. Decide whether a counted run may
+      write dependency caches in the live node_modules (they are not the project's files, git
+      ignores them), and either say so in the scenario or give the export's tools a cache of their
+      own (Vite's cacheDir, or a .vite of the export's).
