@@ -3735,7 +3735,7 @@ items:
     title: Classify every difference T-132's edge run found, and open a fix item for each one not deliberate
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-138

@@ -5176,8 +5176,6 @@
     make the proof pass. Do not rerun the proof: slice-7 to slice-11 changed exit codes and output
     since, so a new run compares something else. Report the table of all 53, their classification
     and the items opened. No product code changes in this task.
-  done_when:
-    - run: itos config check
 - id: T-138
   type: docs
   title: Bring the open items' whys up to date with the finished refactor
