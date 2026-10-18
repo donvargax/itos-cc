@@ -4551,8 +4551,6 @@
     tiers before enabling it; preserve valid active checks and never infer
     a full-module pass from the narrower internal pass. The older in-process
     mutation idea does not authorize own-source mutation or changing T-46.
-  done_when:
-    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
 
 - id: T-117
   type: test

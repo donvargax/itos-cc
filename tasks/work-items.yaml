@@ -3539,7 +3539,7 @@ items:
     title: Remove the completed refactor's sample count application
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-115]
     kind: task
   - id: renamed-snapshot-unit-namespace
