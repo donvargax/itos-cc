@@ -249,7 +249,7 @@ func (p Plan) start(ctx context.Context, env []string, log io.Writer, execute Co
 	if len(p.Prepare) == 0 {
 		return "", CommandExecution{}, nil
 	}
-	cmd := exec.CommandContext(ctx, p.Prepare[0], p.Prepare[1:]...)
+	cmd := exec.CommandContext(ctx, p.Prepare[0], p.Prepare[1:]...) //nolint:gosec // the collector's Prepare command, which this package's plan for the language names
 	cmd.Dir, cmd.Env = p.Dir, unsetEnv(env, p.CoverEnv...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, log
@@ -265,7 +265,7 @@ func (p Plan) start(ctx context.Context, env []string, log io.Writer, execute Co
 		return why, call, nil
 	}
 	if err != nil {
-		log.Write(out.Bytes())
+		logf(log, "%s", out.Bytes())
 		return "", call, fmt.Errorf("start %s integration coverage: %w", p.Language, err)
 	}
 	return "", call, nil
@@ -274,7 +274,7 @@ func (p Plan) start(ctx context.Context, env []string, log io.Writer, execute Co
 // noIntegration is the integration coverage p's collector could not
 // measure, logged.
 func (p Plan) noIntegration(why string, log io.Writer) coverage.Unmeasured {
-	fmt.Fprintf(log, "itos-cc: coverage: %s: going on without integration coverage: %s\n", p.Dir, why)
+	logf(log, "itos-cc: coverage: %s: going on without integration coverage: %s\n", p.Dir, why)
 	return coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: port.ToolMissing{}, Reason: "no integration coverage: " + why}
 }
 
@@ -375,11 +375,11 @@ func (p Plan) dropRunnerData() error {
 // loadedAny says whether the raw V8 coverage file names a script whose URL
 // holds one of fragments.
 func loadedAny(file string, fragments []string) (bool, error) {
-	f, err := os.Open(file)
+	f, err := os.Open(file) //nolint:gosec // a raw V8 coverage file the run's own tests wrote in its coverage folder
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read alone: closing it after decoding loses nothing
 	var raw struct {
 		Result []struct {
 			URL string `json:"url"`

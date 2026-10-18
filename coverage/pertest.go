@@ -3,7 +3,6 @@ package coverage
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -159,7 +158,7 @@ func startTestCollectors(ctx context.Context, collectors []testCollector, log io
 	var calls []CommandExecution
 	for _, c := range collectors {
 		if c.missing != "" {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: the listed tests' %s processes go unmeasured: %s\n", c.dir, languageLabel(c.language), c.missing)
+			logf(log, "itos-cc: coverage: %s: the listed tests' %s processes go unmeasured: %s\n", c.dir, languageLabel(c.language), c.missing)
 			continue
 		}
 		if len(c.prepare) == 0 {
@@ -176,7 +175,7 @@ func startTestCollectors(ctx context.Context, collectors []testCollector, log io
 			why = err.Error()
 		}
 		if why != "" {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: the listed tests' %s processes go unmeasured: %s\n", c.dir, languageLabel(c.language), why)
+			logf(log, "itos-cc: coverage: %s: the listed tests' %s processes go unmeasured: %s\n", c.dir, languageLabel(c.language), why)
 			continue
 		}
 		out = append(out, c)
@@ -226,10 +225,12 @@ func anyWritten(collectors []testCollector, d string) bool {
 // removes once read, for their data. It returns nil when the tests fail:
 // the tests that fail without any mutant decide no mutant.
 func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer) *coverage.TestCoverage {
-	os.RemoveAll(dir)
-	defer os.RemoveAll(dir)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
+	// This unsupervised measure has always gone on when it cannot clear or
+	// remove its folder; MeasureTestsSupervised reports either.
+	_ = os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
+	if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec // the listed tests' coverage folder keeps its 0755; narrowing it would change what the run creates
+		logf(log, "itos-cc: coverage: %v\n", err)
 		return nil
 	}
 	collectors, _, _ := startTestCollectors(ctx, testCollectors(ctx, p.Root, dir, sources), log, nil, false)
@@ -239,7 +240,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		ids = append(ids, t.ID)
 	}
 	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log); err != nil {
-		fmt.Fprintf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
+		logf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
 		return nil
 	}
 	written := map[string]string{}
@@ -253,12 +254,12 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		// process it starts writing to a directory of its own.
 		for i, id := range ids {
 			d := filepath.Join(dir, ".each", strconv.Itoa(i))
-			if err := os.MkdirAll(d, 0o755); err != nil {
-				fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
+			if err := os.MkdirAll(d, 0o755); err != nil { //nolint:gosec // a listed test's own coverage folder keeps its 0755; narrowing it would change what the run creates
+				logf(log, "itos-cc: coverage: %v\n", err)
 				return nil
 			}
 			if err := runShell(ctx, p.Select([]string{id}), p.Root, eachEnv(collectors, d), log); err != nil {
-				fmt.Fprintf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
+				logf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
 				return nil
 			}
 			if anyWritten(collectors, d) {
@@ -280,17 +281,18 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			if !c.written(d) {
 				continue
 			}
-			os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755)
+			// A folder it cannot make fails the conversion below, which is logged.
+			_ = os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755) //nolint:gosec // the converted profiles' folder keeps its 0755; narrowing it would change what the run creates
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
-			cmd := exec.Command(args[0], args[1:]...)
+			cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
 			cmd.Dir, cmd.Env = c.dir, unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
 			if out, err := cmd.CombinedOutput(); err != nil {
-				fmt.Fprintf(log, "itos-cc: coverage: %s: %s: %v\n%s", id, displayArgs(args), err, out)
+				logf(log, "itos-cc: coverage: %s: %s: %v\n%s", id, displayArgs(args), err, out)
 				continue
 			}
 			entries, err := Load(profile)
 			if err != nil {
-				fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", id, err)
+				logf(log, "itos-cc: coverage: %s: %v\n", id, err)
 				continue
 			}
 			reports = append(reports, coverage.Build(ctx, Disk{}, sources, c.dir, entries))
@@ -328,14 +330,14 @@ func runShell(ctx context.Context, line, dir string, env []string, log io.Writer
 	if ctx.Err() != nil {
 		return context.Cause(ctx)
 	}
-	fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", dir, line)
+	logf(log, "itos-cc: coverage %s$ %s\n", dir, line)
 	cmd := shellCommand(line)
 	cmd.Dir = dir
 	cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
 	err := cmd.Run()
-	log.Write(out.Bytes())
+	logf(log, "%s", out.Bytes())
 	return err
 }
 
@@ -356,5 +358,5 @@ func shellCommand(line string) *exec.Cmd {
 	if runtime.GOOS == "windows" {
 		name, flag = "cmd", "/C"
 	}
-	return exec.Command(name, flag, line)
+	return exec.Command(name, flag, line) //nolint:gosec // the person's own command line, run through the platform shell
 }

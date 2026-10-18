@@ -34,10 +34,10 @@ func (Disk) SameFile(_ context.Context, path string, among []string) (string, bo
 // Load reads the report at file, in the format the domain's Parse finds in
 // its content.
 func Load(file string) ([]coverage.Entry, error) {
-	f, err := os.Open(file)
+	f, err := os.Open(file) //nolint:gosec // a report a plan names or the person passed; reading it is the point
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read alone: closing it after decoding loses nothing
 	return coverage.Parse(f)
 }

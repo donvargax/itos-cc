@@ -12,13 +12,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
-	"unicode"
 
-	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/mutants"
@@ -529,156 +526,6 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 	return plan
 }
 
-// pytestRunner is how a coverage plan runs pytest: without its cache
-// plugin, as every pytest command itos-cc composes runs, so measuring writes
-// no .pytest_cache into the project. Plugins it autoloads stay the
-// project's.
-var pytestRunner = []string{"-m", "pytest", "-q", "-p", "no:cacheprovider"}
-
-// pythonRunner is the runner arguments of a Python coverage plan: pytest's
-// or unittest's, over tests, the test files PythonTests gives, or over the
-// whole suite when tests is nil.
-func pythonRunner(pytest bool, tests []string) []string {
-	switch {
-	case pytest:
-		return append(slices.Clone(pytestRunner), tests...)
-	case tests != nil:
-		return append([]string{"-m", "unittest"}, PythonModules(tests)...)
-	}
-	return []string{"-m", "unittest", "discover"}
-}
-
-// PythonTests is which of tests, the test files that reach a source, a
-// Python own-test run in dir passes its runner: those inside dir named as
-// pytest collects test files by default, test_*.py or *_test.py, relative
-// to dir with forward slashes, sorted. conftest.py, __init__.py and other
-// helpers are left out: pytest applies conftest.py files on its own, and a
-// file it collects no test from would fail a run of it alone.
-func PythonTests(dir string, tests []string) []string {
-	out := []string{}
-	for _, test := range tests {
-		if !PythonTestFile(test) {
-			continue
-		}
-		rel, err := filepath.Rel(dir, test)
-		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
-			continue
-		}
-		if rel = filepath.ToSlash(rel); !slices.Contains(out, rel) {
-			out = append(out, rel)
-		}
-	}
-	sort.Strings(out)
-	return out
-}
-
-// PythonTestFile says whether the file at path is named as pytest collects
-// test files by default, test_*.py or *_test.py: a runnable test, not a
-// conftest.py or a helper.
-func PythonTestFile(path string) bool {
-	base := filepath.Base(path)
-	return strings.HasSuffix(base, ".py") && (strings.HasPrefix(base, "test_") || strings.HasSuffix(base, "_test.py"))
-}
-
-// PythonModules is tests, test files relative to the directory the
-// command runs in as PythonTests gives them, as the dotted modules
-// python -m unittest imports: relative to src for one beneath it, which is
-// on PYTHONPATH as the project's own sources are, else relative to the
-// directory. A path no module name spells is left out.
-func PythonModules(tests []string) []string {
-	var out []string
-	for _, test := range tests {
-		name := strings.TrimSuffix(strings.TrimPrefix(test, "src/"), ".py")
-		parts := strings.Split(name, "/")
-		valid := true
-		for _, part := range parts {
-			valid = valid && pythonIdentifier(part)
-		}
-		if valid {
-			out = append(out, strings.Join(parts, "."))
-		}
-	}
-	return out
-}
-
-func pythonIdentifier(s string) bool {
-	for i, r := range s {
-		if r != '_' && !unicode.IsLetter(r) && (i == 0 || !unicode.IsDigit(r)) {
-			return false
-		}
-	}
-	return s != ""
-}
-
-// pythonPlan measures dir's Python sources with tests, the test files that
-// reach them as PythonTests gives them, or with the whole suite when tests
-// is nil.
-func pythonPlan(dir, out string, tests []string) Plan {
-	py := pythonFor(dir)
-	data := filepath.Join(out, ".coverage")
-	report := filepath.Join(out, "lcov.info")
-	runner := pythonRunner(exec.Command(py, "-c", "import pytest").Run() == nil, tests)
-	plan := Plan{
-		Language: "python",
-		Dir:      dir,
-		Reports:  []string{report},
-		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
-	}
-	if exec.Command(py, "-c", "import coverage").Run() != nil {
-		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
-		return plan
-	}
-	plan.Commands = pythonCommands(py, dir, data, report, runner)
-	pythonIntegration(&plan, py, dir, out)
-	return plan
-}
-
-// pythonCommands is the commands of a Python coverage plan: coverage run
-// of runner, writing data, in dir; then the in-process data files a
-// project's parallel data wrote beside data combined into it
-// (pythonInProcessScript); then data's LCOV report, written to report.
-func pythonCommands(py, dir, data, report string, runner []string) [][]string {
-	return [][]string{
-		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
-		{py, "-c", pythonInProcessScript, data},
-		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
-	}
-}
-
-func pythonPlanSupervised(ctx context.Context, dir, out string, tests []string, execute CommandExecutor) (Plan, []CommandExecution, error) {
-	py := pythonFor(dir)
-	var executions []CommandExecution
-	probe := func(ctx context.Context, module string) error {
-		cmd := exec.CommandContext(ctx, py, "-c", "import "+module)
-		cmd.Dir, cmd.Stdout, cmd.Stderr = dir, io.Discard, io.Discard
-		err := execute(ctx, cmd)
-		executions = append(executions, CommandExecution{Args: append([]string{}, cmd.Args...), Dir: dir, Err: err})
-		return err
-	}
-	pytestErr := probe(ctx, "pytest")
-	if pytestErr != nil && ctx.Err() != nil {
-		return Plan{}, executions, ctx.Err()
-	}
-	runner := pythonRunner(pytestErr == nil, tests)
-	data := filepath.Join(out, ".coverage")
-	report := filepath.Join(out, "lcov.info")
-	plan := Plan{
-		Language: "python", Dir: dir,
-		Reports:  []string{report},
-		Existing: []string{report, filepath.Join(dir, "lcov.info"), filepath.Join(dir, "coverage", "lcov.info")},
-	}
-	if err := probe(ctx, "coverage"); err != nil {
-		if ctx.Err() != nil {
-			return Plan{}, executions, ctx.Err()
-		}
-		plan.Unsupported = fmt.Sprintf("coverage.py is not installed for %s; install it there, or measure with --coverage-command", py)
-		return plan, executions, nil
-	}
-	plan.Commands = pythonCommands(py, dir, data, report, runner)
-	pythonIntegration(&plan, py, dir, out)
-	return plan, executions, nil
-}
-
 // kotlinPlan measures the Kotlin module at dir with its JaCoCo or Kover,
 // running classes, the test classes KotlinTests gives, or the whole suite
 // when classes is nil, and the JVMs its tests start with the JaCoCo agent
@@ -735,245 +582,6 @@ func GradleTests(classes []string) []string { return mutants.GradleTests(classes
 // MavenTests forwards the same existing nil-aware Surefire formatter.
 func MavenTests(classes []string) []string { return mutants.MavenTests(classes) }
 
-// Run executes each plan and returns the coverage of sources. A plan whose
-// commands fail still contributes any report it wrote, because failing tests
-// still measure the code they ran; one that measured none of its files is
-// Missing. A plan whose commands all succeed and write their reports
-// Measures its language, and is never Missing: its files the report never
-// names are untested, since no test loaded them. Problems are written to
-// log.
-//
-// A file of a language whose reports list every class of their module
-// (classInventories) that no test reaches has its executable lines listed,
-// all unexecuted, from the report of a successful plan of its module.
-func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *coverage.Report {
-	var reports []*coverage.Report
-	// classes is, by language and module, the entries of a successful
-	// report that lists every class of the module; unlisted is each
-	// Unreached plan whose files they can list, by its report's index.
-	classes := map[[2]string][]coverage.Entry{}
-	unlisted := map[int]Plan{}
-	for _, p := range plans {
-		// A done context starts no command: the caller reports the stop.
-		if ctx.Err() != nil {
-			break
-		}
-		if p.Unreached {
-			if classInventories[p.Language] {
-				unlisted[len(reports)] = p
-			}
-			reports = append(reports, p.unreached(log))
-			continue
-		}
-		if p.Unsupported != "" {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Unsupported)
-			reports = append(reports, p.missing(port.ToolMissing{}, p.Unsupported))
-			continue
-		}
-		for _, r := range append(p.Reports, p.Integration) {
-			os.Remove(r)
-		}
-		os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755)
-		env := project.NoBytecodeEnv(os.Environ())
-		var noIntegration []coverage.Unmeasured
-		if p.CollectorMissing != "" {
-			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
-		}
-		if p.Notice != "" {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Notice)
-		}
-		if p.CoverDir != "" {
-			p.removeCoverDir()
-			why, _, err := p.start(ctx, env, log, nil)
-			if err != nil {
-				why = err.Error()
-			}
-			switch {
-			case why != "":
-				noIntegration = append(noIntegration, p.noIntegration(why, log))
-				p.removeCoverDir()
-				p.CoverDir = ""
-			case os.MkdirAll(p.CoverDir, 0o755) == nil:
-				env = setEnv(env, p.CoverEnv...)
-			default:
-				p.CoverDir = ""
-			}
-		}
-		failed := ""
-		for _, args := range p.Commands {
-			if ctx.Err() != nil {
-				failed = fmt.Sprintf("; %v", context.Cause(ctx))
-				break
-			}
-			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
-			cmd := exec.Command(args[0], args[1:]...)
-			cmd.Dir = p.Dir
-			cmd.Env = env
-			cmd.Stdout = log
-			cmd.Stderr = log
-			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
-				failed = fmt.Sprintf("; %s: %v", args[0], err)
-			}
-		}
-		integration, why := p.integrate(log)
-		if why != "" {
-			noIntegration = append(noIntegration, p.noIntegration(why, log))
-		}
-		r := load(ctx, p.Reports, integration, p.Dir, p.measures(sources), log)
-		r.SetIntegrationMissing(noIntegration...)
-		// Told by exit status and the report alone, never by what the
-		// runner prints: a run that succeeded and wrote its report measured
-		// its language, whichever files the report names.
-		if failed == "" && len(r.Missing()) == 0 {
-			r.MarkMeasured(p.Language)
-			p.prove(r)
-			reports = append(reports, r)
-			if classInventories[p.Language] && !p.Unattested && len(p.Reports) == 1 {
-				// Read again, whole: r holds only the files p measures,
-				// and the next plan of the module writes over the report.
-				if entries, err := Load(p.Reports[0]); err == nil {
-					classes[[2]string{p.Language, p.Dir}] = entries
-				}
-			}
-			continue
-		}
-		reports = append(reports, p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed))
-	}
-	for i, p := range unlisted {
-		if entries, ok := classes[[2]string{p.Language, p.Dir}]; ok {
-			reports[i].List(ctx, Disk{}, p.Sources, p.Dir, entries)
-		}
-	}
-	return coverage.Merge(reports...)
-}
-
-// unreached is the report of an Unreached plan: its language measured, and
-// none of its sources loaded, as no test reaches them.
-func (p Plan) unreached(log io.Writer) *coverage.Report {
-	fmt.Fprintf(log, "itos-cc: coverage %s: no test reaches %s, so none runs\n", p.Dir, strings.Join(relativeTo(p.Dir, p.Sources), " "))
-	r := &coverage.Report{}
-	r.MarkMeasured(p.Language)
-	p.prove(r)
-	return r
-}
-
-// prove records, of r, the report of p's commands that all succeeded and
-// wrote their reports, which of p's sources it lists completely, at its
-// format's line precision (Report.Lines), and which no test loaded, so it
-// names none of their lines (Report.Unloaded): none of either for an
-// Unattested plan.
-func (p Plan) prove(r *coverage.Report) {
-	if p.Unattested {
-		r.Prove(p.Language, p.Dir, nil)
-		return
-	}
-	r.Prove(p.Language, p.Dir, p.Sources)
-}
-
-// missing is a report of nothing, p's build root Missing for cause, why.
-func (p Plan) missing(cause port.Gap, why string) *coverage.Report {
-	r := &coverage.Report{}
-	r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why})
-	return r
-}
-
-// measures is the sources p's report speaks for, of sources: its own
-// Sources when it measures them alone (OwnSources).
-func (p Plan) measures(sources []string) []string {
-	if p.OwnSources {
-		return p.Sources
-	}
-	return sources
-}
-
-// measured is r, Missing p when r measured none of p's files: the run
-// failed, wrote an empty report, or loaded none of them. A report that
-// measured some of them leaves the rest untested, not missing.
-func (p Plan) measured(r *coverage.Report, cause port.Gap, why string) *coverage.Report {
-	for _, s := range p.Sources {
-		if r.Has(s) {
-			r.SetMissing()
-			return r
-		}
-	}
-	if len(p.Sources) > 0 {
-		r.SetMissing(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: cause, Reason: why})
-	}
-	return r
-}
-
-// IgnoreDir creates dir with a .gitignore that ignores everything in it, so
-// raw reports stay out of version control while the rest of .metrics is
-// committed.
-func IgnoreDir(dir string) error {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("*\n"), 0o644)
-}
-
-// Existing reads reports already on disk, the first one found per plan.
-func Existing(ctx context.Context, plans []Plan, sources []string, log io.Writer) *coverage.Report {
-	var reports []*coverage.Report
-	for _, p := range plans {
-		if p.Unreached {
-			reports = append(reports, p.unreached(log))
-			continue
-		}
-		r := &coverage.Report{}
-		for _, path := range p.Existing {
-			if exists(path) {
-				// A run's integration profile goes with its report.
-				integration := ""
-				if path == p.Reports[0] && p.Integration != "" && exists(p.Integration) {
-					integration = p.Integration
-				}
-				r = load(ctx, []string{path}, integration, p.Dir, p.measures(sources), log)
-				break
-			}
-		}
-		reports = append(reports, p.measured(r, port.NoReport{}, "no report on disk measures its files"))
-	}
-	return coverage.Merge(reports...)
-}
-
-// Files reads reports named on the command line, relative to the working
-// directory.
-func Files(ctx context.Context, paths []string, sources []string, log io.Writer) *coverage.Report {
-	wd, _ := os.Getwd()
-	return load(ctx, paths, "", wd, sources, log)
-}
-
-// load reads the reports at paths; each that cannot be read is Missing. The
-// profile at integration, unless it is "", is read beside them as
-// Integration data, kept to what they count (Report.Integrated); one that
-// cannot be read is only logged.
-func load(ctx context.Context, paths []string, integration, base string, sources []string, log io.Writer) *coverage.Report {
-	var all [][]coverage.Entry
-	var missing []coverage.Unmeasured
-	for _, path := range paths {
-		entries, err := Load(path)
-		if err != nil {
-			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
-			missing = append(missing, coverage.Unmeasured{Report: path, Cause: port.Unreadable{}, Reason: err.Error()})
-			continue
-		}
-		all = append(all, entries)
-	}
-	if integration != "" {
-		entries, err := Load(integration)
-		if err != nil {
-			fmt.Fprintf(log, "itos-cc: coverage: %v\n", err)
-		}
-		in := coverage.Build(ctx, Disk{}, sources, base, all...)
-		all = append(all, in.Integrated(ctx, Disk{}, sources, base, entries))
-	}
-	r := coverage.Build(ctx, Disk{}, sources, base, all...)
-	r.SetMissing(missing...)
-	return r
-}
-
 type packageJSON struct {
 	Scripts         map[string]string `json:"scripts"`
 	Dependencies    map[string]string `json:"dependencies"`
@@ -986,8 +594,8 @@ func (p packageJSON) has(dep string) bool {
 
 func readPackageJSON(dir string) packageJSON {
 	var pkg packageJSON
-	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil {
-		json.Unmarshal(data, &pkg)
+	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil { //nolint:gosec // the selected project's package.json
+		_ = json.Unmarshal(data, &pkg) // a manifest that does not parse names nothing, as if absent
 	}
 	return pkg
 }
@@ -1005,28 +613,16 @@ func installedVersion(dir, dep string) string {
 		Version string `json:"version"`
 	}
 	if module := project.NodeModule(dir, dep); module != "" {
-		if data, err := os.ReadFile(filepath.Join(module, "package.json")); err == nil {
-			json.Unmarshal(data, &pkg)
+		if data, err := os.ReadFile(filepath.Join(module, "package.json")); err == nil { //nolint:gosec // an installed dependency's package.json in the project's node_modules
+			_ = json.Unmarshal(data, &pkg) // a manifest that does not parse names no version: running will tell
 		}
 	}
 	return pkg.Version
 }
 
-// pythonFor prefers the project's own virtualenv, so tests run with the
-// project's dependencies.
-func pythonFor(dir string) string {
-	for _, venv := range []string{".venv", "venv"} {
-		py := filepath.Join(dir, venv, "bin", "python")
-		if exists(py) {
-			return py
-		}
-	}
-	return "python3"
-}
-
 func buildMentions(dir, word string) bool {
 	for _, name := range []string{"build.gradle.kts", "build.gradle"} {
-		if data, err := os.ReadFile(filepath.Join(dir, name)); err == nil && strings.Contains(string(data), word) {
+		if data, err := os.ReadFile(filepath.Join(dir, name)); err == nil && strings.Contains(string(data), word) { //nolint:gosec // the selected module's Gradle build file
 			return true
 		}
 	}
@@ -1050,7 +646,7 @@ func relativeTo(dir string, paths []string) []string {
 // above it, such as a parent's, mentions word.
 func pomMentions(dir, word string) bool {
 	for d := dir; ; d = filepath.Dir(d) {
-		data, err := os.ReadFile(filepath.Join(d, "pom.xml"))
+		data, err := os.ReadFile(filepath.Join(d, "pom.xml")) //nolint:gosec // pom.xml at and above the selected module
 		if err != nil {
 			return false
 		}
@@ -1064,7 +660,7 @@ func pomMentions(dir, word string) bool {
 }
 
 func exists(path string) bool {
-	_, err := os.Stat(path)
+	_, err := os.Stat(path) //nolint:gosec // only asks whether a path of the selected project is there
 	return err == nil
 }
 

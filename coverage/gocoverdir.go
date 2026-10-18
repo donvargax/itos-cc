@@ -60,7 +60,7 @@ func ExecTest(args []string) int {
 		fmt.Fprintln(os.Stderr, "itos-cc: "+ExecArg+" needs a command to run")
 		return 2
 	}
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the test binary and arguments go test -exec hands this wrapper
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if dir := os.Getenv(coverDirEnv); dir != "" {
 		cmd.Env = append(os.Environ(), "GOCOVERDIR="+dir)
@@ -85,9 +85,11 @@ func (p Plan) integrate(log io.Writer) (string, string) {
 	if p.CoverDir == "" {
 		return "", ""
 	}
-	defer p.removeCoverDir()
+	// This unsupervised run has always gone on when its scratch cannot be
+	// removed; integrateSupervised reports it.
+	defer func() { _ = p.removeCoverDir() }()
 	if err := p.dropRunnerData(); err != nil {
-		fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
+		logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 		return "", ""
 	}
 	if !p.written() {
@@ -97,13 +99,13 @@ func (p Plan) integrate(log io.Writer) (string, string) {
 		return "", p.ConverterMissing
 	}
 	for _, args := range p.conversions() {
-		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
-		cmd := exec.Command(args[0], args[1:]...)
+		logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the plan's conversion of its coverage data, which this package names
 		cmd.Dir, cmd.Env = p.Dir, p.convertEnv()
 		cmd.Stdout = log
 		cmd.Stderr = log
 		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
+			logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 			return "", ""
 		}
 	}

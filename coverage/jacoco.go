@@ -160,7 +160,7 @@ func buildFilesText(dir string) string {
 	for d := dir; ; d = filepath.Dir(d) {
 		held := false
 		for _, name := range names {
-			if data, err := os.ReadFile(filepath.Join(d, name)); err == nil {
+			if data, err := os.ReadFile(filepath.Join(d, name)); err == nil { //nolint:gosec // the Gradle or Maven build files at and above the selected module
 				held = true
 				text.Write(data)
 				text.WriteByte('\n')

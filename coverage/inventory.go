@@ -108,12 +108,12 @@ func Inventory(ctx context.Context, r *coverage.Report, language string, log io.
 		}
 		args, report := inventory(dir, abs, out)
 		if len(args) == 0 {
-			os.RemoveAll(out)
+			_ = os.RemoveAll(out) // a temporary folder left behind changes no measurement
 			continue
 		}
-		fmt.Fprintf(log, "itos-cc: coverage %s$ %s (static inventory, no test runs) %s\n", dir, args[0], strings.Join(relativeTo(dir, files), " "))
+		logf(log, "itos-cc: coverage %s$ %s (static inventory, no test runs) %s\n", dir, args[0], strings.Join(relativeTo(dir, files), " "))
 		var stdout bytes.Buffer
-		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the language's static inventory command, which inventory composes
 		cmd.Dir, cmd.Env = dir, project.NoBytecodeEnv(os.Environ())
 		cmd.Stdout, cmd.Stderr = &stdout, log
 		if report != "" {
@@ -133,9 +133,9 @@ func Inventory(ctx context.Context, r *coverage.Report, language string, log io.
 		default:
 			entries, err = coverage.ParseLCOV(&stdout)
 		}
-		os.RemoveAll(out)
+		_ = os.RemoveAll(out) // a temporary folder left behind changes no measurement
 		if err != nil {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: static inventory: %v\n", language, err)
+			logf(log, "itos-cc: coverage: %s: static inventory: %v\n", language, err)
 			failures = append(failures, fmt.Errorf("%s static coverage inventory in %s: %w", language, dir, err))
 			continue
 		}

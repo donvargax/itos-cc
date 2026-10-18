@@ -86,7 +86,9 @@ func TestMissingNodeToolsAreNeverFetched(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			dir, src := vitestProject(t, "5.0.2")
-			os.RemoveAll(filepath.Join(dir, filepath.FromSlash(remove)))
+			if err := os.RemoveAll(filepath.Join(dir, filepath.FromSlash(remove))); err != nil {
+				t.Fatal(err)
+			}
 			plan := onePlan(t, dir, src)
 			if len(plan.Commands) != 0 || !strings.Contains(plan.Unsupported, "not installed") {
 				t.Errorf("plan %+v, want no commands and why", plan)
@@ -202,8 +204,12 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 	if missing := Existing(t.Context(), []Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != (port.NoReport{}) {
 		t.Errorf("existing: missing %v, want the plan with no report on disk", missing)
 	}
-	os.MkdirAll(filepath.Join(dir, "out"), 0o755)
-	os.WriteFile(failing.Reports[0], []byte("mode: set\n"), 0o644)
+	if err := os.MkdirAll(filepath.Join(dir, "out"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(failing.Reports[0], []byte("mode: set\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if missing := Existing(t.Context(), []Plan{failing}, []string{src}, &log).Missing(); len(missing) != 1 || missing[0].Cause != (port.NoReport{}) {
 		t.Errorf("existing: missing %v, want the plan whose report measures none of its files", missing)
 	}
@@ -223,7 +229,9 @@ func TestHelperCoverageCommand(t *testing.T) {
 		return
 	}
 	if report != "-" {
-		os.WriteFile(report, []byte(os.Getenv("HELPER_COVERAGE_TEXT")), 0o644)
+		if err := os.WriteFile(report, []byte(os.Getenv("HELPER_COVERAGE_TEXT")), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if os.Getenv("HELPER_COVERAGE_FAIL") != "" {
 		os.Exit(1)

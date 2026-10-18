@@ -71,7 +71,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				}
 			}
 		}
-		if err := os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(p.Reports[0]), 0o755); err != nil { //nolint:gosec // the report's folder keeps its 0755; narrowing it would change what the run creates
 			failures = append(failures, fmt.Errorf("prepare report directory for %s: %w", p.Language, err))
 			continue
 		}
@@ -81,7 +81,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			noIntegration = append(noIntegration, p.noIntegration(p.CollectorMissing, log))
 		}
 		if p.Notice != "" {
-			fmt.Fprintf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Notice)
+			logf(log, "itos-cc: coverage: %s: %s\n", p.Dir, p.Notice)
 		}
 		if p.CoverDir != "" {
 			if err := p.removeCoverDir(); err != nil {
@@ -106,7 +106,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				}
 				p.CoverDir = ""
 			} else {
-				if err := os.MkdirAll(p.CoverDir, 0o755); err != nil {
+				if err := os.MkdirAll(p.CoverDir, 0o755); err != nil { //nolint:gosec // the integration coverage folder keeps its 0755; narrowing it would change what the run creates
 					failures = append(failures, fmt.Errorf("prepare integration coverage directory: %w", err))
 					continue
 				}
@@ -118,8 +118,8 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 				failures = append(failures, err)
 				break
 			}
-			fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
-			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+			logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's coverage commands, which this package composes for the language
 			cmd.Dir, cmd.Env = p.Dir, env
 			cmd.Stdout, cmd.Stderr = log, log
 			err := execute(ctx, cmd)
@@ -127,7 +127,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			if err != nil {
 				failures = append(failures, fmt.Errorf("%s coverage command %q: %w", p.Language, args, err))
 				planFailed = true
-				fmt.Fprintf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
+				logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 			}
 		}
 		aborted := ctx.Err() != nil
@@ -193,7 +193,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			resultErr = errors.Join(resultErr, fmt.Errorf("remove listed coverage data: %w", err))
 		}
 	}()
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec // the listed tests' coverage folder keeps its 0755; narrowing it would change what the run creates
 		return nil, nil, fmt.Errorf("create listed coverage directory: %w", err)
 	}
 	tc := &coverage.TestCoverage{}
@@ -209,12 +209,12 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Root, line)
+		logf(log, "itos-cc: coverage %s$ %s\n", p.Root, line)
 		name, flag := "sh", "-c"
 		if runtime.GOOS == "windows" {
 			name, flag = "cmd", "/C"
 		}
-		cmd := exec.CommandContext(ctx, name, flag, line)
+		cmd := exec.CommandContext(ctx, name, flag, line) //nolint:gosec // the person's own listed-test command line, run through the platform shell
 		cmd.Dir = p.Root
 		cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
 		cmd.Stdout, cmd.Stderr = log, log
@@ -247,7 +247,7 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 				return nil, executions, fmt.Errorf("listed test %s has no selector", id)
 			}
 			d := filepath.Join(dir, ".each", strconv.Itoa(i))
-			if err := os.MkdirAll(d, 0o755); err != nil {
+			if err := os.MkdirAll(d, 0o755); err != nil { //nolint:gosec // a listed test's own coverage folder keeps its 0755; narrowing it would change what the run creates
 				return nil, executions, fmt.Errorf("prepare coverage for listed test %s: %w", id, err)
 			}
 			if err := run(ctx, id, p.Select([]string{id}), eachEnv(collectors, d)); err != nil {
@@ -268,11 +268,11 @@ func MeasureTestsSupervised(ctx context.Context, p PerTest, dir string, sources 
 			if !c.written(d) {
 				continue
 			}
-			if err := os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Join(dir, ".profiles"), 0o755); err != nil { //nolint:gosec // the converted profiles' folder keeps its 0755; narrowing it would change what the run creates
 				return nil, executions, fmt.Errorf("prepare profile for listed test %s: %w", id, err)
 			}
 			args, profile := c.convert(d, filepath.Join(dir, ".profiles", strconv.Itoa(i)+"."+c.language))
-			cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the collector's conversion of a listed test's data, which this package names
 			cmd.Dir, cmd.Stdout, cmd.Stderr = c.dir, log, log
 			cmd.Env = unsetEnv(project.NoBytecodeEnv(os.Environ()), c.vars...)
 			err := execute(ctx, cmd)
@@ -316,8 +316,8 @@ func (p Plan) integrateSupervised(ctx context.Context, log io.Writer, execute Co
 		return "", p.ConverterMissing, nil, nil
 	}
 	for _, args := range p.conversions() {
-		fmt.Fprintf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
-		cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+		logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
+		cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's conversion of its coverage data, which this package names
 		cmd.Dir, cmd.Env, cmd.Stdout, cmd.Stderr = p.Dir, p.convertEnv(), log, log
 		err := execute(ctx, cmd)
 		calls = append(calls, CommandExecution{Args: append([]string{}, args...), Dir: p.Dir, Err: err})

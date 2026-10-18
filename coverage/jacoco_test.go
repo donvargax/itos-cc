@@ -142,7 +142,9 @@ func TestKotlinPlansNameTheCachedJaCoCoAgentToTheJVMsTheTestsStart(t *testing.T)
 			t.Fatalf("plan %+v, want jacococli to report what the JVMs write", p)
 		}
 		// The class files and sources the build wrote by then.
-		os.MkdirAll(filepath.Join(p.Dir, "build", "classes", "kotlin", "main"), 0o755)
+		if err := os.MkdirAll(filepath.Join(p.Dir, "build", "classes", "kotlin", "main"), 0o755); err != nil {
+			t.Fatal(err)
+		}
 		execs := []string{filepath.Join(p.CoverDir, "a.exec"), filepath.Join(p.CoverDir, "b.exec")}
 		got := p.ConvertWritten(execs)
 		want := []string{"java", "-jar", cli, "report", execs[0], execs[1],
@@ -166,10 +168,16 @@ func TestHelperJVM(t *testing.T) {
 		return
 	}
 	if dest := os.Getenv(JacocoDestDirEnv); dest != "" && os.Getenv(JacocoAgentEnv) != "" {
-		os.WriteFile(filepath.Join(dest, "jvm.exec"), []byte("exec"), 0o644)
+		if err := os.WriteFile(filepath.Join(dest, "jvm.exec"), []byte("exec"), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
-	os.MkdirAll(filepath.Dir(report), 0o755)
-	os.WriteFile(report, []byte(`<?xml version="1.0"?><report name="r"></report>`), 0o644)
+	if err := os.MkdirAll(filepath.Dir(report), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(report, []byte(`<?xml version="1.0"?><report name="r"></report>`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	os.Exit(0)
 }
 
