@@ -3512,8 +3512,8 @@ items:
   - id: T-116
     title: Remove the completed refactor's sample count application
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-115]
     kind: task
   - id: renamed-snapshot-unit-namespace
