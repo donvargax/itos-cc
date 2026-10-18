@@ -3468,3 +3468,24 @@ items:
       sample_ui.go:110). A rerun with every mutant reused prints no mutations to test
       (internal/mutants/run.go:203, progress.go:42-43; ID-MUT-22). Wave 2.
     refs: ["#21", "#49"]
+  - id: mutant-resource-caps
+    title: Each mutant's output and memory are capped by default, sized from the baseline, over a cap a visible kill
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issues #47 and #54. A mutant whose test loops writing output fills unbounded buffers
+      (internal/worktrees/worker.go:150-153, proc_owned.go:229-236) and can take the runner down; a
+      failing baseline prints only its last 20 lines (run_ui.go:255,284, sample_ui.go:110) and
+      --json baseline-failed carries only file. The person (2026-10-18): output and memory are both
+      capped by default. Each cap is sized from the baseline as the timeout is (baseline time x
+      --timeout-factor + 5 s): the baseline's peak memory and output size times a factor, plus a
+      floor, so a cap never sits below what the unmutated tests need; the spec sets the factors,
+      floors and their flags or keys. Where a platform cannot measure memory there is no memory cap
+      rather than a guessed one. Going over a cap counts as killed, as a timeout does (a runaway is
+      the suite catching the mutant; PIT and Stryker agree), under its own outcome over-limit beside
+      timeout in the snapshot and --json, so such kills can always be listed and reviewed. Keep head
+      and tail of output, shared with the baseline's report (#47). Wave 1.
+    refs: ["#47", "#54"]
