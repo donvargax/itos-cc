@@ -776,10 +776,20 @@ refactor-final-proof. The nightly mutation workflow, `nightly.yml`, is disabled 
 (`gh workflow disable Nightly`) until T-46 makes a whole run finish and commit its results.
 `.metrics/mutate/` holds the results committed before both were turned off.
 
-The hooks a clone declares are itos's, `commit-msg` and `pre-push` (`itos hook install`).
-`tools/hooks/pre-commit`, the template's script, which runs the module-wide lint and the
-networked vulnerability check, is not a declared hook of this project: T-120 declares a fast
-project pre-commit hook, checking the staged Go formatting, and documents its setup.
+Each check runs where its cost fits:
+
+- On every commit, the project's `pre-commit` hook, `tools/hooks/pre-commit`: gofmt over the
+  staged version of each Go file the commit stages, and nothing else, so a commit costs a
+  fraction of a second and no network. Each clone declares it (README.md, Hooks);
+  `tools/bin/pre-commit-check` proves it with real commits in a repository of its own (T-120).
+- itos's own hooks (`itos hook install`), `commit-msg` on every commit and `pre-push` on every
+  push.
+- On every push touching more than prose, the CI plan above: gofmt over every tracked Go file,
+  which also catches a commit made in a clone without the hook, and the module-wide
+  golangci-lint and the networked govulncheck, which the template's `tools/hooks/pre-commit` ran
+  on every commit staging code. They are slower and need the network or a download, so they
+  stay here, where they ran before this project declared any pre-commit hook; none was moved or
+  turned off.
 
 Tools are pinned:
 

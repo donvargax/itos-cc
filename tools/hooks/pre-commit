@@ -1,28 +1,43 @@
 #!/bin/sh
-# The pre-commit hook: the linters and the vulnerability check, at the
-# versions pinned here, over the module. itos's own hooks (commit-msg and
-# pre-push) are declared by itos hook install; this one is the project's,
-# declared once in each clone (README.md):
+# The project's pre-commit hook: gofmt over the staged version of each Go
+# file the commit adds, copies, modifies or renames, naming each one gofmt
+# would change. It reads the index alone, never the working tree, and
+# changes neither: no formatting, no staging. itos's own hooks (commit-msg
+# and pre-push) are declared by itos hook install; this one is declared once
+# in each clone (README.md, Hooks):
 #
 #   git config hook.itos-cc-pre-commit.event pre-commit
 #   git config hook.itos-cc-pre-commit.command tools/hooks/pre-commit
 #
 # git runs it from the top of the working tree, under sh on every platform
-# (Git for Windows' on Windows).
+# (Git for Windows' on Windows). tools/bin/pre-commit-check proves it in a
+# repository of its own.
+#
+# Adapted from go-template-itos v0.2.0's tools/hooks/pre-commit
+# (https://github.com/donvargax/go-template-itos), which ran the pinned
+# golangci-lint and the networked govulncheck over the whole module on a
+# commit staging code (T-120). Both stay in itos.yaml's CI plan, which every
+# push runs, alongside its gofmt over every tracked Go file (docs/go.md,
+# Quality checks), so a commit pays only for the files it stages.
 set -eu
 
-# Prose and itos's own data need neither: Markdown, docs/**, tasks/** (the
-# ledger and the work registry) and feature files. itos.yaml, the ledger, the
-# registry and the smoke set are checked by itos's commit-msg hook.
-if [ -z "$(git diff --cached --name-only --diff-filter=ACMRD -- . ':(exclude)*.md' ':(exclude)docs/**' ':(exclude)tasks/**' ':(exclude)features/**/*.feature')" ]; then
-	exit 0
-fi
-
-# golangci-lint at its pinned release, its download checked against the
-# SHA-256 in tools/bin/pinned; the linters are .golangci.yml's.
-tools/bin/pinned golangci-lint run ./...
-
-# govulncheck at the version go.mod's tool block pins, go.sum checking it: a
-# vulnerability the code, its tests included, reaches. It asks the
-# vulnerability database, so it needs the network.
-go tool govulncheck -test ./...
+# Deleted paths are left out, so a commit of prose, of deletions or of files
+# other than Go hands xargs nothing. -z keeps every path whole, spaces
+# included. :0: names the staged blob, whatever the path looks like.
+git diff --cached --name-only -z --diff-filter=ACMR -- '*.go' |
+	xargs -0 sh -c '
+		status=0
+		for path do
+			if ! out=$(git cat-file blob ":0:$path" | gofmt -l 2>&1); then
+				printf "pre-commit: gofmt failed on the staged %s:\n%s\n" "$path" "$out" >&2
+				status=1
+			elif [ -n "$out" ]; then
+				printf "pre-commit: gofmt would change the staged %s\n" "$path" >&2
+				status=1
+			fi
+		done
+		if [ "$status" -ne 0 ]; then
+			echo "pre-commit: run gofmt -w on each, stage the result and commit again" >&2
+		fi
+		exit "$status"
+	' pre-commit

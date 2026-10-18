@@ -988,10 +988,35 @@ sample count app, kept as a reference while porting (q-48), is gone (T-116).
 [CONTRIBUTORS.md](CONTRIBUTORS.md) records where the harvested infrastructure came from. `itos go`
 coordinates the work; an implementing agent uses `itos guide work`.
 
-A clone's hooks are itos's own, `commit-msg` and `pre-push`, which `itos hook install` declares.
-`tools/hooks/pre-commit` is the template's script, running the module-wide lint and the
-networked vulnerability check; this project does not declare it as a hook. T-120 declares a
-fast project pre-commit hook and adds its setup here.
+### Hooks
+
+A clone runs three hooks, each declared in its own `.git/config`, so a fresh clone has none until
+it declares them. `itos hook install` declares itos's own, `commit-msg` and `pre-push`. The
+project's `pre-commit` hook, [`tools/hooks/pre-commit`](tools/hooks/pre-commit), runs gofmt over
+the staged version of each Go file a commit adds, copies, modifies or renames, and names each one
+gofmt would change. It reads the index, not the working tree, so it refuses an unformatted staged
+file whose working copy was fixed later and accepts a formatted one with unstaged edits beside
+it. It formats nothing, stages nothing and skips deleted files; a commit with no staged Go file,
+prose alone for one, runs no gofmt. It needs `gofmt` on `PATH`, the Go toolchain's. Declare it
+once in each clone, from the top of the working tree:
+
+```sh
+git config hook.itos-cc-pre-commit.event pre-commit
+git config hook.itos-cc-pre-commit.command tools/hooks/pre-commit
+```
+
+Check what the clone declares with `git config --get-regexp '^hook\.'`, which lists the two
+lines above beside itos's four, and `git hook list pre-commit`, which names
+`tools/hooks/pre-commit`. `tools/bin/pre-commit-check` proves the hook itself: it declares it the
+same way in a temporary repository of its own and makes real commits there, accepted and refused
+(T-120). Neither proves another clone has declared it; that clone's `git config` does.
+
+The template, go-template-itos v0.2.0, brought `tools/hooks/pre-commit` running the pinned
+golangci-lint and the networked govulncheck over the whole module on every commit that staged
+code. This project's version is the staged gofmt check above instead: a commit pays only for the
+files it stages, and needs no network. The template's two checks, and gofmt over every tracked Go
+file, are steps of `itos.yaml`'s CI plan, which `ci.yml` and `cd.yml` run on every push that
+touches code ([docs/go.md](docs/go.md), Quality checks); none was moved or turned off.
 
 ## CI
 

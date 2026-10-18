@@ -1,0 +1,116 @@
+#!/bin/sh
+# pre-commit-check: proves tools/hooks/pre-commit through real commits in a
+# temporary repository of its own, the hook declared there exactly as
+# README.md tells a clone to declare it, and git itself running it (T-120).
+# It writes only inside that repository, never this one. A gofmt wrapper on
+# PATH counts the hook's gofmt runs, so a commit with no staged Go file is
+# seen to cost none. Exit 1 naming each case that went wrong.
+set -eu
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
+gofmt=$(command -v gofmt) || {
+	echo "pre-commit-check: gofmt is not on PATH" >&2
+	exit 1
+}
+
+tmp=$(mktemp -d)
+trap 'rm -rf -- "$tmp"' EXIT HUP INT TERM
+repo=$tmp/repo
+mkdir -p "$tmp/bin" "$repo/tools/hooks" "$repo/sub dir"
+
+# The wrapper logs one line per run and hands the real gofmt everything.
+cat >"$tmp/bin/gofmt" <<EOF
+#!/bin/sh
+echo run >>"$tmp/gofmt.log"
+exec "$gofmt" "\$@"
+EOF
+chmod +x "$tmp/bin/gofmt"
+PATH=$tmp/bin:$PATH
+
+# Only the repository's own config: no user or system hooks, no signing.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY
+GIT_CONFIG_GLOBAL=/dev/null
+GIT_CONFIG_NOSYSTEM=1
+export PATH GIT_CONFIG_GLOBAL GIT_CONFIG_NOSYSTEM
+cd -- "$repo"
+git init -q -b main
+git config user.name pre-commit-check
+git config user.email pre-commit-check@example.invalid
+git config commit.gpgsign false
+
+good='package p
+
+func F() int { return 1 }
+'
+bad='package p
+func F()   int {return 1}
+'
+printf '%s' "$bad" >legacy.go
+printf '# Fixture\n' >README.md
+git add -- legacy.go README.md
+git commit -q -m 'start with an unformatted file, before the hook'
+
+cp -- "$root/tools/hooks/pre-commit" tools/hooks/pre-commit
+git config hook.itos-cc-pre-commit.event pre-commit
+git config hook.itos-cc-pre-commit.command tools/hooks/pre-commit
+git hook list pre-commit | grep -q . || {
+	echo "pre-commit-check: git $(git --version) lists no pre-commit hook from config" >&2
+	exit 1
+}
+
+failed=0
+fail() {
+	echo "pre-commit-check: $case: $1" >&2
+	failed=1
+}
+# commit <accept|refuse> <runs>: commit what is staged, then check the
+# outcome, the number of gofmt runs, and that the index and the working tree
+# are byte for byte as they were.
+commit() {
+	: >"$tmp/gofmt.log"
+	before=$(git rev-parse HEAD)
+	index=$(git ls-files -s | git hash-object --stdin)
+	tree=$(git diff | git hash-object --stdin)
+	if git commit -q -m "$case" >"$tmp/out" 2>&1; then got=accept; else got=refuse; fi
+	[ "$got" = "$1" ] || fail "wanted $1, got $got: $(cat "$tmp/out")"
+	if [ "$got" = refuse ] && [ "$(git rev-parse HEAD)" != "$before" ]; then
+		fail "refused, yet HEAD moved"
+	fi
+	runs=$(wc -l <"$tmp/gofmt.log" | tr -d ' ')
+	[ "$runs" = "$2" ] || fail "wanted $2 gofmt runs, got $runs"
+	[ "$(git ls-files -s | git hash-object --stdin)" = "$index" ] || fail "the index changed"
+	[ "$(git diff | git hash-object --stdin)" = "$tree" ] || fail "the working tree changed"
+}
+
+case='a formatted file under a spaced path is accepted'
+printf '%s' "$good" >"sub dir/a b.go"
+git add -- "sub dir/a b.go"
+commit accept 1
+
+case='an unformatted staged blob is refused though the working copy is fixed'
+printf '%s' "$bad" >"sub dir/bad file.go"
+git add -- "sub dir/bad file.go"
+printf '%s' "$good" >"sub dir/bad file.go"
+commit refuse 1
+grep -qF 'gofmt would change the staged sub dir/bad file.go' "$tmp/out" ||
+	fail "the refusal does not name the path: $(cat "$tmp/out")"
+git reset -q -- "sub dir/bad file.go"
+rm -- "sub dir/bad file.go"
+
+case='a formatted staged blob is accepted beside unformatted unstaged edits'
+printf '%s\nfunc G() int { return 2 }\n' "$good" >"sub dir/a b.go"
+git add -- "sub dir/a b.go"
+printf 'func H()   int {return 3}\n' >>"sub dir/a b.go"
+commit accept 1
+git checkout -q -- "sub dir/a b.go"
+
+case='a prose-only commit beside an unformatted tracked file runs no gofmt'
+printf '# Fixture\n\nProse.\n' >README.md
+git add -- README.md
+commit accept 0
+
+case='deleting the unformatted file runs no gofmt'
+git rm -q -- legacy.go
+commit accept 0
+
+exit "$failed"
