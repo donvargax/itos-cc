@@ -52,5 +52,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0047: Adapters may import the domain they serve; nothing outside the domain is imported into it](0047-adapters-may-import-the-domain-they-serve-nothing-outside-the-domain-is-imported-into-it.md)
 - [ADR-0048: CI is a fast Linux push gate and CD runs the full suite on every system and cuts the release](0048-ci-is-a-fast-linux-push-gate-and-cd-runs-the-full-suite-on-every-system-and-cuts-the-release.md)
 - [ADR-0049: The scenarios are the spec and the tests that kill mutants; unit tests only for domain rules](0049-the-scenarios-are-the-spec-and-the-tests-that-kill-mutants-unit-tests-only-for-domain-rules.md)
+- [ADR-0050: A domain may carry struct tags used only for serialization, and holds no encoding logic](0050-a-domain-may-carry-struct-tags-used-only-for-serialization-and-holds-no-encoding-logic.md)
 
 <!-- itos:decisions:end -->
