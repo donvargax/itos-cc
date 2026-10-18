@@ -18,6 +18,7 @@ queue:
   - portable-go-evidence
   - comment-free-unit-hash
   - since-broad-stale-panic
+  - worker-copy-pristine
   - T-102
   - T-103
   - T-104
