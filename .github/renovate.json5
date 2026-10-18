@@ -29,11 +29,12 @@
 			matchManagers: ["github-actions"],
 			pinDigests: true,
 		},
-		// main is itos-cc's only base branch, so every update commit lands there, and itos refuses a
-		// build or ci commit without a Task footer. Each one names T-131, the task that gave them the
-		// footer; a closed task stays in the ledger, so the footer keeps validating.
+		// itos refuses a build or ci commit without a Task footer, so every update commit names T-131,
+		// the task that gave them the footer; a closed task stays in the ledger, so the footer keeps
+		// validating. main is itos-cc's only base branch, so the rule matches every package rather
+		// than a base branch, which Renovate's validator accepts only beside baseBranchPatterns.
 		{
-			matchBaseBranches: ["main"],
+			matchPackageNames: ["*"],
 			commitTrailers: ["Task: T-131"],
 		},
 		{
