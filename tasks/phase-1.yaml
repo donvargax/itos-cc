@@ -5026,3 +5026,50 @@
     opens a pull request after prNotPendingHours and branch-automerges only once every check on it
     is green, ci.yml's and cd.yml's on all three systems: say so in README's CI section.
     go-template-itos#3 tracks the template's side.
+- id: T-132
+  type: test
+  title: Prove the refactored binary matches the pre-refactor one but for its listed changes
+  why: >
+    The refactor's one final proof (docs/go.md step 9), by the method the person settled on
+    2026-10-17, which replaces the full command-line matrix of 2026-10-11. The baseline is the
+    binary built from T-29's parent, 51f3952. The refactored side is main's head at this task's
+    start: its product code last changed in fe21721 (T-119), and T-120 and T-130 changed only
+    hooks and tests. The work registry's entry for this task (was refactor-final-proof) holds
+    every move's notes: the deliberate differences and the edge cases each move listed. They are
+    this task's case list; git keeps them after the close drops the registry's why.
+
+    First, give the binary driver (features/, TestFeatures) a way to run a prebuilt binary rather
+    than building one: an environment variable or a test flag, documented in features/README.md.
+    It must change nothing when unset. Run today's whole binary-driver suite against the baseline
+    binary. A scenario passing on both binaries is proven unchanged (main's cd.yml shows the new
+    binary passing). Name every scenario that fails on the baseline, with its failing step, and
+    classify it as exactly one of these:
+    - a listed deliberate difference;
+    - a red-first feat or fix added during the refactor, citing its commits;
+    - a scenario corrected by a fix commit, citing it;
+    - an unlisted difference.
+
+    The scenarios needing the real language tools (ITOS_CC_LANGUAGE_TOOLS) skip where the tools
+    are missing. Run them where they exist, through a manual workflow_dispatch workflow on Linux
+    (committed, for example .github/workflows/refactor-proof.yml) that builds both binaries. Report
+    its run.
+
+    Second, compare stdout, stderr and the exit code of both binaries over the edge cases the
+    moves listed that no scenario holds, through a small committed script in tools/ (for example
+    tools/bin/refactor-proof) with its case list. Include the files a case writes where its note
+    asks. Normalize only temporary paths, durations and the version string, and list each
+    normalization rule in the report. Mutation cases run on small Go and TypeScript fixtures,
+    never on this repository's code. There is no combinatorial matrix.
+
+    Every unlisted difference becomes a fix item named in the report, and the proof reruns after
+    the fix. Nothing joins the deliberate list to make the proof pass. Exit codes have not changed
+    yet: exit 130 on interrupt and the semantic exit codes come after this task and are no part of
+    it. Serve and graph stay on their legacy code, so compare serve's listed cases as they are.
+    Don't turn the mutation proof or the nightly back on. No new dependencies, no worktrees (build
+    the baseline in a scratch folder from git archive), no own-code mutation runs.
+
+    Report: the classified list of scenarios failing on the baseline, the edge-case results with
+    every difference and its classification, the normalization rules, the runs, and the fix items
+    opened.
+  done_when:
+    - run: go build ./... && itos config check
