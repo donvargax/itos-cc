@@ -159,8 +159,22 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, written Written) in
 		ui.Line("no source files to mutate")
 		p.Elsewhere(ctx, found.Elsewhere)
 	case found.Ran:
-		c.present(ctx, p, found, &result)
+		// An interrupted run, or one whose owned cleanup failed, reports its
+		// files as a fail-fast run does, each with its state and work.
+		partial := c.FailFast || found.Interrupted != nil || cleanupFailures(found.Results)
+		if partial && result.Work == nil {
+			result.Work = &runWork{}
+		}
+		c.present(ctx, p, found, &result, partial)
 		p.Elsewhere(ctx, found.Elsewhere)
+		p.cleanupFailed(found.Results)
+		if found.Interrupted != nil {
+			if stop := found.Stop; stop != nil {
+				result.Stop = &runStop{Stopped: true, Rule: stop.Rule, Subject: p.stopSubject(stop)}
+			}
+			p.Problems = append(p.Problems, ui.Problems(found.Interrupted)...)
+			return ui.Emit(c.JSON, result, p.Problems)
+		}
 	}
 	if err != nil {
 		return ui.Emit(c.JSON, result, append(p.Problems, ui.Problems(runError(err, ui.Rel))...))
@@ -220,7 +234,7 @@ func GapProblems(ui *cli.UI, ms []coverage.Unmeasured) []*cli.Problem {
 
 // present prints and reports each file's result a run judged, strict
 // coverage's findings first.
-func (c Run) present(ctx context.Context, p *Presentation, found RunFound, result *runResult) {
+func (c Run) present(ctx context.Context, p *Presentation, found RunFound, result *runResult, partial bool) {
 	ui, failUncovered, scope := p.UI, c.FailUncovered != nil, found.Lines
 	if found.Strict {
 		p.strictCoverage(found.Results, scope)
@@ -233,7 +247,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		// mutants, each with its state.
 		var work *runWork
 		state, cache := "", ""
-		if c.FailFast {
+		if partial {
 			work = workOf(r.Mutants)
 			result.Work.add(work)
 			state, cache = failFastState(r, work), "incomplete"
@@ -241,7 +255,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 				cache = "complete"
 			}
 		}
-		if c.FailFast && (r.BaselineFailed || len(r.FailedSelections) > 0) {
+		if partial && (r.BaselineFailed || len(r.FailedSelections) > 0) {
 			// It counts what it ran and reused before the stop, as its
 			// completed work does.
 			f := runFile{File: r.Rel, Ran: r.Ran, Reused: r.Reused, Baseline: r.Baseline, Judged: r.Judged, Mutants: jsonMutants(r.Mutants),
@@ -345,6 +359,37 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		}
 		p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
 	}
+}
+
+// cleanupFailures says whether a judgment's owned cleanup failed in any of
+// results.
+func cleanupFailures(results []mutants.FileResult) bool {
+	for _, r := range results {
+		if len(r.CleanupFailures) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanupFailed reports mutation.cleanup-failed for each owned process
+// group whose cleanup did not finish (ADR-0021, q-37): the internal exit,
+// beside the run's other problems, one for each group.
+func (p *Presentation) cleanupFailed(results []mutants.FileResult) {
+	for _, r := range results {
+		for _, c := range r.CleanupFailures {
+			p.report(CleanupProblem(c))
+		}
+	}
+}
+
+// CleanupProblem is mutation.cleanup-failed for the owned process group
+// whose cleanup c says failed, naming the group and its command.
+func CleanupProblem(c mutants.WorkerCleanupFailed) *cli.Problem {
+	return cli.NewProblem(cli.CodeInternal, "mutation.cleanup-failed",
+		fmt.Sprintf("the owned process group %d of %q did not end by its cleanup deadline: %v", c.ProcessGroup, c.Command, c.Cause),
+		"Stop what it left running; a command that detaches from its process group or session is not supported.").
+		With("process_group", c.ProcessGroup).With("command", c.Command)
 }
 
 // strictCoverage reports, for every judged function of a file of a strict

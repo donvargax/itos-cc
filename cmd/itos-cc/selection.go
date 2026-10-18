@@ -22,8 +22,9 @@ func classifySelection(err error) ([]*cli.Problem, bool) {
 // selectionProblem is failure's problem: --changed with no git is the
 // environment's, exit 82, and an argument that names nothing a usage error,
 // exit 80, as file_selection.feature reads them; a walk or a read that
-// failed is the internal 100, its own message whole; an interrupt
-// is 130 (decision 31). None has a default; a kind with no case here is the 100 of a bug.
+// failed is the internal 100, its own message whole; a cancellation an
+// interrupt caused, cli.ErrInterrupted its cause, is 130 (decision 38), and
+// any other the internal 100. None has a default; a kind with no case here is the 100 of a bug.
 func selectionProblem(failure port.Failure) *cli.Problem {
 	p := cli.Internal(failure)
 	switch e := failure.(type) {
@@ -38,7 +39,9 @@ func selectionProblem(failure port.Failure) *cli.Problem {
 	case *port.Unreadable:
 		p = cli.Internal(e)
 	case *port.Cancelled:
-		p = cli.Interrupted()
+		if errors.Is(e.Cause, cli.ErrInterrupted) {
+			p = cli.Interrupted()
+		}
 	}
 	return p
 }

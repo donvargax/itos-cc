@@ -82,6 +82,8 @@ as **/porttest/**, are left out, however they are chosen: a path or
 			"coverage.tool-missing      with --threshold, a tool coverage needs is not installed",
 			"coverage.no-report         with --threshold and --use-existing-coverage, no report measures the files",
 			"coverage.report-unreadable with --threshold, a --coverage-report cannot be read",
+			"coverage.cleanup-failed    a coverage command's owned process group did not end by its deadline: process_group, command",
+			"interrupted                SIGINT or SIGTERM stopped it",
 			"config.invalid             itos-cc.yaml cannot be read: file, and key for an exclude glob",
 		},
 		Exits: []cli.Exit{
@@ -235,10 +237,17 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		printTable(ui.Stdout, worst)
 	}
 	if c.Threshold == nil {
+		// A coverage command whose owned group did not end is a problem
+		// with or without one (ADR-0021).
+		var problems []*cli.Problem
 		for _, m := range out.Unmeasured {
+			if _, failed := m.Cause.(covport.CleanupFailed); failed {
+				problems = append(problems, ui.Problems(m)...)
+				continue
+			}
 			ui.Line("no coverage for " + m.String())
 		}
-		return ui.Emit(c.JSON, out, nil)
+		return ui.Emit(c.JSON, out, problems)
 	}
 	// A threshold cannot be checked for code coverage did not measure.
 	var problems []*cli.Problem

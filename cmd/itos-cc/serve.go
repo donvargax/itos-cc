@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
 	"time"
 
@@ -42,7 +41,6 @@ updates their numbers. Listens on localhost only, until interrupted.`,
 		"serve.repo-unreadable  a repository cannot be read",
 	},
 	exits: []exitDoc{
-		{0, "interrupted"},
 		{cli.CodeTemporary, "the port is in use; it may be free later"},
 		{cli.CodeUsage, "a usage error: a bad flag, or a repository that cannot be read"},
 	},
@@ -53,8 +51,10 @@ updates their numbers. Listens on localhost only, until interrupted.`,
 	run: runServe,
 }
 
-// runServe serves until an interrupt, which cancels a context of its own
-// over ctx, shuts the server down.
+// runServe serves until an interrupt cancels ctx, the command's, which
+// shuts the server down: it then reports the address beside the
+// interrupted problem, exit 130, as every interrupted command does
+// (decision 38). Any other end of ctx's is the failure it is.
 func runServe(ctx context.Context, in *invocation) (any, error) {
 	roots := in.args
 	if len(roots) == 0 {
@@ -65,8 +65,6 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 	if err != nil {
 		return nil, cli.NewProblem(cli.CodeUsage, "serve.repo-unreadable", err.Error(), "Name repositories that exist.")
 	}
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
-	defer stop()
 	go srv.Watch(ctx, in.duration("interval"))
 
 	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(in.integer("port")))
@@ -81,9 +79,13 @@ func runServe(ctx context.Context, in *invocation) (any, error) {
 	if err := httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return nil, err
 	}
-	return struct {
+	served := struct {
 		Address string `json:"address"`
-	}{addr}, nil
+	}{addr}
+	if ctx.Err() != nil {
+		return served, context.Cause(ctx)
+	}
+	return served, nil
 }
 
 // shutdownWhenDone shuts srv down once ctx is done, giving what it is

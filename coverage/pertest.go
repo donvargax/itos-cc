@@ -224,7 +224,7 @@ func anyWritten(collectors []testCollector, d string) bool {
 // MeasureTests runs p's tests for coverage of sources, with dir, which it
 // removes once read, for their data. It returns nil when the tests fail:
 // the tests that fail without any mutant decide no mutant.
-func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer) *coverage.TestCoverage {
+func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) *coverage.TestCoverage {
 	// This unsupervised measure has always gone on when it cannot clear or
 	// remove its folder; MeasureTestsSupervised reports either.
 	_ = os.RemoveAll(dir)
@@ -239,7 +239,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 	for _, t := range p.Tests {
 		ids = append(ids, t.ID)
 	}
-	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log); err != nil {
+	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log, execute); err != nil {
 		logf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
 		return nil
 	}
@@ -258,7 +258,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 				logf(log, "itos-cc: coverage: %v\n", err)
 				return nil
 			}
-			if err := runShell(ctx, p.Select([]string{id}), p.Root, eachEnv(collectors, d), log); err != nil {
+			if err := runShell(ctx, p.Select([]string{id}), p.Root, eachEnv(collectors, d), log, execute); err != nil {
 				logf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
 				return nil
 			}
@@ -326,17 +326,20 @@ func hasCoverData(dir string) bool {
 // runShell runs line through the platform shell in dir, with env set in
 // the environment and its output written to log. Once ctx is done it starts
 // nothing and returns its cause.
-func runShell(ctx context.Context, line, dir string, env []string, log io.Writer) error {
+func runShell(ctx context.Context, line, dir string, env []string, log io.Writer, execute CommandExecutor) error {
 	if ctx.Err() != nil {
 		return context.Cause(ctx)
 	}
 	logf(log, "itos-cc: coverage %s$ %s\n", dir, line)
 	cmd := shellCommand(line)
+	if execute != nil {
+		cmd = shellCommandContext(ctx, line)
+	}
 	cmd.Dir = dir
 	cmd.Env = setEnv(project.NoBytecodeEnv(os.Environ()), env...)
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
-	err := cmd.Run()
+	err := runCommand(ctx, cmd, execute)
 	logf(log, "%s", out.Bytes())
 	return err
 }
@@ -349,6 +352,14 @@ func Shell(line string, log io.Writer) error {
 	cmd.Stdout = log
 	cmd.Stderr = log
 	return cmd.Run()
+}
+
+// shellCommandContext is shellCommand under ctx, which kills it once done.
+func shellCommandContext(ctx context.Context, line string) *exec.Cmd {
+	cmd := shellCommand(line)
+	owned := exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...) //nolint:gosec // the person's own command line, run through the platform shell
+	owned.Args = cmd.Args
+	return owned
 }
 
 // shellCommand is line run through the platform shell: sh, or cmd on

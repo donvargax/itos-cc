@@ -11,6 +11,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -27,14 +28,13 @@ const (
 	CodeUnknownCommand = 81  // a command or subcommand that is none
 	CodeEnvironment    = 82  // a requirement not met: the environment lacks something
 	CodeInternal       = 100 // an error nothing classified
-	CodeInterrupted    = 130 // an interrupt stopped it (decision 31)
+	CodeInterrupted    = 130 // an interrupt stopped it (decision 38)
 )
 
 // Precedence picks the exit code of a run with problems of several codes:
 // the first of these it has, not the highest, the one that says the most
 // about why nothing else could be trusted (q-54, decision 36, docs/CLI.md's
-// exit codes). The interrupt is first, though no itos-cc command reports
-// one yet.
+// exit codes). The interrupt is first.
 var Precedence = []int{CodeInterrupted, CodeUsage, CodeUnknownCommand, CodeInternal, CodeEnvironment, CodeTemporary, CodeNo}
 
 // Issues is where a person reports a bug.
@@ -139,8 +139,9 @@ func ExitCode(problems []*Problem) int {
 }
 
 // Problems is err as the problems it reports. A problem is itself; a
-// failure a classifier claims is that classifier's problems; anything else
-// is one internal problem, err whole. Errors joined (errors.Join) are each
+// failure a classifier claims is that classifier's problems; a cause no
+// classifier claims that an interrupt gave, ErrInterrupted, is the
+// interrupt; anything else is one internal problem, err whole. Errors joined (errors.Join) are each
 // their own problems once one of them is claimed, so one never hides
 // another.
 func (u *UI) Problems(err error) []*Problem {
@@ -152,6 +153,9 @@ func (u *UI) Problems(err error) []*Problem {
 	claimed := false
 	for _, leaf := range all {
 		p, ok := u.classify(leaf)
+		if !ok && errors.Is(leaf, ErrInterrupted) {
+			p, ok = []*Problem{Interrupted()}, true
+		}
 		claimed = claimed || ok
 		if !ok {
 			p = []*Problem{Internal(leaf)}

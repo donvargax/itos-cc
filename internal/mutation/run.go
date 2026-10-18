@@ -52,6 +52,9 @@ type RunFound struct {
 	Elsewhere []mutants.StaleException
 	Orphans   []mutants.Orphan
 	Lines     mutants.LineScope
+	// Interrupted is the cause of the run's context once it stopped while
+	// it judged, as an interrupt stops it: Results holds what it kept.
+	Interrupted error
 }
 
 // CoverageGaps is why strict coverage stopped a run before any mutant: the
@@ -226,6 +229,12 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		found.Results, found.Stop, err = mutants.RunFailFast(ctx, sources, opt, ff)
 	} else {
 		found.Results, err = mutants.Run(ctx, sources, opt)
+	}
+	var stopped mutants.Stopped
+	if errors.As(err, &stopped) {
+		// It kept what it finished; no orphan is judged of a run cut short.
+		found.Ran, found.Interrupted = true, stopped.Cause
+		return found, nil
 	}
 	if err != nil {
 		found.Results, found.Stop = nil, nil

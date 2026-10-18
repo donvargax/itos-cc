@@ -23,13 +23,14 @@ func classifySnapshot(err error) ([]*cli.Problem, bool) {
 // that could not be read, written or removed, or a folder of them listed,
 // is the internal 100, its message err's text whole, the
 // library's with whatever a caller wrapped it in, such as the snapshot's
-// name mutation gives, as when no classifier claimed it; and an interrupt
-// is 130 (decision 31). A command that can go on without a snapshot, as
+// name mutation gives, as when no classifier claimed it; a cancellation
+// an interrupt caused, cli.ErrInterrupted its cause, is 130 (decision 38),
+// and any other the internal 100. A command that can go on without a snapshot, as
 // scrap without its last one, says so and never brings the failure here.
 // None has a default; a kind with no case here is the 100 of a bug.
 func snapshotProblem(err error, failure snapport.Failure) *cli.Problem {
 	p := cli.Internal(err)
-	switch failure.(type) {
+	switch e := failure.(type) {
 	case *snapport.Unreadable:
 		p = cli.Internal(err)
 	case *snapport.Unwritable:
@@ -39,7 +40,9 @@ func snapshotProblem(err error, failure snapport.Failure) *cli.Problem {
 	case *snapport.Unlistable:
 		p = cli.Internal(err)
 	case *snapport.Cancelled:
-		p = cli.Interrupted()
+		if errors.Is(e.Cause, cli.ErrInterrupted) {
+			p = cli.Interrupted()
+		}
 	}
 	return p
 }

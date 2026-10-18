@@ -97,7 +97,7 @@ var (
 // and a done ctx Cancelled.
 func (t Tree) Discover(ctx context.Context, roots []string) (sources, tests []string, failure port.Failure) {
 	if ctx.Err() != nil {
-		return nil, nil, &port.Cancelled{}
+		return nil, nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	for _, root := range roots {
 		if failure, ok := t.Failures[root]; ok {
@@ -118,7 +118,7 @@ func (t Tree) Discover(ctx context.Context, roots []string) (sources, tests []st
 // copy, NoGit when it is set, or Cancelled once ctx is done.
 func (t Tree) Changed(ctx context.Context) ([]string, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if t.NoGit != nil {
 		return nil, t.NoGit
@@ -148,7 +148,7 @@ func (t Tree) Exists(ctx context.Context, path string) bool {
 // absolute, Unreadable when it has none, or Cancelled once ctx is done.
 func (t Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if rel, ok := t.rel(t.abs(path)); ok {
 		if text, ok := t.Contents[rel]; ok {

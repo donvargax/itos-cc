@@ -35,14 +35,36 @@ release instead: itos-cc is at 0.x.
 | 81   | An unknown command or subcommand.                                                      |
 | 82   | A requirement not met: the environment lacks something, a tool, a report, a git repository. |
 | 100  | An internal error that itos-cc could not classify, a panic included. Report it.        |
+| 130  | Interrupted: SIGINT (Ctrl-C) or SIGTERM stopped the command.                           |
 
 The codes are square/exit's, keeping 75 for a failure that may pass when
 run again (decision 36): before it, a usage error and an unknown command
 were 2, a requirement not met 3, and an internal error 70. A run with
-problems of several kinds exits with the first of 80 and 81, 100, 82, 75,
-and 1 that it has, not the highest code (q-54). Every command reports
-through `internal/cli`, whose `Precedence` holds this order and puts 130,
-an interrupt, before it; no command reports an interrupt yet.
+problems of several kinds exits with the first of 130, 80 and 81, 100, 82,
+75, and 1 that it has, not the highest code (q-54). Every command reports
+through `internal/cli`, whose `Precedence` holds this order.
+
+### Interrupts
+
+Every command, `serve` and `mutation run --count` included, stops on SIGINT
+and on SIGTERM (decision 38): its context is cancelled, it says once that it
+was interrupted, `itos-cc: interrupted …` on stderr or the rule
+`interrupted`, exit 130, in `--json`, and exits 130. On Linux and macOS it
+then raises the signal that came again, with its default action, so a shell
+reads 130 for SIGINT and 143 for SIGTERM and stops a loop over it; Windows,
+where Ctrl-C and CTRL_BREAK arrive as SIGINT, exits 130. `serve` reports the
+address it served beside the problem. A second interrupt ends the command at
+once, unless the process groups it owns are being killed and joined then
+(ADR-0021), which it waits for, up to their shared five-second deadline; the
+command then ends on its own. A cancellation that is no interrupt, such as a
+`--fail-fast` stop or a mutant's timeout, keeps its own classification. An
+interrupted `mutation run` keeps what it finished, as a `--fail-fast` stop
+does: each file has its `"state"` and `"work"`, a file it cut short gets no
+summary comment, and its `--json` gives no `"stop"`; a counted run's report
+says completion `interrupted`. An owned process group whose cleanup does not
+finish by its deadline is `mutation.cleanup-failed`, or for a coverage
+command `coverage.cleanup-failed`, exit 100, one problem for each group,
+beside the run's other problems.
 
 ### `--json`
 
@@ -101,7 +123,6 @@ output of the commands it runs passes as it is.
 | `count.unsupported-scope`    | 80   | mutation run --count | none                                                  |
 | `count.preparation-failed`   | 1, 82 (a tool missing) | mutation run --count | `stage`                             |
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
-| `count.interrupted`        | 75   | mutation run --count | none                                                  |
 | `fail-fast.platform`         | 82   | mutation run --fail-fast | `platform`                                        |
 | `coverage.command-needs-report` | 80 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
@@ -124,6 +145,9 @@ output of the commands it runs passes as it is.
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
 | `serve.repo-unreadable`      | 80   | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
+| `mutation.cleanup-failed`    | 100  | mutation run   | `process_group`, `command`                                  |
+| `coverage.cleanup-failed`    | 100  | crap, mutation run | `process_group`, `command`, `dir`, `language`           |
+| `interrupted`                | 130  | every          | none                                                        |
 | `internal`                   | 100  | every          | none                                                        |
 
 ## The rules
@@ -476,4 +500,3 @@ verdict and no exit code changes for it.
 | 17 | `--threshold` is a CRAP score in `crap` and a similarity in `dry`. | `crap --threshold 30`, `dry --threshold 0.9` |
 | 32 | An internal error's message is Go's error text. | a source file that cannot be read |
 | Shell completion, go-template-itos's rule 41 | No `completion <shell>` command and no hidden `__complete`, so no shell completes itos-cc's commands and flags. | `itos-cc completion bash` exits 81 as an unknown command |
-| Exit 130 on interrupt, go-template-itos's rule 42 | Ctrl-C does not cancel a command's context and exit 130 with one stderr line (`interrupted` with `--json`): most commands end by the system's default action, `mutation run --count` exits 75 with `count.interrupted`, and `serve` shuts down and exits 0. | Ctrl-C during `itos-cc crap` |

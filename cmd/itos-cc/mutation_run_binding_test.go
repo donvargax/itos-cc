@@ -52,7 +52,7 @@ func newMutationRunFixture(t *testing.T) *mutationRunFixture {
 	f.workers = f.memory.workers()
 	f.snapshots = &mutantstest.Snapshots{RootDir: root}
 	f.edits = &mutantstest.SourceEdits{Files: f.memory.files, Write: f.memory.Write}
-	f.adapters = diskAdapters(&f.stderr)
+	f.adapters = diskAdapters(&f.stderr, nil)
 	f.adapters.Snapshots, f.adapters.SourceEdits = f.snapshots, f.edits
 	f.adapters.Workers, f.adapters.Toolchain, f.adapters.Fingerprints, f.adapters.Reach = f.workers, inputs, inputs, inputs
 	f.adapters.Tree, f.adapters.Surroundings = seltest.TreeOf(root, relative, nil), inputs

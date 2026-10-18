@@ -160,7 +160,7 @@ func TestDispatch(t *testing.T) {
 
 func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	t.Parallel()
-	contract := []string{"Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  80 ", "  100 ", "Examples:", cli.Issues}
+	contract := []string{"Options:", "--json", `"schema": 1`, "Exit codes:", "  80 ", "  100 ", "  130 interrupted", "Examples:", cli.Issues}
 	// serve, on its legacy handler, prints its own, in the same layout.
 	for _, c := range legacy {
 		h := c.help()
@@ -171,7 +171,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 		}
 	}
 	// Every other command prints its from kong's model and its Contract.
-	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters(io.Discard))
+	parser, err := parserOf(t.Context(), &commandLine{}, stdUI(), diskAdapters(io.Discard, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +199,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  80 ", "  81 ", "Examples:", cli.Issues} {
+		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  80 ", "  81 ", "  130 interrupted", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}
@@ -234,7 +234,7 @@ func TestAPanicIsAnInternalError(t *testing.T) {
 	// Serial: it swaps os.Stdout to read what execute prints.
 	boom := &command{name: "boom", run: func(context.Context, *invocation) (any, error) { panic("oops") }}
 	var code int
-	out := stdout(t, func() { code = execute(t.Context(), boom, []string{"--json"}, diskAdapters(io.Discard)) })
+	out := stdout(t, func() { code = execute(t.Context(), boom, []string{"--json"}, diskAdapters(io.Discard, nil)) })
 	if code != 100 || !strings.Contains(out, `"rule": "internal"`) || !strings.Contains(out, "boom panicked: oops") {
 		t.Errorf("exit %d, stdout %q: want exit 100 and an internal problem", code, out)
 	}

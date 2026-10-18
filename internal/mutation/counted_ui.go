@@ -2,6 +2,7 @@ package mutation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,6 +19,9 @@ type countedResult struct {
 	Selected []countedSite      `json:"selected"`
 	Subjects countedSubjects    `json:"subjects"`
 	Stages   []preparationStage `json:"stages"`
+	// cleanups are the owned process groups of trials whose cleanup did
+	// not finish, which the run reports each as mutation.cleanup-failed.
+	cleanups []mutants.WorkerCleanupFailed
 }
 
 // preparationStage is one observed stage of a counted run, in its report.
@@ -169,6 +173,9 @@ func (r *countedProgress) Counted(ctx context.Context, found CountedFound) {
 		if found.Interrupted != nil {
 			p.report(countedInterrupted(found.Interrupted))
 		}
+		for _, c := range found.Report.cleanups {
+			p.report(CleanupProblem(c))
+		}
 		for _, e := range found.Stale {
 			p.StaleExceptions(ctx, e.File, []mutants.StaleException{e})
 		}
@@ -190,12 +197,15 @@ func (r *countedProgress) Counted(ctx context.Context, found CountedFound) {
 	}
 }
 
-// countedInterrupted is the problem of a counted run that cause, a signal,
-// stopped.
+// countedInterrupted is the problem of a counted run that cause stopped:
+// an interrupt's, the interrupted problem every command reports (decision
+// 38), which count.interrupted was; any other cause, which nothing in a
+// counted run gives, the internal failure it would be.
 func countedInterrupted(cause error) *cli.Problem {
-	return cli.NewProblem(cli.CodeTemporary, "count.interrupted",
-		fmt.Sprintf("the counted run was %v, so its report is partial: only the judgments it shows are proven", cause),
-		"Run it again to judge the selection in full.")
+	if errors.Is(cause, cli.ErrInterrupted) {
+		return cli.Interrupted()
+	}
+	return cli.Internal(cause)
 }
 
 // printCounted writes the plain report: the draw, each selected site, and
@@ -254,7 +264,8 @@ func (p *Presentation) reportCounted(r *countedResult, failUncovered func(counte
 		case site.State == "blocked" && site.selection != nil:
 			p.FailedSelections([]mutants.FailedSelection{*site.selection}, selections, "mutation run --count")
 		case site.State == "cancelled" || (site.State == "unattempted" && interrupted):
-			// count.interrupted reports the interruption that stopped it.
+			// The interrupt that stopped it, or its owned cleanup that
+			// failed, is reported as itself.
 		case site.State == "failed" || site.State == "unattempted" || site.State == "blocked":
 			reason := site.Reason
 			if reason == "" {

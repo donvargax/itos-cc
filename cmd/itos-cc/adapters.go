@@ -73,11 +73,9 @@ type adapters struct {
 	Config configFile
 	// Repository and PhysicalDir are what a counted mutation run starts
 	// from: the top of the Git repository holding the working directory,
-	// and the working directory, both physical. Interruptible derives its
-	// own context, which SIGINT or SIGTERM cancels.
-	Repository    func(ctx context.Context) (string, error)
-	PhysicalDir   func(ctx context.Context) (string, error)
-	Interruptible func(ctx context.Context) (context.Context, func())
+	// and the working directory, both physical.
+	Repository  func(ctx context.Context) (string, error)
+	PhysicalDir func(ctx context.Context) (string, error)
 	// Platform is the system itos-cc runs on, which mutation run's --count
 	// and --fail-fast check (countedPlatform).
 	Platform string
@@ -94,18 +92,23 @@ type configFile interface {
 // diskAdapters are this process's: its working directory,
 // internal/workdir's tree and surroundings, internal/metricsdir's store,
 // internal/coveragetools' measurer, saying what it runs on log, and
-// itos-cc.yaml at the project root on the disk.
-func diskAdapters(log io.Writer) adapters {
+// itos-cc.yaml at the project root on the disk. Every command they run in
+// a process group they own marks, through hold, the group being killed
+// and joined, which an interrupt waits for: the run's Interrupts', bound
+// here, never held anywhere else.
+func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	dir, _ := os.Getwd()
-	owner := &worktrees.OwnedExecutor{Platform: runtime.GOOS}
+	owner := &worktrees.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
+	coverageRun := &worktrees.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
+	measurer := coveragetools.Measurer{Log: log, Execute: coverageCommand(coverageRun)}
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: owner.Command, Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
 	return adapters{Settings: config.Reader{Source: diskConfig{}}, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
-	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
-		Coverage: coveragetools.Measurer{Log: log}, MutationCoverage: coveragetools.Measurer{Log: log}, Config: diskConfig{},
-		Repository: countedRoot, PhysicalDir: physicalDir, Interruptible: countedSignalContext, Platform: countedPlatform}
+	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+		Coverage: measurer, MutationCoverage: measurer, Config: diskConfig{},
+		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform}
 }
 
 // diskConfig is itos-cc.yaml at the project root of the working directory.

@@ -45,7 +45,7 @@ var _ port.Measurer[*coverage.Report] = Measurer{}
 // that is not there measured nothing.
 func (m Measurer) Measure(ctx context.Context, req port.Request) (*coverage.Report, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, port.Cancelled{}
+		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	switch {
 	case len(req.Reports) == 0 && req.Existing:

@@ -2,7 +2,9 @@ package coverage
 
 import (
 	"bytes"
+	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -64,7 +66,7 @@ func TestVitestBeforeTheCurrentMajorIsNotRun(t *testing.T) {
 		t.Fatalf("plans %+v, want one unsupported plan with no commands", plans)
 	}
 	var log bytes.Buffer
-	Run(t.Context(), plans, []string{src}, &log)
+	Run(t.Context(), plans, []string{src}, &log, nil)
 	if !strings.Contains(log.String(), "Vitest 4.1.11 is not supported; upgrade to Vitest 5 or later") {
 		t.Errorf("log %q does not say why", log.String())
 	}
@@ -196,7 +198,7 @@ func TestCoverageThatCouldNotBeMeasuredIsMissing(t *testing.T) {
 		Reports: []string{filepath.Join(dir, "out", "coverage.out")}}
 	unsupported := Plan{Language: "typescript", Dir: dir, Unsupported: "Vitest is not installed"}
 	var log bytes.Buffer
-	missing := Run(t.Context(), []Plan{failing, unsupported}, []string{src}, &log).Missing()
+	missing := Run(t.Context(), []Plan{failing, unsupported}, []string{src}, &log, nil).Missing()
 	if len(missing) != 2 || missing[0].Cause != (port.MeasuredNothing{}) || !strings.Contains(missing[0].String(), "(go): its coverage run measured none of its files; go: exit status") ||
 		missing[1].Cause != (port.ToolMissing{}) || !strings.Contains(missing[1].Reason, "Vitest is not installed") {
 		t.Errorf("missing %q, want the failed run and the missing tool", missing)
@@ -256,7 +258,7 @@ func TestARunThatSucceedsAndWritesItsReportMeasuresItsLanguage(t *testing.T) {
 		t.Setenv("HELPER_COVERAGE_REPORT", c.report)
 		t.Setenv("HELPER_COVERAGE_FAIL", c.fail)
 		var log bytes.Buffer
-		r := Run(t.Context(), []Plan{plan}, []string{src}, &log)
+		r := Run(t.Context(), []Plan{plan}, []string{src}, &log, nil)
 		if r.Measures("typescript") != c.measures || r.Measures("go") || r.Has(src) {
 			t.Errorf("%s: measures typescript %v, go %v, has %s %v; want %v, false, false\nlog:\n%s",
 				c.name, r.Measures("typescript"), r.Measures("go"), src, r.Has(src), c.measures, &log)
@@ -315,7 +317,7 @@ func TestPythonOwnCoverageIsPlannedPerSetOfReachingTests(t *testing.T) {
 	}
 
 	var log bytes.Buffer
-	r := Run(t.Context(), []Plan{unreached}, sources, &log)
+	r := Run(t.Context(), []Plan{unreached}, sources, &log, nil)
 	if !r.Measures("python") || r.Has(at("u.py")) || len(r.Missing()) != 0 {
 		t.Errorf("an Unreached plan's report: measures python %v, has u.py %v, missing %v; want python measured and u.py loaded by no test",
 			r.Measures("python"), r.Has(at("u.py")), r.Missing())
@@ -409,5 +411,30 @@ func TestKotlinOwnCoverageIsPlannedPerSetOfReachingTestClasses(t *testing.T) {
 				t.Errorf("without reach: %+v, want one plan of the whole suite", whole)
 			}
 		})
+	}
+}
+
+// A coverage command whose owned process group did not end by its cleanup
+// deadline leaves its plan's files with that gap, naming the group and the
+// command, which crap and mutation report as coverage.cleanup-failed; the
+// executor that owns the groups is cmd's (ADR-0021).
+func TestACommandWhoseCleanupFailedLeavesItsGap(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "a.go")
+	plan := Plan{Language: "go", Dir: dir, Sources: []string{src}, Commands: [][]string{{"go", "test", "./..."}},
+		Reports: []string{filepath.Join(dir, "out", "coverage.out")}}
+	failed := port.CleanupFailed{ProcessGroup: 4242, Command: "go test ./...", Reason: "owned process group 4242 remained active at cleanup deadline"}
+	var ran []string
+	execute := func(_ context.Context, cmd *exec.Cmd) error {
+		ran = append(ran, strings.Join(cmd.Args, " "))
+		return failed
+	}
+	var log bytes.Buffer
+	missing := Run(t.Context(), []Plan{plan}, []string{src}, &log, execute).Missing()
+	if len(ran) != 1 || ran[0] != "go test ./..." {
+		t.Errorf("the executor ran %q, want the plan's command", ran)
+	}
+	if len(missing) != 1 || missing[0].Cause != failed || !strings.Contains(missing[0].Reason, "owned process group did not end") {
+		t.Errorf("missing %+v, want the plan's files with its failed cleanup", missing)
 	}
 }

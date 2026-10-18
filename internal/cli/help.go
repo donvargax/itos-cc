@@ -15,6 +15,9 @@ import (
 // codes and examples, then where to report an issue. Every command prints
 // it in one layout, Page's, whether kong parses its command line or not.
 
+// InterruptedMeaning is what every command's help says of exit 130.
+const InterruptedMeaning = "interrupted by SIGINT or SIGTERM; on Linux and macOS it then ends by that signal, which a shell reads as 130 or 143"
+
 // Exit is an exit code a command can return, and when.
 type Exit struct {
 	Code    int
@@ -24,7 +27,7 @@ type Exit struct {
 // Contract is what a command's help says beyond its flags and arguments,
 // which kong's model holds: what it does, the keys --json adds beside
 // schema, ok and problems, the problem rules it reports ("rule: meaning"),
-// its exit codes (0 and 80 among them; 100 is every command's), and examples.
+// its exit codes (0 and 80 among them; 100 and 130 are every command's), and examples.
 type Contract struct {
 	About    string
 	JSON     string
@@ -78,6 +81,7 @@ func (p Page) String() string {
 		fmt.Fprintf(&b, "  %-3d %s\n", e.Code, e.Meaning)
 	}
 	fmt.Fprintf(&b, "  %-3d an internal error %s could not classify; please report it\n", CodeInternal, p.Program)
+	fmt.Fprintf(&b, "  %-3d %s\n", CodeInterrupted, InterruptedMeaning)
 	b.WriteString("\nExamples:\n")
 	for _, e := range p.Examples {
 		fmt.Fprintf(&b, "  %s\n", e)

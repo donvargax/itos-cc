@@ -23,16 +23,14 @@ import (
 // counted are the bindings a counted or fail-fast mutation run starts from,
 // over the memory at dir, as the disk's adapters bind them: porttest's Fresh
 // over the fake repository's committed bytes, the same actual Workers for its
-// trials, the fake repository's root, dir as the physical working directory,
-// a context of the run's own that installs no signal handling, and the
-// configured platform value.
+// trials, the fake repository's root, dir as the physical working directory
+// and the configured platform value.
 type counted struct {
-	Fresh         mutation.Fresh
-	FreshWorkers  mutation.Workers
-	Repository    func(context.Context) (string, error)
-	PhysicalDir   func(context.Context) (string, error)
-	Interruptible func(context.Context) (context.Context, func())
-	Platform      string
+	Fresh        mutation.Fresh
+	FreshWorkers mutation.Workers
+	Repository   func(context.Context) (string, error)
+	PhysicalDir  func(context.Context) (string, error)
+	Platform     string
 }
 
 // counted binds them for a run in dir, over its tree, inputs, coverage,
@@ -62,8 +60,7 @@ func (m *memory) counted(dir string, tree *selporttest.Tree, inputs *mutantstest
 			}
 			return dir, nil
 		},
-		Interruptible: ownContext,
-		Platform:      m.Platform(),
+		Platform: m.Platform(),
 	}
 }
 
@@ -113,14 +110,6 @@ func (m *memory) freshMeasured(_ context.Context, p *mutation.FreshPlan, listed 
 		}
 	}
 	return nil
-}
-
-// ownContext is the run's own context, derived from parent, with no signal
-// handling: nothing in process delivers an interrupt, which the binary
-// driver's interrupt scenarios send a real process.
-func ownContext(parent context.Context) (context.Context, func()) {
-	ctx, cancel := context.WithCancelCause(parent)
-	return ctx, func() { cancel(nil) }
 }
 
 // decodeFreshSettings is the one settings codec over committed bytes.

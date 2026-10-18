@@ -2,15 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 )
 
 // countedPlatform is the platform counted mode and --fail-fast check: both
@@ -19,40 +15,9 @@ import (
 // is given it as a value (adapters' Platform).
 var countedPlatform = runtime.GOOS
 
-// errCountedInterrupted is the cause of a counted run's context once
-// SIGINT or SIGTERM aborts it.
-var errCountedInterrupted = errors.New("interrupted")
-
-// countedSignalContext is the one context of a counted run, derived from
-// parent: SIGINT or SIGTERM cancels it, with errCountedInterrupted as its
-// cause. Every later signal is caught too, until stop, so a second one
-// cannot end the process before its owned commands are joined and its
-// private inputs removed.
-func countedSignalContext(parent context.Context) (context.Context, func()) {
-	ctx, cancel := context.WithCancelCause(parent)
-	signals := make(chan os.Signal, 4)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-	done := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case sig := <-signals:
-				name := "SIGTERM"
-				if sig == os.Interrupt {
-					name = "SIGINT"
-				}
-				cancel(fmt.Errorf("%w by %s", errCountedInterrupted, name))
-			case <-done:
-				return
-			}
-		}
-	}()
-	return ctx, func() {
-		signal.Stop(signals)
-		close(done)
-		cancel(nil)
-	}
-}
+// hostPlatform is the system this process runs on, which says how an
+// interrupted command ends (endInterrupted).
+var hostPlatform = runtime.GOOS
 
 // countedRoot is the top of the Git repository holding the working
 // directory, its physical path, or why git could not tell it, which the

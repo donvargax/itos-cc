@@ -3068,9 +3068,10 @@ Feature: Mutation testing
   #   killed and joined within the one shared five-second post-abort deadline
   #   before the private frozen inputs are removed. A second signal does not skip
   #   that join. The run still prints its partial report (completion
-  #   interrupted, completed judgments kept) and exits 75 with the new rule
-  #   count.interrupted, documented in the help and docs/CLI.md. Complete-mode
-  #   signal handling is unchanged.
+  #   interrupted, completed judgments kept) and exited 75 with the rule
+  #   count.interrupted until decision 38: it now reports interrupted, exit 130,
+  #   as every interrupted command does, complete runs included (ID-MUT-249 to
+  #   253), and a second signal waits only while owned groups are killed.
   Rule: Fresh counted mutation judges a bounded committed selection without claiming full proof
 
     @mutation-counted-run @ID-MUT-173
@@ -3190,7 +3191,7 @@ Feature: Mutation testing
 
     # Decision 38 retires count.interrupted (75): a counted run stopped by
     # SIGINT or SIGTERM ends as every interrupted command does.
-    @wip @binary-only @slice-7 @slice-8 @ID-MUT-249
+    @binary-only @slice-7 @slice-8 @ID-MUT-249
     Scenario Outline: An interrupted counted run reports interrupted, not count.interrupted
       Given a count-two selection has one completed judgment and one active judgment
       When the counted run is <stopped> while the second judgment is active
@@ -3411,7 +3412,7 @@ Feature: Mutation testing
     # q-37: a cleanup that fails is its own problem, mutation.cleanup-failed,
     # with the internal exit, which outranks the check's no that stopped the
     # run; the partial report is kept, not lost to the failure.
-    @wip @binary-only @slice-7 @slice-8 @ID-MUT-250
+    @binary-only @slice-7 @slice-8 @ID-MUT-250
     Scenario: A fail-fast stop whose cleanup fails exits 100 and keeps its partial report
       Given two workers, one judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
       When the other worker's mutant becomes an actionable survivor
@@ -3486,7 +3487,7 @@ Feature: Mutation testing
 
     # Binary-only for good, as the rest of this Rule: the signal reaches
     # itos-cc as a process of its own while processes it owns run.
-    @wip @binary-only @slice-8 @ID-MUT-251
+    @binary-only @slice-8 @ID-MUT-251
     Scenario: An interrupted complete run keeps the judgments it finished and leaves no owned process
       Given a complete run with one worker has one completed judgment and one active judgment
       When the complete run is interrupted while the second judgment is active
@@ -3501,7 +3502,7 @@ Feature: Mutation testing
       And after the stopped run returns, its owned fixture peers have terminated and worker copies are removed
       And unrelated processes remain untouched
 
-    @wip @binary-only @slice-7 @slice-8 @ID-MUT-252
+    @binary-only @slice-7 @slice-8 @ID-MUT-252
     Scenario Outline: An interrupt whose cleanup fails exits 130 and reports both
       Given a <run> is judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
       When the run is interrupted while that judgment is active
@@ -3520,7 +3521,7 @@ Feature: Mutation testing
       # a counted run said only count.interrupted (75) before, hiding the
       # failed cleanup
 
-    @wip @binary-only @slice-8 @ID-MUT-253
+    @binary-only @slice-8 @ID-MUT-253
     Scenario: A second interrupt waits while the owned process groups are killed
       Given a complete run is judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
       When the run is interrupted, and interrupted again once its owned processes have been killed

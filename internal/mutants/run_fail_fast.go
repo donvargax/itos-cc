@@ -67,10 +67,28 @@ func (st *stopper) result() *Stop {
 func announce(progress Progress, s *Stop) { report(progress, RunEvent{Kind: "stop", Stop: s}) }
 
 // cancelledBy says whether err is how a command or a selection's baseline
-// ended because ctx, a fail-fast run's, stopped: a start the stop refused or
-// a cancellation it caused, never a failure of the command's own.
+// ended because ctx stopped, a fail-fast run's stop or the run's own
+// context's cause, such as an interrupt: a start the stop refused or a
+// cancellation it caused, never a failure of the command's own.
 func cancelledBy(ctx context.Context, err error) bool {
-	return ctx.Err() != nil && err != nil && (errors.Is(err, context.Canceled) || errors.Is(err, errFailFastStop))
+	return ctx.Err() != nil && err != nil &&
+		(errors.Is(err, context.Canceled) || errors.Is(err, errFailFastStop) || errors.Is(err, context.Cause(ctx)))
+}
+
+// Stopped is a run whose own context was done while it judged, as when an
+// interrupt stops it (decision 38): it stopped as a fail-fast stop does,
+// keeping what it finished (ADR-0022), and returns its results with
+// Stopped, Cause the context's cause.
+type Stopped struct{ Cause error }
+
+func (s Stopped) Error() string { return "the run stopped: " + s.Cause.Error() }
+func (s Stopped) Unwrap() error { return s.Cause }
+
+// cleanupFailed is err as the failure of a command's owned cleanup.
+func cleanupFailed(err error) (WorkerCleanupFailed, bool) {
+	var c WorkerCleanupFailed
+	ok := errors.As(err, &c)
+	return c, ok
 }
 
 // stopped is the cause of ctx once it is done, or else err: a call that a

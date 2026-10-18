@@ -46,7 +46,14 @@ func (e *Unreadable) Error() string   { return e.Reason }
 
 // Cancelled is returned when the context was done before the files were
 // found, as an interrupt makes it.
-type Cancelled struct{}
+type Cancelled struct {
+	// Cause is the context's cause, which tells an interrupt from any
+	// other stop.
+	Cause error
+}
+
+// Unwrap is the context's cause.
+func (c *Cancelled) Unwrap() error { return c.Cause }
 
 func (*Cancelled) selectionFailure() {}
 func (*Cancelled) Error() string     { return "cancelled selection" }

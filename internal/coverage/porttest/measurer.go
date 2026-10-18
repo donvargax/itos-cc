@@ -90,7 +90,7 @@ func (m *Measurer) Measure(ctx context.Context, req port.Request) (*coverage.Rep
 
 func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *coverage.PerTest) (*coverage.Report, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, port.Cancelled{}
+		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if len(req.Reports) > 0 || req.Existing || m.Declarations == nil {
 		return m.Aggregate.Measure(ctx, req)
@@ -157,7 +157,7 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	}
 
 	if ctx.Err() != nil {
-		return nil, port.Cancelled{}
+		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return r, nil
 }
@@ -170,7 +170,7 @@ func (m *Measurer) badArtifact(root string, err error) *coverage.Report {
 
 func (m *Measurer) Inventory(ctx context.Context, report *coverage.Report, language string) port.Failure {
 	if ctx.Err() != nil {
-		return port.Cancelled{}
+		return port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if report == nil || (language != "python" && language != "typescript") {
 		return nil
@@ -196,7 +196,7 @@ func (m *Measurer) Inventory(ctx context.Context, report *coverage.Report, langu
 		report.List(ctx, m.disk(), groups[root], root, entries)
 	}
 	if ctx.Err() != nil {
-		return port.Cancelled{}
+		return port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return nil
 }

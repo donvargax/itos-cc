@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -64,7 +65,64 @@ func (b *cleanupBudget) until() time.Time {
 	return b.deadline
 }
 
-func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *cleanupBudget, platform string, observe func(time.Time)) error {
+// CleanupFailed is an owned command's process group whose cleanup did not
+// finish by its deadline: a member still ran, or a process outside the group
+// still held the command's output open. ProcessGroup is the group, the
+// command's process ID, and Command its words, as a person reads them.
+type CleanupFailed struct {
+	ProcessGroup int
+	Command      string
+	Cause        error
+}
+
+func (c *CleanupFailed) Error() string {
+	return fmt.Sprintf("cleanup of owned process group %d (%s) failed: %v", c.ProcessGroup, c.Command, c.Cause)
+}
+func (c *CleanupFailed) Unwrap() error { return c.Cause }
+
+// holdOwned marks, through hold, owned process groups being killed and
+// joined from when ctx is done or the command has ended until the release
+// it returns is called, so a later interrupt waits for them (decision 38).
+// A nil hold marks nothing.
+type holdOwned struct {
+	mu       sync.Mutex
+	release  func()
+	stop     func() bool
+	hold     func() func()
+	finished bool
+}
+
+func startHold(ctx context.Context, hold func() func()) *holdOwned {
+	h := &holdOwned{hold: hold}
+	if hold != nil {
+		h.stop = context.AfterFunc(ctx, h.begin)
+	}
+	return h
+}
+
+// begin marks the cleanup under way, once.
+func (h *holdOwned) begin() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.hold != nil && h.release == nil && !h.finished {
+		h.release = h.hold()
+	}
+}
+
+// end marks it done.
+func (h *holdOwned) end() {
+	if h.stop != nil {
+		h.stop()
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.finished = true
+	if h.release != nil {
+		h.release()
+	}
+}
+
+func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *cleanupBudget, platform string, observe func(time.Time), hold func() func()) error {
 	if !ownedOutcomePrecedence(platform) {
 		killGroup(cmd, platform)
 		if err := cmd.Start(); err != nil {
@@ -89,11 +147,6 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		reader, writer, err := os.Pipe()
 		if err != nil {
 			return fmt.Errorf("create owned command output pipe: %w", err)
-		}
-		if err := nativeNonblock(reader.Fd(), true); err != nil {
-			_ = reader.Close()
-			_ = writer.Close()
-			return fmt.Errorf("configure owned command output pipe: %w", err)
 		}
 		assign(writer)
 		captures = append(captures, ownedOutputCapture{reader: reader, writer: writer, target: target})
@@ -122,8 +175,9 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
 		captures[i].done = make(chan outputResult, 1)
+		stopReader.readers = append(stopReader.readers, captures[i].reader)
 		go func(capture *ownedOutputCapture) {
-			data, err := readOwnedCommandOutput(capture.reader, stopReader)
+			data, err := readOwnedCommandOutput(capture.reader)
 			capture.done <- outputResult{data: data, err: err}
 		}(&captures[i])
 	}
@@ -145,7 +199,10 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 	for _, capture := range captures {
 		_ = capture.writer.Close()
 	}
+	held := startHold(ctx, hold)
+	defer held.end()
 	waitErr := cmd.Wait()
+	held.begin()
 
 	deadline := cleanupBudgetForScope(ctx, budget).until()
 	if observe != nil {
@@ -167,7 +224,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		}
 	}
 	if cleanupErr != nil {
-		return errors.Join(waitErr, cleanupErr)
+		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: cmd.Process.Pid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
 	}
 	return waitErr
 }
@@ -193,13 +250,20 @@ type outputResult struct {
 	err  error
 }
 
+// cleanupSignal ends the reads of an owned command's output at the cleanup
+// deadline, which a process that outlives the group by holding the output
+// open would otherwise keep waiting for ever.
 type cleanupSignal struct {
 	done     chan struct{}
 	deadline time.Time
+	readers  []*os.File
 }
 
 func (signal *cleanupSignal) activate(deadline time.Time) {
 	signal.deadline = deadline
+	for _, r := range signal.readers {
+		_ = r.SetReadDeadline(deadline) // a pipe the system cannot time out reads to its end, as before
+	}
 	close(signal.done)
 }
 
@@ -226,31 +290,24 @@ func killOwnedProcessGroup(platform string, pgid int) error {
 	return nil
 }
 
-func readOwnedCommandOutput(reader *os.File, stop *cleanupSignal) ([]byte, error) {
+// readOwnedCommandOutput reads reader to its end, or to the read deadline
+// the cleanup sets, past which the output not closed is a cleanup failure.
+func readOwnedCommandOutput(reader *os.File) ([]byte, error) {
 	var output bytes.Buffer
-	var cleanupDeadline time.Time
 	buffer := make([]byte, 32*1024)
 	for {
-		count, err := nativeRead(reader.Fd(), buffer)
+		count, err := reader.Read(buffer)
 		if count > 0 {
 			_, _ = output.Write(buffer[:count])
 		}
-		if err == nil && count == 0 {
+		switch {
+		case err == nil:
+		case errors.Is(err, io.EOF):
 			return output.Bytes(), nil
-		}
-		if err != nil && !errors.Is(err, syscall.EAGAIN) && !errors.Is(err, syscall.EWOULDBLOCK) && !errors.Is(err, syscall.EINTR) {
+		case errors.Is(err, os.ErrDeadlineExceeded):
+			return output.Bytes(), errors.New("owned command output did not close before cleanup deadline")
+		default:
 			return output.Bytes(), err
 		}
-		if cleanupDeadline.IsZero() {
-			select {
-			case <-stop.done:
-				cleanupDeadline = stop.deadline
-			default:
-			}
-		}
-		if !cleanupDeadline.IsZero() && !time.Now().Before(cleanupDeadline) {
-			return output.Bytes(), fmt.Errorf("owned command output did not close before cleanup deadline")
-		}
-		time.Sleep(5 * time.Millisecond)
 	}
 }

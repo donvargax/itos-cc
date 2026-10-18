@@ -33,8 +33,7 @@ type CountedQuery struct {
 
 // CountedProgress receives a counted run's observations while it works:
 // each run event, and its report once it is as complete as it gets, under
-// the run's own context, while the run still owns its frozen inputs and
-// catches interrupts.
+// the run's own context, while the run still owns its frozen inputs.
 type CountedProgress interface {
 	mutants.Progress
 	Counted(ctx context.Context, found CountedFound)
@@ -63,7 +62,7 @@ type CountedFound struct {
 // from the HEAD commit's inputs. It writes no snapshot, annotation or
 // coverage cache. It observes in the cmd handler's order: the repository's
 // top level, the paths from the working directory, then under its own
-// context, which Interruptible derives, the plan, preparation, strict
+// context, which an interrupt cancels, the plan, preparation, strict
 // integration coverage, the exceptions and the trials. A refusal is a
 // Failure the UI words; the report reaches Progress before the frozen
 // inputs are released.
@@ -81,11 +80,6 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	if err != nil {
 		return err
 	}
-	if h.Interruptible == nil {
-		return errors.New("mutation interrupt binding is missing")
-	}
-	ctx, stop := h.Interruptible(ctx)
-	defer stop()
 	fresh := h.Fresh
 	if fresh == nil {
 		return errors.New("mutation Fresh binding is missing")
@@ -276,7 +270,14 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 				selectionStage.State, selectionStage.Error = stage.State, stage.Error
 			}
 		}
+		var cleanup mutants.WorkerCleanupFailed
 		switch {
+		case errors.As(r.Err, &cleanup):
+			// Its owned cleanup did not finish: no outcome, and the run
+			// reports the group.
+			site.State, site.Reason = "cancelled", "its owned process group's cleanup did not finish"
+			result.cleanups = append(result.cleanups, cleanup)
+			continue
 		case r.Err != nil && ctx.Err() != nil && len(r.Stages) == 0:
 			// Never started: nothing is admitted after the abort.
 			site.State = "unattempted"

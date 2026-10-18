@@ -117,9 +117,15 @@ output is for people.
 | 81 | An unknown command or subcommand. |
 | 82 | A requirement not met: a tool, a report, a git repository. |
 | 100 | An internal error itos-cc could not classify; please report it. |
+| 130 | Interrupted: SIGINT (Ctrl-C) or SIGTERM stopped it. On Linux and macOS it then ends by that signal, so a shell reads 130, or 143 for SIGTERM, and stops a loop over it. |
 
-A run with problems of several kinds exits with the first of 80 and 81, 100,
-82, 75 and 1 that it has. Before the semantic exit codes (decision 36), a
+A run with problems of several kinds exits with the first of 130, 80 and 81,
+100, 82, 75 and 1 that it has. Every command, `serve` and `mutation run`
+included, stops on SIGINT or SIGTERM, says once that it was interrupted, and
+reports the rule `interrupted`; a second interrupt ends it at once, unless
+the process groups it owns are being killed, which it waits for. A process
+group whose cleanup does not finish is `mutation.cleanup-failed` or
+`coverage.cleanup-failed`, exit 100. Before the semantic exit codes (decision 36), a
 usage error and an unknown command were 2, a requirement not met 3 and an
 internal error 70.
 
@@ -616,10 +622,11 @@ stages their trial ran, the judged and omitted `subjects`, and the `stages`
 that ran. A counted run writes no snapshot, comment or coverage
 cache, and its pass proves only its sampled judgments; `--count` bounds
 mutant trials, not discovery, baselines or total time. A range with no site
-is reported not applicable. SIGINT or SIGTERM interrupts it: the active
-judgment is cancelled with no outcome, every process it started is stopped
-within five seconds, and the partial report exits 75 with
-`count.interrupted`. It runs on Linux and macOS, where every command it
+is reported not applicable. SIGINT or SIGTERM interrupts it, as it does
+every command: the active judgment is cancelled with no outcome, every
+process it started is stopped within five seconds, and the partial report
+says `interrupted`, exit 130 (it exited 75 with `count.interrupted` before
+decision 38). It runs on Linux and macOS, where every command it
 starts runs in a process group it owns; a command that detaches from its
 process group or session is not followed. On Windows it fails with
 `count.platform` (#29).

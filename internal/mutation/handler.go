@@ -44,14 +44,12 @@ type Handler struct {
 	// A counted run's: Fresh prepares the committed inputs, FreshWorkers
 	// runs the trials in them, Repository is the top of the Git repository
 	// holding the working directory and PhysicalDir the working directory,
-	// both physical, and Interruptible derives the run's own context, which
-	// an interrupt or a termination cancels, with the function that stops
-	// catching them. Cmd observes and binds each.
-	Fresh         mutants.Fresh
-	FreshWorkers  mutants.Workers
-	Repository    func(ctx context.Context) (string, error)
-	PhysicalDir   func(ctx context.Context) (string, error)
-	Interruptible func(ctx context.Context) (context.Context, func())
+	// both physical. The run's context is the command's, which an
+	// interrupt cancels (decision 38). Cmd observes and binds each.
+	Fresh        mutants.Fresh
+	FreshWorkers mutants.Workers
+	Repository   func(ctx context.Context) (string, error)
+	PhysicalDir  func(ctx context.Context) (string, error)
 	// Platform is the system the run is on, a value cmd detects: --count
 	// and --fail-fast run on Linux and macOS.
 	Platform string

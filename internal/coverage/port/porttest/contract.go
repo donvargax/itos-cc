@@ -259,7 +259,7 @@ func aDoneContextMeasuresNothing(t *testing.T, open opener) {
 	cancel()
 	source := []string{filepath.Join(dir, "src", "a.ts")}
 	for _, req := range []port.Request{{Sources: source, Reports: []string{"good.info"}}, {Sources: source}} {
-		if r, failure := m.Measure(ctx, req); r != nil || failure != (port.Cancelled{}) {
+		if r, failure := m.Measure(ctx, req); r != nil || failure != (port.Cancelled{Cause: context.Canceled}) {
 			t.Errorf("Measure(%+v) on a done context = %v, %v; want no report, cancelled", req, r, failure)
 		}
 	}

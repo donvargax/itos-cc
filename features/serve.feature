@@ -80,4 +80,4 @@ Feature: Serving the architecture graph
   Scenario: Stopping
     Given the server is running
     When I press Ctrl-C
-    Then the server shuts down and exits with 0
+    Then the server shuts down and exits with 130

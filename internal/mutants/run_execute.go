@@ -38,6 +38,9 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 			}
 		}
 	}(ctx)
+	// A parent's abort, such as an interrupt, starts the cleanup deadline
+	// every worker shares, as a fail-fast stop does.
+	defer context.AfterFunc(ctx, pool.Abort)()
 	var st *stopper
 	if ff != nil {
 		ctx, st = newStopper(ctx, opt.Progress)
@@ -76,6 +79,11 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 			if _, done := timeouts[key]; !done && failed[key] == "" && !st.stopped() {
 				report(opt.Progress, RunEvent{Kind: "baseline", Command: s.command})
 				r, err := workers[0].Run(ctx, s.command, nil, 0)
+				if cancelledBy(ctx, err) {
+					// The run stopped during the baseline: nothing of
+					// the file is admitted.
+					continue
+				}
 				if err != nil {
 					return nil, err
 				}
@@ -138,9 +146,13 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					firstErr = err
 				}
 				site := j.state.sites[j.site]
+				if r.cleanup != nil {
+					j.state.result.CleanupFailures = append(j.state.result.CleanupFailures, *r.cleanup)
+				}
 				if r.cancelled {
-					// The stop came first: no outcome, and a judgment that
-					// never started stays unattempted.
+					// The stop came first, or the judgment's owned cleanup
+					// failed: no outcome, and a judgment that never started
+					// stays unattempted.
 					if r.started {
 						j.state.leave(j.site, StateCancelled)
 						report(opt.Progress, RunEvent{Kind: "cancelled", File: j.state.rel, Site: site, Failure: context.Cause(ctx), Elapsed: r.elapsed})
@@ -213,6 +225,9 @@ type mutantRun struct {
 	// short, or came before it: it has no outcome. started says whether
 	// any of its commands had been admitted.
 	cancelled, started bool
+	// cleanup is the failure of the judgment's owned cleanup, which
+	// leaves it cancelled.
+	cleanup *WorkerCleanupFailed
 }
 
 // runMutant runs the file's own tests on the mutant, then, when it survives
@@ -232,6 +247,9 @@ func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels
 		var r CommandResult
 		r, err = w.Run(ctx, s.command, &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, timeout)
 		run = mutantRun{outcome: Judged(r), elapsed: r.Elapsed, started: true}
+		if c, ok := cleanupFailed(err); ok {
+			return mutantRun{cancelled: true, started: true, elapsed: r.Elapsed, cleanup: &c}, nil
+		}
 		if r.Cancelled || cancelledBy(ctx, err) {
 			return mutantRun{cancelled: true, started: true, elapsed: r.Elapsed}, nil
 		}
@@ -253,6 +271,11 @@ func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels
 		return run, sel.err
 	}
 	listed, err := w.Run(ctx, sels.listed.Command(run.ids), &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, sel.timeout)
+	if c, ok := cleanupFailed(err); ok {
+		cut.elapsed += listed.Elapsed
+		cut.cleanup = &c
+		return cut, nil
+	}
 	if listed.Cancelled || cancelledBy(ctx, err) {
 		cut.elapsed += listed.Elapsed
 		return cut, nil

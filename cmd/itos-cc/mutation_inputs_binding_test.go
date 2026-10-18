@@ -57,7 +57,7 @@ func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	base := diskAdapters(&stderr)
+	base := diskAdapters(&stderr, nil)
 	inputs := m.inputs(features.Run{Dir: root})
 	base.Workers = m.workers()
 	base.Toolchain = inputs

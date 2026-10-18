@@ -152,9 +152,11 @@ func lineCount(path string) int {
 	return strings.Count(string(data), "\n")
 }
 
-// @ID-MUT-183. Kept: a second signal while the run cleans up neither skips
-// its join nor its report, which no scenario sends: ID-MUT-183's
-// interrupts once (T-130).
+// @ID-MUT-183, which ID-MUT-249 moved to the interrupted problem every
+// command reports (decision 38): one SIGINT stops the run, which reports
+// interrupted, exit 130, and then ends by SIGINT's own default action. A
+// second interrupt waiting for the owned cleanup is held by internal/cli's
+// tests and ID-MUT-253.
 func TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)
@@ -244,14 +246,11 @@ func checkInterruptedCountedRun(t *testing.T) {
 	}
 	runsBefore := lineCount(filepath.Join(gate, "runs"))
 
-	// When the run is interrupted, and signalled again while it cleans up.
+	// When the run is interrupted.
 	interrupted := time.Now()
 	if err := run.Process.Signal(syscall.SIGINT); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(50 * time.Millisecond)
-	// It may have exited already, which the wait below accepts.
-	_ = run.Process.Signal(syscall.SIGTERM)
 	select {
 	case <-exited:
 	case <-time.After(time.Minute):
@@ -273,10 +272,10 @@ func checkInterruptedCountedRun(t *testing.T) {
 	} else if active := c.Selected[1]; (active["state"] != "cancelled" && active["state"] != "undecided") || active["outcome"] != nil {
 		t.Errorf("active site %+v: want cancelled or undecided with no outcome", active)
 	}
-	code := run.ProcessState.ExitCode()
-	if p := c.problem("count.interrupted"); code != 75 || p == nil || c.Sampling["completion"] != "interrupted" {
-		t.Errorf("exit %d, completion %v, problems %+v: want 75 with count.interrupted and completion interrupted",
-			code, c.Sampling["completion"], c.Problems)
+	status, _ := run.ProcessState.Sys().(syscall.WaitStatus)
+	if p := c.problem("interrupted"); !status.Signaled() || status.Signal() != syscall.SIGINT || p == nil || p["exit"] != float64(130) || c.Sampling["completion"] != "interrupted" {
+		t.Errorf("status %v, completion %v, problems %+v: want interrupted, exit 130, completion interrupted, and an end by SIGINT",
+			run.ProcessState, c.Sampling["completion"], c.Problems)
 	}
 	// No further command is admitted after the abort.
 	if after := lineCount(filepath.Join(gate, "runs")); after != runsBefore {

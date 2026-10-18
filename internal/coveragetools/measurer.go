@@ -27,6 +27,10 @@ type Measurer struct {
 	// Log is where it says what it runs and the tools write their output,
 	// the writer main gives it, so stdout stays the report.
 	Log io.Writer
+	// Execute runs each coverage command the tests' own measurement runs,
+	// in a process group it owns, which an interrupt stops (ADR-0021,
+	// decision 38); nil runs it as it is.
+	Execute covrun.CommandExecutor
 }
 
 var _ port.Measurer[*coverage.Report] = Measurer{}
@@ -44,7 +48,7 @@ func (m Measurer) Measure(ctx context.Context, req port.Request) (*coverage.Repo
 // folder through the unchanged runner.
 func (m Measurer) MeasureListed(ctx context.Context, req port.Request, perTest *coverage.PerTest) (*coverage.Report, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, port.Cancelled{}
+		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if len(req.Reports) > 0 {
 		return m.named(ctx, req)
@@ -99,12 +103,20 @@ func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope
 		return nil, port.Unwritable{Reason: err.Error()}
 	}
 	defer func() { _ = os.RemoveAll(run) }()
-	report := covrun.Run(ctx, covrun.Plans(ctx, req.Sources, run, scope, req.Reach), req.Sources, m.Log)
+	report := covrun.Run(ctx, covrun.Plans(ctx, req.Sources, run, scope, req.Reach), req.Sources, m.Log, m.Execute)
 	if perTest != nil {
-		report.SetTests(covrun.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), req.Sources, m.Log))
+		report.SetTests(covrun.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), req.Sources, m.Log, m.Execute))
 	}
 	if ctx.Err() != nil {
-		return nil, port.Cancelled{}
+		// The command it stopped may have left its owned group's cleanup
+		// unfinished, which the stop reports beside itself.
+		cancelled := port.Cancelled{Cause: context.Cause(ctx)}
+		for _, missing := range report.Missing() {
+			if c, ok := missing.Cause.(port.CleanupFailed); ok {
+				cancelled.Cleanup = &c
+			}
+		}
+		return nil, cancelled
 	}
 	keepLatest(run, out)
 	return report, nil
@@ -136,11 +148,11 @@ func keepLatest(run, out string) {
 // failures are logged, while cancellation stops the caller with its cause.
 func (m Measurer) Inventory(ctx context.Context, report *coverage.Report, language string) port.Failure {
 	if ctx.Err() != nil {
-		return port.Cancelled{}
+		return port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	_, _ = covrun.Inventory(ctx, report, language, m.Log, nil)
 	if ctx.Err() != nil {
-		return port.Cancelled{}
+		return port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return nil
 }

@@ -19,6 +19,9 @@ type Workers struct {
 	Platform string
 	Prepare  func(*exec.Cmd)
 	Owner    *OwnedExecutor
+	// Hold marks the owned process groups of the pool's commands being
+	// killed and joined, as OwnedExecutor's does; with Owner, Owner's.
+	Hold func() (release func())
 }
 
 var _ mutants.Workers = Workers{}
@@ -40,12 +43,13 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 		return nil, mutants.WorkerFailed{Cause: err}
 	}
 	budget := &cleanupBudget{localUntilAbort: purpose == mutants.MutationRun}
+	hold := f.Hold
 	if f.Owner != nil {
-		budget = &f.Owner.cleanup
+		budget, hold = &f.Owner.cleanup, f.Owner.Hold
 	}
 	p := &pool{scratch: scratch, budget: budget, closing: make(chan struct{}), done: make(chan struct{})}
 	for i := 0; i < max(1, count); i++ {
-		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]string{}, runner: commandRunner{cleanupBudget: budget, platform: platformAtBoundary(f.Platform)}, prepare: f.Prepare}})
+		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]string{}, runner: commandRunner{cleanupBudget: budget, platform: platformAtBoundary(f.Platform), hold: hold}, prepare: f.Prepare}})
 	}
 	return p, nil
 }
@@ -106,6 +110,10 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 		r, err = w.worker.withMutant(ctx, c.Root, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
 	}
 	if err != nil {
+		var cleanup *CleanupFailed
+		if errors.As(err, &cleanup) {
+			return r, mutants.WorkerCleanupFailed{ProcessGroup: cleanup.ProcessGroup, Command: cleanup.Command, Cause: err}
+		}
 		if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
 			return r, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
 		}

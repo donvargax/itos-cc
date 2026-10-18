@@ -197,10 +197,9 @@ a `context.Context` first (decision 30); pure logic takes none.
   listed tests' support files and the bindings, strict coverage's checks and measurement
   through `Coverage`, the run through the `Snapshots` and `SourceEdits` writers and the
   orphans it removes from `Metrics`. `Counted` reads no settings: it asks cmd's `Repository`
-  and `PhysicalDir`, derives its own context through `Interruptible` (cmd's
-  `countedSignalContext`), then plans, prepares and judges through `Fresh` and
-  `FreshWorkers`, handing its report to its query's `CountedProgress` while it still owns
-  the frozen inputs and catches interrupts. The
+  and `PhysicalDir`, then, under the command's context, which an interrupt cancels (decision
+  38), plans, prepares and judges through `Fresh` and `FreshWorkers`, handing its report to
+  its query's `CountedProgress` while it still owns the frozen inputs. The
   handler builds no problem and picks no exit code: it returns the slice's sealed
   `Failure` (`LinesWithoutSince`, `SinceWithChanged`, `SinceUnavailable` with its ref,
   `SeedUnavailable`, `SiteExcluded`, `NoSurvivor`, `StrictCoverageFlag`, `CountedNoGit`,
@@ -271,8 +270,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
-  plain or JSON answer. It holds `StopOnInterrupt`, which stops a command on Ctrl-C (decision
-  31), though no command wires it yet (interrupt-exit-130). A domain's failures
+  plain or JSON answer. It holds `Interrupts`, which stops every command on SIGINT or SIGTERM
+  (decision 38), cancelling its context with the cause `ErrInterrupted`, and lets a later
+  interrupt end it at once unless the process groups it owns are being killed (`Cleaning`);
+  cmd makes one per run and binds `Cleaning` into the adapters that kill those groups. A domain's failures
   reach it through that domain's classifier, which cmd hands it. For the commands kong parses
   it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
   types (`ParseProblem`), retains validated explicit/raw flag facts (`Provided`) and prints
@@ -301,10 +302,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   `exclude`, so `dispatch` reads the file through `a.Config` once the command line is parsed
   and binds them then: a file that cannot be read fails that command as `config.invalid`,
   never help or `version`, and `version`'s version (`versionString`, release stamps
-  `-X main.version`) is bound then too. A command that stops on a signal derives its own from it
-  (`serve`'s `signal.NotifyContext`, `mutation run --count`'s `countedSignalContext`, which
-  cmd binds into the slice's handler as `Interruptible`), and
-  cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`. Nothing below
+  `-X main.version`) is bound then too. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
+  with the cause `cli.ErrInterrupted`, for every command alike (decision 38), and
+  cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`, as an
+  interrupted `mutation run` writes what it finished. Nothing below
   `main` makes a context of its own, and none is held in a value or captured by a closure
   that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
   does. A done context starts no command. It is the only place
@@ -701,8 +702,8 @@ build output are copies of `project`'s, which the suite keeps honest.
 The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
 of package `features` behind its `Driver`. `features`' `TestFeatures` runs every converted
 file against the built binary (`binary.go`), which proves main's wiring, the real adapters and
-tools and exit codes. Its interrupt step, which interrupts the binary once it waits on an open
-standard input, is the binary's alone; no live scenario uses it until interrupt-exit-130. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
+tools and exit codes. Its interrupt steps, which signal serve, crap or a shell running itos-cc
+once its output shows it under way, are the binary's alone (`interrupt_test.go`). `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
 (`InProcess`), every converted file since `cli.feature` joined it (T-114), in process: its driver, a `_test.go`, holds every
 folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
 renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
@@ -729,8 +730,8 @@ that also observe `serve`, which stays on its legacy handler until its own web a
 T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-code row that
 runs `serve` on a port in use (T-112). The in-process driver runs one scenario at a time, the binary driver as many at once as the CPUs, each scenario isolated (`features/README.md`, T-128). itos.yaml's scenario lines run both tests, so `cd.yml`
 holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
-ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
-interrupts on every system.
+ending the process at once, unless owned process groups are being killed, is held by
+`internal/cli`'s unit tests, which feed `Interrupts` fake interrupts on every system.
 
 Properties use `pgregory.net/rapid` and live in the domain's tests; the `rapid` rule admits it
 in `internal/selection`'s alone. The selection property checks that paths and fragments only

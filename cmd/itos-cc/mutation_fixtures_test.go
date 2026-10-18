@@ -18,10 +18,10 @@ func loadMutationSnapshot(ctx context.Context, store snapport.Store, key string)
 	return mutation.LoadSnapshot(ctx, metricsdir.Mutations{Store: store}, key, testtools.Toolchain{})
 }
 func planFreshForTest(ctx context.Context, root string, paths []string, since string, count int, seed string) (*mutation.FreshPlan, error) {
-	return diskAdapters(io.Discard).Fresh.Plan(ctx, mutation.FreshRequest{Root: root, Paths: paths, Since: since, Count: count, Seed: seed})
+	return diskAdapters(io.Discard, nil).Fresh.Plan(ctx, mutation.FreshRequest{Root: root, Paths: paths, Since: since, Count: count, Seed: seed})
 }
 func releaseFreshPlan(ctx context.Context, p *mutation.FreshPlan) {
-	diskAdapters(io.Discard).Fresh.Release(ctx, p)
+	diskAdapters(io.Discard, nil).Fresh.Release(ctx, p)
 }
 
 // removeFixture removes path, a fixture file the test may or may not have

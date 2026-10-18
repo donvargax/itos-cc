@@ -93,6 +93,10 @@ type FileResult struct {
 	// its functions judged: the cache's completeness, which a stopped run
 	// can leave complete, apart from the run's own (Incomplete).
 	Cached bool
+	// CleanupFailures are the commands of the file's judgments whose owned
+	// process group's cleanup did not finish (ADR-0021): each judgment has
+	// no outcome, and the run reports each group.
+	CleanupFailures []WorkerCleanupFailed
 }
 
 // BaselineNotRun is the baseline of a file whose own tests did not run

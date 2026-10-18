@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -27,8 +28,11 @@ func TestEachSelectionFailureKindHasItsProblem(t *testing.T) {
 			`"nosuch" is no file, and no file's path under the working directory contains it`, "Name a file, a directory, or a fragment of a source's path.", "nosuch"},
 		{&port.Unwalkable{Reason: "open src: permission denied"}, cli.CodeInternal, "internal",
 			"open src: permission denied", "This is a bug in itos-cc; please report it at " + cli.Issues + ".", nil},
-		{&port.Cancelled{}, cli.CodeInterrupted, "interrupted",
+		{&port.Cancelled{Cause: cli.ErrInterrupted}, cli.CodeInterrupted, "interrupted",
 			"interrupted before it finished", "Run it again and let it finish.", nil},
+		// A cancellation no interrupt caused is no interrupt (decision 38).
+		{&port.Cancelled{Cause: context.Canceled}, cli.CodeInternal, "internal",
+			"cancelled selection", "This is a bug in itos-cc; please report it at " + cli.Issues + ".", nil},
 	} {
 		problems, ok := classifySelection(fmt.Errorf("selecting: %w", c.failure))
 		if !ok || len(problems) != 1 {

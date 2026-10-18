@@ -29,7 +29,7 @@ var _ port.Store = Store{}
 // Root is RootDir, or project.Root when it is "". A done ctx asks nothing.
 func (s Store) Root(ctx context.Context) (string, port.Failure) {
 	if ctx.Err() != nil {
-		return "", &port.Cancelled{}
+		return "", &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return s.root(), nil
 }
@@ -41,7 +41,7 @@ func (s Store) Root(ctx context.Context) (string, port.Failure) {
 // its end.
 func (s Store) Read(ctx context.Context, name string, v any) (bool, port.Failure) {
 	if ctx.Err() != nil {
-		return false, &port.Cancelled{}
+		return false, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	found, err := metrics.ReadIn(s.dir(), name, v)
 	switch {
@@ -58,7 +58,7 @@ func (s Store) Read(ctx context.Context, name string, v any) (bool, port.Failure
 // no snapshot is left half renamed.
 func (s Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if ctx.Err() != nil {
-		return &port.Cancelled{}
+		return &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if err := metrics.WriteIn(s.dir(), name, v); err != nil {
 		return &port.Unwritable{Name: name, Reason: err.Error()}
@@ -71,7 +71,7 @@ func (s Store) Write(ctx context.Context, name string, v any) port.Failure {
 // end.
 func (s Store) Remove(ctx context.Context, name string) port.Failure {
 	if ctx.Err() != nil {
-		return &port.Cancelled{}
+		return &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if err := metrics.RemoveIn(s.dir(), name); err != nil {
 		return &port.Unremovable{Name: name, Reason: err.Error()}
@@ -83,7 +83,7 @@ func (s Store) Remove(ctx context.Context, name string) port.Failure {
 // whole. A done ctx lists nothing; a listing under way runs to its end.
 func (s Store) List(ctx context.Context, dir string) ([]string, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	names, err := metrics.ListIn(s.dir(), dir)
 	if err != nil {

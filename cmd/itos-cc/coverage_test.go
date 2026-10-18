@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -51,9 +52,27 @@ func TestEachCoverageGapHasItsProblem(t *testing.T) {
 			}
 		}
 	}
-	problems, ok := classifyCoverage(coverage.Unmeasured{Dir: "web", Language: "go", Cause: covport.Cancelled{}, Reason: "stopped"})
+	problems, ok := classifyCoverage(coverage.Unmeasured{Dir: "web", Language: "go", Cause: covport.Cancelled{Cause: cli.ErrInterrupted}, Reason: "stopped"})
 	if !ok || len(problems) != 1 || problems[0].Code != cli.CodeInterrupted || problems[0].Rule != "interrupted" {
 		t.Errorf("a cancelled root is %+v, %t; want the interrupt", problems, ok)
+	}
+	// A cancellation no interrupt caused is no interrupt (decision 38).
+	problems, ok = classifyCoverage(coverage.Unmeasured{Dir: "web", Language: "go", Cause: covport.Cancelled{Cause: context.Canceled}, Reason: "stopped"})
+	if !ok || len(problems) != 1 || problems[0].Code != cli.CodeInternal {
+		t.Errorf("a root another stop cancelled is %+v, %t; want the internal failure", problems, ok)
+	}
+	// A coverage command whose owned group did not end is
+	// coverage.cleanup-failed, the internal exit, naming the group and the
+	// command: crap's coverage commands own their groups as mutation's do
+	// (ADR-0021), and no scenario can make a cleanup fail in crap's run.
+	failed := covport.CleanupFailed{ProcessGroup: 4242, Command: "go test -coverprofile cover.out ./...", Reason: "owned process group 4242 remained active at cleanup deadline"}
+	problems, ok = classifyCoverage(fmt.Errorf("measuring: %w", coverage.Unmeasured{Dir: "web", Language: "go", Cause: failed, Reason: "its coverage command's owned process group did not end"}))
+	if !ok || len(problems) != 1 {
+		t.Fatalf("a failed cleanup: claimed %t, %d problems; want its one", ok, len(problems))
+	}
+	if p := problems[0]; p.Code != cli.CodeInternal || p.Rule != "coverage.cleanup-failed" || p.Subject("process_group") != 4242 ||
+		p.Subject("command") != failed.Command || p.Subject("dir") != "web" || p.Subject("language") != "go" {
+		t.Errorf("a failed cleanup is %+v, want coverage.cleanup-failed naming group 4242 and its command", p)
 	}
 }
 
@@ -67,7 +86,7 @@ func TestEachMeasureFailureHasItsProblem(t *testing.T) {
 		rule    string
 		message string
 	}{
-		{covport.Cancelled{}, cli.CodeInterrupted, "interrupted", "interrupted before it finished"},
+		{covport.Cancelled{Cause: cli.ErrInterrupted}, cli.CodeInterrupted, "interrupted", "interrupted before it finished"},
 		{covport.Unwritable{Reason: "mkdir .metrics/coverage: not a directory"}, cli.CodeInternal, "internal", "mkdir .metrics/coverage: not a directory"},
 	} {
 		problems, ok := classifyCoverage(fmt.Errorf("measuring: %w", c.failure))
@@ -77,6 +96,14 @@ func TestEachMeasureFailureHasItsProblem(t *testing.T) {
 		if p := problems[0]; p.Code != c.code || p.Rule != c.rule || p.Message != c.message || p.Subject("dir") != nil {
 			t.Errorf("%T: %+v, want %d %s %q", c.failure, p, c.code, c.rule, c.message)
 		}
+	}
+	// An interrupt that stopped a command whose owned group then did not
+	// end is reported beside that cleanup, and the run exits 130.
+	cleanup := &covport.CleanupFailed{ProcessGroup: 77, Command: "go test", Reason: "owned command output did not close before cleanup deadline"}
+	problems, ok := classifyCoverage(covport.Cancelled{Cause: cli.ErrInterrupted, Cleanup: cleanup})
+	if !ok || len(problems) != 2 || problems[0].Rule != "interrupted" || problems[1].Rule != "coverage.cleanup-failed" ||
+		problems[1].Subject("process_group") != 77 || cli.ExitCode(problems) != cli.CodeInterrupted {
+		t.Errorf("an interrupt whose cleanup failed is %+v, %t; want interrupted and coverage.cleanup-failed, exit 130", problems, ok)
 	}
 }
 

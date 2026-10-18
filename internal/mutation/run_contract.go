@@ -172,12 +172,19 @@ on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
 followed); Windows is #29. It refuses --changed, --no-coverage, existing
 or raw coverage, --test-command and --mutate-all, and --seed needs it. With --all-tests the own stage runs the whole suite, and a
-survivor still runs the listed tests that reach it. SIGINT or SIGTERM
-interrupts a counted run: no command starts after it, the judgment then
-running is cancelled with no outcome, every process the run started is
-stopped and joined within one shared five-second deadline before its
-private copies are removed, a second signal included, and the partial
-report, completion "interrupted", keeps the judgments completed before it.
+survivor still runs the listed tests that reach it.
+
+SIGINT or SIGTERM interrupts a run, complete or counted, as it does every
+command: no command starts after it, the judgment then running is
+cancelled with no outcome, and every process group the run owns is killed
+and joined within one shared five-second deadline before its copies are
+removed, a second interrupt waiting for that, then ending the run at once.
+It reports interrupted, exit 130. A complete run keeps what it finished as
+a --fail-fast stop does, each file with its "state" and "work", and a file
+it cut short gets no summary comment; a counted run's report, completion
+"interrupted", keeps the judgments completed before it. An owned group
+whose cleanup does not finish is mutation.cleanup-failed, exit 100, beside
+the run's other problems, one for each group.
 
 --fail-fast stops a complete run at the first actionable failure it
 observes, in the order judgments finish, for a quick fix-and-retry loop:
@@ -407,12 +414,12 @@ judged and no snapshot is written. Listed tests are not run with
 			"count.unsupported-scope   --count over committed content it cannot judge, such as a symlink or a submodule",
 			"count.preparation-failed  with --count, a runtime Git, tool, listing, coverage, conversion or baseline step failed before any mutant, or the private scratch directory is unusable (stage scratch): stage",
 			"count.trial-failed        with --count, a selected mutant's trial could not run: file, line, column, function, original, replacement, identity",
-			"count.interrupted         with --count, SIGINT or SIGTERM interrupted the run, whose report is partial",
+			"mutation.cleanup-failed   an owned process group's cleanup did not finish by its deadline, its judgment left with no outcome: process_group, command",
+			"interrupted               SIGINT or SIGTERM stopped the run, whose report keeps what it finished",
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every mutant that ran was killed"},
 			{Code: 1, Meaning: "a mutant survived, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
-			{Code: cli.CodeTemporary, Meaning: "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
 			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		},

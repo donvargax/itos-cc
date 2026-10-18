@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -32,8 +33,11 @@ func TestEachSnapshotFailureKindHasItsProblem(t *testing.T) {
 			"writing: remove .metrics/mutate/a.go.json: permission denied", internal},
 		{&snapport.Unlistable{Dir: "mutate", Reason: "open .metrics/mutate/src: permission denied"}, cli.CodeInternal, "internal",
 			"writing: open .metrics/mutate/src: permission denied", internal},
-		{&snapport.Cancelled{}, cli.CodeInterrupted, "interrupted",
+		{&snapport.Cancelled{Cause: cli.ErrInterrupted}, cli.CodeInterrupted, "interrupted",
 			"interrupted before it finished", "Run it again and let it finish."},
+		// A cancellation no interrupt caused is no interrupt (decision 38).
+		{&snapport.Cancelled{Cause: context.Canceled}, cli.CodeInternal, "internal",
+			"writing: cancelled snapshot", internal},
 	} {
 		problems, ok := classifySnapshot(fmt.Errorf("writing: %w", c.failure))
 		if !ok || len(problems) != 1 {

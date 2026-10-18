@@ -50,6 +50,7 @@ Exit codes:
   0   success
   80  a usage error
   100 an internal error itos-cc could not classify; please report it
+  130 interrupted by SIGINT or SIGTERM; on Linux and macOS it then ends by that signal, which a shell reads as 130 or 143
 
 Examples:
   itos-cc probe src

@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 		if platform := os.Getenv(platformEnv); platform != "" {
 			countedPlatform = platform
 		}
-		code = run(context.Background(), os.Args[2:], os.Stdin, os.Stdout, os.Stderr, diskAdapters(os.Stderr))
+		code = run(context.Background(), os.Args[2:], os.Stdin, os.Stdout, os.Stderr, diskAdapters(os.Stderr, nil))
 	} else if len(os.Args) > 2 && os.Args[1] == holdLockArg {
 		code = holdLock(os.Args[2])
 	} else {

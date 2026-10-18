@@ -40,7 +40,7 @@ func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	a := diskAdapters(&stderr)
+	a := diskAdapters(&stderr, nil)
 	a.Workers = m.workers()
 	args := []string{"mutation", "run", "--json", "--no-coverage", "--no-annotate", "--mutate-all", "board.go"}
 	invoke := func() (int, string, string) {

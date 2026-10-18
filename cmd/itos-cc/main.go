@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime/debug"
+	"syscall"
+	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
@@ -30,10 +33,36 @@ func versionString() string {
 }
 
 // main makes the program's one context, which every command runs under,
-// and gives run this process's standard streams and adapters. No interrupt
-// cancels the context yet (docs/CLI.md). It alone exits.
+// and gives run this process's standard streams and adapters. SIGINT or
+// SIGTERM cancels the context, its cause cli.ErrInterrupted, and the
+// command reports the interrupt, exit 130; a later one ends it at once,
+// unless the process groups it owns are being killed (decision 38). The
+// interrupts are this run's, bound into the adapters that kill those
+// groups. It alone exits.
 func main() {
-	os.Exit(run(context.Background(), os.Args[1:], os.Stdin, os.Stdout, os.Stderr, diskAdapters(os.Stderr)))
+	ctx, cancel := context.WithCancelCause(context.Background())
+	signals := make(chan os.Signal, 4)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	interrupts := &cli.Interrupts{}
+	go interrupts.Stop(signals, cancel, func(sig os.Signal) { endInterrupted(hostPlatform, sig) })
+	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr, diskAdapters(os.Stderr, interrupts.Cleaning))
+	if sig := interrupts.Signal(); sig != nil && code == cli.CodeInterrupted {
+		endInterrupted(hostPlatform, sig)
+	}
+	os.Exit(code)
+}
+
+// endInterrupted ends the process as sig interrupted it, once the command
+// has reported: on Linux and macOS by sig's own default action, raised
+// again, so a shell reads 130 for SIGINT and 143 for SIGTERM and stops its
+// loop (q-54); on Windows, which raises none, with exit 130, as it does
+// should the signal not end it.
+func endInterrupted(platform string, sig os.Signal) {
+	if platform != "windows" && raise(sig) == nil {
+		// The signal ends the process; this only bounds a wait for it.
+		time.Sleep(time.Second)
+	}
+	os.Exit(cli.CodeInterrupted)
 }
 
 // classifiers are each domain's, which turn its sealed failures into

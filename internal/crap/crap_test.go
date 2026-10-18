@@ -170,7 +170,7 @@ func TestAFailureStopsTheRun(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	h := handler(measurer(), &snapporttest.Store{RootDir: at("")})
-	if _, err := h.Handle(ctx, Query{Measure: true}, []string{at("src/board.go")}); err != (covport.Cancelled{}) {
+	if _, err := h.Handle(ctx, Query{Measure: true}, []string{at("src/board.go")}); err != (covport.Cancelled{Cause: context.Canceled}) {
 		t.Errorf("a done context: %v, want the coverage port's Cancelled", err)
 	}
 	full := &snapport.Unwritable{Name: "crap.json", Reason: "no space left on device"}

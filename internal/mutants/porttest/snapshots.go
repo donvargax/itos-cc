@@ -30,13 +30,13 @@ type Snapshots struct {
 
 func (s *Snapshots) Root(ctx context.Context) (string, snapport.Failure) {
 	if ctx.Err() != nil {
-		return "", &snapport.Cancelled{}
+		return "", &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return s.RootDir, s.RootFailure
 }
 func (s *Snapshots) Read(ctx context.Context, key string) (*mutants.Snapshot, snapport.Failure) {
 	if ctx.Err() != nil {
-		return nil, &snapport.Cancelled{}
+		return nil, &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure := s.Failures[key]; failure != nil {
 		return nil, failure
@@ -51,7 +51,7 @@ func (s *Snapshots) Read(ctx context.Context, key string) (*mutants.Snapshot, sn
 }
 func (s *Snapshots) Write(ctx context.Context, key string, value mutants.Snapshot) snapport.Failure {
 	if ctx.Err() != nil {
-		return &snapport.Cancelled{}
+		return &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure := s.WriteFailures[key]; failure != nil {
 		return failure
@@ -71,7 +71,7 @@ func (s *Snapshots) Write(ctx context.Context, key string, value mutants.Snapsho
 }
 func (s *Snapshots) Remove(ctx context.Context, key string) snapport.Failure {
 	if ctx.Err() != nil {
-		return &snapport.Cancelled{}
+		return &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure := s.Failures[key]; failure != nil {
 		return failure
@@ -114,7 +114,7 @@ func cloneSnapshot(value mutants.Snapshot) mutants.Snapshot {
 
 func (s *Snapshots) List(ctx context.Context) ([]string, snapport.Failure) {
 	if ctx.Err() != nil {
-		return nil, &snapport.Cancelled{}
+		return nil, &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if s.ListFailure != nil {
 		return nil, s.ListFailure
@@ -142,7 +142,7 @@ func (s *Snapshots) List(ctx context.Context) ([]string, snapport.Failure) {
 }
 func (s *Snapshots) RecordedFile(ctx context.Context, name string) (string, snapport.Failure) {
 	if ctx.Err() != nil {
-		return "", &snapport.Cancelled{}
+		return "", &snapport.Cancelled{Cause: context.Cause(ctx)}
 	}
 	s.MetadataReads = append(s.MetadataReads, name)
 	if failure := s.CatalogFailures[name]; failure != nil {

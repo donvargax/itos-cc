@@ -22,12 +22,12 @@ var _ port.Tree = Tree{}
 // takes seconds at most.
 func (Tree) Discover(ctx context.Context, roots []string) (sources, tests []string, failure port.Failure) {
 	if ctx.Err() != nil {
-		return nil, nil, &port.Cancelled{}
+		return nil, nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	files, err := project.Discover(ctx, roots)
 	if err != nil && ctx.Err() != nil {
 		// The walk stopped because ctx did: the tree is not unwalkable.
-		return nil, nil, &port.Cancelled{}
+		return nil, nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if err != nil {
 		return nil, nil, &port.Unwalkable{Reason: err.Error()}
@@ -40,7 +40,7 @@ func (Tree) Discover(ctx context.Context, roots []string) (sources, tests []stri
 // A done ctx asks nothing.
 func (Tree) Changed(ctx context.Context) ([]string, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	changed, err := project.Changed()
 	if err != nil {
@@ -62,7 +62,7 @@ func (Tree) Exists(ctx context.Context, path string) bool {
 // nothing; a read under way runs to its end.
 func (Tree) Read(ctx context.Context, path string) ([]byte, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	text, err := os.ReadFile(path) //nolint:gosec // the person selected the path, reading it is the point
 	if err != nil {

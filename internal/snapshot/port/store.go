@@ -50,7 +50,14 @@ func (e *Unlistable) Error() string  { return e.Reason }
 
 // Cancelled is returned when the context was done before the snapshot was
 // read, written or removed, or its folder listed, as an interrupt makes it.
-type Cancelled struct{}
+type Cancelled struct {
+	// Cause is the context's cause, which tells an interrupt from any
+	// other stop.
+	Cause error
+}
+
+// Unwrap is the context's cause.
+func (c *Cancelled) Unwrap() error { return c.Cause }
 
 func (*Cancelled) snapshotFailure() {}
 func (*Cancelled) Error() string    { return "cancelled snapshot" }

@@ -202,11 +202,22 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 	} else {
 		report(opt.Progress, RunEvent{Kind: "nothing"})
 	}
-	// A run whose own context stopped writes nothing: what it left
-	// undecided is the stop, never an outcome. A fail-fast stop cancels
-	// only the context execute derives.
-	if err := stopped(ctx, nil); err != nil {
-		return nil, nil, err
+	// A run whose own context stopped while it judged, as an interrupt
+	// stops it, keeps what it finished as a fail-fast stop does (ADR-0022),
+	// writing it outside the cancelled context, and so does one whose
+	// judgment's owned cleanup failed. A fail-fast stop cancels only the
+	// context execute derives.
+	var interrupted error
+	if ctx.Err() != nil {
+		interrupted = Stopped{Cause: context.Cause(ctx)}
+		ctx = context.WithoutCancel(ctx)
+	}
+	for _, s := range states {
+		if interrupted != nil || len(s.result.CleanupFailures) > 0 {
+			for _, other := range states {
+				other.failFast = true
+			}
+		}
 	}
 	for _, s := range states {
 		// No baseline ran for the file: none of its mutants needed one,
@@ -315,7 +326,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		}
 		results = append(results, *s.result)
 	}
-	return results, stop, nil
+	return results, stop, interrupted
 }
 
 // follow takes the snapshot of a file renamed from a path that holds no

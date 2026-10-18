@@ -478,7 +478,7 @@ func TestFreshPreparationPreservesCompleteDefaults(t *testing.T) {
 	report := filepath.Join(root, "coverage.out")
 	plan := coverage.Plan{Language: "go", Dir: root, Sources: []string{source},
 		Commands: [][]string{{"legacy-helper"}}, Reports: []string{report}}
-	legacy := coverage.Run(t.Context(), []coverage.Plan{plan}, []string{source}, os.Stderr)
+	legacy := coverage.Run(t.Context(), []coverage.Plan{plan}, []string{source}, os.Stderr, nil)
 	if legacy == nil || len(legacy.Missing()) == 0 {
 		t.Fatalf("legacy complete-run soft failure behavior changed: %#v", legacy)
 	}

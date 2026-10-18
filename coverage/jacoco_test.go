@@ -206,7 +206,7 @@ func TestExecFilesNoJacococliReportsAreAMissingCollector(t *testing.T) {
 				p.CoverEnv = append(p.CoverEnv, JacocoAgentEnv+"=agent.jar")
 			}
 			var log bytes.Buffer
-			r := Run(t.Context(), []Plan{p}, []string{src}, &log)
+			r := Run(t.Context(), []Plan{p}, []string{src}, &log, nil)
 			missing := r.IntegrationMissing()
 			if got := len(missing) == 1 && missing[0].Language == "kotlin" && missing[0].Cause == (port.ToolMissing{}) && strings.Contains(missing[0].Reason, "jacococli"); got != c.missing {
 				t.Errorf("integration missing %+v, want it naming jacococli: %v\nlog:\n%s", missing, c.missing, &log)

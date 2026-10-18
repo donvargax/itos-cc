@@ -162,6 +162,7 @@ Exit codes, for every command (each command's help says when):
   81  an unknown command
   82  the environment lacks something: a tool, a report, a git repository
   100 an internal error %[1]s could not classify; please report it
+  130 interrupted by SIGINT or SIGTERM, which every command says once
 
 Scripts read the exit code and --json, less "message" and "fix"; plain
 output is for people and may change in any release. See docs/CLI.md.

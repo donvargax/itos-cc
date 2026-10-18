@@ -38,7 +38,7 @@ var _ port.Store = (*Store)(nil)
 // done.
 func (s *Store) Root(ctx context.Context) (string, port.Failure) {
 	if ctx.Err() != nil {
-		return "", &port.Cancelled{}
+		return "", &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if s.RootFailure != nil {
 		return "", s.RootFailure
@@ -50,7 +50,7 @@ func (s *Store) Root(ctx context.Context) (string, port.Failure) {
 // one that does not decode Unreadable, in the fake's own plain words.
 func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failure) {
 	if ctx.Err() != nil {
-		return false, &port.Cancelled{}
+		return false, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
 		return false, failure
@@ -71,7 +71,7 @@ func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failur
 // text, and stores nothing.
 func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 	if ctx.Err() != nil {
-		return &port.Cancelled{}
+		return &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
 		return failure
@@ -94,7 +94,7 @@ func (s *Store) Write(ctx context.Context, name string, v any) port.Failure {
 // failure.
 func (s *Store) Remove(ctx context.Context, name string) port.Failure {
 	if ctx.Err() != nil {
-		return &port.Cancelled{}
+		return &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure, ok := s.Failures[filepath.ToSlash(name)]; ok {
 		return failure
@@ -107,7 +107,7 @@ func (s *Store) Remove(ctx context.Context, name string) port.Failure {
 // sorted.
 func (s *Store) List(ctx context.Context, dir string) ([]string, port.Failure) {
 	if ctx.Err() != nil {
-		return nil, &port.Cancelled{}
+		return nil, &port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	if failure, ok := s.Failures[filepath.ToSlash(dir)]; ok {
 		return nil, failure

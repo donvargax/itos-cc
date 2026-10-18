@@ -79,7 +79,8 @@ run's exit code from its problems by the precedence `docs/CLI.md` gives, the fir
 rather than the highest; an error that neither is a problem nor any classifier claims is an
 internal one, exit 100. A new command is a new slice beside the others that reuses the domains,
 never another slice's package. `cmd/itos-cc` assembles them, handing the UI each domain's
-classifier and making the one context every command runs under (decision 30); no interrupt
-cancels it yet (interrupt-exit-130). `features/` holds the public behaviour as scenarios, which
+classifier and making the one context every command runs under (decision 30), which SIGINT or
+SIGTERM cancels, its cause `cli.ErrInterrupted`, every command then reporting the interrupt,
+exit 130, and on Linux and macOS ending by that signal (decision 38). `features/` holds the public behaviour as scenarios, which
 godog runs through two drivers: against the binary the harness builds for the platform it is on,
 and in process against the ports' fakes (decision 44, `features/README.md`).

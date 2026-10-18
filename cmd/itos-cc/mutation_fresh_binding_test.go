@@ -55,7 +55,7 @@ func TestMutationCountedUsesActualFreshAndTrialBindings(t *testing.T) {
 					return c.Exclude, c.Tests, c.Exceptions, nil
 				},
 			}
-			a := diskAdapters(&bytes.Buffer{})
+			a := diskAdapters(&bytes.Buffer{}, nil)
 			a.Fresh, a.FreshWorkers, a.Tree, a.Surroundings, a.Toolchain = fresh, workers, &tree, inputs, inputs
 			switch shape {
 			case "missing Fresh":

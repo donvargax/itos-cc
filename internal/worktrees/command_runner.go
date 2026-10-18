@@ -16,6 +16,9 @@ type commandRunner struct {
 	platform      string
 	lifecycle     commandLifecycle
 	cleanupBudget *cleanupBudget // Shared run-abort budget; per-command cleanup never activates it.
+	// hold marks the command's owned group being killed and joined, so a
+	// later interrupt waits for it (decision 38); nil marks nothing.
+	hold func() func()
 }
 
 // commandLifecycle can replace the start/wait boundary for one worker runner.
@@ -38,7 +41,7 @@ func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *byt
 	waited := false
 	if runner.lifecycle.start == nil && runner.lifecycle.wait == nil {
 		started = time.Now()
-		err = runOwnedCommand(ctx, cmd, output, runner.cleanupBudget, platform, runner.lifecycle.cleanup)
+		err = runOwnedCommand(ctx, cmd, output, runner.cleanupBudget, platform, runner.lifecycle.cleanup, runner.hold)
 		waited = true
 	} else if runner.lifecycle.start != nil {
 		started = time.Now()

@@ -93,7 +93,7 @@ Feature: Command line
 
     # Decisions 36 and 38: square/exit's codes, none of 2, 3 and 70, and 130
     # in every command's, since every command stops on an interrupt.
-    @wip @slice-7 @slice-8 @ID-CLI-19
+    @slice-7 @slice-8 @ID-CLI-19
     Scenario Outline: Each help lists the exit codes its command ends with
       When I run "itos-cc <args>"
       Then its help lists the exit codes <codes>, and no other
@@ -247,7 +247,7 @@ Feature: Command line
 
     # Binary-only for good, as the rest of this Rule: the signal reaches
     # itos-cc as a process of its own.
-    @wip @binary-only @slice-8 @ID-CLI-23
+    @binary-only @slice-8 @ID-CLI-23
     Scenario: An interrupted serve says so once and exits 130
       Given "itos-cc serve" is serving the scratch folder
       When it is interrupted
@@ -255,7 +255,7 @@ Feature: Command line
       And it ends as interrupted, which a shell reads as 130
       # serve exited 0 when interrupted until decision 38
 
-    @wip @binary-only @slice-7 @slice-8 @ID-CLI-24
+    @binary-only @slice-7 @slice-8 @ID-CLI-24
     Scenario: An interrupted serve with --json keeps its address beside the problem
       Given "itos-cc serve --json" is serving the scratch folder
       When it is interrupted
@@ -265,7 +265,7 @@ Feature: Command line
         | interrupted | 130  |
       And it ends as interrupted, which a shell reads as 130
 
-    @wip @binary-only @slice-7 @slice-8 @ID-CLI-25
+    @binary-only @slice-7 @slice-8 @ID-CLI-25
     Scenario: SIGTERM stops a command as an interrupt does, and a shell reads 143
       Given "itos-cc serve --json" is serving the scratch folder
       When it is sent SIGTERM
@@ -275,7 +275,7 @@ Feature: Command line
       And it ends as terminated, which a shell reads as 143
       # SIGTERM is what CI sends to cancel a job; --json says 130 for either
 
-    @wip @binary-only @slice-8 @ID-CLI-26
+    @binary-only @slice-8 @ID-CLI-26
     Scenario: An interrupt stops crap promptly while its test hangs, leaving no process its tests started
       Given a Go project whose test starts a process of its own and then hangs
       When "itos-cc crap" is interrupted once that process is running
@@ -283,7 +283,7 @@ Feature: Command line
       And it ends as interrupted, which a shell reads as 130
       And no process its tests started is still running
 
-    @wip @binary-only @slice-8 @ID-CLI-27
+    @binary-only @slice-8 @ID-CLI-27
     Scenario: A shell reads 130 from an interrupted command
       Given a shell runs:
         """
@@ -293,7 +293,7 @@ Feature: Command line
       When itos-cc alone is interrupted once it is serving
       Then the shell prints "status 130"
 
-    @wip @binary-only @slice-8 @ID-CLI-28
+    @binary-only @slice-8 @ID-CLI-28
     Scenario: Ctrl-C stops a shell's loop over a command
       Given a shell runs:
         """

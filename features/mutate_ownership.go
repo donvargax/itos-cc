@@ -456,11 +456,13 @@ func (q *mutationExecution) cancelOutcome() error {
 	if err != nil {
 		return err
 	}
-	if q.m.w.exit != 75 || executionMap(q.result, "sampling")["completion"] != "interrupted" || mu["outcome"] != nil || !slices.Contains([]any{"cancelled", "undecided"}, mu["state"]) {
-		return fmt.Errorf("parent cancellation judgment: %v", q.result)
+	// An interrupted run reports interrupted, exit 130, and then ends by the
+	// signal's own default action, raised again (decision 38).
+	if q.m.w.signal == 0 || executionMap(q.result, "sampling")["completion"] != "interrupted" || mu["outcome"] != nil || !slices.Contains([]any{"cancelled", "undecided"}, mu["state"]) {
+		return fmt.Errorf("parent cancellation judgment: exit %d, signal %d: %v", q.m.w.exit, q.m.w.signal, q.result)
 	}
 	ps := checkProblems(q.result)
-	if len(ps) != 1 || ps[0]["rule"] != "count.interrupted" {
+	if len(ps) != 1 || ps[0]["rule"] != "interrupted" || ps[0]["exit"] != float64(130) {
 		return fmt.Errorf("parent cancellation problem: %v", q.result)
 	}
 	sampling := executionMap(q.result, "sampling")

@@ -2,6 +2,7 @@ package coverage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,7 +26,12 @@ import (
 // A file of a language whose reports list every class of their module
 // (classInventories) that no test reaches has its executable lines listed,
 // all unexecuted, from the report of a successful plan of its module.
-func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *coverage.Report {
+//
+// execute runs each coverage command, in a process group it owns, nil
+// running it as it is; a command whose owned group's cleanup did not
+// finish leaves its plan's files with that gap, port.CleanupFailed. A
+// done context kills the command that runs.
+func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, execute CommandExecutor) *coverage.Report {
 	var reports []*coverage.Report
 	// classes is, by language and module, the entries of a successful
 	// report that lists every class of the module; unlisted is each
@@ -84,20 +90,25 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *co
 			}
 		}
 		failed := ""
+		var cleanup *port.CleanupFailed
 		for _, args := range p.Commands {
 			if ctx.Err() != nil {
 				failed = fmt.Sprintf("; %v", context.Cause(ctx))
 				break
 			}
 			logf(log, "itos-cc: coverage %s$ %s\n", p.Dir, displayArgs(args))
-			cmd := exec.Command(args[0], args[1:]...) //nolint:gosec // the plan's coverage commands, which this package composes for the language
+			cmd := exec.CommandContext(ctx, args[0], args[1:]...) //nolint:gosec // the plan's coverage commands, which this package composes for the language
 			cmd.Dir = p.Dir
 			cmd.Env = env
 			cmd.Stdout = log
 			cmd.Stderr = log
-			if err := cmd.Run(); err != nil {
+			if err := runCommand(ctx, cmd, execute); err != nil {
 				logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
+				var c port.CleanupFailed
+				if errors.As(err, &c) {
+					cleanup = &c
+				}
 			}
 		}
 		integration, why := p.integrate(log)
@@ -120,6 +131,10 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer) *co
 					classes[[2]string{p.Language, p.Dir}] = entries
 				}
 			}
+			continue
+		}
+		if cleanup != nil {
+			reports = append(reports, p.measured(r, *cleanup, "its coverage command's owned process group did not end"+failed))
 			continue
 		}
 		reports = append(reports, p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed))
@@ -256,4 +271,12 @@ func load(ctx context.Context, paths []string, integration, base string, sources
 	r := coverage.Build(ctx, Disk{}, sources, base, all...)
 	r.SetMissing(missing...)
 	return r
+}
+
+// runCommand runs cmd through execute, or as it is when execute is nil.
+func runCommand(ctx context.Context, cmd *exec.Cmd, execute CommandExecutor) error {
+	if execute != nil {
+		return execute(ctx, cmd)
+	}
+	return cmd.Run()
 }

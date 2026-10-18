@@ -73,6 +73,20 @@ func (WorkerCancelled) workerFailure()  {}
 func (f WorkerCancelled) Error() string { return f.Cause.Error() }
 func (f WorkerCancelled) Unwrap() error { return f.Cause }
 
+// WorkerCleanupFailed is a command whose owned process group's cleanup did
+// not finish by its deadline (ADR-0021): ProcessGroup and Command name the
+// group and the command. Its judgment has no outcome, and the run reports
+// the failure beside its other problems, never as a kill.
+type WorkerCleanupFailed struct {
+	ProcessGroup int
+	Command      string
+	Cause        error
+}
+
+func (WorkerCleanupFailed) workerFailure()  {}
+func (f WorkerCleanupFailed) Error() string { return f.Cause.Error() }
+func (f WorkerCleanupFailed) Unwrap() error { return f.Cause }
+
 // WorkerFailed preserves an actual setup, copy, start, wait or cleanup error.
 type WorkerFailed struct{ Cause error }
 
