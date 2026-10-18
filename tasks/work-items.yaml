@@ -3756,3 +3756,15 @@ items:
       --all-tests outcome recorded in one checkout can read stale in another. Apply slice-10's rule
       (tracked files a build can include; go's directory rules outside git) to whole-suite evidence.
     refs: ["#37"]
+  - id: serve-listening-address
+    title: serve names the address it listens on, not the one it asked for
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      With --port 0, serve's stderr line and its --json address say 127.0.0.1:0, not the port the
+      system picked, so a script or a person cannot reach it; the S10 interrupt scenarios start
+      serve on port 0 and wait on that line. Naming listener.Addr() would be a contract change, so
+      it needs a scenario first.
