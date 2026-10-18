@@ -3301,6 +3301,10 @@ items:
       write dependency caches in the live node_modules (they are not the project's files, git
       ignores them), and either say so in the scenario or give the export's tools a cache of their
       own (Vite's cacheDir, or a .vite of the export's).
+
+      q-68 answered 2026-10-18: give the export's tools caches of their own (Vite's cacheDir, or a
+      .vite and .cache beside the export, removed with it), so a counted run leaves the live working
+      tree unchanged, ignored files included.
   - id: p1-serve-announces-its-port
     title: serve announces the address it listens on, so --port 0 works
     phase: 1
