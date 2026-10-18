@@ -46,6 +46,9 @@ type mutateState struct {
 	original, recorded string
 	// baseline is how long the Given says the project's tests take.
 	baseline time.Duration
+	// launched is when the last run whose baseline the tests record was
+	// launched.
+	launched time.Time
 	// command is the --test-command a Given's project runs its tests
 	// with, "" for its own, and factor the timeout factor a When says is
 	// the default, 0 where it says none.

@@ -58,6 +58,7 @@ func TestCount(t *testing.T) {
 		TimingOut: []Site{{m.file, 7, "-", "+"}, {m.file, 7, "1", "0"}}}); err != nil {
 		return err
 	}
+	m.launched = time.Now()
 	return m.w.runEnv(m.w.dir, m.w.env(), "mutation", "run", "--no-coverage", filepath.FromSlash(m.file))
 }
 
@@ -87,9 +88,15 @@ func (m *mutateState) baselineFirst() error {
 const timeoutAllowance = 5.0
 
 // reaping is how much longer than its timeout a timed-out run may take to
-// end, a second, and the two seconds itos-cc lets the processes it starts
-// hold its output where the system ends no process group at once.
-const reaping = 3.0
+// end on the platform: a second, and on Windows, where itos-cc ends the
+// command's process but not the processes it started, the two seconds it
+// lets those hold its output.
+func reaping(platform string) float64 {
+	if platform == "windows" {
+		return 3
+	}
+	return 1
+}
 
 // timedOut are the last run's mutants of the file that timed out, and the
 // longest of those that did not, in seconds.
@@ -109,29 +116,36 @@ func (m *mutateState) timedOut() ([]trial, float64, error) {
 	return out, longest, nil
 }
 
-// durationSetsTimeout is whether the mutant that timed out took the
-// factor times the baseline's time, plus the allowance: no less than its
-// test took, and no more than half again the longest other mutant's run,
-// and the time a timed-out run takes to end.
+// durationSetsTimeout is whether the mutants that timed out took the
+// factor times the baseline's time, plus the allowance: the baseline no
+// shorter than its test took, and no longer than from the run's launch to
+// the start of the first mutant's test, with the time a timed-out run takes
+// to end. The run says no baseline it measured: it began after the launch,
+// and the mutants' runs began after it ended, so the run's own times bound
+// it whatever the load, and a timeout not set from it, fixed or a default,
+// is past them.
 func (m *mutateState) durationSetsTimeout() error {
 	runs, err := m.mutantRuns()
 	if err != nil {
 		return err
 	}
 	slices.SortStableFunc(runs, func(a, b testRecord) int { return int(a.Start - b.Start) })
-	baseline := float64(runs[0].End-runs[0].Start) / 1000
-	out, longest, err := m.timedOut()
+	first := slices.IndexFunc(runs, func(r testRecord) bool { return r.Mutated })
+	if first < 0 || m.launched.IsZero() {
+		return fmt.Errorf("no mutant's test ran after the baseline of a run whose launch was noted: %+v\n%s", runs, m.w.report())
+	}
+	shortest := float64(runs[0].End-runs[0].Start) / 1000
+	longest := float64(runs[first].Start-m.launched.UnixMilli()) / 1000
+	out, _, err := m.timedOut()
 	if err != nil {
 		return err
 	}
 	factor := 10.0
-	// The baseline, the first run in a fresh copy, may build what the
-	// mutants' runs find built: it may take half again the longest of them.
-	low, high := factor*baseline+timeoutAllowance, factor*longest*1.5+timeoutAllowance+reaping
+	low, high := factor*shortest+timeoutAllowance, factor*longest+timeoutAllowance+reaping(m.w.d.Platform())
 	for _, t := range out {
 		if t.elapsed < low || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not between %.1fs and %.1fs, as a baseline of %.2fs to %.1fs sets\n%s",
-				t.line, t.elapsed, low, high, baseline, longest, m.w.report())
+				t.line, t.elapsed, low, high, shortest, longest, m.w.report())
 		}
 	}
 	return nil
@@ -248,7 +262,7 @@ func (m *mutateState) timesOutAfter(text, times, allowance string) error {
 	if err != nil {
 		return err
 	}
-	high := after + factor*max(0, longest-m.baseline.Seconds()) + reaping
+	high := after + factor*max(0, longest-m.baseline.Seconds()) + reaping(m.w.d.Platform())
 	for _, t := range out {
 		if t.elapsed < after || t.elapsed > high {
 			return fmt.Errorf("the mutant at line %d timed out after %.1fs, not %ss, its baseline %s and the longest other run %.1fs\n%s",
