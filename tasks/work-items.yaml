@@ -3706,3 +3706,17 @@ items:
       unnoticed until the build. A check at suite start (every step text of the feature files
       against the registered expressions, in both drivers) would refuse it in the test commit
       itself.
+  - id: bug-4
+    title: An itos-cc.yaml that cannot be read makes crap, dry, units and mutation exit 100 as a bug in itos-cc
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      Found by T-132's edge run 39101044040 (cases t115-06 and t115-07) and confirmed on the binary
+      at e5b202c: with itos-cc.yaml unreadable, units, crap, dry and mutation list exit 100, rule
+      internal, 'This is a bug in itos-cc; please report it'. docs/CLI.md row 38 and slice-6's
+      Upgrading say a file that cannot be read is config.invalid, exit 80. cmd/itos-cc/adapters.go's
+      exclusionOf returns config.Read's error unwrapped and wraps only config.Parse's; mutation's
+      settings path needs checking too. scrap never reads the file and stays exit 0.
