@@ -1688,17 +1688,9 @@ items:
     title: Run the godog harness over itos-cc's feature files
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-26]
     kind: idea
-    why: >
-      Set aside by T-26. go-template-itos v0.2.0 brought features/*_test.go, a godog harness that
-      runs every live scenario of features/*.feature against the built binary (Strict, so an
-      undefined step fails). itos-cc's feature files have no godog steps yet, so TestFeatures starts
-      with a t.Skip naming this item. Wiring it means steps for itos-cc's scenarios (or the
-      scenarios moved to them), the t.Skip removed, and itos.yaml's tests.scenario given the
-      template's run selection so itos ci run can run them; a gate of its own, never weakened to
-      pass.
   - id: template-main-tests
     title: Restore the template's cmd/itos-cc/main_test.go with the port of its main.go
     phase: 1
