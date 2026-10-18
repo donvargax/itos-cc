@@ -3752,3 +3752,17 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: baseline-timeout-reported
+    title: mutation run reports the baseline it measured and the timeout it set
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-139 (6ee4f5c) found that a run exposes neither: stderr's baseline line has no duration, and
+      neither --json nor the snapshot holds the baseline or the mutant timeout, so ID-MUT-13's step
+      bounds a timed-out mutant from the launch time to the first mutant's start, about 18 s looser
+      than the real timeout on a Windows runner. Reporting both (say in --json's run summary and the
+      baseline's stderr line) would let a person see why a mutant timed out and let the scenario
+      check the timeout exactly.
