@@ -474,6 +474,12 @@ items:
       none of its results match a file of shop. Such tests should run from a root of their own, such
       as a temporary git repository holding a copy of the fixture, so this repository's results
       never leak into them.
+
+      This belongs to serve's move to a web app of its own (1b449af, the person's decision of
+      2026-10-17), which takes the graph along, since the graph is reachable only through serve.
+      Serve's moves in this repository (T-102 to T-108, T-112 and T-113) are deferred until that web
+      app is specified. graph/graph_test.go still builds testdata/shop from inside this repository
+      (line 14).
   - id: integration-coverage-other-languages
     title: Coverage from tests that run the built program, in TypeScript, Python and Kotlin
     phase: 1
