@@ -23,6 +23,7 @@ queue:
   - listed-coverage-failed
   - coverage-thresholds-override
   - T-46
+  - p1-itos-proof-code
   - T-102
   - T-103
   - T-104
