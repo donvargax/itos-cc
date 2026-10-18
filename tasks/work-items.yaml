@@ -3299,8 +3299,8 @@ items:
   - id: bug-3
     title: scrap's ignoring line for an unreadable .metrics/scrap.json names other Go types than before the refactor
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
