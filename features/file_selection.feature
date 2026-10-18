@@ -190,7 +190,7 @@ Feature: Choosing which files a command looks at
   # the same on every system, where a file's permissions are not. Each
   # command reads the file before it selects anything, so none needs a path.
   # scrap reads only tests and never reads the file.
-  @wip @bug-4 @ID-SEL-20
+  @bug-4 @ID-SEL-20
   Scenario Outline: An itos-cc.yaml that cannot be read is a config error
     Given itos-cc.yaml is a directory, so it cannot be read
     When I run "itos-cc <command>"
@@ -207,7 +207,7 @@ Feature: Choosing which files a command looks at
       | mutation check     |
       | mutation sample    |
 
-  @wip @bug-4 @ID-SEL-21
+  @bug-4 @ID-SEL-21
   Scenario: scrap never reads itos-cc.yaml
     Given itos-cc.yaml is a directory, so it cannot be read
     When I run "itos-cc scrap"

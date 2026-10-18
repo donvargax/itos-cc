@@ -21,7 +21,8 @@ type SettingsReader interface {
 	Read(ctx context.Context) (root string, config *Config, failure SettingsFailure)
 }
 
-// SettingsFailure distinguishes invalid content from actual I/O and cancellation.
+// SettingsFailure distinguishes settings that cannot be read, invalid, from a
+// read that failed short of them, such as a missing binding, and cancellation.
 //
 //sumtype:decl
 type SettingsFailure interface {
@@ -29,6 +30,9 @@ type SettingsFailure interface {
 	settingsFailure()
 }
 
+// SettingsInvalid is settings that cannot be read: a file that could not be
+// read, or content that is not valid, Reason saying why and Key naming the
+// key at fault where one is.
 type SettingsInvalid struct{ Reason, Key string }
 
 func (SettingsInvalid) settingsFailure() {}

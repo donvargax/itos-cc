@@ -20,14 +20,15 @@ import (
 // against internal/workdir, internal/metricsdir and the file on the disk.
 
 // heldConfig is itos-cc.yaml held in memory at root: its text, or none when
-// text is nil.
+// text is nil, or err, what kept it from being read.
 type heldConfig struct {
 	root string
 	text []byte
+	err  error
 }
 
 func (c heldConfig) Read(context.Context) (string, []byte, error) {
-	return c.root, c.text, nil
+	return c.root, c.text, c.err
 }
 
 // fakes are adapters over a working tree at work, held in memory, of a

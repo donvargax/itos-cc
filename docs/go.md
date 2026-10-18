@@ -218,7 +218,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   `mutants.Config` is the existing semantic settings value; `config.Config` aliases it.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
-  or memory bytes; invalid reason/key and ordinary read failures stay distinct. The
+  or memory bytes. A file the bytes' source cannot read is invalid settings, a reason
+  with no key, as a file that does not parse is (bug-4); only a cancelled read, or a
+  missing binding, stays apart. `exclusionOf`, the `exclude` of `crap`, `dry` and
+  `units`, reads through it too, so every command classifies the file alike. The
   unit fake owns only semantic values. The memory driver runs all five children over its
   fakes (T-125), binding a counted run as the disk adapters bind it: porttest's `Fresh`
   over the fake repository, the same `Workers` for its trials, the fake repository's

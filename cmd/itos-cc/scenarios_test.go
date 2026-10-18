@@ -169,13 +169,21 @@ func (m *memory) WriteExecutable(path string, data []byte) error {
 	return m.Write(path, data)
 }
 
+// Read is the text of the file at path; a folder there cannot be read, as
+// on a disk, and nothing there is not there.
 func (m *memory) Read(path string) ([]byte, error) {
 	text, ok := m.files[filepath.Clean(path)]
 	if !ok {
+		if m.Exists(path) {
+			return nil, &fs.PathError{Op: "read", Path: path, Err: errIsDirectory}
+		}
 		return nil, &fs.PathError{Op: "open", Path: path, Err: fs.ErrNotExist}
 	}
 	return []byte(text), nil
 }
+
+// errIsDirectory is why the memory cannot read a folder as a file.
+var errIsDirectory = errors.New("is a directory")
 
 func (m *memory) Mkdir(path string) error {
 	m.dirs[filepath.Clean(path)] = true
@@ -497,8 +505,10 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		store.Snapshots[rel] = text
 	}
 	file := heldConfig{root: root}
-	if text, ok := m.files[filepath.Join(root, config.File)]; ok {
-		file.text = []byte(text)
+	if text, err := m.Read(filepath.Join(root, config.File)); err == nil {
+		file.text = text
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		file.err = err
 	}
 	input := m.inputs(r)
 	observations := &selporttest.Observations{}

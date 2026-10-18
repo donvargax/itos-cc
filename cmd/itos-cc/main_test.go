@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -67,23 +67,23 @@ func TestRunPrintsTheVersionMainWorksOut(t *testing.T) {
 type unreadable struct{}
 
 func (unreadable) Read(context.Context) (string, []byte, error) {
-	return "/work", nil, errors.New("itos-cc.yaml: permission denied")
+	return "/work", nil, &fs.PathError{Op: "open", Path: "/work/itos-cc.yaml", Err: fs.ErrPermission}
 }
 
-// crap, dry and units end with the failure of reading itos-cc.yaml, which
-// nothing classifies, before measuring anything; their help, scrap and
-// version never read it, so it breaks none of them.
+// crap, dry and units end with config.invalid, naming the file and why it
+// could not be read, before measuring anything (bug-4); their help, scrap
+// and version never read it, so it breaks none of them.
 func TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead(t *testing.T) {
 	failing := fakes(nil)
 	failing.Config = unreadable{}
 	for _, name := range []string{"crap", "dry", "units"} {
 		code, stdout, stderr := runFaked(t, failing, name, "--json")
-		if code != cli.CodeInternal || !strings.Contains(stdout, `"rule": "internal"`) || !strings.Contains(stdout, "itos-cc.yaml: permission denied") || stderr != "" {
-			t.Errorf("%s --json: exit %d, stdout %q, stderr %q; want 100 and the failure as its object", name, code, stdout, stderr)
+		if code != cli.CodeUsage || !strings.Contains(stdout, `"rule": "config.invalid"`) || !strings.Contains(stdout, `"file": "itos-cc.yaml"`) || !strings.Contains(stdout, "itos-cc.yaml: cannot be read: permission denied") || stderr != "" {
+			t.Errorf("%s --json: exit %d, stdout %q, stderr %q; want 80 and config.invalid as its object", name, code, stdout, stderr)
 		}
 		code, _, stderr = runFaked(t, failing, name)
-		if code != cli.CodeInternal || !strings.Contains(stderr, "itos-cc: itos-cc.yaml: permission denied") {
-			t.Errorf("%s: exit %d, stderr %q; want 100 and the failure on stderr", name, code, stderr)
+		if code != cli.CodeUsage || !strings.Contains(stderr, "itos-cc: itos-cc.yaml: cannot be read: permission denied") {
+			t.Errorf("%s: exit %d, stderr %q; want 80 and the failure on stderr", name, code, stderr)
 		}
 		code, stdout, _ = runFaked(t, failing, name, "--help")
 		if code != 0 || !strings.Contains(stdout, "usage: itos-cc "+name) {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"io"
 	"os"
 	"runtime"
@@ -123,32 +122,34 @@ func (diskConfig) Read(context.Context) (string, []byte, error) {
 }
 
 // exclusionOf is the sources itos-cc.yaml's exclude leaves out, its globs
-// from the root file gives with the file's text, read under ctx: a file
-// that cannot be read as a config is config.invalid.
+// from the root file gives with the file's text, read under ctx through
+// config.Reader, the one codec mutation's settings are read through too, so
+// both classify a file the same way.
 func exclusionOf(ctx context.Context, file configFile) (selection.Exclusion, error) {
-	root, text, err := file.Read(ctx)
-	if err != nil {
-		return selection.Exclusion{}, err
-	}
-	cfg, err := config.Parse(text)
-	if err != nil {
-		return selection.Exclusion{}, invalidConfig(err)
+	root, cfg, failure := config.Reader{Source: file}.Read(ctx)
+	if failure != nil {
+		return selection.Exclusion{}, settingsError(failure)
 	}
 	return selection.Exclusion{Root: root, Globs: cfg.Exclude}, nil
 }
 
-// invalidConfig is err, from reading itos-cc.yaml, as a person reads it: a
-// file that cannot be read as a config is config.invalid, saying what each
-// key needs, and any other error is err.
-func invalidConfig(err error) error {
-	var invalid *config.InvalidError
-	if errors.As(err, &invalid) {
-		p := cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(),
+// settingsError is failure, from reading itos-cc.yaml, as a person reads it:
+// a file that cannot be read, or read as a config, is config.invalid, saying
+// what each key needs, and a read that failed short of it or was cancelled
+// is its cause.
+func settingsError(failure mutation.SettingsFailure) error {
+	switch failure := failure.(type) {
+	case mutation.SettingsInvalid:
+		p := cli.NewProblem(cli.CodeUsage, "config.invalid", config.File+": "+failure.Reason,
 			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", config.File)
-		if invalid.Key != "" {
-			p = p.With("key", invalid.Key)
+		if failure.Key != "" {
+			p = p.With("key", failure.Key)
 		}
 		return p
+	case mutation.InputFailed:
+		return failure.Cause
+	case mutation.InputCancelled:
+		return failure.Cause
 	}
-	return err
+	return failure
 }
