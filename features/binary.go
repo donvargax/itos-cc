@@ -34,27 +34,27 @@ func (binary) Folder() (string, error) {
 
 // Write writes data to path, making the folders above it.
 func (binary) Write(path string, data []byte) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { //nolint:gosec // a scenario's folders have the 0755 a checkout's folders have; the product under test sees fixture modes, so narrowing them would change what scenarios check
 		return err
 	}
-	return os.WriteFile(path, data, 0o600)
+	return os.WriteFile(path, data, 0o600) //nolint:gosec // a scenario file, at a path its steps name in the scenario's own temporary folder
 }
 
 func (b binary) WriteExecutable(path string, data []byte) error {
 	if err := b.Write(path, data); err != nil {
 		return err
 	}
-	return os.Chmod(path, 0o700)
+	return os.Chmod(path, 0o700) //nolint:gosec // an executable fixture, such as a test script, must be executable by its owner
 }
 
 // Read is the content of the file at path.
 func (binary) Read(path string) ([]byte, error) {
-	return os.ReadFile(path)
+	return os.ReadFile(path) //nolint:gosec // a file of the scenario's own temporary folder, as its steps name it
 }
 
 // Mkdir makes the folder at path.
 func (binary) Mkdir(path string) error {
-	return os.Mkdir(path, 0o755)
+	return os.Mkdir(path, 0o755) //nolint:gosec // a scenario's folders have the 0755 a checkout's folders have; the product under test sees fixture modes, so narrowing them would change what scenarios check
 }
 
 // Exists is whether anything is at path.
@@ -74,7 +74,7 @@ func (binary) Git(dir string, args ...string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command(bin, args...)
+	cmd := exec.Command(bin, args...) //nolint:gosec // the real git the scenarios resolved, with the arguments a step names
 	cmd.Dir = dir
 	cmd.Env = environment(nil)
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -149,7 +149,7 @@ func (b binary) Coverage(dir string, c Coverage) error {
 			return missing("python3")
 		}
 		for _, module := range []string{"pytest", "coverage"} {
-			if exec.Command("python3", "-c", "import "+module).Run() != nil {
+			if exec.Command("python3", "-c", "import "+module).Run() != nil { //nolint:gosec // probe the installed python3 for a module this harness names
 				return missing(module + " for python3")
 			}
 		}
@@ -281,7 +281,7 @@ func venv(dir string, required bool) error {
 	}
 	link := filepath.Join(dir, ".venv", "bin", "python")
 	if err == nil {
-		err = os.MkdirAll(filepath.Dir(link), 0o755)
+		err = os.MkdirAll(filepath.Dir(link), 0o755) //nolint:gosec // the scenario project's .venv/bin has the 0755 a real virtualenv's has; the product under test sees fixture modes, so narrowing them would change what scenarios check
 	}
 	if err != nil {
 		return err
@@ -327,7 +327,7 @@ func (b binary) nodeModules() string {
 
 // installed says whether modules holds the package name.
 func installed(modules, name string) bool {
-	_, err := os.Stat(filepath.Join(modules, filepath.FromSlash(name), "package.json"))
+	_, err := os.Stat(filepath.Join(modules, filepath.FromSlash(name), "package.json")) //nolint:gosec // asks only whether a package the harness names is installed
 	return err == nil
 }
 
@@ -339,7 +339,7 @@ func (b binary) Run(r Run) (Result, error) {
 	if r.Binary != "" {
 		bin = r.Binary
 	}
-	cmd := exec.Command(bin, r.Args...)
+	cmd := exec.Command(bin, r.Args...) //nolint:gosec // the itos-cc binary under test, or a step's named one, with the scenario's arguments
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
 	if len(r.Without) > 0 {
@@ -487,7 +487,7 @@ func isOneOf(e os.DirEntry, names []string) bool {
 // linkAllBut makes links a folder of links to every entry of folder but the
 // hidden ones.
 func linkAllBut(folder, links string, entries []os.DirEntry, hidden func(os.DirEntry) bool) error {
-	if err := os.MkdirAll(links, 0o755); err != nil {
+	if err := os.MkdirAll(links, 0o755); err != nil { //nolint:gosec // the folder of links standing for PATH has the 0755 a PATH folder has; the product under test sees fixture modes, so narrowing them would change what scenarios check
 		return err
 	}
 	for _, e := range entries {

@@ -29,9 +29,9 @@ func (binary) Tools(ctx context.Context, dir string, setup ToolSetup) error {
 	}
 	probe := setup.Python
 	if probe.Interpreter == "" {
-		return errors.New("Python setup probe needs its actual interpreter identity")
+		return errors.New("the Python setup probe needs its actual interpreter identity")
 	}
-	cmd := exec.CommandContext(ctx, probe.Interpreter, "-c", "import pytest")
+	cmd := exec.CommandContext(ctx, probe.Interpreter, "-c", "import pytest") //nolint:gosec // probe the interpreter the scenario project uses for pytest
 	cmd.Dir, cmd.Env = dir, environment(setup.Env)
 	err := cmd.Run()
 	if cause := context.Cause(ctx); cause != nil {

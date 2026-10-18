@@ -2,12 +2,6 @@ package features
 
 // Real subprocess collector fixtures retained from the legacy command guards.
 
-const (
-	strictPyCliIfLine       = 6
-	strictPyCliPositiveLine = 7
-	strictPyCliOtherLine    = 8
-)
-
 const strictPyCliSource = `import os
 import sys
 
@@ -57,12 +51,6 @@ var strictPyPythonIntegrationFiles = map[string]string{
 	"test_cli.py":    strictPyCliRunner(false) + "def test_positive():\n    assert run(\"test_positive\", \"1\") == \"101\"\n",
 }
 
-const (
-	strictTsTsCliIfLine       = 4
-	strictTsTsCliPositiveLine = 5
-	strictTsTsCliOtherLine    = 7
-)
-
 const strictTsTsCliSource = `import { appendFileSync } from "node:fs";
 
 export function describe(n: number): number {
@@ -107,12 +95,6 @@ var strictTsTypescriptIntegrationFiles = map[string]string{
 	"src/cli.ts":      strictTsTsCliSource,
 	"src/cli.test.ts": strictTsTsCliRunner(false) + "test(\"positive\", () => {\n  expect(run(\"positive\", \"1\")).toBe(\"101\");\n});\n",
 }
-
-const (
-	strictKtKtMainIfLine       = 4
-	strictKtKtMainPositiveLine = 5
-	strictKtKtMainOtherLine    = 7
-)
 
 const strictKtKtMainSource = "package board\n\n" +
 	"fun describe(n: Int): Int {\n" +

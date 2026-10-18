@@ -18,7 +18,6 @@ type broadLanguage struct {
 	l             *languageMutation
 	scope, change string
 	before        map[string]any
-	states        map[string]string
 }
 
 func (l *languageMutation) broadSteps(sc *godog.ScenarioContext) {

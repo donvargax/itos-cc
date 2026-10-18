@@ -48,7 +48,7 @@ func (binary) ObserveReads(paths ...string) (func() ([]string, error), error) {
 		if info.IsDir() {
 			_, err = os.ReadDir(path)
 		} else {
-			_, err = os.ReadFile(path)
+			_, err = os.ReadFile(path) //nolint:gosec // a file of the scenario's own temporary folder, read to observe access
 		}
 		if err != nil {
 			return nil, err

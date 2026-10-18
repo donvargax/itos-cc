@@ -13,7 +13,7 @@ func (binary) Head(ctx context.Context, dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	cmd := exec.CommandContext(ctx, git, "rev-parse", "HEAD")
+	cmd := exec.CommandContext(ctx, git, "rev-parse", "HEAD") //nolint:gosec // the real git the scenarios resolved, asked for HEAD
 	cmd.Dir = dir
 	cmd.Env = environment(nil)
 	out, err := cmd.CombinedOutput()

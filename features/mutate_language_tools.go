@@ -280,7 +280,7 @@ func (l *languageMutation) installedPreparation() error {
 			}
 		case "kotlin":
 			if !strings.Contains(line, "--offline") || !strings.Contains(line, "--tests board.BoardTest") {
-				return fmt.Errorf("Gradle frozen command not offline/narrowed: %s", line)
+				return fmt.Errorf("the Gradle frozen command not offline/narrowed: %s", line)
 			}
 		}
 	}

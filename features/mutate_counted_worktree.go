@@ -107,7 +107,8 @@ func (q *countedMutation) linkedScratch() error {
 		if !ok {
 			return fmt.Errorf("linked execution cwd missing")
 		}
-		if r["source_sha256"] == original {
+		switch r["source_sha256"] {
+		case original:
 			rel, err := filepath.Rel(filepath.Join(gitdir, "itos"), cwd)
 			if err != nil || strings.HasPrefix(rel, "..") || !strings.HasPrefix(filepath.ToSlash(rel), "fresh-plan-") {
 				return fmt.Errorf("linked private input escaped git directory: %v", r)
@@ -117,9 +118,9 @@ func (q *countedMutation) linkedScratch() error {
 			if r["coverage"] != true {
 				baseline++
 			}
-		} else if r["source_sha256"] == mutated {
+		case mutated:
 			trial++
-		} else {
+		default:
 			return fmt.Errorf("linked execution source differs from HEAD/selected mutant: %v", r)
 		}
 	}

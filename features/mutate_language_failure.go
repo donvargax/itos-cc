@@ -19,7 +19,7 @@ func (l *languageMutation) failureSteps(sc *godog.ScenarioContext) {
 			return err
 		}
 		if code != 1 {
-			return fmt.Errorf("Go strict setup exit%d: %v", code, a)
+			return fmt.Errorf("the Go strict setup exit%d: %v", code, a)
 		}
 		snap, err := l.s.snapshot("gomod/entry.go")
 		if err != nil {

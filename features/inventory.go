@@ -39,7 +39,7 @@ func (binary) Lock(ctx context.Context, path string) (func() error, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	f, err := os.OpenFile(path, os.O_RDWR, 0)
+	f, err := os.OpenFile(path, os.O_RDWR, 0) //nolint:gosec // a file of the scenario's own temporary folder, as its step names it
 	if err != nil {
 		return nil, err
 	}

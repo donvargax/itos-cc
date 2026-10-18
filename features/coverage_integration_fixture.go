@@ -37,7 +37,7 @@ func coverageWithoutC8(modules, dest, platform string, required bool) error {
 		if err != nil {
 			return err
 		}
-		if err := os.MkdirAll(filepath.Join(dest, sub), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Join(dest, sub), 0o755); err != nil { //nolint:gosec // a copied fixture's folders have the 0755 a checkout's folders have; the product under test sees fixture modes, so narrowing them would change what scenarios check
 			return err
 		}
 		for _, entry := range entries {

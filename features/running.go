@@ -34,7 +34,7 @@ func (b *capturedOutput) Write(p []byte) (int, error) {
 	defer b.Unlock()
 	return b.Buffer.Write(p)
 }
-func (b *capturedOutput) text() string { b.Lock(); defer b.Unlock(); return b.Buffer.String() }
+func (b *capturedOutput) text() string { b.Lock(); defer b.Unlock(); return b.String() }
 
 type productRun struct {
 	cmd            *exec.Cmd
@@ -54,7 +54,7 @@ func (b binary) Start(ctx context.Context, r Run) (Running, error) {
 	if r.Binary != "" {
 		return nil, errors.New("Start accepts only the product under test, not a Binary override")
 	}
-	cmd := exec.Command(b.bin, r.Args...)
+	cmd := exec.Command(b.bin, r.Args...) //nolint:gosec // the itos-cc binary under test, with the scenario's arguments
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
 	if len(r.Without) > 0 {

@@ -44,7 +44,7 @@ func (q *countedMutation) measureProfile(expected string) error {
 		return err
 	}
 	if code != 0 && code != 1 {
-		return fmt.Errorf("Go profile observation exit%d: %s%s", code, out, log)
+		return fmt.Errorf("the Go profile observation exit%d: %s%s", code, out, log)
 	}
 	data, err := w.d.Read(filepath.Join(w.dir, "T81.observed"))
 	if err != nil {
@@ -56,7 +56,7 @@ func (q *countedMutation) measureProfile(expected string) error {
 		return a
 	}
 	if !slices.Equal(lines(string(data)), lines(expected)) {
-		return fmt.Errorf("Go profile declaration differs from actual compiler inventory:\n%s\nexpected:\n%s", data, expected)
+		return fmt.Errorf("the Go profile declaration differs from actual compiler inventory:\n%s\nexpected:\n%s", data, expected)
 	}
 	if err = w.d.Remove(filepath.Join(w.dir, "T81.observed")); err != nil {
 		return err

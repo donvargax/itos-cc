@@ -25,7 +25,7 @@ func (b binary) Graph(ctx context.Context, r Run) (result []byte, runErr error) 
 	if err := listener.Close(); err != nil {
 		return nil, err
 	}
-	cmd := exec.CommandContext(ctx, b.bin, "serve", "--port", strconv.Itoa(port), "--interval", "1h")
+	cmd := exec.CommandContext(ctx, b.bin, "serve", "--port", strconv.Itoa(port), "--interval", "1h") //nolint:gosec // the itos-cc binary under test, serving on a port this harness chose
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
 	cmd.WaitDelay = time.Second
@@ -78,7 +78,7 @@ func (b binary) Graph(ctx context.Context, r Run) (result []byte, runErr error) 
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }() // read whole below: closing it loses nothing
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err

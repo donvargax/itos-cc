@@ -13,11 +13,11 @@ import (
 )
 
 type languageMutation struct {
-	m                                       *mutateState
-	s                                       *sinceMutation
-	id, language, file, trace, originalRoot string
-	before                                  map[string]string
-	dependencyTarget, frozenSource          string
+	m                              *mutateState
+	s                              *sinceMutation
+	id, language, file, trace      string
+	before                         map[string]string
+	dependencyTarget, frozenSource string
 }
 
 func languageMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {

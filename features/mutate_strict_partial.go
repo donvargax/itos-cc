@@ -1,6 +1,7 @@
 package features
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -122,13 +123,13 @@ example.com/strict/main.go:6.15,6.27 1 1
 			return err
 		}
 		if old["hash"] == now["hash"] {
-			return fmt.Errorf("Edited hash unchanged")
+			return errors.New("edited hash unchanged")
 		}
 		if _, err := strictEvidence(now); err != nil {
 			return err
 		}
 		if reflect.DeepEqual(old["go_coverage"], now["go_coverage"]) {
-			return fmt.Errorf("Edited reused old evidence")
+			return errors.New("edited reused old evidence")
 		}
 		return nil
 	})

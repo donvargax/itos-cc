@@ -102,7 +102,7 @@ func Defer(sel Selection, selection, dir string, deferred map[string]string) (Se
 func examplesTags(files []string) (map[string][]string, error) {
 	owners := map[string][]string{}
 	for _, file := range files {
-		text, err := os.ReadFile(file)
+		text, err := os.ReadFile(file) //nolint:gosec // a feature file of this module, read to list its scenarios
 		if err != nil {
 			return nil, err
 		}

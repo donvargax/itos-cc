@@ -136,7 +136,7 @@ func (e *exceptionMutation) rejudgeRenew(ctx context.Context) error {
 	}
 	u := e.s.units(snap, renewModule+"#Label")
 	if len(u) != 1 || u[0]["survived"] != float64(1) {
-		return fmt.Errorf("Label not rejudged surviving: %v", u)
+		return fmt.Errorf("unit Label not rejudged surviving: %v", u)
 	}
 	e.renewFiles, err = e.treeWithoutConfig(ctx)
 	return err
@@ -174,7 +174,7 @@ func (e *exceptionMutation) renewedEntry(ctx context.Context) error {
 	}
 	u := e.s.units(snap, renewModule+"#Label")
 	if len(u) != 1 {
-		return fmt.Errorf("Label unit %v", u)
+		return fmt.Errorf("unit Label: %v", u)
 	}
 	want := map[string]any{}
 	for key, v := range e.renewBefore[renewModule+"#Label"] {

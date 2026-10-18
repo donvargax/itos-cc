@@ -73,7 +73,7 @@ func (b binary) FixturePeers(ctx context.Context) (FixturePeers, error) {
 	}
 	var nonce [24]byte
 	if _, err = rand.Read(nonce[:]); err != nil {
-		listener.Close()
+		_ = listener.Close() // the nonce's failure is the error returned
 		return nil, err
 	}
 	p := &peerListener{listener: listener, owner: hex.EncodeToString(nonce[:]), connections: map[net.Conn]bool{}, peers: map[string]*fixtureConnection{}, accepted: make(chan struct{})}
@@ -116,14 +116,14 @@ func (p *peerListener) handshake(conn net.Conn) {
 	defer p.handshakes.Done()
 	if err := conn.SetDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		p.connectionFailure(conn, err)
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadSlice('\n')
 	if err != nil {
 		p.connectionFailure(conn, err)
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 	var hello fixtureHello
@@ -134,7 +134,7 @@ func (p *peerListener) handshake(conn net.Conn) {
 	}
 	if err != nil || hello.Owner != p.owner || hello.PID < 1 || len(hello.Nonce) < 32 {
 		p.fail(fmt.Errorf("invalid fixture handshake: %v", err))
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 	peer := &fixtureConnection{conn: conn, reader: reader, hello: hello, gate: make(chan struct{}, 1)}
@@ -144,19 +144,19 @@ func (p *peerListener) handshake(conn net.Conn) {
 	if p.peers[hello.Nonce] != nil {
 		p.mu.Unlock()
 		p.fail(errors.New("duplicate fixture nonce"))
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 	p.peers[hello.Nonce] = peer
 	p.mu.Unlock()
 	if _, err = io.WriteString(conn, "owned\n"); err != nil {
 		p.connectionFailure(conn, err)
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 	if err = conn.SetDeadline(time.Time{}); err != nil {
 		p.connectionFailure(conn, err)
-		conn.Close()
+		_ = conn.Close() // the handshake's failure is recorded above; this only drops it
 		return
 	}
 }
@@ -184,7 +184,7 @@ func (p *peerListener) Capture(ctx context.Context, path string) (FixturePeer, e
 			if !info.Mode().IsRegular() || info.Size() > 65536 {
 				return nil, errors.New("ready record is not a bounded regular file")
 			}
-			record, err := os.ReadFile(path)
+			record, err := os.ReadFile(path) //nolint:gosec // a ready record a fixture published in the scenario's own folder
 			if err != nil {
 				return nil, err
 			}

@@ -208,8 +208,8 @@ func TestFixturePeerCancellationJoinsBeforeCleanup(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 	client, server := net.Pipe()
-	defer client.Close()
-	defer server.Close()
+	defer func() { _ = client.Close() }() // closed again only to free it
+	defer func() { _ = server.Close() }() // closed again only to free it
 	observed := &fixtureReadStarted{Conn: client, started: make(chan struct{})}
 	p := &fixtureConnection{conn: observed, reader: bufio.NewReader(observed), hello: fixtureHello{Nonce: "owned"}, gate: make(chan struct{}, 1)}
 	waiting, stop := context.WithCancel(ctx)
@@ -260,7 +260,7 @@ func TestFixturePeerCloseRetainsProtocolFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }() // closed again only to free it
 	deadline, _ := ctx.Deadline()
 	if err = conn.SetDeadline(deadline); err != nil {
 		t.Fatal(err)

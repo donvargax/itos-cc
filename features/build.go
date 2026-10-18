@@ -68,7 +68,7 @@ func (b binary) install(dir, version, bin string) (Built, error) {
 	}
 	proxy := filepath.Join(dir, "proxy")
 	at := filepath.Join(proxy, filepath.FromSlash(strings.ToLower(module)), "@v")
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	if err := os.MkdirAll(at, 0o755); err != nil { //nolint:gosec // the build's output folder has the 0755 a go build output folder has; the product under test sees fixture modes, so narrowing them would change what scenarios check
 		return Built{}, err
 	}
 	if err := b.zipModule(filepath.Join(at, version+".zip"), module+"@"+version); err != nil {
@@ -129,7 +129,7 @@ func (b binary) checkout(dir, version, bin string) (Built, error) {
 	if err != nil {
 		return Built{}, err
 	}
-	cmd := exec.Command(git, "rev-parse", "HEAD")
+	cmd := exec.Command(git, "rev-parse", "HEAD") //nolint:gosec // the real git the harness resolved, asked for HEAD
 	cmd.Dir, cmd.Env = tree, environment(nil)
 	out, err := cmd.Output()
 	if err != nil {
@@ -142,7 +142,7 @@ func (b binary) checkout(dir, version, bin string) (Built, error) {
 // goCommand runs go with args in dir, in the scenarios' environment with
 // vars set.
 func goCommand(dir string, vars []string, args ...string) error {
-	cmd := exec.Command("go", args...)
+	cmd := exec.Command("go", args...) //nolint:gosec // only the fixed go tool, building the binary under test
 	cmd.Dir, cmd.Env = dir, environment(vars)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("go %s: %v\n%s", strings.Join(args, " "), err, out)
@@ -161,11 +161,11 @@ func fileURL(p string) string {
 
 // modulePath is the path go.mod at root declares.
 func modulePath(root string) (string, error) {
-	f, err := os.Open(filepath.Join(root, "go.mod"))
+	f, err := os.Open(filepath.Join(root, "go.mod")) //nolint:gosec // this module's own go.mod
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read alone: closing it loses nothing
 	lines := bufio.NewScanner(f)
 	for lines.Scan() {
 		if rest, ok := strings.CutPrefix(strings.TrimSpace(lines.Text()), "module "); ok {
@@ -236,7 +236,7 @@ func (b binary) zipModule(name, prefix string) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(name)
+	f, err := os.Create(name) //nolint:gosec // a file of the harness's own build folder
 	if err != nil {
 		return err
 	}

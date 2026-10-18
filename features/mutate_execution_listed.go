@@ -218,22 +218,6 @@ import("fmt";"os")
 func main(){f,err:=os.OpenFile(os.Getenv("FF_DIR")+"/list.log",os.O_WRONLY|os.O_CREATE|os.O_APPEND,0600);if err!=nil{panic(err)};if _,err=f.WriteString("list\n");err!=nil{panic(err)};if err=f.Close();err!=nil{panic(err)};fmt.Println("ID-A-01\te2e/e2e_test.go\nID-A-02\te2e/e2e_test.go")}
 `
 
-func (q *mutationExecution) recorded(name string) ([]map[string]any, error) {
-	a, err := q.s.snapshot("main.go")
-	if err != nil {
-		return nil, err
-	}
-	var found []map[string]any
-	for _, u := range objectList(a, "units") {
-		if strictNamed(fmt.Sprint(u["name"]), name) {
-			found = append(found, u)
-		}
-	}
-	if len(found) != 1 {
-		return nil, fmt.Errorf("recorded unit %s: want exactly one, got %v", name, found)
-	}
-	return objectList(found[0], "mutants"), nil
-}
 func (q *mutationExecution) snapshotBytes(file string) (string, error) {
 	b, err := q.m.w.d.Read(filepath.Join(q.m.w.dir, ".metrics", "mutate", file+".json"))
 	return string(b), err

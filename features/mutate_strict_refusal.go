@@ -144,7 +144,6 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		files[q.testFile] = "import {expect,test} from 'vitest';\nimport {label} from './label';\ntest('label',()=>expect(label('value')).toBe('value'));\n"
 		c.Report = "SF:src/label.ts\nDA:2,1\nend_of_record\n"
 		t.Command = vitestCommand + "src/label.ts"
-		inputSource = "src/label.ts"
 	case "an editable dependency outside the root":
 		marker = "pyproject.toml"
 		q.file = "label.py"
@@ -157,7 +156,6 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		w.variables = append(w.variables, "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1")
 		c.Report = "SF:label.py\nDA:1,1\nDA:2,1\nend_of_record\n"
 		t.Command = "python3 -m pytest -q -x -p no:cacheprovider test_label.py"
-		inputSource = q.file
 	case "a Gradle includeBuild outside the root":
 		marker = "settings.gradle.kts"
 		q.file = "src/main/kotlin/Label.kt"
@@ -173,7 +171,6 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		c.Program = "gradle"
 		c.Report = `<report><package name=""><sourcefile name="Label.kt"><line nr="2" mi="0" ci="1"/></sourcefile></package></report>`
 		t.Command = "gradle -p . test --fail-fast --tests LabelTest"
-		inputSource = q.file
 	case "a Maven module outside the root":
 		marker = "pom.xml"
 		q.file = "app/src/main/kotlin/Label.kt"
@@ -190,7 +187,6 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		t.Command = "mvn -q test -Dtest=LabelTest -Dsurefire.failIfNoSpecifiedTests=false"
 		// Maven measures and tests the module where its own pom.xml is.
 		measureDir = filepath.Join(w.dir, "app")
-		inputSource = q.file
 	default:
 		return fmt.Errorf("unknown unsupported scope %s", scope)
 	}

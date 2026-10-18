@@ -108,7 +108,7 @@ func (l *languageMutation) pythonKilled() error {
 		return err
 	}
 	if f["baseline"] != "passed" || f["ran"] != float64(1) || f["killed"] != float64(1) || f["survived"] != float64(0) {
-		return fmt.Errorf("Python actual judgment: %v", f)
+		return fmt.Errorf("the Python actual judgment: %v", f)
 	}
 	return l.m.w.exitsWith(0)
 }
