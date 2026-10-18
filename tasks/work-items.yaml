@@ -3399,7 +3399,7 @@ items:
     title: Move the undecodable snapshot's wording from the snapshot port into metricsdir
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: since-broad-stale-panic

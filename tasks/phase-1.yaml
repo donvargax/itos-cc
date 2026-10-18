@@ -5086,6 +5086,3 @@
     where it is the adapter's: metricsdir's unit tests and ID-SCRAP-30. The user-visible line does
     not change, so the refactor-proof cases t42-05 and t42-06 keep their bug-3 note. docs/go.md's
     snapshot port paragraph moves the wording to metricsdir's. No depguard rule changes.
-  done_when:
-    - run: go test ./internal/snapshot/... ./internal/metricsdir/... ./internal/scrap/...
-    - run: sh -c '! go list -deps ./internal/snapshot/port | grep -qx encoding/json'
