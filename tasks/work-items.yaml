@@ -1340,6 +1340,14 @@ items:
       evidence, so a comment-only or signature-only change (#22) still reports coverage-missing or
       coverage-stale though no executable line changed. Telling executable lines from the parse
       alone, per language, would let such a function need no evidence.
+
+      The comment-only half is done, and #22 with it (closed). slice-11 (b214f15) leaves comments
+      out of a function's hash in every language, so a function a range changed only in its comments
+      is judged by no run, check or sample, and none of its lines asks coverage evidence under
+      --fail-uncovered=lines (ID-MUT-259 holds it for Go; ID-MUT-256 to ID-MUT-258 hold freshness).
+      What is left is a change that touches no executable line and is no comment, a signature-only
+      change above all, whose function still needs fresh complete evidence under
+      --fail-uncovered=lines.
     refs: ["#22", "#33"]
   - id: slice-4
     title: A stale exception's fix names mutation except --renew first
