@@ -69,8 +69,8 @@ selection of listed tests failed.`,
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every sampled mutant's outcome agrees with the one recorded, or there was nothing to sample"},
 			{Code: 1, Meaning: "a sampled mutant's outcome differs from the one recorded, a file's tests fail before any mutant, or a selection of listed tests fails without any mutant"},
-			{Code: 2, Meaning: "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
-			{Code: 3, Meaning: "outside a git repository: with no --seed, or with --changed or --since"},
+			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path, a --count below 1, a --since ref that is no commit, --since with --changed, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "outside a git repository: with no --seed, or with --changed or --since"},
 		},
 		Examples: []string{
 			"itos-cc mutation sample                        # in CI: 20 mutants, seeded with HEAD",

@@ -44,8 +44,8 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 	goSource, ts, siteFree := filepath.FromSlash("gomod/entry.go"), filepath.FromSlash("app/src/calc.ts"), filepath.FromSlash("app/src/label.ts")
 
 	mixed := itosCc(t, "mutation", "run", "--json", "--no-annotate", "--workers", "1", "--fail-uncovered", goSource, ts)
-	if p := mixed.json(t).problem("coverage.tool-missing"); p == nil || p["language"] != "typescript" || mixed.code != 3 {
-		t.Errorf("mixed strict run: exit %d, want 3 with TypeScript's coverage.tool-missing\n%s%s", mixed.code, mixed.stdout, mixed.stderr)
+	if p := mixed.json(t).problem("coverage.tool-missing"); p == nil || p["language"] != "typescript" || mixed.code != 82 {
+		t.Errorf("mixed strict run: exit %d, want 82 with TypeScript's coverage.tool-missing\n%s%s", mixed.code, mixed.stdout, mixed.stderr)
 	}
 	if files := mixed.rawFiles(t); len(files) != 0 {
 		t.Errorf("mixed strict run judged files %v, want the run stopped before any mutant", files)
@@ -70,7 +70,7 @@ func TestStrictMixedRunStopsWhenAnotherLanguageMeasuredNothing(t *testing.T) {
 	// (strict-lines-typescript), so a raw report is refused as Go's and
 	// Python's are, rather than falling back to running every mutant.
 	raw := failClosedRun(t, ts, "--fail-uncovered", "--coverage-report", "absent.info")
-	if p := raw.json(t).problem("flags.conflict"); raw.code != 2 || p == nil || p["flag"] != "--coverage-report" {
-		t.Errorf("--coverage-report under --fail-uncovered for TypeScript: exit %d, want 2 with flags.conflict naming it\n%s%s", raw.code, raw.stdout, raw.stderr)
+	if p := raw.json(t).problem("flags.conflict"); raw.code != 80 || p == nil || p["flag"] != "--coverage-report" {
+		t.Errorf("--coverage-report under --fail-uncovered for TypeScript: exit %d, want 80 with flags.conflict naming it\n%s%s", raw.code, raw.stdout, raw.stderr)
 	}
 }

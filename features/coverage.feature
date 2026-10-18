@@ -156,7 +156,7 @@ Feature: Coverage
     Scenario: A custom command must say where its report lands
       When I run "itos-cc crap --coverage-command 'make cover'"
       Then stderr says "itos-cc: --coverage-command needs --coverage-report to say where its report lands. Add --coverage-report FILE."
-      And the exit code is 2
+      And the exit code is 80
 
     @ID-COV-19
     Scenario: Skipping coverage

@@ -39,7 +39,7 @@ Options:
 
 Output with --json, one object on stdout:
   {"schema": 1, "ok": true|false, "things": [],
-   "problems": [{"rule", "message", "fix", and keys for its subject}]}
+   "problems": [{"rule", "message", "fix", "exit", and keys for its subject}]}
   "problems" is there only when ok is false. Scripts read the exit code and
   these keys, never "message", "fix", or the plain output.
 
@@ -48,8 +48,8 @@ Problem rules:
 
 Exit codes:
   0   success
-  2   a usage error
-  70  an internal error itos-cc could not classify; please report it
+  80  a usage error
+  100 an internal error itos-cc could not classify; please report it
 
 Examples:
   itos-cc probe src

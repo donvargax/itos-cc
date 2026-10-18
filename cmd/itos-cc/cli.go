@@ -56,7 +56,7 @@ type command struct {
 	about    string
 	flags    []flagSpec
 	json     string    // the keys --json adds beside schema, ok, and problems
-	exits    []exitDoc // its exit codes, 0 and 2 included
+	exits    []exitDoc // its exit codes, 80 included
 	rules    []string  // the problem rules it reports, "rule: meaning"
 	examples []string
 	run      func(context.Context, *invocation) (any, error)
@@ -233,7 +233,7 @@ func execute(ctx context.Context, cmd *command, args []string, a adapters) int {
 }
 
 // runSafely runs cmd under ctx, turning a panic into an internal error, so
-// even a bug ends in the --json object and exit 70.
+// even a bug ends in the --json object and exit 100.
 func runSafely(ctx context.Context, cmd *command, in *invocation) (data any, err error) {
 	defer func() {
 		if r := recover(); r != nil {

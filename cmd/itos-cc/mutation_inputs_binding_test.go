@@ -102,7 +102,7 @@ func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {
 				t.Run(binding.name, func(t *testing.T) {
 					a := base
 					binding.change(&a)
-					if code, out := invoke(a, consumer.args...); code != 70 || !strings.Contains(out, binding.token) {
+					if code, out := invoke(a, consumer.args...); code != 100 || !strings.Contains(out, binding.token) {
 						t.Fatalf("binding escaped: %d %s", code, out)
 					}
 				})
@@ -114,7 +114,7 @@ func TestMutationCachedConsumersRequireActualInputBindings(t *testing.T) {
 	noPorts.Toolchain = nil
 	noPorts.Fingerprints = nil
 	noPorts.Reach = nil
-	if code, out := invoke(noPorts, "mutation", "except", "--json"); code != 2 || !strings.Contains(out, "flags.value-missing") {
+	if code, out := invoke(noPorts, "mutation", "except", "--json"); code != 80 || !strings.Contains(out, "flags.value-missing") {
 		t.Fatalf("usage return changed: %d %s", code, out)
 	}
 	if err := os.Remove(filepath.Join(root, "itos-cc.yaml")); err != nil {

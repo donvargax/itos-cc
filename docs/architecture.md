@@ -77,7 +77,7 @@ the UI every command shares, imports no domain: it holds the problem, its rule,
 message, fix and subject keys, prints them as the JSON object or as text lines, and picks the
 run's exit code from its problems by the precedence `docs/CLI.md` gives, the first present
 rather than the highest; an error that neither is a problem nor any classifier claims is an
-internal one, exit 70. A new command is a new slice beside the others that reuses the domains,
+internal one, exit 100. A new command is a new slice beside the others that reuses the domains,
 never another slice's package. `cmd/itos-cc` assembles them, handing the UI each domain's
 classifier and making the one context every command runs under (decision 30); no interrupt
 cancels it yet (interrupt-exit-130). `features/` holds the public behaviour as scenarios, which

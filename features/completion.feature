@@ -53,9 +53,9 @@ Feature: Shell completion
       | powershell |
 
   @ID-COMPL-05 @count-cli @wip
-  Scenario: completion refuses a shell it has no script for with exit 2, naming it
+  Scenario: completion refuses a shell it has no script for with exit 80, naming it
     When itos-cc runs with "completion tcsh"
-    Then it exits with code 2
+    Then it exits with code 80
     And its error output says "tcsh"
 
   @ID-COMPL-06 @count-cli @wip

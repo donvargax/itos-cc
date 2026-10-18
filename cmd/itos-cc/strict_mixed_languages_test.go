@@ -88,7 +88,7 @@ func requireTypeScriptUnjudged(t *testing.T, o outcome, ts string) {
 	if missing != 1 {
 		t.Errorf("%s: %d mutation.coverage-missing of TypeScript line evidence, want 1 for its function, as no TypeScript tool measures it\n%s", ts, missing, o.stdout)
 	}
-	if o.code == 70 || o.code == 3 {
+	if o.code == 100 || o.code == 82 {
 		t.Errorf("%s in the selection: exit %d\n%s%s", ts, o.code, o.stdout, o.stderr)
 	}
 }

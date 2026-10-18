@@ -185,7 +185,7 @@ func dispatch(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 
 // callSafely calls run, a command's Run, with kong's bindings, and returns
 // its exit code. A panic is an internal error, as it is in serve's legacy
-// handler (runSafely), so even a bug ends in the --json object and exit 70.
+// handler (runSafely), so even a bug ends in the --json object and exit 100.
 func callSafely(ui *cli.UI, parsed *kong.Context, name string, run any, asJSON bool) (code int) {
 	defer func() {
 		if r := recover(); r != nil {

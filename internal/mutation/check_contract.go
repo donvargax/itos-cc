@@ -118,8 +118,8 @@ mutants at sites gone, when it has any.`,
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every function checked has fresh results, and none records a survivor"},
 			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript or Kotlin line, or missing/stale Go, Python, TypeScript or Kotlin coverage evidence with --fail-uncovered; or an exception is stale"},
-			{Code: 2, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
-			{Code: 3, Meaning: "--changed or --since outside a git repository"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository"},
 		},
 		Examples: []string{
 			"itos-cc mutation check --since origin/main --fail-uncovered  # a commit hook",

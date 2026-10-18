@@ -58,7 +58,7 @@ Feature: Command line
     Scenario Outline: An unknown command is a usage error
       When I run "itos-cc <args>"
       Then stderr says "itos-cc: there is no command \"<name>\"<guess> Run 'itos-cc --help' for the commands."
-      And the exit code is 2
+      And the exit code is 81
 
       Examples:
         | args        | name   | guess                     |
@@ -132,7 +132,7 @@ Feature: Command line
     Scenario Outline: A bad flag is a usage error
       When I run "itos-cc <args>"
       Then stderr says "itos-cc: <message>"
-      And the exit code is 2
+      And the exit code is 80
 
       Examples:
         | args                    | message                                                       |
@@ -147,28 +147,6 @@ Feature: Command line
       # a flag is never read as a value: --top --changed is a --top with no value
 
   Rule: One contract with scripts
-
-    @ID-CLI-08
-    Scenario Outline: Exit codes by kind
-      Given <situation>
-      When the command ends
-      Then the exit code is <code>
-
-      Examples:
-        | situation                                                        | code |
-        | it succeeded                                                     | 0    |
-        | a check said no: a mutant survived, a function is over a threshold | 1    |
-        | a usage or config error: a bad flag, path, or report             | 2    |
-        | the environment lacks something: a tool, a report, a git repository | 3    |
-        | an error itos-cc could not classify                              | 70   |
-
-      # The binary driver's alone until T-112 (features.Deferred): serve
-      # stays on its legacy handler, which listens on the real network.
-      @T-112
-      Examples:
-        | situation                                                        | code |
-        | a temporary failure, such as serve's port being in use           | 75   |
-      # with problems of several kinds: 2, then 70, 3, 75, and 1
 
     @ID-CLI-09
     Scenario: --json prints one object
@@ -186,6 +164,7 @@ Feature: Command line
           "problems": [
             {
               "command": "crapp",
+              "exit": 81,
               "fix": "Did you mean 'crap'? Run 'itos-cc --help' for the commands.",
               "message": "there is no command \"crapp\"",
               "rule": "command.unknown"
@@ -194,7 +173,7 @@ Feature: Command line
           "schema": 1
         }
         """
-      And the exit code is 2
+      And the exit code is 81
       # each problem carries a stable rule id and its subject as keys, such
       # as file, line, and function; scripts never read message or fix
 
@@ -205,7 +184,7 @@ Feature: Command line
 
     # Decision 36 renumbers ID-CLI-08's kinds as square/exit does, keeping
     # 75 for a failure that may pass when run again; this replaces it.
-    @wip @slice-7 @ID-CLI-20
+    @slice-7 @ID-CLI-20
     Scenario Outline: Each kind of ending has its own exit code
       Given <situation>
       When the command ends
@@ -221,14 +200,14 @@ Feature: Command line
         | an error itos-cc could not classify                                 | 100  |
 
       # The binary driver's alone until T-112 (features.Deferred), as
-      # ID-CLI-08's row is.
+      # ID-CLI-08's row was.
       @T-112
       Examples:
         | situation                                              | code |
         | a temporary failure, such as serve's port being in use | 75   |
       # 130, an interrupt, is the next Rule's
 
-    @wip @slice-7 @ID-CLI-21
+    @slice-7 @ID-CLI-21
     Scenario Outline: An unknown command exits 81, any other usage error 80
       When I run "itos-cc <args>"
       Then the problem is "<rule>"
@@ -245,7 +224,7 @@ Feature: Command line
         | version extra          | args.unexpected     | 80   |
         | crap nosuch            | paths.unmatched     | 80   |
 
-    @wip @slice-7 @ID-CLI-22
+    @slice-7 @ID-CLI-22
     Scenario: A run with problems of several kinds exits as the first kind, and --json gives each its own
       Given a Go function scoring 20 beside TypeScript whose coverage tool is not installed
       When I run "itos-cc crap --threshold 5 --json"
@@ -362,17 +341,17 @@ Feature: Command line
     Scenario: mutate is no longer a command
       When I run "itos-cc mutate src/board.ts"
       Then stderr says "itos-cc: there is no command \"mutate\". Did you mean 'mutation'? Run 'itos-cc --help' for the commands."
-      And the exit code is 2
+      And the exit code is 81
 
     @mutation-group @ID-CLI-16
     Scenario: An unknown subcommand of the group is a usage error
       When I run "itos-cc mutation nosuch"
       Then the problem is "command.unknown"
       And stderr names the subcommands run and list
-      And the exit code is 2
+      And the exit code is 81
 
     @mutation-group @ID-CLI-17
     Scenario: --scan is not a flag of mutation run
       When I run "itos-cc mutation run --scan x.ts"
       Then the problem is "flags.unknown", with flag "--scan"
-      And the exit code is 2
+      And the exit code is 80

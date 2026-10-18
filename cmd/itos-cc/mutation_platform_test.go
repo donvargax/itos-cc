@@ -29,8 +29,8 @@ func TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue(t *testing.T) {
 			dir := moduleRepo(t, compareFiles)
 			useEnv(t, platformEnv, "windows")
 			o := itosCc(t, append([]string{"mutation", "run", "--json"}, c.args...)...)
-			if p := o.counted(t).problem(c.rule); o.code != 3 || p == nil || p["platform"] != "windows" {
-				t.Errorf("%s on Windows: exit %d, want 3 with %s for windows\n%s%s", c.mode, o.code, c.rule, o.stdout, o.stderr)
+			if p := o.counted(t).problem(c.rule); o.code != 82 || p == nil || p["platform"] != "windows" {
+				t.Errorf("%s on Windows: exit %d, want 82 with %s for windows\n%s%s", c.mode, o.code, c.rule, o.stdout, o.stderr)
 			}
 			// It fails before launching any command, and writes nothing.
 			for _, launched := range []string{"itos-cc: coverage", "itos-cc: baseline", "itos-cc: ["} {

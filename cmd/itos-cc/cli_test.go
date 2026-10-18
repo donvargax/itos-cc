@@ -100,10 +100,10 @@ func TestDispatch(t *testing.T) {
 		{[]string{"--help"}, 0, "Commands:"},
 		{[]string{"help", "crap"}, 0, "usage: itos-cc crap"},
 		{[]string{"crap", "--help"}, 0, "Exit codes:"},
-		{[]string{"help", "nosuch"}, 2, ""},
-		{[]string{"--json", "crapp"}, 2, `"Did you mean 'crap'?`},
+		{[]string{"help", "nosuch"}, 81, ""},
+		{[]string{"--json", "crapp"}, 81, `"Did you mean 'crap'?`},
 		{[]string{"--json", "version"}, 0, `"version"`},
-		{[]string{"version", "extra"}, 2, ""},
+		{[]string{"version", "extra"}, 80, ""},
 		{nil, 0, "mutation run "},
 		{[]string{"mutation", "-h"}, 0, "Subcommands:"},
 		{[]string{"mutation", "--help"}, 0, "Subcommands:"},
@@ -119,36 +119,36 @@ func TestDispatch(t *testing.T) {
 		{[]string{"help", "mutation", "sample"}, 0, "usage: itos-cc mutation sample"},
 		{nil, 0, "mutation sample "},
 		{[]string{"mutation"}, 0, "  sample "},
-		{[]string{"--json", "mutation", "sampel"}, 2, `"Did you mean 'mutation sample'?`},
+		{[]string{"--json", "mutation", "sampel"}, 81, `"Did you mean 'mutation sample'?`},
 		{[]string{"mutation", "except", "--help"}, 0, "usage: itos-cc mutation except"},
 		{[]string{"help", "mutation", "except"}, 0, "usage: itos-cc mutation except"},
 		{nil, 0, "mutation except "},
 		{[]string{"mutation"}, 0, "  except "},
-		{[]string{"--json", "mutation", "excpet"}, 2, `"Did you mean 'mutation except'?`},
-		{[]string{"--json", "mutation", "chek"}, 2, `"Did you mean 'mutation check'?`},
-		{[]string{"help", "mutation", "nosuch"}, 2, ""},
-		{[]string{"help", "crap", "run"}, 2, ""},
-		{[]string{"--json", "mutation"}, 2, `"command.missing"`},
-		{[]string{"mutation", "--json"}, 2, `"command.missing"`},
-		{[]string{"--json", "mutation", "rn"}, 2, `"Did you mean 'mutation run'?`},
-		{[]string{"--json", "mutation", "--changed", "run"}, 2, `"flags.unknown"`},
+		{[]string{"--json", "mutation", "excpet"}, 81, `"Did you mean 'mutation except'?`},
+		{[]string{"--json", "mutation", "chek"}, 81, `"Did you mean 'mutation check'?`},
+		{[]string{"help", "mutation", "nosuch"}, 81, ""},
+		{[]string{"help", "crap", "run"}, 80, ""},
+		{[]string{"--json", "mutation"}, 80, `"command.missing"`},
+		{[]string{"mutation", "--json"}, 80, `"command.missing"`},
+		{[]string{"--json", "mutation", "rn"}, 81, `"Did you mean 'mutation run'?`},
+		{[]string{"--json", "mutation", "--changed", "run"}, 80, `"flags.unknown"`},
 		{nil, 0, "  units           list the functions"},
 		{[]string{"units", "--help"}, 0, "usage: itos-cc units [options] [path ...]"},
 		{[]string{"help", "units"}, 0, "usage: itos-cc units [options] [path ...]"},
-		{[]string{"help", "units", "extra"}, 2, ""},
-		{[]string{"--json", "unit"}, 2, `"Did you mean 'units'?`},
-		{[]string{"--json", "units", "-changed"}, 2, `"Did you mean --changed?`},
+		{[]string{"help", "units", "extra"}, 80, ""},
+		{[]string{"--json", "unit"}, 81, `"Did you mean 'units'?`},
+		{[]string{"--json", "units", "-changed"}, 80, `"Did you mean --changed?`},
 		{nil, 0, "  serve           live architecture graph"},
 		{nil, 0, "  version         print the version"},
 		{[]string{"help", "serve"}, 0, "usage: itos-cc serve [options] [repo ...]"},
-		{[]string{"help", "serve", "extra"}, 2, ""},
-		{[]string{"--json", "serve", "--port", "x"}, 2, `"flags.value-invalid"`},
-		{[]string{"--json", "serv"}, 2, `"Did you mean 'serve'?`},
+		{[]string{"help", "serve", "extra"}, 80, ""},
+		{[]string{"--json", "serve", "--port", "x"}, 80, `"flags.value-invalid"`},
+		{[]string{"--json", "serv"}, 81, `"Did you mean 'serve'?`},
 		{[]string{"help", "version"}, 0, "usage: itos-cc version [options]"},
 		{[]string{"version", "-h", "extra"}, 0, "usage: itos-cc version [options]"},
-		{[]string{"--json", "version", "--bogus"}, 2, `"flags.unknown"`},
+		{[]string{"--json", "version", "--bogus"}, 80, `"flags.unknown"`},
 		{[]string{"--json", "--version"}, 0, `"version"`},
-		{[]string{"--json", "vresion"}, 2, `"Did you mean 'version'?`},
+		{[]string{"--json", "vresion"}, 81, `"Did you mean 'version'?`},
 	} {
 		o := itosCc(t, c.args...)
 		code, out := o.code, o.stdout
@@ -160,7 +160,7 @@ func TestDispatch(t *testing.T) {
 
 func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 	t.Parallel()
-	contract := []string{"Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  2 ", "  70 ", "Examples:", cli.Issues}
+	contract := []string{"Options:", "--json", `"schema": 1`, "Exit codes:", "  0 ", "  80 ", "  100 ", "Examples:", cli.Issues}
 	// serve, on its legacy handler, prints its own, in the same layout.
 	for _, c := range legacy {
 		h := c.help()
@@ -199,7 +199,7 @@ func TestEveryCommandsHelpGivesItsContract(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  2 ", "Examples:", cli.Issues} {
+		for _, part := range []string{"usage: itos-cc " + name + " <subcommand>", "Subcommands:", "--json", "command.missing", "Exit codes:", "  0 ", "  80 ", "  81 ", "Examples:", cli.Issues} {
 			if !strings.Contains(h, part) {
 				t.Errorf("%s --help lacks %q", name, part)
 			}
@@ -235,8 +235,8 @@ func TestAPanicIsAnInternalError(t *testing.T) {
 	boom := &command{name: "boom", run: func(context.Context, *invocation) (any, error) { panic("oops") }}
 	var code int
 	out := stdout(t, func() { code = execute(t.Context(), boom, []string{"--json"}, diskAdapters(io.Discard)) })
-	if code != 70 || !strings.Contains(out, `"rule": "internal"`) || !strings.Contains(out, "boom panicked: oops") {
-		t.Errorf("exit %d, stdout %q: want exit 70 and an internal problem", code, out)
+	if code != 100 || !strings.Contains(out, `"rule": "internal"`) || !strings.Contains(out, "boom panicked: oops") {
+		t.Errorf("exit %d, stdout %q: want exit 100 and an internal problem", code, out)
 	}
 }
 

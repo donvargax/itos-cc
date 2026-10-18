@@ -80,7 +80,7 @@ and with --renew a line per renewal and per entry left stale:
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale"},
 			{Code: 1, Meaning: "with --renew, an entry that no longer holds could not be renewed"},
-			{Code: 2, Meaning: "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew with a site or --reason, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew with a site or --reason, or an itos-cc.yaml that cannot be read"},
 		},
 		Examples: []string{
 			"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",

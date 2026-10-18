@@ -317,7 +317,7 @@ var digits = regexp.MustCompile(`\d+`)
 // itos-cc with args does: the same exit code and stdout, and the same
 // stderr but for its numbers.
 func (c *cliState) sameAs(args string) error {
-	if c.w.last == nil || c.w.exit == 2 {
+	if c.w.last == nil || c.w.exit == 80 {
 		return fmt.Errorf("the run to compare was a usage error, or none\n%s", c.w.report())
 	}
 	fields, err := commandWords(args)

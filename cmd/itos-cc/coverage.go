@@ -32,7 +32,7 @@ func classifyCoverage(err error) ([]*cli.Problem, bool) {
 // --coverage-report is a usage error, and a measurement an interrupt
 // stopped is the stop (decision 31). Each names the build root, language
 // and report m names. None has a default; a gap with no case here is the
-// 70 of a bug.
+// 100 of a bug.
 func gapProblem(m coverage.Unmeasured) *cli.Problem {
 	p := cli.Internal(fmt.Errorf("coverage gap %v: %s", m.Cause, m))
 	switch m.Cause.(type) {
@@ -60,9 +60,9 @@ func gapProblem(m coverage.Unmeasured) *cli.Problem {
 }
 
 // measureProblem is failure's problem: a stopped measurement is its gap's,
-// Cancelled, the stop; a run folder that could not be made is the 70 it
-// has always been, the operating system's text whole. None has a default;
-// a kind with no case here is the 70 of a bug.
+// Cancelled, the stop; a run folder that could not be made is the internal 100,
+// the operating system's text whole. None has a default;
+// a kind with no case here is the 100 of a bug.
 func measureProblem(failure covport.Failure) *cli.Problem {
 	p := cli.Internal(failure)
 	switch e := failure.(type) {

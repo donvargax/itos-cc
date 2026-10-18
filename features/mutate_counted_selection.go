@@ -434,7 +434,7 @@ func (q *countedMutation) notSiteFreeFailures() error {
 	if err != nil {
 		return err
 	}
-	if err = countedProblem(o, "count.unsupported-scope", 2); err != nil {
+	if err = countedProblem(o, "count.unsupported-scope", 80); err != nil {
 		return err
 	}
 	return strictNoCommands(o.result.Stderr)

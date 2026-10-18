@@ -112,9 +112,9 @@ Feature: CRAP scores
     Examples:
       | problem                                         | rule                       | names            | code |
       | tests do not compile                            | coverage.measured-nothing  | dir and language | 1    |
-      | coverage tool is not installed                  | coverage.tool-missing      | dir and language | 3    |
-      | report is missing, with --use-existing-coverage | coverage.no-report         | dir and language | 3    |
-      | --coverage-report cannot be read                | coverage.report-unreadable | report           | 2    |
+      | coverage tool is not installed                  | coverage.tool-missing      | dir and language | 82   |
+      | report is missing, with --use-existing-coverage | coverage.no-report         | dir and language | 82   |
+      | --coverage-report cannot be read                | coverage.report-unreadable | report           | 80   |
     # N/A is not 0%: a broken test setup is not untested code, but it must
     # not pass the gate
 

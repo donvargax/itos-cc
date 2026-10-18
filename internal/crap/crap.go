@@ -87,8 +87,8 @@ as **/porttest/**, are left out, however they are chosen: a path or
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success"},
 			{Code: 1, Meaning: "a function scores above --threshold, or with --threshold, the tests measured nothing"},
-			{Code: 2, Meaning: "a usage or config error: a bad flag, path, or --coverage-report, or an itos-cc.yaml that cannot be read"},
-			{Code: 3, Meaning: "with --threshold, a coverage tool or report is missing; --changed outside git"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag, path, or --coverage-report, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "with --threshold, a coverage tool or report is missing; --changed outside git"},
 		},
 		Examples: []string{
 			"itos-cc crap --top 20",

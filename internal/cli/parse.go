@@ -297,7 +297,7 @@ func UnknownCommand(node *kong.Node, word string) *Problem {
 	if guess := Closest(word, commandNames(node)); guess != "" {
 		fix = fmt.Sprintf("Did you mean '%s'? ", strings.TrimSpace(commandPath(node)+" "+guess)) + fix
 	}
-	return NewProblem(CodeUsage, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)
+	return NewProblem(CodeUnknownCommand, "command.unknown", fmt.Sprintf("there is no command %q", full), fix).With("command", full)
 }
 
 // commandNames are the commands of node a person may name.

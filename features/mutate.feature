@@ -635,7 +635,7 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --no-coverage --fail-uncovered src/board.ts"
       Then the problem is "flags.conflict", naming "--no-coverage"
       And no coverage command or mutant runs
-      And the exit code is 2
+      And the exit code is 80
 
   Rule: Differential runs
 
@@ -771,20 +771,20 @@ Feature: Mutation testing
       When I run "itos-cc mutation run --since nosuch"
       Then stderr says "itos-cc: --since nosuch: not a commit in this repository"
       And the problem is "since.bad-ref", with ref "nosuch"
-      And the exit code is 2
+      And the exit code is 80
 
     @slice-1 @ID-MUT-44
     Scenario: --since outside a git repository is a missing environment
       Given the working directory is not a git repository
       When I run "itos-cc mutation run --since main"
       Then the problem is "since.no-git"
-      And the exit code is 3
+      And the exit code is 82
 
     @slice-1 @ID-MUT-45
     Scenario: --since and --changed are not combined
       When I run "itos-cc mutation run --since main --changed"
       Then the problem is "flags.conflict", with flag "--changed"
-      And the exit code is 2
+      And the exit code is 80
       # --changed judges whole files of the working tree, --since functions of
       # commits: together they would judge neither
 
@@ -1156,14 +1156,14 @@ Feature: Mutation testing
       Given the working directory is not a git repository
       When I run "itos-cc mutation sample"
       Then the problem is "sample.no-git"
-      And the exit code is 3
+      And the exit code is 82
       But "itos-cc mutation sample --seed 1" runs
 
     @mutation-sample @ID-MUT-80
     Scenario: A count below 1 is a usage error
       When I run "itos-cc mutation sample --count 0"
       Then the problem is "flags.value-invalid", with flag "--count" and value "0"
-      And the exit code is 2
+      And the exit code is 80
 
     @mutation-sample @ID-MUT-81
     Scenario: With --since only the functions the range changed are sampled
@@ -1447,15 +1447,15 @@ Feature: Mutation testing
       Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
       When I run "itos-cc mutation except src/board.ts:5:9 --reason 'x'"
       Then the problem is "exception.no-survivor", with file, line and column
-      And the exit code is 2
+      And the exit code is 80
       And excepting src/board.ts:9:3 is refused the same way
 
     @mutation-exceptions @ID-MUT-87
     Scenario: A reason is required
       When I run "itos-cc mutation except src/board.ts:7:19"
       Then the problem is "flags.value-missing", with flag "--reason"
-      And the exit code is 2
-      And "--reason ''" is "flags.value-invalid", exit 2
+      And the exit code is 80
+      And "--reason ''" is "flags.value-invalid", exit 80
 
     @mutation-exceptions @ID-MUT-88
     Scenario: The rest of itos-cc.yaml is kept
@@ -1541,7 +1541,7 @@ Feature: Mutation testing
       Given itos-cc.yaml holds an entry with no reason
       When I run "itos-cc mutation run src/board.ts"
       Then the problem is "config.invalid", with file "itos-cc.yaml"
-      And the exit code is 2
+      And the exit code is 80
 
     @mutation-exceptions @ID-MUT-99
     Scenario: Excepted mutants as JSON
@@ -1809,7 +1809,7 @@ Feature: Mutation testing
 
       Examples:
         | language   | failure                              | rule                      | exit |
-        | TypeScript | tool is missing                      | coverage.tool-missing     | 3    |
+        | TypeScript | tool is missing                      | coverage.tool-missing     | 82   |
         | Python     | command exits 0 but writes no report | coverage.measured-nothing | 1    |
         | Kotlin     | command fails                        | coverage.measured-nothing | 1    |
 
@@ -2250,7 +2250,7 @@ Feature: Mutation testing
     @strict-changed-lines @ID-MUT-226
     Scenario: Changed-line strictness needs a range and holds in a counted run
       When I run "itos-cc mutation run --fail-uncovered=lines" without --since
-      Then it fails as a usage error, exit 2, naming --since
+      Then it fails as a usage error, exit 80, naming --since
       And a counted Go run with --count 1 --since <base> --fail-uncovered=lines judges coverage only on the changed lines, as a complete run does
 
     # Slice-11 (issue #22): a function the range touched only in its
@@ -2657,9 +2657,9 @@ Feature: Mutation testing
     @strict-go-coverage @ID-MUT-163
     Scenario: Strict coverage validates flags and does not widen other modes
       When I combine --fail-uncovered with --no-coverage, even for an empty selection
-      Then the problem is "flags.conflict" for "--no-coverage" and the exit code is 2
+      Then the problem is "flags.conflict" for "--no-coverage" and the exit code is 80
       When strict Go run is combined with --coverage-report, --use-existing-coverage or --coverage-command
-      Then the problem is "flags.conflict" naming the incompatible report flag and the exit code is 2
+      Then the problem is "flags.conflict" naming the incompatible report flag and the exit code is 80
       And no report, coverage command or mutant is consumed to bless strict evidence
       But non-strict explicit-report and no-coverage runs retain their current behavior
       And other-language statement coverage, ordinary graph/sample freshness and survivor exceptions are unchanged
@@ -3241,7 +3241,7 @@ Feature: Mutation testing
   # (stop at the earliest observed final failure, cancel at once, one shared
   # five-second cleanup deadline), ADR-0021 (owned process trees) and ADR-0022
   # (preserve valid partial evidence, report incomplete work) hold, with q-36:
-  # Linux and macOS first, Windows refused (fail-fast.platform, exit 3) until
+  # Linux and macOS first, Windows refused (fail-fast.platform, exit 82) until
   # #29. Decisions for both slices:
   # - mutation run --fail-fast is opt-in; without it scheduling, output,
   #   snapshots and annotations are exactly as before. It applies to complete
@@ -3358,7 +3358,7 @@ Feature: Mutation testing
     Scenario Outline: Unsupported Windows execution is refused before project commands run
       Given a committed eligible mutation fixture on Windows
       When I run "itos-cc mutation run <mode> --json" in that fixture
-      Then the problem is "<rule>" for Windows and the exit code is 3
+      Then the problem is "<rule>" for Windows and the exit code is 82
       And no test, list or coverage command runs and no snapshot is written
 
       Examples:
@@ -3433,7 +3433,7 @@ Feature: Mutation testing
   # added key), and the next mutation run under its paths removes it; an
   # exception naming it is stale with why excluded, whose fix is to remove
   # the entry, and mutation except refuses its sites as exception.excluded,
-  # exit 2. --count reads the itos-cc.yaml HEAD commits.
+  # exit 80. --count reads the itos-cc.yaml HEAD commits.
   Rule: Sources itos-cc.yaml excludes are not mutated
 
     @slice-6 @ID-MUT-243
@@ -3461,7 +3461,7 @@ Feature: Mutation testing
       Then it reports "mutation.exception-stale" with "why" "excluded"
       When I run "itos-cc mutation except src/port/porttest/fake.go:7:9 --reason x"
       Then the problem is "exception.excluded", with file "src/port/porttest/fake.go"
-      And the exit code is 2
+      And the exit code is 80
 
     @slice-6 @ID-MUT-246
     Scenario: A counted run selects no site in an excluded source

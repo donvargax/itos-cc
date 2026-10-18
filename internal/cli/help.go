@@ -24,7 +24,7 @@ type Exit struct {
 // Contract is what a command's help says beyond its flags and arguments,
 // which kong's model holds: what it does, the keys --json adds beside
 // schema, ok and problems, the problem rules it reports ("rule: meaning"),
-// its exit codes (0 and 2 among them; 70 is every command's), and examples.
+// its exit codes (0 and 80 among them; 100 is every command's), and examples.
 type Contract struct {
 	About    string
 	JSON     string
@@ -65,7 +65,7 @@ func (p Page) String() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "usage: %s %s %s\n\n%s\n\nOptions:\n", p.Program, p.Command, p.Synopsis, strings.TrimSpace(p.About))
 	WriteFlags(&b, p.Flags)
-	fmt.Fprintf(&b, "\nOutput with --json, one object on stdout:\n  {\"schema\": 1, \"ok\": true|false, %s,\n   \"problems\": [{\"rule\", \"message\", \"fix\", and keys for its subject}]}\n", p.JSON)
+	fmt.Fprintf(&b, "\nOutput with --json, one object on stdout:\n  {\"schema\": 1, \"ok\": true|false, %s,\n   \"problems\": [{\"rule\", \"message\", \"fix\", \"exit\", and keys for its subject}]}\n", p.JSON)
 	b.WriteString("  \"problems\" is there only when ok is false. Scripts read the exit code and\n  these keys, never \"message\", \"fix\", or the plain output.\n")
 	if len(p.Rules) > 0 {
 		b.WriteString("\nProblem rules:\n")

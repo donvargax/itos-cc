@@ -38,7 +38,8 @@ Problem rules:
 
 Exit codes:
   0   help printed
-  2   a usage error: an unknown subcommand or flag, or --json with no subcommand
+  80  a usage error: an unknown flag, or --json with no subcommand
+  81  an unknown subcommand
 `, programOf(node), name)
 	b.WriteString("\nExamples:\n")
 	for _, e := range c.Examples {

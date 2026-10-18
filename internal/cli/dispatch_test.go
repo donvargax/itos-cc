@@ -117,7 +117,7 @@ func TestDispatchRefusesWhatTheModelLacks(t *testing.T) {
 		"vresion":     "Did you mean 'version'? Run 'itos-cc --help' for the commands.",
 	} {
 		r := Dispatch(app, strings.Fields(args))
-		if r.Problem == nil || r.Problem.Rule != "command.unknown" || r.Problem.Code != CodeUsage || r.Problem.Fix != fix {
+		if r.Problem == nil || r.Problem.Rule != "command.unknown" || r.Problem.Code != CodeUnknownCommand || r.Problem.Fix != fix {
 			t.Errorf("%s: %+v, want command.unknown with %q", args, r.Problem, fix)
 		}
 	}
@@ -150,7 +150,7 @@ func TestUsageListsEveryCommandSorted(t *testing.T) {
 	if !strings.HasPrefix(usage, want) {
 		t.Errorf("the usage begins\n%s\nwant\n%s", usage[:min(len(usage), len(want))], want)
 	}
-	for _, part := range []string{"'itos-cc help <command>'", "  70  an internal error itos-cc could not classify", "  itos-cc mutation run --changed --json\n", "\nReport issues at " + Issues + "\n"} {
+	for _, part := range []string{"'itos-cc help <command>'", "  100 an internal error itos-cc could not classify", "  itos-cc mutation run --changed --json\n", "\nReport issues at " + Issues + "\n"} {
 		if !strings.Contains(usage, part) {
 			t.Errorf("the usage lacks %q", part)
 		}

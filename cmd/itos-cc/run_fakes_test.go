@@ -97,8 +97,8 @@ func TestRunWithFakesReadsTheConfigGiven(t *testing.T) {
 		t.Errorf("an exclude: exit %d, stdout %q, stderr %q; want 0, cart alone and the count said", code, stdout, stderr)
 	}
 	code, stdout, _ = runFaked(t, fakes([]byte("exclude: {a: b}\n")), "units", "--json")
-	if code != 2 || !strings.Contains(stdout, `"rule": "config.invalid"`) {
-		t.Errorf("an invalid file: exit %d, stdout %q; want 2 and config.invalid", code, stdout)
+	if code != 80 || !strings.Contains(stdout, `"rule": "config.invalid"`) {
+		t.Errorf("an invalid file: exit %d, stdout %q; want 80 and config.invalid", code, stdout)
 	}
 }
 
@@ -114,7 +114,7 @@ func TestRunWithFakesWritesTheStreamsGiven(t *testing.T) {
 		t.Errorf("help units: exit %d, stdout %q; want 0 and units' help", code, stdout)
 	}
 	code, _, stderr := runFaked(t, fakes(nil), "nosuch")
-	if code != 2 || !strings.Contains(stderr, `there is no command "nosuch"`) {
-		t.Errorf("an unknown command: exit %d, stderr %q; want 2 and command.unknown", code, stderr)
+	if code != 81 || !strings.Contains(stderr, `there is no command "nosuch"`) {
+		t.Errorf("an unknown command: exit %d, stderr %q; want 81 and command.unknown", code, stderr)
 	}
 }

@@ -224,7 +224,7 @@ func (q *strictMutation) missingC8() error {
 			found = true
 		}
 	}
-	if code != 3 || !found || len(baselines(log)) != 0 {
+	if code != 82 || !found || len(baselines(log)) != 0 {
 		return fmt.Errorf("missing-c8 strict exit%d: %v\n%s", code, strict, log)
 	}
 	plain, log, code, err := q.capture("mutation run --all-tests --json " + q.file)

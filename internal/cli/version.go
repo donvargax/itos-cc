@@ -22,7 +22,7 @@ func (Version) Contract() Contract {
 		JSON:  `"version"`,
 		Exits: []Exit{
 			{Code: 0, Meaning: "success"},
-			{Code: 2, Meaning: "a usage error: a bad flag or an argument"},
+			{Code: CodeUsage, Meaning: "a usage error: a bad flag or an argument"},
 		},
 		Examples: []string{"itos-cc version", "itos-cc --version --json"},
 	}

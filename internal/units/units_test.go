@@ -138,7 +138,7 @@ func TestRunReportsAFailureWithWhatItListed(t *testing.T) {
 	}
 	var plain ends
 	if code := run(t, &plain, CLI{}, Handler{Tree: locked, Surroundings: around}); code != cli.CodeInternal || plain.stdout.Len() != 0 {
-		t.Errorf("plain: exit %d, stdout %q; want 70 and nothing", code, plain.stdout.String())
+		t.Errorf("plain: exit %d, stdout %q; want 100 and nothing", code, plain.stdout.String())
 	}
 }
 
@@ -150,7 +150,7 @@ func TestTheContractGivesTheUnitsKeysAndExitCodes(t *testing.T) {
 	for _, e := range c.Exits {
 		codes = append(codes, e.Code)
 	}
-	if !strings.Contains(c.JSON, `"start_line"`) || !slices.Equal(codes, []int{0, 2, 3}) {
+	if !strings.Contains(c.JSON, `"start_line"`) || !slices.Equal(codes, []int{0, 80, 82}) {
 		t.Errorf("JSON %q, exit codes %v", c.JSON, codes)
 	}
 }

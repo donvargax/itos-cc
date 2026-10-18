@@ -412,9 +412,9 @@ judged and no snapshot is written. Listed tests are not run with
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every mutant that ran was killed"},
 			{Code: 1, Meaning: "a mutant survived, a mutant is uncovered with --fail-uncovered or coverage measured nothing where it has mutants to judge, an exception is stale, a file's tests fail before any mutant, the list command of mutation.tests failed, a selection of listed tests fails without any mutant, or with --count a preparation step failed or a selected mutant is not judged"},
-			{Code: 2, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
-			{Code: 3, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
-			{Code: 75, Meaning: "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
+			{Code: cli.CodeTemporary, Meaning: "with --count, SIGINT or SIGTERM interrupted the run; its partial report is printed"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, a --count below 1, --seed without --count, committed content --count cannot judge, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository; with --fail-uncovered, a coverage tool missing where it has mutants to judge; --count outside a Git repository with a commit, on Windows, or with a required tool missing; --fail-fast on Windows"},
 		},
 		Examples: []string{
 			"itos-cc mutation run --changed",

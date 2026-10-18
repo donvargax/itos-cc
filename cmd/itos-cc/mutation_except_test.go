@@ -142,8 +142,8 @@ func TestOnlyARecordedSurvivorCanBeExcepted(t *testing.T) {
 		o := mutationExcept(t, "--json", arg, "--reason", "x")
 		wantProblem(t, o.json(t).problem("exception.no-survivor"),
 			map[string]any{"file": boardSource, "line": float64(site.line), "column": float64(site.column)}, o.stdout)
-		if o.code != 2 {
-			t.Errorf("%s: exit %d, want 2", arg, o.code)
+		if o.code != 80 {
+			t.Errorf("%s: exit %d, want 80", arg, o.code)
 		}
 	}
 	noItosCcYAML(t)
@@ -345,8 +345,8 @@ func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
 
 	o := mutateRun(t, "--json", boardSource)
 	wantProblem(t, o.json(t).problem("config.invalid"), map[string]any{"file": "itos-cc.yaml"}, o.stdout)
-	if o.code != 2 {
-		t.Errorf("an entry with no reason: exit %d, want 2", o.code)
+	if o.code != 80 {
+		t.Errorf("an entry with no reason: exit %d, want 80", o.code)
 	}
 	if n := mutantsRun(o.stderr); n != 0 {
 		t.Errorf("%d mutants ran, want none\n%s", n, o.stderr)
@@ -356,8 +356,8 @@ func TestAnInvalidItosCcYamlIsAConfigError(t *testing.T) {
 	writeFile(t, "itos-cc.yaml", "mutation: [\n")
 	o = mutationCheck(t, "--json", boardSource)
 	wantProblem(t, o.json(t).problem("config.invalid"), map[string]any{"file": "itos-cc.yaml"}, o.stdout)
-	if o.code != 2 {
-		t.Errorf("no YAML: exit %d, want 2", o.code)
+	if o.code != 80 {
+		t.Errorf("no YAML: exit %d, want 80", o.code)
 	}
 }
 
@@ -403,8 +403,8 @@ func TestMutationExceptTakesOneSite(t *testing.T) {
 		{[]string{"a.go"}, "args.invalid"},
 	} {
 		o := mutationExcept(t, append(c.args, "--reason", "r", "--json")...)
-		if p := o.json(t).problem(c.rule); p == nil || o.code != 2 {
-			t.Errorf("%q: exit %d, stdout:\n%s\nwant %s and exit 2", c.args, o.code, o.stdout, c.rule)
+		if p := o.json(t).problem(c.rule); p == nil || o.code != 80 {
+			t.Errorf("%q: exit %d, stdout:\n%s\nwant %s and exit 80", c.args, o.code, o.stdout, c.rule)
 		}
 	}
 }

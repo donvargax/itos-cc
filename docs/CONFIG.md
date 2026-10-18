@@ -37,7 +37,7 @@ The `config` package reads `itos-cc.yaml` (`config.Parse`) and writes it (`mutat
 | 17 | `mutation except` rewrites the document in place, keeping its other keys, comments and permissions, and adds or renews only the entries it writes. |
 
 A file that is not there is an empty configuration. One whose text the loader refuses is
-`config.invalid`, exit 2; one the disk cannot read is an internal failure, exit 70.
+`config.invalid`, exit 80; one the disk cannot read is an internal failure, exit 100.
 
 ## Sources
 

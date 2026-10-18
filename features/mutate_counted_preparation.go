@@ -166,7 +166,7 @@ func (q *countedMutation) noCoverageBypass() error {
 		if err != nil {
 			return err
 		}
-		if err = countedProblem(o, "flags.conflict", 2); err != nil {
+		if err = countedProblem(o, "flags.conflict", 80); err != nil {
 			return err
 		}
 		if len(o.traces) != 0 {

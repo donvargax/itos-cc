@@ -64,12 +64,12 @@ func (q *strictMutation) changedSteps(sc *godog.ScenarioContext) {
 		return nil
 	})
 	sc.Step(`^I run "itos-cc mutation run --fail-uncovered=lines" without --since$`, func() error { return q.run("mutation run --fail-uncovered=lines --json") })
-	sc.Step(`^it fails as a usage error, exit 2, naming --since$`, func() error {
+	sc.Step(`^it fails as a usage error, exit 80, naming --since$`, func() error {
 		a, err := q.object()
 		if err != nil {
 			return err
 		}
-		if err := q.m.w.exitsWith(2); err != nil {
+		if err := q.m.w.exitsWith(80); err != nil {
 			return err
 		}
 		for _, p := range checkProblems(a) {

@@ -11,7 +11,7 @@ func TestNativeAdmissionAssertionRejectsWrongObservedFacts(t *testing.T) {
 	valid := func() map[string]any {
 		return map[string]any{"ok": false, "problems": []any{map[string]any{"rule": "count.platform", "platform": "windows", "message": "counted execution is unavailable on windows"}}}
 	}
-	if err := executionAdmission(valid(), 3, "count.platform", 3, "windows"); err != nil {
+	if err := executionAdmission(valid(), 82, "count.platform", 82, "windows"); err != nil {
 		t.Fatal(err)
 	}
 	cases := []struct {
@@ -19,11 +19,11 @@ func TestNativeAdmissionAssertionRejectsWrongObservedFacts(t *testing.T) {
 		exit   int
 		change func(map[string]any)
 	}{
-		{"wrong exit", 2, func(map[string]any) {}},
-		{"passing verdict", 3, func(a map[string]any) { a["ok"] = true }},
-		{"missing problem", 3, func(a map[string]any) { a["problems"] = []any{} }},
-		{"wrong rule", 3, func(a map[string]any) { a["problems"].([]any)[0].(map[string]any)["rule"] = "some.other.rule" }},
-		{"wrong platform", 3, func(a map[string]any) {
+		{"wrong exit", 80, func(map[string]any) {}},
+		{"passing verdict", 82, func(a map[string]any) { a["ok"] = true }},
+		{"missing problem", 82, func(a map[string]any) { a["problems"] = []any{} }},
+		{"wrong rule", 82, func(a map[string]any) { a["problems"].([]any)[0].(map[string]any)["rule"] = "some.other.rule" }},
+		{"wrong platform", 82, func(a map[string]any) {
 			a["problems"].([]any)[0].(map[string]any)["platform"] = "darwin"
 		}},
 	}
@@ -31,7 +31,7 @@ func TestNativeAdmissionAssertionRejectsWrongObservedFacts(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			a := valid()
 			c.change(a)
-			if err := executionAdmission(a, c.exit, "count.platform", 3, "windows"); err == nil {
+			if err := executionAdmission(a, c.exit, "count.platform", 82, "windows"); err == nil {
 				t.Fatal("accepted deliberately wrong observed admission facts")
 			}
 		})

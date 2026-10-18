@@ -27,8 +27,7 @@ type Problem struct {
 }
 
 // reserved are the names a subject key never takes: the problem's own keys
-// in --json, and exit, which each problem's own exit code will take
-// (docs/CLI.md).
+// in --json, exit, its own exit code, among them (docs/CLI.md).
 var reserved = []string{"rule", "message", "fix", "exit"}
 
 // NewProblem is a problem of its code, rule, message and fix, about nothing
@@ -58,9 +57,10 @@ func (p *Problem) Subject(key string) any { return p.subject[key] }
 func (p *Problem) Error() string { return p.Message }
 
 // MarshalJSON is the problem as --json gives it: rule, message, fix when
-// there is one, and the subject's keys beside them.
+// there is one, its own exit code, as RFC 9457's status gives each problem
+// its own (q-54), and the subject's keys beside them.
 func (p *Problem) MarshalJSON() ([]byte, error) {
-	out := map[string]any{"rule": p.Rule, "message": p.Message}
+	out := map[string]any{"rule": p.Rule, "message": p.Message, "exit": p.Code}
 	if p.Fix != "" {
 		out["fix"] = p.Fix
 	}

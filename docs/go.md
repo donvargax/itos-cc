@@ -313,7 +313,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   to the top-level help and the guess. It holds the selection domain's classifier,
   `classifySelection`, since every command selects its files; `serve`, on the hand parser, selects none (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it; `dry`'s and `scrap`'s handlers write through `adapters`' `Store`, `internal/metricsdir`'s
-  on the disk: a snapshot that cannot be written is the internal 70 it always was, its message whole with
+  on the disk: a snapshot that cannot be written is the internal 100, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
   on. The `mutation` slice reads, writes, removes and lists its snapshots only through
   the handler's bound readers, catalog, publication capability and store. `serve`'s

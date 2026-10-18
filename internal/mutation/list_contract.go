@@ -17,8 +17,8 @@ exclude names are left out, however they are chosen.`,
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success"},
-			{Code: 2, Meaning: "a usage or config error: a bad flag or path, or an itos-cc.yaml that cannot be read"},
-			{Code: 3, Meaning: "--changed outside a git repository"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed outside a git repository"},
 		},
 		Examples: []string{
 			"itos-cc mutation list src/billing/invoice.ts",

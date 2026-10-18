@@ -49,7 +49,7 @@ func TestAClassifiedFailureIsItsDomainsProblem(t *testing.T) {
 	if code := e.ui().Fail(fmt.Errorf("counting: %w", &gone{"absent.txt"}), true); code != CodeEnvironment {
 		t.Fatalf("Fail = %d, want %d", code, CodeEnvironment)
 	}
-	want := "{\n  \"ok\": false,\n  \"problems\": [\n    {\n      \"file\": \"absent.txt\",\n" +
+	want := "{\n  \"ok\": false,\n  \"problems\": [\n    {\n      \"exit\": 82,\n      \"file\": \"absent.txt\",\n" +
 		"      \"fix\": \"Check the path.\",\n      \"message\": \"the file absent.txt is not there\",\n" +
 		"      \"rule\": \"probe.gone\"\n    }\n  ],\n  \"schema\": 1\n}\n"
 	if got := e.stdout.String(); got != want {
@@ -123,9 +123,9 @@ func TestJoinedErrorsNothingClaimsAreOneInternalProblem(t *testing.T) {
 
 // The exit code is the first of the precedence a run's problems have, not
 // the highest: a usage error says more than an internal one, an internal
-// one more than a missing tool.
+// one more than a missing tool (decision 36).
 func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
-	if got, want := Precedence, []int{130, 2, 70, 3, 75, 1}; fmt.Sprint(got) != fmt.Sprint(want) {
+	if got, want := Precedence, []int{130, 80, 81, 100, 82, 75, 1}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("Precedence = %v, want %v (docs/CLI.md)", got, want)
 	}
 	of := func(codes ...int) []*Problem {
@@ -141,11 +141,12 @@ func TestExitCodeComesFromTheMostTellingKind(t *testing.T) {
 	}{
 		{nil, 0},
 		{of(CodeNo), 1},
-		{of(CodeNo, CodeEnvironment), 3},
-		{of(CodeEnvironment, CodeUsage, CodeNo), 2},
-		{of(CodeEnvironment, CodeInternal), 70},
+		{of(CodeNo, CodeEnvironment), 82},
+		{of(CodeEnvironment, CodeUsage, CodeNo), 80},
+		{of(CodeEnvironment, CodeUnknownCommand, CodeInternal), 81},
+		{of(CodeEnvironment, CodeInternal), 100},
 		{of(CodeNo, CodeTemporary), 75},
-		{of(CodeTemporary, CodeEnvironment), 3},
+		{of(CodeTemporary, CodeEnvironment), 82},
 		{of(CodeUsage, CodeInterrupted), 130},
 		{of(42), CodeInternal},
 	} {
@@ -173,8 +174,8 @@ func TestJSONIsOneObjectWithSchemaOkAndProblems(t *testing.T) {
 	if got["schema"] != 1.0 || got["ok"] != false || len(problems) != 1 || got["files"] == nil {
 		t.Fatalf("object %v", got)
 	}
-	if p := problems[0].(map[string]any); p["rule"] != "mutation.survived" || p["line"] != 3.0 || p["fix"] != "Add a test." || p["message"] != "it survived" {
-		t.Errorf("problem %v, want its rule, sentences, and subject keys", p)
+	if p := problems[0].(map[string]any); p["rule"] != "mutation.survived" || p["line"] != 3.0 || p["fix"] != "Add a test." || p["message"] != "it survived" || p["exit"] != 1.0 {
+		t.Errorf("problem %v, want its rule, sentences, exit, and subject keys", p)
 	}
 	var ok ends
 	if code := ok.ui().Emit(true, map[string]int{"total": 2}, nil); code != 0 {
@@ -196,7 +197,7 @@ func TestAProblemWithoutAFixOrShownAlready(t *testing.T) {
 		t.Errorf("stderr = %q, want %q", got, want)
 	}
 	raw, err := json.Marshal(NewProblem(CodeNo, "x.bare", "no fix", ""))
-	if err != nil || string(raw) != `{"message":"no fix","rule":"x.bare"}` {
+	if err != nil || string(raw) != `{"exit":1,"message":"no fix","rule":"x.bare"}` {
 		t.Errorf("JSON = %s, %v; want no fix key", raw, err)
 	}
 }
@@ -220,7 +221,7 @@ func TestASubjectKeyIsNeverReserved(t *testing.T) {
 	}
 }
 
-// A usage failure is exit 2, names the command as it was written, and says
+// A usage failure is exit 80, names the command as it was written, and says
 // what to do next: a person reads it, a script reads its rule.
 func TestUsageNamesTheCommandAndTheWayOut(t *testing.T) {
 	var e ends
@@ -231,7 +232,7 @@ func TestUsageNamesTheCommandAndTheWayOut(t *testing.T) {
 		t.Errorf("stderr = %q, want none with --json", e.stderr.String())
 	}
 	var got struct {
-		Problems []map[string]string `json:"problems"`
+		Problems []map[string]any `json:"problems"`
 	}
 	if err := json.Unmarshal([]byte(e.stdout.String()), &got); err != nil || len(got.Problems) != 1 {
 		t.Fatalf("--json = %q: %v", e.stdout.String(), err)

@@ -85,7 +85,7 @@ func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	a.Workers = nil
-	if code, out, _ := invoke(); code != 70 || !strings.Contains(out, "Workers binding is missing") {
+	if code, out, _ := invoke(); code != 100 || !strings.Contains(out, "Workers binding is missing") {
 		t.Fatalf("missing binding escaped: %d %s", code, out)
 	}
 	// Wrong command binding is actually reached by the same handler.
@@ -93,7 +93,7 @@ func TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	a.Workers = m.workers()
-	if code, out, _ := invoke(); code != 70 || !strings.Contains(out, "no tests declared") {
+	if code, out, _ := invoke(); code != 100 || !strings.Contains(out, "no tests declared") {
 		t.Fatalf("wrong binding escaped: %d %s", code, out)
 	}
 }

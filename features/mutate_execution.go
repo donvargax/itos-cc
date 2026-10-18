@@ -65,7 +65,7 @@ func executionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step(`^the complete and counted mutation run commands$`, q.admissionProject)
 	sc.Step(`^--fail-fast is combined with --count$`, func() error { return q.run("mutation run --count 1 --fail-fast --json") })
 	sc.Step(`^--count with --fail-fast is a flags\.conflict usage error$`, func(ctx context.Context) error {
-		if err := q.admission("flags.conflict", 2, "--fail-fast"); err != nil {
+		if err := q.admission("flags.conflict", 80, "--fail-fast"); err != nil {
 			return err
 		}
 		return q.nothingLaunched(ctx)
@@ -78,7 +78,7 @@ func executionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 		return q.admissionProject()
 	})
 	sc.Step(`^I run "itos-cc ([^"]*)" in that fixture$`, q.run)
-	sc.Step(`^the problem is "([^"]*)" for Windows and the exit code is 3$`, func(rule string) error { return q.admission(rule, 3, "windows") })
+	sc.Step(`^the problem is "([^"]*)" for Windows and the exit code is 82$`, func(rule string) error { return q.admission(rule, 82, "windows") })
 	sc.Step(`^no test, list or coverage command runs and no snapshot is written$`, q.nothingLaunched)
 }
 

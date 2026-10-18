@@ -71,7 +71,7 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 	}
 	// The memory holds no repository, so the seed must be given; the bound
 	// workers and snapshots hold no cached mutant to sample.
-	if got := invoke("sample"); got.Exit != 3 || !strings.Contains(got.Stdout, "sample.no-git") || strings.Contains(got.Stdout, "config.invalid") {
+	if got := invoke("sample"); got.Exit != 82 || !strings.Contains(got.Stdout, "sample.no-git") || strings.Contains(got.Stdout, "config.invalid") {
 		t.Fatalf("memory sample read a HEAD or the physical config: %+v", got)
 	}
 	if got := invoke("sample", "--seed", "fixed"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"files":[]`) || !strings.Contains(compactRead(got.Stdout), `"seed":"fixed"`) || !strings.Contains(got.Stderr, "no cached mutant to sample") {
@@ -87,7 +87,7 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 		}
 		return result
 	}
-	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 2 || !strings.Contains(got.Stdout, "exception.no-survivor") || !strings.Contains(got.Stdout, "has no mutation results") {
+	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 80 || !strings.Contains(got.Stdout, "exception.no-survivor") || !strings.Contains(got.Stdout, "has no mutation results") {
 		t.Fatalf("memory except read the physical config or ignored the memory's source: %+v", got)
 	}
 	if got := except("--renew"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"renewed":[]`) || strings.Contains(got.Stdout, "config.invalid") {
@@ -117,7 +117,7 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 	if got := invoke("sample", "--seed", "fixed"); got.Exit != 0 || !strings.Contains(compactRead(got.Stdout), `"files":[]`) || !strings.Contains(got.Stderr, "1 sources left out by exclude") || !strings.Contains(got.Stderr, "no source files to sample") {
 		t.Fatalf("current memory exclusions not observed by sample: %+v", got)
 	}
-	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 2 || !strings.Contains(got.Stdout, "exception.excluded") {
+	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 80 || !strings.Contains(got.Stdout, "exception.excluded") {
 		t.Fatalf("current memory exclusions not observed by except: %+v", got)
 	}
 	// An entry in the memory's settings is renewed or left through the
@@ -142,11 +142,11 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 	if err := m.Write(path, []byte("exclude: [\"\"]\n")); err != nil {
 		t.Fatal(err)
 	}
-	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 2 || !strings.Contains(got.Stdout, "config.invalid") || !strings.Contains(compactRead(got.Stdout), `"key":"exclude[0]"`) {
+	if got := except("board.go:2:35", "--reason", "reviewed"); got.Exit != 80 || !strings.Contains(got.Stdout, "config.invalid") || !strings.Contains(compactRead(got.Stdout), `"key":"exclude[0]"`) {
 		t.Fatalf("current invalid memory document ignored by except: %+v", got)
 	}
 	for _, child := range []string{"list", "check", "sample"} {
-		if got := invoke(child); got.Exit != 2 || !strings.Contains(got.Stdout, "config.invalid") || !strings.Contains(compactRead(got.Stdout), `"key":"exclude[0]"`) {
+		if got := invoke(child); got.Exit != 80 || !strings.Contains(got.Stdout, "config.invalid") || !strings.Contains(compactRead(got.Stdout), `"key":"exclude[0]"`) {
 			t.Fatalf("current invalid memory document ignored by %s: %+v", child, got)
 		}
 	}
@@ -228,7 +228,7 @@ func TestMemoryRunsMutationRunInProcess(t *testing.T) {
 				t.Fatalf("genuine help rejected: %+v %v", result, err)
 			}
 			result, err = m.Run(features.Run{Dir: root, Args: []string{"mutation", child, "--json", "--not-a-flag"}})
-			if err != nil || result.Exit != 2 || !strings.Contains(result.Stdout, "flags.unknown") {
+			if err != nil || result.Exit != 80 || !strings.Contains(result.Stdout, "flags.unknown") {
 				t.Fatalf("genuine parse error rejected: %+v %v", result, err)
 			}
 		})

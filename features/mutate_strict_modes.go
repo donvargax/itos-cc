@@ -14,7 +14,7 @@ import (
 
 func (q *strictMutation) modeSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^I combine --fail-uncovered with --no-coverage, even for an empty selection$`, func() error { return q.run("mutation run --fail-uncovered --no-coverage --json") })
-	sc.Step(`^the problem is "flags.conflict" for "--no-coverage" and the exit code is 2$`, func() error {
+	sc.Step(`^the problem is "flags.conflict" for "--no-coverage" and the exit code is 80$`, func() error {
 		a, err := q.object()
 		if err != nil {
 			return err
@@ -23,7 +23,7 @@ func (q *strictMutation) modeSteps(sc *godog.ScenarioContext) {
 		if len(ps) != 1 || ps[0]["flag"] != "--no-coverage" {
 			return fmt.Errorf("empty strict conflict: %v", a)
 		}
-		return q.m.w.exitsWith(2)
+		return q.m.w.exitsWith(80)
 	})
 	sc.Step(`^strict Go run is combined with --coverage-report, --use-existing-coverage or --coverage-command$`, func() error {
 		if err := q.goProject(strictBaseGo, strictBaseTest, strictBaseReport); err != nil {
@@ -39,14 +39,14 @@ func (q *strictMutation) modeSteps(sc *godog.ScenarioContext) {
 		}
 		return q.reportFlags()
 	})
-	sc.Step(`^the problem is "flags.conflict" naming the incompatible report flag and the exit code is 2$`, func() error {
+	sc.Step(`^the problem is "flags.conflict" naming the incompatible report flag and the exit code is 80$`, func() error {
 		// Each report flag's exact subject and exit was captured by the preceding
 		// operation; repeat here as the scenario's assertion, preserving every result.
 		if len(q.flags) != 3 {
 			return fmt.Errorf("missing report flag observations")
 		}
 		for _, r := range q.flags {
-			if r.code != 2 || len(checkProblems(r.object)) != 1 || checkProblems(r.object)[0]["rule"] != "flags.conflict" || checkProblems(r.object)[0]["flag"] != r.flag {
+			if r.code != 80 || len(checkProblems(r.object)) != 1 || checkProblems(r.object)[0]["rule"] != "flags.conflict" || checkProblems(r.object)[0]["flag"] != r.flag {
 				return fmt.Errorf("incompatible report flag %s exit%d: %v", r.flag, r.code, r.object)
 			}
 		}

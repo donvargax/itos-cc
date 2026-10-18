@@ -73,7 +73,7 @@ func TestMutationCheckUsesActualReadOnlyBindings(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			a := base
 			c.change(&a)
-			if code, out := invoke(a); code != 70 || !strings.Contains(compactRead(out), c.token) {
+			if code, out := invoke(a); code != 100 || !strings.Contains(compactRead(out), c.token) {
 				t.Fatalf("binding escaped: %d %s", code, out)
 			}
 		})
@@ -99,18 +99,18 @@ func TestMutationListUsesBoundTreeAndRendersPrefixBeforeLaterReadFailure(t *test
 	tree.Sources = append(tree.Sources, "z.go")
 	f.adapters.Tree = tree
 	args := []string{"mutation", "list", "--json", "."}
-	if code, out := invokeRead(t, f, f.adapters, args...); code != 70 || !strings.Contains(compactRead(out), `"file":"board.go"`) || !strings.Contains(compactRead(out), "fake") {
+	if code, out := invokeRead(t, f, f.adapters, args...); code != 100 || !strings.Contains(compactRead(out), `"file":"board.go"`) || !strings.Contains(compactRead(out), "fake") {
 		t.Fatalf("ordered JSON prefix: %d %s", code, out)
 	}
-	if code, out := invokeRead(t, f, f.adapters, "mutation", "list", "."); code != 70 || !strings.Contains(compactRead(out), "board.go:2:") || !strings.Contains(compactRead(out), "fake") {
+	if code, out := invokeRead(t, f, f.adapters, "mutation", "list", "."); code != 100 || !strings.Contains(compactRead(out), "board.go:2:") || !strings.Contains(compactRead(out), "fake") {
 		t.Fatalf("ordered plain prefix: %d %s", code, out)
 	}
-	if code, out := invokeRead(t, f, f.adapters, "mutation", "check", "--json", "."); code != 70 || !strings.Contains(compactRead(out), `"files":[]`) || strings.Contains(compactRead(out), `"function":`) {
+	if code, out := invokeRead(t, f, f.adapters, "mutation", "check", "--json", "."); code != 100 || !strings.Contains(compactRead(out), `"files":[]`) || strings.Contains(compactRead(out), `"function":`) {
 		t.Fatalf("check published a partial prefix: %d %s", code, out)
 	}
 	a := f.adapters
 	a.Tree = nil
-	if code, out := invokeRead(t, f, a, "mutation", "list", "board.go"); code != 70 || !strings.Contains(compactRead(out), "source tree binding is missing") {
+	if code, out := invokeRead(t, f, a, "mutation", "list", "board.go"); code != 100 || !strings.Contains(compactRead(out), "source tree binding is missing") {
 		t.Fatalf("list disk fallback: %d %s", code, out)
 	}
 	a = f.adapters
@@ -153,7 +153,7 @@ func TestMutationOrphansUseActualCatalogAndIndependentPresence(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			bad := a
 			c.change(&bad)
-			if code, out := invokeRead(t, f, bad, args...); code != 70 || !strings.Contains(compactRead(out), c.token) {
+			if code, out := invokeRead(t, f, bad, args...); code != 100 || !strings.Contains(compactRead(out), c.token) {
 				t.Fatalf("binding escaped: %d %s", code, out)
 			}
 		})
@@ -169,7 +169,7 @@ func TestMutationListRequiresActualSettingsBinding(t *testing.T) {
 	f := newMutationRunFixture(t)
 	a := f.adapters
 	a.Settings = nil
-	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 70 || !strings.Contains(out, "settings binding is missing") {
+	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 100 || !strings.Contains(out, "settings binding is missing") {
 		t.Fatalf("missing settings fell back: %d %s", code, out)
 	}
 	a.Settings = &mutantstest.Settings{Root: f.root, Value: mutation.Config{Exclude: []string{"board.go"}}}

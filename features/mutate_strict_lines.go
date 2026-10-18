@@ -221,7 +221,7 @@ func (q *strictMutation) reportFlags() error {
 		ps := q.findings(a, "flags.conflict", "")
 		name := strings.Fields(flag)[0]
 		q.flags = append(q.flags, strictFlagObservation{flag: name, code: code, object: a, log: log})
-		if code != 2 || len(ps) != 1 || ps[0]["flag"] != name {
+		if code != 80 || len(ps) != 1 || ps[0]["flag"] != name {
 			return fmt.Errorf("strict report flag%s exit%d: %v\n%s", flag, code, a, log)
 		}
 	}

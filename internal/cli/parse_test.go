@@ -28,7 +28,7 @@ func (probe) Contract() Contract {
 		About:    "Probes things.",
 		JSON:     `"things": []`,
 		Rules:    []string{"probe.failed  a thing failed"},
-		Exits:    []Exit{{0, "success"}, {2, "a usage error"}},
+		Exits:    []Exit{{0, "success"}, {CodeUsage, "a usage error"}},
 		Examples: []string{"itos-cc probe src"},
 	}
 }
@@ -129,7 +129,11 @@ func TestEachFailureIsItsProblemWordForWord(t *testing.T) {
 		{"group", "command.missing", "group needs a subcommand. Name one of run and list; run 'itos-cc group --help' for them.", "", ""},
 	} {
 		p := problemOf(t, strings.Fields(c.args)...)
-		if p.Rule != c.rule || p.plain() != c.line || p.Code != CodeUsage {
+		want := CodeUsage
+		if c.rule == "command.unknown" {
+			want = CodeUnknownCommand
+		}
+		if p.Rule != c.rule || p.plain() != c.line || p.Code != want {
 			t.Errorf("%s: %s %q (exit %d), want %s %q", c.args, p.Rule, p.plain(), p.Code, c.rule, c.line)
 		}
 		if c.key != "" && p.Subject(c.key) != c.subject {

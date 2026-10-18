@@ -49,7 +49,7 @@ func TestVersionHelpGivesItsContract(t *testing.T) {
 	for _, want := range []string{
 		"usage: itos-cc version [options]\n\nPrints \"itos-cc <version>\". --version is the same.\n",
 		`{"schema": 1, "ok": true|false, "version",`,
-		"  0   success\n  2   a usage error: a bad flag or an argument\n  70  ",
+		"  0   success\n  80  a usage error: a bad flag or an argument\n  100 ",
 		"  itos-cc version\n  itos-cc --version --json\n",
 	} {
 		if !strings.Contains(page, want) {

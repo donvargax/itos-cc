@@ -43,8 +43,8 @@ updates their numbers. Listens on localhost only, until interrupted.`,
 	},
 	exits: []exitDoc{
 		{0, "interrupted"},
-		{2, "a usage error: a bad flag, or a repository that cannot be read"},
-		{75, "the port is in use; it may be free later"},
+		{cli.CodeTemporary, "the port is in use; it may be free later"},
+		{cli.CodeUsage, "a usage error: a bad flag, or a repository that cannot be read"},
 	},
 	examples: []string{
 		"itos-cc serve --ui viewer/dist .",

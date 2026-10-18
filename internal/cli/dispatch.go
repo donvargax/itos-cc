@@ -157,10 +157,11 @@ Options, for every command and in any position:
 Exit codes, for every command (each command's help says when):
   0   success
   1   a check said no: a mutant survived, a function is over a threshold
-  2   a usage or config error
-  3   the environment lacks something: a tool, a report, a git repository
-  70  an internal error %[1]s could not classify; please report it
   75  a temporary failure: the same command may pass when run again
+  80  a usage or config error
+  81  an unknown command
+  82  the environment lacks something: a tool, a report, a git repository
+  100 an internal error %[1]s could not classify; please report it
 
 Scripts read the exit code and --json, less "message" and "fix"; plain
 output is for people and may change in any release. See docs/CLI.md.

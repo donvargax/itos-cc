@@ -156,7 +156,7 @@ rows it leaves, the scenarios of `InProcess` files that the in-process driver le
 binary driver for now, each with why, naming the work that owns it. Unlike `@binary-only`, which
 a scenario only the binary can run carries for good, an entry goes once its owner's work lets the
 scenario run in process. Today it names ID-MUT-134, 153, 154, 163 and 207, which observe `serve`
-(`Driver.Graph`) as well as mutation, and `@T-112`, the Examples block of ID-CLI-08 whose row
+(`Driver.Graph`) as well as mutation, and `@T-112`, the Examples block of ID-CLI-20 whose row
 runs `serve` on a port in use: `serve` stays on its legacy handler, listening on the real
 network, its moves (T-102 to T-108, T-112 and T-113) deferred while it leaves for its own web
 app. `Defer` takes them out of the in-process selection, which logs each one it matches, by its

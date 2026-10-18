@@ -5,7 +5,7 @@
 // It imports no domain. A domain's errors are a sealed set of plain types
 // carrying no exit code, rule ID or wording; cmd hands the UI one
 // Classifier per domain, each turning that domain's failures into problems
-// in one switch naming every kind. An error no classifier claims is the 70
+// in one switch naming every kind. An error no classifier claims is the 100
 // of an unclassified bug, never a child process's status passed through.
 package cli
 
@@ -18,21 +18,24 @@ import (
 	"strings"
 )
 
-// The exit codes, as docs/CLI.md's table gives them.
+// The exit codes, as docs/CLI.md's table gives them: square/exit's, with
+// 75 kept for a failure that may pass when run again (decision 36).
 const (
-	CodeNo          = 1   // a check said no
-	CodeUsage       = 2   // a usage or config error
-	CodeEnvironment = 3   // the environment lacks something
-	CodeInternal    = 70  // an error nothing classified
-	CodeTemporary   = 75  // may pass when run again unchanged
-	CodeInterrupted = 130 // an interrupt stopped it (decision 31)
+	CodeNo             = 1   // a check said no
+	CodeTemporary      = 75  // may pass when run again unchanged
+	CodeUsage          = 80  // a usage or config error
+	CodeUnknownCommand = 81  // a command or subcommand that is none
+	CodeEnvironment    = 82  // a requirement not met: the environment lacks something
+	CodeInternal       = 100 // an error nothing classified
+	CodeInterrupted    = 130 // an interrupt stopped it (decision 31)
 )
 
 // Precedence picks the exit code of a run with problems of several codes:
 // the first of these it has, not the highest, the one that says the most
-// about why nothing else could be trusted (q-54, docs/CLI.md's exit codes).
-// The interrupt is first, though no itos-cc command reports one yet.
-var Precedence = []int{CodeInterrupted, CodeUsage, CodeInternal, CodeEnvironment, CodeTemporary, CodeNo}
+// about why nothing else could be trusted (q-54, decision 36, docs/CLI.md's
+// exit codes). The interrupt is first, though no itos-cc command reports
+// one yet.
+var Precedence = []int{CodeInterrupted, CodeUsage, CodeUnknownCommand, CodeInternal, CodeEnvironment, CodeTemporary, CodeNo}
 
 // Issues is where a person reports a bug.
 const Issues = "https://github.com/donvargax/itos-cc/issues"
@@ -79,7 +82,7 @@ func (u *UI) Fail(err error, withJSON bool) int {
 }
 
 // Usage reports err, a command line kong could not parse, as Fail does: a
-// usage error, exit 2, in the words of the person who wrote the line. The
+// usage error, exit 80, in the words of the person who wrote the line. The
 // command is named as it was written, so the sentence says what was read,
 // never kong's own such as "EOL".
 func (u *UI) Usage(command string, err error, withJSON bool) int {
@@ -122,7 +125,7 @@ func (u *UI) Emit(asJSON bool, data any, problems []*Problem) int {
 
 // ExitCode is the exit code of a run with problems: 0 with none, else the
 // first code of Precedence one of them has. A problem of a code the list
-// lacks is a defect of ours, so with no listed code it is 70.
+// lacks is a defect of ours, so with no listed code it is 100.
 func ExitCode(problems []*Problem) int {
 	for _, code := range Precedence {
 		if slices.ContainsFunc(problems, func(p *Problem) bool { return p.Code == code }) {
@@ -188,7 +191,7 @@ func leaves(err error) []error {
 	return all
 }
 
-// Internal is err as an internal problem, a defect of ours: exit 70.
+// Internal is err as an internal problem, a defect of ours: exit 100.
 func Internal(err error) *Problem {
 	return NewProblem(CodeInternal, "internal", err.Error(), "This is a bug in itos-cc; please report it at "+Issues+".")
 }

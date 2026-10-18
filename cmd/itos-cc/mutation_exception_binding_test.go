@@ -91,24 +91,24 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 				code        int
 				change      func(*adapters)
 			}{
-				{"missing exceptions", "Exceptions binding is missing", 70, func(a *adapters) { a.Exceptions = nil }},
-				{"wrong exceptions", "actual document read denied", 70, func(a *adapters) {
+				{"missing exceptions", "Exceptions binding is missing", 100, func(a *adapters) { a.Exceptions = nil }},
+				{"wrong exceptions", "actual document read denied", 100, func(a *adapters) {
 					a.Exceptions = func(string) mutation.Exceptions {
 						return &mutantstest.Exceptions{Failure: mutation.ExceptionFailed{Cause: errors.New("actual document read denied")}}
 					}
 				}},
-				{"invalid exceptions", "config.invalid", 2, func(a *adapters) {
+				{"invalid exceptions", "config.invalid", 80, func(a *adapters) {
 					a.Exceptions = func(string) mutation.Exceptions {
 						return &mutantstest.Exceptions{Failure: mutation.ExceptionInvalid{Reason: "wrong independent document shape", Key: "mutation"}}
 					}
 				}},
-				{"missing status", "source status binding is missing", 70, func(a *adapters) { a.SourceStatus = nil }},
-				{"missing reader", "snapshots reader binding is missing", 70, func(a *adapters) { a.SnapshotReader = nil }},
-				{"wrong reader", "actual read-only snapshot denied", 70, func(a *adapters) {
+				{"missing status", "source status binding is missing", 100, func(a *adapters) { a.SourceStatus = nil }},
+				{"missing reader", "snapshots reader binding is missing", 100, func(a *adapters) { a.SnapshotReader = nil }},
+				{"wrong reader", "actual read-only snapshot denied", 100, func(a *adapters) {
 					a.SnapshotReader = &mutantstest.Snapshots{RootDir: f.root, Failures: map[string]snapport.Failure{"board.go": &snapport.Unreadable{Reason: "actual read-only snapshot denied"}}}
 				}},
-				{"missing tree", "source tree binding is missing", 70, func(a *adapters) { a.Tree = nil }},
-				{"wrong tree", "outside the requested inventory", 70, func(a *adapters) { a.Tree = seltest.TreeOf(f.root, map[string]string{}, nil) }},
+				{"missing tree", "source tree binding is missing", 100, func(a *adapters) { a.Tree = nil }},
+				{"wrong tree", "outside the requested inventory", 100, func(a *adapters) { a.Tree = seltest.TreeOf(f.root, map[string]string{}, nil) }},
 			} {
 				t.Run(c.name, func(t *testing.T) {
 					a := base
@@ -122,11 +122,11 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	}
 	wrong := base
 	wrong.SourceStatus = &mutantstest.SourceEdits{}
-	if code, out := invoke(wrong, except...); code != 2 || !strings.Contains(out, "exception.no-survivor") {
+	if code, out := invoke(wrong, except...); code != 80 || !strings.Contains(out, "exception.no-survivor") {
 		t.Fatalf("missing actual source ignored: %d %s", code, out)
 	}
 	wrong.SourceStatus = &mutantstest.SourceEdits{StatErrors: map[string]error{filepath.Join(f.root, "board.go"): errors.New("actual following Stat denied")}}
-	if code, out := invoke(wrong, renew...); code != 70 || !strings.Contains(out, "actual following Stat denied") {
+	if code, out := invoke(wrong, renew...); code != 100 || !strings.Contains(out, "actual following Stat denied") {
 		t.Fatalf("wrong renewal Stat ignored: %d %s", code, out)
 	}
 }
@@ -166,7 +166,7 @@ func TestMutationSampleUsesActualReadAndExecutionBindings(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			bad := a
 			c.change(&bad)
-			if code, out := invokeRead(t, f, bad, args...); code != 70 || !strings.Contains(compactRead(out), c.token) {
+			if code, out := invokeRead(t, f, bad, args...); code != 100 || !strings.Contains(compactRead(out), c.token) {
 				t.Fatalf("sample binding escaped: %d %s", code, out)
 			}
 		})

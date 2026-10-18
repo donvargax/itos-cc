@@ -233,7 +233,7 @@ func TestCountedExecutionEvaluatesFrozenCommittedInputs(t *testing.T) {
 	gitIn(t, link, "add", "alias.go")
 	gitIn(t, link, "commit", "-qm", "alias")
 	o = countedRun(t, "--count", "1")
-	if p := o.counted(t).problem("count.unsupported-scope"); o.code != 2 || p == nil {
+	if p := o.counted(t).problem("count.unsupported-scope"); o.code != 80 || p == nil {
 		t.Errorf("committed symlink: exit %d, want count.unsupported-scope\n%s%s", o.code, o.stdout, o.stderr)
 	}
 	if _, err := os.Stat(filepath.Join(link, ".metrics")); !os.IsNotExist(err) {

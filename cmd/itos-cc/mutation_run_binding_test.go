@@ -177,7 +177,7 @@ func TestMutationRunListingFailureUsesBoundListerBeforeTrials(t *testing.T) {
 		} else {
 			a.TestLister = nil
 		}
-		if code, out := invoke(a); code != 70 || !strings.Contains(out, token) {
+		if code, out := invoke(a); code != 100 || !strings.Contains(out, token) {
 			t.Fatalf("missing/wrong actual listing: %d %s", code, out)
 		}
 	}

@@ -99,8 +99,8 @@ func TestRenewingTakesNoSiteAndNoReason(t *testing.T) {
 			message, _ := p["message"].(string)
 			named = named || p["rule"] == c.rule && strings.Contains(message, "--renew")
 		}
-		if o.code != 2 || !named {
-			t.Errorf("mutation except %s: exit %d, problems %v; want 2, %s naming --renew", strings.Join(c.args, " "), o.code, rawProblems(t, o), c.rule)
+		if o.code != 80 || !named {
+			t.Errorf("mutation except %s: exit %d, problems %v; want 80, %s naming --renew", strings.Join(c.args, " "), o.code, rawProblems(t, o), c.rule)
 		}
 	}
 }

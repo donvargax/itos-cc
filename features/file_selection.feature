@@ -49,14 +49,14 @@ Feature: Choosing which files a command looks at
     When I run "itos-cc crap --changed"
     Then stderr says "itos-cc: --changed needs a git repository: …"
     And the problem is "changed.no-git"
-    And the exit code is 3
+    And the exit code is 82
 
   @ID-SEL-08
   Scenario: An argument that names nothing is a usage error
     Given no file's path under the working directory contains "nosuch"
     When I run "itos-cc crap nosuch"
     Then the problem is "paths.unmatched", with argument "nosuch"
-    And the exit code is 2
+    And the exit code is 80
     # a fragment that matches only test files still selects them
 
   @ID-SEL-09
@@ -181,4 +181,4 @@ Feature: Choosing which files a command looks at
     Given itos-cc.yaml holds 'exclude: ["src/**", "src/[x"]'
     When I run "itos-cc crap"
     Then the problem is "config.invalid", with key "exclude[1]"
-    And the exit code is 2
+    And the exit code is 80

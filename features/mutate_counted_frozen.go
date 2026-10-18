@@ -131,7 +131,7 @@ func (q *countedMutation) unsupportedInputs() error {
 	if err != nil {
 		return err
 	}
-	if err = countedProblem(o, "count.unsupported-scope", 2); err != nil {
+	if err = countedProblem(o, "count.unsupported-scope", 80); err != nil {
 		return err
 	}
 	if len(o.traces) != 0 {

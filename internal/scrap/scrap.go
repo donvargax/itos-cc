@@ -65,8 +65,8 @@ the test is for before changing it. Each run is compared with the previous
    "compare"}]`,
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success, whatever the actions"},
-			{Code: 2, Meaning: "a usage error: a bad flag or path"},
-			{Code: 3, Meaning: "--changed outside a git repository"},
+			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or path"},
+			{Code: cli.CodeEnvironment, Meaning: "--changed outside a git repository"},
 		},
 		Examples: []string{
 			"itos-cc scrap",

@@ -30,12 +30,16 @@ release instead: itos-cc is at 0.x.
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
 | 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript or Kotlin line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
-| 2    | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
-| 3    | The environment lacks something: a tool, a report, a git repository.                   |
-| 70   | An internal error that itos-cc could not classify, a panic included. Report it.        |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
+| 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
+| 81   | An unknown command or subcommand.                                                      |
+| 82   | A requirement not met: the environment lacks something, a tool, a report, a git repository. |
+| 100  | An internal error that itos-cc could not classify, a panic included. Report it.        |
 
-A run with problems of several kinds exits with the first of 2, 70, 3, 75,
+The codes are square/exit's, keeping 75 for a failure that may pass when
+run again (decision 36): before it, a usage error and an unknown command
+were 2, a requirement not met 3, and an internal error 70. A run with
+problems of several kinds exits with the first of 80 and 81, 100, 82, 75,
 and 1 that it has, not the highest code (q-54). Every command reports
 through `internal/cli`, whose `Precedence` holds this order and puts 130,
 an interrupt, before it; no command reports an interrupt yet.
@@ -53,15 +57,17 @@ included, prints the object too, with `"ok": false` and its problems:
 
 ```json
 {"schema": 1, "ok": false, "problems": [
-  {"rule": "mutation.survived", "message": "…", "fix": "…",
+  {"rule": "mutation.survived", "exit": 1, "message": "…", "fix": "…",
    "file": "src/a.go", "line": 12, "column": 9, "function": "example.com/m/a#Pos",
    "original": ">", "replacement": ">="}
 ]}
 ```
 
-`rule` is a stable id; the other keys besides `message` and `fix` are the
-problem's subject. A subject key is never named `rule`, `message`, `fix` or
-`exit`: these are reserved, `exit` for each problem's own exit code, and
+`rule` is a stable id, and `exit` the problem's own exit code, as RFC
+9457's `status` gives each problem its own (q-54); the run exits with the
+first of its problems' codes in the order above. The other keys besides
+`message` and `fix` are the problem's subject. A subject key is never
+named `rule`, `message`, `fix` or `exit`: these are reserved, and
 `internal/cli` refuses a subject key of one of them. Progress and test output go to stderr, never stdout:
 each line itos-cc writes there itself begins `itos-cc:`, such as
 `itos-cc: coverage <dir>$ <command>` before a coverage command runs, and the
@@ -71,37 +77,37 @@ output of the commands it runs passes as it is.
 
 | Rule                         | Exit | Command        | Subject keys                                                |
 | ---------------------------- | ---- | -------------- | ----------------------------------------------------------- |
-| `flags.unknown`              | 2    | every          | `flag`                                                      |
-| `flags.value-missing`        | 2    | every          | `flag`                                                      |
-| `flags.value-invalid`        | 2    | every          | `flag`, `value`                                             |
-| `flags.switch-value`         | 2    | every          | `flag`                                                      |
-| `flags.repeated`             | 2    | every          | `flag`                                                      |
-| `flags.conflict`             | 2    | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
-| `command.unknown`            | 2    | itos-cc, mutation | `command`                                                |
-| `command.missing`            | 2    | itos-cc --json, mutation --json | none                                       |
-| `args.unexpected`            | 2    | version, help, mutation except | `argument`                                  |
-| `args.missing`               | 2    | mutation except | none                                                       |
-| `args.invalid`               | 2    | mutation except | `argument`                                                 |
-| `config.invalid`             | 2    | crap, dry, units, mutation run, mutation list, mutation check, mutation sample, mutation except | `file`, and `key` for an `exclude` glob (`exclude[1]`) |
-| `exception.no-survivor`      | 2    | mutation except | `file`, `line`, `column`                                   |
-| `exception.excluded`         | 2    | mutation except | `file`                                                     |
-| `paths.unmatched`            | 2    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
-| `changed.no-git`             | 3    | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
-| `since.bad-ref`              | 2    | mutation run, mutation check, mutation sample | `ref`                                         |
-| `since.no-git`               | 3    | mutation run, mutation check, mutation sample | none                                          |
-| `sample.no-git`              | 3    | mutation sample, without `--seed` | none                                     |
-| `count.platform`             | 3    | mutation run --count | `platform`                                            |
-| `count.no-git`               | 3    | mutation run --count | none                                                  |
-| `count.unsupported-scope`    | 2    | mutation run --count | none                                                  |
-| `count.preparation-failed`   | 1, 3 (a tool missing) | mutation run --count | `stage`                             |
+| `flags.unknown`              | 80   | every          | `flag`                                                      |
+| `flags.value-missing`        | 80   | every          | `flag`                                                      |
+| `flags.value-invalid`        | 80   | every          | `flag`, `value`                                             |
+| `flags.switch-value`         | 80   | every          | `flag`                                                      |
+| `flags.repeated`             | 80   | every          | `flag`                                                      |
+| `flags.conflict`             | 80   | mutation run, mutation check, mutation sample, mutation except | `flag`                                        |
+| `command.unknown`            | 81   | itos-cc, mutation | `command`                                                |
+| `command.missing`            | 80   | itos-cc --json, mutation --json | none                                       |
+| `args.unexpected`            | 80   | version, help, mutation except | `argument`                                  |
+| `args.missing`               | 80   | mutation except | none                                                       |
+| `args.invalid`               | 80   | mutation except | `argument`                                                 |
+| `config.invalid`             | 80   | crap, dry, units, mutation run, mutation list, mutation check, mutation sample, mutation except | `file`, and `key` for an `exclude` glob (`exclude[1]`) |
+| `exception.no-survivor`      | 80   | mutation except | `file`, `line`, `column`                                   |
+| `exception.excluded`         | 80   | mutation except | `file`                                                     |
+| `paths.unmatched`            | 80   | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | `argument` |
+| `changed.no-git`             | 82   | crap, dry, mutation run, mutation list, mutation check, mutation sample, scrap, units | none     |
+| `since.bad-ref`              | 80   | mutation run, mutation check, mutation sample | `ref`                                         |
+| `since.no-git`               | 82   | mutation run, mutation check, mutation sample | none                                          |
+| `sample.no-git`              | 82   | mutation sample, without `--seed` | none                                     |
+| `count.platform`             | 82   | mutation run --count | `platform`                                            |
+| `count.no-git`               | 82   | mutation run --count | none                                                  |
+| `count.unsupported-scope`    | 80   | mutation run --count | none                                                  |
+| `count.preparation-failed`   | 1, 82 (a tool missing) | mutation run --count | `stage`                             |
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
 | `count.interrupted`        | 75   | mutation run --count | none                                                  |
-| `fail-fast.platform`         | 3    | mutation run --fail-fast | `platform`                                        |
-| `coverage.command-needs-report` | 2 | crap, mutation run | none                                                    |
+| `fail-fast.platform`         | 82   | mutation run --fail-fast | `platform`                                        |
+| `coverage.command-needs-report` | 80 | crap, mutation run | none                                                    |
 | `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
-| `coverage.tool-missing`      | 3    | crap --threshold, mutation run --fail-uncovered (a coverage tool, or the collector of the processes tests start, missing where its language has mutants to judge) | `dir`, `language`                                         |
-| `coverage.no-report`         | 3    | crap --threshold | `dir`, `language`                                         |
-| `coverage.report-unreadable` | 2    | crap --threshold | `report`                                                  |
+| `coverage.tool-missing`      | 82   | crap --threshold, mutation run --fail-uncovered (a coverage tool, or the collector of the processes tests start, missing where its language has mutants to judge) | `dir`, `language`                                         |
+| `coverage.no-report`         | 82   | crap --threshold | `dir`, `language`                                         |
+| `coverage.report-unreadable` | 80   | crap --threshold | `report`                                                  |
 | `crap.threshold`             | 1    | crap           | `file`, `line`, `function`, `crap`, `threshold`             |
 | `mutation.survived`          | 1    | mutation run, mutation check | `file`, `line`, `column`, `function`, `original`, `replacement` |
 | `mutation.uncovered`         | 1    | mutation run --fail-uncovered, mutation check --fail-uncovered | `file`, `line`, `column`, `function`, `original`, `replacement` |
@@ -116,9 +122,9 @@ output of the commands it runs passes as it is.
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
 | `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
-| `serve.repo-unreadable`      | 2    | serve          | none                                                        |
+| `serve.repo-unreadable`      | 80   | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |
-| `internal`                   | 70   | every          | none                                                        |
+| `internal`                   | 100  | every          | none                                                        |
 
 ## The rules
 
@@ -333,7 +339,7 @@ its `reason` and comments; nothing else is written. `--json` lists
 `renewed`, each with `old_hash`, `new_hash`, the site and `match` (`line`,
 `place` or `only`), and `not_renewed`, each entry left stale with `why`,
 also reported as `mutation.exception-stale`, exit 1. `--renew` with a site
-is `args.unexpected`, and with `--reason` `flags.conflict`, exit 2.
+is `args.unexpected`, and with `--reason` `flags.conflict`, exit 80.
 
 `--fail-uncovered` takes an optional value: alone it is
 `--fail-uncovered=functions`, the whole judged functions above.
@@ -352,12 +358,12 @@ from, is judged for survivors and exceptions alone. Survivors and
 exceptions are judged as before. Evidence is measured and recorded for whole
 functions either way, so a later `--fail-uncovered` check of the same
 snapshot judges them whole. `=lines` without `--since` is `flags.conflict`,
-exit 2, and any other value is `flags.value-invalid`.
+exit 80, and any other value is `flags.value-invalid`.
 
 `mutation run --count` runs on Linux and macOS, where every command it starts
 runs in a process group it owns, stopped and joined before the run returns.
 A command that detaches from its process group or session is not followed.
-On Windows it fails with `count.platform`, exit 3, before launching any
+On Windows it fails with `count.platform`, exit 82, before launching any
 command; native Windows support is #29.
 
 `mutation run --fail-fast` stops a complete run at the first actionable final
@@ -380,7 +386,7 @@ completed or reused, with their original scope and freshness evidence, and
 no outcome for an undecided mutant (ADR-0022). Like `--count`, it runs on Linux and macOS, where each command it
 starts runs in an owned process group, and every one is stopped and joined
 within one shared five-second deadline from the stop; on Windows it fails
-with `fail-fast.platform`, exit 3, before launching any command (#29).
+with `fail-fast.platform`, exit 82, before launching any command (#29).
 `--fail-fast` with `--count` is `flags.conflict`.
 
 A snapshot under `.metrics/mutate/` whose source file is gone, nothing at
@@ -437,28 +443,28 @@ verdict and no exit code changes for it.
 | 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position; for the group, `mutation`, `mutation -h`, `help mutation run`, `mutation run --help`. |
 | 10 | Help gives the `--json` shape and exit codes | Follows, with each command's problem rules. |
 | 11 | `--version` and `version` print `itos-cc <version>` first | Follows. |
-| 12 | Unknown command exits 2 and names a guess | Follows, for a group's subcommands too: `mutation nosuch` exits 2 and names `run`, `list`, `check`, `sample`, and `except`. |
-| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, `sample`, and `except`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 2. |
+| 12 | Unknown command exits 2 and names a guess | Follows with decision 36's 81, for a group's subcommands too: `mutation nosuch` exits 81 and names `run`, `list`, `check`, `sample`, and `except`. |
+| 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, `sample`, and `except`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 80. |
 | 14 | Help ends with examples and the issues address | Follows. |
 | 15, 16 | Long flags, `-h` the only short one; standard names | Follows. |
 | 17 | A flag means the same in every command | Does not follow: `--threshold`. |
 | 18 | A flag changes an action, never selects another | Follows. |
-| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows: `units`, `dry`, `scrap`, `crap`, `version` and the `mutation` group read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and `serve`, on its legacy handler, from its declared spec (`cmd/itos-cc/cli.go`), in the same words. |
+| 19–22 | `--flag=value` and `--flag value`; bad, missing, repeated, or switch values exit 2; a value is never a flag; no optional values | Follows, exiting decision 36's 80: `units`, `dry`, `scrap`, `crap`, `version` and the `mutation` group read their flags through kong, held to these rules by `internal/cli` (its `Flags` and `Parse`), and `serve`, on its legacy handler, from its declared spec (`cmd/itos-cc/cli.go`), in the same words. |
 | 23 | `--` ends the options; `-` is stdin or stdout | Follows for `--`; no command reads stdin, and the one file a command writes outside `.metrics/` is `itos-cc.yaml`, which `mutation except` edits in place. |
 | 24 | Flags in any position | Follows. |
-| 25 | Each argument checked; a bad one exits 2 | Follows: a path that is no file and no fragment of one exits 2. |
+| 25 | Each argument checked; a bad one exits 2 | Follows with decision 36's 80: a path that is no file and no fragment of one exits 80. |
 | 26 | Main output on stdout, the rest on stderr | Follows. |
 | 27 | JSON only with `--json`, `"schema": 1`, keys only added | Follows. `serve`'s HTTP API is JSON by design and not stdout. |
 | 28 | A stderr hint when plain output looks like data | No plain output looks like data. |
 | 29 | `--json` prints the object for every failure | Follows, usage errors and panics included. |
 | 30 | No colour; `NO_COLOR` passed on | Follows: itos-cc prints no colour, and the tests it runs inherit the environment. |
-| 31 | The exit code comes from the kind; unclassified is 70 | Follows. |
+| 31 | The exit code comes from the kind; unclassified is 70 | Follows with decision 36's codes: unclassified is 100. |
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
 | 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start, and `ITOS_CC_JACOCO_AGENT` and `ITOS_CC_JACOCO_DESTDIR` for the JVMs a Kotlin harness starts with the JaCoCo agent. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
 | 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
-| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `exclude`, doublestar globs, slash-separated and from the project root, of the sources (never tests) that `crap`, `dry`, `units` and `mutation run`, `list`, `check`, `sample` and `run --count` leave out however they were chosen, which a person writes; `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 2, and so is an `exclude` glob that is empty, absolute, holds `..` or a backslash, or is no pattern, its `key` naming it. `crap`, `dry`, `units` and `mutation list` read the file too, from the version that has `exclude`; `units` and `dry` read it once their command line is parsed, so a file that cannot be read never breaks help or `version`, and `scrap`, which reads only tests, never reads it. `mutation run --count` reads the file the commit at `HEAD` holds. |
+| 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `exclude`, doublestar globs, slash-separated and from the project root, of the sources (never tests) that `crap`, `dry`, `units` and `mutation run`, `list`, `check`, `sample` and `run --count` leave out however they were chosen, which a person writes; `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 80, and so is an `exclude` glob that is empty, absolute, holds `..` or a backslash, or is no pattern, its `key` naming it. `crap`, `dry`, `units` and `mutation list` read the file too, from the version that has `exclude`; `units` and `dry` read it once their command line is parsed, so a file that cannot be read never breaks help or `version`, and `scrap`, which reads only tests, never reads it. `mutation run --count` reads the file the commit at `HEAD` holds. |
 | 39–41 | Entry points for other programs | None. |
 | 42, 43 | Breaking changes together in a major release, no compatibility code | Follows; before 1.0, in a minor release: `mutate` became `mutation run` in one with no alias. |
 
@@ -469,5 +475,5 @@ verdict and no exit code changes for it.
 | 5 | Two commands with names a letter apart. | `crap`, `scrap` |
 | 17 | `--threshold` is a CRAP score in `crap` and a similarity in `dry`. | `crap --threshold 30`, `dry --threshold 0.9` |
 | 32 | An internal error's message is Go's error text. | a source file that cannot be read |
-| Shell completion, go-template-itos's rule 41 | No `completion <shell>` command and no hidden `__complete`, so no shell completes itos-cc's commands and flags. | `itos-cc completion bash` exits 2 as an unknown command |
+| Shell completion, go-template-itos's rule 41 | No `completion <shell>` command and no hidden `__complete`, so no shell completes itos-cc's commands and flags. | `itos-cc completion bash` exits 81 as an unknown command |
 | Exit 130 on interrupt, go-template-itos's rule 42 | Ctrl-C does not cancel a command's context and exit 130 with one stderr line (`interrupted` with `--json`): most commands end by the system's default action, `mutation run --count` exits 75 with `count.interrupted`, and `serve` shuts down and exits 0. | Ctrl-C during `itos-cc crap` |

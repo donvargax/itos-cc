@@ -237,7 +237,7 @@ Feature: Units: the functions and methods every tool measures
     When I run "itos-cc units ---changed"
     Then the problem is "flags.unknown", with flag "---changed"
     And its fix suggests "--changed"
-    And the exit code is 2
+    And the exit code is 80
 
   # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
   # sources it names out of units, but never a test: units --tests still

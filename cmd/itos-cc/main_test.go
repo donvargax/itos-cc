@@ -28,7 +28,7 @@ import (
 //   - commandName's is internal/cli's Dispatch, which its own tests and
 //     @ID-CLI-04 and @ID-CLI-10 hold;
 //   - the help of a line with no arguments is @ID-CLI-01's first row, and a
-//     usage error's line and exit 2 are @ID-CLI-07's;
+//     usage error's line and exit 80 are @ID-CLI-07's;
 //   - __complete's and completion's are the template's: itos-cc has no such
 //     command;
 //   - count's line past a reader's token limit was the template's sample
@@ -79,11 +79,11 @@ func TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead(t *testing.T) {
 	for _, name := range []string{"crap", "dry", "units"} {
 		code, stdout, stderr := runFaked(t, failing, name, "--json")
 		if code != cli.CodeInternal || !strings.Contains(stdout, `"rule": "internal"`) || !strings.Contains(stdout, "itos-cc.yaml: permission denied") || stderr != "" {
-			t.Errorf("%s --json: exit %d, stdout %q, stderr %q; want 70 and the failure as its object", name, code, stdout, stderr)
+			t.Errorf("%s --json: exit %d, stdout %q, stderr %q; want 100 and the failure as its object", name, code, stdout, stderr)
 		}
 		code, _, stderr = runFaked(t, failing, name)
 		if code != cli.CodeInternal || !strings.Contains(stderr, "itos-cc: itos-cc.yaml: permission denied") {
-			t.Errorf("%s: exit %d, stderr %q; want 70 and the failure on stderr", name, code, stderr)
+			t.Errorf("%s: exit %d, stderr %q; want 100 and the failure on stderr", name, code, stderr)
 		}
 		code, stdout, _ = runFaked(t, failing, name, "--help")
 		if code != 0 || !strings.Contains(stdout, "usage: itos-cc "+name) {
@@ -98,7 +98,7 @@ func TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead(t *testing.T) {
 }
 
 // A command kong runs that panics, or asks for what nothing binds, is a bug:
-// an internal problem and exit 70, as the --json object or a line on
+// an internal problem and exit 100, as the --json object or a line on
 // stderr, never a crash.
 func TestCallSafelyReportsABugAsAnInternalFailure(t *testing.T) {
 	for _, c := range []struct {
@@ -129,7 +129,7 @@ func TestCallSafelyReportsABugAsAnInternalFailure(t *testing.T) {
 				}
 			}
 			if code != cli.CodeInternal || !strings.Contains(out, c.want) {
-				t.Errorf("%s (--json %v): exit %d, output %q; want 70 and %q", c.name, asJSON, code, out, c.want)
+				t.Errorf("%s (--json %v): exit %d, output %q; want 100 and %q", c.name, asJSON, code, out, c.want)
 			}
 		}
 	}

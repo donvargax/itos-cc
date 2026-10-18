@@ -100,7 +100,7 @@ excluded is an orphan, which the next `mutation run` removes; an exception
 naming one is stale, as `excluded`, and `mutation except` refuses its sites
 as `exception.excluded`. `mutation run --count` reads the `itos-cc.yaml`
 `HEAD` commits. A glob that is no pattern, empty, absolute, holding `..` or
-a backslash is `config.invalid`, exit 2, its `key` naming it
+a backslash is `config.invalid`, exit 80, its `key` naming it
 (`exclude[1]`). An itos-cc release older than this one ignores `exclude`.
 
 Scripts rely on three things only, as with itos ([docs/CLI.md](docs/CLI.md)):
@@ -112,13 +112,19 @@ output is for people.
 | --- | --- |
 | 0 | Success. |
 | 1 | A check said no: a mutant survived, a function is over `--threshold`. |
-| 2 | A usage or config error: a bad flag, path, or report, or an `itos-cc.yaml` that cannot be read. |
-| 3 | The environment lacks something: a tool, a report, a git repository. |
-| 70 | An internal error itos-cc could not classify; please report it. |
 | 75 | A temporary failure: the same command may pass when run again. |
+| 80 | A usage or config error: a bad flag, path, or report, or an `itos-cc.yaml` that cannot be read. |
+| 81 | An unknown command or subcommand. |
+| 82 | A requirement not met: a tool, a report, a git repository. |
+| 100 | An internal error itos-cc could not classify; please report it. |
+
+A run with problems of several kinds exits with the first of 80 and 81, 100,
+82, 75 and 1 that it has. Before the semantic exit codes (decision 36), a
+usage error and an unknown command were 2, a requirement not met 3 and an
+internal error 70.
 
 `--json` prints one object, `{"schema": 1, "ok": true|false, …}`, and for a
-failure, usage errors included, `"problems": [{"rule", "message", "fix", …}]`
+failure, usage errors included, `"problems": [{"rule", "exit", "message", "fix", …}]`
 with a stable rule id and the problem's subject (file, line, function, …)
 as keys. Each command's `--help` gives its keys, rules, and exit codes.
 
@@ -280,7 +286,7 @@ A build root whose coverage could not be measured (tests that do not
 compile, a missing tool, no report) shows `N/A`, not 0%, and is named on
 stderr. With `--threshold`, a function above it exits 1, and so does a
 coverage run that measured nothing, such as tests that do not compile; a
-missing tool or report exits 3. A broken test setup never passes the gate.
+missing tool or report exits 82. A broken test setup never passes the gate.
 A file no test loads is untested, not unmeasured: when the coverage run for
 its language succeeded and wrote its report, its functions show 0%, even
 when it is scored alone and the run found no test for it.
@@ -488,7 +494,7 @@ coverage measured nothing for the language, every mutant runs and none is
 uncovered, without `--fail-uncovered`. With it, a TypeScript, Python or
 Kotlin build root with mutants to judge whose coverage tool is missing, or
 whose coverage command fails or writes no report, fails closed as Go does:
-`coverage.tool-missing` (exit 3) or `coverage.measured-nothing` (exit 1),
+`coverage.tool-missing` (exit 82) or `coverage.measured-nothing` (exit 1),
 naming its language and directory, and the run stops before any mutant
 runs; so does a Python build root whose coverage.py does not start in the
 processes its tests start, a TypeScript package measured by Vitest or
@@ -562,7 +568,7 @@ evidence is still measured and recorded for whole functions, so a later
 plain `--fail-uncovered` check of the same snapshot judges them whole. It
 holds in `mutation run`, counted runs and `mutation check` alike.
 `--fail-uncovered` alone is `--fail-uncovered=functions`, whole functions;
-`=lines` without `--since` is a usage error, exit 2.
+`=lines` without `--since` is a usage error, exit 80.
 
 ```sh
 itos-cc mutation run --since origin/main --fail-uncovered=lines    # a gate on the lines a branch changed
@@ -652,7 +658,7 @@ for every mutant of its judged functions, else `incomplete`) and its
 `baseline` as it ran (`not-run` when it never did), and each mutant its
 `state`, with an outcome only when completed. Plain output says the run stopped early and why. It runs on Linux
 and macOS, where every command it starts runs in a process group it owns;
-on Windows it fails with `fail-fast.platform`, exit 3, before any command
+on Windows it fails with `fail-fast.platform`, exit 82, before any command
 runs (#29). It refuses `--count`, which stays aggregate. Without it, runs
 are exactly as before.
 
@@ -793,7 +799,7 @@ select holds a function of the entry's name and hash, the entry has
 to remove. Only `mutation except` writes `itos-cc.yaml`. An
 entry never excuses an uncovered mutant: that needs a test, not a reason. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
-`config.invalid`, exit 2.
+`config.invalid`, exit 80.
 
 A change that leaves an excepted mutant the same, such as a rename, a
 literal or comment edit, reformatting or a line added elsewhere in its

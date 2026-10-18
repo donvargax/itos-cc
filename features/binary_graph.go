@@ -40,7 +40,7 @@ const portAttempts = 3
 
 // temporaryFailure is the exit code of a temporary failure, which serve
 // exits with when its port is in use, the only one it has before it is
-// ready (cli.feature's ID-CLI-08).
+// ready (cli.feature's ID-CLI-20).
 const temporaryFailure = 75
 
 // errPortTaken is serve's refusal of a port something took after the

@@ -73,7 +73,7 @@ func TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction(t *t
 	// strict command runs.
 	before := mutateCovered(t, append([]string{"--json"}, selection...)...)
 	logRun(t, &before)
-	if before.code == 70 || before.code == 3 || len(before.json(t).Files) != 2 {
+	if before.code == 100 || before.code == 82 || len(before.json(t).Files) != 2 {
 		t.Fatalf("setup run without --fail-uncovered: exit %d\n%s%s", before.code, before.stdout, before.stderr)
 	}
 	beforeCheck := mutationCheck(t, append([]string{"--json"}, selection...)...)
@@ -156,8 +156,8 @@ func TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction(t *t
 		if p == nil || p["flag"] != args[0] {
 			t.Errorf("strict TypeScript run with %v reports %v, want flags.conflict naming %s\n%s", args, p, args[0], o.stdout)
 		}
-		if o.code != 2 {
-			t.Errorf("strict TypeScript run with %v exit %d, want 2\n%s%s", args, o.code, o.stdout, o.stderr)
+		if o.code != 80 {
+			t.Errorf("strict TypeScript run with %v exit %d, want 80\n%s%s", args, o.code, o.stdout, o.stderr)
 		}
 	}
 

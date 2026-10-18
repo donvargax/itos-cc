@@ -243,8 +243,8 @@ func TestChangedLineStrictnessNeedsARange(t *testing.T) {
 			fix, _ := p["fix"].(string)
 			named = named || strings.Contains(message+" "+fix, "--since")
 		}
-		if o.code != 2 {
-			t.Errorf("%s: exit %d, want 2, a usage error\n%s", strings.Join(args, " "), o.code, o.stdout)
+		if o.code != 80 {
+			t.Errorf("%s: exit %d, want 80, a usage error\n%s", strings.Join(args, " "), o.code, o.stdout)
 		}
 		if !named {
 			t.Errorf("%s: problems %v, want one naming --since", strings.Join(args, " "), rawProblems(t, o))

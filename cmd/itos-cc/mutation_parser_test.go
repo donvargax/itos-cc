@@ -171,13 +171,13 @@ func TestMutationGroupHelpRoutingAndErrorPrecedence(t *testing.T) {
 		{[]string{"mutation", "--help", "nosuch"}, 0, "Subcommands:"},
 		{[]string{"mutation", "run", "--bad", "--help"}, 0, "usage: itos-cc mutation run"},
 		{[]string{"mutation", "run", "--help", "--json"}, 0, "usage: itos-cc mutation run"},
-		{[]string{"--json", "mutation", "rn"}, 2, "Did you mean 'mutation run'?"},
-		{[]string{"mutation", "rn", "--help", "--json"}, 2, "The subcommands of mutation are run, list, check, sample, and except."},
-		{[]string{"mutation", "--changed", "run", "--json"}, 2, "before a subcommand"},
-		{[]string{"mutation", "--json"}, 2, "command.missing"},
-		{[]string{"--json", "help", "mutation", "run", "extra"}, 2, "help takes one command"},
-		{[]string{"--json", "help", "mutation", "unknown"}, 2, "The subcommands of mutation are"},
-		{[]string{"--json", "help", "mutation", "--changed"}, 2, "there is no command"},
+		{[]string{"--json", "mutation", "rn"}, 81, "Did you mean 'mutation run'?"},
+		{[]string{"mutation", "rn", "--help", "--json"}, 81, "The subcommands of mutation are run, list, check, sample, and except."},
+		{[]string{"mutation", "--changed", "run", "--json"}, 80, "before a subcommand"},
+		{[]string{"mutation", "--json"}, 80, "command.missing"},
+		{[]string{"--json", "help", "mutation", "run", "extra"}, 80, "help takes one command"},
+		{[]string{"--json", "help", "mutation", "unknown"}, 81, "The subcommands of mutation are"},
+		{[]string{"--json", "help", "mutation", "--changed"}, 81, "there is no command"},
 	} {
 		t.Run(strings.Join(tc.args, " "), func(t *testing.T) {
 			var out, errOut bytes.Buffer
@@ -206,7 +206,7 @@ func TestMutationGroupJSONPlacementRetainsLegacyDispatch(t *testing.T) {
 		output, errOutput := captured(t, func() { code = run(t.Context(), tc.args, strings.NewReader(""), &given, &givenErr, adapters{}) })
 		output += given.String()
 		errOutput += givenErr.String()
-		if code != 2 {
+		if code != 80 {
 			t.Fatalf("%q exit=%d out=%q err=%q", tc.args, code, output, errOutput)
 		}
 		if json.Valid([]byte(output)) != tc.json {
@@ -391,7 +391,7 @@ func TestMutationParsedAdmissionKeepsEmptyAndZeroRefusals(t *testing.T) {
 			if err := json.Unmarshal([]byte(out), &result); err != nil {
 				t.Fatalf("exit=%d stdout=%q stderr=%q: %v", code, out, errOut, err)
 			}
-			if code != 2 || len(result.Problems) != 1 || result.Problems[0].Rule != tc.rule || result.Problems[0].Flag != tc.flag {
+			if code != 80 || len(result.Problems) != 1 || result.Problems[0].Rule != tc.rule || result.Problems[0].Flag != tc.flag {
 				t.Fatalf("lost actual admission: exit=%d result=%+v", code, result)
 			}
 			// The refused count is quoted back as it was written.

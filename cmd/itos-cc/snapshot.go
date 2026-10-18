@@ -21,12 +21,12 @@ func classifySnapshot(err error) ([]*cli.Problem, bool) {
 
 // snapshotProblem is the problem of err, which holds failure: a snapshot
 // that could not be read, written or removed, or a folder of them listed,
-// is the 70 it has always been, its message err's text whole, the
+// is the internal 100, its message err's text whole, the
 // library's with whatever a caller wrapped it in, such as the snapshot's
 // name mutation gives, as when no classifier claimed it; and an interrupt
 // is 130 (decision 31). A command that can go on without a snapshot, as
 // scrap without its last one, says so and never brings the failure here.
-// None has a default; a kind with no case here is the 70 of a bug.
+// None has a default; a kind with no case here is the 100 of a bug.
 func snapshotProblem(err error, failure snapport.Failure) *cli.Problem {
 	p := cli.Internal(err)
 	switch failure.(type) {

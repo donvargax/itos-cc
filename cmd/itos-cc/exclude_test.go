@@ -62,8 +62,8 @@ func TestAnExceptionRefusedForAnExcludedSourceLeavesItosCcYamlAsItWas(t *testing
 	boardRepo(t, withFake(killedTests, map[string]string{"itos-cc.yaml": excludePorttest + fakeException}))
 
 	site := fakeFile + ":7:9"
-	if o := itosCc(t, "mutation", "except", site, "--reason", "x"); o.code != 2 {
-		t.Errorf("mutation except %s: exit %d, want 2\n%s%s", site, o.code, o.stdout, o.stderr)
+	if o := itosCc(t, "mutation", "except", site, "--reason", "x"); o.code != 80 {
+		t.Errorf("mutation except %s: exit %d, want 80\n%s%s", site, o.code, o.stdout, o.stderr)
 	}
 	data, err := os.ReadFile(inWD(t, "itos-cc.yaml"))
 	if err != nil {

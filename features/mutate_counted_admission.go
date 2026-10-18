@@ -58,7 +58,7 @@ func (q *countedMutation) usageRefused() error {
 		if i == 3 {
 			rule, flag = "flags.conflict", "--seed"
 		}
-		if err := countedProblem(o, rule, 2); err != nil {
+		if err := countedProblem(o, rule, 80); err != nil {
 			return err
 		}
 		if checkProblems(o.object)[0]["flag"] != flag {
@@ -100,7 +100,7 @@ func (q *countedMutation) gitAdmission(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		if err = countedProblem(o, "count.no-git", 3); err != nil {
+		if err = countedProblem(o, "count.no-git", 82); err != nil {
 			return err
 		}
 		if err = strictNoCommands(o.result.Stderr); err != nil {

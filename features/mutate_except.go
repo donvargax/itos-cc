@@ -72,7 +72,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step("^it records src/board\\.ts, \"Board#count\", the function's hash, the site's line within the function, its column, `<`, `<=`, and the reason$", e.entryFields)
 	sc.Step(`^the snapshot records the mutant at src/board\.ts:5:9 as killed, and the one at src/board\.ts:9:3 as uncovered$`, e.refusedFixture)
 	sc.Step(`^excepting src/board\.ts:9:3 is refused the same way$`, e.refusedUncovered)
-	sc.Step(`^"--reason ''" is "flags\.value-invalid", exit 2$`, e.emptyReason)
+	sc.Step(`^"--reason ''" is "flags\.value-invalid", exit 80$`, e.emptyReason)
 	sc.Step(`^itos-cc\.yaml holds a comment, another key, and an entry for src/board\.ts:7:19$`, e.commented)
 	sc.Step(`^the entry's reason is "reworded", and it is still the only one for that site$`, e.reworded)
 	sc.Step(`^the comment and the other key are unchanged$`, e.restKept)
@@ -262,7 +262,7 @@ func (e *exceptionMutation) refusedUncovered() error {
 	if err := e.run("mutation except src/board.ts:9:3 --reason x --json"); err != nil {
 		return err
 	}
-	if e.s.m.w.exit != 2 {
+	if e.s.m.w.exit != 80 {
 		return fmt.Errorf("refused uncovered exit %d", e.s.m.w.exit)
 	}
 	return e.refusal(9, 3)
@@ -276,7 +276,7 @@ func (e *exceptionMutation) emptyReason() error {
 		return err
 	}
 	p := checkProblems(a)
-	if e.s.m.w.exit != 2 || len(p) != 1 {
+	if e.s.m.w.exit != 80 || len(p) != 1 {
 		return fmt.Errorf("invalid reason: exit%d %v", e.s.m.w.exit, a)
 	}
 	if err := exceptionFields(p[0], map[string]any{"rule": "flags.value-invalid", "flag": "--reason", "value": ""}); err != nil {
