@@ -3188,8 +3188,8 @@ items:
   - id: T-128
     title: Run the binary driver's scenarios concurrently
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-130
