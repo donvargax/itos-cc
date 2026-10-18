@@ -3533,14 +3533,15 @@ items:
       the stale entry and keeps its reason. Also run and check say gone where --renew says changed:
       make them agree. After except-prune.
     refs: ["#50"]
-  - id: except-uncovered-message
+  - id: slice-23
     title: The refusal to except an uncovered site says why and names the way out
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-uncovered-message.
       Issue #58. The person (2026-10-18): keep q-12 (exceptions cover survivors only).
       exception.no-survivor's message says it is on purpose and suggests routing the branch through
       code a test already reaches. Size S.
