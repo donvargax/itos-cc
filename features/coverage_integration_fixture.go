@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/cucumber/godog"
@@ -40,17 +41,68 @@ func coverageWithoutC8(modules, dest, platform string, required bool) error {
 
 // toolCaches are the folders of a node_modules its tools write as they run:
 // Vite's, so Vitest's results and dependencies (.vite), and the one Babel,
-// nyc and others share (.cache). Every scenario's node_modules leaves them
-// out, so each scenario's tools make and write their own, never the pinned
-// installation's, which every scenario links and several write at once
-// when scenarios run at once (T-128).
+// nyc and others share (.cache). Every scenario's node_modules links them
+// to a folder of its own outside the scenario's tree (scenarioCaches),
+// never the pinned installation's, which every scenario links and several
+// would write at once when scenarios run at once (T-128). Outside the
+// tree, as the installation's were when node_modules linked it whole, so
+// what a scenario sees of its tree, such as a counted run's leaving the
+// live tree unchanged, is what it saw before.
 var toolCaches = []string{".vite", ".cache"}
 
+var (
+	toolCachesMu  sync.Mutex
+	toolCachesDir string
+)
+
+// scenarioCaches makes a folder for one scenario's tool caches, in the
+// system's temporary directory, inside a folder of the run's that
+// removeToolCaches removes.
+func scenarioCaches() (string, error) {
+	toolCachesMu.Lock()
+	defer toolCachesMu.Unlock()
+	if toolCachesDir == "" {
+		dir, err := os.MkdirTemp("", "itos-cc-features-caches-")
+		if err != nil {
+			return "", err
+		}
+		toolCachesDir = dir
+	}
+	return os.MkdirTemp(toolCachesDir, "scenario-")
+}
+
+// removeToolCaches removes the folders scenarioCaches made.
+func removeToolCaches() {
+	toolCachesMu.Lock()
+	defer toolCachesMu.Unlock()
+	if toolCachesDir != "" {
+		_ = os.RemoveAll(toolCachesDir)
+		toolCachesDir = ""
+	}
+}
+
 // linkPackages makes dest a node_modules of links to each entry of modules
-// and of its .bin, leaving out toolCaches and the names in leftOut, with
-// failed links' errors as failedLink makes them. It writes only in dest.
+// and of its .bin, leaving out the names in leftOut, and toolCaches linked
+// to the scenario's own caches folder instead, with failed links' errors
+// as failedLink makes them. It never writes in modules.
 func linkPackages(modules, dest string, leftOut []string, failedLink func(error) error) error {
 	leftOut = slices.Concat(toolCaches, leftOut)
+	caches, err := scenarioCaches()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dest, 0o755); err != nil { //nolint:gosec // a copied fixture's folders have the 0755 a checkout's folders have; the product under test sees fixture modes, so narrowing them would change what scenarios check
+		return err
+	}
+	for _, cache := range toolCaches {
+		own := filepath.Join(caches, strings.TrimPrefix(cache, "."))
+		if err := os.Mkdir(own, 0o755); err != nil { //nolint:gosec // a tool cache's folder has the 0755 the tool would give it
+			return err
+		}
+		if err := os.Symlink(own, filepath.Join(dest, cache)); err != nil {
+			return failedLink(err)
+		}
+	}
 	for _, sub := range []string{"", ".bin"} {
 		entries, err := os.ReadDir(filepath.Join(modules, sub))
 		if errors.Is(err, fs.ErrNotExist) && sub != "" {

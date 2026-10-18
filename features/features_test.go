@@ -102,6 +102,7 @@ func TestFeatures(t *testing.T) {
 		return
 	}
 	t.Cleanup(removeCallerPath)
+	t.Cleanup(removeToolCaches)
 	root, err := moduleRoot()
 	if err != nil {
 		t.Fatal(err)

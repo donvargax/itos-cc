@@ -13,6 +13,7 @@ import (
 )
 
 func TestBinaryMissingC8FacadeIsolation(t *testing.T) {
+	t.Cleanup(removeToolCaches)
 	original := t.TempDir()
 	dest := filepath.Join(t.TempDir(), "node_modules")
 	files := map[string]string{
@@ -90,11 +91,13 @@ func TestBinaryMissingC8FacadeLinkFailures(t *testing.T) {
 
 // TestBinaryNodeModulesKeepToolCachesApart holds what scenarios running at
 // once need of the node_modules Coverage links (T-128), which no scenario
-// observes: each scenario's own folder of links to the pinned packages, so
-// Vitest's .vite and the tools' .cache are made in the scenario's folder,
-// never written into the installation every scenario shares, and a second
-// declaration in the same folder keeps the first's.
+// observes: each scenario's own folder of links to the pinned packages,
+// Vitest's .vite and the tools' .cache linked to folders of the scenario's
+// own outside its tree, never written into the installation every
+// scenario shares, and a second declaration in the same folder keeping the
+// first's.
 func TestBinaryNodeModulesKeepToolCachesApart(t *testing.T) {
+	t.Cleanup(removeToolCaches)
 	original := t.TempDir()
 	d := binary{}
 	files := map[string]string{
@@ -106,7 +109,8 @@ func TestBinaryNodeModulesKeepToolCachesApart(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	dest := filepath.Join(t.TempDir(), "node_modules")
+	scenario := t.TempDir()
+	dest := filepath.Join(scenario, "node_modules")
 	failed := func(err error) error { return fmt.Errorf("%w: %v", godog.ErrSkip, err) }
 	for range 2 {
 		if err := linkModules(original, dest, failed); errors.Is(err, godog.ErrSkip) {
@@ -119,8 +123,15 @@ func TestBinaryNodeModulesKeepToolCachesApart(t *testing.T) {
 		t.Fatalf("node_modules is not a folder of the scenario's own: %v %v", info, err)
 	}
 	for _, cache := range toolCaches {
-		if _, err := os.Lstat(filepath.Join(dest, cache)); !os.IsNotExist(err) {
-			t.Fatalf("%s is the installation's: %v", cache, err)
+		target, err := os.Readlink(filepath.Join(dest, cache))
+		if err != nil {
+			t.Fatalf("%s is no link: %v", cache, err)
+		}
+		if rel, err := filepath.Rel(scenario, target); err == nil && filepath.IsLocal(rel) {
+			t.Fatalf("%s's cache %s is in the scenario's tree", cache, target)
+		}
+		if rel, err := filepath.Rel(original, target); err == nil && filepath.IsLocal(rel) {
+			t.Fatalf("%s's cache %s is the installation's", cache, target)
 		}
 	}
 	for _, file := range []string{"vitest/package.json", ".bin/vitest"} {

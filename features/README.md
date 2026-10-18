@@ -218,8 +218,9 @@ stretch what the timing scenarios measure. The in-process driver, `TestScenarios
 time. Any scenario can run beside any other because each is isolated: its own temporary folders
 (`Folder`), its own itos-cc and tool processes, ports the system picks (`Occupy`, and `Graph`,
 which starts `serve` again on another port when a scenario beside it took the one it was given),
-a `node_modules` of its own, links to the pinned packages without their caches, so Vitest writes
-its `.vite` in the scenario's folder, and no step changes the test process's working directory,
+a `node_modules` of its own, links to the pinned packages with Vitest's `.vite` and the tools'
+`.cache` linked to folders of the scenario's own outside its tree, never the installation's, and
+no step changes the test process's working directory,
 environment or a package variable but `pathHiding`'s cache, under its lock. A step must keep it
 so: one that changes what every scenario shares fails scenarios at random, never in order.
 
