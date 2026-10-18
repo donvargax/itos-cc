@@ -3680,6 +3680,12 @@ items:
       system picked, so a script or a person cannot reach it; the S10 interrupt scenarios start
       serve on port 0 and wait on that line. Naming listener.Addr() would be a contract change, so
       it needs a scenario first.
+
+      From p1-serve-announces-its-port (T-128, dropped as its duplicate 2026-10-18): the binary
+      driver's Graph asks the system for a free port, closes it and hands it to serve; with
+      scenarios running at once another can be handed the same port in between, so Graph retries
+      serve on another port when it exits 75 before it is ready. Once serve announces its listener's
+      address, the harness passes --port 0 and drops the retry.
   - id: T-134
     title: ID-MUT-250 fails on macOS when a killed fixture resets its connection
     phase: 1
