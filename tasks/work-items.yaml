@@ -2722,6 +2722,23 @@ items:
       classifying that case (mutation-group-json). Exit 130 on interrupt and the semantic exit codes
       land after this comparison and are no part of it. Mutation proof and the nightly run stay off
       until this item is done.
+
+      The person, 2026-10-17, replacing the full command-line matrix of 2026-10-11: the scenario
+      text barely changed during the refactor (from T-29's parent 51f3952 to now, 9 feature files,
+      +398 -128, the removals mostly count.feature and a dozen fix: corrections), but most feature
+      files became executable against the binary only during it, so they have never run against the
+      old binary. The proof is therefore: (1) give the binary driver an option to use a prebuilt
+      binary, and run today's whole binary-driver suite against the binary built from 51f3952; every
+      scenario passing on both is proven unchanged, and each failure on the old binary must be a
+      listed deliberate difference, a red-first feat or fix added during the refactor, or a
+      corrected scenario, named one by one; (2) compare stdout, stderr and exit code of both
+      binaries over only the edge cases the moves listed in this item and no scenario holds, through
+      a small committed script in tools/; (3) no combinatorial matrix. Normalize only temp paths,
+      durations and the version string, each rule listed in the report. Mutation cases use small Go
+      and TypeScript fixtures, never this repository's code. An unlisted difference becomes a fix
+      item and the proof reruns; nothing joins the deliberate list to pass. Lesson for the next
+      large refactor: make the scenarios executable against the old binary before refactoring, as
+      characterization.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
