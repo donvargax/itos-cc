@@ -833,6 +833,65 @@ Feature: Mutation testing
       Then only "Board#Place" is judged
       And the other functions' results are kept in .metrics/mutate/src/grid.go.json
 
+  # Issue #22 (slice-11): a function's hash covered its whole text, comments
+  # included, so a commit that only added a lint exception's comment to one
+  # of its lines made it changed for --since and its results stale, asking
+  # for a run no mutant of it could answer differently. Decided with the
+  # person on 2026-10-18: the hash leaves comments out, in every language,
+  # with the space and line breaks only a comment needed, so a function
+  # whose code is unchanged keeps its hash and its results, and a recorded
+  # site a comment moved keeps its outcome. --since judges a function the
+  # range changed only when its hash changed too: a function the range
+  # touched only in its comments is not judged, by mutation run, check or
+  # sample. Shipping it changes every function's hash, so every snapshot
+  # reads stale once, and every exception in itos-cc.yaml exception-stale
+  # until mutation except --renew carries it over. A site's offset is
+  # taken in the comment-free text, so a comment above a site keeps its
+  # recorded outcome. Python docstrings are code, not comments. The steps
+  # that made a function changed by editing only a comment (changePlace,
+  # changedBefore, deletedLine, rename and their kin) change code now.
+  Rule: A change to a function's comments alone is no change
+
+    @wip @slice-11 @ID-MUT-256
+    Scenario Outline: A comment-only change inside a function leaves its results fresh
+      Given fresh results for every function of src/board.go, all killed
+      And a commit after "base" only <changed> inside "Board#Place"
+      When I run "itos-cc mutation check --since base"
+      Then the exit code is 0
+      And "itos-cc mutation check --json src/board.go" gives "Board#Place" the state "fresh"
+      And "itos-cc mutation run --since base" judges no function and runs no mutant
+      But after a commit that changes its code, "itos-cc mutation check --since base" reports "mutation.stale" for "Board#Place"
+
+      Examples:
+        | changed                                                      |
+        | added a comment on a line of its own above its mutation site |
+        | added a comment at the end of its mutation site's line       |
+        | reworded its comment                                         |
+        | deleted its comment's line                                   |
+
+    # Issue #22 as found: no range had judged the function, so it had no
+    # results, and its comment made it "mutation.missing".
+    @wip @slice-11 @ID-MUT-257
+    Scenario: A function with no results whose only change is a comment is not judged
+      Given "Board#Reset" has no mutation results, and a commit after "base" only added a comment at the end of one of its lines
+      When I run "itos-cc mutation check --since base"
+      Then the exit code is 0
+      And "itos-cc mutation run --since base" judges no function and runs no mutant
+
+    @wip @slice-11 @ID-MUT-258
+    Scenario Outline: A comment-only change leaves a <language> function fresh
+      Given a <language> function with fresh results, all killed, committed at "base"
+      And a commit after "base" only added a comment on a line of its own above its mutation site, and another at the end of that site's line
+      When I run "itos-cc mutation check --since base"
+      Then the exit code is 0
+      And "itos-cc mutation check --json" of its file gives the function the state "fresh"
+
+      Examples:
+        | language   |
+        | typescript |
+        | python     |
+        | kotlin     |
+
   # Issue #8, part 1: a gate (a commit hook) proves that results exist for
   # exactly the code being committed, without running anything. Decided with
   # the person on 2026-10-06 (q-1 to q-3): it is a subcommand of the group,
@@ -2194,6 +2253,23 @@ Feature: Mutation testing
       Then it fails as a usage error, exit 2, naming --since
       And a counted Go run with --count 1 --since <base> --fail-uncovered=lines judges coverage only on the changed lines, as a complete run does
 
+    # Slice-11 (issue #22): a function the range touched only in its
+    # comments is not judged, so none of its lines asks evidence, though a
+    # comment at the end of an executable line shares that line's hunk. A
+    # change to another line no test can execute, such as a signature, still
+    # asks it (the idea strict-lines-nonexecutable-changes). Strict Go
+    # evidence is bound to the module's file bytes, so a check that judges
+    # the whole function still finds it stale, as after any edit of the
+    # module.
+    @wip @slice-11 @ID-MUT-259
+    Scenario: A comment-only change asks no coverage evidence of its function
+      Given a Go function with fresh results and fresh strict coverage evidence, committed at "base"
+      And a commit after "base" only added a comment at the end of one of its executable lines
+      When I run "itos-cc mutation check --since base --fail-uncovered=lines --json"
+      Then it reports no problem and the exit code is 0
+      And "itos-cc mutation check --since base --fail-uncovered" exits 0
+      But "itos-cc mutation check --fail-uncovered --json" of its file reports "mutation.coverage-stale" for it, naming that file
+
   # except-renew, issue #32, q-42 (answered 2026-10-11): mutation except
   # --renew carries reviewed exceptions across a change that leaves their
   # mutant the same: a rename, a literal or comment edit, reformatting, a
@@ -2605,6 +2681,55 @@ Feature: Mutation testing
       And no external dependency tree is followed or admitted as fresh coverage
       But replacement inputs already inside the actual inventory remain supported
       And non-strict commands retain their existing behavior
+
+    # Issues #36 and #37 (slice-10): strict Go evidence recorded in one
+    # checkout read coverage-stale for every function in any other, CI's
+    # included. @go-env hashed the raw variables, so the GOTOOLCHAIN=local
+    # setup-go exports differed from an unset one though the same Go built
+    # the same code; and the inputs were every .go file on disk beneath the
+    # module, inside .git/, testdata and _ directories, untracked and ignored
+    # ones included. Now @go-env holds the values go env resolves, without
+    # GOTOOLCHAIN, which only says how the version was chosen; the files are
+    # go.mod, go.sum and the .go files git tracks beneath the module that a
+    # build can include, never under testdata or a directory whose name
+    # starts with _ or ., nor in a nested module; and the Go version is the
+    # project's toolchain's, go env GOVERSION, not the one itos-cc was built
+    # with, which no scenario can hold, having one Go. Shipping it changes the
+    # inputs of all recorded Go evidence, which reads coverage-stale once
+    # until a strict run measures it again; mutant outcomes stay fresh.
+    # Outside a git repository the files are those go's own directory
+    # rules take from the disk.
+    # The fixture's go.mod names a Go no newer than the one installed, so
+    # local and auto resolve the same toolchain and nothing is downloaded.
+    @wip @slice-10 @ID-MUT-254
+    Scenario Outline: Strict Go evidence stays fresh when only how the same Go is chosen differs
+      Given fresh strict coverage evidence for an unchanged Go function, recorded with <recorded>
+      When I run mutation check with --fail-uncovered --json for the function's file, with <checked>
+      Then no function is "mutation.coverage-stale" and the exit code is 0
+      But with GOFLAGS=-buildvcs=false its problem is "mutation.coverage-stale", naming "@go-env"
+
+      Examples:
+        | recorded          | checked                      |
+        | GOTOOLCHAIN unset | GOTOOLCHAIN=local            |
+        | GOTOOLCHAIN unset | GOTOOLCHAIN=auto             |
+        | GOTOOLCHAIN=local | GOTOOLCHAIN unset            |
+        | GOOS unset        | GOOS set to the system's own |
+
+    @wip @slice-10 @ID-MUT-255
+    Scenario Outline: A Go file no build of the checkout includes is no input of strict Go evidence
+      Given fresh strict coverage evidence for an unchanged Go function, its snapshot committed
+      And a Go file <file> was added, <how>
+      When I run mutation check with --fail-uncovered --json for the function's file
+      Then no function is "mutation.coverage-stale" and the exit code is 0
+      But a committed Go file added beside the function's own file makes its problem "mutation.coverage-stale", naming that file
+
+      Examples:
+        | file          | how                                       |
+        | .git/x/x.go   | inside the git directory                  |
+        | _t/x.go       | untracked, in a directory go ignores      |
+        | dist/x.go     | in a directory .gitignore ignores         |
+        | testdata/x.go | committed, in a testdata directory        |
+        | scratch.go    | untracked, beside the function's own file |
 
   # Issue #26's ownership prerequisite is split by the person's instructions:
   # T-9 extracts legacy execution; T-10 exposes internal context and lifecycle
