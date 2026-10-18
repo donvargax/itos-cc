@@ -199,6 +199,7 @@ go test ./features -count=1                          # every live scenario, thro
 go test ./features -count=1 -scenarios='^@ID-CLI-'   # the live scenarios with a matching tag
 GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its coverage in $d
 ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin
+ITOS_CC_FEATURES_CONCURRENCY=1 go test ./features -count=1  # one scenario at a time
 go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   # in process
 itos tests smoke run scenario                        # exactly the smoke set, both ways
 ```
@@ -207,6 +208,28 @@ itos tests smoke run scenario                        # exactly the smoke set, bo
 own tag filter takes exact tags joined by commas, while itos merges selections into one regular
 expression joined by `|`. One that matches no tag fails the run, so a selection never passes by
 running nothing. Each scenario is a subtest of `TestFeatures`, named after the scenario.
+
+The binary driver runs scenarios at once (T-128): as many as the CPUs Go runs on,
+`runtime.GOMAXPROCS(0)`, which follows a container's CPU limit, so four on `ubuntu-latest` and
+`windows-latest` and three on `macos-latest`. `ITOS_CC_FEATURES_CONCURRENCY` sets another number,
+1 for one at a time; the whole number it names must be 1 or more. Each scenario mostly waits on
+the itos-cc, git and go processes it starts, which take the CPUs, so more at once would only
+stretch what the timing scenarios measure. The in-process driver, `TestScenarios`, runs one at a
+time. Any scenario can run beside any other because each is isolated: its own temporary folders
+(`Folder`), its own itos-cc and tool processes, ports the system picks (`Occupy`, and `Graph`,
+which starts `serve` again on another port when a scenario beside it took the one it was given),
+a `node_modules` of its own, links to the pinned packages without their caches, so Vitest writes
+its `.vite` in the scenario's folder, and no step changes the test process's working directory,
+environment or a package variable but `pathHiding`'s cache, under its lock. A step must keep it
+so: one that changes what every scenario shares fails scenarios at random, never in order.
+
+godog holds back each scenario's report until the scenario ends when it runs several at once, and
+would interleave two that end together, so `TestFeatures` reports through `itos-cc-ordered`
+(`ordered_report_test.go`): godog's pretty report with each feature's header and its scenarios
+whole, in the file's order, as one at a time prints them, each printed once it and every scenario
+before it have ended. A failure reads as before: its step and error in the report and in the
+summary of failed steps at its end, and the scenario's subtest failing with the error. The
+cucumber JSON of `-scenario-report` is written at the end, from godog's results, as before.
 
 ## Checking assertion strictness
 

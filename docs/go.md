@@ -724,7 +724,7 @@ skips with a typed reason (`features.ErrPhysicalUnsupported`), which the in-proc
 the binary for now, each with why and the work that owns it: the five mutation scenarios
 that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
 T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-code row that
-runs `serve` on a port in use (T-112). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so `cd.yml`
+runs `serve` on a port in use (T-112). The in-process driver runs one scenario at a time, the binary driver as many at once as the CPUs, each scenario isolated (`features/README.md`, T-128). itos.yaml's scenario lines run both tests, so `cd.yml`
 holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
 interrupts on every system.

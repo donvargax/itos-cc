@@ -8,6 +8,7 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.10.3
 	github.com/cucumber/gherkin/go/v42 v42.0.0
 	github.com/cucumber/godog v0.16.0
+	github.com/cucumber/messages/go/v34 v34.2.0
 	github.com/donvargax/kong v1.16.2-itos.1
 	github.com/fwcd/tree-sitter-kotlin v0.0.0-20260801230305-1852ea17b7f6
 	github.com/tree-sitter/go-tree-sitter v0.25.0
@@ -21,7 +22,6 @@ require (
 )
 
 require (
-	github.com/cucumber/messages/go/v34 v34.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-memdb v1.3.5 // indirect

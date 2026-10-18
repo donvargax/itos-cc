@@ -15,6 +15,9 @@
 //	                                                   either, against the
 //	                                                   itos-cc binary at <file>,
 //	                                                   built by no one here
+//	ITOS_CC_FEATURES_CONCURRENCY=<n> go test ./features -count=1
+//	                                                   either, <n> scenarios at
+//	                                                   once, not one a CPU
 //
 // -scenarios takes the regular expression itos's run templates join the IDs
 // they select into, which TagFilter turns into godog's filter. A scenario
@@ -64,6 +67,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -106,7 +110,11 @@ func TestFeatures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	format := "pretty"
+	at, err := concurrency()
+	if err != nil {
+		t.Fatal(err)
+	}
+	format := orderedFormat
 	if *scenarioReport != "" {
 		if strings.Contains(*scenarioReport, ",") {
 			t.Fatal("scenario-report path cannot contain a Godog formatter separator (comma)")
@@ -121,13 +129,37 @@ func TestFeatures(t *testing.T) {
 			Paths:       sel.Paths,
 			Tags:        sel.Filter,
 			Strict:      true,
-			Concurrency: 1,
+			Concurrency: at,
 			TestingT:    t,
 		},
 	}
 	if suite.Run() != 0 {
 		t.Fatal("a scenario failed")
 	}
+}
+
+// concurrencyEnv says how many scenarios the binary driver runs at once.
+const concurrencyEnv = "ITOS_CC_FEATURES_CONCURRENCY"
+
+// concurrency is how many scenarios run at once: the number concurrencyEnv
+// names, else as many as the CPUs Go runs on here (GOMAXPROCS, which
+// follows the CPUs the system gives the process, a container's limit
+// among them), so a runner of four CPUs runs four and one of three runs
+// three. Each scenario spends most of its time waiting on the itos-cc,
+// git and go processes it starts, which take the CPUs; more scenarios than
+// CPUs would only make each wait longer, and stretch what the timing
+// scenarios measure. Any scenario can run beside any other, each isolated
+// as features/README.md's Running them says.
+func concurrency() (int, error) {
+	text := os.Getenv(concurrencyEnv)
+	if text == "" {
+		return runtime.GOMAXPROCS(0), nil
+	}
+	n, err := strconv.Atoi(text)
+	if err != nil || n < 1 {
+		return 0, fmt.Errorf("%s=%q: want a whole number of scenarios, 1 or more", concurrencyEnv, text)
+	}
+	return n, nil
 }
 
 // prebuiltEnv names the binary the scenarios run instead of building one.
