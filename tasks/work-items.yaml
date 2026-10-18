@@ -3324,6 +3324,12 @@ items:
 
       itos#55 (open): itos's moves rule may leave no way to adopt scenarios for existing behaviour;
       check it before writing characterization scenarios, and file what the audit hits there.
+
+      One claim above is wrong. coverage.command-needs-report is not dead, since internal/cli's
+      CommandNeedsReport (internal/cli/coverage.go:7) words it, crap gives it at
+      internal/crap/crap.go:219 and mutation run at internal/mutation/progress.go:55, and no
+      scenario names it, so it is a behaviour to specify, not a row to remove. T-132, which this
+      waited on, is done.
   - id: prepush-mutation-check
     title: A pre-push hook judges a few mutants of the changes being pushed
     phase: 1
