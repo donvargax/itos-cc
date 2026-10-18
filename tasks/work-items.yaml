@@ -2597,8 +2597,8 @@ items:
   - id: T-140
     title: Review decision 47 against the refactored code with the person
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-7]
     kind: task
   - id: bug-1
