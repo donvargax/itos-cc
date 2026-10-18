@@ -3511,8 +3511,8 @@ items:
   - id: T-115
     title: Restore applicable main tests and reconcile the parked template exception
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-114]
     kind: task
   - id: T-116
