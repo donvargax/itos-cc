@@ -524,6 +524,11 @@ items:
       defined in, such as a.feature, is in none of them, so serve keeps showing a listed kill fresh
       after that file changes until something else changes. Stamping the files the snapshots' listed
       maps name would fix it, at the cost of reading the snapshots on every poll.
+
+      This belongs to serve's move to a web app of its own (1b449af, the person's decision of
+      2026-10-17), which takes the graph along, since the graph is reachable only through serve.
+      Serve's moves in this repository (T-102 to T-108, T-112 and T-113) are deferred until that web
+      app is specified. The builder's stamps are still graph/build.go's.
     refs: ["#14"]
   - id: listed-selection-baseline
     title: Each selection of listed tests has its own baseline and timeout
