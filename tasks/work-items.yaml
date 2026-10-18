@@ -16,7 +16,7 @@ queue:
   - slice-9
   - slice-10
   - slice-11
-  - since-broad-stale-panic
+  - slice-12
   - worker-copy-pristine
   - empty-case-covered
   - listed-coverage-failed
@@ -3401,14 +3401,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: since-broad-stale-panic
+  - id: slice-12
     title: mutation run --since panics when recorded whole-suite outcomes see a test or support change
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was since-broad-stale-panic.
       Issue #40. KeepUnjudged (internal/mutants/snapshot.go:546-549) leaves out an unjudged function
       with no recorded entry, so Snapshot.Units is shorter than the file's functions, and
       markBroadStale (internal/mutants/run_broad.go:8-12, from run.go:262) indexes it by the file's
