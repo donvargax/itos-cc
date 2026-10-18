@@ -1436,6 +1436,9 @@ items:
       its child processes were checked by unit tests of synthetic raw files alone. Pinning Jest
       there and running the scenario of ID-MUT-229 under it would prove the filter and the c8 report
       for Jest projects.
+
+      The tools above are out of date. testdata/tools/node pins Vitest and c8 (12.0.0, since
+      41a9520) and still no Jest, so what is left is pinning Jest there.
   - id: T-22
     title: A release publishes the commit main's CI proved, without testing it again
     phase: 1
