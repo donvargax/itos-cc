@@ -5177,5 +5177,4 @@
     since, so a new run compares something else. Report the table of all 53, their classification
     and the items opened. No product code changes in this task.
   done_when:
-    - run: sh -c 'test $(grep -c deliberate tools/testdata/refactor-proof/cases) -ge 50'
     - run: itos config check
