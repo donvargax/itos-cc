@@ -192,6 +192,18 @@ func TestFixturePeerProcess(t *testing.T) {
 
 var _ io.Writer = (*capturedOutput)(nil)
 
+// TestCapturedOutputCopiesThroughItsLock holds what the race detector found
+// once scenarios ran at once (T-128): io.Copy, which exec runs to fill a
+// running product's output, calls a writer's ReadFrom in place of Write
+// when it has one, so capturedOutput must have none, or the copy would fill
+// its buffer without the lock while a step reads it. The race needs a real
+// process and the race detector to show; this holds the cause.
+func TestCapturedOutputCopiesThroughItsLock(t *testing.T) {
+	if _, ok := any(&capturedOutput{}).(io.ReaderFrom); ok {
+		t.Fatal("capturedOutput has a ReadFrom, which io.Copy calls without its lock")
+	}
+}
+
 // The read-start handshake makes cancellation happen during a blocking read,
 // rather than merely testing a context cancelled before the operation begins.
 type fixtureReadStarted struct {

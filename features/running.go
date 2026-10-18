@@ -24,17 +24,21 @@ type Running interface {
 
 var ErrPhysicalUnsupported = errors.New("physical fixture capability is unavailable")
 
+// capturedOutput is a running product's output, written by exec's copying
+// goroutine while a step reads it. Its buffer is a field, not embedded: an
+// embedded bytes.Buffer would lend it ReadFrom, which io.Copy prefers to
+// Write, so the copy would fill the buffer without the lock.
 type capturedOutput struct {
-	sync.Mutex
-	bytes.Buffer
+	mu  sync.Mutex
+	buf bytes.Buffer
 }
 
 func (b *capturedOutput) Write(p []byte) (int, error) {
-	b.Lock()
-	defer b.Unlock()
-	return b.Buffer.Write(p)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
 }
-func (b *capturedOutput) text() string { b.Lock(); defer b.Unlock(); return b.String() }
+func (b *capturedOutput) text() string { b.mu.Lock(); defer b.mu.Unlock(); return b.buf.String() }
 
 type productRun struct {
 	cmd            *exec.Cmd
