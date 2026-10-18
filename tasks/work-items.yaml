@@ -3826,3 +3826,10 @@ items:
       imports in the module) changed since the kill was recorded, so a fixed --count catches stale
       kills sooner, keeping the draw deterministic for a given seed and commit. A public change of
       sample's selection, specified in mutate.feature beside MUT-71..84.
+  - id: T-131
+    title: Give Renovate's update commits the Task footer itos requires
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

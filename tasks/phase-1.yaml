@@ -5011,3 +5011,28 @@
   done_when:
     - run: go test ./internal/mutants/... ./internal/mutation/...
     - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="@ID-(MUT|SNAP)-"
+- id: T-131
+  type: ci
+  title: Give Renovate's update commits the Task footer itos requires
+  why: >
+    Found 2026-10-17 on Renovate's PR #52 (actions/checkout v4.4.0 to v7.0.1): its CD run failed at
+    itos verify, 'ci commits need a Task: T-... footer'. go-template-itos's .github/renovate.json5
+    gives every update commit on main a footer through a packageRule (matchBaseBranches main,
+    commitTrailers Task: T-1, its bootstrap task); adopting the template (2cb5615) left that rule
+    out but kept the comment describing it, and in a made project the template's T-1 would name the
+    wrong task anyway (itos-cc's T-1 is Adopt itos). So every Renovate commit, security fixes
+    included, is refused. This task is the one Renovate's commits name: add to
+    .github/renovate.json5 a packageRule with matchBaseBranches ["main"] and commitTrailers ["Task:
+    <this task's id>"], correct the comment beside it to describe itos-cc's single base branch, and
+    keep the rest of the file and the shared preset (donvargax/renovate-config, automerge on green
+    after a 7-day wait) as they are. A closed task stays in the ledger, so the footer keeps
+    validating after this task is done. Validate the file once locally with Renovate's own config
+    validator at a pinned version, and report it. Then see whether Renovate's next run (or a rebase
+    of #52, which the coordinator asks the person about first) writes the footer and itos verify
+    passes on the PR's commit; merging #52 itself is separate (a major update; see the idea
+    nightly-checkout-node20). Under ADR-0048 Renovate's automerge waits only for the Linux ci.yml on
+    its branch, so an update breaking Windows or macOS would land on main and cd.yml would catch it
+    after, as repair work: say so in README's CI section. go-template-itos#3 tracks the template's
+    side.
+  done_when:
+    - run: itos config check
