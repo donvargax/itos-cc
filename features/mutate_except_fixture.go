@@ -168,7 +168,7 @@ func (e *exceptionMutation) declare(file string, survive bool) error {
 	return nil
 }
 func (e *exceptionMutation) changeCount() error {
-	return e.s.replace("src/board.ts", "count(x){ return x<5; }", "count(x){ return x<5; /* changed body */ }")
+	return e.s.replace("src/board.ts", "count(x){ return x<5; }", "count(x){ return x<5 }")
 }
 func (e *exceptionMutation) deleteCount() error {
 	if err := e.s.replace("src/board.ts", "count(x){ return x<5; }\n", ""); err != nil {

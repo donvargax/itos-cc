@@ -123,7 +123,7 @@ func resultMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 		if err := s.unchangedPlace(); err != nil {
 			return err
 		}
-		return s.replace(s.file, "return i < 3", "// changed clear\n    return i < 3")
+		return s.replace(s.file, "return i < 3", "return (i < 3)")
 	})
 	sc.Step(`^its file in "files" has "mutants", one for each site in site order$`, r.siteInventory)
 	sc.Step(`^each has line, column, function, original, replacement, outcome, reused, and scope$`, r.mutantFields)

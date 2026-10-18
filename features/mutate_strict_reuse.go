@@ -134,6 +134,7 @@ func (q *strictMutation) reuseSteps(sc *godog.ScenarioContext) {
 	})
 	q.blessSteps(sc)
 	q.portableSteps(sc)
+	q.commentSteps(sc)
 }
 
 // unchangedEvidence records strict evidence for Positive, beside a module

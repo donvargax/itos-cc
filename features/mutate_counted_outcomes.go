@@ -143,7 +143,7 @@ func (q *countedMutation) staleExceptions() error {
 		return fmt.Errorf("killed exception trusted as assurance: %v", killed.object)
 	}
 	w := q.e.m.w
-	changed := strings.Replace(countedListedSubject, "n > 5", "n > 5 /*changed*/", 1)
+	changed := strings.Replace(countedListedSubject, "n > 5 }", "n > 5; }", 1)
 	if err = w.write("subject.go", changed); err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (q *countedMutation) staleExceptions() error {
 	if err = q.listedMode("survive"); err != nil {
 		return err
 	}
-	if err = q.auditProfile(strings.Replace(countedListedProfile, "subject.go:3.28,3.42", "subject.go:3.28,3.54", 1)); err != nil {
+	if err = q.auditProfile(strings.Replace(countedListedProfile, "subject.go:3.28,3.42", "subject.go:3.28,3.43", 1)); err != nil {
 		return err
 	}
 	changedRun, err := q.count("--count", "1", "--seed", q.seed, "--workers", "1", "subject.go")

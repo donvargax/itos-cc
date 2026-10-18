@@ -245,6 +245,19 @@ func (s *sinceMutation) replace(file, old, new string) error {
 	}
 	return s.m.w.write(file, strings.Replace(text, old, new, 1))
 }
+
+// changePlaceCode changes the code of Board#place in file, wrapping its
+// comparison in parentheses, which leaves what its mutants do: a change to
+// its comments alone is no change of it.
+func (s *sinceMutation) changePlaceCode(file string) error {
+	text := s.m.read(file)
+	for _, old := range []string{"i > 5", "i>5"} {
+		if strings.Contains(text, old) {
+			return s.replace(file, old, "("+old+")")
+		}
+	}
+	return fmt.Errorf("%s has no comparison of place to change", file)
+}
 func (s *sinceMutation) commit(message string) error {
 	if err := s.m.w.git("add", "-A"); err != nil {
 		return err
@@ -325,7 +338,7 @@ func (s *sinceMutation) changedBefore() error {
 	if err := s.killedBefore(); err != nil {
 		return err
 	}
-	return s.replace(s.file, "// past five", "// past five, edited")
+	return s.changePlaceCode(s.file)
 }
 func (s *sinceMutation) movedFunction() error {
 	if err := s.project(false); err != nil {
@@ -445,7 +458,7 @@ func (s *sinceMutation) changePlace(ref string) error {
 	if ref != "base" {
 		return fmt.Errorf("unknown fixture ref %s", ref)
 	}
-	if err := s.replace(s.file, "// past five", "// past five, changed in a commit"); err != nil {
+	if err := s.changePlaceCode(s.file); err != nil {
 		return err
 	}
 	return s.commit("change place")

@@ -385,7 +385,7 @@ func (r *resultMutation) reusedBaseline() error {
 	return nil
 }
 func (r *resultMutation) changedBaseline() error {
-	if err := r.s.replace(r.file, "// past five", "// past five, edited"); err != nil {
+	if err := r.s.changePlaceCode(r.file); err != nil {
 		return err
 	}
 	if err := r.run("mutation run --json " + r.file); err != nil {

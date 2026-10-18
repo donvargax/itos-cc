@@ -52,7 +52,7 @@ func checkMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutat
 			if err := c.fresh(); err != nil {
 				return ctx, err
 			}
-			if err := s.replace(s.file, "// past five", "// past five, changed"); err != nil {
+			if err := s.changePlaceCode(s.file); err != nil {
 				return ctx, err
 			}
 			return ctx, c.addMethod("reset(i: number): boolean { return i == 0; }")
@@ -199,7 +199,7 @@ func (c *checkMutation) changed() error {
 	if _, _, err := c.captureCheck(0); err != nil {
 		return fmt.Errorf("moving an unchanged function: %w", err)
 	}
-	return c.s.replace(c.s.file, "// past five", "// past five, edited")
+	return c.s.changePlaceCode(c.s.file)
 }
 
 func (c *checkMutation) addMethod(method string) error {

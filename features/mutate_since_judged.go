@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 )
 
 // Which functions a --since run judges, and how it carries a renamed file's
@@ -64,13 +65,18 @@ func (s *sinceMutation) clearNotJudged() error {
 }
 
 func (s *sinceMutation) deletedLine() error {
+	// A line of code: deleting a comment's line is no change of its function.
+	s.tsSource = strings.Replace(sinceBoardTS, "    return i > 5;\n", "    const limit = 5;\n    return i > 5;\n", 1)
 	if err := s.project(true); err != nil {
 		return err
 	}
-	if err := s.replace(s.file, "    // past five\n", ""); err != nil {
+	if err := s.replace(s.file, "    const limit = 5;\n", ""); err != nil {
 		return err
 	}
-	return s.commit("delete a line in place")
+	if err := s.commit("delete a line in place"); err != nil {
+		return err
+	}
+	return s.declare()
 }
 
 func (s *sinceMutation) twoChanged() error {
@@ -228,7 +234,7 @@ func (s *sinceMutation) rename(edit bool) error {
 	s.file = "src/grid.go"
 	s.m.file = s.file
 	if edit {
-		if err := s.replace(s.file, "// past five", "// past five, changed"); err != nil {
+		if err := s.changePlaceCode(s.file); err != nil {
 			return err
 		}
 	}

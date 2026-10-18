@@ -278,7 +278,7 @@ func (q *mutationExecution) priorPartial() error {
 	if err := q.partialProject(); err != nil {
 		return err
 	}
-	q.source["a.go"] = strings.Replace(q.source["a.go"], "func A1(n int) bool {", "func A1(n int) bool { /* initially selected */", 1)
+	q.source["a.go"] = strings.Replace(q.source["a.go"], "func A1(n int) bool {", "func A1(n int) bool { _ = n;", 1)
 	if err := q.m.w.write("a.go", q.source["a.go"]); err != nil {
 		return err
 	}
@@ -488,7 +488,7 @@ func (q *mutationExecution) changedPartialInputs() error {
 	for _, kind := range []string{"source", "tests", "support"} {
 		switch kind {
 		case "source":
-			q.source["a.go"] = strings.Replace(q.source["a.go"], "func A1(n int) bool {", "func A1(n int) bool { /* changed input */", 1)
+			q.source["a.go"] = strings.Replace(q.source["a.go"], "func A1(n int) bool {", "func A1(n int) bool { _, _ = n, n;", 1)
 			if err := q.m.w.write("a.go", q.source["a.go"]); err != nil {
 				return err
 			}

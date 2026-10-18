@@ -475,7 +475,7 @@ func (b *broadLanguage) partialProject() error {
 }
 func (b *broadLanguage) changeOne() error {
 	l := b.l
-	if err := l.m.w.write(l.file, strings.Replace(l.m.read(l.file), "func Low() bool { return true }", "func Low() bool { /* changed */ return true }", 1)); err != nil {
+	if err := l.m.w.write(l.file, strings.Replace(l.m.read(l.file), "func Low() bool { return true }", "func Low() bool { return (true) }", 1)); err != nil {
 		return err
 	}
 	return l.s.commit("one function and module test changed")

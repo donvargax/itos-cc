@@ -4,6 +4,7 @@ package features
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/cucumber/godog"
@@ -94,7 +95,11 @@ func (q *strictMutation) staleNaming() error {
 		return err
 	}
 	ps := q.findings(a, "mutation.coverage-stale", "Positive")
-	if len(ps) != 1 || !strings.Contains(fmt.Sprint(ps[0]["message"]), q.input) {
+	if len(ps) != 1 {
+		return fmt.Errorf("want one stale finding naming %s: %v", q.input, ps)
+	}
+	_, changed, _ := strings.Cut(fmt.Sprint(ps[0]["message"]), "changed: ")
+	if !slices.Contains(strings.Split(changed, ", "), q.input) {
 		return fmt.Errorf("stale finding does not name %s: %v", q.input, ps)
 	}
 	return q.m.w.exitsWith(1)

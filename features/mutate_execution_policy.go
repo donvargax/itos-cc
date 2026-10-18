@@ -57,7 +57,7 @@ func (q *mutationExecution) addSelected(names ...string) error {
 	source := q.source["main.go"]
 	for _, name := range names {
 		head := "func " + name + "(n int) bool {\n"
-		source = strings.Replace(source, head, head+"\t// newly selected\n", 1)
+		source = strings.Replace(source, head, "func "+name+"(\n\tn int) bool {\n", 1)
 	}
 	q.source["main.go"] = source
 	if err := q.m.w.write("main.go", source); err != nil {

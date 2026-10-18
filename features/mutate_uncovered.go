@@ -60,7 +60,7 @@ func (m *mutateState) commitChanged(ref, function string) error {
 	if code, stdout, stderr, err := m.w.capture(m.w.dir, m.w.env(), "mutation", "run"); err != nil || code != 0 {
 		return fmt.Errorf("the run after %s: exit %d, %v\n%s%s", ref, code, err, stdout, stderr)
 	}
-	if err := m.w.write(m.file, strings.Replace(boardGo, "// past five\n", "// past five, and not at five\n", 1)); err != nil {
+	if err := m.w.write(m.file, strings.Replace(boardGo, "return i > 5", "return (i > 5)", 1)); err != nil {
 		return err
 	}
 	for _, args := range [][]string{{"add", "-A"}, {"commit", "-qm", "change place"}} {

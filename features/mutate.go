@@ -78,6 +78,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 
 	since := sinceMutationSteps(sc, m)
 	checkMutationSteps(sc, m, since)
+	commentFreeSteps(sc, m, since)
 	listedMutationSteps(sc, m)
 	sample := sampleMutationSteps(sc, m, since)
 	resultMutationSteps(sc, m, since, sample)

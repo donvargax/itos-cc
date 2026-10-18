@@ -46,7 +46,7 @@ func (q *mutationExecution) listedProject(selected ...string) error {
 		if !strings.Contains(q.source["main.go"], head) {
 			return fmt.Errorf("listed fixture has no %s", name)
 		}
-		q.source["main.go"] = strings.Replace(q.source["main.go"], head, head+"\t// selected since base\n", 1)
+		q.source["main.go"] = strings.Replace(q.source["main.go"], head, "func "+name+"(\n\tn int) bool {\n", 1)
 	}
 	if err := w.write("main.go", q.source["main.go"]); err != nil {
 		return err
@@ -104,7 +104,8 @@ func (q *mutationExecution) listedDeclarations(failing []string) error {
 	for _, name := range []string{"shown", "idle", "quick", "wait", "label", "spare"} {
 		head := "func " + name + "(n int) bool {"
 		for i, line := range lines {
-			if line == head {
+			// A selected function's signature is split over two lines.
+			if line == head || line == "func "+name+"(" {
 				for j := i + 1; j < len(lines); j++ {
 					if strings.Contains(lines[j], "return n >") {
 						sites[name] = Site{File: "main.go", Line: j + 1, Original: ">", Replacement: ">="}
