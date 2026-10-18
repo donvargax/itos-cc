@@ -604,14 +604,15 @@ items:
     depends_on: []
     kind: idea
     refs: ["#17"]
-  - id: other-os-code
+  - id: slice-25
     title: Code only another OS builds or runs is not judged uncovered on this one
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was other-os-code.
       Issue #18: a file a build constraint leaves out on the current GOOS/GOARCH (probe_windows.go
       on Linux), or a runtime.GOOS branch, is uncovered wherever the gate runs on another system, so
       an item changing Windows-only code can never pass --fail-uncovered on Linux. The issue offers
