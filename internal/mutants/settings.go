@@ -7,21 +7,21 @@ import "strings"
 // when it was excepted, and the site's place within the function, so a
 // function that only moved keeps it.
 type Exception struct {
-	File     string // slash-separated, from the project root
-	Function string // namespace#name
-	Hash     string // the function's hash, as the snapshot records it
+	File     string `json:"file" yaml:"file"`         // slash-separated, from the project root
+	Function string `json:"function" yaml:"function"` // namespace#name
+	Hash     string `json:"hash" yaml:"hash"`         // the function's hash, as the snapshot records it
 	// LineInFunction is the site's line counted from the function's first
 	// line, which is 1.
-	LineInFunction int
-	Column         int
-	Original       string
-	Replacement    string // empty for a deletion
-	Reason         string
+	LineInFunction int    `json:"line_in_function" yaml:"line_in_function"`
+	Column         int    `json:"column" yaml:"column"`
+	Original       string `json:"original" yaml:"original"`
+	Replacement    string `json:"replacement" yaml:"replacement"` // empty for a deletion
+	Reason         string `json:"reason" yaml:"reason"`
 	// LineText is the text of the site's line, less the space around it, as
 	// it was when the entry was written: what mutation except --renew
 	// matches the line against. Optional: entries written before it have
 	// none.
-	LineText string
+	LineText string `json:"line_text,omitempty" yaml:"line_text,omitempty"`
 }
 
 // SameSite reports whether e and o except the same site: one function, one

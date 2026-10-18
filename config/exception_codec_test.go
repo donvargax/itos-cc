@@ -11,7 +11,7 @@ import (
 func TestExceptionCodecPreservesYAMLRepresentation(t *testing.T) {
 	e := Exception{File: "src/a.go", Function: "main#f", Hash: "hash", LineInFunction: 2, Column: 3, Original: "!", Reason: "reviewed"}
 	want := "file: src/a.go\nfunction: main#f\nhash: hash\nline_in_function: 2\ncolumn: 3\noriginal: '!'\nreplacement: \"\"\nreason: reviewed\n"
-	data, err := yaml.Marshal(exceptionWire(e))
+	data, err := yaml.Marshal(e)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func TestExceptionCodecPreservesYAMLRepresentation(t *testing.T) {
 		t.Fatalf("exception YAML %q, want %q", data, want)
 	}
 	e.LineText = "return !x"
-	data, err = yaml.Marshal(exceptionWire(e))
+	data, err = yaml.Marshal(e)
 	if err != nil {
 		t.Fatal(err)
 	}

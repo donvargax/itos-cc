@@ -32,7 +32,7 @@ func ExceptDocument(data []byte, e Exception) ([]byte, bool, error) {
 	exceptions := valueOf(valueOf(root, "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 
 	var entry yaml.Node
-	if err := entry.Encode(exceptionWire(e)); err != nil {
+	if err := entry.Encode(e); err != nil {
 		return nil, false, err
 	}
 	for i, old := range c.Exceptions {
@@ -81,7 +81,7 @@ func RenewDocument(data []byte, renewals []Renewal) ([]byte, error) {
 			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", File, r.Old.Function, r.Old.File)
 		}
 		var entry yaml.Node
-		if err := entry.Encode(exceptionWire(r.New)); err != nil {
+		if err := entry.Encode(r.New); err != nil {
 			return nil, err
 		}
 		was := exceptions.Content[i]

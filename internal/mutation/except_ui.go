@@ -10,22 +10,11 @@ import (
 	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
-// exceptionJSON is an entry of itos-cc.yaml, with the same keys.
-type exceptionJSON struct {
-	File           string `json:"file"`
-	Function       string `json:"function"`
-	Hash           string `json:"hash"`
-	LineInFunction int    `json:"line_in_function"`
-	Column         int    `json:"column"`
-	Original       string `json:"original"`
-	Replacement    string `json:"replacement"`
-	Reason         string `json:"reason"`
-	LineText       string `json:"line_text,omitempty"`
-}
-
+// exceptResult is mutation except's --json object: the entry of
+// itos-cc.yaml, with the same keys, and whether it replaced one.
 type exceptResult struct {
-	Exception *exceptionJSON `json:"exception,omitempty"`
-	Replaced  bool           `json:"replaced"`
+	Exception *mutants.Exception `json:"exception,omitempty"`
+	Replaced  bool               `json:"replaced"`
 }
 
 // renewedJSON is a renewal in --renew's --json object: the entry as it
@@ -50,7 +39,7 @@ type renewedJSON struct {
 
 // notRenewedJSON is an entry --renew left as it was, and why.
 type notRenewedJSON struct {
-	exceptionJSON
+	mutants.Exception
 	Why  string `json:"why"`
 	Line int    `json:"line,omitempty"`
 }
@@ -98,8 +87,7 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again.")))
 	}
 	e := found.Exception
-	result = exceptResult{Exception: &exceptionJSON{File: e.File, Function: e.Function, Hash: e.Hash, LineInFunction: e.LineInFunction,
-		Column: e.Column, Original: e.Original, Replacement: e.Replacement, Reason: e.Reason, LineText: e.LineText}, Replaced: found.Replaced}
+	result = exceptResult{Exception: &e, Replaced: found.Replaced}
 	if !c.JSON {
 		what := "excepted"
 		if found.Replaced {
@@ -143,9 +131,7 @@ func (c Except) renew(ctx context.Context, ui *cli.UI, h Handler) int {
 	var problems []*cli.Problem
 	for _, u := range found.Left {
 		rel := ui.Rel(sourcePath(found.Root, u.File))
-		result.NotRenewed = append(result.NotRenewed, notRenewedJSON{exceptionJSON: exceptionJSON{File: u.File, Function: u.Function,
-			Hash: u.Hash, LineInFunction: u.LineInFunction, Column: u.Column, Original: u.Original, Replacement: u.Replacement,
-			Reason: u.Reason, LineText: u.LineText}, Why: u.Why, Line: u.Line})
+		result.NotRenewed = append(result.NotRenewed, notRenewedJSON{Exception: u.Exception, Why: u.Why, Line: u.Line})
 		at := rel
 		if u.Line != 0 {
 			at = fmt.Sprintf("%s:%d:%d", rel, u.Line, u.Column)

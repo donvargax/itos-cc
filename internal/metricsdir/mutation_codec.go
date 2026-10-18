@@ -49,9 +49,9 @@ type unitResultWire struct {
 	// means the snapshot predates strict coverage of its language or the
 	// function was not measured by an admitted producer. Go evidence is
 	// written under go_coverage, as it always was; evidence of a
-	// line-precision language (coverageEvidenceWire.Language) under
+	// line-precision language (mutants.CoverageEvidence.Language) under
 	// line_coverage (MarshalJSON).
-	Coverage *coverageEvidenceWire `json:"go_coverage,omitempty"`
+	Coverage *mutants.CoverageEvidence `json:"go_coverage,omitempty"`
 	// Stale marks an entry decided under tests other than those the
 	// snapshot records: a run that did not judge the function kept it,
 	// outcomes and survivors included, after the tests that import the file
@@ -65,18 +65,18 @@ type unitResultWire struct {
 // evidence is of a line-precision language: under line_coverage rather
 // than go_coverage. Converting between the two keeps their fields the same.
 type unitLines struct {
-	Namespace string                `json:"namespace"`
-	Name      string                `json:"name"`
-	Hash      string                `json:"hash"`
-	StartLine int                   `json:"start_line"`
-	EndLine   int                   `json:"end_line"`
-	Killed    int                   `json:"killed"`
-	Survived  int                   `json:"survived"`
-	Uncovered int                   `json:"uncovered"`
-	Sites     int                   `json:"sites"`
-	Mutants   []mutantWire          `json:"mutants"`
-	Coverage  *coverageEvidenceWire `json:"line_coverage,omitempty"`
-	Stale     bool                  `json:"stale,omitempty"`
+	Namespace string                    `json:"namespace"`
+	Name      string                    `json:"name"`
+	Hash      string                    `json:"hash"`
+	StartLine int                       `json:"start_line"`
+	EndLine   int                       `json:"end_line"`
+	Killed    int                       `json:"killed"`
+	Survived  int                       `json:"survived"`
+	Uncovered int                       `json:"uncovered"`
+	Sites     int                       `json:"sites"`
+	Mutants   []mutantWire              `json:"mutants"`
+	Coverage  *mutants.CoverageEvidence `json:"line_coverage,omitempty"`
+	Stale     bool                      `json:"stale,omitempty"`
 }
 
 // MarshalJSON writes u with its coverage evidence under go_coverage, Go's
@@ -105,7 +105,7 @@ func (u *unitResultWire) UnmarshalJSON(data []byte) error {
 	type plain unitResultWire
 	var raw struct {
 		plain
-		Lines *coverageEvidenceWire `json:"line_coverage"`
+		Lines *mutants.CoverageEvidence `json:"line_coverage"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -115,35 +115,6 @@ func (u *unitResultWire) UnmarshalJSON(data []byte) error {
 		u.Coverage = raw.Lines
 	}
 	return nil
-}
-
-// coverageEvidenceWire is a function's complete measured executable coverage
-// inventory and the producer/input boundary that makes it reusable. Go
-// evidence, Language "", holds positive-weight blocks at cover-profile
-// precision; that of a line-precision language, such as Python's from
-// coverage.py's LCOV, holds a block per executable line of the function,
-// Span its line number, Weight 1 and Column 0.
-type coverageEvidenceWire struct {
-	Version  int                 `json:"version"`
-	Language string              `json:"language,omitempty"`
-	File     string              `json:"file"`
-	Function string              `json:"function"`
-	Hash     string              `json:"function_hash"`
-	Producer string              `json:"producer"`
-	Inputs   map[string]string   `json:"inputs"`
-	Complete bool                `json:"complete"`
-	Blocks   []coverageBlockWire `json:"blocks"`
-}
-
-// coverageBlockWire is a positive-weight executable span at its format's
-// precision: a Go coverage-profile block, whose Span distinguishes blocks
-// sharing a line, or an executable line.
-type coverageBlockWire struct {
-	Span    string  `json:"span"`
-	Line    int     `json:"line"`
-	Column  int     `json:"column"`
-	Weight  float64 `json:"weight"`
-	Covered bool    `json:"covered"`
 }
 
 // mutantWire is one site's outcome.
@@ -162,23 +133,15 @@ type mutantWire struct {
 	// that decided it after the file's own tests survived the mutant: those
 	// whose coverage reaches its line.
 	Tests []string `json:"tests,omitempty"`
-	// suiteEvidenceWire is the test and configured-support input of a
+	// SuiteEvidence is the test and configured-support input of a
 	// broad-scope outcome, of any language. Nil means legacy evidence was
 	// not recorded. Go outcomes recorded it under go_evidence before every
 	// language did; that key reads as this one, and is never written.
-	SuiteEvidence *suiteEvidenceWire `json:"suite_evidence,omitempty"`
+	SuiteEvidence *mutants.SuiteEvidence `json:"suite_evidence,omitempty"`
 	// Excepted is the reason itos-cc.yaml gives for a survivor it excepts,
 	// as a run or a check judged it; never written to the snapshot, which
 	// records the survivor as it is.
 	Excepted string `json:"-"`
-}
-
-// suiteEvidenceWire is the complete freshness evidence of a broad-scope
-// outcome: the hashes of every test file beneath its source's build root
-// (SuiteTestHashes) and of the configured support files.
-type suiteEvidenceWire struct {
-	Tests   map[string]string `json:"tests"`
-	Support map[string]string `json:"support"`
 }
 
 // UnmarshalJSON reads a mutant, its evidence under suite_evidence or, as Go
@@ -187,7 +150,7 @@ func (m *mutantWire) UnmarshalJSON(data []byte) error {
 	type plain mutantWire
 	var raw struct {
 		plain
-		GoEvidence *suiteEvidenceWire `json:"go_evidence"`
+		GoEvidence *mutants.SuiteEvidence `json:"go_evidence"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
@@ -252,10 +215,7 @@ func unitResultWireOf(v mutants.UnitResult) unitResultWire {
 			out.Mutants[i] = mutantWireOf(x)
 		}
 	}
-	if v.Coverage != nil {
-		x := coverageEvidenceWireOf(*v.Coverage)
-		out.Coverage = &x
-	}
+	out.Coverage = v.Coverage
 	out.Stale = v.Stale
 	return out
 }
@@ -277,69 +237,8 @@ func (v unitResultWire) domain() mutants.UnitResult {
 			out.Mutants[i] = x.domain()
 		}
 	}
-	if v.Coverage != nil {
-		x := v.Coverage.domain()
-		out.Coverage = &x
-	}
+	out.Coverage = v.Coverage
 	out.Stale = v.Stale
-	return out
-}
-
-func coverageEvidenceWireOf(v mutants.CoverageEvidence) coverageEvidenceWire {
-	out := coverageEvidenceWire{}
-	out.Version = v.Version
-	out.Language = v.Language
-	out.File = v.File
-	out.Function = v.Function
-	out.Hash = v.Hash
-	out.Producer = v.Producer
-	out.Inputs = v.Inputs
-	out.Complete = v.Complete
-	if v.Blocks != nil {
-		out.Blocks = make([]coverageBlockWire, len(v.Blocks))
-		for i, x := range v.Blocks {
-			out.Blocks[i] = coverageBlockWireOf(x)
-		}
-	}
-	return out
-}
-
-func (v coverageEvidenceWire) domain() mutants.CoverageEvidence {
-	out := mutants.CoverageEvidence{}
-	out.Version = v.Version
-	out.Language = v.Language
-	out.File = v.File
-	out.Function = v.Function
-	out.Hash = v.Hash
-	out.Producer = v.Producer
-	out.Inputs = v.Inputs
-	out.Complete = v.Complete
-	if v.Blocks != nil {
-		out.Blocks = make([]mutants.CoverageBlock, len(v.Blocks))
-		for i, x := range v.Blocks {
-			out.Blocks[i] = x.domain()
-		}
-	}
-	return out
-}
-
-func coverageBlockWireOf(v mutants.CoverageBlock) coverageBlockWire {
-	out := coverageBlockWire{}
-	out.Span = v.Span
-	out.Line = v.Line
-	out.Column = v.Column
-	out.Weight = v.Weight
-	out.Covered = v.Covered
-	return out
-}
-
-func (v coverageBlockWire) domain() mutants.CoverageBlock {
-	out := mutants.CoverageBlock{}
-	out.Span = v.Span
-	out.Line = v.Line
-	out.Column = v.Column
-	out.Weight = v.Weight
-	out.Covered = v.Covered
 	return out
 }
 
@@ -353,10 +252,7 @@ func mutantWireOf(v mutants.Mutant) mutantWire {
 	out.Outcome = v.Outcome
 	out.Scope = v.Scope
 	out.Tests = v.Tests
-	if v.SuiteEvidence != nil {
-		x := suiteEvidenceWireOf(*v.SuiteEvidence)
-		out.SuiteEvidence = &x
-	}
+	out.SuiteEvidence = v.SuiteEvidence
 	out.Excepted = v.Excepted
 	return out
 }
@@ -371,25 +267,8 @@ func (v mutantWire) domain() mutants.Mutant {
 	out.Outcome = v.Outcome
 	out.Scope = v.Scope
 	out.Tests = v.Tests
-	if v.SuiteEvidence != nil {
-		x := v.SuiteEvidence.domain()
-		out.SuiteEvidence = &x
-	}
+	out.SuiteEvidence = v.SuiteEvidence
 	out.Excepted = v.Excepted
-	return out
-}
-
-func suiteEvidenceWireOf(v mutants.SuiteEvidence) suiteEvidenceWire {
-	out := suiteEvidenceWire{}
-	out.Tests = v.Tests
-	out.Support = v.Support
-	return out
-}
-
-func (v suiteEvidenceWire) domain() mutants.SuiteEvidence {
-	out := mutants.SuiteEvidence{}
-	out.Tests = v.Tests
-	out.Support = v.Support
 	return out
 }
 

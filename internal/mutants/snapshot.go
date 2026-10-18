@@ -81,15 +81,15 @@ type UnitResult struct {
 // coverage.py's LCOV, holds a block per executable line of the function,
 // Span its line number, Weight 1 and Column 0.
 type CoverageEvidence struct {
-	Version  int
-	Language string
-	File     string
-	Function string
-	Hash     string
-	Producer string
-	Inputs   map[string]string
-	Complete bool
-	Blocks   []CoverageBlock
+	Version  int               `json:"version"`
+	Language string            `json:"language,omitempty"`
+	File     string            `json:"file"`
+	Function string            `json:"function"`
+	Hash     string            `json:"function_hash"`
+	Producer string            `json:"producer"`
+	Inputs   map[string]string `json:"inputs"`
+	Complete bool              `json:"complete"`
+	Blocks   []CoverageBlock   `json:"blocks"`
 }
 
 // GoCoverageEvidence is Go's CoverageEvidence, by the name it had before
@@ -100,11 +100,11 @@ type GoCoverageEvidence = CoverageEvidence
 // precision: a Go coverage-profile block, whose Span distinguishes blocks
 // sharing a line, or an executable line.
 type CoverageBlock struct {
-	Span    string
-	Line    int
-	Column  int
-	Weight  float64
-	Covered bool
+	Span    string  `json:"span"`
+	Line    int     `json:"line"`
+	Column  int     `json:"column"`
+	Weight  float64 `json:"weight"`
+	Covered bool    `json:"covered"`
 }
 
 // GoCoverageBlock is Go's CoverageBlock, by its name before other
@@ -181,8 +181,8 @@ type Mutant struct {
 // outcome: the hashes of every test file beneath its source's build root
 // (SuiteTestHashes) and of the configured support files.
 type SuiteEvidence struct {
-	Tests   map[string]string
-	Support map[string]string
+	Tests   map[string]string `json:"tests"`
+	Support map[string]string `json:"support"`
 }
 
 // Scopes of the tests that decide an outcome. Any other scope is the

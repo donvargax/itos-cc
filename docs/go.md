@@ -72,6 +72,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   parser's text. The in-process scenario driver words through it too, standing in for this
   adapter over the fake. Its model-bearing `Mutations` adapter owns the one concrete
   mutation snapshot codec; all consumers use its concrete read/write boundaries without a second schema.
+  The codec keeps mirrors only of the snapshot, unit and mutant (`snapshotWire`,
+  `unitResultWire`, `mutantWire`), whose methods write coverage under `go_coverage` or
+  `line_coverage` by language and read legacy `go_evidence`; it encodes mutants'
+  `CoverageEvidence`, `CoverageBlock` and `SuiteEvidence` through their own tags (T-136).
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
   syntax and mutation rules. Every language's rules for a namespace (the markers it walks up
@@ -160,7 +164,10 @@ a `context.Context` first (decision 30); pure logic takes none.
   parse supplied source through lang's surroundings fake. Ordinary and counted scheduling,
   check/list/sample/exception policy and fresh admission live here over model-bearing ports.
   `metricsdir` owns the concrete snapshot codec, including legacy evidence keys and line
-  precision; config owns the exception YAML codec. The legacy `mutate` package is retired.
+  precision; config owns the exception YAML codec. `CoverageEvidence`, `CoverageBlock` and
+  `SuiteEvidence` carry the snapshot's json keys, and `Exception` itos-cc.yaml's as json and
+  yaml tags, so metricsdir, the mutation slice's `--json` and config's writes encode them with
+  no mirror (T-136). The legacy `mutate` package is retired.
 - `internal/freshenv` implements mutation's coarse `Fresh` Plan/Prepare/Release contract.
   It owns immutable Git export, native mode and symlink admission, scratch materialization,
   installed-dependency links and ordered supervised preparation. Cmd injects its owned
