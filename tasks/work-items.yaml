@@ -1982,6 +1982,12 @@ items:
       exits 70 and asks the user to report a bug. The selection port now names this case as
       Unwalkable, and its classifier keeps the old 70 so that T-31 changes no output. Exit 3, with a
       rule and a fix that name the directory, is a behaviour change that needs a scenario.
+
+      The exit codes above are out of date. Since slice-7's semantic exits (379109e) an unwalkable
+      directory is the internal problem, exit 100, not 70 (cmd/itos-cc/selection.go:37-38 maps
+      port.Unwalkable, and port.Unreadable beside it, to cli.Internal), and the environment's code
+      is 82, not 3. It is still a behaviour change with a scenario, now from 100 to 82, with a rule
+      and a fix naming the directory.
   - id: lang-root-through-port
     title: lang finds a namespace's project root and go.mod on disk itself
     phase: 1
