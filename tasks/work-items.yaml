@@ -16,7 +16,7 @@ queue:
   - slice-8
   - slice-9
   - slice-10
-  - comment-free-unit-hash
+  - slice-11
   - since-broad-stale-panic
   - worker-copy-pristine
   - empty-case-covered
@@ -3470,14 +3470,15 @@ items:
       ls-files or go list). The person (2026-10-18): land it with comment-free-unit-hash (#22) in
       one window before T-46, so every snapshot goes stale once and the nightly measures once.
     refs: ["#36", "#37"]
-  - id: comment-free-unit-hash
+  - id: slice-11
     title: A comment-only change inside a function leaves it fresh
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was comment-free-unit-hash.
       Issue #22. UnitHash hashes the function's text including comments (internal/mutants/sites.go
       about 101-106). The person (2026-10-18): exclude comments from the hash. Lands with
       portable-go-evidence before T-46. strict-lines-nonexecutable-changes covers the
