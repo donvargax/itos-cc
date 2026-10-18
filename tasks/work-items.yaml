@@ -1923,38 +1923,9 @@ items:
     title: Exit codes follow square/exit, 75 kept for retry
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-30, T-132]
     kind: slice
-    why: >
-      Was semantic-exit-codes.
-      q-56: 80 usage, 81 unknown command, 82 a requirement not met (was 3), 100 internal (was 70),
-      75 a failure that may pass when run again, 1 a check's no, 130 interrupted; precedence 130, 80
-      and 81, 100, 82, 75, 1. Each problem in --json gains its own exit, as RFC 9457's status
-      (q-54). A feat in the same minor release as interrupt-exit-130, proposed to go-template-itos
-      alongside the internal/cli contract.
-
-      Execution constraint for S10: interruption and semantic exit codes must ship in one minor
-      release. Because main push CI automatically releases feat/fix changes, the product push must
-      contain both fully verified implementations together. Coordinate the two item specs/red-first
-      scenario evidence before implementation; no intermediate interrupt-only or codes-only product
-      push, no bypassed hooks or disabled release gate. Take/registry prose pushes may precede them.
-      Keep final-proof comparison before either public exit change.
-
-      At S10 specification, explicitly cover a combined user interrupt and cleanup failure. ADR36's
-      later exit precedence keeps130 first; the separate cleanup-failed problem has its own internal
-      exit100 after migration, and partial data plus both facts remain visible. Do not silently
-      restore the older q37 ordering that put70 above count.interrupted75, or hide the cleanup
-      failure as an ordinary interrupt. A fail-fast check failure without an interrupt plus failed
-      cleanup exits100 ahead of the check's1. Include plain/JSON outcomes, per-problem exit and
-      aggregate precedence in red-first cases, retaining mutation/coverage classifications by types
-      rather than message text. Keep these code changes in the single coordinated minor-release
-      product push with interruption, after final comparison.
-
-      The person (2026-10-18): the feat carries Upgrading and a BREAKING CHANGE footer (2 to 80, 81
-      for an unknown command, 3 to 82, 70 to 100, a per-problem exit key). Ships in one product push
-      with interrupt-exit-130 and version-without-v (#19). Build mutation.cleanup-failed to 100
-      (ADR-0036), not ADR-0038's 70.
     refs: [q-56, q-54]
   - id: release-notes-bookkeeping
     title: Release notes list the registry's bookkeeping commits
