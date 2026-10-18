@@ -3709,3 +3709,17 @@ items:
       globs in itos-cc.yaml, doublestar like exclude, copied after the dependency links), and what a
       baseline that fails for a missing ignored file reports, so the person can confirm it with the
       spec.
+  - id: ambiguous-steps-upfront
+    title: The scenario suite refuses an ambiguous step before any scenario runs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-11's agent (2026-10-18) defined a step in its red-first test commit that matched the
+      shared "itos-cc …" exits N step too. godog reports an ambiguous step only when a scenario
+      reaches it, and in a red run the scenario fails earlier, so the red-first commit carried it
+      unnoticed until the build. A check at suite start (every step text of the feature files
+      against the registered expressions, in both drivers) would refuse it in the test commit
+      itself.
