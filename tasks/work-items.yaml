@@ -3491,8 +3491,8 @@ items:
   - id: slice-9
     title: Release and go install builds print the same version, without a v
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
