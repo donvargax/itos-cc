@@ -47,13 +47,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   under a folder, each taking the context first, and its sealed set of failures:
   `Unreadable`, `Unwritable` and `Unremovable`, each carrying the snapshot's name, and
   `Unlistable`, the folder's, with the library's error text whole as its `Reason`, and
-  `Cancelled`. A snapshot read that did not decode is `Undecodable`'s `Unreadable`, which
-  both stores build, its `Reason` in the snapshot's own terms rather than the Go types a
-  reader decodes into (bug-3): a value of the wrong kind names its key path and the JSON
-  kinds, `files[0].file should be a string, not a number`, and JSON that does not parse
-  keeps the parser's text. `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing
-  the bytes the `metrics` library writes, and `StoreContract`, the contract it and
-  `internal/metricsdir`'s `Store` both pass (Tests, below).
+  `Cancelled`. A snapshot read that did not decode is `Unreadable` too, its `Reason` in each
+  store's own words, naming no Go type or package; the port knows no JSON.
+  `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing the bytes the
+  `metrics` library writes and giving a plain reason for a snapshot that does not decode, and
+  `StoreContract`, the contract it and `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
   hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
@@ -67,7 +65,12 @@ a `context.Context` first (decision 30); pure logic takes none.
   top-level `metrics` library, which writes them as indented JSON renamed into place, removes
   and lists them, and `project`, which finds the root, so
   every byte and every atomic write stays the library's, translating their errors into the
-  port's failures. Its model-bearing `Mutations` adapter owns the one concrete
+  port's failures. It alone decodes snapshot files, so a snapshot that did not decode is
+  worded by its `Undecodable`, in the snapshot's own terms rather than the Go types a reader
+  decodes into (bug-3): a value of the wrong kind names its key path and the JSON kinds,
+  `files[0].file should be a string, not a number`, and JSON that does not parse keeps the
+  parser's text. The in-process scenario driver words through it too, standing in for this
+  adapter over the fake. Its model-bearing `Mutations` adapter owns the one concrete
   mutation snapshot codec; all consumers use its concrete read/write boundaries without a second schema.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
