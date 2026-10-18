@@ -3592,3 +3592,18 @@ items:
       except-repoint). Paired with exception-adversarial-review, so the exceptions this invites are
       themselves checked.
     refs: ["#39"]
+  - id: exception-adversarial-review
+    title: Periodic adversarial review of excepted mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person (2026-10-18), choosing option A for #39: exceptions get a periodic adversarial
+      review, each excepted mutant re-examined for whether it is really equivalent (a test that
+      kills it would prove it is not). over-limit kills (mutant-resource-caps) are candidates too.
+      Not yet designed: cadence (nightly beside T-46's run?), who reviews (an agent, a command that
+      lists exceptions with their reasons and mutants), what a finding becomes. Specify with the
+      person.
+    refs: ["#39"]
