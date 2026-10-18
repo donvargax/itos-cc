@@ -3794,3 +3794,20 @@ items:
       mutation runs over this repository's code (AGENTS.md, ADR-0040) holds until the refactor's
       proof turns mutation proof back on; this idea lifts it only for this bounded hook, with the
       person's agreement.
+  - id: mutation-uncovered-reuse
+    title: mutation run reuses a recorded uncovered outcome as it reuses a kill
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the mutation explainer's research, 2026-10-17. mutation run's help says later runs
+      retry only other survivors and changed functions, but Previous.Kept
+      (internal/mutants/snapshot.go:413-416) never keeps an uncovered outcome, so such sites stay
+      pending and every non-strict run over the file measures coverage again just to re-mark them;
+      NeedsMutationCoverage's comment calls them reusable, which holds in strict mode only. Decide
+      red-first: either reuse an uncovered outcome under the same conditions as a kill (same
+      function hash, same reaching tests; no less sound than reusing a kill, which also ignores
+      callees), or keep the behaviour and correct the help and the comment. A public change,
+      specified in mutate.feature.
