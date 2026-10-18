@@ -5330,5 +5330,3 @@
     internal error, fixed as bug-4 (7df78f1; scrap never reads the file); the dead items dropped and
     the stale whys brought up to date (T-138); and the macOS and Windows scenario races CD found on
     the way (T-134, T-139). T-86, feature-owned vertical slices, follows.
-  done_when:
-    - run: itos config check

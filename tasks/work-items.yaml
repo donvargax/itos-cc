@@ -1664,7 +1664,7 @@ items:
     title: Move the code to the design go-template-itos brings
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-26]
     kind: task
   - id: left-out-singular-wording
