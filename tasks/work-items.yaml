@@ -3747,6 +3747,10 @@ items:
       feature of our kong fork that every kong-based tool gets. Specify nothing until that is
       settled; then rewrite or replace completion.feature for itos-cc's own commands. docs/CLI.md
       lists shell completion among the rules itos-cc does not follow yet.
+
+      completion.feature's @wip scenarios still name the sample's count command and carry the tag
+      @count-cli, which no registry item has; the rewrite replaces both (noted by T-116,
+      2026-10-17).
   - id: spec-coverage-audit
     title: Every itos-cc behaviour is specified in a feature file
     phase: 1
