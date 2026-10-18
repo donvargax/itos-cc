@@ -22,6 +22,7 @@ queue:
   - empty-case-covered
   - listed-coverage-failed
   - coverage-thresholds-override
+  - T-46
   - T-102
   - T-103
   - T-104
