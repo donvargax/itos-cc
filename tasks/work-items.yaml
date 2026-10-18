@@ -2819,6 +2819,14 @@ items:
       > inside them likely became a redirection. Not reproduced on a Windows machine.
       --coverage-command shares the shell path. If confirmed, the fix passes the line through
       SysProcAttr.CmdLine, and a scenario with a quoted --test-command holds it.
+
+      The path above is out of date. mutate/proc_windows.go is gone, and a --test-command line runs
+      through internal/worktrees/process.go's shellCommand (lines 27-31), which takes the platform
+      as a value and runs cmd /C on Windows. The same cmd /C path also runs --coverage-command
+      (coverage/pertest.go:367-372), coverage's listed tests (coverage/supervised.go:213-216), a
+      frozen preparation's mutation.tests.list (internal/freshenv/preparation.go:366-369) and the
+      test listing (internal/testtools/listing.go:24-27), so a fix through SysProcAttr.CmdLine
+      serves them all.
   - id: T-83
     title: Push CI leaves mutate.feature's scenarios out until S7 runs them in process
     phase: 1
