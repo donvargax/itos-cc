@@ -1734,8 +1734,8 @@ items:
   - id: T-120
     title: Declare a fast project pre-commit hook and document clone setup
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-119]
     kind: task
     why: >
