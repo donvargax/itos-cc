@@ -2208,6 +2208,12 @@ items:
       returns, nil when none. SCRAP-24 only asks that the key be there, so T-41 pins nothing either
       way; whether the scrap slice (T-43) keeps null or gives [] is a behaviour change to decide
       with a scenario, not in the refactor.
+
+      The names above are out of date. scrap.Analyze is now teststructure.Analyze
+      (internal/teststructure/analyze.go:129), which sets Clusters to [] at line 132 and then
+      assigns what clusters() returns at line 147, nil when no examples cluster (its var out, line
+      193). T-41 and T-43 are done and kept null, so giving [] is a behaviour change of its own,
+      decided with a scenario beside ID-SCRAP-24.
   - id: slice-parse-source
     title: One way for a slice to read and parse a selected source
     phase: 1
