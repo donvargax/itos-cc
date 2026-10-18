@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,13 +22,14 @@ var version = "dev"
 
 // versionString is the version the binary says it is: the release's stamp,
 // else the module version Go recorded (go install's, or a checkout's
-// pseudo-version), else dev.
+// pseudo-version), else dev. Each loses a leading v, so a release and a go
+// install of one version say it alike (#19).
 func versionString() string {
 	if version != "dev" {
-		return version
+		return strings.TrimPrefix(version, "v")
 	}
 	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
-		return info.Main.Version
+		return strings.TrimPrefix(info.Main.Version, "v")
 	}
 	return version
 }

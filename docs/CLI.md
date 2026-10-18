@@ -466,7 +466,7 @@ verdict and no exit code changes for it.
 | 7, 8 | No implicit default subcommand, no abbreviations | Follows: `itos-cc` alone and `itos-cc mutation` alone print help; an unknown command names the one meant. |
 | 9 | Help everywhere, on stdout, exit 0 | Follows: `itos-cc`, `--help`, `help <command>`, `<command> --help`, `-h` in any position; for the group, `mutation`, `mutation -h`, `help mutation run`, `mutation run --help`. |
 | 10 | Help gives the `--json` shape and exit codes | Follows, with each command's problem rules. |
-| 11 | `--version` and `version` print `itos-cc <version>` first | Follows. |
+| 11 | `--version` and `version` print `itos-cc <version>` first | Follows: the version has no leading v, so a release's and a `go install`'s of one version say it alike (#19). |
 | 12 | Unknown command exits 2 and names a guess | Follows with decision 36's 81, for a group's subcommands too: `mutation nosuch` exits 81 and names `run`, `list`, `check`, `sample`, and `except`. |
 | 13 | A group with no subcommand names them | Follows: `itos-cc mutation` prints the group's help, naming `run`, `list`, `check`, `sample`, and `except`, on stdout with exit 0, as `itos-cc` alone does; with `--json` it is `command.missing`, exit 80. |
 | 14 | Help ends with examples and the issues address | Follows. |

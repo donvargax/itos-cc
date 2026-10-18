@@ -46,13 +46,14 @@ Feature: Command line
       Then the first line of stdout is "itos-cc <reported>"
 
       Examples:
-        | how                                                  | command   | reported                  |
-        | by a release with -X main.version=v1.2.3             | version   | v1.2.3                    |
-        | by "go install ...@v1.2.3"                           | version   | v1.2.3                    |
-        | from a local checkout with "go build"                | --version | v<next>-0.<time>-<commit> |
-        | with "go build" from a tree with no git information  | --version | dev                       |
+        | how                                                  | command   | reported                 |
+        | by a release with -X main.version=v1.2.3             | version   | 1.2.3                    |
+        | by "go install ...@v1.2.3"                           | version   | 1.2.3                    |
+        | from a local checkout with "go build"                | --version | <next>-0.<time>-<commit> |
+        | with "go build" from a tree with no git information  | --version | dev                      |
       # a checkout's build says the pseudo-version Go records from git: the
-      # release after its last tag, the commit's time and its commit
+      # release after its last tag, the commit's time and its commit, every
+      # version without its leading v (#19, ID-CLI-18)
 
     @ID-CLI-04
     Scenario Outline: An unknown command is a usage error
@@ -71,7 +72,7 @@ Feature: Command line
     # 1.2.3 and go install v1.2.3. Every version printed loses a leading v,
     # a stamp given with one and a checkout's pseudo-version included, so
     # ID-CLI-03's rows change with this slice.
-    @wip @binary-only @slice-9 @ID-CLI-18
+    @binary-only @slice-9 @ID-CLI-18
     Scenario Outline: A release and a go install of one version say it alike, with no v
       Given the binary was built <how>
       When I run "itos-cc version"
