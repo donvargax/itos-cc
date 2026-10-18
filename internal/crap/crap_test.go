@@ -52,7 +52,7 @@ func fromSrc(path string) string {
 
 // handler is a handler over the project, its coverage measured by m, its
 // snapshots kept in store.
-func handler(m covport.Measurer[*coverage.Report], store *snapporttest.Store) Handler {
+func handler(m coverage.Measurer, store *snapporttest.Store) Handler {
 	return Handler{Tree: porttest.TreeOf(at(""), files, nil), Surroundings: langporttest.Surroundings{Dir: "/work/src"},
 		Store: store, Coverage: m, Name: fromSrc}
 }

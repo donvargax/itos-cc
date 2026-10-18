@@ -38,7 +38,7 @@ type Measurer struct {
 	Left map[string]*coverage.Report
 }
 
-var _ port.Measurer[*coverage.Report] = Measurer{}
+var _ coverage.Measurer = Measurer{}
 
 // Measure gives the report of req, as the port says. A Command runs
 // nothing here: what it writes is in Files already, and a report of it

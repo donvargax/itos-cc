@@ -9,7 +9,6 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
-	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/coveragetools"
 	"github.com/donvargax/itos-cc/internal/freshenv"
 	"github.com/donvargax/itos-cc/internal/githistory"
@@ -64,8 +63,8 @@ type adapters struct {
 	Surroundings langport.Surroundings
 	// Store is the snapshot port, the snapshots under .metrics/.
 	Store snapport.Store
-	// Coverage is the coverage port, which measures coverage for crap.
-	Coverage covport.Measurer[*coverage.Report]
+	// Coverage is coverage's Measurer, which measures coverage for crap.
+	Coverage coverage.Measurer
 	// MutationCoverage supplies listed evidence and executable inventories.
 	MutationCoverage coverage.MutationMeasurer
 	// Config is itos-cc.yaml.

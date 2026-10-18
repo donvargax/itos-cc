@@ -1,4 +1,4 @@
-// Package coveragetools is the coverage port's adapter (decision 46): it
+// Package coveragetools is coverage's Measurer adapter (decision 46): it
 // measures coverage with the project's own tools, through the top-level
 // coverage runner, its process groups and the run folders under
 // .metrics/coverage they write their reports in, and reads the reports a
@@ -21,7 +21,7 @@ import (
 	"github.com/donvargax/itos-cc/metrics"
 )
 
-// Measurer is the coverage port's Measurer over the disk and the project's
+// Measurer is the coverage domain's Measurer over the disk and the project's
 // own tools. porttest.MeasurerContract holds it to what the fake does.
 type Measurer struct {
 	// Log is where it says what it runs and the tools write their output,
@@ -33,7 +33,7 @@ type Measurer struct {
 	Execute covrun.CommandExecutor
 }
 
-var _ port.Measurer[*coverage.Report] = Measurer{}
+var _ coverage.Measurer = Measurer{}
 var _ coverage.MutationMeasurer = Measurer{}
 
 // Measure gives the report of req, as the port says: the reports it names,

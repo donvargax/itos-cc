@@ -95,7 +95,7 @@ func refusesWhatIsNoFile(t *testing.T, open func(t *testing.T, files []string) (
 // opener lays out files, their text by slash-separated path relative to a
 // directory, and returns the Measurer over them and that directory,
 // absolute, the working directory; it may make that the test's.
-type opener = func(t *testing.T, files map[string]string) (port.Measurer[*coverage.Report], string)
+type opener = func(t *testing.T, files map[string]string) (coverage.Measurer, string)
 
 // MeasurerContract holds a Measurer to what every one, the fake and
 // internal/coveragetools', must do with the reports a request names: each
@@ -129,7 +129,7 @@ func MeasurerContract(t *testing.T, open opener) {
 // measure is m's report of reports, the sources by slash-separated path
 // relative to dir, made absolute as the selection discovers them; a
 // failure fails t.
-func measure(t *testing.T, m port.Measurer[*coverage.Report], dir string, req port.Request, sources ...string) *coverage.Report {
+func measure(t *testing.T, m coverage.Measurer, dir string, req port.Request, sources ...string) *coverage.Report {
 	t.Helper()
 	for _, s := range sources {
 		req.Sources = append(req.Sources, filepath.Join(dir, filepath.FromSlash(s)))

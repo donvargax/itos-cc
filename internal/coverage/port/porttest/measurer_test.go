@@ -11,7 +11,7 @@ import (
 // The fake keeps the contract every Measurer keeps, internal/coveragetools'
 // included. Its directory is a name only: the fake never touches it.
 func TestMeasurerKeepsTheContract(t *testing.T) {
-	MeasurerContract(t, func(t *testing.T, files map[string]string) (port.Measurer[*coverage.Report], string) {
+	MeasurerContract(t, func(t *testing.T, files map[string]string) (coverage.Measurer, string) {
 		dir := t.TempDir()
 		held := map[string]string{}
 		for name, text := range files {

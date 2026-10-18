@@ -4,7 +4,7 @@
 // Run assembles the Query from the command line, the one copy of a command
 // line's values, and hands it to the Handler with the context cmd made.
 // The Handler only wires: the selection domain chooses the sources through
-// the Tree port it was given (Select), then the coverage port it was given
+// the Tree port it was given (Select), then the coverage Measurer it was given
 // measures them as the coverage flags ask, the selection domain parses
 // each, read through the same Tree and parsed by lang, asking the
 // Surroundings port what surrounds it, the changerisk domain scores each
@@ -121,7 +121,7 @@ type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Store        snapport.Store
-	Coverage     covport.Measurer[*coverage.Report]
+	Coverage     coverage.Measurer
 	Name         func(path string) string
 	Exclude      selection.Exclusion
 }
@@ -140,7 +140,7 @@ type Found struct {
 }
 
 // Handle scores every function of sources, which Select chose, by the
-// coverage q asks for, measured through the coverage port, and records
+// coverage q asks for, measured through the coverage Measurer, and records
 // the scores in crap.json, each file by its path from the project root
 // (snapshot.Key), passing ctx on to the domains, lang and the ports. A
 // failure to measure, read or record stops it with nothing found.

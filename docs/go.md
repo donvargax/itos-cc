@@ -114,7 +114,15 @@ a `context.Context` first (decision 30); pure logic takes none.
   `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the setters
   `SetMissing`, `SetIntegrationMissing`, `MarkMeasured` and `Prove`, `List` for a static
   inventory's lines, `Integrated` for the data of the processes the tests started, and
-  `TestCoverage.Add` with `SetTests`; the zero `Report` is empty. The runner keeps `Load`,
+  `TestCoverage.Add` with `SetTests`; the zero `Report` is empty. It declares `Measurer`, which
+  the commands measure coverage through (decision 46): `Measure(ctx, port.Request)` gives a
+  `*Report`, each build root or report it could not measure in its `Missing`, or the port's
+  sealed `Failure` of the whole measurement: `Cancelled`, the gap, once the context is done,
+  and `Unwritable`, a run folder that could not be made. It sits beside the `Report` it
+  returns, so it names that type with no type argument, while the `Request` it is given and
+  the `Failure` stay in the port the domain imports for `Files` and `Gap`, and no cycle
+  forms (T-135). `MutationMeasurer` embeds it, adding `MeasureListed` and `Inventory`. The
+  runner keeps `Load`,
   which opens a report, `Disk`, the `Files` port over the disk, and `Inventory`, which runs a
   static inventory command. An `Unmeasured` is an error, its `String`, so a command hands it
   to the UI, whose classifier makes it its gap's problem. Its tests are package
@@ -124,22 +132,19 @@ a `context.Context` first (decision 30); pure logic takes none.
   of its name it is, reached through a symlinked directory too. It declares the sealed set of
   `Gap`s an `Unmeasured` build root or report has as its `Cause`: `ToolMissing`,
   `MeasuredNothing`, `NoReport`, `Unreadable` and `Cancelled`, each written as its name. It
-  declares `Measurer[R]`, which the commands measure coverage through (decision 46):
-  `Measure(ctx, Request)` gives the domain's `*coverage.Report`, each build root or report it
-  could not measure in its `Missing`, or a sealed `Failure` of the whole measurement:
-  `Cancelled`, the gap, once the context is done, and `Unwritable`, a run folder that could
-  not be made. `R` is always `*coverage.Report`: the port names the domain's type as a type
-  argument, since the domain imports the port for `Files` and `Gap` and Go refuses the cycle
-  an import back would make. `Request` carries what crap's coverage flags say: the
+  declares what the domain's `Measurer` is given and fails with: the `Request`, and the
+  sealed `Failure` of a whole measurement, `Cancelled` or `Unwritable`. `Request` carries
+  what crap's coverage flags say: the
   `Sources`, `--coverage-report`'s `Reports`, `--coverage-command`'s `Command`,
   `--use-existing-coverage`'s `Existing`, `--all-tests`' `AllTests`, the `Scope` of tests
   that run without it and the `Reach` of the test files that reach each source.
   `internal/coverage/port/porttest` holds the in-memory fakes: `Files`, with links standing
-  for symlinks, and `Measurer`, which reads the reports a request names from the files it
-  holds and gives a request that names none the canned reports of its build roots; and
-  `FilesContract` and `MeasurerContract`, the contracts each and its adapter pass.
-- `internal/coveragetools` is the coverage port's adapter (decision 46). Its `Measurer`
-  wraps the top-level `coverage` runner, its process groups and the run folders under
+  for symlinks, and `Measurer`, the domain's `Measurer` in memory, which reads the reports a
+  request names from the files it holds and gives a request that names none the canned
+  reports of its build roots; and `FilesContract` and `MeasurerContract`, the contracts each
+  and its adapter pass.
+- `internal/coveragetools` is the adapter of the coverage domain's `Measurer` and its
+  port (decision 46). Its `Measurer` wraps the top-level `coverage` runner, its process groups and the run folders under
   `.metrics/coverage` the tools write their reports in, one for each run, the latest kept for
   `--use-existing-coverage`, and runs `--coverage-command` through the runner's `Shell`. It
   returns the domain's `Report` as the runner built it, with no mapper (decision 47), and
@@ -257,7 +262,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `Run` prints each file's report, and says on stderr, with `--json` too, when the last
   snapshot was ignored or there was no test file to measure. It has no classifier.
 - `internal/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, its `Handler`
-  holding `dry`'s and the coverage port's `Measurer`, `Coverage`. Its `CLI` takes the
+  holding `dry`'s and the coverage domain's `Measurer`, `Coverage`. Its `CLI` takes the
   coverage flags crap always took: `--coverage-report` is the first cumulative flag, each a
   report, a comma no separator (`sep:"none"`), and `--threshold` is a pointer, nil when it is
   not given, so 0 is a threshold. `Select` chooses the sources, so `Run` says how many
@@ -375,6 +380,8 @@ context-as-argument a context after any other parameter, tests included.
   or library. An adapter may also import the domain it serves, and a port the domain it
   belongs to, to build or return the domain's own types with no mapper between them (decision
   47, amending 29's adapter rule): its rule allows that domain once the adapter needs it.
+  An adapter may also use the shared pure domains its rule names, `internal/lang` and
+  `internal/selection`, which read nothing, as `freshenv`, `testtools` and `testinputs` do.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
@@ -822,10 +829,10 @@ scenario runner they took. `itos-cc.yaml` holds itos-cc's own settings and two r
 exceptions, both of `internal/release`: the template's parked exception for its main.go went
 with T-115, and its sample count app, which had none, with T-116.
 
-T-90 keeps coverage's aggregate `port.Measurer[*Report]` unchanged. Its new
-model-bearing `MutationMeasurer` contract belongs beside `Report` and
+T-90 added the model-bearing `MutationMeasurer` contract beside `Report` and
 `TestCoverage`, composing aggregate measurement with `MeasureListed` and
-`Inventory`. `Test` and `PerTest` are domain values; `PerTest.Select` constructs
+`Inventory`; T-135 moved that aggregate `Measurer` beside it, a plain interface
+over the domain's `Report`, from the port's `Measurer[R]`. `Test` and `PerTest` are domain values; `PerTest.Select` constructs
 a command without I/O. The root-owned fake and shared suite belong in
 `internal/coverage/porttest` and reuse the child aggregate fake. This is the
 same narrow model-bearing recipe exception as mutation's root contracts,

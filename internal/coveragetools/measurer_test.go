@@ -43,7 +43,7 @@ func workspace(t *testing.T, files map[string]string) string {
 // The Measurer keeps the contract every Measurer keeps, the fake's
 // included, over a temporary working directory.
 func TestMeasurerKeepsTheContract(t *testing.T) {
-	porttest.MeasurerContract(t, func(t *testing.T, files map[string]string) (port.Measurer[*coverage.Report], string) {
+	porttest.MeasurerContract(t, func(t *testing.T, files map[string]string) (coverage.Measurer, string) {
 		dir := workspace(t, files)
 		return Measurer{Log: io.Discard}, dir
 	})

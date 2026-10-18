@@ -543,7 +543,7 @@ func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 			plan.Unsupported = "jacoco-maven-plugin is not in pom.xml or a parent's; add it, or measure with --coverage-command"
 			return plan
 		}
-		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, MavenTests(classes)...)}
+		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, mutants.MavenTests(classes)...)}
 		plan.Reports = []string{maven}
 		kotlinIntegration(&plan, dir, out)
 		return plan
@@ -568,19 +568,13 @@ func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 	}
 	args := []string{gradle, "-p", dir}
 	if classes != nil {
-		args = append(append(args, test...), GradleTests(classes)...)
+		args = append(append(args, test...), mutants.GradleTests(classes)...)
 	} else if task == "jacocoTestReport" || plan.CoverDir != "" {
 		args = append(args, test...)
 	}
 	plan.Commands = [][]string{append(args, task)}
 	return plan
 }
-
-// GradleTests forwards the pure filter formatter until T-90 moves these callers.
-func GradleTests(classes []string) []string { return mutants.GradleTests(classes) }
-
-// MavenTests forwards the same existing nil-aware Surefire formatter.
-func MavenTests(classes []string) []string { return mutants.MavenTests(classes) }
 
 type packageJSON struct {
 	Scripts         map[string]string `json:"scripts"`

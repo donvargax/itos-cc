@@ -1,25 +1,5 @@
 package port
 
-import "context"
-
-// Measurer measures coverage for a request, as the project's own tools do
-// or as reports already written say: crap's, and mutation's once it moves
-// (decision 46). R is the coverage domain's *coverage.Report, the one type
-// every Measurer returns, built through the domain's API with no mapper
-// between them (decision 47); this package names it as a type argument,
-// since the domain imports this package for Files and Gap and Go refuses
-// the cycle a named import would make. ctx carries only cancellation and
-// deadlines, never a value (decision 30). porttest.MeasurerContract holds
-// what every Measurer, the fake and internal/coveragetools', must do.
-type Measurer[R any] interface {
-	// Measure gives the report of req's Sources: each build root or named
-	// report it could not measure is in the report's Missing with its Gap,
-	// and what it measured of the rest is the report's. A Failure is a
-	// measurement that gave no report at all: Cancelled once ctx is done,
-	// whatever it measured before then kept by no one.
-	Measure(ctx context.Context, req Request) (R, Failure)
-}
-
 // Request is what to measure and how, as crap's coverage flags say.
 type Request struct {
 	// Sources are the files to measure, as the selection discovered them.

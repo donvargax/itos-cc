@@ -121,7 +121,7 @@ var markers = map[string][]string{
 	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
 }
 
-// measurer is the coverage port's fake over the memory, from dir: every
+// measurer is coverage's Measurer fake over the memory, from dir: every
 // file, the reports a run names among them, and the report of each build
 // root, as the runner groups the sources by language and the nearest
 // folder holding that language's marker, or their own folder. A root whose

@@ -17,7 +17,7 @@ import (
 // Physical collectors and their split/fallback protocols remain adapter guards.
 func MutationMeasurerContract(t *testing.T, open func(*testing.T, map[string]string) (coverage.MutationMeasurer, string)) {
 	t.Helper()
-	aggregate.MeasurerContract(t, func(t *testing.T, files map[string]string) (port.Measurer[*coverage.Report], string) {
+	aggregate.MeasurerContract(t, func(t *testing.T, files map[string]string) (coverage.Measurer, string) {
 		m, dir := open(t, files)
 		return listedEntry{m, dir}, dir
 	})
