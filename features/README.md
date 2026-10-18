@@ -568,6 +568,7 @@ the folder the run ran in, as itos-cc names them.
 | `the file "…" is discovered` / `it is classified as …`                                | units over that file alone lists it as that kind and not the other. |
 | `a command reports on a file inside the working directory` / `the file is named by its path relative to the working directory` / `a file outside the working directory keeps its absolute path` | units --json in src over cart/total.ts and ../kt/src/main/kotlin/Shelf.kt; the first named so, the second by an absolute path, the scratch folder found in it by its name. |
 | `itos-cc.yaml holds '…'` / `the sources … and …` / `… is scored, and … is not`        | That itos-cc.yaml; the two files; crap lists the first and not the second. |
+| `itos-cc.yaml is a directory, so it cannot be read`                                   | A folder where itos-cc.yaml goes, which no system reads as a file. |
 
 `cli.feature`'s steps, in `cli.go`. A scenario that only says When I run runs in an empty folder,
 or in a project of its own: a Go module, `src/` of eight functions and `lib/billing/` of one
