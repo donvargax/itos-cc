@@ -16,15 +16,49 @@ import (
 
 // Graph starts the real serve command and waits for its public readiness
 // message before requesting the graph. It never calls the graph library.
-func (b binary) Graph(ctx context.Context, r Run) (result []byte, runErr error) {
+// serve takes a port to listen on, never 0, so the harness asks the system
+// for a free one and closes it for serve; a scenario running beside it
+// (T-128) can be handed the same port in between, and serve then refuses
+// it as in use. That run is tried again on another port, up to
+// portAttempts times; a refusal on every one is the scenario's failure.
+func (b binary) Graph(ctx context.Context, r Run) ([]byte, error) {
+	for attempt := 1; ; attempt++ {
+		port, err := freePort()
+		if err != nil {
+			return nil, err
+		}
+		body, err := b.graphOn(ctx, r, port)
+		if errors.Is(err, errPortTaken) && attempt < portAttempts {
+			continue
+		}
+		return body, err
+	}
+}
+
+// portAttempts is how many free ports Graph tries serve on.
+const portAttempts = 3
+
+// temporaryFailure is the exit code of a temporary failure, which serve
+// exits with when its port is in use, the only one it has before it is
+// ready (cli.feature's ID-CLI-08).
+const temporaryFailure = 75
+
+// errPortTaken is serve's refusal of a port something took after the
+// harness found it free.
+var errPortTaken = errors.New("serve found its port in use")
+
+// freePort is a port of 127.0.0.1 free when asked.
+func freePort() (int, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
-	if err := listener.Close(); err != nil {
-		return nil, err
-	}
+	return port, listener.Close()
+}
+
+// graphOn runs serve on port and requests the graph from it.
+func (b binary) graphOn(ctx context.Context, r Run, port int) (result []byte, runErr error) {
 	cmd := exec.CommandContext(ctx, b.bin, "serve", "--port", strconv.Itoa(port), "--interval", "1h") //nolint:gosec // the itos-cc binary under test, serving on a port this harness chose
 	cmd.Dir = r.Dir
 	cmd.Env = environment(r.Env)
@@ -66,7 +100,11 @@ func (b binary) Graph(ctx context.Context, r Run) (result []byte, runErr error) 
 	case <-ready:
 	case err := <-stopped:
 		stopped <- err
-		return nil, fmt.Errorf("serve stopped before readiness: %v\n%s", err, <-scanned)
+		output := <-scanned
+		if exit := (*exec.ExitError)(nil); errors.As(err, &exit) && exit.ExitCode() == temporaryFailure {
+			return nil, fmt.Errorf("%w: %v\n%s", errPortTaken, err, output)
+		}
+		return nil, fmt.Errorf("serve stopped before readiness: %v\n%s", err, output)
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	}
