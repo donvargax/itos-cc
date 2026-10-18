@@ -19,6 +19,7 @@ queue:
   - comment-free-unit-hash
   - since-broad-stale-panic
   - worker-copy-pristine
+  - empty-case-covered
   - T-102
   - T-103
   - T-104
