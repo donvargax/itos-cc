@@ -3772,3 +3772,6 @@ items:
       fail), or report it as dead documentation to remove. Out of scope: serve and viewer.feature,
       which leave with the web app, and completion.feature, whose @wip scenarios stay as they are
       under the idea shell-completion.
+
+      itos#55 (open): itos's moves rule may leave no way to adopt scenarios for existing behaviour;
+      check it before writing characterization scenarios, and file what the audit hits there.
