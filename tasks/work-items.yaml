@@ -2562,6 +2562,10 @@ items:
       N/A, with no coverage.report-unreadable problem and no unmeasured entry. ID-CRAP-11 says a
       threshold is not passed by code coverage could not measure; a report naming no file could be
       refused as unreadable, or as measuring nothing.
+
+      The format sniffing above moved. It is now internal/coverage's Parse
+      (internal/coverage/formats.go:16-28), which the runner's coverage.Load (coverage/disk.go:36)
+      calls, and it still reads a report that starts with neither "mode:" nor "<" as LCOV.
   - id: adr-47-code-review
     title: Review decision 47 against the refactored code with the person
     phase: 1
