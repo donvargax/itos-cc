@@ -1850,14 +1850,15 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: interrupt-exit-130
+  - id: slice-8
     title: An interrupted command exits 130, says so once, and a second Ctrl-C ends it at once
     phase: 1
     owner: null
     status: todo
     depends_on: [T-132]
-    kind: idea
+    kind: slice
     why: >
+      Was interrupt-exit-130.
       q-51: every command, serve and mutation run --count included, cancels its context on Ctrl-C
       and exits 130 with rule interrupted (count.interrupted's 75 goes), a minor release called out
       in Upgrading. A second Ctrl-C ends it at once, except while the process groups itos-cc owns
@@ -2799,7 +2800,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [template-adoption, T-132, interrupt-exit-130, slice-7, adr-47-code-review]
+    depends_on: [template-adoption, T-132, slice-8, slice-7, adr-47-code-review]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
