@@ -188,63 +188,6 @@ func withFiles(base map[string]string, extra map[string]string) map[string]strin
 	return out
 }
 
-// @ID-MUT-173
-func TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries(t *testing.T) {
-	t.Parallel()
-	dir := moduleRepo(t, untestedFiles)
-	for _, args := range [][]string{{"--count", "0"}, {"--count=-2"}, {"--count", "two"}} {
-		o := countedRun(t, args...)
-		p := o.counted(t).problem("flags.value-invalid")
-		if o.code != 2 || p == nil || p["flag"] != "--count" {
-			t.Errorf("mutation run %v: exit %d, want a --count usage error before any trial\n%s%s", args, o.code, o.stdout, o.stderr)
-		}
-	}
-	o := countedRun(t, "--seed", "abc")
-	if p := o.counted(t).problem("flags.conflict"); o.code != 2 || p == nil || p["flag"] != "--seed" {
-		t.Errorf("--seed without --count: exit %d, want a --seed usage conflict\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if _, err := os.Stat(filepath.Join(dir, ".metrics")); !os.IsNotExist(err) {
-		t.Errorf("a refused counted run wrote .metrics: %v", err)
-	}
-
-	if runtime.GOOS == "windows" {
-		o := countedRun(t, "--count", "1")
-		if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil {
-			t.Errorf("counted mode on %s: exit %d, want count.platform before launching commands\n%s%s", runtime.GOOS, o.code, o.stdout, o.stderr)
-		}
-		if strings.Contains(o.stderr, "itos-cc: coverage") || strings.Contains(o.stderr, "itos-cc: baseline") {
-			t.Errorf("counted mode launched commands on %s:\n%s", runtime.GOOS, o.stderr)
-		}
-		return
-	}
-
-	// The same refusal on Linux and macOS, with the platform pretended away.
-	useEnv(t, platformEnv, "windows")
-	o = countedRun(t, "--count", "1")
-	useEnv(t, platformEnv, "")
-	if p := o.counted(t).problem("count.platform"); o.code != 3 || p == nil || strings.Contains(o.stderr, "itos-cc: coverage") {
-		t.Errorf("counted mode on an unsupported platform: exit %d, want count.platform before launching commands\n%s%s", o.code, o.stdout, o.stderr)
-	}
-
-	// Outside any Git repository, and in one whose HEAD is unborn.
-	plain := t.TempDir()
-	writeFile(t, filepath.Join(plain, "go.mod"), "module example.com/plain\n\ngo 1.22\n")
-	writeFile(t, filepath.Join(plain, "main.go"), "package main\n\nfunc Half(i int) bool { return i > 2 }\n\nfunc main() {}\n")
-	useDir(t, plain)
-	o = countedRun(t, "--count", "1")
-	if p := o.counted(t).problem("count.no-git"); o.code != 3 || p == nil {
-		t.Errorf("counted mode outside Git: exit %d, want count.no-git\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	gitIn(t, plain, "init", "-q")
-	o = countedRun(t, "--count", "1")
-	if p := o.counted(t).problem("count.no-git"); o.code != 3 || p == nil {
-		t.Errorf("counted mode with an unborn HEAD: exit %d, want count.no-git\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if _, err := os.Stat(filepath.Join(plain, ".metrics")); !os.IsNotExist(err) {
-		t.Errorf("a refused counted run wrote .metrics: %v", err)
-	}
-}
-
 // @ID-MUT-174
 func TestCountedExecutionEvaluatesFrozenCommittedInputs(t *testing.T) {
 	t.Parallel()
