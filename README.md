@@ -1017,6 +1017,13 @@ lets it watch a second workflow, so the coordinator watches each `cd.yml` run wi
 `gh run watch <id>` in the background and hands a red one to a fresh agent as repair work, ahead
 of new items.
 
+Renovate lands its updates on `main` by branch automerge. Neither workflow runs on a push to its
+`renovate/` branch, so the branch stays pending until Renovate opens a pull request for it (after
+`prNotPendingHours`, 25 hours by default). Both workflows then run on that pull request, and
+Renovate merges only once every check on its head is green, `cd.yml`'s Windows and macOS jobs
+included. Each update therefore waits at least 25 hours beyond the 7-day release wait before it
+gets any CI.
+
 No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
 sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, is disabled
 on GitHub until T-46; both wait for the refactor's final comparison (refactor-final-proof).

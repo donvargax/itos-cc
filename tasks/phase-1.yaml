@@ -5030,9 +5030,9 @@
     validator at a pinned version, and report it. Then see whether Renovate's next run (or a rebase
     of #52, which the coordinator asks the person about first) writes the footer and itos verify
     passes on the PR's commit; merging #52 itself is separate (a major update; see the idea
-    nightly-checkout-node20). Under ADR-0048 Renovate's automerge waits only for the Linux ci.yml on
-    its branch, so an update breaking Windows or macOS would land on main and cd.yml would catch it
-    after, as repair work: say so in README's CI section. go-template-itos#3 tracks the template's
-    side.
+    nightly-checkout-node20). Neither workflow runs on a push to a renovate/ branch, so Renovate
+    opens a pull request after prNotPendingHours and branch-automerges only once every check on it
+    is green, ci.yml's and cd.yml's on all three systems: say so in README's CI section.
+    go-template-itos#3 tracks the template's side.
   done_when:
     - run: itos config check
