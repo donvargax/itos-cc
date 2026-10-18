@@ -3776,3 +3776,21 @@ items:
 
       itos#55 (open): itos's moves rule may leave no way to adopt scenarios for existing behaviour;
       check it before writing characterization scenarios, and file what the audit hits there.
+  - id: prepush-mutation-check
+    title: A pre-push hook judges a few mutants of the changes being pushed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [inprocess-mutation-tests, refactor-final-proof]
+    kind: idea
+    why: >
+      The person, 2026-10-17: fast mutation feedback on the changes about to be pushed, in the
+      pre-push hook. A counted run fits the push tier (ADR-0051 in itos): a seed from HEAD makes it
+      deterministic and --count bounds it, for example itos-cc mutation run --since @{upstream}
+      --count 5. Today it is far too slow: a domain mutant runs cmd/itos-cc's whole test package,
+      one hop away, about 2 to 3 minutes on CI's Linux runner. Once inprocess-mutation-tests makes
+      each mutant run only the in-memory scenarios reaching its line (decision 49), measure it and
+      set a budget, such as under a minute for 5 mutants, before declaring the hook. The ban on
+      mutation runs over this repository's code (AGENTS.md, ADR-0040) holds until the refactor's
+      proof turns mutation proof back on; this idea lifts it only for this bounded hook, with the
+      person's agreement.
