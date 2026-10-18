@@ -3501,3 +3501,17 @@ items:
       internal/testtools/toolchain.go:40-46); a resolvable node_modules/.bin/vitest should count.
       Wave 1, TypeScript workspace track, first.
     refs: ["#45"]
+  - id: pnpm-workspace-members
+    title: Strict mode for pnpm settings files and members with no local dependency
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #48. Point 1: a pnpm-workspace.yaml with no packages key is a settings file, not a
+      workspace (internal/testinputs/line_coverage_scope.go:151-153 refuses on existence). Point 2,
+      The person (2026-10-18): amend ADR-0025 so a member with no workspace:, file: or link:
+      dependency is fingerprinted like a standalone package; members with local dependencies stay
+      refused. Wave 1, after vitest-through-toolchain.
+    refs: ["#48"]
