@@ -3428,3 +3428,16 @@ items:
       ls-files or go list). The person (2026-10-18): land it with comment-free-unit-hash (#22) in
       one window before T-46, so every snapshot goes stale once and the nightly measures once.
     refs: ["#36", "#37"]
+  - id: comment-free-unit-hash
+    title: A comment-only change inside a function leaves it fresh
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #22. UnitHash hashes the function's text including comments (internal/mutants/sites.go
+      about 101-106). The person (2026-10-18): exclude comments from the hash. Lands with
+      portable-go-evidence before T-46. strict-lines-nonexecutable-changes covers the
+      coverage-evidence half.
+    refs: ["#22"]
