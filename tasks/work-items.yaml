@@ -88,6 +88,11 @@ items:
       With --since, --scan takes its files from the range but lists every site in them, not only the
       sites of the functions --since would judge. No scenario says which it should be; listing only
       the judged functions would preview what a gate runs.
+
+      The text above names the old mutate --scan, which is mutation list now. Its declaration
+      (internal/mutation/mutation.go:63-67) takes the selection and --json and no --since, as the
+      title says, so what is left is a behaviour change with a scenario, letting list take --since
+      and list only the sites of the functions it would judge.
   - id: since-follows-renames
     title: "mutation run --since follows renames: a file's results move with it"
     phase: 1
