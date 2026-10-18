@@ -3917,7 +3917,7 @@ items:
     title: Bring the open items' whys up to date with the finished refactor
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-139

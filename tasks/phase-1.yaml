@@ -5212,9 +5212,6 @@
     internal/coverage and its port, which serve neither mutants nor that list: name coverage there
     too, as a shared pure domain freshenv reads coverage blocks through. No product code,
     tests or scenarios change.
-  done_when:
-    - run: itos config check
-    - run: itos work check
 - id: T-139
   type: test
   title: ID-MUT-13's timeout bound fails on a slow Windows runner
