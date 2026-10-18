@@ -47,7 +47,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   under a folder, each taking the context first, and its sealed set of failures:
   `Unreadable`, `Unwritable` and `Unremovable`, each carrying the snapshot's name, and
   `Unlistable`, the folder's, with the library's error text whole as its `Reason`, and
-  `Cancelled`. `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing
+  `Cancelled`. A snapshot read that did not decode is `Undecodable`'s `Unreadable`, which
+  both stores build, its `Reason` in the snapshot's own terms rather than the Go types a
+  reader decodes into (bug-3): a value of the wrong kind names its key path and the JSON
+  kinds, `files[0].file should be a string, not a number`, and JSON that does not parse
+  keeps the parser's text. `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing
   the bytes the `metrics` library writes, and `StoreContract`, the contract it and
   `internal/metricsdir`'s `Store` both pass (Tests, below).
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git

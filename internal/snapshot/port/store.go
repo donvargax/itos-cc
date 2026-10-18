@@ -17,7 +17,9 @@ type Failure interface {
 
 // Unreadable is returned when a snapshot that may be there could not be
 // read, or what it holds could not be decoded. Name is the snapshot's, and
-// Reason the library's error text whole, a sentence for people.
+// Reason a sentence for people: the library's error text whole for a
+// snapshot that could not be read, and for one that did not decode,
+// Undecodable's, in the snapshot's own terms.
 type Unreadable struct{ Name, Reason string }
 
 func (*Unreadable) snapshotFailure() {}

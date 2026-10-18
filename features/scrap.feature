@@ -307,7 +307,7 @@ Feature: Test-code structure
       Then stderr says it is ignoring the unreadable snapshot
       And the run completes
 
-    @bug-3 @ID-SCRAP-30 @wip
+    @bug-3 @ID-SCRAP-30
     Scenario Outline: A previous snapshot holding a value of the wrong kind is ignored, naming its key
       Given .metrics/scrap.json holds <snapshot>
       When I run "itos-cc scrap"
