@@ -1892,6 +1892,18 @@ items:
       cancellation/timeout must not be misclassified as a user interrupt. Native Windows ownership
       implementation remains deferred. Exact public scenarios are specified after final proof and
       before any product implementation.
+
+      The person (2026-10-18), answering S10's open questions: SIGTERM is an interrupt like Ctrl-C
+      in every command (rule interrupted, exit 130 in --json), and on Unix the command re-raises the
+      signal that arrived, so a shell reads 143 for SIGTERM. An interrupted complete mutation run
+      keeps its finished judgments as a fail-fast stop does (ADR-0022), written outside the
+      cancelled context; files cut short get no summary. Threading the context through crap's
+      coverage commands (coverage/measure.go:93, pertest.go:347) is inside this slice, with
+      ID-CLI-24 proving an interrupt stops them. The feat carries Upgrading and BREAKING CHANGE
+      footers. Decision 31's citations now live in internal/cli/interrupt.go:8, cli.go:28,
+      cmd/itos-cc/selection.go:26, snapshot.go:27, coverage.go:33 and docs/go.md:271-272
+      (internal/count and internal/disk are gone). One agent implements both S10 slices; both feats
+      and version-without-v (#19) reach main in a single product push.
     refs: [q-51, q-54, q-37]
   - id: semantic-exit-codes
     title: Exit codes follow square/exit, 75 kept for retry
