@@ -894,6 +894,12 @@ items:
       infer that macOS ran its counted and ownership tests from the previous red run of the same
       tests and from package durations. A CI step that prints a per-test summary, from go test -json
       for example, would make that evidence direct.
+
+      Part of this is done. cd.yml's languages shards and its native mutation and snapshot steps
+      (T-80, T-82) run go test -v, and the native steps keep a -scenario-report JSON as an artifact.
+      What is left is the platform parts, whose go test runs still print only per-package ok lines,
+      cd.yml's cmd-a, cmd-b, features and others (.github/workflows/cd.yml:156-174) and ci.yml's
+      cmd-a, cmd-b and others (.github/workflows/ci.yml:124-138).
   - id: fail-fast-partial
     title: A fail-fast stop keeps the valid judgments of the files it cut short
     phase: 1
