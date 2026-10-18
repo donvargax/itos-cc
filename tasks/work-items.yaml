@@ -3529,3 +3529,15 @@ items:
       linked, when the package belongs to a workspace; say fails only in the worker copy when the
       tree passes. Wave 1, after pnpm-workspace-members.
     refs: ["#44"]
+  - id: except-byte-exact
+    title: mutation except changes only the exceptions list, byte for byte elsewhere
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #55. config/exception_document.go:116-127 re-encodes the whole document with yaml.v3,
+      restyling flow mappings. First of the exceptions-file track (then except-prune,
+      except-repoint, except-uncovered-message).
+    refs: ["#55"]
