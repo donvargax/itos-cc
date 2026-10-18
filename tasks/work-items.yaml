@@ -3469,14 +3469,15 @@ items:
       portable-go-evidence before T-46. strict-lines-nonexecutable-changes covers the
       coverage-evidence half.
     refs: ["#22"]
-  - id: version-without-v
+  - id: slice-9
     title: Release and go install builds print the same version, without a v
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was version-without-v.
       Issue #19. cmd/itos-cc/main.go:22-30 returns info.Main.Version with its v; release.yml:151,212
       stamps the tag without it; internal/version/version.go:38-55 trims it but is unused. The
       person (2026-10-18): no v everywhere (version and version --json), shipped in the same product
