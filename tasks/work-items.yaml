@@ -19,7 +19,7 @@ queue:
   - slice-12
   - slice-13
   - slice-14
-  - listed-coverage-failed
+  - slice-15
   - coverage-thresholds-override
   - T-46
   - p1-itos-proof-code
@@ -569,14 +569,15 @@ items:
     depends_on: []
     kind: task
     refs: ["#14"]
-  - id: listed-coverage-failed
+  - id: slice-15
     title: A failing coverage run of the listed tests is a tests.* problem, not every mutant uncovered
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was listed-coverage-failed.
       Issue #15, found in itos-template on v0.5.0: when the listed tests' coverage run fails,
       itos-cc prints one stderr line and judges every mutant uncovered, so under --fail-uncovered a
       gate asks for tests of code the suite covers and --json never names the cause. Like
