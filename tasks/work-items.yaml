@@ -3388,17 +3388,9 @@ items:
     title: "Strict Go evidence carries between checkouts: toolchain resolution and tracked files only"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was portable-go-evidence.
-      Issues #36 and #37. The raw environment, GOTOOLCHAIN included, is hashed
-      (internal/testinputs/go_coverage_inputs.go:83-91); every .go file on disk is walked, .git,
-      testdata and untracked files included (52-69); GoVersion is itos-cc's own runtime.Version()
-      (inputs.go:21), not the project toolchain's go env GOVERSION. Inventory tracked files (git
-      ls-files or go list). The person (2026-10-18): land it with comment-free-unit-hash (#22) in
-      one window before T-46, so every snapshot goes stale once and the nightly measures once.
     refs: ["#36", "#37"]
   - id: slice-11
     title: A comment-only change inside a function leaves it fresh
