@@ -1262,6 +1262,10 @@ items:
       matching no test) or c8 (--all --include over an empty program) such files stay unproven and
       are coverage-missing, failing closed. Neither tool is installed in CI, so both need fixtures
       before they can be trusted.
+
+      The last sentence is half out of date. c8 is installed now, pinned at 12.0.0 in
+      testdata/tools/node/package.json (41a9520) and installed by cd.yml's languages job, so c8's
+      case can get its fixture there; Jest is still installed nowhere.
   - id: strict-lines-kotlin-lone-module
     title: A Kotlin file no test reaches gets line evidence even when its module measures nothing else
     phase: 1
