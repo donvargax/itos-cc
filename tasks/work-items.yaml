@@ -3413,3 +3413,18 @@ items:
       (coverage/run.go:499-515), so a selection's partial run fails the project's floor. One item
       with listed-coverage-failed (#15): a failed coverage run is not uncovered code. Wave 0.
     refs: ["#46"]
+  - id: portable-go-evidence
+    title: "Strict Go evidence carries between checkouts: toolchain resolution and tracked files only"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issues #36 and #37. The raw environment, GOTOOLCHAIN included, is hashed
+      (internal/testinputs/go_coverage_inputs.go:83-91); every .go file on disk is walked, .git,
+      testdata and untracked files included (52-69); GoVersion is itos-cc's own runtime.Version()
+      (inputs.go:21), not the project toolchain's go env GOVERSION. Inventory tracked files (git
+      ls-files or go list). The person (2026-10-18): land it with comment-free-unit-hash (#22) in
+      one window before T-46, so every snapshot goes stale once and the nightly measures once.
+    refs: ["#36", "#37"]
