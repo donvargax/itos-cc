@@ -26,7 +26,7 @@ func retry(op func() error) error {
 			return err
 		}
 		// A random sleep keeps writers that collided from colliding again.
-		time.Sleep(delay/2 + rand.N(delay/2+1))
+		time.Sleep(delay/2 + rand.N(delay/2+1)) //nolint:gosec // jitter between colliding writers needs no unpredictable randomness
 		delay = min(2*delay, 50*time.Millisecond)
 	}
 }

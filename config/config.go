@@ -97,7 +97,7 @@ func LoadFrom(root string) (*Config, error) {
 // Read is the text of itos-cc.yaml at the project root root, nil when there
 // is no file there.
 func Read(root string) ([]byte, error) {
-	data, err := os.ReadFile(filepath.Join(root, File))
+	data, err := os.ReadFile(filepath.Join(root, File)) //nolint:gosec // itos-cc.yaml at the project root the caller found
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, nil
 	}
@@ -278,7 +278,7 @@ func writeDocument(path string, data []byte) error {
 	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode().Perm()
 	}
-	return os.WriteFile(path, data, mode)
+	return os.WriteFile(path, data, mode) //nolint:gosec // path is itos-cc.yaml at the project root, rewritten keeping its own mode
 }
 
 // Exception and Tests are domain values; YAML stays at this boundary.

@@ -23,8 +23,10 @@ func PackageManager(dir string) string {
 		var pkg struct {
 			PackageManager string `json:"packageManager"`
 		}
-		if data, err := os.ReadFile(filepath.Join(d, "package.json")); err == nil {
-			json.Unmarshal(data, &pkg)
+		if data, err := os.ReadFile(filepath.Join(d, "package.json")); err == nil { //nolint:gosec // the manifest of the project the person selected, at or above its folder
+			// A package.json that does not parse names no manager: the
+			// lockfiles below, or npm, decide, as they would without it.
+			_ = json.Unmarshal(data, &pkg)
 		}
 		if name, _, _ := strings.Cut(pkg.PackageManager, "@"); name != "" {
 			return name

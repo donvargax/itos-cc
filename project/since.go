@@ -146,6 +146,7 @@ func DeletedSinceAt(ctx context.Context, dir, ref string) ([]string, error) {
 }
 
 func deletedSinceCommand(ref string) ([]string, error) {
+	//nolint:gosec // only the fixed git program; ref is the revision the person named with --since
 	out, err := exec.Command("git", "-c", "core.quotePath=false", "diff", "--name-only", "-z", "-M", "--no-color",
 		"--relative", "--diff-filter=D", ref+"...HEAD").Output()
 	return deletedNames(out, err, "", ref)
@@ -197,15 +198,6 @@ func changedLines(ranges []lines) []LineRange {
 	return out
 }
 
-func overlaps(ranges []lines, start, end int) bool {
-	for _, r := range ranges {
-		if r.start <= end && r.end >= start {
-			return true
-		}
-	}
-	return false
-}
-
 // diffLines reads a git diff -U0 with the prefixes a/ and b/: the lines of
 // each file's new side that its hunks changed, by the file's name as git
 // prints it, unquoted, and the old name of each renamed file by its new
@@ -222,7 +214,10 @@ func diffLines(diff string) (map[string][]lines, map[string]string) {
 		case header && strings.HasPrefix(line, "rename to "):
 			if to := quotedName(strings.TrimPrefix(line, "rename to ")); to != "" && from != "" {
 				renames[to] = from
-				out[to] = out[to]
+				// A file renamed without a change has an entry, and no lines.
+				if _, ok := out[to]; !ok {
+					out[to] = nil
+				}
 			}
 		case header && strings.HasPrefix(line, "+++ "):
 			// Only in a file's header: an added line "++ x" reads "+++ x".

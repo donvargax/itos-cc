@@ -18,7 +18,7 @@ func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bo
 		return false, mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
 	path := filepath.Join(e.RootDir, File)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // itos-cc.yaml at the project root this adapter was given
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return false, exceptionFailure(err)
 	}
@@ -39,7 +39,7 @@ func (e Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutan
 		return nil
 	}
 	path := filepath.Join(e.RootDir, File)
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // itos-cc.yaml at the project root this adapter was given
 	if err != nil {
 		return exceptionFailure(err)
 	}

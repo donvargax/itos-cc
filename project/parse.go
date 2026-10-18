@@ -15,7 +15,7 @@ func ParseFile(ctx context.Context, path string) (*lang.File, error) {
 	if spec == nil {
 		return nil, fmt.Errorf("unsupported language: %s", path)
 	}
-	src, err := os.ReadFile(path)
+	src, err := os.ReadFile(path) //nolint:gosec // the person selected the path; reading it is the point
 	if err != nil {
 		return nil, err
 	}

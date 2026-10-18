@@ -36,6 +36,7 @@ func renames(rev string) (map[string]string, error) {
 	root := Root()
 	// -z prints each path as it is, unquoted; --name-status a rename as
 	// R<score>, its old path and its new one, from the repository's top.
+	//nolint:gosec // only the fixed git program; rev is the revision the person named with --since
 	out, err := exec.Command("git", "diff", "--name-status", "-z", "-M", "--no-color", "--no-relative", "--diff-filter=R", rev, "--").Output()
 	if err != nil {
 		return nil, fmt.Errorf("git diff %s: %s", rev, gitError(nil, err))

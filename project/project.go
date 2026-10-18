@@ -48,7 +48,7 @@ func gitIgnores(ctx context.Context, dir string) bool {
 	if ctx.Err() != nil {
 		return false
 	}
-	cmd := exec.Command("git", "check-ignore", "-q", dir)
+	cmd := exec.Command("git", "check-ignore", "-q", dir) //nolint:gosec // only the fixed git program, asked about a folder of the selected tree
 	cmd.Dir = filepath.Dir(dir)
 	return cmd.Run() == nil
 }
@@ -147,7 +147,7 @@ func Changed() ([]string, error) {
 		{"diff", "--name-only", "-z", "--relative", "--diff-filter=AMR", "HEAD"},
 		{"ls-files", "-z", "--others", "--exclude-standard"},
 	} {
-		out, err := exec.Command("git", args...).Output()
+		out, err := exec.Command("git", args...).Output() //nolint:gosec // only the fixed git program, with the two fixed listings above
 		if err != nil {
 			// A repository without commits has no HEAD; fall back to the index.
 			if args[0] == "diff" {
