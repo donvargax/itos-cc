@@ -843,6 +843,11 @@
     the whole repository (itos-cc exited 0 or 1), "chore: record partial nightly mutation results"
     when it was cut off (a timeout, a kill, a lost runner). Done once a nightly on main has
     committed a finished run's results; partial saves alone do not close it.
+    Decision 49 (2026-10-17): once inprocess-mutation-tests lists the in-memory scenarios as
+    mutation.tests, the nightly drops --all-tests. Its kills are then keyed on the scenarios that
+    reach each line rather than the whole suite, so a test edit no longer stales every nightly
+    result, and each mutant costs seconds rather than cmd/itos-cc's suite. Measure the run before
+    re-scoping the nightly.
   done_when:
     - run: "test \"$(gh api repos/donvargax/itos-cc/actions/workflows/nightly.yml --jq .state)\" = active"
     - run: "test -n \"$(git log --since=2026-10-12 --format=%s -- .metrics/mutate | grep -x 'chore: record the nightly mutation results')\""
