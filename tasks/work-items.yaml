@@ -1842,7 +1842,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [refactor-final-proof]
+    depends_on: [T-132]
     kind: idea
     why: >
       q-51: every command, serve and mutation run --count included, cancels its context on Ctrl-C
@@ -1885,7 +1885,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-30, refactor-final-proof]
+    depends_on: [T-30, T-132]
     kind: idea
     why: >
       q-56: 80 usage, 81 unknown command, 82 a requirement not met (was 3), 100 internal (was 70),
@@ -2187,14 +2187,15 @@ items:
       itself to save as it goes, that is product behaviour with a scenario: stop and report so it is
       specified as a slice. Done once a scheduled or dispatched nightly on main completes its Mutate
       step over the whole repository and commits its results.
-  - id: refactor-final-proof
-    title: The binaries from before and after the refactor agree, but for its listed changes
+  - id: T-132
+    title: Prove the refactored binary matches the pre-refactor one but for its listed changes
     phase: 1
     owner: null
     status: todo
     depends_on: [T-116, T-119, T-120]
-    kind: idea
+    kind: task
     why: >
+      Was refactor-final-proof.
       The person, 2026-10-11: one byte-for-byte comparison once every command has moved (docs/go.md
       step 9), not one per move. Build the binary of T-29's parent and the refactored one; run both
       over the command lines step 9 lists for every command, plus each move's added cases (dry's
@@ -3293,7 +3294,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [template-adoption, refactor-final-proof, interrupt-exit-130, semantic-exit-codes, adr-47-code-review]
+    depends_on: [template-adoption, T-132, interrupt-exit-130, semantic-exit-codes, adr-47-code-review]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3552,7 +3553,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [refactor-final-proof]
+    depends_on: [T-132]
     kind: idea
     why: >
       Found while specifying T-77/MUT-144 with a real TypeScript fixture. Record results and a
@@ -3745,7 +3746,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [refactor-final-proof]
+    depends_on: [T-132]
     kind: idea
     why: >
       The person, 2026-10-17: the scenarios are itos-cc's spec, so after the refactor's final proof
@@ -3769,7 +3770,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [inprocess-mutation-tests, refactor-final-proof]
+    depends_on: [inprocess-mutation-tests, T-132]
     kind: idea
     why: >
       The person, 2026-10-17: fast mutation feedback on the changes about to be pushed, in the
