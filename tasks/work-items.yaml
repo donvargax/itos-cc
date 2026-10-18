@@ -1919,14 +1919,9 @@ items:
     title: internal/cli's Flags reads only switches and strings, in the words of neither crap nor dry
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      crap, dry and mutation run take whole numbers, numbers, durations and switches with choices
-      (--fail-uncovered=lines). Before they move onto kong, Flags needs a mapper for each kind with
-      a typed refusal worded as the hand parser's (--threshold needs a number, and was given "abc");
-      until then ParseProblem gives kong's own words under flags.value-invalid.
   - id: kong-interspersed-args
     title: kong reads a command's arguments in one run, so cli.Parse moves them behind its flags
     phase: 1
