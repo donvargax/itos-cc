@@ -293,6 +293,12 @@ items:
       by one). The first nightly left four survivors in crap.Score on *, 1 and -. Seeds are fixed so
       outcomes are reproducible under mutation (fast-check, Hypothesis and rapid take a seed; go
       test runs only a fuzz target's committed corpus).
+
+      The name above is out of date. crap.Score is now changerisk.Score
+      (internal/changerisk/crap.go:34). rapid (pgregory.net/rapid) has been adopted since, in
+      internal/selection's tests alone (select_test.go, admitted by depguard's rapid rule), and
+      tools/bin/domain-coverage runs the domains' tests with RAPID_CHECKS=1. What is left is
+      property tests where only the whole suite kills mutants, changerisk.Score's among them.
   - id: integration-coverage
     title: "Coverage from tests that run the built binary, through Go's GOCOVERDIR"
     phase: 1
