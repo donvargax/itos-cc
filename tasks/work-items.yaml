@@ -1660,83 +1660,13 @@ items:
       as it is" kept that case out of the fix, as did --fail-fast's unchanged output; whether it
       should say "failed", and whether its reused outcomes should still be written, is a decision to
       take.
-  - id: template-adoption
+  - id: T-141
     title: Move the code to the design go-template-itos brings
     phase: 1
     owner: null
     status: todo
     depends_on: [T-26]
-    kind: idea
-    why: >
-      The person (2026-10-11): adopt the full template (go-template-itos, stack go, feature cli)
-      properly once itos-template's fix for adopting an existing project lands; itos-cc's code then
-      follows the template's code design (shared domain behind ports, thin command slices,
-      internal/cli, kong, context cancellation, exit codes incl. 130 on interrupt), the bigger
-      refactor. Not before: no CLI-guidance work until then. A scratch trial on 2026-10-11 with
-      itos-template 0.27.0 and template v0.2.0 showed adopt alone installs nothing (missing files
-      count as our deletions) and adopt v0.1.0 + update to v0.2.0 conflicts in 30 paths. Needs itos
-      upgraded from 6.5.1 (template CI uses 7.4.0). Settles q-37 (fail-fast-cleanup-report).
-
-      2026-10-11: itos-template 0.28.0's adopt --merge takes the template's files in; the adoption
-      itself is T-25 (itos upgrade) then T-26 (adopt --merge, conflicts resolved toward itos-cc's
-      code), per q-47..q-49. This idea is what follows: slices porting kong + internal/cli, exit 130
-      on interrupt (settles q-37), ports and slices, the godog harness, each set-aside gate as a
-      task, then deleting the sample count app (q-48).
-
-      Stages, 2026-10-12 (S0..S3 done: T-29..T-43). S4 threads one context from main to every
-      package (T-47..T-50) and gates ADR-0030 (T-51). S5 moves crap: its feature files to godog,
-      shared selection flags and one parse of a selected source (shared-selection-flags,
-      slice-parse-source), a coverage domain behind a port shared with mutation (a question for the
-      person first), crap's scoring under internal/, then the crap slice. S6 and S7 move the
-      mutation group: the rest of flags-typed-value-mappers, snapshot-port-remove-and-other-roots,
-      mutate.feature to godog in pieces, the mutate domain and adapter split, then the slices. S8
-      moves serve (graph and server), after mutation since graph imports mutate. S9 puts version and
-      top-level dispatch on kong with the template's main.go (template-main-tests,
-      template-main-exception) and deletes the count sample (q-48). S10 is refactor-final-proof,
-      then interrupt-exit-130, then semantic-exit-codes.
-
-      From 2026-10-12 (decision on q-60): after S4, port-contract-suites then scenario-two-drivers
-      (units, dry, scrap in process with fakes); each later move (S5 crap, S6-S7 mutation, S8 serve)
-      adds its port's contract suite and its feature file to the in-process driver as part of the
-      move.
-
-      S6-S7 planned 2026-10-13 (clone notes .git/itos/s6-plan.md): T-68 choice flags, T-69 snapshot
-      port Remove/List, mutate.feature in 12 pieces (T-70..T-81) then metrics_snapshots (T-82), then
-      the internal/mutants domain, Workers/Toolchain/Fingerprints/Reach/History/Exceptions/Fresh
-      ports, the kong flip and the mutation slice's handlers in process; graph's use of mutate stays
-      for S8. The coordinator settled Q1 (Unstepped list), Q6 (Driver.Tests), Q2 (names
-      internal/mutants, internal/mutation, internal/worktrees, internal/githistory,
-      internal/importgraph) and Q4 (Exception and Tests in the domain, decision 47); Q5
-      (saves-each-file behaviour), Q3, Q7, Q10 wait for the person.
-
-      Coordinator overnight execution plan is now explicit: S7 T-87..T-101; S8 T-102..T-108 then
-      T-112 serve slice and T-113 cleanup; S9 T-114 Kong top-level/version preserving accepted
-      output, T-115 reconcile applicable main fixtures/exception, T-116 remove count sample as q-48.
-      T-109..T-111 were discarded draft reservations, not missing work. Current task ledger whys
-      supersede old plan placeholders. Q3 one internal/mutation group, Q7 parser flip before handler
-      moves, Q10 coarse Fresh boundary settled under the person's autonomous-choice authorization;
-      Q5 save-each-file stays a separate future feature, preserving publication behavior here. S10
-      final-proof follows T-116, then interruption and semantic-exit features must ship in one minor
-      release as already decided. Existing CLI contract overrides incompatible ignored template test
-      defaults; do not introduce completion/new JSON forms/version output inside a refactor. Future
-      feature-owned architecture T-86 remains after this current refactor. Before umbrella closure
-      reconcile parked ideas against actual commits/config; do not leave duplicate stale ideas as
-      hidden blockers or silently claim unfinished gates complete.
-
-      Closing state (2026-10-18). S0 to S7, S9 and S10 are done, and every gate set aside at T-26
-      (2cb5615) is wired. S8 (T-102 to T-108, T-112, T-113) is deferred (1b449af, the person
-      2026-10-17): serve leaves to become its own web app, so it stays on its legacy hand parser
-      (cmd/itos-cc/cli.go, serve.go, legacyServe in dispatch.go), graph/ and server/ stay at the top
-      level, mutation reaches graph.TestsImporting through internal/importgraph/reach.go, the live
-      scenarios of architecture_graph.feature, serve.feature and viewer.feature run through no
-      harness, the deferred mutation scenarios (MUT-134, 153, 154, 163, 207) run only through the
-      binary driver, and no workflow runs the viewer's tests. Those belong to the web-app move, not
-      this refactor. The template's scenario-moves range check (itos-policy.yaml) was neither
-      adopted nor set aside: it waits on itos#55 as the idea scenario-moves-check. Left before
-      closing: decision 47's review (adr-47-code-review, decision 50), T-132's edge-case differences
-      classified (its run 39101044040 shows 53 differences, 3 classified, and one untracked
-      regression: an unreadable itos-cc.yaml makes units, crap, dry and scrap exit 100), and the
-      stale whys the audit listed.
+    kind: task
   - id: left-out-singular-wording
     title: mutation check's left-out note reads "1 recorded mutant at sites gone"
     phase: 1
@@ -2855,7 +2785,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [template-adoption, T-132, slice-8, slice-7, T-140]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants

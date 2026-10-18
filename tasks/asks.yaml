@@ -224,17 +224,17 @@ questions:
     answer: "As recommended, 2026-10-11: a run removes an orphan only when git shows no rename of its file to a file that exists, in the --since range or uncommitted against HEAD. Fix before v0.13.0."
     decision: none
   - id: q-47
-    item: "template-adoption"
+    item: "T-141"
     question: "Adopting go-template-itos (MIT) with --merge leaves LICENSE in conflict with itos-cc's AGPL-3.0. Which license does itos-cc carry after adoption? Options: keep AGPL-3.0, or switch to MIT."
     answer: "Keep AGPL-3.0, 2026-10-11: the adoption resolves LICENSE to itos-cc's."
     decision: 32
   - id: q-48
-    item: "template-adoption"
+    item: "T-141"
     question: "The template brings a sample count app (internal/count, internal/counting, internal/disk, internal/stdin, features/count.feature) and its own itos-cc.yaml with exceptions for the template's main.go. Recommend deleting them at adoption; alternative: keep them as reference while porting, delete after the refactor."
     answer: "Keep for now, 2026-10-11: the sample app stays as reference while porting and goes after the refactor."
     decision: none
   - id: q-49
-    item: "template-adoption"
+    item: "T-141"
     question: "How far does the adoption commit go? Recommend staged: an itos upgrade task (6.5.1 to 7.5.0), then an adoption task taking the template's docs, tools, CI and ADRs (renumbered after ours) while keeping itos-cc's main.go and CLI behaviour, the new gates wired only as far as they pass; then slices porting the code design (kong + internal/cli, exit 130 on interrupt, ports and slices, the godog harness), each new gate a task of its own. Alternative: all at once, main.go rewritten onto kong and internal/cli in the adoption."
     answer: "Staged, as recommended, 2026-10-11."
     decision: 33
@@ -289,12 +289,12 @@ questions:
     answer: "As recommended (the person, 2026-10-12), all four points."
     decision: 45
   - id: q-62
-    item: "template-adoption"
+    item: "T-141"
     question: "Coverage in the refactored design (S5): coverage/ (3.8k lines) both runs test tools (go test -cover, Vitest, pytest-cov, Gradle and JaCoCo; subprocesses and run folders) and holds the pure Report that answers which lines are covered, a function's fraction and which tests reach a line; crap and mutation both use it. Recommend splitting it as lang was: the pure Report, its queries and the format parsers become an internal/coverage domain; a port declared there measures coverage for a request and gives a Report or a sealed failure (tool missing, measured nothing, no report, report unreadable), mapped once by cmd for crap and mutation; the adapter wraps the existing runner and its process groups; the port gets a contract suite and crap's scenarios run in process against its fake (decision 44). Alternative: a coverage port declared by crap's domain now and another for mutation when it moves, which keeps the rules but duplicates the model and the failure mapping."
     answer: "As recommended (the person, 2026-10-13): the split is the correct solution."
     decision: 46
   - id: q-63
-    item: "template-adoption"
+    item: "T-141"
     question: "Decision 29 lets an adapter import only port packages, never the domain it serves, and every adapter rule in .golangci.yml holds that. Decision 46's coverage port gives a Report, a domain type, so its adapter would import internal/coverage. Keep 29 whole (the port speaks raw results in port types and the domain parses and assembles them, an extra task reshaping the runner), or let an adapter import the domain it serves?"
     answer: "The person (2026-10-13): let the adapter import it. That rule was too strict: the domain leaking outward is fine, and preferred, since it avoids mappers, and parsing raw values in the domain would be worse. Nothing may leak into the domain."
     decision: 47
