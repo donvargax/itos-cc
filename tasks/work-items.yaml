@@ -3387,8 +3387,8 @@ items:
   - id: slice-10
     title: "Strict Go evidence carries between checkouts: toolchain resolution and tracked files only"
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
