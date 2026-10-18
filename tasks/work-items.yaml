@@ -3395,15 +3395,9 @@ items:
     title: A comment-only change inside a function leaves it fresh
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was comment-free-unit-hash.
-      Issue #22. UnitHash hashes the function's text including comments (internal/mutants/sites.go
-      about 101-106). The person (2026-10-18): exclude comments from the hash. Lands with
-      portable-go-evidence before T-46. strict-lines-nonexecutable-changes covers the
-      coverage-evidence half.
     refs: ["#22"]
   - id: slice-9
     title: Release and go install builds print the same version, without a v
