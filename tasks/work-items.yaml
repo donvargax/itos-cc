@@ -608,6 +608,10 @@ items:
       two directions: skip such a file here with a reason (mutation.not-built), or merge outcomes
       recorded on each platform into .metrics/mutate/ so a check on Linux trusts Windows CI's. A
       decision of its own.
+
+      The person (2026-10-18) (#18): files the current platform's build constraints leave out are
+      reported as not built here, with a named reason, and do not fail --fail-uncovered; outcomes
+      are not merged across platforms. A runtime.GOOS branch stays a test-design matter.
     refs: ["#18"]
   - id: mismatch-fix-quotes
     title: A mismatch's fix with --test-command nests single quotes
