@@ -3401,3 +3401,15 @@ items:
       (internal/coverage/formats.go:152-153), so a block of 0 statements that ran reads as not run
       (coverage.go:219-231, used at internal/mutants/run_plan.go:224). Wave 0.
     refs: ["#53"]
+  - id: coverage-thresholds-override
+    title: The selection's coverage run trips the project's coverage.thresholds
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #46. The Vitest and Jest coverage commands pass no thresholds override
+      (coverage/run.go:499-515), so a selection's partial run fails the project's floor. One item
+      with listed-coverage-failed (#15): a failed coverage run is not uncovered code. Wave 0.
+    refs: ["#46"]
