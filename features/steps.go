@@ -312,9 +312,12 @@ type Run struct {
 	Binary  string
 }
 
-// Result is what a run of itos-cc did: its exit code and its output.
+// Result is what a run of itos-cc did: its exit code and its output, and
+// the number of the signal whose default action ended it, 0 for a run that
+// exited by itself, its Exit then -1.
 type Result struct {
 	Exit           int
+	Signal         int
 	Stdout, Stderr string
 }
 
@@ -434,6 +437,10 @@ type world struct {
 
 	exit           int
 	stdout, stderr string
+	// signal is the number of the signal whose default action ended the
+	// last run a step started and stopped itself, 0 when it exited by
+	// itself.
+	signal int
 	// each are the runs of a When that runs several commands, each of which
 	// the exit code and stderr steps hold to; nil after a run of one.
 	each []outcome
@@ -540,6 +547,8 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
 	sc.Step(`^its problems in --json are:$`, w.problemsAre)
+	sc.Step(`^stderr says "([^"]*)" once$`, w.stderrSaysOnce)
+	sc.Step(`^it ends as (interrupted|terminated), which a shell reads as (\d+)$`, w.endsAs)
 	sc.Step(`^its standard output lists "([^"]*)"$`, func(text string) error {
 		if !slices.Contains(outputLines(w.stdout), text) {
 			return fmt.Errorf("standard output does not list %q\n%s", text, w.report())
@@ -665,7 +674,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 func (w *world) setUp(s *godog.Scenario) error {
 	w.problemSubject = nil
 	w.beforeRemove = nil
-	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges = nil, nil, nil, "", nil, "", nil
+	w.last, w.problem, w.without, w.wrote, w.each, w.binary, w.edges, w.signal = nil, nil, nil, "", nil, "", nil, 0
 	w.feature, w.scored, w.noTests, w.with, w.project = filepath.Base(s.Uri), nil, nil, nil, ""
 	var err error
 	w.dir, err = w.d.Folder()
@@ -772,7 +781,7 @@ func setEnv(env []string, name, value string) []string {
 // runEnv runs itos-cc with args in the folder dir with the variables env
 // sets, its exit code and output what the Then steps read.
 func (w *world) runEnv(dir string, env []string, args ...string) error {
-	w.last, w.each = &run{dir: dir, env: env, args: args}, nil
+	w.last, w.each, w.signal = &run{dir: dir, env: env, args: args}, nil, 0
 	var err error
 	w.exit, w.stdout, w.stderr, err = w.capture(dir, env, args...)
 	return err

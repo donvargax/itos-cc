@@ -53,6 +53,12 @@ func countedMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMut
 		if slices.Contains([]string{"173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "212"}, q.id) {
 			m.w.beforeRemove = q.cleanup
 		}
+		if slices.Contains(interruptIDs, q.id) {
+			// The interrupt's steps share the ownership and fail-fast steps'
+			// state, whose sentences they reuse.
+			q.e = m.execution
+			m.w.beforeRemove = q.cleanup
+		}
 		return ctx, nil
 	})
 	q.admissionSteps(sc)
@@ -60,6 +66,7 @@ func countedMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMut
 	q.frozenSteps(sc)
 	q.budgetSteps(sc)
 	q.interruptSteps(sc)
+	q.runInterruptSteps(sc)
 	q.worktreeSteps(sc)
 	q.listedSteps(sc)
 	q.preparationSteps(sc)

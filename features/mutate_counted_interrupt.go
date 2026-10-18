@@ -12,7 +12,7 @@ import (
 
 func (q *countedMutation) interruptSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a count-two selection has one completed judgment and one active judgment$`, q.interruptProject)
-	sc.Step(`^the counted run is interrupted while the second judgment is active$`, q.interruptRun)
+	sc.Step(`^the counted run is (interrupted|sent SIGTERM) while the second judgment is active$`, q.interruptRun)
 	sc.Step(`^the completed result remains visible$`, func() error { return q.e.completedFirst() })
 	sc.Step(`^the unfinished judgment is cancelled or undecided, not a killed or timed-out mutant$`, func() error { return q.e.cancelOutcome() })
 	sc.Step(`^no further command is admitted after the run abort$`, q.noCommandAfterAbort)
@@ -50,13 +50,17 @@ func (q *countedMutation) interruptProject(ctx context.Context) error {
 	}
 	return nil
 }
-func (q *countedMutation) interruptRun(ctx context.Context) error {
+func (q *countedMutation) interruptRun(ctx context.Context, how string) error {
+	send := Running.Interrupt
+	if how == "sent SIGTERM" {
+		send = Running.Terminate
+	}
 	var err error
 	q.traceBefore, err = q.e.m.w.d.Read(filepath.Join(q.e.outside, "trace.jsonl"))
 	if err != nil {
 		return err
 	}
-	if err := q.e.cancelParent(ctx); err != nil {
+	if err := q.e.signalParent(ctx, send); err != nil {
 		return err
 	}
 	q.primary = countedObservation{object: q.e.result, result: Result{Exit: q.e.m.w.exit, Stdout: q.e.m.w.stdout, Stderr: q.e.m.w.stderr}}

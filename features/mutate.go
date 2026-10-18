@@ -19,6 +19,9 @@ import (
 // mutateState is one mutate.feature scenario's state beside the world's.
 type mutateState struct {
 	w *world
+	// execution is the state of the ownership and fail-fast steps, which
+	// the interrupt's steps share.
+	execution *mutationExecution
 
 	// file is the source the scenario's mutation list listed, as the run
 	// named it, and sites what it listed.

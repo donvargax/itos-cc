@@ -8,6 +8,7 @@
 package features
 
 import (
+	"errors"
 	"os"
 	"syscall"
 
@@ -26,7 +27,18 @@ func interrupt(p *os.Process) error {
 	return windows.GenerateConsoleCtrlEvent(windows.CTRL_BREAK_EVENT, uint32(p.Pid))
 }
 
-// killedBySignal is whether the process ended by the console's default
-// handler, which exits STATUS_CONTROL_C_EXIT, so it never handled the
-// interrupt it was sent.
-func consoleInterruptExit() uint32 { return uint32(windows.STATUS_CONTROL_C_EXIT) }
+// errNoSignals is why Windows takes no step that sends a signal other than
+// the console's interrupt: no process can send another SIGTERM or SIGINT.
+var errNoSignals = errors.New("windows sends a process no SIGTERM or SIGINT of another's")
+
+// terminate cannot send SIGTERM on Windows.
+func terminate(*os.Process) error { return errNoSignals }
+
+// ownGroup starts a process in a console process group of its own.
+func ownGroup() *syscall.SysProcAttr { return interruptAttributes() }
+
+// interruptGroup cannot send SIGINT to a group on Windows.
+func interruptGroup(int) error { return errNoSignals }
+
+// killGroup kills nothing on Windows, where no step starts a group.
+func killGroup(int) error { return nil }

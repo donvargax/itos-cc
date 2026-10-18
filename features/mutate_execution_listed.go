@@ -159,6 +159,9 @@ func executionStop(a map[string]any, rule string) error {
 	return nil
 }
 func (q *mutationExecution) listedBlocked() error {
+	if q.id == "250" {
+		return q.keptStop()
+	}
 	if q.m.w.exit != 1 {
 		return fmt.Errorf("blocked selection exit%d", q.m.w.exit)
 	}
@@ -236,4 +239,24 @@ func executionJSONEqual(a, b any) bool {
 	left, _ := json.Marshal(a)
 	right, _ := json.Marshal(b)
 	return slices.Equal(left, right)
+}
+
+// keptStop is whether a fail-fast run whose other judgment's cleanup failed
+// still reports its stop at the survivor that triggered it, Gate.
+func (q *mutationExecution) keptStop() error {
+	if q.result == nil {
+		return fmt.Errorf("the run printed no JSON object\n%s", q.m.w.report())
+	}
+	if err := executionStop(q.result, "mutation.survived"); err != nil {
+		return err
+	}
+	trigger, err := executionMutant(q.result, "main.go", "Gate")
+	if err != nil {
+		return err
+	}
+	subject := executionMap(executionMap(q.result, "stop"), "subject")
+	if subject["file"] != "main.go" || subject["function"] != trigger["function"] {
+		return fmt.Errorf("the stop's subject: %v", subject)
+	}
+	return nil
 }

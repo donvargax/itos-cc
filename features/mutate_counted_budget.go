@@ -386,7 +386,7 @@ func (q *countedMutation) outputUnfinished(ctx context.Context) error {
 	if err = interrupted.interruptProject(ctx); err != nil {
 		return err
 	}
-	if err = interrupted.interruptRun(ctx); err != nil {
+	if err = interrupted.interruptRun(ctx, "interrupted"); err != nil {
 		return err
 	}
 	if err = interrupted.e.cancelOutcome(); err != nil {

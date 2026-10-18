@@ -20,4 +20,16 @@ func interrupt(p *os.Process) error {
 	return p.Signal(os.Interrupt)
 }
 
-func consoleInterruptExit() uint32 { return 0 }
+// terminate sends the process SIGTERM, as CI does to cancel a job.
+func terminate(p *os.Process) error { return p.Signal(syscall.SIGTERM) }
+
+// ownGroup starts a process as the leader of a process group of its own,
+// which interruptGroup signals as a terminal signals its foreground group.
+func ownGroup() *syscall.SysProcAttr { return &syscall.SysProcAttr{Setpgid: true} }
+
+// interruptGroup sends SIGINT to every process of the group led by pid, as
+// Ctrl-C at a terminal reaches the shell and the command it runs.
+func interruptGroup(pid int) error { return syscall.Kill(-pid, syscall.SIGINT) }
+
+// killGroup kills every process of the group led by pid.
+func killGroup(pid int) error { return syscall.Kill(-pid, syscall.SIGKILL) }

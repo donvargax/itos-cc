@@ -27,7 +27,12 @@ func (q *mutationExecution) partialSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the file's snapshot keeps each completed or reused judgment with its original scope and freshness evidence$`, q.partialProof)
 	sc.Step(`^cancelled, blocked and unattempted sites get no outcome and no new freshness proof$`, q.unfinishedProof)
 	sc.Step(`^mutation check still fails the functions with missing valid site entries$`, q.partialCheck)
-	sc.Step(`^the file's annotated source bytes are unchanged$`, func() error { return q.sourceUnchanged("a.go") })
+	sc.Step(`^the file's annotated source bytes are unchanged$`, func() error {
+		if q.owned != nil && q.owned.complete {
+			return q.sourceUnchanged("main.go")
+		}
+		return q.sourceUnchanged("a.go")
+	})
 	sc.Step(`^a file with fresh complete mutation results$`, q.completePrior)
 	sc.Step(`^a fail-fast --mutate-all rerun of it is cancelled by a stop elsewhere$`, q.cancelForced)
 	sc.Step(`^its prior fresh results still satisfy mutation check$`, q.priorCacheUsable)
@@ -303,6 +308,9 @@ func (q *mutationExecution) priorPartial() error {
 	return q.partialDeclaration(true, false)
 }
 func (q *mutationExecution) partialProof() error {
+	if q.owned != nil && q.owned.complete {
+		return q.interruptedProof()
+	}
 	if q.m.w.exit != 1 {
 		return fmt.Errorf("partial exit%d", q.m.w.exit)
 	}
@@ -342,6 +350,9 @@ func (q *mutationExecution) partialProof() error {
 	return nil
 }
 func (q *mutationExecution) unfinishedProof() error {
+	if q.owned != nil && q.owned.complete {
+		return q.interruptedUnfinished()
+	}
 	for _, name := range []string{"A2"} {
 		_, entries, err := q.recordFile("a.go", name)
 		if err != nil {

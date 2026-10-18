@@ -26,10 +26,20 @@ type ownershipExecution struct {
 	trigger          FixturePeer
 	order            []string
 	block            string
+	// keep is the function whose judgment the keeper leaves its owned
+	// group's cleanup unable to finish, "" for none; keepBlock keeps the
+	// block's, once the run's order names it. complete says the run is a
+	// complete one, not counted.
+	keep      string
+	keepBlock bool
+	complete  bool
+	// interrupted is when the run was interrupted a second time.
+	interrupted time.Time
 }
 type ownedProcessRecord struct {
 	Nonce     string `json:"nonce"`
 	PID       int    `json:"pid"`
+	Group     int    `json:"group"`
 	ParentPID int    `json:"parent_pid"`
 	Role      string `json:"role"`
 	Function  string `json:"function"`
@@ -111,7 +121,14 @@ func (q *mutationExecution) writeControl(mode string, closed, release bool, bloc
 	if release {
 		return q.m.w.d.Write(filepath.Join(q.outside, "control.json.release"), []byte("release\n"))
 	}
-	b, err := json.Marshal(map[string]any{"Mode": mode, "Closed": closed, "Release": release, "Block": block})
+	keep := ""
+	if q.owned != nil {
+		keep = q.owned.keep
+		if q.owned.keepBlock {
+			keep = block
+		}
+	}
+	b, err := json.Marshal(map[string]any{"Mode": mode, "Closed": closed, "Release": release, "Block": block, "Keep": keep})
 	if err != nil {
 		return err
 	}
@@ -294,7 +311,7 @@ func (q *mutationExecution) waitOwned(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	q.m.w.exit = r.Exit
+	q.m.w.exit, q.m.w.signal, q.m.w.last = r.Exit, r.Signal, nil
 	q.m.w.stdout = r.Stdout
 	q.m.w.stderr = r.Stderr
 	if err = json.Unmarshal([]byte(r.Stdout), &q.result); err != nil {
@@ -402,6 +419,12 @@ func (q *mutationExecution) successOutcome() error {
 	return nil
 }
 func (q *mutationExecution) cancelParent(ctx context.Context) error {
+	return q.signalParent(ctx, Running.Interrupt)
+}
+
+// signalParent sends the counted run send, once its first judgment's
+// progress shows, and waits for it to return.
+func (q *mutationExecution) signalParent(ctx context.Context, send func(Running, context.Context) error) error {
 	ready, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	ticker := time.NewTicker(5 * time.Millisecond)
@@ -418,7 +441,7 @@ func (q *mutationExecution) cancelParent(ctx context.Context) error {
 		}
 	}
 	q.owned.released = time.Now()
-	if err := q.owned.run.Interrupt(ctx); err != nil {
+	if err := send(q.owned.run, ctx); err != nil {
 		return err
 	}
 	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(5*time.Second))
@@ -426,6 +449,9 @@ func (q *mutationExecution) cancelParent(ctx context.Context) error {
 	return q.waitOwned(bounded)
 }
 func (q *mutationExecution) cancelOutcome() error {
+	if q.owned != nil && q.owned.complete {
+		return q.interruptedOutcome()
+	}
 	mu, err := countedExecution(q.result, q.owned.block)
 	if err != nil {
 		return err

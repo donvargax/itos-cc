@@ -19,6 +19,11 @@ type Running interface {
 	Output() (stdout, stderr string)
 	Wait(context.Context) (Result, error)
 	Interrupt(context.Context) error
+	// Terminate sends the run SIGTERM, as CI does to cancel a job; Windows
+	// sends none.
+	Terminate(context.Context) error
+	// Kill ends a run that would not, by the system's own kill.
+	Kill(context.Context) error
 	Close(context.Context) error
 }
 
@@ -86,7 +91,7 @@ func (p *productRun) Wait(ctx context.Context) (Result, error) {
 	case <-p.done:
 	}
 	out, stderr := p.Output()
-	r := Result{Stdout: out, Stderr: stderr}
+	r := Result{Stdout: out, Stderr: stderr, Signal: signalOf(p.cmd.ProcessState)}
 	var exit *exec.ExitError
 	if errors.As(p.err, &exit) {
 		r.Exit = exit.ExitCode()
@@ -103,6 +108,36 @@ func (p *productRun) Interrupt(ctx context.Context) error {
 		return nil
 	default:
 		err := interrupt(p.cmd.Process)
+		if errors.Is(err, os.ErrProcessDone) {
+			return nil
+		}
+		return err
+	}
+}
+func (p *productRun) Terminate(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	select {
+	case <-p.done:
+		return nil
+	default:
+		err := terminate(p.cmd.Process)
+		if errors.Is(err, os.ErrProcessDone) {
+			return nil
+		}
+		return err
+	}
+}
+func (p *productRun) Kill(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	select {
+	case <-p.done:
+		return nil
+	default:
+		err := p.cmd.Process.Kill()
 		if errors.Is(err, os.ErrProcessDone) {
 			return nil
 		}

@@ -3,18 +3,26 @@ package features
 import (
 	"os"
 	"os/exec"
-	"runtime"
+	"syscall"
 )
 
-// The existing interrupt fixture and the product-only running driver share the
+// The interrupt steps and the product-only running driver share the
 // native signal operations. Keep policy and mutation out of tagged leaves.
 func interruptible(cmd *exec.Cmd) { cmd.SysProcAttr = interruptAttributes() }
 
-func killedBySignal(state *os.ProcessState) bool { return signalExit(state, runtime.GOOS) }
-func signalExit(state *os.ProcessState, platform string) bool {
-	if platform == "windows" {
-		return uint32(state.ExitCode()) == consoleInterruptExit() //nolint:gosec // a Windows exit code is a uint32 that ExitCode gives as int; converting back restores it
+// signalOf is the number of the signal that ended a process, 0 when it
+// exited by itself: as Linux and macOS report a process the signal's
+// default action ended, which Windows never does.
+func signalOf(state *os.ProcessState) int {
+	if state == nil {
+		return 0
 	}
-	status, ok := state.Sys().(interface{ Signaled() bool })
-	return ok && status.Signaled()
+	status, ok := state.Sys().(interface {
+		Signaled() bool
+		Signal() syscall.Signal
+	})
+	if !ok || !status.Signaled() {
+		return 0
+	}
+	return int(status.Signal())
 }

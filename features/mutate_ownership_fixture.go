@@ -16,11 +16,14 @@ import (
  "os"
  "os/exec"
  "path/filepath"
+ "runtime"
+ "strconv"
  "strings"
+ "syscall"
  "testing"
  "time"
 )
-type fixtureControl struct {Mode string;Block string;Closed bool;Release bool}
+type fixtureControl struct {Mode string;Block string;Keep string;Closed bool;Release bool}
 const ownedControl = CONTROL_PATH
 func control(t *testing.T)fixtureControl {
  t.Helper();var c fixtureControl
@@ -56,6 +59,7 @@ func TestTrial(t *testing.T){
  if c.Mode=="cancel"&&name!=c.Block{t.Fatal("first boundary changed",name)}
  connected(t,"command",name)
  startOwned(t,"child",name,c.Closed)
+ if c.Keep==name{keep(t,name)}
  if c.Mode=="success"{
   ticker:=time.NewTicker(5*time.Millisecond);defer ticker.Stop()
   for !released(t){<-ticker.C}
@@ -70,6 +74,31 @@ func startOwned(t *testing.T,role,name string,closed bool){
  if err:=cmd.Start();err!=nil{t.Fatal(err)}
  // These children intentionally outlive a successful test. The public product
  // scope owns cleanup and joins their processes/output pipes, not the fixture.
+}
+// keep starts the keeper, which leaves the owned group's cleanup unable to
+// finish: on Linux it holds the owned command's output open from a group of
+// its own, and on macOS it keeps a child's zombie in the owned group,
+// unreaped, which that group's cleanup waits to be gone.
+func keep(t *testing.T,name string){
+ t.Helper();cmd:=exec.Command(os.Args[0],"-test.run=^TestKeeper$")
+ cmd.Env=append(os.Environ(),"T80_HELPER_ROLE=keeper","T80_HELPER_FUNCTION="+name,"T80_OWNED_GROUP="+strconv.Itoa(syscall.Getpgrp()))
+ cmd.SysProcAttr=&syscall.SysProcAttr{Setpgid:true}
+ if runtime.GOOS=="linux"{
+  out,err:=os.OpenFile(fmt.Sprintf("/proc/%d/fd/1",os.Getppid()),os.O_WRONLY,0);if err!=nil{t.Fatal(err)}
+  cmd.Stdout=out
+ }
+ if err:=cmd.Start();err!=nil{t.Fatal(err)}
+}
+func TestKeeper(t *testing.T){
+ if os.Getenv("T80_HELPER_ROLE")!="keeper"{return}
+ if runtime.GOOS!="linux"{
+  group,err:=strconv.Atoi(os.Getenv("T80_OWNED_GROUP"));if err!=nil{t.Fatal(err)}
+  zombie:=exec.Command(os.Args[0],"-test.run=^$")
+  zombie.SysProcAttr=&syscall.SysProcAttr{Setpgid:true,Pgid:group}
+  if err=zombie.Start();err!=nil{t.Fatal(err)}
+ }
+ connected(t,"keeper",os.Getenv("T80_HELPER_FUNCTION"))
+ select{}
 }
 func TestOwned(t *testing.T){
  role:=os.Getenv("T80_HELPER_ROLE");if role==""{return}
@@ -89,7 +118,7 @@ func connected(t *testing.T,role,name string){
  cwd,err:=os.Getwd();if err!=nil{t.Fatal(err)};cwd,err=filepath.EvalSymlinks(cwd);if err!=nil{t.Fatal(err)}
  source,err:=os.ReadFile("main.go");if err!=nil{t.Fatal(err)};sha:=sha256.Sum256(source)
  original,err:=filepath.EvalSymlinks(os.Getenv("T80_ORIGINAL"));if err!=nil{t.Fatal(err)}
- record,err:=json.Marshal(map[string]any{"original_root":original,"nonce":nonce,"pid":pid,"parent_pid":os.Getppid(),"role":role,"function":name,"cwd":cwd,"source_sha256":hex.EncodeToString(sha[:]),"closed_streams":control(t).Closed});if err!=nil{t.Fatal(err)}
+ record,err:=json.Marshal(map[string]any{"original_root":original,"nonce":nonce,"pid":pid,"group":syscall.Getpgrp(),"parent_pid":os.Getppid(),"role":role,"function":name,"cwd":cwd,"source_sha256":hex.EncodeToString(sha[:]),"closed_streams":control(t).Closed});if err!=nil{t.Fatal(err)}
  final:=filepath.Join(filepath.Dir(ownedControl),name+"-"+role+".json")
  temp:=final+"."+nonce
  if err=os.WriteFile(temp,record,0600);err!=nil{t.Fatal(err)}

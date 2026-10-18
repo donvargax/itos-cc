@@ -40,6 +40,7 @@ func executionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	q := &mutationExecution{m: m, s: s}
 	sc.Before(func(ctx context.Context, scenario *godog.Scenario) (context.Context, error) {
 		*q = mutationExecution{m: m, s: s, command: "go test -count=1 ."}
+		m.execution = q
 		for _, tag := range scenario.Tags {
 			if strings.HasPrefix(tag.Name, "@ID-MUT-") {
 				q.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")

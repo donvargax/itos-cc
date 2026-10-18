@@ -63,6 +63,8 @@ func cliSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^it ends with examples and the address for issue reports$`, c.endsWithExamples)
 	sc.Step(`^the binary was built (.+)$`, c.builtAs)
 	sc.Step(`^the first line of stdout is "([^"]*)"$`, c.firstLineIs)
+	sc.Step(`^its help lists the exit codes (.+), and no other$`, c.listsExitCodes)
+	sc.Step(`^it lists (\d+) as "([^"]*)"$`, c.listsExitAs)
 
 	// Flags.
 	sc.Step(`^it is the same as "itos-cc ([^"]*)"$`, c.sameAs)
@@ -169,6 +171,74 @@ func (c *cliState) endsWithExamples() error {
 	}
 	if last := lines[len(lines)-1]; !regexp.MustCompile(`^Report issues at https://\S+$`).MatchString(last) {
 		return fmt.Errorf("the help ends with %q, not the address for issue reports\n%s", last, c.w.report())
+	}
+	return nil
+}
+
+// exitCodes are the exit codes the help on stdout lists, each with what it
+// means: the lines of its section whose heading begins "Exit codes", each
+// a code and its meaning, up to the blank line that ends it.
+func (c *cliState) exitCodes() (map[int]string, error) {
+	codes := map[int]string{}
+	in := false
+	line := regexp.MustCompile(`^\s+(\d+)\s+(.*)$`)
+	for _, l := range outputLines(c.w.stdout) {
+		l = strings.TrimSuffix(l, "\r")
+		switch {
+		case strings.HasPrefix(l, "Exit codes"):
+			in = true
+		case in && strings.TrimSpace(l) == "":
+			in = false
+		case in:
+			m := line.FindStringSubmatch(l)
+			if m == nil {
+				return nil, fmt.Errorf("%q in the help's exit codes is no code and its meaning\n%s", l, c.w.report())
+			}
+			code, _ := strconv.Atoi(m[1])
+			codes[code] = m[2]
+		}
+	}
+	if len(codes) == 0 {
+		return nil, fmt.Errorf("the help lists no exit codes\n%s", c.w.report())
+	}
+	return codes, nil
+}
+
+// listsExitCodes is whether the help lists the exit codes of the list, and
+// none besides.
+func (c *cliState) listsExitCodes(list string) error {
+	codes, err := c.exitCodes()
+	if err != nil {
+		return err
+	}
+	var want, got []int
+	for _, word := range splitList(list) {
+		code, err := strconv.Atoi(word)
+		if err != nil {
+			return fmt.Errorf("%q is no exit code", word)
+		}
+		want = append(want, code)
+	}
+	for code := range codes {
+		got = append(got, code)
+	}
+	slices.Sort(want)
+	slices.Sort(got)
+	if !slices.Equal(got, want) {
+		return fmt.Errorf("the help lists the exit codes %v, not %v\n%s", got, want, c.w.report())
+	}
+	return nil
+}
+
+// listsExitAs is whether the help lists the exit code code, meaning what
+// begins with meaning.
+func (c *cliState) listsExitAs(code int, meaning string) error {
+	codes, err := c.exitCodes()
+	if err != nil {
+		return err
+	}
+	if got, ok := codes[code]; !ok || !strings.HasPrefix(got, meaning) {
+		return fmt.Errorf("the help lists %d as %q, not as %q\n%s", code, got, meaning, c.w.report())
 	}
 	return nil
 }

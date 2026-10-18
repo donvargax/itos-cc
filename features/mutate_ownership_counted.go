@@ -31,7 +31,11 @@ func (q *mutationExecution) concurrentOwned(ctx context.Context) error {
 	if !CountedOn(q.m.w.d.Platform()) {
 		return fmt.Errorf("%w: Unix process ownership", godog.ErrSkip)
 	}
-	q.owned = &ownershipExecution{mode: "failfast"}
+	keep := ""
+	if q.owned != nil {
+		keep = q.owned.keep
+	}
+	q.owned = &ownershipExecution{mode: "failfast", keep: keep}
 	var err error
 	q.peers, err = q.m.w.d.FixturePeers(ctx)
 	if err != nil {
@@ -100,6 +104,14 @@ func (q *mutationExecution) releaseSurvivor(ctx context.Context) error {
 	q.owned.released = time.Now()
 	if err := q.writeControl("failfast", false, true, ""); err != nil {
 		return err
+	}
+	// A kept judgment's cleanup fails only at the shared deadline, so its
+	// run returns after it.
+	if q.owned.keep != "" {
+		bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(15*time.Second))
+		defer stop()
+		r, err := q.owned.run.Wait(bounded)
+		return q.returned(ctx, r, err, time.Now())
 	}
 	bounded, stop := context.WithDeadline(ctx, q.owned.released.Add(5*time.Second))
 	defer stop()

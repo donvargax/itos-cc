@@ -106,13 +106,20 @@ resolver reads the same edges from the files' text; the in-process driver gives 
 languages' transitive closure, Python's applicable `conftest.py` and Kotlin's references. A
 fixture whose files import one another declares those edges, so both drivers see the same reach.
 
-An interrupt is the binary driver's alone (`interrupt_test.go`), sent as each system delivers
-Ctrl-C, from one build-tagged file per system:
-`os.Interrupt` on Linux and macOS, and on Windows `CTRL_BREAK_EVENT` to the binary started in a
-process group of its own, which Go reports as the same signal. The step first writes more to the
-binary's open stdin than any pipe holds unread, so the write returns only once the binary is
-reading, its interrupt handling already in place; no sleep guesses when. A run the interrupt
-killed by the system's default action fails the step: it never handled the interrupt.
+An interrupt is the binary driver's alone (`interrupt_test.go`, and `Running`'s `Interrupt` and
+`Terminate` for a mutation run), sent as each system delivers it, from one build-tagged file per
+system: `os.Interrupt` on Linux and macOS, and on Windows `CTRL_BREAK_EVENT` to the binary started
+in a process group of its own, which Go reports as the same signal; SIGTERM, and SIGINT to a
+shell's process group as Ctrl-C at a terminal sends it, on Linux and macOS alone, Windows skipping
+those scenarios. A step signals a run once its output shows it under way, serve's line saying it
+serves, or a project's test publishing that the process it started runs; no sleep guesses when.
+A run still under way ten seconds after the signal is killed and read as never ending. A run ends
+as interrupted, or terminated, only when it reported the interrupt first, on stderr or in its
+`--json` object, and then ended by the signal's own default action on Linux and macOS, which a
+shell reads as 130 or 143, or exited 130 on Windows: a run the signal killed before it reported
+never handled it. A shell's scenarios run `bash`, which stops a loop when the command it waits on
+ends by the signal, as POSIX shells do, skipping where there is none. `Result.Signal` gives the
+signal whose default action ended a run, its `Exit` then -1.
 
 ## Which files run
 

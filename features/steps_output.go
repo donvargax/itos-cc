@@ -207,6 +207,71 @@ func (w *world) problemsAre(table *godog.Table) error {
 	return nil
 }
 
+// stderrSaysOnce is whether exactly one line of stderr begins with text.
+func (w *world) stderrSaysOnce(text string) error {
+	n := 0
+	for _, line := range outputLines(w.stderr) {
+		if strings.HasPrefix(line, text) {
+			n++
+		}
+	}
+	if n != 1 {
+		return fmt.Errorf("%d lines of stderr begin %q, not one\n%s", n, text, w.report())
+	}
+	return nil
+}
+
+// endSignals are the signals a run ends by, as a scenario names its end,
+// by their numbers on Linux and macOS: SIGINT and SIGTERM.
+var endSignals = map[string]int{"interrupted": 2, "terminated": 15}
+
+// endsAs is whether the last run, which a step signalled, reported its
+// interrupt first, on stderr or in its --json object, and then ended as
+// how says, which a shell reads as status, 128 and the signal's number: on
+// Linux and macOS by that signal's default action, the one end a shell
+// stops its loop for, and on Windows, where no process ends so, with exit
+// 130. A run that ended by the signal without reporting never handled it.
+func (w *world) endsAs(how string, status int) error {
+	if want := 128 + endSignals[how]; status != want {
+		return fmt.Errorf("a shell reads %d for a command %s, not %d", want, how, status)
+	}
+	if !w.reportedInterrupt() {
+		return fmt.Errorf("itos-cc ended without reporting the interrupt\n%s", w.report())
+	}
+	if w.d.Platform() == "windows" {
+		if w.exit != 130 {
+			return fmt.Errorf("itos-cc exited %d, not 130\n%s", w.exit, w.report())
+		}
+		return nil
+	}
+	if w.signal != endSignals[how] {
+		return fmt.Errorf("itos-cc ended with exit %d and signal %d, not by signal %d, which a shell reads as %d\n%s", w.exit, w.signal, endSignals[how], status, w.report())
+	}
+	return nil
+}
+
+// reportedInterrupt is whether the last run said it was interrupted: a
+// line of stderr beginning "itos-cc: interrupted", or a problem of rule
+// interrupted in its --json object.
+func (w *world) reportedInterrupt() bool {
+	for _, line := range outputLines(w.stderr) {
+		if strings.HasPrefix(line, "itos-cc: interrupted") {
+			return true
+		}
+	}
+	var object map[string]any
+	if err := json.Unmarshal([]byte(w.stdout), &object); err != nil {
+		return false
+	}
+	problems, _ := object["problems"].([]any)
+	for _, one := range problems {
+		if p, _ := one.(map[string]any); p["rule"] == "interrupted" {
+			return true
+		}
+	}
+	return false
+}
+
 // runObject is the --json object of the last run: of standard output when
 // the steps started the run themselves, with no last run, else as
 // lastObject gives it.
