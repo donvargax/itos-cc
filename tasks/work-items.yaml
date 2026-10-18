@@ -3519,14 +3519,15 @@ items:
       (internal/mutation/mutation.go about 91-96). --prune reports each removed entry and keeps
       other keys and comments. After except-byte-exact.
     refs: ["#51"]
-  - id: except-repoint
+  - id: slice-22
     title: Excepting the same change in the same function re-points a stale entry
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-repoint.
       Issue #50. The person (2026-10-18): keep --renew's line-text guard (mutate.feature:2225,
       internal/mutants/renew.go:274-288); excepting the same change in the same function replaces
       the stale entry and keeps its reason. Also run and check say gone where --renew says changed:
