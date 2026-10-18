@@ -3308,17 +3308,9 @@ items:
     title: serve announces the address it listens on, so --port 0 works
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      Found by T-128. serve listens on the port --port names and announces that number, so --port 0
-      would announce port 0, not the one the system gave it. The binary driver's Graph therefore
-      asks the system for a free port, closes it and hands it to serve; with scenarios running at
-      once another can be handed the same port in between, so Graph retries serve on another port
-      when it exits 75 before it is ready. If serve announced the address its listener got, a
-      caller, the harness among them, could pass --port 0 and need no retry. It belongs with serve's
-      move (T-102 to T-108, T-112, T-113).
   - id: T-133
     title: Move the undecodable snapshot's wording from the snapshot port into metricsdir
     phase: 1
