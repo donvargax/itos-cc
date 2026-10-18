@@ -5110,3 +5110,26 @@
     what it checks. The fix belongs only in the step code; no feature file and no product code
     changes. Linux may not reproduce it: run the scenario repeatedly here, then let cd.yml on macOS
     judge.
+- id: T-135
+  type: refactor
+  title: Declare coverage's Measurer in its domain and drop the refactor's forwarders
+  why: >
+    Decision 47's review (A47-1, A47-9, A47-10; the person 2026-10-18 chose to change A47-1).
+    internal/coverage/port/measurer.go declares Measurer[R any] only to dodge the cycle the domain's
+    import of its port makes, and all eleven uses are Measurer[*coverage.Report]. Declare a plain
+    Measurer in the internal/coverage root beside MutationMeasurer, which embeds it, returning
+    (*Report, port.Failure); Request, Failure, Files and the gaps stay in port, so no cycle and no
+    depguard change. Every reference moves to coverage.Measurer: crap and its test,
+    cmd/itos-cc/adapters.go, coveragetools and its test, both porttest packages (MeasurerContract
+    may stay in internal/coverage/port/porttest). Also remove coverage/run.go's GradleTests and
+    MavenTests, which only forward to mutants 'until T-90' (T-90 is done), calling mutants directly.
+    Amend .golangci.yml's adapter-rule comment and docs/go.md's boundary list to say an adapter may
+    also use the shared pure domains its rule names (lang, selection), as freshenv, testtools and
+    testinputs do, and docs/go.md's Measurer passages. No behaviour change: every scenario and
+    contract holds as it is. workdir.Surroundings stays.
+  done_when:
+    - run: go build ./...
+    - run: go test ./internal/coverage/... ./internal/coveragetools/... ./internal/crap/...
+    - run: sh -c '! grep -rn --include=*.go "Measurer\[" .'
+    - run: go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -scenarios='@ID-CRAP-'
+      timeout: 600
