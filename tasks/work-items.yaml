@@ -3941,3 +3941,28 @@ items:
       than the real timeout on a Windows runner. Reporting both (say in --json's run summary and the
       baseline's stderr line) would let a person see why a mutant timed out and let the scenario
       check the timeout exactly.
+  - id: quality-report-evidence
+    title: Coverage, CRAP and scrap reports carry evidence that they measured the selected change
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #28 asks that CI can tell a coverage, CRAP or scrap report was measured for the selected
+      committed change, or that a reused one still matches its inputs, since a report file being
+      there proves neither. Today crap and scrap select by paths and --changed alone, with no
+      committed range (internal/cli/selection.go), .metrics/crap.json and .metrics/scrap.json record
+      measurements with no source, test, config or tool fingerprints, coverage that could not be
+      measured fails crap only under --threshold (ID-CRAP-11, ID-CRAP-12), and scrap has no flag
+      that fails on its recommendations. The issue asks for opt-in evidence, the default advisory
+      behaviour kept. It wants the range or subjects measured and left unmeasured, the provider's
+      version and config and the inputs behind each result, and whether a result was measured anew
+      or validly reused; stale, malformed, missing or unexpectedly empty evidence refused, and an
+      empty selection reported as not applicable; coverage required apart from any CRAP threshold;
+      scrap's analysis shown complete while its recommendations stay advisory, a recommendation and
+      a measurement failure having distinct outcomes; committed-range targeting with no full
+      coverage or mutation prepass; and stable JSON fields, problem rules and scenarios for each
+      case. It is apart from bounded mutation freshness (#27). Command names and schema are open, so
+      it is specified with the person before any scenario.
+    refs: ["#28"]
