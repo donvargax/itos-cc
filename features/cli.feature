@@ -66,6 +66,56 @@ Feature: Command line
         | crapp       | crapp  | . Did you mean 'crap'?    |
         | help nosuch | nosuch | .                         |
 
+    # Binary-only for good, as ID-CLI-03: each row builds itos-cc as a
+    # release or go install makes it. Issue #19: the release archive said
+    # 1.2.3 and go install v1.2.3. Every version printed loses a leading v,
+    # a stamp given with one and a checkout's pseudo-version included, so
+    # ID-CLI-03's rows change with this slice.
+    @wip @binary-only @slice-9 @ID-CLI-18
+    Scenario Outline: A release and a go install of one version say it alike, with no v
+      Given the binary was built <how>
+      When I run "itos-cc version"
+      Then the first line of stdout is "itos-cc 1.2.3"
+      When I run "itos-cc version --json"
+      Then stdout is:
+        """
+        {
+          "ok": true,
+          "schema": 1,
+          "version": "1.2.3"
+        }
+        """
+
+      Examples:
+        | how                                     |
+        | by a release with -X main.version=1.2.3 |
+        | by "go install ...@v1.2.3"              |
+
+    # Decisions 36 and 38: square/exit's codes, none of 2, 3 and 70, and 130
+    # in every command's, since every command stops on an interrupt.
+    @wip @slice-7 @slice-8 @ID-CLI-19
+    Scenario Outline: Each help lists the exit codes its command ends with
+      When I run "itos-cc <args>"
+      Then its help lists the exit codes <codes>, and no other
+      And it lists 130 as "interrupted"
+
+      Examples:
+        | args                   | codes                             |
+        | --help                 | 0, 1, 75, 80, 81, 82, 100 and 130 |
+        | crap --help            | 0, 1, 80, 82, 100 and 130         |
+        | dry --help             | 0, 80, 82, 100 and 130            |
+        | scrap --help           | 0, 80, 82, 100 and 130            |
+        | units --help           | 0, 80, 82, 100 and 130            |
+        | help serve             | 75, 80, 100 and 130               |
+        | version --help         | 0, 80, 100 and 130                |
+        | mutation               | 0, 80, 81 and 130                 |
+        | mutation run --help    | 0, 1, 80, 82, 100 and 130         |
+        | mutation list --help   | 0, 80, 82, 100 and 130            |
+        | mutation check --help  | 0, 1, 80, 82, 100 and 130         |
+        | mutation sample --help | 0, 1, 80, 82, 100 and 130         |
+        | mutation except --help | 0, 1, 80, 100 and 130             |
+      # serve ends only when stopped, so 0 is not among its codes
+
   Rule: Flags are read by one spec in every command
 
     @ID-CLI-05
@@ -152,6 +202,131 @@ Feature: Command line
     Scenario: Plain output prints each problem on stderr
       When a run has a problem
       Then stderr says "itos-cc: <message>. <fix>"
+
+    # Decision 36 renumbers ID-CLI-08's kinds as square/exit does, keeping
+    # 75 for a failure that may pass when run again; this replaces it.
+    @wip @slice-7 @ID-CLI-20
+    Scenario Outline: Each kind of ending has its own exit code
+      Given <situation>
+      When the command ends
+      Then the exit code is <code>
+
+      Examples:
+        | situation                                                           | code |
+        | it succeeded                                                        | 0    |
+        | a check said no: a mutant survived, a function is over a threshold  | 1    |
+        | a usage or config error: a bad flag, path, or report                | 80   |
+        | an unknown command                                                  | 81   |
+        | the environment lacks something: a tool, a report, a git repository | 82   |
+        | an error itos-cc could not classify                                 | 100  |
+
+      # The binary driver's alone until T-112 (features.Deferred), as
+      # ID-CLI-08's row is.
+      @T-112
+      Examples:
+        | situation                                              | code |
+        | a temporary failure, such as serve's port being in use | 75   |
+      # 130, an interrupt, is the next Rule's
+
+    @wip @slice-7 @ID-CLI-21
+    Scenario Outline: An unknown command exits 81, any other usage error 80
+      When I run "itos-cc <args>"
+      Then the problem is "<rule>"
+      And the exit code is <code>
+
+      Examples:
+        | args                   | rule                | code |
+        | lint                   | command.unknown     | 81   |
+        | help nosuch            | command.unknown     | 81   |
+        | mutation nosuch        | command.unknown     | 81   |
+        | crap --no-such-flag    | flags.unknown       | 80   |
+        | units --tests=yes      | flags.switch-value  | 80   |
+        | mutation run --count 0 | flags.value-invalid | 80   |
+        | version extra          | args.unexpected     | 80   |
+        | crap nosuch            | paths.unmatched     | 80   |
+
+    @wip @slice-7 @ID-CLI-22
+    Scenario: A run with problems of several kinds exits as the first kind, and --json gives each its own
+      Given a Go function scoring 20 beside TypeScript whose coverage tool is not installed
+      When I run "itos-cc crap --threshold 5 --json"
+      Then its problems in --json are:
+        | rule                  | exit |
+        | coverage.tool-missing | 82   |
+        | crap.threshold        | 1    |
+      And the exit code is 82
+      # the first of 130, 80 and 81, 100, 82, 75, and 1, not the highest
+
+  # Decision 38 (q-51, q-54): every command, serve and mutation run --count
+  # included, stops on SIGINT and on SIGTERM, says once that it was
+  # interrupted, reports the rule interrupted, exit 130 in --json, and exits
+  # 130. On Linux and macOS it then raises the signal that came again, with
+  # its default action, so a shell reads 130 for SIGINT and 143 for SIGTERM
+  # and stops its loop; Windows exits 130. Each scenario signals a run once
+  # it shows it is under way, never after a guessed delay. A second
+  # interrupt ending a command at once is held by unit tests on fake signals.
+  Rule: An interrupt stops every command
+
+    # Binary-only for good, as the rest of this Rule: the signal reaches
+    # itos-cc as a process of its own.
+    @wip @binary-only @slice-8 @ID-CLI-23
+    Scenario: An interrupted serve says so once and exits 130
+      Given "itos-cc serve" is serving the scratch folder
+      When it is interrupted
+      Then stderr says "itos-cc: interrupted" once
+      And it ends as interrupted, which a shell reads as 130
+      # serve exited 0 when interrupted until decision 38
+
+    @wip @binary-only @slice-7 @slice-8 @ID-CLI-24
+    Scenario: An interrupted serve with --json keeps its address beside the problem
+      Given "itos-cc serve --json" is serving the scratch folder
+      When it is interrupted
+      Then stdout is one object with "schema": 1, "ok", "address", and "problems"
+      And its problems in --json are:
+        | rule        | exit |
+        | interrupted | 130  |
+      And it ends as interrupted, which a shell reads as 130
+
+    @wip @binary-only @slice-7 @slice-8 @ID-CLI-25
+    Scenario: SIGTERM stops a command as an interrupt does, and a shell reads 143
+      Given "itos-cc serve --json" is serving the scratch folder
+      When it is sent SIGTERM
+      Then its problems in --json are:
+        | rule        | exit |
+        | interrupted | 130  |
+      And it ends as terminated, which a shell reads as 143
+      # SIGTERM is what CI sends to cancel a job; --json says 130 for either
+
+    @wip @binary-only @slice-8 @ID-CLI-26
+    Scenario: An interrupt stops crap promptly while its test hangs, leaving no process its tests started
+      Given a Go project whose test starts a process of its own and then hangs
+      When "itos-cc crap" is interrupted once that process is running
+      Then stderr says "itos-cc: interrupted" once
+      And it ends as interrupted, which a shell reads as 130
+      And no process its tests started is still running
+
+    @wip @binary-only @slice-8 @ID-CLI-27
+    Scenario: A shell reads 130 from an interrupted command
+      Given a shell runs:
+        """
+        itos-cc serve --port 0
+        echo "status $?"
+        """
+      When itos-cc alone is interrupted once it is serving
+      Then the shell prints "status 130"
+
+    @wip @binary-only @slice-8 @ID-CLI-28
+    Scenario: Ctrl-C stops a shell's loop over a command
+      Given a shell runs:
+        """
+        for run in first second; do
+          itos-cc serve --port 0
+          echo "$run ended with status $?"
+        done
+        """
+      When Ctrl-C reaches the shell and itos-cc once itos-cc is serving
+      Then the shell ends interrupted, before the second itos-cc starts
+      # a command that catches the signal and exits, even with 130, lets the
+      # loop go on: a shell stops only when the command ends by the signal
 
   # Decided with the person on 2026-10-06 (q-1, q-3): mutation testing is one
   # group, mutation, following itos's CLI rules 3, 4, 7 and 13. mutate and

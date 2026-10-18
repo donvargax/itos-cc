@@ -3063,6 +3063,25 @@ Feature: Mutation testing
       And after the interrupted run returns, its owned fixture peers have terminated and private inputs are removed
       And one shared five-second post-abort cleanup deadline applies without killing unrelated processes
 
+    # Decision 38 retires count.interrupted (75): a counted run stopped by
+    # SIGINT or SIGTERM ends as every interrupted command does.
+    @wip @binary-only @slice-7 @slice-8 @ID-MUT-249
+    Scenario Outline: An interrupted counted run reports interrupted, not count.interrupted
+      Given a count-two selection has one completed judgment and one active judgment
+      When the counted run is <stopped> while the second judgment is active
+      Then the completed result remains visible
+      And the unfinished judgment is cancelled or undecided, not a killed or timed-out mutant
+      And its problems in --json are:
+        | rule        | exit |
+        | interrupted | 130  |
+      And it ends as <ended>, which a shell reads as <status>
+      And after the interrupted run returns, its owned fixture peers have terminated and private inputs are removed
+
+      Examples:
+        | stopped      | ended       | status |
+        | interrupted  | interrupted | 130    |
+        | sent SIGTERM | terminated  | 143    |
+
     # Binary-only for good: the product runs as a process of its own, which
     # the scenario stops while selected work runs.
     @mutation-counted-run @ID-MUT-184 @binary-only
@@ -3264,6 +3283,22 @@ Feature: Mutation testing
       Then the preserved judgments are reused and only the unjudged sites run
       But a preserved judgment whose source, tests or support inputs changed runs again
 
+    # q-37: a cleanup that fails is its own problem, mutation.cleanup-failed,
+    # with the internal exit, which outranks the check's no that stopped the
+    # run; the partial report is kept, not lost to the failure.
+    @wip @binary-only @slice-7 @slice-8 @ID-MUT-250
+    Scenario: A fail-fast stop whose cleanup fails exits 100 and keeps its partial report
+      Given two workers, one judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
+      When the other worker's mutant becomes an actionable survivor
+      Then the judgment whose cleanup failed is cancelled, with no killed, timed-out or survived outcome
+      And JSON is one object with a stop naming the trigger's rule and subject
+      And its problems in --json are:
+        | rule                    | exit |
+        | mutation.survived       | 1    |
+        | mutation.cleanup-failed | 100  |
+      And the mutation.cleanup-failed problem names the owned process group and its command
+      And the exit code is 100
+
   # slice-6, issue #16 and decision 45: itos-cc.yaml's exclude leaves the
   # sources it names out of mutation run, list, check, sample and run
   # --count. The selection drops them before a --since range is
@@ -3308,3 +3343,67 @@ Feature: Mutation testing
       Given the itos-cc.yaml HEAD commits excludes "**/porttest/**"
       When I run "itos-cc mutation run --count 20 --json"
       Then no selected site is in src/port/porttest/fake.go
+
+  # Decision 38 and q-37: an interrupt stops a complete mutation run as a
+  # fail-fast stop does (ADR-0020 to ADR-0022): no command starts after it,
+  # the judgment running is cancelled with no outcome, every owned process
+  # group is killed and joined within the shared five-second deadline, and
+  # the judgments it finished are kept, a file it cut short getting no
+  # summary comment. A second interrupt waits for that cleanup, up to the
+  # deadline (ADR-0021). A cleanup that fails is mutation.cleanup-failed,
+  # exit 100, beside interrupted, and the run still exits 130; its subject
+  # gives process_group and command, one problem for each group. An
+  # interrupted complete run's --json gives no stop object: the interrupted
+  # problem says why it ended. crap's coverage commands own their process
+  # groups as mutation's do, and a cleanup of theirs that fails is
+  # coverage.cleanup-failed, exit 100, held by unit tests.
+  Rule: An interrupt stops a mutation run, keeping what it finished
+
+    # Binary-only for good, as the rest of this Rule: the signal reaches
+    # itos-cc as a process of its own while processes it owns run.
+    @wip @binary-only @slice-8 @ID-MUT-251
+    Scenario: An interrupted complete run keeps the judgments it finished and leaves no owned process
+      Given a complete run with one worker has one completed judgment and one active judgment
+      When the complete run is interrupted while the second judgment is active
+      Then the unfinished judgment is cancelled or undecided, not a killed or timed-out mutant
+      And the file's snapshot keeps each completed or reused judgment with its original scope and freshness evidence
+      And cancelled, blocked and unattempted sites get no outcome and no new freshness proof
+      And the file's annotated source bytes are unchanged
+      And its problems in --json are:
+        | rule        | exit |
+        | interrupted | 130  |
+      And it ends as interrupted, which a shell reads as 130
+      And after the stopped run returns, its owned fixture peers have terminated and worker copies are removed
+      And unrelated processes remain untouched
+
+    @wip @binary-only @slice-7 @slice-8 @ID-MUT-252
+    Scenario Outline: An interrupt whose cleanup fails exits 130 and reports both
+      Given a <run> is judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
+      When the run is interrupted while that judgment is active
+      Then the judgment whose cleanup failed is cancelled, with no killed, timed-out or survived outcome
+      And its problems in --json are:
+        | rule                    | exit |
+        | interrupted             | 130  |
+        | mutation.cleanup-failed | 100  |
+      And the mutation.cleanup-failed problem names the owned process group and its command
+      And it ends as interrupted, which a shell reads as 130
+
+      Examples:
+        | run          |
+        | complete run |
+        | counted run  |
+      # a counted run said only count.interrupted (75) before, hiding the
+      # failed cleanup
+
+    @wip @binary-only @slice-8 @ID-MUT-253
+    Scenario: A second interrupt waits while the owned process groups are killed
+      Given a complete run is judging a mutant whose owned cleanup cannot finish within the shared five-second deadline
+      When the run is interrupted, and interrupted again once its owned processes have been killed
+      Then it returns only once the shared five-second cleanup deadline has passed
+      And its problems in --json are:
+        | rule                    | exit |
+        | interrupted             | 130  |
+        | mutation.cleanup-failed | 100  |
+      And it ends as interrupted, which a shell reads as 130
+      # at any other time a second interrupt ends the command at once, which
+      # unit tests hold with fake signals
