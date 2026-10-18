@@ -5133,3 +5133,27 @@
     - run: sh -c '! grep -rn --include=*.go "Measurer\[" .'
     - run: go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -scenarios='@ID-CRAP-'
       timeout: 600
+- id: T-136
+  type: refactor
+  title: Let internal/mutants carry serialization tags and drop the mirrors that copy its types
+  why: >
+    Decision 50 (the person 2026-10-18, from decision 47's review A47-2 and A47-4): a domain may
+    carry struct tags used only for serialization and holds no encoding logic. internal/mutants
+    alone was kept tag-free, so its types are copied field by field. Tag the types whose mirrors
+    only copy and remove the mirrors: in internal/metricsdir/mutation_codec.go the leaf mirrors
+    coverageEvidenceWire, coverageBlockWire and suiteEvidenceWire and their copy functions, the
+    codec using CoverageEvidence, CoverageBlock and SuiteEvidence directly; in
+    internal/mutation/except_ui.go exceptionJSON and its two copies (101-102, 146-148), exceptResult
+    and notRenewedJSON carrying mutants.Exception; in config/exception_codec.go exceptionWire,
+    config writing mutants.Exception through its yaml tags. snapshotWire, unitResultWire and
+    mutantWire stay in metricsdir, since the go_coverage or line_coverage key by language and legacy
+    go_evidence need methods, which stay in the adapter; mutation.Site stays, since tagging
+    ListedSite would change --json's key order. Every byte stays as it is: the snapshot files,
+    --json output, itos-cc.yaml as mutation except writes it (key order, omitempty, comments kept),
+    held by metricsdir's codec byte tests, config's exception tests and the mutation scenarios. If a
+    tag cannot give the same bytes, keep that mirror and say why in the commit.
+  done_when:
+    - run: go build ./...
+    - run: go test ./internal/metricsdir/... ./config/... ./internal/mutation/... ./internal/mutants/...
+    - run: go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -scenarios='@ID-MUT-'
+      timeout: 900
