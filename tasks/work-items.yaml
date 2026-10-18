@@ -1693,6 +1693,12 @@ items:
       for n = 1, so one left-out mutant reads "at sites gone" though it had one site. The
       template-driven CLI refactor could word the singular as "at a site gone" when it reshapes
       check's output.
+
+      The refactor ended without rewording the note, so the singular is now a behaviour change of
+      its own, specified by a scenario that changes the note's contract. The note is printed at
+      internal/mutation/check_ui.go:121, its contract is at internal/mutation/check_contract.go:90,
+      and the step behind its scenario expects "1 recorded mutant at sites gone" today
+      (features/mutate_result_late.go:439).
   - id: T-25
     title: Move itos from 6.5.1 to 7.5.0
     phase: 1
