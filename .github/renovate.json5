@@ -7,12 +7,6 @@
 	],
 	enabledManagers: ["gomod", "github-actions", "renovate-config"],
 
-	// The template's base branches and its useBaseBranchConfig merge live in main's file alone:
-	// Renovate reads baseBranchPatterns from the default branch only and merges this file over
-	// main's for this branch's requests, and this file is what a made project, with only main,
-	// gets. main's file also gives this branch's requests their task trailer, since commitTrailers
-	// would add to main's rather than replace them.
-
 	// itos moves with its config pin and workflow action, not through Renovate.
 	ignoreDeps: ["donvargax/itos"],
 	automergeType: "branch",
@@ -34,6 +28,13 @@
 		{
 			matchManagers: ["github-actions"],
 			pinDigests: true,
+		},
+		// main is itos-cc's only base branch, so every update commit lands there, and itos refuses a
+		// build or ci commit without a Task footer. Each one names T-131, the task that gave them the
+		// footer; a closed task stays in the ledger, so the footer keeps validating.
+		{
+			matchBaseBranches: ["main"],
+			commitTrailers: ["Task: T-131"],
 		},
 		{
 			// One dependency's updates share a branch name on every base branch, so they move together.
