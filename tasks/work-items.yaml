@@ -1714,8 +1714,8 @@ items:
   - id: T-119
     title: Enforce Go lint across the completed refactor module
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-116]
     kind: task
     why: >
