@@ -3753,3 +3753,24 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: mut-13-windows-timing
+    title: ID-MUT-13's timeout bound fails on a slow Windows runner
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      CD run 39163467526 (Renovate PR #52, actions/checkout v7, which reaches no Go code) failed on
+      test (windows-latest, features) at ID-MUT-13, 'The baseline proves the copy works': 'the
+      mutant at line 7 timed out after 46.9s, not between 10.0s and 44.0s, as a baseline of 0.50s to
+      2.4s sets'. features/mutate_baseline.go's durationSetsTimeout bounds a timed-out mutant's time
+      from above by half again the longest other mutant's run plus the allowance and reaping, a
+      guess at how long a timed-out run takes to end that a slow Windows runner exceeded; T-134
+      fixed a macOS race of the same kind, and flaky gates hold dependency updates up for nothing.
+      Find what the upper bound is meant to catch and bound it by what the run actually decides, the
+      timeout itos-cc set (the factor times the baseline it measured, which its report or the trial
+      records may give) plus the time a timed-out process tree takes to end on that system, rather
+      than by other mutants' durations; never by widening the bound until it passes, retrying,
+      skipping or tagging the scenario. Step code only: no feature text, no product code. Linux may
+      not reproduce it; cd.yml's Windows features job judges.
