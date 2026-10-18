@@ -3398,8 +3398,8 @@ items:
   - id: T-133
     title: Move the undecodable snapshot's wording from the snapshot port into metricsdir
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: since-broad-stale-panic
