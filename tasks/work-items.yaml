@@ -17,7 +17,7 @@ queue:
   - slice-10
   - slice-11
   - slice-12
-  - worker-copy-pristine
+  - slice-13
   - empty-case-covered
   - listed-coverage-failed
   - coverage-thresholds-override
@@ -3418,14 +3418,15 @@ items:
       (cmd/itos-cc/dispatch.go:189-194, cli.go:236-243) prints no stack; say where a bug is when one
       is reported.
     refs: ["#40"]
-  - id: worker-copy-pristine
+  - id: slice-13
     title: A file one test leaves in a worker's copy fails every later mutant on that worker
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was worker-copy-pristine.
       Issue #35, wrong results (false kills). worker.copyOf caches the copy for the run
       (internal/worktrees/worker.go:43-56) and withMutant restores only the mutated file (158-172).
       Restore the copy to pristine before each mutant rather than copying afresh. Wave 0.
