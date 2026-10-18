@@ -3361,3 +3361,19 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: since-broad-stale-panic
+    title: mutation run --since panics when recorded whole-suite outcomes see a test or support change
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #40. KeepUnjudged (internal/mutants/snapshot.go:546-549) leaves out an unjudged function
+      with no recorded entry, so Snapshot.Units is shorter than the file's functions, and
+      markBroadStale (internal/mutants/run_broad.go:8-12, from run.go:262) indexes it by the file's
+      own function index: a panic, or without one the wrong function marked stale. Wave 0 of the
+      2026-10-18 triage, first issue after the portable-evidence window. The panic handler
+      (cmd/itos-cc/dispatch.go:189-194, cli.go:236-243) prints no stack; say where a bug is when one
+      is reported.
+    refs: ["#40"]
