@@ -13,11 +13,13 @@ import (
 	"net"
 	"os"
 	"sync"
+	"syscall"
 	"time"
 )
 
 // FixturePeers observes only controlled test helpers. They hold authenticated
-// connections until process exit; EOF is lifetime evidence only for that fixture.
+// connections until process exit; their end, EOF or a reset, is lifetime
+// evidence only for that fixture.
 type FixturePeers interface {
 	Environment() []string
 	Capture(context.Context, string) (FixturePeer, error)
@@ -260,7 +262,7 @@ func (p *fixtureConnection) operation(ctx context.Context, command string) error
 			if command != "stop" {
 				return err
 			}
-			if _, readErr := p.reader.ReadSlice('\n'); errors.Is(readErr, io.EOF) {
+			if _, readErr := p.reader.ReadSlice('\n'); peerEnded(readErr) {
 				p.ended = true
 				return nil
 			}
@@ -272,7 +274,7 @@ func (p *fixtureConnection) operation(ctx context.Context, command string) error
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	if errors.Is(err, io.EOF) {
+	if peerEnded(err) {
 		p.ended = true
 		if command == "ping" {
 			return errors.New("fixture peer ended before ping acknowledgment")
@@ -286,6 +288,17 @@ func (p *fixtureConnection) operation(ctx context.Context, command string) error
 		return nil
 	}
 	return fmt.Errorf("unexpected fixture peer reply %q during %s", line, command)
+}
+
+// peerEnded is whether a read's err is the fixture's end of its connection:
+// EOF, or a reset. A controlled fixture holds its connection until its
+// process exits, so either says the process is gone. Which one the harness
+// reads is the system's choice: a socket closed with bytes unread, or with a
+// zero SO_LINGER, resets, and one whose owner has exited answers what is
+// written to it with a reset, which macOS reports to the next read before
+// the end of stream already queued. Any other failure is not an end.
+func peerEnded(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET)
 }
 func (p *fixtureConnection) Ping(ctx context.Context) error { return p.operation(ctx, "ping") }
 func (p *fixtureConnection) EOF(ctx context.Context) error  { return p.operation(ctx, "eof") }
