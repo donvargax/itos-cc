@@ -20,6 +20,7 @@ queue:
   - since-broad-stale-panic
   - worker-copy-pristine
   - empty-case-covered
+  - listed-coverage-failed
   - T-102
   - T-103
   - T-104
