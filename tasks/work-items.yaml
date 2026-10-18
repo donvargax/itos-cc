@@ -1670,6 +1670,12 @@ items:
       without it, since the move takes no decision; whether itos-cc's CI should run a code proof
       (for example its own mutation or coverage check over the changed functions) is the person's
       call.
+
+      2026-10-17 (decision 48 and the mutation explainer's review): the cache does not key a kill on
+      the code its function calls, so a callee change can leave a stale kill. When the proof turns
+      back on, run itos-cc mutation sample (the template's plan has --count 10) in cd.yml on every
+      source push beside the check proof, so a stale kill is caught within a push. ci.yml stays
+      fast; cd.yml is where the full suite and this sample belong.
   - id: T-27
     title: Every feat and fix says what a user must change, in an Upgrading footer
     phase: 1
