@@ -125,9 +125,9 @@ ci:
     - { run: go mod verify, cost: static }
     - { run: go mod tidy -diff, cost: static }
     - { run: itos tests smoke check scenario, cost: static }
-    # The pinned golangci-lint over internal/ alone, the packages laid out
-    # as decision 29 says, widening as packages move there (q-50, T-31).
-    - { run: tools/bin/pinned golangci-lint run ./internal/..., cost: static }
+    # The pinned golangci-lint over the whole module: cmd, internal/, the
+    # top-level libraries, the scenario harness and tools (q-50, T-119).
+    - { run: tools/bin/pinned golangci-lint run ./..., cost: static }
     # The depguard arrows of .golangci.yml over its own fixture modules, with
     # the golangci-lint tools/bin/pinned fetches and checks; not our code.
     - { run: tools/bin/architecture-check, cost: static }

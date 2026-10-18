@@ -350,8 +350,8 @@ context-as-argument a context after any other parameter, tests included.
   It holds the same files as `slices`, tests left out, and names each port's `porttest`, since
   depguard matches a prefix and `slices` allows the ports' folders. `tools/bin/architecture-check`
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
-  CI's golangci-lint covers `./internal/...` alone and so does not lint `cmd`: a fake enters
-  `cmd` only through its `_test.go` files.
+  depguard sees only the imports a file names, not what a binary links through them: a fake
+  enters `cmd` only through its `_test.go` files.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
@@ -401,8 +401,8 @@ port's `Failure`, is annotated `//sumtype:decl` and given its exit codes in one 
 names every kind, in its domain's classifier, as cmd's `selectionProblem` gives the selection
 port's and `internal/mutation`'s `failureError` words the slice's own `Failure`. gochecksumtype
 then refuses the switch when a kind is added and left out; without the annotation nothing
-checks it. CI's lint runs over `./internal/...` alone, so it checks the switches in `internal/`
-and not yet cmd's classifiers, which T-119's module-wide lint brings in.
+checks it. CI's lint runs over the whole module, so it checks cmd's classifiers as well as the
+switches in `internal/`.
 
 Code that differs by OS takes the OS as a value. Logic never branches on `runtime.GOOS`. A
 build-tagged file holds only a call that one OS lacks, with no mutation site: the scenarios'
@@ -535,8 +535,7 @@ follows the same steps for a command it wrote before it had the template's desig
     allowed in `slices` with a comment saying why (`lang` was, until T-36 made it the domain
     `internal/lang`), or one an adapter wraps, which stays refused (`project`). Add the slice to the fixture lists of
     `tools/testdata/architecture/check_test.go`, with every library you allowed or refused,
-    and run `tools/bin/architecture-check` and `tools/bin/pinned golangci-lint run
-    ./internal/...`.
+    and run `tools/bin/architecture-check` and `tools/bin/pinned golangci-lint run ./...`.
 11. **Then the old tests.** Once CI has run the converted scenarios green, remove only the Go
     tests of `cmd/itos-cc` that are the same check as a scenario; keep any that holds what no
     scenario reaches.
@@ -751,14 +750,14 @@ these checks in cost order, the first failure stopping the run:
 - `gofmt` over every tracked Go file, `go build ./...`, `go vet ./...`, `go mod verify` against
   `go.sum`, and `go mod tidy -diff` so the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.
-- The pinned golangci-lint over `./internal/...` alone (q-50): the standard linters plus
+- The pinned golangci-lint over the whole module, `./...` (q-50, T-119): the standard linters plus
   depguard, gosec on non-test code, revive's file-length limit, gochecksumtype, which refuses
   a type switch over a sealed set that leaves a kind out, a default arm not counting, and the
   context rules of decision 30: containedctx, which refuses a context held in a struct, and
   revive's context-as-argument, which refuses one passed anywhere but first. revive runs only
-  the rules `.golangci.yml` lists, never its defaults. `cmd`, the top-level libraries, `features`
-  and `tools` are not linted yet: T-119 widens the step to `./...`, and a pass over
-  `./internal/...` is no evidence that the whole module passes.
+  the rules `.golangci.yml` lists, never its defaults. `cmd`, `internal`, the top-level
+  libraries, the scenario harness in `features` and `tools` are all linted. A finding that is
+  by design carries a `//nolint:<linter> // <reason>` at its own site, saying why.
 - `tools/bin/architecture-check`, the self-test above.
 - `go tool govulncheck -test ./...`, covering the dependencies in use, test-only ones and
   the standard library.

@@ -3,8 +3,9 @@
 set -eu
 
 # linked <package>: refuse a binary linking a port's fake (T-56), which
-# golangci-lint cannot hold since it does not lint cmd. go list -deps leaves
-# _test.go files out, so a fake a command's tests import passes.
+# depguard cannot hold, seeing only the imports a file names, not what a
+# binary links through them. go list -deps leaves _test.go files out, so a
+# fake a command's tests import passes.
 linked() {
 	deps=$(go list -deps "$1")
 	fakes=$(printf '%s\n' "$deps" | grep -E '/porttest(/|$)' || true)

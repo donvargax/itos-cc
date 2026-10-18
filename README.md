@@ -1027,7 +1027,7 @@ gets any CI.
 No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
 sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, is disabled
 on GitHub until T-46; both wait for the refactor's final comparison (refactor-final-proof).
-CI's golangci-lint covers `./internal/...` alone until T-119 widens it to the whole module.
+CI's golangci-lint covers the whole module, `./...`.
 [docs/go.md](docs/go.md) lists every configured check.
 
 ## License

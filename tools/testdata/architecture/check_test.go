@@ -412,8 +412,8 @@ func Code(failure sealed.Failure) int {
 		contexts("context_first_allowed_"+kind, first, "", "", test)
 		contexts("context_blank_allowed_"+kind, blank, "", "", test)
 	}
-	// itos-cc's binary links no fake (T-56), which golangci-lint cannot
-	// hold since it does not lint cmd: architecture-check --linked refuses a
+	// itos-cc's binary links no fake (T-56), which depguard cannot hold,
+	// seeing only the imports a file names: architecture-check --linked refuses a
 	// command linking a porttest, naming it, and passes one whose fake enters
 	// only through a _test.go file.
 	fake := module + "/" + fakes[0]
