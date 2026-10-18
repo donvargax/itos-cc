@@ -843,9 +843,11 @@ Feature: Mutation testing
   # site a comment moved keeps its outcome. --since judges a function the
   # range changed only when its hash changed too: a function the range
   # touched only in its comments is not judged, by mutation run, check or
-  # sample. Shipping it changes every function's hash, so every snapshot
-  # reads stale once, and every exception in itos-cc.yaml exception-stale
-  # until mutation except --renew carries it over. A site's offset is
+  # sample. Shipping it changes the hash of every function whose text holds
+  # a comment, so those functions' results read stale once, and an
+  # exception in itos-cc.yaml on such a function exception-stale until
+  # mutation except --renew carries it over; a function without comments
+  # keeps its hash and its results. A site's offset is
   # taken in the comment-free text, so a comment above a site keeps its
   # recorded outcome. Python docstrings are code, not comments. The steps
   # that made a function changed by editing only a comment (changePlace,
