@@ -5188,7 +5188,11 @@
     and itos.yaml's ci comment that says RAPID_CHECKS come later, reworded to what
     tools/bin/domain-coverage does. Check every claim of the audit against the code before writing
     it; one it got wrong (it said scrap exits 100 on an unreadable itos-cc.yaml; it exits 0) shows
-    they need checking. GitHub #28, which no item tracks, gets an idea of its own. No product code,
+    they need checking. GitHub #28, which no item tracks, gets an idea of its own. T-135 (c1f2225)
+    amended .golangci.yml's adapter-rule comment and docs/go.md's boundary list to let an adapter
+    use the shared pure domains its rule names (lang, selection), but freshenv's rule also allows
+    internal/coverage and its port, which serve neither mutants nor that list: name coverage there
+    too, as a shared pure domain freshenv reads coverage blocks through. No product code,
     tests or scenarios change.
   done_when:
     - run: itos config check
