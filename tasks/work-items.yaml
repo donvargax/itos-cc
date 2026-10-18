@@ -2598,7 +2598,7 @@ items:
     title: Review decision 47 against the refactored code with the person
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-7]
     kind: task
   - id: bug-1

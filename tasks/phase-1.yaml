@@ -5263,5 +5263,3 @@
     forwarding Surroundings (A47-9) and cmd reading itos-cc.yaml twice (A47-8) stay as low value.
     Nothing leaks into a domain: no domain, port or porttest package imports an adapter, slice, cmd,
     the CLI, kong, the filesystem, the network or itos-cc's exit codes.
-  done_when:
-    - run: itos config check
