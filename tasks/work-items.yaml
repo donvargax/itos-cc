@@ -1935,6 +1935,11 @@ items:
       aggregate precedence in red-first cases, retaining mutation/coverage classifications by types
       rather than message text. Keep these code changes in the single coordinated minor-release
       product push with interruption, after final comparison.
+
+      The person (2026-10-18): the feat carries Upgrading and a BREAKING CHANGE footer (2 to 80, 81
+      for an unknown command, 3 to 82, 70 to 100, a per-problem exit key). Ships in one product push
+      with interrupt-exit-130 and version-without-v (#19). Build mutation.cleanup-failed to 100
+      (ADR-0036), not ADR-0038's 70.
     refs: [q-56, q-54]
   - id: release-notes-bookkeeping
     title: Release notes list the registry's bookkeeping commits
