@@ -46,8 +46,8 @@ t42-01 | scrap | p | - | ! chmod 000 py/test_a.py ;; itos-cc scrap
 t42-02 | scrap | p | .metrics/scrap.json | itos-cc scrap py ;; itos-cc scrap ts
 t42-03 | scrap | p | .metrics/scrap.json | itos-cc scrap ;; itos-cc scrap py --json
 t42-04 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": "py/test_a.py", "average_score": 1}, {"file": "py/test_a.py", "average_score": 2}]}\n' > .metrics/scrap.json ;; itos-cc scrap
-t42-05 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": 7}]}\n' > .metrics/scrap.json ;; itos-cc scrap
-t42-06 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": "none"}\n' > .metrics/scrap.json ;; itos-cc scrap --json
+t42-05 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": [{"file": 7}]}\n' > .metrics/scrap.json ;; itos-cc scrap | deliberate: the ignoring line words the wrong-typed value by its key and JSON kinds, naming no Go type (bug-3)
+t42-06 | scrap | p | .metrics/scrap.json | ! mkdir -p .metrics && printf '{"files": "none"}\n' > .metrics/scrap.json ;; itos-cc scrap --json | deliberate: the ignoring line words the wrong-typed value by its key and JSON kinds, naming no Go type (bug-3)
 
 # T-43: scrap on kong.
 t43-01 | scrap | p | - | itos-cc scrap --verbose=x
