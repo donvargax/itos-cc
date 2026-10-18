@@ -1076,7 +1076,7 @@ items:
     depends_on: []
     kind: task
   - id: coverage-line-stderr
-    title: go test -cover's summary of cmd/itos-cc reads a coverage command's error as its percentage
+    title: go test -cover's summary of internal/freshenv reads a coverage command's error as its percentage
     phase: 1
     owner: null
     status: todo
@@ -1091,6 +1091,13 @@ items:
       'coverage: ' as the package's summary. A tool that reads the ok line, as the nightly might,
       gets no number. Giving coverage.Run a buffer the test logs on failure, instead of os.Stderr,
       would keep the summary line go test's own.
+
+      The package above is out of date. TestFreshPreparationPreservesCompleteDefaults moved to
+      internal/freshenv/preparation_test.go:471 and still hands coverage.Run and
+      coverage.RunSupervised os.Stderr (lines 481 and 485), so it is internal/freshenv's ok line
+      that reads the error now. On 2026-10-18, go test -cover -run
+      TestFreshPreparationPreservesCompleteDefaults ./internal/freshenv/ ended that line with
+      'coverage: go: exec: "legacy-helper": executable file not found in $PATH'.
   - id: transitive-test-reach
     title: TypeScript, Python and Kotlin tests reach what they import transitively
     phase: 1
