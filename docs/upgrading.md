@@ -19,8 +19,8 @@ security fixes following the existing security-update policy. Renovate reads
 by the project's own CI. The file alone does not make Renovate run: the automation stays
 unverified until the Renovate app is installed and a request has landed.
 
-Mutation proof is off until after the refactor's final comparison (`docs/go.md`, Quality
-checks), so no push judges mutation records yet. Once it is on, a pin move that changes code or
+Mutation proof is off, waiting on T-46 now that the refactor's final comparison (T-132) is
+done (`docs/go.md`, Quality checks), so no push judges mutation records yet. Once it is on, a pin move that changes code or
 relevant test imports needs fresh records, made from the push's range start, the nearest
 ancestor with a green `ci.yml` run, which `itos ci run` judges the proof from.
 

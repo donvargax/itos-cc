@@ -810,7 +810,8 @@
     GitHub's 6-hour job limit after 267 of 4901 mutants (6872 sites), all in cmd/itos-cc, with
     nothing saved: under --all-tests each mutant runs cmd/itos-cc's 217-second suite (survivors
     took 323 s on average, kills 103 s), so a full run needs some 30 to 100 hours, and mutation run
-    writes .metrics/mutate/ only once every mutant has run (mutate/run.go, after execute). The
+    writes .metrics/mutate/ only once every mutant has run (internal/mutants/run.go, its writes at
+    lines 287-313 after execute; was mutate/run.go). The
     refactor rewrites cmd daily and moves its logic into internal/ slices with fast tests, so tuning
     the nightly now would measure code about to change; mutation proof is off until the refactor
     ends anyway (decision 40), so the person disabled the workflow (gh workflow disable Nightly,
@@ -4204,7 +4205,9 @@
   type: test
   title: Run graph node and import scenarios through the black-box harness
   why: >
-    S8 of the CURRENT template-adoption refactor, after mutation S7; futureT86 layout is separate.
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person, 2026-10-17)
+    until that web app, with whatever export of the graph it needs, is specified. It was S8 of the
+    template-adoption refactor, which ended without it; futureT86 layout is separate.
     Convert the named live scenarios of features/architecture_graph.feature to strict godog steps
     before moving their implementation. Steps are black-box, reaching the program and fixture world
     only through Driver capabilities; reuse the public serve GET/api/graph capability introduced for
@@ -4232,7 +4235,9 @@
   type: test
   title: Run graph HTTP-edge scenarios through the black-box harness
   why: >
-    S8 of the CURRENT template-adoption refactor, after mutation S7; futureT86 layout is separate.
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person, 2026-10-17)
+    until that web app, with whatever export of the graph it needs, is specified. It was S8 of the
+    template-adoption refactor, which ended without it; futureT86 layout is separate.
     Convert the named live scenarios of features/architecture_graph.feature to strict godog steps
     before moving their implementation. Steps are black-box, reaching the program and fixture world
     only through Driver capabilities; reuse the public serve GET/api/graph capability introduced for
@@ -4260,7 +4265,9 @@
   type: test
   title: Run graph metric, freshness and rebuild scenarios through the black-box harness
   why: >
-    S8 of the CURRENT template-adoption refactor, after mutation S7; futureT86 layout is separate.
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person, 2026-10-17)
+    until that web app, with whatever export of the graph it needs, is specified. It was S8 of the
+    template-adoption refactor, which ended without it; futureT86 layout is separate.
     Convert the named live scenarios of features/architecture_graph.feature to strict godog steps
     before moving their implementation. Steps are black-box, reaching the program and fixture world
     only through Driver capabilities; reuse the public serve GET/api/graph capability introduced for
@@ -4291,14 +4298,16 @@
   type: test
   title: Run serving and HTTP stream scenarios through the black-box harness
   why: >
-    S8 after T-104. Convert the12 live scenarios of features/serve.feature to strict godog steps
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17), after T-104; it was S8 of the template-adoption refactor, which ended without it.
+    Convert the12 live scenarios of features/serve.feature to strict godog steps
     through the built binary and public HTTP/SSE behavior, before moving the command implementation.
     Reuse/extend Driver server lifecycle and HTTP capabilities from graph-scenario work; no step
     directly calls server/graph internals to decide a result. Cover actual localhost binding and
     named ports/multiple roots, graph JSON/cache headers, initial/change/15-second keepalive events,
     slow-client nonblocking behavior, source whitelist/traversal refusal, configured/default watch
-    interval, failed rebuild retaining previous graph, API guidance, SPA routes and Ctrl-C exit0
-    (130 comes only in S10). Use readiness/lifecycle signals and bounded contexts rather than
+    interval, failed rebuild retaining previous graph, API guidance, SPA routes and Ctrl-C's exit
+    130 (slice-8, 94c5c12, ID-SERVE-12). Use readiness/lifecycle signals and bounded contexts rather than
     sleeps/repeated network polling; clean up only owned child processes/listeners on every exit.
     Real-port/process/signal capabilities may be binary-only for good, not a temporary substitute
     for missing in-process support. Do not download a viewer build: a minimal fixture asset
@@ -4310,14 +4319,17 @@
     intact; no new product behavior or silent weakening. Register Converted/steps and update harness
     docs, remove old Go tests only when every assertion has a new holder. Focus localchecks on these
     scenarios, broad gates hooks/CI. No own-code mutation runs/worktrees/sessionmoves/agents or
-    unapproved dependencies. FutureT86layout is not part of S8.
+    unapproved dependencies. FutureT86layout is not part of this move.
   done_when:
     - run: go test ./features -count=1 -scenarios="@ID-SERVE-"
 - id: T-106
   type: refactor
   title: Move pure architecture graph rules into internal/architecture
   why: >
-    S8 after T-105. Extract the pure architecture graph models, node/module identity and hierarchy,
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17), after T-105; it was S8 of the template-adoption refactor, which ended without it.
+    T-132's final proof ran without it, so the final-proof cases below wait for the proof this move
+    sets. Extract the pure architecture graph models, node/module identity and hierarchy,
     module/import/HTTP-edge resolution from supplied facts, snapshot-overlay judgments,
     CRAP/mutation/duplicate rollups and grades into internal/architecture. This domain name
     describes what serve presents. Separate mixed source in place first, git-move recognizable files
@@ -4344,7 +4356,10 @@
   type: refactor
   title: Build and refresh architecture through repository and snapshot ports
   why: >
-    S8 after T-106. Move repository discovery, root naming facts, source/test reads and parsing I/O,
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17), after T-106; it was S8 of the template-adoption refactor, which ended without it.
+    T-132's final proof ran without it, so the final-proof cases below wait for the proof this move
+    sets. Move repository discovery, root naming facts, source/test reads and parsing I/O,
     source/snapshot stamps, config and snapshot decoding behind architecture-domain-owned
     input/source boundaries with internal/architecturefiles as the real adapter. Reuse existing
     selection/lang/snapshot/mutants capabilities where they already fit; compose real adapters at
@@ -4373,7 +4388,10 @@
   type: refactor
   title: Serve architecture through an HTTP adapter over domain services
   why: >
-    S8 after T-107. Move top-level server HTTP/listener, JSON/SSE, watch timers, logging, static
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17), after T-107; it was S8 of the template-adoption refactor, which ended without it.
+    T-132's final proof ran without it, so the final-proof cases below wait for the proof this move
+    sets. Move top-level server HTTP/listener, JSON/SSE, watch timers, logging, static
     assets and source I/O into internal/httpapi, against architecture-domain services and
     source/serving boundaries rather than concrete graph/filesystem dependencies in the domain. Keep
     graph computation/cache/freshness and graph-membership/source-whitelist policy with their
@@ -4383,7 +4401,7 @@
     initial version event, later updates,15-second keepalive, existing slow-client/drop semantics,
     source404/traversal rules, text content type, static asset/SPA fallback, failed rebuild
     retaining old publication and unchanged logging. Do not introduce new protocol/features or alter
-    Ctrl-C exit0 yet. Every external operation uses ctx first or request context; no
+    Ctrl-C's exit 130 (slice-8, 94c5c12). Every external operation uses ctx first or request context; no
     stored/recreated domain context, owned goroutines/listeners clean up under bounded lifecycle.
     Factor the actual HTTP handler so in-process tests/drivers can exercise it with memory
     source/assets and injected tick capability without real network/disk/processes, rather than
@@ -4403,12 +4421,15 @@
   type: refactor
   title: Move serve onto Kong and its slice with in-process HTTP scenarios
   why: >
-    S8 after T-108. Move serve onto the existing Kong fork and internal/serve slice with typed CLI,
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17), after T-108; it was S8 of the template-adoption refactor, which ended without it.
+    T-132's final proof ran without it, so the final-proof cases below wait for the proof this move
+    sets. Move serve onto the existing Kong fork and internal/serve slice with typed CLI,
     Contract, Query, Handler and Run, using architecture-domain services and serving ports supplied
     by cmd. No direct filesystem/network/process/timer calls in the slice and no import of concrete
     adapters. Keep current flag order, default roots, localhost binding, output/logging, duration
-    parsing and failure text, help/JSON/problem subjects/current exit codes exactly; Ctrl-C still
-    ends serve with0 until separately specified S10. Add duration handling at the existing typed
+    parsing and failure text, help/JSON/problem subjects/current exit codes exactly; Ctrl-C ends
+    serve with 130, as slice-8 (94c5c12) specified it. Add duration handling at the existing typed
     Flags boundary in the hand parser's words, not by matching error strings; dependencies come
     through existing Kong binding, no new DI framework or registration scheme (futureT86 is
     separate). Use domain values directly and minimum owned port interfaces, no model
@@ -4436,7 +4457,9 @@
   type: refactor
   title: Finish architecture and serving scenario coverage and remove legacy scaffolding
   why: >
-    Finish S8 after T-112. Review architecture_graph.feature and serve.feature registration in both
+    Part of serve's move to a web app of its own, deferred with it (1b449af, the person,
+    2026-10-17); it was S8 of the template-adoption refactor, which ended without it. Finish
+    serve's moves in this repository after T-112. Review architecture_graph.feature and serve.feature registration in both
     drivers: no remaining graph/serve Unstepped IDs, no temporary binary-only tags or hidden empty
     selections, permanent real process/socket/signal/tool-only cases explicitly explained. Report
     actual scenario and example counts, steps and intentional skips from each driver. Preserve
@@ -4445,11 +4468,11 @@
     replacement mappings. Delete now-unused legacy graph/server files and compatibility scaffolding,
     retain reusable project/coverage adapters from earlier accepted stages rather than bulk-moving
     unrelated libraries. Update docs/go.md dependency map and fixtures, features README coverage and
-    current-refactor proof case list to final state; each enforced package rule reflects actual
+    this move's proof case list to final state; each enforced package rule reflects actual
     imports and comments. Carry notices, CONTRIBUTORS and artifact/exception moves whole, no
     invented mutation evidence. Scenarios and flags must remain same; a behavior mismatch is a
-    separately specified red-first fix. Verify S7 temporary ITOS_CC_SKIP_FEATURES setting was
-    removed at T-100 from both push-CI steps, do not restore it. Focus local named checks and
+    separately specified red-first fix. ITOS_CC_SKIP_FEATURES is out of every workflow since
+    91c46d9 (T-125); do not restore it. Focus local named checks and
     leftover-reference inventory, gates via hooks/CI, no own-code
     mutation/worktrees/sessionmoves/agents. Future T-86 feature-owned layout remains a follow-up.
   done_when:

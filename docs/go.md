@@ -387,8 +387,10 @@ context-as-argument a context after any other parameter, tests included.
   or library. An adapter may also import the domain it serves, and a port the domain it
   belongs to, to build or return the domain's own types with no mapper between them (decision
   47, amending 29's adapter rule): its rule allows that domain once the adapter needs it.
-  An adapter may also use the shared pure domains its rule names, `internal/lang` and
-  `internal/selection`, which read nothing, as `freshenv`, `testtools` and `testinputs` do.
+  An adapter may also use the shared pure domains its rule names, `internal/lang`,
+  `internal/selection` and `internal/coverage`, which read nothing, as `freshenv`, `testtools`
+  and `testinputs` do. `freshenv` serves mutants, yet its rule allows `internal/coverage` and its
+  port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
