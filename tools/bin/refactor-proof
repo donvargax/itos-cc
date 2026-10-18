@@ -1,0 +1,626 @@
+#!/usr/bin/env bash
+# refactor-proof: T-132's edge-case comparison. Runs two itos-cc binaries,
+# the one built from T-29's parent (51f3952) and the refactored one, over
+# the cases in tools/testdata/refactor-proof/cases, the edge cases the
+# refactor's moves listed, and compares each run's stdout, stderr and exit
+# code, and the files a case names, byte for byte after the normalization
+# rules below. It writes only under the evidence folder, never this
+# repository; mutation cases run on the small Go and TypeScript fixtures
+# defined here, never on this repository's code.
+#
+#   tools/bin/refactor-proof OLD NEW [EVIDENCE] [CASE-REGEX]
+#
+# EVIDENCE (default: a new temporary folder) must not exist yet, so a run
+# never overwrites another's evidence. It keeps every raw stream, exit code
+# and captured file of both sides, the normalized copies beside them, and
+# report.txt, one line per case: same (raw bytes equal), normalized (equal
+# only after the rules), differs, unstable (the old binary run again
+# differs from itself, so the run decides, not the binary) or as-rerun
+# (unstable, and the new binary's run equals the old binary's second one),
+# with its classification from the case list when it names one. Exit 0 when no case differs, 1 when one does, 2
+# for a bad case list or a setup failure.
+#
+# Both sides of a case run in the same folder, the binary copied to the same
+# path, the folder rebuilt from scratch before
+# each side by the case's fixture, with git commits at fixed dates, so paths
+# and commit ids agree and need no rule. The normalization rules, applied to
+# both sides alike and to nothing else:
+#   1. temporary paths: TMPDIR, which each side gets empty, written
+#      <tmp>, and the digits of the first name below it (os.MkdirTemp's
+#      random suffix) written N; a folder anywhere named NAME-DIGITS, six
+#      digits or more (os.MkdirTemp's, such as .metrics/coverage/run-N or
+#      .git/itos/fresh-plan-N), its digits written N, and a folder below
+#      such a one named LANGUAGE-HEX8 (coverage's folder for a build root,
+#      a hash of the root's path, which the random folder holds), its hex
+#      written H; a file named NAME.DIGITS.tmp, six digits or more (a
+#      snapshot's temporary file, written beside it), its digits written N;
+#   2. durations: a Go duration printed after a digit-free word boundary
+#      (1.2s, 350ms, 1m2.5s, 12µs) written <duration>; and the timing of a
+#      Vitest run that itos-cc passes on, its "Start at" line's clock time
+#      written <clock> and its "Duration" line's shares of that time
+#      written (<shares>);
+#   3. the version string: none, since both binaries are stamped with the
+#      same version and commit by the caller (refactor-proof.yml's build).
+#
+# A case line, its fields split on " | ":
+#   ID | FIXTURE | CWD | CAPTURE | STEPS [| NOTE]
+# CWD is relative to the fixture's root; CAPTURE is "-" or comma-separated
+# paths relative to the project p/, a folder captured as its listing and
+# every file's bytes; STEPS are split on " ;; ", each one either
+#   itos-cc ARGS      the binary under test, ARGS read as shell words,
+#                     $W expanding to the fixture's root
+#   env:NAME=VALUE ... itos-cc ARGS    the same with variables set
+#   nopath:PROG ... itos-cc ARGS       the same with PROG off the PATH
+#   int:ERE itos-cc ARGS   started, and sent SIGINT once its stderr
+#                     matches ERE (60 s at most)
+#   ! SHELL           a setup command in the case's folder, its output
+#                     not compared, failing the case if it fails
+# NOTE, when given, is printed beside a differing case: the deliberate
+# difference or fix item that accounts for it.
+set -euo pipefail
+
+usage() {
+	echo "usage: refactor-proof OLD NEW [EVIDENCE] [CASE-REGEX]" >&2
+	exit 2
+}
+[ $# -ge 2 ] && [ $# -le 4 ] || usage
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
+old=$(realpath -- "$1")
+new=$(realpath -- "$2")
+[ -x "$old" ] && [ -x "$new" ] || {
+	echo "refactor-proof: OLD and NEW must be executables" >&2
+	exit 2
+}
+if [ $# -ge 3 ] && [ -n "$3" ]; then
+	[ ! -e "$3" ] || {
+		echo "refactor-proof: $3 exists; evidence folders are never reused" >&2
+		exit 2
+	}
+	mkdir -p -- "$3"
+	ev=$(realpath -- "$3")
+else
+	ev=$(mktemp -d "${TMPDIR:-/tmp}/T-132-refactor-proof.XXXXXX")
+fi
+only=${4:-}
+cases=$root/tools/testdata/refactor-proof/cases
+modules=${ITOS_CC_NODE_MODULES:-$root/testdata/tools/node/node_modules}
+
+# The fixed world of every run: a fixture root, an empty TMPDIR and HOME,
+# no git config but the repository's, fixed identities and dates, and the
+# caller's Go caches so the fixtures build offline.
+run=$ev/run
+W=$run/w
+tmp=$run/tmp
+gocache=$(go env GOCACHE)
+gomodcache=$(go env GOMODCACHE)
+
+# The PATH every run gets: the caller's, with each folder holding an itos,
+# a claude or a git that is an itos (itos git-shim install) replaced by a
+# folder of links to everything else in it; hidden PROGs too for nopath:.
+isitos() {
+	case "$(basename -- "$(readlink -f -- "$1")")" in itos | itos.exe) return 0 ;; esac
+	go version -m "$1" 2>/dev/null | grep -q '/cmd/itos$'
+}
+pathwithout() { # names...
+	local key dir out folder i=0 name e
+	key=$(printf '%s-' "$@")
+	dir=$ev/path/$key
+	if [ -f "$dir.path" ]; then
+		cat "$dir.path"
+		return
+	fi
+	out=
+	IFS=: read -ra folders <<<"$PATH"
+	for folder in "${folders[@]}"; do
+		i=$((i + 1))
+		[ -d "$folder" ] || continue
+		local hide=()
+		for e in "$folder"/*; do
+			name=$(basename -- "$e")
+			case " $* " in *" $name "*)
+				hide+=("$name")
+				continue
+				;;
+			esac
+			case "$name" in itos | itos-* | claude) hide+=("$name") ;; git) isitos "$e" && hide+=("$name") ;; esac
+		done
+		if [ ${#hide[@]} -eq 0 ]; then
+			out=$out${out:+:}$folder
+			continue
+		fi
+		mkdir -p "$dir/$i"
+		for e in "$folder"/*; do
+			name=$(basename -- "$e")
+			case " ${hide[*]} " in *" $name "*) continue ;; esac
+			ln -s -- "$e" "$dir/$i/$name"
+		done
+		out=$out${out:+:}$dir/$i
+	done
+	mkdir -p "$(dirname -- "$dir")"
+	printf '%s' "$out" >"$dir.path"
+	printf '%s' "$out"
+}
+basepath=$(pathwithout)
+
+world() { # runs "$@" in the fixed environment, in place of the shell with WORLD_EXEC set
+	${WORLD_EXEC:+exec} env -i HOME="$run/home" TMPDIR="$tmp" PATH="${P:-$basepath}" LANG=C.UTF-8 \
+		NO_COLOR=1 GOCACHE="$gocache" GOMODCACHE="$gomodcache" GOTOOLCHAIN=local GOFLAGS= GOPROXY=off \
+		GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+		GIT_AUTHOR_NAME=refactor-proof GIT_AUTHOR_EMAIL=proof@localhost \
+		GIT_COMMITTER_NAME=refactor-proof GIT_COMMITTER_EMAIL=proof@localhost \
+		GIT_AUTHOR_DATE=2026-01-01T00:00:00Z GIT_COMMITTER_DATE=2026-01-01T00:00:00Z \
+		"${EXTRA[@]}" "$@"
+}
+
+# Fixtures: each writes a project at $W/p, and anything outside it beside.
+gitinit() { # commit everything in $W/p
+	(cd "$W/p" && world git init -q -b main && world git add -A && world git commit -q -m fixture)
+}
+fx_empty() { mkdir -p "$W/p"; }
+fx_gitempty() {
+	mkdir -p "$W/p"
+	(cd "$W/p" && world git init -q -b main && world git commit -q --allow-empty -m fixture)
+}
+gofiles() {
+	mkdir -p "$W/p/sub"
+	printf 'module example.com/proof\n\ngo 1.22\n' >"$W/p/go.mod"
+	cat >"$W/p/board.go" <<'EOF'
+package proof
+
+// Pos reports whether n is positive.
+func Pos(n int) bool {
+	return n > 0
+}
+
+// Add sums a and b.
+func Add(a, b int) int {
+	return a + b
+}
+
+// Clamp keeps n within lo and hi.
+func Clamp(n, lo, hi int) int {
+	if n < lo {
+		return lo
+	}
+	if n > hi {
+		return hi
+	}
+	return n
+}
+EOF
+	cat >"$W/p/board_test.go" <<'EOF'
+package proof
+
+import "testing"
+
+func TestPos(t *testing.T) {
+	if !Pos(5) || Pos(-5) {
+		t.Fatal("Pos")
+	}
+}
+
+func TestAdd(t *testing.T) {
+	if Add(2, 3) != 5 {
+		t.Fatal("Add")
+	}
+}
+EOF
+	cat >"$W/p/sub/sub.go" <<'EOF'
+package sub
+
+// Twice doubles n.
+func Twice(n int) int {
+	if n == 0 {
+		return 0
+	}
+	return n * 2
+}
+EOF
+	cat >"$W/p/sub/sub_test.go" <<'EOF'
+package sub
+
+import "testing"
+
+func TestTwice(t *testing.T) {
+	if Twice(3) != 6 || Twice(0) != 0 {
+		t.Fatal("Twice")
+	}
+}
+EOF
+	mkdir -p "$W/o"
+	cp "$W/p/board.go" "$W/o/outside.go"
+}
+fx_go() { gofiles && gitinit; }
+fx_goslow() { # tests slow enough for an interrupt to land while they run
+	gofiles
+	cat >"$W/p/sub/sub_test.go" <<'EOF'
+package sub
+
+import (
+	"testing"
+	"time"
+)
+
+func TestTwice(t *testing.T) {
+	time.Sleep(4 * time.Second)
+	if Twice(3) != 6 || Twice(0) != 0 {
+		t.Fatal("Twice")
+	}
+}
+EOF
+	cp "$W/p/sub/sub_test.go" "$W/p/slow_test.go"
+	sed -i 's/^package sub$/package proof/; s/Twice(3) != 6 || Twice(0) != 0/!Pos(1)/' "$W/p/slow_test.go"
+	gitinit
+}
+fx_gonogit() { gofiles; }
+fx_gocov() { # coverage fractions 0, 1/3, 1/2, 2/3, 1 for crap's scores
+	mkdir -p "$W/p"
+	printf 'module example.com/cov\n\ngo 1.22\n' >"$W/p/go.mod"
+	cat >"$W/p/cov.go" <<'EOF'
+package cov
+
+func None(n int) int {
+	if n > 1 {
+		n++
+	}
+	return n
+}
+
+func Third(n int) int {
+	if n == 1 {
+		return 1
+	}
+	if n == 2 {
+		return 2
+	}
+	if n == 3 {
+		return 3
+	}
+	if n == 4 {
+		return 4
+	}
+	return 0
+}
+
+func Half(n int) int {
+	x := n
+	if n > 0 {
+		x++
+		x++
+		x++
+	}
+	return x
+}
+
+func Most(n int) int {
+	a := n
+	a++
+	a++
+	a++
+	a++
+	a++
+	a++
+	a++
+	a++
+	if n < 0 {
+		return 0
+	}
+	return a
+}
+
+func Full(n int) int {
+	if n > 0 {
+		return 1
+	}
+	return 0
+}
+EOF
+	cat >"$W/p/cov_test.go" <<'EOF'
+package cov
+
+import "testing"
+
+func TestCov(t *testing.T) {
+	Third(1)
+	Half(0)
+	Most(1)
+	Full(1)
+	Full(0)
+}
+EOF
+	gitinit
+}
+tsfiles() {
+	mkdir -p "$W/p/src"
+	printf '{"name": "board", "type": "module", "devDependencies": {"vitest": "5.0.2", "@vitest/coverage-v8": "5.0.2"}}\n' >"$W/p/package.json"
+	cat >"$W/p/src/board.ts" <<'EOF'
+export function place(n: number): boolean {
+  return n > 0;
+}
+
+export class Board {
+  count(n: number): number {
+    if (n > 10) {
+      return 10;
+    }
+    return n + 1;
+  }
+}
+EOF
+	cat >"$W/p/src/board.test.ts" <<'EOF'
+import { expect, test } from "vitest";
+import { place, Board } from "./board";
+
+test("place", () => {
+  expect(place(5)).toBe(true);
+  expect(place(-5)).toBe(false);
+});
+
+test("count", () => {
+  expect(new Board().count(1)).toBe(2);
+});
+EOF
+	printf 'node_modules\n' >"$W/p/.gitignore"
+}
+fx_ts() {
+	tsfiles
+	gitinit
+	ln -s -- "$modules" "$W/p/node_modules"
+}
+fx_mixed() { # units, dry and scrap over every language, no tools needed
+	gofiles
+	mkdir -p "$W/p/src" "$W/p/py" "$W/p/kt/src/main/kotlin" "$W/p/dist" "$W/p/ignored" "$W/p/real"
+	tsfiles
+	printf 'def total(items):\n    s = 0\n    for i in items:\n        s += i\n    return s\n' >"$W/p/py/billing.py"
+	printf 'from py.billing import total\n\ndef test_total():\n    assert total([1, 2]) == 3\n' >"$W/p/py/test_billing.py"
+	printf '<project></project>\n' >"$W/p/kt/pom.xml"
+	printf 'fun area(w: Int, h: Int): Int {\n    return w * h\n}\n' >"$W/p/kt/src/main/kotlin/Area.kt"
+	printf 'export function built(n: number): number {\n  return n * 3;\n}\n' >"$W/p/dist/built.ts"
+	printf 'export function hidden(n: number): number {\n  return n - 1;\n}\n' >"$W/p/ignored/hidden.ts"
+	printf 'export function linked(n: number): number {\n  return n + 7;\n}\n' >"$W/p/real/linked.ts"
+	printf 'node_modules\nignored/\n' >"$W/p/.gitignore"
+	gitinit
+	ln -s real "$W/p/linked"
+}
+fx_scrap() {
+	mkdir -p "$W/p/py" "$W/p/ts"
+	cat >"$W/p/py/test_a.py" <<'EOF'
+def test_one():
+    assert 1 + 1 == 2
+
+def test_two():
+    assert 2 + 2 == 4
+EOF
+	cat >"$W/p/ts/b.test.ts" <<'EOF'
+import { expect, test } from "vitest";
+
+test("b", () => {
+  for (let i = 0; i < 3; i++) {
+    if (i > 1) {
+      expect(i).toBe(2);
+    }
+  }
+});
+EOF
+	gitinit
+}
+
+normalize() { # file: rules 1 and 2, see the header
+	perl -pe '
+		BEGIN { $t = shift @ARGV }
+		s{\Q$t\E/([^/\s"\x27:]*)}{ my $n = $1; $n =~ s/[0-9]+/N/g; "<tmp>/$n" }ge;
+		s{\Q$t\E}{<tmp>}g;
+		s{(/[\w.-]+?-)[0-9]{6,}(?=[/\s"\x27\$:]|$)}{${1}N}g;
+		s{(/[\w.-]+\.)[0-9]{6,}(\.tmp)(?![\w.])}{${1}N$2}g;
+		1 while s{(-N/[^\s"\x27]*?(?<=/)(?:go|typescript|python|kotlin)-)[0-9a-f]{8}(?![0-9a-f])}{${1}H};
+		s{^(\s*Start at\s+)[0-9]{2}:[0-9]{2}:[0-9]{2}$}{$1<clock>};
+		s{^(\s*Duration\s+\S+\s+)\(.*\)$}{$1(<shares>)};
+		s{(?<![\w.\[])(?:[0-9]+(?:\.[0-9]+)?(?:h|ms|\x{b5}s|\x{3bc}s|us|ns|m|s))+(?![\w])}{<duration>}g;
+	' "$tmp" "$1"
+}
+
+capture() { # side dest paths
+	local side=$1 dest=$2 list=$3 p
+	[ "$list" = "-" ] && return 0
+	IFS=, read -ra paths <<<"$list"
+	for p in "${paths[@]}"; do
+		local src=$W/p/$p name=${p//\//_}
+		if [ -d "$src" ]; then
+			(cd "$src" && find . -mindepth 1 | LC_ALL=C sort) >"$dest/files-$name.list"
+			(cd "$src" && find . -type f | LC_ALL=C sort | while read -r f; do
+				printf '== %s\n' "$f"
+				cat -- "$f"
+			done) >"$dest/files-$name.dir"
+		elif [ -e "$src" ]; then
+			cp -- "$src" "$dest/files-$name"
+		else
+			printf 'refactor-proof: %s does not exist\n' "$p" >"$dest/files-$name.missing"
+		fi
+	done
+}
+
+step() { # bin dest n step
+	local bin=$1 dest=$2 n=$3 s=$4 sig="" words
+	local EXTRA=() P=$basepath hide=()
+	if [ "${s:0:1}" = "!" ]; then
+		EXTRA+=("W=$W")
+		(world sh -c "${s:1}") >"$dest/setup-$n.log" 2>&1 || {
+			echo "setup step $n failed: ${s:1}" >"$dest/setup-failed"
+			return 1
+		}
+		return 0
+	fi
+	eval "words=($s)"
+	while [ ${#words[@]} -gt 0 ]; do
+		case "${words[0]}" in
+		env:*) EXTRA+=("${words[0]#env:}") ;;
+		nopath:*) hide+=("${words[0]#nopath:}") ;;
+		int:*) sig=${words[0]#int:} ;;
+		itos-cc)
+			words=("${words[@]:1}")
+			break
+			;;
+		*)
+			echo "step $n names no itos-cc: $s" >"$dest/setup-failed"
+			return 1
+			;;
+		esac
+		words=("${words[@]:1}")
+	done
+	[ ${#hide[@]} -eq 0 ] || P=$(pathwithout "${hide[@]}")
+	printf '%s\n' "${words[@]}" >"$dest/$n.argv"
+	if [ -z "$sig" ]; then
+		set +e
+		world timeout -s KILL 600 "$bin" "${words[@]}" >"$dest/$n.out" 2>"$dest/$n.err" </dev/null
+		echo $? >"$dest/$n.exit"
+		set -e
+		return 0
+	fi
+	# The interrupt case: SIGINT restored to its default disposition, which a
+	# background job of a script starts with ignored, then sent once ready.
+	WORLD_EXEC=1 world perl -e '$SIG{INT} = "DEFAULT"; exec @ARGV or die' "$bin" "${words[@]}" \
+		>"$dest/$n.out" 2>"$dest/$n.err" </dev/null &
+	local pid=$! i=0
+	until grep -Eq -- "$sig" "$dest/$n.err" 2>/dev/null; do
+		i=$((i + 1))
+		if [ $i -gt 1200 ] || ! kill -0 "$pid" 2>/dev/null; then
+			echo "refactor-proof: never matched $sig" >>"$dest/$n.note"
+			break
+		fi
+		sleep 0.05
+	done
+	kill -INT "$pid" 2>/dev/null || true
+	i=0
+	while kill -0 "$pid" 2>/dev/null; do
+		i=$((i + 1))
+		if [ $i -gt 1200 ]; then
+			echo "refactor-proof: still running 60 s after SIGINT; killed" >>"$dest/$n.note"
+			kill -KILL "$pid" 2>/dev/null || true
+			break
+		fi
+		sleep 0.05
+	done
+	set +e
+	wait "$pid"
+	echo $? >"$dest/$n.exit"
+	set -e
+}
+
+side() { # id fixture cwd capture steps side bin
+	local id=$1 fixture=$2 cwd=$3 cap=$4 steps=$5 dest=$ev/$1/$6 bin=$run/bin/itos-cc n=0 s
+	chmod -R u+rwx "$run" 2>/dev/null || true
+	rm -rf -- "$run"
+	mkdir -p "$W" "$tmp" "$run/home" "$run/bin" "$dest"
+	cp -- "$7" "$bin"
+	local EXTRA=()
+	"fx_$fixture"
+	local rest=$steps
+	(
+		cd "$W/$cwd"
+		while :; do
+			n=$((n + 1))
+			s=${rest%% ;; *}
+			step "$bin" "$dest" "$n" "$s" || exit 1
+			[ "$s" = "$rest" ] && break
+			rest=${rest#* ;; }
+		done
+	) || true
+	chmod -R u+rwx "$run" 2>/dev/null || true
+	capture "$6" "$dest" "$cap"
+	for f in "$dest"/*; do
+		case "$f" in *.argv | *.norm | */setup-*) continue ;; esac
+		[ -f "$f" ] && normalize "$f" >"$f.norm"
+	done
+	return 0
+}
+
+# normsame DIR: whether old/ and new/ hold the same normalized files.
+normsame() {
+	local f
+	[ "$(cd "$1/old" && ls -- *.norm)" = "$(cd "$1/new" && ls -- *.norm)" ] || return 1
+	for f in "$1"/old/*.norm; do
+		cmp -s -- "$f" "$1/new/${f##*/}" || return 1
+	done
+}
+
+# fieldsof LINE: the case's fields, split on " | ", into the array fields.
+fieldsof() {
+	local rest=$1
+	fields=()
+	while [[ "$rest" == *" | "* ]]; do
+		fields+=("${rest%% | *}")
+		rest=${rest#* | }
+	done
+	fields+=("$rest")
+}
+
+# Read and check the case list: no duplicate id, every field there.
+declare -A seen
+ids=()
+while IFS= read -r line || [ -n "$line" ]; do
+	case "$line" in '' | '#'*) continue ;; esac
+	id=${line%% | *}
+	[ -z "${seen[$id]:-}" ] || {
+		echo "refactor-proof: case $id is listed twice" >&2
+		exit 2
+	}
+	seen[$id]=$line
+	fieldsof "$line"
+	[ ${#fields[@]} -ge 5 ] && declare -F "fx_${fields[1]}" >/dev/null || {
+		echo "refactor-proof: case $id is malformed or names no fixture: $line" >&2
+		exit 2
+	}
+	ids+=("$id")
+done <"$cases"
+
+report=$ev/report.txt
+: >"$report"
+differs=0 ran=0
+for id in "${ids[@]}"; do
+	[ -z "$only" ] || [[ "$id" =~ $only ]] || continue
+	fieldsof "${seen[$id]}"
+	note=${fields[5]:-}
+	ran=$((ran + 1))
+	side "$id" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" old "$old"
+	side "$id" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" new "$new"
+	if [ -e "$ev/$id/old/setup-failed" ] || [ -e "$ev/$id/new/setup-failed" ]; then
+		verdict="setup-failed"
+		differs=1
+	elif diff -rq -x '*.norm' -x 'setup-*' "$ev/$id/old" "$ev/$id/new" >/dev/null; then
+		verdict=same
+	elif normsame "$ev/$id"; then
+		verdict=normalized
+	else
+		verdict=differs
+		differs=1
+		# The control: the old binary again. A difference it shows with
+		# itself is the run's, not the refactor's: unstable.
+		side "$id" "${fields[1]}" "${fields[2]}" "${fields[3]}" "${fields[4]}" old2 "$old"
+		if ! (mv "$ev/$id/new" "$ev/$id/new.t" && mv "$ev/$id/old2" "$ev/$id/new" &&
+			normsame "$ev/$id"; r=$?; mv "$ev/$id/new" "$ev/$id/old2"; mv "$ev/$id/new.t" "$ev/$id/new"; exit $r); then
+			verdict=unstable
+			if (mv "$ev/$id/old" "$ev/$id/old.t" && mv "$ev/$id/old2" "$ev/$id/old" &&
+				normsame "$ev/$id"; r=$?; mv "$ev/$id/old" "$ev/$id/old2"; mv "$ev/$id/old.t" "$ev/$id/old"; exit $r); then
+				verdict=as-rerun
+			fi
+		fi
+		(cd "$ev/$id" && for f in old/*.norm new/*.norm; do
+			b=${f#*/}
+			[ -e "old/$b" ] || printf 'only in new: %s\n' "${b%.norm}"
+			[ -e "new/$b" ] || printf 'only in old: %s\n' "${b%.norm}"
+			[ "${f%%/*}" = old ] && [ -e "new/$b" ] || continue
+			cmp -s "$f" "new/$b" || diff -u --label "old/${b%.norm}" --label "new/${b%.norm}" "$f" "new/$b" || true
+		done) >"$ev/$id/diff.txt"
+	fi
+	printf '%-12s %s%s\n' "$verdict" "$id" "${note:+  [$note]}" | tee -a "$report"
+done
+# The last case's folder and the PATH's links go: the evidence keeps only
+# what the cases wrote, never a link out of it.
+chmod -R u+rwx "$run" 2>/dev/null || true
+rm -rf -- "$run" "$ev/path"
+[ "$ran" -gt 0 ] || {
+	echo "refactor-proof: no case matches $only" >&2
+	exit 2
+}
+echo "refactor-proof: $ran cases, evidence in $ev" >&2
+exit "$differs"
