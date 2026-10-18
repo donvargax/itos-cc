@@ -3747,3 +3747,24 @@ items:
       feature of our kong fork that every kong-based tool gets. Specify nothing until that is
       settled; then rewrite or replace completion.feature for itos-cc's own commands. docs/CLI.md
       lists shell completion among the rules itos-cc does not follow yet.
+  - id: spec-coverage-audit
+    title: Every itos-cc behaviour is specified in a feature file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [refactor-final-proof]
+    kind: idea
+    why: >
+      The person, 2026-10-17: the scenarios are itos-cc's spec, so after the refactor's final proof
+      (not before it), audit that every feature is specified. A first grep on 2026-10-17 found every
+      flag of every command's help in some scenario, but 12 of the 47 problem rules in docs/CLI.md's
+      table named by none: args.invalid, args.missing, args.unexpected, command.missing,
+      flags.repeated, flags.switch-value, count.no-git, count.trial-failed, count.unsupported-scope,
+      coverage.command-needs-report (whose producing branch T-101 removed, so the row may be dead),
+      serve.port-in-use and serve.repo-unreadable (these two go with serve and its web app). Audit
+      each command's help contract and docs/CLI.md sentence by sentence against the scenarios, list
+      each unspecified behaviour, and specify it red-first as test commits of scenarios describing
+      current behaviour (characterization, which should pass at once and must be shown able to
+      fail), or report it as dead documentation to remove. Out of scope: serve and viewer.feature,
+      which leave with the web app, and completion.feature, whose @wip scenarios stay as they are
+      under the idea shell-completion.
