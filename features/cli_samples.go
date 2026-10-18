@@ -126,9 +126,9 @@ test("either", () => {
 )
 
 // boardLCOV is the LCOV Vitest's V8 coverage writes for src/board.ts, as
-// it was written and once score and either have their comments: every
-// function's lines covered but unused's, line 28 or, a line under each
-// comment, 30.
+// it was written and once score and either have their signatures split:
+// every function's lines covered but unused's, line 28 or, a line further
+// down for each, 30.
 var boardLCOV = map[bool]string{
 	false: `TN:
 SF:src/board.ts
@@ -226,7 +226,8 @@ func boardTests(scoreIf int) Tests {
 
 // mutationSample writes the Vitest project, runs mutation run over
 // src/board.ts once, which caches every outcome, then changes score and
-// either by a comment each: the next run reuses the eight killed mutants
+// either by splitting each one's signature over two lines, a change of its
+// code, as a comment's would be none: the next run reuses the eight killed mutants
 // of the three functions unchanged and runs the seven of those two again,
 // score's survivor among them, its if a line further down.
 func (c *cliState) mutationSample() error {
@@ -253,8 +254,8 @@ func (c *cliState) mutationSample() error {
 	if want := "(ran 15, reused 0)"; code != 1 || !strings.Contains(stdout, want) {
 		return fmt.Errorf("the first mutation run did not run the 15 mutants it reaches: exit %d\n%s%s", code, stdout, stderr)
 	}
-	changed := strings.NewReplacer("  if (n === 1) {", "  // one scores nothing\n  if (n === 1) {",
-		"  return a && !b;", "  // a, unless b\n  return a && !b;").Replace(boardTS)
+	changed := strings.NewReplacer("export function score(n: number)", "export function score(\n  n: number)",
+		"export function either(a: boolean, b: boolean)", "export function either(\n  a: boolean, b: boolean)").Replace(boardTS)
 	if err := c.w.write("src/board.ts", changed); err != nil {
 		return err
 	}
