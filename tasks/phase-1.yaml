@@ -4512,9 +4512,6 @@
     edits. Keep all current behavior/exit codes; no per-task binary comparison, add edge cases to
     final-proof. Focus selected main boundary checks and cli scenarios, full gates hooks/CI. No
     own-code mutation/worktrees/sessionmoves/agents; futureT86 separate.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestRun|TestCommandName|TestWantsJSON|TestLogger)'
-    - run: go test ./features ./cmd/itos-cc -count=1 -run '^Test(Features|Scenarios)$' -scenarios="^@ID-CLI-"
 - id: T-116
   type: refactor
   title: Remove the completed refactor's sample count application

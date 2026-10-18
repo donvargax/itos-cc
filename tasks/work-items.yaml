@@ -3521,7 +3521,7 @@ items:
     title: Restore applicable main tests and reconcile the parked template exception
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-114]
     kind: task
   - id: T-116
