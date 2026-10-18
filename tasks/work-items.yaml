@@ -3659,3 +3659,14 @@ items:
       move ahead of the other wave-3 features once the nightly and mutation proof are back.
       kill-by-test-graph (#56) builds on it.
     refs: ["#30"]
+  - id: kill-by-test-graph
+    title: A Go kill is dated by its killing test and what that test reaches
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #56. Against ADR-0016 (importer hashes date every outcome). Decide with the person after
+      listed-test-fingerprint lands, which uses the same machinery.
+    refs: ["#56"]
