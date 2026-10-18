@@ -3824,6 +3824,12 @@ items:
       scenarios running at once another can be handed the same port in between, so Graph retries
       serve on another port when it exits 75 before it is ready. Once serve announces its listener's
       address, the harness passes --port 0 and drops the retry.
+
+      This belongs to serve's move to a web app of its own (1b449af, the person's decision of
+      2026-10-17), which takes the graph along, since the graph is reachable only through serve.
+      Serve's moves in this repository (T-102 to T-108, T-112 and T-113) are deferred until that web
+      app is specified. Until then serve stays on its legacy handler, which still announces the
+      address it asked for (cmd/itos-cc/serve.go:78).
   - id: T-134
     title: ID-MUT-250 fails on macOS when a killed fixture resets its connection
     phase: 1
