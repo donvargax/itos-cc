@@ -1711,16 +1711,9 @@ items:
     title: Restore itos-cc.yaml's mutation exception for the template's main.go
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: [T-26]
     kind: idea
-    why: >
-      Set aside by T-26. The template's itos-cc.yaml excepts one mutant of the template's main.go
-      (cmd/itos-cc#run, > to >=, hash c33f9e2625dbed56). itos-cc's main.go is not the template's
-      yet, so the entry would be stale here (mutation check names it mutation.exception-stale), and
-      it is commented out with the reason above it. When the refactor ports the template's main.go,
-      the entry is uncommented if its function and hash match, or renewed with itos-cc mutation
-      except --renew if the port changed it; never left to go stale.
   - id: T-119
     title: Enforce Go lint across the completed refactor module
     phase: 1
