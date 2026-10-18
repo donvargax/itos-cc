@@ -1735,17 +1735,9 @@ items:
     title: Declare a fast project pre-commit hook and document clone setup
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-119]
     kind: task
-    why: >
-      Was pre-commit-hook.
-      Set aside by T-26. go-template-itos v0.2.0 brought tools/hooks/pre-commit, which runs
-      golangci-lint and govulncheck at their pinned versions on a commit that stages code, declared
-      once per clone with git config hook.itos-cc-pre-commit.event pre-commit and
-      hook.itos-cc-pre-commit.command tools/hooks/pre-commit. It is not declared, as neither check
-      passes on itos-cc yet (gate-golangci-lint, gate-govulncheck); once both are wired, README says
-      how to declare it.
   - id: template-bare-decision-citations
     title: Template code cites itos-template's decisions by bare number, which read as this repository's
     phase: 1

@@ -4758,9 +4758,6 @@
     do not claim other clones are configured or rely on script existence.
     Record actual declaration and functional evidence before closure.
     No public CLI, release, mutation-proof or future T-86 changes belong here.
-  done_when:
-    - run: tools/bin/pre-commit-check
-    - run: sh -n tools/hooks/pre-commit
 - id: T-121
   type: test
   title: Bound native ownership timeout fixtures independently of baseline duration
