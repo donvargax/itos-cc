@@ -3389,3 +3389,15 @@ items:
       (internal/worktrees/worker.go:43-56) and withMutant restores only the mutated file (158-172).
       Restore the copy to pristine before each mutant rather than copying afresh. Wave 0.
     refs: ["#35"]
+  - id: empty-case-covered
+    title: A site in an empty Go case clause is uncovered even when the clause runs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #53. ParseGo stores covered weight as boolWeight(count>0, stmts)
+      (internal/coverage/formats.go:152-153), so a block of 0 statements that ran reads as not run
+      (coverage.go:219-231, used at internal/mutants/run_plan.go:224). Wave 0.
+    refs: ["#53"]
