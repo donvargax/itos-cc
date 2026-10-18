@@ -33,15 +33,15 @@ func TestJoinedCommandCancellation(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer input.Close()
-			defer keepOpen.Close()
+			defer func() { _ = input.Close() }()    // closed again only to free it; the test checks the close that matters
+			defer func() { _ = keepOpen.Close() }() // closed again only to free it; the test checks the close that matters
 			cmd.Stdin = input
 			output, writer, err := os.Pipe()
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer output.Close()
-			defer writer.Close()
+			defer func() { _ = output.Close() }() // closed again only to free it; the test checks the close that matters
+			defer func() { _ = writer.Close() }() // closed again only to free it; the test checks the close that matters
 			cmd.Stdout = writer
 			cmd.Stderr = writer
 			done := make(chan struct{})

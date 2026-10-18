@@ -10,10 +10,11 @@ import (
 )
 
 func executeGo(ctx context.Context, root, dir, selection string) execution {
-	log, err := os.OpenFile(filepath.Join(dir, "test.log"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	log, err := os.OpenFile(filepath.Join(dir, "test.log"), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // the test log, created exclusively in this run's own evidence folder
 	if err != nil {
 		return execution{-1, err}
 	}
+	//nolint:gosec // only the fixed go test of ./features; selection is the reviewed manifest's scenario selection
 	cmd := exec.CommandContext(ctx, "go", "test", "./features", "-run", "^TestFeatures$", "-count=1", "-v", "-scenarios="+selection, "-scenario-report="+filepath.Join(dir, "cucumber.json"))
 	cmd.Dir = root
 	cmd.Stdout = log

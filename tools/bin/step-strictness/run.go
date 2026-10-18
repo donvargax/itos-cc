@@ -56,7 +56,7 @@ type execution struct {
 type executor func(context.Context, string, string, string) execution
 
 func writeDurable(path string, b []byte, mode os.FileMode) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode) //nolint:gosec // a new file, created exclusively at a path of this run's evidence folder
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,9 @@ func writeJSON(path string, value any) error {
 		return err
 	}
 	name := tmp.Name()
-	defer os.Remove(name)
+	// Renamed into place, the staged file is gone; before that, the error
+	// returned already says what failed.
+	defer func() { _ = os.Remove(name) }()
 	_, writeErr := tmp.Write(append(b, '\n'))
 	if err = errors.Join(writeErr, tmp.Sync(), tmp.Close()); err != nil {
 		return err
@@ -133,7 +135,7 @@ func sameFile(path string, want []byte, mode os.FileMode) error {
 	if err = sourceMode(info.Mode()); err != nil {
 		return fmt.Errorf("concurrent mode change at %s: %w", path, err)
 	}
-	actual, err := os.ReadFile(path)
+	actual, err := os.ReadFile(path) //nolint:gosec // a step source the reviewed manifest names, checked before it is replaced
 	if err != nil {
 		return err
 	}
@@ -152,7 +154,9 @@ func replaceOwned(path string, from, to []byte, mode os.FileMode) error {
 		return err
 	}
 	name := f.Name()
-	defer os.Remove(name)
+	// Renamed into place, the staged file is gone; before that, the error
+	// returned already says what failed.
+	defer func() { _ = os.Remove(name) }()
 	_, writeErr := f.Write(to)
 	if err = errors.Join(writeErr, f.Chmod(mode), f.Sync(), f.Close()); err != nil {
 		return err

@@ -102,7 +102,7 @@ func checkJSON(data []byte) error {
 }
 
 func loadPlan(path string) (plan, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) //nolint:gosec // the reviewed manifest the person named with -plan
 	if err != nil {
 		return plan{}, err
 	}

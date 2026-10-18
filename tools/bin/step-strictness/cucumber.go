@@ -43,7 +43,7 @@ type caseEvidence struct {
 func (c caseEvidence) key() string { return fmt.Sprintf("%s:%s:%d", c.URI, c.ID, c.Line) }
 
 func readCases(path string) ([]caseEvidence, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec // the cucumber report this run had the scenarios write in its evidence folder
 	if err != nil {
 		return nil, err
 	}

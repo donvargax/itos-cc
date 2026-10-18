@@ -25,6 +25,9 @@ func printJSON(out io.Writer, value any) error {
 	return e.Encode(value)
 }
 
+// command runs step-strictness and returns its exit code, which carries the
+// outcome: a line the person's terminal refuses has nowhere else to be
+// reported, so its write's error is discarded.
 func command(ctx context.Context, args []string, out, stderr io.Writer, platform string) int {
 	flags := flag.NewFlagSet("step-strictness", flag.ContinueOnError)
 	flags.SetOutput(stderr)
@@ -34,29 +37,29 @@ func command(ctx context.Context, args []string, out, stderr io.Writer, platform
 		return 2
 	}
 	if *path == "" || flags.NArg() != 0 {
-		fmt.Fprintln(stderr, "usage: step-strictness -plan <manifest.json> [-print-plan]")
+		_, _ = fmt.Fprintln(stderr, "usage: step-strictness -plan <manifest.json> [-print-plan]")
 		return 2
 	}
 	if !*printPlan && platform != "linux" && platform != "darwin" {
-		fmt.Fprintln(stderr, "step-strictness execution requires Linux or macOS; no files were written")
+		_, _ = fmt.Fprintln(stderr, "step-strictness execution requires Linux or macOS; no files were written")
 		return 2
 	}
 	q, err := prepare(*path)
 	if err != nil {
-		fmt.Fprintln(stderr, err)
+		_, _ = fmt.Fprintln(stderr, err)
 		return 2
 	}
 	if *printPlan {
 		if err := printJSON(out, q.plan); err != nil {
-			fmt.Fprintln(stderr, err)
+			_, _ = fmt.Fprintln(stderr, err)
 			return 2
 		}
 		return 0
 	}
 	r, err := runPlan(ctx, &q, executeGo)
-	fmt.Fprintf(out, "evidence: %s\ndetected %d, undetected %d, invalid %d (%s)\n", q.output, r.Detected, r.Undetected, r.Invalid, r.Duration)
+	_, _ = fmt.Fprintf(out, "evidence: %s\ndetected %d, undetected %d, invalid %d (%s)\n", q.output, r.Detected, r.Undetected, r.Invalid, r.Duration)
 	if err != nil {
-		fmt.Fprintln(stderr, err)
+		_, _ = fmt.Fprintln(stderr, err)
 		return 2
 	}
 	if r.Invalid > 0 {
