@@ -3750,6 +3750,6 @@ items:
     title: ID-MUT-13's timeout bound fails on a slow Windows runner
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

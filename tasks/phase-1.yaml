@@ -5218,6 +5218,3 @@
     mutants' durations; never by widening the bound until it passes, retrying, skipping or tagging
     the scenario. Step code only: no feature text, no product code. Linux may not reproduce it;
     cd.yml's Windows features job judges.
-  done_when:
-    - run: go test ./features -run '^TestFeatures$' -count=3 -scenarios='^@ID-MUT-(13|14)$'
-      timeout: 900
