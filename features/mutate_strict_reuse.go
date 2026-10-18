@@ -118,23 +118,7 @@ func (q *strictMutation) reuseSteps(sc *godog.ScenarioContext) {
 		return q.finding(a, "mutation.coverage-missing", "Positive", 3)
 	})
 	sc.Step(`^no test, list or coverage command runs and no file is written$`, func() error { return q.quiet(q.m.w.stderr) })
-	sc.Step(`^fresh strict coverage evidence for an unchanged Go function$`, func() error {
-		if err := q.positiveProject(); err != nil {
-			return err
-		}
-		for file, text := range map[string]string{"other.go": "package main\nvar Other = 1\n", "support/dep.txt": "initial\n", "itos-cc.yaml": "mutation:\n  tests:\n    list: go version\n    run: go version\n    support: ['support/**']\n"} {
-			if err := q.m.w.write(file, text); err != nil {
-				return err
-			}
-		}
-		// A non-listed run supplies the measurement and source hashes. The support
-		// configuration participates in evidence even though no mutant is listed.
-		if err := q.m.w.write("itos-cc.yaml", "mutation:\n  tests:\n    list: go version\n    run: go version\n    support: ['support/**']\n"); err != nil {
-			return err
-		}
-		// Listed harness setup is supplied below using an actual Go list program.
-		return q.fingerprintSetup()
-	})
+	sc.Step(`^fresh strict coverage evidence for an unchanged Go function$`, q.unchangedEvidence)
 	sc.Step(`^a (.+) input was (changed|added|removed) without changing that function$`, q.changeInput)
 	sc.Step(`^I run mutation check with --fail-uncovered --json for the function's file$`, func() error { return q.run("mutation check --fail-uncovered --json " + q.file) })
 	sc.Step(`^its problem is "mutation.coverage-stale", naming the changed input$`, func() error {
@@ -148,6 +132,31 @@ func (q *strictMutation) reuseSteps(sc *godog.ScenarioContext) {
 		}
 		return nil
 	})
+	q.blessSteps(sc)
+	q.portableSteps(sc)
+}
+
+// unchangedEvidence records strict evidence for Positive, beside a module
+// helper, a support file and a listed harness, in the run's environment.
+func (q *strictMutation) unchangedEvidence() error {
+	if err := q.positiveProject(); err != nil {
+		return err
+	}
+	for file, text := range map[string]string{"other.go": "package main\nvar Other = 1\n", "support/dep.txt": "initial\n", "itos-cc.yaml": "mutation:\n  tests:\n    list: go version\n    run: go version\n    support: ['support/**']\n"} {
+		if err := q.m.w.write(file, text); err != nil {
+			return err
+		}
+	}
+	// A non-listed run supplies the measurement and source hashes. The support
+	// configuration participates in evidence even though no mutant is listed.
+	if err := q.m.w.write("itos-cc.yaml", "mutation:\n  tests:\n    list: go version\n    run: go version\n    support: ['support/**']\n"); err != nil {
+		return err
+	}
+	// Listed harness setup is supplied below using an actual Go list program.
+	return q.fingerprintSetup()
+}
+
+func (q *strictMutation) blessSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a later strict run cannot bless the old profile with new fingerprints$`, func() error {
 		before, err := q.snapshot()
 		if err != nil {

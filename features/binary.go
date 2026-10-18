@@ -370,7 +370,7 @@ func (b binary) Run(r Run) (Result, error) {
 }
 
 // environment is the environment every command runs in, with each
-// NAME=value of vars set: the caller's, less what would make git, itos or
+// NAME=value of vars set, and each NAME of vars alone unset: the caller's, less what would make git, itos or
 // itos-cc read anything but the scratch folder (a hook's GIT_DIR, the
 // caller's ITOS_CC_ settings, CI's), with no global or system git config
 // and a fixed identity, and the caller's PATH without its claude, its itos,
@@ -396,7 +396,11 @@ func environment(vars []string) []string {
 		"PATH="+callerPath(),
 	)
 	for _, kv := range vars {
-		name, value, _ := strings.Cut(kv, "=")
+		name, value, set := strings.Cut(kv, "=")
+		if !set {
+			env = unsetEnv(env, name)
+			continue
+		}
 		env = setEnv(env, name, value)
 	}
 	return env

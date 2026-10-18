@@ -274,11 +274,7 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	if len(runs) > 0 {
 		run = runs[0]
 	}
-	env := map[string]string{}
-	for _, value := range run.Env {
-		key, text, _ := strings.Cut(value, "=")
-		env[key] = text
-	}
+	env := runVariables(run.Env)
 	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write, Env: env, Without: slices.Clone(run.Without), Platform: m.Platform()}
 }
 
@@ -317,14 +313,25 @@ func (m *memory) Tools(ctx context.Context, dir string, setup features.ToolSetup
 	return nil
 }
 
+// runVariables are a run's variables by name: each NAME=value set and each
+// NAME alone unset, in order, as the binary driver applies them.
+func runVariables(vars []string) map[string]string {
+	env := map[string]string{}
+	for _, value := range vars {
+		key, text, set := strings.Cut(value, "=")
+		if !set {
+			delete(env, key)
+			continue
+		}
+		env[key] = text
+	}
+	return env
+}
+
 // inputs supplies independent tool/import/runtime facts to actual bound ports.
 // It never derives availability or reach from a Workers outcome declaration.
 func (m *memory) inputs(r features.Run) *mutantstest.Inputs {
-	env := map[string]string{}
-	for _, value := range r.Env {
-		key, text, _ := strings.Cut(value, "=")
-		env[key] = text
-	}
+	env := runVariables(r.Env)
 	imports := map[string][]string(nil)
 	for root, edges := range m.imports {
 		if filepath.Clean(r.Dir) == root || under(filepath.Clean(r.Dir), root) {

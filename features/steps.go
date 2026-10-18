@@ -298,11 +298,11 @@ type Coverage struct {
 }
 
 // Run is one run of itos-cc: the folder it runs in, the variables the
-// scenario sets in its environment as NAME=value, the text of its standard
-// input, "" for none, its arguments, the programs it finds on no folder
-// of the PATH, so a command naming one never runs, as Gradle and Maven for
-// a scenario that only reads which of them itos-cc chose, and the binary
-// Build made that it runs, "" for the one under test.
+// scenario sets in its environment as NAME=value, or unsets as NAME alone,
+// the text of its standard input, "" for none, its arguments, the programs
+// it finds on no folder of the PATH, so a command naming one never runs, as
+// Gradle and Maven for a scenario that only reads which of them itos-cc
+// chose, and the binary Build made that it runs, "" for the one under test.
 type Run struct {
 	Dir     string
 	Env     []string
@@ -769,13 +769,19 @@ func commandWords(line string) ([]string, error) {
 
 // setEnv is env with the variable name, in any case, set to value.
 func setEnv(env []string, name, value string) []string {
+	return append(unsetEnv(env, name), name+"="+value)
+}
+
+// unsetEnv is env without the variable name, its case ignored as Windows
+// ignores it.
+func unsetEnv(env []string, name string) []string {
 	var out []string
 	for _, kv := range env {
 		if n, _, _ := strings.Cut(kv, "="); !strings.EqualFold(n, name) {
 			out = append(out, kv)
 		}
 	}
-	return append(out, name+"="+value)
+	return out
 }
 
 // runEnv runs itos-cc with args in the folder dir with the variables env
