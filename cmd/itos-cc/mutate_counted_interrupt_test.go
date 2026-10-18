@@ -152,7 +152,9 @@ func lineCount(path string) int {
 	return strings.Count(string(data), "\n")
 }
 
-// @ID-MUT-183
+// @ID-MUT-183. Kept: a second signal while the run cleans up neither skips
+// its join nor its report, which no scenario sends: ID-MUT-183's
+// interrupts once (T-130).
 func TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

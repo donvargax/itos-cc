@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,23 +13,13 @@ import (
 
 // The scenarios of "Rule: Fresh counted mutation judges a bounded committed
 // selection without claiming full proof" in features/mutation.feature that the
-// mutation-counted-listed slice holds. They use the module of
-// mutate_listed_test.go, whose binary its e2e harness tests by listed test
-// ID, through selectionRepo, which makes the harness record the SHA-256 of
-// the main.go each of its runs builds; ownRecorded makes the file's own test
-// record it too. Like the other counted steps they drive the CLI and read
-// the --json object as raw maps, and each focused case selects one or two
-// sites, so a run holds at most two mutant trials.
-
-// ownRecorded makes main_test.go record, on each run, "own main=<SHA-256 of
-// the main.go it tests>" in the file GREET_RECORD names.
-var ownRecorded = [3]string{"main_test.go", "import \"testing\"\n\nfunc TestHalf(t *testing.T) {\n",
-	"import (\n\t\"crypto/sha256\"\n\t\"fmt\"\n\t\"os\"\n\t\"testing\"\n)\n\nfunc TestHalf(t *testing.T) {\n" +
-		"\tif record := os.Getenv(\"GREET_RECORD\"); record != \"\" {\n" +
-		"\t\tsrc, _ := os.ReadFile(\"main.go\")\n" +
-		"\t\tif f, err := os.OpenFile(record, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {\n" +
-		"\t\t\tfmt.Fprintf(f, \"own main=%x\\n\", sha256.Sum256(src))\n" +
-		"\t\t\tf.Close()\n\t\t}\n\t}\n"}
+// mutation-counted-listed slice holds, whose holders still assert what their
+// scenarios do not. They use the module of mutate_listed_test.go, whose
+// binary its e2e harness tests by listed test ID, through selectionRepo,
+// which makes the harness record the SHA-256 of the main.go each of its runs
+// builds. Like the other counted steps they drive the CLI and read the
+// --json object as raw maps, and each focused case selects one or two sites,
+// so a run holds at most two mutant trials.
 
 // countedListedRepo is selectionRepo with a.feature, the file the list
 // command names for ID-A-01, committed: counted preparation admits only a
@@ -43,11 +32,6 @@ func countedListedRepo(t *testing.T, changes ...[3]string) (string, string) {
 	gitIn(t, dir, "add", "a.feature")
 	gitIn(t, dir, "commit", "-qm", "a.feature")
 	return record, main
-}
-
-// sha is the hex SHA-256 of text, as the recording tests write it.
-func sha(text string) string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(text)))
 }
 
 // at is the site of greet's main.go on line whose original text is original.
@@ -70,11 +54,6 @@ func selecting(got *[]mutation.FreshCandidate, wants ...func(mutation.FreshCandi
 		*got = slices.Clone(s)
 		return true
 	}
-}
-
-// firstIndex is the index of the first of lines that is line, -1 for none.
-func firstIndex(lines []string, line string) int {
-	return slices.Index(lines, line)
 }
 
 // siteTests is the "tests" of a selected site, or nil.
@@ -137,57 +116,9 @@ func logOnFailure(t *testing.T, o *outcome) {
 	})
 }
 
-// @ID-MUT-178
-func TestApplicableListedIntegrationTestsFinishASingleFreshJudgment(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	record, main := countedListedRepo(t, ownRecorded)
-	dir := wd(t)
-	// Line 17's n-1 → n+1 survives the own test, and ID-A-02 alone reaches
-	// it and kills it.
-	var chosen []mutation.FreshCandidate
-	seed := seedSelecting(t, dir, 1, selecting(&chosen, at(listedManyLine, "-")))
-	clean, mutated := sha(main), sha(string(chosen[0].Site.Apply([]byte(main))))
-
-	o := countedRun(t, "--count", "1", "--seed", seed, "--workers", "1")
-	logOnFailure(t, &o)
-	c := o.counted(t)
-	lines := harnessRuns(t, record)
-
-	// Own tests run on the mutant before the listed tests do.
-	own := firstIndex(lines, "own main="+mutated)
-	baseline := firstIndex(lines, "run tests=ID-A-02 coverdir= main="+clean)
-	listed := firstIndex(lines, "run tests=ID-A-02 coverdir= main="+mutated)
-	if own < 0 || listed < 0 || own > listed {
-		t.Errorf("the own test ran on the mutant at %d and ID-A-02 at %d of the record, want the own test first:\n%s", own, listed, strings.Join(lines, "\n"))
-	}
-	// The selection's baseline runs without the mutant before its mutation stage.
-	if baseline < 0 || baseline > listed || baseline < own {
-		t.Errorf("ID-A-02 ran without the mutant at %d, want after the own stage (%d) and before its mutation stage (%d):\n%s",
-			baseline, own, listed, strings.Join(lines, "\n"))
-	}
-	// The final outcome is killed with the listed attribution.
-	if len(c.Selected) != 1 {
-		t.Fatalf("selected = %+v, want the one site", c.Selected)
-	}
-	site := c.Selected[0]
-	if o.code != 0 || site["state"] != "judged" || site["outcome"] != "killed" || site["scope"] != "listed" || !slices.Equal(siteTests(site), []string{"ID-A-02"}) {
-		t.Errorf("exit %d, selected %+v: want it judged killed with scope listed by [ID-A-02]", o.code, site)
-	}
-	// The own and listed mutation stages consume one trial, not two.
-	if c.number("executed") != 1 || trialLines(o.stderr) != 1 || c.number("budget") != 1 {
-		t.Errorf("executed %d with %d trial lines, want one trial for the own and listed stages", c.number("executed"), trialLines(o.stderr))
-	}
-	// No unselected site executes: every main.go the tests saw is the
-	// committed one or the selected mutant.
-	for _, l := range lines {
-		if _, hash, ok := strings.Cut(l, "main="); ok && hash != clean && hash != mutated {
-			t.Errorf("a test ran on a main.go that is neither committed nor the selected mutant: %s", l)
-		}
-	}
-}
-
-// @ID-MUT-179
+// @ID-MUT-179. Kept: the survivor names both listed tests it survived, as
+// its "tests", which no scenario asserts: ID-MUT-179's reads its scope
+// alone (T-130).
 func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)
@@ -278,93 +209,10 @@ func TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings(t *testing.
 	}
 }
 
-// preparationFailure is one way fresh preparation of greet's module fails:
-// the changes that make it fail and the stage that must report it.
-type preparationFailure struct {
-	name    string
-	changes [][3]string
-	stage   string
-}
-
-// @ID-MUT-181
-func TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	harness := "e2e/e2e_test.go"
-	failures := []preparationFailure{
-		{"a failing list command", [][3]string{{"itos-cc.yaml", "list: go run ./testdata/list.go", "list: go run ./testdata/list.go fail"}}, "listed-tests"},
-		{"a malformed list", [][3]string{{"itos-cc.yaml", "list: go run ./testdata/list.go", `list: "printf 'ID-A-01\\nID-A-01\\n'"`}}, "listed-tests"},
-		{"an own coverage command that fails after writing its report", [][3]string{{"main_test.go", "func TestHalf(t *testing.T) {\n",
-			"func TestHalf(t *testing.T) {\n\tif testing.CoverMode() != \"\" {\n\t\tt.Fatal(\"fails under coverage\")\n\t}\n"}}, "coverage"},
-		{"a listed coverage command that fails after writing its data", [][3]string{{harness, "\tfor _, f := range features {\n",
-			"\tif split != \"\" {\n\t\tdefer t.Error(\"fails after writing coverage\")\n\t}\n\tfor _, f := range features {\n"}}, "listed-coverage"},
-		{"listed coverage data that does not convert", [][3]string{{harness, "\t\t\tcmd.Env = append(os.Environ(), \"GOCOVERDIR=\"+dir)\n",
-			"\t\t\tos.WriteFile(filepath.Join(dir, \"covmeta.bogus\"), []byte(\"not coverage\"), 0o644)\n"}}, "listed-coverage"},
-	}
-	for _, f := range failures {
-		t.Run(f.name, func(t *testing.T) {
-			countedListedRepo(t, f.changes...)
-			o := countedRun(t, "--count", "1", "--workers", "1")
-			logOnFailure(t, &o)
-			c := o.counted(t)
-			p := c.problem("count.preparation-failed")
-			if o.code != 1 || p == nil || p["stage"] != f.stage {
-				t.Errorf("exit %d, problems %+v: want 1 with count.preparation-failed at stage %s", o.code, c.Problems, f.stage)
-			}
-			if s := c.stage(f.stage); s == nil || s["state"] != "failed" {
-				t.Errorf("stage %s = %+v in %+v, want failed: a report never erases its command's failure", f.stage, s, c.Stages)
-			}
-			for _, s := range c.Stages {
-				if s["name"] == "baseline" || s["name"] == "trials" || (s["name"] == "preparation" && s["state"] == "complete") {
-					t.Errorf("stage %+v follows the failed %s", s, f.stage)
-				}
-			}
-			if c.number("executed") != 0 || trialLines(o.stderr) != 0 || c.Sampling["completion"] != "stopped" {
-				t.Errorf("executed %d with %d trial lines, completion %v: no trial starts after failed preparation",
-					c.number("executed"), trialLines(o.stderr), c.Sampling["completion"])
-			}
-			for _, s := range c.Selected {
-				if s["outcome"] != nil {
-					t.Errorf("site %+v has an outcome after failed preparation", s)
-				}
-			}
-		})
-	}
-
-	// Raw or existing coverage cannot stand in for fresh evidence or listed
-	// tests: each is refused before anything runs.
-	countedListedRepo(t)
-	dir := wd(t)
-	for _, args := range [][]string{{"--coverage-report", "coverage.out"}, {"--use-existing-coverage"},
-		{"--coverage-command", "true"}, {"--no-coverage"}, {"--test-command", "true"}} {
-		o := countedRun(t, append([]string{"--count", "1"}, args...)...)
-		if p := o.counted(t).problem("flags.conflict"); o.code != 2 || p == nil || trialLines(o.stderr) != 0 || strings.Contains(o.stderr, "itos-cc: coverage") {
-			t.Errorf("--count with %v: exit %d, want a flags.conflict before any command\n%s%s", args, o.code, o.stdout, o.stderr)
-		}
-	}
-
-	// No local measurement or per-scenario coverage map is needed: a fresh
-	// clone with none prepares every stage, here for an uncovered site,
-	// which runs no trial.
-	var uncovered []mutation.FreshCandidate
-	seed := seedSelecting(t, dir, 1, selecting(&uncovered, at(listedTwiceLine, "*")))
-	o := countedRun(t, "--count", "1", "--seed", seed)
-	logOnFailure(t, &o)
-	c := o.counted(t)
-	if o.code != 0 || len(c.Selected) != 1 || c.Selected[0]["outcome"] != "uncovered" {
-		t.Errorf("exit %d, selected %+v: want the uncovered site measured with no local measurement", o.code, c.Selected)
-	}
-	for _, name := range []string{"listed-tests", "coverage", "listed-coverage", "preparation"} {
-		if s := c.stage(name); s == nil || s["state"] != "complete" {
-			t.Errorf("stage %s = %+v, want complete", name, s)
-		}
-	}
-	if _, err := os.Stat(filepath.Join(dir, ".metrics")); !os.IsNotExist(err) {
-		t.Errorf("a counted run needed or wrote .metrics: %v", err)
-	}
-}
-
-// @ID-MUT-182
+// @ID-MUT-182. Kept: the run a failing selection blocks reports no trials
+// stage complete, and the failing own baseline's problem names its file,
+// which no scenario asserts. ID-MUT-178 and 181's holders went, every
+// assertion their scenarios' (T-130).
 func TestCleanBaselineFailureIsNotAMutationKill(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

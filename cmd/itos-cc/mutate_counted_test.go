@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -18,8 +17,8 @@ import (
 
 // The scenarios of "Rule: Fresh counted mutation judges a bounded committed
 // selection without claiming full proof" in features/mutation.feature that the
-// mutation-counted-run slice holds. Each reads the --json object as raw maps,
-// so the steps compile against a product that has no counted mode yet. Local
+// mutation-counted-run slice holds, whose holders still assert what their
+// scenarios do not. Each reads the --json object as raw maps. Local
 // trials stay sparse: most fixtures have no test reaching the selected site,
 // so its measured-uncovered judgment runs no mutant at all.
 
@@ -188,7 +187,10 @@ func withFiles(base map[string]string, extra map[string]string) map[string]strin
 	return out
 }
 
-// @ID-MUT-174
+// @ID-MUT-174. Kept: the run leaves the staged paths as they were, and the
+// refused committed symlink writes no .metrics, which no scenario asserts:
+// ID-MUT-174's compares the files outside .git and its refusal's commands
+// (T-130).
 func TestCountedExecutionEvaluatesFrozenCommittedInputs(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)
@@ -260,105 +262,10 @@ func keys(m map[string]string) []string {
 	return out
 }
 
-// @ID-MUT-175
-func TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":     "module example.com/same\n\ngo 1.22\n",
-		"main.go":    "package main\n\nfunc main() {}\n",
-		"a/value.go": "package a\n\nfunc Value(x int) int { return x + 1 }\n",
-		"b/value.go": "package b\n\ntype T struct{}\n\nfunc (T) Value(x int) int { return x - 1 }\n\nfunc Value(x int) int { return x * 2 }\n",
-	})
-	head := gitOut(t, dir, "rev-parse", "HEAD")
-
-	// Static checks, no trial: every eligible site is fully identified, and
-	// another seed can be checked to draw another site.
-	plan, err := planFreshForTest(t.Context(), dir, nil, "", 1, "fixed")
-	if err != nil {
-		t.Fatal(err)
-	}
-	identities := map[string]bool{}
-	for _, c := range plan.Eligible {
-		identities[c.Identity] = true
-	}
-	fixed := plan.Selected[0].Identity
-	releaseFreshPlan(t.Context(), plan)
-	if len(identities) != 5 {
-		t.Fatalf("eligible identities %v, want 5 distinct sites across same-name units", identities)
-	}
-	seedSelecting(t, dir, 1, func(s []mutation.FreshCandidate) bool { return s[0].Identity != fixed })
-
-	first := countedRun(t, "--count", "1", "--seed", "fixed").counted(t)
-	reordered := countedRun(t, "--count", "1", "--seed", "fixed", "b", "a").counted(t)
-	if len(first.Selected) != 1 || len(reordered.Selected) != 1 {
-		t.Fatalf("selected %+v and %+v, want one site each", first.Selected, reordered.Selected)
-	}
-	if first.Selected[0]["identity"] != fixed || reordered.Selected[0]["identity"] != fixed {
-		t.Errorf("selected %v and %v, want the planned %s whatever the path order", first.Selected[0]["identity"], reordered.Selected[0]["identity"], fixed)
-	}
-	if first.Sampling["seed"] != "fixed" || first.Sampling["algorithm"] != mutation.FreshPlanVersion {
-		t.Errorf("sampling = %+v, want seed fixed and algorithm %s", first.Sampling, mutation.FreshPlanVersion)
-	}
-	if first.number("executed") != 0 {
-		t.Errorf("untested selection executed %d trials, want 0", first.number("executed"))
-	}
-	byDefault := countedRun(t, "--count", "1").counted(t)
-	if byDefault.Sampling["seed"] != head {
-		t.Errorf("default seed %v, want the resolved HEAD %s", byDefault.Sampling["seed"], head)
-	}
-}
-
-// @ID-MUT-176
-func TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":      "module example.com/budget\n\ngo 1.22\n",
-		"main.go":     "package main\n\nfunc main() {}\n",
-		"a/a.go":      "package a\n\nfunc Less(x, y int) bool { return x < y }\n",
-		"a/a_test.go": "package a\n\nimport \"testing\"\n\nfunc TestLess(t *testing.T) {\n\tif !Less(1, 2) || Less(2, 2) {\n\t\tt.Fatal(\"Less\")\n\t}\n}\n",
-		"b/b.go":      "package b\n\nfunc Add(x, y int) int { return x + y }\n\nfunc Sub(x, y int) int { return x - y }\n",
-		"b/b_test.go": "package b\n\nimport \"testing\"\n\nfunc TestB(t *testing.T) {\n\tif Add(2, 3) != 5 || Sub(5, 3) != 2 {\n\t\tt.Fatal(\"b\")\n\t}\n}\n",
-	})
-	// A complete run caches a/a.go's one kill: one trial.
-	if o := mutateCovered(t, filepath.FromSlash("a/a.go")); o.code != 0 {
-		t.Fatalf("complete run of a/a.go: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	snapshot := filepath.Join(dir, ".metrics", "mutate", "a", "a.go.json")
-	cached, err := os.ReadFile(snapshot)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// A later commit adds a function the cache has never seen.
-	writeFile(t, filepath.Join(dir, "a", "a.go"), "package a\n\nfunc Less(x, y int) bool { return x < y }\n\nfunc Twice(x int) int { return x * 2 }\n")
-	gitIn(t, dir, "add", "a/a.go")
-	gitIn(t, dir, "commit", "-qm", "twice")
-	seed := seedSelecting(t, dir, 1, func(s []mutation.FreshCandidate) bool { return inFunction("Less")(s[0]) })
-
-	o := countedRun(t, "--count", "1", "--seed", seed, "--workers", "4")
-	c := o.counted(t)
-	if o.code != 0 {
-		t.Fatalf("counted run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if c.number("eligible") != 4 || c.number("selected") != 1 || c.number("executed") != 1 || c.number("omitted") != 3 || c.number("budget") != 1 {
-		t.Errorf("sampling = %+v, want budget 1, 4 eligible (missing and stale entries admitted), 1 selected, 1 executed, 3 omitted", c.Sampling)
-	}
-	if len(c.Selected) != 1 || c.Selected[0]["outcome"] != "killed" || c.Selected[0]["state"] != "judged" || c.Selected[0]["reused"] == true {
-		t.Errorf("selected = %+v, want Less's mutant judged fresh and killed", c.Selected)
-	}
-	if n := trialLines(o.stderr); n != 1 {
-		t.Errorf("%d mutant trials ran, want exactly 1 across the whole selection:\n%s", n, o.stderr)
-	}
-	if omitted := c.Subjects["omitted"]; len(omitted) != 3 {
-		t.Errorf("omitted subjects %+v, want Twice, Add and Sub", omitted)
-	}
-	if now, err := os.ReadFile(snapshot); err != nil || !bytes.Equal(now, cached) {
-		t.Errorf("the cached snapshot changed: %v", err)
-	}
-}
-
-// @ID-MUT-177
+// @ID-MUT-177. Kept: mutation run --help names --seed TEXT, --since REF,
+// --fail-uncovered and --all-tests, and mutation sample --help keeps its
+// --count's meaning, which no scenario asserts: ID-MUT-177's reads only
+// --count N in each (T-130).
 func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	t.Parallel()
 	useDir(t, t.TempDir())
@@ -406,7 +313,11 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	}
 }
 
-// @ID-MUT-180
+// @ID-MUT-180. Kept: a function only Windows builds is
+// mutation.coverage-missing in a strict counted run, which no scenario
+// asserts. ID-MUT-173, 175, 176 and 184 to 186's holders went, every
+// assertion theirs or another scenario's, ID-MUT-173's platform guard to
+// mutation_platform_test.go (T-130).
 func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)
@@ -454,149 +365,5 @@ func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
 	}
 	if strict.stage("strict-go-inventory") == nil || strict.stage("strict-go-inventory")["state"] != "complete" {
 		t.Errorf("a missing-evidence finding did not leave the strict inventory complete: %+v", strict.Stages)
-	}
-}
-
-// @ID-MUT-184
-func TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	dir := moduleRepo(t, withFiles(compareFiles, map[string]string{
-		"main.go": "package main\n\nfunc Compare(n int) bool { return n > 5 }\n\nfunc Half(i int) bool { return i > 2 }\n\nfunc Third(i int) int { return i / 3 }\n\nfunc main() {}\n",
-	}))
-	head := gitOut(t, dir, "rev-parse", "HEAD")
-	seed := seedSelecting(t, dir, 2, func(s []mutation.FreshCandidate) bool {
-		return slices.ContainsFunc(s, inFunction("Compare")) && !slices.ContainsFunc(s, inFunction("Third"))
-	})
-	o := countedRun(t, "--count", "2", "--seed", seed, "--workers", "1")
-	c := o.counted(t) // one JSON object, or it fails here
-	if o.code != 0 {
-		t.Fatalf("counted run: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	want := map[string]int{"budget": 2, "eligible": 3, "selected": 2, "executed": 1, "omitted": 1}
-	for key, n := range want {
-		if c.number(key) != n {
-			t.Errorf("sampling.%s = %v, want %d", key, c.Sampling[key], n)
-		}
-	}
-	if c.Sampling["commit"] != head || c.Sampling["seed"] != seed || c.Sampling["algorithm"] != mutation.FreshPlanVersion {
-		t.Errorf("provenance = %+v", c.Sampling)
-	}
-	if c.Sampling["assurance"] != "sampled" || c.Sampling["completion"] != "completed" {
-		t.Errorf("assurance %v completion %v, want sampled and completed", c.Sampling["assurance"], c.Sampling["completion"])
-	}
-	outcomes := map[string]string{}
-	for _, s := range c.Selected {
-		for _, key := range []string{"identity", "file", "line", "column", "function", "original", "replacement", "state"} {
-			if _, ok := s[key]; !ok {
-				t.Errorf("selected site lacks %q: %+v", key, s)
-			}
-		}
-		state, _ := s["state"].(string)
-		outcome, has := s["outcome"].(string)
-		if state != "judged" && state != "uncovered" && has {
-			t.Errorf("%s site has a fabricated outcome %q", state, outcome)
-		}
-		function, _ := s["function"].(string)
-		outcomes[function] = outcome
-	}
-	if outcomes["example.com/counted#Compare"] != "killed" || outcomes["example.com/counted#Half"] != "uncovered" {
-		t.Errorf("outcomes = %v, want Compare killed and Half uncovered", outcomes)
-	}
-	judged, omitted := c.Subjects["judged"], c.Subjects["omitted"]
-	if len(judged) != 2 || len(omitted) != 1 || omitted[0]["function"] != "example.com/counted#Third" {
-		t.Errorf("subjects judged %+v omitted %+v", judged, omitted)
-	}
-	for _, name := range []string{"coverage", "baseline", "trials"} {
-		if s := c.stage(name); s == nil || s["state"] != "complete" {
-			t.Errorf("stage %s = %+v in %+v", name, s, c.Stages)
-		}
-	}
-
-	// Plain output, on a selection that runs no trial.
-	moduleRepo(t, untestedFiles)
-	text := itosCc(t, "mutation", "run", "--count", "1")
-	for _, want := range []string{"sampled", "not a complete", "bounds mutant trials, not discovery"} {
-		if !strings.Contains(text.stdout, want) {
-			t.Errorf("plain output lacks %q:\n%s", want, text.stdout)
-		}
-	}
-}
-
-// @ID-MUT-185
-func TestSampledExecutionPublishesNoPersistentCompleteProof(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	dir := moduleRepo(t, map[string]string{
-		"go.mod":      "module example.com/publish\n\ngo 1.22\n",
-		"main.go":     "package main\n\nfunc main() {}\n",
-		"x/x.go":      "package x\n\nfunc Less(x, y int) bool { return x < y }\n",
-		"x/x_test.go": "package x\n\nimport \"testing\"\n\nfunc TestLess(t *testing.T) {\n\tif !Less(1, 2) || Less(2, 2) {\n\t\tt.Fatal(\"Less\")\n\t}\n}\n",
-		"y/y.go":      "package y\n\nfunc Mix(x, y int) int { return x*y + 1 }\n",
-		"y/y_test.go": "package y\n\nimport \"testing\"\n\nfunc TestMix(t *testing.T) {\n\tif Mix(2, 3) != 7 {\n\t\tt.Fatal(\"Mix\")\n\t}\n}\n",
-	})
-	// A genuine complete cache of x/x.go, annotated: one trial.
-	if o := itosCc(t, "mutation", "run", "--workers", "1", filepath.FromSlash("x/x.go")); o.code != 0 {
-		t.Fatalf("complete run of x/x.go: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	gitIn(t, dir, "add", "x/x.go")
-	gitIn(t, dir, "commit", "-qm", "annotated")
-	before := tree(t, dir)
-
-	o := countedRun(t, "--count", "1", "--workers", "1", "y")
-	if c := o.counted(t); o.code != 0 || c.number("executed") != 1 {
-		t.Fatalf("count-one run of y: exit %d\n%s%s", o.code, o.stdout, o.stderr)
-	}
-	if after := tree(t, dir); !maps2Equal(before, after) {
-		t.Errorf("counted run published files:\nbefore %v\nafter  %v", keys(before), keys(after))
-	}
-	check := itosCc(t, "mutation", "check", "--json", filepath.FromSlash("y/y.go"))
-	if p := check.json(t).problem("mutation.missing"); check.code != 1 || p == nil {
-		t.Errorf("complete check of y/y.go: exit %d, want its missing complete proof\n%s", check.code, check.stdout)
-	}
-	if strings.Contains(check.stderr, "itos-cc: coverage") || strings.Contains(check.stderr, "itos-cc: baseline") {
-		t.Errorf("mutation check ran tests:\n%s", check.stderr)
-	}
-	if valid := itosCc(t, "mutation", "check", filepath.FromSlash("x/x.go")); valid.code != 0 {
-		t.Errorf("the genuine complete cache of x/x.go no longer holds: exit %d\n%s%s", valid.code, valid.stdout, valid.stderr)
-	}
-}
-
-// @ID-MUT-186
-func TestOnlyAGenuinelySiteFreeRangeIsNotApplicable(t *testing.T) {
-	t.Parallel()
-	requireCountedPlatform(t)
-	moduleRepo(t, map[string]string{
-		"go.mod":  "module example.com/sitefree\n\ngo 1.22\n",
-		"main.go": "package main\n\nfunc Name() string { return \"x\" }\n\nfunc Dormant(flag bool) string {\n\tif flag {\n\t\treturn \"yes\"\n\t}\n\treturn \"no\"\n}\n\nfunc main() {}\n",
-	})
-	o := countedRun(t, "--count", "3")
-	c := o.counted(t)
-	if o.code != 0 || c.Sampling["completion"] != "not-applicable" || c.number("eligible") != 0 || c.number("selected") != 0 {
-		t.Errorf("site-free range: exit %d sampling %+v, want not applicable with 0 eligible and selected\n%s", o.code, c.Sampling, o.stderr)
-	}
-	if c.number("executed") != 0 || trialLines(o.stderr) != 0 {
-		t.Errorf("site-free range ran trials:\n%s", o.stderr)
-	}
-	if text := itosCc(t, "mutation", "run", "--count", "3"); !strings.Contains(text.stdout, "not applicable") {
-		t.Errorf("plain output does not say not applicable:\n%s", text.stdout)
-	}
-	// Strict obligations still apply to a site-free range.
-	strict := countedRun(t, "--count", "3", "--fail-uncovered")
-	if p := strict.counted(t).problem("mutation.uncovered-statement"); strict.code != 1 || p == nil {
-		t.Errorf("strict site-free range: exit %d, want Dormant's uncovered statement\n%s", strict.code, strict.stdout)
-	}
-
-	// A range with sites whose tests cannot run is no site-free success.
-	moduleRepo(t, withFiles(compareFiles, map[string]string{
-		"main_test.go": "package main\n\nimport \"testing\"\n\nfunc TestCompare(t *testing.T) { Compare(undefined) }\n",
-	}))
-	broken := countedRun(t, "--count", "1")
-	b := broken.counted(t)
-	if p := b.problem("count.preparation-failed"); broken.code != 1 || p == nil || p["stage"] == nil {
-		t.Errorf("failing measurement: exit %d, want count.preparation-failed naming its stage\n%s", broken.code, broken.stdout)
-	}
-	if b.Sampling["completion"] == "not-applicable" || b.number("executed") != 0 {
-		t.Errorf("failing measurement reported %+v", b.Sampling)
 	}
 }
