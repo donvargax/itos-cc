@@ -2406,6 +2406,10 @@ items:
       mutation.tests.support uses filepath.Glob (mutate/listed.go), which has no **, while exclude:
       takes doublestar globs (decision on q-61). One glob syntax across itos-cc.yaml would be easier
       to learn; changing support's is an Upgrading change.
+
+      The path above is out of date. mutate/listed.go is gone; support's globs are expanded by
+      filepath.Glob in internal/testinputs/support.go:25 and checked with filepath.Match in
+      config/config.go:232-236, while exclude's are doublestar's (config/config.go:166-183).
   - id: itos-cc-yaml-version
     title: itos-cc.yaml carries a version, as docs/CONFIG.md asks of every config file
     phase: 1
