@@ -2601,6 +2601,18 @@ items:
       (setEnv) and supervised process groups. golangci-lint does not lint the runner, so nothing
       holds it there; internal/coveragetools, its adapter, could hand it the OS once the runner
       moves under internal/.
+
+      Two things above are out of date. golangci-lint lints the runner now, since T-119 runs it over
+      ./... (itos.yaml), yet no linter holds this rule, which docs/go.md states with nothing
+      enforcing it. And the supervised process groups take the OS as a value already, running
+      through worktrees.OwnedExecutor, whose Platform cmd sets (cmd/itos-cc/adapters.go:99-100).
+      What is left branches on runtime.GOOS in four places. They are shellCommand
+      (coverage/pertest.go:367-372), the listed-test shell of coverage/supervised.go:213-216,
+      setEnv's key folding in deleteEnvKey (coverage/collector.go:226), and project/node.go:56,
+      NodeBin's .cmd suffix, which the text above does not name. The refactor ended with the runner
+      still at the top level, so taking the OS as a value is now a change of its own that changes no
+      behaviour, which internal/coveragetools can hand the runner whether or not it moves under
+      internal/.
   - id: T-68
     title: internal/cli's Flags reads a switch that takes one of its choices after =, refusing any other in the hand parser's words
     phase: 1
