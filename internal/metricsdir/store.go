@@ -36,9 +36,9 @@ func (s Store) Root(ctx context.Context) (string, port.Failure) {
 
 // Read is metrics.ReadIn, any failure Unreadable: a snapshot that could
 // not be read with the library's text whole, one read that did not decode
-// worded by port.Undecodable, in the snapshot's own terms rather than the
-// Go types it decodes into. A done ctx reads nothing; a read under way runs
-// to its end.
+// worded by Undecodable, in the snapshot's own terms rather than the Go
+// types it decodes into. A done ctx reads nothing; a read under way runs to
+// its end.
 func (s Store) Read(ctx context.Context, name string, v any) (bool, port.Failure) {
 	if ctx.Err() != nil {
 		return false, &port.Cancelled{}
@@ -46,7 +46,7 @@ func (s Store) Read(ctx context.Context, name string, v any) (bool, port.Failure
 	found, err := metrics.ReadIn(s.dir(), name, v)
 	switch {
 	case err != nil && found:
-		return found, port.Undecodable(name, err)
+		return found, Undecodable(name, err)
 	case err != nil:
 		return found, &port.Unreadable{Name: name, Reason: err.Error()}
 	}

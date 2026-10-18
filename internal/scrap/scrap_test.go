@@ -108,7 +108,7 @@ func TestHandleWithNoTestFileDoesNothing(t *testing.T) {
 func TestAnUnreadableSnapshotIsIgnored(t *testing.T) {
 	s := store("{")
 	found, err := handler(tree(), s).Handle(t.Context(), Query{})
-	if err != nil || found.Ignored == nil || found.Ignored.Reason != "unexpected end of JSON input" || len(found.Reports) != 1 {
+	if err != nil || found.Ignored == nil || found.Ignored.Reason != "it does not decode" || len(found.Reports) != 1 {
 		t.Fatalf("Handle() = %+v, %v; want the report and the snapshot ignored", found, err)
 	}
 	if got := recordedFiles(t, s); !slices.Equal(got, []string{"src/cart.test.ts"}) {
@@ -186,7 +186,7 @@ func TestRunWarnsOfAFileMadeWorse(t *testing.T) {
 // The lines for people on stderr are said with --json too.
 func TestRunSaysOnStderrWhatItSkipped(t *testing.T) {
 	code, stdout, stderr := run(t, CLI{JSON: true}, handler(tree(), store("{")))
-	if code != 0 || stderr != "itos-cc: ignoring unreadable .metrics/scrap.json: unexpected end of JSON input\n" || !strings.Contains(stdout, `"file": "cart.test.ts"`) {
+	if code != 0 || stderr != "itos-cc: ignoring unreadable .metrics/scrap.json: it does not decode\n" || !strings.Contains(stdout, `"file": "cart.test.ts"`) {
 		t.Errorf("exit %d, stdout\n%s\nstderr %q", code, stdout, stderr)
 	}
 	code, stdout, stderr = run(t, CLI{Selection: cli.Selection{Paths: []string{at("src/cart.ts")}}, JSON: true}, handler(tree(), store("")))

@@ -1,4 +1,4 @@
-package port
+package metricsdir
 
 import (
 	"encoding"
@@ -6,13 +6,17 @@ import (
 	"errors"
 	"reflect"
 	"strings"
+
+	"github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
-// Undecodable is the Unreadable a Store returns when the snapshot name was
-// read but what it holds did not decode, err being encoding/json's. Every
-// Store words it so, the fake and the disk's alike. Its Reason is in the
-// snapshot's own terms, never the Go types a reader decodes into, which
-// change whenever one moves (bug-3):
+// Undecodable is the Unreadable Read returns when the snapshot name was
+// read but what it holds did not decode, err being encoding/json's. This
+// adapter alone decodes snapshot files, so the wording is its own: the port
+// asks only for a Reason naming no Go type or package, and the in-process
+// scenario driver, standing in for this adapter, words through it. The
+// Reason is in the snapshot's own terms, never the Go types a reader
+// decodes into, which change whenever one moves (bug-3):
 //   - a value of the wrong kind names its key path, keys joined by dots and
 //     an array's index in brackets, the JSON kind it should be and the kind
 //     it is: "files[0].file should be a string, not a number", or "the
@@ -22,8 +26,8 @@ import (
 //     type: "unexpected end of JSON input";
 //   - any other failure of the decoder, which names the Go type it decodes
 //     into and no snapshot's reader meets, is said without its detail.
-func Undecodable(name string, err error) *Unreadable {
-	return &Unreadable{Name: name, Reason: decodeReason(err)}
+func Undecodable(name string, err error) *port.Unreadable {
+	return &port.Unreadable{Name: name, Reason: decodeReason(err)}
 }
 
 func decodeReason(err error) string {
@@ -33,7 +37,7 @@ func decodeReason(err error) string {
 	}
 	var mistyped *json.UnmarshalTypeError
 	if errors.As(err, &mistyped) && mistyped.Type != nil {
-		return keyPath(mistyped.Field) + " should be " + expected(mistyped.Type, mistyped.Value) + ", not " + found(mistyped.Value)
+		return keyPath(mistyped.Field) + " should be " + expectedKind(mistyped.Type, mistyped.Value) + ", not " + foundKind(mistyped.Value)
 	}
 	return "it does not decode as this snapshot"
 }
@@ -62,10 +66,10 @@ func keyPath(field string) string {
 // textUnmarshaler is the interface a value read from a JSON string has.
 var textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
 
-// expected is the JSON kind a value of type t is read from. value is what
+// expectedKind is the JSON kind a value of type t is read from. value is what
 // was found: a number literal there ("number 1.5") is one of the right kind
 // that t cannot hold, so the kind is said more closely.
-func expected(t reflect.Type, value string) string {
+func expectedKind(t reflect.Type, value string) string {
 	for t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
@@ -102,9 +106,9 @@ func expected(t reflect.Type, value string) string {
 	}
 }
 
-// found is the JSON kind encoding/json found, or the number literal it
+// foundKind is the JSON kind encoding/json found, or the number literal it
 // found when that is what does not fit.
-func found(value string) string {
+func foundKind(value string) string {
 	switch value {
 	case "string":
 		return "a string"

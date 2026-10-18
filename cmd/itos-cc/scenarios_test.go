@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -624,6 +626,20 @@ type observedStore struct {
 	*snapporttest.Store
 	memory *memory
 	dir    string
+}
+
+// Read is the fake's, but a snapshot that does not decode is worded as
+// metricsdir words it on the disk, its key and JSON kinds, since the fake
+// gives its own plain reason and a scenario hears the binary's line.
+func (s observedStore) Read(ctx context.Context, name string, v any) (bool, snapport.Failure) {
+	found, failure := s.Store.Read(ctx, name, v)
+	var unreadable *snapport.Unreadable
+	if found && errors.As(failure, &unreadable) {
+		if err := json.Unmarshal([]byte(s.Snapshots[filepath.ToSlash(name)]), v); err != nil {
+			return found, metricsdir.Undecodable(name, err)
+		}
+	}
+	return found, failure
 }
 
 func (s observedStore) Write(ctx context.Context, name string, v any) snapport.Failure {

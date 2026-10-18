@@ -1,10 +1,15 @@
-package port
+package metricsdir
 
 import (
 	"encoding/json"
+	"errors"
+	"maps"
+	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
 // shape is a snapshot of every kind a reader decodes into.
@@ -60,5 +65,32 @@ func TestUndecodableSaysNoGoTypeOfAMisusedDecoder(t *testing.T) {
 	reason := Undecodable("s.json", err).Reason
 	if reason != "it does not decode as this snapshot" || strings.Contains(reason, "shape") {
 		t.Errorf("Reason = %q; want it said without the decoder's detail", reason)
+	}
+}
+
+// Read words a snapshot that does not decode as Undecodable does, so a
+// reader of .metrics/ hears the snapshot's key and kinds, never the Go
+// types it decodes into; one that could not be read keeps the library's
+// text (TestStoreTranslatesTheLibrarysFailures).
+func TestReadWordsAnUndecodableSnapshotInItsOwnTerms(t *testing.T) {
+	reasons := map[string]string{
+		"bad.json":           "unexpected end of JSON input",
+		"mutate/bad.go.json": "version should be a number, not a string",
+		"files.json":         "files[1] should be a string, not a number",
+		"list.json":          "the snapshot should be an object, not an array",
+	}
+	store, _ := open(t, map[string]string{
+		"bad.json":           "{",
+		"mutate/bad.go.json": `{"version": "one"}`,
+		"files.json":         `{"version": 1, "files": ["a.go", 7]}`,
+		"list.json":          `[1]`,
+	})
+	for _, name := range slices.Sorted(maps.Keys(reasons)) {
+		var got sample
+		found, failure := store.Read(t.Context(), name, &got)
+		var unreadable *port.Unreadable
+		if !found || !errors.As(failure, &unreadable) || unreadable.Name != name || unreadable.Reason != reasons[name] {
+			t.Errorf("Read(%s) = %t, %v; want there and Unreadable because %q", name, found, failure, reasons[name])
+		}
 	}
 }

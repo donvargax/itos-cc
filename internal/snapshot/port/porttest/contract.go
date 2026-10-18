@@ -121,15 +121,9 @@ func refusesMalformedText(t *testing.T, open func(t *testing.T, snapshots map[st
 		"files.json":         `{"version": 1, "files": ["a.go", 7]}`,
 		"list.json":          `[1]`,
 	})
-	// A value of the wrong kind is said in the snapshot's own terms, its
-	// key and the JSON kinds, never the Go types the reader decodes into
-	// (bug-3); JSON that does not parse keeps the parser's text.
-	reasons := map[string]string{
-		"bad.json":           "unexpected end of JSON input",
-		"mutate/bad.go.json": "version should be a number, not a string",
-		"files.json":         "files[1] should be a string, not a number",
-		"list.json":          "the snapshot should be an object, not an array",
-	}
+	// Each store words the reason itself; whatever its words, they name
+	// no Go type the reader decodes into nor its package (bug-3), and the
+	// adapter's own tests pin its exact wording.
 	for _, name := range []string{"bad.json", "mutate/bad.go.json", "files.json", "list.json"} {
 		var got record
 		found, failure := store.Read(t.Context(), name, &got)
@@ -137,9 +131,6 @@ func refusesMalformedText(t *testing.T, open func(t *testing.T, snapshots map[st
 		if !found || !errors.As(failure, &unreadable) || unreadable.Name != name || unreadable.Reason == "" {
 			t.Errorf("Read(%s) = %t, %T %v; want there and Unreadable naming it", name, found, failure, failure)
 			continue
-		}
-		if unreadable.Reason != reasons[name] {
-			t.Errorf("Read(%s) Reason = %q; want %q", name, unreadable.Reason, reasons[name])
 		}
 		for _, internal := range []string{"Go ", "of type", "record", "porttest", "[]string"} {
 			if strings.Contains(unreadable.Reason, internal) {

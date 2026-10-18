@@ -47,7 +47,7 @@ func (s *Store) Root(ctx context.Context) (string, port.Failure) {
 }
 
 // Read decodes the snapshot's JSON into v: one not in Snapshots is false,
-// one that does not decode Unreadable, worded as port.Undecodable words it.
+// one that does not decode Unreadable, in the fake's own plain words.
 func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failure) {
 	if ctx.Err() != nil {
 		return false, &port.Cancelled{}
@@ -60,7 +60,7 @@ func (s *Store) Read(ctx context.Context, name string, v any) (bool, port.Failur
 		return false, nil
 	}
 	if err := json.Unmarshal([]byte(text), v); err != nil {
-		return true, port.Undecodable(name, err)
+		return true, &port.Unreadable{Name: name, Reason: "it does not decode"}
 	}
 	return true, nil
 }
