@@ -2068,6 +2068,12 @@ items:
       Found reading internal/cli (2026-10-11): Emit builds its object from a map, so keys come out
       sorted (ok, problems, schema), while UI.JSON(struct) keeps the struct order. Two outputs of
       one CLI order keys differently; decide one order before more commands move onto kong.
+
+      Every command but serve has moved onto kong since, and the refactor ended without settling the
+      order, so it is now a JSON-shape decision of its own, a behaviour change with a scenario, and
+      an Upgrading note if keys move. The two sites are internal/cli/cli.go's Emit, which builds a
+      map at line 103 and so prints its keys sorted, and UI.JSON at line 205, which keeps a struct's
+      field order.
   - id: moved-parser-once
     title: cmd builds the kong parser once per run
     phase: 1
