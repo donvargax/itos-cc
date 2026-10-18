@@ -3441,3 +3441,17 @@ items:
       portable-go-evidence before T-46. strict-lines-nonexecutable-changes covers the
       coverage-evidence half.
     refs: ["#22"]
+  - id: version-without-v
+    title: Release and go install builds print the same version, without a v
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #19. cmd/itos-cc/main.go:22-30 returns info.Main.Version with its v; release.yml:151,212
+      stamps the tag without it; internal/version/version.go:38-55 trims it but is unused. The
+      person (2026-10-18): no v everywhere (version and version --json), shipped in the same product
+      push and minor release as S10 (semantic-exit-codes, interrupt-exit-130), since it changes a
+      contract value. ID-CLI-03 changes.
+    refs: ["#19"]
