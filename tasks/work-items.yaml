@@ -2731,6 +2731,12 @@ items:
       item and the proof reruns; nothing joins the deliberate list to pass. Lesson for the next
       large refactor: make the scenarios executable against the old binary before refactoring, as
       characterization.
+
+      T-119 (module-wide lint) completed its source at fe21721 (ci: lint the whole module on every
+      push), whose ci.yml run 39092002860 ran tools/bin/pinned golangci-lint run ./... green. Its
+      lint fixes in cmd, coverage, project, config, metrics, server, graph, tools and features
+      (0b5821c, e796b16, cb74339, 4becfde, 77f0422, d9764df) keep output, errors and exit codes, and
+      belong in the one comparison: compare from T-29's parent to fe21721 or a later head.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
