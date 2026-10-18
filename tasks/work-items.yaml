@@ -17,6 +17,7 @@ queue:
   - slice-9
   - portable-go-evidence
   - comment-free-unit-hash
+  - since-broad-stale-panic
   - T-102
   - T-103
   - T-104
