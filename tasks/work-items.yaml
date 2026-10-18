@@ -2703,6 +2703,15 @@ items:
       Compare serve through its new route: serve --help and serve -h (printed on the process's
       stdout), help serve, help serve extra, serve --port x, serve --json --port x, --json serve
       --port x, serve --bogus and serve --interval 5.
+
+      T-115 (main's tests rebuilt over the thin main): compare the lines that ask for --json in a
+      way only --json counts, which the template's wantsJSON read otherwise: --json=true crapp
+      (refused before a command, plain on stderr), units --json=true and version --json=false
+      (flags.switch-value, plain, not the object), --json -- crapp (-- named as the unknown command,
+      as the object), -- --json crapp (plain), and version --json --json (flags.repeated as the
+      object); and crap, dry and units with an itos-cc.yaml that exists but cannot be read (exit 70,
+      the read error as an internal problem), beside their --help, scrap and version, which never
+      read it and succeed.
   - id: T-117
     title: Reuse a manifest-driven runner for scenario assertion checks
     phase: 1
