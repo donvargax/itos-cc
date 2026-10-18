@@ -4982,8 +4982,6 @@
     local run at the CI concurrency. Every scenario keeps running on every system; nothing is
     skipped, tagged binary-only or moved to the nightly. Report cd.yml's per-job times before and
     after, from at least three source pushes.
-  done_when:
-    - run: go test ./features -count=1 -run '^TestFeatures$' -scenarios="@ID-MUT-(0[1-6]|101)$"
 - id: T-130
   type: refactor
   title: Review the legacy T-79, T-80 and T-81 holders T-101 left whole
