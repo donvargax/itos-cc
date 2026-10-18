@@ -166,6 +166,58 @@ func (w *world) lastObject() (map[string]any, string, error) {
 	return object, report, nil
 }
 
+// problemsAre is whether the --json object of the last run reports exactly
+// the problems of the table, one a row under its header, by their rule and
+// exit, in any order, a row twice for a rule reported twice. A run the
+// steps started and stopped themselves, with no last run of its own, is
+// read from its standard output; any other as lastObject reads it.
+func (w *world) problemsAre(table *godog.Table) error {
+	object, report, err := w.runObject()
+	if err != nil {
+		return err
+	}
+	var want []string
+	for i, row := range table.Rows {
+		if len(row.Cells) != 2 {
+			return fmt.Errorf("row %d of the problems gives %d cells, not a rule and an exit", i+1, len(row.Cells))
+		}
+		if i == 0 {
+			if row.Cells[0].Value != "rule" || row.Cells[1].Value != "exit" {
+				return errors.New("the problems' header is not | rule | exit |")
+			}
+			continue
+		}
+		want = append(want, row.Cells[0].Value+" "+row.Cells[1].Value)
+	}
+	var got []string
+	problems, _ := object["problems"].([]any)
+	for _, one := range problems {
+		p, _ := one.(map[string]any)
+		exit := "none"
+		if code, ok := p["exit"].(float64); ok {
+			exit = fmt.Sprint(code)
+		}
+		got = append(got, fmt.Sprintf("%v %s", p["rule"], exit))
+	}
+	slices.Sort(want)
+	slices.Sort(got)
+	if !slices.Equal(got, want) {
+		return fmt.Errorf("the problems by rule and exit are %q, not %q\n%s", got, want, report)
+	}
+	return nil
+}
+
+// runObject is the --json object of the last run: of standard output when
+// the steps started the run themselves, with no last run, else as
+// lastObject gives it.
+func (w *world) runObject() (map[string]any, string, error) {
+	if w.last == nil {
+		object, err := w.json()
+		return object, w.report(), err
+	}
+	return w.lastObject()
+}
+
 // problemIs is whether the last run reports a problem of that rule, whose
 // key, a flag, an argument, a key of itos-cc.yaml or a file, its
 // separators read as slashes, is value; any problem

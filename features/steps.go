@@ -539,6 +539,7 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 	sc.Step(`^the problem is "([^"]*)", with (flag|argument|key|file) "([^"]*)"$`, w.problemIs)
 	sc.Step(`^the problem is "([^"]*)"$`, func(rule string) error { return w.problemIs(rule, "", "") })
 	sc.Step(`^its fix suggests "([^"]*)"$`, w.fixSuggests)
+	sc.Step(`^its problems in --json are:$`, w.problemsAre)
 	sc.Step(`^its standard output lists "([^"]*)"$`, func(text string) error {
 		if !slices.Contains(outputLines(w.stdout), text) {
 			return fmt.Errorf("standard output does not list %q\n%s", text, w.report())

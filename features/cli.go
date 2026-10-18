@@ -25,12 +25,12 @@ type cliState struct {
 	// checkout's build is to say it comes before, without its v.
 	built Built
 	next  string
-	// situations are the commands CLI-08's Given set up, each run by the
+	// situations are the commands CLI-20's Given set up, each run by the
 	// When in a folder of its own.
 	situations []situation
 }
 
-// situation is a command of CLI-08, by the words of its sentence that
+// situation is a command of CLI-20, by the words of its sentence that
 // name it (layOut).
 type situation struct{ what string }
 
@@ -38,7 +38,7 @@ type situation struct{ what string }
 var knownSituations = []string{
 	"it succeeded", "a mutant survived", "a function is over a threshold", "a bad flag", "path", "report",
 	"a tool", "a report", "a git repository", "an error itos-cc could not classify",
-	"a temporary failure, such as serve's port being in use",
+	"a temporary failure, such as serve's port being in use", "an unknown command",
 }
 
 func cliSteps(sc *godog.ScenarioContext, w *world) {
@@ -69,12 +69,13 @@ func cliSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^"([^"]*)" is a path, not the flag$`, c.isAPath)
 
 	// The contract with scripts.
-	sc.Step(`^(it succeeded|a check said no: .+|a usage or config error: .+|the environment lacks something: .+|an error itos-cc could not classify|a temporary failure, such as serve's port being in use)$`, c.situation)
+	sc.Step(`^(it succeeded|a check said no: .+|a usage or config error: .+|an unknown command|the environment lacks something: .+|an error itos-cc could not classify|a temporary failure, such as serve's port being in use)$`, c.situation)
 	sc.Step(`^the command ends$`, c.commandEnds)
 	sc.Step(`^stdout is one object with "schema": 1, "ok": true, and the command's own keys$`, c.ownKeys)
 	sc.Step(`^progress and test output go to stderr$`, c.progressOnStderr)
 	sc.Step(`^stdout is:$`, c.stdoutIs)
 	sc.Step(`^a run has a problem$`, func() error { return w.runWith(w.env(), "crap nosuch") })
+	sc.Step(`^a Go function scoring 20 beside TypeScript whose coverage tool is not installed$`, c.scoringBesideUnmeasured)
 
 	// The mutation group.
 	sc.Step(`^stdout names the subcommands (\w+) and (\w+)$`, c.stdoutNames)
@@ -280,7 +281,7 @@ func (c *cliState) isAPath(name string) error {
 
 // The contract with scripts.
 
-// situation sets up the commands of a situation of CLI-08: one for each
+// situation sets up the commands of a situation of CLI-20: one for each
 // thing the list after its colon names, else the one it names.
 func (c *cliState) situation(text string) error {
 	items := []string{text}
@@ -363,6 +364,8 @@ func (c *cliState) layOut(what, dir string) ([]string, func(), error) {
 		return []string{"crap", "--threshold", "5", "--coverage-report", "lcov.info", "board.go"}, nil, nil
 	case "a bad flag":
 		return []string{"crap", "--no-such-flag"}, nil, source()
+	case "an unknown command":
+		return []string{"lint"}, nil, source()
 	case "path":
 		return []string{"crap", "nosuch"}, nil, source()
 	case "report":
@@ -403,6 +406,24 @@ func (c *cliState) layOut(what, dir string) ([]string, func(), error) {
 		return []string{"serve", "--port", strconv.Itoa(port)}, release, nil
 	}
 	return nil, nil, fmt.Errorf("no command is set up for %q", what)
+}
+
+// scoringBesideUnmeasured writes, in the scratch folder, the Go module
+// board, whose place makes three decisions no test runs, so it scores 20
+// (4² + 4), beside plain, which its test covers, and declares that go test
+// measures it; and beside it a TypeScript project with neither Vitest nor
+// Jest and no c8, whose coverage no tool measures: a run with a threshold
+// below 20 has a problem of each kind.
+func (c *cliState) scoringBesideUnmeasured() error {
+	fns := []goFunction{{name: "place", cc: 4}, {name: "plain", cc: 1, covered: true}}
+	source, lcov := goFile("board.go", fns)
+	for name, text := range map[string]string{"go.mod": goModule, "board.go": source, "board_test.go": goTest(fns),
+		"package.json": "{}\n", "x.ts": sourceFor("x.ts")} {
+		if err := c.w.write(name, text); err != nil {
+			return err
+		}
+	}
+	return c.w.d.Coverage(c.w.dir, Coverage{Language: "go", Report: lcov})
 }
 
 // ownKeys is whether stdout is one JSON object, schema 1 and ok, holding
