@@ -3714,8 +3714,8 @@ items:
   - id: bug-4
     title: An itos-cc.yaml that cannot be read makes crap, dry, units and mutation exit 100 as a bug in itos-cc
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: bug
     why: >
