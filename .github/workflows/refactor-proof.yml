@@ -1,0 +1,157 @@
+name: Refactor proof
+# T-132, the refactor's one final proof, run by hand (gh workflow run
+# refactor-proof.yml): the binary of T-29's parent, 51f3952, built from git
+# archive in a folder of its own, never a worktree, beside the refactored
+# binary of the commit the run is on, both stamped as TestFeatures stamps
+# the binary it builds. Each runs today's whole binary-driver suite through
+# ITOS_CC_FEATURES_BINARY with every language tool installed as cd.yml's
+# languages job installs them, under ITOS_CC_LANGUAGE_TOOLS, so the
+# scenarios other jobs skip run here too; the refactored side is the
+# control, telling a scenario this runner cannot pass from one only the old
+# binary fails. The edges job compares both binaries over
+# tools/bin/refactor-proof's cases. A scenario failing on the old binary
+# fails its job by design: the proof is the classified list of what fails,
+# read from the cucumber JSON and logs each job keeps, not a green run.
+# Neither job turns on mutation proof or the nightly, and no job mutates
+# this repository's code.
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: The commit the old binary is built from
+        default: 51f3952
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  STAMP: >-
+    -X github.com/donvargax/itos-cc/internal/version.stamp=1.2.3-features
+    -X github.com/donvargax/itos-cc/internal/version.commit=0123456789abcdef0123456789abcdef01234567
+
+jobs:
+  suite:
+    strategy:
+      fail-fast: false
+      matrix:
+        side: [old, new]
+    name: suite (${{ matrix.side }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # The tools as cd.yml's languages job sets them up, Kotlin included.
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          gradle-version: "9.8.1"
+          cache-provider: basic
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: testdata/tools/node/package-lock.json
+      - working-directory: testdata/tools/node
+        run: npm ci
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: testdata/tools/python/requirements.txt
+      - run: python3 -m pip install -r testdata/tools/python/requirements.txt
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: cmd/itos-cc/mutate_kotlin_own_tests_test.go
+      - env:
+          MAVEN_VERSION: "3.9.16"
+          MAVEN_SHA512: 831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6
+        run: |
+          archive="$RUNNER_TEMP/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+          curl -fsSL -o "$archive" "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+          echo "$MAVEN_SHA512  $archive" | sha512sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-$MAVEN_VERSION/bin" >> "$GITHUB_PATH"
+      - name: Build the binary
+        env:
+          SIDE: ${{ matrix.side }}
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          src=$GITHUB_WORKSPACE
+          if [ "$SIDE" = old ]; then
+            src=$RUNNER_TEMP/baseline-src
+            mkdir -p "$src"
+            git archive "$BASELINE" | tar -x -C "$src"
+          fi
+          (cd "$src" && go build -trimpath -buildvcs=false -ldflags "$STAMP" -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc)
+          "$RUNNER_TEMP/itos-cc" version
+      - name: Run the whole suite
+        env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: |
+          set +e
+          ITOS_CC_FEATURES_BINARY=$RUNNER_TEMP/itos-cc go test ./features -run '^TestFeatures$' -count=1 -v -timeout 140m \
+            -scenario-report "$RUNNER_TEMP/suite-${{ matrix.side }}.json" > "$RUNNER_TEMP/suite-${{ matrix.side }}.log" 2>&1
+          status=$?
+          tail -n 60 "$RUNNER_TEMP/suite-${{ matrix.side }}.log"
+          echo "go test exited $status"
+          jq -r '.[] | .elements[] | select(any(.steps[]?; .result.status == "failed")) |
+            "\((.tags // []) | map(.name) | map(select(startswith("@ID-"))) | join(" ")) \(.name): \(first(.steps[] | select(.result.status == "failed")) | .name)"' \
+            "$RUNNER_TEMP/suite-${{ matrix.side }}.json" | tee "$RUNNER_TEMP/failed-${{ matrix.side }}.txt"
+          exit $status
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
+        with:
+          name: suite-${{ matrix.side }}
+          path: |
+            ${{ runner.temp }}/suite-${{ matrix.side }}.json
+            ${{ runner.temp }}/suite-${{ matrix.side }}.log
+            ${{ runner.temp }}/failed-${{ matrix.side }}.txt
+          if-no-files-found: error
+
+  edges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: testdata/tools/node/package-lock.json
+      - working-directory: testdata/tools/node
+        run: npm ci
+      - name: Build both binaries
+        env:
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          src=$RUNNER_TEMP/baseline-src
+          mkdir -p "$src"
+          git archive "$BASELINE" | tar -x -C "$src"
+          (cd "$src" && go build -trimpath -buildvcs=false -ldflags "$STAMP" -o "$RUNNER_TEMP/itos-cc-old" ./cmd/itos-cc)
+          go build -trimpath -buildvcs=false -ldflags "$STAMP" -o "$RUNNER_TEMP/itos-cc-new" ./cmd/itos-cc
+      - name: Compare the edge cases
+        env:
+          ITOS_CC_NODE_MODULES: ${{ github.workspace }}/testdata/tools/node/node_modules
+        run: tools/bin/refactor-proof "$RUNNER_TEMP/itos-cc-old" "$RUNNER_TEMP/itos-cc-new" "$RUNNER_TEMP/edges"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2; same pin as release.yml
+        with:
+          name: edges
+          path: ${{ runner.temp }}/edges
+          if-no-files-found: error
