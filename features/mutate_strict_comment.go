@@ -47,12 +47,6 @@ func (q *strictMutation) commentSteps(sc *godog.ScenarioContext) {
 		}
 		return q.m.w.exitsWith(0)
 	})
-	sc.Step(`^"itos-cc mutation check --since base --fail-uncovered" exits 0$`, func() error {
-		if err := q.run("mutation check --since base --fail-uncovered"); err != nil {
-			return err
-		}
-		return q.m.w.exitsWith(0)
-	})
 	sc.Step(`^"itos-cc mutation check --fail-uncovered --json" of its file reports "mutation\.coverage-stale" for it, naming that file$`, func() error {
 		q.input = q.file
 		return q.staleNaming()

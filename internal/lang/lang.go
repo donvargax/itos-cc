@@ -163,6 +163,8 @@ type Syntax struct {
 	Identifiers map[string]bool
 	// Literals are kinds whose whole subtree is one literal value.
 	Literals map[string]bool
+	// Comments are the kinds of a comment, which a unit's hash leaves out.
+	Comments map[string]bool
 }
 
 func set(kinds ...string) map[string]bool {

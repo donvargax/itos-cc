@@ -305,15 +305,16 @@ func TestFeatures(t *testing.T) {
 }
 
 // ffListedRepo makes ffListedFiles a Git repository and the test's
-// directory (useDir), then commits a comment inside each function of judged, so a
-// run with --since HEAD~1 judges those alone. FF_DIR points at a fresh
+// directory (useDir), then commits each function of judged with its
+// signature split over two lines, a change of its code, as a comment's
+// would be none, so a run with --since HEAD~1 judges those alone. FF_DIR points at a fresh
 // directory, which it returns.
 func ffListedRepo(t *testing.T, judged ...string) string {
 	t.Helper()
 	moduleRepo(t, ffListedFiles)
 	for _, function := range judged {
 		head := "func " + function + "(n int) bool {\n"
-		edit(t, "main.go", head, head+"\t// judged\n")
+		edit(t, "main.go", head, "func "+function+"(\n\tn int) bool {\n")
 	}
 	commitAll(t, "judge "+strings.Join(judged, " "))
 	ff := t.TempDir()

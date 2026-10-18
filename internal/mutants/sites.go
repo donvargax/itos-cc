@@ -4,8 +4,8 @@
 // line no test executes is uncovered and is not run.
 //
 // Results are cached per function in .metrics/mutate/, keyed by a hash of the
-// function's source, so a later run only retries survivors and the sites of
-// functions whose text changed.
+// function's code, its comments left out, so a later run only retries
+// survivors and the sites of functions whose code changed.
 package mutants
 
 import (
@@ -13,6 +13,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"slices"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 
@@ -52,6 +53,7 @@ func Sites(f *lang.File) []Site {
 	var sites []Site
 	for i, u := range f.Units {
 		unitStart := u.Node.StartByte()
+		comments := commentSpans(f, u)
 		f.WalkOwn(u, func(n *sitter.Node) bool {
 			if n.ChildCount() > 0 {
 				return true
@@ -79,7 +81,7 @@ func Sites(f *lang.File) []Site {
 					Unit:        i,
 					Start:       n.StartByte(),
 					End:         n.EndByte(),
-					Offset:      int(n.StartByte() - unitStart),
+					Offset:      int(n.StartByte()-unitStart) - removedBefore(comments, n.StartByte()),
 					Line:        int(p.Row) + 1,
 					Column:      int(p.Column) + 1,
 					Original:    text,
@@ -102,16 +104,106 @@ func LineOrder(a, b Site) int {
 	return cmp.Compare(a.Column, b.Column)
 }
 
-// UnitHash fingerprints a unit's source text, without its inline units.
-// Changing anything else inside the unit, including whitespace and comments,
-// changes it.
+// UnitHash fingerprints a unit's code, without its inline units or its
+// comments: the space and line break only a comment needed go with it
+// (commentSpans), so a change to a unit's comments alone keeps its hash.
+// Changing anything else inside the unit, whitespace included, changes it.
 func UnitHash(f *lang.File, u lang.Unit) string {
 	h := sha256.New()
-	at := u.Node.StartByte()
+	cut := commentSpans(f, u)
 	for _, inner := range f.InnerNodes(u) {
-		h.Write(f.Src[at:inner.StartByte()])
-		at = inner.EndByte()
+		cut = append(cut, span{inner.StartByte(), inner.EndByte()})
 	}
-	h.Write(f.Src[at:u.Node.EndByte()])
+	slices.SortFunc(cut, func(a, b span) int { return cmp.Compare(a.start, b.start) })
+	at := u.Node.StartByte()
+	for _, c := range cut {
+		if c.start > at {
+			h.Write(f.Src[at:c.start])
+		}
+		at = max(at, c.end)
+	}
+	if end := u.Node.EndByte(); end > at {
+		h.Write(f.Src[at:end])
+	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
+}
+
+// span is a byte range of a file's source, its end excluded.
+type span struct{ start, end uint }
+
+// commentSpans are the byte ranges of u's text its comments take, in source
+// order, those of its inline units included, each with the space and line
+// break only the comment needed: a comment alone on its line takes the
+// whole line, the line break before it on the unit's last line; one after
+// code on its line, the space before it; one before code on its line, the
+// space after it; and one between code, the space before it.
+func commentSpans(f *lang.File, u lang.Unit) []span {
+	kinds := f.Spec.Syntax.Comments
+	start, end := u.Node.StartByte(), u.Node.EndByte()
+	src := f.Src
+	var out []span
+	lang.Walk(u.Node, func(n *sitter.Node) bool {
+		if !kinds[n.Kind()] {
+			return true
+		}
+		from, to := n.StartByte(), n.EndByte()
+		// A line comment's token may hold the \r of its \r\n.
+		for to > from && src[to-1] == '\r' {
+			to--
+		}
+		before := from
+		for before > start && (src[before-1] == ' ' || src[before-1] == '\t') {
+			before--
+		}
+		after := to
+		for after < end && (src[after] == ' ' || src[after] == '\t') {
+			after++
+		}
+		lineBreak := 0
+		switch {
+		case after < end && src[after] == '\n':
+			lineBreak = 1
+		case after+1 < end && src[after] == '\r' && src[after+1] == '\n':
+			lineBreak = 2
+		}
+		startsLine := before == start || src[before-1] == '\n'
+		endsLine := after == end || lineBreak > 0
+		switch {
+		case startsLine && endsLine:
+			from = before
+			to = after + uint(lineBreak)
+			// The unit's last line: the line break before it goes instead.
+			if lineBreak == 0 && from > start {
+				from--
+				if from > start && src[from-1] == '\r' {
+					from--
+				}
+			}
+		case endsLine:
+			from, to = before, after
+		case startsLine:
+			to = after
+		default:
+			from = before
+		}
+		if len(out) > 0 && from < out[len(out)-1].end {
+			from = out[len(out)-1].end
+		}
+		if from < to {
+			out = append(out, span{from, to})
+		}
+		return false
+	})
+	return out
+}
+
+// removedBefore is how many bytes spans take before at.
+func removedBefore(spans []span, at uint) int {
+	n := 0
+	for _, s := range spans {
+		if s.end <= at {
+			n += int(s.end - s.start)
+		}
+	}
+	return n
 }

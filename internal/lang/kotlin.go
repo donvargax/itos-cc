@@ -43,6 +43,7 @@ func init() {
 			Identifiers: set("simple_identifier", "type_identifier"),
 			Literals: set("string_literal", "integer_literal", "real_literal", "long_literal", "hex_literal",
 				"bin_literal", "unsigned_literal", "boolean_literal", "character_literal", "null_literal"),
+			Comments: set("line_comment", "multiline_comment"),
 		},
 		Mutations: Mutations{
 			Swaps: swaps(map[string]string{"===": "!==", "!==": "===", "&&": "||", "||": "&&"}),

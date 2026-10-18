@@ -264,9 +264,11 @@ func boardUnits(t *testing.T) map[string]mutation.UnitResult {
 	return units
 }
 
+// changePlace commits a change to place's code that leaves what its
+// mutants do: a change to its comments alone would be no change of it.
 func changePlace(t *testing.T) {
 	t.Helper()
-	edit(t, boardSource, "// past five\n", "// past five, and not at five\n")
+	edit(t, boardSource, "return i > 5", "return (i > 5)")
 	commitAll(t, "change place")
 }
 

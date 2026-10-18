@@ -45,6 +45,7 @@ func init() {
 			Identifiers: set("identifier", "field_identifier", "type_identifier", "package_identifier"),
 			Literals: set("interpreted_string_literal", "raw_string_literal", "int_literal",
 				"float_literal", "imaginary_literal", "rune_literal", "true", "false", "nil"),
+			Comments: set("comment"),
 		},
 		Mutations: Mutations{
 			Swaps:         swaps(map[string]string{"&&": "||", "||": "&&"}),

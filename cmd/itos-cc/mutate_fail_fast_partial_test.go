@@ -138,7 +138,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		release(t, ff)
 		// An earlier run judged Done alone, with prior.sh: its kill is
 		// recorded with that scope and the module's tests as its evidence.
-		edit(t, "main.go", "func Done(n int) bool { return n > 4 }", "func Done(n int) bool { /* judged */ return n > 4 }")
+		edit(t, "main.go", "func Done(n int) bool { return n > 4 }", "func Done(n int) bool { return (n > 4) }")
 		commitAll(t, "judge Done")
 		prior := itosCc(t, "mutation", "run", "--json", "--no-coverage", "--no-annotate", "--test-command", "sh prior.sh", "--since", "HEAD~1")
 		logOutcome(t, &prior)
@@ -210,7 +210,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 			`list: printf "ID-A-01\te2e/e2e_test.go\nID-A-02\te2e/e2e_test.go\n"`, 1) + "    support: [\"support/*.txt\"]\n"
 		files["support/dep.txt"] = "one\n"
 		moduleRepo(t, files)
-		edit(t, "main.go", "func shown(n int) bool {\n", "func shown(n int) bool {\n\t// judged\n")
+		edit(t, "main.go", "func shown(n int) bool {\n", "func shown(\n\tn int) bool {\n")
 		commitAll(t, "judge shown")
 		ff := t.TempDir()
 		useEnv(t, "FF_DIR", ff)
@@ -225,7 +225,7 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 		}
 		for _, function := range []string{"idle", "quick", "wait", "label", "spare"} {
 			head := "func " + function + "(n int) bool {\n"
-			edit(t, "main.go", head, head+"\t// judged\n")
+			edit(t, "main.go", head, "func "+function+"(\n\tn int) bool {\n")
 		}
 		commitAll(t, "judge the rest")
 		source := readText(t, "main.go")

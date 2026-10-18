@@ -852,7 +852,7 @@ Feature: Mutation testing
   # changedBefore, deletedLine, rename and their kin) change code now.
   Rule: A change to a function's comments alone is no change
 
-    @wip @slice-11 @ID-MUT-256
+    @slice-11 @ID-MUT-256
     Scenario Outline: A comment-only change inside a function leaves its results fresh
       Given fresh results for every function of src/board.go, all killed
       And a commit after "base" only <changed> inside "Board#Place"
@@ -871,14 +871,14 @@ Feature: Mutation testing
 
     # Issue #22 as found: no range had judged the function, so it had no
     # results, and its comment made it "mutation.missing".
-    @wip @slice-11 @ID-MUT-257
+    @slice-11 @ID-MUT-257
     Scenario: A function with no results whose only change is a comment is not judged
       Given "Board#Reset" has no mutation results, and a commit after "base" only added a comment at the end of one of its lines
       When I run "itos-cc mutation check --since base"
       Then the exit code is 0
       And "itos-cc mutation run --since base" judges no function and runs no mutant
 
-    @wip @slice-11 @ID-MUT-258
+    @slice-11 @ID-MUT-258
     Scenario Outline: A comment-only change leaves a <language> function fresh
       Given a <language> function with fresh results, all killed, committed at "base"
       And a commit after "base" only added a comment on a line of its own above its mutation site, and another at the end of that site's line
@@ -2261,7 +2261,7 @@ Feature: Mutation testing
     # evidence is bound to the module's file bytes, so a check that judges
     # the whole function still finds it stale, as after any edit of the
     # module.
-    @wip @slice-11 @ID-MUT-259
+    @slice-11 @ID-MUT-259
     Scenario: A comment-only change asks no coverage evidence of its function
       Given a Go function with fresh results and fresh strict coverage evidence, committed at "base"
       And a commit after "base" only added a comment at the end of one of its executable lines

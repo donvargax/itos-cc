@@ -237,8 +237,24 @@ func (h History) ChangedSince(ctx context.Context, ref string) (map[string]mutan
 			}
 			return nil, nil, mutants.HistoryFailed{Cause: err}
 		}
-		changed[abs] = mutants.ChangedFunctionsOf(file, historyRanges(before[old], after[path]), mutants.UnitHash)
+		// The file as the range started from tells a function whose
+		// comments alone changed.
+		var base *lang.File
+		if text, exists := before[old]; exists && lang.Detect(old) == lang.Detect(path) {
+			base, err = lang.Parse(ctx, surroundings, lang.Detect(old), filepath.Join(h.Root, filepath.FromSlash(old)), []byte(text))
+			if err != nil {
+				file.Close()
+				if ctx.Err() != nil {
+					return nil, nil, mutants.HistoryCancelled{Cause: context.Cause(ctx)}
+				}
+				return nil, nil, mutants.HistoryFailed{Cause: err}
+			}
+		}
+		changed[abs] = mutants.ChangedFunctionsOf(file, base, historyRanges(before[old], after[path]), mutants.UnitHash)
 		file.Close()
+		if base != nil {
+			base.Close()
+		}
 	}
 	return changed, renamed, nil
 }

@@ -69,8 +69,18 @@ func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, 
 		}
 		return nil, nil, ErrBadRef
 	}
+	// The range starts from the merge base, as ref...HEAD diffs, whose
+	// version of each file tells a function whose comments alone changed.
+	out, err := historyCommand(ctx, dir, "merge-base", ref, "HEAD").Output()
+	if ctx.Err() != nil {
+		return nil, nil, context.Cause(ctx)
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("git merge-base %s HEAD: %s", ref, gitError(nil, err))
+	}
+	start := strings.TrimSpace(string(out))
 	// -M finds renames whatever diff.renames says.
-	out, err := historyCommand(ctx, dir, "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-color", "--no-ext-diff",
+	out, err = historyCommand(ctx, dir, "-c", "core.quotePath=false", "diff", "-U0", "-M", "--no-color", "--no-ext-diff",
 		"--no-textconv", "--src-prefix=a/", "--dst-prefix=b/", "--relative", "--diff-filter=AMR", ref+"...HEAD").Output()
 	if ctx.Err() != nil {
 		return nil, nil, context.Cause(ctx)
@@ -117,11 +127,52 @@ func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, 
 		for _, r := range lines {
 			ranges = append(ranges, mutants.LineRange{Start: r.start, End: r.end, Deletion: r.deletion})
 		}
-		c := mutants.ChangedFunctionsOf(f, ranges, hash)
+		old := name
+		if before, ok := renames[name]; ok {
+			old = before
+		}
+		base, err := baseFile(ctx, dir, start, old, spec)
+		if err != nil {
+			f.Close()
+			return nil, nil, err
+		}
+		c := mutants.ChangedFunctionsOf(f, base, ranges, hash)
 		f.Close()
+		if base != nil {
+			base.Close()
+		}
 		changed[abs] = c
 	}
 	return changed, renamed, nil
+}
+
+// baseFile is the file at name, relative to dir, as the commit start held
+// it, parsed as spec, or nil when start had no such file or it is of
+// another language. Once ctx is done it returns its cause.
+func baseFile(ctx context.Context, dir, start, name string, spec *lang.Spec) (*lang.File, error) {
+	if lang.Detect(name) != spec {
+		return nil, nil
+	}
+	src, err := historyCommand(ctx, dir, "cat-file", "blob", start+":./"+name).Output()
+	if ctx.Err() != nil {
+		return nil, context.Cause(ctx)
+	}
+	if err != nil {
+		// A file the range added has no base version.
+		return nil, nil
+	}
+	abs, err := historyAbs(dir, filepath.FromSlash(name))
+	if err != nil {
+		return nil, err
+	}
+	f, err := lang.Parse(ctx, historySurroundings{Dir: dir}, spec, abs, src)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, context.Cause(ctx)
+		}
+		return nil, err
+	}
+	return f, nil
 }
 
 // DeletedSince returns each supported file the commits since ref deleted,

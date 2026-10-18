@@ -67,24 +67,46 @@ func (f HistoryFailed) Unwrap() error { return f.Cause }
 
 // ChangedFunctionsOf pairs HEAD units with independently observed diff ranges.
 // Pure deletion ranges admit neighboring functions but never changed new lines.
-func ChangedFunctionsOf(file *lang.File, ranges []LineRange, hash func(*lang.File, lang.Unit) string) ChangedFunctions {
+// base is the file as the range started from, nil when it had none. With a
+// hash, a unit the ranges touch changed only when no unit of base of its
+// namespace#name has its hash: one whose comments alone changed did not, so
+// it is neither among Functions nor asks its lines, and a range within such
+// units alone is no changed line.
+func ChangedFunctionsOf(file, base *lang.File, ranges []LineRange, hash func(*lang.File, lang.Unit) string) ChangedFunctions {
 	c := ChangedFunctions{Functions: map[string]bool{}}
-	for _, r := range ranges {
-		if !r.Deletion {
-			c.Lines = append(c.Lines, r)
+	before := map[string]map[string]bool{}
+	if base != nil && hash != nil {
+		for _, u := range base.Units {
+			id := u.Namespace + "#" + u.Name
+			if before[id] == nil {
+				before[id] = map[string]bool{}
+			}
+			before[id][hash(base, u)] = true
 		}
 	}
+	touched := make([]bool, len(file.Units))
+	same := make([]bool, len(file.Units))
 	named := map[string]int{}
-	for _, u := range file.Units {
+	for i, u := range file.Units {
 		id := u.Namespace + "#" + u.Name
 		named[id]++
-		if OverlapsRanges(ranges, u.StartLine, u.EndLine) {
+		if !OverlapsRanges(ranges, u.StartLine, u.EndLine) {
+			continue
+		}
+		touched[i] = true
+		same[i] = before[id][hashOf(hash, file, u)]
+		if !same[i] {
 			c.Functions[id] = true
 		}
 	}
-	for _, u := range file.Units {
+	for _, r := range ranges {
+		if !r.Deletion && !unchangedOnly(file, touched, same, r) {
+			c.Lines = append(c.Lines, r)
+		}
+	}
+	for i, u := range file.Units {
 		id := u.Namespace + "#" + u.Name
-		if hash == nil || named[id] < 2 || !c.Functions[id] || OverlapsRanges(ranges, u.StartLine, u.EndLine) {
+		if hash == nil || named[id] < 2 || !c.Functions[id] || touched[i] && !same[i] {
 			continue
 		}
 		if c.Kept == nil {
@@ -96,4 +118,34 @@ func ChangedFunctionsOf(file *lang.File, ranges []LineRange, hash func(*lang.Fil
 		c.Kept[id][hash(file, u)] = true
 	}
 	return c
+}
+
+// hashOf is u's hash, "" with no hash to take.
+func hashOf(hash func(*lang.File, lang.Unit) string, file *lang.File, u lang.Unit) string {
+	if hash == nil {
+		return ""
+	}
+	return hash(file, u)
+}
+
+// unchangedOnly is whether every line of r is a line of a unit the ranges
+// touched whose hash did not change, and of none whose hash did, as an
+// inline unit's inside an unchanged one.
+func unchangedOnly(file *lang.File, touched, same []bool, r LineRange) bool {
+	for line := r.Start; line <= r.End; line++ {
+		unchanged := false
+		for i, u := range file.Units {
+			if !touched[i] || line < u.StartLine || u.EndLine < line {
+				continue
+			}
+			if !same[i] {
+				return false
+			}
+			unchanged = true
+		}
+		if !unchanged {
+			return false
+		}
+	}
+	return true
 }

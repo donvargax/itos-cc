@@ -40,6 +40,8 @@ func init() {
 			Members:     map[string]string{"attribute": "attribute"},
 			Identifiers: set("identifier"),
 			Literals:    set("string", "concatenated_string", "integer", "float", "true", "false", "none"),
+			// A docstring is a string, so code; only # comments are comments.
+			Comments: set("comment"),
 		},
 		Mutations: Mutations{
 			Swaps:         swaps(map[string]string{"and": "or", "or": "and"}),

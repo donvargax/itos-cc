@@ -373,6 +373,15 @@ its `reason` and comments; nothing else is written. `--json` lists
 also reported as `mutation.exception-stale`, exit 1. `--renew` with a site
 is `args.unexpected`, and with `--reason` `flags.conflict`, exit 80.
 
+A function's results are keyed by its hash, which leaves its comments out,
+in every language, with the space and line breaks only a comment needed, and
+its sites' offsets are taken in that comment-free text. A change to a
+function's comments alone keeps its results fresh, and `--since` judges a
+function the range touched only when its hash changed too: one the range
+touched only in its comments is not judged, by `mutation run`, `check` or
+`sample`, and none of its lines counts for `--fail-uncovered=lines`. A Python
+docstring is code, not a comment.
+
 `--fail-uncovered` takes an optional value: alone it is
 `--fail-uncovered=functions`, the whole judged functions above.
 `--fail-uncovered=lines`, which needs `--since`, judges only where the range

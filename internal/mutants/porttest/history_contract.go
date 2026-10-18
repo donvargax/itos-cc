@@ -223,10 +223,10 @@ func HistoryContract(t *testing.T, open func(*testing.T) HistoryFixture) {
 	})
 	t.Run("pure deletion and same-name kept hashes", func(t *testing.T) {
 		b := open(t)
-		source := "package sample\nfunc init() { println(1) }\nfunc init() { println(2) }\nfunc Value() int {\n // delete this line\n return 1\n}\n"
+		source := "package sample\nfunc init() { println(1) }\nfunc init() { println(2) }\nfunc Value() int {\n println(0)\n return 1\n}\n"
 		historyCommit(t, b, map[string]string{"go.mod": "module example/history\n", "same.go": source})
 		historyGit(t, b, "tag", "base")
-		after := strings.Replace(strings.Replace(source, "println(2)", "println(3)", 1), " // delete this line\n", "", 1)
+		after := strings.Replace(strings.Replace(source, "println(2)", "println(3)", 1), " println(0)\n", "", 1)
 		historyCommit(t, b, map[string]string{"same.go": after})
 		changed, _, failure := b.At(b.Root).ChangedSince(t.Context(), "base")
 		if failure != nil {
@@ -252,6 +252,22 @@ func HistoryContract(t *testing.T, open func(*testing.T) HistoryFixture) {
 			t.Fatalf("same-name hashes mispaired: hashes=%v changes=%+v", initHashes, c)
 		}
 
+	})
+	t.Run("a change to a function's comments alone is no change", func(t *testing.T) {
+		b := open(t)
+		source := "package sample\nfunc A() int {\n // one\n return 1\n}\nfunc B() int {\n return 2\n}\n"
+		historyCommit(t, b, map[string]string{"go.mod": "module example/history\n", "comments.go": source})
+		historyGit(t, b, "tag", "base")
+		after := strings.Replace(strings.Replace(source, "// one", "// the first", 1), "return 2", "return 3 // changed", 1)
+		historyCommit(t, b, map[string]string{"comments.go": after})
+		changed, _, failure := b.At(b.Root).ChangedSince(t.Context(), "base")
+		if failure != nil {
+			t.Fatal(failure)
+		}
+		c := changed[filepath.Join(b.Root, "comments.go")]
+		if c.Functions["example/history#A"] || !c.Functions["example/history#B"] || c.Changes(2, 5) || !c.Changes(7, 7) {
+			t.Fatalf("comment-only versus code change: %+v", c)
+		}
 	})
 	t.Run("typed failures and caller cause on every operation", func(t *testing.T) {
 		b := open(t)

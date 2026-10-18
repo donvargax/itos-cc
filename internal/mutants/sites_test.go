@@ -160,3 +160,79 @@ func TestSiteKeysSurviveCodeAboveTheUnit(t *testing.T) {
 		t.Error("moving a function down the file changed its hash")
 	}
 }
+
+// Issue #22: a function's hash and its sites' keys leave its comments out,
+// with the space and line break only a comment needed, in every language,
+// so a change to its comments alone keeps both; a change to its code, its
+// whitespace included, still changes the hash.
+func TestCommentsAreNoPartOfAUnitsHashOrSiteKeys(t *testing.T) {
+	for _, c := range []struct {
+		path, code string
+		comments   []string // the same code with comments
+		changed    []string // the code changed
+	}{
+		{"x.go", "package x\n\nfunc F(a int) bool {\n\tb := a + 1\n\treturn b > 2\n}\n",
+			[]string{
+				"package x\n\nfunc F(a int) bool {\n\t// one\n\tb := a + 1\n\treturn b > 2\n}\n",
+				"package x\n\nfunc F(a int) bool {\n\tb := a + 1 // one\n\treturn b > 2\n}\n",
+				"package x\n\nfunc F(a int) bool {\n\tb := a /* one */ + 1\n\treturn b > 2\n}\n",
+				"package x\n\nfunc F(a int) bool {\n\t/* one */ b := a + 1\n\treturn b > 2\n}\n",
+			},
+			[]string{
+				"package x\n\nfunc F(a int) bool {\n\tb := a + 1\n\treturn b >= 2\n}\n",
+				"package x\n\nfunc F(a int) bool {\n\tb := a + 1\n\n\treturn b > 2\n}\n",
+				"package x\n\nfunc F(a int) bool {\n\tb := a + 1\n\treturn \"// b > 2\" != \"\"\n}\n",
+			}},
+		{"x.ts", "export function f(a: number): boolean {\n  const b = a + 1;\n  return b > 2;\n}\n",
+			[]string{
+				"export function f(a: number): boolean {\n  // one\n  const b = a + 1;\n  return b > 2; // two\n}\n",
+				"export function f(a: number): boolean {\n  /** one\n   * two */\n  const b = a + 1;\n  return b > 2;\n}\n",
+			},
+			[]string{"export function f(a: number): boolean {\n  const b = a - 1;\n  return b > 2;\n}\n"}},
+		{"x.py", "def f(a):\n    b = a + 1\n    return b > 2\n",
+			[]string{"def f(a):\n    # one\n    b = a + 1  # two\n    return b > 2\n", "def f(a):\n    b = a + 1\n    return b > 2\n    # last\n"},
+			// A docstring is code.
+			[]string{"def f(a):\n    \"\"\"One.\"\"\"\n    b = a + 1\n    return b > 2\n"}},
+		{"X.kt", "fun f(a: Int): Boolean {\n    val b = a + 1\n    return b > 2\n}\n",
+			[]string{
+				"fun f(a: Int): Boolean {\n    // one\n    val b = a + 1 // two\n    return b > 2\n}\n",
+				"fun f(a: Int): Boolean {\n    /* one */\n    val b = a + 1\n    return b > 2\n}\n",
+			},
+			[]string{"fun f(a: Int): Boolean {\n    val b = a + 1\n    return b < 2\n}\n"}},
+	} {
+		code := parse(t, c.path, c.code)
+		hash, keys := UnitHash(code, code.Units[0]), siteKeys(code)
+		for _, text := range c.comments {
+			f := parse(t, c.path, text)
+			if UnitHash(f, f.Units[0]) != hash {
+				t.Errorf("%s: a comment changed the hash:\n%s", c.path, text)
+			}
+			if got := siteKeys(f); !slices.Equal(got, keys) {
+				t.Errorf("%s: a comment changed the site keys %q to %q:\n%s", c.path, keys, got, text)
+			}
+		}
+		for _, text := range c.changed {
+			f := parse(t, c.path, text)
+			if UnitHash(f, f.Units[0]) == hash {
+				t.Errorf("%s: a change to the code kept the hash:\n%s", c.path, text)
+			}
+		}
+	}
+}
+
+// A comment's own line goes whole, its \r\n line break included.
+func TestACommentLineGoesWithItsCarriageReturn(t *testing.T) {
+	code := parse(t, "x.go", "package x\r\n\r\nfunc F(a int) bool {\r\n\treturn a > 2\r\n}\r\n")
+	commented := parse(t, "x.go", "package x\r\n\r\nfunc F(a int) bool {\r\n\t// one\r\n\treturn a > 2 // two\r\n}\r\n")
+	if UnitHash(code, code.Units[0]) != UnitHash(commented, commented.Units[0]) || !slices.Equal(siteKeys(code), siteKeys(commented)) {
+		t.Errorf("comments changed a CRLF function: %q %q", siteKeys(code), siteKeys(commented))
+	}
+}
+
+func siteKeys(f *lang.File) []string {
+	var keys []string
+	for _, s := range Sites(f) {
+		keys = append(keys, s.Key())
+	}
+	return keys
+}
