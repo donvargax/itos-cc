@@ -439,6 +439,12 @@ items:
       CRAP until it is. The entries record start and end lines and complexity, which could pair
       them, or crap.json could record each function's hash as the mutation snapshots do. Read from
       graph/build.go while building same-name-units, not reproduced.
+
+      This belongs to serve's move to a web app of its own (1b449af, the person's decision of
+      2026-10-17), which takes the graph along, since the graph is reachable only through serve.
+      Serve's moves in this repository (T-102 to T-108, T-112 and T-113) are deferred until that web
+      app is specified. The overlay that pairs crap.json's coverage by name and order is still
+      graph/build.go's (from line 396).
   - id: graph-snapshot-lookup
     title: The graph finds a file's mutation snapshot where mutation check does
     phase: 1
