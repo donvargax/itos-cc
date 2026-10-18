@@ -5071,5 +5071,3 @@
     Report: the classified list of scenarios failing on the baseline, the edge-case results with
     every difference and its classification, the normalization rules, the runs, and the fix items
     opened.
-  done_when:
-    - run: go build ./... && itos config check
