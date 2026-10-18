@@ -1,280 +1,136 @@
-// Set aside (T-26): these are the template's tests of the template's main.go, which
-// itos-cc's main.go is not yet (it stays itos-cc's until the refactor ports the template's
-// CLI), so they cannot compile beside it. The ignore constraint keeps the file the template's,
-// out of every build, until the work item template-main-tests takes it away.
-
-//go:build ignore
-
 package main
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"log/slog"
-	"os"
-	"path/filepath"
+	"errors"
 	"strings"
 	"testing"
 
-	"golang.org/x/term"
-
-	"github.com/donvargax/itos-cc/internal/version"
+	"github.com/donvargax/itos-cc/internal/cli"
 )
 
-// The logs are held here: a run is quiet by default, and nothing count
-// logs below a warning, so no scenario sees a log line.
+// These test main's own seams, which no scenario reaches: the version run
+// binds from the build, the itos-cc.yaml the adapters give failing to be
+// read, and a command kong runs panicking or asking for what nothing binds.
+// What a scenario reaches stays in cli.feature.
+//
+// They replace the template's tests of the template's main.go (go-template-itos
+// v0.2.0, set aside by T-26), whose assertions are held so:
+//
+//   - its logger's (JSON to a writer, text to a terminal, quiet below a
+//     warning) are the template's alone: itos-cc's main makes no logger and
+//     asks no terminal, its commands' progress lines going to the stderr they
+//     are given, so neither the tests nor golang.org/x/term come back;
+//   - wantsJSON's is internal/cli's Read, which TestReadFindsJSONAndHelpBeforeDashDash
+//     holds, and @ID-CLI-10 for a failure's object; --no-json and --json=true
+//     are no flags of itos-cc's;
+//   - commandName's is internal/cli's Dispatch, which its own tests and
+//     @ID-CLI-04 and @ID-CLI-10 hold;
+//   - the help of a line with no arguments is @ID-CLI-01's first row, and a
+//     usage error's line and exit 2 are @ID-CLI-07's;
+//   - __complete's and completion's are the template's: itos-cc has no such
+//     command;
+//   - count's line past a reader's token limit is the sample's, which no
+//     itos-cc command runs;
+//   - version's stamp is @ID-CLI-03's, from the binary as each build makes
+//     it, and the commit its object carried is the template's: itos-cc's
+//     prints its version alone.
 
-// A warning to a writer that is not a terminal is one JSON object, with its
-// level, its message and its attributes.
-func TestLoggerWritesAWarningAsOneJSONObject(t *testing.T) {
-	var buf bytes.Buffer
-	logger(&buf).Warn("could not remove a folder", "path", "/tmp/x", "tries", 3)
-
-	var line map[string]any
-	dec := json.NewDecoder(&buf)
-	if err := dec.Decode(&line); err != nil {
-		t.Fatalf("not JSON: %v", err)
-	}
-	if dec.More() {
-		t.Fatalf("more than one object: %q", buf.String())
-	}
-	want := map[string]any{"level": "WARN", "msg": "could not remove a folder", "path": "/tmp/x", "tries": 3.0}
-	for k, v := range want {
-		if line[k] != v {
-			t.Errorf("%s = %v, want %v", k, line[k], v)
+// version and --version print the version main works out from the build,
+// as the line and as the object of that version alone.
+func TestRunPrintsTheVersionMainWorksOut(t *testing.T) {
+	for _, args := range [][]string{{"version"}, {"--version"}} {
+		code, stdout, stderr := runFaked(t, fakes(nil), args...)
+		if want := "itos-cc " + versionString() + "\n"; code != 0 || stdout != want || stderr != "" {
+			t.Errorf("%q: exit %d, stdout %q, stderr %q; want 0, %q and nothing", args, code, stdout, stderr, want)
 		}
 	}
-}
-
-// An error is logged too.
-func TestLoggerWritesAnError(t *testing.T) {
-	var buf bytes.Buffer
-	logger(&buf).Error("broken")
-	var line map[string]any
-	if err := json.Unmarshal(buf.Bytes(), &line); err != nil || line["level"] != "ERROR" {
-		t.Errorf("logged %q", buf.String())
-	}
-}
-
-// Below a warning, nothing: a run is quiet by default.
-func TestLoggerWritesNothingBelowAWarning(t *testing.T) {
-	var buf bytes.Buffer
-	l := logger(&buf)
-	l.Info("starting")
-	l.Debug("details")
-	if buf.Len() != 0 {
-		t.Errorf("logged %q", buf.String())
-	}
-}
-
-// A terminal gets text, a person reads it. Where the run has no terminal to
-// offer, this is not shown: nothing else here can make one, and a test that
-// skipped it would still hold what the run does.
-func TestLoggerWritesTextToATerminal(t *testing.T) {
-	f, ok := terminalFile(t)
-	if !ok {
-		t.Skip("no terminal to write to in this run")
-	}
-	if h := logger(f).Handler(); !isText(h) {
-		t.Errorf("handler %T, want *slog.TextHandler", h)
-	}
-}
-
-// A file that is no terminal, a run's output redirected, gets JSON: a
-// script's logs are machine-readable wherever a person is not reading.
-func TestLoggerWritesJSONToARedirectedRun(t *testing.T) {
-	f, err := os.Create(filepath.Join(t.TempDir(), "log"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = f.Close() }()
-	if h := logger(f).Handler(); isText(h) {
-		t.Errorf("handler %T, want *slog.JSONHandler", h)
-	}
-}
-
-// A writer that is not a file at all, as a test's buffer, is no terminal
-// either.
-func TestLoggerWritesJSONToAWriterThatIsNotAFile(t *testing.T) {
-	var buf bytes.Buffer
-	if h := logger(&buf).Handler(); isText(h) {
-		t.Errorf("handler %T, want *slog.JSONHandler", h)
-	}
-}
-
-// terminalFile is a file this run's terminal is, opening the standard input
-// or output whichever is one; false where neither is, as under go test in
-// CI, which is where a scenario's runs happen too.
-func terminalFile(t *testing.T) (*os.File, bool) {
-	t.Helper()
-	for _, name := range []*os.File{os.Stdout, os.Stderr, os.Stdin} {
-		if term.IsTerminal(int(name.Fd())) {
-			return name, true
-		}
-	}
-	return nil, false
-}
-
-// isText is whether h is the text handler, and not the JSON one.
-func isText(h slog.Handler) bool {
-	_, ok := h.(*slog.TextHandler)
-	return ok
-}
-
-// A command line kong could not parse still asks for --json, or not: the
-// last of --json and --no-json before any -- decides, and none means no. No
-// scenario gives a usage error every one of these ways.
-func TestWantsJSONReadsTheLastJSONFlagBeforeDashDash(t *testing.T) {
-	for _, c := range []struct {
-		args []string
-		want bool
-	}{
-		{nil, false},
-		{[]string{"count", "--bogus"}, false},
-		{[]string{"count", "--json"}, true},
-		{[]string{"--json=true", "count"}, true},
-		{[]string{"--json", "--no-json"}, false},
-		{[]string{"--json", "--json=false"}, false},
-		{[]string{"--no-json", "--json"}, true},
-		{[]string{"--", "--json"}, false},
-		{[]string{"--json", "--", "--no-json"}, true},
-	} {
-		if got := wantsJSON(c.args); got != c.want {
-			t.Errorf("wantsJSON(%q) = %v, want %v", c.args, got, c.want)
-		}
-	}
-}
-
-// No arguments at all: no implicit default action, so the program says what
-// it can do on stdout and succeeds.
-func TestRunWithNoArgumentsPrintsTheHelpAndSucceeds(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := run(t.Context(), nil, strings.NewReader(""), &stdout, &stderr); code != 0 {
-		t.Fatalf("run with no arguments returned %d, want 0", code)
-	}
-	for _, want := range []string{"count", "version", "completion"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Errorf("the help does not name %q\n%s", want, stdout.String())
-		}
-	}
-	if stderr.Len() != 0 {
-		t.Errorf("the help wrote to stderr: %q", stderr.String())
-	}
-}
-
-// A usage error kong finds before any command runs is the one failure main
-// reports itself, as a line on stderr and exit 2.
-func TestRunReportsAUsageErrorAsAUsageExit(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"count"}, strings.NewReader(""), &stdout, &stderr); code != 2 {
-		t.Fatalf("run of count with no file returned %d, want 2", code)
-	}
-	if !strings.Contains(stderr.String(), "itos-cc: ") {
-		t.Errorf("stderr = %q, want a line prefixed for a person", stderr.String())
-	}
-}
-
-// The completion protocol answers from kong's model and never runs a
-// command: __complete is the shell's, and it lists what a new word fits.
-func TestRunOfCompleteAnswersFromTheModelWithoutRunningACommand(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"__complete", ""}, strings.NewReader(""), &stdout, &stderr); code != 0 {
-		t.Fatalf("run of __complete returned %d, want 0", code)
-	}
-	for _, want := range []string{"count", "version", "completion"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Errorf("__complete does not offer %q\n%s", want, stdout.String())
-		}
-	}
-	if strings.Contains(stdout.String(), "__complete") {
-		t.Errorf("__complete offers itself\n%s", stdout.String())
-	}
-}
-
-// The stamped version and commit the scenario harness builds with: run
-// stamps what a release's build stamps, and this is where that is read.
-func TestRunPrintsTheStampVersionAndCommand(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"version"}, strings.NewReader(""), &stdout, &stderr); code != 0 {
-		t.Fatalf("run of version returned %d, want 0", code)
-	}
-	if !strings.HasPrefix(stdout.String(), "itos-cc ") {
-		t.Errorf("version printed %q", stdout.String())
-	}
-}
-
-// version --json gives the version and commit internal/version reads, the
-// commit left out where this test binary knows none, so the object and the
-// text are made of the same two values.
-func TestRunOfVersionJSONGivesTheBuildsVersionAndCommit(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	if code := run(t.Context(), []string{"version", "--json"}, strings.NewReader(""), &stdout, &stderr); code != 0 {
-		t.Fatalf("run of version --json returned %d, want 0", code)
-	}
+	code, stdout, _ := runFaked(t, fakes(nil), "version", "--json")
 	var object map[string]any
-	if err := json.Unmarshal(stdout.Bytes(), &object); err != nil {
-		t.Fatalf("version --json printed %q: %v", stdout.String(), err)
+	if err := json.Unmarshal([]byte(stdout), &object); err != nil {
+		t.Fatalf("version --json printed %q: %v", stdout, err)
 	}
-	if object["version"] != version.Version() {
-		t.Errorf("version = %v, want %q", object["version"], version.Version())
+	want := map[string]any{"schema": 1.0, "ok": true, "version": versionString()}
+	if code != 0 || len(object) != len(want) {
+		t.Errorf("version --json: exit %d, %v; want 0 and %v", code, object, want)
 	}
-	commit, has := object["commit"]
-	if want := version.Commit(); has != (want != "") || has && commit != want {
-		t.Errorf("commit = %v (present %v), want %q", commit, has, want)
-	}
-}
-
-// A line longer than any reader's token limit is still one line and is
-// counted whole, so the answer does not depend on the length of a line.
-func TestCountReadsALineWholePastAnyTokenLimit(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "long.txt")
-	if err := os.WriteFile(path, []byte(strings.Repeat("x", 100000)+"\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	var stdout, stderr bytes.Buffer
-	code := run(t.Context(), []string{"count", path, "--json"}, strings.NewReader(""), &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("run of count returned %d: %s", code, stderr.String())
-	}
-	// The file is written as JSON writes it, whose escaping is the encoder's
-	// and not this test's: a Windows path holds backslashes, and the answer a
-	// script reads is the one with them escaped.
-	name, err := json.Marshal(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := `{"schema":1,"ok":true,"file":` + string(name) + `,"lines":1,"words":1}` + "\n"
-	if got := stdout.String(); got != want {
-		t.Errorf("standard output = %q, want %q", got, want)
+	for key, value := range want {
+		if object[key] != value {
+			t.Errorf("version --json: %s = %v, want %v", key, object[key], value)
+		}
 	}
 }
 
-// The command a line names, as the usage failure about it is written: the
-// first word that is neither a flag nor a flag's value, and "" where the line
-// names none. No scenario begins a line with a flag, so nothing else reads
-// this.
-func TestCommandNameSkipsFlagsAndTheirValues(t *testing.T) {
+// unreadable is an itos-cc.yaml that cannot be read, as a file the user
+// cannot open.
+type unreadable struct{}
+
+func (unreadable) Read(context.Context) (string, []byte, error) {
+	return "/work", nil, errors.New("itos-cc.yaml: permission denied")
+}
+
+// crap, dry and units end with the failure of reading itos-cc.yaml, which
+// nothing classifies, before measuring anything; their help, scrap and
+// version never read it, so it breaks none of them.
+func TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead(t *testing.T) {
+	failing := fakes(nil)
+	failing.Config = unreadable{}
+	for _, name := range []string{"crap", "dry", "units"} {
+		code, stdout, stderr := runFaked(t, failing, name, "--json")
+		if code != cli.CodeInternal || !strings.Contains(stdout, `"rule": "internal"`) || !strings.Contains(stdout, "itos-cc.yaml: permission denied") || stderr != "" {
+			t.Errorf("%s --json: exit %d, stdout %q, stderr %q; want 70 and the failure as its object", name, code, stdout, stderr)
+		}
+		code, _, stderr = runFaked(t, failing, name)
+		if code != cli.CodeInternal || !strings.Contains(stderr, "itos-cc: itos-cc.yaml: permission denied") {
+			t.Errorf("%s: exit %d, stderr %q; want 70 and the failure on stderr", name, code, stderr)
+		}
+		code, stdout, _ = runFaked(t, failing, name, "--help")
+		if code != 0 || !strings.Contains(stdout, "usage: itos-cc "+name) {
+			t.Errorf("%s --help: exit %d, stdout %q; want 0 and its help", name, code, stdout)
+		}
+	}
+	for _, args := range [][]string{{"scrap", "--json"}, {"version"}} {
+		if code, stdout, stderr := runFaked(t, failing, args...); code != 0 {
+			t.Errorf("%q: exit %d, stdout %q, stderr %q; want 0, the file unread", args, code, stdout, stderr)
+		}
+	}
+}
+
+// A command kong runs that panics, or asks for what nothing binds, is a bug:
+// an internal problem and exit 70, as the --json object or a line on
+// stderr, never a crash.
+func TestCallSafelyReportsABugAsAnInternalFailure(t *testing.T) {
 	for _, c := range []struct {
-		args []string
+		name string
+		run  any
 		want string
 	}{
-		{nil, ""},
-		{[]string{"count", "notes.txt"}, "count"},
-		{[]string{"--", "count"}, ""},
-		// A flag's value is the next word unless the flag took it as
-		// --flag=value, which is one word: a word after a bare flag is that
-		// flag's value, and never names the command.
-		{[]string{"--json", "count", "notes.txt"}, "notes.txt"},
-		{[]string{"--json=yes", "count", "notes.txt"}, "count"},
-		{[]string{"--json", "count"}, ""},
-		{[]string{"--json"}, ""},
-		// A lone - is a command's argument, the file read from standard
-		// input, and not a flag.
-		{[]string{"-", "notes.txt"}, "-"},
+		{"a panic", func() int { panic("oops") }, "version panicked: oops"},
+		{"an unbound value", func(*testing.T) int { return 0 }, "*testing.T"},
 	} {
-		if got := commandName(c.args); got != c.want {
-			t.Errorf("commandName(%q) = %q, want %q", c.args, got, c.want)
+		for _, asJSON := range []bool{true, false} {
+			var stdout, stderr strings.Builder
+			ui := &cli.UI{In: strings.NewReader(""), Stdout: &stdout, Stderr: &stderr}
+			parser, err := parserOf(t.Context(), &commandLine{}, ui, fakes(nil))
+			if err != nil {
+				t.Fatal(err)
+			}
+			parsed, err := cli.Parse(parser, []string{"version"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			code := callSafely(ui, parsed, "version", c.run, asJSON)
+			out := stderr.String()
+			if asJSON {
+				out = stdout.String()
+				if !strings.Contains(out, `"rule": "internal"`) {
+					t.Errorf("%s with --json: stdout %q, want the internal problem's object", c.name, out)
+				}
+			}
+			if code != cli.CodeInternal || !strings.Contains(out, c.want) {
+				t.Errorf("%s (--json %v): exit %d, output %q; want 70 and %q", c.name, asJSON, code, out, c.want)
+			}
 		}
 	}
 }
