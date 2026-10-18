@@ -819,7 +819,11 @@
     re-enables the workflow, a dispatched run measures the refactored code, and the design follows
     from that measure (parallel shards with a merging commit job, a step timeout under the job's,
     mutation-run-saves-each-file if it has landed, resource caps if a mutant still takes the runner
-    down). The parts below still hold. Earlier history follows.
+    down). slice-11 (b214f15) left comments out of a function's hash, which changed the hash of
+    internal/release#extract, whose text holds a comment: its exception in itos-cc.yaml reads
+    exception-stale until a measured run records its mutant survived again and mutation except
+    --renew carries the entry over, which this task does once the dispatched run's results land
+    (#Newest's stays fresh). The parts below still hold. Earlier history follows.
     The person's call (2026-10-11): the nightly has committed no mutation results since 2026-10-07,
     every run dying with a runner shutdown at about mutant 161 of 2213, right after
     cmd/itos-cc/main.go:133 (runs 37600315790, 37627544105, then 37756389520, 37911085058,
