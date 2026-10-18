@@ -3619,3 +3619,15 @@ items:
       snapshots and skips sites already judged, deliberately reversing #27's cache-blind counted
       design for this flag. Helped by mutation-run-saves-each-file. Wave 3.
     refs: ["#43"]
+  - id: mutation-operators
+    title: Opt-in return-value and call-removal mutators, Go first
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Issue #24. Only leaf-token swaps and unary deletions exist (internal/mutants/sites.go:48-90,
+      internal/lang/golang.go:52-53). The person (2026-10-18): a mutation.operators key turns them
+      on, off by default so no function goes stale (q-13); Go first, other languages later. Wave 3.
+    refs: ["#24"]
