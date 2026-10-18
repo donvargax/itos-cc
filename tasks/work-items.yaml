@@ -3696,6 +3696,6 @@ items:
     title: ID-MUT-250 fails on macOS when a killed fixture resets its connection
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

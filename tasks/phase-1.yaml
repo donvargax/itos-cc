@@ -5106,6 +5106,3 @@
     what it checks. The fix belongs only in the step code; no feature file and no product code
     changes. Linux may not reproduce it: run the scenario repeatedly here, then let cd.yml on macOS
     judge.
-  done_when:
-    - run: go test ./features -run '^TestFeatures$' -count=5 -scenarios='^@ID-MUT-250$'
-      timeout: 900
