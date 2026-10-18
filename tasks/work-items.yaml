@@ -3731,3 +3731,19 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: shell-completion
+    title: itos-cc completes its commands and flags in the shell
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person, 2026-10-17: itos-cc needs a completion command. features/completion.feature holds
+      7 @wip scenarios written for the template's sample count app (bash, zsh, fish and PowerShell
+      scripts asking the binary through a hidden __complete what fits, from kong's model); they stay
+      @wip until this is specified. Before specifying it, the person is checking other repositories
+      for a clean way to add completion, possibly without feature files of its own, perhaps as a
+      feature of our kong fork that every kong-based tool gets. Specify nothing until that is
+      settled; then rewrite or replace completion.feature for itos-cc's own commands. docs/CLI.md
+      lists shell completion among the rules itos-cc does not follow yet.
