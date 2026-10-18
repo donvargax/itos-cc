@@ -298,6 +298,20 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 		}
 		return nil
 	})
+	sc.Step(`^\.metrics/scrap\.json holds (\{.*\})$`, func(snapshot string) error {
+		if err := d.writeFile("test_ok.py", cleanPy); err != nil {
+			return err
+		}
+		return w.write(".metrics/scrap.json", snapshot+"\n")
+	})
+	// The whole line, so a reason that goes on to name a Go type fails.
+	sc.Step(`^stderr says it is ignoring the snapshot because (.+)$`, func(reason string) error {
+		line := "itos-cc: ignoring unreadable .metrics/scrap.json: " + reason
+		if !slices.Contains(strings.Split(strings.ReplaceAll(w.stderr, "\r\n", "\n"), "\n"), line) {
+			return fmt.Errorf("stderr has no line %q\n%s", line, w.report())
+		}
+		return nil
+	})
 	sc.Step(`^the run completes$`, d.runCompletes)
 	sc.Step(`^the selection holds no test files$`, func() error {
 		return d.writeFiles(map[string]string{"src/cart.ts": "export function total(xs: number[]) {\n  return xs.length;\n}\n", "README.md": "# notes\n"})

@@ -8,6 +8,7 @@ import (
 	"maps"
 	"math"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -114,13 +115,36 @@ func findsNoAbsentSnapshot(t *testing.T, open func(t *testing.T, snapshots map[s
 }
 
 func refusesMalformedText(t *testing.T, open func(t *testing.T, snapshots map[string]string) (port.Store, string)) {
-	store, _ := open(t, map[string]string{"bad.json": "{", "mutate/bad.go.json": `{"version": "one"}`})
-	for _, name := range []string{"bad.json", "mutate/bad.go.json"} {
+	store, _ := open(t, map[string]string{
+		"bad.json":           "{",
+		"mutate/bad.go.json": `{"version": "one"}`,
+		"files.json":         `{"version": 1, "files": ["a.go", 7]}`,
+		"list.json":          `[1]`,
+	})
+	// A value of the wrong kind is said in the snapshot's own terms, its
+	// key and the JSON kinds, never the Go types the reader decodes into
+	// (bug-3); JSON that does not parse keeps the parser's text.
+	reasons := map[string]string{
+		"bad.json":           "unexpected end of JSON input",
+		"mutate/bad.go.json": "version should be a number, not a string",
+		"files.json":         "files[1] should be a string, not a number",
+		"list.json":          "the snapshot should be an object, not an array",
+	}
+	for _, name := range []string{"bad.json", "mutate/bad.go.json", "files.json", "list.json"} {
 		var got record
 		found, failure := store.Read(t.Context(), name, &got)
 		var unreadable *port.Unreadable
 		if !found || !errors.As(failure, &unreadable) || unreadable.Name != name || unreadable.Reason == "" {
 			t.Errorf("Read(%s) = %t, %T %v; want there and Unreadable naming it", name, found, failure, failure)
+			continue
+		}
+		if unreadable.Reason != reasons[name] {
+			t.Errorf("Read(%s) Reason = %q; want %q", name, unreadable.Reason, reasons[name])
+		}
+		for _, internal := range []string{"Go ", "of type", "record", "porttest", "[]string"} {
+			if strings.Contains(unreadable.Reason, internal) {
+				t.Errorf("Read(%s) Reason = %q names %q, a Go type or package", name, unreadable.Reason, internal)
+			}
 		}
 	}
 }

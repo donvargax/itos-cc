@@ -307,6 +307,18 @@ Feature: Test-code structure
       Then stderr says it is ignoring the unreadable snapshot
       And the run completes
 
+    @bug-3 @ID-SCRAP-30 @wip
+    Scenario Outline: A previous snapshot holding a value of the wrong kind is ignored, naming its key
+      Given .metrics/scrap.json holds <snapshot>
+      When I run "itos-cc scrap"
+      Then stderr says it is ignoring the snapshot because <reason>
+      And the run completes
+
+      Examples:
+        | snapshot                 | reason                                         |
+        | {"files": [{"file": 7}]} | files[0].file should be a string, not a number |
+        | {"files": "none"}        | files should be an array, not a string         |
+
     @ID-SCRAP-29
     Scenario: Nothing to measure
       Given the selection holds no test files
