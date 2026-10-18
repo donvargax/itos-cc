@@ -5322,9 +5322,13 @@
     deferred mutation scenarios (MUT-134, 153, 154, 163, 207) run only through the binary driver,
     and no workflow runs the viewer's tests. Those belong to the web-app move, not this refactor.
     The template's scenario-moves range check (itos-policy.yaml) was neither adopted nor set aside:
-    it waits on itos#55 as the idea scenario-moves-check. Left before closing: decision 47's review
-    (adr-47-code-review, decision 50), T-132's edge-case differences classified (its run 39101044040
-    shows 53 differences, 3 classified, and one untracked regression: an unreadable itos-cc.yaml
-    makes units, crap, dry and scrap exit 100), and the stale whys the audit listed.
+    it waits on itos#55 as the idea scenario-moves-check. Closed on 2026-10-18, the person having
+    asked to close the refactor out, once the last of it landed: decision 47's review (T-140, with
+    decision 50, T-135 and T-136); T-132's edge-case differences, all 53 classified by T-137
+    (68c05e7), 46 of them slice-6's exclude changes, none needing a new fix; the one regression they
+    held, an unreadable itos-cc.yaml making crap, dry, units and the mutation group exit 100 as an
+    internal error, fixed as bug-4 (7df78f1; scrap never reads the file); the dead items dropped and
+    the stale whys brought up to date (T-138); and the macOS and Windows scenario races CD found on
+    the way (T-134, T-139). T-86, feature-owned vertical slices, follows.
   done_when:
     - run: itos config check
