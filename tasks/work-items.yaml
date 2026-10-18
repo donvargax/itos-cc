@@ -1922,8 +1922,8 @@ items:
   - id: slice-7
     title: Exit codes follow square/exit, 75 kept for retry
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-30, T-132]
     kind: slice
     why: >
