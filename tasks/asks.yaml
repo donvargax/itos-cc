@@ -316,3 +316,6 @@ questions:
   - id: q-67
     item: "T-133"
     question: "T-133 kept ID-SCRAP-30 running in process by giving the in-process driver's observedStore a Read that re-decodes an Unreadable snapshot with metricsdir.Undecodable, which therefore stays exported. Recommended: keep it; the driver already wires metricsdir over the fake, the fake stays JSON-free, and the push gate keeps the scenario. Alternative: tag ID-SCRAP-30 @binary-only (the wording is metricsdir's; its unit test pins it) and unexport Undecodable."
+  - id: q-68
+    item: "p1-counted-live-tool-caches"
+    question: "p1-counted-live-tool-caches (found by T-128): a counted run links the live project's node_modules into its frozen export, so Vitest writes node_modules/.vite/vitest/<hash>/results.json into the live project. Recommended: give the export's tools caches of their own (Vite's cacheDir, or a .vite and .cache beside the export, removed with it), so a counted run keeps its promise that the live working tree is left unchanged, ignored files included. Alternative: allow writes to dependency caches git ignores, and say so in the scenario 'A counted run judges a project through its installed tools, offline'."
