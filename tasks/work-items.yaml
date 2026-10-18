@@ -692,6 +692,10 @@ items:
       q-28 authorizes scoping a minimal foundation as separate slices. debt-inventory is the first
       prerequisite; range and staged transition contracts still need decisions. No adopt/tighten,
       full measurement gating, SARIF or host claim updates are included by default.
+
+      The path above is out of date. Commands are registered in the kong model commandLine
+      (cmd/itos-cc/dispatch.go:31-39), which names crap, dry, mutation, scrap, serve, units and
+      version and none of the debt commands IDEAS.md plans, so the foundation is still missing.
     refs: ["#25"]
   - id: strict-go-multimodule
     title: Strict Go coverage provenance for workspaces and local replacement modules
