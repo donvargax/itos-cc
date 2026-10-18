@@ -11,17 +11,6 @@ exclude: ["**/porttest/**", "features/**"]
 # a reason that stops holding cannot outlive the code it was written for.
 mutation:
   exceptions:
-    # Set aside (T-26): the template's exception for the template's main.go, whose
-    # run itos-cc's main.go is not yet, so it would go stale here. It returns when
-    # the refactor ports the template's main.go (the work item template-main-exception).
-    # - file: cmd/itos-cc/main.go
-    #   function: github.com/donvargax/itos-cc/cmd/itos-cc#run
-    #   hash: c33f9e2625dbed56
-    #   line_in_function: 22
-    #   column: 15
-    #   original: '>'
-    #   replacement: '>='
-    #   reason: run replaces an empty line with --help before this comparison, so len(args) is never 0 here and > and >= both hold.
     - file: internal/release/build.go
       function: github.com/donvargax/itos-cc/internal/release#extract
       hash: 6e51bcbcdcf402f5
