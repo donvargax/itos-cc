@@ -139,7 +139,10 @@ func (e changedLinesExample) testFile() string {
 	return ""
 }
 
-// @ID-MUT-225
+// @ID-MUT-225. Kept: a whole-function check of the snapshot the
+// changed-line run wrote still reports the old line, which no scenario
+// asserts: ID-MUT-225's checks with --fail-uncovered=lines and runs again
+// with --fail-uncovered (T-130).
 func TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem(t *testing.T) {
 	t.Parallel()
 	if _, err := exec.LookPath("go"); err != nil {
@@ -148,7 +151,10 @@ func TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem(t *testing.
 	changedLinesScenario(t, changedLinesExamples[0])
 }
 
-// @ID-MUT-225
+// @ID-MUT-225. Kept: a whole-function check of the snapshot the
+// changed-line run wrote still reports the old line, which no scenario
+// asserts: ID-MUT-225's checks with --fail-uncovered=lines and runs again
+// with --fail-uncovered (T-130).
 func TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "python")
@@ -215,7 +221,10 @@ func changedLinesScenario(t *testing.T, e changedLinesExample) {
 	}
 }
 
-// @ID-MUT-226
+// @ID-MUT-226. Kept: a counted run and mutation check with
+// --fail-uncovered=lines and no --since are usage errors naming --since,
+// which no scenario asserts: ID-MUT-226's runs a complete run alone
+// (T-130).
 func TestChangedLineStrictnessNeedsARange(t *testing.T) {
 	t.Parallel()
 	inEmptyDir(t)

@@ -18,7 +18,9 @@ import (
 // one mutation site is on the old line no test runs: --count 1 always
 // selects it, and it is uncovered.
 
-// @ID-MUT-226
+// @ID-MUT-226. Kept: after a commit adds a line no test runs, the counted
+// changed-line run reports that line alone and fails, which no scenario
+// asserts: ID-MUT-226's counted run sees no added line (T-130).
 func TestChangedLineStrictnessHoldsInACountedRun(t *testing.T) {
 	t.Parallel()
 	requireCountedPlatform(t)

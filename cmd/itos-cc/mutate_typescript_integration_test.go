@@ -147,7 +147,11 @@ func tsCliMutant(m map[string]any) string {
 	return strings.Replace(describe(m), greetSource, "src/cli.ts", 1)
 }
 
-// @ID-MUT-229
+// @ID-MUT-229. Kept: the child process writes its V8 coverage under the
+// run's own run-* directory, gone with no coverage file left in the project
+// once the run ends, and listed tests the harness does not split are each
+// measured alone, which no scenario asserts: ID-MUT-229's reads the
+// outcomes and a split harness (T-130).
 func TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered(t *testing.T) {
 	t.Parallel()
 	modules := languageTools(t, "c8")

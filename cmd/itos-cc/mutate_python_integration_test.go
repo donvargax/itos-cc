@@ -138,7 +138,11 @@ func cliCoverage(m map[string]any) []string {
 	return out
 }
 
-// @ID-MUT-228
+// @ID-MUT-228. Kept: the subprocess writes its coverage.py data under the
+// run's own run-* directory, gone with no data file left in the project
+// once the run ends, and listed tests the harness does not split are each
+// measured alone, which no scenario asserts: ID-MUT-228's reads the
+// outcomes and a split harness (T-130).
 func TestLinesAPythonTestReachesThroughASubprocessAreCovered(t *testing.T) {
 	t.Parallel()
 	languageTools(t, "python")
