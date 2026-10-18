@@ -5034,5 +5034,3 @@
     opens a pull request after prNotPendingHours and branch-automerges only once every check on it
     is green, ci.yml's and cd.yml's on all three systems: say so in README's CI section.
     go-template-itos#3 tracks the template's side.
-  done_when:
-    - run: itos config check

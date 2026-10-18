@@ -3830,6 +3830,6 @@ items:
     title: Give Renovate's update commits the Task footer itos requires
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
