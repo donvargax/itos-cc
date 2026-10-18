@@ -3506,14 +3506,15 @@ items:
       restyling flow mappings. First of the exceptions-file track (then except-prune,
       except-repoint, except-uncovered-message).
     refs: ["#55"]
-  - id: except-prune
+  - id: slice-21
     title: mutation except --prune removes stale exception entries
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was except-prune.
       Issue #51. No command removes an entry whose why is gone, killed or excluded
       (internal/mutation/mutation.go about 91-96). --prune reports each removed entry and keeps
       other keys and comments. After except-byte-exact.
