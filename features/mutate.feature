@@ -2850,7 +2850,7 @@ Feature: Mutation testing
     # Comparative contract (native public proof is ID-MUT-248):
     # But on Windows counted mode still fails clearly before launching commands
       And the help names Linux and macOS as the supported platforms
-    # Documentation contract retained in TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows:
+    # Documentation contract retained in TestTheDocsDescribeCountedAndFailFastPlatforms:
     # And the help, README and docs name Linux and macOS as the supported platforms
 
   # GitHub #27, now the person's priority, is fresh bounded execution, not
@@ -3207,7 +3207,7 @@ Feature: Mutation testing
     # Comparative contract (native public proof is ID-MUT-248):
     # And on Windows it fails with fail-fast.platform before launching commands
       And the help describes --fail-fast, its rule and its platforms
-    # Documentation contract retained in TestFailFastAdmissionBoundaries:
+    # Documentation contract retained in TestTheDocsDescribeCountedAndFailFastPlatforms:
     # And the help, README and docs/CLI.md describe --fail-fast, its rule and its platforms
 
     @native-platform-admission @ID-MUT-248

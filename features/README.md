@@ -1070,9 +1070,10 @@ actual execution in that installed-tool selection.
 T-101 reviewed 156 to 164 and 221 to 224 once the scenarios ran green through both drivers; the
 raw coverage flag guard, `TestStrictGoRejectsUnattestedRawCoverageFlags`, went with them, ID-MUT-163
 holding each flag's refusal through the binary, where serve's deferral leaves it. Each kept holder
-holds what no scenario asserts. T-101 left 225, 226 and 228 to 230 unreviewed; they stay whole.
+holds what no scenario asserts. T-130 reviewed 225, 226 and 228 to 230 the same way: all seven
+holders stay, each asserting what no scenario does, with why beside it.
 
-| MUT | Holder under cmd/itos-cc | Exact test | T-101 |
+| MUT | Holder under cmd/itos-cc | Exact test | Review |
 | --- | --- | --- | --- |
 | 156 | strict_go_coverage_test.go | TestStrictGoRunFindsUncoveredExecutableBlockWithoutMutationSite | removed |
 | 157 | strict_go_coverage_test.go | TestStrictGoChecksZeroSiteFunctionsAndExemptsEmptyBodies | removed |
@@ -1089,13 +1090,13 @@ holds what no scenario asserts. T-101 left 225, 226 and 228 to 230 unreviewed; t
 | 222 | strict_lines_typescript_test.go | TestAStrictTypeScriptRunProvesEveryExecutableLineOfEveryJudgedFunction | kept: the stale findings' functions and lines |
 | 223 | strict_lines_kotlin_test.go | TestAStrictKotlinRunProvesEveryExecutableLineOfEveryJudgedFunction | kept: the stale findings' functions and lines |
 | 224 | strict_scope_refusals_test.go | TestStrictCoverageRefusesScopesItsFingerprintsCannotProve | kept: the refusal's line |
-| 225 | strict_changed_lines_test.go | TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | not reviewed |
-| 225 | strict_changed_lines_test.go | TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | not reviewed |
-| 226 | strict_changed_lines_test.go | TestChangedLineStrictnessNeedsARange | not reviewed |
-| 226 | strict_changed_lines_counted_test.go | TestChangedLineStrictnessHoldsInACountedRun | not reviewed |
-| 228 | mutate_python_integration_test.go | TestLinesAPythonTestReachesThroughASubprocessAreCovered | not reviewed |
-| 229 | mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered | not reviewed |
-| 230 | mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered | not reviewed |
+| 225 | strict_changed_lines_test.go | TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | T-130 kept: the whole-function check of the changed-line snapshot |
+| 225 | strict_changed_lines_test.go | TestAPythonChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem | T-130 kept: the whole-function check of the changed-line snapshot |
+| 226 | strict_changed_lines_test.go | TestChangedLineStrictnessNeedsARange | T-130 kept: the counted run's and check's refusals without --since |
+| 226 | strict_changed_lines_counted_test.go | TestChangedLineStrictnessHoldsInACountedRun | T-130 kept: the counted run after the added line |
+| 228 | mutate_python_integration_test.go | TestLinesAPythonTestReachesThroughASubprocessAreCovered | T-130 kept: raw data under the run's directory, then gone; unsplit listed tests run alone |
+| 229 | mutate_typescript_integration_test.go | TestLinesATypeScriptTestReachesThroughAChildNodeProcessAreCovered | T-130 kept: raw data under the run's directory, then gone; unsplit listed tests run alone |
+| 230 | mutate_kotlin_integration_test.go | TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered | T-130 kept: raw data under the run's directory, then gone; unsplit listed tests run alone |
 
 Additional retained guards include unloaded-package ordering and coverage-missing
 behavior, cached workspace rejection,
@@ -1201,28 +1202,41 @@ separately from the native Windows positives.
 Keep every legacy holder, helper and extra assertion through actual restored
 replacement CI and T101 cleanup. No adapter fault/budget guard is a CLI duplicate.
 
-| MUT | Retained holder | Exact test or shared helper |
-| --- | --- | --- |
-| 165 / 187 | mutate/command_runner_ownership_linux_test.go / command_runner_ownership_darwin_test.go | TestLinuxOwnTimeoutStopsOwnedProcessTree / TestMacOSOwnTimeoutStopsOwnedProcessTree; checkOwnTimeoutStopsOwnedTree |
-| 166 / 188 | same ownership holders | TestLinuxNormalReturnStopsOwnedDescendant / TestMacOSNormalReturnStopsOwnedDescendant; checkNormalReturnStopsOwnedDescendant |
-| 167 / 189 | same ownership holders | TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment / TestMacOSParentCancellationIsNotAMutantDeadline; cancellation/completed-first helpers |
-| 168 / 190 | Linux/Darwin/shared Unix ownership holders | TestLinuxOwnershipStartupFailureDoesNotRunCommand; TestLinuxCleanupFailureIsReturnedNotJudged; TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback; TestLinuxProbeCountsAZombieOnlyGroupEmpty |
-| 191 / count part of 248 | cmd/itos-cc/mutate_counted_macos_test.go | TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows |
-| 192 | cmd/itos-cc/mutate_fail_fast_test.go | TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants |
-| 193 | same fail-fast holder | TestInFlightJudgmentsAreCancelledAndTheirOwnedProcessesCleanedUp |
-| 194 | same fail-fast holder | TestNonActionableJudgmentsNeverStopTheRun |
-| 195 | same fail-fast holder | TestKnownPolicyFailuresStopBeforeAvoidableMutantWork |
-| 196 | same fail-fast holder | TestAFailingBaselineStopsTheRunWithoutInventingOutcomes |
-| 197 | same fail-fast holder | TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork |
-| 198 | same fail-fast holder | TestAFileTheStopCutShortPublishesNoPartialProof |
-| 199 / fail-fast part of 248 | cmd/itos-cc/mutate_fail_fast_admission_test.go | TestFailFastAdmissionBoundaries |
-| 200 | cmd/itos-cc/mutate_fail_fast_partial_test.go | TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged |
-| 201 | same partial holder | TestACancelledForcedRerunLeavesAFreshPriorCacheUsable |
-| 202 | same partial holder | TestALaterRunFinishesOnlyWhatTheStopLeft |
-| 211 | cmd/itos-cc/mutate_fail_fast_counts_test.go | TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused |
+| MUT | Holder | Exact test or shared helper | T-130 |
+| --- | --- | --- | --- |
+| 165 / 187 | internal/worktrees/command_runner_ownership_linux_test.go / command_runner_ownership_darwin_test.go | TestLinuxOwnTimeoutStopsOwnedProcessTree / TestMacOSOwnTimeoutStopsOwnedProcessTree; checkOwnTimeoutStopsOwnedTree | adapter, kept |
+| 166 / 188 | same ownership holders | TestLinuxNormalReturnStopsOwnedDescendant / TestMacOSNormalReturnStopsOwnedDescendant; checkNormalReturnStopsOwnedDescendant | adapter, kept |
+| 167 / 189 | same ownership holders | TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment / TestMacOSParentCancellationIsNotAMutantDeadline; cancellation/completed-first helpers | adapter, kept |
+| 168 / 190 | Linux/Darwin/shared Unix ownership holders | TestLinuxOwnershipStartupFailureDoesNotRunCommand; TestLinuxCleanupFailureIsReturnedNotJudged; TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback; TestLinuxProbeCountsAZombieOnlyGroupEmpty | adapter, kept |
+| 191 / count part of 248 | cmd/itos-cc/mutate_counted_macos_test.go | TestCountedExecutionIsAdmittedOnMacOSAndStillRefusedOnWindows | removed; its guards split (below) |
+| 192 | cmd/itos-cc/mutate_fail_fast_test.go | TestTheFirstActionableSurvivorStopsAdmissionOfLaterMutants | removed |
+| 193 | same fail-fast holder | TestInFlightJudgmentsAreCancelledAndTheirOwnedProcessesCleanedUp | removed |
+| 194 | same fail-fast holder | TestNonActionableJudgmentsNeverStopTheRun | removed |
+| 195 | same fail-fast holder | TestKnownPolicyFailuresStopBeforeAvoidableMutantWork | removed |
+| 196 | same fail-fast holder | TestAFailingBaselineStopsTheRunWithoutInventingOutcomes | kept: the blocked and unattempted states, no passed selection baseline logged |
+| 197 | same fail-fast holder | TestOutputDistinguishesCompletedWorkFromCancelledAndUnattemptedWork | removed |
+| 198 | same fail-fast holder | TestAFileTheStopCutShortPublishesNoPartialProof | removed |
+| 199 / fail-fast part of 248 | cmd/itos-cc/mutate_fail_fast_admission_test.go | TestFailFastAdmissionBoundaries | removed; its guards split (below) |
+| 200 | cmd/itos-cc/mutate_fail_fast_partial_test.go | TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged | kept: the blocked stop's recorded listed kill and uncovered judgment |
+| 201 | same partial holder | TestACancelledForcedRerunLeavesAFreshPriorCacheUsable | removed |
+| 202 | same partial holder | TestALaterRunFinishesOnlyWhatTheStopLeft | removed |
+| 211 | cmd/itos-cc/mutate_fail_fast_counts_test.go | TestAFileBlockedByAFailingListedSelectionCountsWhatItRanAndReused | removed |
 
-T-101 did not review these T-80 holders; each stays whole until a later review maps it
-assertion by assertion.
+T-130 reviewed the thirteen cmd holders assertion by assertion and removed eleven, each
+assertion its scenario's or another's. A command started after a stop is ID-MUT-192's trace and
+193's later mutant, whose test would fail had it run; the join before a worker copy goes is
+`TestPoolJoinsEnteredWaiterBeforeRemovingInputs`; 191's interrupted run is 183's kept holder,
+which runs on macOS too; and a planning stop's aggregate run judging its mutants is held by the
+aggregate scenarios, ID-MUT-92 and 228 to 230. The ownership guards stay in `internal/worktrees`
+as adapter tests.
+
+The mixed 191 and 199 holders were split before they went. Their help checks are ID-MUT-191's
+and 199's, and the native refusals ID-MUT-248's. Their private platform-value guard, with 173's,
+is `cmd/itos-cc/mutation_platform_test.go`'s `TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue`:
+cmd hands the application the platform as a value, so a pretended Windows shows both refusals on
+every system, which the public CLI cannot. Their README and docs/CLI.md assertions are
+`cmd/itos-cc/mutation_docs_test.go`'s `TestTheDocsDescribeCountedAndFailFastPlatforms`, which
+reads the documents without running the command, now on every system rather than on macOS alone.
 
 The current partial fixture demonstrates reused/completed proof, cancellation and
 unattempted sites; the old blocked-selection partial-evidence branch remains an
@@ -1298,26 +1312,29 @@ events. MUT183 separately holds physical process lifetime observations.
 Keep every legacy holder, helper and extra guard until actual replacement CI
 and T101's review. No legacy file is deleted by T81.
 
-| MUT | Retained holder under cmd/itos-cc | Exact test |
-| --- | --- | --- |
-| 173 | mutate_counted_test.go | TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries |
-| 174 | same | TestCountedExecutionEvaluatesFrozenCommittedInputs |
-| 175 | same | TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits |
-| 176 | same | TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled |
-| 177 | same | TestCountedModeLeavesCompleteAndCachedSampleContractsIntact |
-| 178 | mutate_counted_listed_test.go | TestApplicableListedIntegrationTestsFinishASingleFreshJudgment |
-| 179 | same | TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings |
-| 180 | mutate_counted_test.go | TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn |
-| 181 | mutate_counted_listed_test.go | TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance |
-| 182 | same | TestCleanBaselineFailureIsNotAMutationKill |
-| 183 | mutate_counted_interrupt_test.go | TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands; checkInterruptedCountedRun |
-| 184 | mutate_counted_test.go | TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness |
-| 185 | same | TestSampledExecutionPublishesNoPersistentCompleteProof |
-| 186 | same | TestOnlyAGenuinelySiteFreeRangeIsNotApplicable |
-| 212 | mutate_counted_worktree_test.go | TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection |
+| MUT | Holder under cmd/itos-cc | Exact test | T-130 |
+| --- | --- | --- | --- |
+| 173 | mutate_counted_test.go | TestCountedExecutionHasExplicitAdmissionAndPlatformBoundaries | removed; its platform guard split (T-80, above) |
+| 174 | same | TestCountedExecutionEvaluatesFrozenCommittedInputs | kept: the staged paths left alone, no .metrics after the symlink refusal |
+| 175 | same | TestFreshSelectionIsReproducibleAcrossPathsAndSameNameUnits | removed |
+| 176 | same | TestTheGlobalFreshBudgetHoldsEvenWhenEverySelectedMutantIsKilled | removed |
+| 177 | same | TestCountedModeLeavesCompleteAndCachedSampleContractsIntact | kept: the help's other counted flags and sample's --count |
+| 178 | mutate_counted_listed_test.go | TestApplicableListedIntegrationTestsFinishASingleFreshJudgment | removed |
+| 179 | same | TestFreshOutcomesPreserveSurvivorExceptionAndOwnTimeoutMeanings | kept: the survivor's listed tests |
+| 180 | mutate_counted_test.go | TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn | kept: a Windows-only function's missing coverage |
+| 181 | mutate_counted_listed_test.go | TestCountedPreparationNeverConvertsFailedMeasurementIntoSuccessfulAssurance | removed |
+| 182 | same | TestCleanBaselineFailureIsNotAMutationKill | kept: the blocked run's trials stage, the own baseline problem's file |
+| 183 | mutate_counted_interrupt_test.go | TestInterruptionReportsPartialWorkAndCleansUpOwnedCommands; checkInterruptedCountedRun | kept: the second signal during cleanup |
+| 184 | mutate_counted_test.go | TestMachineAndTextOutputDistinguishSampledWorkFromPopulationCompleteness | removed |
+| 185 | same | TestSampledExecutionPublishesNoPersistentCompleteProof | removed |
+| 186 | same | TestOnlyAGenuinelySiteFreeRangeIsNotApplicable | removed |
+| 212 | mutate_counted_worktree_test.go | TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection | removed |
 
-T-101 did not review these T-81 holders; each stays whole until a later review maps it
-assertion by assertion.
+T-130 reviewed the fifteen holders assertion by assertion and removed nine, each assertion its
+scenario's or another's: 175's planner agreement is `internal/freshenv`'s
+`TestFreshPlanSeedAndUnitIdentityAreStable`, 176's unchanged cache bytes and 184's completion
+and uncovered outcome are ID-MUT-185's, 179's and 180's, and 186's no-trial preparation failure
+is 181's. The six it kept each name, beside the test, what no scenario asserts.
 
 Retain the original183 SIGTERM/second-signal, waiter and no-remove-while-alive
 sampled watcher extras; it is supplementary observation rather than exact
@@ -1645,8 +1662,18 @@ jobs.
 T-101 removed the legacy cmd tests whose every assertion a scenario or a domain test holds,
 and kept each that holds one no scenario does, with why beside it; the tables above name
 both. It did not review the T-79 changed-line and integration holders (225, 226, 228 to 230)
-or the T-80 and T-81 holders, which stay whole. cmd's dead shell helpers and the slice's
+or the T-80 and T-81 holders, which stayed whole. cmd's dead shell helpers and the slice's
 unreachable report refusal went with no product change.
+
+T-130 reviewed those 35 holders the same way, with no product change. It removed 20: none of
+T-79's 7, 11 of T-80's 13 cmd holders and 9 of T-81's 15. It kept 15 with why beside each: all 7
+of T-79's, 2 of T-80's (196, 200) and 6 of T-81's (174, 177, 179, 180, 182, 183). The mixed 191
+and 199 holders' private platform-value guard, with 173's, and their README and docs/CLI.md
+assertions moved to 2 tests of their own boundaries, `mutation_platform_test.go` and
+`mutation_docs_test.go`. Four files went whole, `mutate_counted_macos_test.go`,
+`mutate_fail_fast_admission_test.go`, `mutate_fail_fast_counts_test.go` and
+`mutate_counted_worktree_test.go`, and the helpers only the removed tests used went with them.
+The tables above give each test's verdict.
 
 ## S9 dispatch (T-114)
 
