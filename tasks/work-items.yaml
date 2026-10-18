@@ -1663,8 +1663,8 @@ items:
   - id: T-141
     title: Move the code to the design go-template-itos brings
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-26]
     kind: task
   - id: left-out-singular-wording
