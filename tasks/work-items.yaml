@@ -1596,6 +1596,12 @@ items:
       directory, so mutation run there may fail to write it. The ID-MUT-237 test and its mutate unit
       test skip where no such directory can be made, so CI does not say which. If it fails, such
       files need a decision on Windows: refuse them, or name their snapshots another way.
+
+      The tests above are out of date. cmd/itos-cc's
+      TestASnapshotOfAFileOutsideTheProjectRootIsKeptWhileItsFileExists was removed for the
+      ID-MUT-237 scenario (features/README.md), whose step skips where the snapshot cannot be named,
+      a file whose volume name holds a colon (features/mutate_result_orphans.go:91-95). The question
+      is unchanged, since CI still does not say whether a Windows run writes such a snapshot.
   - id: orphans-outside-git
     title: Orphans outside a git repository are never removed
     phase: 1
