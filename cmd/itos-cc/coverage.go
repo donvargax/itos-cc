@@ -48,13 +48,13 @@ func gapProblem(m coverage.Unmeasured) *cli.Problem {
 		p = cli.Interrupted()
 	}
 	if m.Dir != "" {
-		p.With("dir", m.Dir)
+		p = p.With("dir", m.Dir)
 	}
 	if m.Language != "" {
-		p.With("language", m.Language)
+		p = p.With("language", m.Language)
 	}
 	if m.Report != "" {
-		p.With("report", m.Report)
+		p = p.With("report", m.Report)
 	}
 	return p
 }

@@ -43,7 +43,7 @@ func holdLock(path string) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // the helper ends right after; its lock goes with it
 	if err := lockMarker(f); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
@@ -53,7 +53,7 @@ func holdLock(path string) int {
 		return 2
 	}
 	fmt.Println("held")
-	io.Copy(io.Discard, os.Stdin)
+	_, _ = io.Copy(io.Discard, os.Stdin) // stdin closing or failing both end the hold
 	return 0
 }
 
@@ -111,13 +111,13 @@ func liveWorkers(t *testing.T, tmp, name string) string {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		stdin.Close()
+		_ = stdin.Close() // ends the helper's hold; one already closed has ended it
 		done := make(chan struct{})
-		go func() { cmd.Wait(); close(done) }()
+		go func() { _ = cmd.Wait(); close(done) }() // it may have exited already, and its exit is not under test
 		select {
 		case <-done:
 		case <-time.After(10 * time.Second):
-			cmd.Process.Kill()
+			_ = cmd.Process.Kill() // it may be exiting already; <-done waits either way
 			<-done
 		}
 	})

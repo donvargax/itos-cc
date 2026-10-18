@@ -143,7 +143,7 @@ func invalidConfig(err error) error {
 		p := cli.NewProblem(cli.CodeUsage, "config.invalid", invalid.Error(),
 			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", config.File)
 		if invalid.Key != "" {
-			p.With("key", invalid.Key)
+			p = p.With("key", invalid.Key)
 		}
 		return p
 	}

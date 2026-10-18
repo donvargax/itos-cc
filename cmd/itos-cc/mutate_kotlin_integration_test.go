@@ -231,7 +231,8 @@ func TestLinesAKotlinTestReachesThroughAJVMItStartsAreCovered(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(out, first)); !os.IsNotExist(err) {
 			t.Errorf("the run's directory %s is still there after the run (%v)", first, err)
 		}
-		filepath.WalkDir(wd(t), func(path string, d fs.DirEntry, err error) error {
+		// The callback never stops the walk, so it returns no error.
+		_ = filepath.WalkDir(wd(t), func(path string, d fs.DirEntry, err error) error {
 			if err == nil && d.IsDir() && (d.Name() == "build" || d.Name() == ".gradle") {
 				return filepath.SkipDir
 			}

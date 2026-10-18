@@ -37,7 +37,7 @@ const platformEnv = "ITOS_CC_TEST_PLATFORM"
 var coverDir = os.Getenv("GOCOVERDIR")
 
 func TestMain(m *testing.M) {
-	os.Unsetenv("GOCOVERDIR")
+	_ = os.Unsetenv("GOCOVERDIR") // only an invalid name fails, and this one is valid
 	var code int
 	if len(os.Args) > 1 && os.Args[1] == cliArg {
 		if platform := os.Getenv(platformEnv); platform != "" {
@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 		code = m.Run()
 	}
 	if coverDir != "" {
-		os.Setenv("GOCOVERDIR", coverDir)
+		_ = os.Setenv("GOCOVERDIR", coverDir) // only an invalid name fails, and this one is valid
 	}
 	os.Exit(code)
 }

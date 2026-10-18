@@ -157,20 +157,25 @@ func parse(cmd *command, args []string) (*invocation, error) {
 			return in, cli.NewProblem(cli.CodeUsage, "flags.repeated", fmt.Sprintf("--%s is given more than once", name),
 				"Give it once.").With("flag", "--"+name)
 		}
+		// The argument after this one, which an option without =value takes.
+		next, hasNext := "", i+1 < len(args)
+		if hasNext {
+			next = args[i+1]
+		}
 		switch {
 		case f.typ == switchFlag && hasValue:
 			return in, cli.NewProblem(cli.CodeUsage, "flags.switch-value", fmt.Sprintf("--%s takes no value, and was given %q", name, value),
 				fmt.Sprintf("Write --%s alone.", name)).With("flag", "--"+name)
 		case f.typ == switchFlag:
 			value = "true"
-		case !hasValue && (i+1 == len(args) || (strings.HasPrefix(args[i+1], "-") && args[i+1] != "-")):
+		case !hasValue && (!hasNext || (strings.HasPrefix(next, "-") && next != "-")):
 			// An option's value is never read as a flag: --port --json is a
 			// --port with no value.
 			return in, cli.NewProblem(cli.CodeUsage, "flags.value-missing", fmt.Sprintf("--%s needs a value", name),
 				fmt.Sprintf("Give it one, such as --%s %s.", name, f.arg)).With("flag", "--"+name)
 		case !hasValue:
 			i++
-			value = args[i]
+			value = next
 		}
 		if err := checkValue(f, value); err != nil {
 			return in, err

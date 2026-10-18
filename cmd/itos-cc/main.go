@@ -83,7 +83,9 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	case route.Problem != nil:
 		return ui.Emit(route.JSON, nil, []*cli.Problem{route.Problem})
 	case route.Usage:
-		fmt.Fprint(ui.Stdout, cli.Usage(parser.Model))
+		// The usage page has always exited 0 whether or not stdout takes it;
+		// failing on the write would change its exit code.
+		_, _ = fmt.Fprint(ui.Stdout, cli.Usage(parser.Model))
 		return 0
 	case route.Help != nil:
 		return help(parser, ui, route.Help)

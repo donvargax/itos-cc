@@ -185,7 +185,7 @@ func harnessRuns(t *testing.T, record string) []string {
 	if err != nil && !os.IsNotExist(err) {
 		t.Fatal(err)
 	}
-	os.Remove(record)
+	removeFixture(t, record)
 	return strings.Split(strings.TrimSpace(string(data)), "\n")
 }
 

@@ -88,7 +88,9 @@ func commandNodes(parser *kong.Kong) map[string]*kong.Node {
 // 0: serve's from its legacy handler, every other's from the model.
 func help(parser *kong.Kong, ui *cli.UI, topics []string) int {
 	if cmd := legacy[topics[0]]; cmd != nil {
-		fmt.Fprint(ui.Stdout, cmd.help())
+		// serve's legacy help has always exited 0 whether or not stdout takes
+		// it; failing as modelHelp does would change its exit code.
+		_, _ = fmt.Fprint(ui.Stdout, cmd.help())
 		return 0
 	}
 	return modelHelp(parser, ui, topics...)

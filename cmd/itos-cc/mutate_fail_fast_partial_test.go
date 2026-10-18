@@ -94,7 +94,11 @@ func readText(t *testing.T, name string) string {
 
 // release lets every held judgment of test.sh end once the test is over.
 func release(t *testing.T, ff string) {
-	t.Cleanup(func() { os.WriteFile(filepath.Join(ff, "release"), nil, 0o644) })
+	t.Cleanup(func() {
+		if err := os.WriteFile(filepath.Join(ff, "release"), nil, 0o644); err != nil {
+			t.Error(err)
+		}
+	})
 }
 
 // partialFiles is the module of ID-MUT-200's stopped file. prior.sh, the
@@ -423,8 +427,8 @@ func TestALaterRunFinishesOnlyWhatTheStopLeft(t *testing.T) {
 
 			// When the same run is repeated, its inputs unchanged or
 			// changed as the case says; nothing holds now.
-			os.Remove(filepath.Join(ff, "hold"))
-			os.Remove(filepath.Join(ff, "started"))
+			removeFixture(t, filepath.Join(ff, "hold"))
+			removeFixture(t, filepath.Join(ff, "started"))
 			tc.change(t)
 			later := shellRun(t, args...)
 			logOutcome(t, &later)

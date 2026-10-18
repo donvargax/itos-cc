@@ -177,7 +177,12 @@ func captured(t *testing.T, fn func()) (string, string) {
 			out, _ := io.ReadAll(r)
 			done <- string(out)
 		}()
-		return func() string { w.Close(); return <-done }, func() { *target = saved }
+		return func() string {
+			if err := w.Close(); err != nil {
+				t.Error(err)
+			}
+			return <-done
+		}, func() { *target = saved }
 	}
 	stdout, restoreOut := read(&os.Stdout)
 	defer restoreOut()

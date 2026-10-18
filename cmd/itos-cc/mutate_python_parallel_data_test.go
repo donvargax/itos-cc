@@ -70,7 +70,8 @@ func parallelDataProject(t *testing.T, dir, run string, files map[string]string)
 // any parallel data file, .coverage.*, and a .coverage anywhere else.
 func coverageDataLeft(dir string) []string {
 	var left []string
-	filepath.WalkDir(dir, func(file string, d fs.DirEntry, err error) error {
+	// The callback never stops the walk, so it returns no error.
+	_ = filepath.WalkDir(dir, func(file string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}

@@ -178,16 +178,18 @@ func checkInterruptedCountedRun(t *testing.T) {
 	if err := unrelated.Start(); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { unrelated.Process.Kill(); unrelated.Wait() })
+	t.Cleanup(func() { _ = unrelated.Process.Kill(); _ = unrelated.Wait() }) // it may have exited already, and its exit is not under test
 	// Whatever the run leaves behind is stopped after the test.
 	t.Cleanup(func() {
 		data, _ := os.ReadFile(filepath.Join(gate, "pids"))
 		for _, field := range strings.Fields(string(data)) {
 			if pid, err := strconv.Atoi(field); err == nil && alive(pid) {
-				syscall.Kill(pid, syscall.SIGKILL)
+				_ = syscall.Kill(pid, syscall.SIGKILL) // it may have exited since alive saw it
 			}
 		}
-		os.WriteFile(filepath.Join(gate, "release"), nil, 0o644)
+		if err := os.WriteFile(filepath.Join(gate, "release"), nil, 0o644); err != nil {
+			t.Error(err)
+		}
 	})
 
 	var stdout bytes.Buffer
@@ -195,7 +197,7 @@ func checkInterruptedCountedRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stderr.Close()
+	defer func() { _ = stderr.Close() }() // the run wrote it; the test reads it back by name
 	run := exec.Command(bin, "mutation", "run", "--json", "--count", "2", "--seed", seed, "--workers", "1", "--timeout-factor", "100")
 	run.Dir, run.Stdout, run.Stderr = dir, &stdout, stderr
 	run.Env = append(testEnv(t), "GATE_DIR="+gate)
@@ -209,7 +211,7 @@ func checkInterruptedCountedRun(t *testing.T) {
 		select {
 		case <-exited:
 		default:
-			run.Process.Kill()
+			_ = run.Process.Kill() // it may be exiting already; <-exited waits either way
 			<-exited
 		}
 	})
@@ -246,7 +248,8 @@ func checkInterruptedCountedRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	time.Sleep(50 * time.Millisecond)
-	run.Process.Signal(syscall.SIGTERM)
+	// It may have exited already, which the wait below accepts.
+	_ = run.Process.Signal(syscall.SIGTERM)
 	select {
 	case <-exited:
 	case <-time.After(time.Minute):

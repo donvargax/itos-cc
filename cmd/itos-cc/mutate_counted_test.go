@@ -114,9 +114,7 @@ func seedSelecting(t *testing.T, repo string, count int, want func([]mutation.Fr
 			t.Fatal(err)
 		}
 		ok := want(plan.Selected)
-		if err := releaseFreshPlan(t.Context(), plan); err != nil {
-			t.Fatal(err)
-		}
+		releaseFreshPlan(t.Context(), plan)
 		if ok {
 			return seed
 		}

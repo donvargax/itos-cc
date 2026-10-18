@@ -116,7 +116,9 @@ func TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection(t *testing.T) 
 	// directory is refused with a problem and a fix, not an internal
 	// error: the worktree's scratch directory redirected elsewhere.
 	elsewhere := t.TempDir()
-	os.RemoveAll(filepath.Join(physical, "itos"))
+	if err := os.RemoveAll(filepath.Join(physical, "itos")); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Symlink(elsewhere, filepath.Join(physical, "itos")); err != nil {
 		t.Fatal(err)
 	}
