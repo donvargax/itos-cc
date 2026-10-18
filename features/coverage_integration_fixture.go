@@ -3,6 +3,7 @@ package features
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -32,8 +33,29 @@ func coverageWithoutC8(modules, dest, platform string, required bool) error {
 	} else if !os.IsNotExist(err) {
 		return err
 	}
+	return linkPackages(modules, dest, []string{"c8", "c8.cmd", "c8.ps1"}, func(err error) error {
+		return coverageLinkFailure(platform, required, err)
+	})
+}
+
+// toolCaches are the folders of a node_modules its tools write as they run:
+// Vite's, so Vitest's results and dependencies (.vite), and the one Babel,
+// nyc and others share (.cache). Every scenario's node_modules leaves them
+// out, so each scenario's tools make and write their own, never the pinned
+// installation's, which every scenario links and several write at once
+// when scenarios run at once (T-128).
+var toolCaches = []string{".vite", ".cache"}
+
+// linkPackages makes dest a node_modules of links to each entry of modules
+// and of its .bin, leaving out toolCaches and the names in leftOut, with
+// failed links' errors as failedLink makes them. It writes only in dest.
+func linkPackages(modules, dest string, leftOut []string, failedLink func(error) error) error {
+	leftOut = slices.Concat(toolCaches, leftOut)
 	for _, sub := range []string{"", ".bin"} {
 		entries, err := os.ReadDir(filepath.Join(modules, sub))
+		if errors.Is(err, fs.ErrNotExist) && sub != "" {
+			continue
+		}
 		if err != nil {
 			return err
 		}
@@ -42,11 +64,11 @@ func coverageWithoutC8(modules, dest, platform string, required bool) error {
 		}
 		for _, entry := range entries {
 			name := entry.Name()
-			if slices.Contains([]string{"c8", "c8.cmd", "c8.ps1"}, name) || sub == "" && name == ".bin" {
+			if slices.Contains(leftOut, name) || sub == "" && name == ".bin" {
 				continue
 			}
 			if err := os.Symlink(filepath.Join(modules, sub, name), filepath.Join(dest, sub, name)); err != nil {
-				return coverageLinkFailure(platform, required, err)
+				return failedLink(err)
 			}
 		}
 	}

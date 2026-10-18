@@ -2,6 +2,7 @@ package features
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -84,5 +85,53 @@ func TestBinaryMissingC8FacadeLinkFailures(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestBinaryNodeModulesKeepToolCachesApart holds what scenarios running at
+// once need of the node_modules Coverage links (T-128), which no scenario
+// observes: each scenario's own folder of links to the pinned packages, so
+// Vitest's .vite and the tools' .cache are made in the scenario's folder,
+// never written into the installation every scenario shares, and a second
+// declaration in the same folder keeps the first's.
+func TestBinaryNodeModulesKeepToolCachesApart(t *testing.T) {
+	original := t.TempDir()
+	d := binary{}
+	files := map[string]string{
+		"vitest/package.json": "runner", ".bin/vitest": "vitest",
+		".vite/vitest/results.json": "{}", ".cache/nyc/x": "cache",
+	}
+	for file, text := range files {
+		if err := d.Write(filepath.Join(original, filepath.FromSlash(file)), []byte(text)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dest := filepath.Join(t.TempDir(), "node_modules")
+	failed := func(err error) error { return fmt.Errorf("%w: %v", godog.ErrSkip, err) }
+	for range 2 {
+		if err := linkModules(original, dest, failed); errors.Is(err, godog.ErrSkip) {
+			t.Skip(err)
+		} else if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if info, err := os.Lstat(dest); err != nil || !info.IsDir() {
+		t.Fatalf("node_modules is not a folder of the scenario's own: %v %v", info, err)
+	}
+	for _, cache := range toolCaches {
+		if _, err := os.Lstat(filepath.Join(dest, cache)); !os.IsNotExist(err) {
+			t.Fatalf("%s is the installation's: %v", cache, err)
+		}
+	}
+	for _, file := range []string{"vitest/package.json", ".bin/vitest"} {
+		if got, err := d.Read(filepath.Join(dest, filepath.FromSlash(file))); err != nil || string(got) != files[file] {
+			t.Fatalf("linked %s: %q %v", file, got, err)
+		}
+	}
+	if err := d.Write(filepath.Join(dest, ".vite", "vitest", "results.json"), []byte("scenario")); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := d.Read(filepath.Join(original, ".vite", "vitest", "results.json")); err != nil || string(got) != "{}" {
+		t.Fatalf("the installation's cache changed: %q %v", got, err)
 	}
 }

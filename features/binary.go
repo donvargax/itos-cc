@@ -138,11 +138,13 @@ func (b binary) Coverage(dir string, c Coverage) error {
 			if err := coverageWithoutC8(modules, filepath.Join(dir, "node_modules"), runtime.GOOS, required); err != nil {
 				return err
 			}
-		} else if err := linkModules(modules, filepath.Join(dir, "node_modules")); err != nil {
+		} else if err := linkModules(modules, filepath.Join(dir, "node_modules"), func(err error) error {
 			if required {
 				return err
 			}
 			return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
+		}); err != nil {
+			return err
 		}
 	case "python":
 		if _, err := exec.LookPath("python3"); err != nil {
@@ -176,14 +178,17 @@ func (b binary) Coverage(dir string, c Coverage) error {
 	return nil
 }
 
-// linkModules links path to modules: a link there to them already is the
-// one an earlier declaration made, as a Given that changes its project
-// declares what the tools measure in it again.
-func linkModules(modules, path string) error {
-	if target, err := os.Readlink(path); err == nil && target == modules {
+// linkModules makes path a node_modules of links to modules' packages, its
+// tools' caches left out (linkPackages), so the tools write those in the
+// scenario's folder, and a link that fails as failedLink says: a
+// node_modules there already linking modules' vitest is the one an earlier
+// declaration made, as a Given that changes its project declares what the
+// tools measure in it again.
+func linkModules(modules, path string, failedLink func(error) error) error {
+	if target, err := os.Readlink(filepath.Join(path, "vitest")); err == nil && target == filepath.Join(modules, "vitest") {
 		return nil
 	}
-	return os.Symlink(modules, path)
+	return linkPackages(modules, path, nil, failedLink)
 }
 
 // missing is the error of a tool that is not installed: a skip, or a
