@@ -5,14 +5,39 @@ apply whatever the project's language or interface. Formats that belong to other
 as `go.mod`, a linter's settings, CI workflows or `itos.yaml`, follow those tools' rules
 instead.
 
-The project has no configuration file of its own yet, and applies these rules when it adds its
-first one. Nothing here is implemented yet: there is no loader, no schema and no command that
-prints defaults. Each rule's source is named. An interface's own guide covers how configuration
+The project's own configuration file is `itos-cc.yaml`, at the project root. These rules are
+the policy for its format and for any file the project adds; they are not a description of
+what the loader does. Where the two differ, the section below says so, and changing the loader
+to follow a rule is behaviour work of its own, with its scenarios, never part of a docs or
+refactor change. Each rule's source is named. An interface's own guide covers how configuration
 is found and how flags and environment variables override it. Where the project has a command
-line, that guide is `docs/CLI.md`.
+line, that guide is `docs/CLI.md`, whose rule 38 lists `itos-cc.yaml`'s keys.
 
 The rules are adapted from [itos-template](https://github.com/donvargax/itos-template)'s
 `docs/CONFIG.md` with its owner's permission (`CONTRIBUTORS.md`).
+
+## itos-cc.yaml as implemented
+
+The `config` package reads `itos-cc.yaml` (`config.Parse`) and writes it (`mutation except` and
+`mutation except --renew`). Its keys are `exclude`, `mutation.exceptions` and `mutation.tests`
+(`docs/CLI.md`, rule 38). Against the rules below, the loader as it stands:
+
+| Rule | What the loader does now |
+| ---- | ------------------------ |
+| 1 | Reads YAML with `go.yaml.in/yaml/v3` into Go structs. A key given twice is refused. Anchors, aliases and merge keys are accepted and expanded; a tag such as `!foo` or `!!python/object` builds nothing, the value read as its key's type; a second document after `---` is ignored. |
+| 2 | A key the format does not list is ignored, not refused, so a misspelt key passes unseen. |
+| 3 | Stops at the first problem. An `exclude` glob's problem carries its key from the top (`exclude[1]`); an exception's or `mutation.tests`' names it in the message (`mutation.exceptions[0] has no reason`). |
+| 4 | Checks each `exclude` glob (empty, absolute, `..`, a backslash, or no pattern), each exception's required keys, and `mutation.tests`' placeholders, before any command uses them. |
+| 5–7 | The file has no `version` key, so no version is checked. |
+| 8–11 | Keys are snake case (`line_in_function`, `ids_pattern`); exceptions and tests are objects in lists; paths and globs are slash-separated, from the project root, the folder the file is in. |
+| 12 | `mutation.tests`' commands are single strings a shell runs, not lists of words. |
+| 13 | Holds no secrets. |
+| 14 | Its keys are documented in `docs/CLI.md` and README, without a typed reference of every default. |
+| 15–16 | No command prints the file with its defaults, and no JSON Schema is published. |
+| 17 | `mutation except` rewrites the document in place, keeping its other keys, comments and permissions, and adds or renews only the entries it writes. |
+
+A file that is not there is an empty configuration. One whose text the loader refuses is
+`config.invalid`, exit 2; one the disk cannot read is an internal failure, exit 70.
 
 ## Sources
 

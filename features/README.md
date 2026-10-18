@@ -111,15 +111,18 @@ killed by the system's default action fails the step: it never handled the inter
 The harness runs the feature files that have steps, the ones `Converted` lists in
 `steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
 `complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`,
-`mutate.feature`, `metrics_snapshots.feature`, and `count.feature`, the
-template's sample, all of whose scenarios are `@wip`. `mutate.feature` converted a piece at a
+`mutate.feature` and `metrics_snapshots.feature`. The template's sample `count.feature` went
+with its sample app (q-48, T-116). `mutate.feature` converted a piece at a
 time (T-70 to T-81); the scenarios still without steps are listed in `Unstepped` (`steps.go`), by
 their IDs, and run nowhere: today the four `@wip` Windows ownership scenarios, ID-MUT-169 to 172,
 deferred outside T-80. A selection naming only them logs them as not run, their steps not written
 yet, and passes; a tag other scenarios carry too selects those others alone; and an ID `Unstepped`
-lists that no scenario of a converted file carries fails every selection. Every other file
-converts to godog over time, before or with the command that moves onto kong (q-52), its
-scenarios' text unchanged; until then the Go tests of `cmd/itos-cc` hold its scenarios. A
+lists that no scenario of a converted file carries fails every selection. The files without
+steps are `serve.feature`, `viewer.feature` and `architecture_graph.feature`, whose command,
+`serve`, keeps its legacy handler, and `completion.feature`, every scenario of it `@wip`, since
+itos-cc has no completion command. A file converts to godog before or with the command that
+moves onto kong (q-52), its scenarios' text unchanged; until then the Go tests hold its
+scenarios. A
 selection that names a scenario of such a file, as the smoke set does for every file, logs it as
 not run here and runs the rest; one that names nothing a converted file holds fails, as one
 matching no tag does.
@@ -273,25 +276,25 @@ this tool changes neither product environments nor dependency caches or nightly 
 | Tag               | Meaning                                                                              |
 | ----------------- | ------------------------------------------------------------------------------------ |
 | `@phase-<n>`      | The phase a scenario belongs to.                                                     |
-| `@<item>`         | The work item that turns it green (`@count-cli`).                                     |
+| `@<item>`         | The work item that turns it green (`@slice-6`).                                       |
 | `@ID-<AREA>-<nn>` | Stable scenario ID. Commits reference these. Never reuse or renumber them.           |
 | `@bug-<n>`        | Reproduces a fixed bug. Added by `fix:` commits.                                     |
 | `@wip`            | Written, not yet implemented. Excluded from every run, and a `feat` may not name it. |
 
 **IDs.** `<AREA>` is one word in capitals for the area of behaviour, and one feature file holds
-one area: `COUNT` is `count.feature`, `CLI` is `cli.feature`, `COMPL` is `completion.feature`.
+one area: `DRY` is `dry.feature`, `CLI` is `cli.feature`, `COMPL` is `completion.feature`.
 `<nn>` counts up within the area from `01`; a removed scenario's number is not given again. A new
 area gets a new word and a new file.
 
 ## Commit rules
 
 - `feat:` must add or change scenarios, or reference `@wip` ones it turns green. Footer:
-  `Scenarios: ID-COUNT-01` (`itos commit --scenarios`).
+  `Scenarios: ID-DRY-18` (`itos commit --scenarios`).
 - `fix:` must add a `@bug-<n>` scenario that failed before the fix, or reference an existing
   scenario that was failing. Same footer.
 - The commit-msg hook checks that the referenced IDs exist and are live at the commit.
 - Red first: a slice's steps go alone in a `test` commit, its scenarios still `@wip`
-  (`itos commit --item count-cli`).
+  (`itos commit --item slice-6`).
 
 ## The smoke set
 
@@ -336,15 +339,8 @@ with the program named as the built binary is.
 | `the first line of its standard output is "…" and the stamped version`                | The stamped version the harness built with.                      |
 | `the second line of its standard output is "…" and the stamped commit`                | The stamped commit.                                               |
 | `the last line of its standard output is "…"`                                          | The completion protocol's instruction line.                       |
-| `its JSON output names the problem "…"`                                               | That the object lists a problem with that rule.                  |
-| `its JSON output gives file "…", <n> lines and <n> words`                             | The success object's file, lines and words.                      |
-| `its JSON output gives each problem a rule, a message and a fix`                      | That no problem is missing one of the three.                     |
 | `its JSON output gives the stamped version and commit`                                | version's object: schema 1, ok, the stamped version and commit.  |
 | `its standard output is one line`                                                     | Exactly one line, as `--json` prints its object.                 |
-| `the file "…" contains "…", "…"`                                                      | Each text is in the file.                                         |
-| `the file "…" holds a line of <n> characters`                                         | A file written for the scenario, long enough to beat a token limit. |
-| `standard input holds "…"`                                                            | The text the run reads from its standard input.                   |
-| `an empty folder "…"`                                                                 | A folder in the scratch directory.                                |
 | `I run "itos-cc …"`, also `… without options`                                         | Runs the binary in the scratch folder with those words.          |
 | `stdout is one object with "schema": 1, "ok", "…", and "…"`                           | One JSON value, an object with those keys, none of them null.    |
 | `stdout shows:` with its text                                                         | stdout is the text exactly, a path's separators read as slashes. |

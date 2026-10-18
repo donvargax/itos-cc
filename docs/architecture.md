@@ -1,14 +1,10 @@
 # Architecture
 
-The code is a shared domain behind ports, adapters apart from it, and thin slices named for
+The code is shared domains behind ports, adapters apart from them, and thin slices named for
 their commands (decision 29 in `docs/decisions/`). `docs/go.md` lists the packages and the
-import rules that hold them.
-
-The private counting domain, `internal/counting`, owns line and word semantics and its result.
-It reads through its `Files` port, whose sealed failures describe the input it needs without
-exposing an OS's own errors. The `internal/disk` and `internal/stdin` adapters implement it; an
-in-memory fake holds the domain's test inputs and failures. Unit tests assert outcomes, and the
-rapid property checks addition for newline-terminated pieces.
+import rules that hold them. A port's sealed failures describe what went wrong without exposing
+an OS's own errors, and an in-memory fake in its `porttest` stands in for its adapters in the
+tests, both passing one contract suite (decision 44).
 
 The selection domain, `internal/selection`, owns how every command chooses its files: paths,
 fragments of a path, `--changed` and the whole working directory when none is given. It reaches
@@ -53,7 +49,7 @@ the domain's API and answers the `Files` port from the disk (`Disk`); the adapte
 folders the tools write under `.metrics/coverage`. As decision 47 lets an adapter, it returns the
 domain's own `Report`, with no mapper. cmd's `classifyCoverage` turns each gap and failure into
 its problem, for crap, which measures through the port, and mutation, which measures through
-the adapter directly until it moves.
+its handler's bound coverage capability over the same adapter.
 
 The change-risk domain, `internal/changerisk`, scores each function by CRAP, its complexity
 weighed by how little of it the tests ran. It takes files `internal/lang` has parsed, with the
@@ -69,20 +65,21 @@ language's rules for naming a file but reads nothing: it asks its `Surroundings`
 `internal/lang/port`, whether a path is there, what a file holds, the working
 directory and a path made absolute, and `internal/workdir` answers it from the disk through
 `project`, as it answers the selection port.
-cmd routes it through kong, and the commands not moved yet through its own parser.
 
-The domains know no command-line flags, JSON or exit codes. The `count` slice, `internal/count`,
-carries the command's domain values to the domain through the port and counts nothing itself;
-its classifier turns the port's sealed failures into problems. `internal/cli`, the UI every
-command shares, itos-cc's own included, imports no domain: it holds the problem, its rule,
+The mutation group's slice, `internal/mutation`, runs its five commands over the mutation domain,
+`internal/mutants`, which owns sites, results and their judgment, and reaches its workers, tools,
+inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`).
+cmd routes every command through one kong model but `serve`, which keeps its legacy handler.
+
+The domains know no command-line flags, JSON or exit codes. A slice carries its command's
+domain values to the domains through their ports and measures nothing itself. `internal/cli`,
+the UI every command shares, imports no domain: it holds the problem, its rule,
 message, fix and subject keys, prints them as the JSON object or as text lines, and picks the
 run's exit code from its problems by the precedence `docs/CLI.md` gives, the first present
 rather than the highest; an error that neither is a problem nor any classifier claims is an
-internal one, exit 70. A second command is a new slice beside `count` that reuses the domain,
-never `count`'s package. `cmd/itos-cc` assembles them, handing the UI each domain's classifier
-and making the context that a Ctrl-C cancels (decisions 30 and 31). `features/` holds the public behaviour as scenarios, which godog
-runs against the binary the harness builds for the platform it is on.
-
-Line separators are LF, with CRLF counted once; a nonempty final unterminated line counts.
-Words follow the standard-library Unicode-whitespace rule. No encoding detection or linguistic
-word segmentation is performed. File data is not executed or changed.
+internal one, exit 70. A new command is a new slice beside the others that reuses the domains,
+never another slice's package. `cmd/itos-cc` assembles them, handing the UI each domain's
+classifier and making the one context every command runs under (decision 30); no interrupt
+cancels it yet (interrupt-exit-130). `features/` holds the public behaviour as scenarios, which
+godog runs through two drivers: against the binary the harness builds for the platform it is on,
+and in process against the ports' fakes (decision 44, `features/README.md`).

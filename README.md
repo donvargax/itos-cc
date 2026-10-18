@@ -841,9 +841,10 @@ in the set, so changing it leaves the results as they were. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),
-runs `itos-cc mutation run --all-tests --no-annotate` at 09:00 UTC and commits
-`.metrics/mutate/` back even on nights when a mutant survives and the job
-fails; copy it as a starting point. Raw coverage under
+is written to run `itos-cc mutation run --all-tests --no-annotate` at 09:00 UTC
+and commit `.metrics/mutate/` back even on nights when a mutant survives and
+the job fails; copy it as a starting point. It is disabled here until T-46
+makes a whole run of this repository finish within a job's time limit. Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
@@ -943,20 +944,29 @@ to `.metrics/coverage/`, which ignores itself.
 
 ## Layout
 
+The Go code is laid out as [decision 29](docs/decisions/) says: shared domains behind ports,
+adapters apart from them, and thin slices named for their commands. [docs/go.md](docs/go.md)
+describes each package and the import rules `.golangci.yml` holds them to.
+
 | Package | Role |
 | --- | --- |
-| `internal/lang` | Parsing, units (functions and methods), namespaces, complexity, and each language's syntax and mutation rules; it reads nothing, asking its port, `internal/lang/port`, what surrounds a file |
+| `cmd/itos-cc` | The command line: `main`, the one kong model of every command, and the wiring of each slice to the adapters |
+| `internal/cli` | The UI every command shares: reading the command line, help, problems and exit codes |
+| `internal/units`, `internal/dry`, `internal/scrap`, `internal/crap`, `internal/mutation` | The commands' slices; `serve` alone stays on its legacy handler in `cmd/itos-cc` |
+| `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/duplication`, `internal/teststructure`, `internal/changerisk`, `internal/coverage`, `internal/mutants` | The domains, each reaching outside only through its ports |
+| `internal/workdir`, `internal/metricsdir`, `internal/coveragetools`, `internal/worktrees`, `internal/testtools`, `internal/testinputs`, `internal/githistory`, `internal/freshenv`, `internal/importgraph` | The adapters implementing those ports |
 | `project` | Finding source and test files, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
-| `crap`, `dry`, `mutate`, `scrap` | The tools |
+| `config` | Reading and writing `itos-cc.yaml` |
 | `metrics` | Snapshot files |
 | `graph`, `server` | The architecture graph and its live HTTP API |
-| `cmd/itos-cc` | The command line |
+| `internal/version`, `internal/release` | The build's version, and the library of the release tools in `tools/bin` |
+| `features` | The scenarios and their steps ([features/README.md](features/README.md)) |
 | `viewer/` | The web viewer, a separate npm project |
 
 Adding a language means one file in `internal/lang/` (grammar, units, decisions,
-syntax, mutation rules), test-framework rules in `scrap/`, and a coverage
-plan in `coverage/`.
+syntax, mutation rules), test-framework rules in `internal/teststructure/`, and a
+coverage plan in `coverage/`.
 
 ## Working here
 
@@ -970,12 +980,18 @@ the layer boundaries, [docs/security.md](docs/security.md) the trust boundaries,
 [docs/upgrading.md](docs/upgrading.md) how to move dependency pins,
 [docs/CONFIG.md](docs/CONFIG.md) the rules for a configuration file the project owns,
 [features/README.md](features/README.md) the scenarios, and
-[docs/decisions/](docs/decisions/) its decision records. The layout docs/go.md and
-docs/architecture.md describe is the template's, which the code moves to in later slices; until
-then the template's sample `count` command (`internal/count`, `internal/counting`,
-`internal/disk`, `internal/stdin`) stays as a reference, wired to no command.
+[docs/decisions/](docs/decisions/) its decision records. The code is laid out as docs/go.md and
+docs/architecture.md describe, the template's layout: the refactor that moved it there is done
+but for `serve`, which keeps its legacy handler while it leaves for a web app of its own, and
+the one before-and-after comparison of the binaries (refactor-final-proof). The template's
+sample count app, kept as a reference while porting (q-48), is gone (T-116).
 [CONTRIBUTORS.md](CONTRIBUTORS.md) records where the harvested infrastructure came from. `itos go`
 coordinates the work; an implementing agent uses `itos guide work`.
+
+A clone's hooks are itos's own, `commit-msg` and `pre-push`, which `itos hook install` declares.
+`tools/hooks/pre-commit` is the template's script, running the module-wide lint and the
+networked vulnerability check; this project does not declare it as a hook. T-120 declares a
+fast project pre-commit hook and adds its setup here.
 
 ## CI
 
@@ -999,7 +1015,13 @@ green run to start from, both run everything. A green `ci.yml` no longer means e
 passed: itos watches `ci.yml` alone until [itos#84](https://github.com/donvargax/itos/issues/84)
 lets it watch a second workflow, so the coordinator watches each `cd.yml` run with
 `gh run watch <id>` in the background and hands a red one to a fresh agent as repair work, ahead
-of new items. [`nightly.yml`](.github/workflows/nightly.yml) runs mutation testing once a night.
+of new items.
+
+No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
+sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, is disabled
+on GitHub until T-46; both wait for the refactor's final comparison (refactor-final-proof).
+CI's golangci-lint covers `./internal/...` alone until T-119 widens it to the whole module.
+[docs/go.md](docs/go.md) lists every configured check.
 
 ## License
 

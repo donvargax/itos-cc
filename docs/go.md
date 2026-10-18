@@ -9,17 +9,10 @@ OS as a value), adapted to this module with its owner's permission (`CONTRIBUTOR
 
 ## Packages
 
-The code follows decision 29 (`docs/decisions/`): a shared domain behind ports, adapters apart
-from it, and thin slices named for their commands.
+The code follows decision 29 (`docs/decisions/`): shared domains behind ports, adapters apart
+from them, and thin slices named for their commands. A domain function that calls a port takes
+a `context.Context` first (decision 30); pure logic takes none.
 
-- `internal/counting` is the domain. It owns counting and its result, and reads input only
-  through its port. A function that calls the port takes a `context.Context` first (decision
-  30); pure logic, such as counting bytes, takes none.
-- `internal/counting/port` declares `Files` and its sealed set of failures: `Missing`,
-  `Unreadable` and `Cancelled`. `Files.Read` takes the context first.
-- `internal/counting/port/porttest` holds our in-memory fake of `Files` for the tests, at an
-  absolute `Dir` a relative path is from, as the other ports' fakes are, and `FilesContract`,
-  the contract it and `internal/disk`'s `Files` both pass (Tests, below).
 - `internal/selection` is the domain every command chooses its files through: paths given as
   arguments, a path that is not there taken as a fragment of a file's path under the working
   directory, `--changed` adding git's changed files, and no paths meaning the whole working
@@ -39,7 +32,7 @@ from it, and thin slices named for their commands.
   `Discover` gives absolute paths, which `snapshot.Key` names from the root.
   `internal/selection/port/porttest` holds the in-memory fake of `Tree`, at an absolute
   directory it names and never touches, and `TreeOf`, which lays one out from files' text,
-  classified by `internal/lang` as the disk adapter classifies them, and `TreeContract`, the
+  classified by `internal/lang` as `internal/workdir` classifies them, and `TreeContract`, the
   contract it and `internal/workdir`'s `Tree` both pass (Tests, below).
 - `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
   share and projects commit (decision 41): the `Folder` they live in, the format `Version`
@@ -57,10 +50,6 @@ from it, and thin slices named for their commands.
   `Cancelled`. `internal/snapshot/port/porttest` holds the in-memory fake of `Store`, writing
   the bytes the `metrics` library writes, and `StoreContract`, the contract it and
   `internal/metricsdir`'s `Store` both pass (Tests, below).
-- `internal/disk` and `internal/stdin` are the adapters. `disk` reads real files and translates
-  OS errors into the port's failures; `stdin` reads standard input for `-`, stops with
-  `Cancelled` once the context is done, and hands every other path to a fallback it is given.
-  Each imports nothing of ours but the port.
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
   hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
@@ -230,14 +219,12 @@ from it, and thin slices named for their commands.
   platform value. Its tests hold that nothing reaches the host with a physical decoy: an
   invalid itos-cc.yaml in the process's working directory that a fall-through would read,
   beside which run and except read the memory's.
-- `internal/count` is the `count` command's slice, named for the command. Its kong struct and
-  `Run` are the UI; its `Query`, carrying domain values, and `Handler.Handle(ctx, q)`, which
-  only calls the domain through the port, are the application. `Run` assembling the `Query`
-  from kong's flags is the one copy the layout accepts. Its `Classify` is the counting
-  domain's classifier, turning the port's sealed failures into problems.
 - `internal/units` is the `units` command's slice, the first of itos-cc's own commands moved
-  onto kong (T-32), laid out as `count`'s: its kong struct `CLI` with its `Contract` for the
-  help, its `Query`, and `Handler.Handle(ctx, q)`, which selects the files through the
+  onto kong (T-32) and the layout every slice follows: its kong struct `CLI` and `Run` are the
+  UI, with its `Contract` for the help; its `Query`, carrying domain values, and
+  `Handler.Handle(ctx, q)`, which only calls the domains through their ports, are the
+  application, `Run` assembling the `Query` from kong's flags the one copy the layout accepts.
+  Its handler selects the files through the
   selection domain, parses each with the domain's `Parse`, read through the same `Tree` port
   and named by `internal/lang` through the `Surroundings` port its handler is given, its
   `Exclude` the sources the selection leaves out. `Run` prints them, their paths from the
@@ -277,7 +264,8 @@ from it, and thin slices named for their commands.
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
   run's problems into its exit code, by the precedence `docs/CLI.md` gives, and prints the
-  plain or JSON answer, and it stops a command on Ctrl-C (decision 38). A domain's failures
+  plain or JSON answer. It holds `StopOnInterrupt`, which stops a command on Ctrl-C (decision
+  31), though no command wires it yet (interrupt-exit-130). A domain's failures
   reach it through that domain's classifier, which cmd hands it. For the commands kong parses
   it reads the command line (`Read`, `Parse`), turns kong's failures into problems by their
   types (`ParseProblem`), retains validated explicit/raw flag facts (`Provided`) and prints
@@ -287,10 +275,9 @@ from it, and thin slices named for their commands.
   `--version`, the `version` command), the top-level help, `help <command>` and the guess for
   an unknown command, and `Usage` prints the top-level help from the same model (T-114). It
   holds the `version` command too, its version the one cmd works out (`Build`).
-- `cmd/itos-cc` assembles everything: it makes the context, feeds the interrupts to
-  `internal/cli`, hands it each domain's classifier, gives `stdin` the disk as its fallback,
-  and hands the context and the handler, over the ports in `adapters`, to `Run` through
-  kong's bindings. `main` makes the program's one `context.Background()` and passes it to
+- `cmd/itos-cc` assembles everything: it makes the context, hands `internal/cli` each domain's
+  classifier, and hands the context and the handler, over the ports in `adapters`, to `Run`
+  through kong's bindings. `main` makes the program's one `context.Background()` and passes it to
   `run(ctx, args, stdin, stdout, stderr, a)` with the process's streams and
   `diskAdapters(os.Stderr)`: the working directory, `workdir`'s `Tree` and `Surroundings`,
   `metricsdir`'s `Store`, `coveragetools`' `Measurer`, saying what it runs on standard
@@ -316,9 +303,8 @@ from it, and thin slices named for their commands.
   does. A done context starts no command. It is the only place
   that knows every package. Every command is a node of its one kong model, `commandLine`, its
   fields in their names' order, which the guess weighs a tie by; `serve`'s node only names it
-  to the top-level help and the guess. Until every command is a slice,
-  it also holds the selection domain's classifier, `classifySelection`, since every command
-  selects its files; `serve`, on the hand parser, selects none (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
+  to the top-level help and the guess. It holds the selection domain's classifier,
+  `classifySelection`, since every command selects its files; `serve`, on the hand parser, selects none (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it; `dry`'s and `scrap`'s handlers write through `adapters`' `Store`, `internal/metricsdir`'s
   on the disk: a snapshot that cannot be written is the internal 70 it always was, its message whole with
   whatever the command wrapped it in, and `scrap` warns about an unreadable last one and goes
@@ -340,8 +326,8 @@ from it, and thin slices named for their commands.
   release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
   a command.
 
-The domain is shared, not part of any command, so a second command reuses counting through its
-port without reaching into another command's package. A context carries cancellation and
+A domain is shared, not part of any command, so a second command reuses it through its port
+without reaching into another command's package. A context carries cancellation and
 deadlines only, always as the first parameter and never in a struct or as a value (decision 30).
 golangci-lint holds the shape: containedctx refuses a struct field holding one, and revive's
 context-as-argument a context after any other parameter, tests included.
@@ -364,14 +350,16 @@ context-as-argument a context after any other parameter, tests included.
   It holds the same files as `slices`, tests left out, and names each port's `porttest`, since
   depguard matches a prefix and `slices` allows the ports' folders. `tools/bin/architecture-check`
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
-  golangci-lint does not lint `cmd`: a fake enters `cmd` only through its `_test.go` files.
+  CI's golangci-lint covers `./internal/...` alone and so does not lint `cmd`: a fake enters
+  `cmd` only through its `_test.go` files.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
-- `infra`, `workdir`, `metricsdir` and `coveragetools`: an adapter imports nothing of ours but
-  the port it implements, `internal/workdir` the two it implements, selection's and
-  `internal/lang`'s, and the `project` library it wraps, and `internal/metricsdir` the
-  snapshot port and the `metrics` and `project` libraries it wraps; only its tests may use
-  `porttest`. Each port's adapters have a rule of their own, so none is allowed another's port
+- `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
+  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph`: an adapter imports
+  nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
+  the two ports it implements, selection's and `internal/lang`'s, and the `project` library,
+  and `internal/metricsdir` the snapshot port and the `metrics` and `project` libraries; only
+  its tests may use `porttest`. Each port's adapters have a rule of their own, so none is allowed another's port
   or library. An adapter may also import the domain it serves, and a port the domain it
   belongs to, to build or return the domain's own types with no mapper between them (decision
   47, amending 29's adapter rule): its rule allows that domain once the adapter needs it.
@@ -397,9 +385,8 @@ command from reaching into this one.
   and a classifier for its failures beside the slice that uses it, which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
-- An adapter: add its folder to the `files` of the rule for its port's adapters (`infra` for
-  counting's, `workdir` for selection's, `metricsdir` for the snapshot port's,
-  `coveragetools` for coverage's), or give a new port's adapters a rule of their own allowing
+- An adapter: add its folder to the `files` of the rule for its port's adapters (`workdir` for
+  selection's, `metricsdir` for the snapshot port's, `coveragetools` for coverage's), or give a new port's adapters a rule of their own allowing
   that port, any library they wrap and, when it returns the domain's types, the domain it
   serves (decision 47); add a
   `!**/internal/<name>/**` exclusion to `slices` and to `slice-fakes`. Wire it in `cmd`.
@@ -409,11 +396,13 @@ command from reaching into this one.
   must accept and refuse. `tools/bin/architecture-check` runs the pinned linter over them, so a
   rule that stops matching fails there instead of passing silently.
 
-A new sealed failure set, an interface with an unexported marker method like
-`port.ReadFailure`, is annotated `//sumtype:decl` and given its exit codes in one switch that
-names every kind, in its domain's classifier, as `internal/count`'s `Classify` gives the
-counting port's. gochecksumtype then refuses the switch when a kind is
-added and left out; without the annotation nothing checks it.
+A new sealed failure set, an interface with an unexported marker method like the selection
+port's `Failure`, is annotated `//sumtype:decl` and given its exit codes in one switch that
+names every kind, in its domain's classifier, as cmd's `selectionProblem` gives the selection
+port's and `internal/mutation`'s `failureError` words the slice's own `Failure`. gochecksumtype
+then refuses the switch when a kind is added and left out; without the annotation nothing
+checks it. CI's lint runs over `./internal/...` alone, so it checks the switches in `internal/`
+and not yet cmd's classifiers, which T-119's module-wide lint brings in.
 
 Code that differs by OS takes the OS as a value. Logic never branches on `runtime.GOOS`. A
 build-tagged file holds only a call that one OS lacks, with no mutation site: the scenarios'
@@ -448,9 +437,9 @@ follows the same steps for a command it wrote before it had the template's desig
    which an adapter could not implement without importing a slice. A path a person reads is
    named from the working directory by `ui.Rel`, not by a library an adapter wraps.
 3. **Its classifier.** A domain's failures become problems in one classifier, held beside the
-   one slice that uses the domain (`count.Classify`). A domain several commands share keeps
-   its classifier in cmd (`classifySelection`), since no slice may import another; the
-   moved slice then needs none. internal/cli never holds one.
+   one slice that uses the domain, as `internal/mutation` words its own `Failure`s. A domain
+   several commands share keeps its classifier in cmd (`classifySelection`), since no slice may
+   import another; the moved slice then needs none. internal/cli never holds one.
 4. **Routing in cmd.** In `cmd/itos-cc/dispatch.go`, add the slice's struct to `commandLine`,
    in its name's order, its `help` tag the line the top-level help lists, its handler to
    `parserOf`'s bindings (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s
@@ -529,7 +518,8 @@ follows the same steps for a command it wrote before it had the template's desig
    step's check. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
    step instead of being logged as not run.
 9. **The proof comes once, after the whole refactor.** A move does not compare binaries on
-   its own: its scenarios and tests hold it. Once every command has moved, one task builds
+   its own: its scenarios and tests hold it. Once the refactor's moves are done (`serve`
+   stays on its legacy handler, its moves deferred), one task, refactor-final-proof, builds
    the binary from before the refactor and the refactored one, and runs both over many
    command lines of every command: every flag alone, with `=value` and given twice, unknown
    and mistyped flags (`-changed`, `--chnged`), `-h` and `--help` anywhere, after `--` and
@@ -674,15 +664,14 @@ workdir dependencies; no new adapter package or rule exception is required.
 ## Tests
 
 Each domain's unit tests use its `porttest` fake and assert results and typed failures.
-The disk and workdir adapters' tests use real temporary files, and workdir's a real git
-repository, since translating OS and git errors is what an adapter does.
+The adapters' tests use real temporary files, and workdir's a real git repository, since
+translating OS and git errors is what an adapter does.
 
 A fake stands in for its adapter only when both pass one contract suite (decision 44). Each
 port's `porttest` exports it from `contract.go`, code that imports `testing` and no test file,
 so the adapter's tests can run it: `TreeContract(t, open)` for selection's `Tree` (T-52) and
 `StoreContract(t, open)` for the snapshot `Store` (T-53), `SurroundingsContract(t, open)`
-for lang's `Surroundings` (T-54), `FilesContract(t, open)` for counting's `Files` (T-55),
-coverage's `FilesContract(t, open)` for its `Files` (T-64) and `MeasurerContract(t, open)`
+for lang's `Surroundings` (T-54), coverage's `FilesContract(t, open)` for its `Files` (T-64) and `MeasurerContract(t, open)`
 for its `Measurer` (T-66), over the reports a request names: formats, matching, merging,
 an unreadable report, one a command did not write, and a done context. Running the
 project's own tools, and the run folders, are `internal/coveragetools`' own tests'.
@@ -701,15 +690,13 @@ directory with `t.Chdir`, so no case runs in parallel. A failure the fake is con
 stays in the fake's own tests, and what only a disk can do (symlinks, permissions, OS error
 texts, what git ignores) in the adapter's. A difference the suite finds is fixed in whichever
 side is wrong, never by leaving the case out; the fake's lists of skipped directories and
-build output are copies of `project`'s, which the suite keeps honest. The `count` slice's tests use the fake too, standard input being its `-`
-key; reading standard input, and stopping when the context is done, is `internal/stdin`'s,
-held by its own tests.
+build output are copies of `project`'s, which the suite keeps honest.
 
 The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
 of package `features` behind its `Driver`. `features`' `TestFeatures` runs every converted
 file against the built binary (`binary.go`), which proves main's wiring, the real adapters and
-tools, exit codes and signals, interrupting it once it waits on an open standard input to show
-the 130 exit. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
+tools and exit codes. Its interrupt step, which interrupts the binary once it waits on an open
+standard input, is the binary's alone; no live scenario uses it until interrupt-exit-130. `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
 (`InProcess`), every converted file since `cli.feature` joined it (T-114), in process: its driver, a `_test.go`, holds every
 folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
 renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
@@ -737,15 +724,15 @@ T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-cod
 runs `serve` on a port in use (T-112). godog runs one scenario at a time in both. itos.yaml's scenario lines run both tests, so `cd.yml`
 holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
 ending the process at once is held by `internal/cli`'s unit tests, which feed it fake
-interrupts on every system: `count` has no cleanup for a scenario to see skipped.
+interrupts on every system.
 
-Properties use `pgregory.net/rapid` and live in the domain's tests. The counting property
-joins newline-terminated pieces and checks that their counts add. Arbitrary concatenation
-can join two words, so it is not promised to be additive. The selection property checks
-that paths and fragments only narrow the working directory: what they select is exactly the
-files of `.` under a path that is there or holding one that is not. Every run sets
-`RAPID_CHECKS=1`: one new random case per property, as fast as an example test, with the
-seed printed on failure. This project has no scheduled high-count run.
+Properties use `pgregory.net/rapid` and live in the domain's tests; the `rapid` rule admits it
+in `internal/selection`'s alone. The selection property checks that paths and fragments only
+narrow the working directory: what they select is exactly the files of `.` under a path that
+is there or holding one that is not. `tools/bin/domain-coverage` runs the domains' tests with
+`RAPID_CHECKS=1`, one new random case per property, as fast as an example test; the Go test
+jobs of `ci.yml` and `cd.yml` set nothing, so a property runs rapid's default 100 cases there.
+Either prints the seed on failure. This project has no scheduled high-count run.
 
 CI has two tiers (decision 48). `ci.yml`, the push gate itos waits on, runs on Linux alone:
 the plan below, with the smoke set and the scenarios the push's range names through both
@@ -756,37 +743,44 @@ self-test, `tools/bin/architecture-check`, runs in the plan of both.
 
 ## Quality checks
 
-`itos.yaml`'s CI plan, which the ci jobs of `ci.yml` and `cd.yml` both run, runs these checks
-in order, and its generated rules in `AGENTS.md` list them exactly:
+`itos.yaml`'s CI plan (`ci.steps`), which the ci jobs of `ci.yml` and `cd.yml` both run, runs
+these checks in cost order, the first failure stopping the run:
 
-- `gofmt` over `cmd`, `internal` and `features`, `go build`, `go vet`, `go mod verify`
-  against `go.sum`, and `go mod tidy -diff` so the module files match the code.
+- `itos config check` and `tools/bin/doc-caps`, the only steps of a push that touches prose
+  alone (`ci.prose`).
+- `gofmt` over every tracked Go file, `go build ./...`, `go vet ./...`, `go mod verify` against
+  `go.sum`, and `go mod tidy -diff` so the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.
-- golangci-lint over `internal/`, widening as packages move there (q-50): the standard
-  linters plus depguard, gosec on non-test code, revive's file-length limit,
-  gochecksumtype, which refuses a type switch over a sealed set that leaves a kind out, a
-  default arm not counting, and the context rules of decision 30: containedctx, which refuses
-  a context held in a struct, and revive's context-as-argument, which refuses one passed
-  anywhere but first. revive runs only the rules `.golangci.yml` lists, never its defaults.
+- The pinned golangci-lint over `./internal/...` alone (q-50): the standard linters plus
+  depguard, gosec on non-test code, revive's file-length limit, gochecksumtype, which refuses
+  a type switch over a sealed set that leaves a kind out, a default arm not counting, and the
+  context rules of decision 30: containedctx, which refuses a context held in a struct, and
+  revive's context-as-argument, which refuses one passed anywhere but first. revive runs only
+  the rules `.golangci.yml` lists, never its defaults. `cmd`, the top-level libraries, `features`
+  and `tools` are not linted yet: T-119 widens the step to `./...`, and a pass over
+  `./internal/...` is no evidence that the whole module passes.
 - `tools/bin/architecture-check`, the self-test above.
 - `go tool govulncheck -test ./...`, covering the dependencies in use, test-only ones and
   the standard library.
-- The unit tests of `cmd` and `internal` with `RAPID_CHECKS=1`, then the release helpers'
-  tests, over example repositories.
 - `tools/bin/domain-coverage`, which requires each domain package to reach 80% statement
   coverage from its own tests.
-- The scenarios, run once: the smoke set and those the push's range names.
-- `itos-cc mutation sample --count 10`, a sample of recorded mutation results. It is not
-  proof of the changed code.
+- The scenarios, run once: the smoke set and those the push's range names, through both
+  drivers.
 
-Changed-code proof is judged in CI. Before pushing code, run
-`tools/bin/pinned itos-cc mutation run --since <base> --fail-uncovered --all-tests
---no-annotate cmd internal`, where the base is the push's range start, the nearest ancestor
-with a green `ci.yml` run (`itos ci range --head HEAD` prints it, given GITHUB_REPOSITORY and
-GITHUB_TOKEN), and commit `.metrics/mutate/`. When a push's range touches `cmd/**/*.go` or
-`internal/**/*.go`, `itos ci run` runs `itos.yaml`'s `proof.code` check from that base as a
-static step, before the tests, and fails while a mutant survives, is uncovered or has no
-result. `itos work done` runs no proof; it needs that green run.
+The Go tests of every package are not a plan step: `ci.yml`'s test job runs them on Linux and
+`cd.yml`'s platform jobs on Linux, macOS and Windows (decision 48).
+
+Mutation proof is off, and nothing here claims a mutation result for a push. The plan has no
+`proof.code` step and no `itos-cc mutation sample` (q-53): whether itos-cc sets itos's
+`proof.code` is the idea p1-itos-proof-code, waiting on T-46, and it turns on only after
+refactor-final-proof. The nightly mutation workflow, `nightly.yml`, is disabled on GitHub
+(`gh workflow disable Nightly`) until T-46 makes a whole run finish and commit its results.
+`.metrics/mutate/` holds the results committed before both were turned off.
+
+The hooks a clone declares are itos's, `commit-msg` and `pre-push` (`itos hook install`).
+`tools/hooks/pre-commit`, the template's script, which runs the module-wide lint and the
+networked vulnerability check, is not a declared hook of this project: T-120 declares a fast
+project pre-commit hook, checking the staged Go formatting, and documents its setup.
 
 Tools are pinned:
 
@@ -800,23 +794,12 @@ Tools are pinned:
 
 ## Setup
 
-A new project has no `itos.yaml` or `tasks` yet but has `itos-policy.yaml`: its commit rules,
-CI plan and code-proof gate. `itos-template new` prints the setup steps that adopt it.
-`itos init --policy itos-policy.yaml` gives the project its own `itos.yaml` and a fresh ledger,
-keeping its smoke set, then the policy file is removed. The last step,
-`itos init --agent-rules`, rewrites `AGENTS.md`'s rules to describe the project's own config.
-From then on `ci.yml` runs the Go steps, the selected scenarios and the Linux tests on the
-project's own `main`, and `cd.yml` every test on Linux, macOS and Windows and the release job
-after them (decision 48), as `docs/CLI.md` describes.
-
-The project starts with no mutation records: the template's are taken over its own names and
-stay behind. Setup makes the render commit the point judging starts from, so the first push
-checks no code. A change to a function needs that function's results: run `itos-cc mutation run`
-as the code proof asks of any change, and commit `.metrics/mutate/` with the change.
-`itos-cc.yaml` comes with the template's reviewed exceptions. Most still hold, their hashes
-covering a function's body; one whose function holds the project's name, such as `cmd`'s `run`,
-goes stale, and its reviewed reason is re-applied with `itos-cc mutation except` when that
-function next changes.
+itos-cc adopted go-template-itos v0.2.0 with `itos-template adopt --merge` (T-26), so it has its
+own `itos.yaml`, ledger and work registry rather than a fresh project's. `itos-policy.yaml` is the
+template's policy file, which `itos.yaml`'s comments cite as the source of the plan and the
+scenario runner they took. `itos-cc.yaml` holds itos-cc's own settings and two reviewed
+exceptions, both of `internal/release`: the template's parked exception for its main.go went
+with T-115, and its sample count app, which had none, with T-116.
 
 T-90 keeps coverage's aggregate `port.Measurer[*Report]` unchanged. Its new
 model-bearing `MutationMeasurer` contract belongs beside `Report` and
