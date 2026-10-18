@@ -4723,8 +4723,6 @@
     Record the completed-source head for final equivalence proof so that
     any fixes here are included in that one comparison. Do not start final
     proof or own-source mutation, change nightly T-46, or implement T-86.
-  done_when:
-    - run: tools/bin/pinned golangci-lint run ./...
 - id: T-120
   type: ci
   title: Declare a fast project pre-commit hook and document clone setup

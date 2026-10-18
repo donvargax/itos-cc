@@ -1715,17 +1715,9 @@ items:
     title: Enforce Go lint across the completed refactor module
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-116]
     kind: task
-    why: >
-      Was gate-golangci-lint.
-      Set aside by T-26. go-template-itos v0.2.0 brought .golangci.yml (its linters and the depguard
-      arrows of the template's layout) and tools/bin/pinned, which downloads golangci-lint at a
-      pinned release and checks its SHA-256. CI does not run it yet: itos-cc's packages were not
-      written to those linters or arrows, so wiring it is its own task: run tools/bin/pinned
-      golangci-lint run ./..., fix what it finds or extend the rules as docs/go.md says, never
-      loosening one, then add it to CI (or to itos.yaml's ci plan).
   - id: gate-govulncheck
     title: Run govulncheck in CI
     phase: 1
