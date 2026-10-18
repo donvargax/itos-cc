@@ -2590,14 +2590,9 @@ items:
     title: cli.feature's ID-CLI-13 declares its Vitest project's tests through Driver.Tests
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      T-70 added Driver.Tests so in-process outcomes match what a fixture's real tests do once the
-      mutation group moves (S7). ID-CLI-13 runs mutation run over a Vitest project and declares only
-      its Coverage, so the fake porttest.Workers would have no declaration for it when cli.feature
-      joins InProcess in S9; it should declare its command, and score's 1 to 0 survivor.
   - id: T-73
     title: mutate.feature's differential and since scenarios run through godog against the built binary
     phase: 1
