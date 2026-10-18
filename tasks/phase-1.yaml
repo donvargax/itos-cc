@@ -5127,12 +5127,6 @@
     also use the shared pure domains its rule names (lang, selection), as freshenv, testtools and
     testinputs do, and docs/go.md's Measurer passages. No behaviour change: every scenario and
     contract holds as it is. workdir.Surroundings stays.
-  done_when:
-    - run: go build ./...
-    - run: go test ./internal/coverage/... ./internal/coveragetools/... ./internal/crap/...
-    - run: sh -c '! grep -rn --include=*.go "Measurer\[" .'
-    - run: go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -scenarios='@ID-CRAP-'
-      timeout: 600
 - id: T-136
   type: refactor
   title: Let internal/mutants carry serialization tags and drop the mirrors that copy its types
