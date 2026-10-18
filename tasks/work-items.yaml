@@ -2591,6 +2591,14 @@ items:
       the gaps) so the port cannot import the domain without a cycle. Compare with declaring the
       Measurer interface in the domain package itself, or a second port package (say
       internal/coverage/measure) that imports the domain.
+
+      The Measurer candidate above is settled. T-135 (c1f2225) declared Measurer as a plain
+      interface in the coverage domain, beside MutationMeasurer
+      (internal/coverage/measurement.go:35), so internal/coverage/port no longer declares Measurer[R
+      any]. T-136 (2ed51e9) tagged mutants' leaf types and removed the mirrors that only copied
+      them, in metricsdir, config's exceptions and the mutation slice (q-70). The older candidates
+      remain, snapshot's Store taking v any (internal/snapshot/port/store.go:79 and 82) and lang's
+      port reading bytes (internal/lang/port/surroundings.go:22).
   - id: bug-1
     title: A coverage report written with \ separators matches no source on Linux or macOS
     phase: 1
