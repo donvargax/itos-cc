@@ -161,6 +161,16 @@ items:
       one) use the viewer's Vitest and skip without viewer/node_modules, which push CI never
       installs, so they run only on a developer's machine (passed locally 2026-10-08). An npm ci of
       viewer/ in the test job would make them run in CI too.
+
+      The second paragraph above is done. T-13 gave those Go tests Node tools of their own,
+      testdata/tools/node, installed with npm ci and found through ITOS_CC_NODE_MODULES
+      (cmd/itos-cc/language_tools_test.go:27-59), and cd.yml's languages job runs them, ID-CRAP-14
+      and ID-MUT-105 among them, on ubuntu-latest. What is left is the first paragraph. No workflow
+      runs viewer/'s vitest run or tsc --noEmit (only nightly.yml installs viewer/, and the nightly
+      is disabled), so viewer.feature's 23 live scenarios, which viewer/src/model.test.ts alone
+      holds, have no holder in CI. The viewer leaves with serve for a web app of its own (1b449af,
+      the person's decision of 2026-10-17), so this belongs to that move rather than to this
+      repository's CI.
   - id: T-7
     title: The viewer's lockfile raises source-map-js past the versions npm audit flags as high
     phase: 1
