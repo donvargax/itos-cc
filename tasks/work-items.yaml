@@ -15,7 +15,7 @@ queue:
   - slice-7
   - slice-8
   - slice-9
-  - portable-go-evidence
+  - slice-10
   - comment-free-unit-hash
   - since-broad-stale-panic
   - worker-copy-pristine
@@ -3454,14 +3454,15 @@ items:
       (coverage/run.go:499-515), so a selection's partial run fails the project's floor. One item
       with listed-coverage-failed (#15): a failed coverage run is not uncovered code. Wave 0.
     refs: ["#46"]
-  - id: portable-go-evidence
+  - id: slice-10
     title: "Strict Go evidence carries between checkouts: toolchain resolution and tracked files only"
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was portable-go-evidence.
       Issues #36 and #37. The raw environment, GOTOOLCHAIN included, is hashed
       (internal/testinputs/go_coverage_inputs.go:83-91); every .go file on disk is walked, .git,
       testdata and untracked files included (52-69); GoVersion is itos-cc's own runtime.Version()
