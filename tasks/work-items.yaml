@@ -3822,3 +3822,22 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: bug-3
+    title: scrap's ignoring line for an unreadable .metrics/scrap.json names other Go types than before the refactor
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      Found by T-132's edge comparison (tools/bin/refactor-proof, cases t42-05 and t42-06), an
+      unlisted difference. With a .metrics/scrap.json whose files hold a value of the wrong type,
+      scrap goes on and writes 'itos-cc: ignoring unreadable .metrics/scrap.json: <error>' on
+      stderr, the error being encoding/json's text, which names the Go types it decoded into. The
+      binary of 51f3952 says 'Go struct field scrapSnapshot.files.0.file of type string' and 'of
+      type []scrap.FileReport'; the refactored one says 'recorded.files.0.file' and
+      '[]teststructure.FileReport', since T-42 moved the snapshot into internal/teststructure. Exit
+      code and stdout agree. The plain line is for people, but the proof allows only its listed
+      differences, and the line leaks internal type names either way: word the decode failure from
+      the snapshot's own terms (the key and the value's kind) so a later move cannot change it, then
+      rerun T-132's comparison for these cases.
