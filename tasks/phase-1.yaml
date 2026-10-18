@@ -5086,3 +5086,26 @@
     where it is the adapter's: metricsdir's unit tests and ID-SCRAP-30. The user-visible line does
     not change, so the refactor-proof cases t42-05 and t42-06 keep their bug-3 note. docs/go.md's
     snapshot port paragraph moves the wording to metricsdir's. No depguard rule changes.
+- id: T-134
+  type: test
+  title: ID-MUT-250 fails on macOS when a killed fixture resets its connection
+  why: >
+    CD run 39128003364 (Renovate PR #52, actions/checkout v7, a change that reaches no Go code)
+    failed on test (macos-latest, features) at one scenario, ID-MUT-250 (slice-7/slice-8,
+    mutate.feature "A fail-fast stop whose cleanup fails exits 100 and keeps its partial report"):
+    every step passed, then the after-scenario hook failed with "read tcp4
+    127.0.0.1:49256->127.0.0.1:49260: read: connection reset by peer". The other 613 scenarios
+    passed. The scenario kills an owned process group whose fixture holds a TCP connection to the
+    harness (features/fixture_peers.go), and a killed peer can reset its socket instead of closing
+    it, so the harness that waits for EOF gets ECONNRESET. That is a race in the step code, not in
+    the product, and the person has said that once CI and CD pass a dependency update is safe, so a
+    flaky gate holds those updates up for nothing. Find why that hook reads a reset on macOS, and
+    make the harness read what the scenario actually asserts without the race: if the killed
+    fixture's end of the connection is the lifetime evidence, a reset after a forced kill is that
+    evidence too, as much as EOF; never by retrying, skipping, tagging the scenario or loosening
+    what it checks. The fix belongs only in the step code; no feature file and no product code
+    changes. Linux may not reproduce it: run the scenario repeatedly here, then let cd.yml on macOS
+    judge.
+  done_when:
+    - run: go test ./features -run '^TestFeatures$' -count=5 -scenarios='^@ID-MUT-250$'
+      timeout: 900
