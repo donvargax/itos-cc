@@ -3478,14 +3478,15 @@ items:
       dependency is fingerprinted like a standalone package; members with local dependencies stay
       refused. Wave 1, after vitest-through-toolchain.
     refs: ["#48"]
-  - id: worker-copy-workspace
+  - id: slice-19
     title: Workers copy enough of a workspace for a tsconfig that extends above the package
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was worker-copy-workspace.
       Issue #44. The worker copies c.Root only (internal/worktrees/worker.go:43-56), the TypeScript
       root being the nearest package.json (testtools/toolchain.go:39), so extends
       ../../tsconfig.base.json fails every baseline. Copy the workspace root, dependency folders
