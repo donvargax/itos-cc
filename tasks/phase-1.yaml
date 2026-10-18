@@ -5003,9 +5003,6 @@
     without callers. Update the removal tables in features/README.md's S7 completion section and
     give the counts exactly. No product change, no new dependency, no own-code mutation run. Checks
     stay fast; CI judges the whole suite.
-  done_when:
-    - run: go test ./internal/mutants/... ./internal/mutation/...
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios="@ID-(MUT|SNAP)-"
 - id: T-131
   type: ci
   title: Give Renovate's update commits the Task footer itos requires

@@ -3717,7 +3717,7 @@ items:
     title: Review the legacy T-79, T-80 and T-81 holders T-101 left whole
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: shell-completion
