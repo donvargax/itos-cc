@@ -3348,6 +3348,9 @@ items:
       mutation runs over this repository's code (AGENTS.md, ADR-0040) holds until the refactor's
       proof turns mutation proof back on; this idea lifts it only for this bounded hook, with the
       person's agreement.
+
+      The refactor's final proof (T-132) is done, but mutation proof stays off until T-46 makes the
+      nightly finish and commit (docs/go.md, Quality checks), so the ban above holds until then.
   - id: mutation-uncovered-reuse
     title: mutation run reuses a recorded uncovered outcome as it reuses a kill
     phase: 1
