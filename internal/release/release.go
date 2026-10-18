@@ -1,7 +1,7 @@
 // Package release reads what a release cut counts: a commit's
 // Conventional Commits type, whether it is marked as breaking, which tag
 // names the last release, and what moved beneath the binary between two
-// commits (Build, Moved and BinaryMoved, decision 23).
+// commits (Build, Moved and BinaryMoved, itos-template's decision 23).
 // The release tools of a project made from this template compute the next
 // version with it and pick the range the notes describe, saying why a patch
 // with no fix was cut with it (T-16), so both read a commit, pick the last

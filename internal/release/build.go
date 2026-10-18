@@ -15,10 +15,11 @@ import (
 )
 
 // Build is what a binary is built from, as the release cut compares it
-// (decision 23): each module it links, by path, at its version (a
-// replacement's path and version after " => "), and the Go toolchain that
-// builds it. The main module is not one of the modules: its own code changes
-// with every commit, and a commit's type says whether that is a release.
+// (itos-template's decision 23): each module it links, by path, at its
+// version (a replacement's path and version after " => "), and the Go
+// toolchain that builds it. The main module is not one of the modules: its
+// own code changes with every commit, and a commit's type says whether that
+// is a release.
 type Build struct {
 	Modules   map[string]string
 	Toolchain string

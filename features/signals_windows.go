@@ -1,7 +1,8 @@
 // The interrupt on Windows, one of the build-tagged files holding a call one
-// system lacks (decision 26). Go cannot send another process os.Interrupt
-// here, but a console delivers CTRL_BREAK_EVENT to a process group, and Go
-// reports it to signal.Notify as os.Interrupt, as Ctrl-C at a console is.
+// system lacks (itos-template's decision 26). Go cannot send another process
+// os.Interrupt here, but a console delivers CTRL_BREAK_EVENT to a process
+// group, and Go reports it to signal.Notify as os.Interrupt, as Ctrl-C at a
+// console is.
 // The binary is started in its own process group, so the event reaches it
 // and never the tests; Go's own os/signal TestCtrlBreak works this way.
 package features

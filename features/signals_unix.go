@@ -1,8 +1,9 @@
 //go:build unix
 
 // The interrupt on Linux and macOS, one of the build-tagged files holding a
-// call one system lacks (decision 26): os.Interrupt is SIGINT here, what a
-// terminal sends for Ctrl-C, and any process may send it to another.
+// call one system lacks (itos-template's decision 26): os.Interrupt is
+// SIGINT here, what a terminal sends for Ctrl-C, and any process may send
+// it to another.
 package features
 
 import (
