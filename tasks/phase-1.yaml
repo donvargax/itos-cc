@@ -5178,3 +5178,26 @@
     and the items opened. No product code changes in this task.
   done_when:
     - run: itos config check
+- id: T-138
+  type: docs
+  title: Bring the open items' whys up to date with the finished refactor
+  why: >
+    Decision 47's closing audit (2026-10-18, kept in this clone at
+    .git/itos/ideas-reconcile-2026-10-18.md, sections 3, 6.1, 7 and 1.2 items 4, 6 and 7) found whys
+    that name code the refactor moved, or say the refactor will do what it ended without doing. Edit
+    each idea's why with itos work edit --note (an idea's why is in the registry) and each task's in
+    its ledger entry: the partly done ideas (viewer-ci-tests, ci-test-names,
+    strict-lines-nonexecutable-changes, inprocess-mutation-tests) down to what is left; the ideas
+    that say 'the refactor will' (left-out-singular-wording, mutation-run-saves-each-file,
+    scrap-clusters-null, emit-key-order, coverage-runner-os-value, inprocess-mutation-tests) as
+    behaviour changes of their own; about thirty stale paths, each old location to its new one,
+    verified in the code; the deferred S8 tasks T-102 to T-108, T-112 and T-113 and the serve and
+    graph ideas pointed at serve's web-app move instead of 'the CURRENT template-adoption refactor';
+    and itos.yaml's ci comment that says RAPID_CHECKS come later, reworded to what
+    tools/bin/domain-coverage does. Check every claim of the audit against the code before writing
+    it; one it got wrong (it said scrap exits 100 on an unreadable itos-cc.yaml; it exits 0) shows
+    they need checking. GitHub #28, which no item tracks, gets an idea of its own. No product code,
+    tests or scenarios change.
+  done_when:
+    - run: itos config check
+    - run: itos work check
