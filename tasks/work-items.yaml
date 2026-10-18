@@ -3734,27 +3734,10 @@ items:
     status: todo
     depends_on: []
     kind: task
-  - id: refactor-proof-classified
+  - id: T-137
     title: Classify every difference T-132's edge run found, and open a fix item for each one not deliberate
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      T-132 closed (bfb3c5f) without the classified list its spec asked for. Its edges job, run
-      39101044040 of refactor-proof.yml at e7158af, failed: its report.txt holds 53 cases that
-      differ, 57 normalized and 268 the same, and only s5-01, s5-02 and t69-04 carry a
-      classification in tools/testdata/refactor-proof/cases. Decision 47's closing audit
-      (2026-10-18) sampled the rest: most are slice-6's exclude wording in help and config output
-      (93d6317), a feature added during the refactor, which T-132's spec says to classify as
-      deliberate with its slice; t115-06 and t115-07 were a regression, now bug-4. Download that
-      run's artifacts (gh run download 39101044040), and for each differing case decide from the
-      commits between the baseline 51f39520 and e7158af whether the difference is a listed
-      deliberate change (a slice, a bug fix, a decision; name it) or not. Write each deliberate
-      one's note in the cases file, in the same form as s5-01's. For each that is not, open an item
-      (itos work add --kind bug, one per distinct cause, its why naming the cases and the commit
-      that changed it); never mark one deliberate to make the proof pass. Do not rerun the proof:
-      slice-7 to slice-11 changed exit codes and output since, so a new run compares something else.
-      Report the table of all 53, their classification and the items opened. No product code changes
-      in this task.
+    kind: task
