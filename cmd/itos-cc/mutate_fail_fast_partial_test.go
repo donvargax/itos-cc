@@ -12,13 +12,13 @@ import (
 	"testing"
 )
 
-// The scenarios of "Rule: A fail-fast stop keeps the valid judgments of the
+// The scenario of "Rule: A fail-fast stop keeps the valid judgments of the
 // files it cut short" in features/mutate.feature, the fail-fast-partial
-// slice (ADR-0022). Like the fail-fast-run steps they drive the CLI, read
-// its --json object as raw maps and read the snapshots under .metrics as
-// raw JSON, so they compile against a product that writes nothing of a file
-// the stop cut short. Every ordering they rely on waits on a marker file in
-// $FF_DIR, never on a sleep.
+// slice (ADR-0022), whose holder still asserts what its scenario does not.
+// Like the fail-fast-run steps it drives the CLI, reads its --json object
+// as raw maps and reads the snapshots under .metrics as raw JSON. Every
+// ordering it relies on waits on a marker file in $FF_DIR, never on a
+// sleep.
 
 // ffSnapshot is the snapshot of the source name under .metrics as raw JSON,
 // nil when there is none.
@@ -125,7 +125,12 @@ var partialFiles = map[string]string{
 		"exit 0"),
 }
 
-// @ID-MUT-200
+// @ID-MUT-200. Kept: its second case, a stop by a failing listed selection,
+// keeps a reused listed kill with the snapshot's listed tests, their files
+// and its support as recorded, and records the measured uncovered mutant
+// beside it, which no scenario asserts: ID-MUT-200's stop is a survivor's,
+// and ID-MUT-211's reads no snapshot. ID-MUT-201 and 202's holders went,
+// every assertion their scenarios' (T-130).
 func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *testing.T) {
 	t.Parallel()
 	t.Run("cut short by a survivor", func(t *testing.T) {
@@ -286,169 +291,4 @@ func TestValidJudgmentsInAStoppedFileArePreservedUnfinishedSitesStayUnjudged(t *
 			t.Errorf("main.go changed:\n%s\nwant it as it was:\n%s", got, source)
 		}
 	})
-}
-
-// cancelledRerunFiles is the module of ID-MUT-201. test.sh kills every
-// mutant of a.go, and B's of b.go, until $FF_DIR/hold exists; then A2's
-// mutant marks that it started and waits for a release that never comes,
-// and B's survives once A2's started.
-var cancelledRerunFiles = map[string]string{
-	"go.mod": "module example.com/ff\n\ngo 1.22\n",
-	"a.go":   "package main\n\nfunc A1(n int) bool { return n > 2 }\n\nfunc A2(n int) bool { return n > 3 }\n",
-	"b.go":   "package main\n\nfunc B(n int) bool { return n > 9 }\n\nfunc main() {}\n",
-	"test.sh": ffScript(
-		"grep -q 'n > 2' a.go || exit 1",
-		"if ! grep -q 'n > 3' a.go; then",
-		"\tif [ -e \"$FF_DIR/hold\" ]; then",
-		"\t\ttouch \"$FF_DIR/started\"",
-		"\t\twhile [ ! -e \"$FF_DIR/release\" ]; do sleep 0.01; done",
-		"\tfi",
-		"\texit 1",
-		"fi",
-		"if ! grep -q 'n > 9' b.go; then",
-		"\t[ -e \"$FF_DIR/hold\" ] || exit 1",
-		"\twhile [ ! -e \"$FF_DIR/started\" ]; do sleep 0.01; done",
-		"\texit 0",
-		"fi",
-		"exit 0"),
-}
-
-// @ID-MUT-201
-func TestACancelledForcedRerunLeavesAFreshPriorCacheUsable(t *testing.T) {
-	t.Parallel()
-	_, ff := ffRepo(t, cancelledRerunFiles)
-	release(t, ff)
-	// Given a file with fresh complete mutation results.
-	first := shellRun(t, "--no-annotate", "--workers", "1")
-	logOutcome(t, &first)
-	if check := itosCc(t, "mutation", "check", "--json", "a.go"); first.code != 0 || check.code != 0 {
-		t.Fatalf("first run exit %d, then mutation check a.go exit %d: want both 0\n%s", first.code, check.code, check.stdout)
-	}
-
-	// When a fail-fast --mutate-all rerun of it is cancelled by a stop
-	// elsewhere: A1's mutant is killed again, A2's is running when B's
-	// survives, and is cancelled.
-	writeFile(t, filepath.Join(ff, "hold"), "")
-	o := shellRun(t, "--no-annotate", "--workers", "2", "--timeout-factor", "10000", "--mutate-all", "--fail-fast")
-	logOutcome(t, &o)
-	f := o.ff(t)
-	a := f.file("a.go")
-	if o.code != 1 || f.stopRule() != "mutation.survived" || !undecided(ffMutant(a, "A2"), "cancelled") || ffMutant(a, "A1")["outcome"] != "killed" {
-		t.Fatalf("exit %d, stop %v, a.go %v: want 1, stopped by B's survivor, A1's mutant killed and A2's cancelled", o.code, f.Stop, a)
-	}
-
-	// Then its prior fresh results still satisfy mutation check.
-	check := itosCc(t, "mutation", "check", "--json", "a.go")
-	logOutcome(t, &check)
-	if check.code != 0 {
-		t.Errorf("mutation check a.go: exit %d, rules %v: want 0, its prior results still fresh and complete", check.code, check.ff(t).rules())
-	}
-
-	// And the run's report says its own work was incomplete, separately
-	// from the cache's completeness.
-	work, _ := a["work"].(map[string]any)
-	if a["state"] != "stopped" || work["cancelled"] != float64(1) {
-		t.Errorf("a.go = %v: want its state stopped, with its one cancelled mutant", a)
-	}
-	if a["cache"] != "complete" {
-		t.Errorf("a.go's cache = %v, want \"complete\": its snapshot still holds a fresh result for every mutant, though this run's work on it was not", a["cache"])
-	}
-}
-
-// laterFiles is the module of ID-MUT-202. test.sh kills K1's, K2's and
-// Hold's mutants of b.go, and Z's of z.go, but while $FF_DIR/hold exists
-// Hold's mutant, once it marked that it started, waits for a release that
-// never comes, and Z's survives once Hold's started. With mutation.tests,
-// support/dep.txt is a support input of every outcome of sh test.sh.
-var laterFiles = map[string]string{
-	"go.mod":          "module example.com/ff\n\ngo 1.22\n",
-	"b.go":            "package main\n\nfunc K1(n int) bool { return n > 2 }\n\nfunc K2(n int) bool { return n > 3 }\n\nfunc Hold(n int) bool { return n > 4 }\n",
-	"z.go":            "package main\n\nfunc Z(n int) bool { return n > 9 }\n\nfunc main() {}\n",
-	"main_test.go":    "package main\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n",
-	"support/dep.txt": "one\n",
-	"itos-cc.yaml":    "mutation:\n  tests:\n    list: \"touch list-ran\"\n    run: \"touch test-ran-{pattern}\"\n    ids_pattern: \"{ids}\"\n    join:\n      each: \"{id}\"\n      sep: \",\"\n    support: [\"support/*.txt\"]\n",
-	"test.sh": ffScript(
-		"grep -q 'n > 2' b.go || exit 1",
-		"grep -q 'n > 3' b.go || exit 1",
-		"if ! grep -q 'n > 4' b.go; then",
-		"\ttouch \"$FF_DIR/started\"",
-		"\tif [ -e \"$FF_DIR/hold\" ]; then",
-		"\t\twhile [ ! -e \"$FF_DIR/release\" ]; do sleep 0.01; done",
-		"\tfi",
-		"\texit 1",
-		"fi",
-		"if ! grep -q 'n > 9' z.go; then",
-		"\t[ -e \"$FF_DIR/hold\" ] || exit 1",
-		"\twhile [ ! -e \"$FF_DIR/started\" ]; do sleep 0.01; done",
-		"\texit 0",
-		"fi",
-		"exit 0"),
-}
-
-// @ID-MUT-202
-func TestALaterRunFinishesOnlyWhatTheStopLeft(t *testing.T) {
-	t.Parallel()
-	for _, tc := range []struct {
-		name   string
-		change func(t *testing.T)
-		// rerun is the functions of b.go whose mutants the later run must
-		// run again rather than reuse, beside Hold's, which never had one.
-		rerun []string
-	}{
-		{"unchanged inputs", func(t *testing.T) {}, nil},
-		{"source changed", func(t *testing.T) {
-			edit(t, "b.go", "func K1(n int) bool { return n > 2 }", "func K1(n int) bool { /* changed */ return n > 2 }")
-		}, []string{"K1"}},
-		{"tests changed", func(t *testing.T) {
-			writeFile(t, "main_test.go", "package main\n\nimport \"testing\"\n\nfunc TestNothing(t *testing.T) {}\n\nfunc TestMore(t *testing.T) {}\n")
-		}, []string{"K1", "K2"}},
-		{"support changed", func(t *testing.T) {
-			writeFile(t, filepath.Join("support", "dep.txt"), "two\n")
-		}, []string{"K1", "K2"}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			_, ff := ffRepo(t, laterFiles)
-			release(t, ff)
-			// Given a stopped fail-fast run preserved some judgments of a
-			// file: K1's and K2's kills, with Hold's cancelled.
-			args := []string{"--no-annotate", "--workers", "2", "--timeout-factor", "10000", "--fail-fast"}
-			writeFile(t, filepath.Join(ff, "hold"), "")
-			first := shellRun(t, args...)
-			logOutcome(t, &first)
-			fb := first.ff(t).file("b.go")
-			if first.code != 1 || fb["state"] != "stopped" || !undecided(ffMutant(fb, "Hold"), "cancelled") ||
-				ffMutant(fb, "K1")["outcome"] != "killed" || ffMutant(fb, "K2")["outcome"] != "killed" {
-				t.Fatalf("first run: exit %d, b.go %v: want 1, b.go stopped with K1's and K2's mutants killed and Hold's cancelled", first.code, fb)
-			}
-			snap := ffSnapshot(t, "b.go")
-			if len(ffRecorded(snap, "K1")) != 1 || len(ffRecorded(snap, "K2")) != 1 {
-				t.Errorf("b.go's snapshot %v: want K1's and K2's kills preserved", snap)
-			}
-
-			// When the same run is repeated, its inputs unchanged or
-			// changed as the case says; nothing holds now.
-			removeFixture(t, filepath.Join(ff, "hold"))
-			removeFixture(t, filepath.Join(ff, "started"))
-			tc.change(t)
-			later := shellRun(t, args...)
-			logOutcome(t, &later)
-			lb := later.ff(t).file("b.go")
-			// Then the preserved judgments are reused and only the
-			// unjudged sites run; but one whose source, tests or support
-			// inputs changed runs again.
-			for _, function := range []string{"K1", "K2"} {
-				m := ffMutant(lb, function)
-				want := !strings.Contains(strings.Join(tc.rerun, " "), function)
-				if m["outcome"] != "killed" || m["reused"] != want {
-					t.Errorf("later run: %s's mutant = %v: want it killed, reused %v", function, m, want)
-				}
-			}
-			if hold := ffMutant(lb, "Hold"); hold["outcome"] != "killed" || hold["reused"] != false {
-				t.Errorf("later run: Hold's mutant = %v: want it run now, killed", hold)
-			}
-			if later.code != 0 || lb["ran"] != float64(1+len(tc.rerun)) || lb["reused"] != float64(2-len(tc.rerun)) {
-				t.Errorf("later run: exit %d, b.go %v: want 0, %d run and %d reused", later.code, lb, 1+len(tc.rerun), 2-len(tc.rerun))
-			}
-		})
-	}
 }

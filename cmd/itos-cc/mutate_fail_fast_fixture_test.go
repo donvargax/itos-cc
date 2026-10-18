@@ -17,9 +17,7 @@ import (
 
 // ffJSON is the --json object of a mutation run, fail-fast keys included.
 type ffJSON struct {
-	OK       bool             `json:"ok"`
 	Stop     map[string]any   `json:"stop"`
-	Work     map[string]any   `json:"work"`
 	Files    []map[string]any `json:"files"`
 	Problems []map[string]any `json:"problems"`
 }
@@ -42,15 +40,6 @@ func (f ffJSON) problem(rule string) map[string]any {
 	return nil
 }
 
-func (f ffJSON) rules() []string {
-	var out []string
-	for _, p := range f.Problems {
-		r, _ := p["rule"].(string)
-		out = append(out, r)
-	}
-	return out
-}
-
 // file is the entry of file in "files", or nil.
 func (f ffJSON) file(name string) map[string]any {
 	for _, file := range f.Files {
@@ -59,12 +48,6 @@ func (f ffJSON) file(name string) map[string]any {
 		}
 	}
 	return nil
-}
-
-// work is the count of work in state, from the run's "work".
-func (f ffJSON) work(state string) int {
-	n, _ := f.Work[state].(float64)
-	return int(n)
 }
 
 // stopped says whether the run reports that it stopped early.
