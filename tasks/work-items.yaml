@@ -3315,3 +3315,17 @@ items:
       differences, and the line leaks internal type names either way: word the decode failure from
       the snapshot's own terms (the key and the value's kind) so a later move cannot change it, then
       rerun T-132's comparison for these cases.
+  - id: mutation-codec-key-path
+    title: An undecodable mutation snapshot names its key path from the unit or mutant, not the file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      bug-3 words a snapshot that does not decode by its key path and JSON kinds (port.Undecodable).
+      encoding/json starts the path again inside an UnmarshalJSON, and the mutation codec's
+      unitResultWire and mutantWire decode themselves, so a wrong-typed value under a unit or mutant
+      of .metrics/mutate/*.json is named from that unit or mutant ("name should be a string, not a
+      number") rather than from the snapshot's top (units[2].name). Give the codec's own decoding
+      the outer path, or rebuild it from the decoder's offset, so the key path is whole.
