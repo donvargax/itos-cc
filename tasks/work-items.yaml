@@ -1905,14 +1905,15 @@ items:
       (internal/count and internal/disk are gone). One agent implements both S10 slices; both feats
       and version-without-v (#19) reach main in a single product push.
     refs: [q-51, q-54, q-37]
-  - id: semantic-exit-codes
+  - id: slice-7
     title: Exit codes follow square/exit, 75 kept for retry
     phase: 1
     owner: null
     status: todo
     depends_on: [T-30, T-132]
-    kind: idea
+    kind: slice
     why: >
+      Was semantic-exit-codes.
       q-56: 80 usage, 81 unknown command, 82 a requirement not met (was 3), 100 internal (was 70),
       75 a failure that may pass when run again, 1 a check's no, 130 interrupted; precedence 130, 80
       and 81, 100, 82, 75, 1. Each problem in --json gains its own exit, as RFC 9457's status
@@ -2194,7 +2195,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-43, semantic-exit-codes]
+    depends_on: [T-43, slice-7]
     kind: task
     why: >
       The person's call (2026-10-11): the nightly has committed no mutation results since
@@ -2342,7 +2343,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [semantic-exit-codes]
+    depends_on: [slice-7]
     kind: idea
     why: >
       The person (2026-10-12): once the refactor is done, itos-cc gains a new language, Dart. The
@@ -2539,7 +2540,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [semantic-exit-codes]
+    depends_on: [slice-7]
     kind: idea
     why: >
       The person (2026-10-13): once the refactor is finished, check the latest decision, 47
@@ -2798,7 +2799,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [template-adoption, T-132, interrupt-exit-130, semantic-exit-codes, adr-47-code-review]
+    depends_on: [template-adoption, T-132, interrupt-exit-130, slice-7, adr-47-code-review]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
