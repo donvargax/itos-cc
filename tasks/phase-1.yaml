@@ -5069,3 +5069,23 @@
     Report: the classified list of scenarios failing on the baseline, the edge-case results with
     every difference and its classification, the normalization rules, the runs, and the fix items
     opened.
+- id: T-133
+  type: refactor
+  title: Move the undecodable snapshot's wording from the snapshot port into metricsdir
+  why: >
+    bug-3 (03b4d42) put port.Undecodable, which words a JSON decode failure by key path and JSON
+    kinds, in internal/snapshot/port, so the fake and the adapter could share it. The person had
+    agreed the fix belongs in the adapter, and the port is imported by the domains scrap, crap,
+    mutation and mutants, which must know no JSON (AGENTS.md): with Undecodable in the port they
+    link encoding/json and reflect through it. The person chose on 2026-10-18 to move it to the
+    adapter. Undecodable and its unit tests move into internal/metricsdir, the one place that
+    decodes snapshot files; the port and its package doc go back to knowing no JSON. The port's
+    contract keeps only what every store must do: a snapshot that does not decode is Unreadable,
+    with a non-empty Reason naming no Go type or package; it no longer pins the exact wording, so
+    the fake gives its own plain reason without a JSON formatter. The exact wording stays pinned
+    where it is the adapter's: metricsdir's unit tests and ID-SCRAP-30. The user-visible line does
+    not change, so the refactor-proof cases t42-05 and t42-06 keep their bug-3 note. docs/go.md's
+    snapshot port paragraph moves the wording to metricsdir's. No depguard rule changes.
+  done_when:
+    - run: go test ./internal/snapshot/... ./internal/metricsdir/... ./internal/scrap/...
+    - run: sh -c '! go list -deps ./internal/snapshot/port | grep -qx encoding/json'
