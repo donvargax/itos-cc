@@ -2413,6 +2413,17 @@ items:
       imports internal/mutants directly), so this needs a mode that runs listed tests first or
       alone; and itos tests list has no form mutation.tests.list reads (itos#22). itos-cc#30 makes a
       listed kill go stale only when its own scenario changes.
+
+      The second paragraph above is done. T-125 runs the mutation scenarios in process (6224c9e),
+      and 91c46d9 took ITOS_CC_SKIP_FEATURES out of the workflows, so push CI runs mutate.feature
+      again; the variable stays only as the harness's own option (features/README.md). The rest is
+      not done, and the refactor ended without it. itos-cc.yaml has no mutation.tests, so mutants
+      are still killed by Go's own tests of a package and one hop away (cmd/itos-cc still imports
+      internal/mutants), and the mode that runs listed tests first or alone, itos#22 and itos-cc#30
+      are all still open. It is a change of its own now, not a step of the refactor, and the
+      listed-first mode is product behaviour that needs its scenarios. Listing the scenarios in
+      itos-cc.yaml still changes Go evidence and freshness, so it still lands before T-46 re-scopes
+      the nightly.
     refs: [itos#22, itos-cc#30]
   - id: T-60
     title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
