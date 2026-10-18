@@ -572,6 +572,11 @@ items:
       (tests.coverage-failed, with the command and exit code), nothing judged and no snapshot
       written; mutation run's help could also say the coverage run sets ITOS_CC_TEST_COVERDIR
       without GOCOVERDIR.
+
+      2026-10-18 triage (#15): still true, coverage/pertest.go:242-245 logs and returns nil,
+      internal/coveragetools/measurer.go:104, internal/mutants/run_coverage.go:113-118. One item
+      with coverage-thresholds-override (#46). Its new rule tests.coverage-failed is specified
+      against S10's exit table. Wave 0.
     refs: ["#15"]
   - id: slice-6
     title: itos-cc.yaml's exclude leaves sources out of what is measured and mutated
