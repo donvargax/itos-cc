@@ -3450,14 +3450,15 @@ items:
       timeout in the snapshot and --json, so such kills can always be listed and reviewed. Keep head
       and tail of output, shared with the baseline's report (#47). Wave 1.
     refs: ["#47", "#54"]
-  - id: vitest-through-toolchain
+  - id: slice-17
     title: A package whose Vitest comes through a toolchain package is measured with Vitest
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was vitest-through-toolchain.
       Issue #45. Coverage and the baseline check pkg.has("vitest") only (coverage/run.go:244-253,
       internal/testtools/toolchain.go:40-46); a resolvable node_modules/.bin/vitest should count.
       Wave 1, TypeScript workspace track, first.
