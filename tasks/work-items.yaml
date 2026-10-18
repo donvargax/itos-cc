@@ -2190,8 +2190,8 @@ items:
   - id: T-132
     title: Prove the refactored binary matches the pre-refactor one but for its listed changes
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-116, T-119, T-120]
     kind: task
     why: >
