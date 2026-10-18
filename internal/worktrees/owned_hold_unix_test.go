@@ -6,8 +6,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"os/exec"
+	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -62,20 +65,39 @@ func TestAnOwnedCleanupIsMarkedFromTheAbortToTheJoin(t *testing.T) {
 
 // A process that leaves the owned group holding its output open fails the
 // cleanup at the deadline, as a CleanupFailed naming the group and the
-// command, never by waiting for ever on the read.
+// command, never by waiting for ever on the read. The command is this test
+// binary, which starts itself again in a process group of its own, holding
+// the command's output, and returns.
 func TestOutputHeldOpenFailsTheCleanupAtItsDeadline(t *testing.T) {
 	if testing.Short() {
 		t.Skip("waits for the five-second cleanup deadline")
 	}
 	owner := &OwnedExecutor{Platform: platformAtBoundary("")}
-	// The sleep leaves the group, job control giving it its own, and ends
-	// on its own soon after the deadline.
-	cmd := exec.CommandContext(t.Context(), "sh", "-c", "(set -m; sleep 7 & ) ; true")
+	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestHeldOutputHelper$")
+	cmd.Env = append(os.Environ(), "ITOS_CC_HELD_OUTPUT=start")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	r, err := owner.Command(t.Context(), cmd)
 	var failed *CleanupFailed
-	if !errors.As(err, &failed) || failed.ProcessGroup != cmd.Process.Pid || failed.Command != "sh -c (set -m; sleep 7 & ) ; true" {
+	if !errors.As(err, &failed) || failed.ProcessGroup != cmd.Process.Pid || failed.Command != strings.Join(cmd.Args, " ") {
 		t.Fatalf("result %+v, %v; want CleanupFailed naming the group and the command", r, err)
+	}
+}
+
+// TestHeldOutputHelper is the command of the test above: started, it starts
+// itself again in a group of its own with its output, and returns; started
+// again, it holds that output for a while past the deadline, then ends.
+func TestHeldOutputHelper(t *testing.T) {
+	switch os.Getenv("ITOS_CC_HELD_OUTPUT") {
+	case "start":
+		hold := exec.Command(os.Args[0], "-test.run=^TestHeldOutputHelper$")
+		hold.Env = append(os.Environ(), "ITOS_CC_HELD_OUTPUT=hold")
+		hold.Stdout = os.Stdout
+		hold.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		if err := hold.Start(); err != nil {
+			t.Fatal(err)
+		}
+	case "hold":
+		time.Sleep(7 * time.Second)
 	}
 }
