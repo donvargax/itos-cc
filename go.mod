@@ -6,7 +6,7 @@ toolchain go1.27.2
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.10.3
-	github.com/cucumber/gherkin/go/v42 v42.0.0
+	github.com/cucumber/gherkin/go/v42 v42.0.1
 	github.com/cucumber/godog v0.16.0
 	github.com/cucumber/messages/go/v34 v34.2.0
 	github.com/donvargax/kong v1.16.2-itos.1
