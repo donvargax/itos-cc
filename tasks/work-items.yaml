@@ -4010,3 +4010,17 @@ items:
       graph.TestsImporting and parseDependencies (graph/tests.go:30). Lift them into an engine
       (lang-side or its own) used by both. Checks: go test ./internal/importgraph ./graph, the MUT
       reach scenarios.
+  - id: slices-scenario-registration
+    title: Generate scenario registration and the in-process driver's adapters
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-import-engine]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R12-R13): features/steps.go's Converted (344), InProcess (396) and step
+      registration (661-670), features/deferred.go's Deferred, and the in-process driver's adapters
+      literal (cmd/itos-cc/scenarios_test.go:489-545, run_fakes_test.go:37) are hand lists every
+      feature edits. Generate them with T-146's tool, or declare them per feature file, so a new
+      feature's steps need no edit to a shared file. .feature files stay in features/. Checks:
+      features TestFeatureSelection*, itos tests smoke check scenario, TestScenarios per area.
