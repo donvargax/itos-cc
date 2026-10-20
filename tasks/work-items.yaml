@@ -2784,7 +2784,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, slices-dry, slices-scrap, slices-settings-split, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
