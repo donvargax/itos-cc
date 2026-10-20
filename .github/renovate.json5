@@ -9,10 +9,28 @@
 
 	// itos moves with its config pin and workflow action, not through Renovate.
 	ignoreDeps: ["donvargax/itos"],
-	automergeType: "branch",
+
+	// Every update lands through its own pull request. Neither workflow runs on a push to a
+	// renovate/ branch, only on a pull request and on main, so a branch alone never gets a check.
+	// GitHub's rebase merge then puts the branch's commit on main with its message as Renovate wrote
+	// it. The default strategy, auto, takes the repository's first allowed method, a squash, and
+	// GitHub appends a Co-authored-by paragraph to a squash's message, which pushes the Task footer
+	// out of the last paragraph, the only one git reads trailers from (T-142). GitHub offers no
+	// fast-forward, for which Renovate falls back to auto, and merge-commit would land a merge
+	// commit with no Conventional Commits header beside the update.
+	// Both stay in this file only until donvargax/renovate-config#6 is released and the preset pin
+	// above moves past v1.3.0; then they come out of it.
+	automergeType: "pr",
+	automergeStrategy: "rebase",
 	automergeSchedule: ["at any time"],
 	semanticCommits: "enabled",
-	commitBody: "Renovate's update, landed on {{{baseBranch}}} once CI passed on its branch.\n\n{{#each upgrades}}{{#unless @first}}\n{{/unless}}- {{{depName}}} {{#if (equals updateType 'digest')}}{{{currentDigestShort}}} to {{{newDigestShort}}}{{else}}{{{currentVersion}}} to {{{newVersion}}}{{#if newDigestShort}} ({{{newDigestShort}}}){{/if}}{{/if}}{{/each}}",
+	// itos refuses a build or ci commit without a Task footer, so every update commit names T-131,
+	// the task that gave them the footer; a closed task stays in the ledger, so the footer keeps
+	// validating. It is set here rather than in a packageRule: commitTrailers is a mergeable list,
+	// and Renovate applies the package rules to an update more than once, so a rule's trailer was
+	// appended once per pass and every message held it twice (T-142).
+	commitTrailers: ["Task: T-131"],
+	commitBody: "Renovate's update, landed on {{{baseBranch}}} once CI passed on its pull request.\n\n{{#each upgrades}}{{#unless @first}}\n{{/unless}}- {{{depName}}} {{#if (equals updateType 'digest')}}{{{currentDigestShort}}} to {{{newDigestShort}}}{{else}}{{{currentVersion}}} to {{{newVersion}}}{{#if newDigestShort}} ({{{newDigestShort}}}){{/if}}{{/if}}{{/each}}",
 
 	packageRules: [
 		{
@@ -28,14 +46,6 @@
 		{
 			matchManagers: ["github-actions"],
 			pinDigests: true,
-		},
-		// itos refuses a build or ci commit without a Task footer, so every update commit names T-131,
-		// the task that gave them the footer; a closed task stays in the ledger, so the footer keeps
-		// validating. main is itos-cc's only base branch, so the rule matches every package rather
-		// than a base branch, which Renovate's validator accepts only beside baseBranchPatterns.
-		{
-			matchPackageNames: ["*"],
-			commitTrailers: ["Task: T-131"],
 		},
 		{
 			// One dependency's updates share a branch name on every base branch, so they move together.

@@ -1055,12 +1055,16 @@ lets it watch a second workflow, so the coordinator watches each `cd.yml` run wi
 `gh run watch <id>` in the background and hands a red one to a fresh agent as repair work, ahead
 of new items.
 
-Renovate lands its updates on `main` by branch automerge. Neither workflow runs on a push to its
-`renovate/` branch, so the branch stays pending until Renovate opens a pull request for it (after
-`prNotPendingHours`, 25 hours by default). Both workflows then run on that pull request, and
-Renovate merges only once every check on its head is green, `cd.yml`'s Windows and macOS jobs
-included. Each update therefore waits at least 25 hours beyond the 7-day release wait before it
-gets any CI.
+Renovate lands each update on `main` through a pull request of its own
+([`.github/renovate.json5`](.github/renovate.json5)). Neither workflow runs on a push to a
+`renovate/` branch, so Renovate opens the pull request as soon as it makes the branch, once the
+release's 7-day wait is over, and both workflows run on it. When `main` moves on, Renovate rebases
+the branch and the checks run again. Renovate merges the pull request once every check on its head
+is green, `cd.yml`'s Windows and macOS jobs included, with GitHub's rebase merge, so the commit
+lands on `main` with the message Renovate wrote and its `Task:` footer alone in the last
+paragraph. The repository does not allow GitHub's auto-merge, so Renovate's own run does the merge:
+an update lands at the first run of the Renovate workflow in donvargax/github-admin after its
+checks pass, hourly on Mondays and every four hours the rest of the week.
 
 No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
 sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, is disabled
