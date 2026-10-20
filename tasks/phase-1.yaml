@@ -5410,3 +5410,26 @@
   done_when:
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-145
+  type: refactor
+  title: Move units into internal/slices/units, declaring its command for assembly
+  why: >
+    T-86's first slice move (ADR-0051), units being the cheapest and least shared: internal/units
+    (CLI, Contract, Query, Handler, Run) uses only the selection Tree and lang Surroundings ports
+    and the exclude setting. Move it to internal/slices/units, its .metrics/mutate snapshots and
+    itos-cc.yaml exceptions with it if it has any (ADR-0037). The slice exports a declaration cmd
+    can assemble from: its command name, help line, a constructor giving a fresh CLI value per run,
+    and the consumer-owned Ports interface it needs, which cmd's adapters satisfy through methods
+    (the coordinator's call in ADR-0051). Assemble it in cmd by hand this once, through the kong
+    fork's DynamicCommand, keeping the top-level help order and the unknown-command guess's tie
+    order (DynamicCommand appends after struct fields, kong.go:142-160, so the order must be
+    checked); the generator that replaces the hand step is the next task. Its steps stay in
+    features/ (units.go, units_routes.go). Update tools/testdata/architecture/check_test.go's
+    package lists, .golangci.yml's globs where they name internal/units, docs/go.md's package list,
+    docs/architecture.md and README's layout table. Help, errors, exit codes and lazy config
+    unchanged. Depends on T-143 (generic dispatch) and T-144 (the sibling rule).
+  done_when:
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract)$' -scenarios='^@ID-(UNIT|CLI)-'
+      timeout: 600
+    - run: tools/bin/architecture-check
+      timeout: 900
