@@ -4024,3 +4024,17 @@ items:
       feature edits. Generate them with T-146's tool, or declare them per feature file, so a new
       feature's steps need no edit to a shared file. .feature files stay in features/. Checks:
       features TestFeatureSelection*, itos tests smoke check scenario, TestScenarios per area.
+  - id: slices-close
+    title: Record slice ownership, prove the refactor once and close T-86
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-scenario-registration]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R14): a path-ownership map per slice in docs (engines, generated files and
+      assembly need a task of their own), a check that a fixture new command touches only its slice
+      and generated files, one tools/bin/refactor-proof of the pre-T-86 binary against the final one
+      (every command's help, errors and exit codes), then T-86's umbrella done_when replaced and
+      T-86 closed. After it, the person's trial of several implementing agents in parallel, each in
+      its own worktree.
