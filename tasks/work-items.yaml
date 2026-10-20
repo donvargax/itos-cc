@@ -3916,7 +3916,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-145]
     kind: task
   - id: slices-dry
     title: Move dry into internal/slices/dry, its fingerprinting into lang
