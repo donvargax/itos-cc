@@ -3932,6 +3932,9 @@ items:
       also uses, move into internal/lang first, as an engine API. Update the domain, domain-io and
       coverage-fakes globs in .golangci.yml and tools/bin/domain-coverage's reading of them. Checks:
       -scenarios '^@ID-(DRY|SNAP)-' both drivers, domain-coverage, architecture-check.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-scrap
     title: Move scrap into internal/slices/scrap
     phase: 1
@@ -3943,6 +3946,9 @@ items:
       T-86 (ADR-0051, R6): internal/scrap and internal/teststructure into internal/slices/scrap,
       removing parserOf's eager kong.Bind of its handler (dispatch.go:73) if T-143 left it. Checks:
       -scenarios '^@ID-SCRAP-' both drivers, domain-coverage, architecture-check.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-settings-split
     title: Take the exclude setting out of mutation's Config
     phase: 1
@@ -3956,6 +3962,9 @@ items:
       exclusionOf). Move the exclusion setting to a selection-owned value config.Reader also gives,
       so crap and mutation can become slices without one reading the other's model. Checks:
       -scenarios '^@ID-(SEL|CLI)-', go test ./config ./internal/selection.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-crap
     title: Move crap into internal/slices/crap, its coverage command off mutation's executor
     phase: 1
@@ -3969,6 +3978,9 @@ items:
       runs through worktrees.OwnedExecutor (adapters.go:100, cmd/itos-cc/coverage.go:22), a mutation
       adapter: move process ownership's executor into the coverage engine or its own engine. Checks:
       -scenarios '^@ID-(CRAP|COV|CPLX|SEL)-', go test ./cmd/itos-cc -run 'TestCrap|TestCoverage'.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-version
     title: Make version a slice, and settle the unused completion and version packages
     phase: 1
@@ -3982,6 +3994,9 @@ items:
       @wip, idea shell-completion) and internal/version, unimported while .goreleaser.yaml:28 stamps
       it and cmd reads main.version (main.go:21), are decided here: wire or remove, checking the
       released binary's version output first. Check: -scenarios '^@ID-CLI-'.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-mutation
     title: Move mutation into internal/slices/mutation, in pieces
     phase: 1
@@ -3998,6 +4013,9 @@ items:
       of mutants inverted or moved; (e) cmd's ~11k lines of mutation integration tests stay in cmd
       as assembly tests mutation owns by path (ADR-0051). Each with -scenarios '^@ID-(MUT|SNAP)-'
       (or narrower) and the moved packages' tests.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-import-engine
     title: Lift import resolution out of graph into an engine
     phase: 1
@@ -4010,6 +4028,9 @@ items:
       graph.TestsImporting and parseDependencies (graph/tests.go:30). Lift them into an engine
       (lang-side or its own) used by both. Checks: go test ./internal/importgraph ./graph, the MUT
       reach scenarios.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-scenario-registration
     title: Generate scenario registration and the in-process driver's adapters
     phase: 1
@@ -4024,6 +4045,9 @@ items:
       feature edits. Generate them with T-146's tool, or declare them per feature file, so a new
       feature's steps need no edit to a shared file. .feature files stay in features/. Checks:
       features TestFeatureSelection*, itos tests smoke check scenario, TestScenarios per area.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
   - id: slices-close
     title: Record slice ownership, prove the refactor once and close T-86
     phase: 1
@@ -4038,3 +4062,6 @@ items:
       (every command's help, errors and exit codes), then T-86's umbrella done_when replaced and
       T-86 closed. After it, the person's trial of several implementing agents in parallel, each in
       its own worktree.
+
+      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
+      is ADR-0051.
