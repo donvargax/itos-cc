@@ -3873,7 +3873,7 @@ items:
   - id: T-142
     title: Land Renovate's updates with their Task footer in the commit's last paragraph
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
