@@ -5433,3 +5433,21 @@
       timeout: 600
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-146
+  type: build
+  title: Generate cmd's command assembly from each slice's declaration, checked current in CI
+  why: >
+    T-86 (ADR-0051): an ordinary new command must need no hand edit outside its slice. A stdlib tool
+    under tools/ (go/parser and go/format, no new dependency; go run or a tools/bin wrapper as the
+    repository's other tools are) scans internal/slices/*/ for the declaration T-145 introduced and
+    writes a committed cmd/itos-cc/commands_gen.go: the slices' imports sorted, their DynamicCommand
+    registrations in name order so help and the unknown-command guess keep their order, and the
+    binding of cmd's adapters to each slice's Ports. units, the only slice by then, moves from
+    T-145's hand assembly to the generated file. Add an itos.yaml ci.steps static step that
+    regenerates into a temporary file and fails, naming the file, when the committed one differs, at
+    the cheapest tier that catches it. The tool's own test adds a fixture slice in a temporary tree
+    and expects it in the output in order, and refuses a slice with no declaration or two with one
+    name. Document how to add a command in docs/go.md's Adding a package section. Depends on T-145.
+  done_when:
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder)$' -scenarios='^@ID-(UNIT|CLI)-'
+      timeout: 600

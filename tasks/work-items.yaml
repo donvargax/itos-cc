@@ -3911,3 +3911,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-146
+    title: Generate cmd's command assembly from each slice's declaration, checked current in CI
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
