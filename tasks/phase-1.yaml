@@ -5393,3 +5393,20 @@
   done_when:
     - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCallSafelyReportsABugAsAnInternalFailure)$' -scenarios='^@ID-(CLI|UNIT|DRY|SCRAP|CRAP|MUT)-'
       timeout: 600
+- id: T-144
+  type: ci
+  title: Refuse a slice under internal/slices importing another slice
+  why: >
+    T-86 (ADR-0051): no package under internal/slices/X imports one under internal/slices/Y.
+    depguard cannot say not a sibling without a rule per slice, since its deny list is a prefix and
+    would refuse a slice's own subpackages too. Add to tools/bin/architecture-check a check over go
+    list's imports (stdlib tools only, as its linked check does) that refuses such an import, naming
+    both packages, while accepting a slice importing its own subpackages, any engine, and
+    cmd/itos-cc importing every slice. Its fixtures in tools/testdata/architecture accept a slice's
+    own-subpackage import and cmd's, and refuse a sibling import, the refusal's message checked.
+    internal/slices does not exist yet, so the check lands green on today's tree; it must not refuse
+    anything there. Describe the rule beside the other arrows in docs/go.md's boundary list, naming
+    ADR-0051.
+  done_when:
+    - run: tools/bin/architecture-check
+      timeout: 900

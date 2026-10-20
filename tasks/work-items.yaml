@@ -3897,3 +3897,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-144
+    title: Refuse a slice under internal/slices importing another slice
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
