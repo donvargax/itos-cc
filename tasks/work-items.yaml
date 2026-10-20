@@ -16,6 +16,7 @@ queue:
   - T-145
   - T-146
   - slices-dry
+  - slices-scrap
   - T-86
   - slice-13
   - worker-copies-skip-ignored
