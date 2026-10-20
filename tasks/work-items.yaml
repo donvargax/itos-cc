@@ -3889,3 +3889,14 @@ items:
       Task footer). Filed donvargax/renovate-config#6 to put both in the preset; once a release has
       them and Renovate moves the preset pin past v1.3.0, remove the two lines and their comment
       here.
+  - id: panic-names-location
+    title: A panic report says where in itos-cc it happened
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From slice-12 (issue #40): the panic handler (cmd/itos-cc/dispatch.go, cli.go) prints the
+      runtime error and asks for a report but names no file or function, so a reporter cannot say
+      where the bug is. Kept out of slice-12, which fixes only the --since index.
