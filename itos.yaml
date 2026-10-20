@@ -52,9 +52,13 @@ commits:
       validate_for: all
       read_at: commit
       in_place_of: { Task: [test, docs, chore] }
-  # Where verification starts: this commit and the ones before it, written
-  # before itos, are never judged.
-  since: "313ea4a7b6fc7d289130df5bd0aa5fa495c28924"
+  # Where verification starts: this commit and the ones before it are never
+  # judged. It was 313ea4a, the last commit written before itos. It moved to
+  # dd4cd26 (T-142, q-71) to get past three published Renovate commits,
+  # 6548192 (#52), cdd48bc (#59) and dd4cd26 (#60): GitHub's squash merge
+  # appended a Co-authored-by paragraph to each, which pushed its Task footer
+  # out of the last paragraph, the one git reads trailers from.
+  since: "dd4cd26bf5f3c28edb3c058a05a90a728a7ecb83"
   # Which paths each type may touch. docs needs no Task footer, so it may
   # touch only Markdown, docs/ and itos's data in tasks/; the rest, anything.
   scopes:
