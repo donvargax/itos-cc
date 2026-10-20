@@ -3909,7 +3909,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-143, T-144]
     kind: task
   - id: T-146
     title: Generate cmd's command assembly from each slice's declaration, checked current in CI
