@@ -3998,3 +3998,15 @@ items:
       of mutants inverted or moved; (e) cmd's ~11k lines of mutation integration tests stay in cmd
       as assembly tests mutation owns by path (ADR-0051). Each with -scenarios '^@ID-(MUT|SNAP)-'
       (or narrower) and the moved packages' tests.
+  - id: slices-import-engine
+    title: Lift import resolution out of graph into an engine
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-mutation]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R11): mutation's importgraph adapter imports serve's graph package for
+      graph.TestsImporting and parseDependencies (graph/tests.go:30). Lift them into an engine
+      (lang-side or its own) used by both. Checks: go test ./internal/importgraph ./graph, the MUT
+      reach scenarios.
