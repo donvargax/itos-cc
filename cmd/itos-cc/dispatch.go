@@ -50,16 +50,15 @@ var legacy = map[string]*command{serveCommand.name: serveCommand}
 // parserOf is the parser of c, which run builds once, as it parses one
 // command line at most (cli.Parse): itos-cc's name, its flags held by
 // internal/cli's Flags, help printed by internal/cli's Help, and the
-// bindings each Run is handed, ctx among them and scrap's handler over a's
-// ports. The handlers of crap, units and dry are not among them: they hold
-// what itos-cc.yaml excludes, which dispatch reads once the line is parsed,
-// so a file that cannot be read never breaks help. Neither is the version
-// version prints, which dispatch binds once its line is parsed. kong never
-// exits the process: help is printed before it parses, and a failure is
-// returned. A model kong refuses is the error returned, a bug run reports as
-// an internal failure.
+// bindings each Run is handed, ctx and the UI among them, and providers
+// (handlers) of every command's handler and of the version version prints.
+// kong calls a provider only when the Run it calls asks for its value, so
+// nothing a provider reads is read for help, a line kong refuses or another
+// command. kong never exits the process: help is printed before it parses,
+// and a failure is returned. A model kong refuses is the error returned, a
+// bug run reports as an internal failure.
 func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kong.Kong, error) {
-	return kong.New(c, append(cli.Flags(),
+	return kong.New(c, append(append(cli.Flags(),
 		kong.Name("itos-cc"),
 		kong.Vars{"mutation_workers": fmt.Sprint(max(1, runtime.NumCPU()/2))},
 		kong.Help(cli.Help),
@@ -70,8 +69,44 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 			return nil
 		}),
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Bind(ui, scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}),
-	)...)
+		kong.Bind(ui),
+	), handlers(ui, a)...)...)
+}
+
+// handlers are the providers of every command's handler, over a's ports,
+// and of version's build, each called under the context of the Run that asks
+// for it. The handlers of crap, units and dry hold the sources itos-cc.yaml
+// excludes, which their providers read under ctx: a file that cannot be read
+// is config.invalid, the provider's error, which kong returns unwrapped from
+// the call of that command's Run alone. scrap reads only tests, which nothing
+// excludes, so it never reads the file, and version reads nothing but the
+// build. mutation's handler is handed the flags its line gave as written
+// (cli.Provided), read from the parsed line kong binds.
+func handlers(ui *cli.UI, a adapters) []kong.Option {
+	return []kong.Option{
+		kong.BindToProvider(func(ctx context.Context) (crap.Handler, error) {
+			exclude, err := exclusionOf(ctx, a.Config)
+			return crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude}, err
+		}),
+		kong.BindToProvider(func(ctx context.Context) (dry.Handler, error) {
+			exclude, err := exclusionOf(ctx, a.Config)
+			return dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude}, err
+		}),
+		kong.BindToProvider(func() mutation.Handler {
+			return mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Exceptions: a.Exceptions, Dir: a.Dir,
+				Snapshots: a.Snapshots, SourceEdits: a.SourceEdits, TestLister: a.TestLister, Coverage: a.MutationCoverage, Metrics: a.Store,
+				Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform}
+		}),
+		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
+		kong.BindToProvider(func() scrap.Handler {
+			return scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}
+		}),
+		kong.BindToProvider(func(ctx context.Context) (units.Handler, error) {
+			exclude, err := exclusionOf(ctx, a.Config)
+			return units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude}, err
+		}),
+		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),
+	}
 }
 
 // commandNodes are the commands of parser's model, by name.
@@ -97,26 +132,25 @@ func help(parser *kong.Kong, ui *cli.UI, topics []string) int {
 }
 
 // dispatch runs args, a command's name and the rest of its command line,
-// with parser, which fills c, and returns its exit code. serve's line goes
-// whole to its legacy handler. For every other command help, -h or --help
-// before any --, wins over anything else the line holds; a line kong cannot
-// parse is a usage problem, with --json the failure's object. Once the line
-// is parsed, crap, units and dry read itos-cc.yaml under ctx for the sources
-// it excludes, bound into their handlers over a's ports, crap's measuring
-// coverage through a's Coverage: a file that cannot be read is
-// config.invalid. scrap reads only tests, which nothing excludes, so it
-// never reads the file, and version reads nothing but the build.
+// with parser, and returns its exit code. serve's line goes whole to its
+// legacy handler. A group, a command with subcommands, first admits the
+// words before its subcommand (cli.GroupLine), its help or problem winning
+// there. For every other command help, -h or --help before any --, wins
+// over anything else the line holds; a line kong cannot parse is a usage
+// problem, with --json the failure's object. Once the line is parsed, the
+// command kong selected runs (runSelected).
 //
 // No interrupt cancels the context parser binds yet: Ctrl-C ends the
 // command by the system's default action, as it ends every command until
 // one reports an interrupt (docs/CLI.md).
-func dispatch(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI, a adapters, args []string) int {
+func dispatch(ctx context.Context, parser *kong.Kong, ui *cli.UI, a adapters, args []string) int {
 	if cmd := legacy[args[0]]; cmd != nil {
 		return execute(ctx, cmd, args[1:], a)
 	}
 	line := cli.Read(args)
-	if args[0] == "mutation" {
-		admitted, help, problem := cli.GroupLine(commandNodes(parser)[args[0]], args[1:])
+	topics := []string{args[0]}
+	if group := commandNodes(parser)[args[0]]; group != nil && len(group.Children) > 0 {
+		admitted, help, problem := cli.GroupLine(group, args[1:])
 		if problem != nil {
 			return ui.Emit(line.JSON, nil, []*cli.Problem{problem})
 		}
@@ -125,62 +159,42 @@ func dispatch(ctx context.Context, parser *kong.Kong, c *commandLine, ui *cli.UI
 		}
 		args = admitted
 		line = cli.Read(args)
+		topics = append(topics, args[1])
 	}
 	if line.Help {
-		topics := []string{args[0]}
-		if args[0] == "mutation" {
-			topics = append(topics, args[1])
-		}
 		return modelHelp(parser, ui, topics...)
 	}
 	parsed, err := cli.Parse(parser, args)
 	if err != nil {
 		return ui.Emit(line.JSON, nil, []*cli.Problem{cli.ParseProblem(err, args)})
 	}
-	if args[0] == "mutation" {
-		parsed.Bind(mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Exceptions: a.Exceptions, Dir: a.Dir,
-			Snapshots: a.Snapshots, SourceEdits: a.SourceEdits, TestLister: a.TestLister, Coverage: a.MutationCoverage, Metrics: a.Store,
-			Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform},
-			mutation.Written(cli.Provided(parsed)))
-		switch parsed.Selected().Name {
-		case "run":
-			return callSafely(ui, parsed, "mutation run", c.Mutation.Run.Run, c.Mutation.Run.JSON)
-		case "list":
-			return callSafely(ui, parsed, "mutation list", c.Mutation.List.Run, c.Mutation.List.JSON)
-		case "check":
-			return callSafely(ui, parsed, "mutation check", c.Mutation.Check.Run, c.Mutation.Check.JSON)
-		case "sample":
-			return callSafely(ui, parsed, "mutation sample", c.Mutation.Sample.Run, c.Mutation.Sample.JSON)
-		case "except":
-			return callSafely(ui, parsed, "mutation except", c.Mutation.Except.Run, c.Mutation.Except.JSON)
-		}
-		// A child kong took that has no case here: a bug.
-		return ui.Fail(fmt.Errorf("no case runs the command %q", parsed.Command()), line.JSON)
+	return runSelected(ui, parsed)
+}
+
+// runSelected calls the Run of the command parsed selected, through
+// callSafely, with what it asks for bound by parserOf, and returns its exit
+// code; a failure that keeps it from being called, such as a handler's
+// config.invalid, is reported as --json, read from the parsed command, asks.
+func runSelected(ui *cli.UI, parsed *kong.Context) int {
+	node := parsed.Selected()
+	asJSON := jsonOf(parsed, node)
+	run := node.Target.Addr().MethodByName("Run")
+	if !run.IsValid() {
+		// A command kong took that has no Run: a bug.
+		return ui.Fail(fmt.Errorf("no Run runs the command %q", parsed.Command()), asJSON)
 	}
-	switch name := parsed.Selected().Name; name {
-	case "crap", "dry", "units":
-		exclude, err := exclusionOf(ctx, a.Config)
-		if err != nil {
-			return ui.Fail(err, line.JSON)
+	return callSafely(ui, parsed, node.Path(), run.Interface(), asJSON)
+}
+
+// jsonOf is whether parsed gave node, the command it selected, --json.
+func jsonOf(parsed *kong.Context, node *kong.Node) bool {
+	for _, flag := range node.Flags {
+		if flag.Name == "json" {
+			asJSON, _ := parsed.FlagValue(flag).(bool)
+			return asJSON
 		}
-		parsed.Bind(units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude},
-			dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude},
-			crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude})
-		switch name {
-		case "units":
-			return callSafely(ui, parsed, name, c.Units.Run, c.Units.JSON)
-		case "crap":
-			return callSafely(ui, parsed, name, c.Crap.Run, c.Crap.JSON)
-		}
-		return callSafely(ui, parsed, name, c.Dry.Run, c.Dry.JSON)
-	case "scrap":
-		return callSafely(ui, parsed, name, c.Scrap.Run, c.Scrap.JSON)
-	case "version":
-		parsed.Bind(cli.Build(versionString()))
-		return callSafely(ui, parsed, name, c.Version.Run, c.Version.JSON)
 	}
-	// A command kong took that has no case here: a bug.
-	return ui.Fail(fmt.Errorf("no case runs the command %q", parsed.Command()), line.JSON)
+	return false
 }
 
 // callSafely calls run, a command's Run, with kong's bindings, and returns

@@ -121,5 +121,5 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 	case route.Help != nil:
 		return help(parser, ui, route.Help)
 	}
-	return dispatch(ctx, parser, &c, ui, a, route.Line)
+	return dispatch(ctx, parser, ui, a, route.Line)
 }

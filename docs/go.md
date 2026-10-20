@@ -313,12 +313,17 @@ a `context.Context` first (decision 30); pure logic takes none.
   exits. `run` builds the parser of every command once, with fresh state, with
   `parserOf(ctx, …, a)`, and `internal/cli`'s `Dispatch` reads the line against its model;
   `dispatch` (`dispatch.go`) then hands `serve`'s line, as it was written, to `execute` and
-  `runSafely`, which run its `run(ctx, in)`, and parses every other's once, whose bindings hand
-  the context to its `Run`. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's
-  `exclude`, so `dispatch` reads the file through `a.Config` once the command line is parsed
-  and binds them then: a file that cannot be read fails that command as `config.invalid`,
-  never help or `version`, and `version`'s version (`versionString`, release stamps
-  `-X main.version`) is bound then too. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
+  `runSafely`, which run its `run(ctx, in)`, admits a group's words before its subcommand
+  (`cli.GroupLine`, for any command with subcommands), and parses every other's once, then
+  calls the `Run` of the command kong selected through one generic call (`runSelected`,
+  `Context.Call` on `parsed.Selected()`'s `Run`, `--json` read from the parsed command),
+  with no case per command. `parserOf` binds every handler, over the ports in `adapters`,
+  and `version`'s version (`versionString`, release stamps `-X main.version`) through kong
+  providers (`handlers`), which kong calls only when the `Run` it calls asks for their
+  value. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so their
+  providers read the file through `a.Config` under the `Run`'s context: a file that cannot
+  be read fails that command alone as `config.invalid`, the provider's error kong returns
+  unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
   with the cause `cli.ErrInterrupted`, for every command alike (decision 38), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`, as an
   interrupted `mutation run` writes what it finished. Nothing below
@@ -469,11 +474,13 @@ follows the same steps for a command it wrote before it had the template's desig
    several commands share keeps its classifier in cmd (`classifySelection`), since no slice may
    import another; the moved slice then needs none. internal/cli never holds one.
 4. **Routing in cmd.** In `cmd/itos-cc/dispatch.go`, add the slice's struct to `commandLine`,
-   in its name's order, its `help` tag the line the top-level help lists, its handler to
-   `parserOf`'s bindings (or, when it holds what itos-cc.yaml says, as `units`' and `dry`'s
-   do, bound in `dispatch` once the line is parsed), built over the ports in `adapters` and
-   never over an adapter itself, a port it needs added there and to `diskAdapters`,
-   and a case to `dispatch` that calls its `Run` through `callSafely`. A command still on the
+   in its name's order, its `help` tag the line the top-level help lists, and a provider of
+   its handler to `parserOf`'s (`handlers`), built over the ports in `adapters` and never
+   over an adapter itself, a port it needs added there and to `diskAdapters`; a handler that
+   holds what itos-cc.yaml says, as `units`' and `dry`'s do, reads it in its provider, which
+   kong calls only for the `Run` that asks for it. `dispatch` needs no case: it calls the
+   selected command's `Run` through `callSafely`, and admits any group's words before its
+   subcommand. A command still on the
    hand parser leaves `legacy` and the in-process driver's refusal with its old file;
    `serve` is the last (T-112). The top-level help, `help <command>` and the guess for an
    unknown command read the one model (`cli.Dispatch`). A group, such as `mutation`, moves whole, and
