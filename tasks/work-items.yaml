@@ -3943,3 +3943,16 @@ items:
       T-86 (ADR-0051, R6): internal/scrap and internal/teststructure into internal/slices/scrap,
       removing parserOf's eager kong.Bind of its handler (dispatch.go:73) if T-143 left it. Checks:
       -scenarios '^@ID-SCRAP-' both drivers, domain-coverage, architecture-check.
+  - id: slices-settings-split
+    title: Take the exclude setting out of mutation's Config
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-146]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R7): mutants.Config holds Exclude (internal/mutants/settings_reader.go:7-16),
+      which crap, dry and units read through mutation's model (cmd/itos-cc/adapters.go:127
+      exclusionOf). Move the exclusion setting to a selection-owned value config.Reader also gives,
+      so crap and mutation can become slices without one reading the other's model. Checks:
+      -scenarios '^@ID-(SEL|CLI)-', go test ./config ./internal/selection.
