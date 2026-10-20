@@ -32,7 +32,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0026: Child-process and per-test coverage use each project's own installed collectors, never downloaded](0026-child-process-and-per-test-coverage-use-each-project-s-own-installed-collectors-never-downloaded.md)
 - [ADR-0027: Python and TypeScript measure the processes tests start automatically; Kotlin opts in](0027-python-and-typescript-measure-the-processes-tests-start-automatically-kotlin-opts-in.md)
 - [ADR-0028: Non-cumulative CLI flags are accepted once](0028-non-cumulative-cli-flags-are-accepted-once.md)
-- [ADR-0029: Go code is a shared domain behind ports, separate adapters and thin slices named for their commands](0029-go-code-is-a-shared-domain-behind-ports-separate-adapters-and-thin-slices-named-for-their-commands.md)
 - [ADR-0030: context.Context carries cancellation from cmd through Handle to the ports, never a value](0030-context-context-carries-cancellation-from-cmd-through-handle-to-the-ports-never-a-value.md)
 - [ADR-0032: itos-cc stays AGPL-3.0 under the MIT template](0032-itos-cc-stays-agpl-3-0-under-the-mit-template.md)
 - [ADR-0033: The template is adopted in stages](0033-the-template-is-adopted-in-stages.md)
@@ -53,5 +52,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0048: CI is a fast Linux push gate and CD runs the full suite on every system and cuts the release](0048-ci-is-a-fast-linux-push-gate-and-cd-runs-the-full-suite-on-every-system-and-cuts-the-release.md)
 - [ADR-0049: The scenarios are the spec and the tests that kill mutants; unit tests only for domain rules](0049-the-scenarios-are-the-spec-and-the-tests-that-kill-mutants-unit-tests-only-for-domain-rules.md)
 - [ADR-0050: A domain may carry struct tags used only for serialization, and holds no encoding logic](0050-a-domain-may-carry-struct-tags-used-only-for-serialization-and-holds-no-encoding-logic.md)
+- [ADR-0051: Each command is a vertical slice under internal/slices owning its code, over shared engines, assembled by generated code](0051-each-command-is-a-vertical-slice-under-internal-slices-owning-its-code-over-shared-engines-assembled-by-generated-code.md)
 
 <!-- itos:decisions:end -->
