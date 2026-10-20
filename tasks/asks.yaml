@@ -335,3 +335,6 @@ questions:
     item: "T-142"
     question: "Main is red on three published Renovate commits (6548192 #52, cdd48bc #59, dd4cd26 #60) whose Task: T-131 footer GitHub's squash pushed out of the last paragraph with a Co-authored-by line. T-142 stops it happening again, but every push's itos verify (FROM = last green, 837d226) will keep judging those three, so no push and no itos work done can go green until something gets past them. How?"
     answer: "Move itos.yaml's commits.since from 313ea4a to dd4cd26 in T-142, with a comment naming the three commits and GitHub's squash Co-authored-by paragraph as the cause; no waiver mechanism, and itos keeps git's trailer rule."
+  - id: q-72
+    item: "T-86"
+    question: "T-86 (feature-owned vertical slices, so an ordinary feature change stays in one folder and agents can work on different features at once) needs ADR-0029's layout revised. Where do feature folders live, where do scenarios and steps live, how are commands assembled without central hand edits, and how is path ownership recorded? Recommended: internal/slices/<name>/ with engines left where they are; .feature files and steps stay in features/ with their hand lists generated; a stdlib generator writing a committed cmd/itos-cc/commands_gen.go, checked current in CI; ownership a docs convention first."
