@@ -19,6 +19,7 @@ queue:
   - slices-scrap
   - slices-settings-split
   - slices-crap
+  - slices-version
   - T-86
   - slice-13
   - worker-copies-skip-ignored
