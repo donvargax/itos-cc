@@ -3956,3 +3956,16 @@ items:
       exclusionOf). Move the exclusion setting to a selection-owned value config.Reader also gives,
       so crap and mutation can become slices without one reading the other's model. Checks:
       -scenarios '^@ID-(SEL|CLI)-', go test ./config ./internal/selection.
+  - id: slices-crap
+    title: Move crap into internal/slices/crap, its coverage command off mutation's executor
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-settings-split]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R8): internal/crap and internal/changerisk into internal/slices/crap; graph
+      keeps a copy of the four-line changerisk.Score (graph/build.go:452). crap's coverage command
+      runs through worktrees.OwnedExecutor (adapters.go:100, cmd/itos-cc/coverage.go:22), a mutation
+      adapter: move process ownership's executor into the coverage engine or its own engine. Checks:
+      -scenarios '^@ID-(CRAP|COV|CPLX|SEL)-', go test ./cmd/itos-cc -run 'TestCrap|TestCoverage'.
