@@ -21,6 +21,7 @@ queue:
   - slices-crap
   - slices-version
   - slices-mutation
+  - slices-import-engine
   - T-86
   - slice-13
   - worker-copies-skip-ignored
