@@ -22,6 +22,7 @@ queue:
   - slices-version
   - slices-mutation
   - slices-import-engine
+  - slices-scenario-registration
   - T-86
   - slice-13
   - worker-copies-skip-ignored
