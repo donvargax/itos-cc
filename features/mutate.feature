@@ -1760,9 +1760,10 @@ Feature: Mutation testing
     # the snapshot holds no entry for gets none. Marking the kept entries
     # stale when a whole-suite input changed then read them by the file's own
     # function order, so a missing entry shifted every later one: the run
-    # panicked (exit 70, "index out of range") when the last kept entry
-    # moved past the end, and otherwise marked the wrong function stale, a
-    # function it had just judged among them. Each kept entry is marked by
+    # panicked ("index out of range") when the last kept entry moved past
+    # the end, and otherwise marked the wrong function stale, a function it
+    # had just judged among them. Issue #40's releases exited 70 on that
+    # panic; today's panic handler exits 100, the internal-error exit. Each kept entry is marked by
     # the function it belongs to. The first function's missing entry is
     # written as raw snapshot JSON, which no run of today's product leaves
     # behind on its own; issue #40's came from an older itos-cc's snapshot.
@@ -1772,7 +1773,7 @@ Feature: Mutation testing
       And a non-importing module test changed since "base"
       And only the second function changed since "base"
       When I run "itos-cc mutation run --since base --all-tests" for that file
-      Then the exit code is not 70 and the output names no panic
+      Then the exit code is not 100 and the output names no panic
       And the second function's outcomes are rerun
       And mutation check reports the third function stale and the second fresh
       And the snapshot still holds no entry for the first function

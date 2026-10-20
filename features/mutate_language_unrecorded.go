@@ -16,7 +16,7 @@ func (b *broadLanguage) unrecordedSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a Go file with three functions, its snapshot holding whole-suite outcomes for the second and third and no entry for the first$`, b.unrecordedProject)
 	sc.Step(`^a non-importing module test changed since "base"$`, func() error { return b.l.appendComment("e2e/support_test.go") })
 	sc.Step(`^only the (second|third) function changed since "base"$`, func(which string) error { return b.changeNamed(ordinalFunction(which)) })
-	sc.Step(`^the exit code is not 70 and the output names no panic$`, b.noPanic)
+	sc.Step(`^the exit code is not 100 and the output names no panic$`, b.noPanic)
 	sc.Step(`^the (second|third) function's outcomes are rerun$`, func(which string) error { return b.executed(ordinalFunction(which), "killed") })
 	sc.Step(`^mutation check reports the (second|third) function stale and the (second|third) fresh$`, func(stale, fresh string) error {
 		a, _, _, err := b.l.capture("mutation check --json " + b.l.file)
@@ -104,7 +104,7 @@ func (b *broadLanguage) noPanic() error {
 	if w.last == nil {
 		return fmt.Errorf("no run of itos-cc to read")
 	}
-	if w.exit == 70 || strings.Contains(strings.ToLower(w.stdout+w.stderr), "panic") {
+	if w.exit == 100 || strings.Contains(strings.ToLower(w.stdout+w.stderr), "panic") {
 		return fmt.Errorf("the run panicked, exit %d\n%s", w.exit, w.report())
 	}
 	return nil
