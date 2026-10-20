@@ -5355,9 +5355,15 @@
     automerge and the T-131 footer rule otherwise as they are; change nothing in other repositories
     (go-template-itos#3 tracks the template; the coordinator files any backport). Validate the file
     locally with Renovate's own config validator at 44.167.5 and report its output. The three
-    commits already on main stay as they are and are not this task's to get past; the coordinator
-    settles that with the person. The proof that it works is the next update Renovate lands: report
-    what the coordinator should look for.
+    commits already on main are published and stay as they are; the person decided (q-71) that CI
+    gets past them by moving itos.yaml's commits.since from 313ea4a to dd4cd26, in its own ci
+    commit of this task, rewriting the comment above it to say both what it was (where
+    verification starts: the commits before itos) and why it moved (the three Renovate commits,
+    6548192, cdd48bc and dd4cd26, whose Task footer GitHub's squash Co-authored-by paragraph pushed
+    out of the trailer block). No waiver mechanism, and itos keeps git's trailer rule. Push that
+    commit first, alone, so main turns green before the Renovate change. The proof that the
+    Renovate change works is the next update Renovate lands: report what the coordinator should
+    look for.
   done_when:
     - run: npx --yes --package renovate@44.167.5 renovate-config-validator --strict .github/renovate.json5
       timeout: 600
