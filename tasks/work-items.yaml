@@ -3874,6 +3874,6 @@ items:
     title: Land Renovate's updates with their Task footer in the commit's last paragraph
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

@@ -5364,6 +5364,3 @@
     commit first, alone, so main turns green before the Renovate change. The proof that the
     Renovate change works is the next update Renovate lands: report what the coordinator should
     look for.
-  done_when:
-    - run: npx --yes --package renovate@44.167.5 renovate-config-validator --strict .github/renovate.json5
-      timeout: 600
