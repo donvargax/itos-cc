@@ -3982,3 +3982,19 @@ items:
       @wip, idea shell-completion) and internal/version, unimported while .goreleaser.yaml:28 stamps
       it and cmd reads main.version (main.go:21), are decided here: wire or remove, checking the
       released binary's version output first. Check: -scenarios '^@ID-CLI-'.
+  - id: slices-mutation
+    title: Move mutation into internal/slices/mutation, in pieces
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-crap]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R10a-e), split into tasks when reached: (a) internal/mutation and
+      internal/mutants (+porttest) into internal/slices/mutation keeping domain, port and porttest
+      subpackages; (b) its adapters worktrees, testtools, testinputs, githistory, freshenv,
+      importgraph; (c) the mutation snapshot codec out of internal/metricsdir and the exceptions
+      codec out of config into mutation adapters; (d) project/since.go's and coverage/run.go's uses
+      of mutants inverted or moved; (e) cmd's ~11k lines of mutation integration tests stay in cmd
+      as assembly tests mutation owns by path (ADR-0051). Each with -scenarios '^@ID-(MUT|SNAP)-'
+      (or narrower) and the moved packages' tests.
