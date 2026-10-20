@@ -3932,3 +3932,14 @@ items:
       also uses, move into internal/lang first, as an engine API. Update the domain, domain-io and
       coverage-fakes globs in .golangci.yml and tools/bin/domain-coverage's reading of them. Checks:
       -scenarios '^@ID-(DRY|SNAP)-' both drivers, domain-coverage, architecture-check.
+  - id: slices-scrap
+    title: Move scrap into internal/slices/scrap
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slices-dry]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R6): internal/scrap and internal/teststructure into internal/slices/scrap,
+      removing parserOf's eager kong.Bind of its handler (dispatch.go:73) if T-143 left it. Checks:
+      -scenarios '^@ID-SCRAP-' both drivers, domain-coverage, architecture-check.
