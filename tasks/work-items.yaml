@@ -3876,3 +3876,16 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: renovate-preset-merge
+    title: Drop the local Renovate merge settings once the preset carries them
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-142 sets automergeType pr and automergeStrategy rebase in .github/renovate.json5 because the
+      shared preset sets no merge method (GitHub squashed, and its Co-authored-by paragraph hid the
+      Task footer). Filed donvargax/renovate-config#6 to put both in the preset; once a release has
+      them and Renovate moves the preset pin past v1.3.0, remove the two lines and their comment
+      here.
