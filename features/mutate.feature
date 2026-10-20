@@ -1766,7 +1766,7 @@ Feature: Mutation testing
     # the function it belongs to. The first function's missing entry is
     # written as raw snapshot JSON, which no run of today's product leaves
     # behind on its own; issue #40's came from an older itos-cc's snapshot.
-    @wip @slice-12 @ID-MUT-260
+    @slice-12 @ID-MUT-260
     Scenario: A run since a commit marks the unjudged function stale, past a function the snapshot never recorded
       Given a Go file with three functions, its snapshot holding whole-suite outcomes for the second and third and no entry for the first
       And a non-importing module test changed since "base"
@@ -1777,7 +1777,7 @@ Feature: Mutation testing
       And mutation check reports the third function stale and the second fresh
       And the snapshot still holds no entry for the first function
 
-    @wip @slice-12 @ID-MUT-261
+    @slice-12 @ID-MUT-261
     Scenario: A run since a commit leaves the function it judged fresh, past a function the snapshot never recorded
       Given a Go file with three functions, its snapshot holding whole-suite outcomes for the second and third and no entry for the first
       And a non-importing module test changed since "base"
