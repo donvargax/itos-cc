@@ -13,6 +13,7 @@ phases:
 queue:
   - T-143
   - T-144
+  - T-145
   - T-86
   - slice-13
   - worker-copies-skip-ignored
