@@ -3890,3 +3890,10 @@ items:
       From slice-12 (issue #40): the panic handler (cmd/itos-cc/dispatch.go, cli.go) prints the
       runtime error and asks for a report but names no file or function, so a reporter cannot say
       where the bug is. Kept out of slice-12, which fixes only the --since index.
+  - id: T-143
+    title: Dispatch any selected command through one generic call, with no per-command case
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

@@ -5371,3 +5371,25 @@
     commit first, alone, so main turns green before the Renovate change. The proof that the
     Renovate change works is the next update Renovate lands: report what the coordinator should
     look for.
+- id: T-143
+  type: refactor
+  title: Dispatch any selected command through one generic call, with no per-command case
+  why: >
+    First task of T-86 (ADR-0051), in cmd only, no layout change. cmd/itos-cc/dispatch.go hard-codes
+    the mutation group's admission and help (about lines 118-135), binds a handler and has a switch
+    case per mutation child (141-158), binds lazy config for crap, dry and units by name (161-175)
+    and has a case per command calling callSafely with c.X.Run and c.X.JSON (170-180); parserOf
+    binds scrap's handler eagerly (73). Replace them with one generic path: kong's parsed.Selected()
+    node and Context.Call on its Run (the donvargax/kong fork v1.16.2-itos.1, context.go:923), group
+    admission for any node that has children rather than the name mutation, a command's --json read
+    from the parsed node rather than a field per command, and handlers and itos-cc.yaml bound
+    through BindToProvider so config is still read only when a Run needs it, never for help or
+    version, and config.invalid fails only the command that reads it (provider errors come back
+    unwrapped, callbacks.go:273-274). Help, help order, the unknown-command guess, errors, exit
+    codes, the interrupt exit and a fresh parser per run stay byte for byte; callSafely still turns
+    a panic into the internal failure. The adapters struct and diskAdapters stay as they are (later
+    tasks). No new dependency. Kong stays only in cmd and internal/cli. Byte equivalence is proven
+    once at T-86's end, not here.
+  done_when:
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCallSafelyReportsABugAsAnInternalFailure)$' -scenarios='^@ID-(CLI|UNIT|DRY|SCRAP|CRAP|MUT)-'
+      timeout: 600
