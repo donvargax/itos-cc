@@ -3907,7 +3907,7 @@ items:
     title: Dispatch any selected command through one generic call, with no per-command case
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-144

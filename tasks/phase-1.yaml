@@ -5390,9 +5390,6 @@
     a panic into the internal failure. The adapters struct and diskAdapters stay as they are (later
     tasks). No new dependency. Kong stays only in cmd and internal/cli. Byte equivalence is proven
     once at T-86's end, not here.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCallSafelyReportsABugAsAnInternalFailure)$' -scenarios='^@ID-(CLI|UNIT|DRY|SCRAP|CRAP|MUT)-'
-      timeout: 600
 - id: T-144
   type: ci
   title: Refuse a slice under internal/slices importing another slice
