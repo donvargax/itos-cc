@@ -5342,17 +5342,24 @@
     reads trailers only from a message's last paragraph (git interpret-trailers --parse on dd4cd26
     prints the Co-authored-by line alone), so itos is right to refuse them; the fix is in how
     Renovate lands a commit, not in itos. Make every Renovate update reach main with its message
-    exactly as Renovate wrote it, the Task footer alone in the last paragraph and once: set
-    automergeStrategy in .github/renovate.json5 to a GitHub merge method that keeps the branch's
-    commit and its message, rebase unless the Renovate docs at the runner's pinned version
-    (44.167.5, donvargax/github-admin's renovate.yml) show a better one, and say why in the comment
-    beside it. Find why Task: T-131 appears twice (go-template-itos's file notes that commitTrailers
-    adds up rather than replaces when configs merge) and make it appear once. Check README's CI
-    section against what happened: PRs #59 and #60 were opened at 04:33 on 2026-10-20, as their
-    branches were made, not after prNotPendingHours, and merged by Renovate through the pull
-    request; correct the text to what Renovate does, from its docs and the github-admin run logs
-    (run 39370032256 opened them, 39423985675 merged #60). Keep the shared preset, the branch
-    automerge and the T-131 footer rule otherwise as they are; change nothing in other repositories
+    exactly as Renovate wrote it, the Task footer alone in the last paragraph and once. ci.yml and
+    cd.yml run only on pull requests and pushes to main, so a renovate/ branch gets no checks
+    until a pull request exists, and branch automerge always ended in one; the person chose
+    (2026-10-20) to make pull requests the normal path rather than run CI on renovate/ pushes:
+    automergeType "pr", set explicitly, in .github/renovate.json5 and automergeStrategy "rebase",
+    unless the Renovate docs at the runner's pinned
+    version (44.167.5, donvargax/github-admin's renovate.yml) show a merge method that keeps the
+    commit and its message better, with a comment saying why. The repository has allow_auto_merge
+    off: say from the docs how platformAutomerge behaves then and when an update lands. Both
+    lines stay local only until donvargax/renovate-config#6 is released and the preset pin moves
+    past v1.3.0; then they come out of this file, and the comment says so. Find why Task: T-131 appears twice (go-template-itos's file notes that
+    commitTrailers adds up rather than replaces when configs merge) and make it appear once.
+    Rewrite README's CI section for the pull-request path (a pull request per update, both
+    workflows on it, rebase-merged once every check is green), from Renovate's docs and the
+    github-admin run logs: branch automerge opened #59 and #60 after prNotPendingHours (last
+    rebased 2026-10-19 01:46 by run 39186372802, opened 2026-10-20 04:33 by run 39370032256) and
+    merged them through the pull request (39394630179, 39423985675). Keep the shared preset and the
+    T-131 footer rule otherwise as they are; change nothing in other repositories
     (go-template-itos#3 tracks the template; the coordinator files any backport). Validate the file
     locally with Renovate's own config validator at 44.167.5 and report its output. The three
     commits already on main are published and stay as they are; the person decided (q-71) that CI
