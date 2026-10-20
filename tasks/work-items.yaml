@@ -3969,3 +3969,16 @@ items:
       runs through worktrees.OwnedExecutor (adapters.go:100, cmd/itos-cc/coverage.go:22), a mutation
       adapter: move process ownership's executor into the coverage engine or its own engine. Checks:
       -scenarios '^@ID-(CRAP|COV|CPLX|SEL)-', go test ./cmd/itos-cc -run 'TestCrap|TestCoverage'.
+  - id: slices-version
+    title: Make version a slice, and settle the unused completion and version packages
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-146]
+    kind: idea
+    why: >
+      T-86 (ADR-0051, R9): version (internal/cli/version.go:8) declared and assembled like the other
+      commands. The unused cli.Completion (internal/cli/completion.go:13; completion.feature all
+      @wip, idea shell-completion) and internal/version, unimported while .goreleaser.yaml:28 stamps
+      it and cmd reads main.version (main.go:21), are decided here: wire or remove, checking the
+      released binary's version output first. Check: -scenarios '^@ID-CLI-'.
