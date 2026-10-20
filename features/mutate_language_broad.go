@@ -103,6 +103,8 @@ func (l *languageMutation) broadSteps(sc *godog.ScenarioContext) {
 	})
 	sc.Step(`^that outcome is stale$`, func() error { return b.stale("Low", "tagged_test.go", nil) })
 	sc.Step(`^adding a _test\.go file only beneath a nested Go module leaves that outcome fresh$`, b.nested)
+
+	b.unrecordedSteps(sc)
 }
 func (b *broadLanguage) goProject(two bool) error {
 	l, w := b.l, b.l.m.w
