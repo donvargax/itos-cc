@@ -1755,6 +1755,38 @@ Feature: Mutation testing
       Then that outcome is stale
       But adding a _test.go file only beneath a nested Go module leaves that outcome fresh
 
+    # slice-12, issue #40: a run with --since keeps what still holds of the
+    # snapshot for the functions it does not judge, and an unjudged function
+    # the snapshot holds no entry for gets none. Marking the kept entries
+    # stale when a whole-suite input changed then read them by the file's own
+    # function order, so a missing entry shifted every later one: the run
+    # panicked (exit 70, "index out of range") when the last kept entry
+    # moved past the end, and otherwise marked the wrong function stale, a
+    # function it had just judged among them. Each kept entry is marked by
+    # the function it belongs to. The first function's missing entry is
+    # written as raw snapshot JSON, which no run of today's product leaves
+    # behind on its own; issue #40's came from an older itos-cc's snapshot.
+    @wip @slice-12 @ID-MUT-260
+    Scenario: A run since a commit marks the unjudged function stale, past a function the snapshot never recorded
+      Given a Go file with three functions, its snapshot holding whole-suite outcomes for the second and third and no entry for the first
+      And a non-importing module test changed since "base"
+      And only the second function changed since "base"
+      When I run "itos-cc mutation run --since base --all-tests" for that file
+      Then the exit code is not 70 and the output names no panic
+      And the second function's outcomes are rerun
+      And mutation check reports the third function stale and the second fresh
+      And the snapshot still holds no entry for the first function
+
+    @wip @slice-12 @ID-MUT-261
+    Scenario: A run since a commit leaves the function it judged fresh, past a function the snapshot never recorded
+      Given a Go file with three functions, its snapshot holding whole-suite outcomes for the second and third and no entry for the first
+      And a non-importing module test changed since "base"
+      And only the third function changed since "base"
+      When I run "itos-cc mutation run --since base --all-tests" for that file
+      Then the third function's outcomes are rerun
+      And mutation check reports the second function stale and the third fresh
+      And the snapshot still holds no entry for the first function
+
   # Language parity with Go (the person, 2026-10-10: implement what exists
   # only for Go for TypeScript, Python and Kotlin too). These three slices
   # need no new toolchain in CI: their fixtures use --test-command scripts,
