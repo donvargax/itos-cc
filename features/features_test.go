@@ -89,13 +89,6 @@ import (
 var scenarios = flag.String("scenarios", "", "run only the live scenarios with a tag this regular expression matches")
 var scenarioReport = flag.String("scenario-report", "", "also write Godog cucumber JSON to this file (test harness only)")
 
-// versionSymbol and commitSymbol are the variables the build stamps
-// (-ldflags -X).
-const (
-	versionSymbol = "github.com/donvargax/itos-cc/internal/version.stamp"
-	commitSymbol  = "github.com/donvargax/itos-cc/internal/version.commit"
-)
-
 func TestFeatures(t *testing.T) {
 	if !optedIn(os.Getenv) {
 		t.Log(notOptedIn)

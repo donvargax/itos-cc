@@ -22,6 +22,14 @@ import (
 // with -trimpath, which changes nothing a build records of its version and
 // lets it reuse what the harness's own build compiled.
 
+// versionSymbol and commitSymbol are the variables the build stamps
+// (-ldflags -X): internal/version's, the one source of the version the
+// binary reports, as release.yml and .goreleaser.yaml stamp them.
+const (
+	versionSymbol = "github.com/donvargax/itos-cc/internal/version.stamp"
+	commitSymbol  = "github.com/donvargax/itos-cc/internal/version.commit"
+)
+
 // Build builds itos-cc from the module at b.root in dir as how says.
 func (b binary) Build(dir string, how Build) (Built, error) {
 	bin := filepath.Join(dir, "bin", "itos-cc")
@@ -30,9 +38,10 @@ func (b binary) Build(dir string, how Build) (Built, error) {
 	}
 	switch how.How {
 	case "release":
-		// A release stamps main.version; its build reads no git.
+		// A release stamps internal/version's stamp (versionSymbol), as
+		// release.yml does; its build reads no git.
 		err := goCommand(b.root, nil, "build", "-trimpath", "-buildvcs=false",
-			"-ldflags", "-X main.version="+how.Version, "-o", bin, "./cmd/itos-cc")
+			"-ldflags", "-X "+versionSymbol+"="+how.Version, "-o", bin, "./cmd/itos-cc")
 		return Built{Binary: bin}, err
 	case "install":
 		return b.install(dir, how.Version, filepath.Dir(bin))

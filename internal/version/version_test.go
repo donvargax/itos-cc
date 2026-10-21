@@ -5,25 +5,27 @@ import (
 	"testing"
 )
 
-// With nothing stamped, a build of a checkout, as go test's is, says the dev
-// version; the scenario harness always stamps, so this is where that is
-// shown.
+// With nothing stamped, a build that records no module version, as go
+// test's is, says dev, the word itos-cc has always printed for it; the
+// scenario harness always stamps, so this is where that is shown.
 func TestVersionUnstamped(t *testing.T) {
 	saved := stamp
 	t.Cleanup(func() { stamp = saved })
 	stamp = ""
-	if got := Version(); got != Dev {
-		t.Errorf("Version() with nothing stamped = %q, want %q", got, Dev)
+	if got := Version(); got != "dev" {
+		t.Errorf("Version() with nothing stamped = %q, want dev", got)
 	}
 }
 
-// The stamp, when there is one, is the version.
+// The stamp, when there is one, is the version, without a leading v (#19).
 func TestVersionStamped(t *testing.T) {
 	saved := stamp
 	t.Cleanup(func() { stamp = saved })
-	stamp = "1.4.0"
-	if got := Version(); got != "1.4.0" {
-		t.Errorf("Version() stamped 1.4.0 = %q", got)
+	for in, want := range map[string]string{"1.4.0": "1.4.0", "v1.4.0": "1.4.0"} {
+		stamp = in
+		if got := Version(); got != want {
+			t.Errorf("Version() stamped %s = %q, want %q", in, got, want)
+		}
 	}
 }
 

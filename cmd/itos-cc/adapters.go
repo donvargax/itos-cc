@@ -24,6 +24,7 @@ import (
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/internal/testtools"
+	"github.com/donvargax/itos-cc/internal/version"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/internal/worktrees"
 	"github.com/donvargax/itos-cc/project"
@@ -102,6 +103,11 @@ func (a adapters) CoverageMeasurer() coverage.Measurer { return a.Coverage }
 // Rel is path as a person reads it, from the working directory, Dir, the
 // one the UI names paths from (cli.Rel), a slice's Ports method.
 func (a adapters) Rel(path string) string { return cli.Rel(a.Dir, path) }
+
+// BuildVersion is the version this binary says it is, internal/version's,
+// the one source a release's stamp and Go's module version reach, a slice's
+// Ports method.
+func (adapters) BuildVersion() string { return version.Version() }
 
 // SelectionExclusion is the sources itos-cc.yaml's exclude names, read under
 // ctx through the selection engine's settings, a slice's Ports method: a

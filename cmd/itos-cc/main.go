@@ -7,32 +7,12 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"runtime/debug"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/cli"
 )
-
-// version is set at release time with -ldflags '-X main.version=…'. A binary
-// built by `go install …@<version>` reports the module version instead.
-var version = "dev"
-
-// versionString is the version the binary says it is: the release's stamp,
-// else the module version Go recorded (go install's, or a checkout's
-// pseudo-version), else dev. Each loses a leading v, so a release and a go
-// install of one version say it alike (#19).
-func versionString() string {
-	if version != "dev" {
-		return strings.TrimPrefix(version, "v")
-	}
-	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
-		return strings.TrimPrefix(info.Main.Version, "v")
-	}
-	return version
-}
 
 // main makes the program's one context, which every command runs under,
 // and gives run this process's standard streams and adapters. SIGINT or

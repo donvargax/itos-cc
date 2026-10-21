@@ -9,10 +9,11 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/version"
 )
 
-// These test main's own seams, which no scenario reaches: the version run
-// binds from the build, the itos-cc.yaml the adapters give failing to be
+// These test main's own seams, which no scenario reaches: the version the
+// adapters give from the build, the itos-cc.yaml they give failing to be
 // read, and a command kong runs panicking or asking for what nothing binds.
 // What a scenario reaches stays in cli.feature.
 //
@@ -38,12 +39,13 @@ import (
 //     it, and the commit its object carried is the template's: itos-cc's
 //     prints its version alone.
 
-// version and --version print the version main works out from the build,
-// as the line and as the object of that version alone.
+// version and --version print the version internal/version works out from
+// the build, which the adapters give the version slice, as the line and as
+// the object of that version alone.
 func TestRunPrintsTheVersionMainWorksOut(t *testing.T) {
 	for _, args := range [][]string{{"version"}, {"--version"}} {
 		code, stdout, stderr := runFaked(t, fakes(nil), args...)
-		if want := "itos-cc " + versionString() + "\n"; code != 0 || stdout != want || stderr != "" {
+		if want := "itos-cc " + version.Version() + "\n"; code != 0 || stdout != want || stderr != "" {
 			t.Errorf("%q: exit %d, stdout %q, stderr %q; want 0, %q and nothing", args, code, stdout, stderr, want)
 		}
 	}
@@ -52,7 +54,7 @@ func TestRunPrintsTheVersionMainWorksOut(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &object); err != nil {
 		t.Fatalf("version --json printed %q: %v", stdout, err)
 	}
-	want := map[string]any{"schema": 1.0, "ok": true, "version": versionString()}
+	want := map[string]any{"schema": 1.0, "ok": true, "version": version.Version()}
 	if code != 0 || len(object) != len(want) {
 		t.Errorf("version --json: exit %d, %v; want 0 and %v", code, object, want)
 	}

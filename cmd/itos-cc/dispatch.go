@@ -11,12 +11,11 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/mutation"
-	versioncmd "github.com/donvargax/itos-cc/internal/slices/version"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
 // reads a whole command line against: kong parses the command lines of the
-// slices and of version, internal/cli reads them and reports their failures
+// slices and of mutation, internal/cli reads them and reports their failures
 // and help as every command's, and each runs as its Run, handed the context,
 // the UI and its handler through kong's bindings. serve alone stays on its
 // legacy handler and hand parser (cli.go, serve.go), its moves deferred
@@ -31,9 +30,8 @@ import (
 // command in their names' order (byName), the order the guess for an
 // unknown command weighs a tie by, as the top-level help lists them.
 type commandLine struct {
-	Mutation mutation.CLI       `cmd:"" help:"mutation testing: do the tests notice small changes?"`
-	Serve    legacyServe        `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
-	Version  versioncmd.Version `cmd:"" help:"print the version"`
+	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
+	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
 }
 
 // legacyServe is serve's node in the model, which names it to the top-level
@@ -50,7 +48,7 @@ var legacy = map[string]*command{serveCommand.name: serveCommand}
 // most (cli.Parse): itos-cc's name, its flags held by internal/cli's Flags,
 // help printed by internal/cli's Help, and the bindings each Run is handed,
 // ctx and the UI among them, and providers (handlers, assembled) of every
-// command's handler and of the version version prints.
+// command's handler.
 // kong calls a provider only when the Run it calls asks for its value, so
 // nothing a provider reads is read for help, a line kong refuses or another
 // command. kong never exits the process: help is printed before it parses,
@@ -73,9 +71,8 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 }
 
 // handlers are the providers of the handler of every command commandLine
-// holds, over a's ports, and of version's build, each called under the
-// context of the Run that asks for it; assembled provides the declared
-// commands'. version reads nothing but the build. mutation's handler is
+// holds, over a's ports, each called under the context of the Run that asks
+// for it; assembled provides the declared commands'. mutation's handler is
 // handed the flags its line gave as written (cli.Provided), read from the
 // parsed line kong binds.
 func handlers(a adapters) []kong.Option {
@@ -86,7 +83,6 @@ func handlers(a adapters) []kong.Option {
 				Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform}
 		}),
 		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
-		kong.BindToProvider(func() versioncmd.Build { return versioncmd.Build(versionString()) }),
 	}
 }
 

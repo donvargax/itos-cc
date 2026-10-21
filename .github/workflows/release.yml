@@ -31,7 +31,7 @@ name: Release
 #   1. version: the version, from the commit this run is for; nothing more when
 #      there is none;
 #   2. build: on each platform's runner, the binary stamped with the version
-#      (-X main.version), checked, packed with LICENSE and README.md as
+#      (-X internal/version.stamp), checked, packed with LICENSE and README.md as
 #      itos-cc-<version>-<os>-<arch>.tar.gz (.zip for Windows), and handed on
 #      as an artifact;
 #   3. publish: the five archives gathered and checksums.txt written; a draft
@@ -209,7 +209,7 @@ jobs:
           MATRIX_CC: ${{ matrix.cc }}
         run: |
           [ -n "$MATRIX_CC" ] && export CC="$MATRIX_CC"
-          flags="-s -w -X main.version=$VERSION"
+          flags="-s -w -X github.com/donvargax/itos-cc/internal/version.stamp=$VERSION"
           tags=""
           # Linux and Windows link statically, so the binary needs no libc or
           # MinGW DLLs; netgo and osusergo keep glibc's NSS out of a static link.

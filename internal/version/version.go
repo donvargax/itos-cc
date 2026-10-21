@@ -10,7 +10,10 @@
 // `go install github.com/donvargax/itos-cc/cmd/itos-cc@<x>`,
 // a pseudo-version from git (0.0.0-<time>-<commit>, +dirty with changes) for
 // a go build in a checkout. One that records none (go run, go test, a build
-// with -buildvcs=false) says Dev.
+// with -buildvcs=false) says Dev. Each loses a leading v, so a release and a
+// go install of one version say it alike (#19). This package is the one
+// source of the version the binary reports: the version command prints it,
+// as cmd's adapters give it.
 //
 // The commit is stamped beside the version: a release's build sets it with
 // "-X github.com/donvargax/itos-cc/internal/version.commit=<id>",
@@ -30,14 +33,17 @@ import (
 var stamp, commit string
 
 // Dev is what a binary says it is when it was built with neither the stamp
-// nor a module version: Go's own word for it.
-const Dev = "(devel)"
+// nor a module version, the word itos-cc has always printed for it.
+const Dev = "dev"
+
+// unrecorded is the module version Go records when it knows none.
+const unrecorded = "(devel)"
 
 // Version is the version this binary says it is: the stamp, else the module
-// version Go recorded, without its leading v, else Dev.
+// version Go recorded, each without its leading v, else Dev.
 func Version() string {
 	if stamp != "" {
-		return stamp
+		return strings.TrimPrefix(stamp, "v")
 	}
 	if info, ok := debug.ReadBuildInfo(); ok {
 		return fromModule(info.Main.Version)
@@ -48,7 +54,7 @@ func Version() string {
 // fromModule reads a module version as Go records it ("v0.6.0", or "(devel)"
 // when it knows none).
 func fromModule(v string) string {
-	if v == "" || v == Dev {
+	if v == "" || v == unrecorded {
 		return Dev
 	}
 	return strings.TrimPrefix(v, "v")

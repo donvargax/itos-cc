@@ -237,8 +237,8 @@ func CountedOn(goos string) bool { return slices.Contains(countedSystems, goos) 
 
 // Build is a way of building itos-cc, as a Given names it.
 type Build struct {
-	// How is the build: "release", go build stamping main.version with
-	// Version as a release does; "install", go install of the module at
+	// How is the build: "release", go build stamping internal/version's
+	// stamp with Version as a release does; "install", go install of the module at
 	// Version from a module proxy; "checkout", go build in a git checkout
 	// one commit past its release Version; "no-git", go build in a copy of
 	// the tree with no git information.

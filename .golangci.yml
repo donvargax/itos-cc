@@ -146,7 +146,7 @@ linters:
             - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
-            - "!**/internal/version/**" # what cmd says the build is
+            - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
             - "!**/internal/slices/**" # the moved slices, held by slice-packages
           allow:
@@ -228,7 +228,7 @@ linters:
             - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
-            - "!**/internal/version/**" # what cmd says the build is
+            - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
             - "!$test"
           deny:
