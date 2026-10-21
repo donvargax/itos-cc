@@ -243,14 +243,14 @@ Scenarios: `features/scrap.feature` `@ID-SCRAP-01` Examples (`:15-20`, `flutter_
 **[Flutter]** a widget test (`testWidgets`, `pumpWidget`, `tester.tap`, `find.byType`) scenario. Steps:
 `features/scrap.go:82,119,138` regexes, `features/scrap_examples.go`, `scrap_grouping.go`.
 
-### 2.6 Import resolution and test reach (import engine; today `graph`)
+### 2.6 Import resolution and test reach (import engine, `internal/imports`)
 
 | where | what | owner after |
 |---|---|---|
-| `graph/graph.go:208-250` `index`/`resolve` switches | Dart: `package:<own name>/x.dart` → `lib/x.dart` (needs the pubspec `name:`), relative URIs, `dart:`/other packages external, conditional imports (both targets), **`export`** (barrels re-export; transitive reach must follow them), **`part`/`part of`** (a part file is its library's module: `moduleID` at `:122-133`) | **import engine** (`slices-import-engine`, "lang-side or its own") |
-| `graph/build.go:312-322` `dependencies` | per-language extras (Kotlin's top-level and refs); Dart's part-of library | import engine |
-| `graph/tests.go:46-125` `importingTests`, `:127-145` `applyingConftests` | transitive closure already applies to every non-Go language. Add `flutter_test_config.dart` (applies to test files at and below its directory, up to the package root) as conftest is applied | import engine |
-| `internal/importgraph/reach.go` | adapter; no language code | slices/mutation adapter |
+| `internal/imports/languages.go` table line, new `internal/imports/dart.go` resolver (`index`, `resolve`, `module`; T-163) | Dart: `package:<own name>/x.dart` → `lib/x.dart` (needs the pubspec `name:`), relative URIs, `dart:`/other packages external, conditional imports (both targets), **`export`** (barrels re-export; transitive reach must follow them), **`part`/`part of`** (a part file is its library's module: dart.go's `module`; `part of <name>` may need it to see the index, which `Resolution.Module` absorbs) | **import engine** (`slices-import-engine`, "lang-side or its own") |
+| `internal/imports/dart.go` `facts` (what `Of` keeps; Kotlin's are kotlin.go's) | per-language extras (Kotlin's top-level and refs); Dart's part-of library | import engine |
+| `internal/imports/dart.go` `support` (Python's conftest.py is python.go's); `reach.go` names no language | transitive closure already applies to every language not `oneHop`. Add `flutter_test_config.dart` (applies to test files at and below its directory, up to the package root) as `support`, as python.go applies conftest.py | import engine |
+| `internal/slices/mutation/adapters/importgraph/reach.go` | adapter; no language code | slices/mutation adapter |
 | `internal/mutants/porttest/reach.go:39,66,86` | the Reach fake's per-language rules (Go one hop, Python conftest) | slices/mutation porttest |
 | `features/imports.go:12` `sourceExtensions` | add `.dart` (the harness's declared adjacency) | features harness |
 

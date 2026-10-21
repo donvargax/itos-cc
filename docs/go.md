@@ -237,7 +237,15 @@ a `context.Context` first (decision 30); pure logic takes none.
   name, and its staleness from `Reach`; mutation's `importgraph` adapter calls
   `TestsImporting`. It keeps its own `stopped`, `rel` and `appendUnique` (ADR-0051's small
   duplication) and uses the `coverage` runner's `PythonTestFile`, so pytest's naming rule has
-  one copy.
+  one copy. A language is a resolver in a file of its own (`golang.go`, `python.go`,
+  `typescript.go` beside `tsconfig.go`, `kotlin.go`) plus a line in `languages.go`'s table,
+  keyed by its `lang.Spec` name (T-163): the unexported `language` says what `Of` keeps of a
+  file beyond its imports (`facts`), its `module`, an `index` over its own files of one
+  `Resolve` call whose `resolve` names an import's modules or external package and whose
+  `unimported` the modules used with no import, whether its tests reach `oneHop`, and the
+  `support` files a test loads with no import. A language with no line is `plain`: the file
+  without its extension, nothing resolves, its tests reach transitively. `Resolve`, `Reach`
+  and `Of` name no language, so adding one changes no caller.
 - `internal/slices/mutation/adapters/freshenv` implements mutation's coarse `Fresh`
   Plan/Prepare/Release contract.
   It owns immutable Git export, native mode and symlink admission, scratch materialization,
