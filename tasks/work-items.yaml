@@ -4638,8 +4638,8 @@ items:
   - id: slice-30
     title: Flutter build output, platform folders and generated Dart are not source
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
