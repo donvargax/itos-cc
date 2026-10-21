@@ -5529,7 +5529,5 @@
     directive at 1.27.1 unless the fix needs it; check internal/release/release_test.go's 1.27.2 is
     a fixture, not a pin. Renovate has no open request for it.
   done_when:
-    - run: go version
-      timeout: 60
-    - run: go vet ./internal/coverage/...
-      timeout: 300
+    - run: go tool govulncheck -test ./...
+      timeout: 600
