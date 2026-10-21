@@ -6011,3 +6011,52 @@
       timeout: 900
     - run: tools/bin/doc-caps
       timeout: 60
+- id: T-165
+  type: refactor
+  title: Give the in-process driver's adapters a provider of their own, held to bind every port on disk and in process
+  why: >
+    T-86 (ADR-0051, R13; slices-scenario-registration (b)), after (a); the shape is q-79's
+    (recommended answer below; edit this why if the person answers otherwise). The in-process
+    driver's adapters are built by hand inside memory.Run (cmd/itos-cc/scenarios_test.go): the
+    fakes, the adapters{...} literal, then the store written back and observationErr read. They
+    change per port, not per slice: a slice declaring only ports adapters already answers adds
+    nothing there, and which fake answers a port is knowledge no slice declaration holds, so no
+    generator can write that literal; what is missing is a check, since after decision 52 nothing
+    local runs diskAdapters and an unbound port shows only as "binding is missing" in the one
+    scenario reaching it. Move the binding into func (m *memory) inProcessAdapters(r features.Run,
+    stdout, stderr io.Writer) (adapters, func() error), the twin of diskAdapters, whose returned
+    function does what Run does after run today, in the same order: the store's removals and writes
+    back into the memory; the read versions bumped (as the deferred function does now, even on
+    error); measurer.observationErr returned. Run keeps its legacy refusal, calls the provider, runs
+    run, then calls the function; no fake changes. Add TestEveryPortIsBoundOnDiskAndInProcess
+    (cmd/itos-cc/adapters_test.go): over diskAdapters(io.Discard, a hold releasing nothing) and over
+    inProcessAdapters on a fresh memory's Folder(), it checks by reflection that every adapters
+    field of kind interface, func, pointer, map or slice is non-nil, naming the field and the
+    provider on failure; it checks fields, not methods, so SelectionExclusion's Selection is held
+    too; one exemption, in process only, SnapshotReaders (only serve reads it, and the in-process
+    driver refuses serve until serve's work); a new field fails it until both providers bind it; no
+    mocks, no runtime.GOOS. The coverage runner gains func Markers(language string) []string, a
+    slices.Clone of its table entry, nil for a language with none; the in-process driver's five uses
+    of its markers copy (scenarios_fakes_test.go and scenarios_coverage_trace_test.go) read
+    covrun.Markers, and the copy goes, so a new language edits one table. hostTools stays (the fake
+    host's PATH). No rule changes. Docs: docs/go.md (routing and Adding a package: a new port goes
+    into adapters, diskAdapters and inProcessAdapters, the test holding all three; the two-drivers
+    paragraph names the provider), docs/dart/touchpoints.md (the markers row goes; the runner's row
+    says the in-process driver reads it). Unchanged: every fake and what it is built over, every
+    scenario's outcome and log line, diskAdapters' bindings, the runner's grouping,
+    run_fakes_test.go's units-only fakes.
+  done_when:
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestEveryPortIsBoundOnDiskAndInProcess|TestMemory[A-Za-z]*|TestRunWithFakes[A-Za-z]*|TestListed[A-Za-z]*|TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace)$'
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(COV|CRAP|CPLX)-'
+      timeout: 900
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(UNIT|DRY|SCRAP|SNAP|SEL)-0[1-5]$'
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-MUT-(0[1-9]|1[0-9]|134)$'
+      timeout: 900
+    - run: go vet ./coverage ./cmd/itos-cc
+      timeout: 300
+    - run: tools/bin/architecture-check
+      timeout: 900
+    - run: tools/bin/doc-caps
+      timeout: 60

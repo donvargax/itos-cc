@@ -4467,3 +4467,10 @@ items:
       adapters, and its list of concrete adapters stops at testtools, testinputs and importgraph.
       T-162 touched only the importgraph sentence. Rewrite the comment to name the slice's adapters
       under internal/slices/mutation/adapters as docs/go.md does.
+  - id: T-165
+    title: Give the in-process driver's adapters a provider of their own, held to bind every port on disk and in process
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
