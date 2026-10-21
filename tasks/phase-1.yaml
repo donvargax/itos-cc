@@ -5621,3 +5621,41 @@
     with their group and proposal, and a short summary. Add one idea per proposed group of local
     tests (itos work add), naming the functions; build none of them here. The measurement runs the
     whole suite once per tier, which is this task's work, not a gate.
+- id: T-155
+  type: refactor
+  title: Move version into internal/slices/version over internal/version
+  why: >
+    T-86 (ADR-0051, R9). version is the last command outside internal/slices: cli.Version and
+    cli.Build (internal/cli/version.go) with cmd's versionString (cmd/itos-cc/main.go:19-35) over
+    main.version, bound at dispatch.go:88. Two version sources disagree today: .goreleaser.yaml:28
+    and the binary driver (features/features_test.go's versionSymbol and commitSymbol) stamp
+    internal/version.stamp and .commit, but nothing imports internal/version, so that stamp lands in
+    a package the binary never links, and a release reports its version only because Go records the
+    module version from the tag; main.version, which versionString reads first, is stamped by
+    nobody. First, before any code, record what the released v0.18.3 binary prints (gh release
+    download v0.18.3 for linux amd64 into the scratch folder: itos-cc version, itos-cc --version
+    --json) and what a go build in the checkout and a go run print, in the move commit's body. Then
+    make internal/version the one source: move version to internal/slices/version as a slice of its
+    own, in a move commit separate from the edits (cli.Version, its Contract and tests), declaring
+    Command and Ports with NewHandler(ctx, Ports) (Handler, error), the generator writing its
+    provider, and the handler reading the version from internal/version.Version() (stamp, else the
+    module version without its leading v, else the word versionString prints today), so help, the
+    text, the JSON key, exit codes and every row of CLI-03 and CLI-18 stay byte for byte; delete
+    main.version and versionString, and --version before any command stays the same command
+    (cli.Dispatch). If internal/version.Version() cannot reproduce today's output for any build
+    kind, keep today's output and adapt internal/version, saying so in the commit. cli.Completion
+    and completion.feature stay as they are: the idea shell-completion decides them. Drop version's
+    field from commandLine and its hand provider, regenerate commands_gen.go, update check_test.go,
+    .golangci.yml, docs/go.md, docs/architecture.md and README's layout table. CLI-03 and CLI-18 are
+    binary-only: run them locally with ITOS_CC_FEATURES_BINARY_DRIVER=1 (decision 52).
+  done_when:
+    - run: go test -count=1 ./internal/slices/version/... ./internal/version/... ./internal/cli/...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract)$' -scenarios='^@ID-CLI-'
+      timeout: 900
+    - run: go test -count=1 ./tools/bin/assemble
+      timeout: 300
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/architecture-check
+      timeout: 900
