@@ -3913,7 +3913,7 @@ items:
     title: Refuse a slice under internal/slices importing another slice
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-145

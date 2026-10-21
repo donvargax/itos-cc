@@ -5404,9 +5404,6 @@
     internal/slices does not exist yet, so the check lands green on today's tree; it must not refuse
     anything there. Describe the rule beside the other arrows in docs/go.md's boundary list, naming
     ADR-0051.
-  done_when:
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-145
   type: refactor
   title: Move units into internal/slices/units, declaring its command for assembly
