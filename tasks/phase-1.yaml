@@ -6185,3 +6185,58 @@
       timeout: 120
     - run: tools/bin/doc-caps
       timeout: 60
+- id: T-170
+  type: docs
+  title: Record who owns each path, slice by slice, in docs/ownership.md
+  why: >
+    T-86 (ADR-0051: which paths each slice owns is a docs convention first, engines, generated files
+    and assembly needing a task of their own; slices-close (1)), after the outside-import check, the
+    inventory refresh, the new-command test and T-165, so it can name the checks and the provider
+    that hold it; it is the brief for the person's trial of several implementing agents in parallel.
+    Write docs/ownership.md, "Who owns a path", by rule rather than by list, so a new command adds
+    nothing to it. A slice <x> owns internal/slices/<x>/** (CLI, application, domain, porttest,
+    adapters and their tests), .metrics/mutate/internal/slices/<x>/**, features/<x>.feature with the
+    Go files in features/ whose featureFile declaration names it and the helper files named for it,
+    its entry in features/smoke.yaml, its section under README's Use, its cells in docs/CLI.md's
+    tables and its docs/go.md bullets. Exceptions by name: mutation owns mutate.feature and
+    features/mutate*.go, metrics_snapshots.feature and its steps, cmd/itos-cc's mutation integration
+    tests by pattern (mutate_*_test.go, mutation_*_test.go, strict_*_test.go, except_renew_test.go,
+    orphans_test.go, uncovered_*_test.go, whole_suite_*_test.go, and each scenarios_*_test.go
+    serving only mutation's fakes, read file by file) and mutate_counted.go, ADR-0051's assembly
+    tests it owns by path; crap owns crap.feature and its steps and cmd's crap tests;
+    complexity.feature, coverage.feature and file_selection.feature, which crap's command drives,
+    are the lang, coverage and selection engines' specs; cli.feature and completion.feature belong
+    to internal/cli, with version's rows. Shared paths, each change a task the coordinator assigns:
+    the engines (internal/selection, lang, snapshot and coverage with their ports and porttests;
+    internal/processes, imports, cli, version, release, workdir, metricsdir and coveragetools;
+    project, coverage, config and metrics); assembly (cmd/itos-cc's hand-written main.go,
+    dispatch.go and adapters.go with their tests, diskAdapters and T-165's inProcessAdapters,
+    scenarios_test.go, scenarios_fakes_test.go, run_fakes_test.go and adapters_test.go, the
+    classifiers in common.go, coverage.go, selection.go and snapshot.go); the harness
+    (features/steps.go, steps_output.go, steps_tags.go, binary*.go, build.go, deferred.go,
+    features_test.go and every other file not named for a feature file); rules and tooling
+    (.golangci.yml, tools/**, itos.yaml, itos-cc.yaml, .github/**, go.mod, go.sum); docs/go.md's
+    shared sections, docs/architecture.md and README's layout table; legacy serve
+    (cmd/itos-cc/serve.go and cli.go, graph/, server/, viewer/, serve.feature, viewer.feature and
+    architecture_graph.feature, serve's deferred work); .metrics/mutate/mutate/* listed as orphaned;
+    tasks/** written only through itos. Generated files (cmd/itos-cc/commands_gen.go,
+    features/steps_gen.go) are any task's to regenerate and nobody's to edit or merge by hand: on a
+    conflict take either side and rerun go run ./tools/bin/assemble on the merged tree;
+    features/smoke.yaml keeps one entry per feature file, each its owner's, a conflict keeping both.
+    Integration rule: a slice task needing a Ports method adapters lacks, a new port, a rule edit,
+    an engine change or another slice's path stops and records an idea (itos work add) instead of
+    editing a shared path, and the coordinator assigns it as a task of its own. What holds the map:
+    the new-command test, the outside-import check, TestEveryPortIsBoundOnDiskAndInProcess. Before
+    the commit sort every path git ls-files lists into an owner by the map with a throwaway script,
+    commit nothing of it, and give the count per owner and any unplaced path in the commit body
+    (that list empty, or each path fixed in the map). Link the file from docs/go.md's Adding a
+    package, docs/architecture.md, README's Working here (whose sentences about refactor-final-proof
+    and the unfinished refactor are stale since T-132 and T-141: say the layout is ADR-0051's) and
+    AGENTS.md's first list as one line (doc-caps allows 8192 bytes). Docs only.
+  done_when:
+    - run: tools/bin/doc-caps
+      timeout: 60
+    - run: itos config check
+      timeout: 60
+    - run: test -s docs/ownership.md
+      timeout: 10
