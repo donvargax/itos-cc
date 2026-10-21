@@ -4413,3 +4413,17 @@ items:
       tools/bin/architecture-check could refuse any rule in .golangci.yml whose deny list holds an
       entry that is a prefix of another, naming both, so the trap is caught where the rule is
       written rather than by whichever fixtures happen to exist.
+  - id: architecture-fixture-package-lists
+    title: Name each package once in the architecture fixtures
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      tools/testdata/architecture/check_test.go repeats the module's package list in about nine
+      places (the stubs, each domain's, adapter's, slice's, UI's, engine's, cmd's, kong's and
+      rapid's targets), so moving one package edits every list by hand; T-159 and T-160 each rewrote
+      all of them for the same paths, and T-161 will again. One table of packages, each with its
+      kind (domain, adapter, slice's adapter, slice, engine, library), from which the loops derive
+      their targets, would make a move one row and keep a list from being missed.
