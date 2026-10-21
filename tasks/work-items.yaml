@@ -4301,8 +4301,8 @@ items:
   - id: T-166
     title: Stamp main.version beside internal/version in the refactor proof's builds
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: release-row-stamp-wording
