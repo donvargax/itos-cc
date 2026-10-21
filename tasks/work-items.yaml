@@ -4882,3 +4882,15 @@ items:
       (itos.yaml or the clone's hook config, as T-120 declared pre-commit), and the template
       backport (go-template-itos). Until then, briefs tell agents to rebase and vet before each
       push.
+  - id: scrap-dart-test-wrappers
+    title: scrap finds Dart examples written with test wrappers
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-33 counts test and testWidgets calls as Dart examples. Flutter apps often write examples
+      through packages' wrappers instead: bloc_test's blocTest, golden_toolkit's testGoldens,
+      patrol's patrolTest, alchemist's goldenTest. scrap finds no example in such a file and leaves
+      it unmeasured. Whether to recognize them, by name or by a closure argument, needs a decision.
