@@ -47,6 +47,8 @@ type selectionState struct {
 	output *outputDir
 	// named are the files a Given named, by slash-separated path.
 	named []string
+	// lib are the files a Flutter app's Given wrote in its lib folder.
+	lib []string
 }
 
 // gitPlan is what git reports of the scratch folder: the files changed
@@ -141,10 +143,17 @@ func selectionSteps(sc *godog.ScenarioContext, w *world) {
 	// What is never walked.
 	sc.Step(`^the project contains these directories, each holding source files:$`, s.directories)
 	sc.Step(`^the project's files are discovered$`, s.discovered)
-	sc.Step(`^nothing inside those directories is selected$`, s.nothingInside)
+	sc.Step(`^nothing inside those (?:directories|folders) is selected$`, s.nothingInside)
 	sc.Step(`^a directory "([^"]*)" holding source files$`, s.outputDirectory)
 	sc.Step(`^its files are not selected$`, func() error { return s.itsFilesAre("not selected") })
 	sc.Step(`^(\S+) is analyzed$`, s.analyzed)
+
+	// Flutter apps and generated Dart.
+	sc.Step(`^a Flutter app whose pubspec\.yaml depends on the flutter SDK$`, s.flutterApp)
+	sc.Step(`^its android, ios, macos, linux, windows, and web folders each hold source files$`, s.platformFolders)
+	sc.Step(`^a linux folder beside a pubspec\.yaml that does not depend on the flutter SDK is selected$`, s.pureDartLinux)
+	sc.Step(`^a Flutter app holding (\S+?)((?:, .+)?)$`, s.flutterAppHolding)
+	sc.Step(`^(\S+\.[a-z]+) is selected$`, s.isSelected)
 
 	// Languages and kinds.
 	sc.Step(`^the files ((?:\S+, )*\S+,? and \S+)$`, s.theFiles)
@@ -456,6 +465,8 @@ func manifestText(name string) string {
 		return unmeasuredPom
 	case "Cargo.toml":
 		return "[package]\nname = \"held\"\nversion = \"0.1.0\"\n"
+	case "pubspec.yaml":
+		return pureDartPubspec
 	}
 	return "\n"
 }

@@ -69,8 +69,11 @@ func (s *selectionState) everyFileSelected() error {
 // the production files under a folder and one file besides, every file
 // staged, or the files it lists.
 func (s *selectionState) areSelected(what string) error {
-	if what == "its files" {
+	switch what {
+	case "its files":
 		return s.itsFilesAre("selected")
+	case "its lib folder's files":
+		return s.libSelected()
 	}
 	got, err := s.selected()
 	if err != nil {
