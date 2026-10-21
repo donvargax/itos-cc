@@ -60,10 +60,9 @@ a `context.Context` first (decision 30); pure logic takes none.
 - `internal/workdir` is the selection port's adapter: the working directory as the disk and git
   hold it. It wraps the top-level `project` library's discovery and git query, stats paths and
   reads files, translating their errors into the port's failures. Beside `Tree` it implements
-  `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk. It
-  also implements mutants' `SourceEdits`: follow-rename absence uses Stat, while
-  annotation rereads current bytes, skips identical content before stat/write, and
-  preserves the current permissions.
+  `internal/lang`'s port as `Surroundings`, answering from `project.Surroundings`, the disk.
+  Mutation's `SourceEdits` was its until it moved to the mutation slice's `sources` adapter
+  (T-161, below), so it imports no mutation package.
 - `internal/metricsdir` is the snapshot port's adapter: the snapshots under `.metrics/` at the
   project root of the working directory, or at the root its `RootDir` names, so one `Store` for
   each root serves several projects (graph's, in S8) with no change to the port. It wraps the
@@ -75,12 +74,9 @@ a `context.Context` first (decision 30); pure logic takes none.
   decodes into (bug-3): a value of the wrong kind names its key path and the JSON kinds,
   `files[0].file should be a string, not a number`, and JSON that does not parse keeps the
   parser's text. The in-process scenario driver words through it too, standing in for this
-  adapter over the fake. Its model-bearing `Mutations` adapter owns the one concrete
-  mutation snapshot codec; all consumers use its concrete read/write boundaries without a second schema.
-  The codec keeps mirrors only of the snapshot, unit and mutant (`snapshotWire`,
-  `unitResultWire`, `mutantWire`), whose methods write coverage under `go_coverage` or
-  `line_coverage` by language and read legacy `go_evidence`; it encodes mutants'
-  `CoverageEvidence`, `CoverageBlock` and `SuiteEvidence` through their own tags (T-136).
+  adapter over the fake. It knows no snapshot's format and imports no mutation package: the
+  mutation snapshot codec, its `Mutations`, was here until it moved to the mutation slice's
+  `snapshots` adapter (T-161, below), which reads and writes through a `Store`.
 - `internal/lang` is the measure library every command shares, a domain package (decision 37):
   it parses a source and names its units, their namespaces, complexity, and each language's
   syntax and mutation rules. Every language's rules for a namespace (the markers it walks up
@@ -162,16 +158,17 @@ a `context.Context` first (decision 30); pure logic takes none.
   tags used only for serialization (decision 50). Tests
   parse supplied source through lang's surroundings fake. Ordinary and counted scheduling,
   check/list/sample/exception policy and fresh admission live here over model-bearing ports.
-  `metricsdir` owns the concrete snapshot codec, including legacy evidence keys and line
-  precision; config owns the exception YAML codec. `CoverageEvidence`, `CoverageBlock` and
-  `SuiteEvidence` carry the snapshot's json keys, and `Exception` itos-cc.yaml's as json and
-  yaml tags, so metricsdir, the mutation slice's `--json` and config's writes encode them with
-  no mirror (T-136). It has no `port` subpackage: its model-bearing ports are declared beside
-  their values (below), and `internal/slices/mutation/domain/porttest` holds their fakes and
+  The slice's `snapshots` adapter owns the concrete snapshot codec, including legacy evidence
+  keys and line precision, and its `exceptions` adapter the exception YAML writer over config's
+  reading codec (T-161). `CoverageEvidence`, `CoverageBlock` and `SuiteEvidence` carry the
+  snapshot's json keys, and `Exception` itos-cc.yaml's as json and yaml tags, so the snapshots
+  adapter, the mutation slice's `--json`, config's reads and the exceptions adapter's writes
+  encode them with no mirror (T-136). It has no `port` subpackage: its model-bearing ports
+  are declared beside their values (below), and `internal/slices/mutation/domain/porttest` holds their fakes and
   contract suites. The `domain`, `domain-io`, `mutant-fakes` and `coverage-fakes` rules hold it,
   and `tools/bin/domain-coverage` measures it. Unlike dry's, scrap's and crap's domains it is on
   the `domain` rule's allow list, since its external tests and porttest import it, and the
-  slice's adapters, the adapters not yet moved, `config` and `graph` import it too; the shared
+  slice's adapters, `config` and `graph` import it too; the shared
   domains may not (`shared-domains`), nor another slice (the sibling rule). The legacy
   `mutate` package is retired.
 - `internal/slices/mutation/adapters` holds the mutation slice's own adapters (ADR-0051), each
@@ -181,7 +178,24 @@ a `context.Context` first (decision 30); pure logic takes none.
   `internal/testinputs`; `worktrees`, its `Workers`, `githistory`, its `History`,
   `importgraph`, its `Reach` over graph's import resolver, and `freshenv`, its counted `Fresh`
   (T-160, below), were `internal/worktrees`, `internal/githistory`, `internal/importgraph` and
-  `internal/freshenv`. They import the slice's domain, whose model-bearing ports they
+  `internal/freshenv`. The last three moved out of shared packages (T-161): `snapshots`, the
+  mutation snapshot codec that was `internal/metricsdir`'s, is the domain's
+  `MutationSnapshots`, `MutationSnapshotReader` and `MutationCatalog` over a snapshot port
+  `Store`, which cmd gives it as `metricsdir.Store`. `MutationName` names a source's snapshot
+  under `.metrics/mutate`, and its wire mirrors (`snapshotWire`, `unitResultWire`,
+  `mutantWire`) write coverage under `go_coverage` or `line_coverage` by language and read
+  legacy `go_evidence`, encoding mutants' `CoverageEvidence`, `CoverageBlock` and
+  `SuiteEvidence` through their own tags (T-136), so every consumer reads and writes through
+  it without a second schema. graph keeps its own one-line copy of `MutationName`, held to
+  this one by a test, as it keeps crap's formula, so no slice's code is reachable from it
+  (ADR-0051). `exceptions`, config's writer until then, is the domain's `Exceptions` at the
+  root cmd selects: `ExceptDocument` and `RenewDocument` rewrite itos-cc.yaml's
+  `mutation.exceptions` through config's `Parse`, keeping its other keys, comments and file
+  mode, and config's `File` and `InvalidError` name the file and its refusal. `sources`,
+  `internal/workdir`'s until then, is the domain's `SourceEdits`, `SourcePresence` and
+  `SourceStatus` over the disk: follow-rename absence uses Stat, while annotation rereads
+  current bytes, skips identical content before stat/write, and preserves the current
+  permissions. They import the slice's domain, whose model-bearing ports they
   implement, and the libraries they wrap; cmd wires them in through the slice's `Ports`, and
   no slice imports them, the mutation slice's code neither (`slice-adapters`). `importgraph`
   stays a package of its own: graph imports the domain, so merging it with anything graph
@@ -553,8 +567,9 @@ context-as-argument a context after any other parameter, tests included.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
-  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph` (the mutation slice's
-  own, under `internal/slices/mutation/adapters`): an adapter imports
+  `testtools`, `testinputs`, `githistory`, `freshenv`, `importgraph`, `snapshots`, `exceptions`
+  and `sources` (the mutation slice's own, under `internal/slices/mutation/adapters`): an
+  adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
   the two ports it implements, selection's and `internal/lang`'s, and the `project` library,
   and `internal/metricsdir` the snapshot port and the `metrics` and `project` libraries; only
@@ -564,10 +579,12 @@ context-as-argument a context after any other parameter, tests included.
   47, amending 29's adapter rule): its rule allows that domain once the adapter needs it.
   An adapter may also use the shared pure domains its rule names, `internal/lang`,
   `internal/selection` and `internal/coverage`, which read nothing, as `freshenv`, `testtools`
-  and `testinputs` do. The mutation adapters' rules and `workdir`'s and `metricsdir`'s allow
-  `internal/slices/mutation/domain`, which the sibling rule lets them import: the slice's own
-  adapters being the slice's, the others being outside `internal/slices`. `freshenv` serves mutants, yet its rule allows `internal/coverage` and its
-  port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
+  and `testinputs` do. The mutation adapters' rules allow `internal/slices/mutation/domain`,
+  which the sibling rule lets them import, the slice's own adapters being the slice's;
+  `workdir`'s and `metricsdir`'s no longer do, since mutation's source edits and snapshot codec
+  left them for `sources` and `snapshots` (T-161). `snapshots`' allows the snapshot port it
+  reads and writes through, and `exceptions`' config, the reading codec it wraps. `freshenv`
+  serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
@@ -858,9 +875,9 @@ The githistory rule admits only mutants and the project library it wraps.
 T-92 moves ordinary Run planning, reuse, scheduling, judgment and publication order
 into the mutation domain, now `internal/slices/mutation/domain`. Its `Options` contains actual bound ports and pure map
 queries, with caller-relative paths resolved lexically from the supplied caller
-folder. `MutationSnapshots` reads complete domain models; `metricsdir.Mutations`
-performs concrete decoding before the domain checks the recorded file and only
-then normalizes admitted TypeScript command scope. `SourceEdits` publishes the
+folder. `MutationSnapshots` reads complete domain models; the snapshots adapter's
+`Mutations` (`internal/metricsdir`'s until T-161) performs concrete decoding before the
+domain checks the recorded file and only then normalizes admitted TypeScript command scope. `SourceEdits` publishes the
 summary using current source bytes. Snapshot write precedes moved-snapshot removal
 and annotation; failed publication stops both. The shared `OrphanReason` policy
 keeps follow-missing Stat separate from orphan Lstat observations.
@@ -881,7 +898,7 @@ T-93 moves check, strict evidence inventory, site listing and orphan judgment in
 the mutation domain. Check receives `MutationSnapshotReader`, never mutation write
 capabilities; `MutationSnapshots` embeds that reader. A separate `MutationCatalog`
 returns the store's regular-JSON names unchanged and observes only permissive
-recorded-file metadata through the same metricsdir adapter. Full decoding remains
+recorded-file metadata through the same snapshots adapter. Full decoding remains
 in its single concrete codec. `SourcePresence` is separate from follow-Stat
 `Missing`: Lstat directories, dangling links and ordinary errors are present,
 while lazy rename traversal requires successful `RenameTarget` evidence.
@@ -899,12 +916,12 @@ arrows; no production fake or adapter import is admitted to the domain.
 T-94 moves Sample, Survivor, Renew and Elsewhere into mutants. Sample receives
 read-only CheckOptions and execution bindings, never snapshot writes. It keeps
 recorded scopes and seed ranking, reusing the one scheduler and selection-baseline
-cache. Renewal and Unrenewed are genuine domain values; config's compatibility aliases
-retain its codec callers without a second model or algorithm.
+cache. Renewal and Unrenewed are genuine domain values, with no second model or algorithm;
+config's Renewal alias and its direct-library Except and Renew went in T-161.
 
-`Exceptions.Except` and `Exceptions.Renew` update the current document. The existing
-config package implements them at an explicit RootDir, sharing one format-preserving
-YAML transform with memory scenario bytes. Initial Config selects entries; updates
+`Exceptions.Except` and `Exceptions.Renew` update the current document. The mutation
+slice's exceptions adapter, config's until T-161, implements them at an explicit RootDir,
+sharing one format-preserving YAML transform with memory scenario bytes. Initial Config selects entries; updates
 reread current bytes, preserve comments/settings/permissions, and consume complete
 Old entries once, validate the whole batch, then write once. Invalid document
 reason/key stays distinct from ordinary I/O and cancellation causes. CLI supplies a

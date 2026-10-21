@@ -89,9 +89,12 @@ The mutation group's slice, `internal/slices/mutation`, the sixth under `interna
 first that is a group, runs its five commands over its own domain,
 `internal/slices/mutation/domain` (it was `internal/mutants`), which owns sites, results and
 their judgment, and reaches its workers, tools,
-inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`),
-under `internal/slices/mutation/adapters`: its tools and inputs (T-159), its workers, history,
-import reach and frozen environments (T-160).
+inputs, history, frozen environments, import reach, snapshots, exceptions and source files
+through adapters of its own (`docs/go.md`), under `internal/slices/mutation/adapters`: its tools
+and inputs (T-159), its workers, history, import reach and frozen environments (T-160), and its
+snapshot codec over the snapshot port, its itos-cc.yaml exceptions writer over `config`'s
+reading codec and its source edits (T-161), which were `internal/metricsdir`'s, `config`'s and
+`internal/workdir`'s.
 It declares itself as every slice does, its `CLI` the struct of its five children, and cmd's
 adapters answer its `Ports`; the functions cmd binds for a counted run and for the exceptions'
 writer reach the handler as they are, so one left unbound is reported missing.

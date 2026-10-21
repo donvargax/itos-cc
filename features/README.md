@@ -850,7 +850,7 @@ ID-MUT-29's, and a timed-out mutant counted killed (53) exits 0 by the same rule
 | 54 | `cmd/itos-cc/mutate_mutants_test.go`: `TestMutantsTakenFromTheSnapshotSaySo` | removed |
 | 55 | `cmd/itos-cc/mutate_mutants_test.go`: `TestWithSinceOnlyTheJudgedFunctionsMutantsAreListed` | removed |
 | 56 | `cmd/itos-cc/mutate_mutants_test.go`: `TestAFailingBaselineListsNoMutant` | removed |
-| 145 | `internal/workdir/annotation_legacy_test.go`: `TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew` | adapter, kept |
+| 145 | `internal/slices/mutation/adapters/sources/annotation_legacy_test.go`: `TestASummaryCommentWithTheOldMarkersIsReplacedByOneWithTheNew` | adapter, kept |
 | 231 | `cmd/itos-cc/mutate_unreached_baseline_test.go`: `TestAFileNoTestReachesReportsItsBaselineAsNotRun` | kept |
 | 232 | `cmd/itos-cc/mutate_counted_unreached_listed_test.go`: `TestACountedRunJudgesAnUnreachedFileByTheListedTestsThatReachIt` | kept |
 | 233 | `cmd/itos-cc/mutate_python_parallel_data_test.go`: `TestAPythonProjectThatWritesParallelCoverageDataIsMeasured` | kept |
@@ -863,7 +863,7 @@ ID-MUT-29's, and a timed-out mutant counted killed (53) exits 0 by the same rule
 | 240 | `cmd/itos-cc/mutate_reused_baseline_test.go`: `TestAFileWhoseMutantsAreAllReusedReportsItsBaselineAsNotRun` | removed |
 | 241 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestCheckSaysHowManyRecordedMutantsItLeftOut` | removed |
 
-For 32–33, retain `internal/workdir/annotation_legacy_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
+For 32–33, retain `internal/slices/mutation/adapters/sources/annotation_legacy_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
 for 34, retain `internal/slices/mutation/domain/annotate_test.go`'s `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
 remain alongside the new public observations.
 
@@ -907,7 +907,7 @@ was a specification correction, not evidence of missing product behavior.
 T-101 reviewed these holders once the scenarios ran green through both drivers; each kept one
 holds what no scenario asserts. An except's exit 0 and recorded fields are ID-MUT-85's, a run with
 an excepted survivor exiting 0 is 89's, a check failing a changed entry before renewal is 96's,
-and the summary comment's blank line before it is `internal/workdir`'s `TestAnnotateReplacesItsOwnBlock`.
+and the summary comment's blank line before it is the sources adapter's `TestAnnotateReplacesItsOwnBlock`.
 
 | MUT | Holder | Exact test | T-101 |
 | --- | --- | --- | --- |
@@ -1705,7 +1705,8 @@ holders and counted export guards remain; they are not deleted as duplicates.
 The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over its own
 domain, `internal/slices/mutation/domain` (T-158), and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`;
 its adapters are its own, under `internal/slices/mutation/adapters`: its tools and inputs (T-159),
-its workers, history, import reach and frozen environments (T-160).
+its workers, history, import reach and frozen environments (T-160), and its snapshot codec,
+exceptions writer and source edits (T-161).
 `mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
 leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership
 scenarios, and no scenario carries a tag that stands for unmoved code.
