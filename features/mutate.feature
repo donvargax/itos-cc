@@ -2120,7 +2120,7 @@ Feature: Mutation testing
         | kotlin     |
 
       # slice-34, dart-support: as TypeScript, Python and Kotlin.
-      @wip @slice-34
+      @slice-34
       Examples:
         | language   |
         | dart       |
@@ -2129,7 +2129,7 @@ Feature: Mutation testing
     # is lib/x.dart of the package whose pubspec.yaml has that name; an
     # export passes reach on; a part file is its library's, so reaching the
     # library reaches the part; a conditional import reaches each target.
-    @wip @slice-34 @ID-MUT-263
+    @slice-34 @ID-MUT-263
     Scenario Outline: A Dart test reaches a library through <link>
       Given a Flutter package "demo" whose test reaches lib/a.dart only through <link>
       And a mutant of lib/a.dart has a recorded result
@@ -2236,7 +2236,7 @@ Feature: Mutation testing
       # slice-34: flutter test loads the nearest flutter_test_config.dart at
       # or above a test file, up to its package root, as pytest loads
       # conftest.py.
-      @wip @slice-34
+      @slice-34
       Examples:
         | language   | support                                   |
         | dart       | a helper library under test/              |

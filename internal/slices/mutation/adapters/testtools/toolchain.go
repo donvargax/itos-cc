@@ -34,6 +34,9 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 	}
 	f.Language = spec.Name
 	switch spec.Name {
+	case "dart":
+		// Its package, each pub workspace member a build root of its own.
+		f.Root = Base(ctx, r.Path, "pubspec.yaml")
 	case "go":
 		f.Root = Base(ctx, r.Path, "go.mod")
 	case "typescript":

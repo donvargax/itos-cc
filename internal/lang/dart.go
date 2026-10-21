@@ -64,9 +64,30 @@ func init() {
 			Other:        dartOperator,
 		},
 		Comment:  "//",
+		Imports:  dartImports,
 		Decision: dartDecision,
 		IsTest:   dartIsTest,
 	})
+}
+
+// dartImports lists the URIs a library names for what it uses: each
+// import's and export's, every target of a conditional one, and each part
+// it holds, since a part is the library's own code. A part's part of names
+// its library back, which uses nothing of it, so is no import. Every uri
+// node counts wherever it sits, so directives the grammar only recovers
+// from, such as an import after part of in a part file, count too.
+func dartImports(root *sitter.Node, src []byte) []Import {
+	var out []Import
+	Walk(root, func(n *sitter.Node) bool {
+		if n.Kind() != "uri" {
+			return true
+		}
+		if p := n.Parent(); p != nil && p.Kind() != "part_of_directive" {
+			out = append(out, Import{Path: unquote(n.Utf8Text(src)), Line: line(n)})
+		}
+		return false
+	})
+	return out
 }
 
 // Dart's mutation sites are the changes that compile whatever their

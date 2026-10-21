@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -92,6 +93,23 @@ func (s *Inputs) TestsImporting(ctx context.Context, root string, sources, tests
 					conftest := filepath.Join(dir, "conftest.py")
 					if conftest != test && nodes[conftest] {
 						pending = append(pending, conftest)
+					}
+					if dir == top || filepath.Dir(dir) == dir {
+						break
+					}
+				}
+			}
+			// flutter test loads the nearest flutter_test_config.dart above a
+			// test file, up to its package, with no import.
+			if spec.Name == "dart" && strings.HasSuffix(filepath.Base(test), "_test.dart") {
+				top := s.nearest(ctx, test, "pubspec.yaml")
+				if top == "" {
+					top = root
+				}
+				for dir := filepath.Dir(test); inside(top, dir); dir = filepath.Dir(dir) {
+					if config := filepath.Join(dir, "flutter_test_config.dart"); nodes[config] {
+						pending = append(pending, config)
+						break
 					}
 					if dir == top || filepath.Dir(dir) == dir {
 						break

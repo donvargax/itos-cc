@@ -12,6 +12,7 @@ import (
 // name. Adding one is a resolver in a file of its own and a line here; a
 // language with no line is plain.
 var languages = map[string]language{
+	"dart":       dart{},
 	"go":         golang{},
 	"kotlin":     kotlin{},
 	"python":     python{},
