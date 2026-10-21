@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# refactor-proof: T-132's edge-case comparison. Runs two itos-cc binaries,
-# the one built from T-29's parent (51f3952) and the refactored one, over
-# the cases in tools/testdata/refactor-proof/cases, the edge cases the
+# refactor-proof: the refactors' edge-case comparison. Runs two itos-cc
+# binaries, the one built from a refactor's baseline and the refactored one,
+# over the cases in tools/testdata/refactor-proof/cases, the edge cases the
 # refactor's moves listed, and compares each run's stdout, stderr and exit
 # code, and the files a case names, byte for byte after the normalization
-# rules below. It writes only under the evidence folder, never this
-# repository; mutation cases run on the small Go and TypeScript fixtures
-# defined here, never on this repository's code.
+# rules below. T-132 ran it against T-29's parent, 51f3952; T-86 runs it
+# against b768837, the parent of its first code commit (47f7543). It writes
+# only under the evidence folder, never this repository; mutation cases run
+# on the small Go and TypeScript fixtures defined here, never on this
+# repository's code.
 #
 #   tools/bin/refactor-proof OLD NEW [EVIDENCE] [CASE-REGEX]
 #
@@ -58,8 +60,11 @@
 #                     matches ERE (60 s at most)
 #   ! SHELL           a setup command in the case's folder, its output
 #                     not compared, failing the case if it fails
-# NOTE, when given, is printed beside a differing case: the deliberate
-# difference or fix item that accounts for it.
+# NOTE, when given, is printed in brackets beside the case's verdict,
+# whatever the verdict: the deliberate difference or fix item that accounts
+# for a difference T-132's run found against 51f3952, and after it, as
+# "; T-86 (b768837): ..." (or alone, "T-86 (b768837): ..."), the one that
+# accounts for a difference T-86's run finds.
 set -euo pipefail
 
 usage() {

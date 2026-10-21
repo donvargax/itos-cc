@@ -1,9 +1,14 @@
 # T-132's edge cases: the cases the refactor's moves listed in the work
 # registry's refactor-final-proof notes that no scenario holds, run by
 # tools/bin/refactor-proof against the binary of 51f3952 and the refactored
-# one. One case a line: ID | FIXTURE | CWD | CAPTURE | STEPS [| NOTE]; the
-# script's header says how each field is read. IDs name the move that
-# listed the case. Mutation runs pass --workers 1, an existing flag, so the
+# one; each note classifies a difference that run found against 51f3952.
+# T-86 runs every case again against b768837, the parent of its first code
+# commit (47f7543), and the # T-86 section at the end adds the edge cases
+# its moves listed; a difference T-86's run finds is classified by
+# "; T-86 (b768837): ..." appended to the case's note, or by a note
+# "T-86 (b768837): ..." where the case had none. One case a line: ID | FIXTURE | CWD |
+# CAPTURE | STEPS [| NOTE]; the script's header says how each field is
+# read. IDs name the move that listed the case. Mutation runs pass --workers 1, an existing flag, so the
 # progress lines come in one order on both sides; a mutation case runs on
 # the script's small Go and TypeScript fixtures only.
 
@@ -446,3 +451,34 @@ t125-02 | gonogit | p | - | itos-cc mutation --json run --count 1
 t125-03 | gonogit | p | - | itos-cc mutation run --count 1 --json
 t125-04 | go | p | - | itos-cc mutation run --workers 1 board.go
 t125-05 | ts | p | - | itos-cc mutation run --workers 1 src/board.ts
+
+# T-86: the edge cases T-143..T-165 listed as unchanged that no case above
+# or live scenario holds, run against b768837, the parent of T-86's first
+# code commit. A line's comment names the move it guards.
+# T-143 (lazy config through BindToProvider), T-157 (the group's help reads
+# nothing): help beside an itos-cc.yaml that exists but cannot be read.
+t86-01 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc --help ;; itos-cc mutation list
+t86-02 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc help mutation
+t86-03 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc mutation --help
+# T-157 (NewHandler reads nothing): a child's help and a line kong refuses.
+t86-04 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc mutation run --help ;; itos-cc mutation run --bogus
+# T-150 (scrap's provider reads no settings): scrap --json and its help.
+t86-05 | go | p | .metrics/scrap.json | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc scrap --json
+t86-06 | go | p | - | ! printf 'exclude: []\n' > itos-cc.yaml && chmod 000 itos-cc.yaml ;; itos-cc scrap --help ;; itos-cc help scrap
+# T-143 (provider errors unwrapped, config.invalid only where a Run reads
+# it): an itos-cc.yaml that is not YAML, beside lines that read none.
+t86-07 | go | p | - | ! printf 'exclude: [' > itos-cc.yaml ;; itos-cc --help ;; itos-cc help mutation ;; itos-cc mutation run --help ;; itos-cc scrap --json ;; itos-cc version --json
+# T-151 (process ownership moved to internal/processes): crap interrupted
+# while its coverage command runs.
+t86-08 | goslow | p | - | int:^itos-cc:.coverage itos-cc crap
+t86-09 | goslow | p | - | int:^itos-cc:.coverage itos-cc crap --json
+# T-156 (which functions a change touches judged by ChangedSince's caller):
+# --since over a commit that edits one function and deletes lines in
+# another, every other function untouched.
+t86-10 | go | p | .metrics/mutate | ! sed -i 's/n < lo/n <= lo/' board.go && sed -i '/if n == 0 {/,/^\t}$/d' sub/sub.go && git commit -qam change ;; itos-cc mutation run --workers 1 --since HEAD~1 ;; itos-cc mutation check --since HEAD~1
+t86-11 | go | p | .metrics/mutate | ! sed -i 's/n < lo/n <= lo/' board.go && sed -i '/if n == 0 {/,/^\t}$/d' sub/sub.go && git commit -qam change ;; itos-cc mutation run --workers 1 --since HEAD~1 --json ;; itos-cc mutation check --since HEAD~1 --json
+# T-161 (the exceptions writer moved): --renew over a commented itos-cc.yaml
+# of mode 0640 (t99-20 holds except alone), keeping the file's comments,
+# the entry's own and the mode, and dropping the reason line's comment, as
+# b768837 does.
+t86-12 | go | p | itos-cc.yaml,mode.txt | itos-cc mutation run --workers 1 ;; ! printf '# the settings\nexclude: ["nothing/**"] # none\n\n# more\nother: 1\n' > itos-cc.yaml && chmod 640 itos-cc.yaml ;; itos-cc mutation except board.go:5:11 --reason 'proof: kept' ;; ! sed -i 's/^\( *reason: .*\)$/\1 # on the reason/; s/^\( *\)- file: board.go$/\1# on the entry\n&/' itos-cc.yaml && sed -i 's#^\treturn n > 0$#\t// a line added elsewhere\n&#' board.go ;; itos-cc mutation run --workers 1 ;; itos-cc mutation except --renew ;; ! stat -c %a itos-cc.yaml > mode.txt
