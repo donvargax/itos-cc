@@ -17,6 +17,7 @@ queue:
   - T-158
   - T-159
   - T-160
+  - T-161
   - slices-import-engine
   - slices-scenario-registration
   - slices-close
