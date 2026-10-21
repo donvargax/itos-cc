@@ -4639,27 +4639,9 @@ items:
     title: Flutter build output, platform folders and generated Dart are not source
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      D2 of dart-support, in the parallel wave beside slice-29 and D5 (person 2026-10-21), its files
-      the project library's discovery and the selection engine's fake twin (project/project.go and
-      internal/selection/port/porttest/tree.go, one commit, TreeContract keeping them equal); never
-      internal/lang (slice-29's) nor worker copies (D7's adapters/worktrees). pubspec.yaml joins the
-      build manifests, so build/ and coverage/ beside it are build output (SEL-11). q-75 (a): a
-      pubspec.yaml whose dependencies name the flutter SDK makes its android, ios, macos, linux,
-      windows and web folders part of the Flutter app, never walked, so no Kotlin or Swift there is
-      selected and crap and mutation plan no Gradle root for MainActivity.kt; beside a pure Dart
-      pubspec, or none, such a folder is ordinary (SEL-22). q-77 (a): generated Dart is not source,
-      as SEL-14 says of .d.ts and .min.js, for units, dry, scrap, crap and mutation alike, test
-      files too: the build_runner and protoc suffixes .g.dart, .freezed.dart, .mocks.dart, .gr.dart,
-      .config.dart, .pb.dart, .pbenum.dart, .pbjson.dart and .pbserver.dart,
-      generated_plugin_registrant.dart, a .dart file whose leading comments say GENERATED CODE - DO
-      NOT MODIFY BY HAND, and gen-l10n's output: beside an l10n.yaml, the output-localization-file
-      (default app_localizations.dart) and its per-locale siblings in output-dir (default lib/l10n)
-      (SEL-23). A file named directly is still taken (SEL-12). Bringing such a file back through
-      itos-cc.yaml waits on its own question and item; the coverage:ignore pragmas are D5's.
   - id: slice-32
     title: Dart coverage and crap with flutter test
     phase: 1
