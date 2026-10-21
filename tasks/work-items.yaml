@@ -4894,3 +4894,19 @@ items:
       through packages' wrappers instead: bloc_test's blocTest, golden_toolkit's testGoldens,
       patrol's patrolTest, alchemist's goldenTest. scrap finds no example in such a file and leaves
       it unmeasured. Whether to recognize them, by name or by a closure argument, needs a decision.
+  - id: scrap-guard-assertion-languages
+    title: An if around an assertion counts the same whatever the assertion library
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      scrap's isGuardAssertion (internal/slices/scrap/domain/measure.go) treats an if whose block
+      only asserts as an assertion, not logic: Go's if got != want { t.Errorf } idiom. Checked
+      against the product, it turns on the statement's shape, not the language: TypeScript's if (x)
+      { assert.equal(y, 1) } is a guard, no decision, but if (x) { expect(y).toBe(1) } is a
+      decision, as expect(y) is the asserting call, not the statement's own; Kotlin's if (x) {
+      assertEquals(1, y) } is a decision, and Dart's if around expect is one too, as SCRAP-31's the
+      limit is ten expects. So the same intent scores differently by the assertion library a test
+      uses. Decide whether the guard idiom is Go's alone.
