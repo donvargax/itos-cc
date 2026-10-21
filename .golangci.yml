@@ -159,8 +159,6 @@ linters:
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
-            - "!**/internal/testtools/**" # mutation tool observations
-            - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/freshenv/**" # immutable counted preparation
@@ -191,8 +189,15 @@ linters:
         # and tools/bin/architecture-check refuses a slice importing another
         # (its sibling rule). A slice's own domain is held by the domain
         # rules instead, as every domain is, so it imports no UI, slice or
-        # I/O. Each domain added to the slices rule's allow list is added
-        # here too, until the last slice moves and this rule is the only one.
+        # I/O. A slice's adapter, under
+        # internal/slices/<name>/adapters/<adapter> (T-159), is held by a
+        # rule of its own, as every adapter is, so this rule, which would
+        # refuse the libraries it wraps, leaves the slice's adapters folder
+        # out, and the sibling rule counts it as the slice's. Allowing
+        # internal/slices/ lets a slice import an adapter, its own above all,
+        # which slice-adapters below refuses. Each domain added to the slices
+        # rule's allow list is added here too, until the last slice moves and
+        # this rule is the only one.
         slice-packages:
           list-mode: lax
           files:
@@ -201,6 +206,7 @@ linters:
             - "!**/internal/slices/scrap/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/crap/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/mutation/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/mutation/adapters/**" # a slice's adapters, each held by its own rule
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
@@ -217,6 +223,27 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "a slice imports only the domain, its ports, internal/cli, internal/lang with its port and its own subpackages (ADR-0051); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # A slice imports no adapter, its own neither: cmd wires a slice's
+        # adapters in through its Ports (decision 29, ADR-0051).
+        # slice-packages allows internal/slices/, so it would let a slice
+        # import an adapter under internal/slices/<name>/adapters, its own
+        # above all, which the sibling rule does not refuse. This rule holds
+        # slice-packages' files and denies each slice's adapters folder by
+        # name. It is a rule of its own because depguard looks a deny up as
+        # the one entry sorting just before the import: a longer deny beside
+        # slice-packages' module-wide one would hide that one from every
+        # import sorting after it.
+        slice-adapters:
+          files:
+            - "**/internal/slices/**"
+            - "!**/internal/slices/dry/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/scrap/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/crap/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/mutation/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/mutation/adapters/**" # a slice's adapters, each held by its own rule
+          deny:
+            - pkg: github.com/donvargax/itos-cc/internal/slices/mutation/adapters
+              desc: "a slice imports no adapter, its own neither (decision 29, ADR-0051): cmd wires a slice's adapters in through its Ports; never loosen this one"
         # A slice's own code links no port's fake, which its tests alone may
         # use, as an adapter's do (T-56): the slices rule allows the domains'
         # ports by prefix, which porttest shares, so this rule refuses each
@@ -233,13 +260,12 @@ linters:
             - "!**/internal/snapshot/**" # a domain and its ports
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/slices/mutation/domain/**" # a slice's domain, its porttest importing other ports' fakes
+            - "!**/internal/slices/mutation/adapters/**" # a slice's adapters, each held by its own rule
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
-            - "!**/internal/testtools/**" # mutation tool observations
-            - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
             - "!**/internal/githistory/**" # mutation committed history
             - "!**/internal/freshenv/**" # immutable counted preparation
@@ -305,9 +331,11 @@ linters:
         # testinputs use them, freshenv reading Go coverage blocks through
         # coverage: not another domain, another adapter, a slice,
         # the UI or porttest's fakes, which its tests alone may use. Each
-        # adapter is listed, and excluded from the slices above. Each port's
-        # adapters have a rule of their own, so no adapter is allowed
-        # another's port or library.
+        # adapter is listed, and excluded from the slices above: one outside
+        # internal/slices from slices and slice-fakes, a slice's own, under
+        # internal/slices/<name>/adapters/<adapter>, from slice-packages,
+        # slice-adapters and slice-fakes. Each port's adapters have a rule of
+        # their own, so no adapter is allowed another's port or library.
         # internal/workdir implements the selection port over project, the
         # top-level library that walks a tree and asks git, and lang's port
         # over project's answers from the disk (T-35): both ports and project
@@ -396,10 +424,13 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "the process-ownership engine imports nothing of ours (T-151): no domain, slice, adapter or UI; a caller converts its Result into its own terms"
         # T-89: each concrete observation adapter owns only its declared I/O.
+        # testtools and testinputs are the mutation slice's adapters, under
+        # internal/slices/mutation/adapters (T-159), the sibling rule letting
+        # them import the slice's domain and no other slice.
         testtools:
           list-mode: lax
           files:
-            - "**/internal/testtools/**"
+            - "**/internal/slices/mutation/adapters/testtools/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
@@ -412,7 +443,7 @@ linters:
         testinputs:
           list-mode: lax
           files:
-            - "**/internal/testinputs/**"
+            - "**/internal/slices/mutation/adapters/testinputs/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$

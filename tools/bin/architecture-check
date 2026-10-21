@@ -26,7 +26,9 @@ linked() {
 # depguard cannot hold: its deny list is a prefix, so refusing the slices
 # would refuse a slice's own subpackages too. A slice may import its own
 # subpackages and any engine, and what is outside internal/slices, cmd
-# above all, may import every slice.
+# above all, may import every slice. Every package under internal/slices/X,
+# its domain and its adapters under internal/slices/X/adapters among them,
+# is X's.
 siblings() {
 	prefix="$(go list -m)/internal/slices/"
 	listed=$(go list -f '{{.ImportPath}}{{range .Imports}} {{.}}{{end}}{{range .TestImports}} {{.}}{{end}}{{range .XTestImports}} {{.}}{{end}}' "$@")
