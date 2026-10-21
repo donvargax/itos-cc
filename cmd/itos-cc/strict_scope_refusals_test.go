@@ -13,8 +13,8 @@ import (
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/project"
 )
 

@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
-	"github.com/donvargax/itos-cc/internal/testtools"
 )
 
 func loadMutationSnapshot(ctx context.Context, store snapport.Store, key string) (*mutation.Snapshot, error) {

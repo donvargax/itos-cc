@@ -6,10 +6,10 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
-	"github.com/donvargax/itos-cc/internal/testinputs"
-	"github.com/donvargax/itos-cc/internal/testtools"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/project"
 )

@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
-	"github.com/donvargax/itos-cc/internal/testtools"
 )
 
 // Actual native helper streams keep list rows independent of diagnostics/status.

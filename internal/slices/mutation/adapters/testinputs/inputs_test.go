@@ -10,8 +10,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
-	"github.com/donvargax/itos-cc/internal/testinputs"
 )
 
 func TestRealFingerprintsContract(t *testing.T) {

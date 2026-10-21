@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/internal/testtools"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/internal/worktrees"
 )

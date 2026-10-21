@@ -8,10 +8,10 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
-	"github.com/donvargax/itos-cc/internal/testinputs"
-	"github.com/donvargax/itos-cc/internal/testtools"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"github.com/donvargax/itos-cc/internal/worktrees"
 )

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/internal/testtools"
 )
 
 // This helper is a real executable probe, not evidence of an installed Python
