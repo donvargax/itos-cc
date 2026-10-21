@@ -2697,9 +2697,43 @@
     Preserve pure model observations, explicit I/O ports and stable reusable
     engine APIs. Evaluate this proposal against actual cross-feature consumers
     during T-86; it is not an accepted replacement for the current architecture.
+
+    Closed 2026-10-21. Decision 51 (q-72) settled the layout, amended by decision 53 (q-79: the
+    in-process driver's adapters stay hand-written per port, held complete by
+    TestEveryPortIsBoundOnDiskAndInProcess); decision 52 (q-73) made local runs in-process only,
+    the built binary CI's and CD's. The work: T-143 generic dispatch, T-144 the sibling rule, T-145
+    units, T-146 the generator, T-147 the exclude setting into selection, T-148 dry, T-150 scrap,
+    T-151 the process engine, T-152 crap, T-155 version, T-156 to T-161 mutation (engines out of it,
+    the slice root, its domain, its nine adapters), T-162 and T-163 the import engine with a
+    resolver per language, T-164 generated step registration, T-165 the in-process adapters
+    provider, T-166 the proof's version stamp, and slices-close's T-167 (only cmd, graph and config
+    import a slice; no nested depguard deny), T-168 (the inventory marked historical, its move
+    table), T-169 (a new command touches only its slice, its feature file and the generated files),
+    T-170 (docs/ownership.md), T-171 (the proof pointed at b768837 with T-86's edge cases) and T-172.
+    Serve, graph, server and viewer stay legacy, graph and config the named consumers of mutation's
+    domain. The one refactor proof, run 39622138010 at e23c469 against b768837 (the parent of
+    47f7543, T-86's first code commit), found 318 cases the same, 71 normalized and t49-03
+    unstable from --fail-fast's timing on both binaries, both suites passing; it is classified in
+    docs/vertical-slices-inventory.md's section 9. bug-5, a crash that run surfaced on both
+    binaries and older than T-86, is not a refactor difference. git diff --exit-code b768837 HEAD
+    over the feature files, features/smoke.yaml, CONTRIBUTORS.md and LICENSE is empty. The
+    parallel-agents trial follows on the person's q-78 authorization, for Dart, with
+    docs/ownership.md as its brief.
   done_when:
     - run: tools/bin/architecture-check
-    - run: go test ./features ./cmd/itos-cc -count=1 -run "^Test(Features|Scenarios)$"
+      timeout: 900
+    - run: go run ./tools/bin/assemble -check
+      timeout: 300
+    - run: go test ./tools/bin/assemble -count=1
+      timeout: 300
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestDispatch|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestEveryPortIsBoundOnDiskAndInProcess)$'
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(CLI|UNIT|DRY|SCRAP|CRAP|MUT)-0[1-3]$'
+      timeout: 900
+    - run: git diff --exit-code --quiet b768837f2097fc2ea84a0a43abeb598b6d033e57 HEAD -- 'features/*.feature' features/smoke.yaml CONTRIBUTORS.md LICENSE
+      timeout: 60
+    - run: tools/bin/doc-caps
+      timeout: 60
 - id: T-87
   type: refactor
   title: Move pure mutation rules and models into internal/mutants
