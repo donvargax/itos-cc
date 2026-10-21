@@ -5,6 +5,7 @@ go 1.27.1
 toolchain go1.27.3
 
 require (
+	github.com/UserNobody14/tree-sitter-dart v0.0.0-20261018035034-0038280b774b
 	github.com/bmatcuk/doublestar/v4 v4.10.3
 	github.com/cucumber/gherkin/go/v42 v42.0.1
 	github.com/cucumber/godog v0.16.0

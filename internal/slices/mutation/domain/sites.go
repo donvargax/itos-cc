@@ -52,7 +52,7 @@ func Sites(f *lang.File) []Site {
 	m := f.Spec.Mutations
 	var sites []Site
 	for i, u := range f.Units {
-		unitStart := u.Node.StartByte()
+		unitStart, _ := u.Span()
 		comments := commentSpans(f, u)
 		f.WalkOwn(u, func(n *sitter.Node) bool {
 			if n.ChildCount() > 0 {
@@ -115,14 +115,14 @@ func UnitHash(f *lang.File, u lang.Unit) string {
 		cut = append(cut, span{inner.StartByte(), inner.EndByte()})
 	}
 	slices.SortFunc(cut, func(a, b span) int { return cmp.Compare(a.start, b.start) })
-	at := u.Node.StartByte()
+	at, end := u.Span()
 	for _, c := range cut {
 		if c.start > at {
 			h.Write(f.Src[at:c.start])
 		}
 		at = max(at, c.end)
 	}
-	if end := u.Node.EndByte(); end > at {
+	if end > at {
 		h.Write(f.Src[at:end])
 	}
 	return hex.EncodeToString(h.Sum(nil)[:8])
@@ -139,10 +139,10 @@ type span struct{ start, end uint }
 // space after it; and one between code, the space before it.
 func commentSpans(f *lang.File, u lang.Unit) []span {
 	kinds := f.Spec.Syntax.Comments
-	start, end := u.Node.StartByte(), u.Node.EndByte()
+	start, end := u.Span()
 	src := f.Src
 	var out []span
-	lang.Walk(u.Node, func(n *sitter.Node) bool {
+	visit := func(n *sitter.Node) bool {
 		if !kinds[n.Kind()] {
 			return true
 		}
@@ -193,7 +193,10 @@ func commentSpans(f *lang.File, u lang.Unit) []span {
 			out = append(out, span{from, to})
 		}
 		return false
-	})
+	}
+	for _, n := range u.Nodes() {
+		lang.Walk(n, visit)
+	}
 	return out
 }
 

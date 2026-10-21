@@ -149,7 +149,7 @@ Feature: Choosing which files a command looks at
     # slice-28: a Dart test is a _test.dart file anywhere, or any file under
     # test/ (helpers and flutter_test_config.dart too), integration_test/ or
     # test_driver/.
-    @wip @slice-28
+    @slice-28
     Examples:
       | path                                 | kind       |
       | lib/board.dart                       | production |

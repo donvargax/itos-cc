@@ -17,7 +17,7 @@ Feature: Cyclomatic complexity
       | Go         |
       | Kotlin     |
 
-    @wip @slice-28
+    @slice-28
     Examples:
       | language   |
       | Dart       |
@@ -141,7 +141,7 @@ Feature: Cyclomatic complexity
   # _ arm are left out. Collection if and for, used throughout widget trees,
   # count; each on or catch handler counts; && and || count in patterns too;
   # a when guard does not, as its case already counts.
-  @wip @slice-28 @ID-CPLX-07
+  @slice-28 @ID-CPLX-07
   Scenario: Dart decisions
     Given the Dart function:
       """

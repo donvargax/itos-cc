@@ -34,6 +34,11 @@ type Unit struct {
 	// Node is the unit's syntax tree. It is valid until its File is closed.
 	Node *sitter.Node `json:"-"`
 
+	// Body is the sibling after Node that ends the unit, where the grammar
+	// puts a function's body beside its signature, as Dart's does, and nil
+	// where Node holds the whole unit. Nodes lists what lies between.
+	Body *sitter.Node `json:"-"`
+
 	// Inner indexes the inline units directly inside this one in its File's
 	// Units. Their code is theirs: it adds nothing to this unit's
 	// complexity, mutation sites, fingerprint, coverage, or hash.
@@ -54,6 +59,13 @@ type Spec struct {
 	// Unit returns the unit's name when n is a function or method, and false
 	// otherwise. The walker does not descend into a unit.
 	Unit func(n *sitter.Node, src []byte) (string, bool)
+
+	// Body returns the sibling after n, a node Unit named, that holds the
+	// unit's body, where the grammar gives a function a signature and a body
+	// as two siblings: the unit then runs from n's start to the body's end,
+	// and the walker passes over the body. Nil for a language whose unit is
+	// one node.
+	Body func(n *sitter.Node) *sitter.Node
 
 	// Inline returns the name of a unit that can sit anywhere, even inside
 	// another unit, such as an Express route callback, and false otherwise.
@@ -379,41 +391,56 @@ type walker struct {
 	units  []Unit
 }
 
-func (w *walker) walk(n *sitter.Node, ns string, inClass bool) {
+// walk finds the units at and below n. It returns the body sibling n's unit
+// took, which its parent's walk passes over, or nil.
+func (w *walker) walk(n *sitter.Node, ns string, inClass bool) *sitter.Node {
 	if name, ok := w.inlineName(n); ok {
 		w.units = append(w.units, w.unit(n, w.ns, name, false))
-		w.walkInner(n, len(w.units)-1)
-		return
+		w.walkInner(w.units[len(w.units)-1], len(w.units)-1)
+		return nil
 	}
 	if name, ok := w.spec.Unit(n, w.src); ok {
-		w.units = append(w.units, w.unit(n, ns, name, inClass))
-		w.walkInner(n, len(w.units)-1)
-		return
+		u := w.unit(n, ns, name, inClass)
+		w.units = append(w.units, u)
+		w.walkInner(u, len(w.units)-1)
+		return u.Body
 	}
 	if name, ok := w.spec.Container(n, w.src); ok {
 		ns = join(ns, name, w.spec.Separator)
 		inClass = true
 	}
+	var taken *sitter.Node
 	for i := uint(0); i < n.NamedChildCount(); i++ {
-		w.walk(n.NamedChild(i), ns, inClass)
+		if c := n.NamedChild(i); !sameNode(c, taken) {
+			taken = w.walk(c, ns, inClass)
+		}
 	}
+	return nil
 }
 
-// walkInner finds the inline units below n, which is inside the unit at
-// index outer, and records the outermost of them as outer's Inner.
-func (w *walker) walkInner(n *sitter.Node, outer int) {
+// walkInner finds the inline units in u, the unit at index outer, and
+// records the outermost of them as outer's Inner.
+func (w *walker) walkInner(u Unit, outer int) {
 	if w.inline == nil {
 		return
 	}
+	for _, n := range u.Nodes() {
+		w.innerBelow(n, outer)
+	}
+}
+
+// innerBelow finds the inline units below n, which is inside the unit at
+// index outer.
+func (w *walker) innerBelow(n *sitter.Node, outer int) {
 	for i := uint(0); i < n.NamedChildCount(); i++ {
 		c := n.NamedChild(i)
 		if name, ok := w.inlineName(c); ok {
 			w.units = append(w.units, w.unit(c, w.ns, name, false))
 			w.units[outer].Inner = append(w.units[outer].Inner, len(w.units)-1)
-			w.walkInner(c, len(w.units)-1)
+			w.innerBelow(c, len(w.units)-1)
 			continue
 		}
-		w.walkInner(c, outer)
+		w.innerBelow(c, outer)
 	}
 }
 
@@ -450,6 +477,13 @@ func (w *walker) unit(n *sitter.Node, ns, name string, inClass bool) Unit {
 			body = line
 		}
 	}
+	last := n
+	var sibling *sitter.Node
+	if w.spec.Body != nil {
+		if sibling = w.spec.Body(n); sibling != nil {
+			last = sibling
+		}
+	}
 	return Unit{
 		BodyLine:  body,
 		File:      w.path,
@@ -459,9 +493,37 @@ func (w *walker) unit(n *sitter.Node, ns, name string, inClass bool) Unit {
 		Kind:      kind,
 		Private:   w.spec.Private(n, name, w.src),
 		StartLine: start,
-		EndLine:   int(n.EndPosition().Row) + 1,
+		EndLine:   int(last.EndPosition().Row) + 1,
 		Node:      n,
+		Body:      sibling,
 	}
+}
+
+// Nodes are the syntax trees u spans, in source order: its Node alone, or,
+// where its body is a sibling, Node, the siblings between, such as a
+// comment, and Body.
+func (u Unit) Nodes() []*sitter.Node {
+	out := []*sitter.Node{u.Node}
+	if u.Body == nil {
+		return out
+	}
+	for n := u.Node.NextSibling(); n != nil; n = n.NextSibling() {
+		out = append(out, n)
+		if sameNode(n, u.Body) {
+			break
+		}
+	}
+	return out
+}
+
+// Span is the byte range of u's source, its end excluded: from its Node's
+// start to the end of its Body, or of its Node where it has none.
+func (u Unit) Span() (start, end uint) {
+	end = u.Node.EndByte()
+	if u.Body != nil {
+		end = u.Body.EndByte()
+	}
+	return u.Node.StartByte(), end
 }
 
 // Complexity is the cyclomatic complexity of u: one plus each decision inside
@@ -478,17 +540,20 @@ func (f *File) Complexity(u Unit) int {
 	return cc
 }
 
-// WalkOwn walks u's own code like Walk, skipping its inline units.
+// WalkOwn walks u's own code like Walk, each of its Nodes in turn, skipping
+// its inline units.
 func (f *File) WalkOwn(u Unit, visit func(*sitter.Node) bool) {
 	inner := f.InnerNodes(u)
-	Walk(u.Node, func(n *sitter.Node) bool {
-		for _, c := range inner {
-			if sameNode(n, c) {
-				return false
+	for _, root := range u.Nodes() {
+		Walk(root, func(n *sitter.Node) bool {
+			for _, c := range inner {
+				if sameNode(n, c) {
+					return false
+				}
 			}
-		}
-		return visit(n)
-	})
+			return visit(n)
+		})
+	}
 }
 
 // InnerNodes are the syntax trees of u's inline units, in source order.
@@ -511,9 +576,14 @@ func Walk(n *sitter.Node, visit func(*sitter.Node) bool) {
 	}
 }
 
+// join adds name to the namespace ns. An unnamed container, such as Dart's
+// unnamed extension, adds nothing.
 func join(ns, name, sep string) string {
 	if ns == "" {
 		return name
+	}
+	if name == "" {
+		return ns
 	}
 	return ns + sep + name
 }

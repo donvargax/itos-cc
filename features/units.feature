@@ -275,7 +275,7 @@ Feature: Units: the functions and methods every tool measures
   # operator+; an unnamed extension's members sit in the file's namespace.
   # A unit is private when its own name, or a named constructor's part after
   # the dot, starts with _: build in _CounterState is not.
-  @wip @slice-28 @ID-UNIT-16
+  @slice-28 @ID-UNIT-16
   Scenario: Dart units
     Given the file "pubspec.yaml":
       """
@@ -400,7 +400,7 @@ Feature: Units: the functions and methods every tool measures
 
   # slice-28: a file outside lib/ is named by its path from the package, the
   # directory holding the nearest pubspec.yaml, under the pubspec's name.
-  @wip @slice-28 @ID-UNIT-17
+  @slice-28 @ID-UNIT-17
   Scenario: A Dart test file is named from its path in the package
     Given the file "app/pubspec.yaml":
       """

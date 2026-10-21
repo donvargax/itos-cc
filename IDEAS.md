@@ -148,6 +148,11 @@ reads `.metrics/`. Only itos's config wires them together.
 - **Kotlin grammar** is fwcd's, pinned to a commit because it has no tagged
   release with Go bindings. The tree-sitter-grammars one drops classes with
   several annotations and no constructor.
+- **Dart grammar** is UserNobody14's, the one maintained Dart grammar,
+  pinned to a commit because it has no tag or release. It is MIT (its
+  package.json says ISC). Its go.mod requires smacker's go-tree-sitter for
+  its own binding test, which puts smacker in our go.sum only; nothing
+  compiles it.
 
 ## Upstream
 
