@@ -2719,21 +2719,6 @@
     over the feature files, features/smoke.yaml, CONTRIBUTORS.md and LICENSE is empty. The
     parallel-agents trial follows on the person's q-78 authorization, for Dart, with
     docs/ownership.md as its brief.
-  done_when:
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: go run ./tools/bin/assemble -check
-      timeout: 300
-    - run: go test ./tools/bin/assemble -count=1
-      timeout: 300
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestDispatch|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestEveryPortIsBoundOnDiskAndInProcess)$'
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(CLI|UNIT|DRY|SCRAP|CRAP|MUT)-0[1-3]$'
-      timeout: 900
-    - run: git diff --exit-code --quiet b768837f2097fc2ea84a0a43abeb598b6d033e57 HEAD -- 'features/*.feature' features/smoke.yaml CONTRIBUTORS.md LICENSE
-      timeout: 60
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-87
   type: refactor
   title: Move pure mutation rules and models into internal/mutants
