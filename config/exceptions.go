@@ -10,7 +10,8 @@ import (
 )
 
 // Exceptions updates the current configuration at an explicit project root.
-// It uses the same representation codec as legacy callers and memory fixtures.
+// It writes through ExceptDocument and RenewDocument, the codec the in-process
+// scenario driver's memory fixtures write through too.
 type Exceptions struct{ RootDir string }
 
 func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bool, mutants.ExceptionFailure) {
@@ -61,4 +62,14 @@ func exceptionFailure(err error) mutants.ExceptionFailure {
 		return mutants.ExceptionInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}
 	return mutants.ExceptionFailed{Cause: err}
+}
+
+// writeDocument rewrites itos-cc.yaml at path with data, keeping the mode
+// it has, or 0644 for a file it creates.
+func writeDocument(path string, data []byte) error {
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode().Perm()
+	}
+	return os.WriteFile(path, data, mode) //nolint:gosec // path is itos-cc.yaml at the project root, rewritten keeping its own mode
 }

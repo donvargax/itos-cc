@@ -249,45 +249,6 @@ func (r *rawTests) parse() (*Tests, error) {
 	return t, nil
 }
 
-// Renewal aliases the genuine domain value; there is no Old/New wire twin.
-type Renewal = mutants.Renewal
-
-// Except retains the original direct-library entry point.
-func Except(e Exception) (bool, error) {
-	data, err := os.ReadFile(Path())
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return false, err
-	}
-	updated, replaced, err := ExceptDocument(data, e)
-	if err != nil {
-		return false, err
-	}
-	return replaced, writeDocument(Path(), updated)
-}
-
-// Renew retains the original direct-library batch entry point.
-func Renew(renewals []Renewal) error {
-	if len(renewals) == 0 {
-		return nil
-	}
-	data, err := os.ReadFile(Path())
-	if err != nil {
-		return err
-	}
-	updated, err := RenewDocument(data, renewals)
-	if err != nil {
-		return err
-	}
-	return writeDocument(Path(), updated)
-}
-func writeDocument(path string, data []byte) error {
-	mode := os.FileMode(0o644)
-	if info, err := os.Stat(path); err == nil {
-		mode = info.Mode().Perm()
-	}
-	return os.WriteFile(path, data, mode) //nolint:gosec // path is itos-cc.yaml at the project root, rewritten keeping its own mode
-}
-
 // Exception and Tests are domain values; YAML stays at this boundary.
 type Exception = mutants.Exception
 type Tests = mutants.Tests

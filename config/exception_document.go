@@ -6,11 +6,13 @@ import (
 	"slices"
 
 	"go.yaml.in/yaml/v3"
+
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ExceptDocument updates the CURRENT document through the single YAML codec.
 // It preserves unrelated keys/comments and returns no bytes on failure.
-func ExceptDocument(data []byte, e Exception) ([]byte, bool, error) {
+func ExceptDocument(data []byte, e mutants.Exception) ([]byte, bool, error) {
 	c, err := Parse(data)
 	if err != nil {
 		return nil, false, err
@@ -50,7 +52,7 @@ func ExceptDocument(data []byte, e Exception) ([]byte, bool, error) {
 }
 
 // RenewDocument consumes complete Old entries once and encodes only a full batch.
-func RenewDocument(data []byte, renewals []Renewal) ([]byte, error) {
+func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
 	c, err := Parse(data)
 	if err != nil {
 		return nil, err
@@ -68,9 +70,9 @@ func RenewDocument(data []byte, renewals []Renewal) ([]byte, error) {
 	}
 	done := make([]bool, len(c.Exceptions))
 	for _, r := range renewals {
-		i := slices.IndexFunc(c.Exceptions, func(e Exception) bool { return e == r.Old })
+		i := slices.IndexFunc(c.Exceptions, func(e mutants.Exception) bool { return e == r.Old })
 		for i >= 0 && done[i] {
-			next := slices.IndexFunc(c.Exceptions[i+1:], func(e Exception) bool { return e == r.Old })
+			next := slices.IndexFunc(c.Exceptions[i+1:], func(e mutants.Exception) bool { return e == r.Old })
 			if next < 0 {
 				i = -1
 				break
