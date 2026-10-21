@@ -87,6 +87,14 @@ func (a adapters) SelectionTree() selport.Tree { return a.Tree }
 // LangSurroundings is lang's port, a slice's Ports method.
 func (a adapters) LangSurroundings() langport.Surroundings { return a.Surroundings }
 
+// SnapshotStore is the snapshot port, the snapshots under .metrics/, a
+// slice's Ports method.
+func (a adapters) SnapshotStore() snapport.Store { return a.Store }
+
+// Rel is path as a person reads it, from the working directory, Dir, the
+// one the UI names paths from (cli.Rel), a slice's Ports method.
+func (a adapters) Rel(path string) string { return cli.Rel(a.Dir, path) }
+
 // SelectionExclusion is the sources itos-cc.yaml's exclude names, read under
 // ctx through the selection engine's settings, a slice's Ports method: a
 // file that cannot be read is config.invalid (settingsError).

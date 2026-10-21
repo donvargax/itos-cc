@@ -13,7 +13,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/crap"
 	"github.com/donvargax/itos-cc/internal/mutation"
 	"github.com/donvargax/itos-cc/internal/scrap"
-	"github.com/donvargax/itos-cc/internal/slices/dry"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
@@ -34,7 +33,6 @@ import (
 // unknown command weighs a tie by, as the top-level help lists them.
 type commandLine struct {
 	Crap     crap.CLI     `cmd:"" help:"CRAP score per function: complexity × untested risk"`
-	Dry      dry.CLI      `cmd:"" help:"functions similar enough to be duplicates"`
 	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
 	Scrap    scrap.CLI    `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
 	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
@@ -80,12 +78,12 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 // handlers are the providers of the handler of every command commandLine
 // holds, over a's ports, and of version's build, each called under the
 // context of the Run that asks for it; assembled provides the declared
-// commands'. The handlers of crap and dry hold the sources itos-cc.yaml
-// excludes, which their providers read under ctx through the selection
-// engine's settings, each provider reading them itself, so their failure is
-// never wrapped as a dependent provider's: a file that cannot be read
-// is config.invalid, the provider's error, which kong returns unwrapped from
-// the call of that command's Run alone. scrap reads only tests, which nothing
+// commands'. crap's handler holds the sources itos-cc.yaml excludes, which
+// its provider reads under ctx through the selection engine's settings,
+// reading them itself, so their failure is never wrapped as a dependent
+// provider's: a file that cannot be read is config.invalid, the provider's
+// error, which kong returns unwrapped from the call of that command's Run
+// alone. scrap reads only tests, which nothing
 // excludes, so it never reads the file, and version reads nothing but the
 // build. mutation's handler is handed the flags its line gave as written
 // (cli.Provided), read from the parsed line kong binds.
@@ -94,10 +92,6 @@ func handlers(ui *cli.UI, a adapters) []kong.Option {
 		kong.BindToProvider(func(ctx context.Context) (crap.Handler, error) {
 			exclude, err := exclusion(ctx, a.Selection)
 			return crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude}, err
-		}),
-		kong.BindToProvider(func(ctx context.Context) (dry.Handler, error) {
-			exclude, err := exclusion(ctx, a.Selection)
-			return dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude}, err
 		}),
 		kong.BindToProvider(func() mutation.Handler {
 			return mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Exceptions: a.Exceptions, Dir: a.Dir,

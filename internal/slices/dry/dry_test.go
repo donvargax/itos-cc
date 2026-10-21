@@ -18,10 +18,12 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	duplication "github.com/donvargax/itos-cc/internal/slices/dry/domain"
+	"github.com/donvargax/itos-cc/internal/slices/dry/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
@@ -78,15 +80,15 @@ func handler(t porttest.Tree, store *snapporttest.Store) Handler {
 	return Handler{Tree: t, Surroundings: langporttest.Surroundings{Dir: "/work/src"}, Store: store, Name: fromSrc}
 }
 
-func query(paths ...string) Query { return Query{Paths: paths, Options: duplication.Defaults} }
+func query(paths ...string) Query { return Query{Paths: paths, Options: domain.Defaults} }
 
 // The defaults help shows and the command uses are the domain's own.
 func TestTheDefaultsAreTheDomains(t *testing.T) {
 	cli := reflect.TypeFor[CLI]()
 	for field, want := range map[string]any{
-		"Threshold": duplication.Defaults.Threshold,
-		"MinLines":  duplication.Defaults.MinLines,
-		"MinNodes":  duplication.Defaults.MinNodes,
+		"Threshold": domain.Defaults.Threshold,
+		"MinLines":  domain.Defaults.MinLines,
+		"MinNodes":  domain.Defaults.MinNodes,
 	} {
 		f, _ := cli.FieldByName(field)
 		if got := f.Tag.Get("default"); got != fmt.Sprint(want) {
@@ -109,8 +111,8 @@ func TestHandleFindsThePairAndRecordsIt(t *testing.T) {
 	var recorded struct {
 		Version    int
 		Threshold  float64
-		Candidates []duplication.Candidate
-		Groups     []duplication.Group
+		Candidates []domain.Candidate
+		Groups     []domain.Group
 	}
 	if err := json.Unmarshal([]byte(store.Snapshots["dry.json"]), &recorded); err != nil {
 		t.Fatal(err)
@@ -175,6 +177,54 @@ func TestHandleStopsAtAFailure(t *testing.T) {
 	found, err := handler(tree(), &snapporttest.Store{Failures: map[string]snapport.Failure{"dry.json": full}}).Handle(t.Context(), query())
 	if !errors.Is(err, full) || len(found.Candidates) != 1 {
 		t.Errorf("an unwritable snapshot: %+v, %v; want the pair and the failure", found, err)
+	}
+}
+
+// ports are the Ports cmd's adapters give the handler, held in memory: the
+// tree, the store, files named from /work/src, and the exclusion the
+// settings give or the failure reading them meets.
+type ports struct {
+	tree    porttest.Tree
+	store   *snapporttest.Store
+	exclude selection.Exclusion
+	failure error
+}
+
+func (p ports) SelectionTree() port.Tree { return p.tree }
+func (p ports) LangSurroundings() langport.Surroundings {
+	return langporttest.Surroundings{Dir: "/work/src"}
+}
+func (p ports) SnapshotStore() snapport.Store { return p.store }
+func (p ports) Rel(path string) string        { return fromSrc(path) }
+func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
+	return p.exclude, p.failure
+}
+
+// NewHandler builds the handler over its Ports: the files their tree holds,
+// named by their Rel, recorded in their store, the sources their settings
+// exclude left out. A failure reading the settings is returned as the Ports
+// gave it, never wrapped, so cmd's config.invalid is the problem the person
+// reads.
+func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
+	store := &snapporttest.Store{RootDir: at("")}
+	h, err := NewHandler(t.Context(), ports{tree: tree(), store: store})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := h.Handle(t.Context(), query())
+	if err != nil || len(found.Candidates) != 1 || found.Candidates[0].Left.File != "invoice.py" || store.Snapshots["dry.json"] == "" {
+		t.Errorf("Handle() = %+v, %v, recorded %v; want invoice.py's pair, named by Rel, in the store", found, err, store.Snapshots)
+	}
+	h, err = NewHandler(t.Context(), ports{tree: tree(), store: &snapporttest.Store{RootDir: at("")}, exclude: selection.Exclusion{Root: at(""), Exclude: []string{"**/receipt.py"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found, err := h.Handle(t.Context(), query()); err != nil || len(found.Candidates) != 0 || found.Excluded != 1 {
+		t.Errorf("Handle() = %+v, %v; want no pair, receipt.py left out", found, err)
+	}
+	failure := cli.NewProblem(cli.CodeUsage, "config.invalid", "itos-cc.yaml: cannot be read", "Fix it.")
+	if _, err := NewHandler(t.Context(), ports{tree: tree(), failure: failure}); err != failure {
+		t.Errorf("a settings failure: %v, want the Ports' own %v", err, failure)
 	}
 }
 

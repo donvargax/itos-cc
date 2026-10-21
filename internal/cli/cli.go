@@ -56,12 +56,20 @@ type UI struct {
 
 // Rel is path as a person reads it: from the working directory when it is
 // in it, and as it is otherwise, so output reads like the command line
-// that produced it.
+// that produced it (Rel, from u.Dir).
 func (u *UI) Rel(path string) string {
-	if u.Dir == "" {
+	return Rel(u.Dir, path)
+}
+
+// Rel is path named from dir, the working directory, when it is in it, and
+// as it is otherwise or when dir is "", not known: the one copy of how a
+// person reads a path, which the UI names paths by and cmd gives the
+// slices whose handlers name files, from the same directory.
+func Rel(dir, path string) string {
+	if dir == "" {
 		return path
 	}
-	rel, err := filepath.Rel(u.Dir, path)
+	rel, err := filepath.Rel(dir, path)
 	if err != nil || strings.HasPrefix(rel, "..") {
 		return path
 	}

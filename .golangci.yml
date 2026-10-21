@@ -50,9 +50,11 @@ linters:
         # port asking what surrounds a file (decisions 42 and 43);
         # internal/snapshot names the files the snapshots under .metrics/
         # record, its port reading and writing them (decision 41);
-        # internal/duplication finds functions similar enough to be
-        # duplicates in files internal/lang parsed, reaching nothing outside,
-        # so it has no port (decision 37); internal/teststructure measures
+        # internal/slices/dry/domain, the dry slice's own domain (ADR-0051),
+        # finds functions similar enough to be duplicates in files
+        # internal/lang parsed, reaching nothing outside, so it has no port
+        # (decision 37), and is no shared domain, so the allow list leaves it
+        # out and no other domain imports it; internal/teststructure measures
         # test code's structure in files internal/lang parsed, with lang's
         # fingerprints, and has no port either;
         # internal/coverage parses coverage reports and answers what they
@@ -66,7 +68,7 @@ linters:
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
-            - "**/internal/duplication/**"
+            - "**/internal/slices/dry/domain/**"
             - "**/internal/teststructure/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"
@@ -78,7 +80,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/duplication$
             - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
@@ -96,7 +97,7 @@ linters:
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
-            - "**/internal/duplication/**"
+            - "**/internal/slices/dry/domain/**"
             - "**/internal/teststructure/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"
@@ -132,7 +133,6 @@ linters:
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
-            - "!**/internal/duplication/**" # a domain, with no port
             - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
@@ -155,7 +155,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/duplication$
             - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
@@ -176,19 +175,20 @@ linters:
         # apart. depguard matches a prefix, so it cannot tell a slice's own
         # subpackage from another slice's: internal/slices/ is allowed here,
         # and tools/bin/architecture-check refuses a slice importing another
-        # (its sibling rule). Each domain added to the slices rule's allow
-        # list is added here too, until the last slice moves and this rule is
-        # the only one.
+        # (its sibling rule). A slice's own domain is held by the domain
+        # rules instead, as every domain is, so it imports no UI, slice or
+        # I/O. Each domain added to the slices rule's allow list is added
+        # here too, until the last slice moves and this rule is the only one.
         slice-packages:
           list-mode: lax
           files:
             - "**/internal/slices/**"
+            - "!**/internal/slices/dry/domain/**" # a slice's domain, held by domain
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/duplication$
             - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
@@ -218,7 +218,6 @@ linters:
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
-            - "!**/internal/duplication/**" # a domain, with no port
             - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
@@ -266,7 +265,7 @@ linters:
             - "**/internal/selection/**"
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
-            - "**/internal/duplication/**"
+            - "**/internal/slices/dry/domain/**"
             - "**/internal/teststructure/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"

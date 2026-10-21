@@ -6,13 +6,17 @@
 // only wires: the selection domain chooses the files through the Tree port
 // it was given and parses each one, read through the same port and parsed
 // by lang, asking the Surroundings port it was given what surrounds it, and
-// the duplication domain finds the pairs and groups; the snapshot domain
-// names each file from the project root, and its Store port records what
-// was found. Run writes it, each file named from the working directory. The
-// slice reads no file itself. A failure is the selection domain's or the
-// snapshot domain's, which cmd's classifiers turn into problems, or lang's,
-// an internal one; Run reports it through the UI. It has no classifier of
-// its own.
+// the slice's own domain, its domain subpackage, finds the pairs and
+// groups; the snapshot domain names each file from the project root, and
+// its Store port records what was found. Run writes it, each file named
+// from the working directory. The slice reads no file itself. A failure is
+// the selection domain's or the snapshot domain's, which cmd's classifiers
+// turn into problems, or lang's, an internal one; Run reports it through
+// the UI. It has no classifier of its own.
+//
+// Command declares the command to cmd, which assembles it into its one
+// model (ADR-0051), and Ports are the ports its handler is built over,
+// which cmd's adapters satisfy.
 package dry
 
 import (
@@ -23,15 +27,23 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
-	duplication "github.com/donvargax/itos-cc/internal/slices/dry/domain"
+	"github.com/donvargax/itos-cc/internal/slices/dry/domain"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 
+// Command is the dry command as cmd assembles it: its name, the line the
+// top-level help lists it by, and a fresh command line for each parser.
+var Command = cli.Declaration{
+	Name: "dry",
+	Help: "functions similar enough to be duplicates",
+	New:  func() any { return &CLI{} },
+}
+
 // CLI is the dry command's command line: the files it selects, as every
 // command selects them (cli.Selection, first), the similarity a pair must
 // reach, the smallest functions it compares, and whether it prints lines or
-// the one object a script reads. Its defaults are duplication.Defaults, a
+// the one object a script reads. Its defaults are domain.Defaults, a
 // test holds.
 type CLI struct {
 	cli.Selection
@@ -80,16 +92,16 @@ are chosen. Writes .metrics/dry.json.`,
 type Query struct {
 	Paths   []string
 	Changed bool
-	Options duplication.Options
+	Options domain.Options
 }
 
 // Handler is the dry command's application: the working tree it selects
 // and reads files through, what surrounds those files, which lang asks
 // about to parse them, the store its snapshot is recorded in, Name, the
 // name a person reads a file by, from the working directory, and Exclude,
-// the sources the project's settings leave out. cmd gives each, choosing
-// the adapters behind them and reading the settings. No value of a command
-// line is read here.
+// the sources the project's settings leave out. cmd gives each through
+// Ports (NewHandler), choosing the adapters behind them and reading the
+// settings. No value of a command line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
@@ -98,14 +110,41 @@ type Handler struct {
 	Exclude      selection.Exclusion
 }
 
+// Ports are what the dry command reaches the world through, which cmd's
+// adapters give it: the working tree it selects and reads files through,
+// what surrounds those files, the store its snapshot is recorded in, Rel,
+// a path named from the working directory as a person reads it, and the
+// sources the project's settings exclude, which cmd reads under the context
+// of the Run that asks for the handler and whose failure it words as a
+// person reads it.
+type Ports interface {
+	SelectionTree() port.Tree
+	LangSurroundings() langport.Surroundings
+	SnapshotStore() snapport.Store
+	Rel(path string) string
+	SelectionExclusion(ctx context.Context) (selection.Exclusion, error)
+}
+
+// NewHandler is the handler over p's tree, surroundings and store, naming
+// each file by p's Rel and leaving out the sources p's settings exclude,
+// read under ctx; their failure is returned as p gave it, never wrapped, so
+// the problem cmd worded is the one the person reads.
+func NewHandler(ctx context.Context, p Ports) (Handler, error) {
+	exclude, err := p.SelectionExclusion(ctx)
+	if err != nil {
+		return Handler{}, err
+	}
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(), Name: p.Rel, Exclude: exclude}, nil
+}
+
 // Found is what Handle found: the pairs at or above the threshold, best
 // first, and the groups they link. NoSources is set when paths or changed
 // selected no source to check, so nothing was compared or recorded.
 // Excluded is the count of the sources the paths and changed chose that
 // Exclude left out.
 type Found struct {
-	Candidates []duplication.Candidate
-	Groups     []duplication.Group
+	Candidates []domain.Candidate
+	Groups     []domain.Group
 	NoSources  bool
 	Excluded   int
 }
@@ -141,7 +180,7 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 	if failure != nil {
 		return Found{}, failure
 	}
-	var forms []duplication.Form
+	var forms []domain.Form
 	keys := map[string]string{}
 	for _, path := range all {
 		f, err := selection.Parse(ctx, h.Tree, h.Surroundings, path)
@@ -150,14 +189,14 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 		}
 		name := h.Name(path)
 		keys[name] = snapshot.Key(root, path)
-		forms = append(forms, duplication.Forms(f, name, q.Options)...)
+		forms = append(forms, domain.Forms(f, name, q.Options)...)
 		f.Close()
 	}
-	found := Found{Candidates: []duplication.Candidate{}, Excluded: chosen.Excluded}
-	if c := duplication.Compare(forms, focus, q.Options); c != nil {
+	found := Found{Candidates: []domain.Candidate{}, Excluded: chosen.Excluded}
+	if c := domain.Compare(forms, focus, q.Options); c != nil {
 		found.Candidates = c
 	}
-	found.Groups = duplication.Groups(found.Candidates)
+	found.Groups = domain.Groups(found.Candidates)
 	candidates, groups := fromRoot(found.Candidates, found.Groups, keys)
 	if failure := h.Store.Write(ctx, "dry.json", recorded{Version: snapshot.Version, Threshold: q.Options.Threshold,
 		Candidates: candidates, Groups: groups}); failure != nil {
@@ -169,10 +208,10 @@ func (h Handler) Handle(ctx context.Context, q Query) (Found, error) {
 // recorded is dry.json: the format version, the threshold, and the pairs
 // and groups with each file named from the project root.
 type recorded struct {
-	Version    int                     `json:"version"`
-	Threshold  float64                 `json:"threshold"`
-	Candidates []duplication.Candidate `json:"candidates"`
-	Groups     []duplication.Group     `json:"groups"`
+	Version    int                `json:"version"`
+	Threshold  float64            `json:"threshold"`
+	Candidates []domain.Candidate `json:"candidates"`
+	Groups     []domain.Group     `json:"groups"`
 }
 
 // union merges sorted path lists without duplicates; paths named outside the
@@ -194,25 +233,25 @@ func union(a, b []string) []string {
 // fromRoot is candidates and groups as dry.json records them: each file by
 // its key, from the project root, while output names it from the working
 // directory.
-func fromRoot(candidates []duplication.Candidate, groups []duplication.Group, keys map[string]string) ([]duplication.Candidate, []duplication.Group) {
-	side := func(s duplication.Side) duplication.Side {
+func fromRoot(candidates []domain.Candidate, groups []domain.Group, keys map[string]string) ([]domain.Candidate, []domain.Group) {
+	side := func(s domain.Side) domain.Side {
 		s.File = keys[s.File]
 		return s
 	}
-	var cs []duplication.Candidate
+	var cs []domain.Candidate
 	if candidates != nil {
-		cs = []duplication.Candidate{}
+		cs = []domain.Candidate{}
 	}
 	for _, c := range candidates {
 		c.Left, c.Right = side(c.Left), side(c.Right)
 		cs = append(cs, c)
 	}
-	var gs []duplication.Group
+	var gs []domain.Group
 	if groups != nil {
-		gs = []duplication.Group{}
+		gs = []domain.Group{}
 	}
 	for _, g := range groups {
-		members := make([]duplication.Side, 0, len(g.Members))
+		members := make([]domain.Side, 0, len(g.Members))
 		for _, m := range g.Members {
 			members = append(members, side(m))
 		}
@@ -225,9 +264,9 @@ func fromRoot(candidates []duplication.Candidate, groups []duplication.Group, ke
 // result is the object --json prints beside schema and ok: the threshold,
 // the pairs and the groups, empty lists rather than none.
 type result struct {
-	Threshold  float64                 `json:"threshold"`
-	Candidates []duplication.Candidate `json:"candidates"`
-	Groups     []duplication.Group     `json:"groups"`
+	Threshold  float64            `json:"threshold"`
+	Candidates []domain.Candidate `json:"candidates"`
+	Groups     []domain.Group     `json:"groups"`
 }
 
 // Run finds the duplicates the command line asks for, through h and with
@@ -235,9 +274,9 @@ type result struct {
 // the failure it met, with what was found before it in the object, and
 // returns the exit code the UI gives it.
 func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
-	opt := duplication.Options{Threshold: c.Threshold, MinLines: c.MinLines, MinNodes: c.MinNodes}
+	opt := domain.Options{Threshold: c.Threshold, MinLines: c.MinLines, MinNodes: c.MinNodes}
 	found, err := h.Handle(ctx, Query{Paths: c.Paths, Changed: c.Changed, Options: opt})
-	out := result{Threshold: opt.Threshold, Candidates: []duplication.Candidate{}, Groups: []duplication.Group{}}
+	out := result{Threshold: opt.Threshold, Candidates: []domain.Candidate{}, Groups: []domain.Group{}}
 	if found.Candidates != nil {
 		out.Candidates = found.Candidates
 	}

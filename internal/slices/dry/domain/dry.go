@@ -1,13 +1,14 @@
-// Package duplication finds functions whose structure is close enough to be
-// duplicates worth reviewing. It is a domain (decision 37): it takes files
-// internal/lang has parsed, with the names its caller gives them, and reads
-// nothing itself.
+// Package domain is the dry command's domain, finding functions whose
+// structure is close enough to be duplicates worth reviewing. It is the dry
+// slice's own (ADR-0051), kept apart from its CLI and application code, and
+// a domain (decision 37): it takes files internal/lang has parsed, with the
+// names its caller gives them, and reads nothing itself.
 //
 // Two functions score the similarity of their structure as internal/lang
 // fingerprints it (lang.Fingerprint, lang.Jaccard): local names, field
 // names, and literal values drop out; called function names, operators, and
 // the shape of the tree stay.
-package duplication
+package domain
 
 import (
 	"fmt"

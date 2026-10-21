@@ -1,4 +1,4 @@
-package duplication
+package domain
 
 import (
 	"strings"
