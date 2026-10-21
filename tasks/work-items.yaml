@@ -4858,8 +4858,8 @@ items:
   - id: slice-35
     title: mutation run runs a Flutter file's mutants with flutter test
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
