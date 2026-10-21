@@ -6275,3 +6275,33 @@
     closes only on a run with no unclassified difference. No product code changes, no normalization
     rule (a run-dependent difference is classified unstable, never normalized away), no mutation run
     of this repository.
+- id: T-173
+  type: build
+  title: Release archives carry every compiled-in dependency's license notice
+  why: >
+    Found by slice-28's agent (2026-10-21); the person put it in the parallel trial beside the Dart
+    wave-2 items. Release archives (.goreleaser.yaml files:) ship LICENSE and README.md only, while
+    the binary compiles in every non-standard Go module the command imports: the tree-sitter
+    grammars' C and Go (MIT and others), go-tree-sitter, kong and the rest. MIT, BSD and Apache ask
+    their notices to travel with copies, binaries included. No go:embed exists, so no npm code
+    ships. Build a stdlib generator, tools/bin/notices/main.go beside assemble and release-notes, no
+    new dependency: go-licenses was passed over, as it guesses license types we do not need, we copy
+    the texts verbatim, and it would be one more pinned tool. It runs go list -deps -json for
+    ./cmd/itos-cc under every platform the release builds (linux, darwin and windows, amd64 and
+    arm64, CGO_ENABLED=1, as release.yml does), takes the union of their modules but the main module
+    (a replaced module by its replacement), and writes THIRD_PARTY_NOTICES at the repository root:
+    for each module in module path order, a header naming the module path and no version, then every
+    file in the module's root whose name starts with LICENSE, LICENCE, COPYING or NOTICE, case
+    ignored, verbatim. No version in the header, so a Renovate bump that keeps a module's license
+    text leaves the file unchanged and its automerge green; a bump that changes the text fails the
+    check, a person regenerating. A module with no such file fails the generator naming it, never
+    skipped. -check regenerates in memory and exits 1 naming each module added, removed or changed,
+    writing nothing. .goreleaser.yaml's archives carry THIRD_PARTY_NOTICES beside LICENSE in every
+    archive; README's install section names it in a line. Tests of the generator in
+    tools/bin/notices with a fixture module tree (no network): the order, the header, the file name
+    match, a module with none failing, -check's verdict. Files: tools/bin/notices,
+    THIRD_PARTY_NOTICES, .goreleaser.yaml, README.md; not cd.yml, ci.yml or release.yml (the check
+    runs per push as a named task's check, as itos ci run runs every named task's checks).
+  done_when:
+    - run: go test ./tools/bin/notices/
+    - run: go run ./tools/bin/notices -check
