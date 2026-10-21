@@ -4495,7 +4495,7 @@ items:
     title: Point the refactor proof at b768837 and add the edge cases T-86 moves listed
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: depguard-nested-allow

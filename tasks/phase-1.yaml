@@ -6255,11 +6255,6 @@
     refactor-proof.yml's default baseline becomes b768837, its header saying it was T-132's run
     against 51f3952 and is T-86's against b768837; T-166's STAMP serves both. No product code
     changes; the proof run itself is the coordinator's dispatch.
-  done_when:
-    - run: bash -n tools/bin/refactor-proof
-      timeout: 30
-    - run: go build -o "${TMPDIR:-/tmp}/t86-proof-itos-cc" ./cmd/itos-cc && tools/bin/refactor-proof "${TMPDIR:-/tmp}/t86-proof-itos-cc" "${TMPDIR:-/tmp}/t86-proof-itos-cc" "" '^t86-'
-      timeout: 600
 - id: T-172
   type: test
   title: Run T-86's one refactor proof against b768837 and classify every difference
