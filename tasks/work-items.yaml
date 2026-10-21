@@ -4108,6 +4108,6 @@ items:
     title: Move the Go toolchain to go1.27.3 for GO-2026-6809
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

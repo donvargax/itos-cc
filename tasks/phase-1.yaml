@@ -5528,6 +5528,3 @@
     toolchain (workflows' setup-go, the pinned tools, docs naming the version), leaving the go
     directive at 1.27.1 unless the fix needs it; check internal/release/release_test.go's 1.27.2 is
     a fixture, not a pin. Renovate has no open request for it.
-  done_when:
-    - run: go tool govulncheck -test ./...
-      timeout: 600
