@@ -5197,3 +5197,15 @@ items:
       Phase 2 narrows to the test names that reach a mutant, as Go's and Python's listed collectors
       do. Started only after the person tries phase 1 and asks (q-76).
     refs: [dart-support]
+  - id: dart-integration-tests
+    title: Run a Flutter app's integration_test/ on a device
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-76 phase 3: integration_test/ and test_driver/ need a device or an emulator and never run
+      today (slice-35, slice-38). Phase 3 runs them for coverage and mutants. Started only after the
+      person tries phase 2 and asks (q-76).
+    refs: [dart-support]
