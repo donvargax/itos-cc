@@ -139,6 +139,12 @@ ci:
     # regenerates both, writing nothing, and fails naming each file whose
     # committed one differs.
     - { run: go run ./tools/bin/assemble -check, cost: static }
+    # THIRD_PARTY_NOTICES, the license and notice texts of every module the
+    # binary compiles in (T-173): -check writes nothing and fails, naming
+    # each module added, removed or changed, when the committed file is not
+    # what tools/bin/notices would write, so a dependency bump that changes
+    # a license text, Renovate's included, fails here (T-175).
+    - { run: go run ./tools/bin/notices -check, cost: static }
     - { run: go build ./..., cost: static }
     - { run: go vet ./..., cost: static }
     - { run: go mod verify, cost: static }
