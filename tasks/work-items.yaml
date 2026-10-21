@@ -5040,3 +5040,19 @@ items:
       cannot resolve package: imports. Running the command's Ready in the frozen root before its
       first baseline would close that, with MUT-209's Dart row (the pub cache, run with --no-pub) as
       its scenario; the touchpoints' D10.
+  - id: covdata-mode-clash
+    title: crap's Go integration coverage fails on a counter-mode clash
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-176's agent (2026-10-21) running a full itos-cc crap over this repository: the
+      integration coverage step logged 'go tool covdata textfmt ... counter mode clash ... previous
+      file had set, new file has atomic', then 'coverage: go: exit status 1', and crap still printed
+      scores, so some functions were scored without their integration coverage and nothing said
+      which. A GOCOVERDIR collected from binaries built with different -covermode values (set for
+      the coverage run, atomic where -race or another build sets it) cannot be merged by covdata.
+      Reproduce, then decide: build every integration binary with one mode, keep the modes'
+      directories apart, or say on stderr which coverage was lost; a scenario holds the fix.
