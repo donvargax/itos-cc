@@ -4172,3 +4172,22 @@ items:
       formats, mutation toolchain and policy, reach, scrap and dry rules, feature Examples rows,
       cd.yml's language shards, release cgo. Write it from that map once the slices refactor fixes
       the layout, and check it against Dart's items.
+  - id: language-adapter-cases
+    title: Reach coverage plans, the toolchain probe and the real reach locally with adapter cases
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): only the binary driver reaches these choices made from
+      project files before any tool runs, so locally nothing checks them. coverage TypeScriptRunner,
+      typescriptPlan and Plan.prove (a package.json coverage script run as <pm> run coverage,
+      Unattested; Jest installed or not), kotlinPlan (gradlew in a parent build root), pythonRunner
+      (unittest over named modules without pytest), internal/testtools Toolchain.Observe (a jest
+      dependency), internal/testinputs addProjectCoverageInputs (a strict project with an
+      itos-cc.yaml), graph index.kotlin (a Kotlin import of an unknown package) and importingTests
+      (a Go test resolving its imports). Adapter cases over fixture files in coverage/run_test.go,
+      internal/testtools, internal/testinputs and graph/graph_test.go or tests_test.go reach them in
+      seconds with no Node, Python, Gradle or Maven run; the scenarios that run the tools stay CDs
+      (decisions 44, 49, 52).
