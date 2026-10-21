@@ -3989,7 +3989,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-156]
+    depends_on: [T-161]
     kind: idea
     why: >
       T-86 (ADR-0051, R11): mutation's importgraph adapter imports serve's graph package for
