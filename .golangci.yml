@@ -229,7 +229,9 @@ linters:
         # name. It is a rule of its own because depguard looks a deny up as
         # the one entry sorting just before the import: a longer deny beside
         # slice-packages' module-wide one would hide that one from every
-        # import sorting after it.
+        # import sorting after it. TestNoDenyEntryPrefixesAnother, in
+        # tools/testdata/architecture, refuses any rule's deny list holding
+        # an entry that prefixes another (T-167).
         slice-adapters:
           files:
             - "**/internal/slices/**"

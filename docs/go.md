@@ -591,8 +591,19 @@ context-as-argument a context after any other parameter, tests included.
   code or its tests (ADR-0051). depguard cannot say "not a sibling", since its deny list is a
   prefix that would refuse a slice's own subpackages too, so `tools/bin/architecture-check`
   holds it over `go list ./...`'s imports and names both packages. A slice may import its own
-  subpackages and any engine, and what is outside `internal/slices`, `cmd` above all, may import
-  every slice.
+  subpackages and any engine.
+- Outside: engines stay behind stable APIs the slices import, never the reverse (ADR-0051,
+  T-167), so a package outside `internal/slices` imports none under it, from its code or its
+  tests, but three. `cmd`, which assembles them, imports every slice, its domains and adapters.
+  graph, the legacy serve consumer, with any subpackage under `graph/`, imports
+  `internal/slices/mutation/domain` from its code, whose judgment it reads, and anything under
+  `internal/slices/mutation/` from its tests, the domain's `porttest` and the adapters it builds
+  fixtures with. `config`, the one settings codec, with any subpackage under `config/`, imports
+  that domain from its code, decoding `mutation.exceptions` and `mutation.tests` into its
+  `Config`, and the domain and its `porttest` from its tests. depguard's `slices` rule covers
+  `internal/` alone, and `project`, `coverage`, `metrics`, `server`, `features` and `tools` have
+  no rule, so `tools/bin/architecture-check` holds it over the same `go list` fields as the
+  sibling rule and names both packages.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
@@ -708,7 +719,11 @@ command from reaching into this one.
   saying what it is, and the same to `slice-fakes`.
 - Then add compile-valid fixtures to `tools/testdata/architecture` that each rule you touched
   must accept and refuse. `tools/bin/architecture-check` runs the pinned linter over them, so a
-  rule that stops matching fails there instead of passing silently.
+  rule that stops matching fails there instead of passing silently. Its
+  `TestNoDenyEntryPrefixesAnother` refuses a rule whose `deny` holds an entry prefixing another,
+  naming both: depguard looks a deny up as the one entry sorting just before the import, so the
+  shorter is hidden from every import sorting after the longer, which goes in a rule of its own,
+  as `slice-adapters` does.
 
 A new sealed failure set, an interface with an unexported marker method like the selection
 port's `Failure`, is annotated `//sumtype:decl` and given its exit codes in one switch that

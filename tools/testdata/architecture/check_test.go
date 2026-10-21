@@ -425,11 +425,24 @@ func TestArchitecture(t *testing.T) {
 		add("json_allowed_"+kind, "internal/imports", "encoding/json", "Marshal", "", test)
 	}
 	// config and graph, engines outside internal/slices, import mutation's
-	// domain, its Config and its Reach, and no rule holds them; graph
-	// resolves its imports through the import-resolution engine.
+	// domain, its Config and its Reach, and no depguard rule holds them;
+	// graph resolves its imports through the import-resolution engine.
+	// architecture-check --outside holds what they and every other package
+	// outside internal/slices import under it, below.
 	add("mutation", "config", module+"/"+mutation, "Value", "", false)
 	add("mutation", "graph", module+"/"+mutation, "Value", "", false)
 	add("imports", "graph", module+"/internal/imports", "Value", "", false)
+	// What is outside internal/slices and no rule holds, which
+	// architecture-check --outside refuses or accepts, below: depguard lets
+	// every one by.
+	add("units", "project", module+"/internal/slices/units", "Value", "", false)
+	add("mutation_domain", "coverage", module+"/"+mutation, "Value", "", true)
+	add("dry_domain", "features", module+"/internal/slices/dry/domain", "Value", "", false)
+	add("crap_domain", "graph", module+"/internal/slices/crap/domain", "Value", "", false)
+	add("snapshots", "graph", module+"/internal/slices/mutation/adapters/snapshots", "Value", "", false)
+	add("testtools", "graph", module+"/internal/slices/mutation/adapters/testtools", "Value", "", true)
+	add("units", "config", module+"/internal/slices/units", "Value", "", false)
+	add("fake", "config", module+"/"+mutation+"/porttest", "Value", "", true)
 	// What assembles them is free to import the domain, the adapters and
 	// the slices.
 	for _, target := range []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", mutation, "internal/coverage", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/slices/mutation/adapters/worktrees", "internal/processes", "internal/imports", "internal/slices/mutation/adapters/testtools", "internal/slices/mutation/adapters/testinputs", "internal/slices/mutation/adapters/importgraph", "internal/slices/mutation/adapters/githistory", "internal/slices/mutation/adapters/freshenv", "internal/slices/mutation/adapters/snapshots", "internal/slices/mutation/adapters/exceptions", "internal/slices/mutation/adapters/sources", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/slices/version", "internal/slices/mutation", "internal/next", "internal/cli", "internal/version", "project", "metrics", "coverage"} {
@@ -753,4 +766,15 @@ func Code(failure sealed.Failure) int {
 			}
 		})
 	}
+	// Engines stay behind stable APIs the slices import, never the reverse
+	// (ADR-0051, T-167): a package outside internal/slices imports none
+	// under it but cmd, which assembles them, and the legacy consumers, each
+	// what its row allows: graph, its fixture subpackages with it, the
+	// mutation domain from its code and anything under
+	// internal/slices/mutation/ from its tests, and config, its fixture
+	// subpackages with it, the mutation domain from its code and that domain
+	// with its porttest from its tests. depguard holds none of them, so
+	// architecture-check --outside refuses, from code or tests, naming both
+	// packages; the lint above holds that depguard accepts every fixture.
+	checkOutside(t, check, dir, compile.Env, module)
 }
