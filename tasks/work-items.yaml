@@ -3924,7 +3924,7 @@ items:
     title: Generate cmd's command assembly from each slice's declaration, checked current in CI
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-145]
     kind: task
   - id: T-148

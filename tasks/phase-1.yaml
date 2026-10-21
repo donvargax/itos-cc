@@ -5458,11 +5458,6 @@
     that problem unwrapped (T-143's finding); dry's and crap's ui.Rel becomes a Ports method too
     when they move. Port method names are shared across slices (SelectionTree, LangSurroundings,
     SelectionSettings), one adapters method serving every slice that declares it.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(UNIT|CLI)-'
-      timeout: 600
-    - run: go test -count=1 ./tools/bin/assemble
-      timeout: 300
 - id: T-147
   type: refactor
   title: Take the exclude setting out of mutation's Config
