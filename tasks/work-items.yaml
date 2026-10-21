@@ -4439,3 +4439,17 @@ items:
       the failed job was the only way past it. The Maven step (cd.yml's languages job) and any other
       pinned download in the workflows could pass curl --retry 4 --retry-all-errors --retry-delay 5,
       keeping the SHA-512 check, so one transient answer from a mirror does not fail a release gate.
+  - id: snapshots-test-only-codec-exports
+    title: Unexport the snapshots adapter's codec helpers only its own tests call
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-161 moved the mutation snapshot codec into internal/slices/mutation/adapters/snapshots with
+      its exported helpers as they were. UnitJSON, MutantJSON, ReadUnitJSON and ReadMutantJSON have
+      no caller outside the package's own internal tests, and SnapshotJSON and ReadSnapshotJSON none
+      outside tests (Mutations.Write uses SnapshotJSON inside the package; cmd's and graph's tests
+      write fixtures with it). An adapter's exported surface is what cmd wires, so the test-only
+      helpers could become unexported or move into a test helper, the byte tests unchanged.
