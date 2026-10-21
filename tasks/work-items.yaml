@@ -4902,3 +4902,17 @@ items:
       assertEquals(1, y) } is a decision, and Dart's if around expect is one too, as SCRAP-31's the
       limit is ten expects. So the same intent scores differently by the assertion library a test
       uses. Decide whether the guard idiom is Go's alone.
+  - id: dart-nested-test-config
+    title: A Dart test reaches only the nearest flutter_test_config.dart above it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-34 follows flutter test (flutter_tools findTestConfigFile): a test file loads the
+      nearest flutter_test_config.dart at or above it, up to its package root, never an outer one.
+      Unlike pytest, which loads every conftest.py above a test, an outer config a nearer one
+      shadows reaches nothing for that test. MUT-219 has one config only, so no scenario holds the
+      nested case; one would show a test below two configs reaching what the inner reaches and not
+      what only the outer reaches.
