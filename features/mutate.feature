@@ -1199,6 +1199,16 @@ Feature: Mutation testing
         | python     |
         | kotlin     |
 
+      # slice-36, dart-support: Dart's comment and documentation_comment
+      # nodes are left out of the hash since slice-29, so this row is a
+      # guardrail that passes before slice-36. Strict Dart evidence is bound
+      # to that hash, so a comment changes no evidence either. It needs no
+      # Flutter: the results come from a --test-command.
+      @wip @slice-36
+      Examples:
+        | language |
+        | dart     |
+
   # Issue #8, part 1: a gate (a commit hook) proves that results exist for
   # exactly the code being committed, without running anything. Decided with
   # the person on 2026-10-06 (q-1 to q-3): it is a subcommand of the group,
@@ -2153,6 +2163,16 @@ Feature: Mutation testing
         | Python     | command exits 0 but writes no report | coverage.measured-nothing | 1    |
         | Kotlin     | command fails                        | coverage.measured-nothing | 1    |
 
+      # slice-36, dart-support: a Flutter package fails closed as the others
+      # do. It already did before Dart was strict, through the non-strict
+      # --fail-uncovered path (run.go's unmeasuredToJudge), so this row is a
+      # guardrail: it passes before slice-36 and holds that strict Dart
+      # keeps failing closed.
+      @wip @slice-36
+      Examples:
+        | language | failure         | rule                  | exit |
+        | Dart     | tool is missing | coverage.tool-missing | 82   |
+
     # slice-16, issue #46: under --fail-uncovered a coverage command that
     # fails proves nothing, even after writing its report, as
     # uncovered-fails-closed decided above: its build root is
@@ -2189,6 +2209,18 @@ Feature: Mutation testing
         | TypeScript | e2e/cli.test.ts         | --all-tests                 |
         | Python     | tests/test_cli.py       | --test-command "./run.sh"   |
         | Kotlin     | src/test/kotlin/CliTest.kt | --all-tests              |
+
+      # slice-36, dart-support: a Dart outcome's whole suite is every test
+      # file beneath its nearest pubspec.yaml, as flutter test finds them,
+      # a nested package's left to it. The non-importing test runs the
+      # package's bin/ entry point with dart run, since flutter_tester has
+      # no dart:mirrors to call a library it does not import. Before slice-36
+      # a Dart whole-suite outcome recorded no test, failing at the Given's
+      # check that its evidence names test/cli_test.dart.
+      @wip @slice-36
+      Examples:
+        | language | test               | scope       |
+        | Dart     | test/cli_test.dart | --all-tests |
 
     @whole-suite-freshness-all @ID-MUT-206
     Scenario: Build roots, support files and legacy evidence are explicit for every language
@@ -2248,6 +2280,14 @@ Feature: Mutation testing
         | Python     |
         | Kotlin     |
 
+      # slice-36, dart-support: as MUT-205's Dart row. Before slice-36 the
+      # Dart outcomes record no test, failing at the Given's check that they
+      # record nonempty test evidence.
+      @wip @slice-36
+      Examples:
+        | language |
+        | Dart     |
+
   # Language parity, second batch: these need the real tools T-13 brings to
   # CI (Linux only; other OSes skip them, naming the missing tool).
   # - ts-coverage-scope: in mutation run, when Vitest or Jest judges the
@@ -2298,6 +2338,23 @@ Feature: Mutation testing
         | TypeScript | node_modules at the project root  |
         | Python     | .venv at the project root         |
         | Kotlin     | the Gradle cache, run with --offline |
+
+      # slice-37, dart-counted-ready, q-C (b): git ignores .dart_tool, so a
+      # frozen export has no package_config.json, and before its coverage is
+      # planned each Dart build root runs its command's Ready there, flutter
+      # pub get --offline (slice-35), resolving the commit's pubspec.lock
+      # from the pub cache alone; its coverage, baseline and trials then run
+      # with --no-pub. An .fvmrc's SDK is the live project's .fvm/flutter_sdk,
+      # linked into the export as node_modules and .venv are. Before slice-37
+      # the export's Dart coverage plan is unsupported, its dependencies not
+      # resolved, and the run stops as count.preparation-failed, failing at
+      # the preparation step; the second row then still runs the PATH's
+      # flutter until the link is made.
+      @wip @slice-37
+      Examples:
+        | language | installed                                                |
+        | Dart     | the pub cache, run with --no-pub                         |
+        | Dart     | the pub cache and the SDK its .fvmrc pins, run with --no-pub |
 
   # python-fresh-bytecode, found by T-13's Python smoke test: a worker's
   # baseline compiles the source into __pycache__, Python validates bytecode
@@ -2622,6 +2679,64 @@ Feature: Mutation testing
       And a strict Kotlin run refuses --coverage-report, --use-existing-coverage and --coverage-command
       But without --fail-uncovered the run and the check report as before
 
+    # slice-36, dart-support, q-40's rule for Dart: a strict Dart run's
+    # evidence is flutter test --coverage's LCOV over the test files under
+    # test/ that reach the file (slice-35), or test/ whole with --all-tests,
+    # never integration_test/ (q-76). A function's lines run from its
+    # signature, where the VM counts each call (q-D), and a line any of
+    # whose code ran is covered, as branches are out of scope. Both drivers
+    # run it: the fake measures what it declares, cd.yml's dart job the real
+    # flutter test. Before slice-36 Dart is not strict, so no line is
+    # reported and the run passes, failing at the first Then.
+    @wip @slice-36 @ID-MUT-271
+    Scenario: A strict Dart run proves every executable line of every judged function
+      Given a Flutter package whose judged library has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one operand of
+      When I run "itos-cc mutation run --fail-uncovered --json" for the file
+      Then each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line, and the partly executed line is not, the mutant counts are unchanged, and the run fails
+      And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
+      And after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again
+      And a strict Dart run refuses --coverage-report, --use-existing-coverage and --coverage-command
+      But without --fail-uncovered the run and the check report as before
+
+    # slice-36, q-A (fail closed): flutter test's LCOV names only the
+    # libraries a test loaded, and itos-cc runs nothing yet that lists a
+    # library's lines without a test loading it, so a library no test loads
+    # has no evidence: each of its functions is mutation.coverage-missing,
+    # as a TypeScript file under Jest or c8 is, and its mutants stay
+    # uncovered. Both drivers run it. Before slice-36 no function of it is
+    # reported, failing at the Then.
+    @wip @slice-36 @ID-MUT-272
+    Scenario: A strict Dart run fails closed on a library no test loads
+      Given a Flutter package whose lib/lonely.dart no test imports, beside a library a test reaches
+      When I run "itos-cc mutation run --fail-uncovered --json" for both libraries
+      Then each function of lib/lonely.dart is reported as "mutation.coverage-missing" and none as "mutation.uncovered-statement", and the run fails
+      And "itos-cc mutation check --fail-uncovered" reports the same findings without running a test
+      But without --fail-uncovered the run and the check report as before
+
+    # slice-36, q-B (b): a Dart package's evidence rests on its package
+    # root, and a pub workspace member's on the whole workspace, as a Kotlin
+    # module's rests on its whole build: every Dart file there (generated
+    # Dart included, which tests compile against), each pubspec.yaml,
+    # pubspec_overrides.yaml and dart_test.yaml, the pubspec.lock, the
+    # .fvmrc and the flutter that runs. integration_test/, test_driver/,
+    # build/, coverage/, hidden folders and a Flutter app's platform folders
+    # are not inputs. Both drivers run it. Before slice-36 a strict Dart run
+    # records no evidence, so the check reports nothing, failing at the
+    # Then.
+    @wip @slice-36 @ID-MUT-273
+    Scenario Outline: Strict Dart evidence goes stale when <changed> changes
+      Given a <package> whose judged library a strict mutation run measured
+      When <changed> changes, and nothing else
+      Then "itos-cc mutation check --fail-uncovered --json" reports "mutation.coverage-stale" for each function of the judged library, naming <changed>, and runs no test
+      But a change to integration_test/app_test.dart alone leaves its evidence fresh
+
+      Examples:
+        | package                                         | changed            |
+        | Flutter app                                     | pubspec.lock       |
+        | Flutter app                                     | lib/user.g.dart    |
+        | pub workspace member app beside its dependency core | pubspec.lock   |
+        | pub workspace member app beside its dependency core | core/lib/core.dart |
+
     # Fresh here is a complete matching adversarial cache, observed first from
     # the same supported plain project. It does not claim that an unsupported
     # scope admitted a measurement; only changed existing manifest hashes are
@@ -2641,6 +2756,19 @@ Feature: Mutation testing
         | python     | an editable dependency outside the root            |
         | kotlin     | a Gradle includeBuild outside the root             |
         | kotlin     | a Maven module outside the root                    |
+
+      # slice-36, q-B (b): a Dart package's evidence rests on its package
+      # root, or its pub workspace's root for a member, so a path
+      # dependency, or a path override in pubspec.yaml or
+      # pubspec_overrides.yaml, that leaves that root is refused, as is one
+      # into a nested package that is not a member, which the fingerprints
+      # leave out. Before slice-36's refusal, the fresh Dart evidence was
+      # reused, failing at the Then.
+      @wip @slice-36
+      Examples:
+        | language | scope                                                   |
+        | dart     | a path dependency outside the root                      |
+        | dart     | a pubspec_overrides.yaml path override outside the root |
 
   # strict-changed-lines, issue #33, q-43 (answered 2026-10-11):
   # --fail-uncovered=lines, with --since, judges coverage only where the
