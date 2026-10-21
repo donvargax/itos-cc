@@ -3950,7 +3950,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-147]
+    depends_on: [T-151]
     kind: task
   - id: slices-version
     title: Make version a slice, and settle the unused completion and version packages
