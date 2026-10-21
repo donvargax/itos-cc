@@ -6400,7 +6400,7 @@
     table and the comment above the block goes. No product behaviour changes; the binary driver
     already passes the rows. The checks run MUT-273 in process and confirm no @wip is left in it.
   done_when:
-    - run: go test ./features -run '^TestScenarios$' -count=1 -scenarios='^@ID-MUT-273$'
+    - run: test "$(go test ./cmd/itos-cc -run '^TestScenarios$' -count=1 -v -scenarios='^@ID-MUT-273$' | grep -c -- '--- PASS:.TestScenarios/Strict_Dart_evidence')" = 4
       timeout: 600
     - run: test "$(awk '/@ID-MUT-273/,/@ID-MUT-224/' features/mutate.feature | grep -c '@wip')" = 0
     - run: go test ./project -count=1
