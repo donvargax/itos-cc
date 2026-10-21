@@ -4938,3 +4938,19 @@ items:
       no tests and the viewer's test runs in no active workflow. Either tag them as deferred with
       the reason and the item that brings them back (as features.Deferred does), or give them
       runners. Missing coverage, not excess.
+  - id: domain-coverage-vs-scenarios
+    title: The domain coverage floor counts what scenarios cover
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the read-only test-surgery audit (2026-10-21, scratchpad test-surgery-audit.md; the
+      person agreed to record it). tools/bin/domain-coverage fails under 80% statement coverage of
+      the domain packages from their own unit tests, so about 415 lines of scrap, dry and crap
+      domain tests that only repeat scenarios cannot be removed, against ADR-0049 (scenarios are the
+      spec and the mutant killers; unit tests only for domain rules). Measure the domain's coverage
+      with the in-process scenarios included (they run in about 25 s), or retire the floor once
+      inprocess-mutation-tests lets mutation see scenario kills. Decide with the person; it is a
+      gate.
