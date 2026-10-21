@@ -5172,3 +5172,16 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: dart-pure-packages
+    title: Measure a pure Dart package with dart test
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-74 (a): the first version supports Flutter apps and packages, run with flutter test; a pure
+      Dart package (no flutter SDK dependency) is left unmeasured today, its coverage asking
+      --coverage-command (coverage/dart.go). This adds dart test and package:coverage as a second
+      runner, its coverage path base and a CI install. Started only when the person asks.
+    refs: [dart-support]
