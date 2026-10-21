@@ -4747,8 +4747,8 @@ items:
   - id: slice-33
     title: scrap measures Flutter and Dart test files
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-29]
     kind: slice
     why: >
