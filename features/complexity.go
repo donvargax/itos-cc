@@ -30,6 +30,7 @@ var straightLine = map[string]string{
 	"Python":     "def total(a, b):\n    sum = a + b\n    return sum * 2\n",
 	"Go":         "package board\n\nfunc total(a, b int) int {\n\tsum := a + b\n\treturn sum * 2\n}\n",
 	"Kotlin":     "fun total(a: Int, b: Int): Int {\n    val sum = a + b\n    return sum * 2\n}\n",
+	"Dart":       "int total(int a, int b) {\n  final sum = a + b;\n  return sum * 2;\n}\n",
 }
 
 // complexityFeature declares complexity.feature's steps, complexitySteps, which
@@ -43,11 +44,11 @@ func complexitySteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
-	sc.Step(`^a (TypeScript|Python|Go|Kotlin) function with no branches$`, func(language string) error {
+	sc.Step(`^a (TypeScript|Python|Go|Kotlin|Dart) function with no branches$`, func(language string) error {
 		return c.writeSource("total"+extensions[language], straightLine[language])
 	})
 	// A Go function is written in a file of its package.
-	sc.Step(`^the (TypeScript|Python|Go|Kotlin) function:$`, func(language string, text *godog.DocString) error {
+	sc.Step(`^the (TypeScript|Python|Go|Kotlin|Dart) function:$`, func(language string, text *godog.DocString) error {
 		source := text.Content + "\n"
 		if language == "Go" && !strings.HasPrefix(source, "package ") {
 			source = "package board\n\n" + source

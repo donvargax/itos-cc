@@ -296,7 +296,7 @@ func (d *dryState) writeFiles(files map[string]string) error {
 // extensions are the file extensions of the languages a scenario writes
 // functions in, and headers what a file of the language holds before them.
 var (
-	extensions = map[string]string{"TypeScript": ".ts", "Go": ".go", "Kotlin": ".kt", "Python": ".py"}
+	extensions = map[string]string{"TypeScript": ".ts", "Go": ".go", "Kotlin": ".kt", "Python": ".py", "Dart": ".dart"}
 	headers    = map[string]string{"Go": "package p\n\n"}
 )
 

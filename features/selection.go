@@ -216,6 +216,8 @@ func sourceFor(name string) string {
 		return "def " + fn + "(n):\n    return n\n"
 	case ".kt":
 		return "fun " + fn + "(n: Int): Int {\n    return n\n}\n"
+	case ".dart":
+		return "int " + fn + "(int n) {\n  return n;\n}\n"
 	case ".go":
 		pkg := "board"
 		if dir := path.Dir(name); dir != "." {
