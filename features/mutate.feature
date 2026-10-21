@@ -214,6 +214,15 @@ Feature: Mutation testing
         | Kotlin     | Gradle            | gradle test --fail-fast for the module, via ./gradlew if present |
         | Kotlin     | Maven             | mvn -q test                                                      |
 
+      # slice-35, dart-support: flutter test has no fail-fast flag; the
+      # files are the test files that reach the source (slice-34), and an
+      # FVM-pinned SDK is preferred as coverage prefers it (slice-32).
+      @wip @slice-35
+      Examples:
+        | language   | setup                        | command                                                     |
+        | Dart       | a resolved Flutter package   | flutter test --no-pub on the test files that reach the file |
+        | Dart       | .fvmrc and .fvm/flutter_sdk  | .fvm/flutter_sdk/bin/flutter test --no-pub                  |
+
     # Binary-only for good: the command coverage runs is the real tools',
     # as COV-03's is.
     @ID-MUT-08 @binary-only
@@ -2195,6 +2204,35 @@ Feature: Mutation testing
         | build  |
         | gradle |
         | maven  |
+
+    # slice-35: a Dart file's own tests are the test files that reach it,
+    # as Python's are; integration_test/ never runs (q-76).
+    @wip @slice-35 @ID-MUT-264 @binary-only
+    Scenario: A Dart file's own tests are the test files that reach it
+      Given a Flutter package where test/a_test.dart reaches lib/a.dart, test/b_test.dart reaches only lib/b.dart and fails, and integration_test/app_test.dart imports lib/a.dart
+      When I run "itos-cc mutation run --json" for lib/a.dart
+      Then lib/a.dart's baseline passes and its mutant is judged by test/a_test.dart alone, with coverage measured from test/a_test.dart alone
+      And test/b_test.dart and integration_test/app_test.dart never run
+      But a Dart file no test reaches has its mutants reported uncovered, and no test command runs for it
+
+    # slice-35: a worker copy of a Flutter package resolves itself once,
+    # offline, so every mutant's flutter test runs with --no-pub in its own
+    # copy; platform folders stay out (q-75) and generated Dart stays in,
+    # as tests compile against it (q-77). A pub workspace member needs the
+    # workspace root's resolution and its sibling members beside it.
+    @wip @slice-35 @ID-MUT-265 @binary-only
+    Scenario Outline: Workers run a Flutter <package>'s mutants offline in copies of their own
+      Given a resolved <package> with android and ios folders and a generated lib/user.g.dart its tests import
+      When I run "itos-cc mutation run --workers 2" for one of its libraries
+      Then each worker's copy holds no android or ios folder, and holds lib/user.g.dart
+      And each worker runs flutter pub get --offline once, before its first mutant, and nothing reaches the network
+      And every mutant's flutter test runs with --no-pub in its worker's copy
+      And the mutants are judged as a single worker judges them
+
+      Examples:
+        | package                                |
+        | Flutter app                            |
+        | member of a pub workspace with a sibling member it depends on |
 
     @own-tests-ts-fallback @ID-MUT-218
     Scenario: A TypeScript test script without Vitest or Jest records whole-suite outcomes
