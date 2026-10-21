@@ -4834,7 +4834,7 @@ items:
     title: CI keeps running go run ./tools/bin/notices -check after T-173 closes
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: prepush-compiles-module

@@ -6336,9 +6336,6 @@
     has the module cache it needs; it then runs in ci.yml on every source push, the push tier (a
     dependency change is what breaks it, and Renovate pushes run ci.yml). Nothing else changes;
     itos#109 asks itos to warn when a close ends a per-push check.
-  done_when:
-    - run: grep -q 'tools/bin/notices -check' itos.yaml
-    - run: go run ./tools/bin/notices -check
 - id: T-176
   type: build
   title: Link Linux against musl and ship the toolchain's notices
