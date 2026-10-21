@@ -6324,3 +6324,18 @@
     say so. cd.yml's Windows features job judges: this item watches its own cd.yml run.
   done_when:
     - run: go test ./features -run 'TestFeatures/A_selection.s_timeout_comes_from_its_own_run' -count=1 -v
+- id: T-175
+  type: ci
+  title: CI keeps running go run ./tools/bin/notices -check after T-173 closes
+  why: >
+    Found by T-173's agent (2026-10-21), a gap in T-173's spec: its why said the notices -check runs
+    per push as a named task's check, but itos work done drops a closed task's checks, so since
+    T-173 closed (2af8729) nothing runs it and THIRD_PARTY_NOTICES can drift when a dependency bump
+    changes a license text, Renovate's automerge included. Add go run ./tools/bin/notices -check as
+    a static step of itos.yaml's ci.steps, beside go run ./tools/bin/assemble -check, which already
+    has the module cache it needs; it then runs in ci.yml on every source push, the push tier (a
+    dependency change is what breaks it, and Renovate pushes run ci.yml). Nothing else changes;
+    itos#109 asks itos to warn when a close ends a per-push check.
+  done_when:
+    - run: grep -q 'tools/bin/notices -check' itos.yaml
+    - run: go run ./tools/bin/notices -check
