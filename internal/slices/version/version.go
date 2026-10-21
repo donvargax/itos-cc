@@ -1,6 +1,10 @@
-package cli
+package version
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/donvargax/itos-cc/internal/cli"
+)
 
 // Version is the version command's command line: whether it prints the
 // version as a person reads it, or the one object a script reads. It takes
@@ -16,13 +20,13 @@ type Build string
 
 // Contract is what version's help says beyond its flags: the text it
 // prints, the key --json adds and the exit codes it can return.
-func (Version) Contract() Contract {
-	return Contract{
+func (Version) Contract() cli.Contract {
+	return cli.Contract{
 		About: `Prints "itos-cc <version>". --version is the same.`,
 		JSON:  `"version"`,
-		Exits: []Exit{
+		Exits: []cli.Exit{
 			{Code: 0, Meaning: "success"},
-			{Code: CodeUsage, Meaning: "a usage error: a bad flag or an argument"},
+			{Code: cli.CodeUsage, Meaning: "a usage error: a bad flag or an argument"},
 		},
 		Examples: []string{"itos-cc version", "itos-cc --version --json"},
 	}
@@ -36,7 +40,7 @@ type version struct {
 // Run prints the version the binary says it is, build: the line
 // "itos-cc <version>", or with --json the object of its version alone. It
 // cannot fail.
-func (v Version) Run(ui *UI, build Build) int {
+func (v Version) Run(ui *cli.UI, build Build) int {
 	if !v.JSON {
 		_, _ = fmt.Fprintln(ui.Stdout, "itos-cc", string(build))
 	}

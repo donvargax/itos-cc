@@ -11,6 +11,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/mutation"
+	versioncmd "github.com/donvargax/itos-cc/internal/slices/version"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
@@ -30,9 +31,9 @@ import (
 // command in their names' order (byName), the order the guess for an
 // unknown command weighs a tie by, as the top-level help lists them.
 type commandLine struct {
-	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
-	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
-	Version  cli.Version  `cmd:"" help:"print the version"`
+	Mutation mutation.CLI       `cmd:"" help:"mutation testing: do the tests notice small changes?"`
+	Serve    legacyServe        `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
+	Version  versioncmd.Version `cmd:"" help:"print the version"`
 }
 
 // legacyServe is serve's node in the model, which names it to the top-level
@@ -85,7 +86,7 @@ func handlers(a adapters) []kong.Option {
 				Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform}
 		}),
 		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
-		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),
+		kong.BindToProvider(func() versioncmd.Build { return versioncmd.Build(versionString()) }),
 	}
 }
 

@@ -1,8 +1,10 @@
-package cli
+package version
 
 import (
 	"strings"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/cli"
 )
 
 // runVersion runs the version command, --json or not, over a build that
@@ -11,7 +13,7 @@ import (
 func runVersion(t *testing.T, asJSON bool, build Build) (stdout, stderr string) {
 	t.Helper()
 	var out, errs strings.Builder
-	ui := &UI{In: strings.NewReader(""), Stdout: &out, Stderr: &errs}
+	ui := &cli.UI{In: strings.NewReader(""), Stdout: &out, Stderr: &errs}
 	if code := (Version{JSON: asJSON}).Run(ui, build); code != 0 {
 		t.Fatalf("Run exit = %d, want 0", code)
 	}
@@ -45,7 +47,7 @@ func TestVersionJSONIsTheObjectOfTheVersion(t *testing.T) {
 // version's help page, in the layout every command's has: the text it
 // prints, its --json key, its exit codes and examples.
 func TestVersionHelpGivesItsContract(t *testing.T) {
-	page := Page{Program: "itos-cc", Command: "version", Synopsis: "[options]", Contract: Version{}.Contract()}.String()
+	page := cli.Page{Program: "itos-cc", Command: "version", Synopsis: "[options]", Contract: Version{}.Contract()}.String()
 	for _, want := range []string{
 		"usage: itos-cc version [options]\n\nPrints \"itos-cc <version>\". --version is the same.\n",
 		`{"schema": 1, "ok": true|false, "version",`,
