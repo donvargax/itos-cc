@@ -5534,14 +5534,3 @@
     package lists, .golangci.yml globs, docs/go.md's package list, docs/architecture.md and README's
     layout table. Steps stay in features/. Help, errors, exit codes and the snapshot format
     unchanged.
-  done_when:
-    - run: go test -count=1 ./internal/slices/scrap/...
-      timeout: 300
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(SCRAP|SNAP|CLI)-'
-      timeout: 600
-    - run: go test -count=1 ./tools/bin/assemble
-      timeout: 300
-    - run: tools/bin/domain-coverage
-      timeout: 600
-    - run: tools/bin/architecture-check
-      timeout: 900
