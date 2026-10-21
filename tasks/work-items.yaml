@@ -4798,25 +4798,13 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: prepush-compiles-module
+  - id: T-177
     title: The pre-push hook compiles the whole module on the rebased tree
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Parallel trial, 2026-10-21: slice-30 and slice-32, in separate worktrees, each added a
-      package-level helper named flutterPubspec to the shared features package in different files.
-      Each push was green alone; together main stopped compiling, and ci.yml stayed red for five
-      pushes (from 908d79a until f052f8d) while other agents pushed on top. itos push rebases and
-      then runs the pre-push hook on the rebased HEAD, so a go vet (or go build plus go test -run
-      '^$') over every package there catches a clash between two agents' merged work before it
-      reaches main, in seconds, at the cheapest tier that catches it. Spec: which command (vet
-      compiles tests too), its time on this module, how it is declared beside itos's own pre-push
-      (itos.yaml or the clone's hook config, as T-120 declared pre-commit), and the template
-      backport (go-template-itos). Until then, briefs tell agents to rebase and vet before each
-      push.
+    kind: task
   - id: scrap-dart-test-wrappers
     title: scrap finds Dart examples written with test wrappers
     phase: 1

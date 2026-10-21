@@ -6360,3 +6360,30 @@
     body, as musl's allocator is slower; a large difference is reported to the coordinator before
     closing. Files: .github/workflows/release.yml, tools/bin/notices, THIRD_PARTY_NOTICES; not
     cd.yml or ci.yml.
+- id: T-177
+  type: ci
+  title: The pre-push hook compiles the whole module on the rebased tree
+  why: >
+    Parallel trial, 2026-10-21; the person: a quick check that keeps main from going red. slice-30
+    and slice-32, in separate worktrees, each added a package-level helper named flutterPubspec to
+    the shared features package; each push was green alone, together main stopped compiling and
+    ci.yml stayed red for five pushes (908d79a to f052f8d). itos push rebases onto the upstream and
+    then pushes, the pre-push hook running on the rebased HEAD with a clean working tree (itos push
+    refuses tracked changes), so a hook that compiles every package there catches such a clash
+    before it reaches main. Add tools/hooks/pre-push, a sh script in tools/hooks/pre-commit's form
+    and comments, running go vet ./... over the working tree (vet compiles every package and its
+    tests; measured 5 s cold, 0.25 s with the build cache warm), refusing the push with vet's output
+    when it fails; declared per clone beside the pre-commit hook (git config
+    hook.itos-cc-pre-push.event pre-push, hook.itos-cc-pre-push.command tools/hooks/pre-push), so it
+    runs after itos's own pre-push and in every worktree of the clone, which share its config.
+    README's Hooks section names it with the two git config lines and says why.
+    tools/bin/pre-push-check proves it in a repository of its own, as tools/bin/pre-commit-check
+    proves pre-commit: a push of a tree that compiles passes, a push whose rebased tree does not
+    (two files declaring the same name) is refused with vet's message, using a local bare remote and
+    git -C, never the network. Not golangci-lint or tests in the hook: CI has them, and the hook
+    must stay seconds. The coordinator declares it in this clone after it lands and files the
+    backport on go-template-itos.
+  done_when:
+    - run: test -x tools/hooks/pre-push
+    - run: grep -q 'hook.itos-cc-pre-push' README.md
+    - run: go run ./tools/bin/pre-push-check
