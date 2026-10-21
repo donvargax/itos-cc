@@ -132,7 +132,7 @@ func TestFreshPreparationReadiesTheFrozenFlutterPackageWithItsPinnedSDK(t *testi
 		t.Fatalf("last stage = %+v, want coverage-plan failed with the Ready's output", last)
 	}
 	sdk := filepath.Join(plan.FrozenRoot, ".fvm", "flutter_sdk")
-	if target, err := os.Readlink(sdk); err != nil || target != filepath.Join(repo, ".fvm", "flutter_sdk") {
+	if target, err := os.Readlink(sdk); err != nil || target != filepath.Join(plan.Root, ".fvm", "flutter_sdk") {
 		t.Fatalf("the export's .fvm/flutter_sdk links %q (%v), not the live SDK", target, err)
 	}
 	readied := prep.Commands[len(prep.Commands)-1]
