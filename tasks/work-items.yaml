@@ -4244,3 +4244,18 @@ items:
       internal/freshenv plan, preparation and contract tests and project/since_test.go, a cmd test
       through the subprocess helper, and a FreshPreparationContract case for a scratch failure in
       internal/mutants/porttest. Git only, seconds.
+  - id: serve-local-tests
+    title: "Give serve local tests: server adapter tests and a held-port cmd test"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): serve is the largest group only the binary driver reaches,
+      29 statements: cmd/itos-cc runServe, server New and Server.rebuild. serve is still on its
+      legacy handler, so features.Deferred keeps its scenarios from the in-process driver, and
+      server has no tests. A server test building a Server over a temporary tree and rebuilding it
+      (graph, JSON, watched files, listeners told) and a cmd test through the subprocess helper with
+      the port held (serve.port-in-use) reach it in seconds on 127.0.0.1. Moot if serve moves onto
+      kong first and its scenarios run in process.
