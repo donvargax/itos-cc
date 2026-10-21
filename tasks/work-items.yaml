@@ -4808,3 +4808,16 @@ items:
       the slice tag to run with @wip included, for example an environment variable or a -godog.tags
       value the test reads, so red-first runs touch no file. Settle the knob in the spec; CI never
       sets it.
+  - id: dart-coverage-docs
+    title: Name Dart's coverage command in README and docs/CLI.md
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-32 measures Flutter apps with flutter test --no-pub --coverage, prefers an FVM SDK, and
+      leaves pure Dart packages unmeasured, but README's coverage section (near line 527) and
+      docs/CLI.md (lines 230 and 309) name only Go's, TypeScript's, Python's and Kotlin's commands,
+      and crap's help still says which languages narrow to reaching tests. Those are shared docs and
+      crap's slice, outside slice-32's files.
