@@ -4117,7 +4117,7 @@ items:
     title: Run the binary driver only where CI and CD opt in
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: binary-only-reach

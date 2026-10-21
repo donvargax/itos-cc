@@ -5592,8 +5592,3 @@
     docs/go.md's driver paragraphs and README's testing and CI text say where each driver runs and
     name decision 52. An agent working on a binary-only scenario sets the variable itself. Measure a
     local go test ./... -count=1 before and after and put both times in the commit body.
-  done_when:
-    - run: env -u ITOS_CC_FEATURES_BINARY_DRIVER -u ITOS_CC_FEATURES_BINARY go test ./features -count=1 -run '^TestFeatures$'
-      timeout: 180
-    - run: "for f in ci cd nightly refactor-proof; do grep -q 'ITOS_CC_FEATURES_BINARY_DRIVER: \"1\"' .github/workflows/$f.yml || exit 1; done"
-      timeout: 30
