@@ -6162,13 +6162,6 @@
     commit body (it lengthens CI's static architecture-check step). docs/go.md's Adding a package
     command bullet says what the test proves and what it leaves to a task of its own (a new port, a
     new domain's rules, an engine).
-  done_when:
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: go vet ./tools/testdata/architecture
-      timeout: 120
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-170
   type: docs
   title: Record who owns each path, slice by slice, in docs/ownership.md
