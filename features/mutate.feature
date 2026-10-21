@@ -2761,17 +2761,8 @@ Feature: Mutation testing
         | package                                             | changed            |
         | pub workspace member app beside its dependency core | pubspec.lock       |
         | pub workspace member app beside its dependency core | core/lib/core.dart |
-
-      # The Flutter app holds lib/user.g.dart, which the in-process
-      # harness declares as an import node though discovery leaves it out,
-      # so the in-process run refuses the app before any step judges it.
-      # These rows wait on the idea features-adjacency-flutter-rules; the
-      # binary driver passes them.
-      @wip
-      Examples:
-        | package     | changed         |
-        | Flutter app | pubspec.lock    |
-        | Flutter app | lib/user.g.dart |
+        | Flutter app                                         | pubspec.lock       |
+        | Flutter app                                         | lib/user.g.dart    |
 
     # Fresh here is a complete matching adversarial cache, observed first from
     # the same supported plain project. It does not claim that an unsupported

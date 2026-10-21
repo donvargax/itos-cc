@@ -3,8 +3,11 @@ package features
 import (
 	"context"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/donvargax/itos-cc/project"
 )
 
 // sourceExtensions are the extensions of the files itos-cc reads as a
@@ -30,8 +33,8 @@ func (w *world) imports(edges map[string][]string) {
 
 // declareAdjacency declares, before a run, the resolved import adjacency
 // of every source and test the scratch folder holds outside the folders a
-// selection never walks into: the edges the fixture named (imports), and
-// none of any other. The real resolver reads the same from the files'
+// selection never walks into, and that discovery takes: the edges the
+// fixture named (imports), and none of any other. The real resolver reads the same from the files'
 // text, which the binary driver runs; the in-process driver's Reach is
 // handed it (Tests.Imports). An edge of a file no longer there is dropped,
 // as no import resolves to it.
@@ -45,7 +48,7 @@ func (w *world) declareAdjacency(ctx context.Context) error {
 	}
 	adjacency := map[string][]string{}
 	for _, name := range files {
-		if slices.Contains(sourceExtensions, path.Ext(name)) && walked(name) {
+		if slices.Contains(sourceExtensions, path.Ext(name)) && walked(name) && discovered(w.dir, name) {
 			adjacency[name] = []string{}
 		}
 	}
@@ -77,4 +80,20 @@ func walked(name string) bool {
 		}
 	}
 	return true
+}
+
+// discovered is whether discovery takes name, a slash path from dir: no
+// folder of its path is a Flutter app's platform folder and it is not
+// generated Dart, as project's rules judge them on dir's real path, so
+// the harness asks discovery's own rules, never a copy of them.
+func discovered(dir, name string) bool {
+	folders := strings.Split(name, "/")
+	at := dir
+	for _, folder := range folders[:len(folders)-1] {
+		at = filepath.Join(at, folder)
+		if project.FlutterPlatformDir(at) {
+			return false
+		}
+	}
+	return !project.GeneratedDart(filepath.Join(dir, filepath.FromSlash(name)))
 }

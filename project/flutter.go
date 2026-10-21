@@ -116,6 +116,12 @@ func (r *flutterRules) generated(path string) bool {
 	return err == nil && markedGenerated(string(text))
 }
 
+// GeneratedDart reports whether path is generated Dart, as discovery
+// leaves it out: a build_runner or protoc suffix, flutter's plugin
+// registrant, what gen-l10n wrote as an l10n.yaml in a folder above it
+// says, or a file whose leading comments carry source_gen's marker.
+func GeneratedDart(path string) bool { return newFlutterRules().generated(path) }
+
 // hasGeneratedSuffix reports whether name ends as build_runner's and
 // protoc's files do.
 func hasGeneratedSuffix(name string) bool {
