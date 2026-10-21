@@ -5558,3 +5558,35 @@
       timeout: 900
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-152
+  type: refactor
+  title: Move crap into internal/slices/crap
+  why: >
+    T-86 (ADR-0051), the fourth slice, after T-151 lifts process ownership into internal/processes.
+    Move internal/crap to internal/slices/crap and its domain internal/changerisk to
+    internal/slices/crap/domain, following T-148's and T-150's pattern: a move commit separate from
+    the edits, .metrics/mutate snapshots with them, the domain and domain-io rules, coverage-fakes,
+    slice-packages' exclusion and domain-coverage following the new path, its domain on no allow
+    list. crap's Handler holds Tree, Surroundings, Store, Coverage (coverage.Measurer), Name and
+    Exclude (internal/crap/crap.go:120-127): its Ports reuse SelectionTree, LangSurroundings,
+    SnapshotStore, Rel and SelectionExclusion and add a coverage Measurer method, which cmd's
+    adapters answer over the coverage engine and internal/processes' executor, never through a
+    mutation adapter; NewHandler(ctx, Ports) (Handler, error); the generator writes its provider.
+    graph, legacy and outside the slices, imports nothing from the crap slice: it keeps its own copy
+    of the four-line changerisk.Score (graph/build.go:452, ADR-0051) and its own decode type for the
+    crap snapshot entries it reads (build.go:399), leaving crap's snapshot format unchanged. crap's
+    scenarios also drive complexity.feature, coverage.feature and most of file_selection.feature, so
+    their scenarios run in the check. Drop crap's commandLine field and hand provider, regenerate
+    commands_gen.go, update check_test.go, .golangci.yml, docs/go.md, docs/architecture.md and
+    README's layout table. Help, errors, exit codes, lazy config and the snapshot format unchanged.
+  done_when:
+    - run: go test -count=1 ./internal/slices/crap/... ./graph/...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCrap.*|TestCoverage.*)$' -scenarios='^@ID-(CRAP|COV|CPLX|SEL|SNAP|CLI)-'
+      timeout: 900
+    - run: go test -count=1 ./tools/bin/assemble
+      timeout: 300
+    - run: tools/bin/domain-coverage
+      timeout: 600
+    - run: tools/bin/architecture-check
+      timeout: 900

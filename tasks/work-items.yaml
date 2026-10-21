@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - slices-crap
+  - T-152
   - slices-version
   - slices-mutation
   - slices-import-engine
@@ -2790,7 +2790,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-152, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3945,22 +3945,13 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: slices-crap
-    title: Move crap into internal/slices/crap, its coverage command off mutation's executor
+  - id: T-152
+    title: Move crap into internal/slices/crap
     phase: 1
     owner: null
     status: todo
     depends_on: [T-147]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R8): internal/crap and internal/changerisk into internal/slices/crap; graph
-      keeps a copy of the four-line changerisk.Score (graph/build.go:452). crap's coverage command
-      runs through worktrees.OwnedExecutor (adapters.go:100, cmd/itos-cc/coverage.go:22), a mutation
-      adapter: move process ownership's executor into the coverage engine or its own engine. Checks:
-      -scenarios '^@ID-(CRAP|COV|CPLX|SEL)-', go test ./cmd/itos-cc -run 'TestCrap|TestCoverage'.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-version
     title: Make version a slice, and settle the unused completion and version packages
     phase: 1
@@ -3982,7 +3973,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-crap]
+    depends_on: [T-152]
     kind: idea
     why: >
       T-86 (ADR-0051, R10a-e), split into tasks when reached: (a) internal/mutation and
