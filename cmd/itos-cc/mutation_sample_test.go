@@ -12,6 +12,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -116,7 +117,7 @@ func recordAs(t *testing.T, rel, function, original, outcome string) {
 	if !found {
 		t.Fatalf("the snapshot of %s records no mutant of %s in %s", rel, mutationslice.Quote(original), function)
 	}
-	data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
+	data, err := json.MarshalIndent(snapshots.SnapshotJSON(*snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}

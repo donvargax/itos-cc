@@ -1,10 +1,10 @@
-package workdir_test
+package sources_test
 
 import (
 	"errors"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
-	"github.com/donvargax/itos-cc/internal/workdir"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -20,13 +20,13 @@ func TestRealSourcePresenceContract(t *testing.T) {
 		if err := os.Mkdir(filepath.Join(root, "directory"), 0700); err != nil {
 			t.Fatal(err)
 		}
-		return workdir.SourceEdits{}, root
+		return sources.SourceEdits{}, root
 	})
 }
 func TestLstatErrorsArePresentButNotSuccessfulRenameTargets(t *testing.T) {
 
 	path := filepath.Join(t.TempDir(), "invalid\x00path")
-	source := workdir.SourceEdits{}
+	source := sources.SourceEdits{}
 	if _, err := os.Lstat(path); err == nil || os.IsNotExist(err) {
 		t.Fatalf("fixture needs a genuine non-not-exist Lstat error: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestRealDanglingSourceIsPresentAndARenameTarget(t *testing.T) {
 		}
 		t.Fatal(err)
 	}
-	source := workdir.SourceEdits{}
+	source := sources.SourceEdits{}
 	if missing, failure := source.Missing(t.Context(), link); failure != nil || !missing {
 		t.Fatalf("follow must see missing target: %v %v", missing, failure)
 	}

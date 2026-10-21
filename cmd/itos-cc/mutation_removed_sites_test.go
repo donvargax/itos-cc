@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/metrics"
 )
@@ -63,11 +64,11 @@ func removedSiteRepoWith(t *testing.T, outcome string) mutation.Mutant {
 		default:
 			t.Fatalf("an added mutant %s, want survived or killed", outcome)
 		}
-		data, err := json.MarshalIndent(metricsdir.SnapshotJSON(*snap), "", "  ")
+		data, err := json.MarshalIndent(snapshots.SnapshotJSON(*snap), "", "  ")
 		if err != nil {
 			t.Fatal(err)
 		}
-		writeFile(t, filepath.Join(metrics.Name, metricsdir.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
+		writeFile(t, filepath.Join(metrics.Name, snapshots.MutationName(filepath.ToSlash(boardSource))), string(data)+"\n")
 		return *gone
 	}
 	t.Fatalf("no entry of %s in %+v", placeID, snap.Units)

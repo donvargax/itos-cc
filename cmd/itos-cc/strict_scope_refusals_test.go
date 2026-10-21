@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
@@ -141,11 +141,11 @@ func seedFreshLineEvidence(t *testing.T, root, rel string) {
 				Complete: true, Blocks: []mutation.CoverageBlock{}},
 		})
 	}
-	data, err := json.MarshalIndent(metricsdir.SnapshotJSON(snap), "", "  ")
+	data, err := json.MarshalIndent(snapshots.SnapshotJSON(snap), "", "  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, filepath.Join(root, ".metrics", filepath.FromSlash(metricsdir.MutationName(rel))), string(data)+"\n")
+	writeFile(t, filepath.Join(root, ".metrics", filepath.FromSlash(snapshots.MutationName(rel))), string(data)+"\n")
 }
 
 // accessTime is the time the file at path was last read, as the file

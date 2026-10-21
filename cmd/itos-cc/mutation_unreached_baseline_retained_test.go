@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees"
@@ -40,14 +41,14 @@ func TestAKotlinFileNoTestClassReachesReportsItsBaselineAsNotRun(t *testing.T) {
 	t.Chdir(dir)
 	src := filepath.Join(dir, "src", "main", "kotlin", "a", "A.kt")
 	helper := filepath.Join(dir, "src", "test", "kotlin", "a", "Helper.kt")
-	opt := mutation.Options{Workers: 1, Root: dir, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, WorkerFactory: worktrees.Workers{}, Progress: mutationslice.Progress{Log: io.Discard}, Tests: func(string) []string { return []string{helper} }}
+	opt := mutation.Options{Workers: 1, Root: dir, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: sources.SourceEdits{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, WorkerFactory: worktrees.Workers{}, Progress: mutationslice.Progress{Log: io.Discard}, Tests: func(string) []string { return []string{helper} }}
 	if c, _ := mutation.ObserveCommand(t.Context(), opt.Toolchain, mutation.CommandRequest{Path: src, Tests: []string{helper}}); !c.RunsNothing() {
 		t.Fatalf("A.kt's own tests run %q, want nothing: Helper.kt declares no test class", c)
 	}
 	for _, failFast := range []bool{false, true} {
 		var results []mutation.FileResult
 		var err error
-		opt.Store = metricsdir.Mutations{Store: &snapporttest.Store{RootDir: dir}}
+		opt.Store = snapshots.Mutations{Store: &snapporttest.Store{RootDir: dir}}
 		if failFast {
 			results, _, err = mutation.RunFailFast(t.Context(), []string{src}, opt, mutation.FailFast{})
 		} else {

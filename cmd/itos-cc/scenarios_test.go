@@ -22,6 +22,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -530,7 +531,7 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	a := adapters{
 		Settings:   config.Reader{Source: memoryConfig{memory: m, root: root}},
 		Exceptions: func(root string) mutation.Exceptions { return memoryExceptions{memory: m, root: root} }, SourceStatus: source,
-		SnapshotReader: metricsdir.Mutations{Store: observed}, Catalog: metricsdir.Mutations{Store: observed}, Presence: source, Snapshots: metricsdir.Mutations{Store: observed}, SourceEdits: source, TestLister: lister,
+		SnapshotReader: snapshots.Mutations{Store: observed}, Catalog: snapshots.Mutations{Store: observed}, Presence: source, Snapshots: snapshots.Mutations{Store: observed}, SourceEdits: source, TestLister: lister,
 		Toolchain: input, Fingerprints: input, Reach: input, History: m.history(dir),
 		Workers:      workers,
 		Dir:          dir,

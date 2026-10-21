@@ -17,9 +17,12 @@ import (
 	"github.com/donvargax/itos-cc/internal/processes"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/freshenv"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/githistory"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/importgraph"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees"
@@ -235,8 +238,8 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
 	settings := config.Reader{Source: diskConfig{}}
 	return adapters{Settings: settings, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
-		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
-	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
+		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
+	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return exceptions.Exceptions{RootDir: root} }, SourceStatus: sources.SourceEdits{}, SnapshotReader: snapshots.Mutations{Store: metricsdir.Store{}}, Catalog: snapshots.Mutations{Store: metricsdir.Store{}}, Presence: sources.SourceEdits{}, Snapshots: snapshots.Mutations{Store: metricsdir.Store{}}, SourceEdits: sources.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
 		Coverage: measurer, MutationCoverage: measurer, Selection: settings,
 		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform}
 }

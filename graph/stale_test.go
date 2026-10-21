@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
@@ -86,7 +87,7 @@ func (m module) tests(rel ...string) map[string]string {
 // units.
 func (m module) snapshot(rel string, tests map[string]string, units []mutants.UnitResult) {
 	m.t.Helper()
-	data, err := json.Marshal(metricsdir.SnapshotJSON(mutants.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units}))
+	data, err := json.Marshal(snapshots.SnapshotJSON(mutants.Snapshot{Version: 1, File: rel, Language: "go", Tests: tests, Units: units}))
 	if err != nil {
 		m.t.Fatal(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -26,7 +27,7 @@ func (s memoryExceptions) Except(ctx context.Context, e mutation.Exception) (boo
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return false, memoryExceptionFailure(err)
 	}
-	updated, replaced, err := config.ExceptDocument(data, e)
+	updated, replaced, err := exceptions.ExceptDocument(data, e)
 	if err != nil {
 		return false, memoryExceptionFailure(err)
 	}
@@ -47,7 +48,7 @@ func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal
 	if err != nil {
 		return memoryExceptionFailure(err)
 	}
-	updated, err := config.RenewDocument(data, renewals)
+	updated, err := exceptions.RenewDocument(data, renewals)
 	if err != nil {
 		return memoryExceptionFailure(err)
 	}

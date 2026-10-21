@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -214,7 +214,7 @@ func broadEvidenceAt(t *testing.T, path string, line int) *mutation.SuiteEvidenc
 		t.Fatal(err)
 	}
 	var snapshot mutation.Snapshot
-	if err := metricsdir.ReadSnapshotJSON(data, &snapshot); err != nil {
+	if err := snapshots.ReadSnapshotJSON(data, &snapshot); err != nil {
 		t.Fatal(err)
 	}
 	for _, unit := range snapshot.Units {

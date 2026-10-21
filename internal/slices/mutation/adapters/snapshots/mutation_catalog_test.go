@@ -1,7 +1,8 @@
-package metricsdir_test
+package snapshots_test
 
 import (
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	"os"
@@ -26,7 +27,7 @@ func TestRealMutationCatalogContract(t *testing.T) {
 		if err := os.MkdirAll(filepath.Join(root, ".metrics", "mutate", "directory.json"), 0700); err != nil {
 			t.Fatal(err)
 		}
-		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, root
+		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, root
 	})
 }
 func TestRecordedFileIsPermissiveAndSeparateFromFullSnapshotDecode(t *testing.T) {
@@ -35,7 +36,7 @@ func TestRecordedFileIsPermissiveAndSeparateFromFullSnapshotDecode(t *testing.T)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	store := metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
+	store := snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 	// The wrong version type invalidates the full schema without invalidating file metadata.
 	for _, text := range []string{`{"file":"outside.go","version":"invalid"}`, `{"file":"outside.go","units":"invalid"}`} {
 		if err := os.WriteFile(filepath.Join(dir, "a.go.json"), []byte(text), 0600); err != nil {
@@ -59,7 +60,7 @@ func TestRecordedFileIsPermissiveAndSeparateFromFullSnapshotDecode(t *testing.T)
 func TestRealMutationCatalogLifecycleContract(t *testing.T) {
 	porttest.MutationCatalogLifecycleContract(t, func(t *testing.T, initial mutants.Snapshot) (porttest.MutationCatalogStore, string) {
 		root := t.TempDir()
-		store := metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
+		store := snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 		if failure := store.Write(t.Context(), "a.go", initial); failure != nil {
 			t.Fatal(failure)
 		}

@@ -10,8 +10,9 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
 func retainedWriteIn(t *testing.T, root, name, text string) {
@@ -56,7 +57,7 @@ func TestOrphansAreSnapshotsWhoseSourceIsGone(t *testing.T) {
 	retainedWriteIn(t, root, ".metrics/mutate/src/notes.txt", "")
 	retainedWriteIn(t, root, ".metrics/mutate/.json", "{}\n")
 
-	all, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(string) bool { return true }, retainedNone)
+	all, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(string) bool { return true }, retainedNone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestOrphansAreSnapshotsWhoseSourceIsGone(t *testing.T) {
 	}
 
 	src := filepath.Join(root, "src")
-	under, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(path string) bool { return filepath.Dir(path) == src }, retainedNone)
+	under, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(path string) bool { return filepath.Dir(path) == src }, retainedNone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +98,7 @@ func TestRemovingOrphansStaysInsideTheSnapshots(t *testing.T) {
 	retainedWriteIn(t, root, ".metrics/mutate/a/b/gone.ts.json", "{}\n")
 	retainedWriteIn(t, root, "outside.json", "{}\n")
 	retainedWriteIn(t, root, ".metrics/crap.json", "{}\n")
-	orphans, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(string) bool { return true }, retainedNone)
+	orphans, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(string) bool { return true }, retainedNone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +115,7 @@ func TestRemovingOrphansStaysInsideTheSnapshots(t *testing.T) {
 			t.Errorf("%s is gone, want everything outside the orphans kept", name)
 		}
 	}
-	if got, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: t.TempDir()}}, workdir.SourceEdits{}, func(string) bool { return true }, retainedNone); got != nil || err != nil {
+	if got, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: t.TempDir()}}, sources.SourceEdits{}, func(string) bool { return true }, retainedNone); got != nil || err != nil {
 		t.Errorf("orphans of a project with no snapshots %v, %v, want none", got, err)
 	}
 }
@@ -134,7 +135,7 @@ func TestOrphanNamesMapBackAsTheyAre(t *testing.T) {
 	if err := os.Symlink(filepath.Join(root, "target.json"), filepath.Join(root, ".metrics", "mutate", "link.ts.json")); err != nil {
 		t.Fatal(err)
 	}
-	orphans, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(string) bool { return true }, retainedNone)
+	orphans, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(string) bool { return true }, retainedNone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +160,7 @@ func TestOrphansAreJudgedByTheFileTheSnapshotRecords(t *testing.T) {
 	retainedWriteIn(t, outside, "kept.go", "package x\n")
 	retainedWriteIn(t, outside, "other.go", "package x\n")
 	snapshotOf := func(path string) string {
-		return filepath.ToSlash(filepath.Join(".metrics", metricsdir.MutationName(filepath.ToSlash(path))))
+		return filepath.ToSlash(filepath.Join(".metrics", snapshots.MutationName(filepath.ToSlash(path))))
 	}
 	if err := os.MkdirAll(filepath.Join(root, filepath.Dir(filepath.FromSlash(snapshotOf(kept)))), 0o755); err != nil {
 		t.Skipf("no snapshot can be named %s here: %v", snapshotOf(kept), err)
@@ -173,7 +174,7 @@ func TestOrphansAreJudgedByTheFileTheSnapshotRecords(t *testing.T) {
 	retainedWriteIn(t, root, snapshotOf(other), `{"version": 1, "file": "src/old.go", "units": []}`+"\n")
 
 	var asked []string
-	orphans, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(path string) bool { asked = append(asked, path); return true }, retainedNone)
+	orphans, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(path string) bool { asked = append(asked, path); return true }, retainedNone)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,16 +198,16 @@ func TestARecordedFileIsAnAbsolutePathWhereItsSnapshotLives(t *testing.T) {
 		name, file string
 		want       string
 	}{
-		{metricsdir.MutationName(filepath.ToSlash(abs)), filepath.ToSlash(abs), abs},
-		{metricsdir.MutationName("src/board.go"), "src/board.go", ""},
-		{metricsdir.MutationName("src/board.go"), filepath.ToSlash(abs), ""},
-		{metricsdir.MutationName(filepath.ToSlash(abs)), "", ""},
+		{snapshots.MutationName(filepath.ToSlash(abs)), filepath.ToSlash(abs), abs},
+		{snapshots.MutationName("src/board.go"), "src/board.go", ""},
+		{snapshots.MutationName("src/board.go"), filepath.ToSlash(abs), ""},
+		{snapshots.MutationName(filepath.ToSlash(abs)), "", ""},
 	}
 	if runtime.GOOS == "windows" {
 		cases = append(cases,
-			struct{ name, file, want string }{metricsdir.MutationName("D:/work/board.go"), "D:/work/board.go", `D:\work\board.go`},
-			struct{ name, file, want string }{metricsdir.MutationName("//host/share/board.go"), "//host/share/board.go", `\\host\share\board.go`},
-			struct{ name, file, want string }{metricsdir.MutationName("/work/board.go"), "/work/board.go", ""})
+			struct{ name, file, want string }{snapshots.MutationName("D:/work/board.go"), "D:/work/board.go", `D:\work\board.go`},
+			struct{ name, file, want string }{snapshots.MutationName("//host/share/board.go"), "//host/share/board.go", `\\host\share\board.go`},
+			struct{ name, file, want string }{snapshots.MutationName("/work/board.go"), "/work/board.go", ""})
 	}
 	for _, c := range cases {
 		got, ok := mutation.RecordedPath(c.name, c.file)
@@ -229,7 +230,7 @@ func TestTheSnapshotOfAnExcludedSourceIsAnOrphan(t *testing.T) {
 	}
 	excluded := func(path string) bool { return strings.Contains(filepath.ToSlash(path), "/porttest/") }
 	src := filepath.Join(root, "src")
-	orphans, err := mutation.Orphans(t.Context(), metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}, workdir.SourceEdits{}, func(path string) bool { return strings.HasPrefix(path, src+string(filepath.Separator)) }, excluded)
+	orphans, err := mutation.Orphans(t.Context(), snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}, sources.SourceEdits{}, func(path string) bool { return strings.HasPrefix(path, src+string(filepath.Separator)) }, excluded)
 	if err != nil {
 		t.Fatal(err)
 	}

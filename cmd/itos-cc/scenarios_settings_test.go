@@ -15,6 +15,7 @@ import (
 	"maps"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 )
 
 // memoryConfig observes the actual current backing document on every read.
@@ -123,7 +124,7 @@ func TestMemoryMutationListCheckSampleAndExceptUseCurrentIndependentBytes(t *tes
 	// An entry in the memory's settings is renewed or left through the
 	// memory's bindings; with no results it is left, and nothing is written.
 	entry := mutants.Exception{File: "board.go", Function: "memory.test/board#Value", Hash: "earlier", LineInFunction: 1, Column: 35, Original: ">", Replacement: ">=", Reason: "reviewed"}
-	document, _, err := config.ExceptDocument([]byte("exclude: [vendor/**]\n"), entry)
+	document, _, err := exceptions.ExceptDocument([]byte("exclude: [vendor/**]\n"), entry)
 	if err != nil {
 		t.Fatal(err)
 	}

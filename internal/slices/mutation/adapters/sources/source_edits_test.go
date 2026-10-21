@@ -1,4 +1,4 @@
-package workdir_test
+package sources_test
 
 import (
 	"os"
@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
-	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
 // The real writer's current bytes, permission and no-write semantics cannot be
@@ -31,7 +31,7 @@ func TestRealSourceEditsContractAndNoIdenticalWrite(t *testing.T) {
 			}
 			return string(data)
 		}
-		return workdir.SourceEdits{}, path, read, write
+		return sources.SourceEdits{}, path, read, write
 	})
 	path := filepath.Join(t.TempDir(), "same.go")
 	if err := os.WriteFile(path, []byte("body\n\n// itos-cc mutation:\n// actual summary\n// end itos-cc mutation\n"), 0640); err != nil {
@@ -45,7 +45,7 @@ func TestRealSourceEditsContractAndNoIdenticalWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failure := (workdir.SourceEdits{}).Annotate(t.Context(), path, "//", "// itos-cc mutation:\n// actual summary\n// end itos-cc mutation\n"); failure != nil {
+	if failure := (sources.SourceEdits{}).Annotate(t.Context(), path, "//", "// itos-cc mutation:\n// actual summary\n// end itos-cc mutation\n"); failure != nil {
 		t.Fatal(failure)
 	}
 	after, err := os.Stat(path)
@@ -59,7 +59,7 @@ func TestRealSourceEditsContractAndNoIdenticalWrite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if failure := (workdir.SourceEdits{}).Annotate(t.Context(), path, "//", "// itos-cc mutation:\n// changed current summary\n// end itos-cc mutation\n"); failure != nil {
+	if failure := (sources.SourceEdits{}).Annotate(t.Context(), path, "//", "// itos-cc mutation:\n// changed current summary\n// end itos-cc mutation\n"); failure != nil {
 		t.Fatal(failure)
 	}
 	changed, err := os.Stat(path)

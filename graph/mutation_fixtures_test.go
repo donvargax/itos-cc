@@ -6,6 +6,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -20,12 +21,12 @@ func checkGraphSnapshot(ctx context.Context, store snapport.Store, files []strin
 	if err != nil {
 		return nil, err
 	}
-	return mutants.Check(ctx, files, mutants.CheckOptions{Root: project.Root(), Dir: dir, Store: metricsdir.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Judge: judge, Tests: tests, Support: support, Exceptions: exceptions})
+	return mutants.Check(ctx, files, mutants.CheckOptions{Root: project.Root(), Dir: dir, Store: snapshots.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Toolchain: testtools.Toolchain{}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Judge: judge, Tests: tests, Support: support, Exceptions: exceptions})
 }
 
 func realMutationInputs() MutationInputs {
 	dir, _ := os.Getwd()
 	return MutationInputs{Snapshots: func(root string) mutants.MutationSnapshotReader {
-		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
+		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}}
 }

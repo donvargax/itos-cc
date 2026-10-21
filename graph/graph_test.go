@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 )
 
 func build(t *testing.T) *Graph {
@@ -131,7 +131,7 @@ func TestCrapScoreIsTheCRAPFormula(t *testing.T) {
 // of one at the root and of one whose path is absolute.
 func TestMutationNameIsTheSnapshotsAdapters(t *testing.T) {
 	for _, key := range []string{"src/board.go", "board.go", "/work/board.go", "D:/work/board.go"} {
-		if got, want := mutationName(key), metricsdir.MutationName(key); got != want {
+		if got, want := mutationName(key), snapshots.MutationName(key); got != want {
 			t.Errorf("mutationName(%q) = %q, want %q", key, got, want)
 		}
 	}

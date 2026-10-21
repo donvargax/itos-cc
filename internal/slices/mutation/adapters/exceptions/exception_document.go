@@ -1,4 +1,4 @@
-package config
+package exceptions
 
 import (
 	"bytes"
@@ -7,19 +7,20 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/donvargax/itos-cc/config"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ExceptDocument updates the CURRENT document through the single YAML codec.
 // It preserves unrelated keys/comments and returns no bytes on failure.
 func ExceptDocument(data []byte, e mutants.Exception) ([]byte, bool, error) {
-	c, err := Parse(data)
+	c, err := config.Parse(data)
 	if err != nil {
 		return nil, false, err
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, false, &InvalidError{Reason: err.Error()}
+		return nil, false, &config.InvalidError{Reason: err.Error()}
 	}
 	if doc.Kind == 0 {
 		doc.Kind = yaml.DocumentNode
@@ -29,7 +30,7 @@ func ExceptDocument(data []byte, e mutants.Exception) ([]byte, bool, error) {
 	}
 	root := doc.Content[0]
 	if root.Kind != yaml.MappingNode {
-		return nil, false, &InvalidError{Reason: "its top level is not a mapping"}
+		return nil, false, &config.InvalidError{Reason: "its top level is not a mapping"}
 	}
 	exceptions := valueOf(valueOf(root, "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 
@@ -53,20 +54,20 @@ func ExceptDocument(data []byte, e mutants.Exception) ([]byte, bool, error) {
 
 // RenewDocument consumes complete Old entries once and encodes only a full batch.
 func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
-	c, err := Parse(data)
+	c, err := config.Parse(data)
 	if err != nil {
 		return nil, err
 	}
 	var doc yaml.Node
 	if err := yaml.Unmarshal(data, &doc); err != nil {
-		return nil, &InvalidError{Reason: err.Error()}
+		return nil, &config.InvalidError{Reason: err.Error()}
 	}
 	if len(doc.Content) == 0 || doc.Content[0].Kind != yaml.MappingNode {
-		return nil, &InvalidError{Reason: "its top level is not a mapping"}
+		return nil, &config.InvalidError{Reason: "its top level is not a mapping"}
 	}
 	exceptions := valueOf(valueOf(doc.Content[0], "mutation", yaml.MappingNode), "exceptions", yaml.SequenceNode)
 	if len(exceptions.Content) != len(c.Exceptions) {
-		return nil, fmt.Errorf("%s: mutation.exceptions changed while it was read", File)
+		return nil, fmt.Errorf("%s: mutation.exceptions changed while it was read", config.File)
 	}
 	done := make([]bool, len(c.Exceptions))
 	for _, r := range renewals {
@@ -80,7 +81,7 @@ func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
 			i += 1 + next
 		}
 		if i < 0 {
-			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", File, r.Old.Function, r.Old.File)
+			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", config.File, r.Old.Function, r.Old.File)
 		}
 		var entry yaml.Node
 		if err := entry.Encode(r.New); err != nil {

@@ -1,4 +1,4 @@
-package config_test
+package exceptions_test
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -21,7 +22,7 @@ func TestExceptDocumentAddsEntriesThatParseReads(t *testing.T) {
 	deletion.Column, deletion.Original, deletion.Replacement = 3, "!", ""
 	var data []byte
 	for _, e := range []mutants.Exception{entry, deletion} {
-		updated, replaced, err := config.ExceptDocument(data, e)
+		updated, replaced, err := exceptions.ExceptDocument(data, e)
 		if err != nil || replaced {
 			t.Fatalf("ExceptDocument(%+v): replaced %v, error %v, want a new entry", e, replaced, err)
 		}
@@ -42,7 +43,7 @@ func TestExceptDocumentReplacesTheSameSiteAndKeepsTheRest(t *testing.T) {
 	text := "# Settings.\nother: [1, 2] # kept\nmutation:\n  # Reviewed.\n  exceptions:\n" +
 		"    # The first.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}\n" +
 		"    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 20, original: '<', replacement: '!=', reason: the loop only counts up}\n"
-	data, replaced, err := config.ExceptDocument([]byte(text), entry)
+	data, replaced, err := exceptions.ExceptDocument([]byte(text), entry)
 	if err != nil || !replaced {
 		t.Fatalf("replaced %v, error %v, want the first entry replaced", replaced, err)
 	}
@@ -74,7 +75,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 	}
 	renewed := before.Exceptions[0]
 	renewed.Hash, renewed.LineInFunction, renewed.LineText = "fedcba9876543210", 3, "for i < n {"
-	data, err := config.RenewDocument([]byte(text), []mutants.Renewal{{Old: before.Exceptions[0], New: renewed}})
+	data, err := exceptions.RenewDocument([]byte(text), []mutants.Renewal{{Old: before.Exceptions[0], New: renewed}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +91,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 			t.Errorf("itos-cc.yaml lost %q:\n%s", kept, data)
 		}
 	}
-	if _, err := config.RenewDocument(data, []mutants.Renewal{{Old: before.Exceptions[0], New: renewed}}); err == nil {
+	if _, err := exceptions.RenewDocument(data, []mutants.Renewal{{Old: before.Exceptions[0], New: renewed}}); err == nil {
 		t.Error("renewing an entry that is no longer there: no error")
 	}
 }
@@ -98,7 +99,7 @@ func TestRenewDocumentRewritesOnlyItsEntriesAndKeepsTheRest(t *testing.T) {
 func TestExceptDocumentFillsAnEmptyOrNullSetting(t *testing.T) {
 	for _, text := range []string{"", "# Nothing yet.\n", "mutation:\n", "mutation:\n  exceptions:\n"} {
 		t.Run(text, func(t *testing.T) {
-			data, _, err := config.ExceptDocument([]byte(text), entry)
+			data, _, err := exceptions.ExceptDocument([]byte(text), entry)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -121,7 +122,7 @@ func TestExceptDocumentRefusesAnInvalidDocument(t *testing.T) {
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 0, column: 1, original: '<', replacement: '<=', reason: ' '}\n",
 		"mutation:\n  exceptions:\n    - {file: a.go, function: f, hash: h, line_in_function: 1, column: 1, original: '<', reason: r}\n",
 	} {
-		data, _, err := config.ExceptDocument([]byte(text), entry)
+		data, _, err := exceptions.ExceptDocument([]byte(text), entry)
 		var invalid *config.InvalidError
 		if !errors.As(err, &invalid) {
 			t.Errorf("%q: ExceptDocument: %v, want it to refuse with an InvalidError", text, err)

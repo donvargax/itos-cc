@@ -1,4 +1,4 @@
-package metricsdir
+package snapshots
 
 import (
 	"encoding/json"

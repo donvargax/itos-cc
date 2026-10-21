@@ -1,4 +1,4 @@
-package workdir_test
+package sources_test
 
 import (
 	"errors"
@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
-	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
 func TestRealSourceStatusContract(t *testing.T) {
@@ -21,7 +21,7 @@ func TestRealSourceStatusContract(t *testing.T) {
 		if err := os.Mkdir(dir, 0700); err != nil {
 			t.Fatal(err)
 		}
-		return workdir.SourceEdits{}, file, dir, missing
+		return sources.SourceEdits{}, file, dir, missing
 	})
 }
 func TestSourceStatusPreservesNonMissingStatError(t *testing.T) {
@@ -30,7 +30,7 @@ func TestSourceStatusPreservesNonMissingStatError(t *testing.T) {
 	if err == nil || os.IsNotExist(err) {
 		t.Fatalf("fixture needs ordinary Stat error: %v", err)
 	}
-	_, failure := (workdir.SourceEdits{}).Kind(t.Context(), path)
+	_, failure := (sources.SourceEdits{}).Kind(t.Context(), path)
 	var failed mutants.InputFailed
 	if !errors.As(failure, &failed) || failed.Cause == nil {
 		t.Fatalf("ordinary failure: %v", failure)

@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/metricsdir"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -48,7 +48,7 @@ func TestCheckGoCoverageJudgesGoFilesAlone(t *testing.T) {
 
 	var asked []string
 	fp := &retainedGoInputs{Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, root: dir, asked: &asked}
-	checks, err := mutation.CheckCoverage(t.Context(), selection, mutation.CheckOptions{Root: dir, Dir: dir, Store: metricsdir.Mutations{Store: &snapporttest.Store{RootDir: dir}}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Toolchain: testtools.Toolchain{}, Fingerprints: fp}, map[string]bool{"go": true}, false, false)
+	checks, err := mutation.CheckCoverage(t.Context(), selection, mutation.CheckOptions{Root: dir, Dir: dir, Store: snapshots.Mutations{Store: &snapporttest.Store{RootDir: dir}}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Toolchain: testtools.Toolchain{}, Fingerprints: fp}, map[string]bool{"go": true}, false, false)
 
 	if err != nil {
 		t.Fatalf("a mixed selection is an error: %v", err)

@@ -1,4 +1,4 @@
-package config_test
+package exceptions_test
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
@@ -21,7 +22,7 @@ func TestRealExceptionsContract(t *testing.T) {
 			t.Helper()
 			data := []byte("# independently changed setting\nexclude: [vendor/**]\n")
 			for _, e := range entries {
-				updated, _, err := config.ExceptDocument(data, e)
+				updated, _, err := exceptions.ExceptDocument(data, e)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -29,14 +30,14 @@ func TestRealExceptionsContract(t *testing.T) {
 			}
 			// Preserve duplicate entries by encoding each into an independent sequence item.
 			if len(entries) > 1 && reflect.DeepEqual(entries[0], entries[1]) {
-				single, _, err := config.ExceptDocument(nil, entries[0])
+				single, _, err := exceptions.ExceptDocument(nil, entries[0])
 				if err != nil {
 					t.Fatal(err)
 				}
 				item := strings.SplitN(string(single), "exceptions:\n", 2)[1]
 				data = []byte("mutation:\n  exceptions:\n" + item + item)
 				for _, e := range entries[2:] {
-					updated, _, err := config.ExceptDocument(data, e)
+					updated, _, err := exceptions.ExceptDocument(data, e)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -50,7 +51,7 @@ func TestRealExceptionsContract(t *testing.T) {
 		if !missing {
 			put(entries)
 		}
-		return porttest.ExceptionFixture{Store: config.Exceptions{RootDir: root}, Replace: put, Entries: func() []mutants.Exception {
+		return porttest.ExceptionFixture{Store: exceptions.Exceptions{RootDir: root}, Replace: put, Entries: func() []mutants.Exception {
 			data, err := config.Read(root)
 			if err != nil {
 				t.Fatal(err)
@@ -66,7 +67,7 @@ func TestRealExceptionsContract(t *testing.T) {
 func TestExceptionsPreserveCurrentDocumentModeAndInvalidFacts(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, config.File)
-	store := config.Exceptions{RootDir: root}
+	store := exceptions.Exceptions{RootDir: root}
 	if err := os.WriteFile(path, []byte("# current setting\nexclude: [vendor/**]\n"), 0600); err != nil {
 		t.Fatal(err)
 	}

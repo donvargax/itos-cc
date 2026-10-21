@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snaptest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
@@ -37,11 +38,11 @@ func TestSampleIgnoresListedIDsOnNonListedRecordedOutcome(t *testing.T) {
 	}
 	workers := &porttest.Workers{Files: files, Tests: map[string]map[string]porttest.Tests{root: {command.String(): {}}}}
 	store := &snaptest.Store{RootDir: root}
-	opt := mutants.Options{Store: metricsdir.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: workdir.SourceEdits{}, Root: root, Dir: root, WorkerFactory: workers, Toolchain: inputs, Fingerprints: inputs, Workers: 1, TimeoutFactor: 10, Progress: mutationslice.Progress{Log: io.Discard}}
+	opt := mutants.Options{Store: snapshots.Mutations{Store: store}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Source: sources.SourceEdits{}, Root: root, Dir: root, WorkerFactory: workers, Toolchain: inputs, Fingerprints: inputs, Workers: 1, TimeoutFactor: 10, Progress: mutationslice.Progress{Log: io.Discard}}
 	if _, err := mutants.Run(t.Context(), []string{path}, opt); err != nil {
 		t.Fatal(err)
 	}
-	snap, err := mutants.LoadSnapshot(t.Context(), metricsdir.Mutations{Store: store}, "board.go", inputs)
+	snap, err := mutants.LoadSnapshot(t.Context(), snapshots.Mutations{Store: store}, "board.go", inputs)
 	if err != nil || snap == nil {
 		t.Fatalf("seed snapshot: %v", err)
 	}
@@ -50,7 +51,7 @@ func TestSampleIgnoresListedIDsOnNonListedRecordedOutcome(t *testing.T) {
 			snap.Units[i].Mutants[j].Tests = []string{"not-a-listed-scope"}
 		}
 	}
-	if failure := store.Write(t.Context(), metricsdir.MutationName("board.go"), metricsdir.SnapshotJSON(*snap)); failure != nil {
+	if failure := store.Write(t.Context(), snapshots.MutationName("board.go"), snapshots.SnapshotJSON(*snap)); failure != nil {
 		t.Fatal(failure)
 	}
 	before := store.Snapshots["mutate/board.go.json"]

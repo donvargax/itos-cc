@@ -1,15 +1,17 @@
-package config
+package exceptions
 
 import (
 	"testing"
 
 	"go.yaml.in/yaml/v3"
+
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // This literal follows the pre-extraction Exception field order/tags, including
 // the required empty replacement and the optional line text.
 func TestExceptionCodecPreservesYAMLRepresentation(t *testing.T) {
-	e := Exception{File: "src/a.go", Function: "main#f", Hash: "hash", LineInFunction: 2, Column: 3, Original: "!", Reason: "reviewed"}
+	e := mutants.Exception{File: "src/a.go", Function: "main#f", Hash: "hash", LineInFunction: 2, Column: 3, Original: "!", Reason: "reviewed"}
 	want := "file: src/a.go\nfunction: main#f\nhash: hash\nline_in_function: 2\ncolumn: 3\noriginal: '!'\nreplacement: \"\"\nreason: reviewed\n"
 	data, err := yaml.Marshal(e)
 	if err != nil {

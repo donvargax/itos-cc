@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/sources"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/internal/workdir"
 )
 
 // An orphan is kept only while its renames lead to a path where something
@@ -30,11 +30,11 @@ func TestAnOrphanRenamedToAFileIsKept(t *testing.T) {
 		{"p.ts", false}, // p → q → p, a cycle to a path where nothing is
 		{"z.ts", false}, // no rename: deleted, or moved where git does not see it
 	} {
-		if got, err := mutation.RenamedToAFile(t.Context(), at(c.name), since, uncommitted, workdir.SourceEdits{}); err != nil || got != c.want {
+		if got, err := mutation.RenamedToAFile(t.Context(), at(c.name), since, uncommitted, sources.SourceEdits{}); err != nil || got != c.want {
 			t.Errorf("renamedToAFile(%s) = %v, want %v", c.name, got, c.want)
 		}
 	}
-	if got, err := mutation.RenamedToAFile(t.Context(), at("a.ts"), nil, nil, workdir.SourceEdits{}); err != nil || got {
+	if got, err := mutation.RenamedToAFile(t.Context(), at("a.ts"), nil, nil, sources.SourceEdits{}); err != nil || got {
 		t.Errorf("renamedToAFile with no renames = true, want false")
 	}
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/exceptions"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -65,7 +66,7 @@ func TestMutationExceptionConsumersRequireActualBindings(t *testing.T) {
 	// Updates must use the independent injected CURRENT store, leaving this decoy.
 	old := entry
 	old.Hash = "earlier function hash"
-	data, _, err := config.ExceptDocument([]byte("# physical decoy\n"), old)
+	data, _, err := exceptions.ExceptDocument([]byte("# physical decoy\n"), old)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +178,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, config.File)
 	old := mutation.Exception{File: "a.go", Function: "p#F", Hash: "old", LineInFunction: 1, Column: 2, Original: ">", Replacement: ">=", Reason: "reviewed"}
-	original, _, err := config.ExceptDocument(nil, old)
+	original, _, err := exceptions.ExceptDocument(nil, old)
 	if err != nil {
 		t.Fatal(err)
 	}
