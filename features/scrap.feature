@@ -19,6 +19,13 @@ Feature: Test-code structure
         | Go         | testing               | parent test, for t.Run subtests   |
         | Kotlin     | JUnit and kotest      | test class, or kotest describe, context, feature, or given block |
 
+      # slice-33, dart-support: a test or testWidgets call is an example,
+      # named under its group titles; flutter_test and package:test alike.
+      @wip @slice-33
+      Examples:
+        | language   | framework                  | group       |
+        | Dart       | flutter_test, package:test | group block |
+
     @ID-SCRAP-02
     Scenario: Go subtests and table loops
       Given a Go test that loops over a table of cases and asserts in the loop body
@@ -40,6 +47,59 @@ Feature: Test-code structure
       Then "ApiTest/lists" is an example with 1 assertion
 
   Rule: Measuring examples
+
+    # slice-33: a Flutter widget test. Examples are named under their group,
+    # joined by /; setUp's lines are setup; each when(...) stubbing is a mock
+    # it sets up, as stubbing a mock is what other languages count; expect
+    # and verify assert; a closure inside an example is part of it.
+    @wip @slice-33 @ID-SCRAP-31
+    Scenario: A Flutter widget test file
+      Given the Dart test file "test/counter_test.dart":
+        """
+        import 'package:flutter/material.dart';
+        import 'package:flutter_test/flutter_test.dart';
+        import 'package:mocktail/mocktail.dart';
+        import 'package:demo/counter.dart';
+
+        class MockRepo extends Mock implements Repo {}
+
+        void main() {
+          late MockRepo repo;
+
+          setUp(() {
+            repo = MockRepo();
+          });
+
+          group('Counter', () {
+            testWidgets('starts at zero', (tester) async {
+              await tester.pumpWidget(const MaterialApp(home: Counter()));
+              expect(find.text('0'), findsOneWidget);
+            });
+
+            testWidgets('saves after a tap', (tester) async {
+              when(() => repo.save(any())).thenAnswer((_) async {});
+              await tester.pumpWidget(MaterialApp(home: Counter(repo: repo)));
+              await tester.tap(find.byIcon(Icons.add));
+              await tester.pump();
+              expect(find.text('1'), findsOneWidget);
+              verify(() => repo.save(1)).called(1);
+            });
+          });
+
+          test('the limit is ten', () {
+            if (Counter.limit > 0) {
+              expect(Counter.limit, 10);
+            }
+          });
+        }
+        """
+      When it is measured
+      Then the examples are:
+        | example                   | assertions | decisions | mocks | table |
+        | Counter/starts at zero    | 1          | 0         | 0     | no    |
+        | Counter/saves after a tap | 2          | 0         | 1     | no    |
+        | the limit is ten          | 1          | 1         | 0     | no    |
+      And setUp's lines count as setup, not as any example's size
 
     @ID-SCRAP-05
     Scenario: Assertion helpers count as assertions
@@ -102,6 +162,14 @@ Feature: Test-code structure
         | Kotlin     | x shouldBe 1                           |
         | Kotlin     | coVerify { repo.save(any()) }          |
 
+      @wip @slice-33
+      Examples:
+        | language   | code                                   |
+        | Dart       | expect(x, 1)                           |
+        | Dart       | expectLater(stream, emits(1))          |
+        | Dart       | verify(() => repo.save(1)).called(1)   |
+        | Dart       | verifyNever(repo.clear)                |
+
     @ID-SCRAP-08
     Scenario Outline: Helper names that read as assertions
       Given a test calls a helper named "<name>" defined outside the file
@@ -135,6 +203,13 @@ Feature: Test-code structure
         | a Python list it loops over, or a parametrize decorator                |
         | a TypeScript array it loops over with for…of, or it.each's argument    |
         | a Kotlin listOf it loops over, or a @CsvSource                         |
+
+      # slice-33: Dart has no built-in parametrize; a loop over cases that
+      # calls test for each is its table.
+      @wip @slice-33
+      Examples:
+        | table                                                                  |
+        | a Dart list it loops over with for…in, calling test for each case      |
 
     @ID-SCRAP-11
     Scenario Outline: Scoring an example
@@ -207,6 +282,11 @@ Feature: Test-code structure
         | Python     | @pytest.mark.parametrize         |
         | Go         | a table of cases run with t.Run  |
         | Kotlin     | @ParameterizedTest               |
+
+      @wip @slice-33
+      Examples:
+        | language   | idiom                                  |
+        | Dart       | a for loop over cases calling test     |
 
     @ID-SCRAP-16
     Scenario: An example that asserts nothing asks for refactoring
