@@ -5749,3 +5749,54 @@
       timeout: 300
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-158
+  type: refactor
+  title: Move the mutation domain into internal/slices/mutation/domain
+  why: >
+    T-86 (ADR-0051, slices-mutation (a), second half), after the slice root. Move internal/mutants
+    (79 files) to internal/slices/mutation/domain and internal/mutants/porttest (35 files) to
+    internal/slices/mutation/domain/porttest in a move commit that rewrites only import paths, then
+    rename the package clause to domain (domain_test), as dry's, scrap's and crap's are; every
+    importer keeps the name it uses today (mutants, cmd's mutation alias at adapters.go:20,
+    mutantstest), so none of the 1,373 qualifiers changes. 159 files import the two (cmd 32,
+    porttest 34, the slice 24, the domain's tests 15, freshenv 9, graph 6, metricsdir 6, testinputs
+    6, testtools 6, config 5, workdir 5, worktrees 5, githistory 2, importgraph 2). The move is one
+    mechanical commit over the usual size: a Go package cannot be split, and porttest moved alone
+    would leave internal/mutants with no statements for domain-coverage. There is no port
+    subpackage: the domain declares its model-bearing ports beside their values (settings_reader.go,
+    workers.go, history.go, run_ports.go, exception_ports.go, .golangci.yml:351), and splitting them
+    is no part of this task; M2's Ports keep their names and types. Rules: domain's files and allow
+    list follow to **/internal/slices/mutation/domain/** with internal/slices/mutation/domain$ and
+    .../domain/porttest$ on the allow list (its external tests and porttest import it); a new
+    shared-domains deny rule over internal/selection, internal/lang, internal/snapshot and
+    internal/coverage refuses github.com/donvargax/itos-cc/internal/slices/; domain-io, mutant-fakes
+    and coverage-fakes follow the path; slices and slice-packages drop internal/mutants and its
+    porttest from their allow lists, and slice-packages excludes
+    **/internal/slices/mutation/domain/**; slice-fakes excludes the same folder (porttest's own code
+    imports other ports' fakes, as !**/internal/mutants/** allows today) and denies the new porttest
+    path; each adapter rule (workdir, metricsdir, worktrees, testtools, testinputs, githistory,
+    freshenv, importgraph) allows the new domain path. domain-coverage measures
+    ./internal/slices/mutation/domain. check_test.go follows: the domains list (:155) and every list
+    or case naming internal/mutants or its porttest (:83, 163, 175, 203-207, 222-247, 285, 319, 334,
+    342, 363, 370); fixtures expect shared domains importing mutation's domain refused by the new
+    rule and other slices' domains by the sibling rule. config, graph and the adapters not yet moved
+    import the domain at its new path, which the sibling rule allows (it holds only internal/slices;
+    slices-close names config and graph as the engines allowed to). docs/go.md (internal/mutants
+    :149-160, the domain, slice-fakes and mutant-fakes notes :438-499, Adding a package :527-532),
+    docs/architecture.md:83, README's layout rows, features/README.md's internal/mutants paths.
+    Every message, snapshot byte and exit code unchanged.
+  done_when:
+    - run: go test -count=1 ./internal/slices/mutation/...
+      timeout: 900
+    - run: go test -count=1 ./config/... ./graph/... ./internal/workdir/... ./internal/metricsdir/... ./internal/githistory/... ./internal/importgraph/... ./internal/testtools/... ./internal/testinputs/... ./internal/worktrees/...
+      timeout: 900
+    - run: go vet ./...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestMemory.*|TestRunWithFakes.*)$' -scenarios='^@ID-(MUT|SNAP)-'
+      timeout: 900
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/domain-coverage
+      timeout: 600
+    - run: tools/bin/architecture-check
+      timeout: 900
