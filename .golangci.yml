@@ -53,8 +53,8 @@ linters:
         # internal/duplication finds functions similar enough to be
         # duplicates in files internal/lang parsed, reaching nothing outside,
         # so it has no port (decision 37); internal/teststructure measures
-        # test code's structure in files internal/lang parsed, with
-        # duplication's fingerprints, and has no port either;
+        # test code's structure in files internal/lang parsed, with lang's
+        # fingerprints, and has no port either;
         # internal/coverage parses coverage reports and answers what they
         # covered, its port asking what a path a report names is on disk
         # and holding the sealed gaps of coverage not measured (decision 46);

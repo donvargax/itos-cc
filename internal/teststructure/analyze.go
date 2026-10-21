@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/duplication"
 	"github.com/donvargax/itos-cc/internal/lang"
 )
 
@@ -162,7 +161,7 @@ func clusters(f *lang.File, examples []Example, reports []ExampleReport) []Clust
 	nodes := make([]int, len(examples))
 	for i, ex := range examples {
 		if ex.Body != nil {
-			prints[i], nodes[i] = duplication.Fingerprint(f, ex.Body)
+			prints[i], nodes[i] = lang.Fingerprint(f, ex.Body)
 		}
 	}
 	parent := make([]int, len(examples))
@@ -181,7 +180,7 @@ func clusters(f *lang.File, examples []Example, reports []ExampleReport) []Clust
 			if len(prints[i]) == 0 || len(prints[j]) == 0 {
 				continue
 			}
-			if duplication.Jaccard(prints[i], prints[j]) >= similar {
+			if lang.Jaccard(prints[i], prints[j]) >= similar {
 				parent[find(i)] = find(j)
 			}
 		}
@@ -199,7 +198,7 @@ func clusters(f *lang.File, examples []Example, reports []ExampleReport) []Clust
 		var pairs int
 		for a := 0; a < len(members); a++ {
 			for b := a + 1; b < len(members); b++ {
-				sum += duplication.Jaccard(prints[members[a]], prints[members[b]])
+				sum += lang.Jaccard(prints[members[a]], prints[members[b]])
 				pairs++
 			}
 		}
