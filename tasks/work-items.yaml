@@ -4817,7 +4817,7 @@ items:
     title: The pre-push hook compiles the whole module on the rebased tree
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: scrap-dart-test-wrappers

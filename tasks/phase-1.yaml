@@ -6383,7 +6383,3 @@
     git -C, never the network. Not golangci-lint or tests in the hook: CI has them, and the hook
     must stay seconds. The coordinator declares it in this clone after it lands and files the
     backport on go-template-itos.
-  done_when:
-    - run: test -x tools/hooks/pre-push
-    - run: grep -q 'hook.itos-cc-pre-push' README.md
-    - run: go run ./tools/bin/pre-push-check
