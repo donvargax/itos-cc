@@ -112,7 +112,7 @@ func isOptionalChain(n *sitter.Node) bool {
 
 // tsOptionalChain mutates a?.b to a.b, and drops the ?. of a call or an
 // index: a?.() becomes a(), a?.[0] becomes a[0].
-func tsOptionalChain(n *sitter.Node) (string, bool) {
+func tsOptionalChain(n *sitter.Node, _ []byte) (string, bool) {
 	if !isOptionalChain(n) {
 		return "", false
 	}

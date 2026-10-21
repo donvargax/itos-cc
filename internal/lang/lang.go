@@ -137,14 +137,18 @@ type Mutations struct {
 	// !x becomes x, -x becomes x.
 	Deletions     map[string]bool
 	DeleteParents map[string]bool
+	// LeftDeletions are binary operators removed with their left operand,
+	// under any of LeftDeleteParents: Dart's a ?? b becomes b.
+	LeftDeletions     map[string]bool
+	LeftDeleteParents map[string]bool
 	// Literals maps a literal's text to its replacement, for leaves of
 	// LiteralKinds: true and false, 0 and 1.
 	Literals     map[string]string
 	LiteralKinds map[string]bool
-	// Other returns the replacement for a leaf whose mutant depends on more
-	// than its text and parent, such as TypeScript's ?., and false for every
-	// other leaf. Nil when the language has none.
-	Other func(leaf *sitter.Node) (string, bool)
+	// Other returns the replacement for a leaf of src whose mutant depends on
+	// more than its text and parent, such as TypeScript's ?., and false for
+	// every other leaf. Nil when the language has none.
+	Other func(leaf *sitter.Node, src []byte) (string, bool)
 }
 
 // swaps returns the shared operator swaps plus extra.
@@ -171,6 +175,15 @@ type Syntax struct {
 	// Members maps a member-access node kind to the field holding the member
 	// name, or "" when the name is the last named child.
 	Members map[string]string
+	// Arguments are, in a grammar with no call node, the kinds of a call's
+	// arguments, which call the link of a selector chain before them: Dart's
+	// a.b(x) is the identifier a, the selector .b, and the selector (x)
+	// holding an argument_part, which calls b on a. Such a call is its
+	// arguments' node to Callee. Nil where Calls holds every call.
+	Arguments map[string]bool
+	// Links are the kinds wrapping one link of a selector chain, as Dart's
+	// selector wraps .b and (x).
+	Links map[string]bool
 	// Identifiers are leaf kinds that name something.
 	Identifiers map[string]bool
 	// Literals are kinds whose whole subtree is one literal value.
@@ -188,12 +201,15 @@ func set(kinds ...string) map[string]bool {
 }
 
 // IsCallee reports whether the identifier n names the function a call
-// invokes: f in f(x), or m in obj.m(x). Single-child wrappers between them,
-// such as Kotlin's navigation_suffix, are looked through.
+// invokes: f in f(x), or m in obj.m(x), whether a call node holds them or,
+// in a selector chain, arguments follow them. Single-child wrappers between
+// them, such as Kotlin's navigation_suffix, are looked through, but not a
+// chain's link or arguments: x in Dart's g(x)(y) is no callee.
 func (s Syntax) IsCallee(n *sitter.Node) bool {
 	id := n
 	p := n.Parent()
-	for p != nil && !s.isMember(p) && !s.isCall(p) && p.NamedChildCount() == 1 {
+	for p != nil && !s.isMember(p) && !s.isCall(p) && !s.Links[p.Kind()] && !s.Arguments[p.Kind()] &&
+		p.NamedChildCount() == 1 {
 		n, p = p, p.Parent()
 	}
 	if p == nil {
@@ -208,6 +224,12 @@ func (s Syntax) IsCallee(n *sitter.Node) bool {
 			return false
 		}
 	}
+	if s.Links[p.Kind()] {
+		n = p
+	}
+	if s.calls(n.NextNamedSibling()) {
+		return true
+	}
 	field, ok := s.Calls[p.Kind()]
 	return ok && sameNode(callee(p, field), n)
 }
@@ -215,10 +237,31 @@ func (s Syntax) IsCallee(n *sitter.Node) bool {
 func (s Syntax) isMember(n *sitter.Node) bool { _, ok := s.Members[n.Kind()]; return ok }
 func (s Syntax) isCall(n *sitter.Node) bool   { _, ok := s.Calls[n.Kind()]; return ok }
 
+// calls reports whether n, the link after another in a selector chain,
+// holds arguments, which call the link before it.
+func (s Syntax) calls(n *sitter.Node) bool {
+	if n == nil {
+		return false
+	}
+	if s.Links[n.Kind()] && n.NamedChildCount() > 0 {
+		n = n.NamedChild(0)
+	}
+	return s.Arguments[n.Kind()]
+}
+
+// isLink reports whether n is a link of a selector chain past its first:
+// a wrapped link, a member access, or arguments.
+func (s Syntax) isLink(n *sitter.Node) bool {
+	return s.Links[n.Kind()] || s.isMember(n) || s.Arguments[n.Kind()]
+}
+
 // Callee splits a call into the object it is made on, if any, and the
 // called name: ("http", "Get") for http.Get(u), ("", "fetch") for fetch(u).
 // A call made on a call's result, a.b().c(), has the object text a.b().
 func (s Syntax) Callee(n *sitter.Node, src []byte) (object, name string, ok bool) {
+	if s.Arguments[n.Kind()] {
+		return s.chainCallee(n, src)
+	}
 	field, isCall := s.Calls[n.Kind()]
 	if !isCall {
 		return "", "", false
@@ -246,6 +289,40 @@ func (s Syntax) Callee(n *sitter.Node, src []byte) (object, name string, ok bool
 	return fn.NamedChild(0).Utf8Text(src), member.Utf8Text(src), true
 }
 
+// chainCallee splits the call args make in a selector chain: the link
+// before them is the called name, and the chain from its start up to that
+// link the object, "" for a bare name or a cascade's member.
+func (s Syntax) chainCallee(args *sitter.Node, src []byte) (object, name string, ok bool) {
+	link := args
+	if p := args.Parent(); p != nil && s.Links[p.Kind()] {
+		link = p
+	}
+	called := link.PrevNamedSibling()
+	if called == nil {
+		return "", "", false
+	}
+	fn := called
+	if s.Links[fn.Kind()] && fn.NamedChildCount() == 1 {
+		fn = fn.NamedChild(0)
+	}
+	if s.Identifiers[fn.Kind()] {
+		return "", fn.Utf8Text(src), true
+	}
+	field, isMember := s.Members[fn.Kind()]
+	if !isMember {
+		return "", "", false
+	}
+	member := s.memberName(fn, field)
+	if member == nil || !s.Identifiers[member.Kind()] {
+		return "", "", false
+	}
+	start := called
+	for start.PrevNamedSibling() != nil && s.isLink(start) {
+		start = start.PrevNamedSibling()
+	}
+	return strings.TrimSpace(string(src[start.StartByte():called.StartByte()])), member.Utf8Text(src), true
+}
+
 func callee(call *sitter.Node, field string) *sitter.Node {
 	if field != "" {
 		return call.ChildByFieldName(field)
@@ -257,7 +334,9 @@ func callee(call *sitter.Node, field string) *sitter.Node {
 }
 
 // memberName is the name in a member access: the field, or the last named
-// child, unwrapped down to the identifier inside it.
+// child, unwrapped down to the identifier inside it. A selector chain's
+// member holds its name itself and is not unwrapped: Dart's selector [i]
+// holds an index, not a name.
 func (s Syntax) memberName(member *sitter.Node, field string) *sitter.Node {
 	var name *sitter.Node
 	if field != "" {
@@ -265,7 +344,7 @@ func (s Syntax) memberName(member *sitter.Node, field string) *sitter.Node {
 	} else if n := member.NamedChildCount(); n > 0 {
 		name = member.NamedChild(n - 1)
 	}
-	for name != nil && !s.Identifiers[name.Kind()] && name.NamedChildCount() > 0 {
+	for name != nil && !s.Identifiers[name.Kind()] && name.NamedChildCount() > 0 && s.Links == nil {
 		name = name.NamedChild(name.NamedChildCount() - 1)
 	}
 	return name

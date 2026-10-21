@@ -138,7 +138,7 @@ Feature: Mutation testing
     # since TypeScript's ?? to || does not compile in Dart. + to - fails
     # only on a String or a List, and such a mutant is reported as not
     # compiling (D7), not as killed.
-    @wip @slice-29 @ID-MUT-262
+    @slice-29 @ID-MUT-262
     Scenario: Dart sites
       Given the file "x.dart":
         """

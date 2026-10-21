@@ -60,10 +60,13 @@ func Sites(f *lang.File) []Site {
 			}
 			text := n.Utf8Text(f.Src)
 			parent := n.Parent()
+			// from is where the site starts: the leaf, or the expression
+			// whose left operand a left deletion takes with the leaf.
+			from := n
 			var replacement string
 			var ok bool
 			if m.Other != nil {
-				replacement, ok = m.Other(n)
+				replacement, ok = m.Other(n, f.Src)
 			}
 			switch {
 			case ok:
@@ -74,17 +77,19 @@ func Sites(f *lang.File) []Site {
 				replacement, ok = m.Swaps[text]
 			case m.DeleteParents[parent.Kind()] && m.Deletions[text]:
 				replacement, ok = "", true
+			case m.LeftDeleteParents[parent.Kind()] && m.LeftDeletions[text]:
+				from, replacement, ok = parent, "", true
 			}
 			if ok {
-				p := n.StartPosition()
+				start, p := from.StartByte(), from.StartPosition()
 				sites = append(sites, Site{
 					Unit:        i,
-					Start:       n.StartByte(),
+					Start:       start,
 					End:         n.EndByte(),
-					Offset:      int(n.StartByte()-unitStart) - removedBefore(comments, n.StartByte()),
+					Offset:      int(start-unitStart) - removedBefore(comments, start),
 					Line:        int(p.Row) + 1,
 					Column:      int(p.Column) + 1,
-					Original:    text,
+					Original:    string(f.Src[start:n.EndByte()]),
 					Replacement: replacement,
 				})
 			}

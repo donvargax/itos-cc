@@ -25,7 +25,7 @@ Feature: Duplicate functions
       | Go         | func alpha(xs []int) []int { ys := filter(xs, odd); return mapf(ys, 1) }     | func beta(items []int) []int { kept := filter(items, even); return mapf(kept, 2) }     |
       | Kotlin     | fun alpha(xs: List<Int>): List<Int> { val ys = filter(xs, odd); return map(ys, 1) } | fun beta(items: List<Int>): List<Int> { val kept = filter(items, even); return map(kept, 2) } |
 
-    @wip @slice-29
+    @slice-29
     Examples:
       | language | first                                                                        | second                                                                                 |
       | Dart     | List<int> alpha(List<int> xs) { final ys = filter(xs, odd); return map(ys, 1); } | List<int> beta(List<int> items) { final kept = filter(items, even); return map(kept, 2); } |
@@ -55,7 +55,7 @@ Feature: Duplicate functions
   # slice-29: Dart's grammar has no call node, a call being a name or a
   # selector followed by its arguments, so a Dart function's calls are read
   # from those chains: the function called still matters.
-  @wip @slice-29 @ID-DRY-19
+  @slice-29 @ID-DRY-19
   Scenario Outline: A Dart function's called functions and operators do matter
     Given the Dart function "int f(List<int> xs) { final ys = filter(xs, odd); return map(ys, inc); }"
     And a copy of it with <change>

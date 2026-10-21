@@ -41,13 +41,70 @@ func init() {
 			return strings.HasPrefix(name, "_") || strings.HasPrefix(own, "_")
 		},
 		Syntax: Syntax{
+			Calls: map[string]string{"new_expression": ""},
+			Members: map[string]string{"unconditional_assignable_selector": "", "conditional_assignable_selector": "",
+				"cascade_selector": ""},
+			Arguments:   set("argument_part"),
+			Links:       set("selector"),
 			Identifiers: set("identifier", "type_identifier"),
-			Comments:    set("comment", "documentation_comment"),
+			Literals: set("string_literal", "decimal_integer_literal", "hex_integer_literal",
+				"decimal_floating_point_literal", "true", "false", "null_literal", "symbol_literal"),
+			Comments: set("comment", "documentation_comment"),
+		},
+		Mutations: Mutations{
+			Swaps:             dartSwaps,
+			SwapParents:       set("logical_and_operator", "logical_or_operator"),
+			Deletions:         set("!"),
+			DeleteParents:     set("negation_operator"),
+			LeftDeletions:     set("??"),
+			LeftDeleteParents: set("if_null_expression"),
+			Literals:          cLikeLiterals,
+			// true and false are leaves of their named nodes.
+			LiteralKinds: set("true", "false", "decimal_integer_literal"),
+			Other:        dartOperator,
 		},
 		Comment:  "//",
 		Decision: dartDecision,
 		IsTest:   dartIsTest,
 	})
+}
+
+// Dart's mutation sites are the changes that compile whatever their
+// operands' types, since a mutant that does not compile still costs a
+// flutter test start: the relational and equality swaps, + and -, && and
+// ||, deleting the prefix ! and -, true and false, 0 and 1, and a ?? b
+// becoming b. Not * and /, as int / int is a double; not ?. to ., as its
+// receiver is nullable; not the postfix null assertion x!.
+var dartSwaps = swaps(map[string]string{"&&": "||", "||": "&&"})
+
+// dartOperators are the operator nodes whose sites dartOperator makes, each
+// with the expression it is changed in: the grammar names the same nodes in
+// an operator's declaration, operator <, which no site changes. An
+// equality, additive or minus operator is a leaf of its own; a relational
+// operator wraps its token.
+var dartOperators = map[string]string{
+	"equality_operator":   "equality_expression",
+	"relational_operator": "relational_expression",
+	"additive_operator":   "additive_expression",
+	"minus_operator":      "prefix_operator",
+}
+
+// dartOperator is the replacement for leaf when it is, or is the token of,
+// an operator node of dartOperators in its expression: the prefix - is
+// deleted and the others swapped.
+func dartOperator(leaf *sitter.Node, src []byte) (string, bool) {
+	op := leaf
+	if !leaf.IsNamed() {
+		op = leaf.Parent()
+	}
+	if op == nil || op.Parent() == nil || dartOperators[op.Kind()] != op.Parent().Kind() {
+		return "", false
+	}
+	if op.Kind() == "minus_operator" {
+		return "", true
+	}
+	replacement, ok := dartSwaps[leaf.Utf8Text(src)]
+	return replacement, ok
 }
 
 // dartSignatures are the signatures a unit starts with: a top-level

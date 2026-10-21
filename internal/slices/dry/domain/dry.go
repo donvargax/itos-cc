@@ -12,6 +12,7 @@ package domain
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -133,7 +134,7 @@ func Forms(f *lang.File, name string, opt Options) []Form {
 		if u.EndLine-u.StartLine+1 < opt.MinLines {
 			continue
 		}
-		prints, nodes := lang.Fingerprint(f, u.Node, f.InnerNodes(u)...)
+		prints, nodes := fingerprint(f, u)
 		if nodes < opt.MinNodes {
 			continue
 		}
@@ -148,6 +149,21 @@ func Forms(f *lang.File, name string, opt Options) []Form {
 		})
 	}
 	return forms
+}
+
+// fingerprint is the fingerprint set of u's code and the number of nodes
+// that survived normalizing it: each of its Nodes', as a Dart unit is a
+// signature and the body beside it, without its inline units.
+func fingerprint(f *lang.File, u lang.Unit) ([]uint64, int) {
+	var prints []uint64
+	nodes := 0
+	for _, n := range u.Nodes() {
+		p, c := lang.Fingerprint(f, n, f.InnerNodes(u)...)
+		prints = append(prints, p...)
+		nodes += c
+	}
+	slices.Sort(prints)
+	return slices.Compact(prints), nodes
 }
 
 // Compare scores every pair of forms in the same language and returns those

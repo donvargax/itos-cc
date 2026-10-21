@@ -1,8 +1,11 @@
 package lang
 
 import (
+	"fmt"
 	"slices"
 	"testing"
+
+	sitter "github.com/tree-sitter/go-tree-sitter"
 
 	"github.com/donvargax/itos-cc/internal/lang/port/porttest"
 )
@@ -161,5 +164,53 @@ func TestDartTestFiles(t *testing.T) {
 		if got := Detect(path).IsTest(path); got != want {
 			t.Errorf("IsTest(%s) = %v, want %v", path, got, want)
 		}
+	}
+}
+
+// Dart's grammar has no call node: a call is a name or a selector followed
+// by its arguments, which DRY-19 reads only through a bare name. The member,
+// cascade and constructor calls, and the names that are no callee, are
+// these tests'.
+func TestDartCallees(t *testing.T) {
+	src := `void f(List<int> xs, A? a) {
+  g(xs.length).h(i)..run(1);
+  a?.m<int>(xs[0]);
+  super.k();
+  new B.named();
+  xs[j](1);
+  g(x)(y);
+  xs.isEmpty;
+}
+`
+	if got, want := callees(t, "app/lib/f.dart", src), []string{"g", "h", "run", "m", "k", "B", "g"}; !slices.Equal(got, want) {
+		t.Errorf("callees %v, want %v", got, want)
+	}
+}
+
+// Callee takes a Dart call's argument_part, which scrap and http read.
+func TestDartCalleeSplitsTheChainBeforeTheArguments(t *testing.T) {
+	src := `void f() {
+  expect(x, 1);
+  a.b.c(1).d(2);
+  obj?.m(y);
+  super.k();
+  x..run(4);
+  g()(2);
+  xs[j](3);
+}
+`
+	f := dartFile(t, "app/lib/f.dart", src)
+	var got []string
+	Walk(f.Root, func(n *sitter.Node) bool {
+		if n.Kind() == "argument_part" {
+			object, name, ok := f.Spec.Syntax.Callee(n, f.Src)
+			got = append(got, fmt.Sprintf("%s|%s|%v", object, name, ok))
+		}
+		return true
+	})
+	want := []string{"|expect|true", "a.b|c|true", "a.b.c(1)|d|true", "obj|m|true", "super|k|true", "|run|true",
+		"|g|true", "||false", "||false"}
+	if !slices.Equal(got, want) {
+		t.Errorf("Callee gives %q, want %q", got, want)
 	}
 }
