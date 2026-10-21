@@ -155,7 +155,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^no selected site is in (\S+)$`, m.noSelectedSiteIn)
 
 	// Running mutants.
-	sc.Step(`^a source file in a (Go|TypeScript|Python|Kotlin) project with (.+)$`, m.sourceInProject)
+	sc.Step(`^a source file in a (Go|TypeScript|Python|Kotlin|Dart) project with (.+)$`, m.sourceInProject)
 	sc.Step(`^its mutants run$`, m.itsMutantsRun)
 	sc.Step(`^the test command is (.+)$`, m.testCommandIs)
 	sc.Step(`^a/a\.go is tested only by e2e/e2e_test\.go, which imports package a$`, m.e2eModule)

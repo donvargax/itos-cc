@@ -83,6 +83,10 @@ func (m *mutateState) sourceInProject(ctx context.Context, language, has string)
 			files["pom.xml"] = kotlinBuild("pom.xml")
 		}
 		w.without = append(w.without, "gradle", "mvn")
+	case "Dart/a resolved Flutter package", "Dart/.fvmrc and .fvm/flutter_sdk":
+		// The real flutter runs its tests: the scenario reads which
+		// command itos-cc chose.
+		return m.mutateDartCommandProject(has != "a resolved Flutter package")
 	default:
 		return fmt.Errorf("no %s project is written with %s", language, has)
 	}
@@ -138,9 +142,11 @@ var pythonName = regexp.MustCompile(`^python(?:3(?:\.\d+)?)?(?:\.exe)?$`)
 // package manager the project declares and <the file's test modules> the
 // modules of the tests that reach the file. "on the file's package" says
 // the command names the file's package folder, "on the file" the file,
-// and "for the module" Gradle's -p and the module's folder, anywhere among
+// "for the module" Gradle's -p and the module's folder, and "on the test
+// files that reach the file" those files and no other test, anywhere among
 // its words; "via ./gradlew if present" checks
-// a run with a gradlew in the build root runs it instead.
+// a run with a gradlew in the build root runs it instead. A program named
+// by a path is that path from the scratch folder.
 func (m *mutateState) testCommandIs(spec string) error {
 	var after []string
 	gradlew := false
@@ -152,6 +158,7 @@ func (m *mutateState) testCommandIs(spec string) error {
 		{" on the file", []string{m.file}},
 		{", the package manager the project declares", nil},
 		{" for the module, via ./gradlew if present", []string{"-p", "."}},
+		{" on the test files that reach the file", mutateDartReaching},
 	} {
 		if rest, ok := strings.CutSuffix(spec, q.suffix); ok {
 			spec, after = rest, q.words
@@ -169,6 +176,9 @@ func (m *mutateState) testCommandIs(spec string) error {
 	want := strings.Fields(spec)
 	if err := m.commandHolds(want, after, installed); err != nil {
 		return err
+	}
+	if m.language == "Dart" {
+		return m.mutateDartOnlyReaching()
 	}
 	if !gradlew {
 		return nil
@@ -201,6 +211,12 @@ func (m *mutateState) commandHolds(want, after []string, installed string) error
 		words[0] = installed
 	case want[0] == "python" && pythonName.MatchString(path.Base(program)):
 		words[0] = "python"
+	case strings.Contains(want[0], "/"):
+		// A program in the project, such as an FVM-linked SDK's, by its
+		// path from the scratch folder.
+		if rel, ok := (&coverageState{w: m.w}).rel(program); ok {
+			words[0] = rel
+		}
 	}
 	if words[0] != want[0] || !subsequence(words, want) || !contiguous(words[1:], after) {
 		return fmt.Errorf("the test command is %q, not %s with %s\n%s", runs[0].command, strings.Join(want, " "), strings.Join(after, " "), m.w.report())
