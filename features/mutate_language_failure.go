@@ -77,6 +77,8 @@ func (l *languageMutation) failureSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the run fails with "([^"]*)" naming the language and directory, and the exit code is (\d+)$`, l.coverageFailed)
 	sc.Step(`^no mutant of that file is judged or reported as covered$`, l.noJudgment)
 	sc.Step(`^without --fail-uncovered the run falls back to running every mutant as before$`, l.failureFallback)
+	sc.Step(`^a Python project whose test fails only when coverage\.py runs it, after its file's every line has run$`, l.failingUnderCoverage)
+	sc.Step(`^no mutant of that file is judged, and no problem is "mutation\.coverage-missing"$`, l.noJudgment)
 	sc.Step(`^a committed project with a Go module and a TypeScript file with no mutation site$`, l.unjudgedCountProject)
 	sc.Step(`^no TypeScript coverage tool is installed$`, func() error {
 		if l.m.w.d.Exists(filepath.Join(l.m.w.dir, "node_modules")) {

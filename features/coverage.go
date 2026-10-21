@@ -270,6 +270,8 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 		return ctx, nil
 	})
 
+	c.floorSteps(sc)
+
 	// Rule: Chosen files run only the tests that load them.
 	sc.Step(`^a/a\.go, tested by its own package and by e2e/e2e_test\.go, which imports package a$`, c.e2eModule)
 	sc.Step(`^slow/slow_test\.go, which never loads package a$`, c.slowTest)
