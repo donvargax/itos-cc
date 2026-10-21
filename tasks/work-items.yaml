@@ -14,7 +14,6 @@ queue:
   - T-174
   - slice-13
   - worker-copies-skip-ignored
-  - slice-14
   - slice-15
   - slice-16
   - T-46
