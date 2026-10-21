@@ -10,6 +10,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 )
 
@@ -57,7 +58,7 @@ func TestMutationHistoryConsumersRequireActualBindings(t *testing.T) {
 		relative[filepath.ToSlash(rel)] = text
 	}
 	bound := mutantstest.History{Root: root, Dir: root, Repository: repository, Working: files}
-	h := Handler{Settings: &mutantstest.Settings{Root: root}, Tree: seltest.TreeOf(root, relative, nil), History: bound,
+	h := Handler{Settings: &mutantstest.Settings{Value: mutants.Config{Selection: selport.Settings{Root: root}}}, Tree: seltest.TreeOf(root, relative, nil), History: bound,
 		Presence: &mutantstest.SourceEdits{Files: files, Directories: map[string]bool{root: true}}, Dir: root}
 	base := "base"
 	q := SelectionQuery{Since: &base}

@@ -226,7 +226,7 @@ func fakes() porttest.Tree {
 }
 
 // porttests is the Exclusion of every porttest package, from dir.
-var porttests = selection.Exclusion{Root: dir, Globs: []string{"**/porttest/**"}}
+var porttests = selection.Exclusion{Root: dir, Exclude: []string{"**/porttest/**"}}
 
 func TestExclusionLeavesSourcesOutHoweverTheyWereChosen(t *testing.T) {
 	for _, c := range []struct {
@@ -279,7 +279,7 @@ func TestExclusionMatchesSlashPathsFromItsRoot(t *testing.T) {
 		{"src/[ab].go", "src/c.go", false},
 		{"{lib,src}/gen/*.ts", "lib/gen/x.ts", true},
 	} {
-		e := selection.Exclusion{Root: dir, Globs: []string{c.glob}}
+		e := selection.Exclusion{Root: dir, Exclude: []string{c.glob}}
 		if got := e.Excludes(filepath.Join(dir, filepath.FromSlash(c.rel))); got != c.want {
 			t.Errorf("%q excludes %s: %t, want %t", c.glob, c.rel, got, c.want)
 		}
@@ -287,7 +287,7 @@ func TestExclusionMatchesSlashPathsFromItsRoot(t *testing.T) {
 }
 
 func TestExclusionNeverReachesAboveItsRoot(t *testing.T) {
-	e := selection.Exclusion{Root: filepath.Join(dir, "project"), Globs: []string{"**"}}
+	e := selection.Exclusion{Root: filepath.Join(dir, "project"), Exclude: []string{"**"}}
 	if e.Excludes(filepath.Join(dir, "other", "a.go")) {
 		t.Errorf("%v excludes a file outside its root", e)
 	}
@@ -309,7 +309,7 @@ func TestExclusionOnlyTakesSourcesAway(t *testing.T) {
 		tests := rapid.SliceOfDistinct(rapid.StringMatching(`[ab]{1,2}/[ab]{1,2}_test\.go`), func(s string) string { return s }).Draw(t, "tests")
 		tree := porttest.TreeOf(dir, files(append(sources, tests...)...), nil)
 		globs := rapid.SliceOfN(rapid.SampledFrom([]string{"a/**", "**/b/**", "*.go", "**/*.ts", "b?/*", "{a,b}/a.go", "**/*_test.go"}), 0, 3).Draw(t, "globs")
-		exclude := selection.Exclusion{Root: dir, Globs: globs}
+		exclude := selection.Exclusion{Root: dir, Exclude: globs}
 		whole, err := selection.Select(t.Context(), tree, nil, false, selection.Exclusion{})
 		if err != nil {
 			t.Fatal(err)

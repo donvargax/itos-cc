@@ -213,8 +213,8 @@ func TestExcludeReadsItsGlobs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"**/porttest/**", "features/*.go", "{a,b}/x?.[ch]", "nothing/here"}; !slices.Equal(c.Exclude, want) {
-		t.Errorf("exclude %q, want %q", c.Exclude, want)
+	if want := []string{"**/porttest/**", "features/*.go", "{a,b}/x?.[ch]", "nothing/here"}; !slices.Equal(c.Selection.Exclude, want) {
+		t.Errorf("exclude %q, want %q", c.Selection.Exclude, want)
 	}
 }
 

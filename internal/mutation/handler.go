@@ -62,25 +62,27 @@ type SelectionQuery struct {
 	Since   *string
 }
 
+// settings is one observation of the settings: the root its selection
+// settings were found at, and the settings.
 func (h Handler) settings(ctx context.Context) (string, *mutants.Config, error) {
 	if h.Settings == nil {
 		return "", nil, errors.New("mutation settings binding is missing")
 	}
-	root, config, failure := h.Settings.Read(ctx)
+	config, failure := h.Settings.Read(ctx)
 	if failure != nil {
-		return root, nil, failure
+		return "", nil, failure
 	}
 	if config == nil {
-		return root, nil, errors.New("mutation settings binding returned no value")
+		return "", nil, errors.New("mutation settings binding returned no value")
 	}
-	return root, config, nil
+	return config.Selection.Root, config, nil
 }
 func (h Handler) exclusion(ctx context.Context) (selection.Exclusion, error) {
-	root, config, err := h.settings(ctx)
+	_, config, err := h.settings(ctx)
 	if err != nil {
 		return selection.Exclusion{}, err
 	}
-	return selection.Exclusion{Root: root, Globs: config.Exclude}, nil
+	return selection.Exclusion(config.Selection), nil
 }
 func (h Handler) files(ctx context.Context, q SelectionQuery) (selection.Files, error) {
 	exclude, err := h.exclusion(ctx)

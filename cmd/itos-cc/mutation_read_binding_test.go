@@ -11,6 +11,7 @@ import (
 
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
@@ -172,7 +173,7 @@ func TestMutationListRequiresActualSettingsBinding(t *testing.T) {
 	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 100 || !strings.Contains(out, "settings binding is missing") {
 		t.Fatalf("missing settings fell back: %d %s", code, out)
 	}
-	a.Settings = &mutantstest.Settings{Root: f.root, Value: mutation.Config{Exclude: []string{"board.go"}}}
+	a.Settings = &mutantstest.Settings{Value: mutation.Config{Selection: selport.Settings{Root: f.root, Exclude: []string{"board.go"}}}}
 	if code, out := invokeRead(t, f, a, "mutation", "list", "--json", "board.go"); code != 0 || !strings.Contains(compactRead(out), `"sites":[]`) || !strings.Contains(out, "1 sources left out by exclude") {
 		t.Fatalf("independently bound settings ignored: %d %s", code, out)
 	}

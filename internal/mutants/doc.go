@@ -26,8 +26,9 @@
 // is reused by scenario memory bytes. SourceStatus observes following-Stat kind,
 // independently of SourcePresence, and each operation applies its own policy.
 // Sample owns no publication capability and reuses the one execution scheduler.
-// Config is the one semantic settings value, aliased by config.Config. Its reader
-// supplies current root/settings at each actual admission point; the existing
+// Config is the one semantic settings value, aliased by config.Config, holding the
+// selection engine's settings, root and exclude. Its reader supplies current
+// settings at each actual admission point; the existing
 // config codec and disk or memory bytes remain outside this package.
 // The domain imports no implementation and contains no process/filesystem I/O.
 package mutants

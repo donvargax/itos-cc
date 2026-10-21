@@ -30,8 +30,9 @@ func Path() string {
 	return filepath.Join(project.Root(), File)
 }
 
-// Config is the mutation domain's genuine settings value. This package owns
-// its representation codec, not a second semantic model.
+// Config is the mutation domain's genuine settings value, holding the
+// selection engine's settings. This package owns its representation codec,
+// not a second semantic model.
 type Config = mutants.Config
 
 // InvalidError is an itos-cc.yaml that cannot be read: not YAML, a key of
@@ -85,13 +86,18 @@ func Load() (*Config, error) {
 }
 
 // LoadFrom is Load for the project whose root is root, which need not be
-// the working directory's.
+// the working directory's: its selection settings' root.
 func LoadFrom(root string) (*Config, error) {
 	data, err := Read(root)
 	if err != nil {
 		return nil, err
 	}
-	return Parse(data)
+	c, err := Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	c.Selection.Root = root
+	return c, nil
 }
 
 // Read is the text of itos-cc.yaml at the project root root, nil when there
@@ -106,7 +112,8 @@ func Read(root string) ([]byte, error) {
 
 // Parse reads data, the text of an itos-cc.yaml, as a config: no text at
 // all is an empty one, and text that cannot be read as a config is an
-// *InvalidError.
+// *InvalidError. The text names no root, so its selection settings have
+// none: the caller that found the file gives it.
 func Parse(data []byte) (*Config, error) {
 	var r raw
 	if err := yaml.Unmarshal(data, &r); err != nil {
@@ -117,7 +124,7 @@ func Parse(data []byte) (*Config, error) {
 		if err := checkExclude(i, glob); err != nil {
 			return nil, err
 		}
-		c.Exclude = append(c.Exclude, glob)
+		c.Selection.Exclude = append(c.Selection.Exclude, glob)
 	}
 	if r.Mutation == nil {
 		return c, nil

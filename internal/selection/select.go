@@ -24,19 +24,18 @@ type Files struct {
 }
 
 // Exclusion is the sources a project leaves out of what every command
-// measures and mutates: those whose path from Root, slash-separated,
-// matches one of Globs, doublestar patterns (itos-cc.yaml's exclude). It
+// measures and mutates, as its selection settings name them: those whose
+// path from Root, slash-separated, matches one of Exclude, doublestar
+// patterns (itos-cc.yaml's exclude). It is those settings, read through
+// port.SettingsReader, so Exclusion(settings) takes them as they are. It
 // never names a test, and the zero Exclusion excludes nothing.
-type Exclusion struct {
-	Root  string
-	Globs []string
-}
+type Exclusion port.Settings
 
 // Excludes reports whether the source at path, absolute, is left out: a
 // path the root cannot reach never is. The globs are taken as valid, as
 // the settings that hold them checked them.
 func (e Exclusion) Excludes(path string) bool {
-	if len(e.Globs) == 0 {
+	if len(e.Exclude) == 0 {
 		return false
 	}
 	rel, err := filepath.Rel(e.Root, path)
@@ -44,7 +43,7 @@ func (e Exclusion) Excludes(path string) bool {
 		return false
 	}
 	rel = filepath.ToSlash(rel)
-	for _, glob := range e.Globs {
+	for _, glob := range e.Exclude {
 		if doublestar.MatchUnvalidated(glob, rel) {
 			return true
 		}

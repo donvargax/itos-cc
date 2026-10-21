@@ -44,7 +44,7 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 		return ExceptFound{}, err
 	}
 	path := sourcePath(h.Dir, q.Path)
-	if (selection.Exclusion{Root: root, Globs: cfg.Exclude}).Excludes(path) {
+	if selection.Exclusion(cfg.Selection).Excludes(path) {
 		return ExceptFound{}, SiteExcluded{Path: path, Line: q.Line, Column: q.Column}
 	}
 	support, tests, err := h.judging(ctx, root, cfg)

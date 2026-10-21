@@ -76,7 +76,9 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 // handlers are the providers of every command's handler, over a's ports,
 // and of version's build, each called under the context of the Run that asks
 // for it. The handlers of crap, units and dry hold the sources itos-cc.yaml
-// excludes, which their providers read under ctx: a file that cannot be read
+// excludes, which their providers read under ctx through the selection
+// engine's settings, each provider reading them itself, so their failure is
+// never wrapped as a dependent provider's: a file that cannot be read
 // is config.invalid, the provider's error, which kong returns unwrapped from
 // the call of that command's Run alone. scrap reads only tests, which nothing
 // excludes, so it never reads the file, and version reads nothing but the
@@ -85,11 +87,11 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 func handlers(ui *cli.UI, a adapters) []kong.Option {
 	return []kong.Option{
 		kong.BindToProvider(func(ctx context.Context) (crap.Handler, error) {
-			exclude, err := exclusionOf(ctx, a.Config)
+			exclude, err := exclusion(ctx, a.Selection)
 			return crap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Coverage: a.Coverage, Name: ui.Rel, Exclude: exclude}, err
 		}),
 		kong.BindToProvider(func(ctx context.Context) (dry.Handler, error) {
-			exclude, err := exclusionOf(ctx, a.Config)
+			exclude, err := exclusion(ctx, a.Selection)
 			return dry.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel, Exclude: exclude}, err
 		}),
 		kong.BindToProvider(func() mutation.Handler {
@@ -102,7 +104,7 @@ func handlers(ui *cli.UI, a adapters) []kong.Option {
 			return scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}
 		}),
 		kong.BindToProvider(func(ctx context.Context) (units.Handler, error) {
-			exclude, err := exclusionOf(ctx, a.Config)
+			exclude, err := exclusion(ctx, a.Selection)
 			return units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude}, err
 		}),
 		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),

@@ -23,7 +23,7 @@ func decodeFreshSettings(data []byte) ([]string, *mutants.Tests, []mutants.Excep
 		invalid := err.(*config.InvalidError)
 		return nil, nil, nil, &mutants.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}
-	return c.Exclude, c.Tests, c.Exceptions, nil
+	return c.Selection.Exclude, c.Tests, c.Exceptions, nil
 }
 
 func memoryCodecFreshFixture(t *testing.T) porttest.FreshFixture {

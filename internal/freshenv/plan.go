@@ -151,7 +151,7 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	if err != nil {
 		return nil, err
 	}
-	exclude := fileselection.Exclusion{Root: frozen, Globs: cfg.Exclude}
+	exclude := fileselection.Exclusion(cfg.Selection)
 	for chosen := range selectedPaths {
 		found := false
 		for _, rel := range tracked {

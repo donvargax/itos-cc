@@ -1,14 +1,19 @@
 package mutants
 
-import "context"
+import (
+	"context"
+
+	selport "github.com/donvargax/itos-cc/internal/selection/port"
+)
 
 // Config is the semantic content of the project's settings. Its codec is
-// outside the domain; these are the existing globs, tests and exceptions.
+// outside the domain; these are the selection settings, tests and
+// exceptions of one observation of them.
 type Config struct {
-	// Exclude are doublestar globs, slash-separated and from the project
-	// root, of the sources every command leaves out of what it measures and
-	// mutates; never of the tests.
-	Exclude    []string
+	// Selection is the selection engine's settings: the project root this
+	// observation found the settings at and the exclude globs, the sources
+	// every command leaves out of what it measures and mutates.
+	Selection  selport.Settings
 	Exceptions []Exception
 	// Tests, when set, is how to list the project's tests and run a
 	// selection of them.
@@ -16,9 +21,10 @@ type Config struct {
 }
 
 // SettingsReader rereads the current settings at each admission boundary.
-// The root belongs to that actual observation, not to a cached CLI snapshot.
+// The root, Selection's, belongs to that actual observation, not to a cached
+// CLI snapshot.
 type SettingsReader interface {
-	Read(ctx context.Context) (root string, config *Config, failure SettingsFailure)
+	Read(ctx context.Context) (config *Config, failure SettingsFailure)
 }
 
 // SettingsFailure distinguishes settings that cannot be read, invalid, from a

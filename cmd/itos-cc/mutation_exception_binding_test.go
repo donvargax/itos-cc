@@ -199,7 +199,7 @@ func TestMemoryExceptionWriterUsesCurrentDocumentBytes(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg, err := config.Parse(actual)
-	if err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{next}) || !strings.Contains(string(actual), "AFTER initial selection") || !reflect.DeepEqual(cfg.Exclude, []string{"vendor/**"}) {
+	if err != nil || !reflect.DeepEqual(cfg.Exceptions, []mutation.Exception{next}) || !strings.Contains(string(actual), "AFTER initial selection") || !reflect.DeepEqual(cfg.Selection.Exclude, []string{"vendor/**"}) {
 		t.Fatalf("current memory document lost: %s %v", actual, err)
 	}
 	// A failed complete-Old batch never publishes an earlier renewal.

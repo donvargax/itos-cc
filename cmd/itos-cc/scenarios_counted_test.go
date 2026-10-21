@@ -122,7 +122,7 @@ func decodeFreshSettings(data []byte) ([]string, *mutation.Tests, []mutation.Exc
 		}
 		return nil, nil, nil, &mutation.FreshInvalid{Reason: invalid.Reason, Key: invalid.Key}
 	}
-	return c.Exclude, c.Tests, c.Exceptions, nil
+	return c.Selection.Exclude, c.Tests, c.Exceptions, nil
 }
 
 // hostTools are the programs the in-process driver's host has on its PATH

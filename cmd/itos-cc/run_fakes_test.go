@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/config"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
@@ -32,9 +33,9 @@ func (c heldConfig) Read(context.Context) (string, []byte, error) {
 }
 
 // fakes are adapters over a working tree at work, held in memory, of a
-// TypeScript source and its test and a Python source, with config as its
+// TypeScript source and its test and a Python source, with text as its
 // itos-cc.yaml.
-func fakes(config []byte) adapters {
+func fakes(text []byte) adapters {
 	work := filepath.FromSlash("/work")
 	return adapters{
 		Dir: work,
@@ -45,7 +46,7 @@ func fakes(config []byte) adapters {
 		}, nil),
 		Surroundings: langporttest.Surroundings{Dir: "/work"},
 		Store:        &snapporttest.Store{RootDir: work},
-		Config:       heldConfig{root: work, text: config},
+		Selection:    config.Reader{Source: heldConfig{root: work, text: text}},
 	}
 }
 

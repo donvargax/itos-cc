@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"runtime"
@@ -67,8 +68,9 @@ type adapters struct {
 	Coverage coverage.Measurer
 	// MutationCoverage supplies listed evidence and executable inventories.
 	MutationCoverage coverage.MutationMeasurer
-	// Config is itos-cc.yaml.
-	Config configFile
+	// Selection is the selection engine's settings, itos-cc.yaml's exclude
+	// and the root it is at, which crap, dry and units select through.
+	Selection selport.SettingsReader
 	// Repository and PhysicalDir are what a counted mutation run starts
 	// from: the top of the Git repository holding the working directory,
 	// and the working directory, both physical.
@@ -77,14 +79,6 @@ type adapters struct {
 	// Platform is the system itos-cc runs on, which mutation run's --count
 	// and --fail-fast check (countedPlatform).
 	Platform string
-}
-
-// configFile is itos-cc.yaml as the moved commands read it.
-type configFile interface {
-	// Read is the project root, where itos-cc.yaml is, and the file's text
-	// there, nil when there is none, or the error that kept it from being
-	// read.
-	Read(ctx context.Context) (root string, text []byte, err error)
 }
 
 // diskAdapters are this process's: its working directory,
@@ -102,10 +96,11 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
 	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: owner.Command, Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
-	return adapters{Settings: config.Reader{Source: diskConfig{}}, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
+	settings := config.Reader{Source: diskConfig{}}
+	return adapters{Settings: settings, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}
 	}, Fresh: fresh, FreshWorkers: worktrees.Workers{Platform: runtime.GOOS, Owner: owner, Prepare: freshenv.CommandEnvironment}, Exceptions: func(root string) mutation.Exceptions { return config.Exceptions{RootDir: root} }, SourceStatus: workdir.SourceEdits{}, SnapshotReader: metricsdir.Mutations{Store: metricsdir.Store{}}, Catalog: metricsdir.Mutations{Store: metricsdir.Store{}}, Presence: workdir.SourceEdits{}, Snapshots: metricsdir.Mutations{Store: metricsdir.Store{}}, SourceEdits: workdir.SourceEdits{}, TestLister: testtools.Lister{Platform: runtime.GOOS, Log: log}, History: githistory.History{Dir: dir}, Toolchain: testtools.Toolchain{Dir: dir, Env: os.Environ()}, Fingerprints: testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}, Reach: importgraph.Reach{}, Workers: worktrees.Workers{Platform: runtime.GOOS, Hold: hold}, Dir: dir, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}, Store: metricsdir.Store{},
-		Coverage: measurer, MutationCoverage: measurer, Config: diskConfig{},
+		Coverage: measurer, MutationCoverage: measurer, Selection: settings,
 		Repository: countedRoot, PhysicalDir: physicalDir, Platform: countedPlatform}
 }
 
@@ -120,34 +115,36 @@ func (diskConfig) Read(context.Context) (string, []byte, error) {
 	return root, text, err
 }
 
-// exclusionOf is the sources itos-cc.yaml's exclude leaves out, its globs
-// from the root file gives with the file's text, read under ctx through
-// config.Reader, the one codec mutation's settings are read through too, so
-// both classify a file the same way.
-func exclusionOf(ctx context.Context, file configFile) (selection.Exclusion, error) {
-	root, cfg, failure := config.Reader{Source: file}.Read(ctx)
+// exclusion is the sources the selection settings reader leaves out, read
+// under ctx: a nil reader is a missing binding, and a failure is worded by
+// settingsError.
+func exclusion(ctx context.Context, reader selport.SettingsReader) (selection.Exclusion, error) {
+	if reader == nil {
+		return selection.Exclusion{}, errors.New("selection settings binding is missing")
+	}
+	settings, failure := reader.ReadSelection(ctx)
 	if failure != nil {
 		return selection.Exclusion{}, settingsError(failure)
 	}
-	return selection.Exclusion{Root: root, Globs: cfg.Exclude}, nil
+	return selection.Exclusion(settings), nil
 }
 
 // settingsError is failure, from reading itos-cc.yaml, as a person reads it:
 // a file that cannot be read, or read as a config, is config.invalid, saying
 // what each key needs, and a read that failed short of it or was cancelled
 // is its cause.
-func settingsError(failure mutation.SettingsFailure) error {
+func settingsError(failure selport.SettingsFailure) error {
 	switch failure := failure.(type) {
-	case mutation.SettingsInvalid:
+	case *selport.SettingsInvalid:
 		p := cli.NewProblem(cli.CodeUsage, "config.invalid", config.File+": "+failure.Reason,
 			"Fix it: exclude lists globs of sources from the project root, such as **/porttest/**; each entry under mutation.exceptions needs file, function, hash, line_in_function, column, original, replacement, and reason, and 'itos-cc mutation except' writes one; mutation.tests needs list, run with {pattern}, ids_pattern with {ids}, and join with each, holding {id}, and sep.").With("file", config.File)
 		if failure.Key != "" {
 			p = p.With("key", failure.Key)
 		}
 		return p
-	case mutation.InputFailed:
+	case *selport.SettingsFailed:
 		return failure.Cause
-	case mutation.InputCancelled:
+	case *selport.Cancelled:
 		return failure.Cause
 	}
 	return failure

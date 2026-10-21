@@ -538,8 +538,8 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Surroundings: input,
 		Store:        observedStore{Store: store, memory: m, dir: metricsDir},
 		Coverage:     measurer, MutationCoverage: measurer,
-		Config: file,
-		Fresh:  c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Platform: c.Platform,
+		Selection: config.Reader{Source: file},
+		Fresh:     c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Platform: c.Platform,
 	}
 	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
 	// What the run removed from the store is gone from the memory too, and

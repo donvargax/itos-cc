@@ -21,19 +21,24 @@ a `context.Context` first (decision 30); pure logic takes none.
   `Parse(ctx, tree, around, path)` is a selected file parsed, the one copy every command that
   measures what it selects uses (T-63): a language `internal/lang` does not know is refused
   before the read, then the tree reads it and lang parses it through its `Surroundings` port.
-  `Exclusion{Root, Globs}` is itos-cc.yaml's `exclude` as a value, which cmd and the slices'
-  handlers are given, read at the edge: `Excludes(path)` matches a path's slash form from
-  `Root` against the doublestar globs, by `filepath.Rel` alone, no I/O.
+  `Exclusion` is the port's `Settings`, itos-cc.yaml's `exclude` as a value, which cmd and the
+  slices' handlers are given, read at the edge: `Excludes(path)` matches a path's slash form
+  from `Root` against the doublestar globs of `Exclude`, by `filepath.Rel` alone, no I/O.
 - `internal/selection/port` declares `Tree` (`Discover` roots into sources and tests,
   `Changed` files, whether a path `Exists`, and `Read`, what a selected file holds, each
   taking the context first) and its sealed set of failures: `NoGit`, `Unmatched`, carrying
   the fragment, `Unwalkable`, `Unreadable` and `Cancelled`. Every command reads the files it
-  selects, so it reads them through the tree it chose them from, never by itself.
+  selects, so it reads them through the tree it chose them from, never by itself. It owns the
+  selection settings too (T-147): `Settings{Root, Exclude}`, the root itos-cc.yaml was found
+  at and its `exclude` globs, and `SettingsReader`, whose `ReadSelection` rereads them at
+  each call, failing as `SettingsInvalid` (a reason and the key at fault), `SettingsFailed`
+  (a read that failed short of them, such as a missing binding) or `Cancelled`.
   `Discover` gives absolute paths, which `snapshot.Key` names from the root.
   `internal/selection/port/porttest` holds the in-memory fake of `Tree`, at an absolute
   directory it names and never touches, and `TreeOf`, which lays one out from files' text,
   classified by `internal/lang` as `internal/workdir` classifies them, and `TreeContract`, the
-  contract it and `internal/workdir`'s `Tree` both pass (Tests, below).
+  contract it and `internal/workdir`'s `Tree` both pass (Tests, below), and the fake
+  `Settings` with `SettingsContract`, which it and `config.Reader` pass.
 - `internal/snapshot` is the domain of the snapshots under `.metrics/` that the commands
   share and projects commit (decision 41): the `Folder` they live in, the format `Version`
   every snapshot records, and `Key(root, abs)`, an absolute path named as a snapshot records
@@ -228,12 +233,15 @@ a `context.Context` first (decision 30); pure logic takes none.
   affects group errors but is stripped before a known child's dispatch, as before;
   top-level and child-level JSON still reach that child.
   `mutants.Config` is the existing semantic settings value; `config.Config` aliases it.
+  It carries the selection engine's `Settings`, root and `exclude`, beside mutation's
+  exceptions and tests, so each admission point reads all four from one observation.
   The model-bearing `SettingsReader` rereads actual current settings at the preserved
   admission points. `config.Reader` uses the one existing codec over cmd-selected disk
   or memory bytes. A file the bytes' source cannot read is invalid settings, a reason
   with no key, as a file that does not parse is (bug-4); only a cancelled read, or a
-  missing binding, stays apart. `exclusionOf`, the `exclude` of `crap`, `dry` and
-  `units`, reads through it too, so every command classifies the file alike. The
+  missing binding, stays apart. `crap`, `dry` and `units` read only the selection
+  settings, through selection's `SettingsReader`, which `config.Reader` implements over
+  the same read and codec (`ReadSelection`), so every command classifies the file alike. The
   unit fake owns only semantic values. The memory driver runs all five children over its
   fakes (T-125), binding a counted run as the disk adapters bind it: porttest's `Fresh`
   over the fake repository, the same `Workers` for its trials, the fake repository's
@@ -365,7 +373,8 @@ context-as-argument a context after any other parameter, tests included.
 
 - `domain`: the domains, their ports and their tests import nothing of ours but the domains and
   their port subpackages, and never kong. `config` imports `internal/mutants`, whose `Config`
-  it aliases and whose `SettingsReader` its `Reader` implements, never the reverse.
+  it aliases and whose `SettingsReader` its `Reader` implements, and `internal/selection/port`,
+  whose `SettingsReader` it implements too, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
 - `slices`: a slice imports nothing of ours but the domains, `internal/cli` and
