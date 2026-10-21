@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/workdir"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 )
 
 // The Kotlin twin of @ID-MUT-232: a counted trial of a Kotlin file no own

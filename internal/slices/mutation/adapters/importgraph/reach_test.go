@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/importgraph"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/importgraph"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 

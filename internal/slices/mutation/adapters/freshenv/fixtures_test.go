@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/importgraph"
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/importgraph"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"

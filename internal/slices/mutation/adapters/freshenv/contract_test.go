@@ -10,7 +10,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/githistory"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/githistory"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )

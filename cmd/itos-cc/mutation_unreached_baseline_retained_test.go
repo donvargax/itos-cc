@@ -10,10 +10,10 @@ import (
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testtools"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/worktrees"
 	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 	"github.com/donvargax/itos-cc/internal/workdir"
-	"github.com/donvargax/itos-cc/internal/worktrees"
 )
 
 // The Kotlin twin of @ID-MUT-231: a Kotlin file none of whose reaching
