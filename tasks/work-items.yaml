@@ -5208,3 +5208,15 @@ items:
       runners and JUnit scrap rules for Kotlin, so Java is mostly a tree-sitter grammar and an
       internal/lang Spec, with docs/architecture.md's adding-a-language recipe (Dart's) as the
       checklist.
+  - id: scrap-helper-charge-back
+    title: scrap charges a test helper's body to the examples that call it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From the survey of Uncle Bob's tools (2026-10-21, read-only). unclebob/scrap counts a helper's
+      body against each example that uses it (03d2b21), so moving setup into a helper is not scored
+      as an improvement. itos-cc compares each scrap run with the last snapshot, so today an agent
+      can improve a file's score just by hiding its setup in a helper.
