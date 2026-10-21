@@ -33,7 +33,8 @@ type scrapState struct {
 	// expected are the examples of the SCRAP-01 fixtures, with what
 	// encloses each.
 	expected map[string][]grouped
-	// setups are the SCRAP-03 fixtures, each with its setup and without it.
+	// setups are the SCRAP-03 and SCRAP-31 fixtures, each with its setup
+	// and without it.
 	setups []setupFixture
 	// kotlinClass and annotations are those of the Kotlin class SCRAP-04
 	// writes.
@@ -83,7 +84,7 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 	})
 
 	// Finding examples.
-	sc.Step(`^a (TypeScript|Python|Go|Kotlin) test file using (.+)$`, d.testFileUsing)
+	sc.Step(`^a (TypeScript|Python|Go|Kotlin|Dart) test file using (.+)$`, d.testFileUsing)
 	sc.Step(`^each test case is an example, grouped by its enclosing (.+)$`, d.groupedBy)
 	sc.Step(`^a Go test that loops over a table of cases and asserts in the loop body$`, func() error {
 		return d.writeFile("table_test.go", goTableTest)
@@ -111,6 +112,7 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 	})
 	sc.Step(`^a test file with ((?:[@\w]+, )*[@\w]+,? or [@\w]+)$`, d.testFileWithSetup)
 	sc.Step(`^those lines count as setup, not as any example's size$`, d.setupNotSize)
+	sc.Step(`^(\w+)'s lines count as setup, not as any example's size$`, d.blockIsSetup)
 	sc.Step(`^the Kotlin test file "([^"]*)" with a class annotated (@\w+(?: and @\w+)*)$`, func(name, annotations string) error {
 		d.file, d.kotlinClass = name, strings.TrimSuffix(filepath.Base(name), ".kt")
 		d.annotations = strings.Split(annotations, " and ")
@@ -120,7 +122,7 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^"([^"/]*)/([^"]*)" is an example with (\d+) assertions?$`, d.isAnExampleWith)
 
 	// Measuring examples.
-	sc.Step(`^the (TypeScript|Python|Go|Kotlin) test file "([^"]*)":$`, func(_, name string, text *godog.DocString) error {
+	sc.Step(`^the (TypeScript|Python|Go|Kotlin|Dart) test file "([^"]*)":$`, func(_, name string, text *godog.DocString) error {
 		return d.writeFile(name, text.Content+"\n")
 	})
 	sc.Step(`^the examples are:$`, d.examplesAre)
@@ -139,7 +141,7 @@ func scrapSteps(sc *godog.ScenarioContext, w *world) {
 		}
 		return nil
 	})
-	sc.Step(`^a (TypeScript|Python|Go|Kotlin) example containing (.+)$`, d.exampleContaining)
+	sc.Step(`^a (TypeScript|Python|Go|Kotlin|Dart) example containing (.+)$`, d.exampleContaining)
 	sc.Step(`^it counts as an assertion$`, func() error { return d.callCounts(true) })
 	sc.Step(`^a test calls a helper named "([^"]*)" defined outside the file$`, func(name string) error {
 		return d.writeFile("helper.test.ts", "it(\"uses a helper\", () => {\n  const result = parse(\"x\");\n  "+name+"(result);\n});\n")

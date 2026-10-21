@@ -51,7 +51,7 @@ func (d *scrapState) examplesAre(table *godog.Table) error {
 		for _, h := range header {
 			switch h.Value {
 			case "example":
-				cells = append(cells, e.Name)
+				cells = append(cells, exampleName(e))
 			case "assertions":
 				cells = append(cells, strconv.Itoa(e.Assertions))
 			case "decisions":
@@ -72,6 +72,15 @@ func (d *scrapState) examplesAre(table *godog.Table) error {
 		return fmt.Errorf("the examples are\n  %s\nnot\n  %s", strings.Join(got, "\n  "), strings.Join(want, "\n  "))
 	}
 	return nil
+}
+
+// exampleName is how a scenario names an example: by its name under its
+// group, joined by /, as Kotlin's Class/method and Dart's group/title.
+func exampleName(e scrapExample) string {
+	if e.Group == "" {
+		return e.Name
+	}
+	return e.Group + "/" + e.Name
 }
 
 // exampleCallingHelpers writes the Go file of the scenario: its helper,
@@ -117,6 +126,8 @@ func (d *scrapState) exampleContaining(language, code string) error {
 		return d.writeFile("checks_test.go", "package a\n\nfunc TestChecks(t *testing.T) {\n    "+code+"\n}\n")
 	case "Kotlin":
 		return d.writeFile("ChecksTest.kt", "class ChecksTest {\n    @Test\n    fun checks() {\n        "+code+"\n    }\n}\n")
+	case "Dart":
+		return d.writeFile("test/checks_test.dart", "void main() {\n  test('checks', () {\n    "+code+";\n  });\n}\n")
 	}
 	return fmt.Errorf("no example is written in %s", language)
 }
@@ -160,6 +171,11 @@ func caseTables(count int) map[string]map[string]string {
 		"a Kotlin listOf it loops over, or a @CsvSource": {
 			"LoopTest.kt": "class LoopTest {\n  @Test fun inc() {\n    val cases = listOf(\n" + rows("      1 to 2,") + "    )\n    for ((a, b) in cases) { assertEquals(b, inc(a)) }\n  }\n}\n",
 			"CsvTest.kt":  "class CsvTest {\n  @ParameterizedTest\n  @CsvSource(\n" + rows("    \"1, 2\",") + "  )\n  fun inc(a: Int, b: Int) { assertEquals(b, inc(a)) }\n}\n",
+		},
+		"a Dart list it loops over with for…in, calling test for each case": {
+			"test/loop_test.dart": "void main() {\n  for (final (a, b) in [\n" + rows("    (1, 2),") + "  ]) {\n    test('inc $a', () {\n      expect(inc(a), b);\n    });\n  }\n}\n",
+			"test/group_loop_test.dart": "void main() {\n  group('inc', () {\n    for (final c in [\n" + rows("      (in: 1, want: 2),") +
+				"    ]) {\n      test('${c.in}', () => expect(inc(c.in), c.want));\n    }\n  });\n}\n",
 		},
 	}
 }

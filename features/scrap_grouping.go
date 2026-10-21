@@ -172,6 +172,48 @@ class AloneSpec : FunSpec({
 			{"stands alone", []enclosure{{"class", "AloneSpec"}}},
 		}},
 	},
+	"Dart": {
+		"flutter_test": {"test/counter_test.dart", `import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets('stands alone', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Text('1')));
+    expect(find.text('1'), findsOneWidget);
+  });
+
+  group('cart', () {
+    testWidgets('adds', (tester) async {
+      expect(add(1), 1);
+    });
+    group('when empty', () {
+      testWidgets('is zero', (tester) async {
+        expect(size(), 0);
+      });
+    });
+  });
+}
+`, []grouped{
+			{"stands alone", nil},
+			{"adds", []enclosure{{"group", "cart"}}},
+			{"is zero", []enclosure{{"group", "cart"}, {"group", "when empty"}}},
+		}},
+		"package:test": {"test/totals_test.dart", `import 'package:test/test.dart';
+
+void main() {
+  test('stands alone', () {
+    expect(one(), 1);
+  });
+
+  group('totals', () {
+    test('sums', () => expect(sum([1]), 1));
+  });
+}
+`, []grouped{
+			{"stands alone", nil},
+			{"sums", []enclosure{{"group", "totals"}}},
+		}},
+	},
 }
 
 // listItems are the items of a sentence's list: "a, b, or c", "a and b".
@@ -361,6 +403,41 @@ class TestCart(unittest.TestCase):
     }
 }
 `, 4},
+}
+
+// blockIsSetup is whether the file's call to name, a block such as
+// Dart's setUp(() { … }) from its line to the first line at its indent
+// closing it, counts as setup: the file's setup lines are the block's,
+// and its examples measure as they do without it.
+func (d *scrapState) blockIsSetup(name string) error {
+	text, err := d.w.readIn(d.w.dir, d.file)
+	if err != nil {
+		return err
+	}
+	lines := strings.SplitAfter(string(text), "\n")
+	start, end := -1, -1
+	for i, line := range lines {
+		switch {
+		case start < 0 && strings.HasPrefix(strings.TrimSpace(line), name+"("):
+			start = i
+		case start >= 0 && leading(line) == leading(lines[start]) && strings.HasPrefix(strings.TrimSpace(line), "}"):
+			end = i
+		}
+		if end >= 0 {
+			break
+		}
+	}
+	if start < 0 || end < 0 {
+		return fmt.Errorf("%s has no %s block, so the step cannot fail", d.file, name)
+	}
+	without := strings.Join(slices.Concat(lines[:start], lines[end+1:]), "")
+	d.setups = append(d.setups, setupFixture{file: d.file, with: string(text), without: without, setupLines: end - start + 1})
+	return d.setupNotSize()
+}
+
+// leading is the indent a line starts with.
+func leading(line string) string {
+	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 
 // testFileWithSetup writes a test file with each kind of setup the list

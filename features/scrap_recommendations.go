@@ -70,6 +70,13 @@ func TestParsesNeg(t *testing.T) {
     fun parsesNeg() { assertEquals(-4, parse("-4")) }
 }
 `},
+	"Dart": {"test/parse_test.dart", `void main() {
+  test('parses one', () { expect(parse('1'), 1); });
+  test('parses two', () { expect(parse('2'), 2); });
+  test('parses ten', () { expect(parse('10'), 10); });
+  test('parses neg', () { expect(parse('-4'), -4); });
+}
+`},
 }
 
 func (d *scrapState) dataOnlyFile(language string) error {
