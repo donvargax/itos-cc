@@ -3948,8 +3948,8 @@ items:
   - id: T-152
     title: Move crap into internal/slices/crap
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-151]
     kind: task
   - id: slices-version
