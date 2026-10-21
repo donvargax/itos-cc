@@ -5131,8 +5131,8 @@ items:
   - id: slice-37
     title: Counted runs judge a Flutter package from its frozen export, offline
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
