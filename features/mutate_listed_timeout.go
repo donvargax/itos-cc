@@ -86,6 +86,12 @@ func (l *listedMutation) selectionTimeout() error {
 	return nil
 }
 
+// timeoutKilled is whether the two mutants of the hanging line, and only
+// they, timed out, on the selection ID-A-01, and count as killed. When it
+// fails it shows the run, whose lines give each mutant's time and the
+// selections' baselines: a timeout on a file's own tests is held to three
+// times that file's baseline, which the run does not print, plus 5 seconds,
+// and the timed-out mutant's time gives it.
 func (l *listedMutation) timeoutKilled() error {
 	entries, err := l.entries()
 	if err != nil {
@@ -96,7 +102,7 @@ func (l *listedMutation) timeoutKilled() error {
 		if e["outcome"] == "timeout" {
 			n++
 			if e["scope"] != "listed" || !slices.Equal(entryIDs(e), []string{"ID-A-01"}) {
-				return fmt.Errorf("unexpected timeout %v", e)
+				return fmt.Errorf("unexpected timeout %v, not the selection ID-A-01's: one with no scope timed out on its file's own tests\n%s", e, l.m.w.report())
 			}
 		}
 	}
@@ -108,7 +114,7 @@ func (l *listedMutation) timeoutKilled() error {
 		}
 	}
 	if n != 2 || !ok || summary.killed != killed {
-		return fmt.Errorf("%d timeouts, summary %v, want killed count %d", n, summary, killed)
+		return fmt.Errorf("%d timeouts, summary %v, want killed count %d\n%s", n, summary, killed, l.m.w.report())
 	}
 	return nil
 }
