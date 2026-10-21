@@ -9,8 +9,10 @@
 # "T-86 (b768837): ..." where the case had none. One case a line: ID | FIXTURE | CWD |
 # CAPTURE | STEPS [| NOTE]; the script's header says how each field is
 # read. IDs name the move that listed the case. Mutation runs pass --workers 1, an existing flag, so the
-# progress lines come in one order on both sides; a mutation case runs on
-# the script's small Go and TypeScript fixtures only.
+# progress lines come in one order on both sides, but for t49-03, whose two
+# workers --fail-fast's cancel of a running mutant needs, so its outcome is
+# the run's; a mutation case runs on the script's small Go and TypeScript
+# fixtures only.
 
 # slice-5 (T-32): the one deliberate difference units' move found.
 s5-01 | mixed | p | - | itos-cc units ---changed | deliberate (1): units ---changed refused as flags.unknown, exit 2 (slice-5)
@@ -90,7 +92,7 @@ t48-02 | goslow | p | - | int:coverage itos-cc mutation run --count 1 --json
 # T-49: fail-fast under the command's context.
 t49-01 | go | p | .metrics/mutate | itos-cc mutation run --fail-fast --workers 1
 t49-02 | go | p | .metrics/mutate | itos-cc mutation run --fail-fast --workers 1 --json
-t49-03 | go | p | .metrics/mutate | itos-cc mutation run --fail-fast --workers 2 board.go
+t49-03 | go | p | .metrics/mutate | itos-cc mutation run --fail-fast --workers 2 board.go | T-86 (b768837): unstable, the run's: board.go:5's two mutants run at once on two workers, and which survives first, the one --fail-fast stops at, and whether the other finishes or is cancelled vary from run to run for either binary (T-172)
 t49-04 | ts | p | .metrics/mutate | itos-cc mutation run --fail-fast --workers 1
 
 # T-50: discovery through project.WalkDir.
