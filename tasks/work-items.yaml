@@ -4988,3 +4988,20 @@ items:
       across scenarios would cut lines without losing coverage: a refactor of the features harness,
       with the scenario run (both drivers) as its proof, never a removal of checks. Measure first
       which feature files carry the most single-use patterns.
+  - id: toolchain-notice-drift
+    title: Fail the release when its toolchain is not the one whose notices ship
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-176's agent (2026-10-21). THIRD_PARTY_NOTICES carries musl 1.2.4's COPYRIGHT,
+      Ubuntu 24.04's musl-tools, and MinGW-w64 v13.0.0's runtime and winpthreads licences,
+      windows-latest's niXman mingw-builds 15.2.0-rt_v13, committed under
+      tools/bin/notices/toolchain. Nothing ties them to what the runners install: when ubuntu-latest
+      moves to 26.04 (musl 1.2.5 or later) or windows-latest's MinGW moves to rt_v14, the release
+      ships the older texts and no check fails. release.yml's build job could compare dpkg-query's
+      musl-dev version and the MinGW runtime's version with the ones tools/bin/notices names,
+      stopping the release on a mismatch, or the runners could be pinned (ubuntu-24.04,
+      windows-2025).
