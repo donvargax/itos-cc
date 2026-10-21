@@ -4490,7 +4490,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-167]
     kind: task
   - id: T-170
     title: Record who owns each path, slice by slice, in docs/ownership.md
