@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/mutants"
@@ -392,11 +391,30 @@ func (k keyed[T]) get(file, namespace, name string, occurrence int) (T, bool) {
 	return v, ok
 }
 
+// crapEntry is what graph reads of a function crap.json scores: where it
+// is and its coverage, nil when none applied. graph decodes the snapshot
+// itself, so it imports nothing of the crap slice (ADR-0051), whose format
+// this follows.
+type crapEntry struct {
+	Namespace string   `json:"namespace"`
+	Name      string   `json:"name"`
+	File      string   `json:"file"`
+	Coverage  *float64 `json:"coverage"` // percent, 0–100
+}
+
+// crapScore is the CRAP formula, with coverage as a fraction from 0 to 1,
+// as the crap command scores a function: CC² × (1 − coverage)³ + CC. graph
+// keeps this copy of it rather than import the crap slice (ADR-0051).
+func crapScore(cc int, coverage float64) float64 {
+	c, u := float64(cc), 1-coverage
+	return c*c*(u*u*u) + c
+}
+
 func loadOverlay(root string) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}
 	dir := metrics.DirOf(root)
 	var crapSnap struct {
-		Entries []changerisk.Entry `json:"entries"`
+		Entries []crapEntry `json:"entries"`
 	}
 	if readJSON(filepath.Join(dir, "crap.json"), &crapSnap) {
 		for _, e := range crapSnap.Entries {
@@ -449,7 +467,7 @@ func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]str
 		occurrence[k]++
 		if cov, ok := o.coverage.get(u.File, u.Namespace, u.Name, n); ok && cov >= 0 {
 			c := cov
-			score := float64(int(changerisk.Score(u.Complexity, c/100)*10+0.5)) / 10
+			score := float64(int(crapScore(u.Complexity, c/100)*10+0.5)) / 10
 			u.Coverage, u.CRAP = &c, &score
 		}
 		if m := mutants.OnSites(entries[i], u.hash, u.sites); m != nil {

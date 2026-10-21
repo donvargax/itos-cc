@@ -3,6 +3,7 @@ package graph
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -106,6 +107,20 @@ func TestUnchangedSourcesDoNotRebuild(t *testing.T) {
 	again, changed, err := b.Build(t.Context())
 	if err != nil || changed || again.Version != first.Version {
 		t.Errorf("second build changed=%v version %d→%d err=%v", changed, first.Version, again.Version, err)
+	}
+}
+
+// graph's copy of the CRAP formula scores as the crap command does:
+// CC² × (1 − coverage)³ + CC.
+func TestCrapScoreIsTheCRAPFormula(t *testing.T) {
+	for _, c := range []struct {
+		cc       int
+		coverage float64
+		want     float64
+	}{{4, 0.5, 6}, {3, 0, 12}, {5, 1, 5}} {
+		if got := crapScore(c.cc, c.coverage); math.Abs(got-c.want) > 1e-9 {
+			t.Errorf("crapScore(%d, %v) = %v, want %v", c.cc, c.coverage, got, c.want)
+		}
 	}
 }
 
