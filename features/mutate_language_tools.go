@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/cucumber/godog"
@@ -25,7 +26,7 @@ func (l *languageMutation) toolSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^the mutant on that line is uncovered and none of its trials runs$`, l.relatedUncovered)
 	sc.Step(`^with --all-tests the coverage script measures the whole suite as before$`, l.allTestsCoverage)
 	sc.Step(`^crap still measures with the coverage script$`, l.crapScript)
-	sc.Step(`^a committed (TypeScript|Python|Kotlin) project with eligible mutation sites and its dependencies installed in (node_modules at the project root|\.venv at the project root|the Gradle cache, run with --offline)$`, l.installedProject)
+	sc.Step(`^a committed (TypeScript|Python|Kotlin|Dart) project with eligible mutation sites and its dependencies installed in (node_modules at the project root|\.venv at the project root|the Gradle cache, run with --offline|the pub cache, run with --no-pub|the pub cache and the SDK its \.fvmrc pins, run with --no-pub)$`, l.installedProject)
 	sc.Step(`^a count-one run judges it$`, func() error { return l.run("mutation run --count 1 --seed 4813e48 --json " + l.file) })
 	sc.Step(`^preparation measures coverage and runs the clean baseline with the project's installed tools$`, l.installedPreparation)
 	sc.Step(`^exactly one selected mutant is judged with a real outcome$`, l.oneRealCounted)
@@ -193,6 +194,22 @@ func (l *languageMutation) installedProject(ctx context.Context, language, insta
 		coverage.Report = `<report><package name="board"><sourcefile name="Board.kt"><line nr="3" mi="0" ci="1"/></sourcefile></package></report>`
 		command = "gradle --offline -p . test --fail-fast --tests board.BoardTest"
 		setup = "crap --json " + l.file
+	case "Dart":
+		// Resolved as its user would before it is committed, pubspec.lock
+		// with it; .dart_tool and an .fvmrc's .fvm are ignored, so the
+		// frozen export holds neither.
+		l.file = "lib/board.dart"
+		files = map[string]string{
+			".gitignore":   ".dart_tool\n.fvm\n.metrics\nbuild\ncoverage\n",
+			"pubspec.yaml": coverageDartFlutterPubspec("board", false),
+			l.file:         mutateDartBoard,
+			"test/board_test.dart": "import 'package:flutter_test/flutter_test.dart';\nimport 'package:board/board.dart';\n\n" +
+				"void main() {\n  test('low', () {\n    expect(low(3), isTrue);\n    expect(low(4), isFalse);\n  });\n}\n",
+		}
+		if strings.Contains(installed, ".fvmrc") {
+			files[".fvmrc"] = "{\n  \"flutter\": \"stable\"\n}\n"
+		}
+		setup = "crap --json " + l.file
 	}
 	if err := l.instrumentInstalled(files); err != nil {
 		return err
@@ -206,8 +223,12 @@ func (l *languageMutation) installedProject(ctx context.Context, language, insta
 	if err := w.d.Coverage(w.dir, coverage); err != nil {
 		return err
 	}
-	if err := w.d.Tests(w.dir, Tests{Language: l.language, Command: command}); err != nil {
-		return err
+	// Dart's tools are flutter's, which its Coverage checked and its
+	// command chooses.
+	if command != "" {
+		if err := w.d.Tests(w.dir, Tests{Language: l.language, Command: command}); err != nil {
+			return err
+		}
 	}
 	if err := w.git("init", "-q"); err != nil {
 		return err
@@ -243,9 +264,6 @@ func (l *languageMutation) installedProject(ctx context.Context, language, insta
 	return err
 }
 func (l *languageMutation) installedPreparation() error {
-	if err := l.installedProvenance(); err != nil {
-		return err
-	}
 	a, err := l.object()
 	if err != nil {
 		return err
@@ -257,6 +275,11 @@ func (l *languageMutation) installedPreparation() error {
 	if !seen["coverage"] || !seen["baseline"] {
 		return fmt.Errorf("installed preparation stages: %v", a)
 	}
+	if err := l.installedProvenance(); err != nil {
+		return err
+	}
+	w := l.m.w
+	pinned := w.d.Exists(filepath.Join(w.dir, ".fvmrc"))
 	coverage, baseline := false, false
 	for _, line := range strings.Split(l.m.w.stderr, "\n") {
 		if !strings.Contains(line, "$ ") {
@@ -281,6 +304,16 @@ func (l *languageMutation) installedPreparation() error {
 		case "kotlin":
 			if !strings.Contains(line, "--offline") || !strings.Contains(line, "--tests board.BoardTest") {
 				return fmt.Errorf("the Gradle frozen command not offline/narrowed: %s", line)
+			}
+		case "dart":
+			if !strings.Contains(line, " test --no-pub") {
+				return fmt.Errorf("the frozen flutter test does not run with --no-pub: %s", line)
+			}
+			// The SDK the .fvmrc pins is the live one, linked into the
+			// export: its flutter there, not the PATH's nor the live link.
+			live := filepath.Join(w.dir, ".fvm", "flutter_sdk", "bin", "flutter")
+			if pinned && (!installedToolPath(line, w.dir, filepath.Join(".fvm", "flutter_sdk", "bin", "flutter")) || strings.Contains(line, "$ "+live+" ")) {
+				return fmt.Errorf("the frozen command does not run the SDK the .fvmrc pins, linked into the export: %s", line)
 			}
 		}
 	}
@@ -313,6 +346,38 @@ func (l *languageMutation) noDownload() error {
 	}
 	if l.language == "kotlin" && !strings.Contains(l.m.w.stderr, "--offline") {
 		return fmt.Errorf("no offline Gradle command")
+	}
+	if l.language == "dart" {
+		return countedDartOffline(l.m.w.stderr)
+	}
+	return nil
+}
+
+// countedDartOffline is whether every flutter command log announces that
+// resolves runs --offline and every flutter test --no-pub, at least one.
+func countedDartOffline(log string) error {
+	tests := 0
+	for _, line := range strings.Split(log, "\n") {
+		_, command, ok := strings.Cut(line, "$ ")
+		if !ok {
+			continue
+		}
+		words, err := commandWords(command)
+		if err != nil || len(words) == 0 || filepath.Base(words[0]) != "flutter" {
+			continue
+		}
+		if slices.Contains(words, "pub") && !slices.Contains(words, "--offline") {
+			return fmt.Errorf("flutter resolved online: %s", line)
+		}
+		if slices.Contains(words, "test") {
+			tests++
+			if !slices.Contains(words, "--no-pub") {
+				return fmt.Errorf("flutter test ran without --no-pub: %s", line)
+			}
+		}
+	}
+	if tests == 0 {
+		return fmt.Errorf("no flutter test ran:\n%s", log)
 	}
 	return nil
 }

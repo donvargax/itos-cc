@@ -35,6 +35,25 @@ fun recordInstalled() {
 }
 `, string(trace), string(original))
 		files["src/test/kotlin/board/BoardTest.kt"] = text
+	case "dart":
+		// Dart's core libraries hash nothing, so the test records the
+		// source itself, which dependencyRecords hashes, and, as the
+		// installed dependency, where its package config resolves matcher,
+		// flutter_test's, from: the pub cache.
+		prelude := "import 'dart:convert';\nimport 'dart:io';\n"
+		record := "void recordInstalled() {\n" +
+			"  final config = File('.dart_tool/package_config.json');\n" +
+			"  final packages = jsonDecode(config.readAsStringSync())['packages'] as List;\n" +
+			"  final matcher = packages.firstWhere((p) => p['name'] == 'matcher');\n" +
+			"  final dependency = Directory.fromUri(config.absolute.uri.resolve(matcher['rootUri'] as String)).resolveSymbolicLinksSync();\n" +
+			"  File(" + string(trace) + ").writeAsStringSync(jsonEncode({\n" +
+			"    'cwd': Directory.current.resolveSymbolicLinksSync(),\n" +
+			"    'original_root': Directory(" + string(original) + ").resolveSymbolicLinksSync(),\n" +
+			"    'source': File('lib/board.dart').readAsStringSync(),\n" +
+			"    'dependency': dependency,\n" +
+			"  }) + '\\n', mode: FileMode.append, flush: true);\n}\n\n"
+		text := prelude + strings.Replace(files["test/board_test.dart"], "void main() {\n", record+"void main() {\n", 1)
+		files["test/board_test.dart"] = strings.Replace(text, "test('low', () {\n", "test('low', () {\n    recordInstalled();\n", 1)
 	}
 	return nil
 }
@@ -48,6 +67,10 @@ func (l *languageMutation) dependencyRecords() ([]map[string]any, error) {
 		var a map[string]any
 		if err := json.Unmarshal([]byte(line), &a); err != nil {
 			return nil, err
+		}
+		if source, ok := a["source"].(string); ok {
+			a["source_sha256"] = fmt.Sprintf("%x", sha256.Sum256([]byte(source)))
+			delete(a, "source")
 		}
 		out = append(out, a)
 	}
