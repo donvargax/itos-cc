@@ -130,6 +130,46 @@ Feature: Mutation testing
         | 5    | *        | /           |
         | 5    | >=       | >           |
 
+    # slice-29, dart-support: a Dart mutant that does not compile still
+    # costs a flutter test start, so Dart's sites are the swaps that compile
+    # whatever their operands' types. Not * and /, as int / int is a double;
+    # not ?. to ., as the receiver is nullable; not the postfix null
+    # assertion x!. a ?? b becomes b: the left operand and ?? are deleted,
+    # since TypeScript's ?? to || does not compile in Dart. + to - fails
+    # only on a String or a List, and such a mutant is reported as not
+    # compiling (D7), not as killed.
+    @wip @slice-29 @ID-MUT-262
+    Scenario: Dart sites
+      Given the file "x.dart":
+        """
+        const limit = 1 + 2;
+
+        bool f(int a, List<int> xs, String? name) {
+          // a < b in a comment
+          final s = 'x > y';
+          if (a == 0 && !xs.isEmpty) return false;
+          final n = name ?? 'none';
+          return a * 2 >= xs.length + 1 || -a < n.length && name!.isNotEmpty;
+        }
+        """
+      When I run "itos-cc mutation list x.dart"
+      Then the sites are:
+        | line | original | replacement |
+        | 6    | ==       | !=          |
+        | 6    | 0        | 1           |
+        | 6    | &&       | \|\|        |
+        | 6    | !        | (deleted)   |
+        | 6    | false    | true        |
+        | 7    | name ??  | (deleted)   |
+        | 8    | >=       | >           |
+        | 8    | +        | -           |
+        | 8    | 1        | 0           |
+        | 8    | \|\|     | &&          |
+        | 8    | -        | (deleted)   |
+        | 8    | <        | <=          |
+        | 8    | &&       | \|\|        |
+      And code outside functions, comments, strings, and type arguments hold no sites
+
     @ID-MUT-06
     Scenario: Scanning prints sites without running tests
       When I run "itos-cc mutation list src/board.py"
