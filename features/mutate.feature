@@ -636,6 +636,34 @@ Feature: Mutation testing
       And no mutant that would run ID-A-02 is recorded killed, and its file's snapshot keeps what it held
       And the exit code is 1
 
+  # slice-14, issue #53: Go's cover profile gives an empty case clause a
+  # block of 0 statements, and reading its covered weight as "count > 0
+  # times statements" made a clause that ran read as not run, so a site in
+  # it (the case's value) was uncovered though a test runs it. A block that
+  # ran is covered whatever its statement count.
+  Rule: A site in a Go case clause the tests run is covered
+
+    @wip @slice-14 @ID-MUT-266 @binary-only
+    Scenario: A site in an empty Go case clause the tests run is judged, not uncovered
+      Given the Go module "example.com/k" with the file "kind.go":
+        """
+        package k
+
+        func Kind(n int) string {
+        	s := "other"
+        	switch n {
+        	case 0:
+        	case 2:
+        		s = "two"
+        	}
+        	return s
+        }
+        """
+      And its test calls Kind(0) and expects "other"
+      When I run "itos-cc mutation run --json kind.go"
+      Then the mutant of line 6's 0 into 1 is survived, not uncovered
+      # Kind(0) still returns "other" with case 1, so the test cannot kill it
+
   # Issue #9, part 2: mutants on lines no test executes are not run, so a
   # changed function with no test passes. A gate passes --fail-uncovered
   # (with --since for a task's commits) to make each uncovered mutant a
