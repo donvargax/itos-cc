@@ -13,6 +13,7 @@ phases:
 queue:
   - T-155
   - T-156
+  - T-157
   - slices-import-engine
   - slices-scenario-registration
   - slices-close
