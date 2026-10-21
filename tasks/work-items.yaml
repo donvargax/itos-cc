@@ -4148,3 +4148,16 @@ items:
       for; run locally without the variable, TestFeatures runs nothing and writes no report, so the
       tool fails on a missing file instead of judging the plan. It should set the variable for its
       child, or refuse up front naming it.
+  - id: language-checklist
+    title: Write docs/go.md's checklist for adding a language
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The Dart touch-point map (2026-10-21) found no list of what a new language touches: lang
+      grammar and units, project markers and the selection fake's twin list, coverage plan and
+      formats, mutation toolchain and policy, reach, scrap and dry rules, feature Examples rows,
+      cd.yml's language shards, release cgo. Write it from that map once the slices refactor fixes
+      the layout, and check it against Dart's items.
