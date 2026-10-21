@@ -70,7 +70,8 @@ func NewHandler(_ context.Context, p Ports) (Handler, error) {
 	return Handler{Version: p.BuildVersion()}, nil
 }
 
-// printed is the object --json prints beside schema and ok.
+// printed is the object --json prints beside schema and ok: the handler's
+// version alone, so a Handler converts to it.
 type printed struct {
 	Version string `json:"version"`
 }
@@ -81,5 +82,5 @@ func (c CLI) Run(ui *cli.UI, h Handler) int {
 	if !c.JSON {
 		_, _ = fmt.Fprintln(ui.Stdout, "itos-cc", h.Version)
 	}
-	return ui.Emit(c.JSON, printed{Version: h.Version}, nil)
+	return ui.Emit(c.JSON, printed(h), nil)
 }
