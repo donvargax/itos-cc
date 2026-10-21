@@ -4746,3 +4746,16 @@ items:
       receiver is nullable: such mutants do not compile and each still costs a flutter test start.
       Checking a mutant with package:analyzer in memory before running it, as dart_mutant does
       (docs/dart/tooling.md 6), would bring them back without the start.
+  - id: dart-constructor-callees
+    title: Dart's const and named constructor calls name the constructor called
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-29 reads Dart's calls from selector chains and new_expression, so A(1), A.named(1) and
+      new A(1) call what they name, but const A(1) calls nothing to dry's fingerprint, as
+      const_object_expression's first named child is const, and new A.named() calls A, not named.
+      Two Dart functions differing only in which constructor they const-construct score as the same
+      code.
