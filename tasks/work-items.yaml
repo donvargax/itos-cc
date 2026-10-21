@@ -4816,8 +4816,8 @@ items:
   - id: T-177
     title: The pre-push hook compiles the whole module on the rebased tree
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: scrap-dart-test-wrappers
