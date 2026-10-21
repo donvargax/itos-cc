@@ -4369,3 +4369,16 @@ items:
       jsonGivesBuild) that no feature file uses. Either drop Commit, Text, the commit stamps and
       those steps, or give the version a commit line or key through a scenario of its own, a
       behaviour change. goreleaser-config-unused covers .goreleaser.yaml itself.
+  - id: since-lines-twice
+    title: Fold project's since lines into LineRange
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      project/since.go keeps an unexported lines type (start, end, deletion) that now has the same
+      shape as project's own LineRange (T-156), converting one into the other for each changed file,
+      and changedLines, which filters out deletions, has no caller but since_test.go. Reading the
+      diff straight into []LineRange and dropping changedLines (or keeping its check in the diff
+      test) would leave one range type and no production code that only a test uses.
