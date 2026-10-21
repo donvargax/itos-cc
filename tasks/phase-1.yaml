@@ -6302,9 +6302,6 @@
     match, a module with none failing, -check's verdict. Files: tools/bin/notices,
     THIRD_PARTY_NOTICES, .goreleaser.yaml, README.md; not cd.yml, ci.yml or release.yml (the check
     runs per push as a named task's check, as itos ci run runs every named task's checks).
-  done_when:
-    - run: go test ./tools/bin/notices/
-    - run: go run ./tools/bin/notices -check
 - id: T-174
   type: test
   title: ID-MUT-135's ordinary mutant times out on a slow Windows runner

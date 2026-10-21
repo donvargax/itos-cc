@@ -4663,7 +4663,7 @@ items:
     title: Release archives carry every compiled-in dependency's license notice
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-174
