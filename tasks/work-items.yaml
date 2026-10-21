@@ -4548,3 +4548,16 @@ items:
       comments across, or say in the help that only the entry's own comments are kept. t86-12 in
       tools/testdata/refactor-proof/cases holds today's behaviour, so a change shows there as a
       deliberate difference.
+  - id: new-command-smoke-check
+    title: Hold the new-command fixture smoke entry to itos tests smoke check
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-169's TestANewCommandTouchesOnlyItsSliceAndTheGeneratedFiles appends probe's entry to
+      features/smoke.yaml in the copy, at the end, out of the file-name order the list keeps, and
+      nothing checks that itos tests smoke check scenario, the static CI step that holds the list,
+      accepts it; the test proves the Go side alone. Running the check in the copy (it needs itos on
+      the PATH, and no git there) or saying where a new entry goes would close it.
