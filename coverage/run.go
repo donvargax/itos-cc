@@ -18,7 +18,6 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -543,7 +542,7 @@ func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 			plan.Unsupported = "jacoco-maven-plugin is not in pom.xml or a parent's; add it, or measure with --coverage-command"
 			return plan
 		}
-		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, mutants.MavenTests(classes)...)}
+		plan.Commands = [][]string{append([]string{"mvn", "-q", "jacoco:prepare-agent", "test", "jacoco:report"}, mavenTests(classes)...)}
 		plan.Reports = []string{maven}
 		kotlinIntegration(&plan, dir, out)
 		return plan
@@ -568,12 +567,36 @@ func kotlinPlan(ctx context.Context, dir, out string, classes []string) Plan {
 	}
 	args := []string{gradle, "-p", dir}
 	if classes != nil {
-		args = append(append(args, test...), mutants.GradleTests(classes)...)
+		args = append(append(args, test...), gradleTests(classes)...)
 	} else if task == "jacocoTestReport" || plan.CoverDir != "" {
 		args = append(args, test...)
 	}
 	plan.Commands = [][]string{append(args, task)}
 	return plan
+}
+
+// gradleTests is the --tests filter of a Gradle test task that runs
+// classes, test classes by fully qualified name. The runner keeps this copy
+// of mutation's filter, which runs a mutant's tests the same way, rather than
+// import the mutation slice (ADR-0051).
+func gradleTests(classes []string) []string {
+	var out []string
+	for _, class := range classes {
+		out = append(out, "--tests", class)
+	}
+	return out
+}
+
+// mavenTests is the properties that have Surefire run classes, test classes
+// by fully qualified name, in each module of a build that holds any of
+// them, and none in one that holds none; nothing when classes is nil. The
+// runner keeps this copy of mutation's filter rather than import the
+// mutation slice (ADR-0051).
+func mavenTests(classes []string) []string {
+	if classes == nil {
+		return nil
+	}
+	return []string{"-Dtest=" + strings.Join(classes, ","), "-Dsurefire.failIfNoSpecifiedTests=false"}
 }
 
 type packageJSON struct {

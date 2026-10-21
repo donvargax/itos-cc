@@ -108,7 +108,9 @@ a `context.Context` first (decision 30); pure logic takes none.
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
   content). It reads nothing. The top-level `coverage` runner, which runs each language's
-  tools, builds every `Report` through the domain's API, never its fields (decision 47):
+  tools, imports no mutation package, keeping its own copy of the Maven and Gradle test
+  filters as graph keeps crap's formula (ADR-0051, T-156), and builds every `Report` through
+  the domain's API, never its fields (decision 47):
   `Build(ctx, files, …)` and `Merge`, `FromLines` and `FromGoBlocks`, the setters
   `SetMissing`, `SetIntegrationMissing`, `MarkMeasured` and `Prove`, `List` for a static
   inventory's lines, `Integrated` for the data of the processes the tests started, and

@@ -6,12 +6,36 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 )
+
+// The runner's copies of the JVM test filters build what mutation's
+// mutants.MavenTests and mutants.GradleTests build, so coverage and a
+// mutant's run select the same test classes.
+func TestJVMTestFiltersMatchMutations(t *testing.T) {
+	for _, c := range []struct {
+		classes       []string
+		maven, gradle []string
+	}{
+		{nil, nil, nil},
+		{[]string{}, []string{"-Dtest=", "-Dsurefire.failIfNoSpecifiedTests=false"}, nil},
+		{[]string{"a.BTest"}, []string{"-Dtest=a.BTest", "-Dsurefire.failIfNoSpecifiedTests=false"}, []string{"--tests", "a.BTest"}},
+		{[]string{"a.BTest", "c.DTest"}, []string{"-Dtest=a.BTest,c.DTest", "-Dsurefire.failIfNoSpecifiedTests=false"},
+			[]string{"--tests", "a.BTest", "--tests", "c.DTest"}},
+	} {
+		if got := mavenTests(c.classes); !reflect.DeepEqual(got, c.maven) {
+			t.Errorf("mavenTests(%#v) = %#v, want %#v", c.classes, got, c.maven)
+		}
+		if got := gradleTests(c.classes); !reflect.DeepEqual(got, c.gradle) {
+			t.Errorf("gradleTests(%#v) = %#v, want %#v", c.classes, got, c.gradle)
+		}
+	}
+}
 
 // writeFiles writes text files under dir.
 func writeFiles(t *testing.T, dir string, files map[string]string) {
