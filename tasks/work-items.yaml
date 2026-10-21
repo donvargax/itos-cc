@@ -4484,8 +4484,8 @@ items:
   - id: T-170
     title: Record who owns each path, slice by slice, in docs/ownership.md
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-165, T-167, T-168, T-169]
     kind: task
   - id: T-171
