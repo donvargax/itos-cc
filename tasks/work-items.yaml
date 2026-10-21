@@ -13,6 +13,7 @@ phases:
 queue:
   - T-163
   - T-164
+  - T-165
   - slices-close
   - T-86
   - slice-13
