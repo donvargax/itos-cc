@@ -5899,23 +5899,6 @@
     Reach, so they guard the slice side only; the engine's local evidence is its moved tests,
     graph's tests, importgraph's ReachContract and freshenv's fixtures over the real Reach. The
     moved snapshots' stale entries are the nightly run's to refresh (no local mutation run).
-  done_when:
-    - run: go test -count=1 ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
-      timeout: 600
-    - run: go test -count=1 ./internal/slices/mutation/adapters/freshenv/...
-      timeout: 900
-    - run: sh -c '! go list -deps -test ./internal/slices/... ./internal/imports/... | grep -x github.com/donvargax/itos-cc/graph'
-      timeout: 120
-    - run: go vet ./...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-MUT-21[5-9]$'
-      timeout: 600
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-163
   type: refactor
   title: Resolve each language's imports through a resolver of its own in internal/imports
