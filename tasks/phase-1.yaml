@@ -6051,3 +6051,54 @@
     same: build 51f3952's itos-cc from a detached worktree in the scratch folder and today's, each
     with the new STAMP, and compare itos-cc version and itos-cc --version --json; state the outputs
     in the commit body. slices-close runs the proof itself.
+- id: T-167
+  type: ci
+  title: Hold the imports into internal/slices to cmd, graph and config, and refuse a depguard deny entry that prefixes another
+  why: >
+    T-86 (ADR-0051, slices-close (3); coordinator 2026-10-21): engines stay behind stable APIs the
+    slices import, never the reverse (T-156). Today only three packages outside internal/slices
+    import one under it: cmd/itos-cc, which assembles them; graph, ADR-0051's legacy serve consumer,
+    whose code reads the mutation domain's judgment (graph/build.go, graph.go) and whose tests
+    import the domain's porttest and build fixtures with the slice's snapshots, testinputs and
+    testtools adapters (graph_test.go, mutation_fixtures_test.go, stale_test.go); and config, whose
+    one codec decodes mutation.exceptions and mutation.tests into the domain's Config for every
+    command (config/config.go, reader.go; T-147, T-161), its tests using the domain's porttest.
+    Nothing holds that: depguard's slices rule covers internal/** only, and project, coverage,
+    metrics, server, features and tools/ have no rule. Add to tools/bin/architecture-check, beside
+    siblings() and over the same go list fields (Imports, TestImports, XTestImports, code apart from
+    tests), a check refusing a package outside internal/slices that imports one under it unless the
+    importer is under cmd/ or a legacy consumer importing what its row allows: graph (and fixture
+    subpackages under graph/) from code internal/slices/mutation/domain, from tests anything under
+    internal/slices/mutation/; config from code internal/slices/mutation/domain, from tests that
+    domain and its porttest. A refusal names both packages and ADR-0051. The default run calls it
+    over ./... after siblings ./..., and --outside <package>... runs it alone for fixtures, as
+    --siblings does. Fixtures in tools/testdata/architecture/check_test.go's temporary module,
+    reusing its stubs, each refusal's message checked: refused project's code importing
+    internal/slices/units, coverage's tests importing the mutation domain, a features package
+    importing a slice's domain, graph's code importing internal/slices/crap/domain (graph keeps its
+    own CRAP formula, T-152), graph's code importing the snapshots adapter (T-161), config importing
+    units; accepted cmd/probe and cmd/slices importing every slice, the existing graph/mutation and
+    config/mutation fixtures, graph's tests importing a mutation adapter. Folds in
+    depguard-nested-deny: depguard looks a deny up as the one entry sorting just before the import
+    (T-159), so an entry prefixing another in one rule is hidden from imports sorting after the
+    longer; a new TestNoDenyEntryPrefixesAnother beside check_test.go reads the repository's
+    .golangci.yml (../../..) with go.yaml.in/yaml/v3, needs no linter or environment variable,
+    refuses any depguard rule whose deny list holds an entry prefixing another (naming the rule and
+    both entries), with table fixtures (a nested pair refused; lists shaped like today's
+    slice-fakes, mocks and kong accepted). First read depguard's lookup at the version
+    tools/bin/pinned fetches to confirm the trap and how a trailing $ reads; if allow lists share
+    it, add an idea rather than widen this check. Lands green (nothing refuses today, no deny list
+    nests); go vet does not reach tools/testdata, so vet it explicitly. docs/go.md's boundary list
+    gets a bullet naming cmd, graph and config and what each may import (out of the Siblings
+    bullet), Adding a package's fixture bullet says the check refuses a nested deny, and the
+    slice-adapters comment in .golangci.yml names the check. No depguard rule changes; every
+    existing check's message unchanged.
+  done_when:
+    - run: tools/bin/architecture-check
+      timeout: 900
+    - run: go test ./tools/testdata/architecture -count=1 -run '^TestNoDenyEntryPrefixesAnother$'
+      timeout: 120
+    - run: go vet ./tools/testdata/architecture
+      timeout: 120
+    - run: tools/bin/doc-caps
+      timeout: 60

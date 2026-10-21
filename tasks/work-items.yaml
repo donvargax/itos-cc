@@ -4490,3 +4490,10 @@ items:
       an in-process case that pass the same list. T-164 kept both as they were, as its spec said.
       Removing them, or deciding they stay for a future driver that runs fewer files, would leave
       TagFilter one fewer argument and the in-process run one dead log line. Found in T-164.
+  - id: T-167
+    title: Hold the imports into internal/slices to cmd, graph and config, and refuse a depguard deny entry that prefixes another
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
