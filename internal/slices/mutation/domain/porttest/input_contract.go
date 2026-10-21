@@ -154,6 +154,7 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 			{"typescript", "a.ts", "package.json", `{"dependencies":{"other":"file:../outside"}}`, "local dependency"},
 			{"python", "a.py", "pyproject.toml", "[tool.uv.sources]\nother = {path = \"../outside\"}\n", "path dependency"},
 			{"kotlin", "src/main/kotlin/A.kt", "settings.gradle.kts", "includeBuild(\"../outside\")\n", "includeBuild"},
+			{"dart", "lib/a.dart", "pubspec.yaml", "name: a\ndependencies:\n  other:\n    path: ../outside\n", "path dependency"},
 		} {
 			t.Run(c.language+" "+c.token, func(t *testing.T) {
 				files := map[string]string{c.source: "actual source\n", c.manifest: c.content, "../outside/never-read.txt": "owned external marker"}

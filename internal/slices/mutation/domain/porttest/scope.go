@@ -7,10 +7,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
@@ -398,6 +402,56 @@ func (s *Inputs) glob(pattern string) ([]string, error) {
 	return found, nil
 }
 
+// dart refuses a path dependency or override outside the Dart file's root,
+// its package or a member's whole workspace, in a pubspec.yaml of that root
+// or a pubspec_overrides.yaml beside one, as the adapter does.
+func (s scopeReader) dart(ctx context.Context, source string) string {
+	pkg := s.buildRoot(ctx, source, "pubspec.yaml")
+	if pkg == "" {
+		return ""
+	}
+	root, workspace := s.inputs.dartRoot(ctx, source)
+	if !inside(s.root, root) {
+		root, workspace = pkg, s.inputs.pubspec(ctx, pkg)
+	}
+	where := "package root"
+	if root != pkg {
+		where = "workspace root"
+	}
+	nested := func(dir string) bool {
+		return s.inputs.Exists(ctx, filepath.Join(dir, "pubspec.yaml")) && !workspace.lists(root, dir)
+	}
+	dirs := []string{root}
+	for _, member := range workspace.Workspace {
+		matches, _ := s.inputs.glob(filepath.Join(root, filepath.FromSlash(path.Clean(filepath.ToSlash(member)))))
+		for _, dir := range matches {
+			if s.inputs.Exists(ctx, filepath.Join(dir, "pubspec.yaml")) && !slices.Contains(dirs, dir) && s.read(ctx, filepath.Join(dir, "pubspec.yaml")) != "" {
+				dirs = append(dirs, dir)
+			}
+		}
+	}
+	for _, dir := range dirs {
+		for _, name := range []string{"pubspec.yaml", "pubspec_overrides.yaml"} {
+			file := filepath.Join(dir, name)
+			var manifest map[string]any
+			if yaml.Unmarshal([]byte(s.read(ctx, file)), &manifest) != nil {
+				continue
+			}
+			for _, field := range []string{"dependencies", "dev_dependencies", "dependency_overrides"} {
+				deps, _ := manifest[field].(map[string]any)
+				for _, dep := range slices.Sorted(maps.Keys(deps)) {
+					spec, _ := deps[dep].(map[string]any)
+					target, ok := spec["path"].(string)
+					if ok && s.outside(ctx, root, dir, target, nested) {
+						return fmt.Sprintf("path dependency %q in %s, outside the %s", target, s.rel(file), where)
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
 func (s *Inputs) Unsupported(ctx context.Context, language, source, root string) (string, mutants.InputFailure) {
 	if failure := inputStopped(ctx); failure != nil {
 		return "", failure
@@ -414,6 +468,8 @@ func (s *Inputs) Unsupported(ctx context.Context, language, source, root string)
 		reason = reader.python(ctx, s.absolute(source))
 	case "kotlin":
 		reason = reader.kotlin(ctx, s.absolute(source))
+	case "dart":
+		reason = reader.dart(ctx, s.absolute(source))
 	}
 	return reason, inputStopped(ctx)
 }

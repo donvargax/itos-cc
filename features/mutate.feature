@@ -2773,7 +2773,7 @@ Feature: Mutation testing
       # into a nested package that is not a member, which the fingerprints
       # leave out. Before slice-36's refusal, the fresh Dart evidence was
       # reused, failing at the Then.
-      @wip @slice-36
+      @slice-36
       Examples:
         | language | scope                                                   |
         | dart     | a path dependency outside the root                      |

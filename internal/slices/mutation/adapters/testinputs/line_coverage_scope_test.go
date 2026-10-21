@@ -126,3 +126,43 @@ func TestLineCoverageScopeIsReadBeneathTheProjectRootAlone(t *testing.T) {
 		t.Errorf("a package root above the project root: %q %v, want nothing read, nothing refused", got, err)
 	}
 }
+
+// Strict Dart refuses a path dependency or override that leaves its
+// inventory's root, its package or a member's whole pub workspace, or that
+// points into a nested package the workspace does not list. A path to a
+// listed member, and git and hosted dependencies, which pubspec.lock pins,
+// are admitted.
+func TestDartLineCoverageRefusesPathsOutsideItsRoot(t *testing.T) {
+	const dart = "int f() {\n  return 1;\n}\n"
+	workspace := "name: ws\nworkspace:\n  - app\n  - core\n"
+	for _, c := range []struct {
+		name, source string
+		files        map[string]string
+		want         string // a word of the refusal, "" for none
+	}{
+		{"path dependency outside the package", "lib/f.dart", map[string]string{
+			"pubspec.yaml": "name: a\ndependencies:\n  b:\n    path: ../b\n", "lib/f.dart": dart}, `"../b" in pubspec.yaml, outside the package root`},
+		{"dev dependency on a nested package", "lib/f.dart", map[string]string{
+			"pubspec.yaml": "name: a\ndev_dependencies:\n  b:\n    path: tool/b\n", "tool/b/pubspec.yaml": "name: b\n", "lib/f.dart": dart}, "tool/b"},
+		{"override beside the pubspec", "lib/f.dart", map[string]string{
+			"pubspec.yaml": "name: a\n", "pubspec_overrides.yaml": "dependency_overrides:\n  b:\n    path: /elsewhere/b\n", "lib/f.dart": dart}, "pubspec_overrides.yaml"},
+		{"git and hosted dependencies", "lib/f.dart", map[string]string{
+			"pubspec.yaml": "name: a\ndependencies:\n  b: ^1.0.0\n  c:\n    git:\n      url: https://example.com/c.git\n      path: ../c\n  d:\n    hosted: https://pub.example.com\n    version: ^2.0.0\n", "lib/f.dart": dart}, ""},
+		{"member's path to a listed sibling", "app/lib/f.dart", map[string]string{
+			"pubspec.yaml": workspace, "app/pubspec.yaml": "name: app\nresolution: workspace\ndependencies:\n  core:\n    path: ../core\n",
+			"core/pubspec.yaml": "name: core\nresolution: workspace\n", "app/lib/f.dart": dart}, ""},
+		{"sibling member's path outside the workspace", "app/lib/f.dart", map[string]string{
+			"pubspec.yaml": workspace, "app/pubspec.yaml": "name: app\nresolution: workspace\n",
+			"core/pubspec.yaml": "name: core\nresolution: workspace\ndependencies:\n  far:\n    path: ../../far\n", "app/lib/f.dart": dart}, "outside the workspace root"},
+		{"member's path to an unlisted package", "app/lib/f.dart", map[string]string{
+			"pubspec.yaml": workspace, "app/pubspec.yaml": "name: app\nresolution: workspace\ndependencies:\n  other:\n    path: ../other\n",
+			"core/pubspec.yaml": "name: core\nresolution: workspace\n", "other/pubspec.yaml": "name: other\n", "app/lib/f.dart": dart}, "../other"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got := scopeOf(t, "dart", c.source, c.files)
+			if c.want == "" && got != "" || c.want != "" && !strings.Contains(got, c.want) {
+				t.Errorf("refusal %q, want one naming %q", got, c.want)
+			}
+		})
+	}
+}

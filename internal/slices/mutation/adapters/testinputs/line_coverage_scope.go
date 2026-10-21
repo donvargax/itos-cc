@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/project"
 )
@@ -30,6 +34,11 @@ import (
 //     script, or a Maven <module>, <subproject> or parent <relativePath>
 //     outside it, in the pom.xml files from the module up to the reactor's
 //     top.
+//   - Dart: a path dependency, under dependencies, dev_dependencies or
+//     dependency_overrides, in a pubspec.yaml of its root (DartCoverageRoot:
+//     its package, or a member's whole pub workspace) or a
+//     pubspec_overrides.yaml beside one, outside that root. git and hosted
+//     dependencies are pinned by pubspec.lock, an input, and admitted.
 //
 // A target is outside the inventory when it resolves outside the root, or
 // through a symbolic link or a nested build root (another package, Python
@@ -53,6 +62,8 @@ func LineCoverageUnsupported(ctx context.Context, language, source, projectRoot 
 		return s.python(ctx, abs), nil
 	case "kotlin":
 		return s.kotlin(ctx, abs), nil
+	case "dart":
+		return s.dart(ctx, abs), nil
 	}
 	return "", nil
 }
@@ -372,6 +383,57 @@ func (s scopeReader) kotlin(ctx context.Context, source string) string {
 		for _, m := range relativePath.FindAllStringSubmatch(text, -1) {
 			if s.outside(top, filepath.Dir(pom), m[1], nil) {
 				return fmt.Sprintf("parent <relativePath>%s</relativePath> in %s, outside the build root", m[1], s.rel(pom))
+			}
+		}
+	}
+	return ""
+}
+
+// dartDependencyFields are the fields of a pubspec.yaml, or of a
+// pubspec_overrides.yaml, that name dependencies.
+var dartDependencyFields = []string{"dependencies", "dev_dependencies", "dependency_overrides"}
+
+func (s scopeReader) dart(ctx context.Context, source string) string {
+	pkg := s.buildRoot(ctx, source, "pubspec.yaml")
+	if pkg == "" {
+		return ""
+	}
+	root, workspace := DartCoverageRoot(ctx, source)
+	if !beneathRoot(s.root, root) {
+		root, workspace = pkg, readPubspec(pkg)
+	}
+	where := "package root"
+	if root != pkg {
+		where = "workspace root"
+	}
+	nested := func(dir string) bool { return dartNested(root, workspace, dir) }
+	// The pubspec.yaml files of the root: its own and its listed members'.
+	dirs := []string{root}
+	for _, member := range workspace.Workspace {
+		matches, _ := filepath.Glob(filepath.Join(root, filepath.FromSlash(path.Clean(filepath.ToSlash(member)))))
+		slices.Sort(matches)
+		for _, dir := range matches {
+			if coverageFileExists(filepath.Join(dir, "pubspec.yaml")) && !slices.Contains(dirs, dir) && s.read(filepath.Join(dir, "pubspec.yaml")) != "" {
+				dirs = append(dirs, dir)
+			}
+		}
+	}
+	for _, dir := range dirs {
+		for _, name := range []string{"pubspec.yaml", "pubspec_overrides.yaml"} {
+			file := filepath.Join(dir, name)
+			var manifest map[string]any
+			if yaml.Unmarshal([]byte(s.read(file)), &manifest) != nil {
+				continue
+			}
+			for _, field := range dartDependencyFields {
+				deps, _ := manifest[field].(map[string]any)
+				for _, dep := range slices.Sorted(maps.Keys(deps)) {
+					spec, _ := deps[dep].(map[string]any)
+					target, ok := spec["path"].(string)
+					if ok && s.outside(root, dir, target, nested) {
+						return fmt.Sprintf("path dependency %q in %s, outside the %s", target, s.rel(file), where)
+					}
+				}
 			}
 		}
 	}
