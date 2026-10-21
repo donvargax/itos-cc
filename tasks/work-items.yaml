@@ -3396,14 +3396,9 @@ items:
     title: A file one test leaves in a worker's copy fails every later mutant on that worker
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was worker-copy-pristine.
-      Issue #35, wrong results (false kills). worker.copyOf caches the copy for the run
-      (internal/worktrees/worker.go:43-56) and withMutant restores only the mutated file (158-172).
-      Restore the copy to pristine before each mutant rather than copying afresh. Wave 0.
     refs: ["#35"]
   - id: slice-14
     title: A site in an empty Go case clause is uncovered even when the clause runs
