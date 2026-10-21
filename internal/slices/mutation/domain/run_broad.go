@@ -39,7 +39,7 @@ func (s *Execution) markBroadStale() {
 // was decided under changed since.
 func (s *Execution) broadChanged(entry UnitResult) bool {
 	for _, m := range entry.Mutants {
-		if len(BroadChanges(m, s.moduleTests, s.currentSupport)) > 0 {
+		if len(BroadChanges(m, s.suite.Of(m.TestScope()), s.currentSupport)) > 0 {
 			return true
 		}
 	}

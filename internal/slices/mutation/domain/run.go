@@ -106,7 +106,7 @@ type Execution struct {
 	previous       *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
 	stored         *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
 	tests          map[string]string // the tests that import the file, as the snapshot records them
-	moduleTests    map[string]string // every test beneath the source's Build root (SuiteTestHashes)
+	suite          Suite             // the whole-suite tests of the source's build root (SuiteTestHashes), by scope
 	currentSupport map[string]string
 	judged         map[int]bool   // by the index of the unit, or nil when every function is
 	excepted       FileExceptions // the exceptions of the functions judged
@@ -269,7 +269,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		if incomplete {
 			s.keepCoverage()
 		}
-		RecordSuiteEvidence(&s.result.Snapshot, s.moduleTests, opt.Support)
+		RecordSuiteEvidence(&s.result.Snapshot, s.suite, opt.Support)
 		if s.judged != nil {
 			s.result.Snapshot.Units = KeepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
 			s.markBroadStale()

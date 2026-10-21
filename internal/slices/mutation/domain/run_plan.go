@@ -45,10 +45,11 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		// Only a broad-scope outcome, judged now or recorded before,
 		// depends on the Build root's tests.
 		if BroadScope(ScopeForCommand(opt.TestCommand, opt.AllTests, s.command)) || snap != nil && HasBroadOutcome(snap.Units) {
-			s.moduleTests, err = opt.Fingerprints.Suite(ctx, path, opt.Root)
+			whole, err := opt.Fingerprints.Suite(ctx, path, opt.Root)
 			if err != nil {
 				return states, err
 			}
+			s.suite = SuiteOf(ctx, opt.Surroundings, opt.Root, path, whole)
 		}
 		s.stored, s.previous = snap, Usable(snap, s.tests)
 		prev, prevScopes := RememberedWithScopes(s.previous, f)
@@ -93,7 +94,8 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 			d := prevScopes[site.Unit][site.Key()]
 			// A listed outcome holds while the files it rests on do.
 			restsOnChange := len(s.listedChange.Files([]Mutant{{Scope: d.Scope, Tests: d.Tests}})) > 0
-			broadStale := len(BroadChanges(Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}, s.moduleTests, opt.Support)) > 0
+			broad := Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}
+			broadStale := len(BroadChanges(broad, s.suite.Of(broad.TestScope()), opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
 				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, tests: d.Tests}
 			}

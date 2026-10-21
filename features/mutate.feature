@@ -2211,12 +2211,14 @@ Feature: Mutation testing
         | Kotlin     | src/test/kotlin/CliTest.kt | --all-tests              |
 
       # slice-36, dart-support: a Dart outcome's whole suite is every test
-      # file beneath its nearest pubspec.yaml, as flutter test finds them,
-      # a nested package's left to it. The non-importing test runs the
-      # package's bin/ entry point with dart run, since flutter_tester has
-      # no dart:mirrors to call a library it does not import. Before slice-36
-      # a Dart whole-suite outcome recorded no test, failing at the Given's
-      # check that its evidence names test/cli_test.dart.
+      # file beneath its nearest pubspec.yaml, a nested package's left to
+      # it; an --all-tests one rests on those under its test/ folder, as
+      # flutter test with no path runs them (slice-38). The non-importing
+      # test runs the package's bin/ entry point with dart run, since
+      # flutter_tester has no dart:mirrors to call a library it does not
+      # import. Before slice-36 a Dart whole-suite outcome recorded no
+      # test, failing at the Given's check that its evidence names
+      # test/cli_test.dart.
       @slice-36
       Examples:
         | language | test               | scope       |
@@ -2557,7 +2559,7 @@ Feature: Mutation testing
     # never among them, though it imports the file. Both drivers run it, as
     # mutation check runs no test. Before slice-38 reach counts those files,
     # so the check reports the result stale, failing at the Then.
-    @slice-38 @ID-MUT-274 @wip
+    @slice-38 @ID-MUT-274
     Scenario Outline: A Dart result recorded by <run> stays fresh when only tests flutter test never runs change
       Given a Flutter package where test/a_test.dart reaches lib/a.dart, and integration_test/app_test.dart and test_driver/app.dart import lib/a.dart
       And a mutant of lib/a.dart has a result recorded by "<run>"

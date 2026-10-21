@@ -35,12 +35,13 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 		return result, err
 	}
 	var changed *TestChange
-	var moduleTests map[string]string
+	var suite Suite
 	if snap != nil && HasBroadOutcome(snap.Units) {
-		moduleTests, err = opt.Fingerprints.Suite(ctx, path, opt.Root)
+		whole, err := opt.Fingerprints.Suite(ctx, path, opt.Root)
 		if err != nil {
 			return result, err
 		}
+		suite = SuiteOf(ctx, opt.Surroundings, opt.Root, path, whole)
 	}
 	if snap != nil {
 		changed = snap.TestsChanged(now)
@@ -83,7 +84,7 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 		var broad []string
 		if e != nil {
 			for _, m := range e.Mutants {
-				broad = append(broad, BroadChanges(m, moduleTests, opt.Support)...)
+				broad = append(broad, BroadChanges(m, suite.Of(m.TestScope()), opt.Support)...)
 			}
 			broad = UniqueSorted(broad)
 		}

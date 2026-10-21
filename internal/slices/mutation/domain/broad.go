@@ -19,10 +19,10 @@ func BroadScope(scope string) bool {
 	return scope == ScopeAllTests || scope != "" && scope != ScopeOwn && scope != ScopeListed
 }
 
-func RecordSuiteEvidence(s *Snapshot, tests, support map[string]string) {
-	if tests == nil {
-		tests = map[string]string{}
-	}
+// RecordSuiteEvidence records on each broad-scope outcome of s the tests
+// of suite it rests on, by its scope, and support, the configured support
+// files' hashes.
+func RecordSuiteEvidence(s *Snapshot, suite Suite, support map[string]string) {
 	if support == nil {
 		support = map[string]string{}
 	}
@@ -30,7 +30,7 @@ func RecordSuiteEvidence(s *Snapshot, tests, support map[string]string) {
 		for j := range s.Units[i].Mutants {
 			m := &s.Units[i].Mutants[j]
 			if BroadScope(m.TestScope()) {
-				m.SuiteEvidence = &SuiteEvidence{Tests: CloneHashes(tests), Support: CloneHashes(support)}
+				m.SuiteEvidence = &SuiteEvidence{Tests: CloneHashes(suite.Of(m.TestScope())), Support: CloneHashes(support)}
 			}
 		}
 	}
@@ -45,8 +45,8 @@ func CloneHashes(in map[string]string) map[string]string {
 }
 
 // BroadChanges is the changed evidence of a broad-scope outcome, of any
-// language: tests are SuiteTestHashes of its source now, support the
-// configured support files' hashes now.
+// language: tests are those of its source's Suite now that its scope
+// rests on (Suite.Of), support the configured support files' hashes now.
 func BroadChanges(m Mutant, tests, support map[string]string) []string {
 	if !BroadScope(m.TestScope()) {
 		return nil

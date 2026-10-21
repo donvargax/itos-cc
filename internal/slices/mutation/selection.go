@@ -42,7 +42,7 @@ func (h Handler) importingTests(ctx context.Context, root string) (func(string) 
 	if h.Reach == nil {
 		return nil, errors.New("mutation Reach binding is missing")
 	}
-	if h.Tree == nil {
+	if h.Tree == nil || h.Surroundings == nil {
 		return nil, errors.New("mutation source tree binding is missing")
 	}
 	sources, tests, failure := h.Tree.Discover(ctx, []string{root})
@@ -52,6 +52,11 @@ func (h Handler) importingTests(ctx context.Context, root string) (func(string) 
 	reach, err := h.Reach.TestsImporting(ctx, root, sources, tests)
 	if err != nil {
 		return nil, err
+	}
+	// An outcome records, and rests on, the tests its run runs: a Dart
+	// file's leave out what flutter test never runs.
+	for source, reaching := range reach {
+		reach[source] = mutants.RunTests(ctx, h.Surroundings, source, reaching)
 	}
 	dir := h.Dir
 	return func(path string) []string { return reach[sourcePath(dir, path)] }, nil

@@ -108,7 +108,7 @@ func TestPartialAndReusedOutcomesKeepTheirOwnBroadEvidence(t *testing.T) {
 	s := Snapshot{Units: []UnitResult{{Mutants: []Mutant{{Scope: ScopeOwn}, {Scope: ScopeAllTests}, {Scope: "go version"}}}}}
 	tests := map[string]string{"a_test.go": "old"}
 	support := map[string]string{"support": "old"}
-	RecordSuiteEvidence(&s, tests, support)
+	RecordSuiteEvidence(&s, Suite{Whole: tests, Runs: tests}, support)
 	tests["a_test.go"] = "new"
 	support["support"] = "new"
 	if !HasBroadOutcome(s.Units) || HasBroadOutcome([]UnitResult{{Mutants: []Mutant{{Scope: ScopeOwn}}}}) || s.Units[0].Mutants[0].SuiteEvidence != nil {
@@ -119,7 +119,7 @@ func TestPartialAndReusedOutcomesKeepTheirOwnBroadEvidence(t *testing.T) {
 			t.Fatal(m)
 		}
 	}
-	RecordSuiteEvidence(&s, nil, nil)
+	RecordSuiteEvidence(&s, Suite{}, nil)
 	if s.Units[0].Mutants[1].SuiteEvidence.Tests == nil || s.Units[0].Mutants[1].SuiteEvidence.Support == nil {
 		t.Fatal("complete empty inventories must remain distinguishable from legacy evidence")
 	}

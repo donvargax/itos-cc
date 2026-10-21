@@ -99,7 +99,7 @@ func TestCheckBroadAndListedEvidenceUsesCurrentFacts(t *testing.T) {
 				if failure != nil {
 					t.Fatal(failure)
 				}
-				mutants.RecordSuiteEvidence(&value, suite, nil)
+				mutants.RecordSuiteEvidence(&value, mutants.Suite{Whole: suite, Runs: suite}, nil)
 			} else {
 				value.Listed = map[string]string{"actual-id": "board_test.go"}
 				hashes, failure := f.inputs.Tests(t.Context(), f.root, []string{filepath.Join(f.root, "board_test.go")})
