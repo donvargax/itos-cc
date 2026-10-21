@@ -157,11 +157,7 @@ linters:
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
-            - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
-            - "!**/internal/importgraph/**" # mutation reach over graph
-            - "!**/internal/githistory/**" # mutation committed history
-            - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -264,11 +260,7 @@ linters:
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
-            - "!**/internal/worktrees/**" # mutation workers adapter
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
-            - "!**/internal/importgraph/**" # mutation reach over graph
-            - "!**/internal/githistory/**" # mutation committed history
-            - "!**/internal/freshenv/**" # immutable counted preparation
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -395,11 +387,13 @@ linters:
         # Model-bearing Workers lives beside the mutation domain's values to
         # avoid a cycle.
         # worktrees wraps only project tree operations and runs its commands
-        # through the process-ownership engine.
+        # through the process-ownership engine. It is the mutation slice's
+        # adapter, under internal/slices/mutation/adapters (T-160), as
+        # githistory, freshenv and importgraph below are.
         worktrees:
           list-mode: lax
           files:
-            - "**/internal/worktrees/**"
+            - "**/internal/slices/mutation/adapters/worktrees/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
@@ -424,9 +418,10 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "the process-ownership engine imports nothing of ours (T-151): no domain, slice, adapter or UI; a caller converts its Result into its own terms"
         # T-89: each concrete observation adapter owns only its declared I/O.
-        # testtools and testinputs are the mutation slice's adapters, under
-        # internal/slices/mutation/adapters (T-159), the sibling rule letting
-        # them import the slice's domain and no other slice.
+        # testtools and testinputs (T-159), githistory, freshenv and
+        # importgraph (T-160), like worktrees above, are the mutation slice's
+        # adapters, under internal/slices/mutation/adapters, the sibling rule
+        # letting them import the slice's domain and no other slice.
         testtools:
           list-mode: lax
           files:
@@ -456,7 +451,7 @@ linters:
         githistory:
           list-mode: lax
           files:
-            - "**/internal/githistory/**"
+            - "**/internal/slices/mutation/adapters/githistory/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
@@ -467,7 +462,7 @@ linters:
         freshenv:
           list-mode: lax
           files:
-            - "**/internal/freshenv/**"
+            - "**/internal/slices/mutation/adapters/freshenv/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
@@ -483,10 +478,15 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "freshenv imports only its mutation contract and the observed libraries/codecs it wraps (T-95); cmd supplies other adapters and owned executors"
+        # importgraph wraps graph's import resolver until the import engine
+        # is lifted out of graph (ADR-0051). graph imports the mutation
+        # domain, so the slice and graph meet without a Go cycle only while
+        # importgraph is a package of its own: never merge it with anything
+        # graph imports.
         importgraph:
           list-mode: lax
           files:
-            - "**/internal/importgraph/**"
+            - "**/internal/slices/mutation/adapters/importgraph/**"
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
