@@ -1167,6 +1167,11 @@ Each check runs where its cost fits:
   `tools/bin/pre-commit-check` proves it with real commits in a repository of its own (T-120).
 - itos's own hooks (`itos hook install`), `commit-msg` on every commit and `pre-push` on every
   push.
+- On every push, after itos's `pre-push`, the project's `pre-push` hook, `tools/hooks/pre-push`:
+  `go vet ./...` over the working tree, which `itos push` has just rebased onto the upstream, so
+  two pushes that each compiled alone but clash together are refused before main breaks; seconds
+  with the build cache warm. Each clone declares it (README.md, Hooks), and every worktree of the
+  clone runs it; `tools/bin/pre-push-check` proves it with a local bare remote (T-177).
 - On every push touching more than prose, the CI plan above: gofmt over every tracked Go file,
   which also catches a commit made in a clone without the hook, and the module-wide
   golangci-lint and the networked govulncheck, which the template's `tools/hooks/pre-commit` ran
