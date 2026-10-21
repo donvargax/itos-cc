@@ -347,3 +347,6 @@ questions:
   - id: q-74
     item: "dart-support"
     question: "Which Dart projects does the first version support? (a, recommended) Flutter apps and packages, run with flutter test, all five commands (units, dry, scrap, crap, mutation), Flutter 3.27 or newer with Dart 3.6 (pub workspaces); pure Dart packages (dart test) become a later idea. (b) Flutter and pure Dart together from the start: a second runner, coverage path base and CI install to build and keep. (c) Flutter with fewer commands first (units, dry, scrap, crap) and mutation later."
+  - id: q-75
+    item: "dart-support"
+    question: "What does itos-cc do with a Flutter app's platform folders (android, ios, macos, linux, windows, web)? android holds a Gradle build with MainActivity.kt, which today reads as a Kotlin project: crap and mutation would plan Gradle for it, and a strict run fails on the unmeasured language. (a, recommended) A pubspec.yaml that depends on the flutter SDK makes those folders part of the Flutter app, left out of measuring, mutation and worker copies by default; a project that wants its Kotlin or Swift measured names it in itos-cc.yaml. (b) Measure each platform folder as its own build root, as today: Gradle runs for android in every crap and mutation run. (c) Leave them in but never fail a strict run on them."
