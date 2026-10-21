@@ -5,9 +5,8 @@ package importgraph
 
 import (
 	"context"
-	"github.com/donvargax/itos-cc/graph"
+	"github.com/donvargax/itos-cc/internal/imports"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 type Reach struct{}
@@ -16,7 +15,7 @@ func (Reach) TestsImporting(ctx context.Context, root string, sources, tests []s
 	if cause := context.Cause(ctx); cause != nil {
 		return nil, mutants.InputCancelled{Cause: cause}
 	}
-	out, err := graph.TestsImporting(ctx, root, project.Files{Sources: sources, Tests: tests})
+	out, err := imports.TestsImporting(ctx, root, sources, tests)
 	if cause := context.Cause(ctx); cause != nil {
 		return nil, mutants.InputCancelled{Cause: cause}
 	}

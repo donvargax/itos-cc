@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/imports"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/snapshots"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/adapters/testinputs"
@@ -280,7 +281,7 @@ func TestTheGraphAndMutationCheckAgreeOnEveryFunction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	importing, err := TestsImporting(t.Context(), m.root, files)
+	importing, err := imports.TestsImporting(t.Context(), m.root, files.Sources, files.Tests)
 	if err != nil {
 		t.Fatal(err)
 	}

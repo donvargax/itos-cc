@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/internal/lang"
+	"github.com/donvargax/itos-cc/internal/imports"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
@@ -130,14 +130,14 @@ func (b *Builder) Build(ctx context.Context) (*Graph, bool, error) {
 			}
 			tests = append(tests, info)
 		}
-		importing := importingTests(ctx, r.root, infos, tests)
+		importing := imports.Reach(ctx, r.root, importFiles(infos), importFiles(tests))
 		hashes := testHashes(ctx, b.mutation.Fingerprints, r.top)
 		for i, info := range infos {
-			now, err := hashes(importing[info.abs])
+			now, err := hashes(importing[info.Abs])
 			if err != nil {
 				return nil, false, err
 			}
-			snap, snapshotErr := b.snapshot(ctx, r.top, info.abs, live)
+			snap, snapshotErr := b.snapshot(ctx, r.top, info.Abs, live)
 			if snapshotErr != nil {
 				return nil, false, snapshotErr
 			}
@@ -249,7 +249,7 @@ func (b *Builder) parse(ctx context.Context, root, path string) (*fileInfo, erro
 		return nil, err
 	}
 	defer f.Close()
-	info := dependencies(root, f)
+	info := &fileInfo{File: imports.Of(root, f)}
 	info.serves, info.calls = f.Endpoints()
 	sites := map[int][]mutants.Site{}
 	for _, s := range mutants.Sites(f) {
@@ -257,7 +257,7 @@ func (b *Builder) parse(ctx context.Context, root, path string) (*fileInfo, erro
 	}
 	for i, u := range f.Units {
 		info.units = append(info.units, Unit{
-			Name: u.Name, Namespace: u.Namespace, File: info.rel, Line: u.StartLine, EndLine: u.EndLine,
+			Name: u.Name, Namespace: u.Namespace, File: info.Rel, Line: u.StartLine, EndLine: u.EndLine,
 			Complexity: f.Complexity(u), hash: mutants.UnitHash(f, u), sites: sites[i],
 		})
 	}
@@ -277,7 +277,7 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 		return nil, err
 	}
 	defer f.Close()
-	info := dependencies(root, f)
+	info := &fileInfo{File: imports.Of(root, f)}
 	b.cache[path] = cached{st, info}
 	return info, nil
 }
@@ -305,18 +305,6 @@ func (b *Builder) snapshot(ctx context.Context, top, path string, live map[strin
 	}
 	b.snapshots[at] = cachedSnapshot{st, snap}
 	return snap, nil
-}
-
-// dependencies is what the graph needs of a parsed file to resolve what it
-// imports, and what imports it.
-func dependencies(root string, f *lang.File) *fileInfo {
-	info := &fileInfo{rel: rel(root, f.Path), abs: f.Path, language: f.Spec.Name, namespace: f.Namespace, imports: f.Imports(),
-		test: f.Spec.IsTest(f.Path)}
-	if f.Spec.Name == "kotlin" {
-		info.topLevel = lang.TopLevelNames(f)
-		info.refs = lang.ReferencedNames(f)
-	}
-	return info
 }
 
 func (f *fileInfo) clone() *fileInfo {
@@ -462,7 +450,7 @@ func (o overlay) apply(ctx context.Context, info *fileInfo, tests map[string]str
 	entries := mutationEntries(info, snap)
 	var moduleTests map[string]string
 	if snap != nil && mutants.HasBroadOutcome(snap.Units) {
-		moduleTests, _ = inputs.Suite(ctx, info.abs, root)
+		moduleTests, _ = inputs.Suite(ctx, info.Abs, root)
 	}
 	occurrence := map[string]int{}
 	for i := range info.units {

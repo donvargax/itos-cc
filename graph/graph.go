@@ -9,13 +9,12 @@ package graph
 import (
 	"context"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/imports"
 	"github.com/donvargax/itos-cc/internal/lang"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
-	"github.com/donvargax/itos-cc/project"
 )
 
 // Node is one box: a repository, a directory, or a module.
@@ -73,19 +72,13 @@ type Graph struct {
 	Edges   []Edge  `json:"edges"`
 }
 
-// fileInfo is what the graph needs from one parsed source file.
+// fileInfo is what the graph needs from one parsed source file: what import
+// resolution needs of it, and its units and endpoints.
 type fileInfo struct {
-	rel       string // repository-relative, slash-separated
-	abs       string
-	language  string
-	namespace string
-	imports   []lang.Import
-	topLevel  []string // Kotlin declarations other files import
-	refs      []string // Kotlin names used, for dependencies within a package
-	units     []Unit
-	serves    []lang.Endpoint
-	calls     []lang.Endpoint
-	test      bool // test code, a runnable test or a test-support file
+	imports.File
+	units  []Unit
+	serves []lang.Endpoint
+	calls  []lang.Endpoint
 }
 
 // repoGraph builds one repository's nodes and edges. Node ids are prefixed
@@ -97,6 +90,7 @@ type repoGraph struct {
 	nodes   map[string]*Node
 	modules map[string]*Node // by module id
 	edges   map[[2]string]int
+	res     imports.Resolution
 }
 
 // newRepoGraph is the graph of files, the repository name's under root, its
@@ -104,10 +98,11 @@ type repoGraph struct {
 func newRepoGraph(ctx context.Context, name, root string, files []*fileInfo) *repoGraph {
 	g := &repoGraph{name: name, root: root, files: files,
 		nodes: map[string]*Node{}, modules: map[string]*Node{}, edges: map[[2]string]int{}}
+	g.res = imports.Resolve(ctx, root, importFiles(files))
 	g.nodes[name] = &Node{ID: name, Kind: "repo", Label: name}
 	for _, f := range files {
 		m := g.module(f)
-		m.Files = appendUnique(m.Files, f.rel)
+		m.Files = appendUnique(m.Files, f.Rel)
 		m.Units = append(m.Units, f.units...)
 		for _, e := range f.serves {
 			m.Serves = appendUnique(m.Serves, e.String())
@@ -116,21 +111,31 @@ func newRepoGraph(ctx context.Context, name, root string, files []*fileInfo) *re
 			m.Calls = appendUnique(m.Calls, e.String())
 		}
 	}
-	g.resolveAll(ctx)
+	for e, count := range g.res.Edges {
+		g.edges[[2]string{name + "/" + e[0], name + "/" + e[1]}] += count
+	}
+	for module, external := range g.res.External {
+		m := g.modules[name+"/"+module]
+		for _, p := range external {
+			m.External = appendUnique(m.External, p)
+		}
+	}
 	return g
 }
 
-// moduleID is the module a file belongs to: its package directory in Go and
-// for a Python __init__.py, the file without its extension elsewhere.
-func (g *repoGraph) moduleID(f *fileInfo) string {
-	if f.language == "go" || path.Base(f.rel) == "__init__.py" {
-		dir := path.Dir(f.rel)
-		if dir == "." {
-			return g.name + "/(root)"
-		}
-		return g.name + "/" + dir
+// importFiles is what import resolution needs of each of files.
+func importFiles(files []*fileInfo) []imports.File {
+	out := make([]imports.File, 0, len(files))
+	for _, f := range files {
+		out = append(out, f.File)
 	}
-	return g.name + "/" + strings.TrimSuffix(f.rel, path.Ext(f.rel))
+	return out
+}
+
+// moduleID is the module a file belongs to, prefixed with the repository's
+// name, as import resolution names it (imports.Resolution.Module).
+func (g *repoGraph) moduleID(f *fileInfo) string {
+	return g.name + "/" + g.res.Module(f.File)
 }
 
 // module returns the file's module node. A package directory that also
@@ -144,9 +149,9 @@ func (g *repoGraph) module(f *fileInfo) *Node {
 	if !exists {
 		m = &Node{ID: id}
 	}
-	m.Kind, m.Label, m.Language = "module", path.Base(id), f.language
+	m.Kind, m.Label, m.Language = "module", path.Base(id), f.Language
 	if strings.HasSuffix(id, "/(root)") {
-		m.Label = f.namespace
+		m.Label = f.Namespace
 	}
 	g.modules[id] = m
 	if !exists {
@@ -170,244 +175,6 @@ func (g *repoGraph) attach(n *Node) {
 		g.attach(parent)
 	}
 	parent.children = append(parent.children, n)
-}
-
-func (g *repoGraph) resolveAll(ctx context.Context) {
-	idx := g.index()
-	for _, f := range g.files {
-		from := g.moduleID(f)
-		// Kotlin needs no import for its own package: a name the file uses
-		// that another file of the package declares is a dependency.
-		for _, to := range idx.samePackage(f) {
-			if to != from {
-				g.edges[[2]string{from, to}]++
-			}
-		}
-		for _, imp := range f.imports {
-			targets, external := idx.resolve(ctx, f, imp)
-			for _, to := range targets {
-				if to != from {
-					g.edges[[2]string{from, to}]++
-				}
-			}
-			if external != "" {
-				m := g.modules[from]
-				m.External = appendUnique(m.External, external)
-			}
-		}
-	}
-}
-
-// index maps the names imports use to module ids.
-type index struct {
-	g          *repoGraph
-	byFile     map[string]string   // repository-relative file without extension → module
-	byDotted   map[string]string   // Python module and package names → module
-	byImport   map[string]string   // Go import path → module
-	byPackage  map[string][]string // Kotlin package → modules
-	byKotlinFQ map[string]string   // Kotlin package.Name → module
-	tsconfigs  map[string]*tsAliases
-}
-
-func (g *repoGraph) index() *index {
-	idx := &index{g: g, byFile: map[string]string{}, byDotted: map[string]string{}, byImport: map[string]string{},
-		byPackage: map[string][]string{}, byKotlinFQ: map[string]string{}, tsconfigs: map[string]*tsAliases{}}
-	for _, f := range g.files {
-		id := g.moduleID(f)
-		switch f.language {
-		case "typescript":
-			idx.byFile[strings.TrimSuffix(f.rel, path.Ext(f.rel))] = id
-		case "python":
-			idx.byDotted[f.namespace] = id
-		case "go":
-			idx.byImport[f.namespace] = id
-		case "kotlin":
-			idx.byPackage[f.namespace] = appendUnique(idx.byPackage[f.namespace], id)
-			for _, name := range f.topLevel {
-				idx.byKotlinFQ[f.namespace+"."+name] = id
-			}
-		}
-	}
-	return idx
-}
-
-// resolve returns the project modules an import names, or the external
-// package it names, looking under ctx for what surrounds f.
-func (idx *index) resolve(ctx context.Context, f *fileInfo, imp lang.Import) (targets []string, external string) {
-	switch f.language {
-	case "typescript":
-		return idx.typescript(ctx, f, imp.Path)
-	case "python":
-		return idx.python(f, imp)
-	case "go":
-		if id, ok := idx.byImport[imp.Path]; ok {
-			return []string{id}, ""
-		}
-		return nil, imp.Path
-	case "kotlin":
-		return idx.kotlin(imp)
-	}
-	return nil, ""
-}
-
-var tsExtensions = []string{".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", ".cts"}
-
-func (idx *index) typescript(ctx context.Context, f *fileInfo, spec string) ([]string, string) {
-	if strings.HasPrefix(spec, ".") {
-		if id, ok := idx.tsFile(path.Join(path.Dir(f.rel), spec)); ok {
-			return []string{id}, ""
-		}
-		return nil, ""
-	}
-	// An alias from tsconfig paths or baseUrl names a project file.
-	for _, abs := range idx.aliases(ctx, f).resolve(spec) {
-		if id, ok := idx.tsFile(rel(idx.g.root, abs)); ok {
-			return []string{id}, ""
-		}
-	}
-	parts := strings.SplitN(spec, "/", 3)
-	if strings.HasPrefix(spec, "@") && len(parts) > 1 {
-		return nil, parts[0] + "/" + parts[1]
-	}
-	return nil, parts[0]
-}
-
-// tsFile finds the module a repository-relative import target names: the
-// file itself, or the index of a directory. ESM imports name the compiled
-// file, so ./a.js means a.ts.
-func (idx *index) tsFile(target string) (string, bool) {
-	for _, ext := range tsExtensions {
-		target = strings.TrimSuffix(target, ext)
-	}
-	for _, candidate := range []string{target, target + "/index"} {
-		if id, ok := idx.byFile[candidate]; ok {
-			return id, true
-		}
-	}
-	return "", false
-}
-
-// aliases are the tsconfig aliases that apply to f: those of the nearest
-// tsconfig.json above it, found under ctx.
-func (idx *index) aliases(ctx context.Context, f *fileInfo) *tsAliases {
-	dir := project.FindUp(ctx, f.abs, "tsconfig.json")
-	a, ok := idx.tsconfigs[dir]
-	if !ok {
-		a = &tsAliases{}
-		if dir != "" {
-			a = loadTSAliases(dir)
-		}
-		idx.tsconfigs[dir] = a
-	}
-	return a
-}
-
-func (idx *index) python(f *fileInfo, imp lang.Import) ([]string, string) {
-	module := imp.Path
-	if strings.HasPrefix(module, ".") {
-		dots := len(module) - len(strings.TrimLeft(module, "."))
-		pkg := strings.Split(f.namespace, ".")
-		if !strings.HasSuffix(f.rel, "__init__.py") {
-			pkg = pkg[:len(pkg)-1]
-		}
-		up := dots - 1
-		if up > len(pkg) {
-			return nil, ""
-		}
-		parts := append([]string{}, pkg[:len(pkg)-up]...)
-		if rest := strings.TrimLeft(module, "."); rest != "" {
-			parts = append(parts, rest)
-		}
-		module = strings.Join(parts, ".")
-	}
-	targets := idx.pythonModule(module, imp.Names)
-	if len(targets) == 0 && !strings.HasPrefix(imp.Path, ".") && f.test {
-		// pytest puts a test's directory on sys.path, so a test imports
-		// the modules beside it, such as a helper, by their bare names.
-		pkg := f.namespace
-		if !strings.HasSuffix(f.rel, "__init__.py") {
-			pkg = parentModule(pkg)
-		}
-		if pkg != "" {
-			targets = idx.pythonModule(join(pkg, module), imp.Names)
-		}
-	}
-	if len(targets) == 0 && !strings.HasPrefix(imp.Path, ".") {
-		return nil, strings.Split(module, ".")[0]
-	}
-	return targets, ""
-}
-
-// pythonModule is the modules from module import names depends on: a name
-// that is a submodule depends on it; otherwise the dependency is on module
-// itself, or the nearest package above it the index holds.
-func (idx *index) pythonModule(module string, names []string) []string {
-	var targets []string
-	onPackage := len(names) == 0
-	for _, name := range names {
-		if id, ok := idx.byDotted[join(module, name)]; ok {
-			targets = append(targets, id)
-		} else {
-			onPackage = true
-		}
-	}
-	if onPackage {
-		for m := module; m != ""; m = parentModule(m) {
-			if id, ok := idx.byDotted[m]; ok {
-				targets = append(targets, id)
-				break
-			}
-		}
-	}
-	return targets
-}
-
-// samePackage lists the modules of f's own Kotlin package that declare a
-// name f uses, once each.
-func (idx *index) samePackage(f *fileInfo) []string {
-	if f.language != "kotlin" {
-		return nil
-	}
-	var out []string
-	for _, name := range f.refs {
-		if id, ok := idx.byKotlinFQ[f.namespace+"."+name]; ok {
-			out = appendUnique(out, id)
-		}
-	}
-	return out
-}
-
-func (idx *index) kotlin(imp lang.Import) ([]string, string) {
-	if imp.Wildcard {
-		if ids, ok := idx.byPackage[imp.Path]; ok {
-			return ids, ""
-		}
-	}
-	// a.b.Outer.Inner imports from the file that declares a.b.Outer.
-	for name := imp.Path; name != ""; name = parentModule(name) {
-		if id, ok := idx.byKotlinFQ[name]; ok {
-			return []string{id}, ""
-		}
-	}
-	parts := strings.Split(imp.Path, ".")
-	if len(parts) > 2 {
-		return nil, strings.Join(parts[:2], ".")
-	}
-	return nil, imp.Path
-}
-
-func join(module, name string) string {
-	if module == "" {
-		return name
-	}
-	return module + "." + name
-}
-
-func parentModule(m string) string {
-	if i := strings.LastIndex(m, "."); i >= 0 {
-		return m[:i]
-	}
-	return ""
 }
 
 func appendUnique(list []string, s string) []string {
@@ -450,13 +217,4 @@ func (g *repoGraph) output(out *Graph) {
 		return edges[i].To < edges[j].To
 	})
 	out.Edges = append(out.Edges, edges...)
-}
-
-// rel is path relative to root with forward slashes.
-func rel(root, p string) string {
-	r, err := filepath.Rel(root, p)
-	if err != nil {
-		return filepath.ToSlash(p)
-	}
-	return filepath.ToSlash(r)
 }

@@ -1,4 +1,4 @@
-package graph
+package imports
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
-// TestsImporting finds the tests of each source file of files, as the graph
+// TestsImporting finds the tests of each source file of sources, as the graph
 // resolves imports. In TypeScript, Python and Kotlin they are the test files
 // that reach its module through the transitive closure of their imports
 // (Kotlin's same-package references included), as vitest related and jest
@@ -25,30 +25,31 @@ import (
 // and of the packages whose sources import it, one hop: a Go test that
 // reaches a package only through another is not among them. root is the
 // project root, which tsconfig aliases resolve against. Paths are those of
-// files, and each list is sorted. It reads under ctx, and once ctx is done
-// returns its cause.
-func TestsImporting(ctx context.Context, root string, files project.Files) (map[string][]string, error) {
-	sources, err := parseDependencies(ctx, root, files.Sources)
+// sources and tests, and each list is sorted. It reads under ctx, and once
+// ctx is done returns its cause.
+func TestsImporting(ctx context.Context, root string, sources, tests []string) (map[string][]string, error) {
+	parsedSources, err := parseDependencies(ctx, root, sources)
 	if err != nil {
 		return nil, stopped(ctx, err)
 	}
-	tests, err := parseDependencies(ctx, root, files.Tests)
+	parsedTests, err := parseDependencies(ctx, root, tests)
 	if err != nil {
 		return nil, stopped(ctx, err)
 	}
-	importing := importingTests(ctx, root, sources, tests)
+	importing := Reach(ctx, root, parsedSources, parsedTests)
 	if err := stopped(ctx, nil); err != nil {
 		return nil, err
 	}
 	return importing, nil
 }
 
-// importingTests is TestsImporting of sources and tests already parsed.
-func importingTests(ctx context.Context, root string, sources, tests []*fileInfo) map[string][]string {
-	g := newRepoGraph(ctx, "project", root, sources)
+// Reach is TestsImporting of sources and tests already parsed, by each
+// source's Abs.
+func Reach(ctx context.Context, root string, sources, tests []File) map[string][]string {
+	g := Resolve(ctx, root, sources)
 	// importers are the modules whose sources import each module.
 	importers := map[string]map[string]bool{}
-	for e := range g.edges {
+	for e := range g.Edges {
 		if importers[e[1]] == nil {
 			importers[e[1]] = map[string]bool{}
 		}
@@ -57,27 +58,29 @@ func importingTests(ctx context.Context, root string, sources, tests []*fileInfo
 	// all is the graph of the sources and every test but Go's, whose
 	// imports resolve to test files as well as sources: imported is the
 	// modules each module imports there.
-	all := append([]*fileInfo{}, sources...)
-	conftests := map[string]*fileInfo{} // by directory
-	for _, t := range tests {
-		if t.language == "go" {
+	all := append([]File{}, sources...)
+	conftests := map[string]*File{} // by directory
+	for i := range tests {
+		t := &tests[i]
+		if t.Language == "go" {
 			continue
 		}
-		all = append(all, t)
-		if t.language == "python" && filepath.Base(t.abs) == "conftest.py" {
-			conftests[filepath.Dir(t.abs)] = t
+		all = append(all, *t)
+		if t.Language == "python" && filepath.Base(t.Abs) == "conftest.py" {
+			conftests[filepath.Dir(t.Abs)] = t
 		}
 	}
-	whole := newRepoGraph(ctx, "project", root, all)
+	whole := Resolve(ctx, root, all)
 	imported := map[string][]string{}
-	for e := range whole.edges {
+	for e := range whole.Edges {
 		imported[e[0]] = append(imported[e[0]], e[1])
 	}
-	idx := g.index()
+	idx := g.idx
 	byModule := map[string][]string{}
-	for _, t := range tests {
+	for i := range tests {
+		t := &tests[i]
 		reaches := map[string]bool{}
-		if t.language == "go" {
+		if t.Language == "go" {
 			// Its own package and the packages that import it, one hop.
 			for _, imp := range t.imports {
 				targets, _ := idx.resolve(ctx, t, imp)
@@ -85,7 +88,7 @@ func importingTests(ctx context.Context, root string, sources, tests []*fileInfo
 					reaches[to] = true
 				}
 			}
-			own := g.moduleID(t)
+			own := moduleID(*t)
 			reaches[own] = true
 			for to, from := range importers {
 				if from[own] {
@@ -96,9 +99,9 @@ func importingTests(ctx context.Context, root string, sources, tests []*fileInfo
 			// Every module the test's imports reach, transitively, through
 			// sources and test files alike, from the test and the
 			// conftest.py files that apply to it.
-			queue := []string{whole.moduleID(t)}
+			queue := []string{moduleID(*t)}
 			for _, c := range applyingConftests(ctx, t, conftests, root) {
-				queue = append(queue, whole.moduleID(c))
+				queue = append(queue, moduleID(*c))
 			}
 			seen := map[string]bool{}
 			for len(queue) > 0 {
@@ -113,14 +116,14 @@ func importingTests(ctx context.Context, root string, sources, tests []*fileInfo
 			}
 		}
 		for m := range reaches {
-			byModule[m] = append(byModule[m], t.abs)
+			byModule[m] = append(byModule[m], t.Abs)
 		}
 	}
 	out := map[string][]string{}
 	for _, s := range sources {
-		list := append([]string{}, byModule[g.moduleID(s)]...)
+		list := append([]string{}, byModule[moduleID(s)]...)
 		sort.Strings(list)
-		out[s.abs] = slices.Compact(list)
+		out[s.Abs] = slices.Compact(list)
 	}
 	return out
 }
@@ -129,16 +132,16 @@ func importingTests(ctx context.Context, root string, sources, tests []*fileInfo
 // test file it runs or a conftest.py: those in its directory and each
 // directory above it, up to its build root, or root when it has none; none
 // for a helper or another language. Its build root is found under ctx.
-func applyingConftests(ctx context.Context, t *fileInfo, conftests map[string]*fileInfo, root string) []*fileInfo {
-	if t.language != "python" || len(conftests) == 0 || !coverage.PythonTestFile(t.abs) && filepath.Base(t.abs) != "conftest.py" {
+func applyingConftests(ctx context.Context, t *File, conftests map[string]*File, root string) []*File {
+	if t.Language != "python" || len(conftests) == 0 || !coverage.PythonTestFile(t.Abs) && filepath.Base(t.Abs) != "conftest.py" {
 		return nil
 	}
-	top := project.FindUp(ctx, t.abs, "pyproject.toml", "setup.py", "setup.cfg")
+	top := project.FindUp(ctx, t.Abs, "pyproject.toml", "setup.py", "setup.cfg")
 	if top == "" {
 		top = root
 	}
-	var out []*fileInfo
-	for dir := filepath.Dir(t.abs); ; dir = filepath.Dir(dir) {
+	var out []*File
+	for dir := filepath.Dir(t.Abs); ; dir = filepath.Dir(dir) {
 		if c := conftests[dir]; c != nil && c != t {
 			out = append(out, c)
 		}
@@ -150,15 +153,24 @@ func applyingConftests(ctx context.Context, t *fileInfo, conftests map[string]*f
 
 // parseDependencies parses each of paths under ctx for what the graph needs
 // to resolve its imports.
-func parseDependencies(ctx context.Context, root string, paths []string) ([]*fileInfo, error) {
-	var out []*fileInfo
+func parseDependencies(ctx context.Context, root string, paths []string) ([]File, error) {
+	var out []File
 	for _, path := range paths {
 		f, err := project.ParseFile(ctx, path)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, dependencies(root, f))
+		out = append(out, Of(root, f))
 		f.Close()
 	}
 	return out, nil
+}
+
+// stopped is the cause of ctx once it is done, or else err, so a call cut
+// short by a stopped run reports the stop, never what it left undone.
+func stopped(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return context.Cause(ctx)
+	}
+	return err
 }

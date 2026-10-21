@@ -1,4 +1,4 @@
-package graph
+package imports
 
 import (
 	"os"
@@ -54,7 +54,7 @@ func TestTheTestsOfAFileAreThoseThatReachIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tests, err := TestsImporting(t.Context(), root, files)
+	tests, err := TestsImporting(t.Context(), root, files.Sources, files.Tests)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestATestReachesThroughTheTestSupportFilesItUses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tests, err := TestsImporting(t.Context(), root, files)
+	tests, err := TestsImporting(t.Context(), root, files.Sources, files.Tests)
 	if err != nil {
 		t.Fatal(err)
 	}
