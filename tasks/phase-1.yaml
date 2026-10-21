@@ -5483,3 +5483,34 @@
     from that value. Problems, their wording, config.invalid failing only the command that reads it
     and lazy config for help are unchanged; no package moves. Move the settings contract's Exclude
     assertions to the selection contract, keeping what each checks.
+- id: T-148
+  type: refactor
+  title: Move dry into internal/slices/dry, its fingerprinting into lang
+  why: >
+    T-86 (ADR-0051), the second slice after units (T-145) and the first through T-146's generator.
+    First, in its own refactor commit, move duplication's Fingerprint and Jaccard
+    (internal/duplication/dry.go, about lines 211-330, syntax-tree fingerprinting over lang) into
+    internal/lang as an engine API, with their tests, because scrap's domain internal/teststructure
+    uses them too (analyze.go:165,184,202) and one slice may not import another. Then move
+    internal/dry to internal/slices/dry and its domain internal/duplication to
+    internal/slices/dry/domain, a subpackage keeping the domain apart from the slice's CLI and
+    application code (depguard's domain and domain-io rules and tools/bin/domain-coverage follow the
+    new path), their .metrics/mutate snapshots and itos-cc.yaml exceptions with them if any. The
+    slice declares Command and Ports and builds its handler with NewHandler(ctx, Ports) (Handler,
+    error), the shape T-146 settled; what dry needs that varies (the exclusion, the snapshot Store,
+    ui.Rel for naming files) comes through Ports methods cmd's adapters answer, reusing the names
+    other slices declare (SelectionTree, LangSurroundings and the rest), then the generator is rerun
+    and its output committed. Keep the move commit separate from the edits so history follows the
+    files. Steps stay in features/. Update .golangci.yml's globs,
+    tools/testdata/architecture/check_test.go's package lists, docs/go.md's package list,
+    docs/architecture.md and README's layout table. Help, errors, exit codes, lazy config and the
+    snapshot format unchanged.
+  done_when:
+    - run: go test -count=1 ./internal/lang/... ./internal/slices/dry/... ./internal/teststructure/...
+      timeout: 300
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(DRY|SCRAP|SNAP|CLI)-'
+      timeout: 600
+    - run: tools/bin/domain-coverage
+      timeout: 600
+    - run: tools/bin/architecture-check
+      timeout: 900

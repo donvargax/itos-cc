@@ -12,7 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-146
-  - slices-dry
+  - T-148
   - slices-scrap
   - slices-crap
   - slices-version
@@ -2793,7 +2793,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, slices-dry, slices-scrap, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, slices-scrap, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3927,29 +3927,19 @@ items:
     status: doing
     depends_on: [T-145]
     kind: task
-  - id: slices-dry
+  - id: T-148
     title: Move dry into internal/slices/dry, its fingerprinting into lang
     phase: 1
     owner: null
     status: todo
     depends_on: [T-146]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, inventory scratch t86-inventory.md section 6 R5): internal/dry and its domain
-      internal/duplication move into internal/slices/dry; duplication's Fingerprint and Jaccard
-      (internal/duplication/dry.go:211-330, about 120 lines), which scrap's internal/teststructure
-      also uses, move into internal/lang first, as an engine API. Update the domain, domain-io and
-      coverage-fakes globs in .golangci.yml and tools/bin/domain-coverage's reading of them. Checks:
-      -scenarios '^@ID-(DRY|SNAP)-' both drivers, domain-coverage, architecture-check.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-scrap
     title: Move scrap into internal/slices/scrap
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-dry]
+    depends_on: [T-148]
     kind: idea
     why: >
       T-86 (ADR-0051, R6): internal/scrap and internal/teststructure into internal/slices/scrap,
