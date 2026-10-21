@@ -346,6 +346,13 @@ a `context.Context` first (decision 30); pure logic takes none.
   `crap.json`'s entries are its `Entry`, which graph does not import: graph, legacy and outside
   the slices, decodes the fields it reads into a type of its own and keeps its own copy of the
   formula, `crapScore` (ADR-0051).
+- `internal/slices/version` is the `version` command's slice, the fifth under
+  `internal/slices` (T-155), with no domain of its own. `Command` declares it and `Ports` names
+  what `NewHandler(ctx, p)` builds the handler over: `BuildVersion`, the version the binary says
+  it is, which `adapters` answers with `internal/version`'s `Version()`, since no slice imports
+  `internal/version`. Its `Handler` holds that version, so `NewHandler` reads nothing and never
+  fails, and its `CLI`'s `Run` prints `itos-cc <version>`, or with `--json` the object of its
+  version alone. `--version` before any command is the same command (`cli.Dispatch`).
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. Its `Selection`,
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
@@ -361,8 +368,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   below says. Before any command reads its line, `Dispatch` reads the whole of it against
   kong's model of every command: the flags before a command (`--json`, `-h`, `--help`, and
   `--version`, the `version` command), the top-level help, `help <command>` and the guess for
-  an unknown command, and `Usage` prints the top-level help from the same model (T-114). It
-  holds the `version` command too, its version the one cmd works out (`Build`).
+  an unknown command, and `Usage` prints the top-level help from the same model (T-114).
 - `cmd/itos-cc` assembles everything: it makes the context, hands `internal/cli` each domain's
   classifier, and hands the context and the handler, over the ports in `adapters`, to `Run`
   through kong's bindings. `main` makes the program's one `context.Background()` and passes it to
@@ -382,9 +388,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   calls the `Run` of the command kong selected through one generic call (`runSelected`,
   `Context.Call` on `parsed.Selected()`'s `Run`, `--json` read from the parsed command),
   with no case per command. `parserOf` binds every handler, over the ports in `adapters`,
-  and `version`'s version (`versionString`, release stamps `-X main.version`) through kong
-  providers (`handlers`), which kong calls only when the `Run` it calls asks for their
-  value. The commands under `internal/slices` are not fields of `commandLine`: `assembled`
+  through kong providers (`handlers`), which kong calls only when the `Run` it calls asks for
+  their value. The commands under `internal/slices` are not fields of `commandLine`: `assembled`
   (`commands_gen.go`, which `tools/bin/assemble` writes from each slice's declaration, T-146)
   adds each slice's declaration with kong's `DynamicCommand`, a fresh command line each, in
   their names' order, and the provider of its handler, one shape for every slice,
@@ -425,9 +430,12 @@ a `context.Context` first (decision 30); pure logic takes none.
   `--coverage-command`, as every raw coverage flag, before it measures
   (`StrictCoverageFlag`); an ordinary run given a coverage command and no report logs
   `cli.CommandNeedsReport`'s words after configured listing and goes on without coverage.
-- `internal/version` says what the build is, and `internal/release` is the library of the
-  release tools that `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is
-  a command.
+- `internal/version` says what the build is, the one source of the version the binary
+  reports: a release stamps `-X github.com/donvargax/itos-cc/internal/version.stamp=<v>`
+  (`release.yml`, `.goreleaser.yaml`), as the scenario harness does, else Go's module version
+  is read, each without a leading v, else `dev`; cmd's `adapters` give it to the `version`
+  slice (`BuildVersion`). `internal/release` is the library of the release tools that
+  `tools/bin/release-version` and `tools/bin/release-notes` run. Neither is a command.
 
 A domain is shared, not part of any command, so a second command reuses it through its port
 without reaching into another command's package. A context carries cancellation and

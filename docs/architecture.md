@@ -79,6 +79,12 @@ language's rules for naming a file but reads nothing: it asks its `Surroundings`
 directory and a path made absolute, and `internal/workdir` answers it from the disk through
 `project`, as it answers the selection port.
 
+The `version` slice, `internal/slices/version`, the fifth under `internal/slices`, has no
+domain: it prints the version the binary says it is, which its one port, `BuildVersion`, gives
+it. cmd answers that port with `internal/version`, the one source of the version: a release's
+stamp, else the module version Go records, each without a leading v, else `dev`. No slice
+imports `internal/version` itself.
+
 The mutation group's slice, `internal/mutation`, runs its five commands over the mutation domain,
 `internal/mutants`, which owns sites, results and their judgment, and reaches its workers, tools,
 inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`).
