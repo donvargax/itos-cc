@@ -6432,7 +6432,7 @@
     prose alone. Starts after slice-38, whose rule it states.
   done_when:
     - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1
-    - run: for f in internal/slices/mutation/mutation.go internal/slices/mutation/run_contract.go internal/slices/crap/crap.go cmd/itos-cc/testdata/mutation-help.json; do rg -q Dart "$f" || exit 1; done
+    - run: for f in internal/slices/mutation/mutation.go internal/slices/mutation/run_contract.go internal/slices/crap/crap.go cmd/itos-cc/testdata/mutation-help.json; do grep -q Dart "$f" || exit 1; done
     - run: head -1 cmd/itos-cc/main.go | grep -q Dart
 - id: T-182
   type: docs
@@ -6462,6 +6462,6 @@
     inventory is in the brief.
   done_when:
     - run: head -5 README.md | grep -q Dart
-    - run: for f in README.md docs/CLI.md; do rg -q 'flutter test' "$f" || exit 1; done
-    - run: rg -q 'dart\.go' docs/go.md
-    - run: for f in docs/dart/touchpoints.md docs/dart/tooling.md; do head -12 "$f" | rg -q 'q-83' || exit 1; done
+    - run: for f in README.md docs/CLI.md; do grep -q 'flutter test' "$f" || exit 1; done
+    - run: grep -q 'dart\.go' docs/go.md
+    - run: for f in docs/dart/touchpoints.md docs/dart/tooling.md; do head -12 "$f" | grep -q 'q-83' || exit 1; done
