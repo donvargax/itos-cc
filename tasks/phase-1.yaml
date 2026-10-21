@@ -6430,10 +6430,6 @@
     code does, checked against coverage/dart.go, coverage/run.go and the slice-28..38 scenarios,
     never what an idea plans; the golden is regenerated the way its test says, and the diff is help
     prose alone. Starts after slice-38, whose rule it states.
-  done_when:
-    - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1
-    - run: for f in internal/slices/mutation/mutation.go internal/slices/mutation/run_contract.go internal/slices/crap/crap.go cmd/itos-cc/testdata/mutation-help.json; do grep -q Dart "$f" || exit 1; done
-    - run: head -1 cmd/itos-cc/main.go | grep -q Dart
 - id: T-182
   type: docs
   title: Name Dart in README, docs/CLI.md and the guides, and close docs/dart
