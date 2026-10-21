@@ -1014,26 +1014,42 @@ coordinates the work; an implementing agent uses `itos guide work`.
 
 ### Hooks
 
-A clone runs three hooks, each declared in its own `.git/config`, so a fresh clone has none until
-it declares them. `itos hook install` declares itos's own, `commit-msg` and `pre-push`. The
-project's `pre-commit` hook, [`tools/hooks/pre-commit`](tools/hooks/pre-commit), runs gofmt over
-the staged version of each Go file a commit adds, copies, modifies or renames, and names each one
-gofmt would change. It reads the index, not the working tree, so it refuses an unformatted staged
-file whose working copy was fixed later and accepts a formatted one with unstaged edits beside
-it. It formats nothing, stages nothing and skips deleted files; a commit with no staged Go file,
-prose alone for one, runs no gofmt. It needs `gofmt` on `PATH`, the Go toolchain's. Declare it
-once in each clone, from the top of the working tree:
+A clone runs four hooks, each declared in its own `.git/config`, so a fresh clone has none until
+it declares them, and every worktree of the clone runs what the clone declares. `itos hook
+install` declares itos's own, `commit-msg` and `pre-push`. The project's `pre-commit` hook,
+[`tools/hooks/pre-commit`](tools/hooks/pre-commit), runs gofmt over the staged version of each Go
+file a commit adds, copies, modifies or renames, and names each one gofmt would change. It reads
+the index, not the working tree, so it refuses an unformatted staged file whose working copy was
+fixed later and accepts a formatted one with unstaged edits beside it. It formats nothing, stages
+nothing and skips deleted files; a commit with no staged Go file, prose alone for one, runs no
+gofmt. It needs `gofmt` on `PATH`, the Go toolchain's.
+
+The project's `pre-push` hook, [`tools/hooks/pre-push`](tools/hooks/pre-push), runs after
+itos's and refuses the push, with vet's output, when `go vet ./...` fails on the working tree:
+vet compiles every package and its tests. `itos push` rebases onto the upstream and refuses
+tracked changes, so the working tree is the rebased HEAD about to land, and the hook catches two
+pushes that each compiled alone but clash together, two files of one package declaring the same
+name, before main stops compiling (T-177). It needs `go` on `PATH`, and costs a fraction of a
+second with the build cache warm, some seconds after a change to the module. golangci-lint and
+the tests stay in CI, so the hook stays that quick. Declare both hooks once in each clone, from
+the top of the working tree:
 
 ```sh
 git config hook.itos-cc-pre-commit.event pre-commit
 git config hook.itos-cc-pre-commit.command tools/hooks/pre-commit
+git config hook.itos-cc-pre-push.event pre-push
+git config hook.itos-cc-pre-push.command tools/hooks/pre-push
 ```
 
-Check what the clone declares with `git config --get-regexp '^hook\.'`, which lists the two
-lines above beside itos's four, and `git hook list pre-commit`, which names
-`tools/hooks/pre-commit`. `tools/bin/pre-commit-check` proves the hook itself: it declares it the
-same way in a temporary repository of its own and makes real commits there, accepted and refused
-(T-120). Neither proves another clone has declared it; that clone's `git config` does.
+Check what the clone declares with `git config --get-regexp '^hook\.'`, which lists the four
+lines above beside itos's four, `git hook list pre-commit`, which names `tools/hooks/pre-commit`,
+and `git hook list pre-push`, which names itos's hook and then `tools/hooks/pre-push`.
+`tools/bin/pre-commit-check` proves the first hook itself: it declares it the same way in a
+temporary repository of its own and makes real commits there, accepted and refused (T-120).
+`go run ./tools/bin/pre-push-check` proves the second: two clones of a local bare remote declare
+it, one pushes a helper, the other's helper of the same name compiles alone and is refused once
+rebased, with vet's message, and accepted once renamed. Neither proves another clone has
+declared them; that clone's `git config` does.
 
 The template, go-template-itos v0.2.0, brought `tools/hooks/pre-commit` running the pinned
 golangci-lint and the networked govulncheck over the whole module on every commit that staged

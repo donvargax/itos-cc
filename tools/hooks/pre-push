@@ -1,0 +1,36 @@
+#!/bin/sh
+# The project's pre-push hook: go vet ./... over the working tree, which
+# compiles every package of the module and its tests, refusing the push with
+# vet's output when one does not compile or vet finds a problem (T-177).
+# itos push rebases onto the upstream and refuses tracked changes, so the
+# working tree is the rebased HEAD about to be pushed: two pushes that each
+# compiled alone, but declare the same name in one package together, are
+# caught here rather than on main. It reads the pushed refs on standard input
+# not at all and changes nothing. itos's own hooks (commit-msg and pre-push)
+# are declared by itos hook install; this one is declared once in each clone
+# (README.md, Hooks), which every worktree of the clone shares, so it runs
+# after itos's pre-push:
+#
+#   git config hook.itos-cc-pre-push.event pre-push
+#   git config hook.itos-cc-pre-push.command tools/hooks/pre-push
+#
+# git runs it from the top of the working tree, under sh on every platform
+# (Git for Windows' on Windows). An untracked Go file in the working tree is
+# vetted too, though the push does not carry it. tools/bin/pre-push-check
+# proves it in a repository of its own with a local bare remote.
+#
+# Neither golangci-lint nor the tests: itos.yaml's CI plan and ci.yml run
+# both on every push (docs/go.md, Quality checks), and this hook stays a
+# matter of seconds, a fraction of one with the build cache warm.
+set -eu
+
+command -v go >/dev/null 2>&1 || {
+	echo "pre-push: go is not on PATH; the hook needs the Go toolchain" >&2
+	exit 1
+}
+
+if ! out=$(go vet ./... 2>&1); then
+	printf 'pre-push: go vet ./... failed on the working tree:\n%s\n' "$out" >&2
+	echo "pre-push: fix it, commit the fix and push again" >&2
+	exit 1
+fi
