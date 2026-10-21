@@ -58,12 +58,17 @@ domain's own `Report`, with no mapper. cmd's `classifyCoverage` turns each gap a
 its problem, for crap, which measures through the port, and mutation, which measures through
 its handler's bound coverage capability over the same adapter.
 
-The change-risk domain, `internal/changerisk`, scores each function by CRAP, its complexity
-weighed by how little of it the tests ran. It takes files `internal/lang` has parsed, with the
+The `crap` slice, `internal/slices/crap`, the fourth under `internal/slices`, scores each
+function by CRAP, its complexity weighed by how little of it the tests ran, through its own
+domain, `internal/slices/crap/domain`, which takes files `internal/lang` has parsed, with the
 names its caller gives them, and a coverage `Report`, and reads nothing, so it has no port. The
-`crap` slice, `internal/crap`, selects the sources and parses each through the selection
-domain, as `dry` does, measures their coverage through the coverage port's `Measurer`, and
-records its scores through the snapshot `Store`.
+slice selects the sources and parses each through the selection domain, as `dry` does,
+measures their coverage through the coverage port's `Measurer`, and records its scores through
+the snapshot `Store`, declaring its command and its ports as `dry` does, the `Measurer` among
+them: cmd answers it over the coverage engine, its commands run through the process-ownership
+engine, `internal/processes`, never through a mutation adapter. `serve`'s graph, legacy and
+outside the slices, imports nothing of crap's: it reads `crap.json` into a type of its own and
+keeps its own copy of the CRAP formula (ADR-0051).
 
 The `units` slice, `internal/slices/units`, is the first of itos-cc's commands on kong and the
 first under `internal/slices` (ADR-0051), declaring its command and the ports it needs for cmd

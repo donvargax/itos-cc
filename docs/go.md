@@ -100,13 +100,6 @@ a `context.Context` first (decision 30); pure logic takes none.
   skip...)` is the fingerprint set of the tree under a node of a parsed file, local names,
   field names and literals dropped, called names, operators and shape kept, each node hashed one
   and two levels deep, and `Jaccard(a, b)` the similarity of two such sorted sets.
-- `internal/changerisk` is the domain that scores functions by CRAP (decision 37), named for
-  what it is while the command keeps its name, `crap`. `Analyze(f, name, report, measured)`
-  takes a file `internal/lang` parsed, the name its caller gives it and a coverage `Report`;
-  `Measured(report, files)` is the languages the report speaks for among every file a run
-  scores, so a file it never names is untested rather than unknown. It reads nothing and has
-  no port; its tests parse in memory through lang's fake. The `crap` slice reads and
-  parses each source through the selection domain's `Parse`.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
@@ -323,20 +316,36 @@ a `context.Context` first (decision 30); pure logic takes none.
   reads nothing and has no port; its tests parse in memory through lang's fake. The `domain`
   and `domain-io` rules hold it as they hold the shared domains, and
   `tools/bin/domain-coverage` measures it.
-- `internal/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, its `Handler`
-  holding `dry`'s and the coverage domain's `Measurer`, `Coverage`. Its `CLI` takes the
-  coverage flags crap always took: `--coverage-report` is the first cumulative flag, each a
-  report, a comma no separator (`sep:"none"`), and `--threshold` is a pointer, nil when it is
-  not given, so 0 is a threshold. `Select` chooses the sources, so `Run` says how many
+- `internal/slices/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, and the
+  fourth under `internal/slices` (T-152). Its `Handler` holds `dry`'s and the coverage domain's
+  `Measurer`, `Coverage`. `Command` declares it and `Ports` names what `NewHandler(ctx, p)`
+  builds the handler over: `SelectionTree`, `LangSurroundings`, `SnapshotStore`, `Rel` and
+  `SelectionExclusion`, as `dry` declares them, and `CoverageMeasurer`, the coverage domain's
+  `Measurer`, which `adapters` answers with `coveragetools`' measurer over the coverage runner,
+  its commands run through `internal/processes`' executor (`coverageCommand`), never through a
+  mutation adapter. `NewHandler` returns the exclusion's failure as `adapters` worded it, so a
+  file that cannot be read is `config.invalid` for `crap` alone, and never for its help. Its
+  `CLI` takes the coverage flags crap always took: `--coverage-report` is the first cumulative
+  flag, each a report, a comma no separator (`sep:"none"`), and `--threshold` is a pointer, nil
+  when it is not given, so 0 is a threshold. `Select` chooses the sources, so `Run` says how many
   itos-cc.yaml left out, and that there is none to score, before anything is measured, and
   refuses `--coverage-command` with no `--coverage-report` only then; `Handle` measures them
   through `Coverage`, whose progress goes to the writer cmd gave its adapter, parses each as
-  `dry` does, scores it with `internal/changerisk` under its `Name` and records `crap.json`
-  through the `Store`, each file keyed from the root. `Run` prints the worst first, warns of
-  each build root or report coverage did not measure, named from the working directory
-  (`UI.Rel`), and with `--threshold` reports each as its gap's problem through the UI's
-  classifiers, beside each function above it. It has no classifier: the coverage domain's
-  is cmd's.
+  `dry` does, scores it with its domain under its `Name` and records `crap.json` through the
+  `Store`, each file keyed from the root. `Run` prints the worst first, warns of each build
+  root or report coverage did not measure, named from the working directory (`UI.Rel`), and
+  with `--threshold` reports each as its gap's problem through the UI's classifiers, beside
+  each function above it. It has no classifier: the coverage domain's is cmd's.
+- `internal/slices/crap/domain` is the `crap` slice's own domain (decision 37, ADR-0051),
+  scoring functions by CRAP; it was `internal/changerisk`. `Analyze(f, name, report,
+  measured)` takes a file `internal/lang` parsed, the name its caller gives it and a coverage
+  `Report`; `Measured(report, files)` is the languages the report speaks for among every file a
+  run scores, so a file it never names is untested rather than unknown. It reads nothing and
+  has no port; its tests parse in memory through lang's fake. The `domain` and `domain-io`
+  rules hold it as they hold the shared domains, and `tools/bin/domain-coverage` measures it.
+  `crap.json`'s entries are its `Entry`, which graph does not import: graph, legacy and outside
+  the slices, decodes the fields it reads into a type of its own and keeps its own copy of the
+  formula, `crapScore` (ADR-0051).
 - `internal/cli` is the UI every slice shares, and imports nothing of ours. Its `Selection`,
   `--changed` and the path arguments, is the command line every command selects its files by,
   embedded first in each slice's kong struct (T-63). It alone turns a
@@ -384,8 +393,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   `assembled` then puts the model's commands in their names' order (`byName`, in
   `dispatch.go`), the order `TestTheModelNamesEveryCommandInOrder` holds. The handlers of
   `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so each reads the file through the
-  selection engine's settings reader under the `Run`'s context in its own provider, `units`
-  and `dry` through their `Ports`' `SelectionExclusion`, which `adapters` answers with `settingsError`'s
+  selection engine's settings reader under the `Run`'s context in its own provider, through
+  its `Ports`' `SelectionExclusion`, which `adapters` answers with `settingsError`'s
   wording and `NewHandler` returns as it is, since kong wraps a dependent provider's error as
   `<type>: %w`: a file that cannot be read fails that command alone as `config.invalid`, the
   provider's error kong returns unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
@@ -409,7 +418,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   observation adapters, and reads a complete admitted snapshot before TypeScript probes. It holds the coverage domain's classifier,
   `classifyCoverage`, one case for each gap and each failure of the port, since `crap` and
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
-  `adapters`' `Coverage`; `mutation run` measures through its handler's `loadCoverage`,
+  `adapters`' `Coverage`, which its `Ports`' `CoverageMeasurer` gives it; `mutation run` measures through its handler's `loadCoverage`,
   which builds the request from its query and calls the separate `MutationCoverage`
   binding's `MeasureListed`. Strict coverage also calls that binding's
   `Inventory`; neither consumer constructs a real fallback. Strict coverage refuses
@@ -429,8 +438,8 @@ context-as-argument a context after any other parameter, tests included.
 `.golangci.yml` holds these arrows with depguard:
 
 - `domain`: the domains, their ports and their tests import nothing of ours but the domains and
-  their port subpackages, and never kong. A slice's own domain, `internal/slices/dry/domain` and
-  `internal/slices/scrap/domain`, is held as the others are, and left out of what a domain may
+  their port subpackages, and never kong. A slice's own domain, `internal/slices/dry/domain`,
+  `internal/slices/scrap/domain` and `internal/slices/crap/domain`, is held as the others are, and left out of what a domain may
   import, since it is no shared one. `config` imports `internal/mutants`, whose `Config`
   it aliases and whose `SettingsReader` its `Reader` implements, and `internal/selection/port`,
   whose `SettingsReader` it implements too, never the reverse.
