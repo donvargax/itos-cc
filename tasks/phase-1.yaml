@@ -6439,3 +6439,34 @@
     - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1
     - run: for f in internal/slices/mutation/mutation.go internal/slices/mutation/run_contract.go internal/slices/crap/crap.go cmd/itos-cc/testdata/mutation-help.json; do rg -q Dart "$f" || exit 1; done
     - run: head -1 cmd/itos-cc/main.go | grep -q Dart
+- id: T-182
+  type: docs
+  title: Name Dart in README, docs/CLI.md and the guides, and close docs/dart
+  why: >
+    dart-support's docs close (D11), its prose half, folding the idea dart-coverage-docs (name
+    Dart's coverage command, flutter test --no-pub --coverage with FVM's SDK preferred and a pure
+    Dart package unmeasured, in README's coverage and crap sections and docs/CLI.md). No prose doc
+    names Dart, though every command measures Flutter apps and packages since slice-28..38.
+    README.md (its language list, exclude, crap's tools, integration coverage, scoring, operators,
+    own tests, worker copies, listed collectors, strict lines and its evidence root and refusals,
+    =lines, counted runs, fail-fast, check's fingerprints, suite build roots, reach, scrap, graph
+    modules, adding a language, CI's real tools), docs/CLI.md (exit codes, reach, own tests,
+    coverage, strict, refusals, =lines), docs/go.md's resolver list (imports/dart.go),
+    docs/architecture.md's adding-a-language section (testinputs, freshenv, the features files a
+    language adds), features/README.md's tools (flutter, ITOS_CC_FLUTTER_TOOLS) and IDEAS.md (the
+    Dart grammar entry done; pointers to dart-pure-packages, dart-per-test-coverage,
+    dart-integration-tests, dart-cd-other-os) name Dart where they list languages or per-language
+    rules. docs/dart/touchpoints.md and tooling.md get a status line at the top saying D0-D11 are
+    done but D8 (dart-cd-other-os) and that the decisions taken are q-74..q-83 and the slices'
+    scenarios, and each stale line is corrected or struck, never silently left. Coordinator's calls,
+    2026-10-21: state only what the code does after slice-38, checked against coverage/dart.go,
+    coverage/run.go and the slice-28..38 scenarios, never what an idea plans; say plainly what Dart
+    lacks (no integration coverage, no listed-test collector, counted runs prove only Go's lines
+    strictly, no key brings back platform folders or generated Dart while q-80 is open). docs
+    commits, after slice-38 and T-181 (the help's wording, which the docs follow). The spot-by-spot
+    inventory is in the brief.
+  done_when:
+    - run: head -5 README.md | grep -q Dart
+    - run: for f in README.md docs/CLI.md; do rg -q 'flutter test' "$f" || exit 1; done
+    - run: rg -q 'dart\.go' docs/go.md
+    - run: for f in docs/dart/touchpoints.md docs/dart/tooling.md; do head -12 "$f" | rg -q 'q-83' || exit 1; done
