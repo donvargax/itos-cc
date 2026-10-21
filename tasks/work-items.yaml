@@ -12,11 +12,11 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-144
+  - T-147
   - T-145
   - T-146
   - slices-dry
   - slices-scrap
-  - T-147
   - slices-crap
   - slices-version
   - slices-mutation
