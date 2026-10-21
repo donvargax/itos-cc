@@ -6305,3 +6305,25 @@
   done_when:
     - run: go test ./tools/bin/notices/
     - run: go run ./tools/bin/notices -check
+- id: T-174
+  type: test
+  title: ID-MUT-135's ordinary mutant times out on a slow Windows runner
+  why: >
+    CD run 39633522425 (be31486, slice-28's close; all else green on all three systems, the Dart
+    grammar built everywhere) failed on test (windows-latest, features) at ID-MUT-135, 'A
+    selection's timeout comes from its own run': 'unexpected timeout map[column:11 line:31 offset:34
+    original:> outcome:timeout replacement:>=]', an ordinary mutant of features/mutate_listed.go's
+    slow project, not the one made to hang, timing out. Its selection's timeout is the factor 3
+    times ID-A-01's own baseline of about a second plus the fixed allowance (timeout-allowance), so
+    a mutant run that rebuilds or starts slower on a loaded Windows runner than its baseline did
+    crosses it. First seen there; the scenario passed in CD 39628468420 the run before. T-139 fixed
+    a bound of the same kind in MUT-13 and T-134 a macOS race: flaky gates hold dependency updates
+    and every push up for nothing. Find why that mutant's run outgrows the timeout itos-cc set: the
+    fixture (a baseline measured warm against a mutant run that compiles cold, a sleep the slow
+    project leans on) or the product (a baseline that leaves out what every mutant run pays, as
+    timeout-allowance meant to cover). Fix the cause where it is; never by raising the factor or the
+    allowance in the scenario until it passes, retrying, skipping or tagging it. A product change is
+    a fix with its own scenario evidence, red first if Linux can show it; if only Windows shows it,
+    say so. cd.yml's Windows features job judges: this item watches its own cd.yml run.
+  done_when:
+    - run: go test ./features -run 'TestFeatures/A_selection.s_timeout_comes_from_its_own_run' -count=1 -v
