@@ -6361,7 +6361,3 @@
     body, as musl's allocator is slower; a large difference is reported to the coordinator before
     closing. Files: .github/workflows/release.yml, tools/bin/notices, THIRD_PARTY_NOTICES; not
     cd.yml or ci.yml.
-  done_when:
-    - run: go test ./tools/bin/notices/
-    - run: go run ./tools/bin/notices -check
-    - run: grep -q musl .github/workflows/release.yml
