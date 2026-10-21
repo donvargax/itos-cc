@@ -5868,3 +5868,48 @@
       timeout: 120
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-161
+  type: refactor
+  title: Give the mutation slice its snapshot codec, exceptions writer and source edits
+  why: >
+    T-86 (ADR-0051, slices-mutation (c), plus the mutation adapter (b) left out). Three
+    mutation-only adapters live in shared packages; move each in one move commit separate from the
+    edits. (1) The mutation snapshot codec in internal/metricsdir: Mutations and MutationName
+    (mutations.go), the wire mirrors with their legacy go_evidence reading (mutation_codec.go) and
+    their tests (mutation_catalog_test.go, mutation_codec_test.go, mutation_codec_bytes_test.go,
+    mutation_legacy_evidence_test.go), to internal/slices/mutation/adapters/snapshots; it reads and
+    writes the domain's Snapshot through the snapshot port (Mutations{Store snapport.Store},
+    mutations.go:13) and its tests keep using metricsdir.Store. graph/build.go:293 and graph's tests
+    keep their own copy of MutationName, as graph keeps crapScore (ADR-0051), never importing the
+    slice's adapter. (2) config's exceptions writer: Exceptions{RootDir} (config/exceptions.go),
+    ExceptDocument and RenewDocument (exception_document.go) and their tests (exceptions_test.go,
+    exception_codec_test.go), to internal/slices/mutation/adapters/exceptions, wrapping config for
+    File, Parse and InvalidError plus yaml.v3; config's legacy Except, Renew and writeDocument
+    (config.go:255-290), which nothing outside config's tests calls, are deleted, any assertion of
+    their tests that the writer's tests lack moved onto ExceptDocument or RenewDocument first; the
+    Renewal alias (:253) goes. config keeps the one reading codec (Reader, Parse, Load, LoadFrom,
+    the Config, Exception and Tests aliases): Parse still checks mutation.exceptions and
+    mutation.tests for every command (T-147), so config still imports the domain. (3)
+    internal/workdir's SourceEdits (source_edits.go: the domain's SourceEdits, SourcePresence and
+    SourceStatus over the disk) with annotation_legacy_test.go, source_edits_test.go,
+    source_presence_test.go and source_status_test.go, to internal/slices/mutation/adapters/sources.
+    Importers change: cmd/itos-cc/adapters.go (diskAdapters :136-140), cmd's tests using the codec,
+    ExceptDocument, RenewDocument or workdir.SourceEdits, scenarios_test.go's in-process driver.
+    Ports unchanged. Rules: three adapter rules (snapshots allows the domain and the snapshot port;
+    exceptions the domain and config; sources the domain); metricsdir's and workdir's rules drop the
+    domain. check_test.go's adapter table and lists follow. Unchanged: snapshot bytes and keys, the
+    legacy evidence keys, an entry's YAML form, itos-cc.yaml's kept comments and file mode, the
+    annotation, every message and exit code. docs/go.md (metricsdir :67-83, workdir :60-66, mutants'
+    codec sentence :156-160, the metricsdir/workdir boundary bullet), docs/architecture.md:13-22,
+    README's layout rows, features/README.md's internal/workdir paths (:853, :866, :910).
+  done_when:
+    - run: go test -count=1 ./internal/slices/mutation/adapters/... ./internal/metricsdir/... ./internal/workdir/... ./config/... ./graph/...
+      timeout: 900
+    - run: go vet ./...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestMemory.*|TestOrphan.*|TestRemovingOrphansStaysInsideTheSnapshots|TestAnException.*|TestRenewingTakesNoSiteAndNoReason|TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule|TestAnInvalidItosCcYamlIsAConfigError|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(MUT|SNAP|CLI)-'
+      timeout: 900
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/architecture-check
+      timeout: 900

@@ -4302,3 +4302,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-161
+    title: Give the mutation slice its snapshot codec, exceptions writer and source edits
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
