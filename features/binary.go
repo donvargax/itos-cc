@@ -112,7 +112,7 @@ const (
 // that did not install the pinned tools skips a scenario needing node or
 // python: its runner's preinstalled ones are whatever version its image has.
 // Dart needs flutter, and has the project resolved as its user would
-// (flutterProject).
+// (coverageDartProject).
 func (b binary) Coverage(dir string, c Coverage) error {
 	if err := c.Validate(); err != nil {
 		return err
@@ -179,7 +179,7 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		if err != nil {
 			return missing("flutter")
 		}
-		if err := flutterProject(dir, flutter, required); err != nil {
+		if err := coverageDartProject(dir, flutter, required); err != nil {
 			return err
 		}
 	default:
@@ -193,13 +193,13 @@ func (b binary) Coverage(dir string, c Coverage) error {
 	return nil
 }
 
-// flutterProject readies the Flutter project at dir as its user would
+// coverageDartProject readies the Flutter project at dir as its user would
 // before measuring it, with flutter, the one on the PATH: where dir holds a
 // .fvmrc, it links .fvm/flutter_sdk to flutter's SDK, as fvm use does; then
 // it resolves the project's dependencies with flutter pub get, from the pub
 // cache alone when that holds them, and pub.dev otherwise. itos-cc never
 // resolves a project itself (decision 26), so this is the fixture's.
-func flutterProject(dir, flutter string, required bool) error {
+func coverageDartProject(dir, flutter string, required bool) error {
 	if _, err := os.Stat(filepath.Join(dir, ".fvmrc")); err == nil {
 		real, err := filepath.EvalSymlinks(flutter)
 		if err != nil {

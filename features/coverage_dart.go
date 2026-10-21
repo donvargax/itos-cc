@@ -11,22 +11,22 @@ import (
 // The Dart projects coverage.feature measures, Flutter apps and packages
 // that flutter test runs (slice-32), and what is checked of their runs.
 
-// dartSource is a Dart library of two functions: place, whose if runs only
-// for an a over 1, and other.
-const dartSource = "int place(int a) {\n  var n = 0;\n  if (a > 1) {\n    n = 1;\n  }\n  return n;\n}\n\n" +
+// coverageDartSource is a Dart library of two functions: place, whose if
+// runs only for an a over 1, and other.
+const coverageDartSource = "int place(int a) {\n  var n = 0;\n  if (a > 1) {\n    n = 1;\n  }\n  return n;\n}\n\n" +
 	"int other(int a) {\n  return a + 1;\n}\n"
 
-// dartTest is a flutter_test test of the package pkg that imports its
-// lib/board.dart and calls call.
-func dartTest(pkg, call string) string {
+// coverageDartTest is a flutter_test test of the package pkg that imports
+// its lib/board.dart and calls call.
+func coverageDartTest(pkg, call string) string {
 	return "import 'package:flutter_test/flutter_test.dart';\nimport 'package:" + pkg + "/board.dart';\n\n" +
 		"void main() {\n  test('board', () {\n    expect(" + call + ", isNotNull);\n  });\n}\n"
 }
 
-// flutterManifest is the pubspec.yaml of the Flutter package name, which
-// depends on the flutter SDK and tests with flutter_test, a pub workspace's
-// member when member says so.
-func flutterManifest(name string, member bool) string {
+// coverageDartFlutterPubspec is the pubspec.yaml of the Flutter package
+// name, which depends on the flutter SDK and tests with flutter_test, a pub
+// workspace's member when member says so.
+func coverageDartFlutterPubspec(name string, member bool) string {
 	text := "name: " + name + "\npublish_to: none\nenvironment:\n  sdk: ^3.6.0\n"
 	if member {
 		text += "resolution: workspace\n"
@@ -34,9 +34,9 @@ func flutterManifest(name string, member bool) string {
 	return text + "dependencies:\n  flutter:\n    sdk: flutter\ndev_dependencies:\n  flutter_test:\n    sdk: flutter\n"
 }
 
-// dartPubspec is the pubspec.yaml of the Dart package name, which depends
-// on nothing, the flutter SDK neither.
-func dartPubspec(name string) string {
+// coverageDartPubspec is the pubspec.yaml of the Dart package name, which
+// depends on nothing, the flutter SDK neither.
+func coverageDartPubspec(name string) string {
 	return "name: " + name + "\npublish_to: none\nenvironment:\n  sdk: ^3.6.0\n"
 }
 
@@ -45,9 +45,9 @@ func dartPubspec(name string) string {
 func (c *coverageState) flutterApp(dir string) error {
 	c.roots[dir] = "dart"
 	return c.writeIn(dir, map[string]string{
-		"pubspec.yaml":         flutterManifest("board", false),
-		"lib/board.dart":       dartSource,
-		"test/board_test.dart": dartTest("board", "place(5)"),
+		"pubspec.yaml":         coverageDartFlutterPubspec("board", false),
+		"lib/board.dart":       coverageDartSource,
+		"test/board_test.dart": coverageDartTest("board", "place(5)"),
 	})
 }
 
@@ -57,9 +57,9 @@ func (c *coverageState) flutterApp(dir string) error {
 func (c *coverageState) dartProject() map[string]string {
 	c.roots["."] = "dart"
 	return map[string]string{
-		"pubspec.yaml":         dartPubspec("board"),
-		"lib/board.dart":       dartSource,
-		"test/board_test.dart": dartTest("board", "place(5)"),
+		"pubspec.yaml":         coverageDartPubspec("board"),
+		"lib/board.dart":       coverageDartSource,
+		"test/board_test.dart": coverageDartTest("board", "place(5)"),
 	}
 }
 
@@ -73,7 +73,7 @@ func (c *coverageState) flutterDependency() error {
 	if !strings.HasPrefix(string(data), "name: board\n") {
 		return fmt.Errorf("the project's pubspec.yaml is not board's: %s", data)
 	}
-	if err := c.w.write("pubspec.yaml", flutterManifest("board", false)); err != nil {
+	if err := c.w.write("pubspec.yaml", coverageDartFlutterPubspec("board", false)); err != nil {
 		return err
 	}
 	return c.declare(".", Coverage{Language: "dart"})
@@ -156,8 +156,8 @@ func (c *coverageState) fvmRunsTests() error {
 func (c *coverageState) pureDart() error {
 	c.roots["."] = "dart"
 	return c.writeIn(".", map[string]string{
-		"pubspec.yaml":         dartPubspec("board"),
-		"lib/board.dart":       dartSource,
+		"pubspec.yaml":         coverageDartPubspec("board"),
+		"lib/board.dart":       coverageDartSource,
 		"test/board_test.dart": "import 'package:test/test.dart';\nimport 'package:board/board.dart';\n\nvoid main() {\n  test('board', () {\n    expect(place(5), 1);\n  });\n}\n",
 	})
 }
@@ -184,12 +184,12 @@ func (c *coverageState) onlyFlutterMeasured() error {
 // does not. It declares the Flutter that measures them, resolving the
 // workspace at its root.
 func (c *coverageState) pubWorkspace(a, b string) error {
-	root := dartPubspec("workspace") + "workspace:\n  - " + a + "\n  - " + b + "\n"
+	root := coverageDartPubspec("workspace") + "workspace:\n  - " + a + "\n  - " + b + "\n"
 	files := map[string]string{"pubspec.yaml": root}
 	for member, call := range map[string]string{a: "place(5)", b: "other(1)"} {
-		files[member+"/pubspec.yaml"] = flutterManifest(member, true)
-		files[member+"/lib/board.dart"] = dartSource
-		files[member+"/test/board_test.dart"] = dartTest(member, call)
+		files[member+"/pubspec.yaml"] = coverageDartFlutterPubspec(member, true)
+		files[member+"/lib/board.dart"] = coverageDartSource
+		files[member+"/test/board_test.dart"] = coverageDartTest(member, call)
 		c.roots[member] = "dart"
 	}
 	if err := c.writeIn(".", files); err != nil {
