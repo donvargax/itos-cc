@@ -4794,3 +4794,17 @@ items:
       test imports, and flutter_test_config.dart, which flutter test loads for every test file at
       and below its directory without an import, as pytest loads conftest.py. Scenarios MUT-215's
       and MUT-219's Dart rows, MUT-263.
+  - id: wip-scenarios-locally
+    title: Run @wip scenarios locally without editing their tags
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Implementing agents (slice-28, slice-30, 2026-10-21) show red first by removing @wip from the
+      feature files with sed, running, and restoring them by hand before the test commit, a step
+      that can leave a tag removed or staged by mistake. The features harness could take the IDs or
+      the slice tag to run with @wip included, for example an environment variable or a -godog.tags
+      value the test reads, so red-first runs touch no file. Settle the knob in the spec; CI never
+      sets it.
