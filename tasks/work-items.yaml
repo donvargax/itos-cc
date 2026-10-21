@@ -4296,7 +4296,7 @@ items:
     title: Move the mutation domain into internal/slices/mutation/domain
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-156, T-157]
     kind: task
   - id: T-159

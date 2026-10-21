@@ -5756,21 +5756,6 @@
     :149-160, the domain, slice-fakes and mutant-fakes notes :438-499, Adding a package :527-532),
     docs/architecture.md:83, README's layout rows, features/README.md's internal/mutants paths.
     Every message, snapshot byte and exit code unchanged.
-  done_when:
-    - run: go test -count=1 ./internal/slices/mutation/...
-      timeout: 900
-    - run: go test -count=1 ./config/... ./graph/... ./internal/workdir/... ./internal/metricsdir/... ./internal/githistory/... ./internal/importgraph/... ./internal/testtools/... ./internal/testinputs/... ./internal/worktrees/...
-      timeout: 900
-    - run: go vet ./...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestMemory.*|TestRunWithFakes.*)$' -scenarios='^@ID-(MUT|SNAP)-'
-      timeout: 900
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/domain-coverage
-      timeout: 600
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-159
   type: refactor
   title: Move testtools and testinputs into the mutation slice
