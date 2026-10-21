@@ -34,3 +34,5 @@ Supersedes ADR-0029's layout; its arrows stay (a domain imports no adapter, UI, 
 ## More Information
 
 Supersedes ADR-0029.
+
+Amended by ADR-0053: the in-process driver's adapters, which this record says are generated, stay hand-written per port in an inProcessAdapters provider beside diskAdapters, a test holding every port bound on disk and in process. The generated command assembly and step registration stand.
