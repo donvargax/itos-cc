@@ -3964,7 +3964,7 @@ items:
     title: Take the exclude setting out of mutation's Config
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: slices-crap

@@ -5474,8 +5474,3 @@
     from that value. Problems, their wording, config.invalid failing only the command that reads it
     and lazy config for help are unchanged; no package moves. Move the settings contract's Exclude
     assertions to the selection contract, keeping what each checks.
-  done_when:
-    - run: go test -count=1 ./config/... ./internal/selection/... ./internal/mutants/... ./internal/mutation/...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestRunWithFakesReadsTheConfigGiven)$' -scenarios='^@ID-(SEL|CLI|UNIT|DRY|CRAP|MUT)-'
-      timeout: 600
