@@ -5247,3 +5247,16 @@ items:
       Python and Kotlin record it too (testinputs.SuiteTestHashes, domain.SuiteOf); T-181 added only
       Dart's sentence there. The help should say what every language does.
     refs: [T-181]
+  - id: mutation-help-golden-update
+    title: TestMutationHelpPreservesOriginalBytes says how to regenerate its golden
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-181's agent, 2026-10-21: cmd/itos-cc/testdata/mutation-help.json has no update flag and its
+      test does not say how to rebuild it, so T-181 wrote a throwaway test rendering every page with
+      @WORKERS@ put back, then rewrote the JSON by script. A -update flag, or the recipe in the
+      test's comment, makes the next help change one command.
+    refs: [T-181]
