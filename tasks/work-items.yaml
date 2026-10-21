@@ -4135,3 +4135,17 @@ items:
       test that runs locally where it is cheap, else accepted as CD's; never a fake standing in for
       the real tool a scenario checks. UNIT-06's binary-only reason (crap and mutation run still
       hand-parsed) is stale since T-100 and T-152: check it can run in process.
+  - id: step-strictness-opt-in
+    title: Make step-strictness opt into the binary driver
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      After T-153 (decision 52) TestFeatures runs only where ITOS_CC_FEATURES_BINARY_DRIVER is 1 or
+      ITOS_CC_FEATURES_BINARY names a binary. tools/bin/step-strictness (exec.go) runs go test
+      ./features -run ^TestFeatures$ with the caller environment and reads the cucumber.json it asks
+      for; run locally without the variable, TestFeatures runs nothing and writes no report, so the
+      tool fails on a missing file instead of judging the plan. It should set the variable for its
+      child, or refuse up front naming it.
