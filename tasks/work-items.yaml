@@ -5072,3 +5072,18 @@ items:
       internal/cli's comments cite q-54 for the precedence and the problem's exit, which decision 34
       records. A lint message or comment naming a dead record sends a reader to the wrong one.
       Comments and desc strings only, a refactor or chore commit with no behaviour change.
+  - id: coverage-os-as-value
+    title: The coverage runner takes the OS as a value
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found while drafting the architecture guide (2026-10-21): the top-level coverage runner
+      branches on runtime.GOOS inside its logic, at coverage/collector.go (about line 226),
+      coverage/pertest.go (about 369) and coverage/supervised.go (about 215), against AGENTS.md's
+      rule that code differing by OS takes the OS as a value detected once at the boundary, as
+      diskAdapters passes Platform to processes, worktrees and testtools. Thread a platform value
+      from cmd through the runner's entry points, so tests can give any OS, with no behaviour change
+      on the real one.
