@@ -351,7 +351,10 @@ if a Dart-specific setting is added.
 | `@binary-only` scenarios | the real-tool ones (counted offline run, cache hygiene like MUT-214, parallel data like MUT-233) carry `@binary-only` with a reason in `features/README.md` (`:40-41`, `:1232`) |
 
 No `.feature` file is per-language: Dart joins existing files as Examples rows or new scenarios, so
-`features/steps.go` `Converted`/`InProcess` (`:344,396`) and `features/smoke.yaml` need **no** edit.
+the scenario registration (`features/steps_gen.go`, which `tools/bin/assemble` writes from each
+step file's `featureFile` declaration since T-164, replacing `steps.go`'s `Converted`/`InProcess`
+hand lists) and `features/smoke.yaml` need **no** edit; only a new `.feature` file would add a
+declaration beside its steps and rerun assemble.
 Scenario IDs continue each file's sequence (next free IDs are the coordinator's to hand out to avoid
 collisions).
 

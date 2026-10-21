@@ -662,7 +662,14 @@ command from reaching into this one.
   in its name's order and its handler's provider. Never edit that file by hand: CI's static
   step `go run ./tools/bin/assemble -check` fails, naming it, when it differs from what the
   slices declare. The generator refuses, naming the slice, a folder under `internal/slices`
-  with no `Command`, a `Command` with no `Ports`, and two slices with one name.
+  with no `Command`, a `Command` with no `Ports`, and two slices with one name. A new feature
+  file's steps get a declaration beside their initializer in `features/<file>.go`,
+  `var <name> = featureFile{Name: "<file>.feature", Steps: <initializer>}`, its Name a string
+  literal; rerun `go run ./tools/bin/assemble` and commit `features/steps_gen.go`, which lists
+  every declaration in its Name's order, the files both drivers run (`Converted`) and the
+  order their steps register in. It refuses, naming the Go file or files, a Name that is no
+  non-empty string literal, a declaration with no Steps, two of one Name and a Name with no
+  such file in `features/`; `-check` names that file too when it is not current.
 - A slice's own domain: put it in the slice's `domain` subpackage, as
   `internal/slices/dry/domain`, and add its folder as a `**/internal/slices/<command>/domain/**`
   glob to `domain`, `domain-io` and `coverage-fakes`, and as an exclusion to `slice-packages`,
@@ -814,18 +821,20 @@ follows the same steps for a command it wrote before it had the template's desig
    commands print through the same `Page`. The help flag's text is set in `parserOf`. Help
    for `<command> --help` and `help <command>` both go through `modelHelp`.
 8. **Its scenarios run through godog.** Convert the command's feature file before the move,
-   so its scenarios hold it: its steps in `features/<file>.go`, registered from `Initialize`
-   in `steps.go`, reaching the world only through its `Driver` and reading only what itos-cc
-   prints and writes, and the file added to `Converted` in `steps.go`. The binary driver then
+   so its scenarios hold it: its steps in `features/<file>.go`, reaching the world only
+   through its `Driver` and reading only what itos-cc prints and writes, declared beside
+   their initializer (`featureFile`, "Adding a package" above), and `go run
+   ./tools/bin/assemble` rerun, which lists the file in `features/steps_gen.go`, so it joins
+   `Converted` and `Initialize` registers its steps. The binary driver then
    runs its scenarios (Tests, below); a Given whose run measures coverage with the project's
    own tools declares them (`Driver.Coverage`), and one whose run runs the project's tests
    declares what they do (`Driver.Tests`): the binary driver skips the scenario where their
    tools are not installed, and the in-process driver records it for its fakes. A file too
    large for one task converts in pieces, the scenarios still without steps listed in
    `features.Unstepped`, which no run selects (mutate.feature, T-70 to T-81, its @wip
-   Windows ownership scenarios still listed). The move adds the file to `InProcess`, and its scenarios run
-   through the in-process driver too, the moved command needing nothing more of it than the
-   ports in `adapters`. Never tag a scenario `@binary-only` because its command has not
+   Windows ownership scenarios still listed). The in-process driver runs every converted file
+   too, every command they ran having moved (T-114), so a new file's scenarios run in process
+   as well, its command needing nothing more of the driver than the ports in `adapters`. Never tag a scenario `@binary-only` because its command has not
    moved: the tag says the binary's for good, as for a scenario about the real tools' commands
    (crap.feature's ID-CRAP-02). A live scenario's text never changes outside a `feat` or a
    `fix`; write the step for the sentence as it stands, or stop and say which scenario cannot
@@ -1009,11 +1018,14 @@ side is wrong, never by leaving the case out; the fake's lists of skipped direct
 build output are copies of `project`'s, which the suite keeps honest.
 
 The scenarios in `features/` run through godog with two drivers (decision 44), the same steps
-of package `features` behind its `Driver`. `features`' `TestFeatures` runs every converted
+of package `features` behind its `Driver`. A converted file is one whose steps declare it
+(`featureFile`), listed by `tools/bin/assemble` in `features/steps_gen.go`, in its name's
+order, the order `Converted` names the files and their steps and hooks register in (T-164).
+`features`' `TestFeatures` runs every converted
 file against the built binary (`binary.go`), which proves main's wiring, the real adapters and
 tools and exit codes. Its interrupt steps, which signal serve, crap or a shell running itos-cc
-once its output shows it under way, are the binary's alone (`interrupt_test.go`). `cmd/itos-cc`'s `TestScenarios` runs the files of the moved commands
-(`InProcess`), every converted file since `cli.feature` joined it (T-114), in process: its driver, a `_test.go`, holds every
+once its output shows it under way, are the binary's alone (`interrupt_test.go`). `cmd/itos-cc`'s `TestScenarios` runs every converted file too
+(`Converted`), every command they run having moved onto kong since `cli.feature`'s did (T-114), in process: its driver, a `_test.go`, holds every
 folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
 renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
 porttest's fakes built from that memory: `TreeOf` over the whole scratch folder, files
@@ -1033,7 +1045,7 @@ repository. It refuses `serve`, still on its legacy handler, so nothing reaches 
 or network. A scenario only one driver can run carries `@binary-only` or `@in-process-only`,
 never a copy, and the other passes it by; a step a driver cannot do fails naming the tag, or
 skips with a typed reason (`features.ErrPhysicalUnsupported`), which the in-process run logs.
-`features.Deferred` names the scenarios of `InProcess` files the in-process driver leaves to
+`features.Deferred` names the scenarios of converted files the in-process driver leaves to
 the binary for now, each with why and the work that owns it: the five mutation scenarios
 that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
 T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-code row that

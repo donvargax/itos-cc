@@ -19,7 +19,7 @@ Never here:
 
 ## Black-box boundary
 
-The steps (`steps.go`, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
+The steps (`steps.go`, with `steps_gen.go`, which `tools/bin/assemble` writes, `units.go`, `dry.go`, `scrap.go`, `crap.go`, `complexity.go`,
 `coverage.go`, `selection.go`, `cli.go`, `metrics_snapshots.go`, and `mutate.go` with its
 pieces, `mutate_*.go`, Go, run by [godog](https://github.com/cucumber/godog)) treat itos-cc as a black
 box. They reach the world only through a `Driver` (`steps.go`): a fresh folder, files written and
@@ -35,9 +35,11 @@ itos-cc as a release, go install or a person's go build makes them (`Build`, run
 Two drivers run them, one scenario at a time each: `cmd/itos-cc`'s `TestScenarios` in process,
 its driver holding every folder and file in memory with a fake git and calling itos-cc's `run`
 against the ports' fakes, and `TestFeatures` through the binary driver (`binary.go`). The binary
-driver runs every converted file; the in-process driver only those of the commands moved onto
-kong, the ones `InProcess` lists in `steps.go`, a file joining it when its command moves. A
-scenario only one driver can run, for good, carries `@binary-only` or `@in-process-only`, never a
+driver and the in-process driver both run every converted file, every command one runs having
+moved onto kong (T-114): a file is converted when the file of its steps declares it beside
+their initializer, `var unitsFeature = featureFile{Name: "units.feature", Steps: unitSteps}`,
+and `go run ./tools/bin/assemble` lists the declaration in `steps_gen.go` (T-164), which no one
+edits by hand. A scenario only one driver can run, for good, carries `@binary-only` or `@in-process-only`, never a
 copy, and the other driver passes it by; `@binary-only` never means "not moved yet". The
 in-process driver refuses `serve`, the one command still on its legacy handler, which reaches
 the real disk and network, naming `features.Deferred`; a run's variables (`Run.Env`) reach the
@@ -137,10 +139,17 @@ signal whose default action ended a run, its `Exit` then -1.
 
 ## Which files run
 
-The harness runs the feature files that have steps, the ones `Converted` lists in
-`steps.go`: `units.feature`, `dry.feature`, `scrap.feature`, `crap.feature`,
-`complexity.feature`, `coverage.feature`, `file_selection.feature`, `cli.feature`,
-`mutate.feature` and `metrics_snapshots.feature`. The template's sample `count.feature` went
+The harness runs the feature files that have steps, the ones `Converted` names in `steps.go`,
+in their names' order: each declared beside its steps' initializer (`featureFile`), in
+`cli.go`, `complexity.go`, `coverage.go`, `crap.go`, `dry.go`, `selection.go`
+(`file_selection.feature`), `metrics_snapshots.go`, `mutate.go`, `scrap.go` and `units.go`, and
+listed in `steps_gen.go` by `go run ./tools/bin/assemble`, which CI's static step holds current
+(`-check`). Their steps and hooks register in that order too; every file's steps are registered
+for every scenario, since files share sentences, godog runs Strict, so a sentence two files
+match is an error, and each file's hooks act on its own state, or on the world only in a
+scenario of its own file, so the order chooses nothing. A file with steps gets a declaration and
+a rerun of assemble, which refuses a Name that is no non-empty string literal, a declaration
+with no Steps, two of one Name and a Name with no such file here. The template's sample `count.feature` went
 with its sample app (q-48, T-116). `mutate.feature` converted a piece at a
 time (T-70 to T-81); the scenarios still without steps are listed in `Unstepped` (`steps.go`), by
 their IDs, and run nowhere: today the four `@wip` Windows ownership scenarios, ID-MUT-169 to 172,
@@ -156,17 +165,17 @@ selection that names a scenario of such a file, as the smoke set does for every 
 not run here and runs the rest; one that names nothing a converted file holds fails, as one
 matching no tag does.
 
-The in-process driver runs those of `InProcess`, every one of them now. `mutate.feature` joined
-it when the mutation group moved (T-125), `metrics_snapshots.feature` once the mutation commands
-it runs had moved (T-101), and `cli.feature` once `version` and the top-level dispatch had moved
-onto the one kong model (T-114). Its `ID-CLI-03` is `@binary-only` for good, each row building
-itos-cc as a release, `go install` or a checkout's `go build` makes it. In process, a
-selection naming a scenario of a converted file not in `InProcess` logs it as binary driver only
-until its command moves, and one naming nothing else runs nothing there and passes, the binary
-driver running it.
+The in-process driver runs every one of them too. `mutate.feature` joined it when the mutation
+group moved (T-125), `metrics_snapshots.feature` once the mutation commands it runs had moved
+(T-101), and `cli.feature` once `version` and the top-level dispatch had moved onto the one kong
+model (T-114), after which its own list, equal to `Converted`, went (T-164). Its `ID-CLI-03` is
+`@binary-only` for good, each row building itos-cc as a release, `go install` or a checkout's
+`go build` makes it. `TagFilter` still takes the files a driver runs, so a selection naming a
+scenario of a converted file the driver did not run would log it as binary driver only
+(`Unmoved`) and pass; with both drivers running `Converted`, none is left.
 
 `Deferred` (`deferred.go`) names, by ID tag, or by the tag of the Examples block holding the
-rows it leaves, the scenarios of `InProcess` files that the in-process driver leaves to the
+rows it leaves, the scenarios of converted files that the in-process driver leaves to the
 binary driver for now, each with why, naming the work that owns it. Unlike `@binary-only`, which
 a scenario only the binary can run carries for good, an entry goes once its owner's work lets the
 scenario run in process. Today it names ID-MUT-134, 153, 154, 163 and 207, which observe `serve`

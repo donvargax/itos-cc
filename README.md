@@ -981,7 +981,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | `metrics` | Snapshot files |
 | `graph`, `server` | The architecture graph, its dependencies resolved by `internal/imports`, and its live HTTP API |
 | `internal/version`, `internal/release` | The build's version, the one source the `version` command prints through cmd, and the library of the release tools in `tools/bin` |
-| `features` | The scenarios and their steps ([features/README.md](features/README.md)) |
+| `features` | The scenarios and their steps, each file of steps declaring its feature file, listed in `steps_gen.go` by `tools/bin/assemble` ([features/README.md](features/README.md)) |
 | `viewer/` | The web viewer, a separate npm project |
 
 Adding a language means one file in `internal/lang/` (grammar, units, decisions,
