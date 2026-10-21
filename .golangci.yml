@@ -140,6 +140,7 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
+            - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/testtools/**" # mutation tool observations
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
@@ -223,6 +224,7 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/worktrees/**" # mutation workers adapter
+            - "!**/internal/processes/**" # the process-ownership engine, held by processes
             - "!**/internal/testtools/**" # mutation tool observations
             - "!**/internal/testinputs/**" # mutation input fingerprints
             - "!**/internal/importgraph/**" # mutation reach over graph
@@ -350,7 +352,8 @@ linters:
             - pkg: github.com/donvargax/itos-cc
               desc: "the coveragetools adapter imports nothing of ours but the coverage domain it serves (decision 47), its port, and coverage and metrics, which it wraps (decision 46); extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # Model-bearing Workers lives beside mutants values to avoid a cycle.
-        # worktrees wraps only project tree operations and its own process I/O.
+        # worktrees wraps only project tree operations and runs its commands
+        # through the process-ownership engine.
         worktrees:
           list-mode: lax
           files:
@@ -358,10 +361,26 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/processes$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the worktrees adapter imports only the mutation domain and project tree operations it wraps (T-88); no UI, other adapters or fakes"
+              desc: "the worktrees adapter imports only the mutation domain, the process-ownership engine its workers run through and project tree operations it wraps (T-88, T-151); no UI, other adapters or fakes"
+        # internal/processes is the process-ownership engine (ADR-0021,
+        # decision 38, T-151): the owned executor, the command runner and
+        # the process-group kill and wait that mutation's workers, counted
+        # preparation and crap's coverage command run through, which cmd
+        # binds. It is an adapter-side engine, not a domain: it starts and
+        # kills processes, so no domain or slice imports it (their rules
+        # leave it out), and it imports nothing of ours, its tests neither,
+        # so no domain's values reach it: a caller converts its Result.
+        processes:
+          list-mode: lax
+          files:
+            - "**/internal/processes/**"
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the process-ownership engine imports nothing of ours (T-151): no domain, slice, adapter or UI; a caller converts its Result into its own terms"
         # T-89: each concrete observation adapter owns only its declared I/O.
         testtools:
           list-mode: lax

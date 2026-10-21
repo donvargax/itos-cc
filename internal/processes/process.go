@@ -1,7 +1,13 @@
+// Package processes is the process-ownership engine (ADR-0021): it runs an
+// already configured command in a process group it owns, and returns only
+// once the group's members and the readers of its output have joined, or
+// reports the cleanup that did not finish by its deadline. An interrupt
+// waits for the groups being killed and joined (decision 38). Mutation's
+// workers, counted preparation and crap's coverage command run through it;
+// it imports nothing of ours, so a caller converts its Result.
 package processes
 
 import (
-	"context"
 	"os/exec"
 	"runtime"
 	"syscall"
@@ -23,10 +29,4 @@ func killGroup(cmd *exec.Cmd, platform string) {
 		cmd.Cancel = func() error { return nativeSignalGroup(-cmd.Process.Pid, syscall.SIGKILL) }
 	}
 	cmd.WaitDelay = 2 * time.Second
-}
-func shellCommand(ctx context.Context, line, platform string) *exec.Cmd {
-	if platform == "windows" {
-		return exec.CommandContext(ctx, "cmd", "/C", line) //nolint:gosec // the person explicitly selected a shell test command
-	}
-	return exec.CommandContext(ctx, "sh", "-c", line) //nolint:gosec // the person explicitly selected a shell test command
 }

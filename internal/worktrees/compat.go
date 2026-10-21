@@ -1,5 +1,6 @@
-// Package worktrees runs mutation commands in private copies and owns their
-// processes until all output waiters and ordinary descendants have joined.
+// Package worktrees runs mutation commands in private copies, through the
+// process-ownership engine, internal/processes, which owns their processes
+// until all output waiters and ordinary descendants have joined.
 // Its inward boundary is mutants.Workers, beside the mutation domain values.
 package worktrees
 
