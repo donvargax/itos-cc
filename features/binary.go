@@ -96,6 +96,11 @@ const (
 	// nodeModulesEnv names a node_modules that holds vitest and
 	// @vitest/coverage-v8.
 	nodeModulesEnv = "ITOS_CC_NODE_MODULES"
+	// flutterToolsEnv is set by the one CI job that installed the pinned
+	// Flutter, cd.yml's dart job, beside languageToolsEnv: the languages
+	// job sets languageToolsEnv and installs no Flutter, so a Dart scenario
+	// it selects skips there, as one does in every other CI job.
+	flutterToolsEnv = "ITOS_CC_FLUTTER_TOOLS"
 )
 
 // Coverage checks the tools c's language measures with are installed, and
@@ -106,6 +111,8 @@ const (
 // skips the scenario, or fails it under ITOS_CC_LANGUAGE_TOOLS. A CI job
 // that did not install the pinned tools skips a scenario needing node or
 // python: its runner's preinstalled ones are whatever version its image has.
+// Dart needs flutter, and has the project resolved as its user would
+// (flutterProject).
 func (b binary) Coverage(dir string, c Coverage) error {
 	if err := c.Validate(); err != nil {
 		return err
@@ -167,6 +174,14 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		if _, err := exec.LookPath("java"); err != nil {
 			return missing("java")
 		}
+	case "dart":
+		flutter, err := exec.LookPath("flutter")
+		if err != nil {
+			return missing("flutter")
+		}
+		if err := flutterProject(dir, flutter, required); err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("no tools known for %s", c.Language)
 	}
@@ -176,6 +191,42 @@ func (b binary) Coverage(dir string, c Coverage) error {
 		}
 	}
 	return nil
+}
+
+// flutterProject readies the Flutter project at dir as its user would
+// before measuring it, with flutter, the one on the PATH: where dir holds a
+// .fvmrc, it links .fvm/flutter_sdk to flutter's SDK, as fvm use does; then
+// it resolves the project's dependencies with flutter pub get, from the pub
+// cache alone when that holds them, and pub.dev otherwise. itos-cc never
+// resolves a project itself (decision 26), so this is the fixture's.
+func flutterProject(dir, flutter string, required bool) error {
+	if _, err := os.Stat(filepath.Join(dir, ".fvmrc")); err == nil {
+		real, err := filepath.EvalSymlinks(flutter)
+		if err != nil {
+			return err
+		}
+		link := filepath.Join(dir, ".fvm", "flutter_sdk")
+		if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil { //nolint:gosec // the scenario project's .fvm has the 0755 fvm gives it; the product under test sees fixture modes, so narrowing them would change what scenarios check
+			return err
+		}
+		if err := os.Symlink(filepath.Dir(filepath.Dir(real)), link); err != nil {
+			if required {
+				return err
+			}
+			return fmt.Errorf("%w: symlinks unavailable: %v", godog.ErrSkip, err)
+		}
+	}
+	var out []byte
+	var err error
+	for _, args := range [][]string{{"pub", "get", "--offline"}, {"pub", "get"}} {
+		cmd := exec.Command(flutter, args...) //nolint:gosec // the flutter on the PATH, resolving the scenario's own project
+		cmd.Dir = dir
+		cmd.Env = environment(nil)
+		if out, err = cmd.CombinedOutput(); err == nil {
+			return nil
+		}
+	}
+	return fmt.Errorf("flutter pub get in %s: %v\n%s", dir, err, out)
 }
 
 // linkModules makes path a node_modules of links to modules' packages, its
@@ -202,10 +253,14 @@ func missing(what string) error {
 
 // languageJob skips a scenario needing language's tools in a CI job that
 // did not install the pinned ones, for any language but Go: its runner's
-// are whatever its image has.
+// are whatever its image has. Flutter is installed in cd.yml's dart job
+// alone, which sets flutterToolsEnv.
 func languageJob(language string) error {
 	if language != "go" && os.Getenv(languageToolsEnv) == "" && os.Getenv("CI") != "" {
 		return fmt.Errorf("%w: CI installs the %s tools on ubuntu-latest only, where it sets %s", godog.ErrSkip, language, languageToolsEnv)
+	}
+	if language == "dart" && os.Getenv(flutterToolsEnv) == "" && os.Getenv("CI") != "" {
+		return fmt.Errorf("%w: CI installs Flutter in cd.yml's dart job only, where it sets %s", godog.ErrSkip, flutterToolsEnv)
 	}
 	return nil
 }

@@ -163,7 +163,8 @@ func (c *coverageState) runInVitestProject(args string) error {
 // projectWithMarker writes a project of language at the scratch folder
 // holding marker, with a source and, but for Kotlin, a test of it. Go and
 // Python declare their tools; a Kotlin project's runs find neither Gradle
-// nor Maven, so its command is chosen and never runs.
+// nor Maven, so its command is chosen and never runs; a Dart project's
+// tools are declared once its setup makes it a Flutter app.
 func (c *coverageState) projectWithMarker(language, marker string) error {
 	files := map[string]string{}
 	switch language {
@@ -176,6 +177,8 @@ func (c *coverageState) projectWithMarker(language, marker string) error {
 	case "Kotlin":
 		files[marker], files["src/main/kotlin/board/Board.kt"] = kotlinBuild(marker), ktSource
 		c.w.without = []string{"gradle", "mvn"}
+	case "Dart":
+		files = c.dartProject()
 	}
 	if _, ok := files[marker]; !ok {
 		return fmt.Errorf("no %s project is written whose build root holds %s", language, marker)
@@ -219,7 +222,7 @@ func kotlinBuild(marker string) string {
 }
 
 // buildMarkers are the files that make a folder a build root.
-var buildMarkers = []string{"go.mod", "package.json", "pyproject.toml", "setup.py", "setup.cfg", "build.gradle.kts", "build.gradle", "pom.xml"}
+var buildMarkers = []string{"go.mod", "package.json", "pyproject.toml", "setup.py", "setup.cfg", "build.gradle.kts", "build.gradle", "pom.xml", "pubspec.yaml"}
 
 // nothingElse is whether the project's folder holds no build root's marker
 // but its own and no Makefile or package.json.

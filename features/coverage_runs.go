@@ -194,8 +194,8 @@ func (c *coverageState) commandIs(spec string) error {
 // holds is why a is not the command spec says, nil when it is.
 func (c *coverageState) holds(a covAnnouncement, spec string, lcov bool) error {
 	words := a.words
-	if lcov && !slices.ContainsFunc(words, func(w string) bool { return regexp.MustCompile(`[Rr]eporters?=lcov$`).MatchString(w) }) {
-		return fmt.Errorf("%q asks for no LCOV reporter", a.command)
+	if lcov && !slices.ContainsFunc(words, func(w string) bool { return regexp.MustCompile(`[Rr]eporters?=lcov$`).MatchString(w) }) && !c.wroteLCOV(words) {
+		return fmt.Errorf("%q asks for no LCOV reporter, and writes no LCOV where its --coverage-path names", a.command)
 	}
 	if rest, ok := strings.CutPrefix(spec, "the installed "); ok {
 		tool, rest, _ := strings.Cut(rest, " ")
@@ -235,6 +235,20 @@ func (c *coverageState) holds(a covAnnouncement, spec string, lcov bool) error {
 		}
 	}
 	return nil
+}
+
+// wroteLCOV is whether a command of words, such as flutter test's, which
+// has no reporter to ask for and writes LCOV alone, wrote an LCOV record
+// where its --coverage-path names, a file of the scratch folder.
+func (c *coverageState) wroteLCOV(words []string) bool {
+	for _, w := range words {
+		if report, ok := strings.CutPrefix(w, "--coverage-path="); ok {
+			rel, in := c.rel(report)
+			data, err := c.w.d.Read(c.abs(rel))
+			return in && err == nil && strings.HasPrefix(string(data), "SF:") && strings.Contains(string(data), "end_of_record")
+		}
+	}
+	return false
 }
 
 // readFromReport is whether the report the project's script wrote is at
