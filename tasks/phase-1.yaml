@@ -5696,3 +5696,56 @@
       timeout: 900
     - run: tools/bin/domain-coverage
       timeout: 600
+- id: T-157
+  type: refactor
+  title: Move internal/mutation into internal/slices/mutation, assembled from its declaration
+  why: >
+    T-86 (ADR-0051, slices-mutation (a), first half): the fifth slice and the first group. Move
+    internal/mutation (31 files, 5.2k lines) to internal/slices/mutation in a move commit separate
+    from the edits; the package keeps its name; internal/mutants stays until the next task.
+    tools/bin/assemble refuses a folder under internal/slices whose own files declare no Command
+    (tools/bin/assemble/main.go:209-214), so the slice root and its declaration land before anything
+    else goes under internal/slices/mutation. The slice declares var Command = cli.Declaration{Name:
+    "mutation", Help: "mutation testing: do the tests notice small changes?", New: func() any {
+    return &CLI{} }}, the help on commandLine's field today (cmd/itos-cc/dispatch.go:33). Its Ports,
+    answered by methods on cmd's adapters, reuse SelectionTree, LangSurroundings and SnapshotStore
+    (Handler.Tree, Surroundings, Metrics) and add, named for the domain's ports: MutationSettings,
+    MutationSnapshotReader, MutationCatalog, MutationSourcePresence, MutationSourceStatus,
+    MutationHistory, MutationToolchain, MutationFingerprints, MutationReach, MutationWorkers,
+    MutationSnapshots, MutationSourceEdits, MutationTestLister, MutationFresh, MutationFreshWorkers,
+    CoverageMutationMeasurer, MutationPlatform and WorkingDir, plus MutationExceptions,
+    MutationRepository and MutationPhysicalDir returning the func values held in the adapters'
+    fields (adapters.go:39-84), never method values, so a binding left nil stays nil and every
+    "binding is missing" failure keeps its words (internal/mutation/handler.go:68,
+    counted.go:72,327, except.go:136, run.go:254-264, selection.go:17,42,45). No method shares a
+    name with an adapters field (MutationCoverage is one). NewHandler(ctx, p Ports) (Handler, error)
+    copies them into today's Handler (handler.go:19-56) and reads nothing, so settings are read only
+    at the handler's admission points, never for help or a line kong refuses. run and sample also
+    take the flags their line gave (mutation.Written: sample_ui.go:40, run_ui.go:116,
+    sample_ui.go:63, counted_ui.go:113), bound today from cli.Provided (dispatch.go:87):
+    internal/cli gains a Written type for what Provided returns, parserOf binds it once for every
+    command, and run and sample convert it to their own. The mutation_workers kong variable
+    (dispatch.go:61; mutation.go:50,84) stays in parserOf. Drop Mutation from commandLine and its
+    providers from handlers (dispatch.go:80-90), rerun go run ./tools/bin/assemble and commit
+    commands_gen.go; kong.PostBuild(byName) keeps the help and guess order
+    TestTheModelNamesEveryCommandInOrder holds, and ${mutation_workers} still resolves (kong
+    interpolates after building dynamic commands). cmd's mutation tests stay in cmd as assembly
+    tests the slice owns by path (slices-mutation (e)); mutation_parser_test.go reads paths from the
+    selected node's Target instead of c.Mutation (:53-61), and six test files change an import path.
+    Add a test that builds the handler over in-memory Ports and keeps a nil port nil. check_test.go
+    follows (the lists naming internal/mutation at :83, 175, 235, 319, 334, 342, 363, 370, the slice
+    cases at :272, the own-subpackage stubs at :89, the comment at :264-271). Docs: docs/go.md
+    (internal/mutation :187-253, the cmd paragraph :366-427, the slices bullet :448-456),
+    docs/architecture.md:82, README's layout row, features/README.md's internal/mutation paths.
+    Unchanged: the group's and its children's help, the top-level rows and the guess, errors, exit
+    codes, group admission and --json placement, lazy config, every message. After slices-version,
+    which edits the same dispatch.go lines.
+  done_when:
+    - run: go test -count=1 ./internal/slices/mutation/... ./internal/cli/...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCallSafelyReportsABugAsAnInternalFailure|TestRunWithFakes.*|TestMutation.*|TestMemory.*|TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue|TestTheDocsDescribeCountedAndFailFastPlatforms)$' -scenarios='^@ID-(MUT|SNAP|CLI)-'
+      timeout: 900
+    - run: go test -count=1 ./tools/bin/assemble
+      timeout: 300
+    - run: tools/bin/architecture-check
+      timeout: 900

@@ -4274,3 +4274,10 @@ items:
       package comment and features/README.md do not say so. Decide whether itos-cc drops an
       inherited GOCOVERDIR from the commands it runs without coverage, or the harness keeps its own
       out of them, and document the module-wide recipe.
+  - id: T-157
+    title: Move internal/mutation into internal/slices/mutation, assembled from its declaration
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
