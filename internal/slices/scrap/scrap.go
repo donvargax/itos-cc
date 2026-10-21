@@ -26,9 +26,9 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
+	teststructure "github.com/donvargax/itos-cc/internal/slices/scrap/domain"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
-	"github.com/donvargax/itos-cc/internal/teststructure"
 )
 
 // CLI is the scrap command's command line: the files it selects, as every

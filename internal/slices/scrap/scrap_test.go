@@ -20,9 +20,9 @@ import (
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	teststructure "github.com/donvargax/itos-cc/internal/slices/scrap/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
-	"github.com/donvargax/itos-cc/internal/teststructure"
 )
 
 const cartTest = `describe("cart", () => {
