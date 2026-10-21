@@ -95,6 +95,11 @@ and inputs (T-159), its workers, history, import reach and frozen environments (
 snapshot codec over the snapshot port, its itos-cc.yaml exceptions writer over `config`'s
 reading codec and its source edits (T-161), which were `internal/metricsdir`'s, `config`'s and
 `internal/workdir`'s.
+Its import reach, `importgraph`, is a thin adapter over the import-resolution engine,
+`internal/imports` (T-162), which resolves each language's imports into dependencies between
+modules and finds the tests that reach each source; `serve`'s graph draws its edges and
+external packages from the same engine, so the slice reaches nothing of graph's, and graph's
+import of the mutation domain, for its staleness, is the one arrow between them.
 It declares itself as every slice does, its `CLI` the struct of its five children, and cmd's
 adapters answer its `Ports`; the functions cmd binds for a counted run and for the exceptions'
 writer reach the handler as they are, so one left unbound is reported missing.

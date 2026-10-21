@@ -176,7 +176,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `testtools`, mutation's `Toolchain` and `TestLister`, and `testinputs`, its `Fingerprints`
   and the coverage-input inventories (T-159, below), were `internal/testtools` and
   `internal/testinputs`; `worktrees`, its `Workers`, `githistory`, its `History`,
-  `importgraph`, its `Reach` over graph's import resolver, and `freshenv`, its counted `Fresh`
+  `importgraph`, its `Reach` over the import-resolution engine, and `freshenv`, its counted `Fresh`
   (T-160, below), were `internal/worktrees`, `internal/githistory`, `internal/importgraph` and
   `internal/freshenv`. The last three moved out of shared packages (T-161): `snapshots`, the
   mutation snapshot codec that was `internal/metricsdir`'s, is the domain's
@@ -198,8 +198,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   permissions. They import the slice's domain, whose model-bearing ports they
   implement, and the libraries they wrap; cmd wires them in through the slice's `Ports`, and
   no slice imports them, the mutation slice's code neither (`slice-adapters`). `importgraph`
-  stays a package of its own: graph imports the domain, so merging it with anything graph
-  imports would be a cycle.
+  is a thin adapter of its own over `internal/imports` (T-162): its `Reach` calls the engine's
+  `TestsImporting` and turns the context's cause into `InputCancelled` and the engine's error
+  into `InputFailed`, since an engine imports no slice and cannot return the domain's
+  failures. It imports neither graph nor `project`, so no slice reaches graph, whose import of
+  the mutation domain, for serve's staleness, is the one arrow left between them.
 - `internal/processes` is the process-ownership engine (ADR-0021, T-151), an adapter-side
   engine rather than a domain: it starts and kills processes and imports nothing of ours.
   `OwnedExecutor` runs an already configured command in a process group it owns on Linux and
@@ -217,6 +220,24 @@ a `context.Context` first (decision 30); pure logic takes none.
   only the group calls Windows lacks. Crap's and mutation's coverage commands (cmd's
   `coverageCommand`), counted preparation and mutation's workers run through it; cmd binds
   it, and no domain or slice imports it, so crap reaches no mutation adapter.
+- `internal/imports` is the import-resolution engine (ADR-0051, T-162), lifted out of graph, an
+  adapter-side engine as `internal/processes` is rather than a domain: it parses files through
+  `project.ParseFile`, finds markers above them with `project.FindUp` and reads and decodes
+  `tsconfig.json`, which `domain-io` and decision 50 refuse in a domain. `File` is what it
+  needs of a parsed file, its `Rel`, `Abs`, `Language` and `Namespace` exported for graph, and
+  `Of(root, file)` makes one. `Resolve(ctx, root, files)` is a `Resolution`: `Module(f)` names
+  a file's module slash-separated from the root, the package directory for Go and a Python
+  `__init__.py`, `(root)` for one at the root, the file without its extension elsewhere;
+  `Edges` counts each module's import statements of another, and Kotlin's uses of a name
+  another file of its package declares, and `External` lists each module's packages from
+  outside the repository. `Reach(ctx, root, sources, tests)` is the test files that reach
+  each source, by its path, and `TestsImporting(ctx, root, sources, tests)` parses the files
+  and returns them, or the context's cause once it is done. graph builds its module ids,
+  edges and external packages from a `Resolution`, prefixing each id with the repository's
+  name, and its staleness from `Reach`; mutation's `importgraph` adapter calls
+  `TestsImporting`. It keeps its own `stopped`, `rel` and `appendUnique` (ADR-0051's small
+  duplication) and uses the `coverage` runner's `PythonTestFile`, so pytest's naming rule has
+  one copy.
 - `internal/slices/mutation/adapters/freshenv` implements mutation's coarse `Fresh`
   Plan/Prepare/Release contract.
   It owns immutable Git export, native mode and symlink admission, scratch materialization,
@@ -586,7 +607,9 @@ context-as-argument a context after any other parameter, tests included.
   reads and writes through, and `exceptions`' config, the reading codec it wraps. `freshenv`
   serves mutants, yet its rule allows `internal/coverage` and its port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
-  port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
+  port and the `coverage` runner and `metrics` it wraps. `importgraph`'s allows the
+  import-resolution engine it adapts, `internal/imports`, and neither graph nor `project`
+  (T-162). Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
 - `processes`: the process-ownership engine, code and tests, imports nothing of ours (T-151).
   It is an adapter-side engine, not a domain: the `domain` and `slices` rules refuse it, so no
@@ -594,6 +617,14 @@ context-as-argument a context after any other parameter, tests included.
   mutation's workers run through it; cmd binds it for counted preparation and the coverage
   command. `slices` and `slice-fakes` leave it out, as they leave out the adapters outside
   `internal/slices`.
+- `imports`: the import-resolution engine, code and tests, imports nothing of ours but
+  `internal/lang`, whose parsed files it resolves, `project` and the `coverage` runner (T-162):
+  no other domain or port, slice, adapter, fake, UI or `cmd`, nor graph, `config` or
+  `metrics`. It is an adapter-side engine like `processes`: the `domain` and `slices` rules
+  refuse it, of the adapters only `importgraph`'s allows it, and graph, which no rule holds,
+  imports it. `slices` and `slice-fakes` leave it out. Its rule has one deny entry, the
+  module, since depguard looks a deny up as the one entry sorting just before the import
+  (T-159).
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -844,9 +875,9 @@ constructs `Command`. `internal/slices/mutation/adapters/testinputs` owns curren
 independent-coverage inventories, including lexical unsupported-scope admission.
 It wraps the existing coverage library for unchanged Kotlin runner/wrapper
 fingerprints, as testtools does for runnable-file/class observations.
-`internal/slices/mutation/adapters/importgraph` wraps the existing graph import resolver until S8. Only cmd
-composes Reach: graph imports the mutation domain, so the domain cannot import that
-adapter without a cycle. Each adapter has its own depguard rule, accepting only
+`internal/slices/mutation/adapters/importgraph` wraps the import-resolution engine,
+`internal/imports` (T-162). Only cmd composes Reach: the adapter imports the mutation domain,
+so the domain cannot import it without a cycle. Each adapter has its own depguard rule, accepting only
 mutants plus the actual libraries it wraps. The shared contract suites live in
 `internal/slices/mutation/domain/porttest`; no production binary links them.
 
