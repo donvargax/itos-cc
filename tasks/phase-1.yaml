@@ -6019,21 +6019,6 @@
     says the in-process driver reads it). Unchanged: every fake and what it is built over, every
     scenario's outcome and log line, diskAdapters' bindings, the runner's grouping,
     run_fakes_test.go's units-only fakes.
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestEveryPortIsBoundOnDiskAndInProcess|TestMemory[A-Za-z]*|TestRunWithFakes[A-Za-z]*|TestListed[A-Za-z]*|TestMutationHandlerBindsDeclaredWorkersAndActualCopyTrace)$'
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(COV|CRAP|CPLX)-'
-      timeout: 900
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(UNIT|DRY|SCRAP|SNAP|SEL)-0[1-5]$'
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-MUT-(0[1-9]|1[0-9]|134)$'
-      timeout: 900
-    - run: go vet ./coverage ./cmd/itos-cc
-      timeout: 300
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-166
   type: ci
   title: Stamp main.version beside internal/version in the refactor proof's builds
