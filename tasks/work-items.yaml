@@ -4703,8 +4703,8 @@ items:
   - id: T-182
     title: Name Dart in README, docs/CLI.md and the guides, and close docs/dart
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: own-baseline-announced
