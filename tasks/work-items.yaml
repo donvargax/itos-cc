@@ -4511,3 +4511,23 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: depguard-nested-allow
+    title: Refuse a depguard allow entry that a longer one in the same list hides
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-167 read depguard v2.2.1's lookup, the version the pinned golangci-lint v2.14.0 builds with:
+      strInPrefixList serves allow lists as it serves deny lists, looking an import up as the one
+      entry sorting just before it, so a prefix entry is hidden from every import sorting after a
+      longer entry it prefixes, an exact one ending in $ among them. Today's domain, slices and
+      slice-packages allow lists hold github.com/donvargax/itos-cc/internal/coverage/ beside
+      .../internal/coverage/porttest$, so a new package under internal/coverage sorting after
+      porttest (internal/coverage/report, say) would be refused there although the prefix allows it.
+      In lax mode a hidden allow refuses rather than lets by, a loud failure rather than a silent
+      one, so T-167 left allow lists out of TestNoDenyEntryPrefixesAnother. Decide whether the test
+      should also refuse a nested allow list, or the allow lists drop the exact porttest entries
+      their prefix already covers.
+    refs: [T-167, T-159]
