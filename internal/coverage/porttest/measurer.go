@@ -243,9 +243,9 @@ func (m *Measurer) Inventory(ctx context.Context, report *coverage.Report, langu
 
 // unreached is whether req measures sources, of group's build root, by
 // their own tests, which none reaches, where their language runs only the
-// tests that reach them: Python's and Kotlin's.
+// tests that reach them: Python's, Kotlin's and Dart's.
 func unreached(req port.Request, group coverage.Unloaded, sources []string) bool {
-	if req.Scope != port.OwnTests || req.AllTests || req.Reach == nil || group.Language != "python" && group.Language != "kotlin" {
+	if req.Scope != port.OwnTests || req.AllTests || req.Reach == nil || group.Language != "python" && group.Language != "kotlin" && group.Language != "dart" {
 		return false
 	}
 	for _, source := range sources {

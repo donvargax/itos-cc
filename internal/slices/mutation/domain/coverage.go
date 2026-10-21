@@ -21,7 +21,7 @@ const LineCoverageEvidenceVersion = 1
 // strictLanguages are the languages whose functions strict coverage
 // (--fail-uncovered) proves executed: Go at cover-profile block precision,
 // the others at their format's line precision (coverage.Report.Lines).
-var StrictLanguages = map[string]bool{"go": true, "python": true, "typescript": true, "kotlin": true}
+var StrictLanguages = map[string]bool{"go": true, "python": true, "typescript": true, "kotlin": true, "dart": true}
 
 // StrictCoverage says whether strict coverage proves the executable code of
 // language's functions: whether its functions need fresh measured evidence.
@@ -40,7 +40,9 @@ const PythonSubprocesses = "subprocesses=COVERAGE_PROCESS_START, python -m cover
 // CoverageProducer is the built-in producer of language's strict coverage
 // evidence, measuring each file with the tests that reach it, or, with
 // allTests, the whole suite of its build root: what evidence records, and
-// what mutation check admits (validCoverageProducer).
+// what mutation check admits (validCoverageProducer). Dart's is flutter
+// test's LCOV over the test files under test/ that reach the file, or with
+// allTests test/ whole, never integration_test/ (q-76).
 func CoverageProducer(language string, allTests bool) string {
 	switch {
 	case language == "go" && allTests:
@@ -51,6 +53,10 @@ func CoverageProducer(language string, allTests bool) string {
 		return "python -m coverage run --branch --source=<build root> <whole suite>; python -m coverage lcov; " + PythonSubprocesses + "; scope=all-tests"
 	case language == "python":
 		return "python -m coverage run --branch --source=<build root> <reaching tests>; python -m coverage lcov; " + PythonSubprocesses + "; scope=own"
+	case language == "dart" && allTests:
+		return "flutter test --no-pub --no-dds --coverage --coverage-path=<report>; scope=all-tests"
+	case language == "dart":
+		return "flutter test --no-pub --no-dds --coverage --coverage-path=<report> <reaching test files>; scope=own"
 	}
 	return ""
 }
@@ -180,7 +186,9 @@ func CoverageEvidenceFor(rel string, file *lang.File, unit lang.Unit, report *co
 // file (coverage.Report.Lines), so a unit with none has nothing to prove.
 // A Kotlin function's lines start at its body's first statement
 // (kotlinBodyLine), and one with no statement in its body has nothing to
-// prove, measured or not.
+// prove, measured or not. A Dart function's start at its signature, its
+// BodyLine: the VM lists that line and counts each call on it, so a called
+// function's first line is covered and an uncalled one's is not (q-D).
 func LineCoverageEvidence(rel string, file *lang.File, unit lang.Unit, lines []coverage.Line, proven bool, producer string, inputs map[string]string) *CoverageEvidence {
 	evidence := &CoverageEvidence{
 		Version: LineCoverageEvidenceVersion, Language: file.Spec.Name, File: rel,

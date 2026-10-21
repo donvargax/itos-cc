@@ -3,9 +3,12 @@ package porttest
 import (
 	"context"
 	"fmt"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/internal/lang"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
@@ -136,6 +139,90 @@ func (s *Inputs) kotlinRoot(ctx context.Context, path string) string {
 	}
 	return module
 }
+
+// dartPubspec is what a pubspec.yaml of the memory says of the pub
+// workspace, as the adapter reads it.
+type dartPubspec struct {
+	Resolution   string         `yaml:"resolution"`
+	Workspace    []string       `yaml:"workspace"`
+	Dependencies map[string]any `yaml:"dependencies"`
+}
+
+func (s *Inputs) pubspec(ctx context.Context, dir string) dartPubspec {
+	var p dartPubspec
+	if yaml.Unmarshal([]byte(s.read(ctx, filepath.Join(dir, "pubspec.yaml"))), &p) != nil {
+		p = dartPubspec{}
+	}
+	return p
+}
+
+// lists says whether the workspace root at root lists dir, a listed path
+// matched as a glob too.
+func (p dartPubspec) lists(root, dir string) bool {
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	for _, member := range p.Workspace {
+		member = path.Clean(filepath.ToSlash(member))
+		if ok, _ := path.Match(member, rel); ok || member == rel {
+			return true
+		}
+	}
+	return false
+}
+
+// dartRoot is the Dart file's package root, or a workspace member's
+// workspace root, with that root's pubspec.yaml, as the adapter's
+// DartCoverageRoot finds them.
+func (s *Inputs) dartRoot(ctx context.Context, source string) (string, dartPubspec) {
+	pkg := s.nearest(ctx, source, "pubspec.yaml")
+	if pkg == "" {
+		return "", dartPubspec{}
+	}
+	own := s.pubspec(ctx, pkg)
+	if own.Resolution == "workspace" {
+		for dir := filepath.Dir(pkg); ; dir = filepath.Dir(dir) {
+			if s.Exists(ctx, filepath.Join(dir, "pubspec.yaml")) {
+				if root := s.pubspec(ctx, dir); root.lists(dir, pkg) {
+					return dir, root
+				}
+			}
+			if filepath.Dir(dir) == dir {
+				break
+			}
+		}
+	}
+	return pkg, own
+}
+
+// dartPlatformDir says whether dir is a Flutter app's platform folder, as
+// project's FlutterPlatformDir reads the disk.
+func (s *Inputs) dartPlatformDir(ctx context.Context, dir string) bool {
+	if !slices.Contains([]string{"android", "ios", "macos", "linux", "windows", "web"}, filepath.Base(dir)) {
+		return false
+	}
+	for _, dep := range s.pubspec(ctx, filepath.Dir(dir)).Dependencies {
+		if m, ok := dep.(map[string]any); ok && m["sdk"] == "flutter" {
+			return true
+		}
+	}
+	return false
+}
+
+// dartFlutter is the flutter coverage's FlutterFor resolves for the
+// package at dir: FVM's linked SDK beside the nearest .fvmrc, else the
+// PATH's, which the memory always has.
+func (s *Inputs) dartFlutter(ctx context.Context, dir string) string {
+	if root := s.nearest(ctx, filepath.Join(dir, "x"), ".fvmrc"); root != "" {
+		if sdk := filepath.Join(root, ".fvm", "flutter_sdk", "bin", "flutter"); s.Exists(ctx, sdk) {
+			return sdk
+		}
+	}
+	return "flutter"
+}
+
 func (s *Inputs) coverageRoot(ctx context.Context, language, source, project string) string {
 	var root string
 	if language == "go" {
@@ -148,9 +235,14 @@ func (s *Inputs) coverageRoot(ctx context.Context, language, source, project str
 			}
 		}
 	}
-	if language == "kotlin" {
+	switch language {
+	case "kotlin":
 		root = s.kotlinRoot(ctx, source)
-	} else {
+	case "dart":
+		if root, _ = s.dartRoot(ctx, source); root != "" && !inside(project, root) {
+			root = s.nearest(ctx, source, "pubspec.yaml")
+		}
+	default:
 		root = s.suiteRoot(ctx, language, source)
 	}
 	if root == "" || !inside(project, root) {
@@ -242,6 +334,15 @@ func (s *Inputs) admittedPath(ctx context.Context, language, root, path, setting
 					return false
 				}
 			}
+		case "dart":
+			// settings is the root's pubspec.yaml, naming its workspace.
+			var workspace dartPubspec
+			_ = yaml.Unmarshal([]byte(settings), &workspace)
+			if strings.HasPrefix(part, ".") || part == "node_modules" || s.dartPlatformDir(ctx, dir) ||
+				slices.Contains([]string{"build", "coverage", "integration_test", "test_driver"}, part) && s.Exists(ctx, filepath.Join(filepath.Dir(dir), "pubspec.yaml")) ||
+				s.Exists(ctx, filepath.Join(dir, "pubspec.yaml")) && !workspace.lists(root, dir) {
+				return false
+			}
 		}
 	}
 	return true
@@ -260,10 +361,13 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 		return nil, inputError(fmt.Errorf("%s: no nearest go.mod", source))
 	}
 	var settings string
-	if language == "kotlin" {
+	switch language {
+	case "kotlin":
 		for _, name := range []string{"settings.gradle.kts", "settings.gradle"} {
 			settings += s.read(ctx, filepath.Join(root, name))
 		}
+	case "dart":
+		settings = s.read(ctx, filepath.Join(root, "pubspec.yaml"))
 	}
 	out := map[string]string{}
 	for _, path := range s.paths(root) {
@@ -285,6 +389,8 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 			include = slices.Contains([]string{".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"}, filepath.Ext(name)) || top && tsConfig(name)
 		case "kotlin":
 			include = kotlinInput(name)
+		case "dart":
+			include = filepath.Ext(name) == ".dart" || slices.Contains([]string{"pubspec.yaml", "pubspec_overrides.yaml", "dart_test.yaml"}, name) || top && name == "pubspec.lock"
 		}
 		if include {
 			text, failure := s.required(ctx, path)
@@ -295,6 +401,16 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 				text = mutants.StripAnnotation(text, f.Comment)
 			}
 			name, _ := filepath.Rel(project, path)
+			out[filepath.ToSlash(name)] = inputHash(text)
+		}
+	}
+	if language == "dart" {
+		if fvm := s.nearest(ctx, source, ".fvmrc"); fvm != "" && inside(project, fvm) {
+			text, failure := s.required(ctx, filepath.Join(fvm, ".fvmrc"))
+			if failure != nil {
+				return nil, failure
+			}
+			name, _ := filepath.Rel(project, filepath.Join(fvm, ".fvmrc"))
 			out[filepath.ToSlash(name)] = inputHash(text)
 		}
 	}
@@ -324,6 +440,12 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 			}
 		}
 		out["@jvm-env"] = s.envHash(runner, "JAVA_HOME", "GRADLE_OPTS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS")
+	case "dart":
+		dir := s.nearest(ctx, source, "pubspec.yaml")
+		if dir == "" {
+			dir = filepath.Dir(s.absolute(source))
+		}
+		out["@flutter-env"] = s.envHash(s.dartFlutter(ctx, dir), "FLUTTER_ROOT", "PUB_CACHE")
 	}
 	return out, inputStopped(ctx)
 }

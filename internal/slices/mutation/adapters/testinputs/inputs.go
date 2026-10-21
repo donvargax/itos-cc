@@ -72,6 +72,8 @@ func (f Fingerprints) Coverage(ctx context.Context, source, root, producer strin
 			out, err = TypeScriptCoverageInputs(ctx, f.Runtime, source, root, producer, support)
 		case "kotlin":
 			out, err = KotlinCoverageInputs(ctx, f.Runtime, source, root, producer, support)
+		case "dart":
+			out, err = DartCoverageInputs(ctx, f.Runtime, source, root, producer, support)
 		}
 	}
 	return out, inputFailure(ctx, err)

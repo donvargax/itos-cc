@@ -5,9 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -308,6 +311,138 @@ func KotlinCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, so
 		}
 	}
 	out["@jvm-env"] = envInput(runtime, runner, "JAVA_HOME", "GRADLE_OPTS", "MAVEN_OPTS", "JAVA_TOOL_OPTIONS")
+	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// dartConfigFiles are the files anywhere in a Dart package's root, beside
+// its Dart, that say how it resolves and how its tests run.
+var dartConfigFiles = map[string]bool{"pubspec.yaml": true, "pubspec_overrides.yaml": true, "dart_test.yaml": true}
+
+// dartLeftOut are the folders beside a pubspec.yaml whose files are no
+// input of its coverage: flutter's build output, the coverage it writes,
+// and the tests flutter test never runs, which need a device (q-76).
+var dartLeftOut = map[string]bool{"build": true, "coverage": true, "integration_test": true, "test_driver": true}
+
+// pubspecOf is what a pubspec.yaml says of the pub workspace: the members
+// a workspace root lists, and a member's resolution: workspace. One that
+// does not parse says neither.
+type pubspecOf struct {
+	Resolution string   `yaml:"resolution"`
+	Workspace  []string `yaml:"workspace"`
+}
+
+func readPubspec(dir string) pubspecOf {
+	var p pubspecOf
+	data, err := os.ReadFile(filepath.Join(dir, "pubspec.yaml")) //nolint:gosec // a pubspec.yaml of the package a strict file belongs to, or above it
+	if err == nil && yaml.Unmarshal(data, &p) != nil {
+		p = pubspecOf{}
+	}
+	return p
+}
+
+// lists says whether the workspace root at root lists dir as a member. A
+// listed path is matched as a glob too, so a pattern names each folder it
+// matches.
+func (p pubspecOf) lists(root, dir string) bool {
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	for _, member := range p.Workspace {
+		member = path.Clean(filepath.ToSlash(member))
+		if ok, _ := path.Match(member, rel); ok || member == rel {
+			return true
+		}
+	}
+	return false
+}
+
+// DartCoverageRoot is the root the strict coverage evidence of the Dart
+// file at source rests on, with the pub workspace that root heads: its
+// package root, the nearest pubspec.yaml, or, for a workspace member, one
+// whose pubspec.yaml says resolution: workspace, the workspace root, the
+// nearest pubspec.yaml above it that lists it under workspace:. "" outside
+// any package.
+func DartCoverageRoot(ctx context.Context, source string) (string, pubspecOf) {
+	pkg := project.FindUp(ctx, source, "pubspec.yaml")
+	if pkg == "" {
+		return "", pubspecOf{}
+	}
+	own := readPubspec(pkg)
+	if own.Resolution == "workspace" {
+		for dir := filepath.Dir(pkg); ; dir = filepath.Dir(dir) {
+			if coverageFileExists(filepath.Join(dir, "pubspec.yaml")) {
+				if root := readPubspec(dir); root.lists(dir, pkg) {
+					return dir, root
+				}
+			}
+			if filepath.Dir(dir) == dir {
+				break
+			}
+		}
+	}
+	return pkg, own
+}
+
+// dartNested says whether dir, a folder beneath root, holds another
+// package: a pubspec.yaml that is not a member root's workspace lists.
+func dartNested(root string, workspace pubspecOf, dir string) bool {
+	return coverageFileExists(filepath.Join(dir, "pubspec.yaml")) && !workspace.lists(root, dir)
+}
+
+// DartCoverageInputs fingerprints the conservative input boundary of
+// independently measured Dart line coverage of source (q-B, q-E, q-F):
+// every Dart file of its root (DartCoverageRoot), the whole pub workspace
+// for a member, generated Dart included, since tests compile against it,
+// each without the summary comment itos-cc writes; each pubspec.yaml,
+// pubspec_overrides.yaml and dart_test.yaml there; the root's pubspec.lock;
+// the nearest .fvmrc beneath the project root; the project's itos-cc.yaml,
+// the configured support files, the producer, and the flutter that runs,
+// as coverage.FlutterFor resolves it, with FLUTTER_ROOT and PUB_CACHE. No
+// command runs for them. Hidden folders, .dart_tool among them, build/,
+// coverage/, integration_test/ and test_driver/ beside a pubspec.yaml, a
+// Flutter app's platform folders and a nested package the workspace does
+// not list are left out. A workspace root above the project root is not
+// followed: the package root stands for it, and the project root for a
+// package root above it too.
+func DartCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
+	pkg := project.FindUp(ctx, source, "pubspec.yaml")
+	root, workspace := DartCoverageRoot(ctx, source)
+	if root != "" && !beneathRoot(projectRoot, root) {
+		root, workspace = pkg, readPubspec(pkg)
+		if !beneathRoot(projectRoot, root) {
+			root = ""
+		}
+	}
+	out, _, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
+		root:   func(string) string { return root },
+		source: func(name string) bool { return filepath.Ext(name) == ".dart" || dartConfigFiles[name] },
+		config: func(name string) bool { return name == "pubspec.lock" },
+		skip: func(path, name string, _ bool) bool {
+			if dartLeftOut[name] && coverageFileExists(filepath.Join(filepath.Dir(path), "pubspec.yaml")) {
+				return true
+			}
+			return project.FlutterPlatformDir(path)
+		},
+		nested: func(path string) bool { return dartNested(root, workspace, path) },
+	})
+	if err != nil {
+		return nil, err
+	}
+	if fvm := project.FindUp(ctx, source, ".fvmrc"); fvm != "" && beneathRoot(projectRoot, fvm) {
+		if err := addCoverageInput(out, projectRoot, filepath.Join(fvm, ".fvmrc")); err != nil {
+			return nil, err
+		}
+	}
+	dir := pkg
+	if dir == "" {
+		dir = filepath.Dir(source)
+	}
+	out["@flutter-env"] = envInput(runtime, coverage.FlutterFor(ctx, dir), "FLUTTER_ROOT", "PUB_CACHE")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}

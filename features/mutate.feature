@@ -1204,7 +1204,7 @@ Feature: Mutation testing
       # guardrail that passes before slice-36. Strict Dart evidence is bound
       # to that hash, so a comment changes no evidence either. It needs no
       # Flutter: the results come from a --test-command.
-      @wip @slice-36
+      @slice-36
       Examples:
         | language |
         | dart     |
@@ -2168,7 +2168,7 @@ Feature: Mutation testing
       # --fail-uncovered path (run.go's unmeasuredToJudge), so this row is a
       # guardrail: it passes before slice-36 and holds that strict Dart
       # keeps failing closed.
-      @wip @slice-36
+      @slice-36
       Examples:
         | language | failure         | rule                  | exit |
         | Dart     | tool is missing | coverage.tool-missing | 82   |
@@ -2688,7 +2688,7 @@ Feature: Mutation testing
     # run it: the fake measures what it declares, cd.yml's dart job the real
     # flutter test. Before slice-36 Dart is not strict, so no line is
     # reported and the run passes, failing at the first Then.
-    @wip @slice-36 @ID-MUT-271
+    @slice-36 @ID-MUT-271
     Scenario: A strict Dart run proves every executable line of every judged function
       Given a Flutter package whose judged library has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one operand of
       When I run "itos-cc mutation run --fail-uncovered --json" for the file
@@ -2705,7 +2705,7 @@ Feature: Mutation testing
     # as a TypeScript file under Jest or c8 is, and its mutants stay
     # uncovered. Both drivers run it. Before slice-36 no function of it is
     # reported, failing at the Then.
-    @wip @slice-36 @ID-MUT-272
+    @slice-36 @ID-MUT-272
     Scenario: A strict Dart run fails closed on a library no test loads
       Given a Flutter package whose lib/lonely.dart no test imports, beside a library a test reaches
       When I run "itos-cc mutation run --fail-uncovered --json" for both libraries
@@ -2723,7 +2723,7 @@ Feature: Mutation testing
     # are not inputs. Both drivers run it. Before slice-36 a strict Dart run
     # records no evidence, so the check reports nothing, failing at the
     # Then.
-    @wip @slice-36 @ID-MUT-273
+    @slice-36 @ID-MUT-273
     Scenario Outline: Strict Dart evidence goes stale when <changed> changes
       Given a <package> whose judged library a strict mutation run measured
       When <changed> changes, and nothing else
@@ -2731,11 +2731,20 @@ Feature: Mutation testing
       But a change to integration_test/app_test.dart alone leaves its evidence fresh
 
       Examples:
-        | package                                         | changed            |
-        | Flutter app                                     | pubspec.lock       |
-        | Flutter app                                     | lib/user.g.dart    |
-        | pub workspace member app beside its dependency core | pubspec.lock   |
+        | package                                             | changed            |
+        | pub workspace member app beside its dependency core | pubspec.lock       |
         | pub workspace member app beside its dependency core | core/lib/core.dart |
+
+      # The Flutter app holds lib/user.g.dart, which the in-process
+      # harness declares as an import node though discovery leaves it out,
+      # so the in-process run refuses the app before any step judges it.
+      # These rows wait on the idea features-adjacency-flutter-rules; the
+      # binary driver passes them.
+      @wip
+      Examples:
+        | package     | changed         |
+        | Flutter app | pubspec.lock    |
+        | Flutter app | lib/user.g.dart |
 
     # Fresh here is a complete matching adversarial cache, observed first from
     # the same supported plain project. It does not claim that an unsupported

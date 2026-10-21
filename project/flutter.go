@@ -76,6 +76,12 @@ func (r *flutterRules) platformDir(dir string) bool {
 	return flutter
 }
 
+// FlutterPlatformDir reports whether dir is a platform folder of a Flutter
+// app, as discovery leaves it out: one of the folders flutter create writes
+// beside a pubspec.yaml that depends on the flutter SDK. A Dart package's
+// strict coverage evidence leaves them out the same way.
+func FlutterPlatformDir(dir string) bool { return newFlutterRules().platformDir(dir) }
+
 // dependsOnFlutter reports whether a pubspec.yaml's dependencies name the
 // flutter SDK: one of them is "sdk: flutter". One that does not parse
 // names nothing.

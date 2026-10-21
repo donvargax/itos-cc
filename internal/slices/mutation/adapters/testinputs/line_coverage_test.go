@@ -220,3 +220,78 @@ func TestKotlinCoverageInputsFingerprintTheWholeMavenReactor(t *testing.T) {
 		t.Errorf("inputs %v, want %v", got, want)
 	}
 }
+
+// Dart evidence rests on its package, or a pub workspace member's whole
+// workspace: every Dart file, generated Dart included, each pubspec.yaml,
+// pubspec_overrides.yaml and dart_test.yaml, the root's pubspec.lock and
+// the nearest .fvmrc. Hidden folders, build output, the tests flutter test
+// never runs, a Flutter app's platform folders and a nested package the
+// workspace does not list are left out.
+func TestDartCoverageInputsFingerprintTheWorkspace(t *testing.T) {
+	dir := t.TempDir()
+	flutter := "dependencies:\n  flutter:\n    sdk: flutter\n"
+	for name, text := range map[string]string{
+		".fvmrc":                                  "{\"flutter\": \"stable\"}\n",
+		"pubspec.yaml":                            "name: workspace\nworkspace:\n  - app\n  - packages/*\n",
+		"pubspec.lock":                            "packages: {}\n",
+		"app/pubspec.yaml":                        "name: app\nresolution: workspace\n" + flutter,
+		"app/pubspec_overrides.yaml":              "dependency_overrides: {}\n",
+		"app/dart_test.yaml":                      "tags: {}\n",
+		"app/pubspec.lock":                        "not the root's\n",
+		"app/lib/app.dart":                        "bool low(int i) => i == 3;\n",
+		"app/lib/user.g.dart":                     "int userId(int i) => i + 1;\n",
+		"app/test/app_test.dart":                  "void main() {}\n",
+		"app/integration_test/app_test.dart":      "void main() {}\n",
+		"app/test_driver/driver.dart":             "void main() {}\n",
+		"app/build/out.dart":                      "",
+		"app/coverage/lcov.info":                  "",
+		"app/.dart_tool/flutter_build/gen.dart":   "",
+		"app/android/app/src/main/kotlin/Main.kt": "class Main\n",
+		"app/android/lib.dart":                    "",
+		"app/example/pubspec.yaml":                "name: example\n",
+		"app/example/lib/example.dart":            "",
+		"packages/core/pubspec.yaml":              "name: core\nresolution: workspace\n",
+		"packages/core/lib/core.dart":             "int three() => 3;\n",
+		"assets/logo.png":                         "png",
+		"README.md":                               "readme\n",
+	} {
+		path := filepath.Join(dir, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	source := filepath.Join(dir, "app", "lib", "app.dart")
+	inputs, err := DartCoverageInputs(t.Context(), CurrentRuntime(), source, dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		".fvmrc", "@flutter-env", "@producer", "app/dart_test.yaml", "app/lib/app.dart", "app/lib/user.g.dart",
+		"app/pubspec.yaml", "app/pubspec_overrides.yaml", "app/test/app_test.dart", "itos-cc.yaml",
+		"packages/core/lib/core.dart", "packages/core/pubspec.yaml", "pubspec.lock", "pubspec.yaml",
+	}
+	if got := sortedKeys(inputs); !reflect.DeepEqual(got, want) {
+		t.Errorf("inputs %v, want %v", got, want)
+	}
+	// A package of its own, outside any workspace, rests on itself alone.
+	alone, err := DartCoverageInputs(t.Context(), CurrentRuntime(), filepath.Join(dir, "app", "example", "lib", "example.dart"), dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := sortedKeys(alone); !reflect.DeepEqual(got, []string{".fvmrc", "@flutter-env", "@producer", "app/example/lib/example.dart", "app/example/pubspec.yaml", "itos-cc.yaml"}) {
+		t.Errorf("a nested package's inputs %v", got)
+	}
+	// The flutter that runs, with its environment, is an input.
+	runtime := CurrentRuntime()
+	runtime.Env = map[string]string{"PUB_CACHE": "/elsewhere"}
+	moved, err := DartCoverageInputs(t.Context(), runtime, source, dir, "producer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if moved["@flutter-env"] == inputs["@flutter-env"] {
+		t.Error("PUB_CACHE left the Flutter environment unchanged")
+	}
+}

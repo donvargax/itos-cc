@@ -105,6 +105,7 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 	t.Run("language inventories preserve source and environment facts", func(t *testing.T) {
 		for _, c := range []struct{ language, source, marker, key string }{
 			{"python", "a.py", "pyproject.toml", "@python-env"}, {"typescript", "a.ts", "package.json", "@node-env"}, {"kotlin", "src/main/kotlin/A.kt", "build.gradle.kts", "@jvm-env"},
+			{"dart", "lib/a.dart", "pubspec.yaml", "@flutter-env"},
 		} {
 			t.Run(c.language, func(t *testing.T) {
 				text := "actual source bytes\n"
@@ -112,12 +113,12 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 				if c.language == "typescript" {
 					files[c.marker] = "{}"
 				}
-				b := makeInput(t, files, nil, map[string]string{"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1", "NODE_ENV": "fixture", "JAVA_HOME": "fixture-jvm"})
+				b := makeInput(t, files, nil, map[string]string{"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1", "NODE_ENV": "fixture", "JAVA_HOME": "fixture-jvm", "FLUTTER_ROOT": "fixture-flutter"})
 				got, failure := b.Fingerprints.Coverage(t.Context(), filepath.Join(b.Root, filepath.FromSlash(c.source)), b.Root, "producer", nil)
 				if failure != nil || got[c.source] != contractHash(text) || got["@producer"] != contractHash("producer") || got[c.key] == "" || got["ignored.txt"] != "" {
 					t.Fatalf("actual %s inputs: %v %v", c.language, got, failure)
 				}
-				changedEnv := map[string]string{"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "0", "NODE_ENV": "different", "JAVA_HOME": "different-jvm"}
+				changedEnv := map[string]string{"PYTEST_DISABLE_PLUGIN_AUTOLOAD": "0", "NODE_ENV": "different", "JAVA_HOME": "different-jvm", "FLUTTER_ROOT": "different-flutter"}
 				other := makeInput(t, files, nil, changedEnv)
 				changed, failure := other.Fingerprints.Coverage(t.Context(), filepath.Join(other.Root, filepath.FromSlash(c.source)), other.Root, "producer", nil)
 				if failure != nil || changed[c.key] == got[c.key] || changed[c.source] != got[c.source] || changed["@producer"] != got["@producer"] {

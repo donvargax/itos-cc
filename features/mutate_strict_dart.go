@@ -166,7 +166,9 @@ func (d *strictDartState) stale(file string) error {
 
 // integrationFresh restores the changed input, changes the package's
 // integration_test/app_test.dart alone, and is whether a strict check
-// finds the evidence fresh.
+// finds the evidence fresh: no strict coverage finding. It judges the
+// evidence alone: the mutation results rest on the tests that import the
+// file, as reach finds them, which slice-36 does not change.
 func (d *strictDartState) integrationFresh() error {
 	q := d.q
 	if err := q.m.w.write(d.changed, d.text); err != nil {
@@ -180,7 +182,7 @@ func (d *strictDartState) integrationFresh() error {
 	if err != nil {
 		return err
 	}
-	if code != 0 || len(strictLineFacts(a)) != 0 {
+	if len(strictLineFacts(a)) != 0 {
 		return fmt.Errorf("a change to %s staled the evidence exit%d: %v\n%s", test, code, a, log)
 	}
 	return nil
