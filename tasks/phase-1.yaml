@@ -6321,8 +6321,6 @@
     Linux shows nothing new, so this item watches the newest cd.yml run whose head contains its
     commit (a cancelled one is superseded) and closes when that run's Windows features job is
     green.
-  done_when:
-    - run: go test ./features -run 'TestFeatures/A_selection.s_timeout_comes_from_its_own_run' -count=1 -v
 - id: T-175
   type: ci
   title: CI keeps running go run ./tools/bin/notices -check after T-173 closes
