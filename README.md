@@ -54,8 +54,12 @@ Parsing uses tree-sitter, which needs cgo and a C compiler:
 
 ```bash
 go build -o itos-cc ./cmd/itos-cc
-go test ./...
+go test ./...                                     # scenarios in process alone
+ITOS_CC_FEATURES_BINARY_DRIVER=1 go test ./...    # and through the built binary too
 ```
+
+Locally the scenarios run in process against the fakes; the binary driver runs only with
+`ITOS_CC_FEATURES_BINARY_DRIVER=1`, which CI and CD set (decision 52, see [CI](#ci)).
 
 Releases are cut by CD (see [CI](#ci)): on a push to `main` whose tests pass on
 Linux, macOS, and Windows in `.github/workflows/cd.yml`,
@@ -1048,6 +1052,15 @@ runs ([decision 48](docs/decisions/0048-ci-is-a-fast-linux-push-gate-and-cd-runs
   tools. On a push to `main`, once all of them pass, it cuts the release
   ([`release.yml`](.github/workflows/release.yml)). It is the only workflow that does, so a
   green `ci.yml` alone never publishes.
+
+The scenarios run through two drivers: in process against the ports' fakes, and against the built
+binary. The binary driver runs only where it is opted into
+([decision 52](docs/decisions/0052-local-runs-hold-the-scenarios-in-process-against-the-fakes-and-the-built-binary-runs-them-in-ci-and-cd.md)):
+every workflow sets `ITOS_CC_FEATURES_BINARY_DRIVER=1`, so the binary runs every scenario in CI
+and CD as above. A local `go test ./...` or `itos tests smoke run scenario` runs the scenarios in
+process alone, as in-memory end-to-end tests, and `TestFeatures` logs that the binary driver ran
+nothing; set `ITOS_CC_FEATURES_BINARY_DRIVER=1` to run it, as an agent working on a
+`@binary-only` scenario does ([features/README.md](features/README.md)).
 
 A push whose range touches only prose runs no tests in either workflow and cuts nothing; with no
 green run to start from, both run everything. A green `ci.yml` no longer means every test

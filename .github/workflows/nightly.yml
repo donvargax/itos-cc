@@ -17,6 +17,11 @@ concurrency:
   group: nightly-mutate
   cancel-in-progress: false
 
+# The binary driver, TestFeatures, runs only where this is set (decision 52,
+# T-153), so the suite the mutants run against keeps its binary scenarios.
+env:
+  ITOS_CC_FEATURES_BINARY_DRIVER: "1"
+
 jobs:
   mutate:
     runs-on: ubuntu-latest

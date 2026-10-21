@@ -883,7 +883,14 @@ the binary for now, each with why and the work that owns it: the five mutation s
 that also observe `serve`, which stays on its legacy handler until its own web app (T-102 to
 T-108, T-112, T-113), and, by its Examples block's tag, `cli.feature`'s exit-code row that
 runs `serve` on a port in use (T-112). The in-process driver runs one scenario at a time, the binary driver as many at once as the CPUs, each scenario isolated (`features/README.md`, T-128). itos.yaml's scenario lines run both tests, so `cd.yml`
-holds every scenario both ways, and itos's scenario step each one it selects. A second Ctrl-C
+holds every scenario both ways, and itos's scenario step each one it selects. The binary
+driver runs only where it is opted into (decision 52, T-153): `ITOS_CC_FEATURES_BINARY_DRIVER=1`,
+which every workflow sets in its top-level `env`, or `ITOS_CC_FEATURES_BINARY` naming a binary.
+Anywhere else, a local `go test ./...` or itos.yaml's scenario lines among them, `TestFeatures`
+logs that the binary driver ran nothing, naming the variable, builds nothing and passes, so a
+local run holds the scenarios in process against the fakes alone, and the `@binary-only` and
+`Deferred` scenarios run in CI (the smoke set and those the range names) and CD. An agent working
+on a `@binary-only` scenario sets the variable itself. A second Ctrl-C
 ending the process at once, unless owned process groups are being killed, is held by
 `internal/cli`'s unit tests, which feed `Interrupts` fake interrupts on every system.
 
@@ -900,7 +907,9 @@ the plan below, with the smoke set and the scenarios the push's range names thro
 drivers, and the Go tests of every package, the in-process driver's whole suite among them.
 `cd.yml`, on the same push, runs every test on Linux, macOS and Windows in its platform jobs,
 every scenario through both drivers, and the release after them. The import-boundary
-self-test, `tools/bin/architecture-check`, runs in the plan of both.
+self-test, `tools/bin/architecture-check`, runs in the plan of both. Both set
+`ITOS_CC_FEATURES_BINARY_DRIVER`, as `nightly.yml` and `refactor-proof.yml` do, the binary
+driver running nowhere else (decision 52).
 
 ## Quality checks
 

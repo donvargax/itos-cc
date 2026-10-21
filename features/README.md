@@ -43,7 +43,20 @@ in-process driver refuses `serve`, the one command still on its legacy handler, 
 the real disk and network, naming `features.Deferred`; a run's variables (`Run.Env`) reach the
 fakes as the environment facts the real adapters read, each `NAME=value` set and each `NAME`
 alone unset, in both drivers, so a scenario can run with a variable CI exports unset. itos.yaml's scenario lines run both, so every scenario of a moved command is held
-both ways. `TestFeatures` builds itos-cc once a run
+both ways in CI and CD.
+
+The binary driver runs only where it is opted into (decision 52, T-153):
+`ITOS_CC_FEATURES_BINARY_DRIVER=1`, which `ci.yml`, `cd.yml`, `nightly.yml` and
+`refactor-proof.yml` set in their top-level `env`, or `ITOS_CC_FEATURES_BINARY` naming a binary
+(below). Anywhere else `TestFeatures` logs that the binary driver ran nothing, naming the variable
+and decision 52, builds nothing and passes, before it reads `-scenarios`. So a local `go test
+./...` or one of itos.yaml's scenario lines holds the scenarios in process against the fakes
+alone, as in-memory end-to-end tests, and a selection naming only `@binary-only` or `Deferred`
+scenarios passes locally having run nothing; those run in CI, the smoke set and the scenarios the
+push's range names, and in CD, every one on every system. An agent working on a `@binary-only`
+scenario, or on the binary driver itself, sets the variable itself.
+
+When it runs, `TestFeatures` builds itos-cc once a run
 from this tree (`itos-cc.exe` on Windows), stamped with a known version and commit, as a
 release's build is stamped with the release's. Each scenario gets a scratch folder in a temporary
 directory, runs the binary in it and reads its exit code, its output and the files it leaves. A
@@ -203,19 +216,22 @@ Before hook keyed on the scenario's file.
 ## Running them
 
 ```sh
+export ITOS_CC_FEATURES_BINARY_DRIVER=1             # opt into the binary driver (decision 52)
 go test ./features -count=1                          # every live scenario, through the binary
 go test ./features -count=1 -scenarios='^@ID-CLI-'   # the live scenarios with a matching tag
 GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its coverage in $d
-ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin
+ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin, opted in
 ITOS_CC_FEATURES_CONCURRENCY=1 go test ./features -count=1  # one scenario at a time
 go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   # in process
-itos tests smoke run scenario                        # exactly the smoke set, both ways
+itos tests smoke run scenario                        # exactly the smoke set, both ways opted in
 ```
 
 `-scenarios` takes a regular expression over each tag, `@` included. It exists because godog's
 own tag filter takes exact tags joined by commas, while itos merges selections into one regular
 expression joined by `|`. One that matches no tag fails the run, so a selection never passes by
-running nothing. Each scenario is a subtest of `TestFeatures`, named after the scenario.
+running nothing, but for `TestFeatures` without the opt-in, which reads no selection and passes,
+so locally only the in-process run judges one. Each scenario is a subtest of `TestFeatures`, named
+after the scenario.
 
 The binary driver runs scenarios at once (T-128): as many as the CPUs Go runs on,
 `runtime.GOMAXPROCS(0)`, which follows a container's CPU limit, so four on `ubuntu-latest` and

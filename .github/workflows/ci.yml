@@ -22,6 +22,14 @@ permissions:
   contents: read
   actions: read
 
+# The binary driver, TestFeatures, runs only where this is set (decision 52,
+# T-153): locally the scenarios run in process against the fakes alone, and
+# the built binary runs them here and in cd.yml. Every job has it, so the ci
+# job's merged run keeps the binary smoke set and the scenarios the range
+# names.
+env:
+  ITOS_CC_FEATURES_BINARY_DRIVER: "1"
+
 jobs:
   # The commit rules, held in CI as well as by the local hooks (T-26): itos
   # verify judges every commit from the last green run's head to this one,

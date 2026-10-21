@@ -84,7 +84,12 @@ commits:
 # TestFeatures alone until serve's work, TestScenarios
 # logging each with its reason; and the @wip Windows ownership scenarios
 # whose steps are not written yet (features.Unstepped) are logged as not
-# run in both.
+# run in both. TestFeatures runs only where ITOS_CC_FEATURES_BINARY_DRIVER is
+# 1 or ITOS_CC_FEATURES_BINARY names a binary (decision 52, T-153): every
+# workflow sets the first, so CI and CD run both tests as these lines say,
+# while a local run holds the scenarios in process against the fakes alone,
+# TestFeatures logging that the binary driver ran nothing and passing. An
+# agent working on a @binary-only scenario sets the variable itself.
 tests:
   scenario:
     adapter: gherkin

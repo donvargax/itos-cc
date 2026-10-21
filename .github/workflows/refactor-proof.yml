@@ -25,7 +25,11 @@ on:
 permissions:
   contents: read
 
+# ITOS_CC_FEATURES_BINARY_DRIVER: the binary driver, TestFeatures, runs only
+# where it is set (decision 52, T-153); ITOS_CC_FEATURES_BINARY, which the
+# suite job names, opts in as well.
 env:
+  ITOS_CC_FEATURES_BINARY_DRIVER: "1"
   STAMP: >-
     -X github.com/donvargax/itos-cc/internal/version.stamp=1.2.3-features
     -X github.com/donvargax/itos-cc/internal/version.commit=0123456789abcdef0123456789abcdef01234567

@@ -5,6 +5,18 @@
 // (github.com/donvargax/itos, features/features_test.go) and the owner's
 // itos-template's, without either one's generator behaviour.
 //
+// The binary driver runs only where it is opted into (decision 52, T-153):
+// ITOS_CC_FEATURES_BINARY_DRIVER=1, which every workflow sets in its
+// top-level env, so CI and CD run it, or ITOS_CC_FEATURES_BINARY naming a
+// binary (below). Anywhere else, a local go test ./... or itos.yaml's
+// scenario lines among them, TestFeatures logs one line saying it ran
+// nothing and why, builds nothing and passes, before it reads -scenarios:
+// locally the scenarios run in process against the fakes alone
+// (cmd/itos-cc's TestScenarios), and a selection naming only @binary-only
+// or Deferred scenarios passes having run nothing. An agent working on a
+// @binary-only scenario sets the variable itself. Every command below
+// assumes it set.
+//
 //	go test ./features -count=1                        every live scenario
 //	go test ./features -count=1 -scenarios=<regexp>    the live scenarios with a
 //	                                                   tag the expression matches
@@ -85,6 +97,10 @@ const (
 )
 
 func TestFeatures(t *testing.T) {
+	if !optedIn(os.Getenv) {
+		t.Log(notOptedIn)
+		return
+	}
 	sel, err := TagFilter(*scenarios, ".", Converted, InProcessOnly)
 	if err != nil {
 		t.Fatal(err)
@@ -137,6 +153,21 @@ func TestFeatures(t *testing.T) {
 	if suite.Run() != 0 {
 		t.Fatal("a scenario failed")
 	}
+}
+
+// driverEnv opts into the binary driver when it is 1 (decision 52).
+const driverEnv = "ITOS_CC_FEATURES_BINARY_DRIVER"
+
+// notOptedIn is the one line TestFeatures logs when it runs nothing.
+const notOptedIn = "the binary driver ran nothing: it runs only where " + driverEnv + "=1 or " +
+	prebuiltEnv + " names a binary, as CI and CD set it; locally the scenarios run in process " +
+	"against the fakes (decision 52)"
+
+// optedIn says whether the binary driver runs here, reading the
+// environment through getenv: driverEnv is 1, or prebuiltEnv names a
+// binary, which a run against another binary (T-132) means as an opt-in.
+func optedIn(getenv func(string) string) bool {
+	return getenv(driverEnv) == "1" || getenv(prebuiltEnv) != ""
 }
 
 // concurrencyEnv says how many scenarios the binary driver runs at once.
@@ -228,5 +259,27 @@ func moduleRoot() (string, error) {
 			return "", errors.New("no go.mod above the working directory")
 		}
 		dir = parent
+	}
+}
+
+// TestOptedIn holds when the binary driver runs: driverEnv at exactly 1, or
+// prebuiltEnv naming any binary, whatever the other says.
+func TestOptedIn(t *testing.T) {
+	cases := []struct {
+		driver, prebuilt string
+		want             bool
+	}{
+		{"", "", false},
+		{"0", "", false},
+		{"true", "", false},
+		{"1", "", true},
+		{"", "/tmp/itos-cc", true},
+		{"0", "/tmp/itos-cc", true},
+	}
+	for _, c := range cases {
+		env := map[string]string{driverEnv: c.driver, prebuiltEnv: c.prebuilt}
+		if got := optedIn(func(name string) string { return env[name] }); got != c.want {
+			t.Errorf("%s=%q %s=%q: opted in %v, want %v", driverEnv, c.driver, prebuiltEnv, c.prebuilt, got, c.want)
+		}
 	}
 }
