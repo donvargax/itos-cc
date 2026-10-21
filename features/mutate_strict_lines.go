@@ -3,6 +3,7 @@ package features
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -15,6 +16,7 @@ func (q *strictMutation) lineSteps(sc *godog.ScenarioContext) {
 	sc.Step(`^a Python project whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes$`, func() error { return q.lineProject("python") })
 	sc.Step(`^a TypeScript project tested with Vitest whose judged file has a function with no mutation site that no test executes, and a reached function with one line no test executes$`, func() error { return q.lineProject("typescript") })
 	sc.Step(`^a Kotlin project built with Gradle and JaCoCo whose judged file has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one branch of$`, func() error { return q.lineProject("kotlin") })
+	sc.Step(`^a Flutter package whose judged library has a function with no mutation site that no test executes, a reached function with one line no test executes, and a line a test executes only one operand of$`, func() error { return q.lineProject("dart") })
 	sc.Step(`^each unexecuted executable line is reported as "mutation.uncovered-statement" with its file, function and line,(?: and the partly executed line is not,)? the mutant counts are unchanged, and the run fails$`, q.strictLines)
 	sc.Step(`^"itos-cc mutation check --fail-uncovered" reports the same findings without running a test$`, func() error {
 		if err := q.observed(); err != nil {
@@ -30,7 +32,7 @@ func (q *strictMutation) lineSteps(sc *godog.ScenarioContext) {
 		return q.quiet(log)
 	})
 	sc.Step(`^after a test that reaches the file changes, the check reports "mutation.coverage-stale" until a new run measures it again$`, q.staleLines)
-	sc.Step(`^a strict (Python|TypeScript|Kotlin) run refuses --coverage-report, --use-existing-coverage and --coverage-command$`, func(_ string) error { return q.reportFlags() })
+	sc.Step(`^a strict (Python|TypeScript|Kotlin|Dart) run refuses --coverage-report, --use-existing-coverage and --coverage-command$`, func(_ string) error { return q.reportFlags() })
 	sc.Step(`^without --fail-uncovered the run and the check report as before$`, func() error {
 		for _, cmd := range []string{"run", "check"} {
 			a, _, code, err := q.capture("mutation " + cmd + " --json " + q.paths())
@@ -94,6 +96,25 @@ func (q *strictMutation) lineProject(language string) error {
 		c.Report = `<report><package name="calc"><sourcefile name="Calc.kt"><line nr="3" mi="1" ci="0"/><line nr="4" mi="0" ci="1"/><line nr="5" mi="1" ci="0"/><line nr="7" mi="1" ci="1"/><line nr="11" mi="1" ci="0"/><line nr="12" mi="1" ci="0"/></sourcefile></package><package name="other"><sourcefile name="Lonely.kt"><line nr="4" mi="1" ci="0"/></sourcefile></package></report>`
 		t.Command = "gradle -p . test --fail-fast --tests calc.CalcTest"
 		t.Surviving = []Site{{File: q.file, Line: 7, Original: "<", Replacement: "<="}}
+	case "dart", strictDartLonely:
+		// The VM lists a function's signature line, hit on each call, and
+		// the lines of code it ran; line 5 runs only i > 5 for reached(5).
+		files = strictDartFiles
+		q.language, c.Language, t.Language = "dart", "dart", "dart"
+		q.file = "lib/calc.dart"
+		q.selected = []string{q.file}
+		q.testFile = "test/calc_test.dart"
+		q.expected = slices.Clone(strictDartLines)
+		c.Report = "SF:lib/calc.dart\nDA:1,1\nDA:3,0\nDA:5,2\nDA:8,0\nDA:9,0\nend_of_record\n"
+		t.Command = strictDartFlutterTest + q.testFile
+		t.Surviving = []Site{{File: q.file, Line: 5, Original: "<", Replacement: "<="}}
+		if language == strictDartLonely {
+			files = maps.Clone(files)
+			files["lib/lonely.dart"] = strictDartLonelySource
+			q.selected = append(q.selected, "lib/lonely.dart")
+			q.expected = append(q.expected, strictDartLonelyMissing...)
+			slices.Sort(q.expected)
+		}
 	default:
 		return fmt.Errorf("unknown strict language %s", language)
 	}

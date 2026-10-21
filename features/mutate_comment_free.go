@@ -60,6 +60,16 @@ var commentLanguages = map[string]commentLanguage{
 		edges: map[string][]string{"src/test/kotlin/board/BoardTest.kt": {"src/main/kotlin/board/Board.kt"}},
 		file:  "src/main/kotlin/board/Board.kt", function: "high", comment: "//", indent: "    ", siteEnd: "return i > 5",
 	},
+	"dart": {
+		files: map[string]string{
+			"pubspec.yaml":   coverageDartFlutterPubspec("board", false),
+			"lib/board.dart": "bool high(int i) {\n  return i > 5;\n}\n",
+			"test/board_test.dart": "import 'package:flutter_test/flutter_test.dart';\nimport 'package:board/board.dart';\n\n" +
+				"void main() {\n  test('high', () {\n    expect(high(6), isTrue);\n    expect(high(5), isFalse);\n  });\n}\n",
+		},
+		edges: map[string][]string{"test/board_test.dart": {"lib/board.dart"}},
+		file:  "lib/board.dart", function: "high", comment: "//", indent: "  ", siteEnd: "return i > 5;",
+	},
 }
 
 func commentFreeSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
@@ -73,7 +83,7 @@ func commentFreeSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutatio
 	sc.Step(`^"itos-cc mutation run --since base" judges no function and runs no mutant$`, c.judgesNothing)
 	sc.Step(`^after a commit that changes its code, "itos-cc mutation check --since base" reports "mutation\.stale" for "Board#Place"$`, c.codeChangeStales)
 	sc.Step(`^"Board#Reset" has no mutation results, and a commit after "base" only added a comment at the end of one of its lines$`, c.resetUnrecorded)
-	sc.Step(`^a (typescript|python|kotlin) function with fresh results, all killed, committed at "base"$`, c.languageFresh)
+	sc.Step(`^a (typescript|python|kotlin|dart) function with fresh results, all killed, committed at "base"$`, c.languageFresh)
 	sc.Step(`^a commit after "base" only added a comment on a line of its own above its mutation site, and another at the end of that site's line$`, c.languageComments)
 	sc.Step(`^"itos-cc mutation check --json" of its file gives the function the state "fresh"$`, func() error { return c.stateOf(c.file, c.function, "fresh") })
 }

@@ -52,3 +52,36 @@ var strictKotlinLines = []string{
 	"mutation.uncovered-statement src/main/kotlin/calc/Calc.kt calc#reached:5",
 	"mutation.uncovered-statement src/main/kotlin/other/Lonely.kt other#lonely:4",
 }
+
+// strictDartFiles are q-D's Flutter package: reached's line 3 never runs,
+// line 5 runs only its first operand for reached(5, false), and dormant,
+// which has no mutation site, never runs.
+var strictDartFiles = map[string]string{
+	"pubspec.yaml": coverageDartFlutterPubspec("calc", false),
+	"lib/calc.dart": "bool reached(int i, bool strict) {\n  if (strict) {\n    throw ArgumentError('strict');\n  }\n  return i > 5 && i < 100;\n}\n\n" +
+		"String dormant(String name) {\n  final label = name.trim();\n  return label;\n}\n",
+	"test/calc_test.dart": "import 'package:flutter_test/flutter_test.dart';\nimport 'package:calc/calc.dart';\n\n" +
+		"void main() {\n  test('reached', () {\n    expect(reached(6, false), isTrue);\n    expect(reached(5, false), isFalse);\n  });\n}\n",
+}
+
+var strictDartLines = []string{
+	"mutation.uncovered-statement lib/calc.dart calc.calc#dormant:8",
+	"mutation.uncovered-statement lib/calc.dart calc.calc#dormant:9",
+	"mutation.uncovered-statement lib/calc.dart calc.calc#reached:3",
+}
+
+// strictDartFlutterTest is the flutter test command a Dart file's own
+// tests run with, before their paths.
+const strictDartFlutterTest = "flutter --suppress-analytics --no-version-check test --no-pub "
+
+// strictDartLonely is MUT-272's package: strictDartFiles with
+// lib/lonely.dart, which no test imports, judged too.
+const strictDartLonely = "dart with lonely.dart"
+
+const strictDartLonelySource = "int lonely(int i) {\n  return i + 1;\n}\n"
+
+// strictDartLonelyMissing is what a strict run reports of lib/lonely.dart:
+// flutter test's LCOV never names a library no test loads.
+var strictDartLonelyMissing = []string{
+	"mutation.coverage-missing lib/lonely.dart calc.lonely#lonely:1",
+}

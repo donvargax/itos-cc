@@ -73,7 +73,7 @@ func (l *languageMutation) failureSteps(sc *godog.ScenarioContext) {
 		}
 		return sameGoFindings(a, goOnly)
 	})
-	sc.Step(`^a (TypeScript|Python|Kotlin) project whose coverage (tool is missing|command exits 0 but writes no report|command fails)$`, l.failedCoverage)
+	sc.Step(`^a (TypeScript|Python|Kotlin|Dart) project whose coverage (tool is missing|command exits 0 but writes no report|command fails)$`, l.failedCoverage)
 	sc.Step(`^the run fails with "([^"]*)" naming the language and directory, and the exit code is (\d+)$`, l.coverageFailed)
 	sc.Step(`^no mutant of that file is judged or reported as covered$`, l.noJudgment)
 	sc.Step(`^without --fail-uncovered the run falls back to running every mutant as before$`, l.failureFallback)
@@ -177,6 +177,12 @@ func (l *languageMutation) failedCoverage(language, failure string) error {
 		files["app/settings.gradle.kts"] = "rootProject.name = \"app\"\n"
 		files["app/build.gradle.kts"] = "plugins { kotlin(\"jvm\") version \"2.4.21\" }\n"
 		files[l.file] = "fun above(a: Int,b: Int): Boolean {\n return a > b\n}\n"
+	case "Dart":
+		// A Flutter package with no flutter on the PATH.
+		l.file = "app/lib/calc.dart"
+		files["app/pubspec.yaml"] = coverageDartFlutterPubspec("app", false)
+		files[l.file] = "bool above(int a, int b) {\n  return a > b;\n}\n"
+		w.without = append(w.without, "flutter")
 	}
 	for file, text := range files {
 		if err := w.write(file, text); err != nil {
