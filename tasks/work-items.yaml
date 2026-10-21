@@ -4830,34 +4830,9 @@ items:
     title: mutation run runs a Flutter file's mutants with flutter test
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      D7 of dart-support, after slice-32 (coverage: flutter test, FlutterFor and its FVM preference,
-      the pubspec and package_config checks) and slice-34 (reach, and Dart's toolchain root at the
-      nearest pubspec.yaml). Its files: internal/slices/mutation/domain (command_policy.go's
-      ChooseCommand, inputs.go's ToolFacts, fresh_commands.go and fresh_admission.go's Dart cases),
-      adapters/testtools (toolchain.go: the Flutter binary from slice-32's FlutterFor, never a
-      second FVM rule), adapters/worktrees (worker copies), adapters/freshenv (own baselines), their
-      porttest fakes, features/mutate*.go and mutate.feature's slice rows, and cd.yml's dart job
-      selector (add this slice's tag beside @slice-32). A Dart file's mutants run flutter test
-      --no-pub with the test files that reach it (slice-34's reach), never a path under
-      integration_test/ or test_driver/; flutter test has no fail-fast flag, so the run is the
-      files' whole run; --all-tests runs flutter test --no-pub with no path (test/). A file no test
-      reaches has its mutants uncovered and runs no test, as Python's and Kotlin's do. The coverage
-      that decides which mutants run is measured from those reaching test files alone (flutter test
-      --no-pub --coverage --coverage-path=... <files>). The timeout is itos-cc's own deadline, as
-      for every language (widget tests' 10-minute default and the fake clock never stop a hang).
-      Worker copies of a Flutter package leave out its platform folders (android, ios, macos, linux,
-      windows, web, as slice-30 leaves them unwalked), build/ and coverage/, keep generated Dart,
-      and each worker runs flutter pub get --offline once before its first mutant, so
-      package_config.json points into the copy and every mutant's run stays offline with --no-pub;
-      .dart_tool is never linked between workers (flutter test writes into it). A pub workspace
-      member's copy holds the workspace root's pubspec.yaml and pubspec.lock and every member at its
-      relative path, platform folders left out. A mutant that does not compile is reported as q-83
-      settles; until it is answered this item builds nothing for it and its scenarios hold no
-      compile-error row. Scenarios MUT-07's Dart rows, MUT-264, MUT-265.
   - id: mutant-not-compiled
     title: A mutant that does not compile has an outcome of its own, in every compiled language
     phase: 1
