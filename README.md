@@ -1000,11 +1000,12 @@ the layer boundaries, [docs/security.md](docs/security.md) the trust boundaries,
 [docs/upgrading.md](docs/upgrading.md) how to move dependency pins,
 [docs/CONFIG.md](docs/CONFIG.md) the rules for a configuration file the project owns,
 [features/README.md](features/README.md) the scenarios, and
-[docs/decisions/](docs/decisions/) its decision records. The code is laid out as docs/go.md and
-docs/architecture.md describe, the template's layout: the refactor that moved it there is done
-but for `serve`, which keeps its legacy handler while it leaves for a web app of its own, and
-the one before-and-after comparison of the binaries (refactor-final-proof). The template's
-sample count app, kept as a reference while porting (q-48), is gone (T-116).
+[docs/decisions/](docs/decisions/) its decision records. The code is laid out as decision 51
+says, each command a slice under `internal/slices` over shared engines, as docs/go.md and
+docs/architecture.md describe; `serve` alone keeps its legacy handler while it leaves for a web
+app of its own. [docs/ownership.md](docs/ownership.md) says who owns each path, slice by slice,
+and which paths are shared. The template's sample count app, kept as a reference while porting
+(q-48), is gone (T-116).
 [CONTRIBUTORS.md](CONTRIBUTORS.md) records where the harvested infrastructure came from. `itos go`
 coordinates the work; an implementing agent uses `itos guide work`.
 

@@ -652,7 +652,8 @@ context-as-argument a context after any other parameter, tests included.
 
 Lint refusing an import after you add a package means a rule has not been told what the package
 is. Extend the rule as below; never loosen it, since every arrow above is what keeps the next
-command from reaching into this one.
+command from reaching into this one. Which paths a command's slice owns, and which are shared,
+each changed in a task of its own, is `docs/ownership.md`'s.
 
 - A command: add its slice as `internal/slices/<command>`. The `slice-packages` rule holds it
   already. Give it scenarios, and in its own package, as `internal/slices/units` does:

@@ -5,6 +5,7 @@ stack and interface; stack and feature guides add only what is specific to them.
 Go's packages, boundary lists, tests and quality checks are in `docs/go.md`.
 Rules for any configuration file a project owns are in `docs/CONFIG.md`.
 The command line's contract and rules are in `docs/CLI.md`.
+Who owns each path, slice by slice, and which paths are shared is in `docs/ownership.md`.
 
 The person's session coordinates with `itos go`. An implementing agent runs `itos guide work`,
 takes its item with `itos work take`, does the work itself and starts no agents. Read the registry
