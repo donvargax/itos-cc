@@ -69,7 +69,9 @@ func (l *listedMutation) selectionTimeout() error {
 	}
 	baseline, _ := strconv.ParseFloat(match[1], 64)
 	timeout, _ := strconv.ParseFloat(match[2], 64)
-	if d := timeout - (3*baseline + 5); d < -0.25 || d > .25 {
+	// Both times are printed to a tenth of a second, so the baseline's
+	// rounding, up to 0.05 s, is ten times larger in its timeout.
+	if d := timeout - (10*baseline + 5); d < -0.6 || d > .6 {
 		return fmt.Errorf("baseline %.2f timeout %.2f", baseline, timeout)
 	}
 	re = regexp.MustCompile(`then timeout with ID-A-01 \([0-9.]+s, the listed tests ([0-9.]+)s\)`)
@@ -79,7 +81,7 @@ func (l *listedMutation) selectionTimeout() error {
 	}
 	for _, run := range runs {
 		elapsed, _ := strconv.ParseFloat(run[1], 64)
-		if elapsed < timeout-.15 || elapsed > timeout+3.5 || elapsed >= 3*(baseline+9) {
+		if elapsed < timeout-.15 || elapsed > timeout+3.5 || elapsed >= 10*(baseline+9)+5 {
 			return fmt.Errorf("trial %.2f timeout %.2f, should use selection baseline", elapsed, timeout)
 		}
 	}
@@ -89,7 +91,7 @@ func (l *listedMutation) selectionTimeout() error {
 // timeoutKilled is whether the two mutants of the hanging line, and only
 // they, timed out, on the selection ID-A-01, and count as killed. When it
 // fails it shows the run, whose lines give each mutant's time and the
-// selections' baselines: a timeout on a file's own tests is held to three
+// selections' baselines: a timeout on a file's own tests is held to ten
 // times that file's baseline, which the run does not print, plus 5 seconds,
 // and the timed-out mutant's time gives it.
 func (l *listedMutation) timeoutKilled() error {

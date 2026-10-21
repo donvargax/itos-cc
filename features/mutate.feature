@@ -617,9 +617,9 @@ Feature: Mutation testing
     Scenario: A selection's timeout comes from its own run
       Given listed tests ID-A-01, which runs in about a second alone, and ID-A-02, which takes about ten
       And a mutant only ID-A-01 reaches makes the binary hang
-      When I run "itos-cc mutation run --timeout-factor 3"
+      When I run "itos-cc mutation run"
       Then ID-A-01 runs once alone without a mutant before that mutant's run
-      And the mutant times out after three times that run plus 5 seconds, not after three times both tests' time
+      And the mutant times out after ten times that run plus 5 seconds, not after ten times both tests' time
       And its outcome is "timeout", counted killed
 
     @listed-selection-baseline @ID-MUT-136

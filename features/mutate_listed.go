@@ -86,7 +86,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^each function holding a listed kill is "mutation\.stale", its message naming features/steps_test\.go$`, func() error { return l.stale([]string{"main", "greet"}, "features/steps_test.go") })
 	sc.Step(`^the functions whose kills were all by their own tests stay fresh$`, l.ownFresh)
 	sc.Step(`^ID-A-01 runs once alone without a mutant before that mutant's run$`, func() error { return l.baselineCount("ID-A-01", true) })
-	sc.Step(`^the mutant times out after three times that run plus 5 seconds, not after three times both tests' time$`, l.selectionTimeout)
+	sc.Step(`^the mutant times out after ten times that run plus 5 seconds, not after ten times both tests' time$`, l.selectionTimeout)
 	sc.Step(`^its outcome is "timeout", counted killed$`, l.timeoutKilled)
 	sc.Step(`^ID-A-02 runs alone without a mutant exactly once$`, func() error { return l.baselineCount("ID-A-02", false) })
 	sc.Step(`^the problem is "tests\.selection-failed", with the IDs of the selection$`, l.selectionProblem)
