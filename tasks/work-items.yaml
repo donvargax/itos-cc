@@ -2343,6 +2343,10 @@ items:
       --offline once per worker, copy a workspace member's root and siblings; real-tool CI on ubuntu
       only in cd.yml, flutter-action pinned by SHA with the Flutter version by hand. Items D1-D11 as
       touchpoints.md splits them, paths rechecked after the slices close.
+
+      The person (2026-10-21): D8 (the Dart CD job on macOS and Windows, today Linux only) runs
+      after the rest of Dart support is done (D9 strict evidence, D10 counted runs, D11 docs); no
+      need to specify it before then. The person is the only user for now.
   - id: T-52
     title: selection's Tree fake and workdir's Tree pass one contract suite
     phase: 1
