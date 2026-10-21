@@ -4497,7 +4497,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-165, T-167, T-168, T-169]
     kind: task
   - id: T-171
     title: Point the refactor proof at b768837 and add the edge cases T-86 moves listed
