@@ -28,7 +28,7 @@ func AddFreshBaseline(baselines []FreshBaseline, root, rel string, c Command) ([
 	if spec == nil {
 		return nil, fmt.Errorf("selected file %s has no supported language", rel)
 	}
-	if c.RunsNothing() && (spec.Name == "python" || spec.Name == "kotlin") {
+	if c.RunsNothing() && (spec.Name == "python" || spec.Name == "kotlin" || spec.Name == "dart") {
 		return baselines, nil
 	}
 	if len(c.Args) == 0 {

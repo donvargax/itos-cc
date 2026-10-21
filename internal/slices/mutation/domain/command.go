@@ -17,6 +17,11 @@ type Command struct {
 	// Suite says the command runs the whole suite of its build root, as no
 	// narrower run exists: a TypeScript test script without Vitest or Jest.
 	Suite bool
+	// Ready, when set, is what a worker runs once in its copy of Root, in
+	// Dir, before the copy's first command: flutter pub get --offline,
+	// which resolves a Flutter package's copy from the pub cache alone, so
+	// its tests run with --no-pub.
+	Ready []string
 }
 
 // Key identifies a command for sharing one baseline between files.
@@ -32,7 +37,7 @@ func (c Command) String() string {
 }
 
 // RunsNothing says whether c runs no command at all: the own tests of a
-// Python or Kotlin file no test reaches.
+// Python, Kotlin or Dart file no test reaches.
 func (c Command) RunsNothing() bool {
 	return len(c.Args) == 0 && c.Shell == ""
 }

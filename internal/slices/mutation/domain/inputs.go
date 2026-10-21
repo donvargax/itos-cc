@@ -12,13 +12,16 @@ type CommandRequest struct {
 
 // ToolFacts are observations used to choose a command. Optional absent tools,
 // unreadable manifests and unsuccessful probes are negative facts, not failures.
-// PythonFiles/Modules and Classes are the existing runners' runnable inventory.
+// PythonFiles/Modules, DartFiles and Classes are the existing runners'
+// runnable inventory. Flutter starts the flutter that runs a Dart package's
+// tests: its program, then the global flags every flutter command carries.
 type ToolFacts struct {
 	Language, Root, Module, Reactor string
 	PackageManager, Vitest, Jest    string
 	Interpreter                     string
 	Pytest                          bool
 	PythonFiles, PythonModules      []string
+	Flutter, DartFiles              []string
 	Runner                          string
 	Classes                         map[string][]string
 }

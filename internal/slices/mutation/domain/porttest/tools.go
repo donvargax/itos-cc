@@ -87,6 +87,19 @@ func (s *Inputs) interpreter(ctx context.Context, root string, first bool) strin
 func pythonFile(name string) bool {
 	return strings.HasSuffix(name, ".py") && (strings.HasPrefix(filepath.Base(name), "test_") || strings.HasSuffix(name, "_test.py"))
 }
+
+// dartFiles are those of tests flutter test runs in root: its test/
+// folder's *_test.dart, relative and sorted.
+func dartFiles(root string, tests []string) []string {
+	files := []string{}
+	for _, path := range tests {
+		if name := relative(root, path); inside(root, path) && strings.HasPrefix(name, "test/") && strings.HasSuffix(name, "_test.dart") && !slices.Contains(files, name) {
+			files = append(files, name)
+		}
+	}
+	slices.Sort(files)
+	return files
+}
 func (s *Inputs) pythonFiles(root string, tests []string) ([]string, []string) {
 	files := []string{}
 	var modules []string
@@ -162,8 +175,14 @@ func (s *Inputs) Observe(ctx context.Context, r mutants.CommandRequest) (mutants
 	f.Language = spec.Name
 	switch f.Language {
 	case "dart":
-		// Its package, each pub workspace member a build root of its own.
+		// Its package, each pub workspace member a build root of its own,
+		// run by the flutter on the PATH: the real toolchain's FVM
+		// preference is coverage's, held by the binary scenarios.
 		f.Root = s.base(ctx, r.Path, "pubspec.yaml")
+		f.Flutter = []string{"flutter", "--suppress-analytics", "--no-version-check"}
+		if !r.All {
+			f.DartFiles = dartFiles(f.Root, r.Tests)
+		}
 	case "go":
 		f.Root = s.base(ctx, r.Path, "go.mod")
 	case "typescript":

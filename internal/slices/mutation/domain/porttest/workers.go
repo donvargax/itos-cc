@@ -181,6 +181,16 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 	root := filepath.Clean(c.Root)
 	copy := w.copies[root]
 	if copy == nil {
+		// A copy's Ready passes unless its program is absent, off the
+		// PATH or a path no file is at, or a declaration of it fails it: a
+		// setup failure, never a judgment.
+		if program := firstWord(c.Ready); program != "" {
+			ready := f.Tests[filepath.Clean(c.Dir)][strings.Join(c.Ready, " ")]
+			_, there := f.Files[filepath.Clean(program)]
+			if hiddenProgram(program, f.Without, f.Platform) || filepath.IsAbs(program) && !there || ready.Baseline != "" {
+				return mutants.CommandResult{}, failed("the worker's copy is not readied by " + strings.Join(c.Ready, " "))
+			}
+		}
 		copy = map[string]string{}
 		for path, text := range f.Files {
 			rel, err := filepath.Rel(root, path)
@@ -562,4 +572,11 @@ func hiddenProgram(program string, without []string, platform string) bool {
 		}
 	}
 	return false
+}
+
+func firstWord(words []string) string {
+	if len(words) == 0 {
+		return ""
+	}
+	return words[0]
 }

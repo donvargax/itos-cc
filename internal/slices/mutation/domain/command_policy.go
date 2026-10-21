@@ -56,6 +56,8 @@ func ChooseCommand(request CommandRequest, facts ToolFacts) Command {
 			}
 			c.Args = PythonArgs(facts.Interpreter, facts.Pytest, run, modules)
 		}
+	case "dart":
+		c.Args, c.Ready = DartArgs(request, facts)
 	case "kotlin":
 		if facts.Runner == "mvn" {
 			c = mavenChoice(request, facts)
@@ -154,4 +156,24 @@ func PythonArgs(py string, pytest bool, run, modules []string) []string {
 		return append([]string{py, "-m", "unittest", "-f"}, modules...)
 	}
 	return []string{py, "-m", "unittest", "discover", "-f"}
+}
+
+// DartArgs runs a Dart package's tests with flutter test --no-pub, never
+// resolving anything: the test files that reach the source (DartFiles), the
+// whole suite of test/ for All, and nothing for a source no test reaches.
+// flutter test has no fail-fast flag, so its run is the files' whole run.
+// ready resolves a worker's copy offline before its first run.
+func DartArgs(request CommandRequest, facts ToolFacts) (args, ready []string) {
+	if len(facts.Flutter) == 0 {
+		return nil, nil
+	}
+	ready = append(slices.Clone(facts.Flutter), "pub", "get", "--offline")
+	if !request.All && len(facts.DartFiles) == 0 {
+		return nil, ready
+	}
+	args = append(slices.Clone(facts.Flutter), "test", "--no-pub")
+	if !request.All {
+		args = append(args, facts.DartFiles...)
+	}
+	return args, ready
 }

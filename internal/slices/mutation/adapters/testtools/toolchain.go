@@ -35,8 +35,18 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 	f.Language = spec.Name
 	switch spec.Name {
 	case "dart":
-		// Its package, each pub workspace member a build root of its own.
+		// Its package, each pub workspace member a build root of its own,
+		// run by the flutter coverage runs it with, FVM's preferred.
 		f.Root = Base(ctx, r.Path, "pubspec.yaml")
+		flutter := coverage.FlutterFor(ctx, f.Root)
+		if flutter == "" {
+			// No flutter is found: the run names the one it lacks.
+			flutter = "flutter"
+		}
+		f.Flutter = append([]string{flutter}, coverage.FlutterQuiet...)
+		if !r.All {
+			f.DartFiles = coverage.DartTests(f.Root, r.Tests)
+		}
 	case "go":
 		f.Root = Base(ctx, r.Path, "go.mod")
 	case "typescript":

@@ -140,7 +140,8 @@ const (
 // Plans groups sources by language and build root and returns one plan per
 // group, with reports written under outDir. Python, Kotlin and Dart run
 // the whole suite whatever the scope, but in OwnTests with reach set: each Python
-// source is measured by the test files that reach it (PythonTests), and each
+// source is measured by the test files that reach it (PythonTests), each
+// Dart source by those of them flutter test runs (DartTests), and each
 // Kotlin source by the test classes of its own build module those files
 // declare (KotlinTests), one plan per build root and distinct set of those
 // tests, its report speaking for its own sources alone (OwnSources), and
@@ -162,10 +163,10 @@ func PlansSupervised(ctx context.Context, sources []string, outDir string, scope
 }
 
 func buildPlans(ctx context.Context, sources []string, outDir string, scope Scope, reach Reach, execute CommandExecutor) ([]Plan, []CommandExecution, error) {
-	// tests is, for a Python or Kotlin source measured by the tests that
-	// reach it, those tests as PythonTests runs them, or the test classes
-	// of its own module KotlinTests finds in them, joined: a group of its
-	// own.
+	// tests is, for a Python, Dart or Kotlin source measured by the tests
+	// that reach it, those tests as PythonTests or DartTests runs them, or
+	// the test classes of its own module KotlinTests finds in them, joined:
+	// a group of its own.
 	type key struct{ lang, dir, tests string }
 	narrow := scope == OwnTests && reach != nil
 	groups := map[key][]string{}
@@ -184,6 +185,8 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 			k.tests = "\x00" + strings.Join(PythonTests(dir, reach(s)), "\x00")
 		case spec.Name == "kotlin" && narrow:
 			k.tests = "\x00" + strings.Join(KotlinTests(ctx, reach(s))[dir], "\x00")
+		case spec.Name == "dart" && narrow:
+			k.tests = "\x00" + strings.Join(DartTests(dir, reach(s)), "\x00")
 		}
 		groups[k] = append(groups[k], s)
 	}
@@ -238,7 +241,7 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 		case "kotlin":
 			p = kotlinPlan(ctx, k.dir, out, tests)
 		case "dart":
-			p = dartPlan(ctx, k.dir, out, sources)
+			p = dartPlan(ctx, k.dir, out, sources, tests)
 		default:
 			continue
 		}

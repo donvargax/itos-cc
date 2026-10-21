@@ -77,6 +77,31 @@ func WorkersContract(t *testing.T, open func(t *testing.T, baseline string) (mut
 			t.Fatalf("setup became a judgment: %v", f)
 		}
 	})
+	t.Run("a copy readied once runs its commands; one that cannot be readied is a setup failure", func(t *testing.T) {
+		factory, c := open(t, "")
+		p, f := factory.Open(t.Context(), mutants.MutationRun, 1)
+		if f != nil {
+			t.Fatal(f)
+		}
+		defer closePool(t.Context(), t, p)
+		c.Ready = c.Args
+		for range 2 {
+			if r, f := p.Worker(0).Run(t.Context(), c, nil, 0); f != nil || !r.Passed {
+				t.Fatalf("readied copy: %+v %v", r, f)
+			}
+		}
+		q, f := factory.Open(t.Context(), mutants.MutationRun, 1)
+		if f != nil {
+			t.Fatal(f)
+		}
+		defer closePool(t.Context(), t, q)
+		c.Ready = []string{filepath.Join(c.Root, "missing-command")}
+		_, f = q.Worker(0).Run(t.Context(), c, nil, 0)
+		var failed mutants.WorkerFailed
+		if !errors.As(f, &failed) {
+			t.Fatalf("unready copy became a judgment: %v", f)
+		}
+	})
 	t.Run("caller cancellation forwarded before any work", func(t *testing.T) {
 		factory, c := open(t, "")
 		ctx, cancel := context.WithCancelCause(t.Context())

@@ -211,6 +211,32 @@ func ToolchainContract(t *testing.T, makeInput InputFactory) {
 			t.Fatalf("installed actual entry: %+v %v", c, failure)
 		}
 	})
+	t.Run("Dart runs the test files under test/ that reach it, offline", func(t *testing.T) {
+		b := makeInput(t, map[string]string{"pubspec.yaml": "name: own\ndependencies:\n  flutter:\n    sdk: flutter\n", "lib/a.dart": "bool a() => true;\n",
+			"test/a_test.dart": "", "test/support.dart": "", "integration_test/app_test.dart": ""}, nil, nil)
+		path := filepath.Join(b.Root, "lib", "a.dart")
+		var tests []string
+		for _, test := range []string{"test/a_test.dart", "test/support.dart", "integration_test/app_test.dart"} {
+			tests = append(tests, filepath.Join(b.Root, filepath.FromSlash(test)))
+		}
+		quiet := []string{"--suppress-analytics", "--no-version-check"}
+		flutter := func(words []string) bool {
+			return len(words) > 0 && filepath.Base(words[0]) == "flutter" && reflect.DeepEqual(words[1:3], quiet)
+		}
+		c, failure := mutants.ObserveCommand(t.Context(), b.Toolchain, mutants.CommandRequest{Path: path, Tests: tests})
+		if failure != nil || c.Root != b.Root || c.Dir != b.Root || !flutter(c.Args) || !reflect.DeepEqual(c.Args[3:], []string{"test", "--no-pub", "test/a_test.dart"}) ||
+			!flutter(c.Ready) || !reflect.DeepEqual(c.Ready[3:], []string{"pub", "get", "--offline"}) {
+			t.Fatalf("reached Dart source: %+v %v", c, failure)
+		}
+		c, failure = mutants.ObserveCommand(t.Context(), b.Toolchain, mutants.CommandRequest{Path: path, All: true})
+		if failure != nil || !flutter(c.Args) || !reflect.DeepEqual(c.Args[3:], []string{"test", "--no-pub"}) {
+			t.Fatalf("every Dart test: %+v %v", c, failure)
+		}
+		c, failure = mutants.ObserveCommand(t.Context(), b.Toolchain, mutants.CommandRequest{Path: path, Tests: tests[1:]})
+		if failure != nil || !c.RunsNothing() || c.Dir != b.Root {
+			t.Fatalf("unreached Dart source: %+v %v", c, failure)
+		}
+	})
 	t.Run("Python shell and unreached source avoid unused probe", func(t *testing.T) {
 		b := makeInput(t, map[string]string{"pyproject.toml": "", "src/a.py": "def a(): return 1\n", ".venv/bin/python": "not executable"}, nil, nil)
 		path := filepath.Join(b.Root, "src", "a.py")

@@ -346,7 +346,7 @@ func (l *languageMutation) mutateDartTracedRun() error {
 	before := w.binary
 	w.binary = strace
 	defer func() { w.binary = before }()
-	return w.runEnv(w.dir, env, "-f", "-qq", "-e", "trace=connect", "-o", t.connections, b.bin,
+	return w.runEnv(w.dir, env, "-f", "-qq", "-s", "256", "-e", "trace=connect,execve,clone,clone3,fork,vfork", "-o", t.connections, b.bin,
 		"mutation", "run", "--workers", "2", "--no-annotate", "--json", filepath.FromSlash(l.file))
 }
 
@@ -410,7 +410,32 @@ func (l *languageMutation) mutateDartCommands() (map[string][]mutateDartCommand,
 }
 
 // mutateDartConnection is a connection strace saw: the address it went to.
-var mutateDartConnection = regexp.MustCompile(`connect\(\d+, \{sa_family=AF_INET6?, .*?(?:inet_addr\("([^"]+)"\)|inet_pton\(AF_INET6, "([^"]+)")`)
+var mutateDartConnection = regexp.MustCompile(`(?m)^(\d+) connect\(\d+, \{sa_family=AF_INET6?, .*?(?:inet_addr\("([^"]+)"\)|inet_pton\(AF_INET6, "([^"]+)")`)
+
+// mutateDartStarted are the threads and processes strace saw started, and
+// the programs they ran: a clone's or fork's new thread or process by its
+// parent, and an execve's program.
+var mutateDartStarted = regexp.MustCompile(`(?m)^(\d+) (?:execve\("[^"]+", \[(.*?)\].*= 0$|.*(?:clone3?|fork|vfork)(?:\(| resumed>).*= (\d+)$)`)
+
+// mutateDartProgramOf names the command the thread tid of strace's trace
+// ran, and the commands that started it: the last each one executed.
+func mutateDartProgramOf(trace, tid string) string {
+	parent, program := map[string]string{}, map[string]string{}
+	for _, m := range mutateDartStarted.FindAllStringSubmatch(trace, -1) {
+		if m[2] != "" {
+			program[m[1]] = m[2]
+		} else {
+			parent[m[3]] = m[1]
+		}
+	}
+	var chain []string
+	for id := tid; id != ""; id = parent[id] {
+		if p := program[id]; p != "" && !slices.Contains(chain, p) {
+			chain = append(chain, p)
+		}
+	}
+	return "thread " + tid + " of " + strings.Join(chain, ", started by ")
+}
 
 // mutateDartResolvedOffline is whether, in each worker's copy, the first
 // flutter command was pub get --offline and no other was a pub get, and
@@ -439,9 +464,9 @@ func (l *languageMutation) mutateDartResolvedOffline() error {
 	seen := 0
 	for _, match := range mutateDartConnection.FindAllStringSubmatch(string(data), -1) {
 		seen++
-		address := match[1] + match[2]
+		address := match[2] + match[3]
 		if !strings.HasPrefix(address, "127.") && address != "::1" && !strings.HasPrefix(address, "::ffff:127.") {
-			return fmt.Errorf("the run connected to %s:\n%s", address, data)
+			return fmt.Errorf("%s connected to %s", mutateDartProgramOf(string(data), match[1]), address)
 		}
 	}
 	if seen == 0 {

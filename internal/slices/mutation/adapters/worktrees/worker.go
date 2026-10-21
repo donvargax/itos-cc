@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -24,9 +26,13 @@ var linkDirs = map[string]bool{"node_modules": true, ".venv": true, "venv": true
 // skipDirs are history and caches a worker neither copies nor shares, as
 // is build output (project.IsBuildOutput); tools rebuild what they need
 // inside the worker.
+// .dart_tool holds pub's resolution, which points into the tree it was
+// made for, and flutter test writes into it, so a worker neither copies nor
+// links it: its copy resolves itself (Command.Ready).
 var skipDirs = map[string]bool{
 	".git": true, ".hg": true, ".svn": true, ".metrics": true, ".idea": true, ".vscode": true,
 	".gradle": true, "__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".tox": true,
+	".dart_tool": true,
 }
 
 // worker owns private copies of project trees, so mutants run in parallel
@@ -40,18 +46,79 @@ type worker struct {
 	prepare func(*exec.Cmd)
 }
 
-// copyOf returns the worker's copy of root, creating it on first use.
-func (w *worker) copyOf(ctx context.Context, root string) (string, error) {
-	if c, ok := w.copies[root]; ok {
-		return c, nil
-	}
-	h := sha256.Sum256([]byte(root))
-	dst := filepath.Join(w.dir, hex.EncodeToString(h[:4]), filepath.Base(root))
-	if err := copyTree(ctx, root, dst); err != nil {
+// copyOf returns the worker's copy of c.Root, creating it on first use:
+// the tree pubWorkspace says a pub workspace's member needs, or c.Root's
+// own, then c.Ready run once in it, before any command runs there.
+func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
+	tree, members := pubWorkspace(c.Root)
+	rel, err := filepath.Rel(tree, c.Root)
+	if err != nil {
 		return "", err
 	}
-	w.copies[root] = dst
-	return dst, nil
+	if dst, ok := w.copies[tree]; ok {
+		return filepath.Join(dst, rel), nil
+	}
+	h := sha256.Sum256([]byte(tree))
+	dst := filepath.Join(w.dir, hex.EncodeToString(h[:4]), filepath.Base(tree))
+	if err := copyPackages(ctx, tree, members, dst); err != nil {
+		return "", err
+	}
+	root := filepath.Join(dst, rel)
+	if len(c.Ready) > 0 {
+		if err := w.ready(ctx, c, root); err != nil {
+			_ = os.RemoveAll(dst) // a later command copies afresh
+			return "", err
+		}
+	}
+	w.copies[tree] = dst
+	return root, nil
+}
+
+// ready runs c.Ready in root, the worker's fresh copy of c.Root, from
+// c.Dir's place in it, failing with its output when it fails.
+func (w *worker) ready(ctx context.Context, c Command, root string) error {
+	cmd := exec.CommandContext(ctx, c.Ready[0], c.Ready[1:]...) //nolint:gosec // the selected package's own toolchain readying the worker's private copy
+	w.prepared(cmd, c, root)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	r, err := w.runner.Run(ctx, cmd, &out)
+	switch {
+	case err != nil:
+		return err
+	case ctx.Err() != nil:
+		return fmt.Errorf("ready the worker's copy with %s: %w", strings.Join(c.Ready, " "), ctx.Err())
+	case !r.Passed:
+		return fmt.Errorf("ready the worker's copy with %s: exit %d\n%s", strings.Join(c.Ready, " "), r.ExitCode, r.Output)
+	}
+	return nil
+}
+
+// copyPackages copies tree to dst: members alone, each at its place in
+// tree, beside tree's pubspec.yaml and pubspec.lock, when members are a
+// pub workspace's, else the whole tree.
+func copyPackages(ctx context.Context, tree string, members []string, dst string) error {
+	if members == nil {
+		return copyTree(ctx, tree, dst)
+	}
+	if err := os.MkdirAll(dst, 0o755); err != nil { //nolint:gosec // preserve project directory behavior inside the owner's private 0700 scratch
+		return err
+	}
+	for _, name := range []string{"pubspec.yaml", "pubspec.lock"} {
+		if err := copyFile(filepath.Join(tree, name), filepath.Join(dst, name)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+	}
+	for _, member := range members {
+		rel, err := filepath.Rel(tree, member)
+		if err != nil {
+			return err
+		}
+		if err := copyTree(ctx, member, filepath.Join(dst, rel)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // copyTree copies the tree at src to dst under ctx, linking dependencies
@@ -64,7 +131,7 @@ func copyTree(ctx context.Context, src, dst string) error {
 		rel, _ := filepath.Rel(src, path)
 		target := filepath.Join(dst, rel)
 		switch {
-		case d.IsDir() && path != src && (skipDirs[d.Name()] || project.IsBuildOutput(ctx, path)):
+		case d.IsDir() && path != src && (skipDirs[d.Name()] || dartLeftOut(path) || project.IsBuildOutput(ctx, path)):
 			return filepath.SkipDir
 		case d.IsDir() && path != src && linkDirs[d.Name()]:
 			return skipAfter(os.Symlink(path, target))
@@ -116,11 +183,10 @@ type result = mutants.CommandResult
 // run executes c inside the worker's copy of c.Root, under parent. A zero
 // timeout waits as long as the tests take.
 func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (result, error) {
-	root, err := w.copyOf(parent, c.Root)
+	root, err := w.copyOf(parent, c)
 	if err != nil {
 		return result{}, err
 	}
-	dir := filepath.Join(root, strings.TrimPrefix(c.Dir, c.Root))
 	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc
@@ -133,7 +199,19 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	} else {
 		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // execute the selected test command with its unchanged argv
 	}
-	cmd.Dir = dir
+	w.prepared(cmd, c, root)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	r, err := w.runner.Run(ctx, cmd, &out)
+	return result(r), err
+}
+
+// prepared runs cmd, one of c's, in root, the worker's copy of c.Root, from
+// c.Dir's place in it, with c's path variable set and the worker's own
+// preparation applied.
+func (w *worker) prepared(cmd *exec.Cmd, c Command, root string) {
+	cmd.Dir = filepath.Join(root, strings.TrimPrefix(c.Dir, c.Root))
 	cmd.Env = project.NoBytecodeEnv(os.Environ())
 	if c.PathEnv != "" {
 		var paths []string
@@ -148,21 +226,16 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	if w.prepare != nil {
 		w.prepare(cmd)
 	}
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	r, err := w.runner.Run(ctx, cmd, &out)
-	return result(r), err
 }
 
 // withMutant writes src to the worker's copy of path, runs fn under ctx,
 // and restores the original text.
-func (w *worker) withMutant(ctx context.Context, root, path string, original, mutated []byte, fn func(context.Context) (result, error)) (result, error) {
-	copyRoot, err := w.copyOf(ctx, root)
+func (w *worker) withMutant(ctx context.Context, c Command, path string, original, mutated []byte, fn func(context.Context) (result, error)) (result, error) {
+	copyRoot, err := w.copyOf(ctx, c)
 	if err != nil {
 		return result{}, err
 	}
-	rel, _ := filepath.Rel(root, path)
+	rel, _ := filepath.Rel(c.Root, path)
 	target := filepath.Join(copyRoot, rel)
 	if err := os.WriteFile(target, mutated, 0o644); err != nil { //nolint:gosec // preserve the legacy trial mode inside private worker scratch
 		return result{}, err

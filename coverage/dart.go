@@ -8,6 +8,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"sort"
+	"strings"
 
 	"go.yaml.in/yaml/v3"
 
@@ -15,16 +18,23 @@ import (
 	"github.com/donvargax/itos-cc/project"
 )
 
+// FlutterQuiet are the global flags every flutter command itos-cc starts
+// carries first: flutter neither reports analytics nor checks for a newer
+// Flutter, so a run contacts nothing for the user (decision 26's spirit),
+// as both otherwise reach the network whatever the command does.
+var FlutterQuiet = []string{"--suppress-analytics", "--no-version-check"}
+
 // dartPlan measures the Dart package at dir, sources its files, with
-// flutter test's whole suite, test/ alone as flutter test runs it with no
-// path, so never integration_test/, which needs a device (q-74, q-76). It
-// writes LCOV with SF: paths relative to dir, so each member of a pub
-// workspace is a plan of its own, run in its own directory. Line coverage
-// only: no --branch-coverage, whose blocks are not decisions. Nothing is
-// downloaded or resolved for it (decision 26): --no-pub keeps flutter test
-// from running pub get, and a package pub has not resolved, a pure Dart
-// package, or no flutter, runs nothing.
-func dartPlan(ctx context.Context, dir, out string, sources []string) Plan {
+// tests, the test files that reach them as DartTests gives them, or with
+// flutter test's whole suite when tests is nil, test/ alone as flutter test
+// runs it with no path, so never integration_test/, which needs a device
+// (q-74, q-76). It writes LCOV with SF: paths relative to dir, so each
+// member of a pub workspace is a plan of its own, run in its own
+// directory. Line coverage only: no --branch-coverage, whose blocks are not
+// decisions. Nothing is downloaded or resolved for it (decision 26):
+// --no-pub keeps flutter test from running pub get, and a package pub has
+// not resolved, a pure Dart package, or no flutter, runs nothing.
+func dartPlan(ctx context.Context, dir, out string, sources, tests []string) Plan {
 	report := filepath.Join(out, "lcov.info")
 	plan := Plan{
 		Language: "dart",
@@ -46,9 +56,32 @@ func dartPlan(ctx context.Context, dir, out string, sources []string) Plan {
 		plan.Unsupported = "its dependencies are not resolved, as it has no .dart_tool/package_config.json; " +
 			"run flutter pub get, or measure with --coverage-command"
 	default:
-		plan.Commands = [][]string{{flutter, "test", "--no-pub", "--coverage", "--coverage-path=" + report}}
+		// --no-dds: the Dart Development Service flutter test starts to
+		// collect coverage connects out, and the LCOV is the same without it.
+		command := append(append([]string{flutter}, FlutterQuiet...), "test", "--no-pub", "--no-dds", "--coverage", "--coverage-path="+report)
+		plan.Commands = [][]string{append(command, tests...)}
 	}
 	return plan
+}
+
+// DartTests is which of tests, the test files that reach a source, a Dart
+// own-test run in dir passes flutter test: those under dir's test/ folder
+// named as flutter test finds test files, *_test.dart, relative to dir with
+// forward slashes, sorted. integration_test/ and test_driver/ are left out,
+// as flutter test with no path leaves them: they need a device (q-76).
+func DartTests(dir string, tests []string) []string {
+	out := []string{}
+	for _, test := range tests {
+		rel, err := filepath.Rel(dir, test)
+		if err != nil || !strings.HasSuffix(rel, "_test.dart") {
+			continue
+		}
+		if rel = filepath.ToSlash(rel); strings.HasPrefix(rel, "test/") && !slices.Contains(out, rel) {
+			out = append(out, rel)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // FlutterFor is the flutter that runs the tests of the Dart package at dir:

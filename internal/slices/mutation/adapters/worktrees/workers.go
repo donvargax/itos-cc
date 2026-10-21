@@ -108,7 +108,7 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 	if change == nil {
 		r, err = w.worker.run(ctx, c, timeout)
 	} else {
-		r, err = w.worker.withMutant(ctx, c.Root, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
+		r, err = w.worker.withMutant(ctx, c, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
 	}
 	if err != nil {
 		var cleanup *processes.CleanupFailed

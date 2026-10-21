@@ -218,7 +218,7 @@ Feature: Mutation testing
       # slice-35, dart-support: flutter test has no fail-fast flag; the
       # files are the test files that reach the source (slice-34), and an
       # FVM-pinned SDK is preferred as coverage prefers it (slice-32).
-      @wip @slice-35
+      @slice-35
       Examples:
         | language   | setup                        | command                                                     |
         | Dart       | a resolved Flutter package   | flutter test --no-pub on the test files that reach the file |
@@ -2208,7 +2208,7 @@ Feature: Mutation testing
 
     # slice-35: a Dart file's own tests are the test files that reach it,
     # as Python's are; integration_test/ never runs (q-76).
-    @wip @slice-35 @ID-MUT-264 @binary-only
+    @slice-35 @ID-MUT-264 @binary-only
     Scenario: A Dart file's own tests are the test files that reach it
       Given a Flutter package where test/a_test.dart reaches lib/a.dart, test/b_test.dart reaches only lib/b.dart and fails, and integration_test/app_test.dart imports lib/a.dart
       When I run "itos-cc mutation run --json" for lib/a.dart
@@ -2221,8 +2221,8 @@ Feature: Mutation testing
     # copy; platform folders stay out (q-75) and generated Dart stays in,
     # as tests compile against it (q-77). A pub workspace member needs the
     # workspace root's resolution and its sibling members beside it.
-    @wip @slice-35 @ID-MUT-265 @binary-only
-    Scenario Outline: Workers run a Flutter <package>'s mutants offline in copies of their own
+    @slice-35 @ID-MUT-265 @binary-only
+    Scenario Outline: Workers run the mutants of a <package> offline, in copies of their own
       Given a resolved <package> with android and ios folders and a generated lib/user.g.dart its tests import
       When I run "itos-cc mutation run --workers 2" for one of its libraries
       Then each worker's copy holds no android or ios folder, and holds lib/user.g.dart

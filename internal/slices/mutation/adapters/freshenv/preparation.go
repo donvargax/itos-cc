@@ -519,11 +519,11 @@ func hashPreparationPolicy(value string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// hasReachedUnit says whether any admitted function is Python's or
-// Kotlin's, whose own tests are the tests that reach its file.
+// hasReachedUnit says whether any admitted function is Python's, Kotlin's
+// or Dart's, whose own tests are the tests that reach its file.
 func hasReachedUnit(units []mutants.FreshUnit) bool {
 	for _, unit := range units {
-		if spec := lang.Detect(unit.Path); spec != nil && (spec.Name == "python" || spec.Name == "kotlin") {
+		if spec := lang.Detect(unit.Path); spec != nil && (spec.Name == "python" || spec.Name == "kotlin" || spec.Name == "dart") {
 			return true
 		}
 	}
