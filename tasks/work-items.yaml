@@ -4669,8 +4669,8 @@ items:
   - id: T-174
     title: ID-MUT-135's ordinary mutant times out on a slow Windows runner
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: changed-takes-unwalked
