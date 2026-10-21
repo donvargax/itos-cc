@@ -62,6 +62,10 @@ type scrapState struct {
 	reportedErr   error
 }
 
+// scrapFeature declares scrap.feature's steps, scrapSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var scrapFeature = featureFile{Name: "scrap.feature", Steps: scrapSteps}
+
 func scrapSteps(sc *godog.ScenarioContext, w *world) {
 	d := &scrapState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

@@ -75,10 +75,10 @@ commits:
 # tags, which each harness turns into godog's tag filter, as godog's own
 # takes only exact tags. The harnesses run only the feature files converted
 # to godog (q-52, T-32): a scenario of another, the smoke set's included, is
-# logged as not run there. TestScenarios runs the converted files of the
-# moved commands (features.InProcess), every converted file since
-# cli.feature joined it (T-114), mutate.feature (T-125) and
-# metrics_snapshots.feature (T-101) among them. The scenarios
+# logged as not run there. A converted file is one whose steps declare it
+# (features/steps_gen.go, which tools/bin/assemble writes, T-164), and both
+# tests run every one (features.Converted), TestScenarios since cli.feature's
+# commands moved (T-114). The scenarios
 # features.Deferred lists, the mutation ones that also observe serve and
 # cli.feature's row that runs serve on a port in use, run through
 # TestFeatures alone until serve's work, TestScenarios
@@ -133,9 +133,11 @@ ci:
     # Every tracked Go file, each top-level package and tools/ included,
     # named when gofmt would change it.
     - { run: "! git ls-files -z -- '*.go' | xargs -0 gofmt -l | grep .", cost: static }
-    # cmd/itos-cc/commands_gen.go is what tools/bin/assemble writes from the
-    # slices under internal/slices (T-146): -check regenerates it, writing
-    # nothing, and fails naming the file when the committed one differs.
+    # cmd/itos-cc/commands_gen.go and features/steps_gen.go are what
+    # tools/bin/assemble writes from the slices under internal/slices (T-146)
+    # and the declarations of the feature files' steps (T-164): -check
+    # regenerates both, writing nothing, and fails naming each file whose
+    # committed one differs.
     - { run: go run ./tools/bin/assemble -check, cost: static }
     - { run: go build ./..., cost: static }
     - { run: go vet ./..., cost: static }

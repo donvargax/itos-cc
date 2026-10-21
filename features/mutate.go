@@ -61,6 +61,10 @@ type mutateState struct {
 	forFile       func(string) error
 }
 
+// mutateFeature declares mutate.feature's steps, mutateSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var mutateFeature = featureFile{Name: "mutate.feature", Steps: mutateSteps}
+
 func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	m := &mutateState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

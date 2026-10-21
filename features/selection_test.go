@@ -48,8 +48,8 @@ func TestFeatureSelectionRunsBothFilesByDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	ran := runSelection(t, sel.Filter, selectionPaths(dir, Converted))
-	if !slices.Equal(ran, []string{"active", "skipped"}) {
-		t.Fatalf("scenarios ran: %v; want both files, in Converted's order", ran)
+	if !slices.Equal(ran, []string{"skipped", "active"}) {
+		t.Fatalf("scenarios ran: %v; want both files, in Converted's order, dry.feature's before units.feature's", ran)
 	}
 }
 
@@ -80,7 +80,7 @@ func TestFeatureSelectionUsesActivePathsForSharedTags(t *testing.T) {
 		files      []string
 	}{
 		{"binary", InProcessOnly, Converted},
-		{"in process", BinaryOnly, InProcess},
+		{"in process", BinaryOnly, Converted},
 	} {
 		t.Run(driver.name, func(t *testing.T) {
 			for _, pattern := range []string{"", "^@shared$", "^@ID-(DRY|UNIT)-90$"} {

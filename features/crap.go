@@ -104,6 +104,10 @@ const unscoredKotlin = "fun plain(a: Int): Int {\n    return a\n}\n\n" +
 
 const unscoredFile = "kt/src/main/kotlin/Board.kt"
 
+// crapFeature declares crap.feature's steps, crapSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var crapFeature = featureFile{Name: "crap.feature", Steps: crapSteps}
+
 func crapSteps(sc *godog.ScenarioContext, w *world) {
 	c := &crapState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

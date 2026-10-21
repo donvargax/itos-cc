@@ -1,6 +1,10 @@
-// Command assemble writes cmd/itos-cc/commands_gen.go, the assembly of the
-// commands the slices under internal/slices declare (ADR-0051), so an
-// ordinary new command needs no hand edit outside its slice (T-146).
+// Command assemble writes the code two hand lists would otherwise be:
+// cmd/itos-cc/commands_gen.go, the assembly of the commands the slices under
+// internal/slices declare, so an ordinary new command needs no hand edit
+// outside its slice (T-146), and features/steps_gen.go, the scenario
+// registration, the feature files whose scenarios have steps, so giving a
+// feature file steps needs none outside the file of its steps (T-164); both
+// ADR-0051.
 //
 // A slice is a folder right under internal/slices whose own Go files, its
 // tests and subfolders left out, hold the two things cmd assembles it by: a
@@ -21,19 +25,34 @@
 // kong's DynamicCommand in its name's order, the order the top-level help
 // and the guess for an unknown command keep, keeps kong.PostBuild(byName),
 // since kong adds a dynamic command after commandLine's fields, and binds
-// each slice's handler through one provider over cmd's adapters. It is
-// formatted by go/format and carries the standard "Code generated … DO NOT
-// EDIT." line, so it is never edited by hand: after adding, removing or
-// renaming a slice, run
+// each slice's handler through one provider over cmd's adapters.
+//
+// A feature file's steps are declared in a Go file right in features/, its
+// tests, subfolders such as testdata/ and steps_gen.go left out, beside
+// their initializer, by a package-level
+//
+//	var unitsFeature = featureFile{Name: "units.feature", Steps: unitSteps}
+//
+// and steps_gen.go's stepped lists every declaration in its Name's order,
+// the order Converted names the files in and initialize registers their
+// steps. A Name that is no non-empty string literal, a declaration with no
+// Steps, two declarations of one Name and a Name with no such file in
+// features/ are refused, each naming the Go file or files, and nothing is
+// written; a feature file with no declaration is no error, its scenarios
+// having no steps yet.
+//
+// Each file is formatted by go/format and carries the standard "Code
+// generated … DO NOT EDIT." line, so it is never edited by hand: after
+// adding, removing or renaming a slice or a declaration, run
 //
 //	go run ./tools/bin/assemble
 //
-// from the repository's root and commit the file. With -check it writes
-// nothing and fails, naming the file, when the committed one differs from
-// what it would write, as CI's static step runs it (itos.yaml).
+// from the repository's root and commit the files. With -check it writes
+// nothing and fails, naming each file that differs, when a committed one is
+// not what it would write, as CI's static step runs it (itos.yaml).
 //
-// Exit status: 0 written or current, 1 a slice refused or the file not
-// current, 2 the tree could not be read or the file written.
+// Exit status: 0 written or current, 1 a slice or a declaration refused or
+// a file not current, 2 the tree could not be read or a file written.
 package main
 
 import (
@@ -56,7 +75,8 @@ import (
 
 const self = "assemble"
 
-// output is the file assemble writes, from the repository's root.
+// output is the file the command assembly is written to, from the
+// repository's root.
 const output = "cmd/itos-cc/commands_gen.go"
 
 // sliceRoot is the folder each slice is a folder of, from the repository's
@@ -64,18 +84,40 @@ const output = "cmd/itos-cc/commands_gen.go"
 const sliceRoot = "internal/slices"
 
 func main() {
-	check := flag.Bool("check", false, "write nothing; fail when "+output+" is not what assemble writes")
+	check := flag.Bool("check", false, "write nothing; fail when "+output+" or "+steppedOutput+" is not what assemble writes")
 	flag.Parse()
 	os.Exit(run(".", *check, flag.Args(), os.Stderr))
 }
 
-// refused is a slice assemble cannot assemble: exit 1, as a stale file is.
+// refused is a slice or a declaration assemble cannot assemble: exit 1, as
+// a stale file is.
 type refused struct{ reason string }
 
 func (r refused) Error() string { return r.reason }
 
-// run writes the assembly of the slices of the repository at dir, or with
-// check holds the committed file to it, and returns the exit status.
+// generated is one file assemble writes: its path from the repository's
+// root, what it is written from, as -check names it, and its source.
+type generated struct {
+	path, from string
+	source     []byte
+}
+
+// generator is one half of what assemble writes: the file's path, what it
+// is written from, and its source over a tree, or why that is refused.
+type generator struct {
+	path, from string
+	source     func(fs.FS) ([]byte, error)
+}
+
+// generators are the files assemble writes, in the order it writes and
+// checks them.
+var generators = []generator{
+	{output, "the slices under " + sliceRoot + " declare", assemble},
+	{steppedOutput, "the declarations in " + featureRoot + "/*.go list", registration},
+}
+
+// run writes the files of the repository at dir, or with check holds the
+// committed ones to them, and returns the exit status.
 func run(dir string, check bool, args []string, stderr io.Writer) int {
 	if len(args) > 0 {
 		say(stderr, "%s: unexpected argument %q\n", self, args[0])
@@ -87,28 +129,52 @@ func run(dir string, check bool, args []string, stderr io.Writer) int {
 		return 2
 	}
 	defer func() { _ = root.Close() }()
-	source, err := assemble(root.FS())
-	var r refused
-	switch {
-	case errors.As(err, &r):
-		say(stderr, "%s: %s\n", self, r.reason)
-		return 1
-	case err != nil:
-		say(stderr, "%s: %v\n", self, err)
-		return 2
-	case check:
-		committed, err := root.ReadFile(output)
-		if err != nil || !bytes.Equal(committed, source) {
-			say(stderr, "%s: %s is not what the slices under %s declare: run go run ./tools/bin/assemble and commit it\n", self, output, sliceRoot)
-			return 1
-		}
-		return 0
+	files, code := sources(root.FS(), stderr)
+	if code != 0 {
+		return code
 	}
-	if err := root.WriteFile(output, source, 0o644); err != nil {
-		say(stderr, "%s: %v\n", self, err)
-		return 2
+	if check {
+		for _, f := range files {
+			committed, err := root.ReadFile(f.path)
+			if err != nil || !bytes.Equal(committed, f.source) {
+				say(stderr, "%s: %s is not what %s: run go run ./tools/bin/assemble and commit it\n", self, f.path, f.from)
+				code = 1
+			}
+		}
+		return code
+	}
+	for _, f := range files {
+		if err := root.WriteFile(f.path, f.source, 0o644); err != nil {
+			say(stderr, "%s: %v\n", self, err)
+			return 2
+		}
 	}
 	return 0
+}
+
+// sources is every file's source over tree, or the exit status of what
+// stopped it, each refusal or failure said on stderr: 1 when one was
+// refused, 2 when one could not be read, so nothing is written either way.
+func sources(tree fs.FS, stderr io.Writer) ([]generated, int) {
+	var files []generated
+	code := 0
+	for _, g := range generators {
+		source, err := g.source(tree)
+		var r refused
+		switch {
+		case errors.As(err, &r):
+			say(stderr, "%s: %s\n", self, r.reason)
+			code = max(code, 1)
+		case err != nil:
+			say(stderr, "%s: %v\n", self, err)
+			code = 2
+		}
+		files = append(files, generated{g.path, g.from, source})
+	}
+	if code != 0 {
+		return nil, code
+	}
+	return files, 0
 }
 
 func say(w io.Writer, format string, a ...any) { _, _ = fmt.Fprintf(w, format, a...) }

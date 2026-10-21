@@ -64,6 +64,10 @@ var sample = map[string]string{
 		"    assert discount(10, 0.5) == 5\n",
 }
 
+// unitsFeature declares units.feature's steps, unitSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var unitsFeature = featureFile{Name: "units.feature", Steps: unitSteps}
+
 func unitSteps(sc *godog.ScenarioContext, w *world) {
 	u := &unitsState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

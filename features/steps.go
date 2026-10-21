@@ -332,19 +332,37 @@ const stampedVersion = "1.2.3-features"
 const stampedCommit = "0123456789abcdef0123456789abcdef01234567"
 
 // Converted are the feature files the steps run, those whose scenarios
-// have steps: units.feature, the first command moved onto kong (T-32),
-// dry.feature and scrap.feature, crap.feature, complexity.feature and
-// coverage.feature, and file_selection.feature, each converted before its
-// command moves so the move is held by its scenarios (T-37, T-41, T-60,
-// T-61, T-62), cli.feature, whose help, version and mutation scenarios
-// need commands that move later (T-62), and mutate.feature, converted in
-// pieces before the mutation group moves (T-70 to T-81), the scenarios of
-// the pieces not done yet listed in Unstepped. A file converts with its
-// scenarios' text unchanged (q-52); the binary driver runs every one.
-var Converted = []string{
-	"units.feature", "dry.feature", "scrap.feature",
-	"crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature",
-	"cli.feature", "mutate.feature", "metrics_snapshots.feature",
+// have steps, in their names' order: the Name of each declaration
+// steps_gen.go's stepped lists (featureFile). A file converts with its scenarios' text
+// unchanged (q-52), its steps given a declaration beside their initializer
+// and steps_gen.go rewritten by go run ./tools/bin/assemble; mutate.feature
+// converted in pieces (T-70 to T-81), the scenarios of the pieces not done
+// yet listed in Unstepped. Both drivers run every one: the binary driver
+// against the built binary, the in-process driver against the ports' fakes,
+// every command a converted file runs having moved onto kong (T-114).
+var Converted = names(stepped)
+
+// featureFile is a feature file whose scenarios have steps, as the file of
+// its steps declares it beside their initializer, a package-level
+//
+//	var unitsFeature = featureFile{Name: "units.feature", Steps: unitSteps}
+//
+// which tools/bin/assemble lists in steps_gen.go's stepped, in its Name's
+// order, so giving a feature file steps edits no list by hand (ADR-0051).
+type featureFile struct {
+	// Name is the feature file's name in this folder, a string literal.
+	Name string
+	// Steps gives sc the file's steps and hooks, over the scenario's world.
+	Steps func(*godog.ScenarioContext, *world)
+}
+
+// names are files' names, in their order.
+func names(files []featureFile) []string {
+	var out []string
+	for _, f := range files {
+		out = append(out, f.Name)
+	}
+	return out
 }
 
 // Unstepped are the scenarios of converted files whose steps are not
@@ -386,19 +404,10 @@ func ids(area string, ranges ...string) []string {
 	return tags
 }
 
-// InProcess are the converted files the in-process driver runs: those of
-// the commands moved onto kong, which run against the ports' fakes. A file
-// joins it in the task that moves its command (crap's, coverage's,
-// complexity's and file selection's files in T-67, mutate.feature in T-125,
-// metrics_snapshots.feature once mutation's commands had moved, in T-101,
-// cli.feature once version and the top-level dispatch had, in T-114); until
-// then the binary driver alone runs its scenarios.
-var InProcess = []string{"units.feature", "dry.feature", "scrap.feature", "crap.feature", "complexity.feature", "coverage.feature", "file_selection.feature", "mutate.feature", "metrics_snapshots.feature", "cli.feature"}
-
 // The tags of a scenario only one driver can run, for good: the binary's,
 // for one that needs a process of its own, the real disk or the real
-// tools, and the in-process driver's. A scenario of a command not moved
-// yet carries neither: its file is not in InProcess.
+// tools, and the in-process driver's. Every other scenario of a converted
+// file runs through both.
 const (
 	BinaryOnly    = "@binary-only"
 	InProcessOnly = "@in-process-only"
@@ -505,8 +514,9 @@ func (w *world) runEach(lines ...string) error {
 	return nil
 }
 
-// Initialize gives sc every step of the converted feature files, each
-// reaching the world through d.
+// Initialize gives sc every step of the converted feature files, the ones
+// stepped declares, in their names' order, each reaching the world through
+// d.
 func Initialize(sc *godog.ScenarioContext, d Driver) {
 	initialize(sc, d)
 }
@@ -656,18 +666,16 @@ func initialize(sc *godog.ScenarioContext, d Driver, own ...func(*godog.Scenario
 		return w.noTests()
 	})
 
-	// The steps of each converted feature file, after the world's, so a
-	// file's own Before runs in the scratch folder made above.
-	unitSteps(sc, w)
-	drySteps(sc, w)
-	scrapSteps(sc, w)
-	crapSteps(sc, w)
-	complexitySteps(sc, w)
-	coverageSteps(sc, w)
-	selectionSteps(sc, w)
-	cliSteps(sc, w)
-	mutateSteps(sc, w)
-	snapshotSteps(sc, w)
+	// The steps of each converted feature file, in its name's order
+	// (stepped), after the world's, so a file's own Before runs in the
+	// scratch folder made above. Every file's steps are registered for every
+	// scenario, since files share sentences, and godog runs Strict, so a
+	// sentence two of them match is an error and their order never chooses
+	// a step; each file's hooks act on its own state, or on the world only in
+	// a scenario of its own file.
+	for _, f := range stepped {
+		f.Steps(sc, w)
+	}
 }
 
 // setUp makes scenario s's scratch folder.

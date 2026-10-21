@@ -3,8 +3,10 @@ package main
 import (
 	"go/parser"
 	"go/token"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -33,12 +35,18 @@ func NewHandler(ctx context.Context, p Ports) (Handler, error) { return Handler{
 }
 
 // treeOf is a repository of module example.com/shop holding files, by their
-// paths from its root, and cmd/itos-cc's main, and its root.
+// paths from its root, and cmd/itos-cc's main, and its root. Unless files
+// hold one, it has a features/ folder of one feature file and the
+// declaration of its steps, so every case runs both generators.
 func treeOf(t *testing.T, files map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
 	files["go.mod"] = "module example.com/shop\n\ngo 1.27\n"
 	files["cmd/itos-cc/main.go"] = "package main\n"
+	if !slices.ContainsFunc(slices.Collect(maps.Keys(files)), func(name string) bool { return strings.HasPrefix(name, featureRoot+"/") }) {
+		files["features/units.feature"] = "Feature: units\n"
+		files["features/units.go"] = stepsSource("unitsFeature", "units.feature", "unitSteps")
+	}
 	for name, text := range files {
 		p := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(p), 0o750); err != nil {
@@ -52,13 +60,18 @@ func treeOf(t *testing.T, files map[string]string) string {
 }
 
 // generate runs assemble over root and returns its exit status, what it
-// said and the file it wrote.
+// said and the command assembly it wrote.
 func generate(t *testing.T, root string, check bool) (int, string, string) {
 	t.Helper()
 	var stderr strings.Builder
 	code := run(root, check, nil, &stderr)
-	written, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(output)))
-	return code, stderr.String(), string(written)
+	return code, stderr.String(), writtenAt(root, output)
+}
+
+// writtenAt is the file at path from root, "" when there is none.
+func writtenAt(root, path string) string {
+	written, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+	return string(written)
 }
 
 // Every slice is in the file: imported in its path's order, its command
@@ -114,7 +127,7 @@ func TestTheFileAssemblesEverySliceInItsNamesOrder(t *testing.T) {
 // assemble writes, or missing.
 func TestCheckRefusesAFileThatIsNotCurrent(t *testing.T) {
 	root := treeOf(t, map[string]string{"internal/slices/units/units.go": sliceSource("units", "units")})
-	if code, stderr, file := generate(t, root, true); code != 1 || !strings.Contains(stderr, output+" is not what the slices") || file != "" {
+	if code, stderr, file := generate(t, root, true); code != 1 || !strings.Contains(stderr, output+" is not what the slices") || file != "" || writtenAt(root, steppedOutput) != "" {
 		t.Errorf("a missing file: exit %d, %q, wrote %q; want 1 naming %s and nothing written", code, stderr, file, output)
 	}
 	if code, _, _ := generate(t, root, false); code != 0 {
@@ -155,8 +168,9 @@ func TestASliceItCannotAssembleIsRefusedByName(t *testing.T) {
 			"internal/slices/units/units.go": strings.Replace(sliceSource("units", "units"), `Name: "units"`, "Name: name", 1),
 		}, []string{"internal/slices/units: its Command names its command by no string literal"}},
 	} {
-		code, stderr, file := generate(t, treeOf(t, c.files), false)
-		if code != 1 || file != "" {
+		root := treeOf(t, c.files)
+		code, stderr, file := generate(t, root, false)
+		if code != 1 || file != "" || writtenAt(root, steppedOutput) != "" {
 			t.Errorf("%s: exit %d, wrote %q; want 1 and nothing written", c.name, code, file)
 		}
 		for _, want := range c.want {

@@ -46,6 +46,10 @@ type dryState struct {
 	reportedErr   error
 }
 
+// dryFeature declares dry.feature's steps, drySteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var dryFeature = featureFile{Name: "dry.feature", Steps: drySteps}
+
 func drySteps(sc *godog.ScenarioContext, w *world) {
 	d := &dryState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

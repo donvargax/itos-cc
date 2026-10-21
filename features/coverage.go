@@ -245,6 +245,10 @@ func shapeOf(name string) (source, function string, pieces []covPiece, err error
 	return "", "", nil, fmt.Errorf("no source is written here for %s", name)
 }
 
+// coverageFeature declares coverage.feature's steps, coverageSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var coverageFeature = featureFile{Name: "coverage.feature", Steps: coverageSteps}
+
 func coverageSteps(sc *godog.ScenarioContext, w *world) {
 	c := &coverageState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

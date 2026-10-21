@@ -88,6 +88,10 @@ var (
 
 const selectionFixture = "testdata/board.go"
 
+// fileSelectionFeature declares file_selection.feature's steps, selectionSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var fileSelectionFeature = featureFile{Name: "file_selection.feature", Steps: selectionSteps}
+
 func selectionSteps(sc *godog.ScenarioContext, w *world) {
 	s := &selectionState{w: w}
 	sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {

@@ -29,9 +29,9 @@ import (
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 
-// The feature files of the commands moved onto kong run in process
-// (decision 44), the ones features.InProcess lists: the steps of package
-// features, through a driver that keeps every folder and file in memory
+// The converted feature files run in process (decision 44), the ones
+// features.Converted lists, every command they run having moved onto kong
+// (T-114): the steps of package features, through a driver that keeps every folder and file in memory
 // with a fake git, and runs itos-cc through run with buffers and porttest's
 // fakes built from that memory. The binary driver (features.TestFeatures)
 // runs the same scenarios against the built binary, every converted file's
@@ -46,7 +46,7 @@ var scenarios = flag.String("scenarios", "", "run only the live scenarios with a
 
 func TestScenarios(t *testing.T) {
 	dir := filepath.Join("..", "..", "features")
-	sel, err := features.TagFilter(*scenarios, dir, features.InProcess, features.BinaryOnly)
+	sel, err := features.TagFilter(*scenarios, dir, features.Converted, features.BinaryOnly)
 	if err != nil {
 		t.Fatal(err)
 	}

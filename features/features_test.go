@@ -36,9 +36,9 @@
 // tagged @wip never runs.
 //
 // Only the feature files in Converted run here: those whose scenarios have
-// steps (q-52), the files of commands not moved yet among them, which the
-// in-process driver leaves to this one until they move (InProcess). The
-// others are converted over time, and until then their scenarios are held
+// steps (q-52), each declared beside its steps (featureFile) and listed in
+// steps_gen.go by tools/bin/assemble, the same files the in-process driver
+// runs. The others are converted over time, and until then their scenarios are held
 // by the Go tests of cmd/itos-cc; a selection naming one of theirs logs it
 // as not run here, and a selection naming nothing else fails, as one
 // matching no tag does. So are the scenarios of a converted file whose

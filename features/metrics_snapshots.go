@@ -24,6 +24,10 @@ type snapshotState struct {
 	overlap              *snapshotOverlap
 }
 
+// metricsSnapshotsFeature declares metrics_snapshots.feature's steps, snapshotSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var metricsSnapshotsFeature = featureFile{Name: "metrics_snapshots.feature", Steps: snapshotSteps}
+
 func snapshotSteps(sc *godog.ScenarioContext, w *world) {
 	q := &snapshotState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {

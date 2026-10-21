@@ -613,10 +613,12 @@ linters:
               skipComments: true
               skipBlankLines: true
   exclusions:
-    # A generated file is linted as hand-written code is: the one there is,
-    # cmd/itos-cc/commands_gen.go, is tools/bin/assemble's, which writes it
-    # from the slices' declarations (T-146), so a rule it breaks is a bug of
-    # the generator to fix there, never a file to leave unread.
+    # A generated file is linted as hand-written code is: the ones there are,
+    # cmd/itos-cc/commands_gen.go and features/steps_gen.go, are
+    # tools/bin/assemble's, which writes them from the slices' declarations
+    # (T-146) and the declarations of the feature files' steps (T-164), so a
+    # rule one breaks is a bug of the generator to fix there, never a file to
+    # leave unread.
     generated: disable
     rules:
       - path: _test\.go$

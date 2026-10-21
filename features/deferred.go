@@ -22,7 +22,7 @@ const serveDeferred = "observes serve as well as mutation; serve stays on its le
 // hold is T-112's.
 const servePortDeferred = "runs serve, which stays on its legacy handler, listening on the real network; T-112 moves it onto serving ports the in-process driver can hold, deferred with T-102 to T-108 and T-113 while serve leaves for its own web app, so the binary driver alone runs it until that work"
 
-// Deferred are the scenarios of InProcess files that the in-process driver
+// Deferred are the scenarios of converted files that the in-process driver
 // leaves to the binary driver for now, by ID tag, or by the tag of the
 // Examples block of the rows it leaves, each with why, naming the work that
 // owns it. The binary driver runs every one of them; the in-process run

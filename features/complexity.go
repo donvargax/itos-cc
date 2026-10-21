@@ -32,6 +32,10 @@ var straightLine = map[string]string{
 	"Kotlin":     "fun total(a: Int, b: Int): Int {\n    val sum = a + b\n    return sum * 2\n}\n",
 }
 
+// complexityFeature declares complexity.feature's steps, complexitySteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var complexityFeature = featureFile{Name: "complexity.feature", Steps: complexitySteps}
+
 func complexitySteps(sc *godog.ScenarioContext, w *world) {
 	c := &complexityState{w: w}
 	sc.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {

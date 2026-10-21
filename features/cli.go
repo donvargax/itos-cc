@@ -41,6 +41,10 @@ var knownSituations = []string{
 	"a temporary failure, such as serve's port being in use", "an unknown command",
 }
 
+// cliFeature declares cli.feature's steps, cliSteps, which
+// tools/bin/assemble lists in steps_gen.go.
+var cliFeature = featureFile{Name: "cli.feature", Steps: cliSteps}
+
 func cliSteps(sc *godog.ScenarioContext, w *world) {
 	c := &cliState{w: w}
 	sc.Before(func(ctx context.Context, s *godog.Scenario) (context.Context, error) {
