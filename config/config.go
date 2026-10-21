@@ -1,9 +1,10 @@
-// Package config reads and writes itos-cc.yaml, the project's settings,
-// kept at the project root under version control and reviewed like the
-// code. It holds exclude, globs of the sources no command measures or
-// mutates, mutation.exceptions, the equivalent mutants a person excepted,
-// each with a reason, and mutation.tests, how to list the project's tests
-// and run a selection of them.
+// Package config reads itos-cc.yaml, the project's settings, kept at the
+// project root under version control and reviewed like the code. It holds
+// exclude, globs of the sources no command measures or mutates,
+// mutation.exceptions, the equivalent mutants a person excepted, each with
+// a reason, and mutation.tests, how to list the project's tests and run a
+// selection of them. It is the one reading codec: the mutation slice's
+// exceptions adapter writes mutation.exceptions through its Parse.
 package config
 
 import (
