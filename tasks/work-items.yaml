@@ -4923,3 +4923,18 @@ items:
       Thirteen of these files were never reviewed by T-101 or T-130, and two keep-reasons are wrong
       (ID-MUT-183's is stale; the strict-scope tests without Kept: are held by ID-MUT-164). Split it
       by file group when specifying.
+  - id: unrun-live-scenarios
+    title: Live scenarios that nothing runs are deferred or given runners
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the read-only test-surgery audit (2026-10-21, scratchpad test-surgery-audit.md; the
+      person agreed to record it). serve.feature, viewer.feature and architecture_graph.feature hold
+      75 scenarios that are not @wip and have no step code or runner (serve was deferred in S8), yet
+      three of them are in the binary smoke set, so a green run claims what never ran; server/ has
+      no tests and the viewer's test runs in no active workflow. Either tag them as deferred with
+      the reason and the item that brings them back (as features.Deferred does), or give them
+      runners. Missing coverage, not excess.
