@@ -323,6 +323,115 @@ Feature: Mutation testing
       Then up to 4 mutants run at the same time
       And the default is half the CPUs, at least 1
 
+    # slice-13 decisions (coordinator, 2026-10-21: the spec drafter's
+    # recommendations, taken as routine calls inside the issue's scope):
+    # 1. Every Worker.Run starts from the copy as it was made. Before each command runs in an
+    #    existing copy (a file's baseline, a listed selection's baseline, a mutant, a counted
+    #    trial; every WorkPurpose), the worker puts the copy back as it was right after
+    #    copying and Ready. It removes what earlier runs added, puts back what they changed,
+    #    and makes again what they removed. The worker restores rather than copying afresh,
+    #    which would cost a full copy, and for Dart a flutter pub get --offline, per mutant.
+    # 2. "As it was made" is a record the worker takes when it makes the copy: each file,
+    #    folder and symbolic link the copy holds once copyPackages and Ready have run, with
+    #    each file's size, mode and modification time and each link's target. The record is
+    #    whatever the copy rules produced, so worker-copies-skip-ignored (q-69), which depends
+    #    on this slice, only changes copyTree and needs no change here.
+    # 3. Order inside boundWorker.Run (workers.go:94-124): restore first, then write the
+    #    mutant (withMutant), then run. The restore never runs between writing a mutant and
+    #    its run. The copy made by a run's first use is already as made and needs no restore.
+    # 4. What the restore leaves alone (q-A). It keeps the folders the copy leaves out, as the
+    #    runs leave them. These are skipDirs, build output (project.IsBuildOutputWithIgnore
+    #    with no git question, since a copy has no .git) and dartLeftOut's build/ and
+    #    coverage/, so Gradle, Cargo, Maven and Flutter's incremental build output and
+    #    .dart_tool (Ready's resolution, which slice-35 put in every copy) persist as they do
+    #    today. It also keeps the linked dependency folders (linkDirs), which are the
+    #    project's own and shared, and never walks into them: a link that a run removed is
+    #    made again. .pytest_cache needs no exception, since every pytest command itos-cc
+    #    composes runs with -p no:cacheprovider (ID-MUT-07). A --test-command that writes one
+    #    writes it in a left-out folder, as today.
+    # 5. What a changed file is (q-B). A file whose size, mode or modification time differs
+    #    from the record, as rsync's quick check decides. The worker copies the file again
+    #    from the project, as the copy was made from it in the first place. Keeping a second
+    #    pristine tree per pool is not worth its disk. The mutated file's own write and put-
+    #    back counts as a change like any other, or the record follows it. The agent chooses.
+    # 6. A restore that fails (q-C), such as a folder a test made unreadable, discards the
+    #    copy and copies afresh with Ready, as copyOf already does when Ready fails
+    #    (worker.go:69). If that fails too, it is WorkerFailed, never a judgment.
+    # 7. The restore is not timed. It happens before the run's timeout context starts
+    #    (worker.go:190-195) and stays out of CommandResult.Elapsed. A baseline's time, and so
+    #    every timeout derived from it (ID-MUT-14, 135, 149), is the command's alone. A done
+    #    context stops the restore as WorkerCancelled.
+    # 8. Only the copy the command runs in is restored. A worker with copies of several trees
+    #    restores each when a command next runs there.
+    # 9. The port says it: Worker's doc (internal/slices/mutation/domain/workers.go:25-30)
+    #    says each run starts from the copy as it was made. README's "Parallel workers" bullet
+    #    says it in a sentence, naming what stays (build output, caches, .dart_tool, the
+    #    linked dependencies).
+    # 10. Out of scope. A coverage run, which runs in the project's own folder, leaving a file
+    #    in the live tree that every copy then carries is q-69 and worker-copies-skip-
+    #    ignored's. The scenario therefore runs with --no-coverage. A test that writes into a
+    #    linked node_modules writes into the project's, as today.
+    # Tests besides the scenario: an adapter test in worktrees that holds it on every OS's go
+    # test with no tools. It reuses worker_test.go's approach of running the test binary
+    # itself as the command (TestCommandRunnerFixtureHelper, a new mode): the helper exits 1
+    # when left-behind exists, when kept.txt is missing or when source.txt is not original\n,
+    # then writes left-behind, removes kept.txt and rewrites source.txt. A baseline then two
+    # mutants on one worker must all pass. The test must also cover a left-out folder (build/
+    # beside a package.json) and a link, which keep what the run wrote, and the restore's time
+    # staying out of Elapsed. Today it fails at the second run. The shared WorkersContract
+    # (domain/porttest) gets no clause, because the fake runs nothing and holds no copy.
+    # Owns: internal/slices/mutation/adapters/worktrees/ (worker.go, workers.go, a new file
+    # for the record and restore, their tests), the Worker doc in domain/workers.go, the
+    # scenario rows below in features/mutate.feature, features/mutate_pristine.go (new), one
+    # registration line in features/mutate.go, and README's "Parallel workers" bullet.
+    # Must not touch: internal/processes (bug-5's), worktrees/dart.go's rules (slice-35's;
+    # read dartLeftOut and pubWorkspace as they are), coverage/, the fake Workers in
+    # domain/porttest, and features/steps.go (the existing Tests declaration with language go
+    # is enough).
+    # slice-13, issue #35: a worker made its copy of the project once a run
+    # and kept it for its baseline and every mutant, putting back only the
+    # mutated file, so whatever one run of the tests wrote, rewrote or
+    # removed there was still so for every later run of that worker. One
+    # run that left a failing state behind (rapid's failfile, in issue #35)
+    # killed every later mutant of the worker, whatever it changed, and
+    # mutation sample reported the kills as mismatches. Decided by the
+    # coordinator on 2026-10-21: each run in a worker, the baseline's, a
+    # selection's and each mutant's, starts from the copy as it was made.
+    # What the copy leaves out, build output, caches and .dart_tool, and
+    # the dependency folders it links stay as the runs leave them.
+    # --no-coverage keeps every run in the copy: a coverage run, in the
+    # project's own folder, leaving a file there is q-69's, for
+    # worker-copies-skip-ignored. --workers 1 has one copy hold every run,
+    # and the test's own check decides each outcome, so no timing does. No
+    # test checks a result, so every mutant survives. Before slice-13 the
+    # baseline passed and left its mark, and every mutant was killed, exit
+    # 0, failing at the first Then. Binary-only for good: the copy, and what
+    # a test run leaves in it, are the real Workers'; the fake runs each
+    # mutant as declared and holds no copy. The adapter's own test holds the
+    # same on every system's go test.
+    @wip @slice-13 @ID-MUT-267 @binary-only
+    Scenario Outline: What a test run <changes> is back as copied for the next mutant
+      Given the Go module "example.com/leak" with the file "leak.go":
+        """
+        package leak
+
+        func A(x int) bool { return x > 0 }
+        func B(x int) bool { return x > 1 }
+        func C(x int) bool { return x > 2 }
+        """
+      And testdata/ is ignored by git and holds golden.txt, "committed", and keep.txt, both committed
+      And its test, which checks no result, fails when <found>, and then <changes>
+      When I run "itos-cc mutation run --no-coverage --workers 1 --no-annotate --json leak.go"
+      Then leak.go's baseline passed and every mutant of leak.go survived
+      And the exit code is 1
+      And the project's own testdata folder is as committed
+
+      Examples:
+        | changes                       | found                                |
+        | writes testdata/left-behind   | testdata/left-behind is there        |
+        | rewrites testdata/golden.txt  | testdata/golden.txt is not committed |
+        | removes testdata/keep.txt     | testdata/keep.txt is gone            |
+
   Rule: Coverage decides which mutants run
 
     @ID-MUT-18
@@ -542,6 +651,124 @@ Feature: Mutation testing
       Given the list command exits 1
       When I run "itos-cc mutation run"
       Then the problem is "tests.list-failed", with its exit code
+      And no mutant runs, no snapshot is written, and the exit code is 1
+
+    # slice-15 decisions (coordinator, 2026-10-21: the spec drafter's
+    # recommendations, taken as routine calls inside the issue's scope):
+    # 1. The rule. tests.coverage-failed: the listed tests' coverage run failed without any
+    #    mutant. Two cases count: - the run of every listed test (whole, else run with every
+    #    ID) exits non-zero; - in the per-test fallback, one test's run alone exits non-zero.
+    # Nothing is judged, no mutant runs, no snapshot is written and no .metrics/coverage cache
+    # is kept, as with a cancelled measurement. This holds with and without --fail-uncovered,
+    # and with --fail-fast. The run reports it as its only problem; coverage.cleanup-failed
+    # for a coverage command's owned group, and interrupted, still stand beside it.
+    # 2. Exit code 1. It is the "a check said no" class of docs/CLI.md: the project's own
+    #    tests fail, as mutation.baseline-failed, tests.list-failed and tests.selection-failed
+    #    do, none of which is a requirement of the environment (82) or a usage error (80). By
+    #    the precedence order (130, 80 and 81, 100, 82, 75, 1) it yields to everything beside
+    #    it: an interrupt that stops the coverage run is interrupted (130), never this
+    #    problem, since the context's cause is checked first, as loadCoverage already does. A
+    #    coverage command whose owned group's cleanup did not finish is coverage.cleanup-
+    #    failed (100).
+    # 3. Subject keys (q-D): command, the shell line that failed as itos-cc ran it (the
+    #    variables it set are not part of it; in the fallback the line selecting that one
+    #    test), and exit_code, its exit code, -1 when it gave none (a signal, or no shell to
+    #    start). These are the same keys as tests.list-failed.
+    # 4. Wording. - message: the listed tests of mutation.tests in itos-cc.yaml failed their
+    #    coverage run without any mutant (<exit status>), so no mutant was judged: <command> -
+    #    fix: Make the listed tests pass when they run with ITOS_CC_TEST_COVERDIR set and
+    #    GOCOVERDIR unset, then run again.
+    # 5. --json shape, beside tests.list-failed's, both "ok": false with no "files":
+    # (the --json shapes beside tests.list-failed: rule, exit, message, fix, command,
+    # exit_code; "ok": false, no "files")
+    # (the --json shapes beside tests.list-failed: rule, exit, message, fix, command,
+    # exit_code; "ok": false, no "files")
+    # The agent confirms the exact command text by running the scenario. The fixture's run
+    # joins IDs as its itos-cc.yaml says.
+    # 6. Boundary. The measurer reports the failure as a typed failure of the coverage port, a
+    #    new port.Failure variant carrying the command line and exit code, from MeasureListed,
+    #    and gives no report. The mutation domain turns it into a failure of its own, as
+    #    ListingFailed is (domain/run_coverage.go:28-35), in strict and non-strict measurement
+    #    alike. The non-strict branch that reports coverage-failed and goes on (110-119) must
+    #    not swallow it. The slice's runFailure (internal/slices/mutation/errors.go:171-183)
+    #    words it, so the strict path (loadCoverage, which today returns the port failure
+    #    unwrapped) reaches the same problem. The domain carries no rule, wording or exit
+    #    code.
+    # 7. The fake (internal/coverage/porttest/measurer.go, MeasureListed and listed, 91-163
+    #    and 306-386) returns the same failure when a declaration's listed collection fails,
+    #    with the command it logged and a declared exit code (default 1). It also does so when
+    #    the harness does not split and a test in Failing runs alone. Today it attaches nil.
+    #    The listed contract holds the real measurer, with a harness that fails, and the fake
+    #    to it. ListedTests.CoverageExit (features/steps.go:212) already reaches the fake as
+    #    ListedFailed (cmd/itos-cc/scenarios_fakes_test.go:149) and carries the exit code
+    #    through.
+    # 8. Out of scope (q-F). A go tool covdata conversion that fails, and a listed test that
+    #    writes no per-ID data, keep today's handling (logged; that test covers nothing). They
+    #    are not the tests failing. Counted runs already stop at this stage as
+    #    count.preparation-failed, stage listed-coverage
+    #    (features/mutate_counted_preparation.go), and mutation sample measures no coverage.
+    #    Neither changes.
+    # 9. Help and docs. mutation run's rules list gains tests.coverage-failed   the listed
+    #    tests' coverage run failed without any mutant: command, exit_code
+    #    (run_contract.go:403-404). Its listed-tests paragraph (322-345) says the coverage run
+    #    that fails is tests.coverage-failed, nothing judged and no snapshot written. As the
+    #    issue asks, it also says that the run of every test sets ITOS_CC_TEST_COVERDIR
+    #    without GOCOVERDIR: a harness builds its binary with -cover only when it gives the
+    #    processes GOCOVERDIR, or gives each test's processes GOCOVERDIR=<dir>/<test ID>
+    #    itself. Otherwise a -cover binary warns on stderr that it wrote no data. pertest.go's
+    #    Go collector sets no whole variable, which confirms this. docs/CLI.md gains the row
+    #    tests.coverage-failed | 1 | mutation run | command, exit_code, and exit code 1's
+    #    meaning gains "the listed tests' coverage run that fails". README's listed-tests
+    #    paragraph (about line 447) says it beside tests.selection-failed. The help golden is
+    #    updated if it holds the text.
+    # Owns: see the table above. Must not touch: coverage/supervised.go's
+    # MeasureTestsSupervised (counted runs' fail-closed path), the counted run's stages,
+    # coverage/run.go and the per-language plans (slice-16's), and features/coverage.feature.
+    # slice-15, issue #15: the listed tests' coverage run, every listed test
+    # run once with ITOS_CC_TEST_COVERDIR set, failed without any mutant,
+    # and itos-cc logged one line and went on with no listed coverage: a
+    # line only listed tests reach was uncovered, so --fail-uncovered asked
+    # for tests of code the suite covers, and --json never named the cause.
+    # Decided by the coordinator on 2026-10-21: as a list command that fails
+    # is tests.list-failed, such a run is "tests.coverage-failed", exit 1,
+    # with the command and its exit code, and nothing is judged and no
+    # snapshot written, with or without --fail-uncovered. Both drivers run
+    # it: the fake measurer fails the listed run as declared
+    # (ListedTests.CoverageExit), and the binary driver's harness fails its
+    # run of every test when ITOS_CC_TEST_COVERDIR is set and the
+    # scenario's variable says so, as GREET_FAIL_ALONE fails a selection.
+    # Before slice-15 each row judged its mutants: with --fail-uncovered the
+    # lines only listed tests reach were mutation.uncovered, and without it
+    # their mutants survived their own tests, so each fails at the problem's
+    # step.
+    @wip @slice-15 @ID-MUT-268
+    Scenario Outline: A coverage run of the listed tests that fails judges nothing
+      Given the listed tests fail when they all run for coverage, though they pass together when a mutant's run selects them
+      When I run "itos-cc mutation run <flags>"
+      Then the problem is "tests.coverage-failed", with the command that ran every listed test and its exit code
+      And no mutant runs, no snapshot is written, and the exit code is 1
+      And no problem is "mutation.uncovered"
+
+      Examples:
+        | flags                   |
+        | --json                  |
+        | --fail-uncovered --json |
+
+    # slice-15: a harness that does not split the coverage run has each
+    # listed test run alone for it (ID-MUT-123); one of those runs failing
+    # is the same problem, naming the command that ran that test alone. The
+    # Given is ID-MUT-137's, under a harness that does not split: ID-A-02
+    # fails alone, for coverage as for its selection. Both drivers run it;
+    # the fake measurer runs the fallback as the real one does once it fails
+    # a test the declaration lists as Failing. Before slice-15 the run
+    # logged "listed test ID-A-02 fails without any mutant" and judged every
+    # mutant with no listed coverage, failing at the problem's step.
+    @wip @slice-15 @ID-MUT-269
+    Scenario: A listed test that fails its own coverage run judges nothing
+      Given the module of ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR
+      And ID-A-02 fails when it runs alone without a mutant, though the listed tests pass together
+      When I run "itos-cc mutation run --json"
+      Then the problem is "tests.coverage-failed", with the command that ran ID-A-02 alone and its exit code
       And no mutant runs, no snapshot is written, and the exit code is 1
 
   # A kill made by listed tests (listed-tests) depends on those tests, which
@@ -1925,6 +2152,26 @@ Feature: Mutation testing
         | TypeScript | tool is missing                      | coverage.tool-missing     | 82   |
         | Python     | command exits 0 but writes no report | coverage.measured-nothing | 1    |
         | Kotlin     | command fails                        | coverage.measured-nothing | 1    |
+
+    # slice-16, issue #46: under --fail-uncovered a coverage command that
+    # fails proves nothing, even after writing its report, as
+    # uncovered-fails-closed decided above: its build root is
+    # coverage.measured-nothing, its message naming the command and its
+    # exit status, and no mutant of it is judged. crap, and a run without
+    # --fail-uncovered, still read what such a report measured (ID-COV-13).
+    # Before slice-16 a failed run whose report named the file read as
+    # measured and left its functions without proof, each
+    # mutation.coverage-missing, whose fix asks for a test. A test that
+    # fails only under coverage.py stands for any failure the command line
+    # cannot clear, such as a Vitest threshold for a glob pattern. Both
+    # drivers run it, but only the binary driver shows it red: the fake
+    # measurer already reads a failed command as measuring nothing.
+    @wip @slice-16 @ID-MUT-270
+    Scenario: A strict run whose coverage command fails after writing its report measured nothing
+      Given a Python project whose test fails only when coverage.py runs it, after its file's every line has run
+      When I run "itos-cc mutation run --fail-uncovered --json" for that file
+      Then the run fails with "coverage.measured-nothing" naming the language and directory, and the exit code is 1
+      And no mutant of that file is judged, and no problem is "mutation.coverage-missing"
 
     @whole-suite-freshness-all @ID-MUT-205
     Scenario Outline: A non-importing test change makes another language's whole-suite outcome stale

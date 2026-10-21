@@ -177,6 +177,128 @@ Feature: Coverage
       Then reports are written under .metrics/coverage/
       And .metrics/coverage/.gitignore ignores everything in it
 
+  # slice-16 decisions (coordinator, 2026-10-21: the spec drafter's
+  # recommendations, taken as routine calls inside the issue's scope):
+  # 1. itos-cc measures; the project's own test script enforces its floor. Every coverage
+  #    command itos-cc composes for these tools sets the floor to nothing from the command
+  #    line, which overrides the config (q-G: every command, not only selections): - Vitest,
+  #    each vitest related, vitest run and the inventory's run:
+  #    --coverage.thresholds.lines=0 --coverage.thresholds.functions=0
+  #    --coverage.thresholds.branches=0 --coverage.thresholds.statements=0
+  #    --coverage.thresholds.100=false --coverage.thresholds.autoUpdate=false.
+  #    autoUpdate=false is required: with zero thresholds and the project's autoUpdate on,
+  #    Vitest would write what one file's tests measured into the project's config, in the
+  #    project's own folder. - Jest, each jest --coverage … with or without
+  #    --findRelatedTests: --coverageThreshold={}, a JSON value that replaces the config's
+  #    whole object, its path and glob keys included. - coverage.py (q-H: included, the same
+  #    bug for a Python file's reaching tests), each coverage lcov: --fail-under=0. - The
+  #    agent confirms each flag against the pinned tools before relying on it: Vitest 5.0.2
+  #    and coverage.py from testdata/tools, and Jest by its documented CLI, since no Jest is
+  #    pinned. A flag a pinned tool refuses stops the slice with a question; nothing is
+  #    guessed. - Go, Kotlin (koverXmlReport, jacocoTestReport and jacoco:report run no
+  #    verification) and Dart have no floor in the commands itos-cc runs, and change
+  #    nothing. A project's own coverage script (<pm> run coverage) and --coverage-command
+  #    run exactly as given.
+  # 2. Under --fail-uncovered, a coverage command that failed proves nothing, even when it
+  #    wrote a report first (q-E, recommended (b)). Its build root is coverage.measured-
+  #    nothing for its language and dir, as ID-MUT-204 and the help already promise, and the
+  #    run stops before any mutant. It is never mutation.coverage-missing for the root's
+  #    functions. The message (Unmeasured.Reason) names the command and its exit status; the
+  #    subject keys stay dir and language (q-I), so the assembly's coverage classifier
+  #    (cmd/itos-cc/coverage.go:69-75) and crap's wording are untouched. This is what is
+  #    left once decision 1 holds: a floor the command line cannot reach (a Vitest threshold
+  #    for a glob pattern), or a test that fails only under coverage. - Mechanism. The
+  #    Report records a plan whose commands failed although it read data, beside Missing.
+  #    Plan.measured (coverage/measure.go:193-204) today clears Missing as soon as the
+  #    report names a source. Mutation's strict gaps (unmeasuredToJudge and strict) read
+  #    that record for a language with mutants to judge. - What stays. crap, and runs
+  #    without --fail-uncovered, keep using a failed run's report as ID-COV-13 says.
+  #    RunSupervised (counted runs) is already fail-closed and does not change. - The
+  #    issue's other suggestion. It also asks that a threshold's exit status not count as a
+  #    failed measurement when the tests passed. That is not adopted: measure.go decides by
+  #    exit status and report alone, never by what the runner prints (measure.go:120-122),
+  #    and exit status cannot tell a missed floor from a failing test.
+  # 3. Help: mutation run's coverage.measured-nothing line (run_contract.go:399) already
+  #    says "a language's coverage command failed or wrote no report", and stays. The
+  #    coverage engine's help or README text for Vitest and Jest gains one sentence: itos-
+  #    cc's coverage run sets the project's thresholds to zero, which its own test script
+  #    still enforces. docs/CLI.md's coverage.measured-nothing row names crap --threshold,
+  #    mutation run --fail-uncovered; today it names crap alone (stale).
+  # Owns and must not touch: see the table above. Must not touch coverage/pertest.go,
+  # internal/coveragetools and the coverage port's Failure (slice-15's), or
+  # coverage/supervised.go.
+  # slice-16, issue #46: Vitest's test.coverage.thresholds, Jest's
+  # coverageThreshold and coverage.py's fail_under hold a whole package to
+  # a floor. A coverage run of the tests that load the chosen files leaves
+  # every other file at 0%, misses that floor and exits 1 after writing its
+  # report, and itos-cc read the run as failed: under --fail-uncovered every
+  # function of the file was mutation.coverage-missing, its fix asking for a
+  # test that exists. Decided by the coordinator on 2026-10-21: itos-cc
+  # measures, and the project's own test script enforces its floor, so
+  # every Vitest, Jest and coverage.py command itos-cc composes, a
+  # selection's, the whole suite's and the inventory of files no test
+  # loads, sets each threshold to nothing from the command line, which
+  # overrides the config, and Vitest's autoUpdate off. A floor the command
+  # line cannot reach, such as Vitest's threshold for a glob pattern, still
+  # fails the run, which ID-MUT-270 reports.
+  Rule: The project's coverage floor never fails itos-cc's measurement
+
+    # Binary-only for good: the floor, and the command that clears it, are
+    # the real tools', as COV-05's are; the fake measures as declared. The
+    # TypeScript row is issue #46's project, run by cd.yml's languages job
+    # with the pinned Vitest and coverage.py. Before slice-16 the command
+    # exits 1 after writing its report, failing at the first Then, and
+    # every function of the file is mutation.coverage-missing.
+    @wip @slice-16 @ID-COV-44 @binary-only
+    Scenario Outline: A run of one file's tests is not held to the project's <language> coverage floor
+      Given a <language> project with two files, each fully covered by its own test, and <floor>
+      And the whole suite meets that floor, and either file's test alone does not
+      When I run "itos-cc mutation run --fail-uncovered --json" for one of the two files
+      Then stderr says no coverage command failed
+      And no problem is "mutation.coverage-missing" or "coverage.measured-nothing"
+
+      Examples:
+        | language   | floor                                                        |
+        | TypeScript | vitest.config.ts's test.coverage.thresholds.statements of 80 |
+        | Python     | pyproject.toml's [tool.coverage.report] fail_under of 80     |
+
+    # Binary-only for good, as COV-05's Jest row: the project's jest is a
+    # placeholder the command is chosen for, so the step reads the command
+    # itos-cc announces. No Jest is pinned to measure with. Before slice-16
+    # the command has no --coverageThreshold, failing at the Then.
+    @wip @slice-16 @ID-COV-45 @binary-only
+    Scenario: Jest's coverage command clears the project's coverageThreshold
+      Given a TypeScript project whose build root holds package.json
+      And jest as a dependency
+      When I run "itos-cc crap src/board.ts"
+      Then coverage runs jest with --findRelatedTests src/board.ts and --coverageThreshold={}
+
+    # A guard, not a red: Vitest's thresholds.autoUpdate writes a higher
+    # measured value back into the config. Before slice-16 a run of one
+    # file's tests never reaches the floor of 80, so nothing is written;
+    # with thresholds of 0 from the command line and autoUpdate left on,
+    # every run would rewrite the project's vitest.config.ts with what one
+    # file's tests measured, as coverage runs in the project's own folder.
+    # Binary-only for good: the config is the real Vitest's to write.
+    @wip @slice-16 @ID-COV-46 @binary-only
+    Scenario: Measuring never rewrites the project's coverage floor
+      Given the TypeScript project of ID-COV-44, its thresholds set to autoUpdate
+      When I run "itos-cc mutation run --json" for one of the two files
+      Then vitest.config.ts is byte for byte as committed
+
+    # The inventory of a TypeScript file no test loads runs Vitest with no
+    # test, so every file it measures is at 0%: the floor failed it, and
+    # the file's functions were mutation.coverage-missing instead of its
+    # lines mutation.uncovered-statement, failing at the Then before
+    # slice-16. Binary-only for good: the inventory is the real Vitest's
+    # run, which the fake does not make.
+    @wip @slice-16 @ID-COV-47 @binary-only
+    Scenario: The lines of a file no test loads are listed under the project's floor
+      Given the TypeScript project of ID-COV-44, with a third file no test imports
+      When I run "itos-cc mutation run --fail-uncovered --json" for that file
+      Then its executable lines are "mutation.uncovered-statement" and its mutants "mutation.uncovered"
+      And no problem is "mutation.coverage-missing"
+
   Rule: The user can bring their own coverage
 
     @ID-COV-15 @binary-only
