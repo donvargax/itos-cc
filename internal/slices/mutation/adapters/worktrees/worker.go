@@ -39,39 +39,73 @@ var skipDirs = map[string]bool{
 // without ever touching the real files.
 type worker struct {
 	dir    string
-	copies map[string]string // real root → copy
+	copies map[string]*workerCopy // real root → copy
 	runner processes.Runner
 	// prepare, when set, adjusts each command before it runs, such as its
 	// environment; complete runs leave it unset.
 	prepare func(*exec.Cmd)
+	// restored, when set, hears each restore of a copy end: a test's
+	// observation, unset in a run.
+	restored func()
 }
 
 // copyOf returns the worker's copy of c.Root, creating it on first use:
 // the tree pubWorkspace says a pub workspace's member needs, or c.Root's
-// own, then c.Ready run once in it, before any command runs there.
+// own, then c.Ready run once in it, before any command runs there, and
+// the record of it as made.
 func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
 	tree, members := pubWorkspace(c.Root)
 	rel, err := filepath.Rel(tree, c.Root)
 	if err != nil {
 		return "", err
 	}
-	if dst, ok := w.copies[tree]; ok {
-		return filepath.Join(dst, rel), nil
+	if cp, ok := w.copies[tree]; ok {
+		return filepath.Join(cp.dir, rel), nil
 	}
 	h := sha256.Sum256([]byte(tree))
-	dst := filepath.Join(w.dir, hex.EncodeToString(h[:4]), filepath.Base(tree))
+	place := filepath.Join(w.dir, hex.EncodeToString(h[:4]))
+	dst := filepath.Join(place, filepath.Base(tree))
+	// A copy discarded in part leaves its folder: the new one goes beside.
+	for n := 1; exists(dst); n++ {
+		dst = filepath.Join(fmt.Sprintf("%s-%d", place, n), filepath.Base(tree))
+	}
 	if err := copyPackages(ctx, tree, members, dst); err != nil {
 		return "", err
 	}
 	root := filepath.Join(dst, rel)
-	if len(c.Ready) > 0 {
-		if err := w.ready(ctx, c, root); err != nil {
-			_ = os.RemoveAll(dst) // a later command copies afresh
-			return "", err
-		}
+	cp, err := w.made(ctx, c, tree, dst, root)
+	if err != nil {
+		cp.discard() // a later command copies afresh
+		return "", err
 	}
-	w.copies[tree] = dst
+	w.copies[tree] = cp
 	return root, nil
+}
+
+// made readies dst, the worker's fresh copy of tree, where c.Root's place
+// is root, and records it as made: a file Ready wrote is kept beside, as
+// no project file gives it back.
+func (w *worker) made(ctx context.Context, c Command, tree, dst, root string) (*workerCopy, error) {
+	cp := &workerCopy{dir: dst, tree: tree, kept: dst + ".ready"}
+	record, err := recordOf(ctx, dst)
+	if err != nil || len(c.Ready) == 0 {
+		cp.record = record
+		return cp, err
+	}
+	if err := w.ready(ctx, c, root); err != nil {
+		return cp, err
+	}
+	readied, err := recordOf(ctx, dst)
+	if err != nil {
+		return cp, err
+	}
+	cp.record = readied
+	return cp, keepReady(dst, cp.kept, record, readied)
+}
+
+func exists(path string) bool {
+	_, err := os.Lstat(path)
+	return err == nil
 }
 
 // ready runs c.Ready in root, the worker's fresh copy of c.Root, from

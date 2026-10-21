@@ -50,7 +50,7 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	}
 	p := &pool{scratch: scratch, budget: budget, closing: make(chan struct{}), done: make(chan struct{})}
 	for i := 0; i < max(1, count); i++ {
-		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]string{}, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
+		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]*workerCopy{}, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
 	}
 	return p, nil
 }
@@ -104,10 +104,14 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 	w.pool.mu.Unlock()
 	defer w.pool.active.Done()
 	var r result
-	var err error
-	if change == nil {
+	// The copy is put back as made before the mutant is written, never
+	// between, and before the command's timeout starts.
+	err := w.worker.fresh(ctx, c)
+	switch {
+	case err != nil:
+	case change == nil:
 		r, err = w.worker.run(ctx, c, timeout)
-	} else {
+	default:
 		r, err = w.worker.withMutant(ctx, c, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
 	}
 	if err != nil {

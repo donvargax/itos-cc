@@ -22,9 +22,13 @@ type WorkerPool interface {
 	Close(ctx context.Context) WorkerFailure
 }
 
-// Worker executes a command in its private copy of Command.Root. A nil change
-// runs a clean baseline; otherwise the changed source is restored after return.
-// A worker is used serially; separate workers may execute concurrently.
+// Worker executes a command in its private copy of Command.Root. Each run
+// starts from the copy as it was made: what an earlier run wrote, changed or
+// removed there is put back first, outside the run's timeout and Elapsed,
+// while the build output, caches and linked dependencies the copy leaves to
+// the tools stay as the runs leave them. A nil change runs a clean baseline;
+// otherwise the changed source is restored after return. A worker is used
+// serially; separate workers may execute concurrently.
 type Worker interface {
 	Run(ctx context.Context, command Command, change *Mutation, timeout time.Duration) (CommandResult, WorkerFailure)
 }

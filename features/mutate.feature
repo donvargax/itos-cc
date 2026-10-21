@@ -409,7 +409,7 @@ Feature: Mutation testing
     # a test run leaves in it, are the real Workers'; the fake runs each
     # mutant as declared and holds no copy. The adapter's own test holds the
     # same on every system's go test.
-    @wip @slice-13 @ID-MUT-267 @binary-only
+    @slice-13 @ID-MUT-267 @binary-only
     Scenario Outline: What a test run <changes> is back as copied for the next mutant
       Given the Go module "example.com/leak" with the file "leak.go":
         """

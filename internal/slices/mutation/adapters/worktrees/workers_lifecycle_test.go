@@ -84,7 +84,7 @@ func TestPoolJoinsEnteredWaiterBeforeRemovingInputs(t *testing.T) {
 	if _, err := os.Stat(p.scratch.dir); err != nil {
 		t.Fatalf("inputs removed while waiter held: %v", err)
 	}
-	copy := w.worker.copies[root]
+	copy := w.worker.copies[root].dir
 	text, err := os.ReadFile(filepath.Join(copy, "source.txt"))
 	if err != nil || string(text) != "mutated\n" {
 		t.Fatalf("pending restoration input: %q %v", text, err)

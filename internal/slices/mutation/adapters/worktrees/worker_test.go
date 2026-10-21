@@ -41,7 +41,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	if !r.Passed || r.ExitCode != 0 {
 		t.Fatalf("result = %+v, want successful command", r)
 	}
-	copyRoot := w.copies[root]
+	copyRoot := w.copies[root].dir
 	wantDir := filepath.Join(copyRoot, "pkg")
 	wantDir, err = filepath.EvalSymlinks(wantDir)
 	if err != nil {
@@ -100,6 +100,8 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 		if _, err := fmt.Fprintln(os.Stderr, "success-stderr"); err != nil {
 			t.Fatal(err)
 		}
+	case "pristine":
+		pristineHelper(t)
 	case "barrier":
 		started := os.Getenv("ITOS_COMMAND_RUNNER_STARTED")
 		release := os.Getenv("ITOS_COMMAND_RUNNER_RELEASE")
@@ -126,7 +128,7 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 
 func newCommandRunnerWorker(t *testing.T) *worker {
 	t.Helper()
-	return &worker{dir: t.TempDir(), copies: make(map[string]string)}
+	return &worker{dir: t.TempDir(), copies: make(map[string]*workerCopy)}
 }
 
 func commandRunnerHelperArgs() []string {

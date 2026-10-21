@@ -362,7 +362,12 @@ test. What keeps `mutation run` fast:
   `--coverage-command` runs exactly as given.
 - **Parallel workers** in private copies of the project, so the real tree is
   never modified while tests run. The baseline runs inside a worker, which
-  proves the copy works before any mutant does. A mutant times out after
+  proves the copy works before any mutant does. Every run in a worker, the
+  baseline's and each mutant's, starts from the copy as it was made: what a
+  test run wrote, rewrote or removed there is put back before the next, so
+  one run's leftovers never fail a later mutant. Build output, caches,
+  `.dart_tool` and the linked dependencies stay as the runs leave them, and
+  putting the copy back is not part of a run's time. A mutant times out after
   the baseline's time times `--timeout-factor` (10 by default), plus 5
   seconds for building the mutated code, and a timeout counts as killed.
   The copies live in an `itos-cc-mutate-` directory of the temporary
