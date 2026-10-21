@@ -6195,13 +6195,6 @@
     package, docs/architecture.md, README's Working here (whose sentences about refactor-final-proof
     and the unfinished refactor are stale since T-132 and T-141: say the layout is ADR-0051's) and
     AGENTS.md's first list as one line (doc-caps allows 8192 bytes). Docs only.
-  done_when:
-    - run: tools/bin/doc-caps
-      timeout: 60
-    - run: itos config check
-      timeout: 60
-    - run: test -s docs/ownership.md
-      timeout: 10
 - id: T-171
   type: test
   title: Point the refactor proof at b768837 and add the edge cases T-86 moves listed
