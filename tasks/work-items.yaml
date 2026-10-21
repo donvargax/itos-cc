@@ -4025,7 +4025,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-scenario-registration]
+    depends_on: [slices-scenario-registration, refactor-proof-version-stamp]
     kind: idea
     why: >
       T-86 (ADR-0051, R14): a path-ownership map per slice in docs (engines, generated files and
