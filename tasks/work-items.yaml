@@ -4339,3 +4339,18 @@ items:
       differ for that reason alone, and tools/bin/refactor-proof's note 3 says the version string
       needs no normalising. Adding -X main.version=1.2.3-features to STAMP, which the refactored
       binary's linker ignores, would make both say the same; or the proof classifies the difference.
+  - id: release-row-stamp-wording
+    title: Name internal/version's stamp in ID-CLI-03's and ID-CLI-18's release rows
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The release rows of cli.feature's ID-CLI-03 and ID-CLI-18 read 'by a release with -X
+      main.version=v1.2.3' (and =1.2.3), and features/cli.go's releaseBuild matches that text. Since
+      T-155 no main.version exists: release.yml and the harness's release build (features/build.go)
+      stamp github.com/donvargax/itos-cc/internal/version.stamp, so the rows still pass but name a
+      symbol the binary no longer has. T-155 left the text as it was, a refactor changing no
+      scenario; rewording the rows and the regular expression, to the stamp's name or to 'by a
+      release stamped v1.2.3', checks the same and needs the person's approval of the scenario text.
