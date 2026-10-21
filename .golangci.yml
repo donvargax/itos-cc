@@ -107,23 +107,24 @@ linters:
               desc: "the domain does no I/O (decision 29): do the I/O in an adapter behind the domain's port, adding it as docs/go.md's Adding a package says; tests may read fixtures. Never loosen this one"
             - pkg: net
               desc: "the domain does no I/O (decision 29): reach networks from an adapter behind the domain's port, adding it as docs/go.md's Adding a package says; never loosen this one"
-        # A slice is a command, in one package named for it: its kong struct
-        # and Run (UI), its Query and Handler (application). It imports
+        # A slice is a command, in one package named for it until it moves
+        # under internal/slices (ADR-0051, slice-packages below): its kong
+        # struct and Run (UI), its Query and Handler (application). It imports
         # nothing of ours but the domain, its ports and internal/cli: no other
-        # slice, no adapter (cmd wires them in) and no cmd. Every package
-        # under internal is a slice but those excluded here, the domain, the
-        # adapters and the packages that are no command, so a new command's
-        # slice is held with no edit to this rule; a new domain or adapter
-        # package is excluded here as it is listed in its own rule. A rule
-        # cannot tell a slice's own import from another's, so a slice's tests
-        # are in its own package and need no import of it. internal/lang, the
-        # domain library that names a source's units, is allowed: it is the
-        # measure every command shares, no adapter and wrapping none, so a
-        # slice names the units of what it read through its port with it
-        # (internal/units, T-32), and with them lang's port, Surroundings,
-        # which a slice's handler holds and its tests fake (T-35); project,
-        # which an adapter wraps and which answers lang's port from the disk,
-        # is not.
+        # slice, under internal/slices or not, no adapter (cmd wires them in)
+        # and no cmd. Every package under internal outside internal/slices is
+        # a slice but those excluded here, the domain, the adapters and the
+        # packages that are no command, so a package no rule names is held as
+        # a slice; a new domain or adapter package is excluded here as it is
+        # listed in its own rule. A rule cannot tell a slice's own import from
+        # another's, so a slice's tests are in its own package and need no
+        # import of it. internal/lang, the domain library that names a
+        # source's units, is allowed: it is the measure every command shares,
+        # no adapter and wrapping none, so a slice names the units of what it
+        # read through its port with it (internal/slices/units, T-32), and
+        # with them lang's port, Surroundings, which a slice's handler holds
+        # and its tests fake (T-35); project, which an adapter wraps and which
+        # answers lang's port from the disk, is not.
         slices:
           list-mode: lax
           files:
@@ -148,6 +149,7 @@ linters:
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # what cmd says the build is
             - "!**/internal/release/**" # the release tools' library
+            - "!**/internal/slices/**" # the moved slices, held by slice-packages
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
@@ -168,6 +170,40 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "a slice imports only the domain, its ports, internal/cli and internal/lang with its port (decision 29); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # A slice under internal/slices/<name> (ADR-0051), its subpackages
+        # with it, imports what the slices rule above allows and its own
+        # subpackages, which keep its domain, port, porttest and adapter
+        # apart. depguard matches a prefix, so it cannot tell a slice's own
+        # subpackage from another slice's: internal/slices/ is allowed here,
+        # and tools/bin/architecture-check refuses a slice importing another
+        # (its sibling rule). Each domain added to the slices rule's allow
+        # list is added here too, until the last slice moves and this rule is
+        # the only one.
+        slice-packages:
+          list-mode: lax
+          files:
+            - "**/internal/slices/**"
+          allow:
+            - github.com/donvargax/itos-cc/internal/selection$
+            - github.com/donvargax/itos-cc/internal/selection/
+            - github.com/donvargax/itos-cc/internal/snapshot$
+            - github.com/donvargax/itos-cc/internal/snapshot/
+            - github.com/donvargax/itos-cc/internal/duplication$
+            - github.com/donvargax/itos-cc/internal/teststructure$
+            - github.com/donvargax/itos-cc/internal/coverage$
+            - github.com/donvargax/itos-cc/internal/coverage/
+            - github.com/donvargax/itos-cc/internal/changerisk$
+            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/mutants/porttest$
+            - github.com/donvargax/itos-cc/internal/coverage/porttest$
+            - github.com/donvargax/itos-cc/internal/cli$
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/internal/lang/port$
+            - github.com/donvargax/itos-cc/internal/lang/port/
+            - github.com/donvargax/itos-cc/internal/slices/
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "a slice imports only the domain, its ports, internal/cli, internal/lang with its port and its own subpackages (ADR-0051); if this package is a domain package or an adapter, not a command, extend the rules as docs/go.md's Adding a package says, never loosen this one"
         # A slice's own code links no port's fake, which its tests alone may
         # use, as an adapter's do (T-56): the slices rule allows the domains'
         # ports by prefix, which porttest shares, so this rule refuses each

@@ -81,6 +81,16 @@ type adapters struct {
 	Platform string
 }
 
+// SelectionTree is the selection port's tree, a slice's Ports method.
+func (a adapters) SelectionTree() selport.Tree { return a.Tree }
+
+// LangSurroundings is lang's port, a slice's Ports method.
+func (a adapters) LangSurroundings() langport.Surroundings { return a.Surroundings }
+
+// SelectionSettings is the selection engine's settings reader, a slice's
+// Ports method.
+func (a adapters) SelectionSettings() selport.SettingsReader { return a.Selection }
+
 // diskAdapters are this process's: its working directory,
 // internal/workdir's tree and surroundings, internal/metricsdir's store,
 // internal/coveragetools' measurer, saying what it runs on log, and

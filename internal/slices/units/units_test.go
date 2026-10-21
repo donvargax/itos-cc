@@ -1,9 +1,7 @@
-// The tests are in the slice's own package: a slice imports no other slice,
-// and depguard cannot tell a slice's own import from another's. The
-// scenarios of features/units.feature hold the command through its binary;
-// these hold what Handle and Run do with what the port gives and fails
-// with, through porttest's fake, which no scenario can make a file fail to
-// read in.
+// The tests are in the slice's own package. The scenarios of
+// features/units.feature hold the command through its binary; these hold
+// what Handle and Run do with what the port gives and fails with, through
+// porttest's fake, which no scenario can make a file fail to read in.
 package units
 
 import (

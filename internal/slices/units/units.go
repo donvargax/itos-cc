@@ -10,6 +10,10 @@
 // working directory. The slice reads no file itself. A failure is the
 // selection domain's, which cmd's classifier for that domain turns into a
 // problem, or lang's, an internal one; Run reports it through the UI.
+//
+// Command declares the command to cmd, which assembles it into its one
+// model (ADR-0051), and Ports are the ports its handler is built over,
+// which cmd's adapters satisfy.
 package units
 
 import (
@@ -22,6 +26,14 @@ import (
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 )
+
+// Command is the units command as cmd assembles it: its name, the line the
+// top-level help lists it by, and a fresh command line for each parser.
+var Command = cli.Declaration{
+	Name: "units",
+	Help: "list the functions and methods every tool measures",
+	New:  func() any { return &CLI{} },
+}
 
 // CLI is the units command's command line: the files it selects, as every
 // command selects them (cli.Selection, first), whether it lists their
@@ -76,6 +88,23 @@ type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
 	Exclude      selection.Exclusion
+}
+
+// Ports are what the units command reaches the world through, which cmd's
+// adapters give it: the working tree it selects and reads files through,
+// what surrounds those files, and the selection engine's settings, whose
+// exclude cmd reads, under the context of the Run that asks for the
+// handler, into the Exclusion NewHandler is given.
+type Ports interface {
+	SelectionTree() port.Tree
+	LangSurroundings() langport.Surroundings
+	SelectionSettings() port.SettingsReader
+}
+
+// NewHandler is the handler over p's tree and surroundings, leaving out the
+// sources exclude names.
+func NewHandler(p Ports, exclude selection.Exclusion) Handler {
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Exclude: exclude}
 }
 
 // Found is what Handle found: the units listed, and Excluded, the count of

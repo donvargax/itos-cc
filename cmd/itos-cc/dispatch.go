@@ -12,7 +12,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/dry"
 	"github.com/donvargax/itos-cc/internal/mutation"
 	"github.com/donvargax/itos-cc/internal/scrap"
-	"github.com/donvargax/itos-cc/internal/slices/units"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
@@ -24,17 +23,18 @@ import (
 // while it leaves for a web app of its own: its node names it in the model,
 // and dispatch hands its command line to that handler as it is.
 
-// commandLine is the command line of every command: one field each, its
-// kong struct, its help the line the top-level help lists it by. The fields
-// are in their names' order, which the guess for an unknown command weighs
-// a tie by, as the top-level help lists them.
+// commandLine is the command line of every command not yet under
+// internal/slices: one field each, its kong struct, its help the line the
+// top-level help lists it by. The commands the slices declare join them in
+// the model (assembled), which then lists every command in their names'
+// order, the order the guess for an unknown command weighs a tie by, as the
+// top-level help lists them.
 type commandLine struct {
 	Crap     crap.CLI     `cmd:"" help:"CRAP score per function: complexity × untested risk"`
 	Dry      dry.CLI      `cmd:"" help:"functions similar enough to be duplicates"`
 	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
 	Scrap    scrap.CLI    `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
 	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
-	Units    units.CLI    `cmd:"" help:"list the functions and methods every tool measures"`
 	Version  cli.Version  `cmd:"" help:"print the version"`
 }
 
@@ -47,11 +47,12 @@ type legacyServe struct{}
 // legacy are the commands still on the hand parser, by name: serve alone.
 var legacy = map[string]*command{serveCommand.name: serveCommand}
 
-// parserOf is the parser of c, which run builds once, as it parses one
-// command line at most (cli.Parse): itos-cc's name, its flags held by
-// internal/cli's Flags, help printed by internal/cli's Help, and the
-// bindings each Run is handed, ctx and the UI among them, and providers
-// (handlers) of every command's handler and of the version version prints.
+// parserOf is the parser of c and of the commands the slices declare
+// (assembled), which run builds once, as it parses one command line at
+// most (cli.Parse): itos-cc's name, its flags held by internal/cli's Flags,
+// help printed by internal/cli's Help, and the bindings each Run is handed,
+// ctx and the UI among them, and providers (handlers, assembled) of every
+// command's handler and of the version version prints.
 // kong calls a provider only when the Run it calls asks for its value, so
 // nothing a provider reads is read for help, a line kong refuses or another
 // command. kong never exits the process: help is printed before it parses,
@@ -70,12 +71,13 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 		}),
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Bind(ui),
-	), handlers(ui, a)...)...)
+	), append(handlers(ui, a), assembled(a)...)...)...)
 }
 
-// handlers are the providers of every command's handler, over a's ports,
-// and of version's build, each called under the context of the Run that asks
-// for it. The handlers of crap, units and dry hold the sources itos-cc.yaml
+// handlers are the providers of the handler of every command commandLine
+// holds, over a's ports, and of version's build, each called under the
+// context of the Run that asks for it; assembled provides the declared
+// commands'. The handlers of crap and dry hold the sources itos-cc.yaml
 // excludes, which their providers read under ctx through the selection
 // engine's settings, each provider reading them itself, so their failure is
 // never wrapped as a dependent provider's: a file that cannot be read
@@ -102,10 +104,6 @@ func handlers(ui *cli.UI, a adapters) []kong.Option {
 		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
 		kong.BindToProvider(func() scrap.Handler {
 			return scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}
-		}),
-		kong.BindToProvider(func(ctx context.Context) (units.Handler, error) {
-			exclude, err := exclusion(ctx, a.Selection)
-			return units.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Exclude: exclude}, err
 		}),
 		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),
 	}
