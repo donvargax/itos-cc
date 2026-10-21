@@ -14,6 +14,7 @@
 package domain
 
 import (
+	"slices"
 	"strings"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
@@ -38,7 +39,7 @@ type Example struct {
 }
 
 // Extract finds the examples of a test file and the lines spent on shared
-// setup (beforeEach, fixtures, setUp, @BeforeEach).
+// setup (beforeEach, fixtures, setUp, @BeforeEach, Dart's setUp blocks).
 func Extract(f *lang.File) (examples []Example, setupLines int) {
 	x := extractor{f: f}
 	switch f.Spec.Name {
@@ -50,6 +51,8 @@ func Extract(f *lang.File) (examples []Example, setupLines int) {
 		x.golang(f.Root)
 	case "kotlin":
 		x.kotlin(f.Root, nil)
+	case "dart":
+		x.dart(f.Root, nil, nil)
 	}
 	return x.examples, x.setup
 }
@@ -395,6 +398,97 @@ func (x *extractor) ktTitle(call *sitter.Node) string {
 		for _, args := range children(suffix) {
 			if args.Kind() == "value_arguments" && args.NamedChildCount() > 0 {
 				return strings.Trim(x.text(args.NamedChild(0)), "\"")
+			}
+		}
+	}
+	return ""
+}
+
+// --- Dart: flutter_test and package:test ---
+
+var (
+	dartGroups   = map[string]bool{"group": true}
+	dartExamples = map[string]bool{"test": true, "testWidgets": true}
+	dartSetup    = map[string]bool{"setUp": true, "setUpAll": true, "tearDown": true, "tearDownAll": true}
+)
+
+// dart finds test and testWidgets calls, named under the titles of the
+// group calls around them. The grammar has no call node: a call is a name
+// followed by a selector holding its argument_part, so the call is the
+// node holding both, its statement. A test called in a loop runs once per
+// case: it is a table, and when the loop calls no other test the loop is
+// the example, its cases its data.
+func (x *extractor) dart(n *sitter.Node, groups []string, loop *sitter.Node) {
+	switch {
+	case n.Kind() == "for_statement":
+		before := len(x.examples)
+		for _, c := range children(n) {
+			x.dart(c, groups, n)
+		}
+		if len(x.examples) == before+1 {
+			ex := &x.examples[before]
+			ex.Node, ex.StartLine, ex.EndLine = n, int(n.StartPosition().Row)+1, int(n.EndPosition().Row)+1
+		}
+		return
+	case x.f.Spec.Syntax.Arguments[n.Kind()]:
+		object, name, ok := x.f.Spec.Syntax.Callee(n, x.f.Src)
+		call := dartCall(n)
+		if !ok || object != "" || call == nil {
+			break
+		}
+		body := dartClosure(n)
+		switch {
+		case dartGroups[name] && body != nil:
+			x.dart(body, append(slices.Clip(groups), x.dartTitle(n)), loop)
+			return
+		case dartExamples[name] && body != nil:
+			x.add(x.dartTitle(n), groups, call, body, loop != nil)
+			return
+		case dartSetup[name]:
+			x.setup += lines(call)
+			return
+		}
+	}
+	for _, c := range children(n) {
+		x.dart(c, groups, loop)
+	}
+}
+
+// dartCall is the node holding the call args make: the name, the selector
+// around args, and nothing after it, or nil when more of a chain follows,
+// as in test(…).then(…).
+func dartCall(args *sitter.Node) *sitter.Node {
+	link := args.Parent()
+	if link == nil || link.Parent() == nil {
+		return nil
+	}
+	if next := link.NextNamedSibling(); next != nil && next.Kind() == "selector" {
+		return nil
+	}
+	return link.Parent()
+}
+
+// dartClosure is the body of the last function among a call's arguments:
+// test's or group's callback.
+func dartClosure(args *sitter.Node) *sitter.Node {
+	var body *sitter.Node
+	for _, list := range children(args) {
+		for _, a := range children(list) {
+			if a.Kind() != "argument" || a.NamedChildCount() == 0 || a.NamedChild(0).Kind() != "function_expression" {
+				continue
+			}
+			body = a.NamedChild(0).ChildByFieldName("body")
+		}
+	}
+	return body
+}
+
+// dartTitle is a call's first argument, its description, unquoted.
+func (x *extractor) dartTitle(args *sitter.Node) string {
+	for _, list := range children(args) {
+		for _, a := range children(list) {
+			if a.Kind() == "argument" {
+				return strings.Trim(x.text(a), "\"'")
 			}
 		}
 	}

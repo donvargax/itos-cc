@@ -190,6 +190,43 @@ class CartSpec : FunSpec({
 	}
 }
 
+// A Dart unit is a signature and its body beside it: a helper asserts in
+// its body. Tests a loop calls are each a table; the loop is the example
+// only when it calls one test.
+func TestDartExamples(t *testing.T) {
+	r := analyze(t, "test/cart_test.dart", `void same(int got, int want) {
+  expect(got, want);
+}
+
+void main() {
+  setUpAll(() => registerFallbackValue(Item()));
+  tearDown(reset);
+
+  group('cart', () {
+    test('adds', () {
+      registerFallbackValue(Item());
+      same(add(1), 1);
+    });
+    const cases = [1, 2];
+    for (final c in cases) {
+      test('keeps $c', () => same(keep(c), c));
+      testWidgets('shows $c', (tester) async {
+        await tester.pumpWidget(Cart(c));
+      });
+    }
+  });
+}
+`)
+	assertSummary(t, r, []string{
+		"cart/adds a=1 d=0 m=1",
+		"cart/keeps $c a=1 d=0 m=0 table",
+		"cart/shows $c a=0 d=0 m=0 table",
+	})
+	if r.SetupLines != 2 {
+		t.Errorf("setup lines %d, want 2", r.SetupLines)
+	}
+}
+
 func TestAssertionHelpersAndCaseLoops(t *testing.T) {
 	r := analyze(t, "x_test.go", `package x
 

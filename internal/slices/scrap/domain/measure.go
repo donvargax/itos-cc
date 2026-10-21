@@ -31,21 +31,24 @@ type measurer struct {
 
 func newMeasurer(f *lang.File) *measurer {
 	m := &measurer{f: f, helpers: map[string]bool{}}
-	// Twice, so a helper that only calls another helper is found too.
+	// Twice, so a helper that only calls another helper is found too. Each
+	// of a unit's nodes, as a Dart unit is a signature and its body.
 	for range 2 {
 		for _, u := range f.Units {
-			if m.helpers[u.Name] {
-				continue
+			for _, root := range u.Nodes() {
+				if m.helpers[u.Name] {
+					break
+				}
+				lang.Walk(root, func(n *sitter.Node) bool {
+					if m.isErrorGuard(n) {
+						return false
+					}
+					if n != root && m.isAssertion(n) {
+						m.helpers[u.Name] = true
+					}
+					return !m.helpers[u.Name]
+				})
 			}
-			lang.Walk(u.Node, func(n *sitter.Node) bool {
-				if m.isErrorGuard(n) {
-					return false
-				}
-				if n != u.Node && m.isAssertion(n) {
-					m.helpers[u.Name] = true
-				}
-				return !m.helpers[u.Name]
-			})
 		}
 	}
 	return m
@@ -102,6 +105,13 @@ func (m *measurer) loopCases(example, loop *sitter.Node) *sitter.Node {
 				cases = loop.Child(i + 1)
 			}
 		}
+	case "dart":
+		// for (final c in cases) holds its iterable in its loop parts.
+		for _, c := range children(loop) {
+			if c.Kind() == "for_loop_parts" {
+				cases = c.ChildByFieldName("value")
+			}
+		}
 	default:
 		cases = loop.ChildByFieldName("right")
 	}
@@ -115,7 +125,8 @@ func (m *measurer) loopCases(example, loop *sitter.Node) *sitter.Node {
 }
 
 // binding is the value name is first given in n: Go's := and var, a Python
-// assignment, a TypeScript const or let, a Kotlin val or var.
+// assignment, a TypeScript const or let, a Kotlin val or var, a Dart final,
+// const, var or typed local.
 func (m *measurer) binding(n *sitter.Node, name string) *sitter.Node {
 	var value *sitter.Node
 	lang.Walk(n, func(x *sitter.Node) bool {
@@ -126,7 +137,7 @@ func (m *measurer) binding(n *sitter.Node, name string) *sitter.Node {
 		switch x.Kind() {
 		case "short_var_declaration", "assignment":
 			left, right = x.ChildByFieldName("left"), x.ChildByFieldName("right")
-		case "var_spec", "variable_declarator":
+		case "var_spec", "variable_declarator", "initialized_variable_definition":
 			left, right = x.ChildByFieldName("name"), x.ChildByFieldName("value")
 		case "property_declaration":
 			for _, c := range children(x) {
@@ -246,9 +257,18 @@ func (m *measurer) isAssertion(n *sitter.Node) bool {
 		return goFailures[name] || object == "assert" || object == "require"
 	case "kotlin":
 		return assertive(name) || name == "coVerify" || strings.HasPrefix(name, "should")
+	case "dart":
+		return object == "" && dartAssertions[name]
 	}
 	return false
 }
+
+// dartAssertions are package:test's and flutter_test's, and mockito's and
+// mocktail's verifications.
+var dartAssertions = map[string]bool{"expect": true, "expectLater": true,
+	"expectAsync0": true, "expectAsync1": true, "expectAsync2": true, "expectAsync3": true,
+	"expectAsync4": true, "expectAsync5": true, "expectAsync6": true,
+	"verify": true, "verifyNever": true, "verifyInOrder": true}
 
 var (
 	tsMockCalls = map[string]bool{"mock": true, "fn": true, "spyOn": true, "doMock": true,
@@ -275,6 +295,10 @@ func (m *measurer) isMock(n *sitter.Node) bool {
 		return name == "EXPECT" || name == "NewController" || strings.HasPrefix(name, "NewMock")
 	case "kotlin":
 		return ktMocks[name]
+	case "dart":
+		// Each when(…) stubs a mock, mockito's or mocktail's; mocktail's
+		// registerFallbackValue sets up the mocks' arguments.
+		return object == "" && (name == "when" || name == "registerFallbackValue")
 	}
 	return false
 }
@@ -308,8 +332,9 @@ func (m *measurer) isGuardAssertion(n *sitter.Node) bool {
 // loopKinds iterate over a collection, the shape of a hand-written table.
 var loopKinds = map[string]bool{"for_statement": true, "for_in_statement": true}
 
-// isTableLoop is a loop over cases whose body asserts or runs a subtest:
-// the table of a table-driven test, not logic in a test.
+// isTableLoop is a loop over cases whose body asserts or runs a subtest,
+// a t.Run or a Dart test: the table of a table-driven test, not logic in a
+// test.
 func (m *measurer) isTableLoop(n *sitter.Node) bool {
 	if !loopKinds[n.Kind()] {
 		return false
@@ -322,7 +347,7 @@ func (m *measurer) isTableLoop(n *sitter.Node) bool {
 		if found {
 			return false
 		}
-		if _, name, ok := m.callee(x); ok && name == "Run" {
+		if _, name, ok := m.callee(x); ok && (name == "Run" || m.f.Spec.Name == "dart" && dartExamples[name]) {
 			found = true
 		}
 		found = found || m.isAssertion(x) || m.isGuardAssertion(x)

@@ -289,6 +289,8 @@ var tableIdiom = map[string]string{
 	"python":     "@pytest.mark.parametrize",
 	"go":         "a table of cases run with t.Run",
 	"kotlin":     "@ParameterizedTest",
+	// Dart has no built-in parametrize: a loop over cases calls test.
+	"dart": "a for loop over cases calling test",
 }
 
 const maxRecommendations = 10

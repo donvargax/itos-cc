@@ -21,7 +21,7 @@ Feature: Test-code structure
 
       # slice-33, dart-support: a test or testWidgets call is an example,
       # named under its group titles; flutter_test and package:test alike.
-      @wip @slice-33
+      @slice-33
       Examples:
         | language   | framework                  | group       |
         | Dart       | flutter_test, package:test | group block |
@@ -52,7 +52,7 @@ Feature: Test-code structure
     # joined by /; setUp's lines are setup; each when(...) stubbing is a mock
     # it sets up, as stubbing a mock is what other languages count; expect
     # and verify assert; a closure inside an example is part of it.
-    @wip @slice-33 @ID-SCRAP-31
+    @slice-33 @ID-SCRAP-31
     Scenario: A Flutter widget test file
       Given the Dart test file "test/counter_test.dart":
         """
@@ -162,7 +162,7 @@ Feature: Test-code structure
         | Kotlin     | x shouldBe 1                           |
         | Kotlin     | coVerify { repo.save(any()) }          |
 
-      @wip @slice-33
+      @slice-33
       Examples:
         | language   | code                                   |
         | Dart       | expect(x, 1)                           |
@@ -206,7 +206,7 @@ Feature: Test-code structure
 
       # slice-33: Dart has no built-in parametrize; a loop over cases that
       # calls test for each is its table.
-      @wip @slice-33
+      @slice-33
       Examples:
         | table                                                                  |
         | a Dart list it loops over with for…in, calling test for each case      |
@@ -283,7 +283,7 @@ Feature: Test-code structure
         | Go         | a table of cases run with t.Run  |
         | Kotlin     | @ParameterizedTest               |
 
-      @wip @slice-33
+      @slice-33
       Examples:
         | language   | idiom                                  |
         | Dart       | a for loop over cases calling test     |
