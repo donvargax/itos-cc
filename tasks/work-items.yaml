@@ -3410,8 +3410,8 @@ items:
   - id: slice-13
     title: A file one test leaves in a worker's copy fails every later mutant on that worker
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
