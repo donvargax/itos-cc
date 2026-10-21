@@ -4718,3 +4718,15 @@ items:
       is always taken (SEL-12), so a changed MainActivity.kt in a Flutter app android folder, a
       regenerated user.g.dart or a changed vendor/ file is selected by --changed though no walk
       takes it. Whether --changed should keep the walk rules is a question for the person.
+  - id: l10n-arb-dir-default
+    title: gen-l10n output defaults to arb-dir, not always lib/l10n
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-30 follows q-77: an l10n.yaml naming no output-dir means lib/l10n. Flutter gen-l10n
+      writes to arb-dir when output-dir is unset, so an l10n.yaml with arb-dir lib/i18n and no
+      output-dir has its generated app_localizations*.dart selected as source. Reading arb-dir as
+      the fallback would need a scenario row.
