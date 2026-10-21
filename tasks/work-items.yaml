@@ -5059,3 +5059,16 @@ items:
       the coverage run, atomic where -race or another build sets it) cannot be merged by covdata.
       Reproduce, then decide: build every integration binary with one mode, keep the modes'
       directories apart, or say on stderr which coverage was lost; a scenario holds the fix.
+  - id: stale-decision-citations
+    title: Code and config cite superseded decisions
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found while drafting the architecture guide (2026-10-21): .golangci.yml's depguard desc
+      strings for the domain, slices and kong rules cite decision 29, which ADR-0051 superseded;
+      internal/cli's comments cite q-54 for the precedence and the problem's exit, which decision 34
+      records. A lint message or comment naming a dead record sends a reader to the wrong one.
+      Comments and desc strings only, a refactor or chore commit with no behaviour change.
