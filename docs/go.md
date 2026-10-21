@@ -95,19 +95,17 @@ a `context.Context` first (decision 30); pure logic takes none.
   `SurroundingsContract`, the contract it and both adapters, `project`'s and
   `internal/workdir`'s, pass (Tests, below). The top-level `project` library is its disk side: `project.Surroundings`,
   making the calls lang once made itself, and `ParseFile` and `FindUp`, which the packages not
-  yet refactored call with the context their caller gives them.
-- `internal/duplication` is the domain that finds functions similar enough to be duplicates
-  (decision 37), named for what it is while the command keeps its name, `dry`. It takes files
-  `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
-  with the name its caller gives the file, since a side's file is the key its pairs and groups
-  are sorted and paired by. It reads nothing and imports neither `project` nor any disk code,
-  so it has no port; its tests parse in memory through lang's fake. `internal/teststructure`
-  measures test code with its `Fingerprint` and `Jaccard`.
+  yet refactored call with the context their caller gives them. It also compares a unit's
+  structure, the engine `dry`'s and `scrap`'s domains share (T-148): `Fingerprint(f, n,
+  skip...)` is the fingerprint set of the tree under a node of a parsed file, local names,
+  field names and literals dropped, called names, operators and shape kept, each node hashed one
+  and two levels deep, and `Jaccard(a, b)` the similarity of two such sorted sets.
 - `internal/teststructure` is the domain that measures the structure of test code (decision
   37), named for what it is while the command keeps its name, `scrap`. `Analyze(f, name)`
   takes a file `internal/lang` parsed and the name its caller gives it, and `History` merges a
   run's reports into what the last snapshot recorded, keeping the files the run did not
   measure. It reads nothing and has no port; its tests parse in memory through lang's fake.
+  It compares a test's examples by `internal/lang`'s `Fingerprint` and `Jaccard`.
 - `internal/changerisk` is the domain that scores functions by CRAP (decision 37), named for
   what it is while the command keeps its name, `crap`. `Analyze(f, name, report, measured)`
   takes a file `internal/lang` parsed, the name its caller gives it and a coverage `Report`;
@@ -259,23 +257,39 @@ a `context.Context` first (decision 30); pure logic takes none.
   top-level help lists it by and `New`, a fresh `*CLI` for each parser; `Ports`, an interface
   it owns, names the ports its handler is built over, the selection `Tree`, lang's
   `Surroundings` and the selection engine's `SettingsReader`, which cmd's `adapters` satisfy
-  through methods (`SelectionTree`, `LangSurroundings`, `SelectionSettings`); and
-  `NewHandler(ports, exclude)` builds the handler over them, given the `Exclusion` cmd read.
+  through methods (`SelectionTree`, `LangSurroundings`, `SelectionExclusion`); and
+  `NewHandler(ctx, p Ports) (Handler, error)` builds the handler over them, the `Exclusion` read
+  through `SelectionExclusion` under `ctx`, its failure returned unwrapped (T-146).
   Its handler selects the files through the
   selection domain, parses each with the domain's `Parse`, read through the same `Tree` port
   and named by `internal/lang` through the `Surroundings` port its handler is given, its
   `Exclude` the sources the selection leaves out. `Run` prints them, their paths from the
   working directory (`UI.Rel`). It has no classifier: its failures are the
   selection domain's, whose classifier is cmd's, or `internal/lang`'s, internal ones.
-- `internal/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first moved
-  command with number flags. Its `Handler` holds the selection `Tree`, lang's `Surroundings`,
-  the snapshot `Store` and `Name`, the name a person reads a file by, which cmd binds to
-  `UI.Rel`, and `Exclude`, the sources both selections leave out. `Handle` selects the
-  sources, and with paths or `--changed` checks them against every source the selection finds
-  under the working directory; it parses each with the selection domain's `Parse`, hands it
-  to `internal/duplication` under its `Name`, and records `dry.json` through the `Store`, each
-  file named from the root (`snapshot.Key`). It has no classifier: its failures are the selection and snapshot
-  domains', whose classifiers are cmd's, or `internal/lang`'s, internal ones.
+- `internal/slices/dry` is the `dry` command's slice (T-40), laid out as `units`'s, the first
+  moved command with number flags, and the second under `internal/slices` (T-148), the first
+  the generator assembled. Its `Handler` holds the selection `Tree`, lang's `Surroundings`, the
+  snapshot `Store`, `Name`, the name a person reads a file by, and `Exclude`, the sources both
+  selections leave out. `Command` declares it and `Ports` names what `NewHandler(ctx, p)` builds
+  the handler over: `SelectionTree`, `LangSurroundings`, `SelectionExclusion`, as `units`
+  declares them, `SnapshotStore`, the snapshot port, and `Rel(path)`, a path named from the
+  working directory, which `adapters` answers with `cli.Rel` from its `Dir`, the one copy of
+  `UI.Rel`'s logic, from the directory the UI is given, so the UI stays out of the slice's
+  ports. `Handle` selects the sources, and with paths or `--changed` checks them against every
+  source the selection finds under the working directory; it parses each with the selection
+  domain's `Parse`, hands it to its domain under its `Name`, and records `dry.json` through the
+  `Store`, each file named from the root (`snapshot.Key`). It has no classifier: its failures
+  are the selection and snapshot domains', whose classifiers are cmd's, or `internal/lang`'s,
+  internal ones.
+- `internal/slices/dry/domain` is the `dry` slice's own domain (decision 37, ADR-0051), the
+  subpackage that keeps it apart from the slice's CLI and application code; it was
+  `internal/duplication`. It finds functions similar enough to be duplicates in files
+  `internal/lang` parsed, `Forms(f, name, opt)` a file's functions large enough to compare,
+  with the name its caller gives the file, since a side's file is the key its pairs and groups
+  are sorted and paired by, compared by lang's `Fingerprint` and `Jaccard`. It reads nothing
+  and imports neither `project` nor any disk code, so it has no port; its tests parse in
+  memory through lang's fake. The `domain` and `domain-io` rules hold it as they hold the
+  shared domains, and `tools/bin/domain-coverage` measures it.
 - `internal/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, its `Handler`
   holding the same four. `Handle` selects the test files, reads the last `scrap.json` through
   the `Store`, going on without it when it is `Unreadable`, reads and parses each test file as
@@ -345,7 +359,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `dispatch.go`), the order `TestTheModelNamesEveryCommandInOrder` holds. The handlers of
   `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so each reads the file through the
   selection engine's settings reader under the `Run`'s context in its own provider, `units`
-  through its `Ports`' `SelectionExclusion`, which `adapters` answers with `settingsError`'s
+  and `dry` through their `Ports`' `SelectionExclusion`, which `adapters` answers with `settingsError`'s
   wording and `NewHandler` returns as it is, since kong wraps a dependent provider's error as
   `<type>: %w`: a file that cannot be read fails that command alone as `config.invalid`, the
   provider's error kong returns unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
@@ -389,7 +403,8 @@ context-as-argument a context after any other parameter, tests included.
 `.golangci.yml` holds these arrows with depguard:
 
 - `domain`: the domains, their ports and their tests import nothing of ours but the domains and
-  their port subpackages, and never kong. `config` imports `internal/mutants`, whose `Config`
+  their port subpackages, and never kong. A slice's own domain, `internal/slices/dry/domain`, is
+  held as the others are, and left out of what a domain may import, since it is no shared one. `config` imports `internal/mutants`, whose `Config`
   it aliases and whose `SettingsReader` its `Reader` implements, and `internal/selection/port`,
   whose `SettingsReader` it implements too, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
@@ -405,7 +420,7 @@ context-as-argument a context after any other parameter, tests included.
   package's import of itself from another's.
 - `slice-packages`: a slice under `internal/slices`, its subpackages with it, imports what
   `slices` allows and its own subpackages, so it can keep its domain, port, porttest and
-  adapter apart (ADR-0051). depguard matches a prefix, so the rule allows `internal/slices/`
+  adapter apart (ADR-0051). Its domain subpackage is held by `domain` instead, excluded here. depguard matches a prefix, so the rule allows `internal/slices/`
   and the sibling rule below refuses another slice; its allow list repeats `slices`', each
   domain added to both, until the last slice moves.
 - `slice-fakes`: a slice's own code imports no `porttest`, which only its tests may use (T-56).
@@ -453,8 +468,9 @@ command from reaching into this one.
   - `var Command = cli.Declaration{Name: "<command>", Help: "…", New: func() any { return &CLI{} }}`,
     its name a string literal;
   - `type Ports interface`, the ports its handler is built over, each a method named for the
-    engine and the port, such as `SelectionTree()`, `LangSurroundings()` and
-    `SelectionExclusion(ctx)`, shared by every slice that needs it;
+    engine and the port, such as `SelectionTree()`, `LangSurroundings()`,
+    `SelectionExclusion(ctx)` and `SnapshotStore()`, shared by every slice that needs it, and
+    `Rel(path)`, a path named from the working directory as the UI names it;
   - `NewHandler(ctx context.Context, p Ports) (Handler, error)`, the one shape every slice's
     constructor has. What differs between slices goes behind a `Ports` method, never into the
     signature, and its error is returned as the port gave it, unwrapped.
@@ -467,6 +483,12 @@ command from reaching into this one.
   step `go run ./tools/bin/assemble -check` fails, naming it, when it differs from what the
   slices declare. The generator refuses, naming the slice, a folder under `internal/slices`
   with no `Command`, a `Command` with no `Ports`, and two slices with one name.
+- A slice's own domain: put it in the slice's `domain` subpackage, as
+  `internal/slices/dry/domain`, and add its folder as a `**/internal/slices/<command>/domain/**`
+  glob to `domain`, `domain-io` and `coverage-fakes`, and as an exclusion to `slice-packages`,
+  never to an `allow` list: no other domain or slice imports it. `tools/bin/domain-coverage`
+  then holds it to 80%. Anything another slice needs from it moves to an engine first, as dry's
+  fingerprints moved to `internal/lang` (T-148).
 - A domain package: add its folder as a `**/internal/<name>/**` glob to `domain` and
   `domain-io` and `coverage-fakes`, as a `!**/internal/<name>/**` exclusion to `slices` and `slice-fakes`, and its
   import path to the `allow` lists of `domain` and of `slices` and `slice-packages` if commands use it. Give it a
@@ -524,7 +546,8 @@ follows the same steps for a command it wrote before it had the template's desig
    the domain's port grows it, as the selection port's `Tree` grew `Read` for the sources
    `units` parses: one port the adapter already implements, never a port of the slice's own,
    which an adapter could not implement without importing a slice. A path a person reads is
-   named from the working directory by `ui.Rel`, not by a library an adapter wraps.
+   named from the working directory by `ui.Rel`, or in a handler by its `Ports`' `Rel`, which
+   cmd answers with `cli.Rel` from the same directory, not by a library an adapter wraps.
 3. **Its classifier.** A domain's failures become problems in one classifier, held beside the
    one slice that uses the domain, as `internal/mutation` words its own `Failure`s. A domain
    several commands share keeps its classifier in cmd (`classifySelection`), since no slice may

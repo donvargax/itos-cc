@@ -24,11 +24,15 @@ keep every byte and the atomic rename, at the working directory's project root o
 is given; cmd's `classifySnapshot` turns its failures into problems. mutation reads and writes
 its snapshots only through the port.
 
-The duplication domain, `internal/duplication`, finds functions similar enough to be
-duplicates. It takes files `internal/lang` has parsed, with the names its caller gives them, and
-reads nothing, so it has no port; the `dry` slice, `internal/dry`, parses each source with the
-selection domain's `Parse`, which reads it through the selection `Tree` and parses it with
-`internal/lang`, and records what was found through the snapshot `Store`.
+The `dry` slice, `internal/slices/dry`, the second under `internal/slices` (ADR-0051), finds
+functions similar enough to be duplicates through its own domain, `internal/slices/dry/domain`,
+which takes files `internal/lang` has parsed, with the names its caller gives them, and reads
+nothing, so it has no port. It compares them by `internal/lang`'s fingerprints of a unit's
+structure (`Fingerprint`, `Jaccard`), which scrap's domain compares a test's examples by too. The
+slice parses each source with the selection domain's `Parse`, which reads it through the
+selection `Tree` and parses it with `internal/lang`, and records what was found through the
+snapshot `Store`, declaring its command and the ports it needs for cmd to assemble, as `units`
+does.
 
 The test-structure domain, `internal/teststructure`, measures test code: which examples are too
 large, branch, mock heavily, assert too little or too much, or repeat each other, and what an
