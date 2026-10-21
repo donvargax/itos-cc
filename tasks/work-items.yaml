@@ -4102,3 +4102,15 @@ items:
       for flag values; a fork change only for naming which source a bad value came from. Needs a
       library selection recorded, scenarios for precedence and errors naming their source, and the
       person's call on whether exceptions and tests stay file-only. After T-86.
+
+      Scope settled with the person, 2026-10-20: what is judged lives in the commit, how it runs on
+      a machine may layer. Layer only operational settings (worker count, timeout factors, output
+      format, colour, cache locations): flag, then environment (ITOS_CC_), then itos-cc.yaml, then a
+      user-level file. Keep exclude, mutation.exceptions and mutation.tests file-only: exceptions
+      are reviewed with the code they excuse, go stale by hash and are written back by mutation
+      except; recorded outcomes' freshness depends on the tests' commands and support globs
+      (ADR-0011, ADR-0013), and a per-machine variation already fits in plain sight in the committed
+      shell strings ('$GOTESTFLAGS'); exclude decides what is measured at all, so an override could
+      skip files in CI. mutation run --count reads HEAD's file, so a commit's verdict stays the same
+      on every machine. docs/CLI.md rules 34-35's note gains a sentence saying exclude is file-only
+      too, for the same reason.
