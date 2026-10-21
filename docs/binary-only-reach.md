@@ -5,6 +5,10 @@ to CI and CD, so code only `TestFeatures` reaches is checked nowhere a person ru
 it once, on one tree, and names the local tests that would reach it. Nothing here changes the
 product; the ideas at the end are the follow-up.
 
+Its paths and line numbers are those of `f88068c`, the commit that added it, whose code is the
+measured tree's; none is rewritten, and the last section of `docs/vertical-slices-inventory.md`
+says where the slice moves since put each package.
+
 ## The measurement
 
 One tree, commit 7e83825 (with only the registry change taking T-154 on top), on Linux 7.2 with

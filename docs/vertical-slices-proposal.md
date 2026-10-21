@@ -1,8 +1,8 @@
 # Proposal: feature-owned models and consumer-owned interfaces
 
-Status: **proposed for T-86**. Record this option for review after the current
-template-adoption refactor, final equivalence proof, exit-code work and ADR-0047
-code review. This proposal does not supersede the accepted architecture.
+Status: **evaluated in T-86 and settled by ADR-0051**, which supersedes ADR-0029's
+layout. Its paths and package names are illustrative: the slices live under
+`internal/slices/<name>/`, as `docs/go.md` describes them.
 
 Approach: **localized, consumer-owned interfaces (Option 2)**, satisfied
 implicitly by feature-owned models.

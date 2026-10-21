@@ -1578,15 +1578,16 @@ and forty steps, thirty-seven passing and SNAP07's three skipped.
 
 Worker boundary (T-88): `mutants.Workers` and its model-bearing contracts live
 beside mutation values; `worktrees.Workers` owns actual copies/processes and
-`mutants/porttest.Workers` holds the in-memory implementation. `Driver.Tests`
-selects outcomes by the actual requested directory and command. The fake applies
-the requested domain Site to actual virtual source bytes, restores them, and
-hashes the resulting copy for observations. Optional runnable test inventories
-include unrelated tests: narrow commands select actual files/classes, broad
-commands emit the full inventory, and unsupported selector shapes fail. Nested
-source traces carry their actual project-relative source identity. No scenario
-ID or prewritten event list chooses executions. Physical dependency links and
-interpreter behavior remain real-adapter observations.
+`internal/slices/mutation/domain/porttest`'s `Workers` holds the in-memory
+implementation. `Driver.Tests` selects outcomes by the actual requested
+directory and command. The fake applies the requested domain Site to actual
+virtual source bytes, restores them, and hashes the resulting copy for
+observations. Optional runnable test inventories include unrelated tests: narrow
+commands select actual files/classes, broad commands emit the full inventory,
+and unsupported selector shapes fail. Nested source traces carry their actual
+project-relative source identity. No scenario ID or prewritten event list
+chooses executions. Physical dependency links and interpreter behavior remain
+real-adapter observations.
 
 The memory driver constructed this binding then, but refused a validated
 mutation run until T-125 admitted it. Its focused handler-binding guard uses disposable

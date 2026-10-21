@@ -1,5 +1,12 @@
 <!-- T-86's ownership inventory, written 2026-10-20 at 2f63821 by a read-only survey; line numbers are as of that commit. The decisions it asks for are settled in ADR-0051. -->
 
+> **Historical.** This is the survey T-86's slice tasks were planned from, kept as it was made: its
+> paths and line numbers are those of `2f63821`, and every package section 1 lists for a command,
+> its domain or mutation's adapters has moved since, as have `graph/tests.go` and `config`'s
+> exceptions codec. ADR-0051 settled section 7's questions. Today's
+> layout is `docs/go.md`'s; the last section says where each move put each package and which work
+> did each of section 6's steps.
+
 # T-86 inventory: feature-owned vertical slices
 
 Read-only survey of `/home/yorch/tmp/llms-safe/code-quality` at `2f63821` (2026-10-20). Sources: T-86's
@@ -317,3 +324,42 @@ changerisk lives in assembly or graph, never inside a feature.
    (feedback rule).
 9. **Unused `internal/version` vs `main.version`** stamping mismatch (`.goreleaser.yaml:28`, `main.go:21`)
    and unused `cli.Completion`: remove or wire them. Outside T-86's refactor, but they touch its packages.
+
+## 8. Where the moves put each package
+
+Each row is a path this survey names and where its move put it, with the task and the commit that
+moved it, so git follows the files as renames from there; a package's `.metrics/mutate` snapshots
+moved with it (ADR-0037). The packages section 1 lists and this table leaves out are where they
+were.
+
+| Old path | New path | Task | Move commit |
+|---|---|---|---|
+| `internal/units` | `internal/slices/units` | T-145 | `35e8ebc` |
+| `internal/duplication`'s `Fingerprint` and `Jaccard` | `internal/lang` (`fingerprint.go`) | T-148 | `7e5a123` |
+| `internal/dry` | `internal/slices/dry` | T-148 | `4a178c7` |
+| `internal/duplication` | `internal/slices/dry/domain` | T-148 | `4a178c7` |
+| `internal/scrap` | `internal/slices/scrap` | T-150 | `e5c7de6` |
+| `internal/teststructure` | `internal/slices/scrap/domain` | T-150 | `e5c7de6` |
+| `internal/worktrees`' process ownership (`OwnedExecutor`, the command runner, `proc_*.go`) | `internal/processes` | T-151 | `3d7fa57` |
+| `internal/crap` | `internal/slices/crap` | T-152 | `5fbd27b` |
+| `internal/changerisk` | `internal/slices/crap/domain` | T-152 | `5fbd27b` |
+| `internal/cli`'s `version.go`, the `version` command | `internal/slices/version` | T-155 | `ddc6c18` |
+| `internal/mutation` | `internal/slices/mutation` | T-157 | `6ceb923` |
+| `internal/mutants` | `internal/slices/mutation/domain` | T-158 | `1f3c18f` |
+| `internal/mutants/porttest` | `internal/slices/mutation/domain/porttest` | T-158 | `1f3c18f` |
+| `internal/testtools` | `internal/slices/mutation/adapters/testtools` | T-159 | `3ce51a8` |
+| `internal/testinputs` | `internal/slices/mutation/adapters/testinputs` | T-159 | `3ce51a8` |
+| `internal/worktrees` (its workers) | `internal/slices/mutation/adapters/worktrees` | T-160 | `2f7d4aa` |
+| `internal/githistory` | `internal/slices/mutation/adapters/githistory` | T-160 | `2f7d4aa` |
+| `internal/importgraph` | `internal/slices/mutation/adapters/importgraph` | T-160 | `2f7d4aa` |
+| `internal/freshenv` | `internal/slices/mutation/adapters/freshenv` | T-160 | `2f7d4aa` |
+| `internal/metricsdir`'s mutation codec (`Mutations`, `mutations.go`, `mutation_codec.go`) | `internal/slices/mutation/adapters/snapshots` | T-161 | `ba727b6` |
+| `config/exceptions.go`, `config/exception_document.go` | `internal/slices/mutation/adapters/exceptions` | T-161 | `ba727b6` |
+| `internal/workdir`'s `SourceEdits` (`source_edits.go`) | `internal/slices/mutation/adapters/sources` | T-161 | `ba727b6` |
+| `graph/tests.go` (`TestsImporting`), `graph/tsconfig.go` | `internal/imports` (`reach.go`, `tsconfig.go`) | T-162 | `98e3788` |
+
+Section 6's steps and the work that did each: D0 is ADR-0051 (asked as q-72). R1 is T-143, R2
+T-144, R3 T-145, R4 T-146, R5 T-148, R6 T-150, R7 T-147, R8 T-151 and T-152, R9 T-155, R10
+T-156 to T-161 ((a) T-157 and T-158, (b) T-159 and T-160, (c) T-161, (d) T-156; ADR-0051 settled
+(e): cmd's mutation tests stay in cmd as assembly tests mutation owns by path), R11 T-162 and
+T-163, R12 T-164, R13 T-165, and R14 slices-close's tasks, T-167 to T-172.
