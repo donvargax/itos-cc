@@ -3935,8 +3935,8 @@ items:
   - id: T-150
     title: Move scrap into internal/slices/scrap
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-148]
     kind: task
   - id: T-147
