@@ -5234,3 +5234,16 @@ items:
       rules read through a file-reading seam the harness can point at the driver, rather than
       copying them a third time.
     refs: [T-178]
+  - id: help-broad-freshness-all-languages
+    title: mutation run's help says every language's whole-suite outcomes carry suite evidence, not only Go's
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-181's agent, 2026-10-21: run_contract.go's broad-freshness paragraph names only Go's
+      --all-tests and --test-command outcomes as carrying whole-suite evidence, but TypeScript,
+      Python and Kotlin record it too (testinputs.SuiteTestHashes, domain.SuiteOf); T-181 added only
+      Dart's sentence there. The help should say what every language does.
+    refs: [T-181]
