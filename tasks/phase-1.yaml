@@ -6143,3 +6143,45 @@
       timeout: 60
     - run: go vet ./internal/slices/mutation/domain
       timeout: 300
+- id: T-169
+  type: test
+  title: Prove a new command touches only its slice, its feature file and the generated files
+  why: >
+    T-86 (ADR-0051, slices-close (2)), after the outside-import check: an ordinary new command needs
+    no hand edit outside its slice, its feature file and steps, and the generated files; T-146's and
+    T-164's assemble tests prove the generator over synthetic trees, not that the real module needs
+    nothing more. Add tools/testdata/architecture/new_command_test.go,
+    TestANewCommandTouchesOnlyItsSliceAndTheGeneratedFiles, run by tools/bin/architecture-check
+    beside TestArchitecture with the same ARCHITECTURE_ROOT and ARCHITECTURE_LINTER and failing
+    without them. It copies every file git ls-files -z lists at the root into t.TempDir(), then adds
+    a fixture command as a person would: internal/slices/probe/probe.go laid out as
+    internal/slices/version (Command, CLI with --json, Contract, Handler, a Ports declaring only
+    BuildVersion() string, an adapters method bound on disk and in process alike, NewHandler and
+    Run); features/probe.feature with one live scenario @ID-PROBE-01 written only in sentences
+    features/ already defines (I run "itos-cc probe", it exits with code 0, one on its output);
+    features/probe.go declaring var probeFeature = featureFile{Name: "probe.feature", Steps:
+    probeSteps} with an empty initializer; an entry appended to features/smoke.yaml, the one shared
+    hand list (itos#103). In the copy it checks: go run ./tools/bin/assemble succeeds and -check
+    passes after it; compared file by file with the root, the changed or new files are exactly those
+    four plus cmd/itos-cc/commands_gen.go and features/steps_gen.go, and in each generated file the
+    root's lines stay in order and every added line names probe; go build of ./cmd/itos-cc into the
+    test's folder works (the binary's name from go env GOEXE), --help lists probe with its help line
+    between mutation and scrap, probe exits 0, help probe gives its Contract; go test ./cmd/itos-cc
+    -count=1 -run '^TestScenarios$' -scenarios='^@ID-PROBE-01$' passes with the scenario run in
+    process, not logged as unconverted or unstepped; architecture-check --siblings
+    ./internal/slices/probe/... and --outside ./... pass; the pinned linter with the copy's
+    .golangci.yml reports nothing over ./internal/slices/probe/..., so depguard holds a new slice
+    with no rule edit; last, probe's Ports gains a method no adapters method answers and go build
+    fails naming it (a new port is assembly's edit, a task of its own). No fakes or mocks, nothing
+    written outside t.TempDir(), no network (GOPROXY=off, GOWORK=off, as TestArchitecture's compile
+    sets them), never the binary driver. Measure the test's time on a warm cache and give it in the
+    commit body (it lengthens CI's static architecture-check step). docs/go.md's Adding a package
+    command bullet says what the test proves and what it leaves to a task of its own (a new port, a
+    new domain's rules, an engine).
+  done_when:
+    - run: tools/bin/architecture-check
+      timeout: 900
+    - run: go vet ./tools/testdata/architecture
+      timeout: 120
+    - run: tools/bin/doc-caps
+      timeout: 60
