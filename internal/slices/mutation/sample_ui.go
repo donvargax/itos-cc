@@ -35,8 +35,9 @@ type sampleResult struct {
 }
 
 // Written is the flags the validated command line gave, by name, each with
-// its values as written (cli.Provided), which cmd binds: a refusal quotes a
-// value back as the person wrote it.
+// its values as written (cli.Provided), which cmd binds as cli.Written and
+// run and sample convert: a refusal quotes a value back as the person wrote
+// it.
 type Written map[string][]string
 
 // spelling is the last value the command line gave flag name, as written,
@@ -60,7 +61,8 @@ func (p selectionProgress) Excluded(n int) { sayExcluded(p.ui, n) }
 // Run refuses a --count below 1 before anything is observed, assembles the
 // query once, then presents the sample, or the result object as far as it
 // got beside the failure; the missing Workers binding alone gives none.
-func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, written Written) int {
+func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) int {
+	written := Written(given)
 	result := sampleResult{Files: []sampleFile{}}
 	if c.Count < 1 {
 		value := written.spelling("count", strconv.Itoa(c.Count))

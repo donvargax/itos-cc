@@ -55,6 +55,59 @@ type Handler struct {
 	Platform string
 }
 
+// Ports are what the mutation group reaches the world through, which cmd's
+// adapters give it, each named for the port of the domain it answers:
+// selection's tree, lang's surroundings and the snapshot store the other
+// slices take too, then the mutation domain's own, the coverage measurer
+// mutation run measures by, the platform and the working directory.
+// MutationExceptions, MutationRepository and MutationPhysicalDir give the
+// functions cmd binds, as they are: a binding left nil stays nil, so the
+// handler's "binding is missing" failure still says so.
+type Ports interface {
+	SelectionTree() selport.Tree
+	LangSurroundings() langport.Surroundings
+	SnapshotStore() snapport.Store
+	MutationSettings() mutants.SettingsReader
+	MutationSnapshotReader() mutants.MutationSnapshotReader
+	MutationCatalog() mutants.MutationCatalog
+	MutationSourcePresence() mutants.SourcePresence
+	MutationSourceStatus() mutants.SourceStatus
+	MutationHistory() mutants.History
+	MutationToolchain() mutants.Toolchain
+	MutationFingerprints() mutants.Fingerprints
+	MutationReach() mutants.Reach
+	MutationWorkers() mutants.Workers
+	MutationSnapshots() mutants.MutationSnapshots
+	MutationSourceEdits() mutants.SourceEdits
+	MutationTestLister() mutants.TestLister
+	MutationFresh() mutants.Fresh
+	MutationFreshWorkers() mutants.Workers
+	CoverageMutationMeasurer() coverage.MutationMeasurer
+	MutationPlatform() string
+	WorkingDir() string
+	MutationExceptions() func(root string) mutants.Exceptions
+	MutationRepository() func(ctx context.Context) (string, error)
+	MutationPhysicalDir() func(ctx context.Context) (string, error)
+}
+
+// NewHandler is the handler over p's ports, copied as they are. It reads
+// nothing, the settings least of all, which each command reads at its own
+// admission point, so help and a line kong refuses read nothing; its error
+// is there for the one shape every slice's constructor has.
+func NewHandler(_ context.Context, p Ports) (Handler, error) {
+	return Handler{
+		Settings: p.MutationSettings(), Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(),
+		Store: p.MutationSnapshotReader(), Catalog: p.MutationCatalog(), Presence: p.MutationSourcePresence(),
+		Status: p.MutationSourceStatus(), History: p.MutationHistory(), Toolchain: p.MutationToolchain(),
+		Fingerprints: p.MutationFingerprints(), Reach: p.MutationReach(), Workers: p.MutationWorkers(),
+		Exceptions: p.MutationExceptions(), Dir: p.WorkingDir(),
+		Snapshots: p.MutationSnapshots(), SourceEdits: p.MutationSourceEdits(), TestLister: p.MutationTestLister(),
+		Coverage: p.CoverageMutationMeasurer(), Metrics: p.SnapshotStore(),
+		Fresh: p.MutationFresh(), FreshWorkers: p.MutationFreshWorkers(),
+		Repository: p.MutationRepository(), PhysicalDir: p.MutationPhysicalDir(), Platform: p.MutationPlatform(),
+	}, nil
+}
+
 // SelectionQuery retains the selection's explicit optional ref, including empty.
 type SelectionQuery struct {
 	Paths   []string

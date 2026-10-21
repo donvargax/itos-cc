@@ -14,13 +14,14 @@ import (
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
 )
 
 // These parser-boundary observations cannot be inferred from a successful
 // command: the handlers intentionally distinguish omitted flags from
 // explicit empty/zero values and report the caller's original number text,
 // read from the flags the validated line gave (cli.Provided, bound as
-// mutation.Written) beside kong's defaults.
+// cli.Written) beside kong's defaults.
 type parsedMutation struct {
 	values   map[string][]string
 	defaults map[string]string
@@ -41,24 +42,26 @@ func (p parsedMutation) integer(name string) int {
 	return n
 }
 
-// parsedMutationOf is the validated line of parsed, which filled c.
-func parsedMutationOf(parsed *kong.Context, c *commandLine) parsedMutation {
+// parsedMutationOf is the validated line of parsed, its paths read from the
+// command it selected, the mutation slice's own command line, which its
+// declaration made and kong filled.
+func parsedMutationOf(parsed *kong.Context) parsedMutation {
 	node := parsed.Selected()
 	p := parsedMutation{values: cli.Provided(parsed), defaults: map[string]string{}, json: cli.Read(parsed.Args).JSON}
 	for _, flag := range node.Flags {
 		p.defaults[flag.Name] = flag.Default
 	}
-	switch node.Name {
-	case "run":
-		p.args = c.Mutation.Run.Paths
-	case "list":
-		p.args = c.Mutation.List.Paths
-	case "check":
-		p.args = c.Mutation.Check.Paths
-	case "sample":
-		p.args = c.Mutation.Sample.Paths
-	case "except":
-		p.args = c.Mutation.Except.Site
+	switch c := node.Target.Addr().Interface().(type) {
+	case *mutationslice.Run:
+		p.args = c.Paths
+	case *mutationslice.List:
+		p.args = c.Paths
+	case *mutationslice.Check:
+		p.args = c.Paths
+	case *mutationslice.Sample:
+		p.args = c.Paths
+	case *mutationslice.Except:
+		p.args = c.Site
 	}
 	return p
 }
@@ -79,7 +82,7 @@ func parsedMutationFixture(t *testing.T, a adapters, args ...string) parsedMutat
 	if err != nil {
 		t.Fatal(err)
 	}
-	return parsedMutationOf(parsed, &c)
+	return parsedMutationOf(parsed)
 }
 
 func TestMutationParserKeepsProvidedValuesAndSpellings(t *testing.T) {
@@ -328,7 +331,7 @@ func TestMutationSampleModelKeepsExplicitEmptySeedAndSince(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := c.Mutation.Sample
+			got := *parsed.Selected().Target.Addr().Interface().(*mutationslice.Sample)
 			same := func(a, b *string) bool { return (a == nil) == (b == nil) && (a == nil || *a == *b) }
 			if !same(got.Seed, tc.seed) || !same(got.Since, tc.since) || got.Count != tc.count {
 				t.Fatalf("sample model: seed=%v since=%v count=%d", got.Seed, got.Since, got.Count)
@@ -350,11 +353,11 @@ func TestMutationTypedModelUsesTheValidatedFlags(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := c.Mutation.Run
+	got := *parsed.Selected().Target.Addr().Interface().(*mutationslice.Run)
 	if got.Count != 1 || got.TimeoutFactor != 10 || !got.NoAnnotate || got.JSON || got.FailUncovered == nil || *got.FailUncovered != "lines" || !slices.Equal(got.Paths, []string{"first.go", "--json"}) || !slices.Equal(got.CoverageReport, []string{"a,b.info", "other.info"}) {
 		t.Fatalf("wrong typed model: %+v", got)
 	}
-	in := parsedMutationOf(parsed, &c)
+	in := parsedMutationOf(parsed)
 	if in.str("count") != "01" || in.str("timeout-factor") != "1e1" || in.json {
 		t.Fatalf("typed conversion erased raw/provided facts: %+v", in)
 	}

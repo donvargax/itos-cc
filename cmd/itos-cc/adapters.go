@@ -116,6 +116,99 @@ func (a adapters) SelectionExclusion(ctx context.Context) (selection.Exclusion, 
 	return exclusion(ctx, a.Selection)
 }
 
+// MutationSettings is the mutation domain's settings reader, itos-cc.yaml
+// as mutation reads it at each admission point, a slice's Ports method.
+func (a adapters) MutationSettings() mutation.SettingsReader { return a.Settings }
+
+// MutationSnapshotReader is the reader of the mutation snapshots under
+// .metrics/, a slice's Ports method.
+func (a adapters) MutationSnapshotReader() mutation.MutationSnapshotReader {
+	return a.SnapshotReader
+}
+
+// MutationCatalog is the catalog of the mutation snapshots, a slice's Ports
+// method.
+func (a adapters) MutationCatalog() mutation.MutationCatalog { return a.Catalog }
+
+// MutationSourcePresence says whether a source is still there, a slice's
+// Ports method.
+func (a adapters) MutationSourcePresence() mutation.SourcePresence { return a.Presence }
+
+// MutationSourceStatus is the sources' status in the working tree, a
+// slice's Ports method.
+func (a adapters) MutationSourceStatus() mutation.SourceStatus { return a.SourceStatus }
+
+// MutationHistory is the committed history mutation judges --since by, a
+// slice's Ports method.
+func (a adapters) MutationHistory() mutation.History { return a.History }
+
+// MutationToolchain is the test tools mutation observes, a slice's Ports
+// method.
+func (a adapters) MutationToolchain() mutation.Toolchain { return a.Toolchain }
+
+// MutationFingerprints is the fingerprints of a mutant's inputs, a slice's
+// Ports method.
+func (a adapters) MutationFingerprints() mutation.Fingerprints { return a.Fingerprints }
+
+// MutationReach is which tests reach a source, a slice's Ports method.
+func (a adapters) MutationReach() mutation.Reach { return a.Reach }
+
+// MutationWorkers runs mutants in copies of the working tree, a slice's
+// Ports method.
+func (a adapters) MutationWorkers() mutation.Workers { return a.Workers }
+
+// MutationSnapshots publishes what mutation run judges, a slice's Ports
+// method.
+func (a adapters) MutationSnapshots() mutation.MutationSnapshots { return a.Snapshots }
+
+// MutationSourceEdits annotates the sources, a slice's Ports method.
+func (a adapters) MutationSourceEdits() mutation.SourceEdits { return a.SourceEdits }
+
+// MutationTestLister lists the tests itos-cc.yaml names, a slice's Ports
+// method.
+func (a adapters) MutationTestLister() mutation.TestLister { return a.TestLister }
+
+// MutationFresh prepares a counted run's committed inputs, a slice's Ports
+// method.
+func (a adapters) MutationFresh() mutation.Fresh { return a.Fresh }
+
+// MutationFreshWorkers runs a counted run's trials in them, a slice's Ports
+// method.
+func (a adapters) MutationFreshWorkers() mutation.Workers { return a.FreshWorkers }
+
+// CoverageMutationMeasurer is the coverage domain's MutationMeasurer, the
+// listed evidence and executable inventories mutation run measures by, a
+// slice's Ports method.
+func (a adapters) CoverageMutationMeasurer() coverage.MutationMeasurer { return a.MutationCoverage }
+
+// MutationPlatform is the system itos-cc runs on, which mutation run's
+// --count and --fail-fast check, a slice's Ports method.
+func (a adapters) MutationPlatform() string { return a.Platform }
+
+// WorkingDir is the working directory, absolute, "" when it cannot be told,
+// a slice's Ports method.
+func (a adapters) WorkingDir() string { return a.Dir }
+
+// MutationExceptions makes the writer of the settings at a root, a slice's
+// Ports method: the field's value as it is, never a method value, so a
+// binding left nil stays nil and the handler says it is missing.
+func (a adapters) MutationExceptions() func(root string) mutation.Exceptions {
+	return a.Exceptions
+}
+
+// MutationRepository is the top of the Git repository holding the working
+// directory, physical, a slice's Ports method: the field's value as it is,
+// so a binding left nil stays nil.
+func (a adapters) MutationRepository() func(ctx context.Context) (string, error) {
+	return a.Repository
+}
+
+// MutationPhysicalDir is the working directory, physical, a slice's Ports
+// method: the field's value as it is, so a binding left nil stays nil.
+func (a adapters) MutationPhysicalDir() func(ctx context.Context) (string, error) {
+	return a.PhysicalDir
+}
+
 // ownedCommand is owner's Command as freshenv's preparation judges it: the
 // engine's Result, which knows no domain, as mutation's CommandResult.
 func ownedCommand(owner *processes.OwnedExecutor) func(context.Context, *exec.Cmd) (mutation.CommandResult, error) {

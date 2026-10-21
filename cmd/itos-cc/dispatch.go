@@ -10,28 +10,26 @@ import (
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/slices/mutation"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
 // reads a whole command line against: kong parses the command lines of the
-// slices and of mutation, internal/cli reads them and reports their failures
+// slices, internal/cli reads them and reports their failures
 // and help as every command's, and each runs as its Run, handed the context,
 // the UI and its handler through kong's bindings. serve alone stays on its
 // legacy handler and hand parser (cli.go, serve.go), its moves deferred
 // while it leaves for a web app of its own: its node names it in the model,
 // and dispatch hands its command line to that handler as it is.
 
-// commandLine is the command line of every command not yet under
-// internal/slices: one field each, its kong struct, its help the line the
-// top-level help lists it by. The commands the slices declare join them in
-// the model (assembled, which tools/bin/assemble writes into
+// commandLine is the command line of every command not under
+// internal/slices, serve alone: one field each, its kong struct, its help
+// the line the top-level help lists it by. The commands the slices declare
+// join them in the model (assembled, which tools/bin/assemble writes into
 // commands_gen.go from each slice's declaration), which then lists every
 // command in their names' order (byName), the order the guess for an
 // unknown command weighs a tie by, as the top-level help lists them.
 type commandLine struct {
-	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
-	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
+	Serve legacyServe `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
 }
 
 // legacyServe is serve's node in the model, which names it to the top-level
@@ -46,9 +44,12 @@ var legacy = map[string]*command{serveCommand.name: serveCommand}
 // parserOf is the parser of c and of the commands the slices declare
 // (assembled), which run builds once, as it parses one command line at
 // most (cli.Parse): itos-cc's name, its flags held by internal/cli's Flags,
-// help printed by internal/cli's Help, and the bindings each Run is handed,
-// ctx and the UI among them, and providers (handlers, assembled) of every
-// command's handler.
+// help printed by internal/cli's Help, mutation_workers, the default of
+// mutation run's and sample's --workers, which kong interpolates once the
+// declared commands are built, and the bindings each Run is handed, ctx,
+// the UI and the flags its line gave as written (cli.Written, read from the
+// parsed line kong binds) among them, and the providers of every command's
+// handler (assembled).
 // kong calls a provider only when the Run it calls asks for its value, so
 // nothing a provider reads is read for help, a line kong refuses or another
 // command. kong never exits the process: help is printed before it parses,
@@ -67,23 +68,8 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 		}),
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Bind(ui),
-	), append(handlers(a), assembled(a)...)...)...)
-}
-
-// handlers are the providers of the handler of every command commandLine
-// holds, over a's ports, each called under the context of the Run that asks
-// for it; assembled provides the declared commands'. mutation's handler is
-// handed the flags its line gave as written (cli.Provided), read from the
-// parsed line kong binds.
-func handlers(a adapters) []kong.Option {
-	return []kong.Option{
-		kong.BindToProvider(func() mutation.Handler {
-			return mutation.Handler{Settings: a.Settings, Tree: a.Tree, Surroundings: a.Surroundings, Store: a.SnapshotReader, Catalog: a.Catalog, Presence: a.Presence, Status: a.SourceStatus, History: a.History, Toolchain: a.Toolchain, Fingerprints: a.Fingerprints, Reach: a.Reach, Workers: a.Workers, Exceptions: a.Exceptions, Dir: a.Dir,
-				Snapshots: a.Snapshots, SourceEdits: a.SourceEdits, TestLister: a.TestLister, Coverage: a.MutationCoverage, Metrics: a.Store,
-				Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform}
-		}),
-		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
-	}
+		kong.BindToProvider(func(parsed *kong.Context) cli.Written { return cli.Provided(parsed) }),
+	), assembled(a)...)...)
 }
 
 // byName puts the commands of k's model in their names' order: kong adds a

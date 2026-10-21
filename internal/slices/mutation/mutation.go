@@ -1,11 +1,25 @@
-// Package mutation declares the mutation command group. Kong owns parsing;
-// run, list, check, sample and except own their application/UI here. Their
-// handler reads settings through mutants' SettingsReader at each original
-// admission point and returns refusals as the sealed Failure set, which
-// Run's classifier words with the exit codes cmd gave them.
+// Package mutation is the mutation command group, a slice named for it,
+// the first that is a group. Kong owns parsing; run, list, check, sample and
+// except own their application/UI here. Their handler reads settings
+// through mutants' SettingsReader at each original admission point and
+// returns refusals as the sealed Failure set, which Run's classifier words
+// with the exit codes cmd gave them.
+//
+// Command declares the group to cmd, which assembles it into its one model
+// (ADR-0051), and Ports are the ports its handler is built over, which
+// cmd's adapters satisfy.
 package mutation
 
 import "github.com/donvargax/itos-cc/internal/cli"
+
+// Command is the mutation group as cmd assembles it: its name, the line the
+// top-level help lists it by, and a fresh command line for each parser,
+// whose five children kong reads from CLI's fields.
+var Command = cli.Declaration{
+	Name: "mutation",
+	Help: "mutation testing: do the tests notice small changes?",
+	New:  func() any { return &CLI{} },
+}
 
 // CLI is one invocation's mutation group and its five child commands.
 type CLI struct {

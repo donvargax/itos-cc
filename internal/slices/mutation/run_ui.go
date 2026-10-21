@@ -113,7 +113,8 @@ func (w Written) given(name string) bool { return len(w[name]) > 0 }
 // presents each file's result, the stale exceptions, the orphans removed
 // and the fail-fast stop, or the result object as far as it got beside the
 // failure.
-func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, written Written) int {
+func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) int {
+	written := Written(given)
 	linesOnly := c.FailUncovered != nil && *c.FailUncovered == "lines"
 	if linesOnly && !written.given("since") {
 		return ui.Emit(c.JSON, nil, ui.Problems(failureError(LinesWithoutSince{}, ui.Rel)))
