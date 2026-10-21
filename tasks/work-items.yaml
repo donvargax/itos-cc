@@ -4691,3 +4691,23 @@ items:
       kuhnroyal/flutter-fvm-config-action into subosito/flutter-action, both pinned by SHA, caching
       the SDK, Linux only, ITOS_CC_LANGUAGE_TOOLS set, running the Dart coverage scenarios through
       the binary driver. Scenarios COV-05's and COV-08's Dart rows, COV-40 to COV-43.
+  - id: third-party-notices
+    title: Release archives carry every compiled-in dependency's license notice
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by slice-28's agent (2026-10-21): .goreleaser.yaml ships LICENSE and README.md only, and
+      nothing in the repository or the archives holds the notices of the modules compiled into the
+      binary: the tree-sitter grammars (MIT and others: Kotlin's fwcd, Dart's UserNobody14,
+      TypeScript, Python, Go), go-tree-sitter, kong and every other Go dependency, and whatever the
+      embedded viewer bundles from npm if it is embedded. MIT, BSD and Apache ask their notice to
+      travel with copies, binaries included. Spec to settle: a pinned generator (google/go-licenses
+      or a stdlib walk of go list -deps -json over the module cache, the library choice made in the
+      spec) writing a THIRD_PARTY_NOTICES file the release archives include beside LICENSE, kept
+      current by a check that fails when go.mod's compiled-in modules and the file disagree, at the
+      cheapest tier that catches it (pre-push or ci.yml, not only release). Files: .goreleaser.yaml,
+      release.yml, tools/, the notices file; disjoint from the Dart wave-2 items, so it may run
+      beside them.
