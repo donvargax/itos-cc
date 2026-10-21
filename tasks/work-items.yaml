@@ -4107,7 +4107,7 @@ items:
   - id: T-149
     title: Move the Go toolchain to go1.27.3 for GO-2026-6809
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
