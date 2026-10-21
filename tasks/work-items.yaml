@@ -4426,3 +4426,16 @@ items:
       all of them for the same paths, and T-161 will again. One table of packages, each with its
       kind (domain, adapter, slice's adapter, slice, engine, library), from which the loops derive
       their targets, would make a move one row and keep a list from being missed.
+  - id: tool-download-retry
+    title: Retry CD's pinned tool downloads before failing the job
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      CD 39575502610 (d682218, 2026-10-21) failed languages (tests) on curl: (22) 404 from
+      repo.maven.apache.org for apache-maven-3.9.16, which answered 200 minutes later; a rerun of
+      the failed job was the only way past it. The Maven step (cd.yml's languages job) and any other
+      pinned download in the workflows could pass curl --retry 4 --retry-all-errors --retry-delay 5,
+      keeping the SHA-512 check, so one transient answer from a mirror does not fail a release gate.
