@@ -5195,3 +5195,16 @@ items:
       on scratch files), which no test can kill, so they end as survivors or mutation except
       entries; main has no type-position check beyond TypeScript's type arguments (ID-MUT-01).
       unclebob/mutator fixed TypeScript on 2026-10-21 (a5a0cb8). A scenario per language, red first.
+  - id: java-support
+    title: itos-cc supports Java
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From the survey of Uncle Bob's tools (2026-10-21, read-only). unclebob/crapper, mutator and
+      dryer cover Java since 2026-09-30. itos-cc already has JaCoCo XML, the Gradle and Maven
+      runners and JUnit scrap rules for Kotlin, so Java is mostly a tree-sitter grammar and an
+      internal/lang Spec, with docs/architecture.md's adding-a-language recipe (Dart's) as the
+      checklist.
