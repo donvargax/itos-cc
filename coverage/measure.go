@@ -18,7 +18,8 @@ import (
 // Run executes each plan and returns the coverage of sources. A plan whose
 // commands fail still contributes any report it wrote, because failing tests
 // still measure the code they ran; one that measured none of its files is
-// Missing. A plan whose commands all succeed and write their reports
+// Missing, and one that measured some of them Failed (Report.Failed), its
+// failed command named, which strict coverage takes for no proof. A plan whose commands all succeed and write their reports
 // Measures its language, and is never Missing: its files the report never
 // names are untested, since no test loaded them. Problems are written to
 // log.
@@ -89,7 +90,7 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 				p.CoverDir = ""
 			}
 		}
-		failed := ""
+		failed, failedCommand := "", ""
 		var cleanup *port.CleanupFailed
 		for _, args := range p.Commands {
 			if ctx.Err() != nil {
@@ -105,6 +106,9 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 			if err := runCommand(ctx, cmd, execute); err != nil {
 				logf(log, "itos-cc: coverage: %s: %v\n", p.Language, err)
 				failed = fmt.Sprintf("; %s: %v", args[0], err)
+				if failedCommand == "" {
+					failedCommand = fmt.Sprintf("%s failed (%v)", displayArgs(args), err)
+				}
 				var c port.CleanupFailed
 				if errors.As(err, &c) {
 					cleanup = &c
@@ -138,7 +142,14 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 			reports = append(reports, p.measured(r, *cleanup, "its coverage command's owned process group did not end"+failed))
 			continue
 		}
-		reports = append(reports, p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed))
+		r = p.measured(r, port.MeasuredNothing{}, "its coverage run measured none of its files"+failed)
+		if failedCommand != "" && len(r.Missing()) == 0 && len(p.Sources) > 0 {
+			// It measured some of its files before failing: read by crap,
+			// and by a run without --fail-uncovered, never proof.
+			r.SetFailed(coverage.Unmeasured{Dir: p.Dir, Language: p.Language, Cause: port.MeasuredNothing{},
+				Reason: "its coverage command " + failedCommand + " after writing its report, which proves nothing"})
+		}
+		reports = append(reports, r)
 	}
 	for i, p := range unlisted {
 		if entries, ok := classes[[2]string{p.Language, p.Dir}]; ok {

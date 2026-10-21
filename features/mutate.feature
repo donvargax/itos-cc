@@ -2186,7 +2186,7 @@ Feature: Mutation testing
     # cannot clear, such as a Vitest threshold for a glob pattern. Both
     # drivers run it, but only the binary driver shows it red: the fake
     # measurer already reads a failed command as measuring nothing.
-    @wip @slice-16 @ID-MUT-270
+    @slice-16 @ID-MUT-270
     Scenario: A strict run whose coverage command fails after writing its report measured nothing
       Given a Python project whose test fails only when coverage.py runs it, after its file's every line has run
       When I run "itos-cc mutation run --fail-uncovered --json" for that file

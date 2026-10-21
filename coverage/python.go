@@ -119,12 +119,14 @@ func pythonPlan(dir, out string, tests []string) Plan {
 // pythonCommands is the commands of a Python coverage plan: coverage run
 // of runner, writing data, in dir; then the in-process data files a
 // project's parallel data wrote beside data combined into it
-// (pythonInProcessScript); then data's LCOV report, written to report.
+// (pythonInProcessScript); then data's LCOV report, written to report,
+// with no floor: the project's fail_under is its own test script's to
+// enforce, which a run of one file's reaching tests would miss.
 func pythonCommands(py, dir, data, report string, runner []string) [][]string {
 	return [][]string{
 		append([]string{py, "-m", "coverage", "run", "--branch", "--data-file=" + data, "--source=" + dir}, runner...),
 		{py, "-c", pythonInProcessScript, data},
-		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report},
+		{py, "-m", "coverage", "lcov", "--data-file=" + data, "-o", report, "--fail-under=0"},
 	}
 }
 

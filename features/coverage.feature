@@ -249,7 +249,7 @@ Feature: Coverage
     # with the pinned Vitest and coverage.py. Before slice-16 the command
     # exits 1 after writing its report, failing at the first Then, and
     # every function of the file is mutation.coverage-missing.
-    @wip @slice-16 @ID-COV-44 @binary-only
+    @slice-16 @ID-COV-44 @binary-only
     Scenario Outline: A run of one file's tests is not held to the project's <language> coverage floor
       Given a <language> project with two files, each fully covered by its own test, and <floor>
       And the whole suite meets that floor, and either file's test alone does not
@@ -266,7 +266,7 @@ Feature: Coverage
     # placeholder the command is chosen for, so the step reads the command
     # itos-cc announces. No Jest is pinned to measure with. Before slice-16
     # the command has no --coverageThreshold, failing at the Then.
-    @wip @slice-16 @ID-COV-45 @binary-only
+    @slice-16 @ID-COV-45 @binary-only
     Scenario: Jest's coverage command clears the project's coverageThreshold
       Given a TypeScript project whose build root holds package.json
       And jest as a dependency
@@ -280,7 +280,7 @@ Feature: Coverage
     # every run would rewrite the project's vitest.config.ts with what one
     # file's tests measured, as coverage runs in the project's own folder.
     # Binary-only for good: the config is the real Vitest's to write.
-    @wip @slice-16 @ID-COV-46 @binary-only
+    @slice-16 @ID-COV-46 @binary-only
     Scenario: Measuring never rewrites the project's coverage floor
       Given the TypeScript project of ID-COV-44, its thresholds set to autoUpdate
       When I run "itos-cc mutation run --json" for one of the two files
@@ -292,7 +292,7 @@ Feature: Coverage
     # lines mutation.uncovered-statement, failing at the Then before
     # slice-16. Binary-only for good: the inventory is the real Vitest's
     # run, which the fake does not make.
-    @wip @slice-16 @ID-COV-47 @binary-only
+    @slice-16 @ID-COV-47 @binary-only
     Scenario: The lines of a file no test loads are listed under the project's floor
       Given the TypeScript project of ID-COV-44, with a third file no test imports
       When I run "itos-cc mutation run --fail-uncovered --json" for that file

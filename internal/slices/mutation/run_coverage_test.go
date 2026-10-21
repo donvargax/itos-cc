@@ -89,3 +89,24 @@ func TestAFailedListedCoverageRunKeepsItsCleanupFailureBesideIt(t *testing.T) {
 		t.Fatalf("second: %#v", joined.Unwrap()[1])
 	}
 }
+
+// The in-process fake reads a failed coverage command as measuring nothing,
+// so no scenario's fake reaches a report that names a file of a build root
+// whose command failed: strict coverage takes that root for measured
+// nothing, its own gap, never the report's lines.
+func TestAStrictRunTakesAFailedCoverageCommandForNoProof(t *testing.T) {
+	dir := t.TempDir()
+	app := filepath.Join(dir, "app")
+	src := filepath.Join(app, "calc.py")
+	report := coverage.FromLines("python", map[string][]coverage.Line{src: {{Line: 1, Covered: true}}})
+	failed := coverage.Unmeasured{Dir: app, Language: "python", Cause: port.MeasuredNothing{}, Reason: "its coverage command python3 -m coverage run failed (exit status 1)"}
+	report.SetFailed(failed)
+	judge := []mutants.FileCheck{{Functions: []mutants.FunctionCheck{{State: mutants.Missing}}}}
+	h := Handler{Dir: dir}
+	if gaps := h.unmeasuredToJudge(report, []string{src, filepath.Join(app, "other.py")}, append(judge, judge...), false); len(gaps) != 1 || gaps[0] != failed {
+		t.Fatalf("gaps %+v; want the failed command's root once", gaps)
+	}
+	if gaps := h.unmeasuredToJudge(report, []string{src}, []mutants.FileCheck{{}}, false); len(gaps) != 0 {
+		t.Fatalf("a file with nothing to judge: gaps %+v", gaps)
+	}
+}

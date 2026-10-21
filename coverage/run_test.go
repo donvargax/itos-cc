@@ -462,3 +462,37 @@ func TestACommandWhoseCleanupFailedLeavesItsGap(t *testing.T) {
 		t.Errorf("missing %+v, want the plan's files with its failed cleanup", missing)
 	}
 }
+
+// A command that fails after writing a report naming its sources, as one
+// held to a floor its run misses does, measured what the report says, for
+// crap and a run without --fail-uncovered, but proves nothing: it is
+// Failed, naming the command and its exit status, never Missing or
+// measured. One that succeeds is not Failed.
+func TestARunThatFailsAfterWritingItsReportIsFailed(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src", "board.ts")
+	report := filepath.Join(dir, "out", "lcov.info")
+	plan := Plan{Language: "typescript", Dir: dir, Sources: []string{src},
+		Commands: [][]string{{os.Args[0], "-test.run=^TestHelperCoverageCommand$"}}, Reports: []string{report}}
+	t.Setenv("HELPER_COVERAGE_REPORT", report)
+	t.Setenv("HELPER_COVERAGE_TEXT", "TN:\nSF:src/board.ts\nDA:1,1\nend_of_record\n")
+	for _, fail := range []string{"1", ""} {
+		t.Setenv("HELPER_COVERAGE_FAIL", fail)
+		var log bytes.Buffer
+		r := Run(t.Context(), []Plan{plan}, []string{src}, &log, nil)
+		if !r.Has(src) || len(r.Missing()) != 0 {
+			t.Fatalf("fail %q: has %v, missing %v; want the report's lines and nothing missing\nlog:\n%s", fail, r.Has(src), r.Missing(), &log)
+		}
+		failed := r.Failed()
+		if fail == "" {
+			if len(failed) != 0 || !r.Measures("typescript") {
+				t.Errorf("a run that succeeded: failed %v, measures %v", failed, r.Measures("typescript"))
+			}
+			continue
+		}
+		if r.Measures("typescript") || len(failed) != 1 || failed[0].Cause != (port.MeasuredNothing{}) || failed[0].Dir != dir || failed[0].Language != "typescript" ||
+			!strings.Contains(failed[0].Reason, "-test.run=^TestHelperCoverageCommand$ failed (exit status 1)") {
+			t.Errorf("a run that failed after writing its report: measures %v, failed %+v", r.Measures("typescript"), failed)
+		}
+	}
+}

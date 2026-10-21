@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
@@ -115,37 +116,46 @@ func (h Handler) listTests(ctx context.Context, q RunQuery, root string, tests *
 // it has mutants this run must judge: the files Run would otherwise fall
 // back on, running every mutant. Each fails closed, as Go does (ADR-0017).
 // A file of a language measured elsewhere in the run is uncovered instead,
-// as before, and a file with nothing to judge needs no coverage.
+// as before, and a file with nothing to judge needs no coverage. A build
+// root whose coverage command failed after writing its report
+// (coverage.Report.Failed) measured nothing either, whatever the report
+// names: a failed command proves nothing.
 func (h Handler) unmeasuredToJudge(report *coverage.Report, sources []string, checks []mutants.FileCheck, mutateAll bool) []coverage.Unmeasured {
 	var found []coverage.Unmeasured
-	seen := map[int]bool{}
-	for i, source := range sources {
-		spec := lang.Detect(source)
-		if spec == nil || spec.Name == "go" || i >= len(checks) {
-			continue
-		}
-		if !mutants.NeedsMutationCoverage(checks[i:i+1], mutateAll) || report.Has(source) || report.Measures(spec.Name) {
-			continue
-		}
-		abs, ok := absIn(h.Dir, source)
-		if !ok {
-			abs = source
-		}
+	seen := map[string]bool{}
+	// under adds each of gaps of spec's language whose build root holds
+	// abs, and says whether one does.
+	under := func(gaps []coverage.Unmeasured, kind, language, abs string) bool {
 		matched := false
-		for j, m := range report.Missing() {
+		for j, m := range gaps {
 			dir, ok := absIn(h.Dir, m.Dir)
-			if m.Language != spec.Name || m.Dir == "" || !ok {
+			if m.Language != language || m.Dir == "" || !ok {
 				continue
 			}
 			if rel, err := filepath.Rel(dir, abs); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 				continue
 			}
 			matched = true
-			if !seen[j] {
-				seen[j] = true
+			if key := kind + strconv.Itoa(j); !seen[key] {
+				seen[key] = true
 				found = append(found, m)
 			}
 		}
+		return matched
+	}
+	for i, source := range sources {
+		spec := lang.Detect(source)
+		if spec == nil || spec.Name == "go" || i >= len(checks) || !mutants.NeedsMutationCoverage(checks[i:i+1], mutateAll) {
+			continue
+		}
+		abs, ok := absIn(h.Dir, source)
+		if !ok {
+			abs = source
+		}
+		if under(report.Failed(), "failed", spec.Name, abs) || report.Has(source) || report.Measures(spec.Name) {
+			continue
+		}
+		matched := under(report.Missing(), "missing", spec.Name, abs)
 		if !matched {
 			found = append(found, coverage.Unmeasured{Dir: filepath.Dir(abs), Language: spec.Name, Cause: covport.MeasuredNothing{},
 				Reason: "its coverage run measured none of its files"})

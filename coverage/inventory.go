@@ -59,8 +59,8 @@ func typescriptInventory(dir string, files []string, out string) ([]string, stri
 		project.NodeModule(dir, "@vitest/coverage-v8") == "" {
 		return nil, ""
 	}
-	args := []string{vitest, "run", typescriptNoTest, "--passWithNoTests", "--coverage.enabled",
-		"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out}
+	args := append([]string{vitest, "run", typescriptNoTest, "--passWithNoTests", "--coverage.enabled",
+		"--coverage.reporter=lcov", "--coverage.reportsDirectory=" + out}, vitestNoFloor...)
 	for _, file := range relativeTo(dir, files) {
 		args = append(args, "--coverage.include="+file)
 	}

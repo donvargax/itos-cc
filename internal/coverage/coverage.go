@@ -95,6 +95,9 @@ type Report struct {
 	// integrationMissing is each build root whose processes the tests
 	// started went unmeasured, as its collector could not measure them.
 	integrationMissing []Unmeasured
+	// failed is each build root whose coverage command failed though the
+	// report it wrote first measured some of its files (Failed).
+	failed []Unmeasured
 	// languages are those a coverage command measured: every command of its
 	// plan exited 0 and every report it was to write was written and read.
 	languages map[string]bool
@@ -149,6 +152,25 @@ func (u Unmeasured) String() string {
 		return fmt.Sprintf("%s (%s): %s", u.Dir, u.Language, u.Reason)
 	}
 	return u.Dir + ": " + u.Reason
+}
+
+// Failed is each build root whose coverage command failed after writing a
+// report that measured some of its files, so it is not Missing: crap, and
+// a mutation run without --fail-uncovered, read what it measured, while a
+// failed command proves nothing to strict coverage, which reports it as
+// its Cause, measured-nothing, with Reason naming the command and its exit
+// status.
+func (r *Report) Failed() []Unmeasured {
+	if r == nil {
+		return nil
+	}
+	return r.failed
+}
+
+// SetFailed records fs as each build root whose coverage command failed
+// after writing its report (Failed), in place of what r held.
+func (r *Report) SetFailed(fs ...Unmeasured) {
+	r.failed = fs
 }
 
 // Missing is what was meant to be measured and was not. Its functions have
@@ -474,6 +496,7 @@ func Merge(reports ...*Report) *Report {
 		}
 		out.missing = append(out.missing, r.missing...)
 		out.integrationMissing = append(out.integrationMissing, r.integrationMissing...)
+		out.failed = append(out.failed, r.failed...)
 		if out.tests == nil {
 			out.tests = r.tests
 		}

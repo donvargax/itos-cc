@@ -162,7 +162,12 @@ tools, run per build root: `go test -coverprofile`, Vitest, Jest, or c8
 the project's own: Node tools from its `node_modules`, run with the package
 manager it declares, coverage.py from its virtualenv, and the JaCoCo its
 `pom.xml` declares. One that is missing is reported, with what to install,
-and never downloaded. Bring your own with `--coverage-command` and
+and never downloaded. The Vitest, Jest and coverage.py commands itos-cc
+composes set the project's coverage floor to nothing (Vitest's
+`test.coverage.thresholds`, its `autoUpdate` off, Jest's
+`coverageThreshold`, coverage.py's `fail_under`), which a run of some
+files' tests would miss: itos-cc measures, and the project's own test
+script still enforces its floor. Bring your own with `--coverage-command` and
 `--coverage-report`; several reports are combined, and code that more than
 one report or Go test binary lists counts once, covered if any of them ran
 it. With paths or `--changed`, Go and TypeScript coverage runs only the

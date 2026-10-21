@@ -148,7 +148,7 @@ output of the commands it runs passes as it is.
 | `count.trial-failed`         | 1    | mutation run --count | `file`, `line`, `column`, `function`, `original`, `replacement`, `identity` |
 | `fail-fast.platform`         | 82   | mutation run --fail-fast | `platform`                                        |
 | `coverage.command-needs-report` | 80 | crap, mutation run | none                                                    |
-| `coverage.measured-nothing`  | 1    | crap --threshold | `dir`, `language`, or `report`                            |
+| `coverage.measured-nothing`  | 1    | crap --threshold, mutation run --fail-uncovered (a coverage command that failed, even after writing its report, or wrote none, where its language has mutants to judge) | `dir`, `language`, or `report`                            |
 | `coverage.tool-missing`      | 82   | crap --threshold, mutation run --fail-uncovered (a coverage tool, or the collector of the processes tests start, missing where its language has mutants to judge) | `dir`, `language`                                         |
 | `coverage.no-report`         | 82   | crap --threshold | `dir`, `language`                                         |
 | `coverage.report-unreadable` | 80   | crap --threshold | `report`                                                  |

@@ -475,6 +475,19 @@ func goScopeSupervised(ctx context.Context, dir string, sources []string, execut
 	return pkgs, testing, executions, nil
 }
 
+// vitestNoFloor sets the project's coverage thresholds to nothing, which the
+// command line does over the config: itos-cc measures, and the project's
+// own test script enforces its floor, which a run of one file's tests, every
+// other file at 0%, would miss. autoUpdate is off, or Vitest would write
+// what one file's tests measured into the project's config.
+var vitestNoFloor = []string{"--coverage.thresholds.lines=0", "--coverage.thresholds.functions=0",
+	"--coverage.thresholds.branches=0", "--coverage.thresholds.statements=0",
+	"--coverage.thresholds.100=false", "--coverage.thresholds.autoUpdate=false"}
+
+// jestNoFloor replaces the project's whole coverageThreshold, its path and
+// glob keys included, with none, as vitestNoFloor does Vitest's.
+const jestNoFloor = "--coverageThreshold={}"
+
 // typescriptPlan measures sources with the tests that import them, through
 // Vitest's related or Jest's findRelatedTests, or with every test when
 // sources is empty. A coverage script or c8 runs the whole suite. With own,
@@ -522,15 +535,15 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 			if len(sources) > 0 {
 				args = append([]string{vitest, "related", "--run"}, relativeTo(dir, sources)...)
 			}
-			plan.Commands = [][]string{append(args, "--coverage.enabled",
-				"--coverage.reporter=lcov", "--coverage.reportsDirectory="+out)}
+			plan.Commands = [][]string{append(append(args, "--coverage.enabled",
+				"--coverage.reporter=lcov", "--coverage.reportsDirectory="+out), vitestNoFloor...)}
 			typescriptIntegration(&plan, dir, out)
 		}
 	case "jest":
 		if jest := project.NodeBin(dir, "jest"); jest == "" {
 			plan.Unsupported = missing("Jest")
 		} else {
-			args := []string{jest, "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out}
+			args := []string{jest, "--coverage", "--coverageReporters=lcov", "--coverageDirectory=" + out, jestNoFloor}
 			if len(sources) > 0 {
 				args = append(append(args, "--findRelatedTests"), relativeTo(dir, sources)...)
 			}
