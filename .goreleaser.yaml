@@ -6,7 +6,8 @@
 #
 # What it publishes: for linux and darwin on amd64 and arm64 and windows on amd64, as itos builds,
 # itos-cc-<version>-<os>-<arch>.tar.gz (.zip for windows) holding the binary
-# (itos-cc, or itos-cc.exe), LICENSE and README.md at its top level; and
+# (itos-cc, or itos-cc.exe), LICENSE, THIRD_PARTY_NOTICES (the license and notice texts of every
+# module the binary compiles in, which tools/bin/notices writes) and README.md at its top level; and
 # checksums.txt, every archive's SHA-256 in sha256sum's format, which the release workflow
 # attests.
 version: 2
@@ -44,6 +45,8 @@ archives:
     builds_info: { owner: root, group: root, mode: 0755, mtime: "{{ .CommitDate }}" }
     files:
       - src: LICENSE
+        info: { owner: root, group: root, mode: 0644, mtime: "{{ .CommitDate }}" }
+      - src: THIRD_PARTY_NOTICES
         info: { owner: root, group: root, mode: 0644, mtime: "{{ .CommitDate }}" }
       - src: README.md
         info: { owner: root, group: root, mode: 0644, mtime: "{{ .CommitDate }}" }

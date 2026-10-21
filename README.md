@@ -42,6 +42,9 @@ tar -xzf itos-cc-<version>-linux-amd64.tar.gz itos-cc
 itos-cc version
 ```
 
+Beside `LICENSE`, each archive carries `THIRD_PARTY_NOTICES`: the license and notice texts of
+every Go module the binary compiles in, which `go run ./tools/bin/notices` writes.
+
 Or build it with Go, which needs cgo and a C compiler (tree-sitter is C):
 
 ```bash
