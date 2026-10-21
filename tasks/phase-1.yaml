@@ -5534,3 +5534,27 @@
     package lists, .golangci.yml globs, docs/go.md's package list, docs/architecture.md and README's
     layout table. Steps stay in features/. Help, errors, exit codes and the snapshot format
     unchanged.
+- id: T-151
+  type: refactor
+  title: Lift process ownership out of mutation's worktrees into an engine
+  why: >
+    T-86 (ADR-0051), before crap moves. internal/worktrees, mutation's workers adapter, holds the
+    process-ownership engine both mutation and crap use: OwnedExecutor (owned_executor.go),
+    runOwnedCommand, cleanupBudget, CleanupFailed, the process-group kill and wait (proc_owned.go,
+    proc_unix.go, proc_windows.go, proc_inspect.go, process.go) and the command runner
+    (command_runner.go), with their ownership tests; crap's coverage command runs through it
+    (cmd/itos-cc/coverage.go coverageCommand, adapters.go diskAdapters), so crap would reach into
+    mutation's adapter once both are slices. Move that engine into internal/processes, an engine
+    package beside the others that worktrees, freshenv and cmd import, as a move commit separate
+    from the edits so history follows the files; worktrees keeps only what is mutation's (workers,
+    worker copies, scratch, locks). Keep ADR-0021's process-tree containment, decision 38's
+    interrupt hold and join, the Windows and Unix split by OS value (no runtime.GOOS in logic) and
+    every message unchanged. Its depguard rule follows the move (an adapter-side engine, not a
+    domain), and docs/go.md's package list and boundary list say where it lives.
+  done_when:
+    - run: go test -count=1 ./internal/processes/... ./internal/worktrees/... ./internal/freshenv/...
+      timeout: 900
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestCoverage.*|TestCrap.*)$' -scenarios='^@ID-(CRAP|COV|MUT)-'
+      timeout: 900
+    - run: tools/bin/architecture-check
+      timeout: 900
