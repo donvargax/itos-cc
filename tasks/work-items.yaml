@@ -4436,8 +4436,8 @@ items:
   - id: T-165
     title: Give the in-process driver's adapters a provider of their own, held to bind every port on disk and in process
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-164]
     kind: task
   - id: dart-touchpoints-paths
