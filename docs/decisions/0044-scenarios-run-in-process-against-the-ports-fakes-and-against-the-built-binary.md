@@ -24,3 +24,7 @@ As recommended (the person, 2026-10-12): the same tests as fast tests with fakes
 ### Consequences
 
 Every port's porttest exports a contract suite its fake and its adapter both pass (port-contract-suites). The godog harness has two drivers, in process with fakes and the built binary, both in CI, a scenario running under both unless tagged for one (scenario-two-drivers, after S4). Each later command move adds its feature file to the in-process driver. Mutation kills domain and slice mutants in process; adapters are killed by their own and the contract tests. Decision 39 stands: the binary driver is the one it names.
+
+## More Information
+
+Amended by ADR-0052: both drivers still run in CI and CD, but locally the scenarios run in process against the fakes alone; TestFeatures runs only where ITOS_CC_FEATURES_BINARY_DRIVER is 1 or ITOS_CC_FEATURES_BINARY names a binary, as every workflow sets it.

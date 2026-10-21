@@ -24,3 +24,7 @@ Asked as q-65, about T-127.
 ### Consequences
 
 Pushes, itos work done and implementing agents wait only on ci.yml. A green ci.yml no longer means every test passed: a cd.yml failure can land after an item closed, so the coordinator watches cd.yml and treats red as repair work ahead of new items. Only cd.yml runs Windows and macOS jobs, at 5 macOS jobs or fewer at once. A release waits for the full suite on every system, as before. This adds a tier between push CI and the nightly of ADR-0051's tiers in itos: the full suite after every push. T-127 builds it; T-128 shortens cd.yml.
+
+## More Information
+
+Amended by ADR-0052: the tiers stand, and every workflow sets ITOS_CC_FEATURES_BINARY_DRIVER so the binary driver keeps running in ci.yml and cd.yml, while local runs hold the scenarios in process alone.
