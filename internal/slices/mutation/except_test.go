@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 

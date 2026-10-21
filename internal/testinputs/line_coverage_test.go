@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Python evidence rests on every Python file and configuration file of the

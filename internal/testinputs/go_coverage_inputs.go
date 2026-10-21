@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
 )
 

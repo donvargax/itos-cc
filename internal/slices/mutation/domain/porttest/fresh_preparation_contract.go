@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // FreshPreparationFixture independently supplies actual collector artifacts and

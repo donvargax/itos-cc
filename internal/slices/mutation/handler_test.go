@@ -11,7 +11,7 @@ import (
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"

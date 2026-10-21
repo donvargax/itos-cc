@@ -1,4 +1,4 @@
-// Package mutants owns pure mutation rules: it makes small changes to functions
+// Package domain owns pure mutation rules: it makes small changes to functions
 // one at a time and checks that the tests notice. A mutant is killed when the
 // tests fail or time out, and survives when they still pass. A mutant on a
 // line no test executes is uncovered and is not run.
@@ -6,7 +6,7 @@
 // Results are cached per function in .metrics/mutate/, keyed by a hash of the
 // function's code, its comments left out, so a later run only retries
 // survivors and the sites of functions whose code changed.
-package mutants
+package domain
 
 import (
 	"cmp"

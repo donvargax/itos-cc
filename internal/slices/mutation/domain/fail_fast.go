@@ -1,4 +1,4 @@
-package mutants
+package domain
 
 // FailFast makes a complete run stop at the first actionable final
 // judgment it observes (ADR-0020): an unexcepted survivor once the listed

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func (h Handler) selectSources(ctx context.Context, q SelectionQuery) (sources []string, judge func(string, string, string) bool, renamed func(string) string, lines mutants.LineScope, excluded int, err error) {

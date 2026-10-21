@@ -10,7 +10,7 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 

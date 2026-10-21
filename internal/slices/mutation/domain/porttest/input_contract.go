@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // InputBindings is one contract fixture's actual bound observations. Factories

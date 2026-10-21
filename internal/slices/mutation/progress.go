@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Progress presents domain observations in the existing progress format on

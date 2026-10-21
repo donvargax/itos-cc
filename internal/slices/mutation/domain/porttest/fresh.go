@@ -14,7 +14,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/lang"
 	sel "github.com/donvargax/itos-cc/internal/selection"
 	selt "github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Fresh owns independent immutable Git state and actual virtual frozen bytes.

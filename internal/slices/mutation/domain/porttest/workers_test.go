@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func TestWorkersContract(t *testing.T) {

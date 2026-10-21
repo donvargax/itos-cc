@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/processes"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Workers is the real mutation worker factory. Prepare adjusts the actual

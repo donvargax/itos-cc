@@ -12,7 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // LineCoverageUnsupported names the scope of source, a file of a

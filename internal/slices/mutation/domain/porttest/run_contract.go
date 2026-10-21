@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ListingContract holds actual stdout/stderr separation and ordinary exit facts.

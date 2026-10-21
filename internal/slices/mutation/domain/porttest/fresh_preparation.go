@@ -15,7 +15,7 @@ import (
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/selection"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport.Scope) (*mutants.FreshPreparation, mutants.FreshFailure) {

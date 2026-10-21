@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/project"
 )

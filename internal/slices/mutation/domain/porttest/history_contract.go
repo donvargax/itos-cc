@@ -12,7 +12,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/lang"
 	langtest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // HistoryFixture supplies actual setup operations, not scripted query answers.

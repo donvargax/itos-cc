@@ -16,7 +16,7 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func (s *Inputs) goUnsupported(ctx context.Context, source string) (string, mutants.InputFailure) {

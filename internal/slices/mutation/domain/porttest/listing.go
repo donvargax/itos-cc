@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Listing is independently observed fixture stdout/stderr and command status.

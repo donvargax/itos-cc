@@ -1,4 +1,4 @@
-package mutants
+package domain
 
 import "strings"
 

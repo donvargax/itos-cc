@@ -1,4 +1,4 @@
-package mutants_test
+package domain_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 

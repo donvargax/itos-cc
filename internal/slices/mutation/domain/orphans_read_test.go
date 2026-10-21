@@ -1,4 +1,4 @@
-package mutants_test
+package domain_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )

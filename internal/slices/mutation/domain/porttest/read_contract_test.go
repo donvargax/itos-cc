@@ -3,7 +3,7 @@ package porttest
 import (
 	"context"
 	"errors"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	"io/fs"
 	"path/filepath"

@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"slices"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Exceptions owns independent current entries. It contains no configuration codec.

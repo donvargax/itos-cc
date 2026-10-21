@@ -1,4 +1,6 @@
-// Package mutants owns pure mutation values and rules. Its model-bearing
+// Package domain is the mutation slice's own domain (ADR-0051), kept apart
+// from its CLI and application code: it owns pure mutation values and
+// rules, and its importers name it mutants. Its model-bearing
 // Workers, Toolchain, Fingerprints, Reach, History, MutationSnapshots,
 // SourceEdits, TestLister and SettingsReader contracts live beside those values: orchestration can use the port
 // without a domain-to-child-port-to-domain cycle. The worktrees adapter and
@@ -31,4 +33,4 @@
 // settings at each actual admission point; the existing
 // config codec and disk or memory bytes remain outside this package.
 // The domain imports no implementation and contains no process/filesystem I/O.
-package mutants
+package domain

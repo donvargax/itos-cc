@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // SampleQuery carries sample's domain values once: the selection, how many

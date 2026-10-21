@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Tests describes one fixture's real command, keyed by directory and command.

@@ -1,11 +1,11 @@
-package mutants_test
+package domain_test
 
 import (
 	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func TestCommandPolicyPreservesObservedRunnerSelections(t *testing.T) {

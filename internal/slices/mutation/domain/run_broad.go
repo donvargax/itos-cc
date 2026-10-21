@@ -1,4 +1,4 @@
-package mutants
+package domain
 
 // markBroadStale marks Stale each entry kept for a function the run did not
 // judge whose recorded whole-suite evidence no longer holds. KeepUnjudged

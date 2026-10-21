@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Inputs is the actual virtual project shared by the observation fakes. Probes

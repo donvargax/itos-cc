@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func memoryInputFixture(t *testing.T, files map[string]string, imports map[string][]string, env map[string]string) InputBindings {

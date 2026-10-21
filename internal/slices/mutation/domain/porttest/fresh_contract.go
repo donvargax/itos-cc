@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // FreshFixture supplies independent committed and live bytes through setup.

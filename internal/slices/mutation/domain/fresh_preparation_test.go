@@ -1,4 +1,4 @@
-package mutants_test
+package domain_test
 
 import (
 	"path/filepath"
@@ -11,7 +11,7 @@ import (
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 

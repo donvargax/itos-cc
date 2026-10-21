@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // historyRanges compares actual fixture lines. LCS edits keep pure deletion

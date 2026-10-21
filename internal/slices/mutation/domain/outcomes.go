@@ -1,4 +1,4 @@
-package mutants
+package domain
 
 // MutantResult is how one mutant was decided in this run.
 type MutantResult struct {

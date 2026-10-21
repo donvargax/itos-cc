@@ -9,7 +9,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	snaptest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 	"github.com/donvargax/itos-cc/internal/workdir"

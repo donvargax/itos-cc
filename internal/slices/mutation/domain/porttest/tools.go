@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func (s *Inputs) nearest(ctx context.Context, path string, markers ...string) string {

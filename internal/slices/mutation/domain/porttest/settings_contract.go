@@ -6,7 +6,7 @@ import (
 
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // SettingsContract observes current semantic values, independent ownership and

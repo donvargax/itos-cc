@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Go evidence is written under go_coverage exactly as before, and the

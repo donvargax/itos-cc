@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/donvargax/itos-cc/internal/selection"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ExceptQuery carries except's domain values once: the survivor's site, as

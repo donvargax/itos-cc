@@ -7,7 +7,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Lister returns stdout alone and streams diagnostics immediately to Log.

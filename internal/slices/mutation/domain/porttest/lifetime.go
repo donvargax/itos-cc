@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Invocation observes an actual entered request and its current virtual copy.

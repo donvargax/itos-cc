@@ -63,7 +63,14 @@ linters:
         # and holding the sealed gaps of coverage not measured (decision 46);
         # internal/slices/crap/domain, the crap slice's own, scores functions
         # by CRAP in files internal/lang parsed and a coverage Report, and has
-        # no port, nor a place on the allow list.
+        # no port, nor a place on the allow list;
+        # internal/slices/mutation/domain, the mutation slice's own, owns
+        # mutation's sites, results and their judgment, and declares its
+        # model-bearing ports beside their values, with no port subpackage;
+        # its external tests and porttest import it, so it and its porttest
+        # are on the allow list. Only its own slice may import it: the
+        # shared-domains rule below refuses the shared domains, and
+        # tools/bin/architecture-check's sibling rule another slice's domain.
         domain:
           list-mode: lax
           files:
@@ -74,7 +81,7 @@ linters:
             - "**/internal/slices/scrap/domain/**"
             - "**/internal/slices/crap/domain/**"
             - "**/internal/coverage/**"
-            - "**/internal/mutants/**"
+            - "**/internal/slices/mutation/domain/**"
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
@@ -84,12 +91,25 @@ linters:
             - github.com/donvargax/itos-cc/internal/snapshot/
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
-            - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/internal/mutants/porttest$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest$
             - github.com/donvargax/itos-cc/internal/coverage/porttest$
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the domain imports no adapter, slice, UI or cmd (decision 29): reach the outside through its port; if this is another domain package, extend the rules as docs/go.md's Adding a package says, never loosen this one"
+        # The shared domains, their ports and fakes, their tests too, import
+        # no package under internal/slices: a slice's domain is its own, and
+        # the domain rule's allow list names the mutation slice's only so
+        # that its tests and porttest may import it (ADR-0051).
+        shared-domains:
+          files:
+            - "**/internal/selection/**"
+            - "**/internal/lang/**"
+            - "**/internal/snapshot/**"
+            - "**/internal/coverage/**"
+          deny:
+            - pkg: github.com/donvargax/itos-cc/internal/slices/
+              desc: "a shared domain imports no slice and no slice's domain (ADR-0051): what every command shares belongs in a shared domain; never loosen this one"
         # The domain's own code does no I/O: no os (os/exec with it) and no
         # net. Its tests may read a fixture.
         domain-io:
@@ -101,7 +121,7 @@ linters:
             - "**/internal/slices/scrap/domain/**"
             - "**/internal/slices/crap/domain/**"
             - "**/internal/coverage/**"
-            - "**/internal/mutants/**"
+            - "**/internal/slices/mutation/domain/**"
             - "!$test"
           deny:
             - pkg: os
@@ -134,7 +154,6 @@ linters:
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
             - "!**/internal/coverage/**" # a domain and its ports
-            - "!**/internal/mutants/**" # pure mutation rules and models
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
@@ -156,8 +175,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/snapshot/
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
-            - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/internal/mutants/porttest$
             - github.com/donvargax/itos-cc/internal/coverage/porttest$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
@@ -183,6 +200,7 @@ linters:
             - "!**/internal/slices/dry/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/scrap/domain/**" # a slice's domain, held by domain
             - "!**/internal/slices/crap/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/mutation/domain/**" # a slice's domain, held by domain
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
@@ -190,8 +208,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/snapshot/
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
-            - github.com/donvargax/itos-cc/internal/mutants$
-            - github.com/donvargax/itos-cc/internal/mutants/porttest$
             - github.com/donvargax/itos-cc/internal/coverage/porttest$
             - github.com/donvargax/itos-cc/internal/cli$
             - github.com/donvargax/itos-cc/internal/lang$
@@ -216,7 +232,7 @@ linters:
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
             - "!**/internal/coverage/**" # a domain and its ports
-            - "!**/internal/mutants/**" # pure mutation rules and models
+            - "!**/internal/slices/mutation/domain/**" # a slice's domain, its porttest importing other ports' fakes
             - "!**/internal/workdir/**" # an adapter, held by workdir
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
@@ -240,7 +256,7 @@ linters:
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
             - pkg: github.com/donvargax/itos-cc/internal/coverage/port/porttest
               desc: "a slice's code links no fake (T-56): a port's fake enters only through _test.go files; never loosen this one"
-            - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
+            - pkg: github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest
               desc: "a slice's code links no fake (T-88): only tests may import mutation's Workers fake"
             - pkg: github.com/donvargax/itos-cc/internal/coverage/porttest
               desc: "a slice's code links no fake (T-90): only tests may import coverage's model-bearing fake"
@@ -248,11 +264,11 @@ linters:
         # allowed in tests, never in the domain's production implementation.
         mutant-fakes:
           files:
-            - "**/internal/mutants/**"
-            - "!**/internal/mutants/porttest/**"
+            - "**/internal/slices/mutation/domain/**"
+            - "!**/internal/slices/mutation/domain/porttest/**"
             - "!$test"
           deny:
-            - pkg: github.com/donvargax/itos-cc/internal/mutants/porttest
+            - pkg: github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest
               desc: "the mutation domain's production code imports no fake (T-88)"
         # Coverage's model-bearing capability uses a root fake; production
         # coverage code must never import that fake.
@@ -265,7 +281,7 @@ linters:
             - "**/internal/slices/scrap/domain/**"
             - "**/internal/slices/crap/domain/**"
             - "**/internal/coverage/**"
-            - "**/internal/mutants/**"
+            - "**/internal/slices/mutation/domain/**"
             - "!**/porttest/**"
             - "!$test"
           deny:
@@ -302,7 +318,7 @@ linters:
             - "**/internal/workdir/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/selection/port$
             - github.com/donvargax/itos-cc/internal/lang/port$
             - github.com/donvargax/itos-cc/project$
@@ -320,7 +336,7 @@ linters:
             - "**/internal/metricsdir/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/snapshot/port$
             - github.com/donvargax/itos-cc/metrics$
             - github.com/donvargax/itos-cc/project$
@@ -348,7 +364,8 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the coveragetools adapter imports nothing of ours but the coverage domain it serves (decision 47), its port, and coverage and metrics, which it wraps (decision 46); extend the rules as docs/go.md's Adding a package says, never loosen this one"
-        # Model-bearing Workers lives beside mutants values to avoid a cycle.
+        # Model-bearing Workers lives beside the mutation domain's values to
+        # avoid a cycle.
         # worktrees wraps only project tree operations and runs its commands
         # through the process-ownership engine.
         worktrees:
@@ -357,7 +374,7 @@ linters:
             - "**/internal/worktrees/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/processes$
             - github.com/donvargax/itos-cc/project$
           deny:
@@ -385,7 +402,7 @@ linters:
             - "**/internal/testtools/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/project$
             - github.com/donvargax/itos-cc/coverage$
@@ -398,7 +415,7 @@ linters:
             - "**/internal/testinputs/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/lang$
             - github.com/donvargax/itos-cc/project$
             - github.com/donvargax/itos-cc/coverage$
@@ -411,7 +428,7 @@ linters:
             - "**/internal/githistory/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/project$
           deny:
             - pkg: github.com/donvargax/itos-cc
@@ -422,7 +439,7 @@ linters:
             - "**/internal/freshenv/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/port$
             - github.com/donvargax/itos-cc/internal/selection$
@@ -441,7 +458,7 @@ linters:
             - "**/internal/importgraph/**"
             - "!$test"
           allow:
-            - github.com/donvargax/itos-cc/internal/mutants$
+            - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
             - github.com/donvargax/itos-cc/project$
             - github.com/donvargax/itos-cc/graph$
           deny:

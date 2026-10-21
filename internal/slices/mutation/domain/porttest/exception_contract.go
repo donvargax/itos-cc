@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ExceptionFixture exposes independently owned current entries for shared

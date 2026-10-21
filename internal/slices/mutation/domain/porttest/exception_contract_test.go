@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func TestMemoryExceptionsContract(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/cli"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Presentation owns shared mutation wording. Remaining cmd handlers delegate

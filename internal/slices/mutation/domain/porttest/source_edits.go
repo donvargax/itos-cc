@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // SourceEdits holds actual current bytes, distinct from a parsed planning copy.

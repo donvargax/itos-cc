@@ -2,7 +2,7 @@ package workdir_test
 
 import (
 	"errors"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	"github.com/donvargax/itos-cc/internal/workdir"
 	"os"

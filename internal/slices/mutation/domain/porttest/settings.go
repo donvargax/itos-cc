@@ -4,7 +4,7 @@ import (
 	"context"
 	"slices"
 
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Settings holds independent current semantic settings, without a wire codec

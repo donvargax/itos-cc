@@ -1,6 +1,6 @@
 package mutation
 
-import "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+import mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 
 // Failure is what the handler refuses at its original admission point. It
 // carries the fact only: the UI words it and picks its exit code.

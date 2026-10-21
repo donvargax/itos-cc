@@ -10,7 +10,7 @@ import (
 
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
