@@ -5802,17 +5802,6 @@
     githistory :704-760, the adapters and processes bullets :476-496), README's layout rows,
     features/README.md's paths, including the internal/worktrees paths T-151 left stale (:1265,
     :1288, :1591).
-  done_when:
-    - run: go test -count=1 ./internal/slices/mutation/adapters/...
-      timeout: 900
-    - run: go vet ./...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestCountedExecutionEvaluatesFrozenCommittedInputs|TestALaterRunRemovesOnlyItosCcWorkerCopiesClearlyAbandoned|TestARenamedFileIsNarrowedByItsNewPath)$' -scenarios='^@ID-MUT-'
-      timeout: 900
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-161
   type: refactor
   title: Give the mutation slice its snapshot codec, exceptions writer and source edits

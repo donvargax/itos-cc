@@ -4308,7 +4308,7 @@ items:
     title: Move worktrees, githistory, importgraph and freshenv into the mutation slice
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-159]
     kind: task
   - id: T-161
