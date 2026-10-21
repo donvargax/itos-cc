@@ -4728,3 +4728,18 @@ items:
       true. The fix is release.yml's: copy THIRD_PARTY_NOTICES with LICENSE and README.md and name
       it in both the tar and the 7z line, and its header's list of what an archive holds.
       release.yml was outside T-173's files, as a shared path a task of its own changes.
+  - id: toolchain-linked-notices
+    title: THIRD_PARTY_NOTICES covers what the Go toolchain and the static link compile in
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-173's agent (2026-10-21). tools/bin/notices names the Go modules ./cmd/itos-cc
+      compiles in, as T-173 settled, but the binary also holds the Go runtime and standard library
+      (BSD-3-Clause, with the golang.org/x packages vendored under GOROOT/src/vendor), and
+      release.yml links Linux and Windows statically (-extldflags=-static), so the C runtime of each
+      runner's toolchain, glibc's static libc on Linux (LGPL, whose static-link terms differ from a
+      notice) and MinGW's runtime and winpthreads on Windows, is in the archive too. Decide which of
+      these need a notice or more, and whether the generator should add Go's LICENSE from GOROOT.
