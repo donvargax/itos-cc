@@ -4605,3 +4605,29 @@ items:
       and T-86's spec closes only on a run with no unclassified difference. An exit of its own for a
       run whose only non-same cases are unstable or as-rerun (still never 0, still read by a person)
       would say so; the header's exit codes would list it. No normalization rule either way.
+  - id: slice-28
+    title: Dart units, complexity and test files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      First item of dart-support (D1a in docs/dart/touchpoints.md), alone before the parallel wave
+      (q-78). Pins github.com/UserNobody14/tree-sitter-dart by pseudo-version as Kotlin's grammar is
+      pinned, MIT notice kept, and an IDEAS.md line beside Kotlin's pin. The grammar splits a
+      function into a signature and a body sibling, so internal/lang learns a unit made of a
+      signature and its body: it starts on the signature's line (never an annotation's) and ends
+      with the body. Units are declarations with a body, a block or =>; abstract and external
+      members and a constructor ending in ; are none, closures and local functions count in the unit
+      around them. Namespace: the nearest pubspec.yaml's name, then the file's path under lib/
+      (outside lib/, its path from the package), dotted. Containers class, mixin, named extension,
+      extension type, enum; an unnamed extension's members sit in the file's namespace. Constructors
+      are C and C.named, a setter s=, an operator operator+; private means the unit's own name, or a
+      named constructor's part after the dot, starts with _. Decisions as docs/dart/tooling.md
+      section 5: if (and if-case), collection if, both for forms, collection for, while, do, each on
+      or catch handler, ?:, each switch case but default, each switch-expression arm but the bare _,
+      && and || in expressions and patterns, ??, ??=, and the null-aware ?. ?[ ?.. ...? forms; a
+      when guard does not count. Tests: *_test.dart anywhere and every file under test/,
+      integration_test/ or test_driver/. Scenarios UNIT-16, UNIT-17, CPLX-01's Dart row, CPLX-07,
+      SEL-15's Dart rows.
