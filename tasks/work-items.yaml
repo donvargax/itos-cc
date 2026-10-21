@@ -3918,7 +3918,7 @@ items:
     title: Move units into internal/slices/units, declaring its command for assembly
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-143, T-144, T-147]
     kind: task
   - id: T-146

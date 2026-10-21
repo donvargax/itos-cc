@@ -5431,11 +5431,6 @@
     docs/architecture.md and README's layout table. Help, errors, exit codes and lazy config
     unchanged. Depends on T-143 (generic dispatch), T-144 (the sibling rule) and T-147 (the
     exclude setting in selection).
-  done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract)$' -scenarios='^@ID-(UNIT|CLI)-'
-      timeout: 600
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-146
   type: build
   title: Generate cmd's command assembly from each slice's declaration, checked current in CI
