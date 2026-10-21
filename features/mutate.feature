@@ -2119,6 +2119,33 @@ Feature: Mutation testing
         | python     |
         | kotlin     |
 
+      # slice-34, dart-support: as TypeScript, Python and Kotlin.
+      @wip @slice-34
+      Examples:
+        | language   |
+        | dart       |
+
+    # slice-34: how a Dart library names another. package:<own name>/x.dart
+    # is lib/x.dart of the package whose pubspec.yaml has that name; an
+    # export passes reach on; a part file is its library's, so reaching the
+    # library reaches the part; a conditional import reaches each target.
+    @wip @slice-34 @ID-MUT-263
+    Scenario Outline: A Dart test reaches a library through <link>
+      Given a Flutter package "demo" whose test reaches lib/a.dart only through <link>
+      And a mutant of lib/a.dart has a recorded result
+      When that test changes
+      Then "itos-cc mutation check" reports that result stale, naming the test
+      And a test that reaches no library linking to lib/a.dart changing leaves that result fresh
+
+      Examples:
+        | link                                                                       |
+        | an import of package:demo/a.dart                                           |
+        | a relative import of ../lib/a.dart                                         |
+        | lib/demo.dart, which it imports and which exports a.dart                   |
+        | lib/b.dart, which it imports and which holds part 'a.dart'                 |
+        | a conditional import of lib/b.dart, if (dart.library.io) lib/a.dart        |
+        | package:core/c.dart of a pub workspace sibling "core", which imports package:demo/a.dart |
+
   # own-tests-python, own-tests-kotlin and own-tests-ts-fallback, q-38
   # (answered 2026-10-10): a file's own command, and the coverage that
   # decides which of its mutants run, are the tests that reach it
@@ -2205,6 +2232,14 @@ Feature: Mutation testing
         | python     | a conftest.py fixture above it   |
         | typescript | a helper module under __tests__/ |
         | kotlin     | a helper class in src/test       |
+
+      # slice-34: flutter test loads flutter_test_config.dart for every test
+      # file at and below its directory, as pytest loads conftest.py.
+      @wip @slice-34
+      Examples:
+        | language   | support                                   |
+        | dart       | a helper library under test/              |
+        | dart       | a flutter_test_config.dart above it       |
 
     @test-support-reach @ID-MUT-220
     Scenario: A Python mutant reached only through conftest.py is judged by the test that uses the fixture
