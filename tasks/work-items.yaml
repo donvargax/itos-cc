@@ -5160,14 +5160,15 @@ items:
       same way. It is the harness's, a shared path, so slice-36 did not change it. Once it lands,
       the @wip block's rows join MUT-273's live Examples.
     refs: [slice-36]
-  - id: dart-integration-test-importers
+  - id: slice-38
     title: A test under integration_test/ that imports a Dart file leaves its own-test results fresh
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
+    kind: slice
     why: >
+      Was dart-integration-test-importers.
       q-76 says flutter test never runs integration_test/ or test_driver/, and slice-35 runs and
       measures a Dart file's own tests from test/ alone, but an own-test outcome's freshness still
       rests on every test that imports the file, as reach finds them: a change to
