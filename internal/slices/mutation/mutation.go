@@ -67,7 +67,7 @@ type Run struct {
 	TestCommand         string      `placeholder:"CMD" help:"shell command that runs the tests, instead of the per-language default"`
 	NoAnnotate          bool        `name:"no-annotate" help:"do not write the summary comment into source files"`
 	Since               string      `placeholder:"REF" help:"judge only the functions the commits since REF changed (git diff REF...HEAD)"`
-	FailUncovered       *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines; =lines, with --since, only on the lines the range changed"`
+	FailUncovered       *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript, Kotlin and Dart lines; =lines, with --since, only on the lines the range changed"`
 	FailFast            bool        `help:"stop at the first actionable failure, cancelling the work still running; Linux and macOS"`
 	Count               int         `placeholder:"N" help:"judge at most N committed mutation sites freshly, drawn across the whole selection; Linux and macOS"`
 	Seed                string      `placeholder:"TEXT" help:"with --count, seed the draw with TEXT instead of the HEAD commit's id"`
@@ -84,7 +84,7 @@ type List struct {
 type Check struct {
 	cli.Selection
 	Since         *string     `placeholder:"REF" help:"check only the functions the commits since REF changed (git diff REF...HEAD)"`
-	FailUncovered *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript and Kotlin lines; =lines, with --since, only on the lines the range changed"`
+	FailUncovered *cli.Choice `enum:"functions,lines" help:"fail on uncovered mutants, executable Go coverage blocks and executable Python, TypeScript, Kotlin and Dart lines; =lines, with --since, only on the lines the range changed"`
 	JSON          bool        `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 }
 

@@ -12,11 +12,14 @@ in Python the test files that reach it (named test_*.py or *_test.py), run
 with python -m pytest -x <files>, or python -m unittest <modules> without
 pytest, in Kotlin the test classes the test files that reach it declare,
 run with gradle test --fail-fast --tests <class> per module, or mvn test
--Dtest=<classes>, or the whole suite where nothing narrower exists. A
+-Dtest=<classes>, in Dart the test files under its package's test/ that
+reach it (named *_test.dart), run with flutter test --no-pub <files>, or
+the whole suite where nothing narrower exists. A Dart file's tests under
+integration_test/ or test_driver/ never run: they need a device. A
 mutant is killed when the tests fail or time out and survives when they
 pass. Mutants on lines those tests never execute are uncovered and are not
-run, and every mutant of a Python or Kotlin file no such test reaches is
-uncovered, with no test run for it. A Python or Kotlin test that runs code
+run, and every mutant of a Python, Kotlin or Dart file no such test reaches
+is uncovered, with no test run for it. A Python or Kotlin test that runs code
 only through a subprocess, the CLI or reflection reaches nothing: run
 --all-tests or --test-command for such code.
 
@@ -58,7 +61,9 @@ without the agent ITOS_CC_JACOCO_AGENT is unset, which a harness can tell,
 and .exec files with no jacococli to report them are coverage.tool-missing
 with --fail-uncovered, where Kotlin has mutants to judge, and otherwise a
 log line. Kover's own agent is not named: a Kover project's harness uses
-JaCoCo's too.
+JaCoCo's too. In Dart, --all-tests runs flutter test --no-pub with no path,
+the test files under the package's test/ alone, never integration_test/ or
+test_driver/, and the processes a test starts show up in no coverage.
 Every test and coverage command itos-cc composes runs with
 PYTHONDONTWRITEBYTECODE=1, and every pytest one with -p no:cacheprovider,
 so neither bytecode nor a .pytest_cache is written into the project; a
@@ -68,12 +73,15 @@ Results are cached in .metrics/mutate/<file>.json, which is meant to be
 committed: later runs reuse killed mutants of unchanged functions, and the
 survivors itos-cc.yaml excepts, and retry only other survivors and changed
 functions. Each snapshot also records the SHA-256
-of every test file that reaches its file: in TypeScript, Python and Kotlin
-the tests whose imports reach it, directly or through other modules, as
+of every test file that reaches its file: in TypeScript, Python, Kotlin and
+Dart the tests whose imports reach it, directly or through other modules, as
 vitest related and jest --findRelatedTests select them, and through the
 test-support files they import (a helper under tests/ or __tests__, a Kotlin
-helper in src/test), which are among them too, and in Python through every
-conftest.py in a test's directory and those above it, up to its build root;
+helper in src/test, a Dart one under test/), which are among them too, and
+in Python through every conftest.py in a test's directory and those above
+it, up to its build root; in Dart only those its own tests run, the test
+files under its package's test/ and the support files on their way, so a
+change under integration_test/ or test_driver/ makes nothing stale;
 in Go its package's tests and those of the packages that import it, one hop. When one of them
 is added, changed, or removed, every mutant of the file runs again. Each outcome records the
 scope of the tests that decided it: "own" (the file's own tests, left out of
@@ -95,6 +103,10 @@ inputs outside those files cannot be inferred. These checks use saved hashes
 and never run a test or list command. Reusing a broad-scope result keeps its
 scope and evidence; a partial run does not refresh evidence for functions it
 did not judge. Legacy broad-scope Go results without this evidence rerun once.
+A Dart outcome recorded with --all-tests depends on the test files under
+its package's test/ alone, those flutter test runs with no path, and one
+recorded with --test-command on every Dart test file beneath its nearest
+pubspec.yaml.
 
 --since REF judges only the functions the commits since REF changed, as a
 gate on a branch's own work: git diff REF...HEAD, committed changes only.
@@ -135,9 +147,12 @@ directory (git rev-parse --git-path itos, a linked worktree's own
 included), so staged, unstaged and untracked changes play no part; tools, dependencies and the environment are
 used as installed, from the live project, and nothing is installed or
 downloaded: TypeScript's node_modules and Python's .venv or venv (else the
-virtualenv VIRTUAL_ENV names) at its build roots, and the Go module, Gradle
-and Maven caches, with Go commands offline (GOPROXY=off), Gradle --offline
-and Maven -o. A dependency missing offline fails the run, as
+virtualenv VIRTUAL_ENV names) at its build roots, the .fvm/flutter_sdk FVM
+links beside a committed .fvmrc, and the Go module, Gradle, Maven and pub
+caches, with Go commands offline (GOPROXY=off), Gradle --offline and Maven
+-o. Each Dart package is readied once with flutter pub get --offline
+--enforce-lockfile, resolving the commit's pubspec.lock from the pub cache,
+and its tests run with --no-pub. A dependency missing offline fails the run, as
 count.preparation-failed naming the stage. Only a language with something
 to judge is measured: one with an eligible site in the selection, and Go,
 whose admitted functions strict Go coverage judges, so a file of another
@@ -152,7 +167,7 @@ uncovered, never run and never redrawn. Every other selected site runs its
 own tests once, even when the cache holds a kill for it, and one that
 survives them runs the listed tests that reach its line, after their
 selection's clean baseline, as a complete run does: both stages are one
-trial. A site of a Python or Kotlin file no own test reaches, whose own
+trial. A site of a Python, Kotlin or Dart file no own test reaches, whose own
 tests run nothing, needs no clean baseline of them: listed tests that
 reach its line judge it alone, as in a complete run. A selection whose
 baseline fails is tests.selection-failed, and a
@@ -165,8 +180,9 @@ snapshot, summary comment or coverage cache, and its pass proves only the
 judgments it reports, never a complete result: mutation check reports the
 cache as it was. --fail-uncovered keeps its meaning, strict Go included,
 for every admitted function, and =lines narrows it to the changed lines
-as in a complete run; strict Python, TypeScript and Kotlin lines
-are not yet proven by a counted run. A range with no site is not applicable, which
+as in a complete run; a counted run still proves only Go's lines
+strictly: strict Python, TypeScript, Kotlin and Dart lines are not yet
+proven by it. A range with no site is not applicable, which
 is not a pass of a range whose tests or measurement failed. --count runs
 on Linux and macOS, where every command it starts runs in a process group
 it owns (a command that detaches from its group or session is not
@@ -190,7 +206,7 @@ the run's other problems, one for each group.
 observes, in the order judgments finish, for a quick fix-and-retry loop:
 an unexcepted survivor, once the listed tests that reach it failed to kill
 it too; with --fail-uncovered, an uncovered mutant or a strict Go, Python,
-TypeScript or Kotlin coverage finding; an exception that no longer holds; a file whose tests fail before
+TypeScript, Kotlin or Dart coverage finding; an exception that no longer holds; a file whose tests fail before
 any mutant; or a selection of listed tests that fails without any mutant.
 It reports that failure under the rule a run without it reports, and exits
 as that rule says. Killed, timed-out, validly excepted and listed-killed
@@ -229,27 +245,31 @@ aggregate. Without it, scheduling, output, snapshots and comments are as
 they always were.
 
 --fail-uncovered makes each uncovered mutant a failure, listed like a
-survivor. For Go, Python, TypeScript and Kotlin it also requires fresh
+survivor. For Go, Python, TypeScript, Kotlin and Dart it also requires fresh
 measured executable coverage for every judged function, including functions
 with no mutation sites, and fails, as mutation.uncovered-statement, each
-uncovered positive-weight Go coverage block, each line a Python or
-TypeScript LCOV report names executable that no test executed, and each
+uncovered positive-weight Go coverage block, each line a Python, TypeScript
+or Dart LCOV report names executable that no test executed, and each
 line of a Kotlin JaCoCo or Kover XML report none of whose instructions ran
 (a line with some run, such as one a test took one branch of, is covered):
 coverage.py's over the tests that reach the file, Vitest's v8 or Jest's
 over its related tests, or c8's over the test script of a package with
-neither, and Gradle's jacocoTestReport or koverXmlReport, or Maven's
+neither, Gradle's jacocoTestReport or koverXmlReport, or Maven's
 jacoco:report, over the test classes of the file's module that reach it,
-the whole suite with --all-tests or --test-command. A function's lines run
-from its body's first statement to its end: a Python def line, or a
-TypeScript arrow function's declaration, runs at import, and a Kotlin
-declaration's line holds the bridge that fills in default arguments. A
+and flutter test --coverage's over the test files under the package's test/
+that reach it, the whole suite with --all-tests or --test-command. A
+function's lines run from its body's first statement to its end: a Python
+def line, or a TypeScript arrow function's declaration, runs at import, and
+a Kotlin declaration's line holds the bridge that fills in default
+arguments. A Dart function's lines run from its signature line, which the
+Dart VM counts at each call, and a line any of whose code ran is covered. A
 Python file no test reaches has its executable lines listed by coverage.py's
 own analysis, a TypeScript file no test loads by Vitest's v8 provider run
 with no test, and a Kotlin file no test reaches by the report of another
 file of its module, which lists every class the module compiled, all of
 them uncovered; under Jest or c8 such a file, a Kotlin one whose module
-measured no other file, and any file a project's own coverage script
+measured no other file, a Dart library no test loads, which flutter test's
+report never names, and any file a project's own coverage script
 measured (--all-tests with one), has no evidence, which is
 mutation.coverage-missing. A scope the fingerprints cannot prove is
 mutation.coverage-unsupported for every judged function of its root, even
@@ -258,14 +278,16 @@ the module; an npm, yarn or pnpm workspace, a workspace: dependency, or a
 file: or link: dependency outside the package root; a Python path or
 editable dependency outside the build root (pyproject.toml, requirements
 files, the root's virtualenv); a Gradle includeBuild, or a Maven module,
-subproject or parent relativePath, outside the build root. They are found
+subproject or parent relativePath, outside the build root; a pub path
+dependency or override, in a pubspec.yaml or pubspec_overrides.yaml, outside
+the package root, or a pub workspace's root for a member. They are found
 in the root's own files, and nothing outside the project root is read.
 Strict runs reject --no-coverage,
 --coverage-report, --use-existing-coverage, and --coverage-command. A
 matching independent cache can avoid remeasurement; otherwise built-in or
 listed coverage must measure successfully. Empty or comment-only function
 bodies have no executable coverage obligation. For the mutants of
-TypeScript, Python and Kotlin it fails closed as Go does: a build root with
+TypeScript, Python, Kotlin and Dart it fails closed as Go does: a build root with
 mutants to judge whose coverage tool is missing, or whose coverage command
 fails or writes no report, is coverage.tool-missing or
 coverage.measured-nothing, naming its language and dir, and the run stops
@@ -275,8 +297,8 @@ mutant, as it always did, and so it does with --coverage-report,
 functions' uncovered mutants and executable blocks count.
 
 --fail-uncovered=lines, which needs --since, judges only where the range
-changed: an executable Go coverage block or Python, TypeScript or Kotlin
-line counts when it overlaps a line the commits since REF added or
+changed: an executable Go coverage block or Python, TypeScript, Kotlin or
+Dart line counts when it overlaps a line the commits since REF added or
 changed, the new side of each hunk of git diff --unified=0 REF...HEAD, a
 renamed file's under its new path, and an uncovered mutant fails only on
 such a line. A judged function with such a line still needs complete
@@ -359,7 +381,7 @@ judged and no snapshot is written. Listed tests are not run with
    ran and passed in this run, for it or for another file sharing its
    command, as a Go package's files do; "not-run" when none ran, as for a
    file whose mutants were all reused, which said "passed" before, or a
-   Python or Kotlin file no test reaches (a script that checked for
+   Python, Kotlin or Dart file no test reaches (a script that checked for
    "passed" should accept "not-run", or check for "failed"), "mutants": [{"line", "column",
    "function", "original", "replacement",
    "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
@@ -398,9 +420,9 @@ judged and no snapshot is written. Listed tests are not run with
 		Rules: []string{
 			"mutation.survived         a mutant survived: file, line, column, function, original, replacement",
 			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
-			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
-			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
-			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
+			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
+			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
+			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
 			"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 			"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
@@ -412,7 +434,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"since.bad-ref             --since names no commit: ref",
 			"since.no-git              --since outside a git repository",
 			"flags.conflict            --since with --changed: flag",
-			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript or Kotlin coverage with raw coverage flags: flag",
+			"flags.conflict            --fail-uncovered with --no-coverage, or strict Go, Python, TypeScript, Kotlin or Dart coverage with raw coverage flags: flag",
 			"flags.conflict            --fail-uncovered=lines without --since: flag",
 			"flags.conflict            --seed without --count, or --count with a flag it refuses, --fail-fast included: flag",
 			"count.platform            --count on a platform other than Linux and macOS, that is Windows (#29): platform",

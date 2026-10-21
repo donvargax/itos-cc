@@ -1,4 +1,4 @@
-// Command itos-cc measures code quality in TypeScript, Python, Kotlin, and Go.
+// Command itos-cc measures code quality in TypeScript, Python, Kotlin, Dart, and Go.
 package main
 
 import (

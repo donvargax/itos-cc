@@ -28,9 +28,10 @@ judged Go function also needs fresh independent executable coverage evidence,
 including zero-site functions. Uncovered executable blocks and missing or
 stale evidence fail without running tests, coverage or list commands. The
 snapshot also records the hash of each test file that reaches its file: in
-TypeScript, Python and Kotlin through its imports, transitively, through the
+TypeScript, Python, Kotlin and Dart through its imports, transitively, through the
 test-support files a test imports and, in Python, the conftest.py files
-above it; in Go its
+above it, in Dart only the files under its package's test/ that its own
+tests run, never those under integration_test/ or test_driver/; in Go its
 package's tests and those of the packages that import it. When one was
 added, changed, or removed since, every function of the file is stale, as
 it is when the snapshot predates recording tests. A run with --since that finds them changed keeps the
@@ -105,10 +106,10 @@ mutants at sites gone, when it has any.`,
 			"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",
 			"mutation.survived         its results record a survivor: file, line, column, function, original, replacement",
 			"mutation.uncovered        with --fail-uncovered, its results record an uncovered mutant: file, line, column, function, original, replacement",
-			"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block or Python, TypeScript or Kotlin line is uncovered: file, function, line",
-			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript or Kotlin function lacks complete measured coverage evidence: file, function, line",
-			"mutation.coverage-stale    with --fail-uncovered, Go, Python, TypeScript or Kotlin coverage inputs changed since measurement: file, function, line",
-			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild or Maven module outside it: file, function, line",
+			"mutation.uncovered-statement with --fail-uncovered, a measured Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
+			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
+			"mutation.coverage-stale    with --fail-uncovered, Go, Python, TypeScript, Kotlin or Dart coverage inputs changed since measurement: file, function, line",
+			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
 			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"since.bad-ref             --since names no commit: ref",
@@ -117,7 +118,7 @@ mutants at sites gone, when it has any.`,
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every function checked has fresh results, and none records a survivor"},
-			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript or Kotlin line, or missing/stale Go, Python, TypeScript or Kotlin coverage evidence with --fail-uncovered; or an exception is stale"},
+			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript, Kotlin or Dart line, or missing/stale Go, Python, TypeScript, Kotlin or Dart coverage evidence with --fail-uncovered; or an exception is stale"},
 			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository"},
 		},
