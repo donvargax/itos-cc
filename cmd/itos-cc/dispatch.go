@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"slices"
+	"strings"
 
 	"github.com/donvargax/kong"
 
@@ -26,9 +28,10 @@ import (
 // commandLine is the command line of every command not yet under
 // internal/slices: one field each, its kong struct, its help the line the
 // top-level help lists it by. The commands the slices declare join them in
-// the model (assembled), which then lists every command in their names'
-// order, the order the guess for an unknown command weighs a tie by, as the
-// top-level help lists them.
+// the model (assembled, which tools/bin/assemble writes into
+// commands_gen.go from each slice's declaration), which then lists every
+// command in their names' order (byName), the order the guess for an
+// unknown command weighs a tie by, as the top-level help lists them.
 type commandLine struct {
 	Crap     crap.CLI     `cmd:"" help:"CRAP score per function: complexity × untested risk"`
 	Dry      dry.CLI      `cmd:"" help:"functions similar enough to be duplicates"`
@@ -107,6 +110,14 @@ func handlers(ui *cli.UI, a adapters) []kong.Option {
 		}),
 		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),
 	}
+}
+
+// byName puts the commands of k's model in their names' order: kong adds a
+// command a slice declares after commandLine's fields, and assembled keeps
+// this after them.
+func byName(k *kong.Kong) error {
+	slices.SortStableFunc(k.Model.Children, func(x, y *kong.Node) int { return strings.Compare(x.Name, y.Name) })
+	return nil
 }
 
 // commandNodes are the commands of parser's model, by name.

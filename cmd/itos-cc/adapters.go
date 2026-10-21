@@ -87,9 +87,12 @@ func (a adapters) SelectionTree() selport.Tree { return a.Tree }
 // LangSurroundings is lang's port, a slice's Ports method.
 func (a adapters) LangSurroundings() langport.Surroundings { return a.Surroundings }
 
-// SelectionSettings is the selection engine's settings reader, a slice's
-// Ports method.
-func (a adapters) SelectionSettings() selport.SettingsReader { return a.Selection }
+// SelectionExclusion is the sources itos-cc.yaml's exclude names, read under
+// ctx through the selection engine's settings, a slice's Ports method: a
+// file that cannot be read is config.invalid (settingsError).
+func (a adapters) SelectionExclusion(ctx context.Context) (selection.Exclusion, error) {
+	return exclusion(ctx, a.Selection)
+}
 
 // diskAdapters are this process's: its working directory,
 // internal/workdir's tree and surroundings, internal/metricsdir's store,

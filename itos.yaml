@@ -128,6 +128,10 @@ ci:
     # Every tracked Go file, each top-level package and tools/ included,
     # named when gofmt would change it.
     - { run: "! git ls-files -z -- '*.go' | xargs -0 gofmt -l | grep .", cost: static }
+    # cmd/itos-cc/commands_gen.go is what tools/bin/assemble writes from the
+    # slices under internal/slices (T-146): -check regenerates it, writing
+    # nothing, and fails naming the file when the committed one differs.
+    - { run: go run ./tools/bin/assemble -check, cost: static }
     - { run: go build ./..., cost: static }
     - { run: go vet ./..., cost: static }
     - { run: go mod verify, cost: static }

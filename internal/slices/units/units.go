@@ -92,19 +92,25 @@ type Handler struct {
 
 // Ports are what the units command reaches the world through, which cmd's
 // adapters give it: the working tree it selects and reads files through,
-// what surrounds those files, and the selection engine's settings, whose
-// exclude cmd reads, under the context of the Run that asks for the
-// handler, into the Exclusion NewHandler is given.
+// what surrounds those files, and the sources the project's settings
+// exclude, which cmd reads under the context of the Run that asks for the
+// handler and whose failure it words as a person reads it.
 type Ports interface {
 	SelectionTree() port.Tree
 	LangSurroundings() langport.Surroundings
-	SelectionSettings() port.SettingsReader
+	SelectionExclusion(ctx context.Context) (selection.Exclusion, error)
 }
 
 // NewHandler is the handler over p's tree and surroundings, leaving out the
-// sources exclude names.
-func NewHandler(p Ports, exclude selection.Exclusion) Handler {
-	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Exclude: exclude}
+// sources p's settings exclude, read under ctx; their failure is returned
+// as p gave it, never wrapped, so the problem cmd worded is the one the
+// person reads.
+func NewHandler(ctx context.Context, p Ports) (Handler, error) {
+	exclude, err := p.SelectionExclusion(ctx)
+	if err != nil {
+		return Handler{}, err
+	}
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Exclude: exclude}, nil
 }
 
 // Found is what Handle found: the units listed, and Excluded, the count of

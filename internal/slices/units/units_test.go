@@ -5,6 +5,7 @@
 package units
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"slices"
@@ -12,7 +13,9 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
 )
@@ -86,6 +89,38 @@ func TestHandleNamesUnitsThroughTheSurroundingsItIsGiven(t *testing.T) {
 	got, err := names(t, Handler{Tree: tree, Surroundings: module}, Query{})
 	if err != nil || !slices.Equal(got, []string{"example.com/shop/billing#Sum"}) {
 		t.Errorf("units %q, %v; want example.com/shop/billing#Sum", got, err)
+	}
+}
+
+// ports are the Ports cmd's adapters give the handler, held in memory: the
+// tree, the surroundings, and the exclusion the settings give or the
+// failure reading them meets.
+type ports struct {
+	tree    porttest.Tree
+	exclude selection.Exclusion
+	failure error
+}
+
+func (p ports) SelectionTree() port.Tree                { return p.tree }
+func (p ports) LangSurroundings() langport.Surroundings { return around }
+func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
+	return p.exclude, p.failure
+}
+
+// NewHandler builds the handler over its Ports, the sources their settings
+// exclude left out, and returns a failure reading them as the Ports gave it,
+// never wrapped, so cmd's config.invalid is the problem the person reads.
+func TestNewHandlerLeavesOutWhatThePortsExclude(t *testing.T) {
+	h, err := NewHandler(t.Context(), ports{tree: tree(), exclude: selection.Exclusion{Root: work, Exclude: []string{"**/*.py"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := names(t, h, Query{}); err != nil || !slices.Equal(got, []string{"cart#total"}) {
+		t.Errorf("units %q, %v; want cart#total alone", got, err)
+	}
+	failure := cli.NewProblem(cli.CodeUsage, "config.invalid", "itos-cc.yaml: cannot be read", "Fix it.")
+	if _, err := NewHandler(t.Context(), ports{tree: tree(), failure: failure}); err != failure {
+		t.Errorf("a settings failure: %v, want the Ports' own %v", err, failure)
 	}
 }
 

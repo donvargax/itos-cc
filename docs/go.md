@@ -336,16 +336,19 @@ a `context.Context` first (decision 30); pure logic takes none.
   and `version`'s version (`versionString`, release stamps `-X main.version`) through kong
   providers (`handlers`), which kong calls only when the `Run` it calls asks for their
   value. The commands under `internal/slices` are not fields of `commandLine`: `assembled`
-  (`commands.go`, written by hand until a generator writes it, T-146) adds each slice's
-  declaration with kong's `DynamicCommand`, a fresh command line each, and the provider of its
-  handler over its `Ports`, `adapters` given as the slice's interface. kong adds a dynamic
-  command after the struct's fields, so `assembled` then puts the model's commands in their
-  names' order (`byName`), the order `TestTheModelNamesEveryCommandInOrder` holds. The handlers
-  of `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so their providers read the file
-  through the selection engine's settings reader under the `Run`'s context, each provider
-  reading it itself, since kong wraps a dependent provider's error as `<type>: %w`: a file that
-  cannot be read fails that command alone as `config.invalid`, the provider's error kong
-  returns unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
+  (`commands_gen.go`, which `tools/bin/assemble` writes from each slice's declaration, T-146)
+  adds each slice's declaration with kong's `DynamicCommand`, a fresh command line each, in
+  their names' order, and the provider of its handler, one shape for every slice,
+  `func(ctx) (<slice>.Handler, error) { return <slice>.NewHandler(ctx, a) }`, `adapters` given
+  as the slice's `Ports`. kong adds a dynamic command after the struct's fields, so
+  `assembled` then puts the model's commands in their names' order (`byName`, in
+  `dispatch.go`), the order `TestTheModelNamesEveryCommandInOrder` holds. The handlers of
+  `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so each reads the file through the
+  selection engine's settings reader under the `Run`'s context in its own provider, `units`
+  through its `Ports`' `SelectionExclusion`, which `adapters` answers with `settingsError`'s
+  wording and `NewHandler` returns as it is, since kong wraps a dependent provider's error as
+  `<type>: %w`: a file that cannot be read fails that command alone as `config.invalid`, the
+  provider's error kong returns unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
   with the cause `cli.ErrInterrupted`, for every command alike (decision 38), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`, as an
   interrupted `mutation run` writes what it finished. Nothing below
@@ -446,8 +449,24 @@ is. Extend the rule as below; never loosen it, since every arrow above is what k
 command from reaching into this one.
 
 - A command: add its slice as `internal/slices/<command>`. The `slice-packages` rule holds it
-  already. Give it a `cli.Declaration` and a `Ports` interface, as `internal/slices/units`
-  does, add it to `cmd`'s `assembled` and give it scenarios.
+  already. Give it scenarios, and in its own package, as `internal/slices/units` does:
+  - `var Command = cli.Declaration{Name: "<command>", Help: "…", New: func() any { return &CLI{} }}`,
+    its name a string literal;
+  - `type Ports interface`, the ports its handler is built over, each a method named for the
+    engine and the port, such as `SelectionTree()`, `LangSurroundings()` and
+    `SelectionExclusion(ctx)`, shared by every slice that needs it;
+  - `NewHandler(ctx context.Context, p Ports) (Handler, error)`, the one shape every slice's
+    constructor has. What differs between slices goes behind a `Ports` method, never into the
+    signature, and its error is returned as the port gave it, unwrapped.
+
+  Add any `Ports` method no slice declared before to `cmd`'s `adapters` (`adapters.go`), once
+  for every slice that declares it, the port it answers from added to `adapters` and
+  `diskAdapters` as well. Then run `go run ./tools/bin/assemble` from the repository's root
+  and commit `cmd/itos-cc/commands_gen.go`, which it rewrites: the slice's import, its command
+  in its name's order and its handler's provider. Never edit that file by hand: CI's static
+  step `go run ./tools/bin/assemble -check` fails, naming it, when it differs from what the
+  slices declare. The generator refuses, naming the slice, a folder under `internal/slices`
+  with no `Command`, a `Command` with no `Ports`, and two slices with one name.
 - A domain package: add its folder as a `**/internal/<name>/**` glob to `domain` and
   `domain-io` and `coverage-fakes`, as a `!**/internal/<name>/**` exclusion to `slices` and `slice-fakes`, and its
   import path to the `allow` lists of `domain` and of `slices` and `slice-packages` if commands use it. Give it a
@@ -512,13 +531,14 @@ follows the same steps for a command it wrote before it had the template's desig
    import another; the moved slice then needs none. internal/cli never holds one.
 4. **Routing in cmd.** The slice declares its command, a `cli.Declaration` named `Command`
    with its name, the line the top-level help lists it by and a constructor of a fresh `*CLI`,
-   and the ports its handler needs, a `Ports` interface it owns, as `internal/slices/units`
-   does. In `cmd/itos-cc/commands.go`, add the declaration to `declared` and a provider of its
-   handler to `assembled`, built over `adapters` as the slice's `Ports` and never over an
-   adapter itself, a port it needs added to `adapters` as a method and to `diskAdapters`; a
-   handler that holds what itos-cc.yaml says, as `units`' and `dry`'s do, reads it in its
-   provider, which kong calls only for the `Run` that asks for it. `assembled` puts the
-   model's commands in their names' order. A command not yet moved under `internal/slices`
+   the ports its handler needs, a `Ports` interface it owns, and `NewHandler(ctx, p Ports)
+   (Handler, error)`, as `internal/slices/units` does and "Adding a package" above says. A
+   port it needs is added to `adapters` as a method and to `diskAdapters`, never handed as an
+   adapter itself; a handler that holds what itos-cc.yaml says, as `units`' does, reads it
+   through a `Ports` method under the context `NewHandler` is given, which kong calls only for
+   the `Run` that asks for it. `go run ./tools/bin/assemble` then writes the slice into
+   `cmd/itos-cc/commands_gen.go`, whose `assembled` puts the model's commands in their names'
+   order. A command not yet moved under `internal/slices`
    is still a field of `commandLine` in `dispatch.go`, in its name's order, its provider in
    `handlers`. `dispatch` needs no case: it calls the
    selected command's `Run` through `callSafely`, and admits any group's words before its

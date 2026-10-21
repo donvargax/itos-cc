@@ -963,7 +963,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 
 | Package | Role |
 | --- | --- |
-| `cmd/itos-cc` | The command line: `main`, the one kong model of every command, and the wiring of each slice to the adapters |
+| `cmd/itos-cc` | The command line: `main`, the one kong model of every command, and the wiring of each slice to the adapters, which `tools/bin/assemble` writes into `commands_gen.go` from each slice's declaration |
 | `internal/cli` | The UI every command shares: reading the command line, help, problems and exit codes |
 | `internal/slices/units`, `internal/dry`, `internal/scrap`, `internal/crap`, `internal/mutation` | The commands' slices, each moving under `internal/slices` as T-86 goes on; `serve` alone stays on its legacy handler in `cmd/itos-cc` |
 | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/duplication`, `internal/teststructure`, `internal/changerisk`, `internal/coverage`, `internal/mutants` | The domains, each reaching outside only through its ports |
