@@ -5142,7 +5142,7 @@ items:
     title: The scenarios' declared import adjacency follows discovery's Flutter rules
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
     refs: [slice-36]
