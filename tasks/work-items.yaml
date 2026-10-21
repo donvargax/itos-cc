@@ -5238,3 +5238,19 @@ items:
       a test. itos-cc already addresses a site as file:line:col in mutation except, so the address
       format exists; a selector on mutation run would rerun just that site and update its snapshot
       entry.
+  - id: fresh-export-findup-escapes
+    title: A frozen export finds markers in the live tree above it
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by slice-37. The frozen export lives under the live checkout's .git/itos, and
+      project.FindUp (lang.Nearest) climbs without a boundary, so a marker the commit lacks is found
+      in the live tree above the export: coverage.FlutterFor from the export finds an uncommitted
+      live .fvmrc and runs the live .fvm/flutter_sdk, and every other FindUp of a build root
+      (pubspec.yaml, package.json, pyproject.toml) can land on the live root when the commit holds
+      none at or below it. counted-languages says the judged configuration comes from the frozen
+      commit. Decide whether lookups that start in the export stop at its root, and where that
+      boundary lives (the Surroundings the export is read through, or freshenv).
