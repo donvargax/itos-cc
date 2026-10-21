@@ -1,12 +1,13 @@
 // Command notices writes THIRD_PARTY_NOTICES, the license and notice texts
-// of every Go module the itos-cc binary compiles in, which the release
-// archives carry beside LICENSE (T-173): MIT, BSD and Apache ask their
-// notices to travel with every copy, binaries included.
+// of every Go module the itos-cc binary compiles in and of the toolchain
+// parts the release links into it, which the release archives carry beside
+// LICENSE (T-173, T-176): MIT, BSD and Apache ask their notices to travel
+// with every copy, binaries included.
 //
 // It runs go list -deps for ./cmd/itos-cc under each platform the release
 // builds (release.yml's build matrix: linux and darwin on amd64 and arm64
-// and windows on amd64, CGO_ENABLED=1 and the build tags each is built
-// with), so a module one platform alone compiles in is named too. go list
+// and windows on amd64, CGO_ENABLED=1, no build tags), so a module one
+// platform alone compiles in is named too. go list
 // reads build constraints only and compiles nothing, so it lists a foreign
 // platform's cgo packages without that platform's C toolchain. It takes the
 // union of the modules those packages are in, the main module and the
@@ -23,20 +24,33 @@
 // A module with no such file is refused, each named, and nothing is
 // written: a notice is never skipped.
 //
+// The toolchain's parts follow the modules, each under a header naming it,
+// in a fixed order: Go's runtime and standard library, in every build, by
+// the LICENSE of the GOROOT go env names, read when the file is written, so
+// a Go bump that keeps its text leaves the file as it was; then the C
+// runtimes the Linux and Windows builds link statically, their texts
+// committed verbatim under toolchain/ (toolchain, below, names where each
+// came from and its version). macOS links its system libraries
+// dynamically, so they need nothing here. A GOROOT with no LICENSE, as a
+// distribution's Go may have, is refused: run it with go.dev's Go, which
+// GOTOOLCHAIN set to go.mod's toolchain fetches.
+//
 //	go run ./tools/bin/notices [-check]
 //
 // from the repository's root writes the file; commit it. With -check it
-// writes nothing and fails, naming each module added, removed or changed,
-// when the committed file is not what it would write.
+// writes nothing and fails, naming each module or toolchain part added,
+// removed or changed, when the committed file is not what it would write.
 //
 // go list needs the modules, from the module cache or the network to the
 // module proxy. It imports nothing but the standard library. Exit status:
-// 0 written or current, 1 a module refused or the file not current, 2 go
-// list failed or a file could not be read or written.
+// 0 written or current, 1 a module or Go's LICENSE refused or the file not
+// current, 2 go list or go env failed or a file could not be read or
+// written.
 package main
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -58,18 +72,43 @@ const (
 	target = "./cmd/itos-cc"
 )
 
-// platform is one build the release makes: its GOOS, its GOARCH and the
-// build tags release.yml's build job gives it.
-type platform struct{ goos, goarch, tags string }
+// platform is one build the release makes: its GOOS and its GOARCH.
+type platform struct{ goos, goarch string }
 
-// platforms are the builds of release.yml's build matrix, each with the
-// tags its Build step sets.
+// platforms are the builds of release.yml's build matrix, none built with
+// tags.
 var platforms = []platform{
-	{"linux", "amd64", "netgo,osusergo"},
-	{"linux", "arm64", "netgo,osusergo"},
-	{"darwin", "amd64", ""},
-	{"darwin", "arm64", ""},
-	{"windows", "amd64", ""},
+	{"linux", "amd64"},
+	{"linux", "arm64"},
+	{"darwin", "amd64"},
+	{"darwin", "arm64"},
+	{"windows", "amd64"},
+}
+
+// goPart is the header of Go's own notice, its LICENSE read from GOROOT.
+const goPart = "Go, the runtime and standard library of every build"
+
+// toolchainTexts holds the C runtimes' texts, committed verbatim.
+//
+//go:embed toolchain
+var toolchainTexts embed.FS
+
+// toolchain is the C runtimes the release links in statically, after Go,
+// in this order: each part's header and its text's path in toolchainTexts.
+var toolchain = []struct{ name, file string }{
+	// musl's COPYRIGHT at v1.2.4,
+	// https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT?h=v1.2.4: the musl
+	// of Ubuntu 24.04's musl-tools 1.2.4-2, whose musl-gcc release.yml's
+	// Linux builds link with on ubuntu-latest (24.04) and ubuntu-24.04-arm.
+	{"musl, the C library of the Linux builds", "toolchain/musl/COPYRIGHT"},
+	// MinGW-w64's runtime licence at v13.0.0,
+	// https://github.com/mingw-w64/mingw-w64/blob/v13.0.0/COPYING.MinGW-w64-runtime/COPYING.MinGW-w64-runtime.txt:
+	// the runtime of windows-latest's MinGW, niXman's mingw-builds
+	// 15.2.0-rt_v13 (gcc 15.2.0, runtime v13), which the Windows build links.
+	{"MinGW-w64 runtime, linked into the Windows build", "toolchain/mingw-w64-runtime/COPYING.MinGW-w64-runtime.txt"},
+	// winpthreads' COPYING at the same tag,
+	// https://github.com/mingw-w64/mingw-w64/blob/v13.0.0/mingw-w64-libraries/winpthreads/COPYING.
+	{"MinGW-w64 winpthreads, linked into the Windows build", "toolchain/winpthreads/COPYING"},
 }
 
 // prefixes are what a notice file's name starts with, case ignored.
@@ -78,7 +117,7 @@ var prefixes = []string{"LICENSE", "LICENCE", "COPYING", "NOTICE"}
 func main() {
 	check := flag.Bool("check", false, "write nothing; fail, naming each module added, removed or changed, when "+output+" is not what notices writes")
 	flag.Parse()
-	os.Exit(run(".", *check, flag.Args(), os.Stderr))
+	os.Exit(run(".", *check, flag.Args(), goroot, os.Stderr))
 }
 
 // refused is a module notices cannot write the notices of: exit 1.
@@ -86,9 +125,10 @@ type refused struct{ reason string }
 
 func (r refused) Error() string { return r.reason }
 
-// run writes the notices of the module at dir, or with check holds the
-// committed file to them, and returns the exit status.
-func run(dir string, check bool, args []string, stderr io.Writer) int {
+// run writes the notices of the module at dir, Go's read from the GOROOT
+// root gives, or with check holds the committed file to them, and returns
+// the exit status.
+func run(dir string, check bool, args []string, root func(dir string) (string, error), stderr io.Writer) int {
 	if len(args) > 0 {
 		say(stderr, "%s: unexpected argument %q\n", self, args[0])
 		return 2
@@ -99,6 +139,11 @@ func run(dir string, check bool, args []string, stderr io.Writer) int {
 		return 2
 	}
 	notices, err := read(mods)
+	if err == nil {
+		var parts []notice
+		parts, err = toolchainNotices(dir, root)
+		notices = append(notices, parts...)
+	}
 	var r refused
 	if errors.As(err, &r) {
 		say(stderr, "%s: %s\n", self, r.reason)
@@ -119,7 +164,7 @@ func run(dir string, check bool, args []string, stderr io.Writer) int {
 		if bytes.Equal(committed, text) {
 			return 0
 		}
-		say(stderr, "%s: %s is not what the modules %s compiles in give: run go run ./tools/bin/notices and commit it\n", self, output, target)
+		say(stderr, "%s: %s is not what the modules %s compiles in and the toolchain give: run go run ./tools/bin/notices and commit it\n", self, output, target)
 		for _, line := range differences(committed, text) {
 			say(stderr, "  %s\n", line)
 		}
@@ -161,7 +206,7 @@ func union(dir string) ([]module, error) {
 
 // list is the modules the target's packages are in, built for p.
 func list(dir string, p platform) ([]module, error) {
-	cmd := exec.Command("go", "list", "-deps", "-json=ImportPath,Module", "-tags="+p.tags, target) //nolint:gosec // go list, with arguments this program names
+	cmd := exec.Command("go", "list", "-deps", "-json=ImportPath,Module", target)
 	cmd.Dir = dir
 	// Later entries win, so these hold whatever the caller's environment sets.
 	cmd.Env = append(os.Environ(), "GOOS="+p.goos, "GOARCH="+p.goarch, "CGO_ENABLED=1")
@@ -273,19 +318,62 @@ func read(mods []module) ([]notice, error) {
 	return notices, nil
 }
 
+// goroot is the GOROOT go env names, run in dir.
+func goroot(dir string) (string, error) {
+	cmd := exec.Command("go", "env", "GOROOT")
+	cmd.Dir = dir
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("go env GOROOT: %v\n%s", err, stderr.String())
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// toolchainNotices is the toolchain's parts: Go's LICENSE, from the GOROOT
+// root gives for dir, or refused when it has none; then each C runtime's
+// committed text.
+func toolchainNotices(dir string, root func(dir string) (string, error)) ([]notice, error) {
+	goRoot, err := root(dir)
+	if err != nil {
+		return nil, err
+	}
+	license, err := os.ReadFile(filepath.Join(goRoot, "LICENSE")) //nolint:gosec // Go's LICENSE, in the GOROOT go env names
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, refused{"no LICENSE in GOROOT, " + goRoot + ", as a distribution's Go may leave it out: run it with go.dev's Go, which GOTOOLCHAIN=<go.mod's toolchain> go run ./tools/bin/notices fetches"}
+	}
+	if err != nil {
+		return nil, err
+	}
+	parts := []notice{{goPart, []noticeFile{{"LICENSE", license}}}}
+	for _, p := range toolchain {
+		text, err := toolchainTexts.ReadFile(p.file)
+		if err != nil {
+			return nil, err
+		}
+		parts = append(parts, notice{p.name, []noticeFile{{filepath.Base(p.file), text}}})
+	}
+	return parts, nil
+}
+
 // rule is the line above and below a module's header.
 var rule = strings.Repeat("=", 80)
 
 const preamble = `THIRD-PARTY NOTICES
 
-The itos-cc binary compiles in the Go modules below. Each module's license
-and notice files follow, verbatim, under a header naming the module.
+The itos-cc binary compiles in the Go modules below, then links in Go's
+runtime and standard library, and the C runtime of a statically linked
+build: musl on Linux, MinGW-w64's runtime and winpthreads on Windows. Each
+one's license and notice files follow, verbatim, under a header naming it.
 
 Written by go run ./tools/bin/notices from the modules ./cmd/itos-cc compiles
-in on every platform released; never edited by hand.
+in on every platform released and the toolchain's texts; never edited by
+hand.
 `
 
-// render is the file: the preamble, then each module's header and files.
+// render is the file: the preamble, then each module's or toolchain part's
+// header and files.
 func render(notices []notice) []byte {
 	var b bytes.Buffer
 	b.WriteString(preamble)
