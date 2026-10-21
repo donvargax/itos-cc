@@ -1,4 +1,4 @@
-package worktrees
+package processes
 
 import (
 	"bytes"
@@ -24,18 +24,25 @@ func ownedOutcomePrecedence(platform string) bool { return platform == "linux" |
 // process group. Commands that daemonize or escape their process group or
 // session are unsupported. Only the probe that a killed group has no live
 // member differs by platform: ownedGroupGone, in proc_inspect.go, with the platform passed as a value.
-// cleanupBudget is a run-abort-only deadline that callers may share across
+// CleanupBudget is a run-abort-only deadline that callers may share across
 // command scopes. Normal completion and mutant-local timeouts use a local
 // cleanup budget and must not activate this shared run-abort deadline.
-type cleanupBudget struct {
+type CleanupBudget struct {
 	mu              sync.Mutex
 	deadline        time.Time
 	localUntilAbort bool
 	armed           bool
 }
 
-func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupBudget {
-	if shared != nil && ctx.Err() != nil && !errors.Is(context.Cause(ctx), errMutationTimeout) {
+// NewCleanupBudget is a shared run-abort budget. With localUntilAbort, a
+// cancelled command's cleanup keeps a local budget of its own until Begin
+// starts the shared deadline.
+func NewCleanupBudget(localUntilAbort bool) *CleanupBudget {
+	return &CleanupBudget{localUntilAbort: localUntilAbort}
+}
+
+func cleanupBudgetForScope(ctx context.Context, shared *CleanupBudget) *CleanupBudget {
+	if shared != nil && ctx.Err() != nil && !errors.Is(context.Cause(ctx), ErrCommandTimeout) {
 		shared.mu.Lock()
 		useShared := !shared.localUntilAbort || shared.armed
 		shared.mu.Unlock()
@@ -43,20 +50,28 @@ func cleanupBudgetForScope(ctx context.Context, shared *cleanupBudget) *cleanupB
 			return shared
 		}
 	}
-	return &cleanupBudget{}
+	return &CleanupBudget{}
 }
 
-// begin starts the shared deadline now, if nothing started it yet: a
+// Begin starts the shared deadline now, if nothing started it yet: a
 // fail-fast stop starts it when it is published, so every command it
 // cancels is killed and joined within five seconds of the stop.
-func (b *cleanupBudget) begin() {
+func (b *CleanupBudget) Begin() {
 	b.until()
 	b.mu.Lock()
 	b.armed = true
 	b.mu.Unlock()
 }
 
-func (b *cleanupBudget) until() time.Time {
+// Deadline is the shared deadline once a cleanup or Begin started it, and
+// the zero time before.
+func (b *CleanupBudget) Deadline() time.Time {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.deadline
+}
+
+func (b *CleanupBudget) until() time.Time {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.deadline.IsZero() {
@@ -122,7 +137,7 @@ func (h *holdOwned) end() {
 	}
 }
 
-func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *cleanupBudget, platform string, observe func(time.Time), hold func() func()) error {
+func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *CleanupBudget, platform string, observe func(time.Time), hold func() func()) error {
 	if !ownedOutcomePrecedence(platform) {
 		killGroup(cmd, platform)
 		if err := cmd.Start(); err != nil {
@@ -131,7 +146,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		return cmd.Wait()
 	}
 	if budget == nil {
-		budget = &cleanupBudget{}
+		budget = &CleanupBudget{}
 	}
 	originalStdout, originalStderr := cmd.Stdout, cmd.Stderr
 	defer func() { cmd.Stdout, cmd.Stderr = originalStdout, originalStderr }()
@@ -186,7 +201,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		for _, capture := range captures {
 			_ = capture.writer.Close()
 		}
-		stopReader.activate((&cleanupBudget{}).until())
+		stopReader.activate((&CleanupBudget{}).until())
 		for _, capture := range captures {
 			read := <-capture.done
 			_ = capture.reader.Close()

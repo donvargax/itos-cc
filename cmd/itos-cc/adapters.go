@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"os/exec"
 	"runtime"
 
 	"github.com/donvargax/itos-cc/config"
@@ -17,6 +18,7 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/processes"
 	"github.com/donvargax/itos-cc/internal/selection"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
@@ -102,6 +104,15 @@ func (a adapters) SelectionExclusion(ctx context.Context) (selection.Exclusion, 
 	return exclusion(ctx, a.Selection)
 }
 
+// ownedCommand is owner's Command as freshenv's preparation judges it: the
+// engine's Result, which knows no domain, as mutation's CommandResult.
+func ownedCommand(owner *processes.OwnedExecutor) func(context.Context, *exec.Cmd) (mutation.CommandResult, error) {
+	return func(ctx context.Context, cmd *exec.Cmd) (mutation.CommandResult, error) {
+		r, err := owner.Command(ctx, cmd)
+		return mutation.CommandResult(r), err
+	}
+}
+
 // diskAdapters are this process's: its working directory,
 // internal/workdir's tree and surroundings, internal/metricsdir's store,
 // internal/coveragetools' measurer, saying what it runs on log, and
@@ -111,12 +122,12 @@ func (a adapters) SelectionExclusion(ctx context.Context) (selection.Exclusion, 
 // here, never held anywhere else.
 func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	dir, _ := os.Getwd()
-	owner := &worktrees.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
-	coverageRun := &worktrees.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
+	owner := &processes.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
+	coverageRun := &processes.OwnedExecutor{Platform: runtime.GOOS, Hold: hold}
 	measurer := coveragetools.Measurer{Log: log, Execute: coverageCommand(coverageRun)}
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
-	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: owner.Command, Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
+	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
 	settings := config.Reader{Source: diskConfig{}}
 	return adapters{Settings: settings, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return metricsdir.Mutations{Store: metricsdir.Store{RootDir: root}}

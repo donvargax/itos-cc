@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/processes"
 )
 
 // This is the private ordering contract behind MUT166/183/188/193. A real
@@ -43,7 +44,7 @@ func TestPoolJoinsEnteredWaiterBeforeRemovingInputs(t *testing.T) {
 		release: func(remove func()) { releaseObserved <- joinReturned.Load(); remove() },
 	}
 	var once sync.Once
-	w.worker.runner.lifecycle.complete = func(context.Context, *exec.Cmd, error) { close(entered); <-release }
+	w.worker.runner.Lifecycle.Complete = func(context.Context, *exec.Cmd, error) { close(entered); <-release }
 	runDone := make(chan struct{})
 	var result mutants.CommandResult
 	var failed mutants.WorkerFailure
@@ -118,7 +119,7 @@ func TestPoolJoinsEnteredWaiterBeforeRemovingInputs(t *testing.T) {
 // Unlike a unit comparison of cleanupBudget.until, this observes the actual
 // deadlines selected inside both bound worker command supervisors.
 func TestBoundWorkersShareAbortDeadline(t *testing.T) {
-	if !ownedOutcomePrecedence(runtime.GOOS) {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		t.Skip("owned descendant supervision is deferred outside Linux/macOS")
 	}
 	for _, tc := range []struct {
@@ -143,7 +144,7 @@ func checkBoundWorkerBudgets(t *testing.T, purpose mutants.WorkPurpose, abort, s
 	outside := t.TempDir()
 	factory := Workers{Platform: runtime.GOOS}
 	if withOwner {
-		factory.Owner = &OwnedExecutor{Platform: runtime.GOOS}
+		factory.Owner = &processes.OwnedExecutor{Platform: runtime.GOOS}
 	}
 	opened, f := factory.Open(t.Context(), purpose, 2)
 	if f != nil {
@@ -160,7 +161,7 @@ func checkBoundWorkerBudgets(t *testing.T, purpose mutants.WorkPurpose, abort, s
 		w.worker.prepare = func(cmd *exec.Cmd) {
 			cmd.Env = append(cmd.Env, runnerFixtureMode+"=barrier", "ITOS_COMMAND_RUNNER_STARTED="+ready, "ITOS_COMMAND_RUNNER_RELEASE="+filepath.Join(outside, "never-released"), "ITOS_COMMAND_RUNNER_FINISHED="+filepath.Join(outside, "never-finished"))
 		}
-		w.worker.runner.lifecycle.cleanup = func(deadline time.Time) { deadlines <- deadline }
+		w.worker.runner.Lifecycle.Cleanup = func(deadline time.Time) { deadlines <- deadline }
 		go func(w mutants.Worker) {
 			r, f := w.Run(ctx, mutants.Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, nil, 0)
 			results <- r
@@ -208,15 +209,15 @@ func checkBoundWorkerBudgets(t *testing.T, purpose mutants.WorkPurpose, abort, s
 		}
 	}
 	if shared {
-		if !observed[0].Equal(observed[1]) || !observed[0].Equal(p.budget.deadline) {
-			t.Fatalf("bound scopes got independent budgets: %v vs %v", observed, p.budget.deadline)
+		if !observed[0].Equal(observed[1]) || !observed[0].Equal(p.budget.Deadline()) {
+			t.Fatalf("bound scopes got independent budgets: %v vs %v", observed, p.budget.Deadline())
 		}
-		if withOwner && p.budget != &factory.Owner.cleanup {
+		if withOwner && p.budget != factory.Owner.Budget() {
 			t.Fatal("frozen trials lost preparation's actual shared owner")
 		}
 	} else {
-		if !p.budget.deadline.IsZero() {
-			t.Fatalf("ordinary aggregate cancellation activated shared deadline: %v", p.budget.deadline)
+		if !p.budget.Deadline().IsZero() {
+			t.Fatalf("ordinary aggregate cancellation activated shared deadline: %v", p.budget.Deadline())
 		}
 		if observed[0].IsZero() || observed[1].IsZero() {
 			t.Fatal("local command cleanup had no actual deadline")

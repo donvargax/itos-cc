@@ -1,6 +1,6 @@
 //go:build darwin
 
-package worktrees
+package processes
 
 import (
 	"path/filepath"

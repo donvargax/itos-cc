@@ -10,7 +10,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	"github.com/donvargax/itos-cc/internal/worktrees"
+	"github.com/donvargax/itos-cc/internal/processes"
 )
 
 // coverageCommand runs a coverage command crap or mutation measures with in
@@ -19,10 +19,10 @@ import (
 // as exec.Cmd.Run gives it, so the runner words a failure as it always
 // has, and a group whose cleanup did not finish as the coverage domain's
 // CleanupFailed, naming the group and the command.
-func coverageCommand(owner *worktrees.OwnedExecutor) covrun.CommandExecutor {
+func coverageCommand(owner *processes.OwnedExecutor) covrun.CommandExecutor {
 	return func(ctx context.Context, cmd *exec.Cmd) error {
 		r, err := owner.Command(ctx, cmd)
-		var cleanup *worktrees.CleanupFailed
+		var cleanup *processes.CleanupFailed
 		switch {
 		case errors.As(err, &cleanup):
 			return covport.CleanupFailed{ProcessGroup: cleanup.ProcessGroup, Command: cleanup.Command, Reason: cleanup.Error()}

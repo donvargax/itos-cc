@@ -1,6 +1,6 @@
 //go:build linux || darwin
 
-package worktrees
+package processes
 
 import (
 	"context"
@@ -132,7 +132,7 @@ func checkOwnershipStartupFailureDoesNotRunCommand(t *testing.T) {
 	started := filepath.Join(root, "started")
 	w := newCommandRunnerWorker(t)
 	startErr := fmt.Errorf("injected ownership setup failure")
-	w.runner.lifecycle.start = func(_ context.Context, _ *exec.Cmd) error {
+	w.runner.Lifecycle.start = func(_ context.Context, _ *exec.Cmd) error {
 		return startErr
 	}
 
@@ -147,7 +147,7 @@ func checkOwnershipStartupFailureDoesNotRunCommand(t *testing.T) {
 
 // checkParentCancellationStopsOwnedTree cancels a supervised command's
 // parent context with the shared run-abort budget given to its runner.
-func checkParentCancellationStopsOwnedTree(t *testing.T, sharedBudget *cleanupBudget) {
+func checkParentCancellationStopsOwnedTree(t *testing.T, sharedBudget *CleanupBudget) {
 	t.Helper()
 	root := t.TempDir()
 	childPID := filepath.Join(root, "child.pid")
@@ -159,11 +159,11 @@ func checkParentCancellationStopsOwnedTree(t *testing.T, sharedBudget *cleanupBu
 	t.Setenv(ownershipGrandEnv, grandchildPID)
 	t.Setenv(runnerStartedPathEnv, started)
 	w := newCommandRunnerWorker(t)
-	w.runner.cleanupBudget = sharedBudget
+	w.runner.Budget = sharedBudget
 	cleanupOwnershipFixture(t, childPID, grandchildPID)
 	parent, cancel := context.WithCancel(context.Background())
 	type runResult struct {
-		value result
+		value Result
 		err   error
 	}
 	done := make(chan runResult, 1)
@@ -208,7 +208,7 @@ func checkCompletedExitPrecedesLaterCancellation(t *testing.T) {
 			w := newCommandRunnerWorker(t)
 			parent, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			w.runner.lifecycle.complete = func(context.Context, *exec.Cmd, error) { cancel() }
+			w.runner.Lifecycle.Complete = func(context.Context, *exec.Cmd, error) { cancel() }
 			root := t.TempDir()
 			got, err := w.run(parent, Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
 			if err != nil || got.Cancelled || got.TimedOut || got.ExitCode != test.code || got.Passed != (test.code == 0) {
@@ -227,7 +227,7 @@ func checkCleanupFailureIsReturnedNotJudged(t *testing.T) {
 	t.Setenv("GORACE", strings.TrimSpace(os.Getenv("GORACE")+" atexit_sleep_ms=0"))
 	w := newCommandRunnerWorker(t)
 	cleanupErr := fmt.Errorf("injected cleanup failure")
-	w.runner.lifecycle.wait = func(_ context.Context, cmd *exec.Cmd) error {
+	w.runner.Lifecycle.wait = func(_ context.Context, cmd *exec.Cmd) error {
 		if err := cmd.Wait(); err != nil {
 			return err
 		}
@@ -247,7 +247,7 @@ func checkCleanupFailureIsReturnedNotJudged(t *testing.T) {
 // abort starts the shared run-abort deadline, which later scopes keep.
 func checkParentAbortSharesOneCleanupDeadline(t *testing.T) {
 	t.Helper()
-	sharedBudget := &cleanupBudget{}
+	sharedBudget := &CleanupBudget{}
 	checkParentCancellationStopsOwnedTree(t, sharedBudget)
 	if sharedBudget.deadline.IsZero() {
 		t.Fatal("parent abort did not activate the shared cleanup deadline")
@@ -261,8 +261,8 @@ func checkSuccessKeepsRunAbortBudget(t *testing.T) {
 	t.Helper()
 	t.Setenv(runnerFixtureMode, "success")
 	w := newCommandRunnerWorker(t)
-	sharedBudget := &cleanupBudget{}
-	w.runner.cleanupBudget = sharedBudget
+	sharedBudget := &CleanupBudget{}
+	w.runner.Budget = sharedBudget
 	root := t.TempDir()
 	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 0)
 	if err != nil || !got.Passed {
@@ -277,8 +277,8 @@ func checkOwnTimeoutKeepsRunAbortBudget(t *testing.T) {
 	t.Helper()
 	t.Setenv(runnerFixtureMode, "loop")
 	w := newCommandRunnerWorker(t)
-	sharedBudget := &cleanupBudget{}
-	w.runner.cleanupBudget = sharedBudget
+	sharedBudget := &CleanupBudget{}
+	w.runner.Budget = sharedBudget
 	root := t.TempDir()
 	got, err := w.run(t.Context(), Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, 60*time.Millisecond)
 	if err != nil || !got.TimedOut || got.Passed {
@@ -291,7 +291,7 @@ func checkOwnTimeoutKeepsRunAbortBudget(t *testing.T) {
 
 func checkCleanupScopesShareOneDeadline(t *testing.T) {
 	t.Helper()
-	budget := &cleanupBudget{}
+	budget := &CleanupBudget{}
 	first, second := budget.until(), budget.until()
 	if !first.Equal(second) {
 		t.Fatalf("cleanup deadlines = %v and %v; want one shared deadline", first, second)

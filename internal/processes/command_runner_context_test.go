@@ -1,4 +1,4 @@
-package worktrees
+package processes
 
 import (
 	"bytes"
@@ -31,13 +31,13 @@ func TestCommandRunnerAcceptsParentContext(t *testing.T) {
 	defer cancel()
 	w := newCommandRunnerWorker(t)
 	observedValue := ""
-	w.runner.lifecycle.wait = func(ctx context.Context, cmd *exec.Cmd) error {
+	w.runner.Lifecycle.wait = func(ctx context.Context, cmd *exec.Cmd) error {
 		observedValue, _ = ctx.Value(contextValueKey).(string)
 		return cmd.Wait()
 	}
 
 	type runResult struct {
-		r   result
+		r   Result
 		err error
 	}
 	done := make(chan runResult, 1)
@@ -67,21 +67,21 @@ func TestCommandRunnerAcceptsInstanceLocalLifecycleOperations(t *testing.T) {
 	t.Setenv(runnerFixtureMode, "success")
 	first, second := newCommandRunnerWorker(t), newCommandRunnerWorker(t)
 	firstStarts, firstWaits, firstCompletions, secondCompletions := 0, 0, 0, 0
-	first.runner.lifecycle.start = func(_ context.Context, cmd *exec.Cmd) error {
+	first.runner.Lifecycle.start = func(_ context.Context, cmd *exec.Cmd) error {
 		firstStarts++
 		return cmd.Start()
 	}
-	first.runner.lifecycle.wait = func(_ context.Context, cmd *exec.Cmd) error {
+	first.runner.Lifecycle.wait = func(_ context.Context, cmd *exec.Cmd) error {
 		firstWaits++
 		return cmd.Wait()
 	}
-	first.runner.lifecycle.complete = func(_ context.Context, cmd *exec.Cmd, _ error) {
+	first.runner.Lifecycle.Complete = func(_ context.Context, cmd *exec.Cmd, _ error) {
 		firstCompletions++
 		if cmd.ProcessState == nil {
 			t.Error("first runner observed completion before Wait populated ProcessState")
 		}
 	}
-	second.runner.lifecycle.complete = func(_ context.Context, cmd *exec.Cmd, _ error) {
+	second.runner.Lifecycle.Complete = func(_ context.Context, cmd *exec.Cmd, _ error) {
 		secondCompletions++
 		if cmd.ProcessState == nil {
 			t.Error("second runner observed completion before Wait populated ProcessState")
@@ -111,7 +111,7 @@ func TestCommandRunnerKeepsPreconfiguredStreams(t *testing.T) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	r, err := w.runner.run(context.Background(), cmd, &resultOutput)
+	r, err := w.runner.Run(context.Background(), cmd, &resultOutput)
 	if err != nil || !r.Passed {
 		t.Fatalf("preconfigured command = %+v, err = %v", r, err)
 	}

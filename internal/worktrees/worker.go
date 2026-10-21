@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/processes"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -33,7 +34,7 @@ var skipDirs = map[string]bool{
 type worker struct {
 	dir    string
 	copies map[string]string // real root → copy
-	runner commandRunner
+	runner processes.Runner
 	// prepare, when set, adjusts each command before it runs, such as its
 	// environment; complete runs leave it unset.
 	prepare func(*exec.Cmd)
@@ -123,12 +124,12 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeoutCause(parent, timeout, errMutationTimeout)
+		ctx, cancel = context.WithTimeoutCause(parent, timeout, processes.ErrCommandTimeout)
 		defer cancel()
 	}
 	var cmd *exec.Cmd
 	if c.Shell != "" {
-		cmd = shellCommand(ctx, c.Shell, platformAtBoundary(w.runner.platform))
+		cmd = shellCommand(ctx, c.Shell, processes.PlatformAtBoundary(w.runner.Platform))
 	} else {
 		cmd = exec.CommandContext(ctx, c.Args[0], c.Args[1:]...) //nolint:gosec // execute the selected test command with its unchanged argv
 	}
@@ -150,7 +151,8 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
-	return w.runner.run(ctx, cmd, &out)
+	r, err := w.runner.Run(ctx, cmd, &out)
+	return result(r), err
 }
 
 // withMutant writes src to the worker's copy of path, runs fn under ctx,
@@ -171,7 +173,9 @@ func (w *worker) withMutant(ctx context.Context, root, path string, original, mu
 	return fn(ctx)
 }
 
-func isExit(err error) bool {
-	_, ok := err.(*exec.ExitError)
-	return ok
+func shellCommand(ctx context.Context, line, platform string) *exec.Cmd {
+	if platform == "windows" {
+		return exec.CommandContext(ctx, "cmd", "/C", line) //nolint:gosec // the person explicitly selected a shell test command
+	}
+	return exec.CommandContext(ctx, "sh", "-c", line) //nolint:gosec // the person explicitly selected a shell test command
 }

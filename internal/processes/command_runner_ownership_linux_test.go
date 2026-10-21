@@ -1,6 +1,6 @@
 //go:build linux
 
-package worktrees
+package processes
 
 import (
 	"os"

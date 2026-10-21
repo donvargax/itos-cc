@@ -1,4 +1,4 @@
-package worktrees
+package processes
 
 import (
 	"bytes"
@@ -8,61 +8,61 @@ import (
 	"time"
 )
 
-var errMutationTimeout = errors.New("mutation command timed out")
+var ErrCommandTimeout = errors.New("mutation command timed out")
 
-// commandRunner executes an already configured command for one worker.
+// Runner executes an already configured command for one worker.
 // Its zero value selects the platform's default command ownership behavior.
-type commandRunner struct {
-	platform      string
-	lifecycle     commandLifecycle
-	cleanupBudget *cleanupBudget // Shared run-abort budget; per-command cleanup never activates it.
-	// hold marks the command's owned group being killed and joined, so a
+type Runner struct {
+	Platform  string
+	Lifecycle Lifecycle
+	Budget    *CleanupBudget // Shared run-abort budget; per-command cleanup never activates it.
+	// Hold marks the command's owned group being killed and joined, so a
 	// later interrupt waits for it (decision 38); nil marks nothing.
-	hold func() func()
+	Hold func() func()
 }
 
-// commandLifecycle can replace the start/wait boundary for one worker runner.
-type commandLifecycle struct {
-	// cleanup observes the actual resolved deadline for focused adapter guards.
-	cleanup func(time.Time)
+// Lifecycle can replace the start/wait boundary for one worker runner.
+type Lifecycle struct {
+	// Cleanup observes the actual resolved deadline for focused adapter guards.
+	Cleanup func(time.Time)
 	// start replaces the default killGroup setup and Cmd.Start call. A custom
 	// operation owns its own pre-start setup and starts the configured command.
 	start func(context.Context, *exec.Cmd) error
 	// wait replaces Cmd.Wait and is called only after start succeeds.
 	wait func(context.Context, *exec.Cmd) error
-	// complete observes the finished start/wait attempt before result mapping.
-	complete func(context.Context, *exec.Cmd, error)
+	// Complete observes the finished start/wait attempt before result mapping.
+	Complete func(context.Context, *exec.Cmd, error)
 }
 
-func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer) (result, error) {
-	platform := platformAtBoundary(runner.platform)
+func (runner *Runner) Run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer) (Result, error) {
+	platform := PlatformAtBoundary(runner.Platform)
 	var started time.Time
 	var err error
 	waited := false
-	if runner.lifecycle.start == nil && runner.lifecycle.wait == nil {
+	if runner.Lifecycle.start == nil && runner.Lifecycle.wait == nil {
 		started = time.Now()
-		err = runOwnedCommand(ctx, cmd, output, runner.cleanupBudget, platform, runner.lifecycle.cleanup, runner.hold)
+		err = runOwnedCommand(ctx, cmd, output, runner.Budget, platform, runner.Lifecycle.Cleanup, runner.Hold)
 		waited = true
-	} else if runner.lifecycle.start != nil {
+	} else if runner.Lifecycle.start != nil {
 		started = time.Now()
-		err = runner.lifecycle.start(ctx, cmd)
+		err = runner.Lifecycle.start(ctx, cmd)
 	} else {
 		killGroup(cmd, platform)
 		started = time.Now()
 		err = cmd.Start()
 	}
 	if err == nil && !waited {
-		if runner.lifecycle.wait != nil {
-			err = runner.lifecycle.wait(ctx, cmd)
+		if runner.Lifecycle.wait != nil {
+			err = runner.Lifecycle.wait(ctx, cmd)
 		} else {
 			err = cmd.Wait()
 		}
 	}
 	elapsed, captured := time.Since(started), output.String()
-	if runner.lifecycle.complete != nil {
-		runner.lifecycle.complete(ctx, cmd, err)
+	if runner.Lifecycle.Complete != nil {
+		runner.Lifecycle.Complete(ctx, cmd, err)
 	}
-	r := result{Elapsed: elapsed, Output: captured, ExitCode: -1}
+	r := Result{Elapsed: elapsed, Output: captured, ExitCode: -1}
 	if ownedOutcomePrecedence(platform) && err != nil && !isExit(err) {
 		return r, err
 	}
@@ -72,7 +72,7 @@ func (runner *commandRunner) run(ctx context.Context, cmd *exec.Cmd, output *byt
 		return r, nil
 	}
 	switch {
-	case ownedOutcomePrecedence(platform) && errors.Is(context.Cause(ctx), errMutationTimeout):
+	case ownedOutcomePrecedence(platform) && errors.Is(context.Cause(ctx), ErrCommandTimeout):
 		r.TimedOut = true
 	case !ownedOutcomePrecedence(platform) && ctx.Err() == context.DeadlineExceeded:
 		r.TimedOut = true

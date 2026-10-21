@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/coverage"
-	"github.com/donvargax/itos-cc/internal/worktrees"
+	"github.com/donvargax/itos-cc/internal/processes"
 )
 
 // These tests exercise new internal preparation capabilities, not behavioral
@@ -387,7 +387,7 @@ func commandTool(cmd *exec.Cmd) string {
 
 func testOwnedPreparationCleanup(t *testing.T) {
 	t.Helper()
-	owned := &worktrees.OwnedExecutor{}
+	owned := &processes.OwnedExecutor{}
 	sentinel := exec.Command("sleep", "30")
 	if err := sentinel.Start(); err != nil {
 		t.Fatal(err)

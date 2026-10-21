@@ -1,79 +1,18 @@
-package worktrees
+package processes
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 )
 
 const runnerFixtureMode = "ITOS_COMMAND_RUNNER_FIXTURE_MODE"
-
-// TestWorkerRunPreservesCommandSetup characterizes worker.run before its
-// execution body is extracted. These are equivalence guards, not behavior reds.
-func TestWorkerRunPreservesCommandSetup(t *testing.T) {
-	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "pkg"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "bin"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("ITOS_COMMAND_RUNNER_CUSTOM", "inherited-value")
-	t.Setenv("ITOS_COMMAND_RUNNER_PATH", "prior-path")
-	t.Setenv(runnerFixtureMode, "setup")
-	w := newCommandRunnerWorker(t)
-
-	c := Command{
-		Root:     root,
-		Dir:      filepath.Join(root, "pkg"),
-		Args:     commandRunnerHelperArgs(),
-		PathEnv:  "ITOS_COMMAND_RUNNER_PATH",
-		PathDirs: []string{"bin"},
-	}
-	r, err := w.run(t.Context(), c, 0)
-	if err != nil {
-		t.Fatalf("worker.run: %v", err)
-	}
-	if !r.Passed || r.ExitCode != 0 {
-		t.Fatalf("result = %+v, want successful command", r)
-	}
-	copyRoot := w.copies[root]
-	wantDir := filepath.Join(copyRoot, "pkg")
-	wantDir, err = filepath.EvalSymlinks(wantDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantPath := strings.Join([]string{filepath.Join(copyRoot, "bin"), "prior-path"}, string(os.PathListSeparator))
-	gotDir := ""
-	for _, line := range strings.Split(r.Output, "\n") {
-		if strings.HasPrefix(line, "cwd=") {
-			gotDir = strings.TrimPrefix(line, "cwd=")
-			break
-		}
-	}
-	gotDir, err = filepath.EvalSymlinks(gotDir)
-	if err != nil || gotDir != wantDir {
-		t.Errorf("command cwd = %q, want resolved worker copy directory %q (resolve error %v)", gotDir, wantDir, err)
-	}
-	for _, want := range []string{"custom=inherited-value", "path=" + wantPath, "stderr-marker"} {
-		if !strings.Contains(r.Output, want) {
-			t.Errorf("combined output %q does not contain %q", r.Output, want)
-		}
-	}
-
-	shell := "printf shell-output"
-	if runtime.GOOS == "windows" {
-		shell = "echo shell-output"
-	}
-	r, err = w.run(t.Context(), Command{Root: root, Dir: root, Shell: shell}, 0)
-	if err != nil || !r.Passed || !strings.Contains(r.Output, "shell-output") {
-		t.Errorf("shell command result = %+v, err = %v; want captured shell output", r, err)
-	}
-}
 
 // TestCommandRunnerPreservesLegacyResults characterizes success, nonzero
 // exit, own timeout, zero timeout and startup error through the original
@@ -136,7 +75,7 @@ func TestCommandRunnerPreservesLifecycleOrdering(t *testing.T) {
 	t.Setenv("ITOS_COMMAND_RUNNER_FINISHED", finished)
 
 	type runResult struct {
-		r   result
+		r   Result
 		err error
 	}
 	done := make(chan runResult, 1)
@@ -238,9 +177,37 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 	}
 }
 
+// Command is what a test runs: the tree it runs over, its directory and
+// its words, as a caller such as mutation's workers gives them.
+type Command struct {
+	Root, Dir string
+	Args      []string
+}
+
+// worker stands in for a caller of the runner, as mutation's workers are:
+// it runs a command in its directory under a timeout of its own, whose
+// cause is ErrCommandTimeout, with its output captured.
+type worker struct{ runner Runner }
+
+func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (Result, error) {
+	ctx := parent
+	if timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeoutCause(parent, timeout, ErrCommandTimeout)
+		defer cancel()
+	}
+	cmd := exec.CommandContext(ctx, c.Args[0], c.Args[1:]...)
+	cmd.Dir = c.Dir
+	cmd.Env = os.Environ()
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	return w.runner.Run(ctx, cmd, &out)
+}
+
 func newCommandRunnerWorker(t *testing.T) *worker {
 	t.Helper()
-	return &worker{dir: t.TempDir(), copies: make(map[string]string)}
+	return &worker{}
 }
 
 func commandRunnerHelperArgs() []string {

@@ -1,4 +1,4 @@
-package worktrees
+package processes
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// platformAtBoundary detects the host only for zero-value legacy adapters.
+// PlatformAtBoundary detects the host only for zero-value legacy adapters.
 // All process policy below receives this value; cmd supplies it explicitly.
-func platformAtBoundary(platform string) string {
+func PlatformAtBoundary(platform string) string {
 	if platform == "" {
 		return runtime.GOOS
 	}

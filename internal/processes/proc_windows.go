@@ -1,6 +1,6 @@
 //go:build windows
 
-package worktrees
+package processes
 
 import "syscall"
 

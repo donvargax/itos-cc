@@ -1,4 +1,4 @@
-package worktrees
+package processes
 
 import (
 	"errors"

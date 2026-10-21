@@ -1,6 +1,6 @@
 //go:build linux || darwin
 
-package worktrees
+package processes
 
 import (
 	"bytes"
@@ -44,7 +44,7 @@ func (h *holds) counts() (taken, active int) {
 // waits (ID-MUT-253).
 func TestAnOwnedCleanupIsMarkedFromTheAbortToTheJoin(t *testing.T) {
 	var h holds
-	owner := &OwnedExecutor{Platform: platformAtBoundary(""), Hold: h.hold}
+	owner := &OwnedExecutor{Platform: PlatformAtBoundary(""), Hold: h.hold}
 	if err := owner.Run(t.Context(), exec.CommandContext(t.Context(), "sh", "-c", "exit 0")); err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestOutputHeldOpenFailsTheCleanupAtItsDeadline(t *testing.T) {
 	if testing.Short() {
 		t.Skip("waits for the five-second cleanup deadline")
 	}
-	owner := &OwnedExecutor{Platform: platformAtBoundary("")}
+	owner := &OwnedExecutor{Platform: PlatformAtBoundary("")}
 	cmd := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestHeldOutputHelper$")
 	cmd.Env = append(os.Environ(), "ITOS_CC_HELD_OUTPUT=start")
 	var out bytes.Buffer

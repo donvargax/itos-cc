@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/processes"
 )
 
 // Workers is the real mutation worker factory. Prepare adjusts the actual
@@ -18,7 +19,7 @@ import (
 type Workers struct {
 	Platform string
 	Prepare  func(*exec.Cmd)
-	Owner    *OwnedExecutor
+	Owner    *processes.OwnedExecutor
 	// Hold marks the owned process groups of the pool's commands being
 	// killed and joined, as OwnedExecutor's does; with Owner, Owner's.
 	Hold func() (release func())
@@ -38,25 +39,25 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	default:
 		return nil, mutants.WorkerFailed{Cause: errors.New("unknown worker purpose")}
 	}
-	scratch, err := newWorkerScratch(prefix, platformAtBoundary(f.Platform))
+	scratch, err := newWorkerScratch(prefix, processes.PlatformAtBoundary(f.Platform))
 	if err != nil {
 		return nil, mutants.WorkerFailed{Cause: err}
 	}
-	budget := &cleanupBudget{localUntilAbort: purpose == mutants.MutationRun}
+	budget := processes.NewCleanupBudget(purpose == mutants.MutationRun)
 	hold := f.Hold
 	if f.Owner != nil {
-		budget, hold = &f.Owner.cleanup, f.Owner.Hold
+		budget, hold = f.Owner.Budget(), f.Owner.Hold
 	}
 	p := &pool{scratch: scratch, budget: budget, closing: make(chan struct{}), done: make(chan struct{})}
 	for i := 0; i < max(1, count); i++ {
-		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]string{}, runner: commandRunner{cleanupBudget: budget, platform: platformAtBoundary(f.Platform), hold: hold}, prepare: f.Prepare}})
+		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]string{}, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
 	}
 	return p, nil
 }
 
 type pool struct {
 	scratch       *workerScratch
-	budget        *cleanupBudget
+	budget        *processes.CleanupBudget
 	workers       []*boundWorker
 	mu            sync.Mutex
 	active        sync.WaitGroup
@@ -67,7 +68,7 @@ type pool struct {
 }
 
 func (p *pool) Worker(index int) mutants.Worker { return p.workers[index] }
-func (p *pool) Abort()                          { p.budget.begin() }
+func (p *pool) Abort()                          { p.budget.Begin() }
 func (p *pool) Close(context.Context) mutants.WorkerFailure {
 	p.closeOnce.Do(func() {
 		p.mu.Lock()
@@ -110,7 +111,7 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 		r, err = w.worker.withMutant(ctx, c.Root, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
 	}
 	if err != nil {
-		var cleanup *CleanupFailed
+		var cleanup *processes.CleanupFailed
 		if errors.As(err, &cleanup) {
 			return r, mutants.WorkerCleanupFailed{ProcessGroup: cleanup.ProcessGroup, Command: cleanup.Command, Cause: err}
 		}
