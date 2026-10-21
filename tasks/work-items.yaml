@@ -4659,3 +4659,35 @@ items:
       (default app_localizations.dart) and its per-locale siblings in output-dir (default lib/l10n)
       (SEL-23). A file named directly is still taken (SEL-12). Bringing such a file back through
       itos-cc.yaml waits on its own question and item; the coverage:ignore pragmas are D5's.
+  - id: slice-32
+    title: Dart coverage and crap with flutter test
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      D5 of dart-support, in the parallel wave beside slice-29 and slice-30 (person 2026-10-21). Its
+      files: the coverage engine (coverage/run.go markers and buildPlans, a new coverage/dart.go,
+      internal/coverage/porttest/measurer.go if the fake needs Dart), features/binary.go's tool
+      switch, features/coverage*.go, a Linux Dart job in .github/workflows/cd.yml (the only wave-2
+      item touching it) and the root .fvmrc and .gitignore; never internal/lang (slice-29's) nor
+      project/project.go (slice-30's). q-74 (a): pubspec.yaml is Dart's marker; a package depending
+      on the flutter SDK runs flutter test --no-pub --coverage --coverage-path=<out>/lcov.info with
+      no path (test/ alone, so never integration_test/, q-76), the whole suite like Python and
+      Kotlin (narrowing to reaching tests waits on reach, D6); a pure Dart package is not measured
+      yet. flutter is never downloaded (decision 26) and pub get never run: no
+      .dart_tool/package_config.json means nothing runs, stderr naming flutter pub get. FVM: a
+      .fvmrc with .fvm/flutter_sdk beside it or above it in the project runs
+      .fvm/flutter_sdk/bin/flutter, as gradlew is preferred to gradle; mutation's toolchain (D7)
+      reuses that choice. A pub workspace's members are the build roots, run each in its own
+      directory, the LCOV's SF: paths relative to it. A lib/ file the LCOV never names is 0%
+      covered, not unknown, unless its coverage:ignore-file pragma makes it not coverable; Flutter
+      already drops ignore-line and ignore-start..end lines from DA. Line coverage only, BRDA
+      ignored (no --branch-coverage), per q-76 phase 1; no child-process coverage (decisions 26,
+      27). Export DartTests for mutation as Python's PythonTests is, if mutation needs it later
+      (D7). The repository pins its own Flutter in a root .fvmrc (newest stable 3.47.7, Renovate's
+      fvm manager bumping it), .fvm/ ignored; cd.yml's Dart job reads it with
+      kuhnroyal/flutter-fvm-config-action into subosito/flutter-action, both pinned by SHA, caching
+      the SDK, Linux only, ITOS_CC_LANGUAGE_TOOLS set, running the Dart coverage scenarios through
+      the binary driver. Scenarios COV-05's and COV-08's Dart rows, COV-40 to COV-43.
