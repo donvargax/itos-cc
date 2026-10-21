@@ -4744,3 +4744,28 @@ items:
       const_object_expression's first named child is const, and new A.named() calls A, not named.
       Two Dart functions differing only in which constructor they const-construct score as the same
       code.
+  - id: slice-33
+    title: scrap measures Flutter and Dart test files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [slice-29]
+    kind: slice
+    why: >
+      D4 of dart-support, after slice-29 (it reads Dart's call syntax, which slice-29 adds to
+      lang.Syntax), in a later parallel wave beside D6 (reach). Its files: internal/slices/scrap
+      (extract.go's Dart extractor, measure.go, analyze.go's table idiom), features/scrap*.go,
+      features/scrap.feature's slice parts; not internal/lang (a Syntax gap found here goes back to
+      the coordinator), not internal/imports. A Dart example is a test or testWidgets call
+      (flutter_test and package:test alike), named by its title under its enclosing group titles,
+      joined by /, as Kotlin's Class/method; setUp, setUpAll, tearDown and tearDownAll blocks are
+      setup lines, never an example's size. Assertions: expect, expectLater, expectAsync0..6, and
+      mockito's or mocktail's verify, verifyNever and verifyInOrder. Mocks: each when(...) stubbing,
+      mockito's or mocktail's, and registerFallbackValue, as stubbing a mock is what the other
+      languages count. A for-in loop over a list of cases that calls test or testWidgets for each is
+      a table (Dart has no built-in parametrize), and the table idiom scrap recommends is 'a for
+      loop over cases calling test'. Like every language, a closure inside an example (an onTap
+      callback, a thenAnswer) is part of it. slice-28 made a Dart unit a signature plus its body:
+      scrap's helper search (measure.go:40) reads u.Node alone, the signature only; it must read the
+      whole unit (Unit.Nodes(), Unit.Span()), other languages unchanged. Scenarios SCRAP-01,
+      SCRAP-07, SCRAP-10 and SCRAP-15's Dart rows, SCRAP-31.
