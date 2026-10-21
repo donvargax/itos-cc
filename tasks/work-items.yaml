@@ -4712,3 +4712,19 @@ items:
       writes to arb-dir when output-dir is unset, so an l10n.yaml with arb-dir lib/i18n and no
       output-dir has its generated app_localizations*.dart selected as source. Reading arb-dir as
       the fallback would need a scenario row.
+  - id: release-archives-pack-notices
+    title: release.yml packs THIRD_PARTY_NOTICES into the archives it builds
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-173's agent (2026-10-21). T-173 put THIRD_PARTY_NOTICES in .goreleaser.yaml's
+      archives, but release.yml's header says .goreleaser.yaml is not used
+      (goreleaser-config-unused): its build job copies LICENSE and README.md alone into dist/pkg and
+      its Pack step tars or zips those three files, so the archives a release publishes still carry
+      no third-party notice, and README's install line saying each archive carries it is not yet
+      true. The fix is release.yml's: copy THIRD_PARTY_NOTICES with LICENSE and README.md and name
+      it in both the tar and the 7z line, and its header's list of what an archive holds.
+      release.yml was outside T-173's files, as a shared path a task of its own changes.
