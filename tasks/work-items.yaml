@@ -3425,8 +3425,8 @@ items:
   - id: slice-14
     title: A site in an empty Go case clause is uncovered even when the clause runs
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
