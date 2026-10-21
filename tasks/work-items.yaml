@@ -4570,3 +4570,25 @@ items:
       to come once the moves are done, though T-132 did it and T-86's closing refactor-proof
       (refactor-proof.yml) replaces it; README's Working here said the same until T-170. Found
       writing docs/ownership.md, whose docs-only scope left the step as it was.
+  - id: bug-5
+    title: "mutation run --fail-fast with two workers can exit 100 with exec: canceling Cmd: no such process"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: bug
+    why: >
+      Found by T-172 rerunning refactor-proof's case t49-03 (mutation run --fail-fast --workers 2
+      board.go on its go fixture) locally: about 1 run in 30 of either binary, b768837's (2 of 58)
+      and e23c469's (4 of 159), prints [2/3] board.go:5 for the mutant --fail-fast cancels as killed
+      and then exits 100 with 'exec: canceling Cmd: no such process. This is a bug in itos-cc',
+      writing no .metrics/mutate snapshot; the other runs stop at the first survivor and report the
+      other mutant cancelled or survived. It predates T-86 and is no difference between the two
+      binaries, so it is not T-86's. The likely cause: internal/processes' killGroup
+      (internal/worktrees' at b768837, the same code) sets cmd.Cancel to kill the process group and
+      returns its ESRCH when the group has already gone, and os/exec reports a Cancel error other
+      than os.ErrProcessDone as Wait's error when the command otherwise exited 0, so a mutant whose
+      tests passed as the cancel lands looks failed and then internal. A fix specifies the cancel
+      racing a command's own exit (a mutant that finished is judged as it finished, never an
+      internal error) and treats the group already gone as os.ErrProcessDone; refactor-proof's
+      t49-03 reproduces it in a loop.
