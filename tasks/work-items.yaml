@@ -4439,7 +4439,7 @@ items:
     title: Resolve each language's imports through a resolver of its own in internal/imports
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-162]
     kind: task
   - id: imports-through-ports

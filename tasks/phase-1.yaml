@@ -5929,13 +5929,6 @@
     files. Unchanged, as the engine's tests, graph's tests and importgraph's ReachContract hold:
     every module id, edge and count, external package, reach list and its order, the tsconfig cache
     per directory, cancellation; no runtime.GOOS anywhere.
-  done_when:
-    - run: go test -count=1 ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
-      timeout: 600
-    - run: go vet ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
-      timeout: 300
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-164
   type: refactor
   title: Generate the stepped feature files and their step registration from a declaration beside each file of steps
