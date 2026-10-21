@@ -2330,6 +2330,25 @@ items:
       Specify it when it comes up: which commands it covers first (units, dry, scrap, crap,
       mutation), the coverage tool (dart test --coverage, package:coverage), and the library to
       parse Dart, if any, decided in the spec.
+
+      Coordinator's calls (2026-10-21), from docs/dart/tooling.md and touchpoints.md, scope pending
+      q-74..q-78: grammar UserNobody14/tree-sitter-dart pinned by pseudo-version as Kotlin's, MIT
+      notice kept; a unit is the function_body named from its preceding signature sibling, starting
+      at the signature's line, closures and local functions counted in the enclosing unit, abstract
+      members not units; namespace the pubspec name plus the path under lib, containers
+      class/mixin/extension/enum/extension type, Separator '.', constructors C and C.named, private
+      by leading _; complexity counts if, collection-if, for/while/do, collection-for, catch, ?:,
+      each case, && and || (in patterns too), ?? and ??= and null-aware forms, not default or _;
+      tests are *_test.dart and files under test/, flutter_test_config.dart is test support reaching
+      the tests below it as conftest.py does; mutation v1 runs one flutter test --no-pub --fail-fast
+      -r json --timeout per mutant over coverage-routed test files (path-mirror fallback, then
+      test/), compile errors read from the JSON loading error as their own status, an itos-side
+      deadline; operators the AST-safe subset (arithmetic, equality, relational, && and ||, ?? to
+      its right operand, ! and unary - deletion, boolean and integer literals, collection-if
+      condition), no ?. to .; worker copies keep .dart_tool and build/test_cache, run pub get
+      --offline once per worker, copy a workspace member's root and siblings; real-tool CI on ubuntu
+      only in cd.yml, flutter-action pinned by SHA with the Flutter version by hand. Items D1-D11 as
+      touchpoints.md splits them, paths rechecked after the slices close.
   - id: T-52
     title: selection's Tree fake and workdir's Tree pass one contract suite
     phase: 1
