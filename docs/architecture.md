@@ -58,9 +58,10 @@ names its caller gives them, and a coverage `Report`, and reads nothing, so it h
 domain, as `dry` does, measures their coverage through the coverage port's `Measurer`, and
 records its scores through the snapshot `Store`.
 
-The `units` slice, `internal/units`, is the first of itos-cc's commands on kong: it selects
-through the domain and parses each file with its `Parse`, read through the same port and named
-by `internal/lang`, the measure every command shares and a domain of its own. It keeps every
+The `units` slice, `internal/slices/units`, is the first of itos-cc's commands on kong and the
+first under `internal/slices` (ADR-0051), declaring its command and the ports it needs for cmd
+to assemble: it selects through the domain and parses each file with its `Parse`, read through
+the same port and named by `internal/lang`, the measure every command shares and a domain of its own. It keeps every
 language's rules for naming a file but reads nothing: it asks its `Surroundings` port,
 `internal/lang/port`, whether a path is there, what a file holds, the working
 directory and a path made absolute, and `internal/workdir` answers it from the disk through

@@ -249,11 +249,18 @@ a `context.Context` first (decision 30); pure logic takes none.
   platform value. Its tests hold that nothing reaches the host with a physical decoy: an
   invalid itos-cc.yaml in the process's working directory that a fall-through would read,
   beside which run and except read the memory's.
-- `internal/units` is the `units` command's slice, the first of itos-cc's own commands moved
-  onto kong (T-32) and the layout every slice follows: its kong struct `CLI` and `Run` are the
+- `internal/slices/units` is the `units` command's slice, the first of itos-cc's own commands
+  moved onto kong (T-32) and the layout every slice follows, and the first under
+  `internal/slices` (ADR-0051, T-145): its kong struct `CLI` and `Run` are the
   UI, with its `Contract` for the help; its `Query`, carrying domain values, and
   `Handler.Handle(ctx, q)`, which only calls the domains through their ports, are the
   application, `Run` assembling the `Query` from kong's flags the one copy the layout accepts.
+  It declares itself to cmd: `Command`, a `cli.Declaration`, gives its name, the line the
+  top-level help lists it by and `New`, a fresh `*CLI` for each parser; `Ports`, an interface
+  it owns, names the ports its handler is built over, the selection `Tree`, lang's
+  `Surroundings` and the selection engine's `SettingsReader`, which cmd's `adapters` satisfy
+  through methods (`SelectionTree`, `LangSurroundings`, `SelectionSettings`); and
+  `NewHandler(ports, exclude)` builds the handler over them, given the `Exclusion` cmd read.
   Its handler selects the files through the
   selection domain, parses each with the domain's `Parse`, read through the same `Tree` port
   and named by `internal/lang` through the `Surroundings` port its handler is given, its
@@ -328,10 +335,17 @@ a `context.Context` first (decision 30); pure logic takes none.
   with no case per command. `parserOf` binds every handler, over the ports in `adapters`,
   and `version`'s version (`versionString`, release stamps `-X main.version`) through kong
   providers (`handlers`), which kong calls only when the `Run` it calls asks for their
-  value. The handlers of `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so their
-  providers read the file through `a.Config` under the `Run`'s context: a file that cannot
-  be read fails that command alone as `config.invalid`, the provider's error kong returns
-  unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
+  value. The commands under `internal/slices` are not fields of `commandLine`: `assembled`
+  (`commands.go`, written by hand until a generator writes it, T-146) adds each slice's
+  declaration with kong's `DynamicCommand`, a fresh command line each, and the provider of its
+  handler over its `Ports`, `adapters` given as the slice's interface. kong adds a dynamic
+  command after the struct's fields, so `assembled` then puts the model's commands in their
+  names' order (`byName`), the order `TestTheModelNamesEveryCommandInOrder` holds. The handlers
+  of `crap`, `units` and `dry` hold itos-cc.yaml's `exclude`, so their providers read the file
+  through the selection engine's settings reader under the `Run`'s context, each provider
+  reading it itself, since kong wraps a dependent provider's error as `<type>: %w`: a file that
+  cannot be read fails that command alone as `config.invalid`, the provider's error kong
+  returns unwrapped, never help or `version`. SIGINT and SIGTERM cancel it in `main`, through `cli.Interrupts`,
   with the cause `cli.ErrInterrupted`, for every command alike (decision 38), and
   cleanup that must outlive a stop runs under `context.WithoutCancel(ctx)`, as an
   interrupted `mutation run` writes what it finished. Nothing below
@@ -377,15 +391,22 @@ context-as-argument a context after any other parameter, tests included.
   whose `SettingsReader` it implements too, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
-- `slices`: a slice imports nothing of ours but the domains, `internal/cli` and
+- `slices`: a slice not yet under `internal/slices` imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
   with its port and, in its tests, the port's fake, so never another slice, an adapter, the `project` library
   an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
-  through mutants' `SettingsReader`, T-97), or `cmd`. Its files are every package under `internal/` except the ones the
-  rule lists as something else, so a new command's slice is held with no edit. A slice's tests
-  are in its own package, since the rule cannot tell a package's import of itself from another's.
+  through mutants' `SettingsReader`, T-97), or `cmd`. Its files are every package under `internal/`
+  outside `internal/slices` except the ones the rule lists as something else, so a package no
+  rule names is held as a slice, and it refuses each of them importing a slice under
+  `internal/slices`. A slice's tests are in its own package, since the rule cannot tell a
+  package's import of itself from another's.
+- `slice-packages`: a slice under `internal/slices`, its subpackages with it, imports what
+  `slices` allows and its own subpackages, so it can keep its domain, port, porttest and
+  adapter apart (ADR-0051). depguard matches a prefix, so the rule allows `internal/slices/`
+  and the sibling rule below refuses another slice; its allow list repeats `slices`', each
+  domain added to both, until the last slice moves.
 - `slice-fakes`: a slice's own code imports no `porttest`, which only its tests may use (T-56).
-  It holds the same files as `slices`, tests left out, and names each port's `porttest`, since
+  It holds the files of `slices` and `slice-packages`, tests left out, and names each port's `porttest`, since
   depguard matches a prefix and `slices` allows the ports' folders. `tools/bin/architecture-check`
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
   depguard sees only the imports a file names, not what a binary links through them: a fake
@@ -424,11 +445,12 @@ Lint refusing an import after you add a package means a rule has not been told w
 is. Extend the rule as below; never loosen it, since every arrow above is what keeps the next
 command from reaching into this one.
 
-- A command: add its slice as `internal/<command>`. The `slices` rule holds it already. Add it
-  to `cmd`'s bindings and give it scenarios.
+- A command: add its slice as `internal/slices/<command>`. The `slice-packages` rule holds it
+  already. Give it a `cli.Declaration` and a `Ports` interface, as `internal/slices/units`
+  does, add it to `cmd`'s `assembled` and give it scenarios.
 - A domain package: add its folder as a `**/internal/<name>/**` glob to `domain` and
   `domain-io` and `coverage-fakes`, as a `!**/internal/<name>/**` exclusion to `slices` and `slice-fakes`, and its
-  import path to the `allow` lists of `domain` and of `slices` if commands use it. Give it a
+  import path to the `allow` lists of `domain` and of `slices` and `slice-packages` if commands use it. Give it a
   `port` subpackage for what it reaches outside, its `porttest` named in `slice-fakes`' `deny`,
   and a classifier for its failures beside the slice that uses it, which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
@@ -463,7 +485,7 @@ exiting with the same codes as before: a refactor, no behaviour change. `units` 
 (T-32), and every step below points at what it did. A project made from go-template-itos
 follows the same steps for a command it wrote before it had the template's design.
 
-1. **The slice.** Make `internal/<command>/<command>.go`, as `internal/units` is laid out:
+1. **The slice.** Make `internal/slices/<command>/<command>.go`, as `internal/slices/units` is laid out:
    - `CLI`, the kong struct: `cli.Selection` embedded first when the command selects files,
      giving it `--changed` and the path arguments, then one field per flag of its own, in the
      order help lists them, each with its `help` tag; `JSON bool` named `json`; any other
@@ -488,12 +510,17 @@ follows the same steps for a command it wrote before it had the template's desig
    one slice that uses the domain, as `internal/mutation` words its own `Failure`s. A domain
    several commands share keeps its classifier in cmd (`classifySelection`), since no slice may
    import another; the moved slice then needs none. internal/cli never holds one.
-4. **Routing in cmd.** In `cmd/itos-cc/dispatch.go`, add the slice's struct to `commandLine`,
-   in its name's order, its `help` tag the line the top-level help lists, and a provider of
-   its handler to `parserOf`'s (`handlers`), built over the ports in `adapters` and never
-   over an adapter itself, a port it needs added there and to `diskAdapters`; a handler that
-   holds what itos-cc.yaml says, as `units`' and `dry`'s do, reads it in its provider, which
-   kong calls only for the `Run` that asks for it. `dispatch` needs no case: it calls the
+4. **Routing in cmd.** The slice declares its command, a `cli.Declaration` named `Command`
+   with its name, the line the top-level help lists it by and a constructor of a fresh `*CLI`,
+   and the ports its handler needs, a `Ports` interface it owns, as `internal/slices/units`
+   does. In `cmd/itos-cc/commands.go`, add the declaration to `declared` and a provider of its
+   handler to `assembled`, built over `adapters` as the slice's `Ports` and never over an
+   adapter itself, a port it needs added to `adapters` as a method and to `diskAdapters`; a
+   handler that holds what itos-cc.yaml says, as `units`' and `dry`'s do, reads it in its
+   provider, which kong calls only for the `Run` that asks for it. `assembled` puts the
+   model's commands in their names' order. A command not yet moved under `internal/slices`
+   is still a field of `commandLine` in `dispatch.go`, in its name's order, its provider in
+   `handlers`. `dispatch` needs no case: it calls the
    selected command's `Run` through `callSafely`, and admits any group's words before its
    subcommand. A command still on the
    hand parser leaves `legacy` and the in-process driver's refusal with its old file;
@@ -580,7 +607,7 @@ follows the same steps for a command it wrote before it had the template's desig
    that finds a case worth comparing adds it to that task's list. `units` (T-32) was compared
    on its own before this: 236 lines agreed but one, `---changed`, which the hand parser read
    as `--changed` and kong refuses as an unknown flag, as rule 15 has it.
-10. **Boundaries.** The `slices` rule holds the new package with no edit. A top-level library
+10. **Boundaries.** The `slice-packages` rule holds the new package with no edit. A top-level library
     it imports that the rule refuses is either a domain library every command measures by,
     allowed in `slices` with a comment saying why (`lang` was, until T-36 made it the domain
     `internal/lang`), or one an adapter wraps, which stays refused (`project`). Add the slice to the fixture lists of
