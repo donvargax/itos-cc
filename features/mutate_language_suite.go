@@ -36,7 +36,7 @@ func (l *languageMutation) suiteSteps(sc *godog.ScenarioContext) {
 		*u = languageSuites{l: l, initial: map[string]map[string]any{}, checked: map[string]string{}, graph: map[string]bool{}, sampled: map[string]bool{}, partial: map[string]map[string]any{}}
 		return ctx, nil
 	})
-	sc.Step(`^a (TypeScript|Python|Kotlin) project whose test (e2e/cli\.test\.ts|tests/test_cli\.py|src/test/kotlin/CliTest\.kt) does not import the production file$`, func(language, test string) error {
+	sc.Step(`^a (TypeScript|Python|Kotlin|Dart) project whose test (e2e/cli\.test\.ts|tests/test_cli\.py|src/test/kotlin/CliTest\.kt|test/cli_test\.dart) does not import the production file$`, func(language, test string) error {
 		p, err := u.project(strings.ToLower(language), "", false, true)
 		if err != nil {
 			return err
@@ -165,6 +165,35 @@ func (u *languageSuites) project(language, root string, multi, nonImporting bool
 		if nonImporting {
 			test = ""
 			files[p.other] = "import kotlin.test.*\nclass CliTest { @Test fun cli(){ val m=Class.forName(\"board.\"+\"BoardKt\").getMethod(\"lo\"+\"w\",Int::class.javaPrimitiveType);assertEquals(true,m.invoke(null,3));assertEquals(false,m.invoke(null,4)); } }\n"
+		}
+	case "dart":
+		// flutter test runs the whole suite as itos-cc words it. The
+		// non-importing test runs bin/board.dart, which imports the file,
+		// with dart run: flutter_tester has no dart:mirrors to call a
+		// library a test does not import.
+		p.file = join("lib/board.dart")
+		p.test = join("test/board_test.dart")
+		p.other = join("test/cli_test.dart")
+		p.command = "flutter --suppress-analytics --no-version-check test --no-pub"
+		files[join("pubspec.yaml")] = coverageDartFlutterPubspec("board", false)
+		test = "import 'package:flutter_test/flutter_test.dart';\nimport 'package:board/board.dart';\n\nvoid main() {\n  test('board', () {\n"
+		calls := ""
+		for i, name := range p.names {
+			n := 3 + i*3
+			source += "bool " + name + "(int i) {\n  return i == " + strconv.Itoa(n) + ";\n}\n"
+			test += "    expect(" + name + "(" + strconv.Itoa(n) + "), isTrue);\n    expect(" + name + "(" + strconv.Itoa(n+1) + "), isFalse);\n"
+			calls += " ${" + name + "(" + strconv.Itoa(n) + ")} ${" + name + "(" + strconv.Itoa(n+1) + ")}"
+			coverage.Report += "DA:" + strconv.Itoa(i*3+1) + ",1\nDA:" + strconv.Itoa(i*3+2) + ",1\n"
+		}
+		test += "  });\n}\n"
+		coverage.Report = "SF:lib/board.dart\n" + coverage.Report + "end_of_record\n"
+		files[p.other] = "import 'package:flutter_test/flutter_test.dart';\n\nvoid main() {\n  test('cli', () {\n    expect(1 + 1, 2);\n  });\n}\n"
+		if nonImporting {
+			test = ""
+			files[join("bin/board.dart")] = "import 'package:board/board.dart';\n\nvoid main() {\n  print('" + strings.TrimSpace(calls) + "');\n}\n"
+			files[p.other] = "import 'dart:io';\n\nimport 'package:flutter_test/flutter_test.dart';\n\nvoid main() {\n  test('cli', () {\n" +
+				"    final run = Process.runSync('dart', ['run', 'bin/board.dart']);\n" +
+				"    expect(run.stdout.toString().trim(), 'true false', reason: run.stderr.toString());\n  });\n}\n"
 		}
 	}
 	files[p.file] = source

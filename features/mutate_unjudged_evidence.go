@@ -29,7 +29,7 @@ func unjudgedEvidenceSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMu
 		*u = unjudgedEvidence{m: m, s: s}
 		return ctx, nil
 	})
-	sc.Step(`^a committed (Go|TypeScript|Python|Kotlin) project with two functions whose whole-suite outcomes record nonempty test and support evidence$`, u.project)
+	sc.Step(`^a committed (Go|TypeScript|Python|Kotlin|Dart) project with two functions whose whole-suite outcomes record nonempty test and support evidence$`, u.project)
 	sc.Step(`^a non-importing test and a configured support file changed since those outcomes were recorded$`, u.dependenciesChanged)
 	sc.Step(`^only one of its functions changed since "base"$`, u.functionChanged)
 	sc.Step(`^a --since run judges that changed function$`, u.run)
@@ -62,6 +62,11 @@ func (u *unjudgedEvidence) project(language string) error {
 		files["build.gradle.kts"] = "plugins { kotlin(\"jvm\") version \"2.4.21\" }\n"
 		files["settings.gradle.kts"] = "rootProject.name = \"evidence\"\n"
 		files[u.test] = "package evidence\nclass OtherTest\n"
+	case "Dart":
+		u.file, u.test = "lib/board.dart", "test/other_test.dart"
+		u.source = "bool Changed() {\n  return true;\n}\n\nbool Kept() {\n  return true;\n}\n"
+		files["pubspec.yaml"] = "name: evidence\nenvironment:\n  sdk: ^3.6.0\n"
+		files[u.test] = "void main() {}\n"
 	}
 	files[u.file] = u.source
 	if err := u.m.writeAll(files); err != nil {

@@ -272,6 +272,7 @@ var testTools = map[string][]string{
 	"typescript": {"node"},
 	"python":     {"python3"},
 	"kotlin":     {"java"},
+	"dart":       {"flutter"},
 }
 
 // Tests checks the tools t's tests run with are installed: the language's
