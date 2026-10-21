@@ -5264,3 +5264,19 @@ items:
       same way. It is the harness's, a shared path, so slice-36 did not change it. Once it lands,
       the @wip block's rows join MUT-273's live Examples.
     refs: [slice-36]
+  - id: dart-integration-test-importers
+    title: A test under integration_test/ that imports a Dart file leaves its own-test results fresh
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-76 says flutter test never runs integration_test/ or test_driver/, and slice-35 runs and
+      measures a Dart file's own tests from test/ alone, but an own-test outcome's freshness still
+      rests on every test that imports the file, as reach finds them: a change to
+      integration_test/app_test.dart alone makes the file's results mutation.stale, though no run of
+      them could change. slice-36's MUT-273 shows it, its strict evidence fresh beside the stale
+      results; its But step judges the evidence alone. The importers an outcome records could leave
+      out what DartTests leaves out, as its run does.
+    refs: [slice-36]
