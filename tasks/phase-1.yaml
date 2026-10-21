@@ -5572,3 +5572,28 @@
     their scenarios run in the check. Drop crap's commandLine field and hand provider, regenerate
     commands_gen.go, update check_test.go, .golangci.yml, docs/go.md, docs/architecture.md and
     README's layout table. Help, errors, exit codes, lazy config and the snapshot format unchanged.
+- id: T-153
+  type: test
+  title: Run the binary driver only where CI and CD opt in
+  why: >
+    Decision 52 (q-73): locally the scenarios run in process against the fakes alone, as in-memory
+    end-to-end tests, and the built binary runs them in CI and CD. TestFeatures
+    (features/features_test.go) runs only when ITOS_CC_FEATURES_BINARY_DRIVER is 1 or
+    ITOS_CC_FEATURES_BINARY names a binary (T-132's proof runs one it names, which is opting in);
+    otherwise it logs one line saying the binary driver ran nothing and why, naming the variable,
+    and builds nothing. The check is the first thing TestFeatures does, before TagFilter, so a
+    -scenarios selection naming only binary-only or deferred scenarios passes locally having run
+    nothing, as decision 52 accepts. Every workflow that runs go test (ci.yml, cd.yml, nightly.yml,
+    refactor-proof.yml) sets ITOS_CC_FEATURES_BINARY_DRIVER: "1" in its top-level env, so itos ci
+    run's smoke and range-named scenarios, every cd.yml job and the nightly keep running
+    TestFeatures exactly as today: no scenario, job, platform or timeout changes in any workflow.
+    itos.yaml's scenario lines stay as they are (they run both tests; locally TestFeatures logs and
+    passes), and its comment, features/features_test.go's package comment, features/README.md,
+    docs/go.md's driver paragraphs and README's testing and CI text say where each driver runs and
+    name decision 52. An agent working on a binary-only scenario sets the variable itself. Measure a
+    local go test ./... -count=1 before and after and put both times in the commit body.
+  done_when:
+    - run: env -u ITOS_CC_FEATURES_BINARY_DRIVER -u ITOS_CC_FEATURES_BINARY go test ./features -count=1 -run '^TestFeatures$'
+      timeout: 180
+    - run: "grep -q 'ITOS_CC_FEATURES_BINARY_DRIVER: \"1\"' .github/workflows/ci.yml .github/workflows/cd.yml .github/workflows/nightly.yml .github/workflows/refactor-proof.yml"
+      timeout: 30
