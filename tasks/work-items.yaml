@@ -4452,3 +4452,16 @@ items:
     status: todo
     depends_on: [T-162]
     kind: task
+  - id: imports-through-ports
+    title: Read imports through lang's Surroundings port and a tsconfig reader, not the disk
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      After T-86: internal/imports (T-162) reads files from the disk through project, so the
+      in-process driver binds porttest's declared Reach and never runs the real resolver, and a new
+      language also edits porttest/reach.go's per-language rules and features/imports.go's
+      sourceExtensions. Reading through lang's Surroundings port plus a tsconfig reader would let
+      the in-memory scenarios run the real resolver, so MUT-215..219 check it locally (decision 52).
