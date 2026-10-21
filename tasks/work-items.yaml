@@ -4706,3 +4706,15 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: changed-takes-unwalked
+    title: A changed file in a folder no walk enters is still selected by --changed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-30 found that --changed hands each changed file to the tree as a root, and a named file
+      is always taken (SEL-12), so a changed MainActivity.kt in a Flutter app android folder, a
+      regenerated user.g.dart or a changed vendor/ file is selected by --changed though no walk
+      takes it. Whether --changed should keep the walk rules is a question for the person.
