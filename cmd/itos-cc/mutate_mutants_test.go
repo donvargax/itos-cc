@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
+	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
 )
 
 // The scenarios of "Rule: Results" that list every mutant in --json, in

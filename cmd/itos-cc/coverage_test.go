@@ -9,7 +9,7 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
+	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
 

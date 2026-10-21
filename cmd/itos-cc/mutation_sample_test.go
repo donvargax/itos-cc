@@ -12,7 +12,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	mutationslice "github.com/donvargax/itos-cc/internal/mutation"
+	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
 )
 
 // Tests of "Rule: Re-running a sample of cached results" in
