@@ -4486,3 +4486,17 @@ items:
       internal/mutants/porttest/reach.go among them) and other pre-ADR-0051 locations that no longer
       exist; T-163 refreshed only its import-resolution rows, so whoever plans Dart reads stale
       file:line references elsewhere in the map.
+  - id: tagfilter-one-driver-list
+    title: Drop TagFilter's per-driver files and Selection.Unmoved now both drivers run Converted
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Since T-164 both drivers pass features.Converted to TagFilter, so its files parameter is
+      always Converted and Selection.Unmoved, the tags of converted files a driver does not run, is
+      always empty; TestScenarios still logs Unmoved and selection_test.go still runs a binary and
+      an in-process case that pass the same list. T-164 kept both as they were, as its spec said.
+      Removing them, or deciding they stay for a future driver that runs fewer files, would leave
+      TagFilter one fewer argument and the in-process run one dead log line. Found in T-164.
