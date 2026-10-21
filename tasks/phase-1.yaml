@@ -6381,3 +6381,26 @@
     git -C, never the network. Not golangci-lint or tests in the hook: CI has them, and the hook
     must stay seconds. The coordinator declares it in this clone after it lands and files the
     backport on go-template-itos.
+- id: T-178
+  type: test
+  title: The scenarios' declared import adjacency follows discovery's Flutter rules
+  why: >
+    features/imports.go's declareAdjacency declares every .dart file outside hidden and unwalked
+    folders as a node of the in-process Reach's adjacency, but discovery has left out generated Dart
+    (lib/user.g.dart and the other slice-30 rules) and a Flutter app's platform folders since
+    slice-30. The fake Reach then refuses the run, exit 100: declared import node lib/user.g.dart is
+    outside the requested inventory. So no in-process scenario can hold generated Dart, and
+    MUT-273's Flutter app rows wait @wip in an Examples block of their own (slice-36). Coordinator's
+    calls, 2026-10-21: project exports its generated-Dart rule as it exports FlutterPlatformDir
+    (slice-36), a thin exported wrapper over flutterRules.generated, with no change to the rule; the
+    harness's walked, or declareAdjacency, leaves out a file under a Flutter platform folder (any
+    folder of its path, judged with project.FlutterPlatformDir on the scratch folder's real path)
+    and a generated Dart file, so the harness asks the same of discovery's rules as the product
+    does, never a copy of them. Then the @wip block's two rows join MUT-273's live Examples in one
+    table and the comment above the block goes. No product behaviour changes; the binary driver
+    already passes the rows. The checks run MUT-273 in process and confirm no @wip is left in it.
+  done_when:
+    - run: go test ./features -run '^TestScenarios$' -count=1 -scenarios='^@ID-MUT-273$'
+      timeout: 600
+    - run: test "$(awk '/@ID-MUT-273/,/@ID-MUT-224/' features/mutate.feature | grep -c '@wip')" = 0
+    - run: go test ./project -count=1
