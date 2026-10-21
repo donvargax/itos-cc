@@ -30,9 +30,17 @@ type Segment struct {
 	Start, End     int
 	Total, Covered float64
 	Key            string
+	// ran is whether the piece ran, whatever it weighs: a Go block of no
+	// statements, such as an empty case clause's, that ran covers its lines
+	// though it adds nothing to a share (#53).
+	ran bool
 	// from holds a bit for each Source whose data covered the segment.
 	from uint8
 }
+
+// executed is whether the segment ran: it covered some of its weight, or
+// it weighs nothing and ran.
+func (s Segment) executed() bool { return s.Covered > 0 || s.ran }
 
 // GoBlock is one positive-weight executable block in a Go cover profile.
 // Span retains the complete measured line/column identity; Line is the
@@ -223,7 +231,7 @@ func (r *Report) LineCovered(file string, line int) (covered, measured bool) {
 	for _, s := range r.files[file] {
 		if line >= s.Start && line <= s.End {
 			measured = true
-			if s.Covered > 0 {
+			if s.executed() {
 				return true, true
 			}
 		}
@@ -240,7 +248,7 @@ func (r *Report) LineSources(file string, line int) []string {
 	}
 	var from uint8
 	for _, s := range r.files[file] {
-		if line >= s.Start && line <= s.End && s.Covered > 0 {
+		if line >= s.Start && line <= s.End && s.executed() {
 			from |= s.from
 		}
 	}
@@ -437,7 +445,7 @@ func Build(ctx context.Context, files port.Files, sources []string, base string,
 // both.
 func merged(segs, more []Segment, src Source, prefix string, seen map[string]int) []Segment {
 	for _, s := range more {
-		if s.Covered > 0 {
+		if s.executed() {
 			s.from |= 1 << src
 		}
 		if s.Key == "" {
@@ -447,6 +455,7 @@ func merged(segs, more []Segment, src Source, prefix string, seen map[string]int
 		key := prefix + "\x00" + s.Key
 		if i, ok := seen[key]; ok {
 			segs[i].Covered = max(segs[i].Covered, s.Covered)
+			segs[i].ran = segs[i].ran || s.ran
 			segs[i].from |= s.from
 			continue
 		}

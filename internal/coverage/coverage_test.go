@@ -146,6 +146,36 @@ example.com/demo/board/board.go:10.10,12.3 1 0
 	}
 }
 
+// An empty case clause is a block of no statements: one that ran covers its
+// line, one that did not leaves it uncovered, and neither weighs in a
+// share (#53).
+func TestAGoBlockOfNoStatementsThatRanCoversItsLine(t *testing.T) {
+	entries, err := coverage.ParseGo(strings.NewReader(`mode: set
+example.com/k/kind.go:4.2,5.11 2 1
+example.com/k/kind.go:6.9,6.9 0 1
+example.com/k/kind.go:7.9,7.9 0 0
+example.com/k/kind.go:8.3,8.12 1 0
+example.com/k/kind.go:10.2,10.10 1 1
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := "/w/k/kind.go"
+	r := build(t, []string{path}, "/w/k", entries)
+	if covered, measured := r.LineCovered(path, 6); !covered || !measured {
+		t.Errorf("line 6 covered=%v measured=%v, want true true: its empty clause ran", covered, measured)
+	}
+	if got := r.LineSources(path, 6); !slices.Equal(got, []string{"in-process"}) {
+		t.Errorf("line 6 sources %v, want [in-process]", got)
+	}
+	if covered, measured := r.LineCovered(path, 7); covered || !measured {
+		t.Errorf("line 7 covered=%v measured=%v, want false true: its empty clause never ran", covered, measured)
+	}
+	if got := fraction(t, r, path, 3, 11); !approx(got, 3.0/4) {
+		t.Errorf("Kind = %v, want 3/4 of its statements", got)
+	}
+}
+
 func TestGoBlocksRepeatedByEachTestBinaryAreOneBlock(t *testing.T) {
 	entries, err := coverage.ParseGo(strings.NewReader(`mode: set
 example.com/demo/board/board.go:9.30,10.10 3 0

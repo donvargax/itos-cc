@@ -93,7 +93,7 @@ func (r *Report) List(ctx context.Context, files port.Files, sources []string, d
 			r.proven = map[string]bool{}
 		}
 		for _, seg := range e.Segments {
-			seg.Covered = 0
+			seg.Covered, seg.ran = 0, false
 			r.inventory[file] = append(r.inventory[file], seg)
 		}
 		r.proven[file] = true

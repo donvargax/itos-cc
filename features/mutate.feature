@@ -643,7 +643,7 @@ Feature: Mutation testing
   # ran is covered whatever its statement count.
   Rule: A site in a Go case clause the tests run is covered
 
-    @wip @slice-14 @ID-MUT-266 @binary-only
+    @slice-14 @ID-MUT-266 @binary-only
     Scenario: A site in an empty Go case clause the tests run is judged, not uncovered
       Given the Go module "example.com/k" with the file "kind.go":
         """

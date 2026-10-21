@@ -150,7 +150,7 @@ func ParseGo(r io.Reader) ([]Entry, error) {
 			entries = append(entries, Entry{Path: file})
 		}
 		entries[i].Segments = append(entries[i].Segments,
-			Segment{Start: start, End: end, Total: stmts, Covered: boolWeight(count > 0, stmts), Key: fields[0]})
+			Segment{Start: start, End: end, Total: stmts, Covered: boolWeight(count > 0, stmts), Key: fields[0], ran: count > 0})
 	}
 	return entries, s.Err()
 }
