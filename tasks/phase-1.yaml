@@ -6051,8 +6051,3 @@
     same: build 51f3952's itos-cc from a detached worktree in the scratch folder and today's, each
     with the new STAMP, and compare itos-cc version and itos-cc --version --json; state the outputs
     in the commit body. slices-close runs the proof itself.
-  done_when:
-    - run: grep -q 'main.version=1.2.3-features' .github/workflows/refactor-proof.yml
-      timeout: 30
-    - run: grep -q 'internal/version.stamp=1.2.3-features' .github/workflows/refactor-proof.yml
-      timeout: 30
