@@ -93,6 +93,12 @@ func (a adapters) LangSurroundings() langport.Surroundings { return a.Surroundin
 // slice's Ports method.
 func (a adapters) SnapshotStore() snapport.Store { return a.Store }
 
+// CoverageMeasurer is the coverage domain's Measurer, a slice's Ports
+// method: coveragetools' over the coverage runner, its commands run in
+// process groups internal/processes' executor owns (coverageCommand), never
+// through a mutation adapter.
+func (a adapters) CoverageMeasurer() coverage.Measurer { return a.Coverage }
+
 // Rel is path as a person reads it, from the working directory, Dir, the
 // one the UI names paths from (cli.Rel), a slice's Ports method.
 func (a adapters) Rel(path string) string { return cli.Rel(a.Dir, path) }

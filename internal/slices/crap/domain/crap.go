@@ -1,12 +1,13 @@
-// Package changerisk is the domain that scores functions by the CRAP
-// formula, for the crap command: complexity that tests do not exercise is
-// risk (decision 37).
+// Package domain is the crap command's domain, scoring functions by the
+// CRAP formula: complexity that tests do not exercise is risk. It is the
+// crap slice's own (ADR-0051), kept apart from its CLI and application
+// code, and a domain (decision 37).
 //
 //	CRAP = CC² × (1 − coverage)³ + CC
 //
 // It takes files internal/lang parsed, with the names its caller gives
 // them, and a coverage Report, and reads nothing, so it has no port.
-package changerisk
+package domain
 
 import (
 	"math"

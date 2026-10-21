@@ -8,6 +8,7 @@ import (
 
 	"github.com/donvargax/kong"
 
+	"github.com/donvargax/itos-cc/internal/slices/crap"
 	"github.com/donvargax/itos-cc/internal/slices/dry"
 	"github.com/donvargax/itos-cc/internal/slices/scrap"
 	"github.com/donvargax/itos-cc/internal/slices/units"
@@ -25,10 +26,12 @@ import (
 // provider's error.
 func assembled(a adapters) []kong.Option {
 	return []kong.Option{
+		kong.DynamicCommand(crap.Command.Name, crap.Command.Help, "", crap.Command.New()),
 		kong.DynamicCommand(dry.Command.Name, dry.Command.Help, "", dry.Command.New()),
 		kong.DynamicCommand(scrap.Command.Name, scrap.Command.Help, "", scrap.Command.New()),
 		kong.DynamicCommand(units.Command.Name, units.Command.Help, "", units.Command.New()),
 		kong.PostBuild(byName),
+		kong.BindToProvider(func(ctx context.Context) (crap.Handler, error) { return crap.NewHandler(ctx, a) }),
 		kong.BindToProvider(func(ctx context.Context) (dry.Handler, error) { return dry.NewHandler(ctx, a) }),
 		kong.BindToProvider(func(ctx context.Context) (scrap.Handler, error) { return scrap.NewHandler(ctx, a) }),
 		kong.BindToProvider(func(ctx context.Context) (units.Handler, error) { return units.NewHandler(ctx, a) }),

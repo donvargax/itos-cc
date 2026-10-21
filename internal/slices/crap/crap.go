@@ -7,14 +7,18 @@
 // the Tree port it was given (Select), then the coverage Measurer it was given
 // measures them as the coverage flags ask, the selection domain parses
 // each, read through the same Tree and parsed by lang, asking the
-// Surroundings port what surrounds it, the changerisk domain scores each
-// function, and the snapshot domain names each file from the project root
-// for its Store port to record (Handle). Run writes the worst first, each
-// file named from the working directory, and judges the threshold. The
-// slice reads and runs nothing itself. A failure is the selection,
-// snapshot or coverage domain's, which cmd's classifiers turn into
-// problems, or lang's, an internal one; Run reports it through the UI. It
-// has no classifier of its own.
+// Surroundings port what surrounds it, the slice's own domain, its domain
+// subpackage, scores each function, and the snapshot domain names each
+// file from the project root for its Store port to record (Handle). Run
+// writes the worst first, each file named from the working directory, and
+// judges the threshold. The slice reads and runs nothing itself. A failure
+// is the selection, snapshot or coverage domain's, which cmd's classifiers
+// turn into problems, or lang's, an internal one; Run reports it through
+// the UI. It has no classifier of its own.
+//
+// Command declares the command to cmd, which assembles it into its one
+// model (ADR-0051), and Ports are the ports its handler is built over,
+// which cmd's adapters satisfy.
 package crap
 
 import (
@@ -29,10 +33,18 @@ import (
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
-	changerisk "github.com/donvargax/itos-cc/internal/slices/crap/domain"
+	"github.com/donvargax/itos-cc/internal/slices/crap/domain"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
+
+// Command is the crap command as cmd assembles it: its name, the line the
+// top-level help lists it by, and a fresh command line for each parser.
+var Command = cli.Declaration{
+	Name: "crap",
+	Help: "CRAP score per function: complexity × untested risk",
+	New:  func() any { return &CLI{} },
+}
 
 // CLI is the crap command's command line: the files it selects, as every
 // command selects them (cli.Selection, first), how coverage is measured,
@@ -115,8 +127,9 @@ type Query struct {
 // about to parse them, the store its snapshot is recorded in, the coverage
 // port it measures through, Name, the name a person reads a file by, from
 // the working directory, and Exclude, the sources the project's settings
-// leave out. cmd gives each, choosing the adapters behind them and reading
-// the settings. No value of a command line is read here.
+// leave out. cmd gives each through Ports (NewHandler), choosing the
+// adapters behind them and reading the settings. No value of a command
+// line is read here.
 type Handler struct {
 	Tree         port.Tree
 	Surroundings langport.Surroundings
@@ -124,6 +137,36 @@ type Handler struct {
 	Coverage     coverage.Measurer
 	Name         func(path string) string
 	Exclude      selection.Exclusion
+}
+
+// Ports are what the crap command reaches the world through, which cmd's
+// adapters give it: the working tree it selects and reads files through,
+// what surrounds those files, the store its snapshot is recorded in, the
+// coverage domain's Measurer, which runs each language's tests or reads
+// the reports the coverage flags name, Rel, a path named from the working
+// directory as a person reads it, and the sources the project's settings
+// exclude, which cmd reads under the context of the Run that asks for the
+// handler and whose failure it words as a person reads it.
+type Ports interface {
+	SelectionTree() port.Tree
+	LangSurroundings() langport.Surroundings
+	SnapshotStore() snapport.Store
+	CoverageMeasurer() coverage.Measurer
+	Rel(path string) string
+	SelectionExclusion(ctx context.Context) (selection.Exclusion, error)
+}
+
+// NewHandler is the handler over p's tree, surroundings, store and coverage
+// Measurer, naming each file by p's Rel and leaving out the sources p's
+// settings exclude, read under ctx; their failure is returned as p gave it,
+// never wrapped, so the problem cmd worded is the one the person reads.
+func NewHandler(ctx context.Context, p Ports) (Handler, error) {
+	exclude, err := p.SelectionExclusion(ctx)
+	if err != nil {
+		return Handler{}, err
+	}
+	return Handler{Tree: p.SelectionTree(), Surroundings: p.LangSurroundings(), Store: p.SnapshotStore(),
+		Coverage: p.CoverageMeasurer(), Name: p.Rel, Exclude: exclude}, nil
 }
 
 // Select is the sources and tests q's paths and changed select, less the
@@ -135,7 +178,7 @@ func (h Handler) Select(ctx context.Context, q Query) (selection.Files, error) {
 // Found is what Handle found: every function of the sources scored, each
 // file by Name, and each build root or report coverage did not measure.
 type Found struct {
-	Entries    []changerisk.Entry
+	Entries    []domain.Entry
 	Unmeasured []coverage.Unmeasured
 }
 
@@ -159,14 +202,14 @@ func (h Handler) Handle(ctx context.Context, q Query, sources []string) (Found, 
 	if failure != nil {
 		return Found{}, failure
 	}
-	measured := changerisk.Measured(report, sources)
-	var entries, recorded []changerisk.Entry
+	measured := domain.Measured(report, sources)
+	var entries, recorded []domain.Entry
 	for _, path := range sources {
 		f, err := selection.Parse(ctx, h.Tree, h.Surroundings, path)
 		if err != nil {
 			return Found{}, err
 		}
-		scored := changerisk.Analyze(f, h.Name(path), report, measured)
+		scored := domain.Analyze(f, h.Name(path), report, measured)
 		f.Close()
 		entries = append(entries, scored...)
 		for _, e := range scored {
@@ -183,15 +226,15 @@ func (h Handler) Handle(ctx context.Context, q Query, sources []string) (Found, 
 // snapshotOf is crap.json: the format version and every function scored,
 // each file named from the project root.
 type snapshotOf struct {
-	Version int                `json:"version"`
-	Entries []changerisk.Entry `json:"entries"`
+	Version int            `json:"version"`
+	Entries []domain.Entry `json:"entries"`
 }
 
 // result is the object --json prints beside schema and ok: the functions
 // printed, worst first, and each build root or report coverage did not
 // measure, its folder from the working directory.
 type result struct {
-	Entries    []changerisk.Entry    `json:"entries"`
+	Entries    []domain.Entry        `json:"entries"`
 	Unmeasured []coverage.Unmeasured `json:"unmeasured"`
 }
 
@@ -202,7 +245,7 @@ type result struct {
 // for it, and without it warns of those. A failure is reported with the
 // empty object. It returns the exit code the UI gives it.
 func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
-	out := result{Entries: []changerisk.Entry{}, Unmeasured: []coverage.Unmeasured{}}
+	out := result{Entries: []domain.Entry{}, Unmeasured: []coverage.Unmeasured{}}
 	q := c.query()
 	chosen, err := h.Select(ctx, q)
 	if err != nil {
@@ -222,7 +265,7 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 	if err != nil {
 		return ui.Emit(c.JSON, out, ui.Problems(err))
 	}
-	worst := changerisk.Worst(found.Entries)
+	worst := domain.Worst(found.Entries)
 	if c.Top > 0 && c.Top < len(worst) {
 		worst = worst[:c.Top]
 	}
@@ -255,7 +298,7 @@ func (c CLI) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		problems = append(problems, ui.Problems(m)...)
 	}
 	threshold := *c.Threshold
-	for _, e := range changerisk.Worst(found.Entries) {
+	for _, e := range domain.Worst(found.Entries) {
 		if e.CRAP == nil || *e.CRAP <= threshold {
 			continue
 		}
@@ -283,7 +326,7 @@ func (c CLI) query() Query {
 
 // printTable writes entries to w as crap's table: the CRAP, CC and COV%
 // columns aligned right, then the function and where it starts.
-func printTable(w io.Writer, entries []changerisk.Entry) {
+func printTable(w io.Writer, entries []domain.Entry) {
 	t := tabwriter.NewWriter(w, 0, 0, 2, ' ', tabwriter.AlignRight)
 	_, _ = fmt.Fprintln(t, "CRAP\tCC\tCOV%\t \t")
 	for _, e := range entries {

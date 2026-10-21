@@ -19,9 +19,12 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
+	"github.com/donvargax/itos-cc/internal/selection"
+	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	changerisk "github.com/donvargax/itos-cc/internal/slices/crap/domain"
+	"github.com/donvargax/itos-cc/internal/slices/crap/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
@@ -66,6 +69,60 @@ func measurer() covporttest.Measurer {
 	return covporttest.Measurer{Dir: at(""), Files: held}
 }
 
+// ports are the Ports cmd's adapters give the handler, held in memory: the
+// project's tree, the store, the coverage measured by measurer, files named
+// from /work/src, and the exclusion the settings give or the failure
+// reading them meets.
+type ports struct {
+	store   *snapporttest.Store
+	exclude selection.Exclusion
+	failure error
+}
+
+func (p ports) SelectionTree() port.Tree { return porttest.TreeOf(at(""), files, nil) }
+func (p ports) LangSurroundings() langport.Surroundings {
+	return langporttest.Surroundings{Dir: "/work/src"}
+}
+func (p ports) SnapshotStore() snapport.Store       { return p.store }
+func (p ports) CoverageMeasurer() coverage.Measurer { return measurer() }
+func (p ports) Rel(path string) string              { return fromSrc(path) }
+func (p ports) SelectionExclusion(context.Context) (selection.Exclusion, error) {
+	return p.exclude, p.failure
+}
+
+// NewHandler builds the handler over its Ports: the sources their tree
+// holds, less those their settings exclude, measured by their Measurer,
+// named by their Rel and recorded in their store. A failure reading the
+// settings is returned as the Ports gave it, never wrapped, so cmd's
+// config.invalid is the problem the person reads.
+func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
+	store := &snapporttest.Store{RootDir: at("")}
+	h, err := NewHandler(t.Context(), ports{store: store})
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := CLI{CoverageReport: []string{"none.info"}}.query()
+	chosen, err := h.Select(t.Context(), q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := h.Handle(t.Context(), q, chosen.Sources)
+	if err != nil || len(found.Entries) != 2 || found.Entries[0].File != "board.go" || found.Entries[0].CRAP == nil || store.Snapshots["crap.json"] == "" {
+		t.Errorf("Handle() = %+v, %v, recorded %v; want board.go's functions scored, named by Rel, in the store", found, err, store.Snapshots)
+	}
+	h, err = NewHandler(t.Context(), ports{store: store, exclude: selection.Exclusion{Root: at(""), Exclude: []string{"**/board.go"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if chosen, err := h.Select(t.Context(), q); err != nil || len(chosen.Sources) != 0 || chosen.Excluded != 1 {
+		t.Errorf("Select() = %+v, %v; want board.go left out by the Ports' exclusion", chosen, err)
+	}
+	failure := cli.NewProblem(cli.CodeUsage, "config.invalid", "itos-cc.yaml: cannot be read", "Fix it.")
+	if _, err := NewHandler(t.Context(), ports{store: store, failure: failure}); err != failure {
+		t.Errorf("a settings failure: %v, want the Ports' own %v", err, failure)
+	}
+}
+
 // run is c run over h, and what it printed on stdout and stderr.
 func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 	t.Helper()
@@ -76,7 +133,7 @@ func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 
 // object is the --json object of a run.
 type object struct {
-	Entries    []changerisk.Entry
+	Entries    []domain.Entry
 	Unmeasured []map[string]any
 	Problems   []map[string]any
 }
@@ -104,7 +161,7 @@ func TestRunScoresAndRecordsEveryFunction(t *testing.T) {
 	}
 	var recorded struct {
 		Version int
-		Entries []changerisk.Entry
+		Entries []domain.Entry
 	}
 	if err := json.Unmarshal([]byte(store.Snapshots["crap.json"]), &recorded); err != nil {
 		t.Fatal(err)

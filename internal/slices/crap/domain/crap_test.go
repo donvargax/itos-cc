@@ -1,4 +1,4 @@
-package changerisk
+package domain
 
 import (
 	"math"

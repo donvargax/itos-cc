@@ -80,13 +80,13 @@ func TestArchitecture(t *testing.T) {
 	// internal/lang is a domain every command measures by, its port the one
 	// workdir implements beside selection's; internal/snapshot is the domain
 	// of the snapshots under .metrics/, its port metricsdir's (decision 41).
-	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "graph", "config"} {
+	for _, path := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "graph", "config"} {
 		write(path+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	for _, fake := range fakes {
 		write(fake+"/stub.go", "package probe\n\nconst Value = 1\n")
 	}
-	for _, slice := range []string{"internal/slices/units", "internal/slices/dry", "internal/slices/scrap"} {
+	for _, slice := range []string{"internal/slices/units", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap"} {
 		write(slice+"/own/stub.go", "package probe\n\nconst Value = 1\n")
 	}
 	mocks := []string{"github.com/golang/mock/gomock", "go.uber.org/mock/gomock", "github.com/stretchr/testify/mock", "github.com/vektra/mockery/v2", "github.com/maxbrunsfeld/counterfeiter/v6"}
@@ -143,18 +143,18 @@ func TestArchitecture(t *testing.T) {
 	// nothing of ours but the domain and its port subpackages, neither an
 	// adapter nor the libraries an adapter wraps. Every domain may import
 	// internal/lang and its port, the measure every command shares. The kong
-	// rule keeps kong out of them, below. internal/slices/dry/domain and
-	// internal/slices/scrap/domain, dry's and scrap's own domains
-	// (ADR-0051), reach nothing outside, so they have no port:
-	// they take files internal/lang parsed, their tests parsing them through
-	// lang's fake, as internal/changerisk, which scores them with a coverage
-	// Report, does. internal/coverage asks its port what a path a report
-	// names is on disk (decision 46). config, the settings codec whose
+	// rule keeps kong out of them, below. internal/slices/dry/domain,
+	// internal/slices/scrap/domain and internal/slices/crap/domain, dry's,
+	// scrap's and crap's own domains (ADR-0051), reach nothing outside, so
+	// they have no port: they take files internal/lang parsed, their tests
+	// parsing them through lang's fake, crap's scoring them with a coverage
+	// Report. internal/coverage asks its port what a path a report names is
+	// on disk (decision 46). config, the settings codec whose
 	// Reader implements mutants' SettingsReader and aliases its Config
 	// (T-97), is outside every domain too.
-	domains := []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage"}
+	domains := []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage"}
 	for _, domain := range domains {
-		ported := domain != "internal/slices/dry/domain" && domain != "internal/slices/scrap/domain" && domain != "internal/changerisk" && domain != "internal/mutants"
+		ported := domain != "internal/slices/dry/domain" && domain != "internal/slices/scrap/domain" && domain != "internal/slices/crap/domain" && domain != "internal/mutants"
 		// A slice's own domain is no shared one: the rule leaves it out of
 		// what a domain may import, so every other domain importing it is
 		// refused, and it has no subpackage of its own to import it.
@@ -172,7 +172,7 @@ func TestArchitecture(t *testing.T) {
 				if test {
 					kind = "test"
 				}
-				for _, target := range []string{"internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/dry/domain", "internal/slices/scrap", "internal/slices/scrap/domain", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "config"} {
+				for _, target := range []string{"internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/dry/domain", "internal/slices/scrap", "internal/slices/scrap/domain", "internal/slices/crap", "internal/slices/crap/domain", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "config"} {
 					if target == domain {
 						continue
 					}
@@ -232,7 +232,7 @@ func TestArchitecture(t *testing.T) {
 			[]string{"internal/coverage", "coverage", "metrics"}},
 	} {
 		base := adapter.base
-		for _, target := range append([]string{"internal/selection", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/selection/port/porttest", "internal/snapshot/port/porttest", "internal/lang", "internal/lang/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe"}, adapter.others...) {
+		for _, target := range append([]string{"internal/selection", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/selection/port/porttest", "internal/snapshot/port/porttest", "internal/lang", "internal/lang/port/porttest", "internal/cli", "internal/version", "internal/release", "cmd/probe"}, adapter.others...) {
 			if slices.Contains(adapter.allowed, target) {
 				continue
 			}
@@ -261,14 +261,15 @@ func TestArchitecture(t *testing.T) {
 	// ports, internal/cli and internal/lang with its port, never another slice, an adapter, the
 	// libraries an adapter wraps, a package that is no command or cmd. The
 	// snapshot domain is a domain like the others, its port a slice's to hold.
-	// internal/crap and internal/next are held with no rule naming them, as
-	// a package no rule names is, by slices; a slice under internal/slices,
-	// units, dry and scrap, by slice-packages, which lets it import its own
-	// subpackages, and refuses what slices does, a slice not yet moved among
-	// them. A slice not yet moved imports none under internal/slices.
+	// internal/mutation and internal/next are held with no rule naming them,
+	// as a package no rule names is, by slices; a slice under
+	// internal/slices, units, dry, scrap and crap, by slice-packages, which
+	// lets it import its own subpackages, and refuses what slices does, a
+	// slice not yet moved among them. A slice not yet moved imports none
+	// under internal/slices, a slice's own domain least of all.
 	// internal/mutation reads settings through mutants' SettingsReader, never
 	// the config codec (T-97).
-	for _, slice := range []struct{ base, other string }{{"internal/next", "internal/slices/units"}, {"internal/slices/units", "internal/next"}, {"internal/slices/dry", "internal/next"}, {"internal/slices/scrap", "internal/crap"}, {"internal/crap", "internal/slices/scrap"}, {"internal/mutation", "internal/slices/units"}, {"internal/slices/units", "internal/mutation"}} {
+	for _, slice := range []struct{ base, other string }{{"internal/next", "internal/slices/units"}, {"internal/slices/units", "internal/next"}, {"internal/slices/dry", "internal/next"}, {"internal/slices/scrap", "internal/mutation"}, {"internal/slices/crap", "internal/next"}, {"internal/next", "internal/slices/crap/domain"}, {"internal/mutation", "internal/slices/units"}, {"internal/slices/units", "internal/mutation"}} {
 		rule, moved := "slices", strings.HasPrefix(slice.base, "internal/slices/")
 		if moved {
 			rule = "slice-packages"
@@ -281,7 +282,7 @@ func TestArchitecture(t *testing.T) {
 			for _, target := range []string{slice.other, "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/version", "internal/release", "cmd/probe", "project", "metrics", "coverage", "config"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_"+kind, slice.base, module+"/"+target, "Value", rule, test)
 			}
-			for _, target := range []string{"internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/cli", "internal/lang", "internal/lang/port"} {
+			for _, target := range []string{"internal/selection", "internal/selection/port", "internal/snapshot", "internal/snapshot/port", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/cli", "internal/lang", "internal/lang/port"} {
 				add(strings.ReplaceAll(target, "/", "_")+"_allowed_"+kind, slice.base, module+"/"+target, "Value", "", test)
 			}
 			if moved {
@@ -315,7 +316,7 @@ func TestArchitecture(t *testing.T) {
 		if test {
 			kind = "test"
 		}
-		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/version", "internal/release", "cmd/probe"} {
+		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/version", "internal/release", "cmd/probe"} {
 			add(strings.ReplaceAll(target, "/", "_")+"_"+kind, "internal/cli", module+"/"+target, "Value", "ui", test)
 		}
 		add("stdlib_allowed_"+kind, "internal/cli", "strings", "ToLower", "", test)
@@ -330,7 +331,7 @@ func TestArchitecture(t *testing.T) {
 		if test {
 			kind = "test"
 		}
-		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/lang", "internal/lang/port", "internal/snapshot", "internal/changerisk", "internal/mutants", "internal/mutants/porttest", "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/freshenv", "internal/slices/units", "internal/crap", "internal/mutation", "internal/cli", "cmd/probe", "project", "metrics", "coverage", "config"} {
+		for _, target := range []string{"internal/selection", "internal/selection/port", "internal/lang", "internal/lang/port", "internal/snapshot", "internal/slices/crap/domain", "internal/mutants", "internal/mutants/porttest", "internal/coverage", "internal/coverage/port", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/freshenv", "internal/slices/units", "internal/slices/crap", "internal/mutation", "internal/cli", "cmd/probe", "project", "metrics", "coverage", "config"} {
 			add(strings.ReplaceAll(target, "/", "_")+"_"+kind, "internal/processes", module+"/"+target, "Value", "processes", test)
 		}
 		add("os_allowed_"+kind, "internal/processes", "os", "ReadFile", "", test)
@@ -338,7 +339,7 @@ func TestArchitecture(t *testing.T) {
 	add("exec_allowed", "internal/processes", "os/exec", "Command", "", false)
 	// What assembles them is free to import the domain, the adapters and
 	// the slices.
-	for _, target := range []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "project", "metrics", "coverage"} {
+	for _, target := range []string{"internal/selection", "internal/lang", "internal/snapshot", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/cli", "internal/version", "project", "metrics", "coverage"} {
 		add(strings.ReplaceAll(target, "/", "_")+"_allowed", "cmd/probe", module+"/"+target, "Value", "", false)
 	}
 	for i, imported := range mocks {
@@ -347,7 +348,7 @@ func TestArchitecture(t *testing.T) {
 		}
 	}
 	// internal/lang's, internal/snapshot's, internal/slices/dry/domain's,
-	// internal/slices/scrap/domain's, internal/changerisk's and
+	// internal/slices/scrap/domain's, internal/slices/crap/domain's and
 	// internal/coverage's tests have no property, so rapid is refused
 	// there.
 	for _, domain := range []string{"internal/selection"} {
@@ -359,14 +360,14 @@ func TestArchitecture(t *testing.T) {
 			for _, layer := range []string{"cmd/probe", "internal/cli"} {
 				add(fmt.Sprintf("kong%d_allowed_%t", i, test), layer, kong, "Value", "", test)
 			}
-			for _, layer := range []string{"internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/version", "internal/release"} {
+			for _, layer := range []string{"internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next", "internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/version", "internal/release"} {
 				add(fmt.Sprintf("kong%d_%t", i, test), layer, kong, "Value", "kong", test)
 			}
 		}
 	}
 	// Rapid only in the domain package's own tests, not its code, a
 	// subpackage's tests (its ports and fakes) or anything else.
-	for _, layer := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/changerisk", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/crap", "internal/slices/units", "internal/mutation", "internal/next"} {
+	for _, layer := range []string{"internal/selection", "internal/selection/port", "internal/selection/port/porttest", "internal/lang", "internal/lang/port", "internal/lang/port/porttest", "internal/snapshot", "internal/snapshot/port", "internal/snapshot/port/porttest", "internal/slices/dry/domain", "internal/slices/scrap/domain", "internal/slices/crap/domain", "internal/mutants", "internal/coverage", "internal/coverage/port", "internal/coverage/port/porttest", "internal/workdir", "internal/metricsdir", "internal/coveragetools", "internal/worktrees", "internal/processes", "internal/testtools", "internal/testinputs", "internal/importgraph", "internal/githistory", "internal/freshenv", "internal/slices/dry", "internal/slices/scrap", "internal/slices/crap", "internal/slices/units", "internal/mutation", "internal/next"} {
 		add("rapid_code", layer, "pgregory.net/rapid", "Value", "rapid", false)
 		add("rapid_test", layer, "pgregory.net/rapid", "Value", "rapid", true)
 	}
