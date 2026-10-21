@@ -4313,8 +4313,8 @@ items:
   - id: T-161
     title: Give the mutation slice its snapshot codec, exceptions writer and source edits
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-160]
     kind: task
   - id: refactor-proof-version-stamp
