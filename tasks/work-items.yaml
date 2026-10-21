@@ -3986,8 +3986,8 @@ items:
   - id: T-162
     title: Lift import resolution out of graph into internal/imports
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-161]
     kind: task
   - id: slices-scenario-registration
