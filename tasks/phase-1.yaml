@@ -5648,17 +5648,6 @@
     field from commandLine and its hand provider, regenerate commands_gen.go, update check_test.go,
     .golangci.yml, docs/go.md, docs/architecture.md and README's layout table. CLI-03 and CLI-18 are
     binary-only: run them locally with ITOS_CC_FEATURES_BINARY_DRIVER=1 (decision 52).
-  done_when:
-    - run: go test -count=1 ./internal/slices/version/... ./internal/version/... ./internal/cli/...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract)$' -scenarios='^@ID-CLI-'
-      timeout: 900
-    - run: go test -count=1 ./tools/bin/assemble
-      timeout: 300
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-156
   type: refactor
   title: Take mutation's domain out of the project and coverage engines

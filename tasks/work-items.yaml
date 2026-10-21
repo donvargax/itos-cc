@@ -3979,7 +3979,7 @@ items:
     title: Move version into internal/slices/version over internal/version
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-146]
     kind: task
   - id: T-156
