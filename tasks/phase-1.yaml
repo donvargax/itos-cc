@@ -6413,3 +6413,29 @@
     advising to keep both sides and continue, never git rebase --skip (itos#107, half of it; the
     other half, merging the appends itself, is itos's p1-registry-merge). itos upgrade asked nothing
     by hand.
+- id: T-181
+  type: chore
+  title: Name Dart in mutation's and crap's help
+  why: >
+    dart-support's docs close (D11), its help half: no help text names Dart, though every command
+    measures Flutter apps and packages since slice-28..38. mutation run's and check's help
+    (internal/slices/mutation/mutation.go, run_contract.go, check_contract.go), pinned byte for byte
+    by cmd/itos-cc/testdata/mutation-help.json and TestMutationHelpPreservesOriginalBytes, names
+    Dart wherever it lists languages or per-language rules: own tests (the *_test.dart files under
+    test/ that reach the file, flutter test --no-pub, integration_test/ and test_driver/ never run,
+    slice-38), test hashes and freshness, counted runs' offline readiness (flutter pub get
+    --offline, the FVM SDK linked), strict lines (--fail-uncovered on Dart: lines from the signature
+    line, a library no test loads fails closed as coverage-missing, a pub path dependency or
+    override leaving the root refused as coverage-unsupported), =lines, fail-fast, and the rules and
+    exit codes that list languages. A counted run still proves only Go's lines strictly; say so
+    where counted strict lines are described. crap's help (internal/slices/crap/crap.go:79) says
+    Python, Kotlin and Dart run their whole suite (from the idea dart-coverage-docs).
+    cmd/itos-cc/main.go's package comment lists Dart. Coordinator's calls, 2026-10-21: chore, no
+    scenario, as no scenario pins help prose (CLI-02 checks only its structure); state only what the
+    code does, checked against coverage/dart.go, coverage/run.go and the slice-28..38 scenarios,
+    never what an idea plans; the golden is regenerated the way its test says, and the diff is help
+    prose alone. Starts after slice-38, whose rule it states.
+  done_when:
+    - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1
+    - run: for f in internal/slices/mutation/mutation.go internal/slices/mutation/run_contract.go internal/slices/crap/crap.go cmd/itos-cc/testdata/mutation-help.json; do rg -q Dart "$f" || exit 1; done
+    - run: head -1 cmd/itos-cc/main.go | grep -q Dart
