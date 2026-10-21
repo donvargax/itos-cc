@@ -5020,8 +5020,8 @@ items:
   - id: slice-36
     title: Strict Dart line coverage, proven by flutter test's LCOV
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
