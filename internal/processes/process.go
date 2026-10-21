@@ -8,6 +8,8 @@
 package processes
 
 import (
+	"errors"
+	"os"
 	"os/exec"
 	"runtime"
 	"syscall"
@@ -26,7 +28,19 @@ func PlatformAtBoundary(platform string) string {
 func killGroup(cmd *exec.Cmd, platform string) {
 	if platform != "windows" {
 		cmd.SysProcAttr = nativeGroupAttributes(true)
-		cmd.Cancel = func() error { return nativeSignalGroup(-cmd.Process.Pid, syscall.SIGKILL) }
+		cmd.Cancel = func() error { return cancelGroup(cmd.Process.Pid) }
 	}
 	cmd.WaitDelay = 2 * time.Second
+}
+
+// cancelGroup kills the command's group when its context ends. A group
+// already gone is os.ErrProcessDone (bug-5): the command exited before the
+// cancel landed, and os/exec then reports its own result, never the kill's
+// ESRCH as Wait's error.
+func cancelGroup(pgid int) error {
+	err := nativeSignalGroup(-pgid, syscall.SIGKILL)
+	if errors.Is(err, syscall.ESRCH) {
+		return os.ErrProcessDone
+	}
+	return err
 }
