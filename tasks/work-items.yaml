@@ -4970,17 +4970,9 @@ items:
     title: A counted Dart run readies its frozen export before its baselines
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      slice-35 gives a Dart command a Ready step, flutter pub get --offline, which each worker runs
-      once in its copy, so the copy resolves itself and its runs stay offline with --no-pub. A
-      counted run's own baselines (freshenv's RunFreshBaselines) run in the frozen export, which git
-      gives no .dart_tool/package_config.json, and never run Ready, so a counted Dart run's baseline
-      cannot resolve package: imports. Running the command's Ready in the frozen root before its
-      first baseline would close that, with MUT-209's Dart row (the pub cache, run with --no-pub) as
-      its scenario; the touchpoints' D10.
   - id: covdata-mode-clash
     title: crap's Go integration coverage fails on a counter-mode clash
     phase: 1
