@@ -2,12 +2,9 @@ package imports
 
 import (
 	"context"
-	"path/filepath"
 	"slices"
 	"sort"
-	"strings"
 
-	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/project"
 )
 
@@ -55,19 +52,23 @@ func Reach(ctx context.Context, root string, sources, tests []File) map[string][
 		}
 		importers[e[1]][e[0]] = true
 	}
-	// all is the graph of the sources and every test but Go's, whose
-	// imports resolve to test files as well as sources: imported is the
-	// modules each module imports there.
+	// all is the graph of the sources and every test but those reaching one
+	// hop, Go's, whose imports resolve to test files as well as sources:
+	// imported is the modules each module imports there.
 	all := append([]File{}, sources...)
-	conftests := map[string]*File{} // by directory
+	transitive := map[string][]*File{} // by language
 	for i := range tests {
 		t := &tests[i]
-		if t.Language == "go" {
+		if languageOf(t.Language).oneHop() {
 			continue
 		}
 		all = append(all, *t)
-		if t.Language == "python" && filepath.Base(t.Abs) == "conftest.py" {
-			conftests[filepath.Dir(t.Abs)] = t
+		transitive[t.Language] = append(transitive[t.Language], t)
+	}
+	supporters := map[string]supporter{} // by language
+	for name, ts := range transitive {
+		if s := languageOf(name).support(ts); s != nil {
+			supporters[name] = s
 		}
 	}
 	whole := Resolve(ctx, root, all)
@@ -75,15 +76,18 @@ func Reach(ctx context.Context, root string, sources, tests []File) map[string][
 	for e := range whole.Edges {
 		imported[e[0]] = append(imported[e[0]], e[1])
 	}
-	idx := g.idx
 	byModule := map[string][]string{}
 	for i := range tests {
 		t := &tests[i]
 		reaches := map[string]bool{}
-		if t.Language == "go" {
-			// Its own package and the packages that import it, one hop.
+		if languageOf(t.Language).oneHop() {
+			// Its own module and the modules that import it, one hop.
+			res := g.resolver(t.Language)
+			for _, to := range res.unimported(t) {
+				reaches[to] = true
+			}
 			for _, imp := range t.imports {
-				targets, _ := idx.resolve(ctx, t, imp)
+				targets, _ := res.resolve(ctx, t, imp)
 				for _, to := range targets {
 					reaches[to] = true
 				}
@@ -97,11 +101,13 @@ func Reach(ctx context.Context, root string, sources, tests []File) map[string][
 			}
 		} else {
 			// Every module the test's imports reach, transitively, through
-			// sources and test files alike, from the test and the
-			// conftest.py files that apply to it.
+			// sources and test files alike, from the test and the support
+			// files that apply to it, such as pytest's conftest.py.
 			queue := []string{moduleID(*t)}
-			for _, c := range applyingConftests(ctx, t, conftests, root) {
-				queue = append(queue, moduleID(*c))
+			if s := supporters[t.Language]; s != nil {
+				for _, c := range s(ctx, root, t) {
+					queue = append(queue, moduleID(*c))
+				}
 			}
 			seen := map[string]bool{}
 			for len(queue) > 0 {
@@ -126,29 +132,6 @@ func Reach(ctx context.Context, root string, sources, tests []File) map[string][
 		out[s.Abs] = slices.Compact(list)
 	}
 	return out
-}
-
-// applyingConftests is the conftest.py files pytest loads for t, a Python
-// test file it runs or a conftest.py: those in its directory and each
-// directory above it, up to its build root, or root when it has none; none
-// for a helper or another language. Its build root is found under ctx.
-func applyingConftests(ctx context.Context, t *File, conftests map[string]*File, root string) []*File {
-	if t.Language != "python" || len(conftests) == 0 || !coverage.PythonTestFile(t.Abs) && filepath.Base(t.Abs) != "conftest.py" {
-		return nil
-	}
-	top := project.FindUp(ctx, t.Abs, "pyproject.toml", "setup.py", "setup.cfg")
-	if top == "" {
-		top = root
-	}
-	var out []*File
-	for dir := filepath.Dir(t.Abs); ; dir = filepath.Dir(dir) {
-		if c := conftests[dir]; c != nil && c != t {
-			out = append(out, c)
-		}
-		if rel, err := filepath.Rel(top, dir); err != nil || rel == "." || strings.HasPrefix(rel, "..") || filepath.Dir(dir) == dir {
-			return out
-		}
-	}
 }
 
 // parseDependencies parses each of paths under ctx for what the graph needs
