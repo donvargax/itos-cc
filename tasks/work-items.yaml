@@ -11,7 +11,6 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - T-144
   - T-147
   - T-145
   - T-146
