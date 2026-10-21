@@ -4141,8 +4141,8 @@ items:
   - id: T-154
     title: Measure what only the binary driver reaches, and name the local tests that would reach it
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: step-strictness-opt-in
