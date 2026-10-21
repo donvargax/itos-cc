@@ -136,8 +136,9 @@ Feature: Mutation testing
     # not ?. to ., as the receiver is nullable; not the postfix null
     # assertion x!. a ?? b becomes b: the left operand and ?? are deleted,
     # since TypeScript's ?? to || does not compile in Dart. + to - fails
-    # only on a String or a List, and such a mutant is reported as not
-    # compiling (D7), not as killed.
+    # only on a String or a List; such a mutant counts as killed, as a Go
+    # or Kotlin mutant that fails to build does (q-83; a separate outcome
+    # for every compiled language waits on the idea mutant-not-compiled).
     @slice-29 @ID-MUT-262
     Scenario: Dart sites
       Given the file "x.dart":
