@@ -4485,8 +4485,8 @@ items:
   - id: T-168
     title: Mark T-86's inventory historical and refresh the paths the slice moves left in the docs
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-169
