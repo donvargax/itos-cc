@@ -772,7 +772,7 @@ precondition) is the slice's `TestSampleSeedsFromTheBoundHistoryOnlyWhenOmitted`
 domain's `TestTheDrawDependsOnTheSeedAndTheMutantAlone`; a mismatch's file, function and exit 1
 (147, 148) are ID-MUT-72's and 73's; a sample with no mismatch exiting 0 (111) is 71's and 74's;
 and the fixtures' survivor exit 1 is ID-MUT-29's. `TestAMismatchsFixRerunsInItsScope` lives in
-`internal/mutation/sample_test.go`.
+`internal/slices/mutation/sample_test.go`.
 
 | ID | Holder | T-101 |
 | --- | --- | --- |
@@ -939,7 +939,7 @@ and the summary comment's blank line before it is `internal/workdir`'s `TestAnno
 
 Additional retained guards are outside the replacement mapping:
 
-- cmd/itos-cc/mutation_except_test.go: `TestMutationExceptTakesOneSite`; `internal/mutation/except_test.go`: `TestASiteIsFileLineAndColumn`.
+- cmd/itos-cc/mutation_except_test.go: `TestMutationExceptTakesOneSite`; `internal/slices/mutation/except_test.go`: `TestASiteIsFileLineAndColumn`.
 - cmd/itos-cc/mutation_annotate_test.go: `TestUnderSinceTheSummaryCommentExceptsTheSurvivorsOfFunctionsNotJudged`.
 - cmd/itos-cc/mutation_except_elsewhere_test.go: `TestAnEntryWhoseFileWasRenamedAndWhoseFunctionChangedIsGone`, `TestWithPathsAnEntryWhoseFileIsGoneIsNotJudged`.
 - cmd/itos-cc/except_renew_test.go: `TestRenewingTakesNoSiteAndNoReason`, `TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule`.
@@ -1701,7 +1701,7 @@ holders and counted export guards remain; they are not deleted as duplicates.
 
 ## S7 completion (T-101)
 
-The mutation group runs in its slice, `internal/mutation`, over the `internal/mutants` domain
+The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over the `internal/mutants` domain
 and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`.
 `mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
 leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership

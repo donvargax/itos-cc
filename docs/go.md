@@ -190,11 +190,26 @@ a `context.Context` first (decision 30); pure logic takes none.
   Release retains historical best-effort scratch cleanup; checked worker Close retains
   lifetime failures and partial trial results. Its depguard rule permits only the served
   domain and the actual config/project/coverage/language/selection libraries it wraps.
-- `internal/mutation` declares the whole mutation group and its five child command
-  structs and help contracts (T-96). Cmd supplies the worker default and creates one fresh
-  model/parser per run. Kong validates each child once; `cli.Provided` retains the actual
-  validated path's explicit flag facts and original value spellings, which cmd binds as
-  `Written`. Every child runs in the slice: list and
+- `internal/slices/mutation` declares the whole mutation group and its five child command
+  structs and help contracts (T-96), the sixth slice under `internal/slices` and the first that
+  is a group (T-157); it was `internal/mutation`. `Command` declares the group, its `New` a fresh
+  `*CLI` whose fields kong reads the five children from, and `Ports` names what
+  `NewHandler(ctx, p)` builds the handler over: `SelectionTree`, `LangSurroundings` and
+  `SnapshotStore`, as the other slices declare them, a method for each mutation port the handler
+  holds, named for the domain's port (`MutationSettings`, `MutationSnapshotReader`,
+  `MutationCatalog`, `MutationSourcePresence`, `MutationSourceStatus`, `MutationHistory`,
+  `MutationToolchain`, `MutationFingerprints`, `MutationReach`, `MutationWorkers`,
+  `MutationSnapshots`, `MutationSourceEdits`, `MutationTestLister`, `MutationFresh`,
+  `MutationFreshWorkers`), `CoverageMutationMeasurer`, `MutationPlatform` and `WorkingDir`.
+  `MutationExceptions`, `MutationRepository` and `MutationPhysicalDir` give the functions
+  `adapters`' fields hold as they are, never a method value, so a binding left nil reaches the
+  handler nil and says it is missing in its own words. `NewHandler` copies them and reads
+  nothing, so settings are read only at each command's admission point, never for help or a
+  line kong refuses, and it never fails. Cmd supplies the worker default (`mutation_workers`)
+  and creates one fresh model/parser per run. Kong validates each child once; `cli.Provided`
+  retains the actual validated path's explicit flag facts and original value spellings, which
+  cmd binds once for every command as `cli.Written` and run and sample convert to the slice's
+  own `Written`. Every child runs in the slice: list and
   check (T-97), sample (T-98), except (T-99) and run (T-100): application queries carry
   selection, coverage, sampling and exception values once, and their handler coordinates the
   existing mutants, selection and language capabilities. List presents its ordered prefix on later read
@@ -205,7 +220,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   sources exclude left out reach stderr through its query's `SelectionProgress` before any
   run progress, and the missing `Workers` binding alone emits no result object. Its
   `Run` refuses a `--count` below 1 before anything is observed, quoting the value as
-  written from the `Written` flags cmd binds (`cli.Provided`). Except's `Run` takes
+  written from the `Written` flags cmd binds (`cli.Provided`, as `cli.Written`). Except's `Run` takes
   `--renew`'s branch before it looks at the reason, refuses an absent `--reason` (nil) apart
   from an empty one, then the site's count and form, read from the right so a drive letter's
   colon is no separator, before assembling its `ExceptQuery`. Its handler reads settings, then
@@ -394,8 +409,12 @@ a `context.Context` first (decision 30); pure logic takes none.
   calls the `Run` of the command kong selected through one generic call (`runSelected`,
   `Context.Call` on `parsed.Selected()`'s `Run`, `--json` read from the parsed command),
   with no case per command. `parserOf` binds every handler, over the ports in `adapters`,
-  through kong providers (`handlers`), which kong calls only when the `Run` it calls asks for
-  their value. The commands under `internal/slices` are not fields of `commandLine`: `assembled`
+  through kong providers (`assembled`), which kong calls only when the `Run` it calls asks for
+  their value, and binds once for every command the flags its line gave as written
+  (`cli.Written`, read by `cli.Provided` from the parsed line) and `mutation_workers`, the
+  default of `mutation run`'s and `sample`'s `--workers`, which kong interpolates once the
+  declared commands are built. The commands under `internal/slices` are not fields of
+  `commandLine`, which holds `serve` alone: `assembled`
   (`commands_gen.go`, which `tools/bin/assemble` writes from each slice's declaration, T-146)
   adds each slice's declaration with kong's `DynamicCommand`, a fresh command line each, in
   their names' order, and the provider of its handler, one shape for every slice,
@@ -415,9 +434,12 @@ a `context.Context` first (decision 30); pure logic takes none.
   `main` makes a context of its own, and none is held in a value or captured by a closure
   that does I/O: a callback that does I/O takes the context first, as `project.WalkDir`'s
   does. A done context starts no command. It is the only place
-  that knows every package. Every command is a node of its one kong model, `commandLine`, its
-  fields in their names' order, which the guess weighs a tie by; `serve`'s node only names it
-  to the top-level help and the guess. It holds the selection domain's classifier,
+  that knows every package. Every command is a node of its one kong model, `commandLine` and
+  the slices' declarations, in their names' order (`byName`), which the guess weighs a tie by;
+  `serve`'s node only names it to the top-level help and the guess. A group is a declaration
+  like any other: `mutation`'s `New` makes the group's struct, whose fields are its children, so
+  its help, its children's, their top-level rows and the guess for a mistyped child come from
+  the same model. It holds the selection domain's classifier,
   `classifySelection`, since every command selects its files; `serve`, on the hand parser, selects none (T-100). It holds the snapshot domain's too, `classifySnapshot`, since several commands share
   it; `dry`'s and `scrap`'s handlers write through `adapters`' `Store`, `internal/metricsdir`'s
   on the disk: a snapshot that cannot be written is the internal 100, its message whole with
@@ -431,7 +453,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `mutation` share the domain. `crap`'s handler measures coverage through the port,
   `adapters`' `Coverage`, which its `Ports`' `CoverageMeasurer` gives it; `mutation run` measures through its handler's `loadCoverage`,
   which builds the request from its query and calls the separate `MutationCoverage`
-  binding's `MeasureListed`. Strict coverage also calls that binding's
+  binding's `MeasureListed`, which its `Ports`' `CoverageMutationMeasurer` gives it. Strict coverage also calls that binding's
   `Inventory`; neither consumer constructs a real fallback. Strict coverage refuses
   `--coverage-command`, as every raw coverage flag, before it measures
   (`StrictCoverageFlag`); an ordinary run given a coverage command and no report logs
@@ -459,7 +481,8 @@ context-as-argument a context after any other parameter, tests included.
   whose `SettingsReader` it implements too, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
   fixtures.
-- `slices`: a slice not yet under `internal/slices` imports nothing of ours but the domains, `internal/cli` and
+- `slices`: a package under `internal/` that no rule names, held as a slice now that every
+  command's slice is under `internal/slices` (T-157), imports nothing of ours but the domains, `internal/cli` and
   `internal/lang`, the domain library naming a source's units that every command measures by,
   with its port and, in its tests, the port's fake, so never another slice, an adapter, the `project` library
   an adapter wraps and lang's disk side, the `config` codec (mutation reads settings
@@ -565,7 +588,7 @@ command from reaching into this one.
 A new sealed failure set, an interface with an unexported marker method like the selection
 port's `Failure`, is annotated `//sumtype:decl` and given its exit codes in one switch that
 names every kind, in its domain's classifier, as cmd's `selectionProblem` gives the selection
-port's and `internal/mutation`'s `failureError` words the slice's own `Failure`. gochecksumtype
+port's and `internal/slices/mutation`'s `failureError` words the slice's own `Failure`. gochecksumtype
 then refuses the switch when a kind is added and left out; without the annotation nothing
 checks it. CI's lint runs over the whole module, so it checks cmd's classifiers as well as the
 switches in `internal/`.
@@ -604,7 +627,7 @@ follows the same steps for a command it wrote before it had the template's desig
    named from the working directory by `ui.Rel`, or in a handler by its `Ports`' `Rel`, which
    cmd answers with `cli.Rel` from the same directory, not by a library an adapter wraps.
 3. **Its classifier.** A domain's failures become problems in one classifier, held beside the
-   one slice that uses the domain, as `internal/mutation` words its own `Failure`s. A domain
+   one slice that uses the domain, as `internal/slices/mutation` words its own `Failure`s. A domain
    several commands share keeps its classifier in cmd (`classifySelection`), since no slice may
    import another; the moved slice then needs none. internal/cli never holds one.
 4. **Routing in cmd.** The slice declares its command, a `cli.Declaration` named `Command`
@@ -616,9 +639,9 @@ follows the same steps for a command it wrote before it had the template's desig
    through a `Ports` method under the context `NewHandler` is given, which kong calls only for
    the `Run` that asks for it. `go run ./tools/bin/assemble` then writes the slice into
    `cmd/itos-cc/commands_gen.go`, whose `assembled` puts the model's commands in their names'
-   order. A command not yet moved under `internal/slices`
-   is still a field of `commandLine` in `dispatch.go`, in its name's order, its provider in
-   `handlers`. `dispatch` needs no case: it calls the
+   order; a group declares itself the same way, its `CLI` the struct of its subcommands, as
+   `internal/slices/mutation` does. A Run that quotes a flag back as written asks for
+   `cli.Written`, which `parserOf` binds for every command. `dispatch` needs no case: it calls the
    selected command's `Run` through `callSafely`, and admits any group's words before its
    subcommand. A command still on the
    hand parser leaves `legacy` and the in-process driver's refusal with its old file;

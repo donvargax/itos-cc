@@ -85,9 +85,13 @@ it. cmd answers that port with `internal/version`, the one source of the version
 stamp, else the module version Go records, each without a leading v, else `dev`. No slice
 imports `internal/version` itself.
 
-The mutation group's slice, `internal/mutation`, runs its five commands over the mutation domain,
+The mutation group's slice, `internal/slices/mutation`, the sixth under `internal/slices` and the
+first that is a group, runs its five commands over the mutation domain,
 `internal/mutants`, which owns sites, results and their judgment, and reaches its workers, tools,
 inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`).
+It declares itself as every slice does, its `CLI` the struct of its five children, and cmd's
+adapters answer its `Ports`; the functions cmd binds for a counted run and for the exceptions'
+writer reach the handler as they are, so one left unbound is reported missing.
 cmd routes every command through one kong model but `serve`, which keeps its legacy handler.
 
 The domains know no command-line flags, encoding or exit codes: a domain may carry struct tags
