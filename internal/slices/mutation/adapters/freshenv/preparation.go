@@ -97,6 +97,14 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 		stage("coverage-plan", "failed", err)
 		return prep, fmt.Errorf("prepare coverage plans: %w", err)
 	}
+	// A Flutter package's resolution, which the commit never holds either,
+	// before any plan looks for its package config.
+	readied, err := e.readyDart(ctx, sources, log, execute)
+	prep.Commands = append(prep.Commands, readied...)
+	if err != nil {
+		stage("coverage-plan", "failed", err)
+		return prep, fmt.Errorf("prepare coverage plans: %w", err)
+	}
 	// A Python or Kotlin file's own tests, and the coverage that decides
 	// which of its mutants run, are the tests that reach it in the frozen
 	// tree.

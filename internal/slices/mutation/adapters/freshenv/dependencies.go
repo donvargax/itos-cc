@@ -15,12 +15,14 @@ import (
 // LinkInstalledDependencies links into the frozen export the dependencies
 // the live project has installed, which the commit never holds: the
 // node_modules of each TypeScript build root and of every directory above
-// it within the repository, as Node resolves them, and the .venv or venv of
-// each Python build root, else the virtualenv VIRTUAL_ENV names. Each is a
-// symbolic link to the live directory, so commands in the export and in
-// workers' copies of it, which copy a link as a link, run the project's
-// installed tools; nothing is installed or copied. Gradle's and Maven's
-// local caches are outside every project and need no link. It returns the
+// it within the repository, as Node resolves them, the .venv or venv of
+// each Python build root, else the virtualenv VIRTUAL_ENV names, and the
+// .fvm/flutter_sdk fvm use links beside the .fvmrc a Dart file's package or
+// workspace commits, the SDK it pins. Each is a symbolic link to the live
+// one, so commands in the export and in workers' copies of it, which copy a
+// link as a link, run the project's installed tools; nothing is installed
+// or copied. Gradle's and Maven's local caches, and the pub cache, are
+// outside every project and need no link. It returns the
 // export-relative links it made. Run it once preparation has verified the
 // export, whose Git status would count the links.
 func linkInstalledDependencies(ctx context.Context, p *FreshPlan) ([]string, error) {
@@ -65,6 +67,21 @@ func linkInstalledDependencies(ctx context.Context, p *FreshPlan) ([]string, err
 			if env := os.Getenv("VIRTUAL_ENV"); !found && env != "" && fileExists(filepath.Join(env, "bin", "python")) {
 				links[filepath.Join(rel, ".venv")] = env
 			}
+		case "dart":
+			// As coverage.FlutterFor finds it: the nearest .fvmrc, here
+			// one the commit holds.
+			dir := project.FindUp(ctx, path, ".fvmrc")
+			if dir == "" {
+				continue
+			}
+			rel, err := filepath.Rel(p.FrozenRoot, dir)
+			if err != nil || !filepath.IsLocal(rel) {
+				continue
+			}
+			sdk := filepath.Join(rel, ".fvm", "flutter_sdk")
+			if live := filepath.Join(p.Root, sdk); isDir(live) {
+				links[sdk] = live
+			}
 		}
 	}
 	var wanted, made []string
@@ -77,6 +94,10 @@ func linkInstalledDependencies(ctx context.Context, p *FreshPlan) ([]string, err
 		if _, err := os.Lstat(target); err == nil {
 			// The commit holds it: the frozen one stands.
 			continue
+		}
+		// The export may hold no .fvm for the SDK's link, which git ignores.
+		if err := os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
+			return made, fmt.Errorf("link installed dependencies %s: %w", filepath.ToSlash(rel), err)
 		}
 		if err := os.Symlink(links[rel], target); err != nil {
 			return made, fmt.Errorf("link installed dependencies %s: %w", filepath.ToSlash(rel), err)

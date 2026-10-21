@@ -2350,7 +2350,7 @@ Feature: Mutation testing
       # resolved, and the run stops as count.preparation-failed, failing at
       # the preparation step; the second row then still runs the PATH's
       # flutter until the link is made.
-      @wip @slice-37
+      @slice-37
       Examples:
         | language | installed                                                |
         | Dart     | the pub cache, run with --no-pub                         |

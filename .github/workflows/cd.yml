@@ -339,13 +339,15 @@ jobs:
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(163|22[1-4])$'
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(228|229|230)$'
 
-  # The Dart scenarios (slice-32, slice-35), which run the real flutter
-  # test: the Flutter apps, FVM SDK and pub workspace of coverage.feature's
-  # slice-32 parts and mutate.feature's slice-35 parts, selected by their
-  # tags, as COV-05, COV-08 and MUT-07 hold other languages' rows this job
-  # has no tools for. MUT-265 traces the connections of a mutation run with
-  # strace, installed here when the image lacks it. On ubuntu-latest alone, as
-  # the languages shards are: every other job skips them, the languages job
+  # The Dart scenarios (slice-32, slice-34, slice-35, slice-36, slice-37),
+  # which run the real flutter test: the Flutter apps, FVM SDK and pub
+  # workspace of coverage.feature's slice-32 parts, mutate.feature's slice-34
+  # Dart reach rows, slice-35 parts, slice-36 strict Dart coverage and
+  # slice-37 counted runs, selected by their tags, as COV-05, COV-08, MUT-07
+  # and MUT-209 hold other languages' rows this job has no tools for.
+  # MUT-265 traces the connections of a mutation run with strace, installed
+  # here when the image lacks it. On ubuntu-latest alone, as the languages
+  # shards are: every other job skips them, the languages job
   # too, which sets ITOS_CC_LANGUAGE_TOOLS without installing Flutter, so
   # ITOS_CC_FLUTTER_TOOLS marks this one (features/binary.go).
   # The Flutter is the repository's own pin, the root .fvmrc fvm reads
@@ -379,7 +381,7 @@ jobs:
       - env:
           ITOS_CC_LANGUAGE_TOOLS: "1"
           ITOS_CC_FLUTTER_TOOLS: "1"
-        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@(slice-32|slice-35)$'
+        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@(slice-32|slice-34|slice-35|slice-36|slice-37)$'
 
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.
