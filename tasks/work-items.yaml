@@ -4475,3 +4475,15 @@ items:
     status: todo
     depends_on: [T-164]
     kind: task
+  - id: dart-touchpoints-paths
+    title: Refresh docs/dart/touchpoints.md paths after the slice moves
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      docs/dart/touchpoints.md still names 18 internal/mutants/ paths (the Reach fake at
+      internal/mutants/porttest/reach.go among them) and other pre-ADR-0051 locations that no longer
+      exist; T-163 refreshed only its import-resolution rows, so whoever plans Dart reads stale
+      file:line references elsewhere in the map.
