@@ -4033,6 +4033,15 @@ items:
 
       The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
       is ADR-0051.
+
+      Coordinator 2026-10-21 (slices-mutation plan): extend tools/bin/architecture-check so a
+      package outside internal/slices may import one under it, from code or tests, only if it is
+      under cmd/ or a named legacy consumer: graph (reads mutation's judgment for serve until
+      serve's work) and config (its one codec decodes mutation.exceptions and mutation.tests into
+      the domain's Config for every command, T-147); a refusal names both packages; fixtures for a
+      refused engine and an accepted cmd and graph; docs/go.md's boundary list. Also update
+      docs/vertical-slices-inventory.md's paths for every moved slice (crap, dry, scrap and the rest
+      still name their old packages).
   - id: fresh-decode-config
     title: Let porttest Fresh decode committed settings into mutants.Config
     phase: 1
