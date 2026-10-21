@@ -73,7 +73,24 @@ func TestDiffLinesReadsEveryNameGitPrints(t *testing.T) {
 	}
 }
 
-func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
+// seen is what a test's judge keeps of a file ChangedSince hands it: the
+// text of HEAD's version and of the base's, "" with none, and the lines.
+type seen struct {
+	file, base string
+	lines      []LineRange
+}
+
+func see(file, base *lang.File, lines []LineRange) seen {
+	s := seen{file: string(file.Src), lines: lines}
+	if base != nil {
+		s.base = string(base.Src)
+	}
+	return s
+}
+
+// Which functions the lines touch is mutation's judgment, checked by the
+// History contract githistory passes and by githistory's own tests.
+func TestChangedSinceHandsOverHEADsVersionAndItsChangedLines(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
@@ -93,7 +110,7 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	write(t, name, "import os\n\n\ndef a(x):\n    return x * 2\n\n\ndef b(x):\n    return x + 1\n")
 
 	t.Chdir(filepath.Join(repo, "sub"))
-	got, _, err := ChangedSince(t.Context(), "base", nil)
+	got, _, err := ChangedSince(t.Context(), "base", see)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,18 +118,17 @@ func TestChangedSinceFindsTheFunctionsInHEAD(t *testing.T) {
 	if keys := slices.Collect(maps.Keys(got)); !slices.Equal(keys, []string{abs}) {
 		t.Fatalf("files %q, want only %q: top.py is not under sub", keys, abs)
 	}
-	var functions []string
-	for f := range got[abs].Functions {
-		functions = append(functions, f[strings.Index(f, "#")+1:])
+	if want := "def a(x):\n    return x\n\n\ndef b(x):\n    return x + 1\n"; got[abs].file != want {
+		t.Errorf("file %q, want HEAD's %q, not the working tree's", got[abs].file, want)
 	}
-	if !slices.Equal(functions, []string{"b"}) {
-		t.Errorf("functions %q, want [b]", functions)
+	if want := "def a(x):\n    return x\n\n\ndef b(x):\n    return x\n"; got[abs].base != want {
+		t.Errorf("base %q, want base's %q", got[abs].base, want)
 	}
-	if lines := got[abs].Lines; !slices.Equal(lines, []LineRange{{Start: 6, End: 6}}) || !got[abs].Changes(5, 6) || got[abs].Changes(1, 5) {
+	if lines := got[abs].lines; !slices.Equal(lines, []LineRange{{Start: 6, End: 6}}) {
 		t.Errorf("lines %v, want b's second line alone, HEAD's line 6", lines)
 	}
 
-	if _, _, err := ChangedSince(t.Context(), "--output=x", nil); err != ErrBadRef {
+	if _, _, err := ChangedSince(t.Context(), "--output=x", see); err != ErrBadRef {
 		t.Errorf("a ref that reads as an option: %v, want ErrBadRef", err)
 	}
 }
@@ -144,44 +160,57 @@ func TestHeadIsTheHEADCommitsId(t *testing.T) {
 	}
 }
 
-func TestChangedSinceTellsFunctionsSharingANameApartByHash(t *testing.T) {
+// The base is the file as the merge base held it, under the name it had
+// there: whatever ref did since, and nothing for a file the range added.
+func TestChangedSinceHandsOverTheFileAsTheMergeBaseHeldIt(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("git is not installed")
 	}
 	repo := t.TempDir()
 	git(t, repo, "init", "-q")
-	name := filepath.Join(repo, "x.py")
-	write(t, name, "def a(x):\n    return x\n\n\ndef a(x):\n    return x\n\n\ndef b(x):\n    return x\n")
+	write(t, filepath.Join(repo, "x.py"), "def a(x):\n    return x\n")
+	write(t, filepath.Join(repo, "was.py"), "def b(x):\n    return x\n\n\ndef c(x):\n    return x\n")
 	git(t, repo, "add", "-A")
 	git(t, repo, "commit", "-qm", "base")
-	git(t, repo, "tag", "base")
-	write(t, name, "def a(x):\n    return x\n\n\ndef a(x):\n    return x + 1\n\n\ndef b(x):\n    return x\n")
-	git(t, repo, "commit", "-qam", "change the second a")
+	git(t, repo, "branch", "ref")
+	write(t, filepath.Join(repo, "x.py"), "def a(x):\n    return x + 1\n")
+	git(t, repo, "mv", "was.py", "now.py")
+	write(t, filepath.Join(repo, "now.py"), "def b(x):\n    return x\n\n\ndef c(x):\n    return x + 1\n")
+	write(t, filepath.Join(repo, "new.py"), "def d(x):\n    return x\n")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-qm", "change, rename and add")
+	git(t, repo, "checkout", "-q", "ref")
+	write(t, filepath.Join(repo, "x.py"), "def a(x):\n    return x * 2\n")
+	git(t, repo, "commit", "-qam", "ref moves on")
+	git(t, repo, "checkout", "-q", "-")
 
 	t.Chdir(repo)
-	text := func(f *lang.File, u lang.Unit) string { return string(f.Src[u.Node.StartByte():u.Node.EndByte()]) }
-	got, _, err := ChangedSince(t.Context(), "base", text)
+	got, renamed, err := ChangedSince(t.Context(), "ref", see)
 	if err != nil {
 		t.Fatal(err)
 	}
-	abs, _ := filepath.Abs("x.py")
-	c := got[abs]
-	var id string
-	for f := range c.Functions {
-		id = f
+	x, now, was, added := absPath(t, "x.py"), absPath(t, "now.py"), absPath(t, "was.py"), absPath(t, "new.py")
+	if want := "def a(x):\n    return x\n"; got[x].base != want {
+		t.Errorf("x.py's base %q, want the merge base's %q", got[x].base, want)
 	}
-	if len(c.Functions) != 1 || !strings.HasSuffix(id, "#a") {
-		t.Fatalf("functions %v, want only a", c.Functions)
+	if want := "def b(x):\n    return x\n\n\ndef c(x):\n    return x\n"; got[now].base != want || renamed[now] != was {
+		t.Errorf("now.py's base %q, renamed from %q, want was.py's %q", got[now].base, renamed[now], want)
 	}
-	if c.Judges(id, "def a(x):\n    return x") {
-		t.Errorf("the first a, unchanged, is judged")
+	if !slices.Equal(got[now].lines, []LineRange{{Start: 6, End: 6}}) {
+		t.Errorf("now.py's lines %v, want c's second line alone", got[now].lines)
 	}
-	if !c.Judges(id, "def a(x):\n    return x + 1") {
-		t.Errorf("the second a, changed, is not judged")
+	if got[added].file != "def d(x):\n    return x\n" || got[added].base != "" {
+		t.Errorf("new.py %+v, want HEAD's text and no base", got[added])
 	}
-	if c.Judges(strings.TrimSuffix(id, "a")+"b", "def b(x):\n    return x") {
-		t.Errorf("b, unchanged, is judged")
+}
+
+func absPath(t *testing.T, name string) string {
+	t.Helper()
+	path, err := filepath.Abs(name)
+	if err != nil {
+		t.Fatal(err)
 	}
+	return path
 }
 
 func TestDeletedSinceListsTheSourcesTheRangeDeletedNotRenamed(t *testing.T) {

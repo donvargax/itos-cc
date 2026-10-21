@@ -27,8 +27,23 @@ func (h History) ReadCommitted(ctx context.Context, ref, path string) ([]byte, m
 	return value, failed(ctx, ref, err)
 }
 func (h History) ChangedSince(ctx context.Context, ref string) (map[string]mutants.ChangedFunctions, map[string]string, mutants.HistoryFailure) {
-	changed, renamed, err := project.ChangedSinceAt(ctx, h.Dir, ref, mutants.UnitHash)
+	changed, renamed, err := project.ChangedSinceAt(ctx, h.Dir, ref, judged(mutants.ChangedFunctionsOf, mutants.UnitHash))
 	return changed, renamed, failed(ctx, ref, err)
+}
+
+// judged is the judge ChangedSince hands each file the range changed: of,
+// mutation's mutants.ChangedFunctionsOf, with hash, given project's line
+// ranges converted to mutation's field for field. It is generic in the
+// parsed file and the hash so this adapter names no type of internal/lang,
+// which its import rule keeps out: the call infers them.
+func judged[F, H, T any](of func(file, base F, ranges []mutants.LineRange, hash H) T, hash H) func(file, base F, lines []project.LineRange) T {
+	return func(file, base F, lines []project.LineRange) T {
+		ranges := make([]mutants.LineRange, 0, len(lines))
+		for _, r := range lines {
+			ranges = append(ranges, mutants.LineRange{Start: r.Start, End: r.End, Deletion: r.Deletion})
+		}
+		return of(file, base, ranges, hash)
+	}
 }
 func (h History) DeletedSince(ctx context.Context, ref string) ([]string, mutants.HistoryFailure) {
 	value, err := project.DeletedSinceAt(ctx, h.Dir, ref)

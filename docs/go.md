@@ -99,7 +99,11 @@ a `context.Context` first (decision 30); pure logic takes none.
   structure, the engine `dry`'s and `scrap`'s domains share (T-148): `Fingerprint(f, n,
   skip...)` is the fingerprint set of the tree under a node of a parsed file, local names,
   field names and literals dropped, called names, operators and shape kept, each node hashed one
-  and two levels deep, and `Jaccard(a, b)` the similarity of two such sorted sets.
+  and two levels deep, and `Jaccard(a, b)` the similarity of two such sorted sets. It imports
+  no mutation package (T-156): `ChangedSince` and `ChangedSinceAt` hand each file a range
+  changed, as HEAD and the merge base hold it, and its changed `LineRange`s, project's own, to
+  the caller's function, generic in what it returns, so which functions a change touches is
+  mutation's judgment, made in `internal/githistory`.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the

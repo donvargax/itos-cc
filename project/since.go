@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/mutants"
 )
 
 // ErrBadRef is returned by ChangedSince for a ref git cannot resolve to a
@@ -34,25 +33,26 @@ func Head() (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// ChangedSince returns the functions the commits since ref changed, by
-// file: git diff ref...HEAD, so a branch's own commits whatever the base did
-// since, and never the working tree. Each supported file under the working
-// directory that the range changed or renamed is a key, by absolute path,
-// even when no function of it changed; its value holds the namespace#name of
-// each function whose lines the range touched. A deleted line counts as a
-// change of the lines either side of it, and a move is no change, so a file
-// renamed unchanged has none. Functions are found in HEAD's version of the
-// file, so an uncommitted edit neither adds one nor moves its lines. renamed
-// maps each file the range renamed, by its absolute path, to the absolute
-// path it had at ref. hash, when set, fingerprints a function's text, so
-// functions sharing a name are told apart (see ChangedFunctions). It reads
-// under ctx: once ctx is done it starts no command and returns its cause.
-func ChangedSince(ctx context.Context, ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
-	return ChangedSinceAt(ctx, "", ref, hash)
+// ChangedSince returns what judge makes of each file the commits since ref
+// changed: git diff ref...HEAD, so a branch's own commits whatever the base
+// did since, and never the working tree. Each supported file under the
+// working directory that the range changed or renamed is a key, by absolute
+// path, even when none of its lines changed; its value is judge's, given the
+// file as HEAD holds it, so an uncommitted edit neither adds a line nor moves
+// one, the file as the range's start, the merge base, held it, under the name
+// it had there, nil when it had none or one of another language, and the
+// lines the range changed in HEAD's version. A deleted line counts as a
+// change of the lines either side of it, marked Deletion, and a move is no
+// change, so a file renamed unchanged has no lines. Both files are open only
+// while judge runs. renamed maps each file the range renamed, by its absolute
+// path, to the absolute path it had at ref. It reads under ctx: once ctx is
+// done it starts no command and returns its cause.
+func ChangedSince[T any](ctx context.Context, ref string, judge func(file, base *lang.File, lines []LineRange) T) (changed map[string]T, renamed map[string]string, err error) {
+	return ChangedSinceAt(ctx, "", ref, judge)
 }
 
 // ChangedSinceAt is the same query under an explicit caller directory.
-func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, lang.Unit) string) (changed map[string]ChangedFunctions, renamed map[string]string, err error) {
+func ChangedSinceAt[T any](ctx context.Context, dir, ref string, judge func(file, base *lang.File, lines []LineRange) T) (changed map[string]T, renamed map[string]string, err error) {
 	if ctx.Err() != nil {
 		return nil, nil, context.Cause(ctx)
 	}
@@ -89,7 +89,7 @@ func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, 
 		return nil, nil, fmt.Errorf("git diff %s...HEAD: %s", ref, gitError(nil, err))
 	}
 	files, renames := diffLines(string(out))
-	changed, renamed = map[string]ChangedFunctions{}, map[string]string{}
+	changed, renamed = map[string]T{}, map[string]string{}
 	for name, lines := range files {
 		spec := lang.Detect(name)
 		if spec == nil {
@@ -123,9 +123,9 @@ func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, 
 			}
 			return nil, nil, err
 		}
-		ranges := make([]mutants.LineRange, 0, len(lines))
+		ranges := make([]LineRange, 0, len(lines))
 		for _, r := range lines {
-			ranges = append(ranges, mutants.LineRange{Start: r.start, End: r.end, Deletion: r.deletion})
+			ranges = append(ranges, LineRange{Start: r.start, End: r.end, Deletion: r.deletion})
 		}
 		old := name
 		if before, ok := renames[name]; ok {
@@ -136,7 +136,7 @@ func ChangedSinceAt(ctx context.Context, dir, ref string, hash func(*lang.File, 
 			f.Close()
 			return nil, nil, err
 		}
-		c := mutants.ChangedFunctionsOf(f, base, ranges, hash)
+		c := judge(f, base, ranges)
 		f.Close()
 		if base != nil {
 			base.Close()
@@ -221,13 +221,12 @@ func deletedNames(out []byte, err error, dir, ref string) ([]string, error) {
 	return deleted, nil
 }
 
-// ChangedFunctions and LineRange are pure mutation values, retained here for
-// existing callers while their orchestration moves.
-type ChangedFunctions = mutants.ChangedFunctions
-type LineRange = mutants.LineRange
-
-func LinesOverlap(ranges []LineRange, start, end int) bool {
-	return mutants.OverlapsRanges(ranges, start, end)
+// LineRange is a range of the lines of HEAD's version of a file that the
+// commits since a ref changed, both ends included; Deletion marks the two
+// lines either side of a hunk that only deleted lines.
+type LineRange struct {
+	Start, End int
+	Deletion   bool
 }
 
 // lines is a range of line numbers, both ends included; deletion marks

@@ -128,11 +128,11 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: since, SinceBase: sinceBase,
 		Seed: seed, Algorithm: FreshPlanVersion}
 	if changed != nil {
-		plan.Changed = map[string][]project.LineRange{}
+		plan.Changed = map[string][]mutants.LineRange{}
 		for rel, ranges := range changed {
 			for _, r := range ranges {
 				if !r.Deletion {
-					plan.Changed[rel] = append(plan.Changed[rel], project.LineRange{Start: r.Start, End: r.End})
+					plan.Changed[rel] = append(plan.Changed[rel], mutants.LineRange{Start: r.Start, End: r.End})
 				}
 			}
 		}
