@@ -3633,6 +3633,11 @@ items:
       Issue #24. Only leaf-token swaps and unary deletions exist (internal/mutants/sites.go:48-90,
       internal/lang/golang.go:52-53). The person (2026-10-18): a mutation.operators key turns them
       on, off by default so no function goes stale (q-13); Go first, other languages later. Wave 3.
+
+      From the survey of Uncle Bob's tools (2026-10-21, read-only). clj-mutate (1256a01) swaps which
+      function is called (min/max, filter/remove, every?/some) and inverts conditionals; itos-cc
+      only swaps operator tokens. Per-language name pairs and condition negation could join the
+      opt-in mutation.operators key, so no function goes stale by default.
     refs: ["#24"]
   - id: summary-location
     title: mutation.summary chooses where the survivor summary goes, metrics by default
