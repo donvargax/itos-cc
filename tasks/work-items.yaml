@@ -4123,3 +4123,18 @@ items:
       it ran nothing otherwise; ci.yml and cd.yml set it on every job that runs TestFeatures, so
       nothing leaves CI or CD; itos.yaml's scenario lines, README and docs/go.md say so. Measure a
       local go test ./... before and after.
+  - id: binary-only-reach
+    title: Measure what only the binary-only scenarios reach, and test it locally where cheap
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Decision 52, after binary-driver-opt-in. Coverage of the local tier (unit, contract and
+      in-process tests) against CD's full run lists the lines only TestFeatures reaches. Sort them:
+      main's wiring, signal-to-exit-code paths, build stamping, real-tool adapters (coverage
+      runners, toolchain probes, worker copies, git check-ignore). For each, an adapter or contract
+      test that runs locally where it is cheap, else accepted as CD's; never a fake standing in for
+      the real tool a scenario checks. UNIT-06's binary-only reason (crap and mutation run still
+      hand-parsed) is stale since T-100 and T-152: check it can run in process.
