@@ -5215,3 +5215,15 @@ items:
       copy, Ready and a test tool's start come between. Worth a scenario only if one shows up; a
       content hash of small files would close it at a cost per run.
     refs: ["#35"]
+  - id: problemis-json-runs
+    title: Let the problem steps read a --json run's problem
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      features' problemIs requires the plain output to print the problem's message, which a run made
+      with --json never does, so a scenario that runs with --json, as MUT-268 and MUT-269 do, cannot
+      use the problem steps and needs its own lookup (features/mutate_listed_coverage_failed.go's
+      problemOf). Found by slice-15.
