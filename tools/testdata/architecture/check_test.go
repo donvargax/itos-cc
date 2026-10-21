@@ -522,4 +522,62 @@ func Code(failure sealed.Failure) int {
 			}
 		})
 	}
+	// No package under internal/slices/X imports one under internal/slices/Y
+	// (ADR-0051), which depguard cannot hold: its deny list is a prefix, so
+	// refusing the slices would refuse a slice's own subpackages too.
+	// architecture-check --siblings refuses a sibling's import, from code or
+	// tests, naming both packages, and passes a slice importing its own
+	// subpackage and an engine, and cmd importing every slice. These fixtures
+	// are a module of their own inside the temporary one, so the parent's
+	// ./... and its lint, whose slices rule refuses a slice's own
+	// subpackages, leave them out.
+	stub := "package probe\n\nconst Value = 1\n"
+	slicePath := func(name string) string { return module + "/internal/slices/" + name }
+	for path, contents := range map[string]string{
+		"go.mod":                              "module " + module + "\n\ngo 1.27\n",
+		"internal/lang/stub.go":               stub,
+		"internal/slices/alpha/store/stub.go": stub,
+		"internal/slices/alpha/alpha.go":      fmt.Sprintf("package probe\n\nimport (\n lang %q\n store %q\n)\n\nconst Value = lang.Value + store.Value\n", module+"/internal/lang", slicePath("alpha/store")),
+		"internal/slices/beta/beta.go":        fmt.Sprintf("package probe\n\nimport alpha %q\n\nconst Value = alpha.Value\n", slicePath("alpha")),
+		"internal/slices/gamma/gamma.go":      stub,
+		"internal/slices/gamma/gamma_test.go": fmt.Sprintf("package probe\n\nimport (\n store %q\n \"testing\"\n)\n\nfunc TestProbe(t *testing.T) {\n _ = t\n _ = store.Value\n}\n", slicePath("alpha/store")),
+		"cmd/slices/main.go":                  fmt.Sprintf("package main\n\nimport (\n _ %q\n _ %q\n _ %q\n)\n\nfunc main() {}\n", slicePath("alpha"), slicePath("beta"), slicePath("gamma")),
+	} {
+		write("siblings/"+path, contents)
+	}
+	siblings := filepath.Join(dir, "siblings")
+	compileSiblings := exec.Command("go", "test", "./...")
+	compileSiblings.Dir = siblings
+	compileSiblings.Env = compile.Env
+	if output, err := compileSiblings.CombinedOutput(); err != nil {
+		t.Fatalf("the sibling fixtures must compile and their tests pass: %v\n%s", err, output)
+	}
+	for _, c := range []struct{ pkg, imported string }{
+		{"./internal/slices/alpha/...", ""},
+		{"./cmd/slices", ""},
+		{"./internal/slices/beta", "alpha"},
+		{"./internal/slices/gamma", "alpha/store"},
+	} {
+		t.Run("siblings "+c.pkg, func(t *testing.T) {
+			run := exec.Command("sh", check, "--siblings", c.pkg)
+			run.Dir = siblings
+			run.Env = compile.Env
+			output, err := run.CombinedOutput()
+			if c.imported == "" {
+				if err != nil {
+					t.Errorf("refused a slice's own subpackage, an engine or cmd importing the slices: %v\n%s", err, output)
+				}
+				return
+			}
+			importer := module + "/" + strings.TrimPrefix(c.pkg, "./")
+			if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 1 {
+				t.Fatalf("missing refusal of %s importing %s: %v\n%s", importer, slicePath(c.imported), err, output)
+			}
+			for _, text := range []string{importer + " imports " + slicePath(c.imported), "ADR-0051"} {
+				if !strings.Contains(string(output), text) {
+					t.Errorf("the refusal does not say %q:\n%s", text, output)
+				}
+			}
+		})
+	}
 }

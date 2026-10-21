@@ -381,6 +381,12 @@ context-as-argument a context after any other parameter, tests included.
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
   depguard sees only the imports a file names, not what a binary links through them: a fake
   enters `cmd` only through its `_test.go` files.
+- Siblings: no package under `internal/slices/X` imports one under `internal/slices/Y`, from its
+  code or its tests (ADR-0051). depguard cannot say "not a sibling", since its deny list is a
+  prefix that would refuse a slice's own subpackages too, so `tools/bin/architecture-check`
+  holds it over `go list ./...`'s imports and names both packages. A slice may import its own
+  subpackages and any engine, and what is outside `internal/slices`, `cmd` above all, may import
+  every slice.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,

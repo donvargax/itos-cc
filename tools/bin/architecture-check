@@ -2,6 +2,11 @@
 # Exercise the actual pinned linter/configuration, without requiring template git history.
 set -eu
 
+usage() {
+	echo "usage: tools/bin/architecture-check [--linked <package> | --siblings <package>...]" >&2
+	exit 2
+}
+
 # linked <package>: refuse a binary linking a port's fake (T-56), which
 # depguard cannot hold, seeing only the imports a file names, not what a
 # binary links through them. go list -deps leaves _test.go files out, so a
@@ -16,20 +21,59 @@ linked() {
 	return 1
 }
 
-# --linked <package> runs that check alone, in the current module: the
-# fixtures prove it refuses.
-if [ "${1-}" = "--linked" ]; then
-	[ $# -eq 2 ] || {
-		echo "usage: tools/bin/architecture-check [--linked <package>]" >&2
-		exit 2
-	}
+# siblings <package>...: refuse a package under internal/slices/X importing
+# one under internal/slices/Y, from its code or its tests (ADR-0051), which
+# depguard cannot hold: its deny list is a prefix, so refusing the slices
+# would refuse a slice's own subpackages too. A slice may import its own
+# subpackages and any engine, and what is outside internal/slices, cmd
+# above all, may import every slice.
+siblings() {
+	prefix="$(go list -m)/internal/slices/"
+	listed=$(go list -f '{{.ImportPath}}{{range .Imports}} {{.}}{{end}}{{range .TestImports}} {{.}}{{end}}{{range .XTestImports}} {{.}}{{end}}' "$@")
+	refused=$(printf '%s\n' "$listed" | awk -v prefix="$prefix" '
+		function slice(path, rest) {
+			if (index(path, prefix) != 1) return ""
+			rest = substr(path, length(prefix) + 1)
+			if (index(rest, "/") > 0) rest = substr(rest, 1, index(rest, "/") - 1)
+			return rest
+		}
+		{
+			own = slice($1)
+			if (own == "") next
+			for (i = 2; i <= NF; i++) {
+				other = slice($i)
+				if (other != "" && other != own && !seen[$1 " " $i]++) print $1 " imports " $i
+			}
+		}')
+	[ -z "$refused" ] && return 0
+	printf '%s\n' "$refused" | while IFS= read -r line; do
+		echo "architecture-check: $line; a slice imports no other slice (ADR-0051)" >&2
+	done
+	return 1
+}
+
+# --linked <package> and --siblings <package>... run that check alone, in
+# the current module: the fixtures prove each refuses.
+case "${1-}" in
+--linked)
+	[ $# -eq 2 ] || usage
 	linked "$2"
 	exit 0
-fi
+	;;
+--siblings)
+	[ $# -ge 2 ] || usage
+	shift
+	siblings "$@"
+	exit 0
+	;;
+-*) usage ;;
+esac
+[ $# -eq 0 ] || usage
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$root"
 linked ./cmd/itos-cc
+siblings ./...
 ARCHITECTURE_ROOT=$root
 ARCHITECTURE_LINTER=$(tools/bin/pinned --path golangci-lint)
 export ARCHITECTURE_ROOT ARCHITECTURE_LINTER
