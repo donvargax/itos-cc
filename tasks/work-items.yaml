@@ -5217,3 +5217,22 @@ items:
       Dart support is done (D9 strict evidence, D10 counted runs, D11 docs); no need to specify it
       before then.
     refs: [dart-support]
+  - id: features-adjacency-flutter-rules-in-memory
+    title: The in-process harness's Flutter rules see the fixture, not the disk
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-178's declareAdjacency asks project.FlutterPlatformDir and project.GeneratedDart of the
+      scratch folder's real path, but the in-process driver holds every file in memory and nothing
+      reaches the disk, so in process only the name-based rules apply (build_runner and protoc
+      suffixes, flutter's plugin registrant). A platform folder beside a Flutter pubspec.yaml, a
+      file with source_gen's marker but no generated suffix, and gen-l10n's output under an
+      l10n.yaml are still declared as import nodes in process, and the fake Reach would refuse such
+      a fixture with exit 100 as it refused lib/user.g.dart. No in-process scenario holds one today
+      (MUT-265, the one with android and ios folders, is binary-only). A fix would let project's
+      rules read through a file-reading seam the harness can point at the driver, rather than
+      copying them a third time.
+    refs: [T-178]
