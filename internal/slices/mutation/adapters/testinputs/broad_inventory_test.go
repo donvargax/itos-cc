@@ -33,6 +33,12 @@ func TestSuiteTestHashesFollowEachLanguagesBuildRoot(t *testing.T) {
 		"mvn/src/test/kotlin/AppTest.kt":         "",
 		"mvn/child/pom.xml":                      "",
 		"mvn/child/src/test/kotlin/ChildTest.kt": "",
+		"dart/pubspec.yaml":                      "name: app\n",
+		"dart/lib/app.dart":                      "",
+		"dart/test/app_test.dart":                "",
+		"dart/test/cli_test.dart":                "",
+		"dart/nested/pubspec.yaml":               "name: nested\n",
+		"dart/nested/test/nested_test.dart":      "",
 		"loose/app.ts":                           "",
 		"loose/app.test.ts":                      "",
 	} {
@@ -49,6 +55,7 @@ func TestSuiteTestHashesFollowEachLanguagesBuildRoot(t *testing.T) {
 		"py/pkg/app.py":                 {"py/conftest.py", "py/tests/test_app.py"},
 		"kt/app/src/main/kotlin/App.kt": {"kt/app/src/test/kotlin/AppTest.kt", "kt/lib/src/test/kotlin/LibTest.kt"},
 		"mvn/src/main/kotlin/App.kt":    {"mvn/src/test/kotlin/AppTest.kt"},
+		"dart/lib/app.dart":             {"dart/test/app_test.dart", "dart/test/cli_test.dart"},
 		"loose/app.ts":                  {},
 	} {
 		tests, err := SuiteTestHashes(t.Context(), filepath.Join(root, filepath.FromSlash(source)), root)

@@ -67,6 +67,8 @@ func (s *Inputs) suiteRoot(ctx context.Context, language, path string) string {
 			return root
 		}
 		return s.nearest(ctx, path, "pom.xml")
+	case "dart":
+		return s.nearest(ctx, path, "pubspec.yaml")
 	}
 	return ""
 }

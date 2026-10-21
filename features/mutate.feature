@@ -2217,7 +2217,7 @@ Feature: Mutation testing
       # no dart:mirrors to call a library it does not import. Before slice-36
       # a Dart whole-suite outcome recorded no test, failing at the Given's
       # check that its evidence names test/cli_test.dart.
-      @wip @slice-36
+      @slice-36
       Examples:
         | language | test               | scope       |
         | Dart     | test/cli_test.dart | --all-tests |
@@ -2283,7 +2283,7 @@ Feature: Mutation testing
       # slice-36, dart-support: as MUT-205's Dart row. Before slice-36 the
       # Dart outcomes record no test, failing at the Given's check that they
       # record nonempty test evidence.
-      @wip @slice-36
+      @slice-36
       Examples:
         | language |
         | Dart     |

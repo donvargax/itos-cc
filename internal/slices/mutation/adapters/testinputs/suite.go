@@ -14,9 +14,10 @@ import (
 // build root, relative to projectRoot: what a whole-suite outcome of source
 // depends on besides its support files (ADR-0016). Go's is its nearest
 // module (GoModuleTestHashes). TypeScript's is the nearest package.json,
-// Python's the nearest pyproject.toml, setup.py or setup.cfg, and Kotlin's
+// Python's the nearest pyproject.toml, setup.py or setup.cfg, Kotlin's
 // the Gradle build root, which holds settings.gradle or settings.gradle.kts,
-// or else the Maven module, the nearest pom.xml. Tests are those project
+// or else the Maven module, the nearest pom.xml, and Dart's the nearest
+// pubspec.yaml, as flutter test finds its tests. Tests are those project
 // discovery classifies as tests, so node_modules, .venv and the like are
 // never walked, and conftest.py counts; a test beneath a nested build root
 // of the language belongs to that root. A source with no build root has
@@ -64,6 +65,8 @@ func suiteRoot(ctx context.Context, language, path string) string {
 			return root
 		}
 		return project.FindUp(ctx, path, "pom.xml")
+	case "dart":
+		return project.FindUp(ctx, path, "pubspec.yaml")
 	}
 	return ""
 }
