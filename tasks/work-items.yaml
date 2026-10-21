@@ -4354,3 +4354,19 @@ items:
       symbol the binary no longer has. T-155 left the text as it was, a refactor changing no
       scenario; rewording the rows and the regular expression, to the stamp's name or to 'by a
       release stamped v1.2.3', checks the same and needs the person's approval of the scenario text.
+  - id: version-commit-unused
+    title: Decide internal/version's commit, which the binary never prints
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      internal/version harvested Commit and Text from the template (the commit on a second line),
+      and .goreleaser.yaml, the scenario harness (features/build.go's commitSymbol) and
+      refactor-proof.yml stamp internal/version.commit, but since T-155 the binary reads only
+      Version(): the version command prints no commit, as T-114 kept it, and features/steps.go and
+      steps_output.go define steps for the stamped version and commit (its first and second lines,
+      jsonGivesBuild) that no feature file uses. Either drop Commit, Text, the commit stamps and
+      those steps, or give the version a commit line or key through a scenario of its own, a
+      behaviour change. goreleaser-config-unused covers .goreleaser.yaml itself.
