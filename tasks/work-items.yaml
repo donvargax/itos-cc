@@ -4835,3 +4835,24 @@ items:
       ID-MUT-135's on windows-latest (CD run 39633522425, T-174) cannot say what it was held to or
       whether its baseline or its run was the odd one. Announce a file's baseline as a selection's
       is, with a scenario, so a report of a timed-out mutant carries both times.
+  - id: mut-135-own-tests-headroom
+    title: ID-MUT-135's factor of 3 leaves its own tests' runs little room on Windows
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      ID-MUT-135 runs every mutant at --timeout-factor 3, the only scenario below the default 10,
+      and that factor holds its file's own tests, go test ./., as well as the selections it is
+      about. An own-tests run is all build and link, so its timeout is three times one build plus 5
+      seconds, and a run crosses it once the runner slows it more than 3 + 5/b times, b the build's
+      time: on Linux, b about 0.2s, that is some 27 times, and the same run here took 0.9s against a
+      0.18s baseline under other work, 5 times; on windows-latest, where T-139's run shows a build
+      of 1 to 3.6s, it is about 4.5 to 8 times, while at the default factor it would be 11 to 15. CD
+      run 39633522425 (T-174) lost half's mutant that way. The work of the baseline and of a
+      mutant's run is the same, both a cold build in the copy (a fresh copy builds the package
+      again, as go test -x shows), so neither the fixture's sleeps nor a warm baseline explain it;
+      what would make the scenario robust is the person's call: fewer scenarios at once on
+      windows-latest (T-128), own tests in the slow project that do work of their own as ID-A-02's
+      sleep does, or a product that times the tests' run apart from their build.
