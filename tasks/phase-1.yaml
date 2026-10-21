@@ -5800,3 +5800,35 @@
       timeout: 600
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-159
+  type: refactor
+  title: Move testtools and testinputs into the mutation slice
+  why: >
+    T-86 (ADR-0051, slices-mutation (b), first of two). Move internal/testtools (6 files: mutation's
+    Toolchain and Lister) and internal/testinputs (12 files: Fingerprints and the coverage-input
+    inventories) to internal/slices/mutation/adapters/testtools and .../testinputs in a move commit
+    separate from the edits; the packages keep their names. Importers change only an import path:
+    cmd/itos-cc/adapters.go (diskAdapters :134-135,140), cmd's mutation_fixtures_test.go,
+    mutation_unreached_baseline_retained_test.go, mutation_go_inventory_retained_test.go and
+    strict_scope_refusals_test.go, freshenv's fixtures_test.go and trial_unreached_test.go, graph's
+    mutation_fixtures_test.go and stale_test.go (graph, legacy, imports them only from tests). Ports
+    unchanged (MutationToolchain, MutationFingerprints, MutationTestLister). Rules: testtools' and
+    testinputs' files follow, allow lists unchanged; slices and slice-fakes drop the old exclusions;
+    slice-packages and slice-fakes exclude **/internal/slices/mutation/adapters/** (adapters are
+    held by their own rules, and slice-packages would refuse the project and coverage runner they
+    wrap); the sibling rule counts them as the mutation slice's. check_test.go's adapter rows
+    (:225-226) and path lists follow. docs/go.md's adapter notes (:725-731) and adapters bullet
+    (:476-491), README's layout rows, and Adding a package say a slice's adapter lives under
+    internal/slices/<command>/adapters/<name> with a rule of its own; features/README.md's paths
+    follow. Every message, probe, fingerprint and snapshot unchanged.
+  done_when:
+    - run: go test -count=1 ./internal/slices/mutation/adapters/... ./graph/...
+      timeout: 900
+    - run: go vet ./...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestStrictCoverageRefusesScopesItsFingerprintsCannotProve)$' -scenarios='^@ID-MUT-'
+      timeout: 900
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/architecture-check
+      timeout: 900
