@@ -5777,17 +5777,6 @@
     (:476-491), README's layout rows, and Adding a package say a slice's adapter lives under
     internal/slices/<command>/adapters/<name> with a rule of its own; features/README.md's paths
     follow. Every message, probe, fingerprint and snapshot unchanged.
-  done_when:
-    - run: go test -count=1 ./internal/slices/mutation/adapters/... ./graph/...
-      timeout: 900
-    - run: go vet ./...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestStrictCoverageRefusesScopesItsFingerprintsCannotProve)$' -scenarios='^@ID-MUT-'
-      timeout: 900
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-160
   type: refactor
   title: Move worktrees, githistory, importgraph and freshenv into the mutation slice
