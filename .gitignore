@@ -9,3 +9,5 @@
 /testdata/tools/node/node_modules/
 # Pinned tools downloaded for local use, by tools/bin/pinned.
 /.tools/
+# The Flutter SDK link fvm install makes from .fvmrc, for the Dart scenarios.
+/.fvm/
