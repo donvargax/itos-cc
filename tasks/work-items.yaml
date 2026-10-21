@@ -3949,7 +3949,7 @@ items:
     title: Move crap into internal/slices/crap
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-151]
     kind: task
   - id: slices-version

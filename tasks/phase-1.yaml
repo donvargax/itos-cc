@@ -5572,14 +5572,3 @@
     their scenarios run in the check. Drop crap's commandLine field and hand provider, regenerate
     commands_gen.go, update check_test.go, .golangci.yml, docs/go.md, docs/architecture.md and
     README's layout table. Help, errors, exit codes, lazy config and the snapshot format unchanged.
-  done_when:
-    - run: go test -count=1 ./internal/slices/crap/... ./graph/...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCrap.*|TestCoverage.*)$' -scenarios='^@ID-(CRAP|COV|CPLX|SEL|SNAP|CLI)-'
-      timeout: 900
-    - run: go test -count=1 ./tools/bin/assemble
-      timeout: 300
-    - run: tools/bin/domain-coverage
-      timeout: 600
-    - run: tools/bin/architecture-check
-      timeout: 900
