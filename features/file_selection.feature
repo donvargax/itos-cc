@@ -103,7 +103,7 @@ Feature: Choosing which files a command looks at
 
     # slice-30: pubspec.yaml is a build manifest, so a Dart package's build
     # and coverage folders are build output too.
-    @wip @slice-30
+    @slice-30
     Examples:
       | directory                                   | selected     |
       | app/build, beside app/pubspec.yaml          | not selected |
@@ -174,7 +174,7 @@ Feature: Choosing which files a command looks at
   # Gradle build, which would read as a Kotlin project that crap and
   # mutation plan Gradle for; none of it is the app's Dart. Beside a pure
   # Dart pubspec, or with no pubspec, a folder of those names is ordinary.
-  @wip @slice-30 @ID-SEL-22
+  @slice-30 @ID-SEL-22
   Scenario: A Flutter app's platform folders are not walked
     Given a Flutter app whose pubspec.yaml depends on the flutter SDK
     And its android, ios, macos, linux, windows, and web folders each hold source files
@@ -190,7 +190,7 @@ Feature: Choosing which files a command looks at
   # and what flutter gen-l10n writes beside an l10n.yaml (its
   # output-localization-file, default app_localizations.dart, and the
   # per-locale files beside it, in output-dir, default lib/l10n).
-  @wip @slice-30 @ID-SEL-23
+  @slice-30 @ID-SEL-23
   Scenario Outline: Generated Dart is not source
     Given a Flutter app holding <file><written>
     When the project's files are discovered

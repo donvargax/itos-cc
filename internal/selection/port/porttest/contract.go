@@ -40,6 +40,7 @@ func TreeContract(t *testing.T, open func(t *testing.T, f TreeFixture) (port.Tre
 		{"discover gives every supported file, absolute, split, sorted and once", discoversEverySupportedFile},
 		{"a directory root gives what is below it and a file root that file", discoversUnderItsRoots},
 		{"hidden, skipped and build output directories are skipped, a file under one taken when named", skipsWhatAWalkSkips},
+		{"a Flutter app's platform folders and generated Dart are skipped, each file taken when named", skipsFlutterOutput},
 		{"a root that is not there is unwalkable", refusesAnAbsentRoot},
 		{"exists says whether a file or a directory is there", existsWhereSomethingIs},
 		{"read gives what a file holds, and an absent one is unreadable", readsWhatAFileHolds},
@@ -114,6 +115,52 @@ func skipsWhatAWalkSkips(t *testing.T, open func(t *testing.T, f TreeFixture) (p
 	discovers(t, tree, []string{".hidden/h.go", "vendor/v/v.go", "web/dist/bundle.js"},
 		absolute(dir, ".hidden/h.go", "vendor/v/v.go", "web/dist/bundle.js"), nil)
 	discovers(t, tree, []string{".metrics", "pkg/testdata"}, absolute(dir, ".metrics/m.go", "pkg/testdata/t.go"), nil)
+}
+
+// flutterApp is a working directory holding a Flutter app, its pubspec.yaml
+// depending on the flutter SDK, with Dart of its own, generated Dart of
+// every kind, a source in its build output and in three of its platform
+// folders; a pure Dart package, pkg, with its own l10n.yaml; and a web
+// folder, plain/web, beside no pubspec.yaml.
+var flutterApp = map[string]string{
+	"pubspec.yaml":                                "name: app\ndependencies:\n  flutter:\n    sdk: flutter\n",
+	"l10n.yaml":                                   "template-arb-file: app_en.arb\n",
+	"lib/main.dart":                               "void main() {}\n",
+	"lib/late.dart":                               "class Late {}\n// GENERATED CODE - DO NOT MODIFY BY HAND\n",
+	"lib/model.dart":                              "/*\n * GENERATED CODE - DO NOT MODIFY BY HAND\n */\nclass Model {}\n",
+	"lib/user.g.dart":                             "part of 'user.dart';\n",
+	"lib/user.freezed.dart":                       "part of 'user.dart';\n",
+	"lib/api/user.pbserver.dart":                  "class UserService {}\n",
+	"lib/generated_plugin_registrant.dart":        "void registerPlugins() {}\n",
+	"lib/l10n/app_localizations.dart":             "abstract class AppLocalizations {}\n",
+	"lib/l10n/app_localizations_en.dart":          "class AppLocalizationsEn {}\n",
+	"lib/l10n/strings.dart":                       "const strings = 1;\n",
+	"test/widget_test.dart":                       "void main() {}\n",
+	"test/widget_test.mocks.dart":                 "class MockClient {}\n",
+	"build/app.dart":                              "void main() {}\n",
+	"android/app/src/main/kotlin/MainActivity.kt": "class MainActivity\n",
+	"linux/held.dart":                             "void held() {}\n",
+	"web/held.ts":                                 "export const held = 1;\n",
+	"pkg/pubspec.yaml":                            "name: pkg\ndependencies:\n  path: ^1.9.0\n",
+	"pkg/l10n.yaml":                               "output-dir: lib/i18n\noutput-localization-file: strings.dart\n",
+	"pkg/lib/i18n/strings_es.dart":                "class StringsEs {}\n",
+	"pkg/lib/l10n/app_localizations.dart":         "abstract class AppLocalizations {}\n",
+	"pkg/linux/held.dart":                         "void held() {}\n",
+	"plain/web/held.dart":                         "void held() {}\n",
+}
+
+func skipsFlutterOutput(t *testing.T, open func(t *testing.T, f TreeFixture) (port.Tree, string)) {
+	tree, dir := open(t, TreeFixture{Files: flutterApp})
+	discovers(t, tree, []string{"."},
+		absolute(dir, "lib/l10n/strings.dart", "lib/late.dart", "lib/main.dart", "pkg/lib/l10n/app_localizations.dart", "pkg/linux/held.dart", "plain/web/held.dart"),
+		absolute(dir, "test/widget_test.dart"))
+	// An l10n.yaml above the root still names what gen-l10n wrote, and a
+	// platform folder is walked when it is the root.
+	discovers(t, tree, []string{"lib"}, absolute(dir, "lib/l10n/strings.dart", "lib/late.dart", "lib/main.dart"), nil)
+	discovers(t, tree, []string{"android", "web"}, absolute(dir, "android/app/src/main/kotlin/MainActivity.kt", "web/held.ts"), nil)
+	// A file is taken when named, generated or not.
+	discovers(t, tree, []string{"lib/user.g.dart", "lib/model.dart", "lib/l10n/app_localizations_en.dart", "test/widget_test.mocks.dart", "linux/held.dart"},
+		absolute(dir, "lib/l10n/app_localizations_en.dart", "lib/model.dart", "lib/user.g.dart", "linux/held.dart"), absolute(dir, "test/widget_test.mocks.dart"))
 }
 
 func refusesAnAbsentRoot(t *testing.T, open func(t *testing.T, f TreeFixture) (port.Tree, string)) {

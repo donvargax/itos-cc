@@ -28,11 +28,13 @@ var skipDirs = map[string]bool{
 var buildDirs = map[string]bool{"target": true, "build": true, "dist": true, "out": true, "coverage": true}
 
 // buildManifests mark a directory whose tool writes buildDirs beside them:
-// npm and its bundlers, Maven, Gradle, Cargo, and Python packaging. Go
-// writes no output into the module.
+// npm and its bundlers, Maven, Gradle, Cargo, Python packaging, and Dart's
+// pub, whose flutter and dart write build and coverage. Go writes no
+// output into the module.
 var buildManifests = []string{
 	"package.json", "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle",
 	"settings.gradle.kts", "Cargo.toml", "pyproject.toml", "setup.py", "setup.cfg",
+	"pubspec.yaml",
 }
 
 // IsBuildOutput reports whether dir is build or test output rather than
@@ -74,21 +76,24 @@ func IsBuildOutputWithIgnore(ctx context.Context, dir string, ignored func(ctx c
 type Files = selection.Files
 
 // Discover walks roots (files or directories) under ctx and classifies
-// every file in a supported language. A root that names a file is taken
-// even if it would be skipped while walking. Once ctx is done it returns
-// its cause.
+// every file in a supported language. It never walks into a skipped,
+// hidden or build output directory, or a Flutter app's platform folder,
+// and takes no generated Dart. A root that names a file is taken even if
+// it would be skipped while walking. Once ctx is done it returns its
+// cause.
 func Discover(ctx context.Context, roots []string) (Files, error) {
 	return DiscoverWithBuildOutput(ctx, roots, IsBuildOutput)
 }
 
 // DiscoverWithBuildOutput is Discover with an explicit build-output
 // classifier, asked under ctx. All other source/test, hidden-directory,
-// fixture and dependency rules remain the same.
+// fixture, dependency, Flutter and generated-Dart rules remain the same.
 func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput func(ctx context.Context, dir string) bool) (Files, error) {
 	if isBuildOutput == nil {
 		isBuildOutput = IsBuildOutput
 	}
 	seen := map[string]bool{}
+	flutter := newFlutterRules()
 	var files Files
 	add := func(path string) {
 		spec := lang.Detect(path)
@@ -120,12 +125,14 @@ func DiscoverWithBuildOutput(ctx context.Context, roots []string, isBuildOutput 
 				return err
 			}
 			if d.IsDir() {
-				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || isBuildOutput(ctx, path)) {
+				if path != abs && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".") || isBuildOutput(ctx, path) || flutter.platformDir(path)) {
 					return filepath.SkipDir
 				}
 				return nil
 			}
-			add(path)
+			if !flutter.generated(path) {
+				add(path)
+			}
 			return nil
 		})
 		if err != nil {

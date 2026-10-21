@@ -87,12 +87,14 @@ var (
 	buildManifests = []string{
 		"package.json", "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle",
 		"settings.gradle.kts", "Cargo.toml", "pyproject.toml", "setup.py", "setup.cfg",
+		"pubspec.yaml",
 	}
 )
 
 // Discover is the files under roots, absolute: a file's path is that file,
-// wherever it is, and a directory's every file below it but those under a
-// hidden, skipped or build output directory beneath it. Each list is
+// wherever it is, and a directory's every file below it but generated Dart
+// and those under a hidden, skipped or build output directory or a Flutter
+// app's platform folder beneath it. Each list is
 // sorted and holds a file once. A root that is not there is Unwalkable,
 // and a done ctx Cancelled.
 func (t Tree) Discover(ctx context.Context, roots []string) (sources, tests []string, failure port.Failure) {
@@ -205,15 +207,15 @@ func (t Tree) isDir(rel string) bool {
 }
 
 // walk is the files of list, absolute, a walk from root takes: root
-// itself when it names one, else each below it with no hidden, skipped or
-// build output directory between them.
+// itself when it names one, else each below it that is no generated Dart,
+// with no hidden, skipped or build output directory or Flutter platform
+// folder between them.
 func (t Tree) walk(root string, list []string) []string {
 	var out []string
 	for _, f := range list {
 		path := t.path(f)
 		rel, err := filepath.Rel(root, path)
-		if path == root || err == nil && filepath.IsLocal(rel) && !t.skips(root, rel) {
-
+		if path == root || err == nil && filepath.IsLocal(rel) && !t.skips(root, rel) && !t.generated(path) {
 			out = append(out, path)
 		}
 	}
@@ -229,7 +231,7 @@ func (t Tree) skips(root, rel string) bool {
 			return false
 		}
 		dir = filepath.Join(dir, name)
-		if skipDirs[name] || strings.HasPrefix(name, ".") || t.isBuildOutput(dir) {
+		if skipDirs[name] || strings.HasPrefix(name, ".") || t.isBuildOutput(dir) || t.isPlatformDir(dir) {
 			return true
 		}
 	}
