@@ -4856,3 +4856,19 @@ items:
       what would make the scenario robust is the person's call: fewer scenarios at once on
       windows-latest (T-128), own tests in the slow project that do work of their own as ID-A-02's
       sleep does, or a product that times the tests' run apart from their build.
+  - id: notices-check-in-ci
+    title: CI keeps running go run ./tools/bin/notices -check after T-173 closes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-173's agent (2026-10-21). T-173's why says its -check runs per push as a named
+      task's check, so a dependency bump that changes a license text fails CI and a person
+      regenerates THIRD_PARTY_NOTICES; but itos work done takes a task's done_when out of its ledger
+      entry, so once T-173 is closed nothing runs the check and the file drifts silently, Renovate's
+      automerge included. itos.yaml's ci.steps runs go run ./tools/bin/assemble -check as a static
+      step; go run ./tools/bin/notices -check belongs beside it (it needs the module cache, which
+      the static steps already have for go build). itos.yaml is a shared path, outside T-173's
+      files.
