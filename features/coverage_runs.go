@@ -239,14 +239,22 @@ func (c *coverageState) holds(a covAnnouncement, spec string, lcov bool) error {
 
 // wroteLCOV is whether a command of words, such as flutter test's, which
 // has no reporter to ask for and writes LCOV alone, wrote an LCOV record
-// where its --coverage-path names, a file of the scratch folder.
+// where its --coverage-path names, a file of the scratch folder's run
+// folder under .metrics/coverage/: once the run ends, its report's folder
+// is kept directly under .metrics/coverage/, for --use-existing-coverage,
+// and the run folder is gone.
 func (c *coverageState) wroteLCOV(words []string) bool {
 	for _, w := range words {
-		if report, ok := strings.CutPrefix(w, "--coverage-path="); ok {
-			rel, in := c.rel(report)
-			data, err := c.w.d.Read(c.abs(rel))
-			return in && err == nil && strings.HasPrefix(string(data), "SF:") && strings.Contains(string(data), "end_of_record")
+		report, ok := strings.CutPrefix(w, "--coverage-path=")
+		if !ok {
+			continue
 		}
+		rel, in := c.rel(report)
+		if !in || !strings.HasPrefix(rel, ".metrics/coverage/") {
+			return false
+		}
+		data, err := c.w.d.Read(c.abs(path.Join(".metrics/coverage", path.Base(path.Dir(rel)), path.Base(rel))))
+		return err == nil && strings.HasPrefix(string(data), "SF:") && strings.Contains(string(data), "end_of_record")
 	}
 	return false
 }
