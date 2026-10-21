@@ -5182,3 +5182,16 @@ items:
       (measured with dart test 1.33.0 for slice-36's draft; not yet with flutter test). That would
       turn mutation.coverage-missing into exact mutation.uncovered-statement findings and change the
       producer string, so evidence reads stale once.
+  - id: mutation-type-position-sites
+    title: No mutation sites in TypeScript and Python type positions
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From the survey of Uncle Bob's tools (2026-10-21, read-only). itos-cc 0.19.0 lists mutants
+      inside TypeScript return types and Python Literal[...] annotations (checked with mutation list
+      on scratch files), which no test can kill, so they end as survivors or mutation except
+      entries; main has no type-position check beyond TypeScript's type arguments (ID-MUT-01).
+      unclebob/mutator fixed TypeScript on 2026-10-21 (a5a0cb8). A scenario per language, red first.
