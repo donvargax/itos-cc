@@ -5435,9 +5435,9 @@
   type: build
   title: Generate cmd's command assembly from each slice's declaration, checked current in CI
   why: >
-    T-86 (ADR-0051): an ordinary new command must need no hand edit outside its slice. A stdlib tool
-    under tools/ (go/parser and go/format, no new dependency; go run or a tools/bin wrapper as the
-    repository's other tools are) scans internal/slices/*/ for the declaration T-145 introduced and
+    T-86 (ADR-0051): an ordinary new command must need no hand edit outside its slice. A stdlib tool,
+    tools/bin/assemble, a Go package as tools/bin/release-notes and release-version are (go/parser
+    and go/format, no new dependency) scans internal/slices/*/ for the declaration T-145 introduced and
     writes a committed cmd/itos-cc/commands_gen.go: the slices' imports sorted, their DynamicCommand
     registrations in name order so help and the unknown-command guess keep their order, and the
     binding of cmd's adapters to each slice's Ports. units, the only slice by then, moves from
@@ -5446,9 +5446,23 @@
     the cheapest tier that catches it. The tool's own test adds a fixture slice in a temporary tree
     and expects it in the output in order, and refuses a slice with no declaration or two with one
     name. Document how to add a command in docs/go.md's Adding a package section. Depends on T-145.
+    From T-145 (07f8f44): a slice is found by its package-level var Command = cli.Declaration{Name,
+    Help, New} and its type Ports interface; cmd/itos-cc/commands.go is the hand file the generated
+    one replaces; kong.PostBuild(byName) sorts the model's children, since dynamic commands append
+    after struct fields, and TestTheModelNamesEveryCommandInOrder is the only test guarding that
+    order (cli.Usage sorts its own copy), so keep both. One handler constructor shape for every
+    slice, so the generator writes the same provider for each: NewHandler(ctx context.Context, p
+    Ports) (Handler, error). What varies between slices goes behind a Ports method cmd's adapters
+    answer, not into the signature: units' exclusion becomes a Ports method whose cmd side reads
+    the settings and keeps config.invalid's wording (settingsError), so the provider still returns
+    that problem unwrapped (T-143's finding); dry's and crap's ui.Rel becomes a Ports method too
+    when they move. Port method names are shared across slices (SelectionTree, LangSurroundings,
+    SelectionSettings), one adapters method serving every slice that declares it.
   done_when:
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder)$' -scenarios='^@ID-(UNIT|CLI)-'
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(UNIT|CLI)-'
       timeout: 600
+    - run: go test -count=1 ./tools/bin/assemble
+      timeout: 300
 - id: T-147
   type: refactor
   title: Take the exclude setting out of mutation's Config
