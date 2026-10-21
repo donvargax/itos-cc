@@ -4765,27 +4765,9 @@ items:
     title: Dart tests reach what they import, through packages, barrels and parts
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [slice-29]
     kind: slice
-    why: >
-      D6 of dart-support, after slice-29 (it sets dart.go's Imports, a file slice-29 holds), beside
-      D4 (scrap) in a later parallel wave. Its files: a new internal/imports/dart.go resolver and
-      its table line in internal/imports/languages.go (T-163's shape), internal/lang/dart.go's
-      Imports only, internal/slices/mutation/domain/porttest/reach.go's Dart rule,
-      features/imports.go, features/mutate_language_reach*.go and mutate.feature's slice rows; not
-      coverage/, project/ or internal/slices/scrap. A Dart test reaches every library in the
-      transitive closure of its imports, as TypeScript, Python and Kotlin tests do (q-39):
-      package:<own pubspec name>/x.dart is lib/x.dart of the package whose pubspec names it (a pub
-      workspace member's sibling included), a relative URI is relative to the importing file, dart:
-      and other packages are outside the project. An export passes reach on (a barrel library that
-      re-exports a.dart reaches a.dart), a part file belongs to the library that names it with part
-      (part of names it back), so reaching the library reaches its parts and a part's own imports
-      count for its library; a conditional import (if (dart.library.io) ...) reaches every target it
-      names. Test support passes reach on (test-support-reach): a non-test helper under test/ the
-      test imports, and flutter_test_config.dart, which flutter test loads for every test file at
-      and below its directory without an import, as pytest loads conftest.py. Scenarios MUT-215's
-      and MUT-219's Dart rows, MUT-263.
   - id: wip-scenarios-locally
     title: Run @wip scenarios locally without editing their tags
     phase: 1
