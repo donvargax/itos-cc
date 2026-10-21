@@ -4000,7 +4000,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-165, T-166]
+    depends_on: [T-165, T-166, T-168, T-171]
     kind: task
   - id: fresh-decode-config
     title: Let porttest Fresh decode committed settings into mutants.Config
