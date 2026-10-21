@@ -35,11 +35,12 @@ func (l *listedMutation) failingCoverage() error {
 	return l.declare()
 }
 
-// coverageProblem is whether the run reports tests.coverage-failed naming
-// the command that ran ids, and go test's exit code for a failing test.
+// coverageProblem is whether the run, made with --json, reports
+// tests.coverage-failed naming the command that ran ids, and go test's exit
+// code for a failing test.
 func (l *listedMutation) coverageProblem(ids ...string) error {
-	if err := l.m.w.problemIs("tests.coverage-failed", "", ""); err != nil {
-		return err
+	if l.m.w.problem = l.problemOf("tests.coverage-failed"); l.m.w.problem == nil {
+		return fmt.Errorf("no problem has the rule %q\n%s", "tests.coverage-failed", l.m.w.report())
 	}
 	if want := listedRun(ids...); l.m.w.problem["command"] != want {
 		return fmt.Errorf("tests.coverage-failed names the command %v, want %q\n%s", l.m.w.problem["command"], want, l.m.w.report())
@@ -50,18 +51,30 @@ func (l *listedMutation) coverageProblem(ids ...string) error {
 	return nil
 }
 
-// noProblem is whether the last run, made with --json, reports no problem
-// of rule.
-func (l *listedMutation) noProblem(rule string) error {
-	object, report, err := l.m.w.lastObject()
+// problemOf is the problem of rule the last run's --json object reports,
+// nil for none.
+func (l *listedMutation) problemOf(rule string) map[string]any {
+	object, _, err := l.m.w.lastObject()
 	if err != nil {
-		return err
+		return nil
 	}
 	problems, _ := object["problems"].([]any)
 	for _, one := range problems {
 		if problem, _ := one.(map[string]any); problem["rule"] == rule {
-			return fmt.Errorf("a problem is %q: %v\n%s", rule, problem, report)
+			return problem
 		}
+	}
+	return nil
+}
+
+// noProblem is whether the last run, made with --json, reports no problem
+// of rule.
+func (l *listedMutation) noProblem(rule string) error {
+	if _, _, err := l.m.w.lastObject(); err != nil {
+		return err
+	}
+	if problem := l.problemOf(rule); problem != nil {
+		return fmt.Errorf("a problem is %q: %v\n%s", rule, problem, l.m.w.report())
 	}
 	return nil
 }
