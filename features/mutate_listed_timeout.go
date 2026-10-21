@@ -125,7 +125,7 @@ func (l *listedMutation) failingSelection() error {
 	if err := l.project(); err != nil {
 		return err
 	}
-	if err := l.replace("e2e/e2e_test.go", "\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")", "\tif os.Getenv(\"GREET_FAIL_ALONE\") != \"\" && *selected == \"ID-A-02\" { t.Fatal(\"selection fails alone\") }\n\tsplit := os.Getenv(\"ITOS_CC_TEST_COVERDIR\")"); err != nil {
+	if err := l.replace("e2e/e2e_test.go", "\tbin := filepath.Join(t.TempDir(), \"greet.exe\")", "\tif os.Getenv(\"GREET_FAIL_ALONE\") != \"\" && *selected == \"ID-A-02\" { t.Fatal(\"selection fails alone\") }\n\tbin := filepath.Join(t.TempDir(), \"greet.exe\")"); err != nil {
 		return err
 	}
 	if err := l.declare(); err != nil {

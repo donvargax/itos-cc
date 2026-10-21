@@ -91,6 +91,10 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^ID-A-02 runs alone without a mutant exactly once$`, func() error { return l.baselineCount("ID-A-02", false) })
 	sc.Step(`^the problem is "tests\.selection-failed", with the IDs of the selection$`, l.selectionProblem)
 	sc.Step(`^no mutant that would run ID-A-02 is recorded killed, and its file's snapshot keeps what it held$`, l.selectionUnchanged)
+	sc.Step(`^the listed tests fail when they all run for coverage, though they pass together when a mutant's run selects them$`, l.failingCoverage)
+	sc.Step(`^the problem is "tests\.coverage-failed", with the command that ran every listed test and its exit code$`, func() error { return l.coverageProblem("ID-A-01", "ID-A-02") })
+	sc.Step(`^the problem is "tests\.coverage-failed", with the command that ran ID-A-02 alone and its exit code$`, func() error { return l.coverageProblem("ID-A-02") })
+	sc.Step(`^no problem is "([^"]+)"$`, l.noProblem)
 }
 
 func (l *listedMutation) project() error {
@@ -206,6 +210,9 @@ func (l *listedMutation) declare() error {
 	}
 	if slices.Contains(w.variables, "GREET_FAIL_ALONE=1") {
 		t.Listed.Failing = []string{"ID-A-02"}
+	}
+	if slices.Contains(w.variables, failCoverageVariable) {
+		t.Listed.CoverageExit = 1
 	}
 	if strings.Contains(l.m.read("itos-cc.yaml"), "list.go fail") {
 		t.Listed.ListFails = true
@@ -532,16 +539,16 @@ func (l *listedMutation) listProblem() error {
 	return nil
 }
 func (l *listedMutation) nothingJudged() error {
-	if len(trials(l.m.w.stderr, "main.go")) != 0 || l.m.w.d.Exists(filepath.Join(l.m.w.dir, ".metrics", "mutate", "main.go.json")) {
-		return fmt.Errorf("failed list judged or wrote mutants")
+	if len(trials(l.m.w.stderr, "main.go")) != 0 || !l.snapshotUnwritten() {
+		return fmt.Errorf("failed run judged or wrote mutants\n%s", l.m.w.report())
 	}
 	lines, err := l.records()
 	if err != nil {
 		return err
 	}
 	for _, record := range lines {
-		if record["test"] == "run" {
-			return fmt.Errorf("harness ran after list failure: %v", record)
+		if l.mutantRan(record) {
+			return fmt.Errorf("harness ran a mutant: %v", record)
 		}
 	}
 	return l.m.w.exitsWith(1)
