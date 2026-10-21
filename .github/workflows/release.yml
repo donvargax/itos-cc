@@ -31,11 +31,12 @@ name: Release
 #   1. version: the version, from the commit this run is for; nothing more when
 #      there is none;
 #   2. build: on each platform's runner, the binary stamped with the version
-#      (-X internal/version.stamp), checked, packed with LICENSE,
-#      THIRD_PARTY_NOTICES (every compiled-in module's license and notice
-#      texts, which tools/bin/notices writes) and README.md as
-#      itos-cc-<version>-<os>-<arch>.tar.gz (.zip for Windows), and handed on
-#      as an artifact;
+#      (-X internal/version.stamp), Linux's linked statically against musl
+#      and proved static, checked, packed with LICENSE, THIRD_PARTY_NOTICES
+#      (the license and notice texts of every compiled-in module and of the
+#      toolchain's Go, musl and MinGW-w64, which tools/bin/notices writes)
+#      and README.md as itos-cc-<version>-<os>-<arch>.tar.gz (.zip for
+#      Windows), and handed on as an artifact;
 #   3. publish: the five archives gathered and checksums.txt written; a draft
 #      release holding all six, its target this commit, replacing any draft a
 #      failed run left; the archives attested (Sigstore, no keys; `gh
@@ -206,23 +207,52 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+      # Linux links musl (MIT), not glibc, whose LGPL-2.1 asks a static link
+      # for relink materials (q-81, T-176): musl-gcc from Ubuntu's
+      # musl-tools, on each Linux runner natively, amd64 and arm64 alike, so
+      # no cross toolchain. Ubuntu 24.04's is musl 1.2.4, whose COPYRIGHT
+      # tools/bin/notices/toolchain holds.
+      - name: musl
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends musl-tools
+          dpkg-query -W musl-tools musl-dev
+          command -v musl-gcc
       - name: Build
         env:
           MATRIX_CC: ${{ matrix.cc }}
         run: |
           [ -n "$MATRIX_CC" ] && export CC="$MATRIX_CC"
           flags="-s -w -X github.com/donvargax/itos-cc/internal/version.stamp=$VERSION"
-          tags=""
           # Linux and Windows link statically, so the binary needs no libc or
-          # MinGW DLLs; netgo and osusergo keep glibc's NSS out of a static link.
+          # MinGW DLLs: Linux against musl, whose getaddrinfo and getpwnam
+          # link statically with no NSS modules to load, so no netgo or
+          # osusergo tags are needed, as they were with glibc.
           case "$GOOS" in
-            linux) tags="netgo,osusergo"; flags="$flags -linkmode=external -extldflags=-static" ;;
+            linux) export CC=musl-gcc; flags="$flags -linkmode=external -extldflags=-static" ;;
             windows) flags="$flags -linkmode=external -extldflags=-static" ;;
           esac
           exe=itos-cc; [ "$GOOS" = windows ] && exe=itos-cc.exe
           mkdir -p dist/pkg
-          go build -trimpath -tags "$tags" -ldflags "$flags" -o "dist/pkg/$exe" ./cmd/itos-cc
+          go build -trimpath -ldflags "$flags" -o "dist/pkg/$exe" ./cmd/itos-cc
           cp LICENSE THIRD_PARTY_NOTICES README.md dist/pkg/
+      # The Linux binary links nothing at run time, so it runs on any Linux:
+      # file says it is statically linked, and on amd64 it runs in an Alpine
+      # container, which has no glibc. Any failure stops the release.
+      - name: Static
+        if: matrix.goos == 'linux'
+        run: |
+          set -euo pipefail
+          said=$(file dist/pkg/itos-cc)
+          echo "$said"
+          case "$said" in
+            *"statically linked"*) ;;
+            *) echo "::error::the Linux binary is not statically linked"; exit 1 ;;
+          esac
+          if [ "$GOARCH" = amd64 ]; then
+            docker run --rm -v "$PWD/dist/pkg:/x:ro" alpine:3.23.4@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11 /x/itos-cc --version
+          fi
       # The binary says the version it was stamped with; the darwin amd64 one,
       # built on an arm64 runner, is not run.
       - name: Check
