@@ -3416,8 +3416,8 @@ items:
   - id: slice-16
     title: The selection's coverage run trips the project's coverage.thresholds
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
