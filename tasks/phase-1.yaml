@@ -6339,3 +6339,32 @@
   done_when:
     - run: grep -q 'tools/bin/notices -check' itos.yaml
     - run: go run ./tools/bin/notices -check
+- id: T-176
+  type: build
+  title: Link Linux against musl and ship the toolchain's notices
+  why: >
+    q-81 (a), the person 2026-10-21. The release builds with cgo (tree-sitter is C) and links Linux
+    and Windows statically (release.yml, since 89bf630), so each binary holds a C runtime beside the
+    Go modules T-173 lists: glibc's static libc on Linux, whose LGPL-2.1 static-link terms ask for
+    relink materials, and MinGW-w64's runtime and winpthreads on Windows; plus the Go runtime and
+    standard library everywhere. Linux moves to musl (MIT), static as before, so the binary still
+    runs on any Linux, Alpine and scratch images included, and only notices have to ship: build with
+    musl-gcc from Ubuntu's musl-tools on each native Linux runner (amd64 and arm64 build natively,
+    no cross toolchain), CC set to it, keeping -linkmode=external -extldflags=-static and dropping
+    the netgo,osusergo tags only if musl makes them pointless (say which in the commit). Prove it in
+    release.yml's build job before packing: the Linux binary is static (file or ldd says so) and
+    itos-cc --version runs in an alpine container on the amd64 runner; on any failure the release
+    stops. tools/bin/notices gains the toolchain's notices after the modules', each under a header
+    naming it: Go's LICENSE read from go env GOROOT at generation (its text, not a version, so a Go
+    bump that keeps it leaves the file alone), and musl's COPYRIGHT and MinGW-w64's runtime and
+    winpthreads licences committed verbatim under tools/bin/notices/toolchain/ with a comment naming
+    where each came from and its version; -check covers them too. Windows keeps its MinGW static
+    link; macOS links its system libraries dynamically and needs nothing. Measure: itos-cc crap over
+    this repository with the glibc and the musl builds on the same runner, both times in the commit
+    body, as musl's allocator is slower; a large difference is reported to the coordinator before
+    closing. Files: .github/workflows/release.yml, tools/bin/notices, THIRD_PARTY_NOTICES; not
+    cd.yml or ci.yml.
+  done_when:
+    - run: go test ./tools/bin/notices/
+    - run: go run ./tools/bin/notices -check
+    - run: grep -q musl .github/workflows/release.yml
