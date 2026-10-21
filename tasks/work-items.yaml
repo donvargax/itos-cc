@@ -5220,3 +5220,16 @@ items:
       body against each example that uses it (03d2b21), so moving setup into a helper is not scored
       as an improvement. itos-cc compares each scrap run with the last snapshot, so today an agent
       can improve a file's score just by hiding its setup in a helper.
+  - id: mutation-run-one-site
+    title: mutation run <file>:<line>[:<col>] reruns one site
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      From the survey of Uncle Bob's tools (2026-10-21, read-only). clj-mutate has had --lines
+      (since 2026-02) and --mutation <id> (since 2026-09-03) to rerun a single survivor after adding
+      a test. itos-cc already addresses a site as file:line:col in mutation except, so the address
+      format exists; a selector on mutation run would rerun just that site and update its snapshot
+      entry.
