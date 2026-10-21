@@ -4289,8 +4289,8 @@ items:
   - id: T-157
     title: Move internal/mutation into internal/slices/mutation, assembled from its declaration
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-152, T-155]
     kind: task
   - id: T-158
