@@ -17,6 +17,11 @@ Feature: Cyclomatic complexity
       | Go         |
       | Kotlin     |
 
+    @wip @slice-28
+    Examples:
+      | language   |
+      | Dart       |
+
   @ID-CPLX-02
   Scenario: TypeScript decisions
     Given the TypeScript function:
@@ -130,3 +135,43 @@ Feature: Cyclomatic complexity
     When its complexity is measured
     Then it is 12
     # if, &&, ||, for, while, do-while, catch, ?:, 2 when entries, lambda if
+
+  # slice-28: Dart counts as DCM does (docs/dart/tooling.md 5), but for its
+  # last switch case: as in TypeScript and Kotlin, only default and the bare
+  # _ arm are left out. Collection if and for, used throughout widget trees,
+  # count; each on or catch handler counts; && and || count in patterns too;
+  # a when guard does not, as its case already counts.
+  @wip @slice-28 @ID-CPLX-07
+  Scenario: Dart decisions
+    Given the Dart function:
+      """
+      int branches(int a, String? b, List<int> xs) {
+        if (a > 0 && b != null || a < -5) {
+        } else if (a == 3) {}
+        for (var i = 0; i < a; i++) {}
+        for (final x in xs) {}
+        while (false) {}
+        do {} while (false);
+        try {} on FormatException {} catch (e) {}
+        final c = a > 1 ? 1 : 2;
+        final d = b ?? 'x';
+        final e = b?.length;
+        b ??= 'y';
+        final w = [if (a > 0) 1, for (final x in xs) x];
+        switch (a) {
+          case 1:
+            break;
+          case 2 || 3:
+            break;
+          default:
+            break;
+        }
+        final s = switch (a) { 1 => 'one', _ => 'other' };
+        xs.forEach((n) { if (n > 0) {} });
+        return 0;
+      }
+      """
+    When its complexity is measured
+    Then it is 22
+    # if, &&, ||, else-if, 2 for, while, do, on, catch, ?:, ??, ?., ??=,
+    # collection if and for, 2 cases, the pattern's ||, the 1 arm, callback if

@@ -263,3 +263,154 @@ Feature: Units: the functions and methods every tool measures
     Then no unit of features/steps.go is listed
     When I run "itos-cc units --tests features"
     Then a unit of features/steps_test.go is listed
+
+  # slice-28, dart-support (q-74: Flutter apps and packages). Dart's grammar
+  # gives a function a signature and a body as two siblings: a unit runs from
+  # its signature's line, never an annotation's, to its body's end. Only a
+  # declaration with a body, a block or =>, is a unit: abstract and external
+  # members and a constructor ending in ; are none, and closures and local
+  # functions count in the unit around them. The namespace is the nearest
+  # pubspec.yaml's name and the path under lib/, as a package: URI names the
+  # library; constructors are C and C.named, a setter s=, an operator
+  # operator+; an unnamed extension's members sit in the file's namespace.
+  # A unit is private when its own name, or a named constructor's part after
+  # the dot, starts with _: build in _CounterState is not.
+  @wip @slice-28 @ID-UNIT-16
+  Scenario: Dart units
+    Given the file "pubspec.yaml":
+      """
+      name: demo
+      dependencies:
+        flutter:
+          sdk: flutter
+      """
+    And the file "lib/game/board.dart":
+      """
+      import 'package:flutter/widgets.dart';
+
+      int place(List<int> board, int n) {
+        int inner() => n;
+        board.forEach((c) => c + 1);
+        return inner();
+      }
+
+      int _hidden() => 1;
+
+      external int native();
+
+      abstract class Shape {
+        double area();
+      }
+
+      class Board extends Shape {
+        Board(this.cells);
+
+        Board.empty() : cells = [] {
+          cells.add(0);
+        }
+
+        factory Board.of(int n) => Board([n]);
+
+        final List<int> cells;
+
+        @override
+        double area() => cells.length.toDouble();
+
+        int get size => cells.length;
+
+        set size(int n) {
+          cells.length = n;
+        }
+
+        Board operator +(Board other) => Board([...cells, ...other.cells]);
+
+        void _clear() {
+          cells.clear();
+        }
+      }
+
+      class Rules {
+        Rules() {
+          print('ready');
+        }
+      }
+
+      mixin Walker {
+        int walk(int steps) => steps;
+      }
+
+      extension Score on Board {
+        int score() => size * 2;
+      }
+
+      extension on int {
+        bool get even => this % 2 == 0;
+      }
+
+      enum Side {
+        left,
+        right;
+
+        Side get other => this == left ? right : left;
+      }
+
+      extension type Cell(int value) {
+        bool get empty => value == 0;
+      }
+
+      class Counter extends StatefulWidget {
+        const Counter({super.key});
+
+        @override
+        State<Counter> createState() => _CounterState();
+      }
+
+      class _CounterState extends State<Counter> {
+        int _n = 0;
+
+        @override
+        Widget build(BuildContext context) {
+          return GestureDetector(
+            onTap: () => setState(() => _n++),
+            child: Text('$_n'),
+          );
+        }
+      }
+      """
+    When the units of lib/game/board.dart are listed
+    Then the units are:
+      | kind     | namespace                     | name        | lines | private |
+      | function | demo.game.board               | place       | 3-7   | no      |
+      | function | demo.game.board               | _hidden     | 9-9   | yes     |
+      | method   | demo.game.board.Board         | Board.empty | 20-22 | no      |
+      | method   | demo.game.board.Board         | Board.of    | 24-24 | no      |
+      | method   | demo.game.board.Board         | area        | 29-29 | no      |
+      | method   | demo.game.board.Board         | size        | 31-31 | no      |
+      | method   | demo.game.board.Board         | size=       | 33-35 | no      |
+      | method   | demo.game.board.Board         | operator+   | 37-37 | no      |
+      | method   | demo.game.board.Board         | _clear      | 39-41 | yes     |
+      | method   | demo.game.board.Rules         | Rules       | 45-47 | no      |
+      | method   | demo.game.board.Walker        | walk        | 51-51 | no      |
+      | method   | demo.game.board.Score         | score       | 55-55 | no      |
+      | method   | demo.game.board               | even        | 59-59 | no      |
+      | method   | demo.game.board.Side          | other       | 66-66 | no      |
+      | method   | demo.game.board.Cell          | empty       | 70-70 | no      |
+      | method   | demo.game.board.Counter       | createState | 77-77 | no      |
+      | method   | demo.game.board._CounterState | build       | 84-89 | no      |
+
+  # slice-28: a file outside lib/ is named by its path from the package, the
+  # directory holding the nearest pubspec.yaml, under the pubspec's name.
+  @wip @slice-28 @ID-UNIT-17
+  Scenario: A Dart test file is named from its path in the package
+    Given the file "app/pubspec.yaml":
+      """
+      name: demo
+      """
+    And the file "app/test/game/board_test.dart":
+      """
+      void main() {
+        print('board');
+      }
+      """
+    When I run "itos-cc units --tests app/test"
+    Then the unit is "demo.test.game.board_test#main"

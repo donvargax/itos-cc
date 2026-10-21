@@ -146,6 +146,20 @@ Feature: Choosing which files a command looks at
       | src/main/kotlin/demo/BoardTests.kt   | test       |
       | src/main/kotlin/demo/BoardSpec.kt    | test       |
 
+    # slice-28: a Dart test is a _test.dart file anywhere, or any file under
+    # test/ (helpers and flutter_test_config.dart too), integration_test/ or
+    # test_driver/.
+    @wip @slice-28
+    Examples:
+      | path                                 | kind       |
+      | lib/board.dart                       | production |
+      | lib/src/board_test.dart              | test       |
+      | test/board_test.dart                 | test       |
+      | test/helpers/fake_board.dart         | test       |
+      | test/flutter_test_config.dart        | test       |
+      | integration_test/app_test.dart       | test       |
+      | test_driver/integration_test.dart    | test       |
+
   @ID-SEL-16
   Scenario: Reports name files relative to the working directory
     When a command reports on a file inside the working directory
