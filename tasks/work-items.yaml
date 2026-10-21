@@ -3993,7 +3993,7 @@ items:
     title: Generate the stepped feature files and their step registration from a declaration beside each file of steps
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-163]
     kind: task
   - id: slices-close

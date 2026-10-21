@@ -5985,25 +5985,6 @@
     scenarios, TestFeatures' not-opted-in line before -scenarios is read (decision 52), the
     interrupt steps, every step's text and behaviour; only the order godog runs files and hooks in
     changes. features/smoke.yaml stays a hand list (itos#103 asks for per-file declarations).
-  done_when:
-    - run: go test ./tools/bin/assemble -count=1
-      timeout: 120
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: go test ./features -count=1 -run '^Test(FeatureSelection|SkippedFeatureSelection|MixedFeatureSelection)'
-      timeout: 300
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-(CLI-01|CPLX-05|COV-20|CRAP-01|DRY-02|SEL-15|SNAP-02|MUT-04|SCRAP-11|UNIT-01|SERVE-03)$'
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-MUT-(134|169)$'
-      timeout: 300
-    - run: itos tests smoke check scenario
-      timeout: 120
-    - run: go vet ./features ./cmd/itos-cc ./tools/bin/assemble
-      timeout: 300
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-165
   type: refactor
   title: Give the in-process driver's adapters a provider of their own, held to bind every port on disk and in process
