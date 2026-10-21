@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - slices-scrap
+  - T-150
   - slices-crap
   - slices-version
   - slices-mutation
@@ -2791,7 +2791,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, slices-scrap, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3932,20 +3932,13 @@ items:
     status: done
     depends_on: [T-146]
     kind: task
-  - id: slices-scrap
+  - id: T-150
     title: Move scrap into internal/slices/scrap
     phase: 1
     owner: null
     status: todo
     depends_on: [T-148]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R6): internal/scrap and internal/teststructure into internal/slices/scrap,
-      removing parserOf's eager kong.Bind of its handler (dispatch.go:73) if T-143 left it. Checks:
-      -scenarios '^@ID-SCRAP-' both drivers, domain-coverage, architecture-check.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: T-147
     title: Take the exclude setting out of mutation's Config
     phase: 1

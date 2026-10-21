@@ -5514,3 +5514,34 @@
     toolchain (workflows' setup-go, the pinned tools, docs naming the version), leaving the go
     directive at 1.27.1 unless the fix needs it; check internal/release/release_test.go's 1.27.2 is
     a fixture, not a pin. Renovate has no open request for it.
+- id: T-150
+  type: refactor
+  title: Move scrap into internal/slices/scrap
+  why: >
+    T-86 (ADR-0051), the third slice after units (T-145) and dry (T-148). Move internal/scrap to
+    internal/slices/scrap and its domain internal/teststructure to internal/slices/scrap/domain, as
+    a move commit separate from the edits so history follows the files, their .metrics/mutate
+    snapshots and itos-cc.yaml exceptions with them if any. teststructure already calls lang for
+    Fingerprint and Jaccard after T-148, so the slice imports no other. Its Handler today holds
+    Tree, Surroundings, Store and Name (internal/scrap/scrap.go:91-96): the slice declares Command
+    and Ports and builds the handler with NewHandler(ctx, Ports) (Handler, error), reusing the Ports
+    method names cmd's adapters already answer for units and dry (SelectionTree, LangSurroundings
+    and T-148's Store and relative-name methods), adding none unless scrap needs one they lack.
+    scrap reads no itos-cc.yaml (CLI rule 38): its provider must not read the settings, and scrap
+    --json and --help still never read the file. Drop scrap's field from commandLine and its hand
+    provider, rerun go run ./tools/bin/assemble and commit commands_gen.go; the domain and domain-io
+    rules and tools/bin/domain-coverage follow internal/slices/scrap/domain. Update check_test.go's
+    package lists, .golangci.yml globs, docs/go.md's package list, docs/architecture.md and README's
+    layout table. Steps stay in features/. Help, errors, exit codes and the snapshot format
+    unchanged.
+  done_when:
+    - run: go test -count=1 ./internal/slices/scrap/...
+      timeout: 300
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(SCRAP|SNAP|CLI)-'
+      timeout: 600
+    - run: go test -count=1 ./tools/bin/assemble
+      timeout: 300
+    - run: tools/bin/domain-coverage
+      timeout: 600
+    - run: tools/bin/architecture-check
+      timeout: 900
