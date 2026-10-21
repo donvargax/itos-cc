@@ -5136,3 +5136,58 @@ items:
       internal/slices/mutation/adapters/worktrees/, adapters/testtools/ and
       domain/command_policy.go; - the help text, mutation-help.json, README.md and docs/CLI.md
       (D11).
+  - id: slice-37
+    title: Counted runs judge a Flutter package from its frozen export, offline
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: slice
+    why: >
+      D10 of dart-support, folding the idea dart-counted-ready; the coordinator took the drafter's
+      recommendations (q-C (b): Ready in the export before coverage is planned, with
+      --enforce-lockfile there if flutter pub get passes it through, else say so). Runs beside D9
+      with disjoint files; D10 owns cd.yml's dart selector and writes both items' tags. Decisions
+      D10 builds to (counted-languages' rule: tools and dependencies as installed, from the live
+      project; nothing installed or downloaded; the judged sources, tests and configuration from the
+      frozen commit): 1. Ready the export before planning coverage (q-C (b)). After
+      linkInstalledDependencies and before covrun.PlansSupervised, preparation readies each Dart
+      build root of the selection once, in the frozen export. - What runs is the Ready of the
+      command slice-35 chooses, through mutants.ObserveCommand with e.Toolchain (flutter
+      --suppress-analytics --no-version-check pub get --offline), in the command's Dir. There is no
+      second resolution rule, and command_policy.go is unchanged. Several Dart files of one Root
+      ready it once. - For a pub workspace member, pub get in the member resolves the whole
+      workspace at its root, which the export holds. - It is supervised and logged like any
+      preparation command (prep.Commands) and runs with CommandEnvironment. - This resolves the
+      commit's pubspec.lock from the pub cache alone. Coverage, baselines and trials then run with
+      --no-pub as slice-35 has them. Worker copies of the export skip .dart_tool and ready
+      themselves as slice-35 does. - In the export only, preparation adds --enforce-lockfile to that
+      Ready (q-C2), as offlineArgs adds --offline to Gradle: a commit whose lock does not match its
+      pubspec fails rather than re-resolving. - A Ready that fails is count.preparation-failed at
+      stage coverage-plan, as a failed link of installed dependencies is (preparation.go:96-99),
+      naming the command and its output. There is no new stage name in --json. 2. The live SDK an
+      .fvmrc pins (settled by counted-languages' precedent). linkInstalledDependencies
+      (freshenv/dependencies.go:26-87) gains a Dart case. It links the live <package or workspace
+      root>/.fvm/flutter_sdk into the export at the same place, when the live one exists and the
+      commit holds none, as it links node_modules and .venv. coverage.FlutterFor then finds it in
+      the export, and workers copy the link as a link. The pub cache needs no link, as Gradle's does
+      not. 3. Nothing else changes. - CommandEnvironment needs no Flutter case: being offline comes
+      from --no-pub and --offline in the arguments, and FlutterQuiet keeps the tool quiet. -
+      fresh_admission.go's stableFunction needs no Dart case. A Dart unit's namespace is the
+      committed pubspec.yaml's name and the path under lib/ (internal/lang/dart.go:268-284), the
+      same in the export as in the tree, as Kotlin's comes from its package declaration. - Strict
+      lines stay unproven in counted runs for every non-Go language (counted.go:107-108), so D10
+      shares nothing with D9. - The live tree is never written: Ready runs in the export only. Files
+      D10 owns: - internal/slices/mutation/adapters/freshenv/{preparation.go, dependencies.go}, a
+      new freshenv/dart.go if the Ready step is kept apart, and their tests (preparation_test.go, or
+      a new dart_test.go, using the repository's fakes); - features/mutate_language_tools.go: the
+      MUT-209 regex at line 28 and the Dart cases of installedProject, installedPreparation and
+      noDownload; - features/mutate_language_provenance.go: a Dart case of instrumentInstalled; -
+      D10's Examples block of features/mutate.feature; - .github/workflows/cd.yml: the dart job's
+      selector line and comment, with both tags. Files D10 must not touch: - everything D9 owns,
+      including features/binary.go; - coverage/dart.go and coverage/run.go: dartResolved stays as it
+      is, and the export is resolved before plans read it; -
+      internal/slices/mutation/domain/command_policy.go: Ready's words stay slice-35's, and
+      --enforce-lockfile is added in freshenv; - adapters/worktrees/ and adapters/testtools/; -
+      features/mutate_language.go: no new ID, since MUT-209 is in its list; - the help text,
+      mutation-help.json, README.md and docs/CLI.md (D11).
