@@ -4111,3 +4111,15 @@ items:
       CleanupBudget.Deadline only for those tests; no production caller sets or reads them. A
       narrower observation the engine owns, or a test package beside it, would keep its API to what
       callers run, without weakening the worker pool's budget and join checks.
+  - id: binary-driver-opt-in
+    title: Run the binary driver only where CI and CD opt in (decision 52)
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Decision 52: TestFeatures runs only when an opt-in environment variable is set, logging that
+      it ran nothing otherwise; ci.yml and cd.yml set it on every job that runs TestFeatures, so
+      nothing leaves CI or CD; itos.yaml's scenario lines, README and docs/go.md say so. Measure a
+      local go test ./... before and after.
