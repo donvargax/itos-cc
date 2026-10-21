@@ -4904,3 +4904,22 @@ items:
       test's JSON error on the loading test), whether the outcome is left out of the score or
       counted apart, the snapshot field and what mutation check and the counts show, and numbers
       from real runs (slice-35 reports how often Flutter mutants fail to compile).
+  - id: cmd-e2e-to-scenarios
+    title: Move the legacy cmd end-to-end tests' extra checks into scenarios
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the read-only test-surgery audit (2026-10-21, scratchpad test-surgery-audit.md; the
+      person agreed to record it). About 9,950 lines of Go tests in cmd/itos-cc run the CLI as a
+      subprocess over the real disk. Each covers a use case a scenario covers too, but adds checks
+      the scenario lacks: 54 tests marked Kept: (about 3,200 lines; the audit checked ID-MUT-52's
+      and ID-MUT-224's claims and both hold), about 770 lines of behaviour no scenario covers at
+      all, and about 500 lines that are domain or adapter tests sitting in cmd. ADR-0049 puts those
+      checks in scenarios (Then lines, or new scenarios for the uncovered behaviour, red first where
+      they fail) and the domain ones in their own package; then most of the 9,950 lines can go.
+      Thirteen of these files were never reviewed by T-101 or T-130, and two keep-reasons are wrong
+      (ID-MUT-183's is stale; the strict-scope tests without Kept: are held by ID-MUT-164). Split it
+      by file group when specifying.
