@@ -51,7 +51,7 @@ func (d *scrapState) examplesAre(table *godog.Table) error {
 		for _, h := range header {
 			switch h.Value {
 			case "example":
-				cells = append(cells, exampleName(e))
+				cells = append(cells, scrapExampleName(e))
 			case "assertions":
 				cells = append(cells, strconv.Itoa(e.Assertions))
 			case "decisions":
@@ -74,9 +74,9 @@ func (d *scrapState) examplesAre(table *godog.Table) error {
 	return nil
 }
 
-// exampleName is how a scenario names an example: by its name under its
+// scrapExampleName is how a scenario names an example: by its name under its
 // group, joined by /, as Kotlin's Class/method and Dart's group/title.
-func exampleName(e scrapExample) string {
+func scrapExampleName(e scrapExample) string {
 	if e.Group == "" {
 		return e.Name
 	}

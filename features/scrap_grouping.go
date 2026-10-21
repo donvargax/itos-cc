@@ -420,7 +420,7 @@ func (d *scrapState) blockIsSetup(name string) error {
 		switch {
 		case start < 0 && strings.HasPrefix(strings.TrimSpace(line), name+"("):
 			start = i
-		case start >= 0 && leading(line) == leading(lines[start]) && strings.HasPrefix(strings.TrimSpace(line), "}"):
+		case start >= 0 && scrapIndent(line) == scrapIndent(lines[start]) && strings.HasPrefix(strings.TrimSpace(line), "}"):
 			end = i
 		}
 		if end >= 0 {
@@ -435,8 +435,8 @@ func (d *scrapState) blockIsSetup(name string) error {
 	return d.setupNotSize()
 }
 
-// leading is the indent a line starts with.
-func leading(line string) string {
+// scrapIndent is the indent a line starts with.
+func scrapIndent(line string) string {
 	return line[:len(line)-len(strings.TrimLeft(line, " \t"))]
 }
 
