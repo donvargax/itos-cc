@@ -4067,3 +4067,18 @@ items:
 
       The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
       is ADR-0051.
+  - id: fresh-decode-config
+    title: Let porttest Fresh decode committed settings into mutants.Config
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found in T-147. internal/mutants/porttest's Fresh.DecodeConfig seam returns exclude, tests and
+      exceptions as a bare tuple ([]string, *Tests, []Exception, *FreshInvalid), and its three
+      implementations (internal/freshenv/memory_contract_test.go,
+      cmd/itos-cc/scenarios_counted_test.go, mutation_fresh_binding_test.go) each pick apart
+      config.Parse's Config, so the exclude reaches the fake as loose globs and is rebuilt into a
+      selection.Exclusion by hand, where freshenv's plan takes the Config's selection Settings
+      whole. Returning the Config would keep one shape for the committed settings.
