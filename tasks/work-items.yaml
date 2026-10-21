@@ -4592,3 +4592,18 @@ items:
       racing a command's own exit (a mutant that finished is judged as it finished, never an
       internal error) and treats the group already gone as os.ErrProcessDone; refactor-proof's
       t49-03 reproduces it in a loop.
+  - id: refactor-proof-unstable-exit
+    title: Let refactor-proof's exit code tell a run-dependent difference from a refactor one
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-172: run 39622138010's edges job exited 1 for t49-03 alone, an unstable case, the
+      same exit a refactor difference gives, since tools/bin/refactor-proof sets differs before its
+      control rerun decides unstable or as-rerun. A reader of the job's status cannot tell a run
+      with nothing but run-dependent cases from one with a refactor bug without reading report.txt,
+      and T-86's spec closes only on a run with no unclassified difference. An exit of its own for a
+      run whose only non-same cases are unstable or as-rerun (still never 0, still read by a person)
+      would say so; the header's exit codes would list it. No normalization rule either way.
