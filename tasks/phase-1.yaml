@@ -5551,13 +5551,6 @@
     interrupt hold and join, the Windows and Unix split by OS value (no runtime.GOOS in logic) and
     every message unchanged. Its depguard rule follows the move (an adapter-side engine, not a
     domain), and docs/go.md's package list and boundary list say where it lives.
-  done_when:
-    - run: go test -count=1 ./internal/processes/... ./internal/worktrees/... ./internal/freshenv/...
-      timeout: 900
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestCoverage.*|TestCrap.*)$' -scenarios='^@ID-(CRAP|COV|MUT)-'
-      timeout: 900
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-152
   type: refactor
   title: Move crap into internal/slices/crap

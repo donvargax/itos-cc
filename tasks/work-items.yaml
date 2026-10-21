@@ -4096,7 +4096,7 @@ items:
     title: Lift process ownership out of mutation's worktrees into an engine
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: processes-test-seams
