@@ -6034,3 +6034,25 @@
       timeout: 900
     - run: tools/bin/doc-caps
       timeout: 60
+- id: T-166
+  type: ci
+  title: Stamp main.version beside internal/version in the refactor proof's builds
+  why: >
+    T-155 made internal/version the one source of the version the binary reports and deleted
+    main.version. refactor-proof.yml's STAMP (env, around :33) sets only internal/version.stamp and
+    .commit, which the baseline 51f3952 never linked: that binary read main.version, so built with
+    -buildvcs=false it prints dev while the refactored binary prints 1.2.3-features, and cases
+    t114-06, t114-07 and t114-08 in tools/testdata/refactor-proof/cases, and any other that prints
+    the version, differ for that reason alone. Add -X main.version=1.2.3-features to STAMP: the
+    baseline reads it, and the refactored binary's linker ignores a symbol it does not have, so both
+    builds (the old and the new, :150-151) and the suite's build (:98) say 1.2.3-features. Keep
+    internal/version's two lines. tools/bin/refactor-proof's note 3 and the comment above STAMP say
+    both symbols are stamped and why. Check, without running the proof, that both binaries print the
+    same: build 51f3952's itos-cc from a detached worktree in the scratch folder and today's, each
+    with the new STAMP, and compare itos-cc version and itos-cc --version --json; state the outputs
+    in the commit body. slices-close runs the proof itself.
+  done_when:
+    - run: grep -q 'main.version=1.2.3-features' .github/workflows/refactor-proof.yml
+      timeout: 30
+    - run: grep -q 'internal/version.stamp=1.2.3-features' .github/workflows/refactor-proof.yml
+      timeout: 30
