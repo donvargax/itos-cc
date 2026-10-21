@@ -5154,8 +5154,8 @@ items:
   - id: slice-38
     title: A test under integration_test/ that imports a Dart file leaves its own-test results fresh
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
