@@ -31,7 +31,9 @@ name: Release
 #   1. version: the version, from the commit this run is for; nothing more when
 #      there is none;
 #   2. build: on each platform's runner, the binary stamped with the version
-#      (-X internal/version.stamp), checked, packed with LICENSE and README.md as
+#      (-X internal/version.stamp), checked, packed with LICENSE,
+#      THIRD_PARTY_NOTICES (every compiled-in module's license and notice
+#      texts, which tools/bin/notices writes) and README.md as
 #      itos-cc-<version>-<os>-<arch>.tar.gz (.zip for Windows), and handed on
 #      as an artifact;
 #   3. publish: the five archives gathered and checksums.txt written; a draft
@@ -220,7 +222,7 @@ jobs:
           exe=itos-cc; [ "$GOOS" = windows ] && exe=itos-cc.exe
           mkdir -p dist/pkg
           go build -trimpath -tags "$tags" -ldflags "$flags" -o "dist/pkg/$exe" ./cmd/itos-cc
-          cp LICENSE README.md dist/pkg/
+          cp LICENSE THIRD_PARTY_NOTICES README.md dist/pkg/
       # The binary says the version it was stamped with; the darwin amd64 one,
       # built on an arm64 runner, is not run.
       - name: Check
@@ -235,10 +237,10 @@ jobs:
           name="itos-cc-$VERSION-$GOOS-$GOARCH"
           cd dist/pkg
           if [ "$GOOS" = windows ]; then
-            7z a -tzip "../$name.zip" itos-cc.exe LICENSE README.md >/dev/null
+            7z a -tzip "../$name.zip" itos-cc.exe LICENSE THIRD_PARTY_NOTICES README.md >/dev/null
             echo "archive=dist/$name.zip" >> "$GITHUB_OUTPUT"
           else
-            tar -czf "../$name.tar.gz" itos-cc LICENSE README.md
+            tar -czf "../$name.tar.gz" itos-cc LICENSE THIRD_PARTY_NOTICES README.md
             echo "archive=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
