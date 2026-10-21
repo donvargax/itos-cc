@@ -12,7 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-155
-  - slices-mutation
+  - T-156
   - slices-import-engine
   - slices-scenario-registration
   - slices-close
@@ -2808,7 +2808,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-152, T-155, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-152, T-155, T-156, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3977,31 +3977,19 @@ items:
     status: todo
     depends_on: [T-146]
     kind: task
-  - id: slices-mutation
-    title: Move mutation into internal/slices/mutation, in pieces
+  - id: T-156
+    title: Take mutation's domain out of the project and coverage engines
     phase: 1
     owner: null
     status: todo
     depends_on: [T-152]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R10a-e), split into tasks when reached: (a) internal/mutation and
-      internal/mutants (+porttest) into internal/slices/mutation keeping domain, port and porttest
-      subpackages; (b) its adapters worktrees, testtools, testinputs, githistory, freshenv,
-      importgraph; (c) the mutation snapshot codec out of internal/metricsdir and the exceptions
-      codec out of config into mutation adapters; (d) project/since.go's and coverage/run.go's uses
-      of mutants inverted or moved; (e) cmd's ~11k lines of mutation integration tests stay in cmd
-      as assembly tests mutation owns by path (ADR-0051). Each with -scenarios '^@ID-(MUT|SNAP)-'
-      (or narrower) and the moved packages' tests.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-import-engine
     title: Lift import resolution out of graph into an engine
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-mutation]
+    depends_on: [T-156]
     kind: idea
     why: >
       T-86 (ADR-0051, R11): mutation's importgraph adapter imports serve's graph package for

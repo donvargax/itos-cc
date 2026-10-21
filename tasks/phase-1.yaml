@@ -5659,3 +5659,40 @@
       timeout: 120
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-156
+  type: refactor
+  title: Take mutation's domain out of the project and coverage engines
+  why: >
+    T-86 (ADR-0051, slices-mutation (d)), the first of the mutation pieces, so no engine imports the
+    mutation slice once its domain moves under internal/slices/mutation: engines stay behind stable
+    APIs the slices import, never the reverse, and today project and the coverage runner import
+    internal/mutants. project/since.go builds a mutation value: ChangedSinceAt(ctx, dir, ref, hash)
+    (:55) parses each changed file and its base at ref, then calls mutants.ChangedFunctionsOf over
+    mutants.LineRange (:126-139), and the file aliases ChangedFunctions and LineRange and forwards
+    LinesOverlap to mutants.OverlapsRanges (:226-231). Make that judgment the caller's: ChangedSince
+    and ChangedSinceAt take a func(file, base *lang.File, lines []LineRange) T, generic in T and
+    called while both files are still open as today, and return map[string]T beside the renames;
+    LineRange becomes project's own struct (Start, End, Deletion); the aliases and LinesOverlap go
+    (nothing outside project calls them). githistory (history.go:29-30), mutation's History adapter,
+    passes a func calling mutants.ChangedFunctionsOf with mutants.UnitHash, converting the ranges
+    field for field as cmd converts processes' Result (T-151); freshenv/plan.go:131-135 builds
+    mutants.LineRange directly instead of project's alias. project's since tests keep what each
+    checks through a callback of their own; their assertions about which functions a change touches
+    are mutation's: the History contract githistory passes
+    (internal/mutants/porttest/history_contract.go) keeps them, and any it lacks moves into
+    githistory's tests. coverage/run.go:546 and :571 call mutants.MavenTests and mutants.GradleTests
+    (internal/mutants/test_filters.go), two pure builders of a build tool's test filter: the runner
+    keeps an unexported copy of each, as graph keeps crap's formula (ADR-0051's small duplication),
+    and mutants keeps its own for command_policy.go:86,98,133. No package moves and no rule changes
+    (neither project nor coverage has a depguard rule yet). --since's selection and wording, the JVM
+    commands' arguments, every message and snapshot unchanged. docs/go.md's project and coverage
+    notes say they import no mutation package.
+  done_when:
+    - run: go test -count=1 ./project/... ./internal/githistory/... ./internal/mutants/...
+      timeout: 600
+    - run: go test -count=1 ./coverage/... ./internal/freshenv/...
+      timeout: 900
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestARenamedFileIsNarrowedByItsNewPath|TestCheckSince.*|TestWithSince.*|TestUnderSince.*|TestChangedLineStrictness.*|TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestMemoryGitBranchesOwnHeadAndCommittedSelection)$' -scenarios='^@ID-MUT-'
+      timeout: 900
+    - run: tools/bin/domain-coverage
+      timeout: 600
