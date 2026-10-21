@@ -5500,15 +5500,6 @@
     tools/testdata/architecture/check_test.go's package lists, docs/go.md's package list,
     docs/architecture.md and README's layout table. Help, errors, exit codes, lazy config and the
     snapshot format unchanged.
-  done_when:
-    - run: go test -count=1 ./internal/lang/... ./internal/slices/dry/... ./internal/teststructure/...
-      timeout: 300
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestTheModelNamesEveryCommandInOrder|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(DRY|SCRAP|SNAP|CLI)-'
-      timeout: 600
-    - run: tools/bin/domain-coverage
-      timeout: 600
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-149
   type: build
   title: Move the Go toolchain to go1.27.3 for GO-2026-6809

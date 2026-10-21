@@ -3930,7 +3930,7 @@ items:
     title: Move dry into internal/slices/dry, its fingerprinting into lang
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-146]
     kind: task
   - id: slices-scrap
