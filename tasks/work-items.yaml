@@ -4259,3 +4259,20 @@ items:
       (graph, JSON, watched files, listeners told) and a cmd test through the subprocess helper with
       the port held (serve.port-in-use) reach it in seconds on 127.0.0.1. Moot if serve moves onto
       kong first and its scenarios run in process.
+  - id: binary-only-scenarios-in-process
+    title: Run the binary-only scenarios that hold domain lines in process, UNIT-06 first
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): domain and slice lines only binary-only scenarios reach:
+      internal/mutants Execution.preserved (ID-MUT-202, a fail-fast stop preserved judgments),
+      internal/mutation Run.present (the stopped-early line), describeStop (a stop naming its site)
+      and reports (mutation run --coverage-report). Under decision 49 such lines belong to
+      in-process scenarios: find which binary-only scenarios reach them and whether each can run in
+      process. ID-UNIT-06 is the first: with its tag removed locally it passes in process up to the
+      step whose mutation run runs exit 0 in src/api, which the fake Workers refuses as undeclared;
+      its step needs to declare those Tests, and its recorded reason (crap and mutation still
+      hand-parsed) is stale since T-100 and T-152.
