@@ -4954,3 +4954,23 @@ items:
       with the in-process scenarios included (they run in about 25 s), or retire the floor once
       inprocess-mutation-tests lets mutation see scenario kills. Decide with the person; it is a
       gate.
+  - id: remove-redundant-tests
+    title: Remove the tests a scenario already holds and the dead step code
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the read-only test-surgery audit (2026-10-21, scratchpad test-surgery-audit.md; the
+      person agreed to record it). Confirmed removable, each traced to a scenario with the same
+      check or shown dead: about 90 lines of step definitions in features/steps.go and selection.go
+      that no scenario line matches, with their helpers; 10 unreferenced declarations in cmd's
+      tests; the three strict-scope cmd tests without Kept: (64 lines, held by ID-MUT-164);
+      duplicate scenarios ID-MUT-15 (held by ID-MUT-149), ID-MUT-19 (by ID-MUT-105), ID-SNAP-01 (by
+      ID-SNAP-03), and one row each of ID-CLI-03 and ID-CLI-21 (by ID-CLI-18 and ID-CLI-16). About
+      470 lines of domain unit tests repeating ID-MUT-01..05, 14/15/149, 25, 32..34, 138, 145,
+      ID-UNIT, ID-CPLX and ID-DRY scenarios wait on inprocess-mutation-tests, or mutation proof
+      would see their mutants unreached. Keep internal/cli/completion.go and its tests until
+      shell-completion is taken up (the person, 2026-10-21), which cleans them up. Exported domain
+      functions only tests call (Remembered, Build, BroadChangesForUnit) go with their tests.
