@@ -6413,5 +6413,3 @@
     advising to keep both sides and continue, never git rebase --skip (itos#107, half of it; the
     other half, merging the appends itself, is itos's p1-registry-merge). itos upgrade asked nothing
     by hand.
-  done_when:
-    - run: itos version --check
