@@ -4974,3 +4974,17 @@ items:
       would see their mutants unreached. Keep internal/cli/completion.go and its tests until
       shell-completion is taken up (the person, 2026-10-21), which cleans them up. Exported domain
       functions only tests call (Remembered, Build, BroadChangesForUnit) go with their tests.
+  - id: step-pattern-consolidation
+    title: Consolidate step patterns that each serve one step line
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by the read-only test-surgery audit (2026-10-21, scratchpad test-surgery-audit.md; the
+      person agreed to record it). The step code is about 39,700 lines for 6,900 lines of feature
+      text; 951 of its 1,267 step patterns serve exactly one step line. Sharing parameterised steps
+      across scenarios would cut lines without losing coverage: a refactor of the features harness,
+      with the scenario run (both drivers) as its proof, never a removal of checks. Measure first
+      which feature files carry the most single-use patterns.
