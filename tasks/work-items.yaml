@@ -3994,7 +3994,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-162]
+    depends_on: [T-163]
     kind: idea
     why: >
       T-86 (ADR-0051, R12-R13): features/steps.go's Converted (344), InProcess (396) and step
