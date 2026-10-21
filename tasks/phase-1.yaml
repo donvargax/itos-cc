@@ -6276,3 +6276,40 @@
       timeout: 30
     - run: go build -o "${TMPDIR:-/tmp}/t86-proof-itos-cc" ./cmd/itos-cc && tools/bin/refactor-proof "${TMPDIR:-/tmp}/t86-proof-itos-cc" "${TMPDIR:-/tmp}/t86-proof-itos-cc" "" '^t86-'
       timeout: 600
+- id: T-172
+  type: test
+  title: Run T-86's one refactor proof against b768837 and classify every difference
+  why: >
+    T-86 (ADR-0051, R14; slices-close (5)): the one refactor proof, after the proof's preparation
+    and once main holds T-86's last product-code change (T-165 and any fix item since). The
+    coordinator dispatches it (gh workflow run refactor-proof.yml --ref main -f
+    baseline=b768837f2097fc2ea84a0a43abeb598b6d033e57, about 2.5 hours) and names the completed run
+    in this task's brief; no agent waits on it. First check the run's head: git diff --stat
+    <head>..main -- cmd internal project coverage config metrics graph server go.mod go.sum
+    ':!*_test.go' must be empty, else ask for a new run; then gh run download <id> into the scratch
+    folder. Edges job (report.txt): for each differing case decide from the commits b768837..<head>
+    (all refactor, test, build, ci and docs) whether a commit made it deliberately (name it and
+    append "; T-86 (b768837): <why> (<commit>)" to its note) or it is a refactor bug (one bug item
+    per cause, itos work add --kind bug, its why naming the cases, both outputs and the commit that
+    changed it); never add a note to make a case pass; for unstable and as-rerun cases say what
+    varies between the old binary's two runs. Suite jobs (failed-old.txt, failed-new.txt): a
+    scenario failing on both sides is the runner's (the new side is the control), say why; one
+    failing on the old side alone is a deliberate change (name its commit), a test-side change since
+    b768837 the old binary cannot meet (name it), or a bug, opened as above. Record the result in a
+    last section of docs/vertical-slices-inventory.md, "The proof": the run's address and head, the
+    baseline, both builds' version line, the edges' totals per verdict, one row per differing,
+    unstable or as-rerun case with its classification, each suite side's failures classified, the
+    items opened; docs/go.md's Moving a command step 9 says T-86's proof ran once, naming the run,
+    as T-132's did. If items were opened each joins T-86's depends_on, each fix's own check runs
+    refactor-proof locally over its cases against b768837, and after the last fix the coordinator
+    dispatches again and a second classification task shaped like this one records that run; T-86
+    closes only on a run with no unclassified difference. No product code changes, no normalization
+    rule (a run-dependent difference is classified unstable, never normalized away), no mutation run
+    of this repository.
+  done_when:
+    - run: itos config check
+      timeout: 60
+    - run: tools/bin/doc-caps
+      timeout: 60
+    - run: go build -o "${TMPDIR:-/tmp}/t86-proof-itos-cc" ./cmd/itos-cc && tools/bin/refactor-proof "${TMPDIR:-/tmp}/t86-proof-itos-cc" "${TMPDIR:-/tmp}/t86-proof-itos-cc" "" '^t114-45$'
+      timeout: 300
