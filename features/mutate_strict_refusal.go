@@ -15,7 +15,7 @@ import (
 )
 
 func (q *strictMutation) refusalSteps(sc *godog.ScenarioContext) {
-	sc.Step(`^a (typescript|python|kotlin) project with (.+), and fresh line coverage evidence for its judged functions$`, q.refusalProject)
+	sc.Step(`^a (typescript|python|kotlin|dart) project with (.+), and fresh line coverage evidence for its judged functions$`, q.refusalProject)
 	sc.Step(`^I run "itos-cc mutation check --fail-uncovered --json" and "itos-cc mutation run --fail-uncovered --json"$`, func() error {
 		q.scopeRuns = nil
 		for _, cmd := range []string{"check", "run"} {
@@ -187,6 +187,26 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 		t.Command = "mvn -q test -Dtest=LabelTest -Dsurefire.failIfNoSpecifiedTests=false"
 		// Maven measures and tests the module where its own pom.xml is.
 		measureDir = filepath.Join(w.dir, "app")
+	case "a path dependency outside the root", "a pubspec_overrides.yaml path override outside the root":
+		// The plain package has an overrides file that overrides nothing,
+		// so the adversarial cache holds its hash, as it holds pubspec.yaml's.
+		marker = "pubspec.yaml"
+		q.file = "lib/label.dart"
+		q.testFile = "test/label_test.dart"
+		plain[marker] = coverageDartFlutterPubspec("app", false)
+		plain["pubspec_overrides.yaml"] = "dependency_overrides: {}\n"
+		if scope == "a path dependency outside the root" {
+			scoped[marker] = strings.Replace(plain[marker], "dev_dependencies:", "  lib:\n    path: ../outside/lib\ndev_dependencies:", 1)
+			q.scopeNames = []string{"../outside/lib", "pubspec.yaml"}
+		} else {
+			scoped["pubspec_overrides.yaml"] = "dependency_overrides:\n  lib:\n    path: ../outside/lib\n"
+			q.scopeNames = []string{"../outside/lib", "pubspec_overrides.yaml"}
+		}
+		files[q.file] = "String label(String name) {\n  return name;\n}\n"
+		files[q.testFile] = "import 'package:flutter_test/flutter_test.dart';\nimport 'package:app/label.dart';\n\n" +
+			"void main() {\n  test('label', () {\n    expect(label('value'), 'value');\n  });\n}\n"
+		c.Report = "SF:lib/label.dart\nDA:1,1\nDA:2,1\nend_of_record\n"
+		t.Command = strictDartFlutterTest + q.testFile
 	default:
 		return fmt.Errorf("unknown unsupported scope %s", scope)
 	}
