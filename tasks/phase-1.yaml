@@ -6404,3 +6404,14 @@
       timeout: 600
     - run: test "$(awk '/@ID-MUT-273/,/@ID-MUT-224/' features/mutate.feature | grep -c '@wip')" = 0
     - run: go test ./project -count=1
+- id: T-179
+  type: chore
+  title: Upgrade the repository pin to itos 8.5.2
+  why: >
+    The person chose on 2026-10-21 to move to the newest itos before slice-38's agent starts. 8.5.2
+    tells an append clash in the registry from a same-item clash when itos push's rebase stops,
+    advising to keep both sides and continue, never git rebase --skip (itos#107, half of it; the
+    other half, merging the appends itself, is itos's p1-registry-merge). itos upgrade asked nothing
+    by hand.
+  done_when:
+    - run: itos version --check

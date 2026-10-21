@@ -5175,3 +5175,10 @@ items:
       (q-76). When this lands, restore that step's exit-0 check in the same feat, so the scenario
       holds the whole behaviour again.
     refs: [slice-36]
+  - id: T-179
+    title: Upgrade the repository pin to itos 8.5.2
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
