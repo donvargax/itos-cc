@@ -23,10 +23,10 @@ func dartTest(pkg, call string) string {
 		"void main() {\n  test('board', () {\n    expect(" + call + ", isNotNull);\n  });\n}\n"
 }
 
-// flutterPubspec is the pubspec.yaml of the Flutter package name, which
+// flutterManifest is the pubspec.yaml of the Flutter package name, which
 // depends on the flutter SDK and tests with flutter_test, a pub workspace's
 // member when member says so.
-func flutterPubspec(name string, member bool) string {
+func flutterManifest(name string, member bool) string {
 	text := "name: " + name + "\npublish_to: none\nenvironment:\n  sdk: ^3.6.0\n"
 	if member {
 		text += "resolution: workspace\n"
@@ -45,7 +45,7 @@ func dartPubspec(name string) string {
 func (c *coverageState) flutterApp(dir string) error {
 	c.roots[dir] = "dart"
 	return c.writeIn(dir, map[string]string{
-		"pubspec.yaml":         flutterPubspec("board", false),
+		"pubspec.yaml":         flutterManifest("board", false),
 		"lib/board.dart":       dartSource,
 		"test/board_test.dart": dartTest("board", "place(5)"),
 	})
@@ -73,7 +73,7 @@ func (c *coverageState) flutterDependency() error {
 	if !strings.HasPrefix(string(data), "name: board\n") {
 		return fmt.Errorf("the project's pubspec.yaml is not board's: %s", data)
 	}
-	if err := c.w.write("pubspec.yaml", flutterPubspec("board", false)); err != nil {
+	if err := c.w.write("pubspec.yaml", flutterManifest("board", false)); err != nil {
 		return err
 	}
 	return c.declare(".", Coverage{Language: "dart"})
@@ -187,7 +187,7 @@ func (c *coverageState) pubWorkspace(a, b string) error {
 	root := dartPubspec("workspace") + "workspace:\n  - " + a + "\n  - " + b + "\n"
 	files := map[string]string{"pubspec.yaml": root}
 	for member, call := range map[string]string{a: "place(5)", b: "other(1)"} {
-		files[member+"/pubspec.yaml"] = flutterPubspec(member, true)
+		files[member+"/pubspec.yaml"] = flutterManifest(member, true)
 		files[member+"/lib/board.dart"] = dartSource
 		files[member+"/test/board_test.dart"] = dartTest(member, call)
 		c.roots[member] = "dart"
