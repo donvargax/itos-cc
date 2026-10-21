@@ -58,6 +58,11 @@ func ChooseCommand(request CommandRequest, facts ToolFacts) Command {
 		}
 	case "dart":
 		c.Args, c.Ready = DartArgs(request, facts)
+		if request.Shell != "" {
+			// A --test-command is the person's own: it readies its copy
+			// as it needs, and may need no flutter at all.
+			c.Ready = nil
+		}
 	case "kotlin":
 		if facts.Runner == "mvn" {
 			c = mavenChoice(request, facts)

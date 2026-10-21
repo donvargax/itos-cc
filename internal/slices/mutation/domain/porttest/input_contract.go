@@ -236,6 +236,10 @@ func ToolchainContract(t *testing.T, makeInput InputFactory) {
 		if failure != nil || !c.RunsNothing() || c.Dir != b.Root {
 			t.Fatalf("unreached Dart source: %+v %v", c, failure)
 		}
+		c, failure = mutants.ObserveCommand(t.Context(), b.Toolchain, mutants.CommandRequest{Path: path, Tests: tests, Shell: "./run.sh"})
+		if failure != nil || c.Shell != "./run.sh" || c.Args != nil || c.Ready != nil {
+			t.Fatalf("a Dart --test-command is run as given, its copy readied by nothing: %+v %v", c, failure)
+		}
 	})
 	t.Run("Python shell and unreached source avoid unused probe", func(t *testing.T) {
 		b := makeInput(t, map[string]string{"pyproject.toml": "", "src/a.py": "def a(): return 1\n", ".venv/bin/python": "not executable"}, nil, nil)
