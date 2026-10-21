@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -97,11 +98,21 @@ type Reach = port.Reach
 // LCOV names both arms of every branch; older ones write V8 blocks.
 const minVitest = 5
 
+// markers are the files that make a folder a build root of each language,
+// the one table of them: the in-process scenario driver reads it too
+// (Markers), so a new language edits it alone.
 var markers = map[string][]string{
 	"go":         {"go.mod"},
 	"typescript": {"package.json"},
 	"python":     {"pyproject.toml", "setup.py", "setup.cfg"},
 	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
+}
+
+// Markers are the files that make a folder a build root of language, as the
+// runner finds its roots, a copy the caller may change; nil for a language
+// it measures none of.
+func Markers(language string) []string {
+	return slices.Clone(markers[language])
 }
 
 // Scope is which tests measure the sources: the coverage port's, which a

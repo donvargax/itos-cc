@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"path/filepath"
@@ -479,18 +480,40 @@ func (m *memory) Git(dir string, args ...string) error {
 	return nil
 }
 
-// Run runs itos-cc through run, in process, against porttest's fakes over
-// the memory at r.Dir: the tree of its files, what surrounds them, the
-// snapshots under .metrics/ at its project root and the itos-cc.yaml there.
-// The snapshots the run writes go back into the memory. The run's
-// variables reach the fakes as the environment facts the real adapters
-// read (inputs). serve, still on its legacy handler, would reach the real
-// disk and network, so it is refused: a scenario that runs it is the binary
-// driver's until serve's work (features.Deferred).
+// Run runs itos-cc through run, in process, against the fakes
+// inProcessAdapters binds over the memory at r.Dir, then hands back what the
+// run wrote and read (its returned function). serve, still on its legacy
+// handler, would reach the real disk and network, so it is refused: a
+// scenario that runs it is the binary driver's until serve's work
+// (features.Deferred).
 func (m *memory) Run(r features.Run) (features.Result, error) {
 	if name := commandOf(r.Args); legacy[name] != nil {
 		return features.Result{}, fmt.Errorf("itos-cc %s is on its legacy handler and reaches the disk and network itself: list the scenario in features.Deferred", strings.Join(r.Args, " "))
 	}
+	var stdout, stderr bytes.Buffer
+	a, finish := m.inProcessAdapters(r, &stderr)
+	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
+	if err := finish(); err != nil {
+		return features.Result{}, err
+	}
+	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
+}
+
+// inProcessAdapters are the in-process driver's, diskAdapters' twin: every
+// port bound to porttest's fakes over the memory at r.Dir, the tree of its
+// files, what surrounds them, the snapshots under .metrics/ at its project
+// root and the itos-cc.yaml there, the run's variables reaching the fakes as
+// the environment facts the real adapters read (inputs), and what the fakes
+// say they run written on stderr. SnapshotReaders alone is unbound: only
+// serve reads it, and Run refuses serve. Which fake answers a port is
+// written here by hand, a new port with it (decision 53,
+// TestEveryPortIsBoundOnDiskAndInProcess). The function it returns is
+// called once the run is over, error or not: what the run removed from the
+// store is gone from the memory and what it wrote is there, every path it
+// read or listed is marked read, and what the coverage fake found wrong in
+// the measurements it observed (memoryCoverage's observationErr) is its
+// error.
+func (m *memory) inProcessAdapters(r features.Run, stderr io.Writer) (adapters, func() error) {
 	dir := filepath.Clean(r.Dir)
 	root, git := m.repoOf(dir)
 	if git == nil {
@@ -514,19 +537,13 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 	input := m.inputs(r)
 	observations := &selporttest.Observations{}
 	tree.Observations = observations
-	defer func() {
-		for _, path := range append(append(input.Reads, input.Lists...), append(observations.Reads, observations.Lists...)...) {
-			m.readVersions[filepath.Clean(path)]++
-		}
-	}()
-	var stdout, stderr bytes.Buffer
 	measurer := &memoryCoverage{memory: m, base: m.measurer(dir), inputs: input}
-	measurer.base.Log = &stderr
+	measurer.base.Log = stderr
 	observed := observedStore{Store: store, memory: m, dir: metricsDir}
 	source := m.sourceEdits()
 	workers := m.workers(r)
 	m.listedSelections(workers, file.text)
-	lister := m.lister(root, file.text, &stderr)
+	lister := m.lister(root, file.text, stderr)
 	c := m.counted(dir, &tree, input, measurer.base, workers, lister)
 	a := adapters{
 		Settings:   config.Reader{Source: memoryConfig{memory: m, root: root}},
@@ -542,21 +559,23 @@ func (m *memory) Run(r features.Run) (features.Result, error) {
 		Selection: config.Reader{Source: file},
 		Fresh:     c.Fresh, FreshWorkers: c.FreshWorkers, Repository: c.Repository, PhysicalDir: c.PhysicalDir, Platform: c.Platform,
 	}
-	code := run(m.t.Context(), r.Args, strings.NewReader(r.Stdin), &stdout, &stderr, a)
-	// What the run removed from the store is gone from the memory too, and
-	// what it wrote is there.
-	for rel := range m.under(metricsDir) {
-		if _, ok := store.Snapshots[rel]; !ok {
-			delete(m.files, filepath.Join(metricsDir, filepath.FromSlash(rel)))
+	finish := func() error {
+		// What the run removed from the store is gone from the memory too,
+		// and what it wrote is there.
+		for rel := range m.under(metricsDir) {
+			if _, ok := store.Snapshots[rel]; !ok {
+				delete(m.files, filepath.Join(metricsDir, filepath.FromSlash(rel)))
+			}
 		}
+		for name, text := range store.Snapshots {
+			m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
+		}
+		for _, path := range append(append(input.Reads, input.Lists...), append(observations.Reads, observations.Lists...)...) {
+			m.readVersions[filepath.Clean(path)]++
+		}
+		return measurer.observationErr
 	}
-	for name, text := range store.Snapshots {
-		m.files[filepath.Join(metricsDir, filepath.FromSlash(name))] = text
-	}
-	if measurer.observationErr != nil {
-		return features.Result{}, measurer.observationErr
-	}
-	return features.Result{Exit: code, Stdout: stdout.String(), Stderr: stderr.String()}, nil
+	return a, finish
 }
 
 // ObserveReads marks actual bound port operations. Positive controls use those

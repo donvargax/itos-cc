@@ -8,8 +8,8 @@ file again at `23adc19` (2026-10-21); the history, counts and estimates in secti
 survey's. When it was made the slices refactor was still open, its `slices-version`,
 `slices-mutation`, `slices-import-engine`, `slices-scenario-registration` and `slices-close` ideas
 `todo`; they became T-155 to T-172, and `docs/vertical-slices-inventory.md` ends with where each
-move put each package. The coverage runner's markers rows (2.3) are T-165's to rewrite and are as
-found. The ledger's own entry is `dart-support`
+move put each package. T-165 rewrote the coverage runner's markers rows (2.3): the in-process
+driver's copy is gone. The ledger's own entry is `dart-support`
 (`tasks/work-items.yaml:2316-2351`, kind idea, `depends_on: [slice-7]`). Per that entry the person's order
 is: the refactor first, then the open GitHub issues, then Dart. It also says the spec must decide which
 commands come first, the coverage tool, and the parsing library.
@@ -206,7 +206,7 @@ feed most SEL/CRAP scenarios, so a new language there ripples [guess: avoid].
 
 | where | what | owner after |
 |---|---|---|
-| `coverage/run.go:101-106` `markers` | `"dart": {"pubspec.yaml"}` | coverage engine (top-level `coverage`, ADR-0037 may move it under internal later) |
+| `coverage/run.go` `markers` | `"dart": {"pubspec.yaml"}`; the one table, which the in-process driver reads too through `Markers` (T-165), so nothing in cmd changes | coverage engine (top-level `coverage`, ADR-0037 may move it under internal later) |
 | `coverage/run.go:149-227` `buildPlans` | `case "dart"` → `dartPlan`; with `narrow` (OwnTests+reach) group by reaching test files as Python does (`:166-167`, `PythonTests`) | coverage engine |
 | `coverage/dart.go` (new) | `dartPlan(dir,out,tests)`: `flutter test --no-pub --coverage --coverage-path <out>/lcov.info [tests]`, `Reports`, `Existing` (`coverage/lcov.info`), `Unsupported` when no `flutter` (never downloaded, decision 26), FVM preference; `DartTests` (test files among reach, excluding `integration_test/`); `DartRunner` if `dart test` is ever supported | coverage engine |
 | `coverage/inventory.go:26-29` `inventories` | optional Dart inventory for unreached files (§1), or none, leaving strict to fail closed | coverage engine |
@@ -214,7 +214,6 @@ feed most SEL/CRAP scenarios, so a new language there ripples [guess: avoid].
 | `coverage/jacoco.go`/`collector.go` integration coverage | processes a test starts: recommend "Dart does not measure child processes", recorded beside decisions 26/27 [decision] | coverage engine |
 | `internal/coverage/formats.go:16-75` | LCOV already parsed; DA only unless branch coverage; nothing to add [guess] | coverage engine |
 | `internal/coverage/porttest/measurer.go:64,175,208` | the fake's per-language reach/report rules (`group.Language != "python" && != "kotlin"` at :208) | coverage engine (fake) |
-| `cmd/itos-cc/scenarios_fakes_test.go:117-122` `markers` | the in-process driver's copy of the markers | cmd (assembly tests) |
 | `cmd/itos-cc/scenarios_coverage_trace_test.go:273-275` | Kotlin selector special case; Dart likely none | cmd |
 | `features/binary.go:108-176` `Coverage` switch | `case "dart"`: check `flutter` (and `dart`) on PATH, skip or fail under `ITOS_CC_LANGUAGE_TOOLS`; `languageJob` (`:206-211`) already skips non-Go in CI jobs without the tools | features harness |
 | `features/steps.go:127-130,259-262` | doc comments listing `Tests.Language`/`Coverage.Language` values | features harness |

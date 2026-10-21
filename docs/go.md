@@ -667,8 +667,10 @@ command from reaching into this one.
     signature, and its error is returned as the port gave it, unwrapped.
 
   Add any `Ports` method no slice declared before to `cmd`'s `adapters` (`adapters.go`), once
-  for every slice that declares it, the port it answers from added to `adapters` and
-  `diskAdapters` as well. Then run `go run ./tools/bin/assemble` from the repository's root
+  for every slice that declares it, the port it answers from added to `adapters`,
+  `diskAdapters` and the in-process driver's `inProcessAdapters` (`scenarios_test.go`) as well:
+  `TestEveryPortIsBoundOnDiskAndInProcess` (`adapters_test.go`) fails, naming the field and the
+  provider, until all three bind it (decision 53). Then run `go run ./tools/bin/assemble` from the repository's root
   and commit `cmd/itos-cc/commands_gen.go`, which it rewrites: the slice's import, its command
   in its name's order and its handler's provider. Never edit that file by hand: CI's static
   step `go run ./tools/bin/assemble -check` fails, naming it, when it differs from what the
@@ -787,7 +789,8 @@ follows the same steps for a command it wrote before it had the template's desig
    with its name, the line the top-level help lists it by and a constructor of a fresh `*CLI`,
    the ports its handler needs, a `Ports` interface it owns, and `NewHandler(ctx, p Ports)
    (Handler, error)`, as `internal/slices/units` does and "Adding a package" above says. A
-   port it needs is added to `adapters` as a method and to `diskAdapters`, never handed as an
+   port it needs is added to `adapters` as a method and to `diskAdapters` and
+   `inProcessAdapters`, which `TestEveryPortIsBoundOnDiskAndInProcess` holds, never handed as an
    adapter itself; a handler that holds what itos-cc.yaml says, as `units`' does, reads it
    through a `Ports` method under the context `NewHandler` is given, which kong calls only for
    the `Run` that asks for it. `go run ./tools/bin/assemble` then writes the slice into
@@ -1056,10 +1059,12 @@ once its output shows it under way, are the binary's alone (`interrupt_test.go`)
 (`Converted`), every command they run having moved onto kong since `cli.feature`'s did (T-114), in process: its driver, a `_test.go`, holds every
 folder and file in memory with independent fake Git staging, immutable commits, branches, tags and tracked
 renames (`--changed` is what differs from the last commit, and every file before one), and each run calls `run` with buffers and
-porttest's fakes built from that memory: `TreeOf` over the whole scratch folder, files
+the adapters `inProcessAdapters`, `diskAdapters`' twin, binds to porttest's fakes built from that
+memory, its returned function writing back what the run wrote and read once `run` returns (decision 53): `TreeOf` over the whole scratch folder, files
 outside the run's folder named by `../`, lang's `Surroundings`, snapshot's `Store` written
 back to `.metrics/`, an itos-cc.yaml held in memory, and coverage's `Measurer`, which reads
-the reports a run names from the memory and gives each build root what the scenario
+the reports a run names from the memory and gives each build root, found by the coverage
+runner's own markers (its `Markers`), what the scenario
 declared its tools measure (`Driver.Coverage`): the LCOV report they write, nothing when
 they write none, a missing tool when none was declared, and no report left for
 `--use-existing-coverage`, writing what their command prints on success where the collectors

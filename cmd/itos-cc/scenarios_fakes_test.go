@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/config"
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
@@ -112,15 +113,6 @@ func pathSet(files map[string]string) map[string]bool {
 	return set
 }
 
-// markers are the files that make a folder a build root of each language,
-// as the coverage runner finds them.
-var markers = map[string][]string{
-	"go":         {"go.mod"},
-	"typescript": {"package.json"},
-	"python":     {"pyproject.toml", "setup.py", "setup.cfg"},
-	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
-}
-
 // measurer is coverage's Measurer fake over the memory, from dir: every
 // file, the reports a run names among them, and the report of each build
 // root, as the runner groups the sources by language and the nearest
@@ -135,10 +127,10 @@ func (m *memory) measurer(dir string) *covtest.Measurer {
 	groups := map[group][]string{}
 	for _, path := range slices.Sorted(maps.Keys(m.files)) {
 		spec := lang.Detect(path)
-		if spec == nil || spec.IsTest(path) || markers[spec.Name] == nil || under(path, filepath.Join(m.scratch(path), ".metrics")) {
+		if spec == nil || spec.IsTest(path) || covrun.Markers(spec.Name) == nil || under(path, filepath.Join(m.scratch(path), ".metrics")) {
 			continue
 		}
-		g := group{spec.Name, m.buildRoot(path, markers[spec.Name])}
+		g := group{spec.Name, m.buildRoot(path, covrun.Markers(spec.Name))}
 		groups[g] = append(groups[g], path)
 	}
 	roots, left := map[string]*coverage.Report{}, map[string]*coverage.Report{}

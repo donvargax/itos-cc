@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	covrun "github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
@@ -111,10 +112,10 @@ func (m *memoryCoverage) announce(ctx context.Context, req port.Request) {
 	sources := map[group][]string{}
 	for _, source := range req.Sources {
 		spec := lang.Detect(source)
-		if spec == nil || markers[spec.Name] == nil {
+		if spec == nil || covrun.Markers(spec.Name) == nil {
 			continue
 		}
-		g := group{spec.Name, m.memory.buildRoot(source, markers[spec.Name])}
+		g := group{spec.Name, m.memory.buildRoot(source, covrun.Markers(spec.Name))}
 		if declared, ok := m.memory.coverage[g.root]; !ok || declared.Language != g.language {
 			continue
 		}
@@ -167,7 +168,7 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 		if spec == nil {
 			continue
 		}
-		root := m.memory.buildRoot(source, markers[spec.Name])
+		root := m.memory.buildRoot(source, covrun.Markers(spec.Name))
 		if !slices.Contains(measured, coverage.Unloaded{Language: spec.Name, Dir: root}) {
 			continue
 		}
@@ -200,7 +201,7 @@ func (m *memoryCoverage) observe(ctx context.Context, req port.Request, measured
 			if req.Scope == port.OwnTests && !req.AllTests && req.Reach != nil {
 				var tests []string
 				for _, selected := range req.Sources {
-					if selectedSpec := lang.Detect(selected); selectedSpec != nil && selectedSpec.Name == spec.Name && m.memory.buildRoot(selected, markers[spec.Name]) == root {
+					if selectedSpec := lang.Detect(selected); selectedSpec != nil && selectedSpec.Name == spec.Name && m.memory.buildRoot(selected, covrun.Markers(spec.Name)) == root {
 						tests = append(tests, req.Reach(selected)...)
 					}
 				}
