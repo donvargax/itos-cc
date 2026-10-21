@@ -63,7 +63,7 @@ Feature: Coverage
       # never pub get (--no-pub: nothing the lockfile has not fetched is
       # downloaded, as npx is never used). With no path flutter test runs
       # test/ alone, so integration_test/ never counts (q-76).
-      @wip @slice-32
+      @slice-32
       Examples:
         | language   | marker           | setup                                        | command                                                           |
         | Dart       | pubspec.yaml     | a dependency on the flutter SDK              | flutter test --no-pub --coverage --coverage-path=... writing LCOV |
@@ -102,7 +102,7 @@ Feature: Coverage
       # slice-32: flutter is never downloaded (decision 26), and a package
       # pub has not resolved is not resolved for it: the user runs
       # flutter pub get, as they install node_modules.
-      @wip @slice-32
+      @slice-32
       Examples:
         | language   | missing                                                      |
         | Dart       | whose flutter is not installed                               |
@@ -133,14 +133,14 @@ Feature: Coverage
     # slice-32: FVM pins a Flutter app's SDK as gradlew pins Gradle's.
     # Without .fvm/flutter_sdk (fvm install never ran there), the flutter on
     # PATH runs, as when there is no .fvmrc.
-    @wip @slice-32 @ID-COV-40 @binary-only
+    @slice-32 @ID-COV-40 @binary-only
     Scenario: A Flutter app's FVM SDK is preferred
       Given a Flutter app whose .fvmrc pins the SDK that .fvm/flutter_sdk links to
       When coverage is run for it
       Then .fvm/flutter_sdk/bin/flutter runs the tests instead of the flutter on PATH
 
     # slice-32, q-74 (a): pure Dart packages (dart test) are a later idea.
-    @wip @slice-32 @ID-COV-41 @binary-only
+    @slice-32 @ID-COV-41 @binary-only
     Scenario: A Dart package that does not use Flutter is not measured yet
       Given a Dart package whose pubspec.yaml does not depend on the flutter SDK
       When coverage is run for it
@@ -150,7 +150,7 @@ Feature: Coverage
 
     # slice-32: a pub workspace's members are its build roots, each run in
     # its own directory, as flutter test writes SF: paths relative to it.
-    @wip @slice-32 @ID-COV-42 @binary-only
+    @slice-32 @ID-COV-42 @binary-only
     Scenario: Each member of a pub workspace is measured in its own directory
       Given a pub workspace whose root pubspec.yaml lists the Flutter packages app and core
       When coverage is run
@@ -340,7 +340,7 @@ Feature: Coverage
     # not unknown as a language nobody measured is (ID-CRAP-05). A file
     # whose coverage:ignore-file pragma Flutter honours is not coverable at
     # all, loaded or not.
-    @wip @slice-32 @ID-COV-43 @binary-only
+    @slice-32 @ID-COV-43 @binary-only
     Scenario: A Dart library no test loads is uncovered, not unmeasured
       Given a Flutter app whose test loads lib/board.dart and no test loads lib/unused.dart or lib/ignored.dart
       And lib/ignored.dart's first line is "// coverage:ignore-file"

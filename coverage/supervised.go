@@ -166,6 +166,7 @@ func RunSupervised(ctx context.Context, plans []Plan, sources []string, log io.W
 			planFailed = true
 		}
 		if !planFailed {
+			r = p.notCoverable(ctx, r)
 			r.MarkMeasured(p.Language)
 			p.prove(r)
 		}

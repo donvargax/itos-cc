@@ -25,7 +25,7 @@ import (
 // Plan is how to measure one project: the directory to run in, the commands
 // that produce coverage, and where the reports land. A project is one
 // language under one build root (go.mod, package.json, pyproject.toml, a
-// Gradle or Maven build).
+// Gradle or Maven build, pubspec.yaml).
 type Plan struct {
 	Language string
 	Dir      string
@@ -87,6 +87,12 @@ type Plan struct {
 	// but proves no file's executable lines (Report.Lines), as no built-in
 	// command made it.
 	Unattested bool
+	// NotCoverable are Sources a pragma makes not coverable at all, such
+	// as Dart's coverage:ignore-file, which the tool honours by naming them
+	// nowhere, loaded or not: a report its commands wrote then names each
+	// with no line, so it has no coverage, rather than the none of a file
+	// no test loaded.
+	NotCoverable []string
 }
 
 // Reach is the test files that reach a source: the coverage port's, which
@@ -106,6 +112,7 @@ var markers = map[string][]string{
 	"typescript": {"package.json"},
 	"python":     {"pyproject.toml", "setup.py", "setup.cfg"},
 	"kotlin":     {"build.gradle.kts", "build.gradle", "pom.xml"},
+	"dart":       {"pubspec.yaml"},
 }
 
 // Markers are the files that make a folder a build root of language, as the
@@ -131,8 +138,8 @@ const (
 )
 
 // Plans groups sources by language and build root and returns one plan per
-// group, with reports written under outDir. Python and Kotlin run the whole
-// suite whatever the scope, but in OwnTests with reach set: each Python
+// group, with reports written under outDir. Python, Kotlin and Dart run
+// the whole suite whatever the scope, but in OwnTests with reach set: each Python
 // source is measured by the test files that reach it (PythonTests), and each
 // Kotlin source by the test classes of its own build module those files
 // declare (KotlinTests), one plan per build root and distinct set of those
@@ -230,6 +237,8 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 			}
 		case "kotlin":
 			p = kotlinPlan(ctx, k.dir, out, tests)
+		case "dart":
+			p = dartPlan(ctx, k.dir, out, sources)
 		default:
 			continue
 		}

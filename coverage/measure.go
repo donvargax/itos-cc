@@ -121,6 +121,7 @@ func Run(ctx context.Context, plans []Plan, sources []string, log io.Writer, exe
 		// runner prints: a run that succeeded and wrote its report measured
 		// its language, whichever files the report names.
 		if failed == "" && len(r.Missing()) == 0 {
+			r = p.notCoverable(ctx, r)
 			r.MarkMeasured(p.Language)
 			p.prove(r)
 			reports = append(reports, r)
@@ -228,7 +229,7 @@ func Existing(ctx context.Context, plans []Plan, sources []string, log io.Writer
 				if path == p.Reports[0] && p.Integration != "" && exists(p.Integration) {
 					integration = p.Integration
 				}
-				r = load(ctx, []string{path}, integration, p.Dir, p.measures(sources), log)
+				r = p.notCoverable(ctx, load(ctx, []string{path}, integration, p.Dir, p.measures(sources), log))
 				break
 			}
 		}

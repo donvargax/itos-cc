@@ -9,10 +9,11 @@ name: CD
 # default branch's context. It runs everything ci.yml ran before the split:
 # the ci job, every Go test on Linux, macOS and Windows, every scenario
 # through both drivers, the native T-80 and T-82 runs, and the languages
-# shards, the test and languages jobs skipped when the scope job finds the
-# range prose-only (T-122).
-# On a push to main, once the ci, test and languages jobs pass, or the
-# latter two were skipped as prose-only, the release job cuts the release in
+# shards; and since slice-32 the Dart scenarios with the real Flutter; the
+# test, languages and dart jobs skipped when the scope job finds the range
+# prose-only (T-122).
+# On a push to main, once the ci, test, languages and dart jobs pass, or the
+# latter three were skipped as prose-only, the release job cuts the release in
 # the same run (release.yml, T-28): the version from the commits since the
 # last tag (tools/bin/release-version), each platform built on its own
 # runner, the archives attested and published with their notes, or nothing
@@ -338,19 +339,60 @@ jobs:
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(163|22[1-4])$'
           go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@ID-MUT-(228|229|230)$'
 
+  # The Dart scenarios (slice-32), which run the real flutter test: the
+  # Flutter apps, FVM SDK and pub workspace of coverage.feature's slice-32
+  # parts, selected by their tag, as COV-05 and COV-08 hold other
+  # languages' rows this job has no tools for. On ubuntu-latest alone, as
+  # the languages shards are: every other job skips them, the languages job
+  # too, which sets ITOS_CC_LANGUAGE_TOOLS without installing Flutter, so
+  # ITOS_CC_FLUTTER_TOOLS marks this one (features/binary.go).
+  # The Flutter is the repository's own pin, the root .fvmrc fvm reads
+  # locally, read here by flutter-fvm-config-action into flutter-action,
+  # which caches the SDK and the pub cache the fixtures resolve from.
+  # ITOS_CC_LANGUAGE_TOOLS makes a missing flutter fail these scenarios
+  # instead of skipping them.
+  # A newer push's run cancels an older one's, as for test (T-123).
+  dart:
+    needs: scope
+    if: needs.scope.outputs.docs_only != 'true'
+    concurrency:
+      group: cd-dart-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3.3
+        id: fvm
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ steps.fvm.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm.outputs.FLUTTER_CHANNEL }}
+          cache: true
+      - run: flutter --version
+      - env:
+          ITOS_CC_LANGUAGE_TOOLS: "1"
+          ITOS_CC_FLUTTER_TOOLS: "1"
+        run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@slice-32$'
+
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.
-  # A prose-only range skips the test and languages jobs, and a job needing
-  # a skipped one is skipped too, so the condition says what passing is:
-  # ci passed, and test and languages passed or were skipped because scope
-  # found the range prose-only. Its release then cuts nothing, as before.
+  # A prose-only range skips the test, languages and dart jobs, and a job
+  # needing a skipped one is skipped too, so the condition says what passing
+  # is: ci passed, and test, languages and dart passed or were skipped
+  # because scope found the range prose-only. Its release then cuts
+  # nothing, as before.
   release:
     if: >-
       !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       && needs.ci.result == 'success' && needs.scope.result == 'success'
       && (needs.test.result == 'success' || needs.test.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
       && (needs.languages.result == 'success' || needs.languages.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
-    needs: [scope, ci, test, languages]
+      && (needs.dart.result == 'success' || needs.dart.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
+    needs: [scope, ci, test, languages, dart]
     # What release.yml's jobs ask for: the release and its assets, the OIDC
     # token Sigstore signs with, and the attestations.
     permissions:
