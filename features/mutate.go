@@ -96,6 +96,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	executionMutationSteps(sc, m, since)
 	countedMutationSteps(sc, m, since)
 	emptyCaseSteps(sc, m)
+	pristineSteps(sc, m)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
