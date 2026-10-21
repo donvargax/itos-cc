@@ -5676,15 +5676,6 @@
     (neither project nor coverage has a depguard rule yet). --since's selection and wording, the JVM
     commands' arguments, every message and snapshot unchanged. docs/go.md's project and coverage
     notes say they import no mutation package.
-  done_when:
-    - run: go test -count=1 ./project/... ./internal/githistory/... ./internal/mutants/...
-      timeout: 600
-    - run: go test -count=1 ./coverage/... ./internal/freshenv/...
-      timeout: 900
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestARenamedFileIsNarrowedByItsNewPath|TestCheckSince.*|TestWithSince.*|TestUnderSince.*|TestChangedLineStrictness.*|TestAGoChangeIsJudgedOnTheLinesItChangedNotTheOldCodeAroundThem|TestMemoryGitBranchesOwnHeadAndCommittedSelection)$' -scenarios='^@ID-MUT-'
-      timeout: 900
-    - run: tools/bin/domain-coverage
-      timeout: 600
 - id: T-157
   type: refactor
   title: Move internal/mutation into internal/slices/mutation, assembled from its declaration

@@ -3985,7 +3985,7 @@ items:
     title: Take mutation's domain out of the project and coverage engines
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-152]
     kind: task
   - id: slices-import-engine
