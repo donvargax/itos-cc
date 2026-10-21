@@ -5005,3 +5005,19 @@ items:
       musl-dev version and the MinGW runtime's version with the ones tools/bin/notices names,
       stopping the release on a mismatch, or the runners could be pinned (ubuntu-24.04,
       windows-2025).
+  - id: flutter-package-rule-shared
+    title: One rule says what a Flutter package's platform folders are
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Whether a folder is a Flutter package's platform folder (android, ios, macos, linux, windows,
+      web beside a pubspec.yaml that depends on the flutter SDK) is now decided in three places:
+      project/flutter.go (platformDirs, dependsOnFlutter) for discovery, coverage/dart.go
+      (flutterPackage) for coverage, and slice-35's
+      internal/slices/mutation/adapters/worktrees/dart.go for worker copies, besides selection's
+      porttest twin. slice-35 could not export project's rule, as project/ was not its path.
+      Exporting project's rule and having coverage and worktrees call it would keep the three from
+      drifting.
