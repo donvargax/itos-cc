@@ -3978,8 +3978,8 @@ items:
   - id: T-155
     title: Move version into internal/slices/version over internal/version
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-146]
     kind: task
   - id: T-156
