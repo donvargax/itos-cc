@@ -3929,8 +3929,8 @@ items:
   - id: T-148
     title: Move dry into internal/slices/dry, its fingerprinting into lang
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-146]
     kind: task
   - id: slices-scrap
