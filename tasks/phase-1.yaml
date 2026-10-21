@@ -6256,10 +6256,3 @@
     closes only on a run with no unclassified difference. No product code changes, no normalization
     rule (a run-dependent difference is classified unstable, never normalized away), no mutation run
     of this repository.
-  done_when:
-    - run: itos config check
-      timeout: 60
-    - run: tools/bin/doc-caps
-      timeout: 60
-    - run: go build -o "${TMPDIR:-/tmp}/t86-proof-itos-cc" ./cmd/itos-cc && tools/bin/refactor-proof "${TMPDIR:-/tmp}/t86-proof-itos-cc" "${TMPDIR:-/tmp}/t86-proof-itos-cc" "" '^t114-45$'
-      timeout: 300

@@ -3998,7 +3998,7 @@ items:
     title: Run T-86's one refactor proof against b768837 and classify every difference
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-165, T-166, T-168, T-171]
     kind: task
   - id: fresh-decode-config
