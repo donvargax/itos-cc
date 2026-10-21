@@ -4616,8 +4616,8 @@ items:
   - id: slice-29
     title: Dart mutation sites and dry comparisons
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-28]
     kind: slice
     why: >
