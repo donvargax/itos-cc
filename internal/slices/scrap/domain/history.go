@@ -1,4 +1,4 @@
-package teststructure
+package domain
 
 import "sort"
 

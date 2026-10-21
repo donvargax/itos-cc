@@ -12,7 +12,6 @@ import (
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/crap"
 	"github.com/donvargax/itos-cc/internal/mutation"
-	"github.com/donvargax/itos-cc/internal/slices/scrap"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch
@@ -34,7 +33,6 @@ import (
 type commandLine struct {
 	Crap     crap.CLI     `cmd:"" help:"CRAP score per function: complexity × untested risk"`
 	Mutation mutation.CLI `cmd:"" help:"mutation testing: do the tests notice small changes?"`
-	Scrap    scrap.CLI    `cmd:"" help:"test-code structure: which tests to leave, table-drive, refactor, or split"`
 	Serve    legacyServe  `cmd:"" help:"live architecture graph and metrics over HTTP, for the viewer"`
 	Version  cli.Version  `cmd:"" help:"print the version"`
 }
@@ -83,10 +81,9 @@ func parserOf(ctx context.Context, c *commandLine, ui *cli.UI, a adapters) (*kon
 // reading them itself, so their failure is never wrapped as a dependent
 // provider's: a file that cannot be read is config.invalid, the provider's
 // error, which kong returns unwrapped from the call of that command's Run
-// alone. scrap reads only tests, which nothing
-// excludes, so it never reads the file, and version reads nothing but the
-// build. mutation's handler is handed the flags its line gave as written
-// (cli.Provided), read from the parsed line kong binds.
+// alone. version reads nothing but the build. mutation's handler is handed
+// the flags its line gave as written (cli.Provided), read from the parsed
+// line kong binds.
 func handlers(ui *cli.UI, a adapters) []kong.Option {
 	return []kong.Option{
 		kong.BindToProvider(func(ctx context.Context) (crap.Handler, error) {
@@ -99,9 +96,6 @@ func handlers(ui *cli.UI, a adapters) []kong.Option {
 				Fresh: a.Fresh, FreshWorkers: a.FreshWorkers, Repository: a.Repository, PhysicalDir: a.PhysicalDir, Platform: a.Platform}
 		}),
 		kong.BindToProvider(func(parsed *kong.Context) mutation.Written { return mutation.Written(cli.Provided(parsed)) }),
-		kong.BindToProvider(func() scrap.Handler {
-			return scrap.Handler{Tree: a.Tree, Surroundings: a.Surroundings, Store: a.Store, Name: ui.Rel}
-		}),
 		kong.BindToProvider(func() cli.Build { return cli.Build(versionString()) }),
 	}
 }

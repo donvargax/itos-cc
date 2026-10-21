@@ -54,9 +54,10 @@ linters:
         # finds functions similar enough to be duplicates in files
         # internal/lang parsed, reaching nothing outside, so it has no port
         # (decision 37), and is no shared domain, so the allow list leaves it
-        # out and no other domain imports it; internal/teststructure measures
-        # test code's structure in files internal/lang parsed, with lang's
-        # fingerprints, and has no port either;
+        # out and no other domain imports it; internal/slices/scrap/domain,
+        # the scrap slice's own, measures test code's structure in files
+        # internal/lang parsed, with lang's fingerprints, and has no port
+        # either, nor a place on the allow list;
         # internal/coverage parses coverage reports and answers what they
         # covered, its port asking what a path a report names is on disk
         # and holding the sealed gaps of coverage not measured (decision 46);
@@ -69,7 +70,7 @@ linters:
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
             - "**/internal/slices/dry/domain/**"
-            - "**/internal/teststructure/**"
+            - "**/internal/slices/scrap/domain/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"
             - "**/internal/mutants/**"
@@ -80,7 +81,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/lang/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
             - github.com/donvargax/itos-cc/internal/changerisk$
@@ -98,7 +98,7 @@ linters:
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
             - "**/internal/slices/dry/domain/**"
-            - "**/internal/teststructure/**"
+            - "**/internal/slices/scrap/domain/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"
             - "**/internal/mutants/**"
@@ -133,7 +133,6 @@ linters:
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
-            - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/mutants/**" # pure mutation rules and models
@@ -155,7 +154,6 @@ linters:
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
             - github.com/donvargax/itos-cc/internal/changerisk$
@@ -184,12 +182,12 @@ linters:
           files:
             - "**/internal/slices/**"
             - "!**/internal/slices/dry/domain/**" # a slice's domain, held by domain
+            - "!**/internal/slices/scrap/domain/**" # a slice's domain, held by domain
           allow:
             - github.com/donvargax/itos-cc/internal/selection$
             - github.com/donvargax/itos-cc/internal/selection/
             - github.com/donvargax/itos-cc/internal/snapshot$
             - github.com/donvargax/itos-cc/internal/snapshot/
-            - github.com/donvargax/itos-cc/internal/teststructure$
             - github.com/donvargax/itos-cc/internal/coverage$
             - github.com/donvargax/itos-cc/internal/coverage/
             - github.com/donvargax/itos-cc/internal/changerisk$
@@ -218,7 +216,6 @@ linters:
             - "!**/internal/selection/**" # a domain and its ports
             - "!**/internal/lang/**" # a domain and its ports
             - "!**/internal/snapshot/**" # a domain and its ports
-            - "!**/internal/teststructure/**" # a domain, with no port
             - "!**/internal/coverage/**" # a domain and its ports
             - "!**/internal/changerisk/**" # a domain, with no port
             - "!**/internal/mutants/**" # pure mutation rules and models
@@ -266,7 +263,7 @@ linters:
             - "**/internal/lang/**"
             - "**/internal/snapshot/**"
             - "**/internal/slices/dry/domain/**"
-            - "**/internal/teststructure/**"
+            - "**/internal/slices/scrap/domain/**"
             - "**/internal/coverage/**"
             - "**/internal/changerisk/**"
             - "**/internal/mutants/**"

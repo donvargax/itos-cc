@@ -1,15 +1,17 @@
-// Package teststructure measures the structure of test code the way crap
-// measures production code: which tests are too big, too clever, too
-// mocked, too weakly asserted, or repeated, and whether a test file is
-// worth refactoring at all. Its verdicts are meant to steer an AI
-// assistant: when to leave a file alone, when to rewrite repeated examples
-// as a table, when to clean up in place, and when to split the file first.
+// Package domain is the scrap command's domain, measuring the structure of
+// test code the way crap measures production code: which tests are too
+// big, too clever, too mocked, too weakly asserted, or repeated, and
+// whether a test file is worth refactoring at all. Its verdicts are meant
+// to steer an AI assistant: when to leave a file alone, when to rewrite
+// repeated examples as a table, when to clean up in place, and when to
+// split the file first.
 //
-// It is a domain (decision 37), named for what it is while the command
-// keeps its name, scrap: it takes files internal/lang parsed, with the
-// names its caller gives them, and reads nothing itself, so it has no port.
-// History merges a run's reports into what the last snapshot recorded.
-package teststructure
+// It is the scrap slice's own (ADR-0051), kept apart from its CLI and
+// application code, and a domain (decision 37): it takes files
+// internal/lang parsed, with the names its caller gives them, and reads
+// nothing itself, so it has no port. History merges a run's reports into
+// what the last snapshot recorded.
+package domain
 
 import (
 	"strings"

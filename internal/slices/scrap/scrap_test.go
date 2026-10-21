@@ -17,10 +17,11 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
-	teststructure "github.com/donvargax/itos-cc/internal/slices/scrap/domain"
+	"github.com/donvargax/itos-cc/internal/slices/scrap/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
@@ -155,6 +156,38 @@ func TestHandleStopsAtAFailure(t *testing.T) {
 	}
 }
 
+// ports are the Ports cmd's adapters give the handler, held in memory: the
+// tree, the store and files named from /work/src.
+type ports struct {
+	tree  porttest.Tree
+	store *snapporttest.Store
+}
+
+func (p ports) SelectionTree() port.Tree { return p.tree }
+func (p ports) LangSurroundings() langport.Surroundings {
+	return langporttest.Surroundings{Dir: "/work/src"}
+}
+func (p ports) SnapshotStore() snapport.Store { return p.store }
+func (p ports) Rel(path string) string        { return fromSrc(path) }
+
+// NewHandler builds the handler over its Ports: the test files their tree
+// holds, named by their Rel, recorded in their store. It reads nothing, so
+// it never fails.
+func TestNewHandlerIsBuiltOverItsPorts(t *testing.T) {
+	s := store("")
+	h, err := NewHandler(t.Context(), ports{tree: tree(), store: s})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := h.Handle(t.Context(), Query{})
+	if err != nil || len(found.Reports) != 1 || found.Reports[0].File != "cart.test.ts" {
+		t.Errorf("Handle() = %+v, %v; want cart.test.ts's report, named by Rel", found, err)
+	}
+	if got := recordedFiles(t, s); !slices.Equal(got, []string{"src/cart.test.ts"}) {
+		t.Errorf("scrap.json records %q, want the file measured, in the Ports' store", got)
+	}
+}
+
 // run is c run over h, and what it printed on stdout and stderr.
 func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 	t.Helper()
@@ -165,7 +198,7 @@ func run(t *testing.T, c CLI, h Handler) (code int, stdout, stderr string) {
 
 func TestRunPrintsEachReport(t *testing.T) {
 	code, stdout, stderr := run(t, CLI{}, handler(tree(), store("")))
-	if code != 0 || stderr != "" || !strings.HasPrefix(stdout, "cart.test.ts  "+teststructure.LeaveAlone+"  pressure=") ||
+	if code != 0 || stderr != "" || !strings.HasPrefix(stdout, "cart.test.ts  "+domain.LeaveAlone+"  pressure=") ||
 		!strings.Contains(stdout, "  examples=2  ") || strings.Count(stdout, "\n") != 1 {
 		t.Errorf("exit %d, stdout\n%s\nstderr %q", code, stdout, stderr)
 	}
