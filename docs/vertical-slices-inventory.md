@@ -4,8 +4,8 @@
 > paths and line numbers are those of `2f63821`, and every package section 1 lists for a command,
 > its domain or mutation's adapters has moved since, as have `graph/tests.go` and `config`'s
 > exceptions codec. ADR-0051 settled section 7's questions. Today's
-> layout is `docs/go.md`'s; the last section says where each move put each package and which work
-> did each of section 6's steps.
+> layout is `docs/go.md`'s; section 8 says where each move put each package and which work did
+> each of section 6's steps, and section 9, the last, records T-86's one refactor proof.
 
 # T-86 inventory: feature-owned vertical slices
 
@@ -363,3 +363,39 @@ T-144, R3 T-145, R4 T-146, R5 T-148, R6 T-150, R7 T-147, R8 T-151 and T-152, R9 
 T-156 to T-161 ((a) T-157 and T-158, (b) T-159 and T-160, (c) T-161, (d) T-156; ADR-0051 settled
 (e): cmd's mutation tests stay in cmd as assembly tests mutation owns by path), R11 T-162 and
 T-163, R12 T-164, R13 T-165, and R14 slices-close's tasks, T-167 to T-172.
+
+## 9. The proof
+
+T-86's one refactor proof (ADR-0051, R14), classified by T-172: run
+[39622138010](https://github.com/donvargax/itos-cc/actions/runs/39622138010) of
+`refactor-proof.yml`, dispatched on `main` at `e23c469`, against the baseline `b768837`, the parent
+of T-86's first code commit (`47f7543`). Nothing under `cmd`, `internal`, `project`, `coverage`,
+`config`, `metrics`, `graph`, `server`, `go.mod` or `go.sum` but tests changed between `e23c469`
+and `main` when it was classified; only documentation (T-170) landed since. Both builds, stamped
+alike (T-166), print the same version line, `itos-cc 1.2.3-features`.
+
+**Edges** (`tools/bin/refactor-proof`, 390 cases): 318 same, 71 normalized, 1 unstable, none
+differs, as-rerun or setup-failed, a verdict for every case. The job exited 1 for the unstable case
+alone: the script counts a case as differing before it runs the old binary again, so unstable and
+as-rerun fail the run as differs does, and the classification below, not the exit code, accounts
+for it. Every normalized case agrees once rules 1 and 2 of the script's header rewrite it: the
+digits of a temporary folder (`run-N`, `fresh-plan-N`, a snapshot's `.N.tmp`), Go durations and
+Vitest's clock and shares; no rule was added.
+
+| Case | Verdict | Classification |
+|---|---|---|
+| `t49-03` (`mutation run --fail-fast --workers 2 board.go`) | unstable | The run's, not the refactor's. `board.go:5`'s two mutants, `>` → `>=` and `0` → `1`, start together on two workers, each surviving when it runs to the end, and `--fail-fast` stops at the first to finish and cancels the other. Which one finishes first, and whether the other finishes before the cancel lands, varies between runs: the old binary's first run finished both (2 survived, 0 cancelled, stopping at `0` → `1`), its second stopped at `>` → `>=` and cancelled `0` → `1`, and the new binary stopped at `0` → `1` and cancelled `>` → `>=`. Rerun locally, 58 times for the old binary and 159 for the new, both give all four outcomes. |
+
+**Suites** (`TestFeatures` through `ITOS_CC_FEATURES_BINARY`, every language tool installed): both
+sides passed, 642 scenarios each, and `failed-old.txt` and `failed-new.txt` are empty, so no
+scenario fails on either side. Six scenarios skip their steps on both sides alike, the macOS and
+Windows ones a Linux runner cannot run.
+
+**Items opened**: none for the refactor; no difference is unclassified. Rerun locally, `t49-03`
+also met a race older than T-86 and no difference between the binaries, opened as bug-5: about one
+run in 30 of either binary (2 of 58 of `b768837`'s, 4 of 159 of `e23c469`'s) reports the mutant
+`--fail-fast` cancels as killed, then exits 100 with `exec: canceling Cmd: no such process` and
+writes no snapshot. `internal/processes`' `killGroup` (`internal/worktrees`' at `b768837`, the same
+code) most likely returns the group's `ESRCH` from `cmd.Cancel` when the group has already gone,
+which `os/exec` reports as `Wait`'s error for a command that otherwise exited 0. It is not one of
+T-86's items.

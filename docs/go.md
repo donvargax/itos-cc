@@ -875,18 +875,22 @@ follows the same steps for a command it wrote before it had the template's desig
    step's check. The file's smoke scenario in `smoke.yaml` then runs in every push's scenario
    step instead of being logged as not run.
 9. **The proof comes once, after the whole refactor.** A move does not compare binaries on
-   its own: its scenarios and tests hold it. Once the refactor's moves are done (`serve`
-   stays on its legacy handler, its moves deferred), one task, refactor-final-proof, builds
-   the binary from before the refactor and the refactored one, and runs both over many
-   command lines of every command: every flag alone, with `=value` and given twice, unknown
-   and mistyped flags (`-changed`, `--chnged`), `-h` and `--help` anywhere, after `--` and
-   beside mistakes, `--json` before the command, `help <command>`, arguments between flags,
-   paths that are there, fragments and nothing, in a git repository, in a plain folder and
-   beside a file that cannot be read. It compares stdout, stderr and the exit code of each,
-   and every line that differs is either a deliberate change that task lists or a bug. A move
-   that finds a case worth comparing adds it to that task's list. `units` (T-32) was compared
-   on its own before this: 236 lines agreed but one, `---changed`, which the hand parser read
-   as `--changed` and kong refuses as an unknown flag, as rule 15 has it.
+   its own: its scenarios and tests hold it. Once a refactor's moves are done, one run of
+   `refactor-proof.yml`, dispatched by hand, builds the binary of the refactor's baseline and
+   the refactored one, runs today's whole binary-driver suite against each (the refactored
+   side the control) and compares both, through `tools/bin/refactor-proof`, over the edge
+   cases the moves listed in `tools/testdata/refactor-proof/cases` that no scenario holds:
+   stdout, stderr, the exit code and the files a case names, after the rules its header
+   lists. Every difference is a deliberate change a commit made, its note in the case list,
+   the run's own (unstable, never normalized away), or a bug. A move that finds a case worth
+   comparing adds it to that list. The kong refactor's proof ran once, T-132's run
+   [39101044040](https://github.com/donvargax/itos-cc/actions/runs/39101044040) against
+   `51f3952`, classified by T-137; T-86's ran once, run
+   [39622138010](https://github.com/donvargax/itos-cc/actions/runs/39622138010) against
+   `b768837`, classified by T-172 in `docs/vertical-slices-inventory.md`'s last section.
+   `units` (T-32) was compared on its own before either: 236 lines agreed but one,
+   `---changed`, which the hand parser read as `--changed` and kong refuses as an unknown
+   flag, as rule 15 has it.
 10. **Boundaries.** The `slice-packages` rule holds the new package with no edit. A top-level library
     it imports that the rule refuses is either a domain library every command measures by,
     allowed in `slices` with a comment saying why (`lang` was, until T-36 made it the domain
