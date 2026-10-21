@@ -1,3 +1,13 @@
+// Package imports is the import-resolution engine (ADR-0051, T-162): it
+// resolves each language's imports into dependencies between a repository's
+// modules, a Go package or a TypeScript, Python or Kotlin file, and finds the
+// test files that reach each source through them. graph draws its
+// architecture from a Resolution, and mutation's importgraph adapter reaches
+// TestsImporting. It is an adapter-side engine, not a domain: it parses
+// files through project, finds the markers above them and reads
+// tsconfig.json, and it imports nothing of ours but internal/lang, project
+// and the coverage runner, so no slice's values reach it and a caller
+// converts its results into its own terms.
 package imports
 
 import (

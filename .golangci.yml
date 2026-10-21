@@ -158,6 +158,7 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
+            - "!**/internal/imports/**" # the import-resolution engine, held by imports
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -261,6 +262,7 @@ linters:
             - "!**/internal/metricsdir/**" # an adapter, held by metricsdir
             - "!**/internal/coveragetools/**" # an adapter, held by coveragetools
             - "!**/internal/processes/**" # the process-ownership engine, held by processes
+            - "!**/internal/imports/**" # the import-resolution engine, held by imports
             - "!**/internal/cli/**" # the UI the slices share
             - "!**/internal/version/**" # the build's version, which cmd gives the version slice
             - "!**/internal/release/**" # the release tools' library
@@ -418,6 +420,29 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "the process-ownership engine imports nothing of ours (T-151): no domain, slice, adapter or UI; a caller converts its Result into its own terms"
+        # internal/imports is the import-resolution engine (ADR-0051, T-162):
+        # it resolves each language's imports into module dependencies and
+        # finds the tests that reach each source, for graph and for mutation's
+        # importgraph adapter. It is an adapter-side engine, not a domain: it
+        # parses files through project, finds markers above them and reads
+        # tsconfig.json, so no domain or slice imports it (their rules leave
+        # it out). It imports internal/lang, whose parsed files it reads,
+        # project, and the coverage runner, for pytest's naming of a test file,
+        # its tests too, and nothing else of ours: no domain but lang, slice,
+        # adapter or fake, so no slice's values reach it. One deny entry only:
+        # depguard looks a deny up as the one entry sorting just before the
+        # import (slice-adapters above).
+        imports:
+          list-mode: lax
+          files:
+            - "**/internal/imports/**"
+          allow:
+            - github.com/donvargax/itos-cc/internal/lang$
+            - github.com/donvargax/itos-cc/project$
+            - github.com/donvargax/itos-cc/coverage$
+          deny:
+            - pkg: github.com/donvargax/itos-cc
+              desc: "the import-resolution engine imports nothing of ours but internal/lang, project and the coverage runner (T-162): no other domain, slice, adapter, UI or fake; a caller converts its results into its own terms"
         # T-89: each concrete observation adapter owns only its declared I/O.
         # testtools and testinputs (T-159), githistory, freshenv and
         # importgraph (T-160), snapshots, exceptions and sources (T-161), like
@@ -480,11 +505,12 @@ linters:
           deny:
             - pkg: github.com/donvargax/itos-cc
               desc: "freshenv imports only its mutation contract and the observed libraries/codecs it wraps (T-95); cmd supplies other adapters and owned executors"
-        # importgraph wraps graph's import resolver until the import engine
-        # is lifted out of graph (ADR-0051). graph imports the mutation
-        # domain, so the slice and graph meet without a Go cycle only while
-        # importgraph is a package of its own: never merge it with anything
-        # graph imports.
+        # importgraph is mutation's Reach over the import-resolution engine,
+        # internal/imports (T-162): it calls the engine's TestsImporting and
+        # turns its failures into the domain's, which an engine, importing no
+        # slice, cannot return. It is a thin adapter of its own, importing
+        # neither graph nor project, so the engine stays free of the slice's
+        # domain and graph, which imports that domain, is reached by no slice.
         importgraph:
           list-mode: lax
           files:
@@ -492,11 +518,10 @@ linters:
             - "!$test"
           allow:
             - github.com/donvargax/itos-cc/internal/slices/mutation/domain$
-            - github.com/donvargax/itos-cc/project$
-            - github.com/donvargax/itos-cc/graph$
+            - github.com/donvargax/itos-cc/internal/imports$
           deny:
             - pkg: github.com/donvargax/itos-cc
-              desc: "the importgraph adapter imports only the mutation domain and its observed libraries (T-89); no other adapters, UI or fakes"
+              desc: "the importgraph adapter imports only the mutation domain and the import-resolution engine it adapts (T-89, T-162); no other adapters, UI or fakes"
         # snapshots is the mutation snapshot codec (T-161), which was
         # internal/metricsdir's: it reads and writes the domain's Snapshot as
         # the JSON under .metrics/mutate, legacy go_evidence included, through

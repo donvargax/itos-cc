@@ -45,8 +45,8 @@ const (
 	OwnTests
 )
 
-// Reach is the test files that reach a source, as graph.TestsImporting
-// finds them. It answers from what it already holds: it reads nothing.
+// Reach is the test files that reach a source, as the import-resolution
+// engine's TestsImporting (internal/imports) finds them. It answers from what it already holds: it reads nothing.
 type Reach func(source string) []string
 
 // Failure is why Measure gave no report at all, while a build root or

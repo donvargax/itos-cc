@@ -1,10 +1,13 @@
-// Package importgraph adapts the current graph import resolver to mutation's
-// Reach contract. The graph remains legacy until S8; cmd composes this adapter
-// because graph itself still imports legacy mutation snapshot readers.
+// Package importgraph adapts the import-resolution engine, internal/imports,
+// to mutation's Reach contract (T-162): it calls the engine's TestsImporting
+// and turns the context's cause into InputCancelled and the engine's error
+// into InputFailed, since the engine imports no slice and cannot return the
+// domain's failures. cmd composes it; it imports neither graph nor project.
 package importgraph
 
 import (
 	"context"
+
 	"github.com/donvargax/itos-cc/internal/imports"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )

@@ -8,7 +8,8 @@
 // Worker requests name semantic run purposes, never physical scratch prefixes.
 // Toolchain supplies observed runner facts to pure Command policy; Fingerprints
 // supplies actual current provenance, and Reach supplies import closure. Their
-// concrete adapters are testtools, testinputs and importgraph. These contracts
+// concrete adapters are testtools, testinputs and importgraph, the last over
+// internal/imports, the import-resolution engine. These contracts
 // reuse existing Command and runtime values; they add no wire or copy models.
 // History supplies immutable committed bytes, caller-relative changes and
 // repository-wide rename observations through githistory and our independent fake.

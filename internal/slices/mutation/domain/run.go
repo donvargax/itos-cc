@@ -60,9 +60,10 @@ type Options struct {
 	// or "": its snapshot moves to the new path, and the old one is removed.
 	Renamed func(path string) string
 	// Tests, when set, lists the test files that reach the file at path
-	// (graph.TestsImporting), whose hashes its snapshot records: a kill is
-	// reused only while they are those recorded. In Python they are also
-	// the tests its own command runs (TestCommand). Unset, a file has none.
+	// (internal/imports' TestsImporting, through Reach), whose hashes its
+	// snapshot records: a kill is reused only while they are those
+	// recorded. In Python they are also the tests its own command runs
+	// (TestCommand). Unset, a file has none.
 	Tests func(path string) []string
 	// Exceptions are the survivors itos-cc.yaml excepts: each one of a
 	// function judged that still survives is excepted, and one that no
