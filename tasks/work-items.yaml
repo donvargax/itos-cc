@@ -4479,8 +4479,8 @@ items:
   - id: T-167
     title: Hold the imports into internal/slices to cmd, graph and config, and refuse a depguard deny entry that prefixes another
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
   - id: T-168
