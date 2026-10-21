@@ -6240,3 +6240,39 @@
       timeout: 60
     - run: test -s docs/ownership.md
       timeout: 10
+- id: T-171
+  type: test
+  title: Point the refactor proof at b768837 and add the edge cases T-86 moves listed
+  why: >
+    T-86 (ADR-0051: one refactor proof at the end; slices-close (5)), before the coordinator
+    dispatches it. The baseline is b768837f2097fc2ea84a0a43abeb598b6d033e57, the parent of 47f7543
+    (T-143's first code commit, T-86's first); between it and main no feat or fix commit landed and
+    no feature file, smoke.yaml, CONTRIBUTORS.md or LICENSE changed, so any difference is a refactor
+    bug unless a commit shows it deliberate. tools/testdata/refactor-proof/cases holds T-132's 378
+    cases, each note classifying a difference against 51f3952: say so in the cases header and in
+    tools/bin/refactor-proof's header (which also says a note prints only beside a differing case,
+    while the code prints it beside every verdict: correct the header to the code), and a T-86
+    classification is appended to a note as "; T-86 (b768837): ...". Add a # T-86 section of the
+    edge cases T-143..T-165 listed as unchanged that no case or live scenario already holds, each
+    t86-NN with its move in a comment, after checking the existing sections (T-47, T-96, T-114,
+    T-115, T-125 already hold help, the unknown-command guess, group admission, --json placement and
+    an unreadable itos-cc.yaml for most commands). Candidates: top-level --help, help mutation,
+    mutation --help and scrap --json beside an unreadable itos-cc.yaml (lazy config through
+    BindToProvider, T-143; scrap's provider reads no settings, T-150; the group's help reads
+    nothing, T-157); crap interrupted while its coverage command runs, int: on the goslow fixture
+    (process ownership moved to internal/processes, T-151); mutation run --since judging a function
+    changed in the last commit (the judgment moved to ChangedSince's caller, T-156), unless t91-03
+    or t91-04 hold it; mutation except over a commented itos-cc.yaml, captured (the writer moved,
+    T-161), unless t99-20 holds it. Only the go, gonogit, empty and mixed fixtures (the edges job
+    has Node but no Python or JVM; CI's check job has no node_modules). Build b768837's itos-cc from
+    git archive in the scratch folder and today's, both with refactor-proof.yml's STAMP, run
+    tools/bin/refactor-proof OLD NEW EV '^t86-', and give the report in the test commit's body:
+    every new case same or normalized, any difference an item before anything is dispatched.
+    refactor-proof.yml's default baseline becomes b768837, its header saying it was T-132's run
+    against 51f3952 and is T-86's against b768837; T-166's STAMP serves both. No product code
+    changes; the proof run itself is the coordinator's dispatch.
+  done_when:
+    - run: bash -n tools/bin/refactor-proof
+      timeout: 30
+    - run: go build -o "${TMPDIR:-/tmp}/t86-proof-itos-cc" ./cmd/itos-cc && tools/bin/refactor-proof "${TMPDIR:-/tmp}/t86-proof-itos-cc" "${TMPDIR:-/tmp}/t86-proof-itos-cc" "" '^t86-'
+      timeout: 600

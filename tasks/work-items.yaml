@@ -4518,3 +4518,10 @@ items:
     status: todo
     depends_on: []
     kind: task
+  - id: T-171
+    title: Point the refactor proof at b768837 and add the edge cases T-86 moves listed
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task
