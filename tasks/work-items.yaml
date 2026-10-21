@@ -12,7 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - T-163
-  - slices-scenario-registration
+  - T-164
   - slices-close
   - T-86
   - slice-13
@@ -2806,7 +2806,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-151, T-152, T-155, T-156, T-157, T-158, T-159, T-160, T-161, T-162, T-163, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-151, T-152, T-155, T-156, T-157, T-158, T-159, T-160, T-161, T-162, T-163, T-164, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3989,29 +3989,19 @@ items:
     status: done
     depends_on: [T-161]
     kind: task
-  - id: slices-scenario-registration
-    title: Generate scenario registration and the in-process driver's adapters
+  - id: T-164
+    title: Generate the stepped feature files and their step registration from a declaration beside each file of steps
     phase: 1
     owner: null
     status: todo
     depends_on: [T-163]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R12-R13): features/steps.go's Converted (344), InProcess (396) and step
-      registration (661-670), features/deferred.go's Deferred, and the in-process driver's adapters
-      literal (cmd/itos-cc/scenarios_test.go:489-545, run_fakes_test.go:37) are hand lists every
-      feature edits. Generate them with T-146's tool, or declare them per feature file, so a new
-      feature's steps need no edit to a shared file. .feature files stay in features/. Checks:
-      features TestFeatureSelection*, itos tests smoke check scenario, TestScenarios per area.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-close
     title: Record slice ownership, prove the refactor once and close T-86
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-scenario-registration, refactor-proof-version-stamp]
+    depends_on: [T-164, refactor-proof-version-stamp]
     kind: idea
     why: >
       T-86 (ADR-0051, R14): a path-ownership map per slice in docs (engines, generated files and
