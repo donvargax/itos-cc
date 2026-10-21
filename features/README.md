@@ -1702,7 +1702,8 @@ holders and counted export guards remain; they are not deleted as duplicates.
 ## S7 completion (T-101)
 
 The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over its own
-domain, `internal/slices/mutation/domain` (T-158), and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`.
+domain, `internal/slices/mutation/domain` (T-158), and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`;
+its tools and inputs adapters are its own, under `internal/slices/mutation/adapters` (T-159).
 `mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
 leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership
 scenarios, and no scenario carries a tag that stands for unmoved code.

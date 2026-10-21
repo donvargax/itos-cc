@@ -171,9 +171,16 @@ a `context.Context` first (decision 30); pure logic takes none.
   contract suites. The `domain`, `domain-io`, `mutant-fakes` and `coverage-fakes` rules hold it,
   and `tools/bin/domain-coverage` measures it. Unlike dry's, scrap's and crap's domains it is on
   the `domain` rule's allow list, since its external tests and porttest import it, and the
-  adapters not yet moved, `config` and `graph` import it too; the shared domains may not
-  (`shared-domains`), nor another slice (the sibling rule). The legacy `mutate` package is
-  retired.
+  slice's adapters, the adapters not yet moved, `config` and `graph` import it too; the shared
+  domains may not (`shared-domains`), nor another slice (the sibling rule). The legacy
+  `mutate` package is retired.
+- `internal/slices/mutation/adapters` holds the mutation slice's own adapters (ADR-0051), each
+  in a subpackage of its name with a depguard rule of its own, as every adapter has:
+  `testtools`, mutation's `Toolchain` and `TestLister`, and `testinputs`, its `Fingerprints`
+  and the coverage-input inventories (T-159, below), were `internal/testtools` and
+  `internal/testinputs`. They import the slice's domain, whose model-bearing ports they
+  implement, and the libraries they wrap; cmd wires them in through the slice's `Ports`, and
+  no slice imports them, the mutation slice's code neither (`slice-adapters`).
 - `internal/processes` is the process-ownership engine (ADR-0021, T-151), an adapter-side
   engine rather than a domain: it starts and kills processes and imports nothing of ours.
   `OwnedExecutor` runs an already configured command in a process group it owns on Linux and
@@ -510,14 +517,24 @@ context-as-argument a context after any other parameter, tests included.
 - `slice-packages`: a slice under `internal/slices`, its subpackages with it, imports what
   `slices` allows and its own subpackages, so it can keep its domain, port, porttest and
   adapter apart (ADR-0051), the mutation slice's domain and its `porttest` among them. Its
-  domain subpackage is held by `domain` instead, excluded here. depguard matches a prefix, so the rule allows `internal/slices/`
+  domain subpackage is held by `domain` instead, excluded here, and its adapters, under
+  `internal/slices/<command>/adapters/<name>`, by their own rules, excluded here too, since
+  this rule would refuse the libraries they wrap. depguard matches a prefix, so the rule allows `internal/slices/`
   and the sibling rule below refuses another slice; its allow list repeats `slices`', each
   domain added to both, until the last slice moves.
+- `slice-adapters`: a slice under `internal/slices`, its tests too, imports no adapter of a
+  slice, its own neither, since cmd wires them in through its `Ports` (decision 29). It holds
+  `slice-packages`' files and denies each slice's `adapters` folder, which `slice-packages`'
+  allowing `internal/slices/` would let by and the sibling rule lets a slice's own code
+  import. It is a rule of its own, not a deny beside `slice-packages`' module-wide one,
+  because depguard looks a deny up as the one entry sorting just before the import, so a
+  longer deny there would hide the module-wide one from every import sorting after it.
 - `slice-fakes`: a slice's own code imports no `porttest`, which only its tests may use (T-56).
   It holds the files of `slices` and `slice-packages`, tests left out, and names each port's `porttest`, since
   depguard matches a prefix and `slices` allows the ports' folders. It leaves out the mutation
   domain's folder, whose `porttest` builds on other ports' fakes; `mutant-fakes` keeps that
-  fake out of the domain's own code. `tools/bin/architecture-check`
+  fake out of the domain's own code. It leaves out a slice's adapters too, whose own rules
+  refuse every fake in their code. `tools/bin/architecture-check`
   also refuses `itos-cc`'s binary linking any `porttest` (`go list -deps ./cmd/itos-cc`), since
   depguard sees only the imports a file names, not what a binary links through them: a fake
   enters `cmd` only through its `_test.go` files.
@@ -530,7 +547,8 @@ context-as-argument a context after any other parameter, tests included.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
-  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph`: an adapter imports
+  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph` (`testtools` and
+  `testinputs` the mutation slice's own, under `internal/slices/mutation/adapters`): an adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
   the two ports it implements, selection's and `internal/lang`'s, and the `project` library,
   and `internal/metricsdir` the snapshot port and the `metrics` and `project` libraries; only
@@ -541,8 +559,8 @@ context-as-argument a context after any other parameter, tests included.
   An adapter may also use the shared pure domains its rule names, `internal/lang`,
   `internal/selection` and `internal/coverage`, which read nothing, as `freshenv`, `testtools`
   and `testinputs` do. The mutation adapters' rules and `workdir`'s and `metricsdir`'s allow
-  `internal/slices/mutation/domain`, which the sibling rule lets them import, being outside
-  `internal/slices`. `freshenv` serves mutants, yet its rule allows `internal/coverage` and its
+  `internal/slices/mutation/domain`, which the sibling rule lets them import: the slice's own
+  adapters being the slice's, the others being outside `internal/slices`. `freshenv` serves mutants, yet its rule allows `internal/coverage` and its
   port too, since it reads Go coverage blocks (`coverage.GoBlock`) through that domain.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
@@ -598,7 +616,20 @@ command from reaching into this one.
   and a classifier for its failures beside the slice that uses it, which `cmd` adds to the UI's classifiers. `tools/bin/domain-coverage` reads its list from `domain`'s `files`,
   so the package is held to 80% from then on. If its tests use rapid, add a
   `!**/internal/<name>/*_test.go` exclusion to `rapid`.
-- An adapter: add its folder to the `files` of the rule for its port's adapters (`workdir` for
+- A slice's adapter, one that serves only that slice's domain: put it in
+  `internal/slices/<command>/adapters/<name>`, as `internal/slices/mutation/adapters/testtools`,
+  never in the slice's own package or under `internal/` beside the shared ones. Give it a
+  depguard rule of its own, named for it, whose `files` are
+  `**/internal/slices/<command>/adapters/<name>/**` with `!$test`, allowing the slice's domain
+  it serves (decision 47), the shared pure domains it uses and the libraries it wraps, and
+  denying the rest of the module. The slice's first adapter also adds
+  `!**/internal/slices/<command>/adapters/**` to the `files` of `slice-packages`,
+  `slice-adapters` and `slice-fakes`, and the folder's import path,
+  `github.com/donvargax/itos-cc/internal/slices/<command>/adapters`, to `slice-adapters`'
+  `deny`; the slice's later adapters touch neither. The sibling rule counts it as the slice's,
+  so it imports the slice's domain and no other slice does. Wire it in `cmd` through the
+  slice's `Ports`.
+- Any other adapter: add its folder to the `files` of the rule for its port's adapters (`workdir` for
   selection's, `metricsdir` for the snapshot port's, `coveragetools` for coverage's), or give a new port's adapters a rule of their own allowing
   that port, any library they wrap and, when it returns the domain's types, the domain it
   serves (decision 47); add a
@@ -783,9 +814,9 @@ uses its own shared owner; ordinary mutation workers retain independent budgets.
 
 
 T-89 keeps the model-bearing `Toolchain`, `Fingerprints` and `Reach` contracts
-beside those values too. `internal/testtools` observes actual manifests, installed
+beside those values too. `internal/slices/mutation/adapters/testtools` observes actual manifests, installed
 runner entries, interpreter probes and runnable files/classes; pure mutants policy
-constructs `Command`. `internal/testinputs` owns current test/support/suite and
+constructs `Command`. `internal/slices/mutation/adapters/testinputs` owns current test/support/suite and
 independent-coverage inventories, including lexical unsupported-scope admission.
 It wraps the existing coverage library for unchanged Kotlin runner/wrapper
 fingerprints, as testtools does for runnable-file/class observations.
