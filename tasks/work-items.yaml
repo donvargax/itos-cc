@@ -4531,3 +4531,21 @@ items:
       from internal/mutants (doc.go and sites.go there too), so go doc prints the two one after the
       other. Found in T-168 while rewriting doc.go's adapter list. Fold sites.go's paragraph into
       doc.go, the one comment, in a refactor commit.
+  - id: renew-keeps-field-comments
+    title: mutation except --renew keeps a comment on an entry field
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-171's t86-12. On b768837 and today, mutation except --renew (and an except that
+      replaces an entry) keeps itos-cc.yaml's other comments and the entry's own head comment, but
+      drops a line comment written on one of the entry's fields, such as its reason, though the help
+      says a renewed entry keeps its reason and comments. ExceptDocument and RenewDocument copy only
+      the entry node's head, line and foot comments onto the new node
+      (internal/slices/mutation/adapters/exceptions/exception_document.go:44 and :91), so a field's
+      comment is lost. Decide whether the help or the writer is right: carry each kept field's
+      comments across, or say in the help that only the entry's own comments are kept. t86-12 in
+      tools/testdata/refactor-proof/cases holds today's behaviour, so a change shows there as a
+      deliberate difference.
