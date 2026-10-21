@@ -4432,15 +4432,9 @@ items:
     title: Name the mutation slice's own adapters in its domain's package comment
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      internal/slices/mutation/domain/doc.go still says the snapshot codecs live in metricsdir and
-      source annotation I/O in workdir, which T-161 moved to the slice's snapshots and sources
-      adapters, and its list of concrete adapters stops at testtools, testinputs and importgraph.
-      T-162 touched only the importgraph sentence. Rewrite the comment to name the slice's adapters
-      under internal/slices/mutation/adapters as docs/go.md does.
   - id: T-165
     title: Give the in-process driver's adapters a provider of their own, held to bind every port on disk and in process
     phase: 1
@@ -4452,14 +4446,9 @@ items:
     title: Refresh docs/dart/touchpoints.md paths after the slice moves
     phase: 1
     owner: null
-    status: todo
+    status: dropped
     depends_on: []
     kind: idea
-    why: >
-      docs/dart/touchpoints.md still names 18 internal/mutants/ paths (the Reach fake at
-      internal/mutants/porttest/reach.go among them) and other pre-ADR-0051 locations that no longer
-      exist; T-163 refreshed only its import-resolution rows, so whoever plans Dart reads stale
-      file:line references elsewhere in the map.
   - id: tagfilter-one-driver-list
     title: Drop TagFilter's per-driver files and Selection.Unmoved now both drivers run Converted
     phase: 1
