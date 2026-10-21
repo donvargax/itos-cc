@@ -5191,3 +5191,17 @@ items:
       --enforce-lockfile is added in freshenv; - adapters/worktrees/ and adapters/testtools/; -
       features/mutate_language.go: no new ID, since MUT-209 is in its list; - the help text,
       mutation-help.json, README.md and docs/CLI.md (D11).
+  - id: dart-strict-inventory
+    title: Strict Dart lists the lines of a library no test loads
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-A (the person, 2026-10-21) made strict Dart fail closed on a lib/ library no test loads
+      (slice-36), as Jest and c8 do. The VM can list such a library's executable lines: a generated
+      test file under .dart_tool/itos/ that only imports it writes LCOV with every line at 0
+      (measured with dart test 1.33.0 for slice-36's draft; not yet with flutter test). That would
+      turn mutation.coverage-missing into exact mutation.uncovered-statement findings and change the
+      producer string, so evidence reads stale once.
