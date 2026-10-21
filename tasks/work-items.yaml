@@ -4772,8 +4772,8 @@ items:
   - id: slice-34
     title: Dart tests reach what they import, through packages, barrels and parts
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [slice-29]
     kind: slice
     why: >
