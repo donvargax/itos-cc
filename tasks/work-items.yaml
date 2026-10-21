@@ -4381,3 +4381,21 @@ items:
       and changedLines, which filters out deletions, has no caller but since_test.go. Reading the
       diff straight into []LineRange and dropping changedLines (or keeping its check in the diff
       test) would leave one range type and no production code that only a test uses.
+  - id: counted-nil-bindings-in-cmd
+    title: Hold cmd's counted-run bindings to staying nil when unbound
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-157 gave the mutation slice Ports whose MutationRepository and MutationPhysicalDir methods
+      on cmd's adapters return the adapters' function fields as they are, so a binding left nil
+      reaches the handler nil and mutation run --count says 'mutation repository binding is missing'
+      or 'mutation working directory binding is missing'. The slice's handler test proves NewHandler
+      keeps a nil port nil over in-memory Ports, and cmd's exception binding test runs a command
+      with adapters' Exceptions nil, but no cmd test runs a counted mutation run with adapters'
+      Repository or PhysicalDir nil, so a later change turning either adapters method into a method
+      value or a wrapper closure would pass every local test and hand the handler a function that
+      calls nil. A table case in cmd beside mutation_exception_binding_test.go's missing bindings,
+      one for each, would hold the adapters to it.
