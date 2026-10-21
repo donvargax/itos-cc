@@ -4276,3 +4276,23 @@ items:
       step whose mutation run runs exit 0 in src/api, which the fake Workers refuses as undeclared;
       its step needs to declare those Tests, and its recorded reason (crap and mutation still
       hand-parsed) is stale since T-100 and T-152.
+  - id: features-coverage-gocoverdir-leak
+    title: Keep the binary driver's coverage build from leaking GOCOVERDIR into the project's commands
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): with GOCOVERDIR set, the binary driver builds itos-cc with
+      -cover and passes GOCOVERDIR to every command a scenario starts, and seven scenarios that pass
+      without it failed: ID-MUT-123, a -cover itos-cc wrote atomic counters into the per-test folder
+      itos-cc set for a listed test and go tool covdata refused the mixed folder; ID-MUT-178, 179,
+      182, 184, 197 and 211, their fixtures read the inherited GOCOVERDIR as a coverage run where
+      itos-cc gives none. The fixtures' builds also wrote 14 set-mode metadata files beside
+      itos-cc's, so covdata textfmt over the folder fails until split by metadata file. Separately,
+      go test -cover replaces every test binary's GOCOVERDIR, so GOCOVERDIR with go test
+      -coverpkg=./... ./... reaches TestFeatures only through an -exec wrapper; features_test.go's
+      package comment and features/README.md do not say so. Decide whether itos-cc drops an
+      inherited GOCOVERDIR from the commands it runs without coverage, or the harness keeps its own
+      out of them, and document the module-wide recipe.
