@@ -5514,3 +5514,22 @@
       timeout: 600
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-149
+  type: build
+  title: Move the Go toolchain to go1.27.3 for GO-2026-6809
+  why: >
+    Found 2026-10-21: govulncheck in ci.yml's ci job (run 39526460496, on T-146's fa5e7b7) reports
+    GO-2026-6809, distrust of compromised intermediate certificates in crypto/x509, found in
+    go1.27.2's standard library and fixed in go1.27.3, reached through
+    internal/coverage/formats.go:18 (coverage.Parse, bufio.Reader.Peek, x509.Certificate.Verify).
+    go.mod pins toolchain go1.27.2, so every push is red until it moves; docs/upgrading.md treats
+    the toolchain's standard library as part of the shipped code, its security fixes outside the
+    seven-day wait. Move go.mod's toolchain line to go1.27.3 and anything else that pins the
+    toolchain (workflows' setup-go, the pinned tools, docs naming the version), leaving the go
+    directive at 1.27.1 unless the fix needs it; check internal/release/release_test.go's 1.27.2 is
+    a fixture, not a pin. Renovate has no open request for it.
+  done_when:
+    - run: go version
+      timeout: 60
+    - run: go vet ./internal/coverage/...
+      timeout: 300
