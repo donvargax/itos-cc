@@ -4099,3 +4099,17 @@ items:
     status: doing
     depends_on: []
     kind: task
+  - id: processes-test-seams
+    title: Keep the process-ownership engine's test seams out of its production API
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-151 moved the engine to internal/processes, and worktrees' tests still observe a worker's
+      runner: the cleanup deadline it resolves and the moment its command completes, and whether a
+      pool's shared budget started. So the engine exports Lifecycle.Cleanup, Lifecycle.Complete and
+      CleanupBudget.Deadline only for those tests; no production caller sets or reads them. A
+      narrower observation the engine owns, or a test package beside it, would keep its API to what
+      callers run, without weakening the worker pool's budget and join checks.
