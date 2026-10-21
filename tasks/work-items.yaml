@@ -4207,3 +4207,21 @@ items:
       executable or a Go fixture whose test fails: coverageCommand with a real
       processes.OwnedExecutor or through the subprocess helper (crap --coverage-command), the others
       in internal/coveragetools and coverage. Seconds, no Node, Python, Gradle or Maven run.
+  - id: cleanup-failed-local-reach
+    title: Reach a failed process-group cleanup locally through processes, worktrees and the Workers contract
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): only ID-MUT-250, binary-only, reaches a cleanup that fails:
+      internal/processes CleanupFailed.Error, internal/worktrees boundWorker.Run mapping it to
+      mutants.WorkerCleanupFailed, internal/mutants runMutant and execute cancelling the judgment,
+      internal/mutation Presentation.cleanupFailed and CleanupProblem reporting
+      mutation.cleanup-failed. A processes adapter test whose child leaves a grandchild holding its
+      output past a short deadline, a worktrees adapter test of the mapping, and a case in
+      internal/mutants/porttest Workers contract run against the fake and the adapter, so the fake
+      reports a cleanup failure as the adapter does. Then decide whether ID-MUT-250 runs in both
+      drivers with its Given declaring the failure to the fake; the real process cleanup stays held
+      by the adapter test and CD.
