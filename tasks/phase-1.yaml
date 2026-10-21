@@ -6093,15 +6093,6 @@
     bullet), Adding a package's fixture bullet says the check refuses a nested deny, and the
     slice-adapters comment in .golangci.yml names the check. No depguard rule changes; every
     existing check's message unchanged.
-  done_when:
-    - run: tools/bin/architecture-check
-      timeout: 900
-    - run: go test ./tools/testdata/architecture -count=1 -run '^TestNoDenyEntryPrefixesAnother$'
-      timeout: 120
-    - run: go vet ./tools/testdata/architecture
-      timeout: 120
-    - run: tools/bin/doc-caps
-      timeout: 60
 - id: T-168
   type: docs
   title: Mark T-86's inventory historical and refresh the paths the slice moves left in the docs

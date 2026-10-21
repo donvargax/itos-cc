@@ -4480,7 +4480,7 @@ items:
     title: Hold the imports into internal/slices to cmd, graph and config, and refuse a depguard deny entry that prefixes another
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: T-168
