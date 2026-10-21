@@ -53,5 +53,6 @@ file and leaves this list, which itos decision record writes.
 - [ADR-0049: The scenarios are the spec and the tests that kill mutants; unit tests only for domain rules](0049-the-scenarios-are-the-spec-and-the-tests-that-kill-mutants-unit-tests-only-for-domain-rules.md)
 - [ADR-0050: A domain may carry struct tags used only for serialization, and holds no encoding logic](0050-a-domain-may-carry-struct-tags-used-only-for-serialization-and-holds-no-encoding-logic.md)
 - [ADR-0051: Each command is a vertical slice under internal/slices owning its code, over shared engines, assembled by generated code](0051-each-command-is-a-vertical-slice-under-internal-slices-owning-its-code-over-shared-engines-assembled-by-generated-code.md)
+- [ADR-0052: Local runs hold the scenarios in process against the fakes, and the built binary runs them in CI and CD](0052-local-runs-hold-the-scenarios-in-process-against-the-fakes-and-the-built-binary-runs-them-in-ci-and-cd.md)
 
 <!-- itos:decisions:end -->
