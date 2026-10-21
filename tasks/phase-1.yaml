@@ -5414,14 +5414,23 @@
     itos-cc.yaml exceptions with it if it has any (ADR-0037). The slice exports a declaration cmd
     can assemble from: its command name, help line, a constructor giving a fresh CLI value per run,
     and the consumer-owned Ports interface it needs, which cmd's adapters satisfy through methods
-    (the coordinator's call in ADR-0051). Assemble it in cmd by hand this once, through the kong
+    (the coordinator's call in ADR-0051): the selection Tree, lang Surroundings and, for the
+    exclude setting, the selection engine's settings reader T-147 adds, so units reads nothing
+    through mutation's model; T-143's units handler provider in dispatch.go then builds the handler
+    from those ports. Assemble it in cmd by hand this once, through the kong
     fork's DynamicCommand, keeping the top-level help order and the unknown-command guess's tie
     order (DynamicCommand appends after struct fields, kong.go:142-160, so the order must be
     checked); the generator that replaces the hand step is the next task. Its steps stay in
     features/ (units.go, units_routes.go). Update tools/testdata/architecture/check_test.go's
-    package lists, .golangci.yml's globs where they name internal/units, docs/go.md's package list,
+    package lists, .golangci.yml's globs where they name internal/units, and its depguard slices
+    rule, which denies the whole module by prefix and lets only the engines through, so it would
+    refuse a slice under internal/slices importing its own subpackages (T-144 had to put its
+    fixtures in a nested module for that reason): let a slice import its own subpackages while
+    architecture-check's sibling rule keeps refusing other slices, with fixtures for both;
+    docs/go.md's package list,
     docs/architecture.md and README's layout table. Help, errors, exit codes and lazy config
-    unchanged. Depends on T-143 (generic dispatch) and T-144 (the sibling rule).
+    unchanged. Depends on T-143 (generic dispatch), T-144 (the sibling rule) and T-147 (the
+    exclude setting in selection).
   done_when:
     - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract)$' -scenarios='^@ID-(UNIT|CLI)-'
       timeout: 600
