@@ -86,8 +86,9 @@ stamp, else the module version Go records, each without a leading v, else `dev`.
 imports `internal/version` itself.
 
 The mutation group's slice, `internal/slices/mutation`, the sixth under `internal/slices` and the
-first that is a group, runs its five commands over the mutation domain,
-`internal/mutants`, which owns sites, results and their judgment, and reaches its workers, tools,
+first that is a group, runs its five commands over its own domain,
+`internal/slices/mutation/domain` (it was `internal/mutants`), which owns sites, results and
+their judgment, and reaches its workers, tools,
 inputs, history, frozen environments and import reach through adapters of its own (`docs/go.md`).
 It declares itself as every slice does, its `CLI` the struct of its five children, and cmd's
 adapters answer its `Ports`; the functions cmd binds for a counted run and for the exceptions'

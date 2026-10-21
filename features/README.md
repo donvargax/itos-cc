@@ -672,12 +672,12 @@ ID-MUT-102 checks both the observed writes and the bytes of source and snapshot.
 T-101 removed T-73's thirteen annotated tests in `cmd/itos-cc/mutate_since_test.go`, for
 37–46 and 102–104, once the scenarios ran green through both drivers. Each assertion is its
 scenario's, with these held elsewhere: the snapshot recording no entry for a function never
-judged (37's comment) is `internal/mutants`' `TestFunctionsNotJudgedKeepTheirRecord`; a
+judged (37's comment) is `internal/slices/mutation/domain`'s `TestFunctionsNotJudgedKeepTheirRecord`; a
 `--since` run recording its judged function's kill is 104's; an empty `judged` under `--json`
 is 103's; and the first runs' survivor exit 1 is ID-MUT-29's. The file keeps the shared
 module helpers and the untagged renamed-file/new-path guard, which no scenario reaches; the
 helpers only the removed tests used went with them. The differential guards in
-`internal/mutants/snapshot_test.go` stay as domain tests.
+`internal/slices/mutation/domain/snapshot_test.go` stay as domain tests.
 
 The cached-result scenarios (ID-MUT-57–70, 106–108) use real Vitest fixtures for every
 literal TypeScript path, and a Go module with an importing package for 70. Their
@@ -864,7 +864,7 @@ ID-MUT-29's, and a timed-out mutant counted killed (53) exits 0 by the same rule
 | 241 | `cmd/itos-cc/mutation_removed_sites_test.go`: `TestCheckSaysHowManyRecordedMutantsItLeftOut` | removed |
 
 For 32–33, retain `internal/workdir/annotation_legacy_test.go`'s `TestAnnotateReplacesItsOwnBlock`;
-for 34, retain `internal/mutants/annotate_test.go`'s `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
+for 34, retain `internal/slices/mutation/domain/annotate_test.go`'s `TestStripLeavesABlockFollowedByCode`. These domain/adapter guards
 remain alongside the new public observations.
 
 
@@ -1701,8 +1701,8 @@ holders and counted export guards remain; they are not deleted as duplicates.
 
 ## S7 completion (T-101)
 
-The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over the `internal/mutants` domain
-and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`.
+The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over its own
+domain, `internal/slices/mutation/domain` (T-158), and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`.
 `mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
 leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership
 scenarios, and no scenario carries a tag that stands for unmoved code.
