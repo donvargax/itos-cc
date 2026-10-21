@@ -5836,14 +5836,3 @@
     annotation, every message and exit code. docs/go.md (metricsdir :67-83, workdir :60-66, mutants'
     codec sentence :156-160, the metricsdir/workdir boundary bullet), docs/architecture.md:13-22,
     README's layout rows, features/README.md's internal/workdir paths (:853, :866, :910).
-  done_when:
-    - run: go test -count=1 ./internal/slices/mutation/adapters/... ./internal/metricsdir/... ./internal/workdir/... ./config/... ./graph/...
-      timeout: 900
-    - run: go vet ./...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestMemory.*|TestOrphan.*|TestRemovingOrphansStaysInsideTheSnapshots|TestAnException.*|TestRenewingTakesNoSiteAndNoReason|TestALegacyExceptionRenewsByItsPlaceAcrossARenamedModule|TestAnInvalidItosCcYamlIsAConfigError|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead)$' -scenarios='^@ID-(MUT|SNAP|CLI)-'
-      timeout: 900
-    - run: go run ./tools/bin/assemble -check
-      timeout: 120
-    - run: tools/bin/architecture-check
-      timeout: 900

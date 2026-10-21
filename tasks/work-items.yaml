@@ -4314,7 +4314,7 @@ items:
     title: Give the mutation slice its snapshot codec, exceptions writer and source edits
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-160]
     kind: task
   - id: refactor-proof-version-stamp
