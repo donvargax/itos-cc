@@ -1,12 +1,14 @@
 name: Refactor proof
-# T-132, the refactor's one final proof, run by hand (gh workflow run
-# refactor-proof.yml): the binary of T-29's parent, 51f3952, built from git
-# archive in a folder of its own, never a worktree, beside the refactored
-# binary of the commit the run is on, both stamped as TestFeatures stamps
-# the binary it builds. Each runs today's whole binary-driver suite through
-# ITOS_CC_FEATURES_BINARY with every language tool installed as cd.yml's
-# languages job installs them, under ITOS_CC_LANGUAGE_TOOLS, so the
-# scenarios other jobs skip run here too; the refactored side is the
+# A refactor's one final proof, run by hand (gh workflow run
+# refactor-proof.yml): T-132's run against T-29's parent, 51f3952, and now
+# T-86's against b768837, the parent of T-86's first code commit (47f7543),
+# the default baseline. The baseline's binary is built from git archive in
+# a folder of its own, never a worktree, beside the refactored binary of
+# the commit the run is on, both stamped alike by STAMP below (T-166),
+# which serves either baseline. Each runs today's whole binary-driver
+# suite through ITOS_CC_FEATURES_BINARY with every language tool installed
+# as cd.yml's languages job installs them, under ITOS_CC_LANGUAGE_TOOLS, so
+# the scenarios other jobs skip run here too; the refactored side is the
 # control, telling a scenario this runner cannot pass from one only the old
 # binary fails. The edges job compares both binaries over
 # tools/bin/refactor-proof's cases. A scenario failing on the old binary
@@ -19,7 +21,7 @@ on:
     inputs:
       baseline:
         description: The commit the old binary is built from
-        default: 51f3952
+        default: b768837
         required: true
 
 permissions:
