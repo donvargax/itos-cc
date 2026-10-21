@@ -681,6 +681,19 @@ command from reaching into this one.
   order their steps register in. It refuses, naming the Go file or files, a Name that is no
   non-empty string literal, a declaration with no Steps, two of one Name and a Name with no
   such file in `features/`; `-check` names that file too when it is not current.
+
+  `tools/testdata/architecture`'s `TestANewCommandTouchesOnlyItsSliceAndTheGeneratedFiles`,
+  which `tools/bin/architecture-check` runs, proves that this is all an ordinary command needs.
+  In a copy of the module it adds `probe`, a slice laid out as `internal/slices/version` whose
+  `Ports` asks only what `adapters` answers already, its feature file with one live scenario
+  in sentences `features/` defines, its steps' declaration and its `features/smoke.yaml`
+  entry, the one shared hand list. Then the assembly is current, the files changed are those
+  four and the two generated ones, each generated file only gaining lines that name `probe`,
+  and the binary builds, lists and runs it and gives its help. Its scenario passes in process,
+  and the sibling and outside checks and the lint with no rule edit all pass. What it leaves
+  to a task of its own: a new port, which `go build` refuses until `adapters` answers it, as
+  the test's last check proves; a slice's own domain, which needs the rules of the next
+  bullet; and an engine.
 - A slice's own domain: put it in the slice's `domain` subpackage, as
   `internal/slices/dry/domain`, and add its folder as a `**/internal/slices/<command>/domain/**`
   glob to `domain`, `domain-io` and `coverage-fakes`, and as an exclusion to `slice-packages`,
