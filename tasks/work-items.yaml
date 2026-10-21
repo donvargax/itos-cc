@@ -4293,7 +4293,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: []
+    depends_on: [T-158]
     kind: task
   - id: T-160
     title: Move worktrees, githistory, importgraph and freshenv into the mutation slice
