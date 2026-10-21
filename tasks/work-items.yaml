@@ -4479,8 +4479,8 @@ items:
   - id: T-169
     title: Prove a new command touches only its slice, its feature file and the generated files
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-167]
     kind: task
   - id: T-170
