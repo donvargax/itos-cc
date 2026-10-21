@@ -5448,3 +5448,28 @@
   done_when:
     - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder)$' -scenarios='^@ID-(UNIT|CLI)-'
       timeout: 600
+- id: T-147
+  type: refactor
+  title: Take the exclude setting out of mutation's Config
+  why: >
+    T-86 (ADR-0051), before any slice moves, so each slice's Ports is written against the engine's
+    settings from the start (the person, 2026-10-20). mutants.Config holds Exclude
+    (internal/mutants/settings_reader.go:7-16), the globs every command leaves out, beside
+    mutation's own Exceptions and Tests, so crap, dry and units read the exclude setting through
+    mutation's model (cmd/itos-cc/adapters.go exclusionOf, called from T-143's handler providers in
+    dispatch.go). The selection engine owns it instead: a selection value holding the root and the
+    exclude globs, a SettingsReader port for it under internal/selection/port with its fake and
+    contract in porttest, and config.Reader satisfying it through the same one codec, so
+    itos-cc.yaml is still parsed by one reader and both classify a file alike. crap, dry and units
+    read only selection's settings; exclusionOf goes. mutants.Config drops its Exclude field and
+    carries the selection value instead, so mutation still reads root, exclude, exceptions and tests
+    from one observation of the file at each admission boundary (its SettingsReader's contract), and
+    its uses (internal/mutation/handler.go, except.go, internal/freshenv/plan.go) read the globs
+    from that value. Problems, their wording, config.invalid failing only the command that reads it
+    and lazy config for help are unchanged; no package moves. Move the settings contract's Exclude
+    assertions to the selection contract, keeping what each checks.
+  done_when:
+    - run: go test -count=1 ./config/... ./internal/selection/... ./internal/mutants/... ./internal/mutation/...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestRunWithFakesReadsTheConfigGiven)$' -scenarios='^@ID-(SEL|CLI|UNIT|DRY|CRAP|MUT)-'
+      timeout: 600

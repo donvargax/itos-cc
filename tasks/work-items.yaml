@@ -16,7 +16,7 @@ queue:
   - T-146
   - slices-dry
   - slices-scrap
-  - slices-settings-split
+  - T-147
   - slices-crap
   - slices-version
   - slices-mutation
@@ -2796,7 +2796,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, slices-dry, slices-scrap, slices-settings-split, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, slices-dry, slices-scrap, T-147, slices-crap, slices-version, slices-mutation, slices-import-engine, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3961,28 +3961,19 @@ items:
 
       The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
       is ADR-0051.
-  - id: slices-settings-split
+  - id: T-147
     title: Take the exclude setting out of mutation's Config
     phase: 1
     owner: null
     status: todo
     depends_on: [T-146]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R7): mutants.Config holds Exclude (internal/mutants/settings_reader.go:7-16),
-      which crap, dry and units read through mutation's model (cmd/itos-cc/adapters.go:127
-      exclusionOf). Move the exclusion setting to a selection-owned value config.Reader also gives,
-      so crap and mutation can become slices without one reading the other's model. Checks:
-      -scenarios '^@ID-(SEL|CLI)-', go test ./config ./internal/selection.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-crap
     title: Move crap into internal/slices/crap, its coverage command off mutation's executor
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-settings-split]
+    depends_on: [T-147]
     kind: idea
     why: >
       T-86 (ADR-0051, R8): internal/crap and internal/changerisk into internal/slices/crap; graph
