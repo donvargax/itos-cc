@@ -18,10 +18,10 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/duplication"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	duplication "github.com/donvargax/itos-cc/internal/slices/dry/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )

@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/duplication"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
+	duplication "github.com/donvargax/itos-cc/internal/slices/dry/domain"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
