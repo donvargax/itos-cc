@@ -6306,22 +6306,21 @@
   type: test
   title: ID-MUT-135's ordinary mutant times out on a slow Windows runner
   why: >
-    CD run 39633522425 (be31486, slice-28's close; all else green on all three systems, the Dart
-    grammar built everywhere) failed on test (windows-latest, features) at ID-MUT-135, 'A
-    selection's timeout comes from its own run': 'unexpected timeout map[column:11 line:31 offset:34
-    original:> outcome:timeout replacement:>=]', an ordinary mutant of features/mutate_listed.go's
-    slow project, not the one made to hang, timing out. Its selection's timeout is the factor 3
-    times ID-A-01's own baseline of about a second plus the fixed allowance (timeout-allowance), so
-    a mutant run that rebuilds or starts slower on a loaded Windows runner than its baseline did
-    crosses it. First seen there; the scenario passed in CD 39628468420 the run before. T-139 fixed
-    a bound of the same kind in MUT-13 and T-134 a macOS race: flaky gates hold dependency updates
-    and every push up for nothing. Find why that mutant's run outgrows the timeout itos-cc set: the
-    fixture (a baseline measured warm against a mutant run that compiles cold, a sleep the slow
-    project leans on) or the product (a baseline that leaves out what every mutant run pays, as
-    timeout-allowance meant to cover). Fix the cause where it is; never by raising the factor or the
-    allowance in the scenario until it passes, retrying, skipping or tagging it. A product change is
-    a fix with its own scenario evidence, red first if Linux can show it; if only Windows shows it,
-    say so. cd.yml's Windows features job judges: this item watches its own cd.yml run.
+    CD run 39633522425 failed on test (windows-latest, features) at ID-MUT-135, 'A selection's
+    timeout comes from its own run': an ordinary mutant (half's i > 2 to >=, line 31) timed out.
+    The first agent found the cause (027f4a5 makes a recurrence print the run): that mutant ran its
+    file's own tests, go test ./., not ID-A-01's selection, and the scenario runs every mutant at
+    --timeout-factor 3, the only scenario below the default 10. A run that is all build times out
+    once a loaded runner slows it more than 3 + 5/b times (b the build's seconds): about 27x on
+    Linux, only 4.5 to 8x on windows-latest, against 11 to 15x at the default factor. No
+    Windows-only mechanism was found. The person settled q-82 (a), 2026-10-21: run ID-MUT-135 at the
+    default factor, dropping --timeout-factor 3 from its When, and assert ten times ID-A-01's own run
+    plus 5 seconds, not ten times both tests' time, in its text and its step; the hanging mutant
+    still times out, and the selection's own baseline (about 15 s) stays far from both tests' (about
+    115 s). A test commit changes the scenario's text and step together; no product code changes.
+    Linux shows nothing new, so this item watches the newest cd.yml run whose head contains its
+    commit (a cancelled one is superseded) and closes when that run's Windows features job is
+    green.
   done_when:
     - run: go test ./features -run 'TestFeatures/A_selection.s_timeout_comes_from_its_own_run' -count=1 -v
 - id: T-175
