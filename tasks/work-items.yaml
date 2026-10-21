@@ -3426,14 +3426,9 @@ items:
     title: A site in an empty Go case clause is uncovered even when the clause runs
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was empty-case-covered.
-      Issue #53. ParseGo stores covered weight as boolWeight(count>0, stmts)
-      (internal/coverage/formats.go:152-153), so a block of 0 statements that ran reads as not run
-      (coverage.go:219-231, used at internal/mutants/run_plan.go:224). Wave 0.
     refs: ["#53"]
   - id: slice-16
     title: The selection's coverage run trips the project's coverage.thresholds
