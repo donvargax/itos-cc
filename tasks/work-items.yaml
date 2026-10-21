@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - slices-import-engine
+  - T-162
   - slices-scenario-registration
   - slices-close
   - T-86
@@ -2806,7 +2806,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-151, T-152, T-155, T-156, T-157, T-158, T-159, T-160, T-161, slices-import-engine, slices-scenario-registration, slices-close]
+    depends_on: [T-141, T-132, slice-8, slice-7, T-140, T-143, T-144, T-145, T-146, T-148, T-150, T-147, T-151, T-152, T-155, T-156, T-157, T-158, T-159, T-160, T-161, T-162, slices-scenario-registration, slices-close]
     kind: task
   - id: T-87
     title: Move pure mutation rules and models into internal/mutants
@@ -3982,27 +3982,19 @@ items:
     status: done
     depends_on: [T-152]
     kind: task
-  - id: slices-import-engine
-    title: Lift import resolution out of graph into an engine
+  - id: T-162
+    title: Lift import resolution out of graph into internal/imports
     phase: 1
     owner: null
     status: todo
     depends_on: [T-161]
-    kind: idea
-    why: >
-      T-86 (ADR-0051, R11): mutation's importgraph adapter imports serve's graph package for
-      graph.TestsImporting and parseDependencies (graph/tests.go:30). Lift them into an engine
-      (lang-side or its own) used by both. Checks: go test ./internal/importgraph ./graph, the MUT
-      reach scenarios.
-
-      The ownership inventory these steps come from is docs/vertical-slices-inventory.md; the layout
-      is ADR-0051.
+    kind: task
   - id: slices-scenario-registration
     title: Generate scenario registration and the in-process driver's adapters
     phase: 1
     owner: null
     status: todo
-    depends_on: [slices-import-engine]
+    depends_on: [T-162]
     kind: idea
     why: >
       T-86 (ADR-0051, R12-R13): features/steps.go's Converted (344), InProcess (396) and step

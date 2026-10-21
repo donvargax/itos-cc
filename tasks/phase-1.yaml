@@ -5836,3 +5836,83 @@
     annotation, every message and exit code. docs/go.md (metricsdir :67-83, workdir :60-66, mutants'
     codec sentence :156-160, the metricsdir/workdir boundary bullet), docs/architecture.md:13-22,
     README's layout rows, features/README.md's internal/workdir paths (:853, :866, :910).
+- id: T-162
+  type: refactor
+  title: Lift import resolution out of graph into internal/imports
+  why: >
+    T-86 (ADR-0051, R11), after T-161: the import-resolution engine ADR-0051 lists. Import
+    resolution lives in serve's legacy graph package; the mutation slice reaches it through
+    importgraph's Reach (internal/slices/mutation/adapters/importgraph/reach.go,
+    graph.TestsImporting) while graph imports the slice's domain, so the two depend on each other
+    and only importgraph being a package of its own keeps Go from a cycle. Move it into
+    internal/imports, package imports, an adapter-side engine as internal/processes is (not a
+    domain, not lang-side: it parses through project.ParseFile, finds markers with project.FindUp
+    and reads and decodes tsconfig.json, which domain-io and decision 50 refuse in lang). The move
+    commit git mv's graph/tests.go to internal/imports/reach.go, graph/tsconfig.go to
+    internal/imports/tsconfig.go, graph/tests_test.go to internal/imports/reach_test.go and
+    .metrics/mutate/graph/tsconfig.go.json to .metrics/mutate/internal/imports/tsconfig.go.json
+    (contents as they are, as 5fbd27b did), and cuts into internal/imports/resolve.go graph.go's
+    resolver (moduleID, resolveAll, index, resolve, typescript, tsFile, aliases, python,
+    pythonModule, samePackage, kotlin, join, parentModule) and build.go's dependencies, with only
+    the edits needed to build; graph_test.go's TestTSConfigAliases and TestStripJSONC move to
+    internal/imports/tsconfig_test.go. The API: File (Rel, Abs, Language, Namespace exported, the
+    fields graph reads; imports, test flag and Kotlin's declared and used names unexported);
+    Of(root, *lang.File) File (was dependencies); Resolve(ctx, root, files []File) Resolution with
+    Module(f) (slash-separated from the root, "(root)" for a root Go package or Python __init__.py,
+    the package directory for those, the file without its extension elsewhere), Edges (import
+    statements and Kotlin same-package uses between modules, with counts) and External (each
+    module's packages from outside the repository); Reach(ctx, root, sources, tests []File)
+    map[string][]string (was importingTests and applyingConftests); TestsImporting(ctx, root string,
+    sources, tests []string) (map[string][]string, error), keeping graph's doc comment. The engine
+    keeps its own stopped, rel and appendUnique (ADR-0051's small duplication) and imports the
+    coverage runner for coverage.PythonTestFile, so pytest's naming rule stays one copy. Afterwards
+    graph's fileInfo holds an imports.File, parse and parseTest call imports.Of, Build calls
+    imports.Reach, newRepoGraph builds module ids as name + "/" + Resolution.Module(f) and takes
+    edges and External from the Resolution (http.go uses the same ids); graph.TestsImporting goes
+    and stale_test.go calls the engine's. importgraph keeps its name and stays a thin adapter of its
+    own: its Reach calls imports.TestsImporting and still turns the context's cause into
+    InputCancelled and an error into InputFailed (an engine imports no slice, so it cannot return
+    the domain's failures); it imports neither graph nor project. graph keeps its dependency on the
+    mutation domain (serve reading mutation's judgment; slices-close names it an allowed legacy
+    consumer), now the one arrow between them. Rules: a new imports rule over
+    **/internal/imports/**, code and tests, allowing internal/lang$, project$ and coverage$ and
+    denying the module, one deny entry only (T-159's sorted-prefix trap); slices and slice-fakes
+    exclude **/internal/imports/**; importgraph's allow list becomes the domain and
+    internal/imports$, dropping project$ and graph$, its never-merge comment rewritten.
+    check_test.go: internal/imports joins the stubs and every target and layer list (domain,
+    adapters, slices, ui, processes, kong, rapid, cmd/probe's allowed list); importgraph's row
+    allows mutation's domain and internal/imports and refuses graph and project; a new engine block
+    like processes', code and tests, refusing every domain but lang, every slice, adapter (T-161's
+    included) and porttest, the UI, cmd/probe, internal/version, graph, config and metrics,
+    accepting lang, project, coverage, os and encoding/json; graph importing the engine accepted.
+    Comments naming graph.TestsImporting follow (internal/coverage/port/measurer.go, the mutation
+    domain's run.go and doc.go). Docs: docs/go.md (an internal/imports bullet after
+    internal/processes, importgraph's adapter notes, the adapter boundary bullet and an imports
+    boundary bullet beside processes'), docs/architecture.md, README's layout table (adapters row, a
+    new internal/imports row, the graph row). Unchanged: graph's /api/graph output (node ids,
+    parents, labels, edges and counts, external packages, units, metrics, staleness), every
+    TestsImporting result, cancellation, parse errors as project words them, serve's watching and
+    rebuilds (Build's signature and caches; a tsconfig.json edit alone still triggers no rebuild),
+    every message. Before the first commit and after the last, marshal graph.NewBuilder's graph over
+    testdata/shop and over the repository root, diff the JSON, commit nothing of it, and state the
+    result in the docs commit's body. In process, the MUT reach scenarios bind porttest's declared
+    Reach, so they guard the slice side only; the engine's local evidence is its moved tests,
+    graph's tests, importgraph's ReachContract and freshenv's fixtures over the real Reach. The
+    moved snapshots' stale entries are the nightly run's to refresh (no local mutation run).
+  done_when:
+    - run: go test -count=1 ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
+      timeout: 600
+    - run: go test -count=1 ./internal/slices/mutation/adapters/freshenv/...
+      timeout: 900
+    - run: sh -c '! go list -deps -test ./internal/slices/... ./internal/imports/... | grep -x github.com/donvargax/itos-cc/graph'
+      timeout: 120
+    - run: go vet ./...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-MUT-21[5-9]$'
+      timeout: 600
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/architecture-check
+      timeout: 900
+    - run: tools/bin/doc-caps
+      timeout: 60
