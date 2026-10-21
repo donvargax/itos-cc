@@ -2548,6 +2548,28 @@ Feature: Mutation testing
       And test/b_test.dart and integration_test/app_test.dart never run
       But a Dart file no test reaches has its mutants reported uncovered, and no test command runs for it
 
+    # slice-38, q-76: flutter test never runs integration_test/ or
+    # test_driver/, so no change there can change a Dart outcome. The tests
+    # a Dart outcome records, and whose changes make it stale, are those its
+    # run runs: the test files under test/ that reach the file, as DartTests
+    # keeps them, with the support files on their way; with --all-tests, the
+    # suite under test/. A file under integration_test/ or test_driver/ is
+    # never among them, though it imports the file. Both drivers run it, as
+    # mutation check runs no test. Before slice-38 reach counts those files,
+    # so the check reports the result stale, failing at the Then.
+    @slice-38 @ID-MUT-274 @wip
+    Scenario Outline: A Dart result recorded by <run> stays fresh when only tests flutter test never runs change
+      Given a Flutter package where test/a_test.dart reaches lib/a.dart, and integration_test/app_test.dart and test_driver/app.dart import lib/a.dart
+      And a mutant of lib/a.dart has a result recorded by "<run>"
+      When integration_test/app_test.dart and test_driver/app.dart change, and nothing else
+      Then "itos-cc mutation check --json" reports no result stale and exits 0
+      But after test/a_test.dart changes, it reports that result stale
+
+      Examples:
+        | run                                  |
+        | itos-cc mutation run                 |
+        | itos-cc mutation run --all-tests     |
+
     # slice-35: a worker copy of a Flutter package resolves itself once,
     # offline, so every mutant's flutter test runs with --no-pub in its own
     # copy; platform folders stay out (q-75) and generated Dart stays in,
@@ -2722,7 +2744,10 @@ Feature: Mutation testing
     # build/, coverage/, hidden folders and a Flutter app's platform folders
     # are not inputs. Both drivers run it. Before slice-36 a strict Dart run
     # records no evidence, so the check reports nothing, failing at the
-    # Then.
+    # Then. slice-36 checks only the evidence in the But step, as reach
+    # counted integration_test/app_test.dart among the library's tests and
+    # so made its results stale; slice-38 restores the step's whole check,
+    # the check exiting 0.
     @slice-36 @ID-MUT-273
     Scenario Outline: Strict Dart evidence goes stale when <changed> changes
       Given a <package> whose judged library a strict mutation run measured
