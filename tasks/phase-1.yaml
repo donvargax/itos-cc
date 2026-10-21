@@ -5832,3 +5832,39 @@
       timeout: 120
     - run: tools/bin/architecture-check
       timeout: 900
+- id: T-160
+  type: refactor
+  title: Move worktrees, githistory, importgraph and freshenv into the mutation slice
+  why: >
+    T-86 (ADR-0051, slices-mutation (b), second of two). Move internal/worktrees (11 files: workers,
+    worker copies, scratch, locks; process ownership is internal/processes' since T-151),
+    internal/githistory (2 files), internal/importgraph (2 files: Reach over graph.TestsImporting)
+    and internal/freshenv (11 files: counted Fresh) to internal/slices/mutation/adapters/<name> in a
+    move commit separate from the edits; the packages keep their names. Importers change only an
+    import path: cmd/itos-cc/adapters.go (diskAdapters :131-140), cmd's
+    mutation_unreached_baseline_retained_test.go, freshenv's own tests (contract_test.go,
+    fixtures_test.go, trial_unreached_test.go). Ports unchanged (MutationWorkers,
+    MutationFreshWorkers, MutationHistory, MutationReach, MutationFresh). importgraph keeps
+    importing graph (graph/tests.go:30) until slices-import-engine; graph imports the domain
+    (graph/build.go), so the slice and legacy graph depend on each other without a Go cycle only
+    because importgraph is a package of its own: never merge it with anything graph imports.
+    freshenv keeps wrapping config.LoadFrom, the coverage runner and project. Rules: the four rules'
+    files follow, allow lists unchanged (worktrees allows internal/processes, freshenv allows
+    config); the slices and slice-fakes exclusions for the old paths go. check_test.go's adapter
+    rows (:227-230), the processes rule's targets (:334) and every list naming the four follow.
+    ADR-0021's containment, decision 38's hold and join, the OS as a value and every message,
+    "mutation command timed out" included, unchanged. docs/go.md (freshenv :178-186, worktrees and
+    githistory :704-760, the adapters and processes bullets :476-496), README's layout rows,
+    features/README.md's paths, including the internal/worktrees paths T-151 left stale (:1265,
+    :1288, :1591).
+  done_when:
+    - run: go test -count=1 ./internal/slices/mutation/adapters/...
+      timeout: 900
+    - run: go vet ./...
+      timeout: 600
+    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestMutation.*|TestCountedExecutionEvaluatesFrozenCommittedInputs|TestALaterRunRemovesOnlyItosCcWorkerCopiesClearlyAbandoned|TestARenamedFileIsNarrowedByItsNewPath)$' -scenarios='^@ID-MUT-'
+      timeout: 900
+    - run: go run ./tools/bin/assemble -check
+      timeout: 120
+    - run: tools/bin/architecture-check
+      timeout: 900
