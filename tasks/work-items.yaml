@@ -3411,14 +3411,9 @@ items:
     title: The selection's coverage run trips the project's coverage.thresholds
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was coverage-thresholds-override.
-      Issue #46. The Vitest and Jest coverage commands pass no thresholds override
-      (coverage/run.go:499-515), so a selection's partial run fails the project's floor. One item
-      with listed-coverage-failed (#15): a failed coverage run is not uncovered code. Wave 0.
     refs: ["#46"]
   - id: slice-10
     title: "Strict Go evidence carries between checkouts: toolchain resolution and tracked files only"
