@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The scenario of "Rule: Mutation results say what happened, and leave

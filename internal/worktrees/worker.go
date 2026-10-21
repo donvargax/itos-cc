@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
 )
 

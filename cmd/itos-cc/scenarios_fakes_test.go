@@ -17,8 +17,8 @@ import (
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
 	"github.com/donvargax/itos-cc/internal/lang"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // The fakes the in-memory driver of TestScenarios builds from its memory

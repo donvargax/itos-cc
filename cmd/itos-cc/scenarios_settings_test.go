@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	"maps"
 
 	"github.com/donvargax/itos-cc/config"

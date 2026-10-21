@@ -5,7 +5,7 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // CheckQuery carries the domain-valued selection and coverage judgment mode.

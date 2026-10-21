@@ -4,6 +4,6 @@
 // Its inward boundary is mutants.Workers, beside the mutation domain values.
 package worktrees
 
-import "github.com/donvargax/itos-cc/internal/mutants"
+import "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 
 type Command = mutants.Command

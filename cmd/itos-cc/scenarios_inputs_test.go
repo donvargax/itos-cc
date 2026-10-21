@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func TestMemoryReadObservationUsesActualBoundTree(t *testing.T) {

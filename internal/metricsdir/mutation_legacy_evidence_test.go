@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func TestGoEvidenceReadsAsSuiteEvidenceAndIsWrittenUnderTheNeutralKey(t *testing.T) {

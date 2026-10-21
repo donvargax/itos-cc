@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The literal byte fixtures follow snapshot.go's pre-extraction field order and

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The UI's classification of what list's and check's handlers return: the

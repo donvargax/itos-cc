@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // SourceEdits updates the live source, never a planning or worker copy.

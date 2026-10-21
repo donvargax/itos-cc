@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The Go module whose binary, greet, is tested only by e2e/e2e_test.go, in

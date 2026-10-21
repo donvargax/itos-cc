@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/features"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 type unavailableTools struct{ mutation.Toolchain }

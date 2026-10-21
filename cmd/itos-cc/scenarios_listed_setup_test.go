@@ -13,8 +13,8 @@ import (
 	"github.com/donvargax/itos-cc/features"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func listedSetupFixture(t *testing.T) (*memory, string) {

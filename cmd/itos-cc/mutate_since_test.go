@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The module the mutation tests of cmd share: a small Go module with a git

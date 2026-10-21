@@ -6,7 +6,7 @@ package importgraph
 import (
 	"context"
 	"github.com/donvargax/itos-cc/graph"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/project"
 )
 

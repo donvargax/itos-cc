@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The scenarios of "Rule: Fresh counted mutation judges a bounded committed

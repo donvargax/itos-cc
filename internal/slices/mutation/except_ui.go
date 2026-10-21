@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // exceptResult is mutation except's --json object: the entry of

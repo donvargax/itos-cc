@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/importgraph"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func TestRealReachContract(t *testing.T) {

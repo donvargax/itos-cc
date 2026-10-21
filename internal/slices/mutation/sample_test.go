@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // No public scenario reaches these: a missing or wrong History binding, or a

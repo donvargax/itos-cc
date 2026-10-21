@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // The scenario of "Rule: Fresh counted mutation judges a bounded committed

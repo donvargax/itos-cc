@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 func TestFreshPlanUsesCommittedInputs(t *testing.T) {

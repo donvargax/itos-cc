@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // This is the private ordering contract behind MUT166/183/188/193. A real

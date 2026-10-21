@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // countedBounds says what --count bounds, in the report and in plain output.

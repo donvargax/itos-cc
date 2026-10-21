@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // ListFound retains the actual ordered domain prefix and selection notices.

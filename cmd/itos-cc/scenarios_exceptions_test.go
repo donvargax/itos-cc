@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/config"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // memoryExceptions rereads current fixture bytes on EVERY update. Initial

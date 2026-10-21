@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )
 

@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/metricsdir"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
 	mutationslice "github.com/donvargax/itos-cc/internal/slices/mutation"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
 

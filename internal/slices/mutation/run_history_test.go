@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // historyFixture is a repository whose base tag precedes a changed main.go,

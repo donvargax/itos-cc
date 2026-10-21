@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // No public scenario reaches a Windows drive letter on the platforms the

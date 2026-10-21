@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 	"github.com/donvargax/itos-cc/internal/workdir"
 )
 

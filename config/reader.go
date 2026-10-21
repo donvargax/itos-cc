@@ -5,8 +5,8 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/donvargax/itos-cc/internal/mutants"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Source supplies current raw configuration at its actual project root.

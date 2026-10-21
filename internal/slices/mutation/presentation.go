@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	selport "github.com/donvargax/itos-cc/internal/selection/port"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Presentation owns shared mutation wording. Remaining cmd handlers delegate

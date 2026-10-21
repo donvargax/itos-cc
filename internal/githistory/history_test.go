@@ -11,8 +11,8 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/lang"
 	langtest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // Native Git setup/translation and caller-directory namespace identity cannot be

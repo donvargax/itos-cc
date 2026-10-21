@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/config"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func TestRealExceptionsContract(t *testing.T) {

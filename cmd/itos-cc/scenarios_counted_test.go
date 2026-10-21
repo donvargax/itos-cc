@@ -15,9 +15,9 @@ import (
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
-	mutation "github.com/donvargax/itos-cc/internal/mutants"
-	mutantstest "github.com/donvargax/itos-cc/internal/mutants/porttest"
 	selporttest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	mutation "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	mutantstest "github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 // counted are the bindings a counted or fail-fast mutation run starts from,

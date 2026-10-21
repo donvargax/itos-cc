@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/importgraph"
-	"github.com/donvargax/itos-cc/internal/mutants"
 	"github.com/donvargax/itos-cc/internal/processes"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/internal/testinputs"
 	"github.com/donvargax/itos-cc/internal/testtools"
 	"github.com/donvargax/itos-cc/internal/workdir"

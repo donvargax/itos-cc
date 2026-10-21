@@ -12,9 +12,9 @@ import (
 	"github.com/donvargax/itos-cc/internal/coverage"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
 	seltest "github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func decodeFreshSettings(data []byte) ([]string, *mutants.Tests, []mutants.Exception, *mutants.FreshInvalid) {

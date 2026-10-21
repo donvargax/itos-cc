@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/donvargax/itos-cc/internal/githistory"
-	"github.com/donvargax/itos-cc/internal/mutants"
-	"github.com/donvargax/itos-cc/internal/mutants/porttest"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain"
+	"github.com/donvargax/itos-cc/internal/slices/mutation/domain/porttest"
 )
 
 func TestRealFreshPreparationContract(t *testing.T) {
