@@ -165,6 +165,23 @@ a `context.Context` first (decision 30); pure logic takes none.
   `SuiteEvidence` carry the snapshot's json keys, and `Exception` itos-cc.yaml's as json and
   yaml tags, so metricsdir, the mutation slice's `--json` and config's writes encode them with
   no mirror (T-136). The legacy `mutate` package is retired.
+- `internal/processes` is the process-ownership engine (ADR-0021, T-151), an adapter-side
+  engine rather than a domain: it starts and kills processes and imports nothing of ours.
+  `OwnedExecutor` runs an already configured command in a process group it owns on Linux and
+  macOS, and when the command ends or its context is done kills the group and joins its
+  members and the readers of its output within one five-second cleanup deadline; a group
+  whose cleanup did not finish is a `CleanupFailed` naming the group and the command. Its
+  `Hold`, which cmd binds to the run's `Cleaning`, marks a group being killed and joined, so a
+  second interrupt waits for it (decision 38). `Run` words a command's end as an error and
+  `Command` returns its `Result`, which a caller converts into its own terms, as cmd does into
+  mutation's `CommandResult` for freshenv; `Budget` is the shared run-abort `CleanupBudget` a
+  worker pool it owns shares from its creation. `Runner` is the command runner mutation's
+  workers run through, `ErrCommandTimeout` the cause of a command's own timeout, judged
+  `TimedOut` rather than cancelled, and `PlatformAtBoundary` the host only for a zero
+  platform: the OS is a value, and the build tags of `proc_unix.go` and `proc_windows.go` hold
+  only the group calls Windows lacks. Crap's and mutation's coverage commands (cmd's
+  `coverageCommand`), counted preparation and mutation's workers run through it; cmd binds
+  it, and no domain or slice imports it, so crap reaches no mutation adapter.
 - `internal/freshenv` implements mutation's coarse `Fresh` Plan/Prepare/Release contract.
   It owns immutable Git export, native mode and symlink admission, scratch materialization,
   installed-dependency links and ordered supervised preparation. Cmd injects its owned
@@ -463,6 +480,11 @@ context-as-argument a context after any other parameter, tests included.
   `internal/coveragetools`' allows the coverage domain, whose `Report` it returns, beside its
   port and the `coverage` runner and `metrics` it wraps. Nothing leaks the other way: the
   `domain` and `domain-io` rules still refuse every adapter and I/O package in a domain.
+- `processes`: the process-ownership engine, code and tests, imports nothing of ours (T-151).
+  It is an adapter-side engine, not a domain: the `domain` and `slices` rules refuse it, so no
+  domain or slice imports it, and of the adapters only `worktrees`' rule allows it, since
+  mutation's workers run through it; cmd binds it for counted preparation and the coverage
+  command. `slices` and `slice-fakes` leave it out, as they leave out the adapters.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -673,7 +695,8 @@ follows the same steps for a command it wrote before it had the template's desig
 Mutation's model-bearing `Workers` contract is declared in `internal/mutants`,
 beside the domain values it consumes and returns. This is a narrow exception to
 putting ports in a child `port` package: the domain's later orchestration must
-use it without an import cycle. `internal/worktrees` implements it and
+use it without an import cycle. `internal/worktrees` implements it, running each
+command through `internal/processes`' `Runner`, and
 `internal/mutants/porttest` holds our fake and shared contract suite. Both import
 the domain directly; the domain imports neither. No model-copy DTO, generic
 result, or forwarding-only package is needed (decisions 29 and 47). Worker

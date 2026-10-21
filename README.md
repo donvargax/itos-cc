@@ -968,6 +968,7 @@ describes each package and the import rules `.golangci.yml` holds them to.
 | `internal/slices/units`, `internal/slices/dry`, `internal/slices/scrap`, `internal/crap`, `internal/mutation` | The commands' slices, each moving under `internal/slices` as T-86 goes on, a slice's own domain in its `domain` subpackage (`internal/slices/dry/domain`, which finds duplicates, and `internal/slices/scrap/domain`, which measures test code's structure); `serve` alone stays on its legacy handler in `cmd/itos-cc` |
 | `internal/selection`, `internal/lang`, `internal/snapshot`, `internal/changerisk`, `internal/coverage`, `internal/mutants` | The domains, each reaching outside only through its ports |
 | `internal/workdir`, `internal/metricsdir`, `internal/coveragetools`, `internal/worktrees`, `internal/testtools`, `internal/testinputs`, `internal/githistory`, `internal/freshenv`, `internal/importgraph` | The adapters implementing those ports |
+| `internal/processes` | The process-ownership engine: the commands mutation and crap run, each in a process group it owns, killed and joined when it ends (ADR-0021) |
 | `project` | Finding source and test files, and the disk lang's port asks: reading and parsing a file (`ParseFile`) and finding a project marker above it (`FindUp`) |
 | `coverage` | Running coverage and reading LCOV, Go profiles, and JaCoCo |
 | `config` | Reading and writing `itos-cc.yaml` |
