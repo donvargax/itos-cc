@@ -5185,3 +5185,15 @@ items:
       --coverage-command (coverage/dart.go). This adds dart test and package:coverage as a second
       runner, its coverage path base and a CI install. Started only when the person asks.
     refs: [dart-support]
+  - id: dart-per-test-coverage
+    title: Dart coverage per test name, not only per test file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-76 phase 2: phase 1 measures a Dart file's own tests per test FILE from flutter test's LCOV.
+      Phase 2 narrows to the test names that reach a mutant, as Go's and Python's listed collectors
+      do. Started only after the person tries phase 1 and asks (q-76).
+    refs: [dart-support]
