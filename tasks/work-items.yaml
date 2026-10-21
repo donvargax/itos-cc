@@ -13,6 +13,7 @@ phases:
 queue:
   - T-178
   - T-181
+  - T-182
   - worker-copies-skip-ignored
   - T-46
   - p1-itos-proof-code
