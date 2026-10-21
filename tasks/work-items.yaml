@@ -4559,3 +4559,15 @@ items:
       nothing checks that itos tests smoke check scenario, the static CI step that holds the list,
       accepts it; the test proves the Go side alone. Running the check in the copy (it needs itos on
       the PATH, and no git there) or saying where a new entry goes would close it.
+  - id: go-md-final-proof-stale
+    title: Say in docs/go.md's Moving a command that the refactor's final proof is done
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      docs/go.md's Moving a command, step 9, still describes refactor-final-proof as the task still
+      to come once the moves are done, though T-132 did it and T-86's closing refactor-proof
+      (refactor-proof.yml) replaces it; README's Working here said the same until T-170. Found
+      writing docs/ownership.md, whose docs-only scope left the step as it was.
