@@ -4872,3 +4872,22 @@ items:
       step; go run ./tools/bin/notices -check belongs beside it (it needs the module cache, which
       the static steps already have for go build). itos.yaml is a shared path, outside T-173's
       files.
+  - id: prepush-compiles-module
+    title: The pre-push hook compiles the whole module on the rebased tree
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Parallel trial, 2026-10-21: slice-30 and slice-32, in separate worktrees, each added a
+      package-level helper named flutterPubspec to the shared features package in different files.
+      Each push was green alone; together main stopped compiling, and ci.yml stayed red for five
+      pushes (from 908d79a until f052f8d) while other agents pushed on top. itos push rebases and
+      then runs the pre-push hook on the rebased HEAD, so a go vet (or go build plus go test -run
+      '^$') over every package there catches a clash between two agents' merged work before it
+      reaches main, in seconds, at the cheapest tier that catches it. Spec: which command (vet
+      compiles tests too), its time on this module, how it is declared beside itos's own pre-push
+      (itos.yaml or the clone's hook config, as T-120 declared pre-commit), and the template
+      backport (go-template-itos). Until then, briefs tell agents to rebase and vet before each
+      push.
