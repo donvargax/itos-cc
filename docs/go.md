@@ -103,7 +103,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   no mutation package (T-156): `ChangedSince` and `ChangedSinceAt` hand each file a range
   changed, as HEAD and the merge base hold it, and its changed `LineRange`s, project's own, to
   the caller's function, generic in what it returns, so which functions a change touches is
-  mutation's judgment, made in `internal/githistory`.
+  mutation's judgment, made in `internal/slices/mutation/adapters/githistory`.
 - `internal/coverage` is the coverage domain (decisions 37 and 46): the `Report` that answers
   which lines a run covered, a function's fraction and which listed tests reach a line, its
   queries, and the parsers of LCOV, Go cover profiles and JaCoCo XML (`Parse` choosing by the
@@ -178,9 +178,14 @@ a `context.Context` first (decision 30); pure logic takes none.
   in a subpackage of its name with a depguard rule of its own, as every adapter has:
   `testtools`, mutation's `Toolchain` and `TestLister`, and `testinputs`, its `Fingerprints`
   and the coverage-input inventories (T-159, below), were `internal/testtools` and
-  `internal/testinputs`. They import the slice's domain, whose model-bearing ports they
+  `internal/testinputs`; `worktrees`, its `Workers`, `githistory`, its `History`,
+  `importgraph`, its `Reach` over graph's import resolver, and `freshenv`, its counted `Fresh`
+  (T-160, below), were `internal/worktrees`, `internal/githistory`, `internal/importgraph` and
+  `internal/freshenv`. They import the slice's domain, whose model-bearing ports they
   implement, and the libraries they wrap; cmd wires them in through the slice's `Ports`, and
-  no slice imports them, the mutation slice's code neither (`slice-adapters`).
+  no slice imports them, the mutation slice's code neither (`slice-adapters`). `importgraph`
+  stays a package of its own: graph imports the domain, so merging it with anything graph
+  imports would be a cycle.
 - `internal/processes` is the process-ownership engine (ADR-0021, T-151), an adapter-side
   engine rather than a domain: it starts and kills processes and imports nothing of ours.
   `OwnedExecutor` runs an already configured command in a process group it owns on Linux and
@@ -198,7 +203,8 @@ a `context.Context` first (decision 30); pure logic takes none.
   only the group calls Windows lacks. Crap's and mutation's coverage commands (cmd's
   `coverageCommand`), counted preparation and mutation's workers run through it; cmd binds
   it, and no domain or slice imports it, so crap reaches no mutation adapter.
-- `internal/freshenv` implements mutation's coarse `Fresh` Plan/Prepare/Release contract.
+- `internal/slices/mutation/adapters/freshenv` implements mutation's coarse `Fresh`
+  Plan/Prepare/Release contract.
   It owns immutable Git export, native mode and symlink admission, scratch materialization,
   installed-dependency links and ordered supervised preparation. Cmd injects its owned
   executor and existing observation adapters. The domain shares path selection, source
@@ -547,8 +553,8 @@ context-as-argument a context after any other parameter, tests included.
 - `ui`: `internal/cli` and its tests import nothing of ours, so adding or removing a domain
   touches no file of the UI (q-54).
 - `workdir`, `metricsdir`, `coveragetools`, and the mutation adapters' `worktrees`,
-  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph` (`testtools` and
-  `testinputs` the mutation slice's own, under `internal/slices/mutation/adapters`): an adapter imports
+  `testtools`, `testinputs`, `githistory`, `freshenv` and `importgraph` (the mutation slice's
+  own, under `internal/slices/mutation/adapters`): an adapter imports
   nothing of ours but the port it implements and the libraries it wraps, `internal/workdir`
   the two ports it implements, selection's and `internal/lang`'s, and the `project` library,
   and `internal/metricsdir` the snapshot port and the `metrics` and `project` libraries; only
@@ -569,7 +575,8 @@ context-as-argument a context after any other parameter, tests included.
   It is an adapter-side engine, not a domain: the `domain` and `slices` rules refuse it, so no
   domain or slice imports it, and of the adapters only `worktrees`' rule allows it, since
   mutation's workers run through it; cmd binds it for counted preparation and the coverage
-  command. `slices` and `slice-fakes` leave it out, as they leave out the adapters.
+  command. `slices` and `slice-fakes` leave it out, as they leave out the adapters outside
+  `internal/slices`.
 - `mocks`: no mocking library anywhere. Fakes live in `porttest`.
 - `rapid`: the property library only in the domains' own tests.
 - `kong`: kong only in `cmd` and `internal/cli`. A slice's struct tags need no import.
@@ -796,7 +803,7 @@ follows the same steps for a command it wrote before it had the template's desig
 Mutation's model-bearing `Workers` contract is declared in `internal/slices/mutation/domain`,
 beside the domain values it consumes and returns. This is a narrow exception to
 putting ports in a child `port` package: the domain's later orchestration must
-use it without an import cycle. `internal/worktrees` implements it, running each
+use it without an import cycle. `internal/slices/mutation/adapters/worktrees` implements it, running each
 command through `internal/processes`' `Runner`, and
 `internal/slices/mutation/domain/porttest` holds our fake and shared contract suite. Both import
 the domain directly; the domain imports neither. No model-copy DTO, generic
@@ -820,7 +827,7 @@ constructs `Command`. `internal/slices/mutation/adapters/testinputs` owns curren
 independent-coverage inventories, including lexical unsupported-scope admission.
 It wraps the existing coverage library for unchanged Kotlin runner/wrapper
 fingerprints, as testtools does for runnable-file/class observations.
-`internal/importgraph` wraps the existing graph import resolver until S8. Only cmd
+`internal/slices/mutation/adapters/importgraph` wraps the existing graph import resolver until S8. Only cmd
 composes Reach: graph imports the mutation domain, so the domain cannot import that
 adapter without a cycle. Each adapter has its own depguard rule, accepting only
 mutants plus the actual libraries it wraps. The shared contract suites live in
@@ -837,7 +844,7 @@ probes use the caller cwd, separately from the command root, and actual runtime
 environment inputs are supplied at composition rather than read by the fake.
 
 T-91 adds the model-bearing `History` contract beside these values.
-`internal/githistory` wraps the existing project Git queries with an explicit
+`internal/slices/mutation/adapters/githistory` wraps the existing project Git queries with an explicit
 caller directory and context; `internal/slices/mutation/domain/porttest` holds immutable
 commit trees, refs and parents captured from actual fixture setup. Cmd binds
 all five existing query consumers: `--since`, default sample seed, deleted-file

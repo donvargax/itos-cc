@@ -1262,7 +1262,7 @@ replacement CI and T101 cleanup. No adapter fault/budget guard is a CLI duplicat
 
 | MUT | Holder | Exact test or shared helper | T-130 |
 | --- | --- | --- | --- |
-| 165 / 187 | internal/worktrees/command_runner_ownership_linux_test.go / command_runner_ownership_darwin_test.go | TestLinuxOwnTimeoutStopsOwnedProcessTree / TestMacOSOwnTimeoutStopsOwnedProcessTree; checkOwnTimeoutStopsOwnedTree | adapter, kept |
+| 165 / 187 | internal/processes/command_runner_ownership_linux_test.go / command_runner_ownership_darwin_test.go | TestLinuxOwnTimeoutStopsOwnedProcessTree / TestMacOSOwnTimeoutStopsOwnedProcessTree; checkOwnTimeoutStopsOwnedTree | adapter, kept |
 | 166 / 188 | same ownership holders | TestLinuxNormalReturnStopsOwnedDescendant / TestMacOSNormalReturnStopsOwnedDescendant; checkNormalReturnStopsOwnedDescendant | adapter, kept |
 | 167 / 189 | same ownership holders | TestLinuxParentCancellationStopsOwnedTreeWithoutTimeoutJudgment / TestMacOSParentCancellationIsNotAMutantDeadline; cancellation/completed-first helpers | adapter, kept |
 | 168 / 190 | Linux/Darwin/shared Unix ownership holders | TestLinuxOwnershipStartupFailureDoesNotRunCommand; TestLinuxCleanupFailureIsReturnedNotJudged; TestMacOSSupervisionFailuresDoNotPermitUnsafeFallback; TestLinuxProbeCountsAZombieOnlyGroupEmpty | adapter, kept |
@@ -1285,8 +1285,8 @@ assertion its scenario's or another's. A command started after a stop is ID-MUT-
 193's later mutant, whose test would fail had it run; the join before a worker copy goes is
 `TestPoolJoinsEnteredWaiterBeforeRemovingInputs`; 191's interrupted run is 183's kept holder,
 which runs on macOS too; and a planning stop's aggregate run judging its mutants is held by the
-aggregate scenarios, ID-MUT-92 and 228 to 230. The ownership guards stay in `internal/worktrees`
-as adapter tests.
+aggregate scenarios, ID-MUT-92 and 228 to 230. The ownership guards stay in `internal/processes`,
+the process-ownership engine (T-151), as its tests.
 
 The mixed 191 and 199 holders were split before they went. Their help checks are ID-MUT-191's
 and 199's, and the native refusals ID-MUT-248's. Their private platform-value guard, with 173's,
@@ -1389,7 +1389,7 @@ and T101's review. No legacy file is deleted by T81.
 | 212 | mutate_counted_worktree_test.go | TestACountOneRunInALinkedWorktreeJudgesItsCommittedSelection | removed |
 
 T-130 reviewed the fifteen holders assertion by assertion and removed nine, each assertion its
-scenario's or another's: 175's planner agreement is `internal/freshenv`'s
+scenario's or another's: 175's planner agreement is `internal/slices/mutation/adapters/freshenv`'s
 `TestFreshPlanSeedAndUnitIdentityAreStable`, 176's unchanged cache bytes and 184's completion
 and uncovered outcome are ID-MUT-185's, 179's and 180's, and 186's no-trial preparation failure
 is 181's. The six it kept each name, beside the test, what no scenario asserts.
@@ -1587,8 +1587,9 @@ handler bindings are exercised independently. Direct legacy library fixture
 callers temporarily keep a real-adapter fallback until T-92 (fresh orchestration
 until T-95); cmd requires injection and cannot silently choose that fallback.
 
-The old command runner, context, Linux/macOS ownership and scratch tests moved
-recognizably to `internal/worktrees`: argv/cwd/environment/streams/elapsed results,
+The old command runner, context and Linux/macOS ownership tests moved recognizably to
+`internal/processes` (T-151), and the scratch tests to
+`internal/slices/mutation/adapters/worktrees` (T-160): argv/cwd/environment/streams/elapsed results,
 startup/cleanup failure, completed-exit precedence, unrelated processes, zombie
 handling and lock-based abandonment guards remain. All existing cmd holders stay.
 The public cleanup clauses in MUT166/183/188/193 establish final state; their
@@ -1703,7 +1704,8 @@ holders and counted export guards remain; they are not deleted as duplicates.
 
 The mutation group runs in its slice, now `internal/slices/mutation` (T-157), over its own
 domain, `internal/slices/mutation/domain` (T-158), and its ports, the real adapters chosen in `cmd` and our fakes in each port's `porttest`;
-its tools and inputs adapters are its own, under `internal/slices/mutation/adapters` (T-159).
+its adapters are its own, under `internal/slices/mutation/adapters`: its tools and inputs (T-159),
+its workers, history, import reach and frozen environments (T-160).
 `mutate.feature` and `metrics_snapshots.feature` run through both drivers. No push CI job
 leaves a feature file out, `features.Unstepped` names only the four `@wip` Windows ownership
 scenarios, and no scenario carries a tag that stands for unmoved code.
