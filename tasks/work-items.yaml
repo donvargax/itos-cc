@@ -4225,3 +4225,22 @@ items:
       reports a cleanup failure as the adapter does. Then decide whether ID-MUT-250 runs in both
       drivers with its Given declaring the failure to the fake; the real process cleanup stays held
       by the adapter test and CD.
+  - id: fresh-git-adapter-cases
+    title: Reach the fresh environment's real-git paths locally with adapter and contract cases
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): only the binary driver reaches these git paths, 25
+      statements. internal/freshenv Environment.privateScratch and ensureInside (a checkout whose
+      .git/itos lies outside it, as a linked worktree), Environment.plan, gitAtEnv and
+      gitCommandError.Error (an unborn HEAD), withGitConfigEnv (GIT_CONFIG_ variables in the
+      environment), listFreshTests and Environment.prepare failed stages (a listed-tests listing
+      that fails), orDir; project ChangedSinceAt (a range changing a file of no language);
+      cmd/itos-cc countedRoot (mutation run --count outside any repository, count.no-git);
+      internal/mutation countedPlanError FreshScratch. Cases over temporary git repositories in
+      internal/freshenv plan, preparation and contract tests and project/since_test.go, a cmd test
+      through the subprocess helper, and a FreshPreparationContract case for a scratch failure in
+      internal/mutants/porttest. Git only, seconds.
