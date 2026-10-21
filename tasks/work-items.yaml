@@ -4571,39 +4571,9 @@ items:
     title: "mutation run --fail-fast with two workers can exit 100 with exec: canceling Cmd: no such process"
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: bug
-    why: >
-      Found by T-172 rerunning refactor-proof's case t49-03 (mutation run --fail-fast --workers 2
-      board.go on its go fixture) locally: about 1 run in 30 of either binary, b768837's (2 of 58)
-      and e23c469's (4 of 159), prints [2/3] board.go:5 for the mutant --fail-fast cancels as killed
-      and then exits 100 with 'exec: canceling Cmd: no such process. This is a bug in itos-cc',
-      writing no .metrics/mutate snapshot; the other runs stop at the first survivor and report the
-      other mutant cancelled or survived. It predates T-86 and is no difference between the two
-      binaries, so it is not T-86's. The likely cause: internal/processes' killGroup
-      (internal/worktrees' at b768837, the same code) sets cmd.Cancel to kill the process group and
-      returns its ESRCH when the group has already gone, and os/exec reports a Cancel error other
-      than os.ErrProcessDone as Wait's error when the command otherwise exited 0, so a mutant whose
-      tests passed as the cancel lands looks failed and then internal. A fix specifies the cancel
-      racing a command's own exit (a mutant that finished is judged as it finished, never an
-      internal error) and treats the group already gone as os.ErrProcessDone; refactor-proof's
-      t49-03 reproduces it in a loop.
-
-      Spec (coordinator, 2026-10-21, for the parallel wave beside slice-35): the race is about 1 run
-      in 30, so no scenario can show it red reliably; the red is a deterministic real-OS test in
-      internal/processes (Linux and macOS, where killGroup sets cmd.Cancel): a command started with
-      killGroup's attributes, run to its own exit and reaped, then its cmd.Cancel called, as os/exec
-      calls it when the context ends after the group is gone: today it returns ESRCH, the fix
-      returns os.ErrProcessDone (wrapped or plain, errors.Is holds), so os/exec reports the
-      command's own result and a mutant that finished as fail-fast cancels the run is judged as it
-      finished, never exit 100. Commit that test alone first (test, Item bug-5), see it fail on
-      ESRCH, then the fix in internal/processes alone. Its fix commit names ID-MUT-192 (the
-      fail-fast scenario it protects) in its Scenarios footer, and its body gives the loop evidence:
-      refactor-proof's case t49-03 (mutation run --fail-fast --workers 2 board.go on its go
-      fixture), run about 100 times before and after on this machine, the exit-100 count each way.
-      Windows has no killGroup cancel (taskkill path) and needs nothing. Files: internal/processes
-      only.
   - id: refactor-proof-unstable-exit
     title: Let refactor-proof's exit code tell a run-dependent difference from a refactor one
     phase: 1
