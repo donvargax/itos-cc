@@ -35,7 +35,7 @@ Feature: Coverage
         | crap                            |
         | crap --all-tests a/a.go         |
         | mutation run --all-tests a/a.go |
-      # Python, Kotlin, a coverage script, and c8 always run the whole suite
+      # Python, Kotlin, Dart, a coverage script, and c8 always run the whole suite
 
   Rule: Each build root gets the language's own coverage command
 
@@ -58,6 +58,15 @@ Feature: Coverage
         | Kotlin     | build.gradle.kts | the build mentions kover                     | gradle koverXmlReport                                             |
         | Kotlin     | build.gradle     | the build does not mention kover             | gradle test jacocoTestReport                                      |
         | Kotlin     | pom.xml          | it or a parent declares jacoco-maven-plugin  | mvn -q jacoco:prepare-agent test jacoco:report                    |
+
+      # slice-32, q-74 (a): a Flutter app or package, run with flutter test,
+      # never pub get (--no-pub: nothing the lockfile has not fetched is
+      # downloaded, as npx is never used). With no path flutter test runs
+      # test/ alone, so integration_test/ never counts (q-76).
+      @wip @slice-32
+      Examples:
+        | language   | marker           | setup                                        | command                                                           |
+        | Dart       | pubspec.yaml     | a dependency on the flutter SDK              | flutter test --no-pub --coverage --coverage-path=... writing LCOV |
 
     @ID-COV-06 @binary-only
     Scenario: The project's own package manager runs its scripts
@@ -89,6 +98,15 @@ Feature: Coverage
         | TypeScript | using neither vitest nor jest, without c8 installed          |
         | Python     | whose python cannot import coverage                          |
         | Kotlin     | built by Maven, with no pom.xml declaring jacoco-maven-plugin |
+
+      # slice-32: flutter is never downloaded (decision 26), and a package
+      # pub has not resolved is not resolved for it: the user runs
+      # flutter pub get, as they install node_modules.
+      @wip @slice-32
+      Examples:
+        | language   | missing                                                      |
+        | Dart       | whose flutter is not installed                               |
+        | Dart       | with no .dart_tool/package_config.json, never resolved       |
       # the user makes the tool available; itos-cc never installs or downloads it
 
     @ID-COV-09 @binary-only
@@ -111,6 +129,33 @@ Feature: Coverage
       Given a Kotlin Gradle module under a build root that holds gradlew
       When coverage is run for it
       Then the gradlew wrapper is used instead of gradle
+
+    # slice-32: FVM pins a Flutter app's SDK as gradlew pins Gradle's.
+    # Without .fvm/flutter_sdk (fvm install never ran there), the flutter on
+    # PATH runs, as when there is no .fvmrc.
+    @wip @slice-32 @ID-COV-40 @binary-only
+    Scenario: A Flutter app's FVM SDK is preferred
+      Given a Flutter app whose .fvmrc pins the SDK that .fvm/flutter_sdk links to
+      When coverage is run for it
+      Then .fvm/flutter_sdk/bin/flutter runs the tests instead of the flutter on PATH
+
+    # slice-32, q-74 (a): pure Dart packages (dart test) are a later idea.
+    @wip @slice-32 @ID-COV-41 @binary-only
+    Scenario: A Dart package that does not use Flutter is not measured yet
+      Given a Dart package whose pubspec.yaml does not depend on the flutter SDK
+      When coverage is run for it
+      Then nothing runs for it
+      And stderr says only Flutter apps and packages are measured
+      And only complexity is reported for it
+
+    # slice-32: a pub workspace's members are its build roots, each run in
+    # its own directory, as flutter test writes SF: paths relative to it.
+    @wip @slice-32 @ID-COV-42 @binary-only
+    Scenario: Each member of a pub workspace is measured in its own directory
+      Given a pub workspace whose root pubspec.yaml lists the Flutter packages app and core
+      When coverage is run
+      Then flutter test runs in app and in core, and nothing runs at the workspace root
+      And each report's lib/ paths are read against its member's directory
 
     @ID-COV-12 @binary-only
     Scenario: Several build roots and languages are measured separately and merged
@@ -289,6 +334,19 @@ Feature: Coverage
       Given a report entry that matches no selected source
       When the report is built
       Then that entry is ignored
+
+    # slice-32: flutter test's LCOV names only the libraries a test loaded,
+    # so a lib/ file it does not name was measured and nothing ran it: 0%,
+    # not unknown as a language nobody measured is (ID-CRAP-05). A file
+    # whose coverage:ignore-file pragma Flutter honours is not coverable at
+    # all, loaded or not.
+    @wip @slice-32 @ID-COV-43 @binary-only
+    Scenario: A Dart library no test loads is uncovered, not unmeasured
+      Given a Flutter app whose test loads lib/board.dart and no test loads lib/unused.dart or lib/ignored.dart
+      And lib/ignored.dart's first line is "// coverage:ignore-file"
+      When I run "itos-cc crap"
+      Then lib/unused.dart's functions are at 0% coverage
+      But lib/ignored.dart's functions have no CRAP score
 
   Rule: A piece of code listed more than once counts once
 
