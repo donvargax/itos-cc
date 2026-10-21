@@ -4191,3 +4191,19 @@ items:
       internal/testtools, internal/testinputs and graph/graph_test.go or tests_test.go reach them in
       seconds with no Node, Python, Gradle or Maven run; the scenarios that run the tools stay CDs
       (decisions 44, 49, 52).
+  - id: coverage-runner-failure-cases
+    title: Reach the coverage runners' failure paths locally with adapter tests
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-154 (docs/binary-only-reach.md): only the binary driver reaches what happens when a coverage
+      command fails. cmd/itos-cc coverageCommand (an owned command that cannot start, or exits
+      non-zero with a ProcessState), internal/coveragetools Measurer.named (a --coverage-command
+      that fails), coverage MeasureTestsSupervised (a listed test command, the whole suite command
+      or a listed test conversion failing). Adapter tests reach each with sh -c exit 3, a missing
+      executable or a Go fixture whose test fails: coverageCommand with a real
+      processes.OwnedExecutor or through the subprocess helper (crap --coverage-command), the others
+      in internal/coveragetools and coverage. Seconds, no Node, Python, Gradle or Maven run.
