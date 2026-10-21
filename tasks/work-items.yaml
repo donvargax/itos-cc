@@ -4887,3 +4887,20 @@ items:
       relative path, platform folders left out. A mutant that does not compile is reported as q-83
       settles; until it is answered this item builds nothing for it and its scenarios hold no
       compile-error row. Scenarios MUT-07's Dart rows, MUT-264, MUT-265.
+  - id: mutant-not-compiled
+    title: A mutant that does not compile has an outcome of its own, in every compiled language
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-83 (the person, 2026-10-21): for now a Dart mutant that does not compile counts as killed,
+      as Go's and Kotlin's do, since their tests fail; the person wants the discussion and the build
+      of a separate outcome later, for Go, Kotlin, Dart and any later language whose mutants can
+      fail to build, all together. A mutant the compiler rejects says nothing about the tests, so
+      counting it killed lifts the score. To settle then: how each toolchain tells a build failure
+      from a test failure (go test's build failed lines, Gradle's and Maven's compile tasks, flutter
+      test's JSON error on the loading test), whether the outcome is left out of the score or
+      counted apart, the snapshot field and what mutation check and the counts show, and numbers
+      from real runs (slice-35 reports how often Flutter mutants fail to compile).
