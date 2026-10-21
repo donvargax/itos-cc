@@ -4095,7 +4095,7 @@ items:
   - id: T-151
     title: Lift process ownership out of mutation's worktrees into an engine
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
