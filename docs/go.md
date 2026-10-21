@@ -9,8 +9,9 @@ OS as a value), adapted to this module with its owner's permission (`CONTRIBUTOR
 
 ## Packages
 
-The code follows decision 29 (`docs/decisions/`): shared domains behind ports, adapters apart
-from them, and thin slices named for their commands. A domain function that calls a port takes
+The code follows ADR-0051 (`docs/decisions/`), which superseded decision 29 and kept its arrows:
+shared domains behind ports, adapters apart from them, and each command a vertical slice under
+`internal/slices/<command>` over shared engines; `docs/architecture.md` draws the layers. A domain function that calls a port takes
 a `context.Context` first (decision 30); pure logic takes none.
 
 - `internal/selection` is the domain every command chooses its files through: paths given as
@@ -572,7 +573,7 @@ context-as-argument a context after any other parameter, tests included.
   and the sibling rule below refuses another slice; its allow list repeats `slices`', each
   domain added to both, until the last slice moves.
 - `slice-adapters`: a slice under `internal/slices`, its tests too, imports no adapter of a
-  slice, its own neither, since cmd wires them in through its `Ports` (decision 29). It holds
+  slice, its own neither, since cmd wires them in through its `Ports` (ADR-0051). It holds
   `slice-packages`' files and denies each slice's `adapters` folder, which `slice-packages`'
   allowing `internal/slices/` would let by and the sibling rule lets a slice's own code
   import. It is a rule of its own, not a deny beside `slice-packages`' module-wide one,
@@ -1111,7 +1112,9 @@ CI has two tiers (decision 48). `ci.yml`, the push gate itos waits on, runs on L
 the plan below, with the smoke set and the scenarios the push's range names through both
 drivers, and the Go tests of every package, the in-process driver's whole suite among them.
 `cd.yml`, on the same push, runs every test on Linux, macOS and Windows in its platform jobs,
-every scenario through both drivers, and the release after them. The import-boundary
+every scenario through both drivers, the real language tools in its `languages` jobs and, in
+its Linux `dart` job, the Dart scenarios with the Flutter `.fvmrc` pins (slice-32), and the
+release after them. The import-boundary
 self-test, `tools/bin/architecture-check`, runs in the plan of both. Both set
 `ITOS_CC_FEATURES_BINARY_DRIVER`, as `nightly.yml` and `refactor-proof.yml` do, the binary
 driver running nowhere else (decision 52).
@@ -1123,8 +1126,12 @@ these checks in cost order, the first failure stopping the run:
 
 - `itos config check` and `tools/bin/doc-caps`, the only steps of a push that touches prose
   alone (`ci.prose`).
-- `gofmt` over every tracked Go file, `go build ./...`, `go vet ./...`, `go mod verify` against
-  `go.sum`, and `go mod tidy -diff` so the module files match the code.
+- `gofmt` over every tracked Go file, then `go run ./tools/bin/assemble -check` (the generated
+  `commands_gen.go` and `steps_gen.go` are current) and `go run ./tools/bin/notices -check`
+  (`THIRD_PARTY_NOTICES` names every compiled-in module's and the toolchain's notices, T-173 to
+  T-176).
+- `go build ./...`, `go vet ./...`, `go mod verify` against `go.sum`, and `go mod tidy -diff` so
+  the module files match the code.
 - `itos tests smoke check scenario`, so every feature file has a smoke scenario.
 - The pinned golangci-lint over the whole module, `./...` (q-50, T-119): the standard linters plus
   depguard, gosec on non-test code, revive's file-length limit, gochecksumtype, which refuses

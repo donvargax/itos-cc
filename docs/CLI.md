@@ -6,6 +6,32 @@ This page names those rules by their numbers there, says whether itos-cc
 follows each, and lists where it does not yet. Change this page in the same
 commit as the command line.
 
+## Why the codes and problems look as they do
+
+The exit codes are [square/exit](https://github.com/square/exit)'s, Square's semantic exit
+codes, which take their model from HTTP's status codes (decision 36). Its two ranges play the
+part of HTTP's classes: 80 to 99 are the caller's errors, as 4xx are the client's (80 a usage
+error, 81 an unknown command, 82 a requirement not met), and 100 to 119 the program's, as 5xx
+are the server's (100 an internal error). Its 0 and 1 are success and a check that said no.
+Two codes are kept from outside square/exit: 75 for a failure that may pass when run again
+unchanged, and 130 for an interrupt, what a shell reports for a command SIGINT ended.
+
+Each problem carries a stable `rule`, a dotted lower-case id such as `mutation.survived`, and its
+own `exit` code, as [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) gives each problem
+detail its own `status`. Its subject keys sit beside them as flat members, as RFC 9457's
+extension members do; `rule`, `message`, `fix` and `exit` are reserved (decision 34). A script
+reads the rule and the code, never the words.
+
+A run with several problems exits with the first code in the precedence order that one of them
+has, not the highest: 130, 80 and 81, 100, 82, 75, 1. The first says the most about why nothing
+after it could be trusted: an interrupted run proves nothing, and a misused one checked nothing.
+`internal/cli`'s `Precedence` holds the order and `ExitCode` applies it; a code missing from it
+is a defect of ours, exit 100. Only `internal/cli` turns problems into an exit code: a domain's
+failures carry no code, rule or wording.
+
+`docs/architecture.md` is this page's partner for the code: how the commands are laid out, where
+each domain's failures become problems, and the gates that hold both.
+
 ## The contract with scripts
 
 Scripts can rely on three things only, as with itos (its decision 35):
@@ -37,12 +63,9 @@ release instead: itos-cc is at 0.x.
 | 100  | An internal error that itos-cc could not classify, a panic included. Report it.        |
 | 130  | Interrupted: SIGINT (Ctrl-C) or SIGTERM stopped the command.                           |
 
-The codes are square/exit's, keeping 75 for a failure that may pass when
-run again (decision 36): before it, a usage error and an unknown command
-were 2, a requirement not met 3, and an internal error 70. A run with
-problems of several kinds exits with the first of 130, 80 and 81, 100, 82,
-75, and 1 that it has, not the highest code (q-54). Every command reports
-through `internal/cli`, whose `Precedence` holds this order.
+Before decision 36 a usage error and an unknown command were 2, a
+requirement not met 3, and an internal error 70. Why the codes and their
+order are what they are is the section above.
 
 ### Interrupts
 
@@ -86,7 +109,7 @@ included, prints the object too, with `"ok": false` and its problems:
 ```
 
 `rule` is a stable id, and `exit` the problem's own exit code, as RFC
-9457's `status` gives each problem its own (q-54); the run exits with the
+9457's `status` gives each problem its own (decision 34); the run exits with the
 first of its problems' codes in the order above. The other keys besides
 `message` and `fix` are the problem's subject. A subject key is never
 named `rule`, `message`, `fix` or `exit`: these are reserved, and
