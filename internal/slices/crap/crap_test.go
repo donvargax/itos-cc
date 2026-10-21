@@ -15,13 +15,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	covporttest "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	langporttest "github.com/donvargax/itos-cc/internal/lang/port/porttest"
 	"github.com/donvargax/itos-cc/internal/selection/port/porttest"
+	changerisk "github.com/donvargax/itos-cc/internal/slices/crap/domain"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 	snapporttest "github.com/donvargax/itos-cc/internal/snapshot/port/porttest"
 )

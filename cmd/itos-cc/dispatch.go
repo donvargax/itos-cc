@@ -10,8 +10,8 @@ import (
 	"github.com/donvargax/kong"
 
 	"github.com/donvargax/itos-cc/internal/cli"
-	"github.com/donvargax/itos-cc/internal/crap"
 	"github.com/donvargax/itos-cc/internal/mutation"
+	"github.com/donvargax/itos-cc/internal/slices/crap"
 )
 
 // Every command is a node of one kong model, which internal/cli's Dispatch

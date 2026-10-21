@@ -23,13 +23,13 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/donvargax/itos-cc/internal/changerisk"
 	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
 	langport "github.com/donvargax/itos-cc/internal/lang/port"
 	"github.com/donvargax/itos-cc/internal/selection"
 	"github.com/donvargax/itos-cc/internal/selection/port"
+	changerisk "github.com/donvargax/itos-cc/internal/slices/crap/domain"
 	"github.com/donvargax/itos-cc/internal/snapshot"
 	snapport "github.com/donvargax/itos-cc/internal/snapshot/port"
 )
