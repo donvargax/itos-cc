@@ -4530,3 +4530,16 @@ items:
       should also refuse a nested allow list, or the allow lists drop the exact porttest entries
       their prefix already covers.
     refs: [T-167, T-159]
+  - id: mutation-domain-one-package-comment
+    title: Give the mutation domain one package comment
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      internal/slices/mutation/domain has two package comments, doc.go's and sites.go's ('Package
+      domain owns pure mutation rules: it makes small changes to functions...'), both carried over
+      from internal/mutants (doc.go and sites.go there too), so go doc prints the two one after the
+      other. Found in T-168 while rewriting doc.go's adapter list. Fold sites.go's paragraph into
+      doc.go, the one comment, in a refactor commit.
