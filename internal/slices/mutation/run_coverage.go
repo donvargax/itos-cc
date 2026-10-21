@@ -71,7 +71,8 @@ func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, so
 // folder. The binding owns progress and test output. reach, in OwnTests, is
 // the test files that reach each source, which measure Python's and
 // Kotlin's; nil measures them by the whole suite. A stopped run is
-// reported as ctx's cause, as mutation reports a stop. Its one caller,
+// reported as ctx's cause, as mutation reports a stop, and listed tests
+// whose coverage run failed as tests.coverage-failed (RunError). Its one caller,
 // strict coverage, has refused every raw coverage flag before it
 // (StrictCoverageFlag), --coverage-command among them.
 func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string, scope covport.Scope, perTest *coverage.PerTest, reach covport.Reach) (*coverage.Report, error) {
@@ -87,6 +88,9 @@ func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string,
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)
+		}
+		if failed, ok := mutants.MeasureFailure(failure).(mutants.CoverageRunFailed); ok {
+			return nil, ranInto(failed)
 		}
 		return nil, failure
 	}

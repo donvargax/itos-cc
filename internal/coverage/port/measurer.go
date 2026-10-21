@@ -71,3 +71,19 @@ type Unwritable struct{ Reason string }
 
 func (Unwritable) measureFailure() {}
 func (e Unwritable) Error() string { return e.Reason }
+
+// TestsFailed is a measurement whose listed tests' coverage run failed
+// without any mutant: the run of every listed test, or in the fallback
+// one test's run alone, exited non-zero. Command is the shell line as it
+// ran, without the variables it set; ExitCode its exit code, -1 when it
+// gave none (a signal, or no shell to start); Reason the runner's text
+// whole; and Cleanup the command's owned process group whose cleanup did
+// not finish, nil for none.
+type TestsFailed struct {
+	Command, Reason string
+	ExitCode        int
+	Cleanup         *CleanupFailed
+}
+
+func (TestsFailed) measureFailure() {}
+func (e TestsFailed) Error() string { return e.Reason }

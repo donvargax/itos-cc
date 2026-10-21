@@ -128,13 +128,14 @@ func TestRealMutationMeasurerContract(t *testing.T) {
 }
 
 func TestRealListedContract(t *testing.T) {
-	covtest.ListedContract(t, func(t *testing.T, split bool) (coverage.MutationMeasurer, string) {
+	covtest.ListedContract(t, func(t *testing.T, split bool, fail string) (coverage.MutationMeasurer, string) {
 		dir := workspace(t, map[string]string{"go.mod": "module example.com/t90\n\ngo 1.22\n", "main.go": covtest.ListedMain, "harness/main.go": covtest.ListedHarness})
 		value := "false"
 		if split {
 			value = "true"
 		}
 		t.Setenv("T90_SPLIT", value)
+		t.Setenv("T90_FAIL", fail)
 		// The test owns both source and target, in this native temporary root.
 		cmd := exec.CommandContext(t.Context(), "go", "build", "-buildvcs=false", "-cover", "-o", filepath.Join(dir, "app.exe"), ".")
 		cmd.Dir = dir

@@ -99,7 +99,8 @@ func gapProblem(m coverage.Unmeasured) *cli.Problem {
 // measureProblem is failure's problems: a stopped measurement is its
 // gap's, Cancelled, the stop, and beside it the cleanup of the command it
 // stopped, when that did not finish; a run folder that could not be made is
-// the internal 100, the operating system's text whole. None has a default;
+// the internal 100, the operating system's text whole, as is listed tests'
+// failed coverage run, which mutation words before it reaches here. None has a default;
 // a kind with no case here is the 100 of a bug.
 func measureProblem(failure covport.Failure) []*cli.Problem {
 	p := []*cli.Problem{cli.Internal(failure)}
@@ -110,6 +111,10 @@ func measureProblem(failure covport.Failure) []*cli.Problem {
 			p = append(p, cleanupProblem(*e.Cleanup))
 		}
 	case covport.Unwritable:
+		p = []*cli.Problem{cli.Internal(e)}
+	case covport.TestsFailed:
+		// Only mutation's listed tests fail so, and its slice words them
+		// as tests.coverage-failed before any classifier sees them.
 		p = []*cli.Problem{cli.Internal(e)}
 	}
 	return p

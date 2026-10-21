@@ -2,14 +2,17 @@ package mutation
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/donvargax/itos-cc/internal/cli"
 	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	aggregate "github.com/donvargax/itos-cc/internal/coverage/port/porttest"
 	covtest "github.com/donvargax/itos-cc/internal/coverage/porttest"
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 // Moved from cmd with run's coverage consumers (T-100): coverage evidence
@@ -64,5 +67,25 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 	cancel()
 	if _, err := h.loadCoverage(ctx, q, sources, port.OwnTests, nil, nil); err != context.Canceled {
 		t.Fatalf("caller cancellation lost: %v", err)
+	}
+}
+
+// No scenario stops a listed coverage command whose owned group's cleanup
+// then fails: such a run is tests.coverage-failed with
+// coverage.cleanup-failed's gap beside it, which cmd's classifier words.
+func TestAFailedListedCoverageRunKeepsItsCleanupFailureBesideIt(t *testing.T) {
+	cleanup := port.CleanupFailed{ProcessGroup: 42, Command: "sh -c all", Reason: "group 42 did not end"}
+	err := runError(ranInto(mutants.CoverageRunFailed{Command: "all", Reason: "signal: killed", ExitCode: -1, Cleanup: &cleanup}), func(s string) string { return s })
+	joined, ok := err.(interface{ Unwrap() []error })
+	if !ok || len(joined.Unwrap()) != 2 {
+		t.Fatalf("worded %T %v; want tests.coverage-failed and the cleanup's gap", err, err)
+	}
+	p, ok := joined.Unwrap()[0].(*cli.Problem)
+	if !ok || p.Rule != "tests.coverage-failed" || p.Subject("command") != "all" || p.Subject("exit_code") != -1 || p.Code != cli.CodeNo {
+		t.Fatalf("first: %#v", joined.Unwrap()[0])
+	}
+	var gap coverage.Unmeasured
+	if !errors.As(joined.Unwrap()[1], &gap) || gap.Cause != cleanup {
+		t.Fatalf("second: %#v", joined.Unwrap()[1])
 	}
 }

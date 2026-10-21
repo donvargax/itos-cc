@@ -3,6 +3,7 @@ package coverage
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
+	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
 )
@@ -222,16 +224,18 @@ func anyWritten(collectors []testCollector, d string) bool {
 }
 
 // MeasureTests runs p's tests for coverage of sources, with dir, which it
-// removes once read, for their data. It returns nil when the tests fail:
-// the tests that fail without any mutant decide no mutant.
-func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) *coverage.TestCoverage {
+// removes once read, for their data. Tests that fail without any mutant
+// decide no mutant: the run of every test, or in the fallback one test's
+// run alone, that fails is port.TestsFailed, naming its command, unless
+// ctx is done, when it gives nothing and the caller reports the stop.
+func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, log io.Writer, execute CommandExecutor) (*coverage.TestCoverage, port.Failure) {
 	// This unsupervised measure has always gone on when it cannot clear or
 	// remove its folder; MeasureTestsSupervised reports either.
 	_ = os.RemoveAll(dir)
 	defer func() { _ = os.RemoveAll(dir) }()
 	if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec // the listed tests' coverage folder keeps its 0755; narrowing it would change what the run creates
 		logf(log, "itos-cc: coverage: %v\n", err)
-		return nil
+		return nil, nil
 	}
 	collectors, _, _ := startTestCollectors(ctx, testCollectors(ctx, p.Root, dir, sources), log, nil, false)
 	tc := &coverage.TestCoverage{}
@@ -240,8 +244,8 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		ids = append(ids, t.ID)
 	}
 	if err := runShell(ctx, p.All, p.Root, wholeEnv(collectors, dir), log, execute); err != nil {
-		logf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant runs them: %v\n", err)
-		return nil
+		logf(log, "itos-cc: coverage: the listed tests fail without any mutant, so no mutant is judged: %v\n", err)
+		return nil, testsFailed(ctx, p.All, err)
 	}
 	written := map[string]string{}
 	for _, id := range ids {
@@ -256,11 +260,11 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 			d := filepath.Join(dir, ".each", strconv.Itoa(i))
 			if err := os.MkdirAll(d, 0o755); err != nil { //nolint:gosec // a listed test's own coverage folder keeps its 0755; narrowing it would change what the run creates
 				logf(log, "itos-cc: coverage: %v\n", err)
-				return nil
+				return nil, nil
 			}
 			if err := runShell(ctx, p.Select([]string{id}), p.Root, eachEnv(collectors, d), log, execute); err != nil {
-				logf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant runs the listed tests: %v\n", id, err)
-				return nil
+				logf(log, "itos-cc: coverage: listed test %s fails without any mutant, so no mutant is judged: %v\n", id, err)
+				return nil, testsFailed(ctx, p.Select([]string{id}), err)
 			}
 			if anyWritten(collectors, d) {
 				written[id] = d
@@ -274,7 +278,7 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		}
 		// A done context starts no command: the caller reports the stop.
 		if ctx.Err() != nil {
-			return nil
+			return nil, nil
 		}
 		var reports []*coverage.Report
 		for _, c := range collectors {
@@ -302,7 +306,24 @@ func MeasureTests(ctx context.Context, p PerTest, dir string, sources []string, 
 		}
 		tc.Add(id, coverage.Merge(reports...))
 	}
-	return tc
+	return tc, nil
+}
+
+// testsFailed is the failure of command, a run of listed tests that ended
+// with err, or nil once ctx is done, a stop the caller reports.
+func testsFailed(ctx context.Context, command string, err error) port.Failure {
+	if ctx.Err() != nil {
+		return nil
+	}
+	failed := port.TestsFailed{Command: command, Reason: err.Error(), ExitCode: -1}
+	if exit := (*exec.ExitError)(nil); errors.As(err, &exit) {
+		failed.ExitCode = exit.ExitCode()
+	}
+	var cleanup port.CleanupFailed
+	if errors.As(err, &cleanup) {
+		failed.Cleanup = &cleanup
+	}
+	return failed
 }
 
 // eachTestEnv is the environment that gives the processes a command starts

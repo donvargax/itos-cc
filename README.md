@@ -448,7 +448,13 @@ a mutant is `tests.selection-failed`, exit 1, with its `ids`: no mutant that
 would run it is judged, and the files holding them keep their snapshots, as
 with a failing baseline. That outcome has scope `"listed"` and records their
 IDs under `tests`, in the snapshot and in `--json`, and `mutation sample`
-runs it again the same way, after its selection's own baseline. A line a listed test reaches is never uncovered. Such a kill
+runs it again the same way, after its selection's own baseline. A coverage run of the listed tests that fails
+without any mutant, the run of every test or, when each runs alone, one
+test's run, is `tests.coverage-failed`, exit 1, with its `command` and
+`exit_code`: nothing is judged and no snapshot is written. The run of
+every test sets `ITOS_CC_TEST_COVERDIR` without `GOCOVERDIR`, so a harness
+builds its binary with `-cover` only when it gives the processes
+`GOCOVERDIR` itself. A line a listed test reaches is never uncovered. Such a kill
 rests on files no import names: the snapshot records the hash of the file
 each of its tests is defined in, and of every file the `support` globs
 match, such as the step code the tests run, and the kill holds while they

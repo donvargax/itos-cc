@@ -741,7 +741,7 @@ Feature: Mutation testing
     # lines only listed tests reach were mutation.uncovered, and without it
     # their mutants survived their own tests, so each fails at the problem's
     # step.
-    @wip @slice-15 @ID-MUT-268
+    @slice-15 @ID-MUT-268
     Scenario Outline: A coverage run of the listed tests that fails judges nothing
       Given the listed tests fail when they all run for coverage, though they pass together when a mutant's run selects them
       When I run "itos-cc mutation run <flags>"
@@ -763,7 +763,7 @@ Feature: Mutation testing
     # a test the declaration lists as Failing. Before slice-15 the run
     # logged "listed test ID-A-02 fails without any mutant" and judged every
     # mutant with no listed coverage, failing at the problem's step.
-    @wip @slice-15 @ID-MUT-269
+    @slice-15 @ID-MUT-269
     Scenario: A listed test that fails its own coverage run judges nothing
       Given the module of ID-MUT-122, whose harness ignores ITOS_CC_TEST_COVERDIR
       And ID-A-02 fails when it runs alone without a mutant, though the listed tests pass together

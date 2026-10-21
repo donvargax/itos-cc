@@ -92,7 +92,8 @@ func (m Measurer) named(ctx context.Context, req port.Request) (*coverage.Report
 // run's reports in out for Existing, in place of the last run's. A run the
 // context stopped measured what it measured for that reason, not for a
 // tool's: it is Cancelled and keeps nothing. A run folder that cannot be
-// made is Unwritable.
+// made is Unwritable. Listed tests whose coverage run fails are
+// TestsFailed, the run kept nowhere.
 func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope port.Scope, perTest *coverage.PerTest) (*coverage.Report, port.Failure) {
 	if err := covrun.IgnoreDir(out); err != nil {
 		return nil, port.Unwritable{Reason: err.Error()}
@@ -104,8 +105,11 @@ func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope
 	}
 	defer func() { _ = os.RemoveAll(run) }()
 	report := covrun.Run(ctx, covrun.Plans(ctx, req.Sources, run, scope, req.Reach), req.Sources, m.Log, m.Execute)
+	var testsFailed port.Failure
 	if perTest != nil {
-		report.SetTests(covrun.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), req.Sources, m.Log, m.Execute))
+		var tests *coverage.TestCoverage
+		tests, testsFailed = covrun.MeasureTests(ctx, *perTest, filepath.Join(run, "tests"), req.Sources, m.Log, m.Execute)
+		report.SetTests(tests)
 	}
 	if ctx.Err() != nil {
 		// The command it stopped may have left its owned group's cleanup
@@ -117,6 +121,11 @@ func (m Measurer) fresh(ctx context.Context, req port.Request, out string, scope
 			}
 		}
 		return nil, cancelled
+	}
+	// Listed tests that fail their coverage run judge nothing, and keep
+	// nothing of the run for Existing.
+	if testsFailed != nil {
+		return nil, testsFailed
 	}
 	keepLatest(run, out)
 	return report, nil

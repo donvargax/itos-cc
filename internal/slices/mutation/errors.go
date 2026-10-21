@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/donvargax/itos-cc/internal/cli"
+	"github.com/donvargax/itos-cc/internal/coverage"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
@@ -157,8 +158,9 @@ func sinceError(failure mutants.HistoryFailure, ref string) error {
 }
 
 // RunError words the domain's run failures as cmd's run and sample's
-// handler word them: a snapshot that cannot be read and the listed tests'
-// list command failing. Any other error is err.
+// handler word them: a snapshot that cannot be read, the listed tests'
+// list command failing and their coverage run failing. Any other error is
+// err.
 func RunError(err error) error {
 	if worded := runFailure(err); worded != nil {
 		return worded
@@ -178,6 +180,17 @@ func runFailure(err error) error {
 		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
 			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so no mutant was judged: %s", "itos-cc.yaml", listing.Reason, listing.Command),
 			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
+	}
+	var failed mutants.CoverageRunFailed
+	if errors.As(err, &failed) {
+		p := cli.NewProblem(cli.CodeNo, "tests.coverage-failed",
+			fmt.Sprintf("the listed tests of mutation.tests in %s failed their coverage run without any mutant (%s), so no mutant was judged: %s", "itos-cc.yaml", failed.Reason, failed.Command),
+			"Make the listed tests pass when they run with ITOS_CC_TEST_COVERDIR set and GOCOVERDIR unset, then run again.").With("command", failed.Command).With("exit_code", failed.ExitCode)
+		if failed.Cleanup != nil {
+			// The command's owned group that did not end stands beside it.
+			return errors.Join(p, coverage.Unmeasured{Cause: *failed.Cleanup, Reason: failed.Cleanup.Reason})
+		}
+		return p
 	}
 	return nil
 }

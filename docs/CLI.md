@@ -55,7 +55,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript or Kotlin line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript or Kotlin line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 | 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 81   | An unknown command or subcommand.                                                      |
@@ -165,6 +165,7 @@ output of the commands it runs passes as it is.
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
 | `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
+| `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
 | `serve.repo-unreadable`      | 80   | serve          | none                                                        |
 | `serve.port-in-use`          | 75   | serve          | `port`                                                      |

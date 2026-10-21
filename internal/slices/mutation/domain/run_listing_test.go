@@ -160,3 +160,35 @@ func TestRunListingBindingIsRequiredOnlyWhenActuallyNeeded(t *testing.T) {
 		t.Fatalf("cancelled lazy measurement: %v", err)
 	}
 }
+
+// Listed tests whose coverage run failed judge nothing, in ordinary
+// measurement as in strict: unlike any other failure, the ordinary branch
+// does not go on without listed coverage.
+func TestRunJudgesNothingWhenTheListedTestsFailTheirCoverageRun(t *testing.T) {
+	for _, strict := range []bool{false, true} {
+		f, _, m, events := listingFixture(t)
+		m.Declarations = map[coverage.Unloaded]covtest.Measurement{{Language: "go", Dir: f.root}: {Language: "go", Report: "mode: set\nexample.test/board/board.go:2.25,2.40 1 1\n",
+			Listed: map[string]map[string]*coverage.Report{"go": {}}, ListedFailed: true, ListedExit: 3}}
+		_, err := f.options.Measure(t.Context(), []string{f.path}, strict)
+		var failed mutants.CoverageRunFailed
+		if !errors.As(err, &failed) || failed.Command != "all first second" || failed.ExitCode != 3 || failed.Reason != "exit status 3" {
+			t.Fatalf("strict %v: %v", strict, err)
+		}
+		for _, event := range events.values {
+			if event.Kind == "coverage-failed" {
+				t.Fatalf("strict %v went on without listed coverage: %+v", strict, events.values)
+			}
+		}
+	}
+	f, _, m, _ := listingFixture(t)
+	m.Declarations = map[coverage.Unloaded]covtest.Measurement{{Language: "go", Dir: f.root}: {Language: "go", Report: "mode: set\n",
+		Listed: map[string]map[string]*coverage.Report{"go": {}}, ListedFailed: true}}
+	_, err := mutants.Run(t.Context(), []string{f.path}, f.options)
+	var failed mutants.CoverageRunFailed
+	if !errors.As(err, &failed) || failed.ExitCode != 1 || len(f.workers.Opened) != 0 || len(f.snapshots.Written) != 0 {
+		t.Fatalf("run after a failed coverage run: %v, opened %v, written %v", err, f.workers.Opened, f.snapshots.Written)
+	}
+	if other := mutants.MeasureFailure(covport.Unwritable{Reason: "read-only"}); !errors.Is(other, covport.Unwritable{Reason: "read-only"}) {
+		t.Fatalf("another failure changed: %v", other)
+	}
+}

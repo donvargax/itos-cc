@@ -147,6 +147,8 @@ func (m *memory) measurer(dir string) *covtest.Measurer {
 			if listed := m.listed[g.root]; listed != nil {
 				d.Listed = map[string]map[string]*coverage.Report{}
 				d.ListedFailed = listed.CoverageExit != 0
+				d.ListedExit = listed.CoverageExit
+				d.Failing = slices.Clone(listed.Failing)
 				d.ListedOutput = listed.CoverageOutput
 				d.Split = listed.Split
 				d.Metadata = slices.Clone(listed.CoverageMetadata)

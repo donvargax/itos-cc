@@ -34,6 +34,30 @@ type ListingFailed struct {
 
 func (f ListingFailed) Error() string { return f.Reason }
 
+// CoverageRunFailed is the listed tests' coverage run that failed without
+// any mutant, so no mutant is judged: Command is the line that failed,
+// ExitCode its exit code, -1 for none, Reason the runner's text, and
+// Cleanup the owned process group of the command whose cleanup did not
+// finish, nil for none. The command-line boundary owns
+// tests.coverage-failed's wording and exit policy.
+type CoverageRunFailed struct {
+	Command, Reason string
+	ExitCode        int
+	Cleanup         *covport.CleanupFailed
+}
+
+func (f CoverageRunFailed) Error() string { return f.Reason }
+
+// MeasureFailure is failure as the run fails with it: the listed tests'
+// failed coverage run is CoverageRunFailed, in strict and ordinary
+// measurement alike; any other failure is itself.
+func MeasureFailure(failure covport.Failure) error {
+	if failed, ok := failure.(covport.TestsFailed); ok {
+		return CoverageRunFailed{Command: failed.Command, Reason: failed.Reason, ExitCode: failed.ExitCode, Cleanup: failed.Cleanup}
+	}
+	return failure
+}
+
 // ParseListing retains first-ID-wins, optional filenames and CRLF trimming.
 func ParseListing(stdout string) []coverage.Test {
 	var listed []coverage.Test
@@ -68,7 +92,8 @@ func ListedTests(ctx context.Context, lister TestLister, command Command) ([]cov
 }
 
 // Measure performs the bound request. Strict callers keep actual errors;
-// ordinary lazy measurement retains the existing best-effort fallback.
+// ordinary lazy measurement retains the existing best-effort fallback, but
+// for listed tests whose coverage run failed, which judge nothing.
 func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (*coverage.Report, error) {
 	if opt.Coverage != nil {
 		return opt.Coverage, nil
@@ -111,6 +136,9 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 	if failure != nil {
 		if ctx.Err() != nil {
 			return nil, context.Cause(ctx)
+		}
+		if failed, ok := MeasureFailure(failure).(CoverageRunFailed); ok {
+			return nil, failed
 		}
 		if strict {
 			return nil, failure

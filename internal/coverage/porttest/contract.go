@@ -40,20 +40,25 @@ func (m listedEntry) Measure(ctx context.Context, req port.Request) (*coverage.R
 	return m.MeasureListed(ctx, req, &coverage.PerTest{Root: m.root, Tests: []coverage.Test{{ID: "not-run"}}, All: "T90-named-report-must-not-start-this-command", Select: func([]string) string { return "T90-no-selector" }})
 }
 
-// ListedContract exercises successful built-in collection using independent
-// fixture artifacts in memory and real covered Go processes at the adapter.
-// split controls whether the actual harness supplies per-ID data in one run.
-func ListedContract(t *testing.T, open func(*testing.T, bool) (coverage.MutationMeasurer, string)) {
+// ListedContract exercises built-in collection using independent fixture
+// artifacts in memory and real covered Go processes at the adapter. split
+// controls whether the actual harness supplies per-ID data in one run, and
+// fail names the harness's run that fails, "" for none: "all", the run of
+// every test, or a test's ID, its run alone. A run that fails is
+// TestsFailed, naming its command and exit code, and gives no report.
+func ListedContract(t *testing.T, open func(t *testing.T, split bool, fail string) (coverage.MutationMeasurer, string)) {
+	tests := func(root string) *coverage.PerTest {
+		return &coverage.PerTest{Root: root, Tests: []coverage.Test{{ID: "A"}, {ID: "B"}, {ID: "C"}}, All: "go run ./harness all", Select: func(ids []string) string { return "go run ./harness " + ids[0] }}
+	}
 	for _, split := range []bool{true, false} {
 		name := "fallback"
 		if split {
 			name = "split"
 		}
 		t.Run(name, func(t *testing.T) {
-			m, root := open(t, split)
+			m, root := open(t, split, "")
 			file := filepath.Join(root, "main.go")
-			tests := &coverage.PerTest{Root: root, Tests: []coverage.Test{{ID: "A"}, {ID: "B"}, {ID: "C"}}, All: "go run ./harness all", Select: func(ids []string) string { return "go run ./harness " + ids[0] }}
-			r, failure := m.MeasureListed(t.Context(), port.Request{Sources: []string{file}, Scope: port.OwnTests}, tests)
+			r, failure := m.MeasureListed(t.Context(), port.Request{Sources: []string{file}, Scope: port.OwnTests}, tests(root))
 			if failure != nil {
 				t.Fatal(failure)
 			}
@@ -62,6 +67,25 @@ func ListedContract(t *testing.T, open func(*testing.T, bool) (coverage.Mutation
 			}
 			if len(r.LineTests(file, 1)) != 0 {
 				t.Fatal("absent/nonexecuted line acquired an ID")
+			}
+		})
+	}
+	for _, c := range []struct {
+		name, fail, command string
+		split               bool
+	}{
+		{name: "split run of every test fails", fail: "all", command: "go run ./harness all", split: true},
+		{name: "fallback run of one test fails", fail: "B", command: "go run ./harness B"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			m, root := open(t, c.split, c.fail)
+			r, failure := m.MeasureListed(t.Context(), port.Request{Sources: []string{filepath.Join(root, "main.go")}, Scope: port.OwnTests}, tests(root))
+			failed, ok := failure.(port.TestsFailed)
+			if !ok || r != nil {
+				t.Fatalf("failed listed run: report %v, failure %T %v; want TestsFailed alone", r, failure, failure)
+			}
+			if failed.Command != c.command || failed.ExitCode != 1 || failed.Reason == "" {
+				t.Fatalf("failed listed run = %+v; want %q, exit code 1 and a reason", failed, c.command)
 			}
 		})
 	}
@@ -108,6 +132,7 @@ const ListedHarness = `package main
 import("fmt";"os";"os/exec";"path/filepath")
 func main(){
  id:=os.Args[1]
+ if os.Getenv("T90_FAIL")==id{os.Exit(1)}
  split:=os.Getenv("T90_SPLIT")=="true"
  whole:=os.Getenv("ITOS_CC_TEST_COVERDIR")
  if whole!="" && !split{return}

@@ -329,7 +329,13 @@ directory>/<test ID> to Node ones, or a JaCoCo destfile under <that
 directory>/<test ID>/ to JVMs, splits the coverage by test in one run;
 otherwise each test runs alone, every process it starts with a
 GOCOVERDIR, a coverage.py data file, a NODE_V8_COVERAGE and an
-ITOS_CC_JACOCO_DESTDIR of its own. A
+ITOS_CC_JACOCO_DESTDIR of its own. The run of every test sets
+ITOS_CC_TEST_COVERDIR without GOCOVERDIR: a harness builds its binary
+with -cover only when it gives the processes GOCOVERDIR, or gives each
+test's processes GOCOVERDIR=<that directory>/<test ID> itself; otherwise
+a -cover binary warns on stderr that it wrote no data. A coverage run
+that fails, of every test or of one alone, is tests.coverage-failed:
+nothing is judged and no snapshot is written. A
 mutant runs its file's own tests first and, only if it survives them, the
 listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
@@ -401,6 +407,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"mutation.baseline-failed  the tests fail before any mutant: file",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
+			"tests.coverage-failed     the listed tests' coverage run failed without any mutant: command, exit_code",
 			"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 			"since.bad-ref             --since names no commit: ref",
 			"since.no-git              --since outside a git repository",

@@ -37,8 +37,14 @@ type Measurement struct {
 	// Listed holds each test's measured report, independently of the request.
 	Listed       map[string]map[string]*coverage.Report
 	ListedFailed bool
+	// ListedExit is the exit code of the failed run of every listed test,
+	// 1 when it is 0.
+	ListedExit int
 	// ListedOutput is what the failed listed collection printed.
-	ListedOutput     string
+	ListedOutput string
+	// Failing is the selection of listed IDs that fails alone: one ID of
+	// it fails its own coverage run when the harness does not split.
+	Failing          []string
 	Split            bool
 	Metadata         []byte
 	ConversionExit   int
@@ -153,6 +159,9 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 	r := coverage.Merge(reports...)
 	if tests != nil {
 		tc, _, _ := m.listed(ctx, groups, tests)
+		if failure := m.listedFailure(groups, tests); failure != nil && ctx.Err() == nil {
+			return nil, failure
+		}
 		r.SetTests(tc)
 	}
 
@@ -160,6 +169,37 @@ func (m *Measurer) MeasureListed(ctx context.Context, req port.Request, tests *c
 		return nil, port.Cancelled{Cause: context.Cause(ctx)}
 	}
 	return r, nil
+}
+
+// listedFailure is the listed tests' coverage run that failed, as the real
+// measurer reports it: the run of every test whose declared collection
+// fails, with its declared exit code, else, when the harness does not
+// split, the first test that fails alone, with exit code 1; nil when none
+// does.
+func (m *Measurer) listedFailure(groups map[coverage.Unloaded][]string, tests *coverage.PerTest) port.Failure {
+	declared, split := false, false
+	for _, group := range orderedGroups(groups) {
+		d := m.Declarations[group]
+		declared, split = declared || d.Listed != nil, split || d.Split
+		if d.ListedFailed {
+			exit := d.ListedExit
+			if exit == 0 {
+				exit = 1
+			}
+			return port.TestsFailed{Command: tests.All, Reason: fmt.Sprintf("exit status %d", exit), ExitCode: exit}
+		}
+	}
+	if !declared || split || tests.Select == nil {
+		return nil
+	}
+	for _, test := range tests.Tests {
+		for _, group := range orderedGroups(groups) {
+			if slices.Equal(m.Declarations[group].Failing, []string{test.ID}) {
+				return port.TestsFailed{Command: tests.Select([]string{test.ID}), Reason: "exit status 1", ExitCode: 1}
+			}
+		}
+	}
+	return nil
 }
 
 func (m *Measurer) badArtifact(root string, err error) *coverage.Report {

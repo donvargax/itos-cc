@@ -181,9 +181,11 @@ func TestListedConversionRetainsSiblingCollectorsAndActualArtifact(t *testing.T)
 	}
 	d.ListedFailed = true
 	m.Declarations[coverage.Unloaded{Language: "go", Dir: root}] = d
+	// A failed run of every listed test is the measurement's failure, as
+	// the real measurer's (slice-15), and gives no report.
 	r, failure = m.MeasureListed(t.Context(), port.Request{Sources: sources}, p)
-	if failure != nil || len(r.LineTests(pyFile, 3)) != 0 || !r.Has(goFile) {
-		t.Fatal("collection failure policy changed")
+	if failed, ok := failure.(port.TestsFailed); !ok || r != nil || failed.Command != "all" || failed.ExitCode != 1 {
+		t.Fatalf("collection failure: %v %T %v", r, failure, failure)
 	}
 }
 
@@ -249,11 +251,18 @@ func TestMemoryMutationMeasurerContract(t *testing.T) {
 }
 
 func TestMemoryListedContract(t *testing.T) {
-	ListedContract(t, func(t *testing.T, split bool) (coverage.MutationMeasurer, string) {
+	ListedContract(t, func(t *testing.T, split bool, fail string) (coverage.MutationMeasurer, string) {
 		m, root, _ := fixture(t, "go", map[string]string{"main.go": ListedMain}, Measurement{Report: "mode: set\n"})
 		file := filepath.Join(root, "main.go")
 		d := m.Declarations[coverage.Unloaded{Language: "go", Dir: root}]
 		d.Split = split
+		switch fail {
+		case "":
+		case "all":
+			d.ListedFailed = true
+		default:
+			d.Failing = []string{fail}
+		}
 		d.Listed = map[string]map[string]*coverage.Report{"go": {"A": coverage.FromLines("go", map[string][]coverage.Line{file: {{Line: 5, Covered: true}}}), "B": coverage.FromLines("go", map[string][]coverage.Line{file: {{Line: 7, Covered: true}}})}}
 		m.Declarations[coverage.Unloaded{Language: "go", Dir: root}] = d
 		return m, root
