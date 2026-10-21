@@ -5245,3 +5245,22 @@ items:
       the command as it ran, with --data-file and --source paths under .metrics/coverage/run-*, a
       folder removed once the run ends, which makes the message long and its paths dangling. Found
       by slice-16.
+  - id: features-adjacency-flutter-rules
+    title: The scenarios' declared import adjacency follows discovery's Flutter rules
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      features/imports.go's declareAdjacency declares every .dart file outside hidden and unwalked
+      folders as a node of the in-process Reach's adjacency, but discovery has left out generated
+      Dart (lib/user.g.dart and the other slice-30 rules) and a Flutter app's platform folders since
+      slice-30. The fake Reach then refuses the run, exit 100: declared import node lib/user.g.dart
+      is outside the requested inventory. So no in-process scenario can hold generated Dart, and
+      MUT-273's Flutter app rows, whose app holds lib/user.g.dart, wait @wip in a block of their own
+      (slice-36). walked, or declareAdjacency, should leave out what discovery leaves out: project's
+      FlutterPlatformDir (exported by slice-36) and a generated-Dart rule project would export the
+      same way. It is the harness's, a shared path, so slice-36 did not change it. Once it lands,
+      the @wip block's rows join MUT-273's live Examples.
+    refs: [slice-36]
