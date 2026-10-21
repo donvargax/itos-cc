@@ -2233,8 +2233,9 @@ Feature: Mutation testing
         | typescript | a helper module under __tests__/ |
         | kotlin     | a helper class in src/test       |
 
-      # slice-34: flutter test loads flutter_test_config.dart for every test
-      # file at and below its directory, as pytest loads conftest.py.
+      # slice-34: flutter test loads the nearest flutter_test_config.dart at
+      # or above a test file, up to its package root, as pytest loads
+      # conftest.py.
       @wip @slice-34
       Examples:
         | language   | support                                   |

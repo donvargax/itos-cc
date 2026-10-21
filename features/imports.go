@@ -9,7 +9,7 @@ import (
 
 // sourceExtensions are the extensions of the files itos-cc reads as a
 // language's sources or tests, as lang.Detect knows them.
-var sourceExtensions = []string{".go", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".py", ".kt", ".kts"}
+var sourceExtensions = []string{".go", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".py", ".kt", ".kts", ".dart"}
 
 // unwalked are the folders no selection walks into, beside any whose name
 // starts with a dot, as the selection's tree skips them.
