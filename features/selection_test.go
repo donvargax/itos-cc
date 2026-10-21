@@ -255,7 +255,7 @@ func TestDeferredScenariosLeaveOnlyTheirDriversSelection(t *testing.T) {
 // A deferral by the tag of an Examples block leaves out its rows alone, and
 // is told for a selection by its scenario's ID as well as by its own tag,
 // never left out silently. dry.feature's scenario, the fixture's other,
-// runs "skipped" too.
+// runs "skipped" too, before units.feature's rows, in Converted's order.
 func TestDeferredExamplesLeaveOnlyTheirRows(t *testing.T) {
 	t.Setenv("ITOS_CC_SKIP_FEATURES", "")
 	dir := featureSelectionFixture(t)
@@ -270,7 +270,7 @@ func TestDeferredExamplesLeaveOnlyTheirRows(t *testing.T) {
 		pattern   string
 		ran, left []string
 	}{
-		{"", []string{"active", "skipped"}, []string{"@T-90"}},
+		{"", []string{"skipped", "active"}, []string{"@T-90"}},
 		{"^@ID-UNIT-91$", []string{"active"}, []string{"@T-90"}},
 		{"^@T-90$", nil, []string{"@T-90"}},
 		{"^@ID-DRY-90$", []string{"skipped"}, nil},
