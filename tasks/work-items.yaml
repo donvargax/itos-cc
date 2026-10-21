@@ -3966,7 +3966,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [T-146]
+    depends_on: []
     kind: task
   - id: slices-crap
     title: Move crap into internal/slices/crap, its coverage command off mutation's executor
