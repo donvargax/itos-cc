@@ -5175,4 +5175,11 @@ items:
       them could change. slice-36's MUT-273 shows it, its strict evidence fresh beside the stale
       results; its But step judges the evidence alone. The importers an outcome records could leave
       out what DartTests leaves out, as its run does.
+
+      Coordinator, 2026-10-21: queue early, before D11. slice-36 narrowed MUT-273's But step (a
+      change to integration_test/app_test.dart alone) to check only that no strict coverage finding
+      appears, no longer that the check exits 0, because reach counts integration_test/ files among
+      a Dart file's importers and so reports mutation.stale for a test flutter test never runs
+      (q-76). When this lands, restore that step's exit-0 check in the same feat, so the scenario
+      holds the whole behaviour again.
     refs: [slice-36]
