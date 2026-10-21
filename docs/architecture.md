@@ -34,12 +34,15 @@ selection `Tree` and parses it with `internal/lang`, and records what was found 
 snapshot `Store`, declaring its command and the ports it needs for cmd to assemble, as `units`
 does.
 
-The test-structure domain, `internal/teststructure`, measures test code: which examples are too
-large, branch, mock heavily, assert too little or too much, or repeat each other, and what an
-assistant may do about each file. It takes files `internal/lang` has parsed, with the names its
+The `scrap` slice, `internal/slices/scrap`, the third under `internal/slices`, measures test
+code through its own domain, `internal/slices/scrap/domain`: which examples are too large,
+branch, mock heavily, assert too little or too much, or repeat each other, and what an assistant
+may do about each file. The domain takes files `internal/lang` has parsed, with the names its
 caller gives them, and merges a run's reports into the last snapshot's; it reads nothing, so it
-has no port. The `scrap` slice, `internal/scrap`, parses each test file with the selection
-domain's `Parse`, as `dry` does, and reads and records its snapshot through the snapshot `Store`.
+has no port. The slice parses each test file with the selection domain's `Parse`, as `dry` does,
+and reads and records its snapshot through the snapshot `Store`, declaring its command and its
+ports as `dry` does; it selects only tests, which `itos-cc.yaml`'s `exclude` never leaves out,
+so it reads no settings.
 
 The coverage domain, `internal/coverage`, owns coverage reports and what they say: it parses
 LCOV, Go cover profiles and JaCoCo XML, matches the paths a report names to the sources, and

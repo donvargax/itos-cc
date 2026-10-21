@@ -100,12 +100,6 @@ a `context.Context` first (decision 30); pure logic takes none.
   skip...)` is the fingerprint set of the tree under a node of a parsed file, local names,
   field names and literals dropped, called names, operators and shape kept, each node hashed one
   and two levels deep, and `Jaccard(a, b)` the similarity of two such sorted sets.
-- `internal/teststructure` is the domain that measures the structure of test code (decision
-  37), named for what it is while the command keeps its name, `scrap`. `Analyze(f, name)`
-  takes a file `internal/lang` parsed and the name its caller gives it, and `History` merges a
-  run's reports into what the last snapshot recorded, keeping the files the run did not
-  measure. It reads nothing and has no port; its tests parse in memory through lang's fake.
-  It compares a test's examples by `internal/lang`'s `Fingerprint` and `Jaccard`.
 - `internal/changerisk` is the domain that scores functions by CRAP (decision 37), named for
   what it is while the command keeps its name, `crap`. `Analyze(f, name, report, measured)`
   takes a file `internal/lang` parsed, the name its caller gives it and a coverage `Report`;
@@ -290,13 +284,28 @@ a `context.Context` first (decision 30); pure logic takes none.
   and imports neither `project` nor any disk code, so it has no port; its tests parse in
   memory through lang's fake. The `domain` and `domain-io` rules hold it as they hold the
   shared domains, and `tools/bin/domain-coverage` measures it.
-- `internal/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, its `Handler`
-  holding the same four. `Handle` selects the test files, reads the last `scrap.json` through
-  the `Store`, going on without it when it is `Unreadable`, reads and parses each test file as
-  `dry` does, measures it with `internal/teststructure` under its `Name`, merges the run into
-  the last snapshot with the domain's `History` and records it, each file keyed from the root.
-  `Run` prints each file's report, and says on stderr, with `--json` too, when the last
-  snapshot was ignored or there was no test file to measure. It has no classifier.
+- `internal/slices/scrap` is the `scrap` command's slice (T-43), laid out as `dry`'s, and the
+  third under `internal/slices` (T-150). Its `Handler` holds the selection `Tree`, lang's
+  `Surroundings`, the snapshot `Store` and `Name`, with no `Exclude`: it selects only tests,
+  which itos-cc.yaml's `exclude` never leaves out. `Command` declares it and `Ports` names what
+  `NewHandler(ctx, p)` builds the handler over, `SelectionTree`, `LangSurroundings`,
+  `SnapshotStore` and `Rel`, as `dry` declares them, with no `SelectionExclusion`, so its
+  provider reads no settings and `scrap`, its `--json` and its help never read the file (CLI
+  rule 38). `NewHandler` cannot fail and keeps the `(Handler, error)` shape every slice's
+  constructor has. `Handle` selects the test files, reads the last `scrap.json` through the
+  `Store`, going on without it when it is `Unreadable`, reads and parses each test file as
+  `dry` does, measures it with its domain under its `Name`, merges the run into the last
+  snapshot with the domain's `History` and records it, each file keyed from the root. `Run`
+  prints each file's report, and says on stderr, with `--json` too, when the last snapshot
+  was ignored or there was no test file to measure. It has no classifier.
+- `internal/slices/scrap/domain` is the `scrap` slice's own domain (decision 37, ADR-0051),
+  measuring the structure of test code; it was `internal/teststructure`. `Analyze(f, name)`
+  takes a file `internal/lang` parsed and the name its caller gives it, and `History` merges a
+  run's reports into what the last snapshot recorded, keeping the files the run did not
+  measure. It compares a test's examples by `internal/lang`'s `Fingerprint` and `Jaccard`. It
+  reads nothing and has no port; its tests parse in memory through lang's fake. The `domain`
+  and `domain-io` rules hold it as they hold the shared domains, and
+  `tools/bin/domain-coverage` measures it.
 - `internal/crap` is the `crap` command's slice (T-67), laid out as `dry`'s, its `Handler`
   holding `dry`'s and the coverage domain's `Measurer`, `Coverage`. Its `CLI` takes the
   coverage flags crap always took: `--coverage-report` is the first cumulative flag, each a
@@ -403,8 +412,9 @@ context-as-argument a context after any other parameter, tests included.
 `.golangci.yml` holds these arrows with depguard:
 
 - `domain`: the domains, their ports and their tests import nothing of ours but the domains and
-  their port subpackages, and never kong. A slice's own domain, `internal/slices/dry/domain`, is
-  held as the others are, and left out of what a domain may import, since it is no shared one. `config` imports `internal/mutants`, whose `Config`
+  their port subpackages, and never kong. A slice's own domain, `internal/slices/dry/domain` and
+  `internal/slices/scrap/domain`, is held as the others are, and left out of what a domain may
+  import, since it is no shared one. `config` imports `internal/mutants`, whose `Config`
   it aliases and whose `SettingsReader` its `Reader` implements, and `internal/selection/port`,
   whose `SettingsReader` it implements too, never the reverse.
 - `domain-io`: the domain's own code does no I/O, neither `os` nor `net`. Its tests may read
