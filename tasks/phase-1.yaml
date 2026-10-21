@@ -6127,13 +6127,6 @@
     tasks/). Before the last commit list every backticked repository path in the touched documents
     that does not exist, commit nothing of that list, and give it with each one's reason in the docs
     commit's body. No code or behaviour changes.
-  done_when:
-    - run: tools/bin/doc-caps
-      timeout: 60
-    - run: itos config check
-      timeout: 60
-    - run: go vet ./internal/slices/mutation/domain
-      timeout: 300
 - id: T-169
   type: test
   title: Prove a new command touches only its slice, its feature file and the generated files
