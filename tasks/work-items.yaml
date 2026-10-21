@@ -4444,3 +4444,10 @@ items:
       outside tests (Mutations.Write uses SnapshotJSON inside the package; cmd's and graph's tests
       write fixtures with it). An adapter's exported surface is what cmd wires, so the test-only
       helpers could become unexported or move into a test helper, the byte tests unchanged.
+  - id: T-163
+    title: Resolve each language's imports through a resolver of its own in internal/imports
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

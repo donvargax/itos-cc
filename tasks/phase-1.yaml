@@ -5916,3 +5916,40 @@
       timeout: 900
     - run: tools/bin/doc-caps
       timeout: 60
+- id: T-163
+  type: refactor
+  title: Resolve each language's imports through a resolver of its own in internal/imports
+  why: >
+    T-86 (ADR-0051, R11, second half), after the engine's lift, so adding a language to import
+    resolution is a new resolver in internal/imports, never an edit to its callers or to switches
+    across it: Dart's reach (docs/dart/touchpoints.md) needs package:, relative, export and part
+    resolution and flutter_test_config.dart as a support file. Today each language is a case in
+    about six places: Module's Go and __init__.py rule, the index's switch, resolve's switch,
+    samePackage's and Of's Kotlin checks, Reach's Go one-hop branch and Python's conftests. Put them
+    behind an unexported language interface: facts(file, *lang.File) (what Of keeps beyond imports,
+    Kotlin's declared and used names), module(file) (the module from the root), index(root, files)
+    (a resolver over its own language's files in one Resolve call, with resolve(ctx, file, imp)
+    returning modules and external packages and unimported(file) returning modules used with no
+    import, Kotlin's same package; the TypeScript tsconfig cache stays scoped to one Resolve call),
+    oneHop() (Go's own package plus its importers) and support(tests) (the implicit support files a
+    test loads, today pytest's conftest.py up to its build root found by FindUp, else the root).
+    Each language in a file of its own (golang.go, python.go, typescript.go beside tsconfig.go,
+    kotlin.go), and languages.go holding the table keyed by the lang.Spec name as a literal, no init
+    registry; a language with no entry keeps today's default (its module is the file without its
+    extension, no index, nothing resolves, its tests reach transitively). Resolve, Reach and Of loop
+    over the table and name no language. No file moves and the public API (File, Of, Resolve and its
+    Resolution, Reach, TestsImporting) is unchanged, so graph, importgraph, cmd, the rules and
+    check_test.go are untouched; Dart's part of <name> form may later need module to see the index,
+    which Resolution.Module already absorbs, so nothing speculative is built. docs/go.md's
+    internal/imports bullet says a language is a resolver in a file of its own plus a line in
+    languages.go, and docs/dart/touchpoints.md's import-resolution rows name internal/imports'
+    files. Unchanged, as the engine's tests, graph's tests and importgraph's ReachContract hold:
+    every module id, edge and count, external package, reach list and its order, the tsconfig cache
+    per directory, cancellation; no runtime.GOOS anywhere.
+  done_when:
+    - run: go test -count=1 ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
+      timeout: 600
+    - run: go vet ./internal/imports/... ./graph/... ./internal/slices/mutation/adapters/importgraph/...
+      timeout: 300
+    - run: tools/bin/doc-caps
+      timeout: 60
