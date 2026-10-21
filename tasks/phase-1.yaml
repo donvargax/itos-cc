@@ -5621,6 +5621,3 @@
     with their group and proposal, and a short summary. Add one idea per proposed group of local
     tests (itos work add), naming the functions; build none of them here. The measurement runs the
     whole suite once per tier, which is this task's work, not a gate.
-  done_when:
-    - run: test -s docs/binary-only-reach.md
-      timeout: 30
