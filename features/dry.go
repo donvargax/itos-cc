@@ -62,10 +62,10 @@ func drySteps(sc *godog.ScenarioContext, w *world) {
 	})
 
 	// Two functions compared directly.
-	sc.Step(`^the (TypeScript|Go|Kotlin|Python) functions:$`, func(language string, text *godog.DocString) error {
+	sc.Step(`^the (TypeScript|Go|Kotlin|Python|Dart) functions:$`, func(language string, text *godog.DocString) error {
 		return d.writeFunctions(language, text.Content)
 	})
-	sc.Step(`^the (TypeScript|Go|Kotlin|Python) function "(.*)"$`, func(language, source string) error {
+	sc.Step(`^the (TypeScript|Go|Kotlin|Python|Dart) function "(.*)"$`, func(language, source string) error {
 		d.first = source
 		return d.writeFunctions(language, source)
 	})

@@ -39,9 +39,12 @@ func (s listedSite) String() string {
 var listedLine = regexp.MustCompile("^(\\S+):(\\d+):(\\d+) `([^`]+)` → (?:`([^`]*)`|\\(deleted\\)) in (.+)$")
 
 // listedSites are the sites stdout, mutation list's plain output, lists,
-// every line one.
+// every line one, and none when it printed nothing.
 func listedSites(stdout string) ([]listedSite, error) {
 	var sites []listedSite
+	if strings.TrimSpace(stdout) == "" {
+		return nil, nil
+	}
 	for _, line := range outputLines(strings.ReplaceAll(stdout, "\r\n", "\n")) {
 		match := listedLine.FindStringSubmatch(line)
 		if match == nil {
@@ -125,11 +128,12 @@ type span struct {
 	line, from, to int
 }
 
-// The pieces of a TypeScript source that are no code of a function, as
-// MUT-01's file writes each.
+// The pieces of a TypeScript or Dart source that are no code of a
+// function, as MUT-01's and MUT-262's files write each: Dart's strings
+// are single-quoted.
 var (
 	commentText  = regexp.MustCompile(`//(.*)`)
-	stringText   = regexp.MustCompile(`"[^"]*"`)
+	stringText   = regexp.MustCompile(`"[^"]*"|'[^']*'`)
 	typeArgument = regexp.MustCompile(`\w(<[\w, ]+>)`)
 	// wouldBeSite is a text that would be a site in a function's code: a
 	// comparison, a logical or arithmetic operator, a 0 or 1, or a boolean;
