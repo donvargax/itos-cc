@@ -6102,3 +6102,44 @@
       timeout: 120
     - run: tools/bin/doc-caps
       timeout: 60
+- id: T-168
+  type: docs
+  title: Mark T-86's inventory historical and refresh the paths the slice moves left in the docs
+  why: >
+    T-86 (ADR-0051, slices-close (4)); folds in mutation-doc-adapters and dart-touchpoints-paths.
+    docs/vertical-slices-inventory.md is the read-only survey of 2f63821 the slice tasks were
+    planned from; every package it names has moved (T-145..T-161), graph/tests.go became
+    internal/imports (T-162), config/exceptions.go the slice's exceptions adapter, and its line
+    numbers are 2f63821's. Rewriting a survey's lines would claim a survey nobody made, so mark it
+    historical: a banner under its first comment (paths and lines as of 2f63821; ADR-0051 settled
+    section 7; today's layout is docs/go.md's); a last section "Where the moves put each package",
+    one row per moved path with old path, new path, task and move commit (35e8ebc units, 7e5a123
+    fingerprints into lang, 4a178c7 dry, e5c7de6 scrap, 3d7fa57 processes, 5fbd27b crap, ddc6c18
+    version, 6ceb923 mutation, 1f3c18f mutants into the domain, 3ce51a8 testtools and testinputs,
+    2f7d4aa worktrees, githistory, importgraph and freshenv, ba727b6 snapshots, exceptions and
+    sources, 98e3788 imports); and section 6's R1..R14 mapped to the work that did each (R1 T-143,
+    R2 T-144, R3 T-145, R4 T-146, R5 T-148, R6 T-150, R7 T-147, R8 T-151 and T-152, R9 T-155, R10
+    T-156..T-161 with its (e) settled by ADR-0051, R11 T-162 and T-163, R12 T-164, R13 T-165, R14
+    slices-close's tasks). docs/vertical-slices-proposal.md's status line says it was evaluated in
+    T-86 and settled by ADR-0051, its paths illustrative; docs/binary-only-reach.md gains one line
+    saying its paths are f88068c's, pointing to the move table, none rewritten. Refresh the live
+    documents: docs/dart/touchpoints.md's internal/mutants paths and other pre-ADR-0051 ones become
+    today's files with their lines read again, rows naming files Dart will add kept, T-165's markers
+    rows left to it if it has not landed; features/README.md's cmd/itos-cc/snapshots_root_test.go,
+    which no longer exists (find what holds its check with git log -S, or say it went); every
+    backticked path in README.md, docs/go.md, docs/architecture.md and features/README.md that names
+    no tracked file is a deliberate "it was" mention or corrected.
+    internal/slices/mutation/domain/doc.go still says the snapshot codecs live in metricsdir and
+    source annotation I/O in workdir, its adapter list stopping at testtools, testinputs and
+    importgraph: name the slice's nine adapters under internal/slices/mutation/adapters as
+    docs/go.md does, in a refactor commit of its own (docs commits touch only Markdown, docs/ and
+    tasks/). Before the last commit list every backticked repository path in the touched documents
+    that does not exist, commit nothing of that list, and give it with each one's reason in the docs
+    commit's body. No code or behaviour changes.
+  done_when:
+    - run: tools/bin/doc-caps
+      timeout: 60
+    - run: itos config check
+      timeout: 60
+    - run: go vet ./internal/slices/mutation/domain
+      timeout: 300
