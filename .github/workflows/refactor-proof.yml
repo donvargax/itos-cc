@@ -28,9 +28,15 @@ permissions:
 # ITOS_CC_FEATURES_BINARY_DRIVER: the binary driver, TestFeatures, runs only
 # where it is set (decision 52, T-153); ITOS_CC_FEATURES_BINARY, which the
 # suite job names, opts in as well.
+# STAMP stamps the version in both places a build of either side reads it:
+# the baseline reads main.version, which T-155 deleted, and the refactored
+# binary reads internal/version's stamp and commit, which the baseline never
+# links. The linker ignores an -X naming a symbol a binary lacks, so every
+# build here, old or new, says 1.2.3-features (T-166).
 env:
   ITOS_CC_FEATURES_BINARY_DRIVER: "1"
   STAMP: >-
+    -X main.version=1.2.3-features
     -X github.com/donvargax/itos-cc/internal/version.stamp=1.2.3-features
     -X github.com/donvargax/itos-cc/internal/version.commit=0123456789abcdef0123456789abcdef01234567
 

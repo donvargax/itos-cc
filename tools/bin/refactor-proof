@@ -40,7 +40,10 @@
 #      written <clock> and its "Duration" line's shares of that time
 #      written (<shares>);
 #   3. the version string: none, since both binaries are stamped with the
-#      same version and commit by the caller (refactor-proof.yml's build).
+#      same version and commit by the caller (refactor-proof.yml's build),
+#      in both symbols: main.version, which the baseline reads, and
+#      internal/version's stamp and commit, which the refactored binary
+#      reads; each binary's linker ignores the one it lacks (T-166).
 #
 # A case line, its fields split on " | ":
 #   ID | FIXTURE | CWD | CAPTURE | STEPS [| NOTE]
