@@ -3992,8 +3992,8 @@ items:
   - id: T-164
     title: Generate the stepped feature files and their step registration from a declaration beside each file of steps
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-163]
     kind: task
   - id: slices-close
