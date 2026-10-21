@@ -4465,3 +4465,16 @@ items:
       language also edits porttest/reach.go's per-language rules and features/imports.go's
       sourceExtensions. Reading through lang's Surroundings port plus a tsconfig reader would let
       the in-memory scenarios run the real resolver, so MUT-215..219 check it locally (decision 52).
+  - id: mutation-doc-adapters
+    title: Name the mutation slice's own adapters in its domain's package comment
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      internal/slices/mutation/domain/doc.go still says the snapshot codecs live in metricsdir and
+      source annotation I/O in workdir, which T-161 moved to the slice's snapshots and sources
+      adapters, and its list of concrete adapters stops at testtools, testinputs and importgraph.
+      T-162 touched only the importgraph sentence. Rewrite the comment to name the slice's adapters
+      under internal/slices/mutation/adapters as docs/go.md does.
