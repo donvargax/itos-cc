@@ -5592,3 +5592,35 @@
     docs/go.md's driver paragraphs and README's testing and CI text say where each driver runs and
     name decision 52. An agent working on a binary-only scenario sets the variable itself. Measure a
     local go test ./... -count=1 before and after and put both times in the commit body.
+- id: T-154
+  type: test
+  title: Measure what only the binary driver reaches, and name the local tests that would reach it
+  why: >
+    Decision 52 (q-73), after T-153: locally the scenarios run in process against the fakes alone,
+    so code only TestFeatures reaches is checked only in CI and CD. Measure it, on one tree, as two
+    module-wide Go profiles: the local tier, go test -count=1 -covermode=set -coverpkg=./... ./...
+    with ITOS_CC_FEATURES_BINARY_DRIVER and ITOS_CC_FEATURES_BINARY unset; and the full tier, the
+    same with ITOS_CC_FEATURES_BINARY_DRIVER=1 and GOCOVERDIR naming an empty folder, so
+    TestFeatures builds itos-cc with -cover (features/features_test.go's package comment) and what
+    its scenarios run is converted with go tool covdata textfmt and merged into the full profile.
+    Install the real tools CI pins where this machine lacks them only if that needs no system
+    package (testdata/tools/node with npm ci, testdata/tools/python's requirements in a virtualenv,
+    ITOS_CC_LANGUAGE_TOOLS=1 and ITOS_CC_NODE_MODULES as cd.yml's languages jobs set them); list
+    every scenario the binary driver skipped for a missing tool, since what it alone reaches is then
+    unmeasured here and stays CD's. The difference is the blocks the full tier covers and the local
+    tier does not, by package and function. Classify each function: main's wiring, signal and
+    interrupt to exit code paths, build stamping, a real-tool adapter (coverage runners, toolchain
+    probes, collectors), worker copies and real folders, git (check-ignore), or other. For each
+    group say whether a local adapter or contract test could reach it cheaply (seconds, no real
+    Python, Node, Gradle or Maven run), naming the test and where it would live under decisions 44
+    and 49 (adapter and contract tests, never a fake standing in for the real tool a scenario
+    checks), or that it stays CD's and why. Also try UNIT-06 in process: its binary-only reason
+    (crap and mutation run still hand-parsed) is stale since T-100 and T-152; say whether it passes
+    there, without changing its tag. Write the result to docs/binary-only-reach.md: the commands and
+    environment, both totals, the skipped scenarios, a table of functions only the full tier reaches
+    with their group and proposal, and a short summary. Add one idea per proposed group of local
+    tests (itos work add), naming the functions; build none of them here. The measurement runs the
+    whole suite once per tier, which is this task's work, not a gate.
+  done_when:
+    - run: test -s docs/binary-only-reach.md
+      timeout: 30

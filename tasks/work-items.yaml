@@ -11,7 +11,7 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
-  - binary-only-reach
+  - T-154
   - slices-version
   - slices-mutation
   - slices-import-engine
@@ -4119,21 +4119,13 @@ items:
     status: done
     depends_on: []
     kind: task
-  - id: binary-only-reach
-    title: Measure what only the binary-only scenarios reach, and test it locally where cheap
+  - id: T-154
+    title: Measure what only the binary driver reaches, and name the local tests that would reach it
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      Decision 52, after binary-driver-opt-in. Coverage of the local tier (unit, contract and
-      in-process tests) against CD's full run lists the lines only TestFeatures reaches. Sort them:
-      main's wiring, signal-to-exit-code paths, build stamping, real-tool adapters (coverage
-      runners, toolchain probes, worker copies, git check-ignore). For each, an adapter or contract
-      test that runs locally where it is cheap, else accepted as CD's; never a fake standing in for
-      the real tool a scenario checks. UNIT-06's binary-only reason (crap and mutation run still
-      hand-parsed) is stale since T-100 and T-152: check it can run in process.
+    kind: task
   - id: step-strictness-opt-in
     title: Make step-strictness opt into the binary driver
     phase: 1
