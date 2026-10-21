@@ -13,7 +13,6 @@ import (
 
 	"github.com/donvargax/itos-cc/config"
 	"github.com/donvargax/itos-cc/internal/lang"
-	"github.com/donvargax/itos-cc/internal/metricsdir"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 	"github.com/donvargax/itos-cc/metrics"
 	"github.com/donvargax/itos-cc/project"
@@ -290,7 +289,7 @@ func (b *Builder) parseTest(ctx context.Context, root, path string) (*fileInfo, 
 // its file changed since the last build. Its path is marked live.
 func (b *Builder) snapshot(ctx context.Context, top, path string, live map[string]bool) (*mutants.Snapshot, error) {
 	rel := project.FromRootOf(top, path)
-	at := filepath.Join(metrics.DirOf(top), metricsdir.MutationName(rel))
+	at := filepath.Join(metrics.DirOf(top), mutationName(rel))
 	live[at] = true
 	st := stamp(at)
 	if c, ok := b.snapshots[at]; ok && c.stamp == st {
@@ -409,6 +408,12 @@ func crapScore(cc int, coverage float64) float64 {
 	c, u := float64(cc), 1-coverage
 	return c*c*(u*u*u) + c
 }
+
+// mutationName is the name under .metrics/ of the mutation snapshot of the
+// source file whose key is key, its path from the project root, as the
+// mutation slice's snapshots adapter names it (MutationName). graph keeps
+// this copy of it rather than import the slice's adapter (ADR-0051).
+func mutationName(key string) string { return filepath.Join("mutate", filepath.ToSlash(key)+".json") }
 
 func loadOverlay(root string) overlay {
 	o := overlay{coverage: newKeyed[float64](), duplicates: map[string]int{}}

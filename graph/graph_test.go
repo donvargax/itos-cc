@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/donvargax/itos-cc/internal/metricsdir"
 )
 
 func build(t *testing.T) *Graph {
@@ -120,6 +122,17 @@ func TestCrapScoreIsTheCRAPFormula(t *testing.T) {
 	}{{4, 0.5, 6}, {3, 0, 12}, {5, 1, 5}} {
 		if got := crapScore(c.cc, c.coverage); math.Abs(got-c.want) > 1e-9 {
 			t.Errorf("crapScore(%d, %v) = %v, want %v", c.cc, c.coverage, got, c.want)
+		}
+	}
+}
+
+// graph's copy of the mutation snapshot's name names the file the mutation
+// slice's snapshots adapter reads and writes, for a key of a nested source,
+// of one at the root and of one whose path is absolute.
+func TestMutationNameIsTheSnapshotsAdapters(t *testing.T) {
+	for _, key := range []string{"src/board.go", "board.go", "/work/board.go", "D:/work/board.go"} {
+		if got, want := mutationName(key), metricsdir.MutationName(key); got != want {
+			t.Errorf("mutationName(%q) = %q, want %q", key, got, want)
 		}
 	}
 }
