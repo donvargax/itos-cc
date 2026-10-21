@@ -410,12 +410,12 @@ func (l *languageMutation) mutateDartCommands() (map[string][]mutateDartCommand,
 }
 
 // mutateDartConnection is a connection strace saw: the address it went to.
-var mutateDartConnection = regexp.MustCompile(`(?m)^(\d+) connect\(\d+, \{sa_family=AF_INET6?, .*?(?:inet_addr\("([^"]+)"\)|inet_pton\(AF_INET6, "([^"]+)")`)
+var mutateDartConnection = regexp.MustCompile(`(?m)^(\d+)\s+connect\(\d+, \{sa_family=AF_INET6?, .*?(?:inet_addr\("([^"]+)"\)|inet_pton\(AF_INET6, "([^"]+)")`)
 
 // mutateDartStarted are the threads and processes strace saw started, and
 // the programs they ran: a clone's or fork's new thread or process by its
 // parent, and an execve's program.
-var mutateDartStarted = regexp.MustCompile(`(?m)^(\d+) (?:execve\("[^"]+", \[(.*?)\].*= 0$|.*(?:clone3?|fork|vfork)(?:\(| resumed>).*= (\d+)$)`)
+var mutateDartStarted = regexp.MustCompile(`(?m)^(\d+)\s+(?:execve\("[^"]+", \[(.*?)\].*= 0$|.*(?:clone3?|fork|vfork)(?:\(| resumed>).*= (\d+)$)`)
 
 // mutateDartProgramOf names the command the thread tid of strace's trace
 // ran, and the commands that started it: the last each one executed.
