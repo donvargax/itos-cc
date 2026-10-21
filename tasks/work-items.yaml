@@ -4397,3 +4397,20 @@ items:
       value or a wrapper closure would pass every local test and hand the handler a function that
       calls nil. A table case in cmd beside mutation_exception_binding_test.go's missing bindings,
       one for each, would hold the adapters to it.
+  - id: depguard-nested-deny
+    title: Refuse a depguard deny list whose entry prefixes another
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-159 found that depguard looks a deny up as the one entry sorting just before the import
+      (sort.Search over the sorted list), so a deny beside a shorter one it extends, such as
+      internal/slices/mutation/adapters beside the module-wide github.com/donvargax/itos-cc in
+      slice-packages, hides the shorter one from every import sorting after the longer:
+      internal/version, internal/workdir, internal/worktrees, metrics and project went through. The
+      architecture fixtures caught it only because they list those imports.
+      tools/bin/architecture-check could refuse any rule in .golangci.yml whose deny list holds an
+      entry that is a prefix of another, naming both, so the trap is caught where the rule is
+      written rather than by whichever fixtures happen to exist.
