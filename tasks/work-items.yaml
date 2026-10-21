@@ -5227,3 +5227,15 @@ items:
       with --json never does, so a scenario that runs with --json, as MUT-268 and MUT-269 do, cannot
       use the problem steps and needs its own lookup (features/mutate_listed_coverage_failed.go's
       problemOf). Found by slice-15.
+  - id: run-failure-json-files
+    title: Settle whether a failed mutation run's --json holds files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-15's decision 5 says tests.list-failed and tests.coverage-failed print ok false with no
+      files, but mutation run's UI emits files: [] with every failure it reports (run_ui.go starts
+      from runResult{Files: []runFile{}}), as tests.list-failed always has. Either the decision's
+      words or the output should change. Found by slice-15.
