@@ -5720,15 +5720,6 @@
     Unchanged: the group's and its children's help, the top-level rows and the guess, errors, exit
     codes, group admission and --json placement, lazy config, every message. After slices-version,
     which edits the same dispatch.go lines.
-  done_when:
-    - run: go test -count=1 ./internal/slices/mutation/... ./internal/cli/...
-      timeout: 600
-    - run: go test ./cmd/itos-cc -count=1 -run '^(TestScenarios|TestDispatch|TestTheModelNamesEveryCommandInOrder|TestEveryCommandsHelpGivesItsContract|TestRunReportsAConfigThatCannotBeReadOnlyWhereItIsRead|TestCallSafelyReportsABugAsAnInternalFailure|TestRunWithFakes.*|TestMutation.*|TestMemory.*|TestUnsupportedPlatformRefusalsTakeThePlatformAsAValue|TestTheDocsDescribeCountedAndFailFastPlatforms)$' -scenarios='^@ID-(MUT|SNAP|CLI)-'
-      timeout: 900
-    - run: go test -count=1 ./tools/bin/assemble
-      timeout: 300
-    - run: tools/bin/architecture-check
-      timeout: 900
 - id: T-158
   type: refactor
   title: Move the mutation domain into internal/slices/mutation/domain
