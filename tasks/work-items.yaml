@@ -5254,3 +5254,18 @@ items:
       none at or below it. counted-languages says the judged configuration comes from the frozen
       commit. Decide whether lookups that start in the export stop at its root, and where that
       boundary lives (the Surroundings the export is read through, or freshenv).
+  - id: worker-restore-coarse-mtime
+    title: A same-size rewrite inside one timestamp tick escapes a worker's restore
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-13's restore finds a changed file by rsync's quick check, size, mode and modification
+      time, as decided. A test that rewrites a file of the copy with the same size within one tick
+      of the file system's timestamps (two seconds on FAT, one on HFS+, a few milliseconds of
+      Linux's coarse clock) leaves a change the restore cannot see. No run seen so far does: the
+      copy, Ready and a test tool's start come between. Worth a scenario only if one shows up; a
+      content hash of small files would close it at a cost per run.
+    refs: ["#35"]
