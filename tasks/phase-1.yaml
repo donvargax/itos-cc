@@ -855,7 +855,9 @@
     re-scoping the nightly.
   done_when:
     - run: "test \"$(gh api repos/donvargax/itos-cc/actions/workflows/nightly.yml --jq .state)\" = active"
+      after: push
     - run: "test -n \"$(git log --since=2026-10-12 --format=%s -- .metrics/mutate | grep -x 'chore: record the nightly mutation results')\""
+      after: push
 - id: T-47
   type: refactor
   title: Every command runs under the one context main makes
