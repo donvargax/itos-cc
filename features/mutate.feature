@@ -601,9 +601,9 @@ Feature: Mutation testing
     # with no memory cap the mutant is killed by its own test.
     # --memory-factor 1 keeps the cap near the baseline's peak plus
     # 256 MiB, well under 2 GiB, whatever the toolchain's own peak.
-    # Before slice-24, on Linux the mutant is "killed", failing at the
-    # Then; on macOS and Windows it is killed too and nothing is said,
-    # failing at the But's stderr.
+    # Before slice-24 the run refuses --memory-factor as flags.unknown,
+    # exit 80, failing at the first Then on every system; without the flag
+    # the hoarder was "killed" by its own test, and nothing was said.
     @slice-24 @ID-MUT-301
     Scenario: A mutant whose tests hold ever more memory is killed over its memory cap where memory is measured
       Given a Go package whose test holds little memory with nothing mutated, where one mutant makes it hold ever more, up to 2 GiB, before it fails
