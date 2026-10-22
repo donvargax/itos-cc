@@ -239,7 +239,7 @@ a `context.Context` first (decision 30); pure logic takes none.
   `TestsImporting`. It keeps its own `stopped`, `rel` and `appendUnique` (ADR-0051's small
   duplication) and uses the `coverage` runner's `PythonTestFile`, so pytest's naming rule has
   one copy. A language is a resolver in a file of its own (`golang.go`, `python.go`,
-  `typescript.go` beside `tsconfig.go`, `kotlin.go`) plus a line in `languages.go`'s table,
+  `typescript.go` beside `tsconfig.go`, `kotlin.go`, `dart.go`) plus a line in `languages.go`'s table,
   keyed by its `lang.Spec` name (T-163): the unexported `language` says what `Of` keeps of a
   file beyond its imports (`facts`), its `module`, an `index` over its own files of one
   `Resolve` call whose `resolve` names an import's modules or external package and whose

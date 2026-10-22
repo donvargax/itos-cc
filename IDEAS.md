@@ -41,8 +41,18 @@ Things we noted but did not build. Rough, unordered within each group.
   function instead of the file's whole related suite.
 - **Mutation grade weighting.** A module whose few mutated functions all
   pass still looks perfect; weigh the grade by how much was mutated.
-- **More languages.** Java and Rust are one file in `lang/` each, plus
-  scrap rules and a coverage plan. Bob's tools also cover Clojure.
+- **More languages.** Java and Rust would each take the path Dart took: a
+  file in `internal/lang/`, scrap rules, a coverage plan, an import resolver
+  and the mutation slice's commands and evidence, which
+  [docs/architecture.md](docs/architecture.md)'s "Adding a language" lists.
+  Bob's tools also cover Clojure.
+- **Dart beyond Flutter's unit and widget tests.** Ideas in the registry
+  (`itos work show <id>`): `dart-pure-packages` (a pure Dart package, left
+  unmeasured today, measured with `dart test`), `dart-per-test-coverage`
+  (coverage per test name, not only per test file),
+  `dart-integration-tests` (`integration_test/` run on a device) and
+  `dart-strict-inventory` (strict lines for a library no test loads, which
+  fails closed today).
 - **kotest string specs.** `"name" { … }` examples are not recognized yet;
   `test("…")`, `it`, `should` are.
 - **EDN output** for Bob's uml-viewer, if anyone wants to feed it our
@@ -132,6 +142,8 @@ reads `.metrics/`. Only itos's config wires them together.
   the worker copy (`PYTHONPATH` is prepended), but this was not tried on a
   real editable install.
 - scrap's thresholds were tuned on two codebases (Bob's and this one).
+- Dart's real-tool scenarios run on Linux alone, in `cd.yml`'s `dart` job;
+  Flutter on macOS and Windows is unverified (the idea `dart-cd-other-os`).
 
 ## Release and packaging
 
@@ -148,8 +160,8 @@ reads `.metrics/`. Only itos's config wires them together.
 - **Kotlin grammar** is fwcd's, pinned to a commit because it has no tagged
   release with Go bindings. The tree-sitter-grammars one drops classes with
   several annotations and no constructor.
-- **Dart grammar** is UserNobody14's, the one maintained Dart grammar,
-  pinned to a commit because it has no tag or release. It is MIT (its
+- **Dart grammar.** Done (slice-28): UserNobody14's, the one maintained Dart
+  grammar, pinned to a commit because it has no tag or release. It is MIT (its
   package.json says ISC). Its go.mod requires smacker's go-tree-sitter for
   its own binding test, which puts smacker in our go.sum only; nothing
   compiles it.

@@ -83,10 +83,15 @@ driver: Go needs `go`; TypeScript `node` and a `node_modules` holding vitest and
 `@vitest/coverage-v8`, `ITOS_CC_NODE_MODULES`'s, else `testdata/tools/node`'s, else the
 viewer's, linked into the project; Python `python3` with pytest and coverage, linked into the
 project as `.venv/bin/python` where it keeps its own virtualenv (`Venv`); Kotlin needs Java and
-the fixture's existing Gradle or Maven (`Program`) and declares its measured JaCoCo XML; and a program the
+the fixture's existing Gradle or Maven (`Program`) and declares its measured JaCoCo XML; Dart needs
+`flutter` on the PATH, and resolves the fixture as its user would, `flutter pub get` from the pub
+cache first, with `.fvm/flutter_sdk` linked to that flutter's SDK where the fixture holds a
+`.fvmrc`; and a program the
 project's coverage runs besides, such as make (`Program`). A tool missing skips the scenario, or fails it under `ITOS_CC_LANGUAGE_TOOLS`, which `cd.yml`'s languages job, the one that installs the
 pinned tools, sets; any other CI job skips the TypeScript, Python and Kotlin ones, its runner's tools being
-whatever its image has. The in-process driver hands what was declared to the fake measurer a
+whatever its image has. Flutter is installed in `cd.yml`'s `dart` job alone, which sets
+`ITOS_CC_FLUTTER_TOOLS` beside `ITOS_CC_LANGUAGE_TOOLS`; every other CI job, the languages job
+included, skips the Dart ones. The in-process driver hands what was declared to the fake measurer a
 command measuring coverage is given, which writes on stderr what the command prints when it
 succeeds (`Output`, such as go test's `ok` line), as the real collectors pass a tool's output
 on. A Given that changes its project and runs again declares what the tools measure in it again,
@@ -96,7 +101,7 @@ A Given whose project's tests a run of itos-cc runs, mutation run's baseline and
 what they do (`Tests`): their language and the command itos-cc runs them with, what a failing
 baseline prints, the sites whose mutants survive or time out, every other mutant they run being
 killed, and how long a run of them takes. The binary driver checks their tools as `Coverage`
-does, the language's own (`go`, `node`, `python3`, `java`) and the program the command runs where
+does, the language's own (`go`, `node`, `python3`, `java`, `flutter`) and the program the command runs where
 the PATH would find it, pytest for a command running it, skipping or failing alike, skips tests
 said to take under 100 milliseconds on Windows, where their baseline takes several times that,
 and the real tests then decide every outcome; the in-process driver hands it to mutation's fake

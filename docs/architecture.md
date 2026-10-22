@@ -206,7 +206,8 @@ its own) and an engine. `docs/ownership.md` says which paths a slice task may to
 
 ### Adding a language
 
-Dart (Flutter) is the worked example; `docs/dart/touchpoints.md` surveys every touch point.
+Dart (Flutter) is the worked example; `docs/dart/touchpoints.md` surveyed every touch point
+before the work, and its status line says what changed since.
 
 1. **Grammar and units**, `internal/lang/dart.go`: `register(&Spec{…})` in `init` gives the
    extensions, the tree-sitter grammar (pinned in `go.mod`; grammars are cgo), how a namespace is
@@ -216,7 +217,8 @@ Dart (Flutter) is the worked example; `docs/dart/touchpoints.md` surveys every t
    with no call node.
 2. **Selection**, `project/project.go` (`pubspec.yaml` as a build manifest) and
    `project/flutter.go` (platform folders and generated Dart never walked), with the fake's copy in
-   `internal/selection/port/porttest/flutter.go`, which `TreeContract` keeps honest.
+   `internal/selection/port/porttest/flutter.go`, which `TreeContract` keeps honest. Its steps are
+   `features/selection_flutter.go`.
 3. **Coverage plan**, `coverage/dart.go` (`dartPlan`, `DartTests`, `FlutterFor`) and its marker
    and plan lines in `coverage/run.go`. Its LCOV reports go through `internal/coverage`'s
    existing parser.
@@ -226,11 +228,18 @@ Dart (Flutter) is the worked example; `docs/dart/touchpoints.md` surveys every t
 5. **Mutation toolchain**: `internal/slices/mutation/adapters/testtools/toolchain.go` finds
    `flutter`, `internal/slices/mutation/domain/command_policy.go` builds its command (`DartArgs`,
    `flutter test --no-pub`), `internal/slices/mutation/adapters/worktrees/dart.go` says what a
-   worker's copy holds.
-6. **Test structure**, where the language writes examples its own way: scrap's extractor,
-   `internal/slices/scrap/domain/extract.go`.
-7. **Scenarios** with the real tool: `features/coverage_dart.go`, `mutate_dart.go`,
-   `mutate_language_reach_dart.go`, run with a real Flutter by `cd.yml`'s `dart` job.
+   worker's copy holds, and `internal/slices/mutation/adapters/freshenv/dart.go` readies a counted
+   run's frozen export (`flutter pub get --offline --enforce-lockfile`).
+6. **Strict evidence**: `StrictLanguages` and the producers in
+   `internal/slices/mutation/domain/coverage.go`; in `internal/slices/mutation/adapters/testinputs/`,
+   the fingerprints (`DartCoverageInputs` in `line_coverage_inputs.go`), the refused scopes
+   (`line_coverage_scope.go`) and the suite root (`suite.go`); and the fakes' rows in
+   `internal/slices/mutation/domain/porttest/` (`fingerprints.go`, `scope.go`, `input_contract.go`).
+7. **Test structure**, where the language writes examples its own way: scrap's extractor,
+   `internal/slices/scrap/domain/extract.go`, and its assertions and loops in `measure.go`.
+8. **Scenarios**: `features/coverage_dart.go`, `mutate_dart.go`, `mutate_language_reach_dart.go`,
+   `mutate_strict_dart.go` and `mutate_dart_fresh.go`. Those that need the real tool run with a real
+   Flutter in `cd.yml`'s `dart` job, on Linux alone, which selects them by their slices' tags.
 
 ### Moving code into a slice
 

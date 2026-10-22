@@ -55,7 +55,7 @@ release instead: itos-cc is at 0.x.
 | Code | Meaning                                                                                |
 | ---- | -------------------------------------------------------------------------------------- |
 | 0    | Success.                                                                               |
-| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript or Kotlin line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
+| 1    | A check said no: a mutant survived, an uncovered mutant, executable Go coverage block or executable Python, TypeScript, Kotlin or Dart line with `--fail-uncovered`, missing or stale mutation/coverage evidence, an exception in `itos-cc.yaml` that no longer holds, a sampled mutant whose outcome differs from its cached one, a function is over `--threshold`, tests that measure nothing, a list command of `mutation.tests` that fails, the listed tests' coverage run that fails. |
 | 75   | A temporary failure: the same command can pass when run again unchanged.               |
 | 80   | A usage or config error: a bad flag, path, argument, or report, an `itos-cc.yaml` that cannot be read, a site to except that is no recorded survivor or is in an excluded source. |
 | 81   | An unknown command or subcommand.                                                      |
@@ -179,17 +179,25 @@ output of the commands it runs passes as it is.
 Rules 1 to 43 of itos's docs/CLI.md, as they apply to itos-cc.
 
 A snapshot's `tests` are the test files that reach its file. In TypeScript,
-Python and Kotlin those are the test files whose imports reach its module
-transitively (Kotlin's same-package references included), as `vitest
+Python, Kotlin and Dart those are the test files whose imports reach its module
+transitively (Kotlin's same-package references included, and Dart's
+`package:` and relative imports, exports, parts, every target of a
+conditional import, and a pub workspace's sibling members), as `vitest
 related` and `jest --findRelatedTests` select them; in Go, the test files of
 its package and of the packages that import it, one hop. A test reaches
 through the test-support files it imports too, files the language counts as
 test code that are not runnable tests (a Python helper under `tests/`, a
-TypeScript helper under `__tests__/`, a Kotlin helper in `src/test`): it
+TypeScript helper under `__tests__/`, a Kotlin helper in `src/test`, a Dart
+helper under `test/`): it
 reaches what they reach, transitively, and they are among the file's tests
 themselves. A Python test pytest runs, and a `conftest.py`, also reaches
 what every `conftest.py` in its directory and those above it, up to its
-build root, reaches. A snapshot recorded when a TypeScript, Python or Kotlin
+build root, reaches, and a Dart test file what the nearest
+`flutter_test_config.dart` in its folder or above it, up to its package,
+reaches. A Dart file's `tests` are only those its own tests run: the test
+files under its package's `test/` and the support files on their way, never
+those under `integration_test/` or `test_driver/`, so a change there makes
+nothing stale. A snapshot recorded when a TypeScript, Python or Kotlin
 file's tests were only those importing it directly, or before tests reached
 through support files, reads stale once if a test reaches the file through
 another module or a support file, and is re-run as any stale result is.
@@ -264,6 +272,18 @@ Python, a Kotlin outcome of scope `own` recorded before still reads fresh
 while its tests are unchanged, and `mutation sample` re-runs it with the
 narrowed tests.
 
+A Dart file's own tests, the scope `own`, are those of its `tests` under its
+package's `test/` named as `flutter test` finds test files, `*_test.dart`.
+`mutation run` runs them as `flutter test --no-pub <files>` in the package's
+directory, which has no fail-fast flag, and measures the coverage that
+decides which of the file's mutants run from them too, one coverage run per
+distinct set of them. The tests under `integration_test/` and
+`test_driver/` never run: they need a device. A Dart file none of whose
+`tests` is such a file runs no test: its mutants are `uncovered`, and its
+`"baseline"` is `"not-run"`. A worker resolves its copy of the package once
+with `flutter pub get --offline` before its first run. A Dart mutant that
+does not compile fails its tests and is `killed`, as a Go or Kotlin one is.
+
 A TypeScript file whose project has neither Vitest nor Jest installed runs
 its project's test script, `<pm> run test`, which nothing can narrow to the
 tests that reach the file: its own tests are the whole suite. `mutation run`
@@ -308,6 +328,21 @@ has mutants to judge. Kover's own agent is not named. Kotlin evidence
 recorded before this (its producer without
 `subprocesses=ITOS_CC_JACOCO_AGENT, jacococli report`) reads stale once.
 
+Dart coverage is `flutter --suppress-analytics --no-version-check test
+--no-pub --no-dds --coverage --coverage-path=<report>`, over the own tests'
+files, or with no path for `--all-tests` and for `crap`, whose Dart run is
+always the whole suite of `test/`. Its `flutter` is the SDK FVM links at
+`.fvm/flutter_sdk` beside the nearest `.fvmrc`, else the one on `PATH`. It
+measures only a Flutter app or package, whose `pubspec.yaml` depends on the
+flutter SDK, once pub has resolved it (`.dart_tool/package_config.json`, or
+its workspace root's for a pub workspace's member); a pure Dart package, one
+not resolved, and a missing `flutter` are left unmeasured, the message
+naming `--coverage-command`. Each pub workspace member is measured in its
+own directory. Coverage is by line, a library marked
+`// coverage:ignore-file` has nothing to cover, and the processes a test
+starts are not measured: Dart has no `"integration"` coverage, and listed
+tests (`mutation.tests`) reach no Dart line, as no collector measures it.
+
 For Go outcomes recorded with `--all-tests` or `--test-command`, freshness
 also depends on every `_test.go` file beneath the source's nearest `go.mod`
 (including build-tagged tests and excluding nested modules) and on the files
@@ -315,24 +350,33 @@ matched by project-root `mutation.tests.support` globs. Feature files and
 other custom-command inputs must be named by those globs. Check, sample, run,
 and graph use the recorded scope's evidence; freshness checks run no tests or
 list command. Older Go broad-scope outcomes without evidence are stale.
+A Dart outcome recorded with `--all-tests` depends on the test files under
+its package's `test/` alone, those `flutter test` runs with no path, and
+one recorded with `--test-command` on every Dart test file beneath its
+nearest `pubspec.yaml`.
 
-Strict Go, Python, TypeScript and Kotlin coverage is independent of mutant
+Strict Go, Python, TypeScript, Kotlin and Dart coverage is independent of mutant
 outcomes. `--fail-uncovered` requires a complete per-function executable
 inventory from a successful built-in or listed measurement, including
 functions with no mutation sites: Go's positive-weight cover-profile blocks,
-the lines a Python or TypeScript LCOV report names executable (DA lines),
+the lines a Python, TypeScript or Dart LCOV report names executable (DA lines),
 and the lines of a Kotlin JaCoCo or Kover XML report with instructions, a
 line uncovered only when none of them ran (a partly executed line, such as
 one a test took one branch of, is covered; branches are out of scope), each
 from a function's body's first statement to its end, a Python `def` line or
 a TypeScript arrow function's declaration running at import, and a Kotlin
-declaration's line holding its default-argument bridge. A one-line Kotlin
+declaration's line holding its default-argument bridge. A Dart function's
+lines run from its signature line, which the Dart VM counts at each call,
+and a Dart line any of whose code ran is covered. A one-line Kotlin
 expression body shares that line. Python's report is coverage.py's;
 TypeScript's is Vitest's v8 or Jest's over the related tests, or with
 `--all-tests` the whole suite, or c8's over the test script of a package
 with neither; Kotlin's is Gradle's `jacocoTestReport` or `koverXmlReport`,
 or Maven's `jacoco:report`, over the module's test classes that reach the
-file, or with `--all-tests` or `--test-command` the module's whole suite. A
+file, or with `--all-tests` or `--test-command` the module's whole suite;
+Dart's is `flutter test --coverage`'s over the test files under the
+package's `test/` that reach the file, or with `--all-tests` or
+`--test-command` the whole suite of `test/`. A
 Python file no test reaches has its executable lines listed by coverage.py's
 own analysis (`Coverage.analysis2`), a TypeScript file no test loads by
 Vitest's v8 provider run with no test (`vitest run <no test>
@@ -340,8 +384,9 @@ Vitest's v8 provider run with no test (`vitest run <no test>
 reaches by the report of another file of its module, which lists every
 class the module compiled, all of them uncovered; under Jest or c8 such a
 file has no evidence, nor does a Kotlin file whose module measured no other
-file (no report task writes a report without running a test), nor a file a
-project's own `coverage` script measured, and is
+file (no report task writes a report without running a test), nor a Dart
+library no test loads, which `flutter test`'s report never names, nor a
+file a project's own `coverage` script measured, and is
 `mutation.coverage-missing`. Empty or comment-only Go and Kotlin bodies,
 and Python or TypeScript functions with no executable body line, have no
 executable obligation. Cached checks report missing or stale coverage
@@ -349,9 +394,18 @@ evidence without running tests, coverage or list commands. A strict run
 measures again only the languages whose evidence is not fresh or whose
 mutants need coverage. Strict runs reject `--coverage-report`,
 `--use-existing-coverage`, and `--coverage-command` in every language;
-non-strict and counted (`--count`) Python, TypeScript and Kotlin behavior is
-unchanged. Kotlin evidence is bound to its whole build root, every module
-of a multi-module build included. Python, TypeScript and Kotlin evidence is
+non-strict behavior is unchanged, and a counted (`--count`) run still
+proves only Go's lines strictly, not Python, TypeScript, Kotlin or Dart
+lines. Kotlin evidence is bound to its whole build root, every module
+of a multi-module build included. Dart evidence is bound to its package,
+the nearest `pubspec.yaml`, or for a pub workspace's member to the whole
+workspace: every Dart file there, generated Dart included, each
+`pubspec.yaml`, `pubspec_overrides.yaml` and `dart_test.yaml`, the root's
+`pubspec.lock`, the nearest `.fvmrc`, the `flutter` that runs,
+`FLUTTER_ROOT` and `PUB_CACHE`, leaving out hidden folders, `build/`,
+`coverage/`, `integration_test/` and `test_driver/` beside a
+`pubspec.yaml`, a Flutter app's platform folders and a nested package the
+workspace does not list. Python, TypeScript, Kotlin and Dart evidence is
 written under a
 unit's `line_coverage` key, with its `"language"`; Go evidence stays under
 `go_coverage`. Go evidence is bound to its nearest module's `go.mod` and
@@ -370,8 +424,12 @@ and `file:` or `link:` dependencies outside the package root; Python path
 or editable dependencies outside the build root (`pyproject.toml` path
 keys and `file:` URLs, `requirements*.txt` editable or path lines, `.pth`
 paths and `__editable__` finder mappings in the root's `.venv` or `venv`);
-and Gradle `includeBuild`, Maven `<module>`, `<subproject>` and parent
-`<relativePath>` outside the build root. A target inside the root counts
+Gradle `includeBuild`, Maven `<module>`, `<subproject>` and parent
+`<relativePath>` outside the build root; and pub path dependencies and
+overrides (`dependencies`, `dev_dependencies` and `dependency_overrides`
+in a `pubspec.yaml` or a `pubspec_overrides.yaml` beside one) outside the
+Dart root, the package or a member's whole workspace. Git and hosted pub
+dependencies are pinned by `pubspec.lock` and admitted. A target inside the root counts
 only through no symbolic link and no nested package or build root. They
 are read lexically from files beneath the project root; nothing outside it
 is read, listed or followed. The refusal
@@ -410,8 +468,8 @@ docstring is code, not a comment.
 `--fail-uncovered=functions`, the whole judged functions above.
 `--fail-uncovered=lines`, which needs `--since`, judges only where the range
 changed, in `mutation run`, counted runs, `--fail-fast` runs and
-`mutation check` alike: a Go block or a Python, TypeScript or Kotlin line
-counts when it overlaps a line the commits since the ref added or changed,
+`mutation check` alike: a Go block or a Python, TypeScript, Kotlin or Dart
+line counts when it overlaps a line the commits since the ref added or changed,
 the new side of a hunk of `git diff --unified=0 <ref>...HEAD`, a renamed
 file's under its new path; a pure deletion changes no line. An uncovered
 mutant fails (`mutation.uncovered`) only on such a line. A judged function
@@ -527,7 +585,7 @@ verdict and no exit code changes for it.
 | 32 | Error lines start `itos-cc:` and say what to do | Partly: an internal error prints Go's error text. |
 | 33 | Help and code agree on exit codes | Follows; tests check every command's help. |
 | 34, 35 | `ITOS_CC_` variables; flag, then environment, then config | itos-cc reads no variables of its own; it sets `ITOS_CC_TEST_COVERDIR` for a project's listed tests, coverage.py's `COVERAGE_PROCESS_START` for the Python processes tests start, Node's `NODE_V8_COVERAGE` for the Node processes Vitest and Jest tests start, and `ITOS_CC_JACOCO_AGENT` and `ITOS_CC_JACOCO_DESTDIR` for the JVMs a Kotlin harness starts with the JaCoCo agent. Its project settings, `mutation.exceptions` and `mutation.tests` in `itos-cc.yaml`, have no flag or variable to set them instead: an exception belongs with the code it excuses, and the tests' commands with the project's harness, so they are read only from the file. |
-| 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. |
+| 36 | No network check in CI | Follows: itos-cc never touches the network, nor downloads a tool. Every `flutter` command it starts carries `--suppress-analytics --no-version-check`, `flutter test` runs with `--no-pub`, and a worker's copy or a counted run's export of a Dart package is resolved with `flutter pub get --offline`. |
 | 37 | Questions only on a terminal, with a flag each | itos-cc asks nothing. |
 | 38 | Project settings in a file under version control | Follows with `itos-cc.yaml` at the project root, the git top level of the working directory, or the working directory outside a git repository. Its settings are `exclude`, doublestar globs, slash-separated and from the project root, of the sources (never tests) that `crap`, `dry`, `units` and `mutation run`, `list`, `check`, `sample` and `run --count` leave out however they were chosen, which a person writes; `mutation.exceptions`, the equivalent mutants excepted, each with its file, function, the function's hash, the site's `line_in_function` and `column`, `original`, `replacement`, `reason`, and the optional `line_text` (the site's line less its surrounding space, which entries written before it lack), which `mutation except` writes, and `mutation except --renew` renews, keeping the file's other keys and comments; and `mutation.tests`, the commands that list the project's tests and run a selection of them (`list`, `run`, `ids_pattern`, `join`, `whole`, and `support`). A file that cannot be read is `config.invalid`, exit 80, and so is an `exclude` glob that is empty, absolute, holds `..` or a backslash, or is no pattern, its `key` naming it. `crap`, `dry`, `units` and `mutation list` read the file too, from the version that has `exclude`; `units` and `dry` read it once their command line is parsed, so a file that cannot be read never breaks help or `version`, and `scrap`, which reads only tests, never reads it. `mutation run --count` reads the file the commit at `HEAD` holds. |
 | 39–41 | Entry points for other programs | None. |
