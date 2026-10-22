@@ -5297,3 +5297,14 @@ items:
       Windows a Job Object can measure and cap a group's memory (JOB_OBJECT_LIMIT_JOB_MEMORY,
       PeakJobMemoryUsed) once mutation-windows-ownership gives each mutant its own job.
     refs: [slice-24, mutation-windows-ownership]
+  - id: mutation-memory-cap-macos
+    title: A mutant's memory is capped on macOS from its process group's resident memory
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-24 (person, 2026-10-21) caps memory on Linux only. macOS needs a reader of an owned
+      process group's resident memory (proc_pidinfo, or ps) to size and enforce the same cap.
+    refs: [slice-24]
