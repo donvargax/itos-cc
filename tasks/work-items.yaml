@@ -5298,3 +5298,20 @@ items:
       reports CGO_ENABLED=0, as a cross-compiling or cgo-less CI does, and is still judged there:
       its mutants uncovered, its functions without coverage evidence. The same rule could take
       CGO_ENABLED from go env and the import from the text.
+  - id: listed-kills-importer-tests
+    title: A listed kill rests on its listed tests and support, not on the tests importing its file
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-46]
+    kind: idea
+    why: >
+      q-84 (the person, 2026-10-22): right after T-46. Today a file's whole snapshot, listed kills
+      included, is discarded when any test file importing it changes, own package or one hop
+      (Usable, internal/slices/mutation/domain/snapshot.go:418-423 and run_plan.go:51; TestsChanged,
+      check_parsed.go:46-48). .metrics/mutate/internal/slices/mutation/domain/doc.go.json records
+      184 test files, 96 of them in cmd/itos-cc, so any edit there stales every outcome of every
+      package cmd/itos-cc imports and the nightly re-judges them. A kill by listed tests should go
+      stale only when those tests (their file or fingerprint) or the support files change; own-scope
+      outcomes and survivors keep resting on the importing tests. Product behaviour: a slice with
+      scenarios beside MUT-130 to 134, sized by T-46's first measured run.
