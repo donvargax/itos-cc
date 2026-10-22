@@ -489,6 +489,17 @@ A command that detaches from its process group or session is not followed.
 On Windows it fails with `count.platform`, exit 82, before launching any
 command; native Windows support is #29.
 
+`mutation run --count` judges the files of the `HEAD` commit, never the
+working tree, so a change not yet committed goes unjudged. When one does,
+it warns on stderr, a line `itos-cc: warning: this run judges commit <id>, …`
+and then a line `itos-cc: unjudged uncommitted change: <path>` for each
+source, test or `itos-cc.yaml` whose working tree differs from that commit:
+staged, unstaged, or untracked and not ignored. A change to any other file,
+a README say, is no input of the run and is not named. Its `--json`
+sampling object lists those paths as `"uncommitted"`, slash paths from the
+repository root, sorted, and an empty list when there are none. The
+warning changes neither the judgment nor the exit code (#41).
+
 `mutation run --fail-fast` stops a complete run at the first actionable final
 judgment it observes, and reports it under the rule and exit code a run
 without it would. Its `--json` object stays one object and adds keys only:

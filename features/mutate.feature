@@ -3687,7 +3687,7 @@ Feature: Mutation testing
     # tests and measurement settings; a change elsewhere in the repository
     # is not named. The warning changes neither the judgment nor the exit
     # code. Before slice-26 nothing is warned, failing at the Then.
-    @slice-26 @ID-MUT-275 @wip
+    @slice-26 @ID-MUT-275
     Scenario: A counted run warns that uncommitted changes in its scope go unjudged
       Given a committed project whose test has an unstaged change and whose source has a staged change, beside an untracked test file and an unstaged change to a README that is neither source, test nor setting
       When I run "itos-cc mutation run --count 1 --json"

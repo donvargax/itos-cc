@@ -32,10 +32,13 @@ type CountedQuery struct {
 }
 
 // CountedProgress receives a counted run's observations while it works:
-// each run event, and its report once it is as complete as it gets, under
-// the run's own context, while the run still owns its frozen inputs.
+// each run event, the inputs whose uncommitted changes it leaves unjudged
+// once it has frozen commit, when there are any, and its report once it is
+// as complete as it gets, under the run's own context, while the run still
+// owns its frozen inputs.
 type CountedProgress interface {
 	mutants.Progress
+	Unjudged(commit string, paths []string)
 	Counted(ctx context.Context, found CountedFound)
 }
 
@@ -88,7 +91,7 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	if planFailure != nil {
 		if ctx.Err() != nil {
 			result.Sampling = countedSampling{Budget: q.Count, Assurance: "sampled", Completion: "interrupted",
-				Stop: "interrupted while planning the selection", Bounds: countedBounds}
+				Stop: "interrupted while planning the selection", Bounds: countedBounds, Uncommitted: []string{}}
 			q.present(ctx, CountedFound{Report: result, Interrupted: context.Cause(ctx)})
 			return nil
 		}
@@ -98,7 +101,10 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 	s := &result.Sampling
 	*s = countedSampling{Budget: q.Count, Eligible: len(plan.Eligible), Selected: len(plan.Selected), Omitted: len(plan.Omitted),
 		Seed: plan.Seed, Algorithm: plan.Algorithm, Commit: plan.Commit, Since: plan.SinceRef, SinceBase: plan.SinceBase,
-		Assurance: "sampled", Completion: "completed", Bounds: countedBounds}
+		Assurance: "sampled", Completion: "completed", Bounds: countedBounds, Uncommitted: plan.UncommittedInputs()}
+	if len(s.Uncommitted) > 0 && q.Progress != nil {
+		q.Progress.Unjudged(plan.Commit, s.Uncommitted)
+	}
 	result.Subjects = countedSubjectsOf(plan)
 	for _, c := range plan.Selected {
 		result.Selected = append(result.Selected, countedSite{Identity: c.Identity, File: c.Path, Line: c.Site.Line, Column: c.Site.Column,

@@ -89,3 +89,11 @@ func TestMemoryFreshPreparationContract(t *testing.T) {
 		}}
 	})
 }
+
+// The settings a counted run names when uncommitted are the file the plan
+// reads at the commit, which the domain names without importing config.
+func TestFreshSettingsIsTheSettingsFile(t *testing.T) {
+	if mutants.FreshSettings != config.File {
+		t.Fatalf("mutants.FreshSettings = %q, config.File = %q", mutants.FreshSettings, config.File)
+	}
+}

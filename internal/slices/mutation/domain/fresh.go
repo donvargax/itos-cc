@@ -7,6 +7,7 @@ import (
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
+	"github.com/donvargax/itos-cc/internal/lang"
 	fileselection "github.com/donvargax/itos-cc/internal/selection"
 )
 
@@ -47,6 +48,30 @@ type FreshPlan struct {
 	// changed: the new side of each hunk, renamed files under their new
 	// path, and none for a pure deletion. Nil without --since.
 	Changed map[string][]LineRange
+	// Uncommitted is every root-relative slash path, sorted, whose live
+	// version differs from Commit when the plan was made: staged, unstaged,
+	// or untracked and not ignored, a deletion included. The run judges
+	// none of these changes (UncommittedInputs).
+	Uncommitted []string
+}
+
+// FreshSettings is the settings file a counted run reads at its commit, at
+// the repository's top level: config.File, which the domain does not
+// import.
+const FreshSettings = "itos-cc.yaml"
+
+// UncommittedInputs are the paths of Uncommitted that are inputs the run
+// froze at Commit, and so judged as committed, not as they are now: the
+// sources and tests of a supported language, and the settings. A change
+// to anything else, a README say, is no input of the judgment. Never nil.
+func (p *FreshPlan) UncommittedInputs() []string {
+	out := []string{}
+	for _, rel := range p.Uncommitted {
+		if rel == FreshSettings || lang.Detect(rel) != nil {
+			out = append(out, rel)
+		}
+	}
+	return out
 }
 
 // ChangedLines reports whether the --since range added or changed any line

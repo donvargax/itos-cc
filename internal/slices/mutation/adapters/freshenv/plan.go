@@ -102,6 +102,10 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	if seed == "" {
 		seed = head
 	}
+	uncommitted, err := e.uncommittedAt(ctx, root)
+	if err != nil {
+		return nil, err
+	}
 	selectedPaths, err := mutants.CanonicalFreshPaths(paths)
 	if err != nil {
 		return nil, err
@@ -126,7 +130,7 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 		return nil, fmt.Errorf("%w: %w", ErrFreshScratch, err)
 	}
 	plan := &FreshPlan{Root: root, FrozenRoot: frozen, Commit: head, SinceRef: since, SinceBase: sinceBase,
-		Seed: seed, Algorithm: FreshPlanVersion}
+		Seed: seed, Algorithm: FreshPlanVersion, Uncommitted: uncommitted}
 	if changed != nil {
 		plan.Changed = map[string][]mutants.LineRange{}
 		for rel, ranges := range changed {
@@ -460,6 +464,36 @@ func makePrivateDirs(root, target string) error {
 		}
 	}
 	return nil
+}
+
+// uncommittedAt lists, sorted, every root-relative slash path of the
+// checkout at root whose live version differs from HEAD: staged, unstaged,
+// or untracked and not ignored, as git status reports them with renames
+// split into a deletion and an addition, and every untracked file named
+// rather than its folder. It takes no optional lock, so it never refreshes
+// the index.
+func (e Environment) uncommittedAt(ctx context.Context, root string) ([]string, error) {
+	out, err := e.gitAt(ctx, root, "--no-optional-locks", "-c", "core.quotePath=false", "status", "--porcelain=v1", "-z",
+		"--untracked-files=all", "--no-renames")
+	if err != nil {
+		return nil, fmt.Errorf("list uncommitted changes: %w", err)
+	}
+	seen := map[string]bool{}
+	paths := []string{}
+	for _, record := range strings.Split(string(out), "\x00") {
+		if record == "" {
+			continue
+		}
+		if len(record) < 4 || record[2] != ' ' {
+			return nil, fmt.Errorf("malformed git status record %q", record)
+		}
+		if rel := strings.TrimSuffix(record[3:], "/"); !seen[rel] {
+			seen[rel] = true
+			paths = append(paths, rel)
+		}
+	}
+	sort.Strings(paths)
+	return paths, nil
 }
 
 // lineRange is a range of line numbers, both ends included; deletion

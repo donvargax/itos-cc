@@ -33,21 +33,24 @@ type preparationStage struct {
 
 // countedSampling is what was drawn and what of it ran. Assurance is
 // "sampled": a pass proves the judgments listed, never the population.
+// Uncommitted are the inputs whose uncommitted changes the run left
+// unjudged, judging them as Commit holds them.
 type countedSampling struct {
-	Budget     int    `json:"budget"`
-	Eligible   int    `json:"eligible"`
-	Selected   int    `json:"selected"`
-	Executed   int    `json:"executed"`
-	Omitted    int    `json:"omitted"`
-	Seed       string `json:"seed"`
-	Algorithm  string `json:"algorithm"`
-	Commit     string `json:"commit"`
-	Since      string `json:"since,omitempty"`
-	SinceBase  string `json:"since_base,omitempty"`
-	Assurance  string `json:"assurance"`
-	Completion string `json:"completion"`
-	Stop       string `json:"stop,omitempty"`
-	Bounds     string `json:"bounds"`
+	Budget      int      `json:"budget"`
+	Eligible    int      `json:"eligible"`
+	Selected    int      `json:"selected"`
+	Executed    int      `json:"executed"`
+	Omitted     int      `json:"omitted"`
+	Seed        string   `json:"seed"`
+	Algorithm   string   `json:"algorithm"`
+	Commit      string   `json:"commit"`
+	Since       string   `json:"since,omitempty"`
+	SinceBase   string   `json:"since_base,omitempty"`
+	Assurance   string   `json:"assurance"`
+	Completion  string   `json:"completion"`
+	Stop        string   `json:"stop,omitempty"`
+	Bounds      string   `json:"bounds"`
+	Uncommitted []string `json:"uncommitted"`
 }
 
 // countedSite is one selected site. State is "judged" (its trial ran to an
@@ -150,6 +153,19 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
 	}
 	return ui.Emit(c.JSON, progress.report, progress.p.Problems)
+}
+
+// Unjudged warns that the run judges commit, so the uncommitted changes
+// to paths, its inputs, go unjudged: a line for the run, then one for each
+// path.
+func (r *countedProgress) Unjudged(commit string, paths []string) {
+	if r.Log == nil {
+		return
+	}
+	_, _ = fmt.Fprintf(r.Log, "itos-cc: warning: this run judges commit %s, so the uncommitted changes to %d of its inputs go unjudged; commit them to judge them\n", commit, len(paths))
+	for _, path := range paths {
+		_, _ = fmt.Fprintf(r.Log, "itos-cc: unjudged uncommitted change: %s\n", path)
+	}
 }
 
 // Counted prints the report, then reports what stopped the run, or each

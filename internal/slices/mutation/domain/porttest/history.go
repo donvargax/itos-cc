@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"maps"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -303,4 +304,77 @@ func (h History) absoluteRenames(before, after map[string]string) map[string]str
 func historyWithin(root, path string) bool {
 	rel, err := filepath.Rel(root, path)
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+}
+
+// uncommitted is, as git status lists it with renames split and every
+// untracked file named, each root-relative slash path, sorted, whose index
+// or working version differs from committed, or that is untracked and not
+// ignored. Nothing under .git is in the working tree, and the root
+// .gitignore's patterns alone ignore (historyIgnored).
+func (h History) uncommitted(committed map[string]string) []string {
+	working := map[string]string{}
+	for abs, text := range h.Working {
+		rel, err := filepath.Rel(h.Root, abs)
+		if err != nil || !historyWithin(h.Root, abs) {
+			continue
+		}
+		rel = filepath.ToSlash(rel)
+		if rel == ".git" || strings.HasPrefix(rel, ".git/") {
+			continue
+		}
+		working[rel] = text
+	}
+	ignores := strings.Split(working[".gitignore"], "\n")
+	changed := map[string]bool{}
+	for rel, text := range committed {
+		if staged, ok := h.Repository.Index[rel]; !ok || staged != text {
+			changed[rel] = true
+		}
+	}
+	for rel, staged := range h.Repository.Index {
+		if text, ok := committed[rel]; !ok || text != staged {
+			changed[rel] = true
+		}
+		if text, ok := working[rel]; !ok || text != staged {
+			changed[rel] = true
+		}
+	}
+	for rel := range working {
+		if _, tracked := h.Repository.Index[rel]; !tracked && !historyIgnored(ignores, rel) {
+			changed[rel] = true
+		}
+	}
+	return slices.Sorted(maps.Keys(changed))
+}
+
+// historyIgnored is whether a pattern of a .gitignore's lines ignores the
+// untracked rel: the fixtures' plain patterns only, no negation. One with a
+// slash inside matches a leading part of the path from the root; one
+// without matches the name of any of its parts, and with a trailing slash
+// only of a folder.
+func historyIgnored(lines []string, rel string) bool {
+	parts := strings.Split(rel, "/")
+	for _, line := range lines {
+		pattern := strings.TrimSpace(line)
+		if pattern == "" || strings.HasPrefix(pattern, "#") {
+			continue
+		}
+		folder := strings.HasSuffix(pattern, "/")
+		pattern = strings.TrimSuffix(pattern, "/")
+		anchored := strings.Contains(pattern, "/")
+		pattern = strings.TrimPrefix(pattern, "/")
+		for i := range parts {
+			if folder && i == len(parts)-1 {
+				break
+			}
+			subject := parts[i]
+			if anchored {
+				subject = strings.Join(parts[:i+1], "/")
+			}
+			if ok, _ := path.Match(pattern, subject); ok {
+				return true
+			}
+		}
+	}
+	return false
 }

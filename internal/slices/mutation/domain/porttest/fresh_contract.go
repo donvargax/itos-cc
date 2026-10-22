@@ -104,4 +104,36 @@ func FreshContract(t *testing.T, open func(*testing.T) FreshFixture) {
 			t.Fatalf("caller cause: %T %v", failed, failed)
 		}
 	})
+	t.Run("the plan names each live change to its commit, and nothing ignored", func(t *testing.T) {
+		b := open(t)
+		historyCommit(t, b.HistoryFixture, map[string]string{"go.mod": "module example/live\n", "value.go": "package value\nfunc Value() int { return 1 }\n",
+			"value_test.go": "package value\n", "README.md": "# value\n", ".gitignore": "ignored.go\nbuild/\n", "itos-cc.yaml": "exclude: []\n"})
+		p, failed := b.Fresh.Plan(t.Context(), mutants.FreshRequest{Root: b.Root, Count: 1})
+		if failed != nil {
+			t.Fatal(failed)
+		}
+		if len(p.Uncommitted) != 0 || p.UncommittedInputs() == nil || len(p.UncommittedInputs()) != 0 {
+			t.Errorf("a clean checkout's uncommitted = %q, inputs %q", p.Uncommitted, p.UncommittedInputs())
+		}
+		b.Fresh.Release(t.Context(), p)
+		historyPut(t, b.HistoryFixture, "value.go", "package value\nfunc Value() int { return 2 }\n")
+		historyGit(t, b.HistoryFixture, "add", "value.go")
+		historyPut(t, b.HistoryFixture, "value_test.go", "package value\n\n// unstaged\n")
+		historyPut(t, b.HistoryFixture, "itos-cc.yaml", "exclude: [value.go]\n")
+		historyPut(t, b.HistoryFixture, "README.md", "# value, changed\n")
+		historyPut(t, b.HistoryFixture, "sub/new_test.go", "package sub\n")
+		historyPut(t, b.HistoryFixture, "ignored.go", "package value\n")
+		historyPut(t, b.HistoryFixture, "build/out.go", "package build\n")
+		p, failed = b.Fresh.Plan(t.Context(), mutants.FreshRequest{Root: b.Root, Count: 1})
+		if failed != nil {
+			t.Fatal(failed)
+		}
+		defer b.Fresh.Release(t.Context(), p)
+		if want := []string{"README.md", "itos-cc.yaml", "sub/new_test.go", "value.go", "value_test.go"}; !reflect.DeepEqual(p.Uncommitted, want) {
+			t.Errorf("uncommitted = %q, want %q", p.Uncommitted, want)
+		}
+		if want := []string{"itos-cc.yaml", "sub/new_test.go", "value.go", "value_test.go"}; !reflect.DeepEqual(p.UncommittedInputs(), want) {
+			t.Errorf("uncommitted inputs = %q, want %q", p.UncommittedInputs(), want)
+		}
+	})
 }

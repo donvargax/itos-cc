@@ -144,8 +144,13 @@ that needs no cache: the cache neither saves a trial nor is written. It
 resolves the Git repository and its HEAD commit once and judges that
 commit's tracked files, frozen in a private copy under the checkout's git
 directory (git rev-parse --git-path itos, a linked worktree's own
-included), so staged, unstaged and untracked changes play no part; tools, dependencies and the environment are
-used as installed, from the live project, and nothing is installed or
+included), so staged, unstaged and untracked changes play no part. It
+warns on stderr when such a change goes unjudged, naming the commit and
+each source, test or itos-cc.yaml whose working tree differs from it,
+staged, unstaged, or untracked and not ignored, and --json lists them as
+the sampling's "uncommitted"; the warning changes neither the judgment nor
+the exit code. Tools, dependencies and the environment are used as
+installed, from the live project, and nothing is installed or
 downloaded: TypeScript's node_modules and Python's .venv or venv (else the
 virtualenv VIRTUAL_ENV names) at its build roots, the .fvm/flutter_sdk FVM
 links beside a committed .fvmrc, and the Go module, Gradle, Maven and pub
@@ -406,7 +411,7 @@ judged and no snapshot is written. Listed tests are not run with
    "seed", "algorithm", "commit", "since", "since_base",
    "assurance": "sampled"|"not-applicable",
    "completion": "completed"|"stopped"|"interrupted"|"not-applicable",
-   "stop", "bounds"},
+   "stop", "bounds", "uncommitted": ["<path>"]},
    "selected": [{"identity", "file", "line", "column", "function",
    "original", "replacement",
    "state": "judged"|"uncovered"|"blocked"|"failed"|"cancelled"|"unattempted",
