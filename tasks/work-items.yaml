@@ -3456,8 +3456,8 @@ items:
   - id: slice-24
     title: Each mutant's output and memory are capped by default, sized from the baseline, over a cap a visible kill
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
