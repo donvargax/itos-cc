@@ -3644,8 +3644,8 @@ items:
   - id: slice-39
     title: A listed kill is dated by its own test's fingerprint, not its whole file
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
