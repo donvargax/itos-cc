@@ -5352,3 +5352,7 @@ items:
       would trigger it without T-184's jq. The base listed fixture lists a.feature without writing
       it (MUT-121 to 129), so the fix must check those scenarios. A bug fix with a scenario: stale,
       naming the file as not there.
+
+      Until this lands, T-184's list command must keep the features/ prefix its jq adds; switching
+      to itos's own list format (itos#22, itos#112) without project-root paths would make every
+      listed kill read fresh forever. Noted on itos#22 (2026-10-22).
