@@ -3493,8 +3493,8 @@ items:
   - id: slice-18
     title: Strict mode for pnpm settings files and members with no local dependency
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
