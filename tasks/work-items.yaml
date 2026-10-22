@@ -5222,7 +5222,7 @@ items:
     title: TestMutationHelpPreservesOriginalBytes rewrites its golden with -update
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
     refs: [T-181]

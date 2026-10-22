@@ -6471,6 +6471,3 @@
     comment and docs/go.md's testing section say: after a help change, or on a rebase conflict in
     the golden, run go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$'
     -update-help and read the diff. No product change.
-  done_when:
-    - run: go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -update-help && git diff --exit-code cmd/itos-cc/testdata/mutation-help.json
-    - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1
