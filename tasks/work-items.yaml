@@ -5303,3 +5303,15 @@ items:
       The person decided on 2026-10-18 (issue #30) to supersede ADR-0011 with an optional third
       column, <ID><tab><file><tab><fingerprint>, which slice-39 builds; docs/decisions still has
       only ADR-0011's per-file rule, and decisions are written only through itos decision record.
+  - id: pnpm-package-json-overrides
+    title: Strict coverage reads pnpm overrides in package.json too
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-18 refuses a link: or file: override outside the package root only in
+      pnpm-workspace.yaml (as settled); pnpm also reads overrides and patchedDependencies from the
+      workspace root package.json pnpm field, and resolutions, so such an override there is still
+      admitted unread.
