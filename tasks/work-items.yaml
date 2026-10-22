@@ -14,6 +14,7 @@ queue:
   - worker-copies-skip-ignored
   - T-184
   - T-46
+  - listed-kills-importer-tests
   - p1-itos-proof-code
   - T-102
   - T-103
