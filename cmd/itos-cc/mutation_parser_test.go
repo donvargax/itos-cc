@@ -4,8 +4,10 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -221,21 +223,122 @@ func TestMutationGroupJSONPlacementRetainsLegacyDispatch(t *testing.T) {
 	}
 }
 
-// mutationHelpBytes is fixed from pre-migration 0ebb527 command/flag literals
-// and the existing Page layout. @WORKERS@ is the supplied boundary default;
-// the fixture was not obtained by executing either product binary.
+// mutationHelpBytes was first fixed from pre-migration 0ebb527 command/flag
+// literals and the existing Page layout. @WORKERS@ is the supplied boundary
+// default, which differs from machine to machine.
+//
+// After a help change, or on a rebase conflict in the golden (take either
+// side first), rewrite it from the help as it renders now and read the diff:
+//
+//	go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -update-help
 //
 //go:embed testdata/mutation-help.json
 var mutationHelpBytes []byte
 
-func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
-	var expected map[string]string
-	if err := json.Unmarshal(mutationHelpBytes, &expected); err != nil {
+const mutationHelpGolden = "testdata/mutation-help.json"
+
+var updateHelp = flag.Bool("update-help", false, "rewrite "+mutationHelpGolden+" from the mutation help as it renders now")
+
+// mutationHelpOrder is the golden's key order, which -update-help keeps: the
+// five children by name, the group page last.
+var mutationHelpOrder = []string{"mutation check", "mutation except", "mutation list", "mutation run", "mutation sample", "mutation"}
+
+// mutationHelpRendered renders the group page and every mutation leaf's
+// page, the --workers help's "(default N)" written as @WORKERS@.
+func mutationHelpRendered(t *testing.T, parser *kong.Kong) map[string]string {
+	t.Helper()
+	pages := map[string]string{}
+	for _, node := range modelLeaves(parser) {
+		name := node.Path()
+		if !strings.HasPrefix(name, "mutation ") {
+			continue
+		}
+		page, err := cli.PageOf(node)
+		if err != nil {
+			t.Fatal(err)
+		}
+		text := page.String()
+		for _, f := range node.Flags {
+			if f.Name == "workers" {
+				text = mutationHelpWorkersPlaceholder(t, name, text, f.Default)
+			}
+		}
+		pages[name] = text
+	}
+	group, err := cli.GroupHelp(commandNodes(parser)["mutation"])
+	if err != nil {
 		t.Fatal(err)
 	}
+	pages["mutation"] = group
+	return pages
+}
+
+// mutationHelpWorkersPlaceholder replaces the first "(default N)" from the
+// --workers row on, so no other number the page holds changes.
+func mutationHelpWorkersPlaceholder(t *testing.T, name, text, workers string) string {
+	t.Helper()
+	row := strings.Index(text, "\n  --workers ")
+	if row < 0 {
+		t.Fatalf("%s: no --workers row\n%s", name, text)
+	}
+	defaults := "(default " + workers + ")"
+	at := strings.Index(text[row:], defaults)
+	if at < 0 {
+		t.Fatalf("%s: no %q after the --workers row\n%s", name, defaults, text)
+	}
+	at += row
+	return text[:at] + "(default @WORKERS@)" + text[at+len(defaults):]
+}
+
+// mutationHelpEncoded writes pages as the golden holds them: one key per
+// line in mutationHelpOrder, two spaces in, HTML characters unescaped, and
+// a trailing newline.
+func mutationHelpEncoded(t *testing.T, pages map[string]string) []byte {
+	t.Helper()
+	if len(pages) != len(mutationHelpOrder) {
+		t.Fatalf("rendered %d mutation pages, the golden orders %d", len(pages), len(mutationHelpOrder))
+	}
+	quoted := func(s string) string {
+		var b bytes.Buffer
+		e := json.NewEncoder(&b)
+		e.SetEscapeHTML(false)
+		if err := e.Encode(s); err != nil {
+			t.Fatal(err)
+		}
+		return strings.TrimSuffix(b.String(), "\n")
+	}
+	var out bytes.Buffer
+	out.WriteString("{\n")
+	for i, name := range mutationHelpOrder {
+		page, ok := pages[name]
+		if !ok {
+			t.Fatalf("no rendered page %q", name)
+		}
+		out.WriteString("  " + quoted(name) + ": " + quoted(page))
+		if i < len(mutationHelpOrder)-1 {
+			out.WriteString(",")
+		}
+		out.WriteString("\n")
+	}
+	out.WriteString("}\n")
+	return out.Bytes()
+}
+
+func TestMutationHelpPreservesOriginalBytes(t *testing.T) {
 	var c commandLine
 	parser, err := parserOf(t.Context(), &c, &cli.UI{Stdout: io.Discard, Stderr: io.Discard}, adapters{})
 	if err != nil {
+		t.Fatal(err)
+	}
+	golden := mutationHelpBytes
+	if *updateHelp {
+		golden = mutationHelpEncoded(t, mutationHelpRendered(t, parser))
+		if err := os.WriteFile(mutationHelpGolden, golden, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var expected map[string]string
+	if err := json.Unmarshal(golden, &expected); err != nil {
 		t.Fatal(err)
 	}
 	expectedNames := []string{"mutation run", "mutation list", "mutation check", "mutation sample", "mutation except"}

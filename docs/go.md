@@ -1100,6 +1100,14 @@ on a `@binary-only` scenario sets the variable itself. A second Ctrl-C
 ending the process at once, unless owned process groups are being killed, is held by
 `internal/cli`'s unit tests, which feed `Interrupts` fake interrupts on every system.
 
+`cmd/itos-cc`'s `TestMutationHelpPreservesOriginalBytes` compares mutation's help, the group
+page and each child's, with `cmd/itos-cc/testdata/mutation-help.json`, the `--workers` default
+written there as `@WORKERS@`. After a help change, or on a rebase conflict in the golden (take
+either side first), run
+`go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -update-help` and read
+the diff: the flag rewrites the golden from the same render the test compares, in the file's
+key order, and on an unchanged help leaves it byte for byte (T-183).
+
 Properties use `pgregory.net/rapid` and live in the domain's tests; the `rapid` rule admits it
 in `internal/selection`'s alone. The selection property checks that paths and fragments only
 narrow the working directory: what they select is exactly the files of `.` under a path that
