@@ -5253,6 +5253,11 @@ items:
       test does not say how to rebuild it, so T-181 wrote a throwaway test rendering every page with
       @WORKERS@ put back, then rewrote the JSON by script. A -update flag, or the recipe in the
       test's comment, makes the next help change one command.
+
+      slice-26's agent, 2026-10-21, met it again: the golden swaps the --workers default for
+      @WORKERS@, and a blanket replace of the default 4 also hits 143 elsewhere, so only the
+      (default N) text can be swapped; the golden's key order (group page last) rules out
+      re-encoding with Go's map order. An update flag removes all three steps.
     refs: [T-181]
   - id: counted-uncommitted-manifests
     title: A counted run names uncommitted build manifests it leaves unjudged
