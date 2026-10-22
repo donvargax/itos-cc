@@ -98,6 +98,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	emptyCaseSteps(sc, m)
 	pristineSteps(sc, m)
 	vitestThroughSteps(sc, m)
+	workspaceCopySteps(sc, m)
 
 	// Mutation sites.
 	sc.Step(`^the sites are:$`, m.sitesAre)
