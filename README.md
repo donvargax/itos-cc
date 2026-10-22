@@ -1061,7 +1061,16 @@ and commit `.metrics/mutate/` back even on nights when a mutant survives and
 the job fails; copy it as a starting point. It interrupts the run before the
 job's time limit, and mutation run keeps what it finished, so a night cut off
 commits that, under a subject that says it is partial. No whole run of this
-repository finishes within a job's time limit yet (T-46). Raw coverage under
+repository finishes within a job's time limit yet (T-46). This repository's
+mutants are meant to be killed by its scenarios run in process, which its
+[`itos-cc.yaml`](itos-cc.yaml) lists as `mutation.tests` (T-184): a mutant
+its package's tests leave alive runs the scenarios that reach its line.
+`cmd/itos-cc`'s `TestScenarios`, run with `-cover` under
+`ITOS_CC_TEST_COVERDIR`, runs each scenario in a test binary of its own
+that writes its coverage under `<that directory>/<scenario ID>`, as a
+`go test -cover` binary writes only to its `-test.gocoverdir`
+([docs/go.md](docs/go.md), Tests). The nightly's `--all-tests` reads no
+listed tests until T-46 drops it. Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at

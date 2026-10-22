@@ -237,6 +237,7 @@ GOCOVERDIR=$d go test ./features -count=1            # built with -cover, its co
 ITOS_CC_FEATURES_BINARY=$bin go test ./features -count=1   # against the binary at $bin, opted in
 ITOS_CC_FEATURES_CONCURRENCY=1 go test ./features -count=1  # one scenario at a time
 go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios='^@ID-DRY-'   # in process
+ITOS_CC_TEST_COVERDIR=$d go test ./cmd/itos-cc -count=1 -cover -coverpkg=./... -run '^TestScenarios$'   # each apart, its coverage in $d/<ID>
 itos tests smoke run scenario                        # exactly the smoke set, both ways opted in
 ```
 

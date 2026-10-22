@@ -1105,6 +1105,30 @@ on a `@binary-only` scenario sets the variable itself. A second Ctrl-C
 ending the process at once, unless owned process groups are being killed, is held by
 `internal/cli`'s unit tests, which feed `Interrupts` fake interrupts on every system.
 
+This repository's mutants are killed by the scenarios the in-process driver runs, listed as
+`itos-cc.yaml`'s `mutation.tests` (decision 49, T-184), never by unit tests written for
+mutation's sake. A mutant runs its own tests first, its package's (decision 12), and only if it
+survives them the scenarios whose coverage reaches its line, in one `TestScenarios` run that
+selects them by ID tag (`run`). `list` is `itos tests list scenario --json` through jq, each
+live scenario's ID and its feature file from the project root, so itos and jq must be on the
+PATH. The coverage per scenario comes from one run, `whole`, of `TestScenarios` built with
+`-cover -coverpkg=./...`: with `ITOS_CC_TEST_COVERDIR` set, as itos-cc sets it, and coverage on,
+`TestScenarios` runs each scenario it selects in a run of its own test binary with
+`-test.gocoverdir=<dir>/<ID>`, the ID tag without its `@` (`scenarios_apart_test.go`), and a
+scenario that fails there fails it. A `go test -cover` binary writes its coverage only to
+`-test.gocoverdir`, once, as it exits, and `runtime/coverage` cannot clear or write its counters
+inside one, so a run of its own per scenario is how itos-cc's split path (decision 10) reads one
+coverage each. Without the variable, or without `-cover`, it runs them in process, as above. A
+listed kill rests on its scenario's feature file and on what the `support` globs match (decision
+13): the step code (`features/*.go`), the in-process driver and its fakes
+(`cmd/itos-cc/scenarios*_test.go`, `cmd/itos-cc/run_fakes_test.go`) and every `porttest` folder
+under `internal/`, each named by a single-star glob, since the globs go through
+`filepath.Glob`, where `**` matches as `*`. The feature files are not among them, so a spec edit
+stales only the kills of its own file's scenarios. A scenario the in-process driver leaves out
+(`@binary-only`, `features.Deferred`) runs nothing there and kills nothing. `--all-tests` reads
+no listed tests, though its outcomes' freshness takes in the `support` files too (decision 16);
+the nightly runs it until T-46 drops it.
+
 `cmd/itos-cc`'s `TestMutationHelpPreservesOriginalBytes` compares mutation's help, the group
 page and each child's, with `cmd/itos-cc/testdata/mutation-help.json`, the `--workers` default
 written there as `@WORKERS@`. After a help change, or on a rebase conflict in the golden (take
