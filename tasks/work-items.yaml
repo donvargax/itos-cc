@@ -3494,16 +3494,9 @@ items:
     title: Workers copy enough of a workspace for a tsconfig that extends above the package
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was worker-copy-workspace.
-      Issue #44. The worker copies c.Root only (internal/worktrees/worker.go:43-56), the TypeScript
-      root being the nearest package.json (testtools/toolchain.go:39), so extends
-      ../../tsconfig.base.json fails every baseline. Copy the workspace root, dependency folders
-      linked, when the package belongs to a workspace; say fails only in the worker copy when the
-      tree passes. Wave 1, after pnpm-workspace-members.
     refs: ["#44"]
   - id: slice-20
     title: mutation except changes only the exceptions list, byte for byte elsewhere
