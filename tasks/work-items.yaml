@@ -5322,3 +5322,16 @@ items:
       alone, stops it before its timeout. MUT-300's fixture sets GOFLAGS=-v to make its output flow.
       Running Go's tests with -v or -json would let the output cap hold for Go on every system.
     refs: [slice-24, "#54"]
+  - id: go-cgo-not-built
+    title: A cgo file go env leaves out with CGO_ENABLED=0 is not judged here
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-25 leaves out a Go file only another system builds by its name and //go:build line, the
+      platform from go env GOOS and GOARCH. A file that imports "C" is left out too where go env
+      reports CGO_ENABLED=0, as a cross-compiling or cgo-less CI does, and is still judged there:
+      its mutants uncovered, its functions without coverage evidence. The same rule could take
+      CGO_ENABLED from go env and the import from the text.
