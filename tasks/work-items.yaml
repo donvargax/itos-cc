@@ -3509,14 +3509,9 @@ items:
     title: mutation except changes only the exceptions list, byte for byte elsewhere
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was except-byte-exact.
-      Issue #55. config/exception_document.go:116-127 re-encodes the whole document with yaml.v3,
-      restyling flow mappings. First of the exceptions-file track (then except-prune,
-      except-repoint, except-uncovered-message).
     refs: ["#55"]
   - id: slice-21
     title: mutation except --prune removes stale exception entries
