@@ -5363,3 +5363,16 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: scenarios-apart-concurrent
+    title: Run the scenarios measured apart several at a time
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      T-184's TestScenarios, under ITOS_CC_TEST_COVERDIR with -cover, runs each scenario in a test
+      binary of its own, one at a time: 401 runs taking 120 s locally against 45 s for the
+      in-process run of the same 631 scenarios. Each run is isolated in memory, so they could run as
+      many at once as the CPUs, as the binary driver does (T-128). T-46's measure says whether the
+      listed tests' coverage step matters beside the mutants' own runs.
