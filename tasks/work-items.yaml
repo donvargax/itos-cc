@@ -12,6 +12,7 @@ phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
   - slice-39
+  - slice-17
   - worker-copies-skip-ignored
   - T-46
   - p1-itos-proof-code
