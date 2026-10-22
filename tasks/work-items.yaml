@@ -625,8 +625,8 @@ items:
   - id: slice-25
     title: Code only another OS builds or runs is not judged uncovered on this one
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
