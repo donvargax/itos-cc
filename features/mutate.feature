@@ -848,6 +848,10 @@ Feature: Mutation testing
   # An outcome recorded before slice-39 keeps its file hashes, and is dated by
   # them until a run records it again. Before slice-39 the third column is
   # read as part of the file's name, so none of these scenarios holds.
+  # The fix does nothing in practice until a lister prints the column:
+  # itos's tests list is asked to in donvargax/itos#112, gated on the
+  # itos-cc release that ships slice-39, since older releases read a third
+  # column as part of the file's name.
   Rule: A listed kill is dated by its test's fingerprint when the list prints one
 
     @slice-39 @ID-MUT-276 @wip
