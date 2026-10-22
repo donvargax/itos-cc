@@ -63,7 +63,7 @@
     green. Update README's nightly paragraph to point at the workflow.
   done_when:
     - run: go tool actionlint .github/workflows/nightly.yml
-    - run: grep -q -- '--all-tests --no-annotate' .github/workflows/nightly.yml
+    - run: grep -q -- 'mutation run --no-annotate' .github/workflows/nightly.yml
     - run: "grep -q 'Task: T-3' .github/workflows/nightly.yml"
     - run: grep -q 'workflow_dispatch' .github/workflows/nightly.yml
 - id: T-4

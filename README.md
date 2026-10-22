@@ -1056,7 +1056,7 @@ in the set, so changing it leaves the results as they were. Commit that
 directory, and have the nightly job commit it back: CI starts from a fresh
 checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),
-is written to run `itos-cc mutation run --all-tests --no-annotate` at 09:00 UTC
+is written to run `itos-cc mutation run --no-annotate` at 09:00 UTC
 and commit `.metrics/mutate/` back even on nights when a mutant survives and
 the job fails; copy it as a starting point. It interrupts the run before the
 job's time limit, and mutation run keeps what it finished, so a night cut off
@@ -1069,8 +1069,8 @@ its package's tests leave alive runs the scenarios that reach its line.
 `ITOS_CC_TEST_COVERDIR`, runs each scenario in a test binary of its own
 that writes its coverage under `<that directory>/<scenario ID>`, as a
 `go test -cover` binary writes only to its `-test.gocoverdir`
-([docs/go.md](docs/go.md), Tests). The nightly's `--all-tests` reads no
-listed tests until T-46 drops it. Raw coverage under
+([docs/go.md](docs/go.md), Tests). The nightly runs without `--all-tests`,
+so its survivors run them (T-46). Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at

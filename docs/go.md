@@ -1127,7 +1127,7 @@ under `internal/`, each named by a single-star glob, since the globs go through
 stales only the kills of its own file's scenarios. A scenario the in-process driver leaves out
 (`@binary-only`, `features.Deferred`) runs nothing there and kills nothing. `--all-tests` reads
 no listed tests, though its outcomes' freshness takes in the `support` files too (decision 16);
-the nightly runs it until T-46 drops it.
+the nightly runs without it, so the listed scenarios judge its survivors (T-46).
 
 `cmd/itos-cc`'s `TestMutationHelpPreservesOriginalBytes` compares mutation's help, the group
 page and each child's, with `cmd/itos-cc/testdata/mutation-help.json`, the `--workers` default

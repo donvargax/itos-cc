@@ -1,7 +1,10 @@
 name: Nightly
 
-# Mutation testing over the whole suite, too slow for every push. Killed
-# mutants are cached in .metrics/mutate/, which is committed back to main so
+# Mutation testing over the whole repository, too slow for every push. Each
+# Go mutant runs its own package's tests and, if it survives them, the
+# in-process scenarios listed in itos-cc.yaml's mutation.tests that reach its
+# line (decision 49, T-46), so a kill rests on the spec. Killed mutants are
+# cached in .metrics/mutate/, which is committed back to main so
 # the next night, and everyone's local runs, reuse the kills of unchanged
 # functions instead of starting over. itos-cc mutation run exits 1 when any
 # mutant survives, which is most nights: the job then ends red, and the
@@ -20,7 +23,8 @@ concurrency:
   cancel-in-progress: false
 
 # The binary driver, TestFeatures, runs only where this is set (decision 52,
-# T-153), so the suite the mutants run against keeps its binary scenarios.
+# T-153), which every workflow sets. No mutant here runs it: features/ is
+# excluded from mutation and TestFeatures is no other package's own test.
 env:
   ITOS_CC_FEATURES_BINARY_DRIVER: "1"
 
@@ -60,8 +64,17 @@ jobs:
         working-directory: viewer
         run: npm ci
 
-      # Fails the job as it exits. --no-annotate: no committed source carries
-      # the summary comment, and the job must not rewrite the sources.
+      # mutation.tests' list command runs itos tests list and reads its JSON
+      # with jq, which ubuntu-latest has. The itos launcher, pinned as in
+      # ci.yml, runs the release itos.yaml pins.
+      - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
+
+      # Fails the job as it exits. With no path, mutation run judges every
+      # source of the repository that itos-cc.yaml's exclude leaves in; with
+      # no --all-tests, a survivor of its own tests runs the listed scenarios
+      # that reach its line, every scenario having run once first for its
+      # coverage. --no-annotate: no committed source carries the summary
+      # comment, and the job must not rewrite the sources.
       # timeout interrupts the run with SIGINT after 330 minutes, well before
       # the job's 360, and mutation run keeps what it finished when
       # interrupted, writing each file it judged (README, mutation run);
@@ -76,7 +89,7 @@ jobs:
         run: |
           set +e
           timeout --signal=INT --kill-after=10m 330m \
-            "$RUNNER_TEMP/itos-cc" mutation run --all-tests --no-annotate
+            "$RUNNER_TEMP/itos-cc" mutation run --no-annotate
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           echo "mutation run ended with exit status $status."
@@ -118,7 +131,7 @@ jobs:
           cat > "$RUNNER_TEMP/message" <<EOF
           $subject
 
-          The nightly run of itos-cc mutation run --all-tests updated .metrics/mutate/.
+          The nightly run of itos-cc mutation run updated .metrics/mutate/.
           $how.
           Committing it lets the next run, and local runs, reuse the kills of
           functions that have not changed instead of starting over. It is
