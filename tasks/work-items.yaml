@@ -3493,16 +3493,9 @@ items:
     title: Strict mode for pnpm settings files and members with no local dependency
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was pnpm-workspace-members.
-      Issue #48. Point 1: a pnpm-workspace.yaml with no packages key is a settings file, not a
-      workspace (internal/testinputs/line_coverage_scope.go:151-153 refuses on existence). Point 2,
-      The person (2026-10-18): amend ADR-0025 so a member with no workspace:, file: or link:
-      dependency is fingerprinted like a standalone package; members with local dependencies stay
-      refused. Wave 1, after vitest-through-toolchain.
     refs: ["#48"]
   - id: slice-19
     title: Workers copy enough of a workspace for a tsconfig that extends above the package
