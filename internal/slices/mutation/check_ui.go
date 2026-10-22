@@ -31,6 +31,10 @@ type checkResult struct {
 	// Orphans are the snapshots under the paths checked whose source file
 	// is gone: named, never judged; left out when there are none.
 	Orphans []Orphan `json:"orphans,omitempty"`
+	// NotBuilt are the Go files selected that only another system builds,
+	// whose recorded outcomes are not judged here; left out when there are
+	// none.
+	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
 }
 
 // Run assembles the query once and presents only fully admitted checks.
@@ -41,6 +45,7 @@ func (c Check) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		result.Orphans = append(result.Orphans, Orphan{File: ui.Rel(orphan.Path), Snapshot: orphan.Snapshot, Why: orphan.Why})
 	}
 	sayExcluded(ui, found.Excluded)
+	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(readError(err, ui.Rel)))
 	}

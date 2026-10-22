@@ -32,6 +32,9 @@ type Toolchain interface {
 	Observe(ctx context.Context, request CommandRequest) (ToolFacts, InputFailure)
 	// CoverageRunner observes the existing built-in collector preference separately from test argv.
 	CoverageRunner(ctx context.Context, source string, related bool) (string, InputFailure)
+	// GoPlatform is the GOOS and GOARCH go env reports in dir, in the
+	// run's environment: the platform a Go build there is for.
+	GoPlatform(ctx context.Context, dir string) (Platform, InputFailure)
 }
 
 // Fingerprints records actual content and runtime inputs. Its inventory is

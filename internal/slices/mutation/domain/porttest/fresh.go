@@ -167,7 +167,7 @@ func (f *Fresh) Plan(ctx context.Context, r mutants.FreshRequest) (*mutants.Fres
 		}
 	}
 	names := slices.Sorted(maps.Keys(committed))
-	if err := mutants.AdmitFresh(ctx, plan, tree, around, sources, names, sel.Exclusion{Root: frozen, Exclude: exclude}, changed, r.Count); err != nil {
+	if err := mutants.AdmitFresh(ctx, plan, tree, around, around, sources, names, sel.Exclusion{Root: frozen, Exclude: exclude}, changed, r.Count); err != nil {
 		if cause := context.Cause(ctx); cause != nil {
 			return nil, mutants.FreshCancelled{Cause: cause}
 		}

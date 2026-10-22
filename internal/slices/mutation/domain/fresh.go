@@ -53,6 +53,10 @@ type FreshPlan struct {
 	// or untracked and not ignored, a deletion included. The run judges
 	// none of these changes (UncommittedInputs).
 	Uncommitted []string
+	// NotBuilt are the committed Go sources only another system builds,
+	// by their root-relative slash paths: no unit or site of theirs is
+	// admitted (AdmitFresh).
+	NotBuilt []NotBuilt
 }
 
 // FreshSettings is the settings file a counted run reads at its commit, at

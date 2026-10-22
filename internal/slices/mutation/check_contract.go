@@ -72,6 +72,13 @@ gone for an excluded source, and in --json under "orphans", and judges
 and fails nothing for it. With no paths it looks under the working directory. The next
 mutation run over its directory removes it.
 
+A Go file only another system builds, as mutation run judges it, is not
+checked here: check says "itos-cc: <file>: not built on <goos>/<goarch>,
+so not judged here" on stderr, lists it under "not_built" in --json, and
+judges none of the outcomes its snapshot records, a survivor included,
+which are that system's to judge. Its snapshot is no orphan, and the file
+fails nothing, --fail-uncovered included.
+
 It chooses as mutation run does: paths, --changed, and --since REF, which
 checks only the functions the commits since REF changed (git diff
 REF...HEAD), as mutation run judges them.
@@ -109,7 +116,9 @@ mutants at sites gone, when it has any.`,
    entry records at sites gone}]}], and when there is any, "orphans": [{"file",
    "snapshot", "why"}], each snapshot under the paths whose source file is
    gone or excluded, "snapshot" its path from the project root, "why"
-   "gone"|"excluded"`,
+   "gone"|"excluded"; and when there is any, "not_built": [{"file",
+   "platform": "<goos>/<goarch>"}], each Go file only another system
+   builds`,
 		Rules: []string{
 			"mutation.missing          a function with a mutation site has no results: file, line, function",
 			"mutation.stale            a function, or a test that imports its file, changed since its results, or they never recorded one of its sites: file, line, function",

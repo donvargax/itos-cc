@@ -19,6 +19,10 @@ type countedResult struct {
 	Selected []countedSite      `json:"selected"`
 	Subjects countedSubjects    `json:"subjects"`
 	Stages   []preparationStage `json:"stages"`
+	// NotBuilt are the committed Go sources only another system builds,
+	// by their paths from the repository's top, none of whose sites is
+	// eligible; left out when there are none.
+	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
 	// cleanups are the owned process groups of trials whose cleanup did
 	// not finish, which the run reports each as mutation.cleanup-failed.
 	cleanups []mutants.WorkerCleanupFailed
@@ -166,6 +170,17 @@ func (r *countedProgress) Unjudged(commit string, paths []string) {
 	_, _ = fmt.Fprintf(r.Log, "itos-cc: warning: this run judges commit %s, so the uncommitted changes to %d of its inputs go unjudged; commit them to judge them\n", commit, len(paths))
 	for _, path := range paths {
 		_, _ = fmt.Fprintf(r.Log, "itos-cc: unjudged uncommitted change: %s\n", path)
+	}
+}
+
+// NotBuilt says on stderr, once for each, that a committed Go source is
+// not built on this platform, so not judged here.
+func (r *countedProgress) NotBuilt(files []mutants.NotBuilt) {
+	if r.Log == nil {
+		return
+	}
+	for _, f := range files {
+		_, _ = fmt.Fprintf(r.Log, "itos-cc: %s: not built on %s, so not judged here\n", f.Path, f.Platform)
 	}
 }
 

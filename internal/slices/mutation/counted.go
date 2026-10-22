@@ -41,6 +41,9 @@ type CountedQuery struct {
 type CountedProgress interface {
 	mutants.Progress
 	Unjudged(commit string, paths []string)
+	// NotBuilt receives the committed Go sources only another system
+	// builds, whose sites the run selects none of, once it has planned.
+	NotBuilt(files []mutants.NotBuilt)
 	Counted(ctx context.Context, found CountedFound)
 }
 
@@ -106,6 +109,12 @@ func (h Handler) Counted(ctx context.Context, q CountedQuery) error {
 		Assurance: "sampled", Completion: "completed", Bounds: countedBounds, Uncommitted: plan.UncommittedInputs()}
 	if len(s.Uncommitted) > 0 && q.Progress != nil {
 		q.Progress.Unjudged(plan.Commit, s.Uncommitted)
+	}
+	for _, f := range plan.NotBuilt {
+		result.NotBuilt = append(result.NotBuilt, notBuiltFile{File: f.Path, Platform: f.Platform.String()})
+	}
+	if len(plan.NotBuilt) > 0 && q.Progress != nil {
+		q.Progress.NotBuilt(plan.NotBuilt)
 	}
 	result.Subjects = countedSubjectsOf(plan)
 	for _, c := range plan.Selected {

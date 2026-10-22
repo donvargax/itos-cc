@@ -10,7 +10,7 @@ import (
 )
 
 func TestRealToolchainContract(t *testing.T) {
-	porttest.ToolchainContract(t, func(t *testing.T, files map[string]string, _ map[string][]string, _ map[string]string) porttest.InputBindings {
+	porttest.ToolchainContract(t, func(t *testing.T, files map[string]string, _ map[string][]string, env map[string]string) porttest.InputBindings {
 		t.Helper()
 		root := t.TempDir()
 		for name, text := range files {
@@ -22,6 +22,13 @@ func TestRealToolchainContract(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		return porttest.InputBindings{Root: root, Toolchain: testtools.Toolchain{Dir: root}}
+		var vars []string
+		if env != nil {
+			vars = os.Environ()
+			for name, value := range env {
+				vars = append(vars, name+"="+value)
+			}
+		}
+		return porttest.InputBindings{Root: root, Toolchain: testtools.Toolchain{Dir: root, Env: vars}}
 	})
 }

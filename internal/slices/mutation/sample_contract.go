@@ -38,6 +38,11 @@ It chooses as mutation check does: paths, --changed, and --since REF, which
 samples only the functions the commits since REF changed (git diff
 REF...HEAD).
 
+A Go file only another system builds, as mutation run judges it, has none
+of its recorded mutants drawn: here each would survive, unbuilt, and read
+as a mismatch. sample says "itos-cc: <file>: not built on <goos>/<goarch>,
+so not judged here" on stderr, and lists it under "not_built" in --json.
+
 Each mutant runs with the scope of the tests its outcome was recorded with:
 the file's own tests, the whole suite (--all-tests), the --test-command
 line, or "listed", the file's own tests then, if the mutant survives them,
@@ -59,7 +64,9 @@ selection of listed tests failed.`,
 		JSON: `"seed", "files": [{"file", "baseline": "passed"|"failed",
    "mutants": [{"line", "column", "function", "original", "replacement",
    "recorded", "outcome": "killed"|"survived"|"timeout"|"over-limit",
-   "scope": "own"|"all-tests"|"listed"|"<test command>"}]}]`,
+   "scope": "own"|"all-tests"|"listed"|"<test command>"}]}], and when
+   there is any, "not_built": [{"file", "platform": "<goos>/<goarch>"}],
+   each Go file only another system builds`,
 		Rules: []string{
 			"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome, scope",
 			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",

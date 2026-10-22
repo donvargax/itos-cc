@@ -32,6 +32,10 @@ type sampledMutant struct {
 type sampleResult struct {
 	Seed  string       `json:"seed"`
 	Files []sampleFile `json:"files"`
+	// NotBuilt are the Go files selected that only another system builds,
+	// none of whose recorded mutants is drawn; left out when there are
+	// none.
+	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
 }
 
 // Written is the flags the validated command line gave, by name, each with
@@ -78,6 +82,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	result.Seed = found.Seed
+	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
 	if errors.Is(err, errNoWorkers) {
 		return ui.Emit(c.JSON, nil, ui.Problems(err))
 	}

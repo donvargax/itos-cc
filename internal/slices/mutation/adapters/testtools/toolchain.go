@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/donvargax/itos-cc/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
@@ -168,4 +170,41 @@ func (t Toolchain) CoverageRunner(ctx context.Context, source string, related bo
 		return "", mutants.InputCancelled{Cause: err}
 	}
 	return runner, nil
+}
+
+// GoPlatform is the GOOS and GOARCH go env reports in dir, in the
+// toolchain's environment. Where go env cannot say, go not installed, it is
+// the GOOS and GOARCH that environment sets, else the system itos-cc runs
+// on, as go's own defaults are: a command that runs no Go, mutation check,
+// still runs without it.
+func (t Toolchain) GoPlatform(ctx context.Context, dir string) (mutants.Platform, mutants.InputFailure) {
+	if err := context.Cause(ctx); err != nil {
+		return mutants.Platform{}, mutants.InputCancelled{Cause: err}
+	}
+	cmd := exec.CommandContext(ctx, "go", "env", "GOOS", "GOARCH")
+	cmd.Dir = dir
+	if t.Env != nil {
+		cmd.Env = t.Env
+	}
+	out, err := cmd.Output()
+	if cause := context.Cause(ctx); cause != nil {
+		return mutants.Platform{}, mutants.InputCancelled{Cause: cause}
+	}
+	if fields := strings.Fields(string(out)); err == nil && len(fields) == 2 {
+		return mutants.Platform{OS: fields[0], Arch: fields[1]}, nil
+	}
+	env := t.Env
+	if env == nil {
+		env = os.Environ()
+	}
+	p := mutants.Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
+	for _, kv := range env {
+		switch name, value, _ := strings.Cut(kv, "="); {
+		case name == "GOOS" && value != "":
+			p.OS = value
+		case name == "GOARCH" && value != "":
+			p.Arch = value
+		}
+	}
+	return p, nil
 }

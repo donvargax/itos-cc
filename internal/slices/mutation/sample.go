@@ -38,6 +38,9 @@ type SampleFound struct {
 	Seed      string
 	NoSources bool
 	Sampled   mutants.Sampled
+	// NotBuilt are the selected Go files only another system builds,
+	// none of whose recorded mutants is drawn.
+	NotBuilt []mutants.NotBuilt
 }
 
 // errNoWorkers is the one failure after which sample reports no result
@@ -64,6 +67,9 @@ func (h Handler) Sample(ctx context.Context, q SampleQuery) (SampleFound, error)
 	if len(sources) == 0 {
 		found.NoSources = true
 		return found, nil
+	}
+	if sources, found.NotBuilt, err = h.notBuilt(ctx, sources); err != nil || len(sources) == 0 {
+		return found, err
 	}
 	root, cfg, err := h.settings(ctx)
 	if err != nil {

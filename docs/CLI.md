@@ -633,6 +633,19 @@ and its exit code stays what its functions make it.
 directory) once it has written what it judged, and lists them under the
 same key; a `--count` run writes nothing and removes nothing.
 
+A Go file only another system builds, its name's `_GOOS` or `_GOARCH`
+suffix or its `//go:build` line ruling out the `GOOS` and `GOARCH` that `go
+env` reports whatever its other tags, is no problem either: `mutation run`,
+`check` and `sample` leave it out of `"files"`, list it in a key of its own,
+`"not_built": [{"file", "platform"}]`, there only when there is one, with
+`file` as in `"files"` and `platform` as `go env` names it, `linux/amd64`,
+say `itos-cc: <file>: not built on <platform>, so not judged here` on
+stderr, and fail nothing for it, `--fail-uncovered` included; a `--count`
+run lists it the same way, `file` from the repository's top as its
+`"selected"` name files. Its snapshot is no orphan and is neither rewritten
+nor judged here. A file only a tag of the project's own leaves out is
+judged as before.
+
 A mutant a fresh entry records at a site its unchanged function no longer
 holds, as when a newer itos-cc removes a mutation operator, is left out of
 `mutation check`'s verdict and counts, and the next `mutation run` drops it

@@ -158,6 +158,17 @@ itos-cc.yaml's exclude leaves out is an orphan too, though its file is
 there, named "<file>: excluded, …". A counted run writes nothing, so it
 removes nothing.
 
+A Go file only another system builds is not judged here: its name's
+_GOOS or _GOARCH suffix, or its //go:build line, rules out the GOOS and
+GOARCH go env reports, whatever its other tags. The run leaves it out,
+says "itos-cc: <file>: not built on <goos>/<goarch>, so not judged here"
+on stderr, lists it under "not_built" in --json, and fails nothing for
+it, --fail-uncovered included. Its snapshot, which a run on a system that
+builds it writes, is left as it is, and is no orphan; a counted run
+selects none of its sites. A file only a tag of the project's own leaves
+out, such as integration or ignore, is judged as before, and so is a
+branch on runtime.GOOS: its lines no test here executes are uncovered.
+
 --count N judges at most N mutation sites freshly, as a bounded check
 that needs no cache: the cache neither saves a trial nor is written. It
 resolves the Git repository and its HEAD commit once and judges that
@@ -434,7 +445,10 @@ judged and no snapshot is written. Listed tests are not run with
    "work": {"completed", "cancelled", "unattempted", "blocked"};
    when it removed any, "orphans": [{"file", "snapshot", "why"}], each
    snapshot whose source file was gone or excluded, "snapshot" its path
-   from the project root, "why" "gone"|"excluded"; with
+   from the project root, "why" "gone"|"excluded"; when it left any out,
+   "not_built": [{"file", "platform": "<goos>/<goarch>"}], each Go file
+   only another system builds, with --count too, its "file" from the
+   repository's top; with
    --count, instead of "files" and "orphans":
    "sampling": {"budget", "eligible", "selected", "executed", "omitted",
    "seed", "algorithm", "commit", "since", "since_base",

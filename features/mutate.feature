@@ -1249,7 +1249,9 @@ Feature: Mutation testing
 
     # Before slice-25 the file's mutants are uncovered, and survivors with
     # --no-coverage; the run fails them and exits 1, failing at the Then.
-    @slice-25 @ID-MUT-304 @wip
+    # With --no-coverage, which measures nothing, the But's branch mutant
+    # runs and survives, as no test here executes its line.
+    @slice-25 @ID-MUT-304
     Scenario Outline: A Go file only another system builds is not judged here, left out by <constraint>
       Given a Go package whose function Probe is split by <constraint> into a file only another system builds and a file this one builds, whose test reaches the second
       When I run "itos-cc mutation run <flags> --json" for both files
@@ -1268,7 +1270,7 @@ Feature: Mutation testing
     # Before slice-25 run judges the changed file, its mutants uncovered,
     # and check reports its changed function mutation.stale; both exit 1,
     # failing at the Then.
-    @slice-25 @ID-MUT-305 @wip
+    @slice-25 @ID-MUT-305
     Scenario Outline: A gate on this system passes a range that changed only code another system builds
       Given the package of MUT-304, its snapshots committed, and a commit since main that changes only the file another system builds
       When I run "itos-cc mutation <command> --since main <mode> --json"
@@ -1286,7 +1288,7 @@ Feature: Mutation testing
     # writes it: killed mutants and one survivor.
     # Before slice-25 check reports the recorded survivor as
     # mutation.survived and exits 1, failing at the Then.
-    @slice-25 @ID-MUT-306 @wip
+    @slice-25 @ID-MUT-306
     Scenario: The results another system recorded are neither judged nor sampled here
       Given the package of MUT-304, where the snapshot of the file another system builds records killed mutants and one survivor, as a run on that system recorded them
       When I run "itos-cc mutation check --json"
@@ -1297,7 +1299,7 @@ Feature: Mutation testing
     # A scenario of its own, as every counted step skips on Windows (#29),
     # so MUT-306 still runs there. Before slice-25 the count-one run may
     # select a site in the file, failing at the Then.
-    @slice-25 @ID-MUT-307 @wip
+    @slice-25 @ID-MUT-307
     Scenario: A counted run selects no site in a file only another system builds
       Given the package of MUT-304, committed, whose only eligible sites are in the file another system builds and in a function of the other file
       When a count-one run judges it, with several seeds

@@ -299,3 +299,19 @@ func (s *Inputs) CoverageRunner(ctx context.Context, path string, related bool) 
 	}
 	return "", nil
 }
+
+// GoPlatform is the memory's one Go toolchain's platform: GOOS and GOARCH
+// as the run sets them, else the platform's, as go env resolves them.
+func (s *Inputs) GoPlatform(ctx context.Context, _ string) (mutants.Platform, mutants.InputFailure) {
+	if failure := inputStopped(ctx); failure != nil {
+		return mutants.Platform{}, failure
+	}
+	p := mutants.Platform{OS: s.Runtime.Platform, Arch: s.Runtime.Architecture}
+	if goos := s.Runtime.Env["GOOS"]; goos != "" {
+		p.OS = goos
+	}
+	if goarch := s.Runtime.Env["GOARCH"]; goarch != "" {
+		p.Arch = goarch
+	}
+	return p, nil
+}

@@ -612,6 +612,22 @@ for the others. `mutation check` names
 the orphans under its paths the same way, without judging or failing
 anything for them. A `--count` run writes nothing, so it removes nothing.
 
+A Go file only another system builds, such as `probe_windows.go` on Linux,
+is not judged here (#18): its name's `_GOOS` or `_GOARCH` suffix, or its
+`//go:build` line, rules out the `GOOS` and `GOARCH` that `go env` reports,
+whatever its other tags. `mutation run`, `check` and `sample` leave it out
+of `files`, say `itos-cc: <file>: not built on <goos>/<goarch>, so not
+judged here` on stderr, list it in `--json` under `not_built` as `{"file",
+"platform"}`, a key there only when there is one, and fail nothing for it,
+`--fail-uncovered` included. Its snapshot, which a run on a system that
+builds it writes, is that system's: no run here rewrites it or calls it an
+orphan, `mutation check` judges none of its outcomes, a survivor included,
+and `mutation sample` draws none of them. A `--count` run selects none of
+its sites, and `mutation list` still lists them. A file only a tag of the
+project's own leaves out, such as `integration` or `ignore`, is judged as
+before, and so is a branch on `runtime.GOOS`: its lines no test here runs
+are uncovered, so pass the system to such code as a value instead.
+
 Uncovered mutants never run, so a changed function no test executes passes.
 `--fail-uncovered` makes each one a failure: listed like a survivor, a
 `mutation.uncovered` problem in `--json`, and exit 1. With `--since`, only the

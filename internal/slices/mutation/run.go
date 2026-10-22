@@ -54,6 +54,9 @@ type RunFound struct {
 	Elsewhere []mutants.StaleException
 	Orphans   []mutants.Orphan
 	Lines     mutants.LineScope
+	// NotBuilt are the selected Go files only another system builds,
+	// which the run leaves out.
+	NotBuilt []mutants.NotBuilt
 	// Interrupted is the cause of the run's context once it stopped while
 	// it judged, as an interrupt stops it: Results holds what it kept.
 	Interrupted error
@@ -110,6 +113,16 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		found.NoSources = true
 		found.Orphans, err = h.removeOrphans(ctx, q.SelectionQuery)
 		return found, err
+	}
+	// A file only another system builds is left out before anything is
+	// measured or run, its exceptions judged by none, as it was selected.
+	if sources, found.NotBuilt, err = h.notBuilt(ctx, sources); err != nil {
+		return found, err
+	}
+	if len(sources) == 0 {
+		found.Ran = true
+		found.Orphans, err = h.removeOrphans(ctx, q.SelectionQuery)
+		return found, ranInto(err)
 	}
 	// Strict coverage proves the functions of each strict language of the
 	// selection (mutants.StrictCoverage) executed.

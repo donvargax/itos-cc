@@ -106,6 +106,10 @@ type runResult struct {
 	// was gone, which it removed; left out when there were none, so a run
 	// with no orphan prints the keys it always did.
 	Orphans []Orphan `json:"orphans,omitempty"`
+	// NotBuilt are the Go files selected that only another system builds,
+	// left out of Files and judged nowhere here; left out when there are
+	// none.
+	NotBuilt []notBuiltFile `json:"not_built,omitempty"`
 }
 
 // given says whether the command line gave flag name.
@@ -157,6 +161,7 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
 	p := &Presentation{UI: ui, JSON: c.JSON, Root: found.Root, Tree: h.Tree}
+	result.NotBuilt = sayNotBuilt(ui, found.NotBuilt)
 	switch {
 	case found.Gaps != nil:
 		p.gaps(*found.Gaps)

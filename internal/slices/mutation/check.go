@@ -24,6 +24,9 @@ type CheckFound struct {
 	Lines     mutants.LineScope
 	Excluded  int
 	NoSources bool
+	// NotBuilt are the selected Go files only another system builds,
+	// which the check leaves out, its recorded outcomes unjudged.
+	NotBuilt []mutants.NotBuilt
 }
 
 // Check observes in the cmd handler's order: settings, then test support,
@@ -70,6 +73,9 @@ func (h Handler) Check(ctx context.Context, q CheckQuery) (CheckFound, error) {
 	if len(sources) == 0 {
 		found.NoSources = true
 		return found, nil
+	}
+	if sources, found.NotBuilt, err = h.notBuilt(ctx, sources); err != nil || len(sources) == 0 {
+		return found, err
 	}
 	if h.Toolchain == nil {
 		return found, errors.New("mutation Toolchain binding is missing")

@@ -309,6 +309,23 @@ func ToolchainContract(t *testing.T, makeInput InputFactory) {
 			t.Fatalf("a Dart --test-command is run as given, its copy readied by nothing: %+v %v", c, failure)
 		}
 	})
+	t.Run("the Go platform is go env's, the run's GOOS and GOARCH first", func(t *testing.T) {
+		files := map[string]string{"go.mod": "module board\n", "a.go": "package board\n"}
+		b := makeInput(t, files, nil, nil)
+		p, failure := b.Toolchain.GoPlatform(t.Context(), b.Root)
+		if failure != nil || p.OS == "" || p.Arch == "" || p.String() != p.OS+"/"+p.Arch {
+			t.Fatalf("Go platform: %+v %v", p, failure)
+		}
+		other := "windows"
+		if p.OS == other {
+			other = "linux"
+		}
+		set := makeInput(t, files, nil, map[string]string{"GOOS": other, "GOARCH": "arm64"})
+		p, failure = set.Toolchain.GoPlatform(t.Context(), set.Root)
+		if failure != nil || p != (mutants.Platform{OS: other, Arch: "arm64"}) {
+			t.Fatalf("Go platform with GOOS=%s GOARCH=arm64: %+v %v", other, p, failure)
+		}
+	})
 	t.Run("Python shell and unreached source avoid unused probe", func(t *testing.T) {
 		b := makeInput(t, map[string]string{"pyproject.toml": "", "src/a.py": "def a(): return 1\n", ".venv/bin/python": "not executable"}, nil, nil)
 		path := filepath.Join(b.Root, "src", "a.py")

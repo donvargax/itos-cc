@@ -201,7 +201,7 @@ func (e Environment) plan(ctx context.Context, repoRoot string, paths []string, 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err := mutants.AdmitFresh(ctx, plan, e.Tree, e.Surroundings, discovered.Sources, tracked, exclude, changed, count); err != nil {
+	if err := mutants.AdmitFresh(ctx, plan, e.Tree, e.Surroundings, e.Toolchain, discovered.Sources, tracked, exclude, changed, count); err != nil {
 		return nil, err
 	}
 	cleanup = false
