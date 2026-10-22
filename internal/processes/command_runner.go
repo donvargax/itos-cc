@@ -48,10 +48,13 @@ func (runner *Runner) Run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 // owned group joined as at its own timeout, within a cleanup budget of its
 // own, and judged OverLimit, unless its parent cancelled it. What cmd
 // writes to output is kept bounded (Result.Output) and written to output
-// as kept once the command has ended.
+// as kept once the command has ended; cmd's streams are given back as they
+// were.
 func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, limits Limits) (Result, error) {
 	platform := PlatformAtBoundary(runner.Platform)
 	kept := &keptOutput{limit: limits.Output}
+	originalStdout, originalStderr := cmd.Stdout, cmd.Stderr
+	defer func() { cmd.Stdout, cmd.Stderr = originalStdout, originalStderr }()
 	if output != nil && cmd.Stdout == output {
 		cmd.Stdout = kept
 	}

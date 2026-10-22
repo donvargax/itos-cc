@@ -277,8 +277,10 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget 
 // runUnownedCommand runs cmd where the platform owns no process group, as
 // on Windows: over its output cap, the command's own process is killed.
 // What it writes to a caller's own writer is counted against the cap as
-// it passes.
+// it passes. The command's streams are given back as they were.
 func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
+	originalStdout, originalStderr := cmd.Stdout, cmd.Stderr
+	defer func() { cmd.Stdout, cmd.Stderr = originalStdout, originalStderr }()
 	counted := func(w io.Writer) io.Writer {
 		if _, file := w.(*os.File); w == nil || file || w == io.Writer(s.kept) {
 			return w
