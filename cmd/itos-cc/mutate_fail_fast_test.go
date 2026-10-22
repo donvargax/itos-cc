@@ -60,8 +60,10 @@ func TestAFailingBaselineStopsTheRunWithoutInventingOutcomes(t *testing.T) {
 		if b == nil || b["baseline"] != "not-run" || b["state"] != "unattempted" || !undecided(ffMutant(b, "B"), "unattempted") {
 			t.Errorf("b/main.go = %v: want its baseline not-run, and the file and its mutant unattempted", b)
 		}
-		if n := runsIn(ff); n != 1 {
-			t.Errorf("test.sh ran %d times, want once: a's baseline alone", n)
+		// a's baseline runs in its worker's copy, then once more in the
+		// project's own folder (slice-19), failing there too; b's never.
+		if n := runsIn(ff); n != 2 {
+			t.Errorf("test.sh ran %d times, want twice: a's baseline in its copy and in the project", n)
 		}
 	})
 
