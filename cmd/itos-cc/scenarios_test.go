@@ -42,6 +42,10 @@ import (
 //
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$'                       every live scenario
 //	go test ./cmd/itos-cc -count=1 -run '^TestScenarios$' -scenarios=<regexp>   those with a tag it matches
+//
+// Run with -cover and ITOS_CC_TEST_COVERDIR, as itos-cc runs its listed
+// tests, each scenario runs in a test binary of its own, its coverage
+// measured apart (runApart).
 
 var scenarios = flag.String("scenarios", "", "run only the live scenarios with a tag this regular expression matches")
 
@@ -71,6 +75,10 @@ func TestScenarios(t *testing.T) {
 		t.Logf("binary driver only until its command moves: %s", strings.Join(sel.Unmoved, " "))
 	}
 	if sel.Filter == "" {
+		return
+	}
+	if dir := measuredApart(); dir != "" {
+		runApart(t, dir, sel)
 		return
 	}
 	suite := godog.TestSuite{
