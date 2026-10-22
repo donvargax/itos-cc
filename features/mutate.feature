@@ -432,6 +432,67 @@ Feature: Mutation testing
         | rewrites testdata/golden.txt  | testdata/golden.txt is not committed |
         | removes testdata/keep.txt     | testdata/keep.txt is gone            |
 
+    # slice-19, issue #44: a worker copied the package's own root alone,
+    # the nearest package.json, with node_modules linked. Whatever the
+    # package read above its folder was missing in the copy. In a pnpm
+    # workspace that is common: a tsconfig.json that extends the
+    # workspace's ../../tsconfig.base.json. Vite could not load it in the
+    # copy, every test failed with TSCONFIG_ERROR, and every baseline
+    # failed, so no mutant was judged. The same tests passed in the tree,
+    # as itos-cc's own coverage run there showed. Decided in the item:
+    # when the package belongs to a workspace, a worker copies the
+    # workspace's root, its dependency folders linked, and runs in the
+    # package's place in that copy, as a pub workspace member's copy holds
+    # its workspace (MUT-265); the cost of copying every member once per
+    # worker is accepted. Coordinator's calls, 2026-10-21: a workspace is a
+    # pnpm-workspace.yaml with a packages key or a package.json with a
+    # workspaces field (npm and yarn), above the package and within the
+    # project root, whose globs match it; a workspace root above the
+    # project root is not copied. The whole root is copied, less what a
+    # copy always leaves out, and two members of one workspace share one
+    # copy per worker. A tsconfig extends chain outside any workspace is
+    # not followed: MUT-284's message covers it. The workspace reader is
+    # the worker's own, not slice-18's, so the two items stay apart.
+    # Binary-only for good: the copy and Vite's reading of the tsconfig
+    # are the real Workers' and the real Vitest's, and the fake Workers
+    # hold no copy (as MUT-267). Before slice-19 every baseline fails in
+    # the copy with TSCONFIG_ERROR, failing at the first Then.
+    @slice-19 @ID-MUT-283 @binary-only @wip
+    Scenario Outline: A member of a <workspace> whose tsconfig extends one at the workspace root is mutated in a copy of its workspace
+      Given a <workspace> whose root holds tsconfig.base.json, with the member packages/shapes, tested with Vitest, whose tsconfig.json extends ../../tsconfig.base.json and whose tests pass in the project
+      When I run "itos-cc mutation run --workers 1 --json packages/shapes/src/area.ts"
+      Then packages/shapes/src/area.ts's baseline passed, and every mutant of it was judged
+      And the exit code is 0
+
+      Examples:
+        | workspace                                                |
+        | pnpm workspace listing packages/* in pnpm-workspace.yaml |
+        | npm workspace listing packages/* in its package.json     |
+
+    # slice-19, issue #44: when a copy still cannot work, a baseline that
+    # fails in the copy but passes in the project said "Make its tests
+    # pass", which points at the wrong fix. Decided in the item: say that
+    # the tests fail only in the worker's copy when they pass in the tree.
+    # Coordinator's calls, 2026-10-21: after a file's baseline fails in a
+    # copy, itos-cc runs the same command once, unmutated, in the
+    # project's own folder, as coverage runs there; when it passes there,
+    # the problem stays "mutation.baseline-failed" and the exit code stays
+    # 1, the message saying its tests pass in the project but fail in the
+    # worker's copy of <root>, and the fix that the copy holds <root> alone
+    # and its tests read something outside it. When they fail there too,
+    # the message is as before. mutation sample says the same. The fixture
+    # is a package in no workspace whose tsconfig.json extends the folder
+    # above it, which slice-19 still does not copy. Binary-only for good,
+    # as MUT-283. Before slice-19 the message says only that its tests
+    # fail, failing at the Then; the But holds today.
+    @slice-19 @ID-MUT-284 @binary-only @wip
+    Scenario: A baseline that fails only in the worker's copy says so
+      Given a TypeScript package in no workspace, tested with Vitest, whose tsconfig.json extends ../tsconfig.base.json in the folder above it, and whose tests pass in the project
+      When I run "itos-cc mutation run --json" for its source
+      Then the problem is "mutation.baseline-failed", its message saying the tests pass in the project but fail in the worker's copy of the package
+      And the exit code is 1
+      But when its tests fail in the project too, the message is "its tests fail before any mutant, so none was judged", as before
+
   Rule: Coverage decides which mutants run
 
     @ID-MUT-18
@@ -2391,6 +2452,41 @@ Feature: Mutation testing
       But with --all-tests the coverage script measures the whole suite as before
       And crap still measures with the coverage script
 
+    # slice-17, issue #45: itos-cc chose a TypeScript package's runner by
+    # the names its package.json declares. Vitest that comes in through
+    # another package (Vite+'s vite-plus, its tests importing
+    # vite-plus/test and its script "vp test") is never named there, so
+    # the package was taken for one with neither Vitest nor Jest. Coverage
+    # looked for c8, found none, and measured nothing: every mutant ran,
+    # and --fail-uncovered could not pass. The baseline ran <pm> run test,
+    # the whole suite, though node_modules/.bin/vitest was installed.
+    # Decided in the item: a vitest that resolves from the package's
+    # node_modules/.bin, as NodeBin finds it, counts as Vitest, in
+    # coverage's choice of runner and in mutation's test command alike.
+    # Coordinator's calls, 2026-10-21: npm and yarn hoist every transitive
+    # bin, so a resolvable vitest counts only when the package's test
+    # script names vitest, vp or vite, or a vite.config.* or
+    # vitest.config.* sits beside its package.json; a package that declares
+    # jest keeps Jest, a resolvable jest alone does not count, and
+    # itos-cc never reads vite-plus or any toolchain's name. The version is
+    # read from the package the bin resolves into, any version admitted
+    # when that cannot be read, as today. The fixture's package declares
+    # @vitest/coverage-v8 and a package named toolchain, which nothing
+    # installs, and its node_modules/.bin holds vitest; it has no c8, as
+    # the issue's had none. Both drivers run it: the fake toolchain reads
+    # the fixture's node_modules/.bin, and the binary driver links the
+    # pinned Vitest. Before slice-17 the baseline is <pm> run test, failing
+    # at the first Then in both drivers.
+    @slice-17 @ID-MUT-280 @wip
+    Scenario: A package whose Vitest comes through another package is measured and mutated with Vitest
+      Given a TypeScript package whose package.json names neither vitest nor jest, whose node_modules/.bin holds vitest and @vitest/coverage-v8 installed through a toolchain package it depends on, whose test script is "vitest run", and no c8
+      When I run "itos-cc mutation run src/area.ts"
+      Then the test command is the installed vitest related --run --bail=1 on the file
+      And stderr does not say "neither Vitest nor Jest"
+      And stderr does not say "running every mutant"
+      And the exit code is 0
+      But when its test script is "node --test" and no vite or vitest config sits beside its package.json, the test command is its package manager's run test, as before
+
     # Real frozen exports, installed runtime dependencies and offline build caches.
     @binary-only @counted-languages @ID-MUT-209
     Scenario Outline: A counted run judges a <language> project through its installed tools, offline
@@ -2862,6 +2958,82 @@ Feature: Mutation testing
         | language | scope                                                   |
         | dart     | a path dependency outside the root                      |
         | dart     | a pubspec_overrides.yaml path override outside the root |
+
+      # slice-18, issue #48: a pnpm workspace member that depends on
+      # another member stays refused, as ADR-0025 says. The refusal now
+      # names the dependency rather than the workspace file, since the file
+      # alone no longer refuses anything. Before slice-18 it names
+      # pnpm-workspace.yaml, failing at the Then.
+      @slice-18 @wip
+      Examples:
+        | language   | scope                                                |
+        | typescript | a pnpm workspace member with a workspace: dependency |
+
+    # slice-18, issue #48: strict coverage refused every TypeScript
+    # function under any pnpm-workspace.yaml from its package root up to
+    # the project root, as a pnpm workspace, the moment the file existed.
+    # pnpm keeps its settings (minimumReleaseAge, allowBuilds, ...) in that
+    # file, so a single package with settings and no packages key was
+    # refused, though the file sits in its package root and is already
+    # fingerprinted there. --fail-uncovered could not be used anywhere
+    # pnpm is set up that way. Decided in the item: a pnpm-workspace.yaml
+    # with no packages key is a settings file, not a workspace.
+    # Coordinator's calls, 2026-10-21: a packages key that is null or an
+    # empty list counts as none; a settings-only file above the package
+    # root, within the project root, is fingerprinted as the package's
+    # input, as a workspace root's files are (MUT-282), not refused. Both
+    # drivers run it: the fake scope reader and fingerprints copy the real
+    # ones. Before slice-18 every function is
+    # "mutation.coverage-unsupported", naming pnpm-workspace.yaml, and the
+    # run exits 1, failing at the first Then.
+    @slice-18 @ID-MUT-281 @wip
+    Scenario: A pnpm-workspace.yaml with no packages key is the package's settings, not a workspace
+      Given a TypeScript package tested with Vitest whose own pnpm-workspace.yaml holds "minimumReleaseAge: 1440" and no packages key
+      When I run "itos-cc mutation run --fail-uncovered --json" for its source
+      Then no function is "mutation.coverage-unsupported", and the exit code is 0
+      And "itos-cc mutation check --fail-uncovered --json" exits 0 and runs no test
+      And after pnpm-workspace.yaml's settings change, the check reports "mutation.coverage-stale" for each judged function, naming pnpm-workspace.yaml, and runs no test
+
+    # slice-18, issue #48: a member of a real pnpm workspace was refused
+    # too, though nothing it reads lies outside its package but its
+    # workspace root's settings. Decided with the person on 2026-10-18,
+    # amending ADR-0025: a member with no workspace:, file: or link:
+    # dependency is fingerprinted like a standalone package, and a member
+    # with one stays refused (MUT-224). Coordinator's calls, 2026-10-21:
+    # a dependency naming another member by its package name with a plain
+    # version is local too (pnpm links it under link-workspace-packages)
+    # and refused; an override in pnpm-workspace.yaml whose value is link:
+    # or file: outside the package root is refused; the workspace's own
+    # root package, which holds the other members, stays refused. What a
+    # member reads from the workspace root is fingerprinted beside its
+    # package: the root's config files as a package root's are named
+    # (package.json, pnpm-lock.yaml, pnpm-workspace.yaml, tsconfig*.json,
+    # ...), its .npmrc and .pnpmfile.cjs, and the patch files
+    # patchedDependencies names; nothing else of the root. Its sibling
+    # members are no input, so a change there leaves its evidence fresh.
+    # The refusal's fix text stays one sentence and names the scope, as
+    # today. npm and yarn workspaces stay refused (MUT-224's npm row), as
+    # the item names pnpm alone. The run's folder does not matter, as the
+    # issue saw. Both drivers run it, as MUT-281. The member's
+    # tsconfig.json does not extend the root's tsconfig.base.json, since a
+    # worker's copy cannot reach it until slice-19. Before slice-18 every
+    # function is "mutation.coverage-unsupported", naming
+    # pnpm-workspace.yaml, failing at the first Then.
+    @slice-18 @ID-MUT-282 @wip
+    Scenario Outline: A pnpm workspace member with no local dependency is proven as a package of its own, beside its workspace root's settings
+      Given a pnpm workspace whose root lists packages/* and holds pnpm-lock.yaml and tsconfig.base.json, with the members packages/label, tested with Vitest and depending on no workspace:, file: or link: package, and packages/other
+      When I run "itos-cc mutation run --fail-uncovered --json" for packages/label/src/label.ts, from <folder>
+      Then no function is "mutation.coverage-unsupported", and the exit code is 0
+      And after the workspace root's <changed> changes, "itos-cc mutation check --fail-uncovered --json" reports "mutation.coverage-stale" for each judged function, naming <changed>, and runs no test
+      But a change to packages/other/src/other.ts alone leaves its evidence fresh
+
+      Examples:
+        | folder           | changed             |
+        | the project root | pnpm-lock.yaml      |
+        | packages/label   | pnpm-workspace.yaml |
+        | the project root | package.json        |
+        | the project root | tsconfig.base.json  |
+        | the project root | .npmrc              |
 
   # strict-changed-lines, issue #33, q-43 (answered 2026-10-11):
   # --fail-uncovered=lines, with --since, judges coverage only where the

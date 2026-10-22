@@ -68,6 +68,19 @@ Feature: Coverage
         | language   | marker           | setup                                        | command                                                           |
         | Dart       | pubspec.yaml     | a dependency on the flutter SDK              | flutter test --no-pub --coverage --coverage-path=... writing LCOV |
 
+      # slice-17, issue #45: a vitest that resolves from the package's
+      # node_modules/.bin counts as Vitest, though the package names it in
+      # neither dependencies nor devDependencies, when its test script
+      # names vitest, vp or vite or a vite or vitest config sits beside its
+      # package.json (MUT-280). crap and coverage choose their command as
+      # mutation does. Binary-only, as COV-05 is. Before slice-17 the
+      # command is the installed c8 around <pm> run test, failing at the
+      # Then.
+      @slice-17 @wip
+      Examples:
+        | language   | marker       | setup                                                                                                                              | command                                                    |
+        | TypeScript | package.json | vitest 5 or later installed through another package, named in neither its dependencies nor its devDependencies, its test script "vitest run" | the installed vitest run with the v8 provider writing LCOV |
+
     @ID-COV-06 @binary-only
     Scenario: The project's own package manager runs its scripts
       Given a TypeScript project in a workspace whose root declares "packageManager": "pnpm@9.12.0"
