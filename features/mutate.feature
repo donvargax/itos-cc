@@ -824,6 +824,62 @@ Feature: Mutation testing
       When the graph is built
       Then the function holding that kill is marked stale, as mutation check calls it
 
+  # slice-39, issue #30, decided with the person on 2026-10-18 (q-19's
+  # option (b) where the list gives it, beside ADR-0011's per-file rule):
+  # a listed kill is dated by its own test, not its test's whole file. A
+  # Gherkin file holds many scenarios and changes far more often than any
+  # one of them, so a comment or a new @wip scenario staled every kill its
+  # file's scenarios made. mutation.tests.list may print a third
+  # tab-separated column, a fingerprint of the test's own text,
+  # <ID>\t<file>\t<fingerprint>; the lister computes it, and itos-cc stays
+  # unaware of Gherkin. With a fingerprint, a listed outcome records the
+  # fingerprint of each covering test in place of its file's hash, and stays
+  # fresh while each covering test is still listed with that fingerprint,
+  # whatever else its file holds and whichever file it moved to. Judging that
+  # runs the list command, in mutation check, run, sample and except alike: a
+  # list that fails is tests.list-failed, exit 1. A test listed without a
+  # fingerprint is dated by its file, as ADR-0011 has it, with no list
+  # command run to judge it (MUT-130 to 133 unchanged). Support files
+  # (mutation.tests.support) stale every listed kill, fingerprinted or not.
+  # An outcome recorded before slice-39 keeps its file hashes, and is dated by
+  # them until a run records it again. Before slice-39 the third column is
+  # read as part of the file's name, so none of these scenarios holds.
+  Rule: A listed kill is dated by its test's fingerprint when the list prints one
+
+    @slice-39 @ID-MUT-276 @wip
+    Scenario: A fingerprinted listed kill stays fresh when the rest of its file changes
+      Given mutation.tests.list prints "ID-A-02", "a.feature" and the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
+      And a.feature has changed since, in a comment and in another scenario, and the list still prints "f1" for ID-A-02
+      When I run "itos-cc mutation check"
+      Then the exit code is 0
+      And "itos-cc mutation run" reuses that kill
+      And after ID-A-02 moves to b.feature, still listed with "f1", the kill is still fresh
+
+    @slice-39 @ID-MUT-277 @wip
+    Scenario: A changed or missing fingerprint makes the listed kill stale
+      Given mutation.tests.list prints the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
+      And the list now prints "f2" for ID-A-02
+      When I run "itos-cc mutation check"
+      Then the problem is "mutation.stale" for that mutant's function, and its message names ID-A-02
+      And "itos-cc mutation run" runs that mutant again, its own tests first
+      And when the list no longer prints ID-A-02 at all, the kill is stale the same way
+
+    @slice-39 @ID-MUT-278 @wip
+    Scenario: Unfingerprinted tests and support files keep their rules
+      Given itos-cc.yaml lists features/*_test.go under mutation.tests.support
+      And mutation.tests.list prints a fingerprint for ID-A-02 in a.feature and none for ID-B-01 in b.feature
+      And a run recorded a mutant ID-A-02 kills and another ID-B-01 kills
+      When a.feature and b.feature change elsewhere, the list's fingerprint for ID-A-02 unchanged
+      Then "itos-cc mutation check" reports ID-B-01's kill "mutation.stale", naming b.feature, and ID-A-02's fresh
+      And after features/steps_test.go changes, both kills are "mutation.stale", naming it
+
+    @slice-39 @ID-MUT-279 @wip
+    Scenario: Judging a fingerprinted kill runs the list, and only then
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 listed with a fingerprint
+      When the list command fails and I run "itos-cc mutation check"
+      Then the problem is "tests.list-failed", with its exit code, and the exit code is 1
+      But when every recorded listed kill was listed without a fingerprint, mutation check runs no list command
+
   # listed-tests timed every run of listed tests from one run of all of
   # them: the coverage run (or the sum of the per-test runs), times the
   # timeout factor. For itos, about 3 minutes times 10, so a mutant that
