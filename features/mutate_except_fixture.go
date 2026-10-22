@@ -78,6 +78,7 @@ func (e *exceptionMutation) review(reason string) error {
 		return fmt.Errorf("review entries %v", a)
 	}
 	e.entry = a[0]
+	e.written = e.s.m.read("itos-cc.yaml")
 	e.reviewed = true
 	return nil
 }

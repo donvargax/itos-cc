@@ -27,6 +27,7 @@ type exceptionMutation struct {
 	renewObject        map[string]any
 	layoutPrefix       string
 	layoutSuffix       string
+	written            string
 }
 
 func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
@@ -38,7 +39,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 				e.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
 			}
 		}
-		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242", "290", "291", "292"}, e.id) {
+		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242", "290", "291", "292", "293", "295", "296"}, e.id) {
 			return ctx, nil
 		}
 		e.r.annotate = slices.Contains([]string{"138", "139", "140"}, e.id)
@@ -143,6 +144,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step(`^"itos-cc mutation check src/board\.ts --json" gives it the same fix$`, e.sameFix)
 	e.renewSteps(sc)
 	e.layoutSteps(sc)
+	e.pruneSteps(sc)
 }
 
 func (e *exceptionMutation) run(args string) error { return e.s.m.w.runWith(e.s.m.w.env(), args) }
