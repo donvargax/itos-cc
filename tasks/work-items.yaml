@@ -2126,8 +2126,8 @@ items:
   - id: T-46
     title: The nightly mutation run survives every mutant and commits its results
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: [T-43, slice-7]
     kind: task
     why: >
