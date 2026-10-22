@@ -316,6 +316,33 @@ Feature: Mutation testing
       And the problem is "mutation.baseline-failed", with file
       And the exit code is 1
 
+    # slice-24, issue #47: a failing baseline printed only the last 20 lines
+    # of its output (Tail in presentation.go, used by run_ui.go and
+    # sample_ui.go). Vitest prints the cause first and the bulk last, so the
+    # cause was cut off, and with --json the output appeared nowhere:
+    # mutation.baseline-failed carried only file (#47). Decided in the item:
+    # keep the head and the tail of the output, shared with the baseline's
+    # report. Coordinator's calls, 2026-10-21: the report gives the first 20
+    # lines and the last 20, and between them one line, "… 60 lines left out
+    # …", when there are more than 40; a run keeps at most 64 KiB at either
+    # end, whatever a line's length, so a baseline's output holds bounded
+    # memory too. --json's mutation.baseline-failed gains "output", the same
+    # text (a key added). mutation sample's report is the same. A failing
+    # selection of listed tests is unchanged. MUT-16's sentence "the last 20
+    # lines of the test output follow" becomes "the test output follows
+    # whole, as it is under 40 lines" in the feat, its step with it. Both
+    # drivers run it, as it needs no real tool. Before slice-24 only the
+    # last 20 lines follow, failing at the Then.
+    @slice-24 @ID-MUT-303 @wip
+    Scenario: A failing baseline's report keeps the head and the tail of its output
+      Given the tests of src/board.py fail without any mutation, printing 100 numbered lines, the first naming the cause
+      When I run "itos-cc mutation run src/board.py"
+      Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
+      And lines 1 to 20 follow it, then "… 60 lines left out …", then lines 81 to 100
+      And the problem is "mutation.baseline-failed", with file "src/board.py"
+      And its "output" in --json is those same lines
+      And "itos-cc mutation sample src/board.py" reports the failing baseline with the same lines
+
     # Binary-only for good: mutants running at once are real processes.
     @ID-MUT-17 @binary-only
     Scenario: Parallel workers
@@ -492,6 +519,109 @@ Feature: Mutation testing
       Then the problem is "mutation.baseline-failed", its message saying the tests pass in the project but fail in the worker's copy of the package
       And the exit code is 1
       But when its tests fail in the project too, the message is "its tests fail before any mutant, so none was judged", as before
+
+  # slice-24, issues #54 and #47. A mutant whose test loops writing output
+  # filled unbounded buffers: the worker's (worktrees/worker.go runIn) and
+  # the supervisor's (processes/proc_owned.go readOwnedCommandOutput). A
+  # test that kept the output in memory grew until the machine died. On a
+  # GitHub-hosted runner that took the runner down before the mutant's
+  # timeout fired: the job ended with a shutdown signal, a counted run
+  # reported count.interrupted, the mutants in flight were lost and every
+  # site after them went unjudged (#54). A gate can never pass a range
+  # holding such a mutant.
+  # Decided in the item: a mutant's output and memory are both capped by
+  # default. Each cap is sized from the baseline as the timeout is
+  # (q-23): the baseline's output size or peak memory times a factor, plus
+  # a fixed allowance, so a cap never sits below what the unmutated tests
+  # need. Where a platform cannot measure memory there is no memory
+  # cap, rather than a guessed one. Going over a cap kills the
+  # mutant, as a timeout does: a runaway is the suite catching the mutant,
+  # as PIT and Stryker count it. Its outcome is its own, over-limit,
+  # beside timeout, in the snapshot and --json, so such kills can be listed
+  # and reviewed.
+  # Decided by the person on 2026-10-21: the defaults, flags only (no
+  # itos-cc.yaml key) and no memory cap on macOS and Windows for now, said
+  # once on stderr, with ideas for a Windows Job Object and a macOS reader;
+  # --json does not list which caps held. Coordinator's calls, 2026-10-21,
+  # for the rest, memory read as the group's summed RSS every 50 ms, not
+  # an rlimit (RLIMIT_AS breaks Go and the JVM, and caps each process, not
+  # the group):
+  # - The output cap is the bytes the baseline wrote, stdout and stderr
+  #   together, times --output-factor, 10 by default, plus 16 MiB. The
+  #   memory cap is the baseline's peak memory times --memory-factor, 4 by
+  #   default, plus 256 MiB. Both flags sit beside --timeout-factor on
+  #   mutation run (counted runs included) and mutation sample; no
+  #   itos-cc.yaml key, as the timeout has none.
+  # - Memory is the resident memory of the command's whole owned process
+  #   group, summed over its members, sampled while it runs; its peak is
+  #   the baseline's. Linux measures it from /proc, as the supervisor
+  #   already reads the group there. macOS and Windows measure nothing yet,
+  #   so they cap no memory, and the run says so once on stderr.
+  # - Each cap comes from the baseline whose time sets the timeout: the
+  #   file's own, a selection of listed tests' (MUT-135), a sample's or a
+  #   counted trial's. A baseline has no cap, as it has no timeout.
+  #  
+  # - Over a cap, the group is killed and joined as at a mutant's own
+  #   timeout (ADR-0021): a local cleanup budget, never the shared one. The
+  #   outcome is "over-limit", with "limit" "output" or "memory" in --json
+  #   and the snapshot (a key added, left out for every other outcome, so
+  #   older snapshots read and write as before). Its progress line says
+  #   which cap and its size.
+  # - Everywhere a timeout counts as killed, over-limit does: the file's
+  #   and the unit's killed counts, mutation check, the reuse of a kill in
+  #   an unchanged function, sample's agreement (MUT-74), an exception gone
+  #   stale as killed, and --fail-fast, where a kill is not actionable.
+  #  
+  # Both drivers run MUT-300 and MUT-302. MUT-301 too, its outcome
+  # differing by system: the platform is a value the Workers binding holds,
+  # and the fake measures memory where the real supervisor does.
+  Rule: A mutant's output and memory are capped, sized from its baseline
+
+    # The flooding fixture writes in 64 KiB pieces with a millisecond's
+    # pause, about 64 MB a second, so today's product, which buffers it
+    # all until the timeout, stays under half a gigabyte on CI.
+    # --timeout-factor 1 keeps that red run short; every judged mutant's
+    # tests end in under a second.
+    # Before slice-24 the endless printer runs to its timeout, outcome
+    # "timeout", failing at the first Then.
+    @slice-24 @ID-MUT-300 @wip
+    Scenario: A mutant whose tests write output without end is killed over its output cap
+      Given a Go package whose test prints 2 MiB with nothing mutated, where one mutant makes it print 30 MiB and pass, and another makes it print without end
+      When I run "itos-cc mutation run --no-coverage --workers 2 --timeout-factor 1 --json" for its file
+      Then the endless printer's outcome is "over-limit", with "limit" "output", and it is counted in "killed"
+      And it ended before its timeout, and every other mutant was judged as its tests decide
+      And the 30 MiB printer survived, under ten times the baseline's 2 MiB plus 16 MiB
+      And the exit code is 1
+      But with "--output-factor 1" the 30 MiB printer is "over-limit" too, and the exit code is 0
+
+    # The hoarding fixture grows by 64 MiB every 20 ms up to 2 GiB, then
+    # fails its test, so no system holds more for long, and on a system
+    # with no memory cap the mutant is killed by its own test.
+    # --memory-factor 1 keeps the cap near the baseline's peak plus
+    # 256 MiB, well under 2 GiB, whatever the toolchain's own peak.
+    # Before slice-24, on Linux the mutant is "killed", failing at the
+    # Then; on macOS and Windows it is killed too and nothing is said,
+    # failing at the But's stderr.
+    @slice-24 @ID-MUT-301 @wip
+    Scenario: A mutant whose tests hold ever more memory is killed over its memory cap where memory is measured
+      Given a Go package whose test holds little memory with nothing mutated, where one mutant makes it hold ever more, up to 2 GiB, before it fails
+      When I run "itos-cc mutation run --no-coverage --workers 1 --memory-factor 1 --json" for its file
+      Then on Linux the hoarder's outcome is "over-limit", with "limit" "memory", before it holds 2 GiB
+      And every other mutant was judged as its tests decide
+      But on macOS and Windows its outcome is "killed", and stderr says once that no memory cap holds on this system, as itos-cc cannot measure a test run's memory there
+
+    # The snapshot is written as raw JSON (the lessons in AGENTS.md): a
+    # run that timed the mutant out records it, and the fixture then turns
+    # its outcome into "over-limit" with "limit" "output".
+    # Before slice-24 run does not reuse an outcome it does not know, so
+    # it runs the mutant again and records "timeout", failing at the Then.
+    @slice-24 @ID-MUT-302 @wip
+    Scenario: A recorded over-limit kill is a kill to run, check and sample
+      Given the snapshot of src/board.go records the mutant at line 7 as "over-limit", with "limit" "output", in a function unchanged since
+      When I run "itos-cc mutation run --json" for its file
+      Then that mutant is "over-limit", with "limit" "output", reused, and counted in "killed"
+      And "itos-cc mutation check src/board.go" counts it killed and exits 0
+      And when it now runs past its timeout, "itos-cc mutation sample --count 20 src/board.go" reports no problem and exits 0
 
   Rule: Coverage decides which mutants run
 
@@ -1068,6 +1198,108 @@ Feature: Mutation testing
       Then the problem is "flags.conflict", naming "--no-coverage"
       And no coverage command or mutant runs
       And the exit code is 80
+
+  # slice-25, issue #18: a Go file the build constraints leave out on the
+  # system the run is on, probe_windows.go on Linux, was mutated as any
+  # other. Its package's tests never build it, so its mutants were
+  # uncovered, or survived with --no-coverage, and with --fail-uncovered
+  # its functions were also mutation.coverage-missing (#18's comment). An
+  # item changing code only Windows builds could never pass the gate on
+  # Linux or macOS, and the gate of a project whose CI runs on Linux alone
+  # failed whatever its tests did.
+  # Decided by the person on 2026-10-18 (#18, why): a file the build
+  # constraints of the current platform leave out is reported as not
+  # built here, with a named reason, and fails nothing, --fail-uncovered
+  # included. Outcomes are not merged across platforms. A branch on
+  # runtime.GOOS stays a test-design matter: its lines are uncovered as
+  # before.
+  # Decided by the person on 2026-10-21: only constraints that rule out
+  # this GOOS and GOARCH count; check and sample here ignore the results
+  # another system recorded, a survivor included; mutation list keeps
+  # listing the file's sites. Coordinator's calls, 2026-10-21, for the
+  # rest, the rule pure in the domain over the file's name and text with
+  # go/build/constraint, GOOS and GOARCH from the toolchain's go env:
+  # - The platform is the GOOS and GOARCH the project's go env reports, a
+  #   value, never runtime.GOOS in the logic (AGENTS.md). A file is not
+  #   built here when its name's _GOOS or _GOARCH suffix, or its //go:build
+  #   line, rules out that GOOS and GOARCH whatever the other tags. A file
+  #   left out only by a tag of the project's own (integration, ignore) is
+  #   judged as before, as listed tests may build it.
+  # - mutation run, check and sample leave such a file out of "files" and
+  #   name it once in "not_built": [{"file", "platform"}] (a key added,
+  #   there only when one is), with "platform" as "linux/amd64". Each
+  #   command says on stderr "itos-cc: <file>: not built on <platform>,
+  #   so not judged here". It fails nothing.
+  # - Its snapshot, written by a run on a system that builds it, is left
+  #   as it is: not rewritten, not an orphan, not read. mutation check does
+  #   not judge its recorded outcomes here, and mutation sample draws none
+  #   of them, as a mutant the build leaves out would survive and read as a
+  #   mismatch.
+  # - A counted run selects no site in it, as MUT-246 does for an
+  #   excluded source; mutation list keeps listing its sites, as they are
+  #   the project's.
+  # - Only Go has build constraints itos-cc reads. Other languages are as
+  #   before.
+  # Both drivers run it, on every system. The fixture names "another
+  # system" from the driver's platform: windows on Linux and macOS, linux
+  # on Windows; and another architecture from the host's.
+  Rule: Code only another system builds is not judged on this one
+
+    # Before slice-25 the file's mutants are uncovered, and survivors with
+    # --no-coverage; the run fails them and exits 1, failing at the Then.
+    @slice-25 @ID-MUT-304 @wip
+    Scenario Outline: A Go file only another system builds is not judged here, left out by <constraint>
+      Given a Go package whose function Probe is split by <constraint> into a file only another system builds and a file this one builds, whose test reaches the second
+      When I run "itos-cc mutation run <flags> --json" for both files
+      Then the first is in "not_built" with this system's platform, and not in "files"
+      And stderr says it is not built on this system's platform, so not judged here
+      And the second's mutants are judged as its tests decide, and the exit code is 0
+      But when the second also branches on runtime.GOOS for another system, its mutants on that branch are uncovered, and the exit code is 1
+
+      Examples:
+        | constraint                                    | flags            |
+        | its file name's suffix                        | --fail-uncovered |
+        | a //go:build line naming another system       | --fail-uncovered |
+        | a //go:build line naming another architecture | --fail-uncovered |
+        | its file name's suffix                        | --no-coverage    |
+
+    # Before slice-25 run judges the changed file, its mutants uncovered,
+    # and check reports its changed function mutation.stale; both exit 1,
+    # failing at the Then.
+    @slice-25 @ID-MUT-305 @wip
+    Scenario Outline: A gate on this system passes a range that changed only code another system builds
+      Given the package of MUT-304, its snapshots committed, and a commit since main that changes only the file another system builds
+      When I run "itos-cc mutation <command> --since main <mode> --json"
+      Then that file is in "not_built", and no problem names it
+      And the exit code is 0
+
+      Examples:
+        | command | mode                   |
+        | run     | --fail-uncovered       |
+        | run     | --fail-uncovered=lines |
+        | check   | --fail-uncovered       |
+        | check   | --fail-uncovered=lines |
+
+    # The snapshot is raw JSON, as a run on a system that builds the file
+    # writes it: killed mutants and one survivor.
+    # Before slice-25 check reports the recorded survivor as
+    # mutation.survived and exits 1, failing at the Then.
+    @slice-25 @ID-MUT-306 @wip
+    Scenario: The results another system recorded are neither judged nor sampled here
+      Given the package of MUT-304, where the snapshot of the file another system builds records killed mutants and one survivor, as a run on that system recorded them
+      When I run "itos-cc mutation check --json"
+      Then that file is in "not_built", no problem names it, and the exit code is 0
+      And "itos-cc mutation sample --count 20" runs none of its mutants and exits 0
+      And "itos-cc mutation run" leaves its snapshot byte for byte, and names no orphan
+
+    # A scenario of its own, as every counted step skips on Windows (#29),
+    # so MUT-306 still runs there. Before slice-25 the count-one run may
+    # select a site in the file, failing at the Then.
+    @slice-25 @ID-MUT-307 @wip
+    Scenario: A counted run selects no site in a file only another system builds
+      Given the package of MUT-304, committed, whose only eligible sites are in the file another system builds and in a function of the other file
+      When a count-one run judges it, with several seeds
+      Then no selected site is in the file another system builds
 
   Rule: Differential runs
 
