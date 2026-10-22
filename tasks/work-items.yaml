@@ -2115,7 +2115,7 @@ items:
     title: The nightly mutation run survives every mutant and commits its results
     phase: 1
     owner: donvargax
-    status: doing
+    status: todo
     depends_on: [T-43, slice-7]
     kind: task
     why: >
