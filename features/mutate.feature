@@ -3290,7 +3290,7 @@ Feature: Mutation testing
   # at the first Then of each scenario.
   Rule: Stale exceptions that nothing can mend are pruned
 
-    @slice-21 @ID-MUT-293 @wip
+    @slice-21 @ID-MUT-293
     Scenario Outline: --prune removes an entry that is <why>, and reports it
       Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
       And <how>
@@ -3307,7 +3307,7 @@ Feature: Mutation testing
         | gone   | "Board#count" was deleted, or no longer has that site |
         | killed | src/board.test.ts changed since, and now kills it     |
 
-    @slice-21 @ID-MUT-294 @wip
+    @slice-21 @ID-MUT-294
     Scenario: --prune removes an entry naming a source the exclude leaves out
       Given itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"
       When I run "itos-cc mutation except --prune --json"
@@ -3315,14 +3315,14 @@ Feature: Mutation testing
       And the removal is reported with why "excluded"
       And "itos-cc mutation check --json" reports no "mutation.exception-stale" problem
 
-    @slice-21 @ID-MUT-295 @wip
+    @slice-21 @ID-MUT-295
     Scenario: --prune keeps an entry that --renew or an edit can mend
       Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
       When I run "itos-cc mutation except --prune --json"
       Then it reports nothing pruned, and the exit code is 0
       And itos-cc.yaml is byte for byte as it was
 
-    @slice-21 @ID-MUT-296 @wip
+    @slice-21 @ID-MUT-296
     Scenario: --prune takes no site and no reason
       When I run "itos-cc mutation except --prune src/board.ts:7:19"
       Then the problem is "args.unexpected", with argument "src/board.ts:7:19"

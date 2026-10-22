@@ -939,8 +939,15 @@ the entries of files they do not select: when exactly one source they
 select holds a function of the entry's name and hash, the entry has
 `moved`, still excepts the mutant at its site there, and fails with
 `new_file` naming the file to put in the entry; otherwise its file is
-`gone`. An entry those judge whose file `exclude` leaves out is `excluded`,
-to remove. Only `mutation except` writes `itos-cc.yaml`. An
+`gone`. An entry those judge whose file `exclude` leaves out is `excluded`.
+`mutation except --prune`, run after `mutation run`, removes every entry
+stale as `gone`, `killed` or `excluded`, which nothing can mend, judging
+each entry as a check of the whole project does, and reports each removal
+(`--json` lists them under `pruned`, each with its `why`). It keeps an entry
+that `changed` or `moved`, for `--renew` or an edit to mend, and changes
+only the removed entries' lines, with the comment lines directly above
+each. The fix of an entry stale as `gone`, `killed` or `excluded` names it.
+Only `mutation except` writes `itos-cc.yaml`. An
 entry never excuses an uncovered mutant: that needs a test, not a reason. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
 `config.invalid`, exit 80.

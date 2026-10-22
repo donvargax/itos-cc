@@ -60,6 +60,22 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 			t.Fatalf("partial batch: %v %+v", failure, f.Entries())
 		}
 	})
+	t.Run("complete entry duplicate removal", func(t *testing.T) {
+		f := open(t, []mutants.Exception{a, a, b}, false)
+		if failure := f.Store.Prune(t.Context(), []mutants.Exception{a}); failure != nil || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a, b}) {
+			t.Fatalf("one duplicate: %v %+v", failure, f.Entries())
+		}
+		missing := b
+		missing.Reason = "not the complete entry"
+		failure := f.Store.Prune(t.Context(), []mutants.Exception{a, missing})
+		var failed mutants.ExceptionFailed
+		if !errors.As(failure, &failed) || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a, b}) {
+			t.Fatalf("partial batch: %v %+v", failure, f.Entries())
+		}
+		if failure := f.Store.Prune(t.Context(), []mutants.Exception{b, a}); failure != nil || len(f.Entries()) != 0 {
+			t.Fatalf("every entry: %v %+v", failure, f.Entries())
+		}
+	})
 	t.Run("missing creation versus nonempty renewal", func(t *testing.T) {
 		f := open(t, nil, true)
 		if failure := f.Store.Renew(t.Context(), nil); failure != nil {
@@ -67,6 +83,12 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 		}
 		if failure := f.Store.Renew(t.Context(), []mutants.Renewal{{Old: a, New: b}}); failure == nil {
 			t.Fatal("missing renewal succeeded")
+		}
+		if failure := f.Store.Prune(t.Context(), nil); failure != nil {
+			t.Fatal(failure)
+		}
+		if failure := f.Store.Prune(t.Context(), []mutants.Exception{a}); failure == nil {
+			t.Fatal("missing removal succeeded")
 		}
 		replaced, failure := f.Store.Except(t.Context(), a)
 		if failure != nil || replaced || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a}) {
@@ -86,6 +108,10 @@ func ExceptionsContract(t *testing.T, open func(*testing.T, []mutants.Exception,
 		failure = f.Store.Renew(ctx, []mutants.Renewal{{Old: a, New: b}})
 		if !errors.As(failure, &stopped) || !errors.Is(failure, cause) || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a}) {
 			t.Fatalf("renew cancellation: %v %+v", failure, f.Entries())
+		}
+		failure = f.Store.Prune(ctx, []mutants.Exception{a})
+		if !errors.As(failure, &stopped) || !errors.Is(failure, cause) || !reflect.DeepEqual(f.Entries(), []mutants.Exception{a}) {
+			t.Fatalf("prune cancellation: %v %+v", failure, f.Entries())
 		}
 	})
 }

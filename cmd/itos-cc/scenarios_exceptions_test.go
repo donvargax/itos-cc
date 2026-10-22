@@ -57,6 +57,27 @@ func (s memoryExceptions) Renew(ctx context.Context, renewals []mutation.Renewal
 	}
 	return memoryExceptionFailure(s.memory.Write(path, updated))
 }
+func (s memoryExceptions) Prune(ctx context.Context, entries []mutation.Exception) mutation.ExceptionFailure {
+	if ctx.Err() != nil {
+		return mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	path := filepath.Join(s.root, config.File)
+	data, err := s.memory.Read(path)
+	if err != nil {
+		return memoryExceptionFailure(err)
+	}
+	updated, err := exceptions.PruneDocument(data, entries)
+	if err != nil {
+		return memoryExceptionFailure(err)
+	}
+	if ctx.Err() != nil {
+		return mutation.ExceptionCancelled{Cause: context.Cause(ctx)}
+	}
+	return memoryExceptionFailure(s.memory.Write(path, updated))
+}
 func memoryExceptionFailure(err error) mutation.ExceptionFailure {
 	if err == nil {
 		return nil

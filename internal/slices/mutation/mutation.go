@@ -105,13 +105,14 @@ type Sample struct {
 // Except accepts a site or renews the current exception entries. Reason is
 // nil when omitted, so an explicit empty one stays distinct.
 type Except struct {
-	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but with --renew"`
+	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but with --renew or --prune"`
 	Renew  bool     `help:"renew each stale entry whose mutant is unchanged, after mutation run, keeping its reason"`
+	Prune  bool     `help:"remove each entry stale as gone, killed or excluded, after mutation run"`
 	JSON   bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
 	Site   []string `arg:"" optional:"" name:"site" help:"the recorded survivor’s file, line and column"`
 }
 
 // Synopsis retains except's two alternative invocation forms.
 func (Except) Synopsis() string {
-	return "<file>:<line>:<column> --reason TEXT [options] | --renew [options]"
+	return "<file>:<line>:<column> --reason TEXT [options] | --renew [options] | --prune [options]"
 }

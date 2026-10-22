@@ -88,7 +88,7 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 		switch e.Why {
 		case mutants.ExceptionKilled:
 			message = fmt.Sprintf("%s: %s is excepted in %s, but the tests now kill it", at, change, "itos-cc.yaml")
-			fix = "Remove its entry from " + "itos-cc.yaml" + ": the tests show that the mutant changes behaviour."
+			fix = pruneKilledFix
 		case mutants.ExceptionChanged:
 			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, "itos-cc.yaml", change)
 			fix = fmt.Sprintf("Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. "+
@@ -105,10 +105,10 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 					message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone", at, "itos-cc.yaml", change)
 				}
 			}
-			fix = "Remove its entry from " + "itos-cc.yaml" + "."
+			fix = pruneFix
 		case mutants.ExceptionExcluded:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a source that its exclude leaves out, which no command mutates", at, "itos-cc.yaml", change)
-			fix = "Remove its entry from " + "itos-cc.yaml" + "."
+			fix = pruneFix
 		case mutants.ExceptionMoved:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a file that is gone; its function is in %s now, where the entry still excepts the mutant",
 				at, "itos-cc.yaml", change, newFile)

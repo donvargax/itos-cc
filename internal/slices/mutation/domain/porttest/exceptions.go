@@ -40,6 +40,45 @@ func (s *Exceptions) Except(ctx context.Context, e mutants.Exception) (bool, mut
 	s.Writes++
 	return false, nil
 }
+func (s *Exceptions) Prune(ctx context.Context, entries []mutants.Exception) mutants.ExceptionFailure {
+	if ctx.Err() != nil {
+		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	if s.Missing {
+		return mutants.ExceptionFailed{Cause: fs.ErrNotExist}
+	}
+	if s.Failure != nil {
+		return s.Failure
+	}
+	done := make([]bool, len(s.Entries))
+	for _, e := range entries {
+		at := slices.IndexFunc(s.Entries, func(old mutants.Exception) bool { return old == e })
+		for at >= 0 && done[at] {
+			next := slices.IndexFunc(s.Entries[at+1:], func(old mutants.Exception) bool { return old == e })
+			if next < 0 {
+				at = -1
+				break
+			}
+			at += 1 + next
+		}
+		if at < 0 {
+			return mutants.ExceptionFailed{Cause: fmt.Errorf("no entry for %s in %s to remove", e.Function, e.File)}
+		}
+		done[at] = true
+	}
+	var kept []mutants.Exception
+	for i, e := range s.Entries {
+		if !done[i] {
+			kept = append(kept, e)
+		}
+	}
+	s.Entries = kept
+	s.Writes++
+	return nil
+}
 func (s *Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
 	if ctx.Err() != nil {
 		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}

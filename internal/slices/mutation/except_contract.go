@@ -55,11 +55,24 @@ fresh results record its mutant killed), changed (no site of its change
 is on a line of its text), gone (its file, function or change is gone),
 ambiguous, no-results (its function has no fresh results) or uncovered.
 
+--prune, run after mutation run, removes each entry that nothing can mend,
+judging every entry as mutation check of the whole project does: one
+stale as gone (its file, function or site is gone), as killed (its
+function's fresh results record its mutant killed) or as excluded (its
+file is one the exclude leaves out). An entry whose function changed, or
+whose file moved, is kept: --renew or an edit of the entry mends it, and
+mutation check still reports it. Only the removed entries' lines change,
+with the comment lines directly above each. It takes no site, no --reason
+and no --renew, and exits 0 once it has written, even when entries it
+keeps are stale.
+
 Plain output is one line, "excepted again" when it replaced an entry:
   excepted <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> in itos-cc.yaml
 and with --renew a line per renewal and per entry left stale:
   renewed <file>:<line>:<column> ` + "`original` → `replacement`" + ` in <namespace#name> (hash <old> → <new>) in itos-cc.yaml
-  not renewed <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)`,
+  not renewed <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>)
+and with --prune a line per entry removed:
+  pruned <file>[:<line>:<column>] ` + "`original` → `replacement`" + ` in <namespace#name> (<why>) from itos-cc.yaml`,
 		JSON: `"exception": {"file", "function", "hash",
    "line_in_function", "column", "original", "replacement", "reason",
    "line_text"}, "replaced": true|false; with --renew instead
@@ -67,28 +80,31 @@ and with --renew a line per renewal and per entry left stale:
    "original", "replacement", "reason", "new_hash", "old_hash", "old_file",
    "old_function", "old_line_in_function", "old_column",
    "match": "line"|"place"|"only"}], "not_renewed": [{the entry's keys,
-   "why", "line" when its site is found}]`,
+   "why", "line" when its site is found}]; with --prune instead
+   "pruned": [{the entry's keys, "why": "gone"|"killed"|"excluded", "line"
+   when its site is found}]`,
 		Rules: []string{
 			"exception.no-survivor     the site is no survivor a fresh snapshot records: file, line, column",
 			"exception.excluded        the site is in a source itos-cc.yaml excludes: file",
 			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered",
-			"flags.conflict            --renew with --reason: flag",
+			"flags.conflict            --renew with --reason, or --prune with --reason or --renew: flag",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"flags.value-missing       no --reason: flag",
 			"flags.value-invalid       an empty --reason: flag, value",
 			"args.missing              no site given",
 			"args.invalid              the site is not <file>:<line>:<column>: argument",
-			"args.unexpected           more than one site, or a site with --renew: argument",
+			"args.unexpected           more than one site, or a site with --renew or --prune: argument",
 		},
 		Exits: []cli.Exit{
-			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale"},
+			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale; with --prune, the entries nothing can mend are removed"},
 			{Code: 1, Meaning: "with --renew, an entry that no longer holds could not be renewed"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew with a site or --reason, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
 		},
 		Examples: []string{
 			"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",
 			"itos-cc mutation except src/billing/invoice.go:42:9 --reason 'the 0 is never read' --json",
 			"itos-cc mutation except --renew  # after mutation run, carry stale entries whose mutant is unchanged",
+			"itos-cc mutation except --prune  # after mutation run, remove entries stale as gone, killed or excluded",
 		},
 	}
 }

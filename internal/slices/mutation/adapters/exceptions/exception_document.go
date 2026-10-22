@@ -41,25 +41,47 @@ func RenewDocument(data []byte, renewals []mutants.Renewal) ([]byte, error) {
 		return nil, &config.InvalidError{Reason: "its top level is not a mapping"}
 	}
 	edit := listEdit{n: len(c.Exceptions), replace: map[int]mutants.Exception{}}
+	done := make([]bool, len(c.Exceptions))
 	for _, r := range renewals {
-		i := slices.IndexFunc(c.Exceptions, func(e mutants.Exception) bool { return e == r.Old })
-		for i >= 0 {
-			if _, done := edit.replace[i]; !done {
-				break
-			}
-			next := slices.IndexFunc(c.Exceptions[i+1:], func(e mutants.Exception) bool { return e == r.Old })
-			if next < 0 {
-				i = -1
-				break
-			}
-			i += 1 + next
-		}
+		i := entryOf(c.Exceptions, done, r.Old)
 		if i < 0 {
 			return nil, fmt.Errorf("%s: no entry for %s in %s to renew", config.File, r.Old.Function, r.Old.File)
 		}
 		edit.replace[i] = r.New
 	}
 	return writeList(data, doc, c.Exceptions, edit)
+}
+
+// PruneDocument removes each of entries, a complete entry of the current
+// document, each entry once, with the comment lines directly above it,
+// and writes only a full batch, changing only those lines.
+func PruneDocument(data []byte, entries []mutants.Exception) ([]byte, error) {
+	c, doc, err := read(data)
+	if err != nil {
+		return nil, err
+	}
+	edit := listEdit{n: len(c.Exceptions), remove: map[int]bool{}}
+	done := make([]bool, len(c.Exceptions))
+	for _, e := range entries {
+		i := entryOf(c.Exceptions, done, e)
+		if i < 0 {
+			return nil, fmt.Errorf("%s: no entry for %s in %s to remove", config.File, e.Function, e.File)
+		}
+		edit.remove[i] = true
+	}
+	return writeList(data, doc, c.Exceptions, edit)
+}
+
+// entryOf is the index of the first entry of entries that is e and not
+// done, which it marks done; -1 when there is none.
+func entryOf(entries []mutants.Exception, done []bool, e mutants.Exception) int {
+	for i, old := range entries {
+		if !done[i] && old == e {
+			done[i] = true
+			return i
+		}
+	}
+	return -1
 }
 
 // read is data as config.Parse reads it, and its node tree, whose top

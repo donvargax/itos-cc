@@ -49,12 +49,21 @@ type renewResult struct {
 	NotRenewed []notRenewedJSON `json:"not_renewed"`
 }
 
-// Run writes the entry for a recorded survivor into itos-cc.yaml, or with
-// --renew renews the stale entries whose mutant is unchanged. --renew's
-// branch comes before the reason is looked at; an absent --reason and an
-// empty one are refused apart, then the site's count and form, before the
-// query is assembled once.
+// pruneResult is --prune's --json object: each entry it removed, and why.
+type pruneResult struct {
+	Pruned []notRenewedJSON `json:"pruned"`
+}
+
+// Run writes the entry for a recorded survivor into itos-cc.yaml, with
+// --renew renews the stale entries whose mutant is unchanged, or with
+// --prune removes those nothing can mend. --prune's and --renew's branches
+// come before the reason is looked at; an absent --reason and an empty one
+// are refused apart, then the site's count and form, before the query is
+// assembled once.
 func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
+	if c.Prune {
+		return c.prune(ctx, ui, h)
+	}
 	if c.Renew {
 		return c.renew(ctx, ui, h)
 	}
@@ -154,6 +163,39 @@ func (c Except) renew(ctx context.Context, ui *cli.UI, h Handler) int {
 	return ui.Emit(c.JSON, result, problems)
 }
 
+// prune is mutation except --prune: each entry of itos-cc.yaml stale as
+// gone, killed or excluded is removed, and each removal reported. It
+// takes no site, no --reason and no --renew.
+func (c Except) prune(ctx context.Context, ui *cli.UI, h Handler) int {
+	result := pruneResult{Pruned: []notRenewedJSON{}}
+	switch {
+	case c.Renew:
+		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "flags.conflict", "--prune removes the entries nothing can mend, and --renew carries others over: they are not given together",
+			"Run 'itos-cc mutation except --renew' first, then 'itos-cc mutation except --prune'.").With("flag", "--renew")))
+	case c.Reason != nil:
+		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "flags.conflict", "--prune removes entries, and was given --reason",
+			"Drop --reason; to except a survivor with a reason, name its site without --prune.").With("flag", "--reason")))
+	case len(c.Site) > 0:
+		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("--prune removes every entry of %s that nothing can mend, and takes no site, but was given %q", "itos-cc.yaml", c.Site[0]),
+			"Drop the site, or drop --prune to except that survivor.").With("argument", c.Site[0])))
+	}
+	found, err := h.Prune(ctx)
+	if err != nil {
+		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then prune again.")))
+	}
+	for _, s := range found.Pruned {
+		result.Pruned = append(result.Pruned, notRenewedJSON{Exception: s.Exception, Why: s.Why, Line: s.Line})
+		if !c.JSON {
+			at := ui.Rel(sourcePath(found.Root, s.File))
+			if s.Line != 0 {
+				at = fmt.Sprintf("%s:%d:%d", at, s.Line, s.Column)
+			}
+			_, _ = fmt.Fprintf(ui.Stdout, "pruned %s %s → %s in %s (%s) from %s\n", at, Quote(s.Original), Quote(s.Replacement), s.Function, s.Why, "itos-cc.yaml")
+		}
+	}
+	return ui.Emit(c.JSON, result, nil)
+}
+
 // parseSite reads <file>:<line>:<column>, the numbers from the right so a
 // Windows drive letter stays in the file.
 func parseSite(arg string) (path string, line, column int, ok bool) {
@@ -200,13 +242,20 @@ func notRenewedBecause(why string) string {
 	return why
 }
 
+// The fixes of an entry stale as killed, and as gone or excluded, which
+// mutation except --prune removes.
+const (
+	pruneKilledFix = "Remove its entry with 'itos-cc mutation except --prune': the tests show that the mutant changes behaviour."
+	pruneFix       = "Remove its entry with 'itos-cc mutation except --prune'."
+)
+
 // notRenewedFix says what to do about a stale entry --renew left.
 func notRenewedFix(why string) string {
 	switch why {
 	case mutants.RenewNoResults:
 		return "Run 'itos-cc mutation run' on its file, then renew again."
 	case mutants.ExceptionKilled:
-		return "Remove its entry from " + "itos-cc.yaml" + ": the tests show that the mutant changes behaviour."
+		return pruneKilledFix
 	case mutants.RenewUncovered:
 		return "Add a test that executes its line, run mutation run, then renew again, or remove its entry."
 	}

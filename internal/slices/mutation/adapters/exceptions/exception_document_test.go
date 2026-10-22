@@ -220,3 +220,36 @@ func TestRenewDocumentChangesOnlyTheLinesOfItsEntries(t *testing.T) {
 		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
 	}
 }
+
+// slice-21: --prune removes each entry it is given with the comment lines
+// directly above it, and changes no other byte.
+func TestPruneDocumentRemovesOnlyItsEntriesAndTheCommentsAboveThem(t *testing.T) {
+	first := "    # The first, about f.\n    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: first}\n"
+	second := "    - file: src/a.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n" +
+		"      original: '<'\n      replacement: '!='\n      reason: |\n        second\n        # still its reason\n"
+	third := "    # The third.\n    - {file: src/b.go, function: m/src#h, hash: 0123456789abcdef, line_in_function: 1, column: 3, original: '!', replacement: '', reason: third}\n"
+	head := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nmutation:\n  exceptions:\n"
+	tail := "\n  # after the list\nnext: 1   # kept\n"
+	text := head + first + "\n" + second + third + tail
+	c, err := config.Parse([]byte(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := exceptions.PruneDocument([]byte(text), []mutants.Exception{c.Exceptions[2], c.Exceptions[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := head + "\n" + second + tail; string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+	data, err = exceptions.PruneDocument(data, []mutants.Exception{c.Exceptions[1]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := head + "\n" + tail; string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+	if _, err := exceptions.PruneDocument(data, []mutants.Exception{c.Exceptions[1]}); err == nil {
+		t.Error("removing an entry that is no longer there: no error")
+	}
+}

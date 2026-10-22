@@ -3,6 +3,7 @@ package mutation
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/donvargax/itos-cc/internal/selection"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -28,6 +29,13 @@ type RenewFound struct {
 	Root    string
 	Renewed []mutants.Renewal
 	Left    []mutants.Unrenewed
+}
+
+// PruneFound is what --prune removed, the settings' root naming their
+// files.
+type PruneFound struct {
+	Root   string
+	Pruned []mutants.StaleException
 }
 
 // errNoExceptions is the missing Exceptions binding, worded as cmd's was.
@@ -106,7 +114,61 @@ func (h Handler) Renew(ctx context.Context) (RenewFound, error) {
 	return RenewFound{Root: root, Renewed: renewed, Left: left}, nil
 }
 
-// judging is what except and renew judge a survivor with, in cmd's order:
+// Prune observes as Renew does, then judges every entry as a check of the
+// whole project does: those whose file is no source it selects, under the
+// root less what exclude leaves out, as gone, moved or excluded; the rest
+// by their file's sources and fresh results. The entries stale as gone,
+// killed or excluded alone go through the Exceptions writer made for the
+// settings' root, which removes them.
+func (h Handler) Prune(ctx context.Context) (PruneFound, error) {
+	root, cfg, err := h.settings(ctx)
+	if err != nil {
+		return PruneFound{}, err
+	}
+	if len(cfg.Exceptions) == 0 {
+		return PruneFound{Root: root}, nil
+	}
+	support, tests, err := h.judging(ctx, root, cfg)
+	if err != nil {
+		return PruneFound{}, err
+	}
+	files, err := h.files(ctx, SelectionQuery{Paths: []string{root}})
+	if err != nil {
+		return PruneFound{}, err
+	}
+	exclude, err := h.exclusion(ctx)
+	if err != nil {
+		return PruneFound{}, err
+	}
+	every := func(string) bool { return true }
+	excluded := func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }
+	stale, moved, err := mutants.Elsewhere(ctx, cfg.Exceptions, files.Sources, every, excluded, h.options(root, nil, nil, nil, nil, nil))
+	if err != nil {
+		return PruneFound{}, err
+	}
+	checks, err := mutants.Check(ctx, files.Sources, h.options(root, nil, tests, support, append(slices.Clone(cfg.Exceptions), moved...), h.listing(root, cfg)))
+	if err != nil {
+		return PruneFound{}, err
+	}
+	for _, c := range checks {
+		stale = append(stale, c.StaleExceptions...)
+	}
+	pruned := mutants.Pruned(cfg.Exceptions, stale)
+	writer, err := h.exceptions(root)
+	if err != nil {
+		return PruneFound{}, err
+	}
+	entries := make([]mutants.Exception, len(pruned))
+	for i, s := range pruned {
+		entries[i] = s.Exception
+	}
+	if failure := writer.Prune(ctx, entries); failure != nil {
+		return PruneFound{}, failure
+	}
+	return PruneFound{Root: root, Pruned: pruned}, nil
+}
+
+// judging is what except, renew and prune judge a survivor with, in cmd's order:
 // the Toolchain and Fingerprints bindings, the listed tests' support files,
 // then the tests that reach each source. importingTests has checked the
 // Tree binding once it returns.

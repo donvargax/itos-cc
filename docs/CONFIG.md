@@ -19,9 +19,9 @@ The rules are adapted from [itos-template](https://github.com/donvargax/itos-tem
 ## itos-cc.yaml as implemented
 
 The `config` package reads `itos-cc.yaml` (`config.Parse`), and the mutation slice's exceptions
-adapter writes it (`mutation except` and `mutation except --renew`), reading it with
-`config.Parse` first. Its keys are `exclude`, `mutation.exceptions` and `mutation.tests`
-(`docs/CLI.md`, rule 38). Against the rules below, the loader as it stands:
+adapter writes it (`mutation except`, `mutation except --renew` and `mutation except --prune`),
+reading it with `config.Parse` first. Its keys are `exclude`, `mutation.exceptions` and
+`mutation.tests` (`docs/CLI.md`, rule 38). Against the rules below, the loader as it stands:
 
 | Rule | What the loader does now |
 | ---- | ------------------------ |
@@ -35,7 +35,7 @@ adapter writes it (`mutation except` and `mutation except --renew`), reading it 
 | 13 | Holds no secrets. |
 | 14 | Its keys are documented in `docs/CLI.md` and README, without a typed reference of every default. |
 | 15–16 | No command prints the file with its defaults, and no JSON Schema is published. |
-| 17 | `mutation except` and `--renew` change only the lines of the entries they write, in block style with the codec's key order, keeping every other byte of the document, its other entries included, and its permissions; a list written in flow style is rewritten whole in block style, and a flow-style `mutation` mapping, which they cannot splice into, has the whole document re-encoded. |
+| 17 | `mutation except`, `--renew` and `--prune` change only the lines of the entries they write or remove (a removed entry with the comment lines directly above it), in block style with the codec's key order, keeping every other byte of the document, its other entries included, and its permissions; a list written in flow style is rewritten whole in block style, and a flow-style `mutation` mapping, which they cannot splice into, has the whole document re-encoded. |
 
 A file that is not there is an empty configuration. One whose text the loader refuses is
 `config.invalid`, exit 80; one the disk cannot read is an internal failure, exit 100.

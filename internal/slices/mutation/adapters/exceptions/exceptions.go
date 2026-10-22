@@ -11,7 +11,7 @@ import (
 )
 
 // Exceptions updates the current configuration at an explicit project root.
-// It writes through ExceptDocument and RenewDocument, the codec the in-process
+// It writes through ExceptDocument, RenewDocument and PruneDocument, the codec the in-process
 // scenario driver's memory fixtures write through too.
 type Exceptions struct{ RootDir string }
 
@@ -34,10 +34,19 @@ func (e Exceptions) Except(ctx context.Context, exception mutants.Exception) (bo
 	return replaced, exceptionFailure(writeDocument(path, updated))
 }
 func (e Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutants.ExceptionFailure {
+	return e.rewrite(ctx, len(renewals), func(data []byte) ([]byte, error) { return RenewDocument(data, renewals) })
+}
+func (e Exceptions) Prune(ctx context.Context, entries []mutants.Exception) mutants.ExceptionFailure {
+	return e.rewrite(ctx, len(entries), func(data []byte) ([]byte, error) { return PruneDocument(data, entries) })
+}
+
+// rewrite writes itos-cc.yaml as update makes it from the text it has, when
+// n, the entries it updates, is not 0.
+func (e Exceptions) rewrite(ctx context.Context, n int, update func([]byte) ([]byte, error)) mutants.ExceptionFailure {
 	if ctx.Err() != nil {
 		return mutants.ExceptionCancelled{Cause: context.Cause(ctx)}
 	}
-	if len(renewals) == 0 {
+	if n == 0 {
 		return nil
 	}
 	path := filepath.Join(e.RootDir, config.File)
@@ -45,7 +54,7 @@ func (e Exceptions) Renew(ctx context.Context, renewals []mutants.Renewal) mutan
 	if err != nil {
 		return exceptionFailure(err)
 	}
-	updated, err := RenewDocument(data, renewals)
+	updated, err := update(data)
 	if err != nil {
 		return exceptionFailure(err)
 	}

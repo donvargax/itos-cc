@@ -4,10 +4,12 @@ import "context"
 
 // Exceptions updates the current document, rather than a stale selected Config.
 // Except replaces the first SameSite entry; Renew matches complete Old values,
-// consumes duplicates once and publishes only a complete batch.
+// consumes duplicates once and publishes only a complete batch; Prune
+// removes entries matched the same way.
 type Exceptions interface {
 	Except(ctx context.Context, exception Exception) (bool, ExceptionFailure)
 	Renew(ctx context.Context, renewals []Renewal) ExceptionFailure
+	Prune(ctx context.Context, entries []Exception) ExceptionFailure
 }
 
 // ExceptionFailure preserves invalid-document facts separately from I/O/cancel.
