@@ -5,7 +5,9 @@ name: Nightly
 # the next night, and everyone's local runs, reuse the kills of unchanged
 # functions instead of starting over. itos-cc mutation run exits 1 when any
 # mutant survives, which is most nights: the job then ends red, and the
-# results are committed anyway.
+# results are committed anyway. A run cut off before it finishes keeps what
+# it judged and commits that too, under a subject that says it is partial
+# (T-46), so the job's colour never has to say how far the run got.
 on:
   schedule:
     - cron: "0 9 * * *" # 09:00 UTC, 2am Pacific
@@ -25,6 +27,9 @@ env:
 jobs:
   mutate:
     runs-on: ubuntu-latest
+    # GitHub's own limit for a hosted job, written out: the Mutate step's
+    # deadline below is set under it, so the commit step always has time.
+    timeout-minutes: 360
     permissions:
       contents: write
     steps:
@@ -57,15 +62,36 @@ jobs:
 
       # Fails the job as it exits. --no-annotate: no committed source carries
       # the summary comment, and the job must not rewrite the sources.
+      # timeout interrupts the run with SIGINT after 330 minutes, well before
+      # the job's 360, and mutation run keeps what it finished when
+      # interrupted, writing each file it judged (README, mutation run);
+      # --kill-after ends it should it not stop within 10 minutes. The exit
+      # status goes to the commit step, which words its subject by it: 0 or 1
+      # is a run that finished over the whole repository, anything else
+      # (timeout's 124, a kill, an interrupt's 130) one that was cut off.
+      # timeout-minutes is the runner's backstop behind timeout's own.
       - name: Mutate
-        run: '"$RUNNER_TEMP/itos-cc" mutation run --all-tests --no-annotate'
+        id: mutate
+        timeout-minutes: 345
+        run: |
+          set +e
+          timeout --signal=INT --kill-after=10m 330m \
+            "$RUNNER_TEMP/itos-cc" mutation run --all-tests --no-annotate
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "mutation run ended with exit status $status."
+          exit "$status"
 
-      # Runs whether Mutate passed or failed, so a night with survivors still
-      # stores its kills. Its own success never turns the job green.
+      # Runs whether Mutate passed, failed or was cut off, even in a
+      # cancelled run, so a night with survivors still stores its kills and
+      # one cut short stores what it judged. Its own success never turns the
+      # job green. The subject says how far the run got (T-46): the whole
+      # repository only when mutation run itself exited 0 or 1.
       - name: Commit .metrics/mutate/
-        if: ${{ !cancelled() }}
+        if: ${{ always() }}
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          STATUS: ${{ steps.mutate.outputs.status }}
         run: |
           if [ "$GITHUB_REF" != refs/heads/main ]; then
             echo "Not on main ($GITHUB_REF): the results are not committed."
@@ -78,10 +104,22 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          case "$STATUS" in
+            0 | 1)
+              subject="chore: record the nightly mutation results"
+              how="It finished over the whole repository"
+              ;;
+            *)
+              subject="chore: record partial nightly mutation results"
+              how="It was cut off before it finished (exit status ${STATUS:-unknown}), so this is what it judged"
+              ;;
+          esac
+          echo "$subject"
           cat > "$RUNNER_TEMP/message" <<EOF
-          chore: record the nightly mutation results
+          $subject
 
           The nightly run of itos-cc mutation run --all-tests updated .metrics/mutate/.
+          $how.
           Committing it lets the next run, and local runs, reuse the kills of
           functions that have not changed instead of starting over. It is
           committed whether or not mutants survived; the run says which:

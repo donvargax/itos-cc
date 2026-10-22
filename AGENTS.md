@@ -53,8 +53,7 @@ Stage only your own files, by explicit path: untracked files you did not make ar
 
 - Do not run mutation testing on this repository's own code while you work:
   no `itos-cc mutation run` over its sources, locally or in a push's CI. The
-  nightly workflow, disabled until T-46, is where it runs, committing
-  `.metrics/mutate/` back. The Go tests of the mutation packages are fine:
+  nightly workflow is where it runs, committing `.metrics/mutate/` back. The Go tests of the mutation packages are fine:
   they mutate fixtures, not this code.
 
 ## Lessons

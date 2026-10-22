@@ -1163,9 +1163,10 @@ The Go tests of every package are not a plan step: `ci.yml`'s test job runs them
 Mutation proof is off, and nothing here claims a mutation result for a push. The plan has no
 `proof.code` step and no `itos-cc mutation sample` (q-53): whether itos-cc sets itos's
 `proof.code` is the idea p1-itos-proof-code, waiting on T-46 alone now that the refactor's
-final proof (T-132) is done. The nightly mutation workflow, `nightly.yml`, is disabled on GitHub
-(`gh workflow disable Nightly`) until T-46 makes a whole run finish and commit its results.
-`.metrics/mutate/` holds the results committed before both were turned off.
+final proof (T-132) is done. The nightly mutation workflow, `nightly.yml`, runs again since
+2026-10-21, but no run finishes over the whole repository within a job's time limit yet (T-46):
+it interrupts the run at 330 minutes and commits what it judged as "chore: record partial nightly
+mutation results", keeping "chore: record the nightly mutation results" for a run that finished.
 
 Each check runs where its cost fits:
 

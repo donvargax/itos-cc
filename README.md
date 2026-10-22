@@ -1025,8 +1025,10 @@ checkout, and without it every night is a first run. This repository's own
 nightly job, [`.github/workflows/nightly.yml`](.github/workflows/nightly.yml),
 is written to run `itos-cc mutation run --all-tests --no-annotate` at 09:00 UTC
 and commit `.metrics/mutate/` back even on nights when a mutant survives and
-the job fails; copy it as a starting point. It is disabled here until T-46
-makes a whole run of this repository finish within a job's time limit. Raw coverage under
+the job fails; copy it as a starting point. It interrupts the run before the
+job's time limit, and mutation run keeps what it finished, so a night cut off
+commits that, under a subject that says it is partial. No whole run of this
+repository finishes within a job's time limit yet (T-46). Raw coverage under
 `.metrics/coverage/` ignores itself and is never committed.
 
 Results go to `.metrics/mutate/<file>.json`, and a summary comment is kept at
@@ -1271,8 +1273,8 @@ an update lands at the first run of the Renovate workflow in donvargax/github-ad
 checks pass, hourly on Mondays and every four hours the rest of the week.
 
 No workflow runs mutation proof yet. `itos.yaml`'s plan has no `proof.code` step and no mutation
-sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, is disabled
-on GitHub until T-46; both now wait on T-46 alone, the refactor's final comparison (T-132)
+sample, and [`nightly.yml`](.github/workflows/nightly.yml), the nightly mutation run, does not yet
+finish over the whole repository; both wait on T-46 alone, the refactor's final comparison (T-132)
 being done.
 CI's golangci-lint covers the whole module, `./...`.
 [docs/go.md](docs/go.md) lists every configured check.
