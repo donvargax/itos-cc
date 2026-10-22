@@ -3479,14 +3479,9 @@ items:
     title: A package whose Vitest comes through a toolchain package is measured with Vitest
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was vitest-through-toolchain.
-      Issue #45. Coverage and the baseline check pkg.has("vitest") only (coverage/run.go:244-253,
-      internal/testtools/toolchain.go:40-46); a resolvable node_modules/.bin/vitest should count.
-      Wave 1, TypeScript workspace track, first.
     refs: ["#45"]
   - id: slice-18
     title: Strict mode for pnpm settings files and members with no local dependency
