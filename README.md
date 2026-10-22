@@ -430,7 +430,17 @@ test. What keeps `mutation run` fast:
   compile against, and holds a pub workspace member's workspace root and
   members. It takes no `.dart_tool` from the project, whose resolution
   points into the project's tree: `flutter pub get --offline` makes the
-  copy's own once, before its first run. A mutant times out after
+  copy's own once, before its first run. A copy of a TypeScript package
+  that belongs to a workspace, a `pnpm-workspace.yaml` with a `packages`
+  key or a `package.json` with a `workspaces` field (npm and yarn) above
+  it and within the project root whose globs match it, holds the
+  workspace's whole root, its `node_modules` linked, and runs the package
+  in its place there, so a `tsconfig.json` that extends one at the root
+  loads as in the project; members of one workspace share one copy per
+  worker. When a file's baseline fails in a copy, itos-cc runs it once
+  more, unmutated, in the project's own folder: when it passes there,
+  `mutation.baseline-failed` says the tests pass in the project but fail
+  in the worker's copy, which holds that tree alone. A mutant times out after
   the baseline's time times `--timeout-factor` (10 by default), plus 5
   seconds for building the mutated code, and a timeout counts as killed.
   The copies live in an `itos-cc-mutate-` directory of the temporary

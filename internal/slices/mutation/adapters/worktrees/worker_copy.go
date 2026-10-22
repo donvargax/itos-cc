@@ -250,7 +250,7 @@ func (c *workerCopy) discard() {
 // it; any later one restores it, and a copy it cannot restore is discarded
 // and made afresh, with Ready. The command's timeout has not started.
 func (w *worker) fresh(ctx context.Context, c Command) error {
-	tree, _ := pubWorkspace(c.Root)
+	tree, _ := w.tree(c)
 	cp, ok := w.copies[tree]
 	if !ok {
 		_, err := w.copyOf(ctx, c)

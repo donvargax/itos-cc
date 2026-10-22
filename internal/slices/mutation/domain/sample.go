@@ -23,6 +23,9 @@ type SampledFile struct {
 	// mutants run in failed, with that baseline's output.
 	BaselineFailed bool
 	BaselineOutput string
+	// BaselineCopy is that baseline's tree a worker's copy holds when its
+	// command passes in the project's own folder (FileResult).
+	BaselineCopy string
 	// FailedSelections is each selection of listed tests a sampled mutant
 	// of the file needed that failed without any mutant: that mutant is
 	// not decided, so none of the file's is reported, as when a baseline

@@ -23,6 +23,9 @@ import (
 // It is fixture configuration, not a sequence of expected calls or events.
 type Tests struct {
 	Baseline string
+	// CopyOnly says Baseline fails in a worker's copy alone: run in the
+	// project's own folder (InProject), the tests pass.
+	CopyOnly bool
 	Elapsed  time.Duration
 	Verdicts []Verdict
 	// Reached, when not nil, are the lines the tests execute, by file
@@ -149,6 +152,59 @@ func (p *pool) Close(context.Context) mutants.WorkerFailure {
 	p.lifetime.state.Released = true
 	p.lifetime.mu.Unlock()
 	return nil
+}
+
+// InProject gives the declared result of c's clean run, as a worker's
+// baseline gives it, for the project's own folder: the fake holds one
+// tree, so a baseline declared to fail there fails here too, unless
+// declared CopyOnly. It hides the programs Without hides, as Run does,
+// makes no copy, records a declared trace from the project's own folder,
+// as the real tests record every run, and names c.Root as the tree a copy
+// holds.
+func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.ProjectRun, mutants.WorkerFailure) {
+	run := mutants.ProjectRun{Copied: filepath.Clean(c.Root)}
+	if ctx.Err() != nil {
+		return run, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
+	}
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		return run, failed("worker pool is closed")
+	}
+	p.active.Add(1)
+	p.mu.Unlock()
+	defer p.active.Done()
+	f := p.factory
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	tests, ok := f.Tests[filepath.Clean(c.Dir)][c.String()]
+	if !ok {
+		return run, failed("no tests declared for " + c.Dir + "$ " + c.String())
+	}
+	if len(c.Args) > 0 && hiddenProgram(c.Args[0], f.Without, f.Platform) {
+		return run, failed("requested executable is absent from actual Run.Without: " + c.Args[0])
+	}
+	if words := strings.Fields(c.Shell); len(words) > 0 && hiddenProgram(words[0], f.Without, f.Platform) {
+		run.Result = mutants.CommandResult{Passed: false, ExitCode: 127, Output: words[0] + ": command not found"}
+		return run, nil
+	}
+	if tests.Trace != nil {
+		// The tests record their run where it ran, the project's own
+		// folder, as the real harness records every run.
+		environment := maps.Clone(f.Env)
+		if environment == nil {
+			environment = map[string]string{}
+		}
+		if err := f.observeTrace(c, f.Files, tests.Trace, filepath.Clean(c.Dir), f.original(c.Root), harnessFields(tests, environment)); err != nil {
+			return run, mutants.WorkerFailed{Cause: err}
+		}
+	}
+	if tests.CopyOnly {
+		tests.Baseline = ""
+	}
+	r, failure := declaredResult(c, tests, nil, 0)
+	run.Result = r
+	return run, failure
 }
 
 type worker struct {

@@ -111,8 +111,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 			if !c.JSON {
 				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; no sampled mutant ran\n%s\n", f.Rel, Tail(f.BaselineOutput, 20))
 			}
-			p.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", f.Rel+": its tests fail before any mutant, so none was run",
-				"Make its tests pass, then run mutation sample again.").With("file", f.Rel))
+			p.report(p.baselineFailed(f.Rel, f.BaselineCopy, "run", "mutation sample"))
 			continue
 		}
 		out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}

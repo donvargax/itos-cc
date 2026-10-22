@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -23,6 +24,25 @@ type Presentation struct {
 }
 
 func (p *Presentation) report(problem *cli.Problem) { p.Problems = append(p.Problems, problem) }
+
+// baselineFailed is the problem of the file rel whose baseline failed, so
+// none of its mutants was done, judged or run, before command runs again:
+// its tests fail, or, when copied is the tree a worker's copy held and
+// they pass in the project's own folder, they fail only in that copy,
+// which holds copied alone.
+func (p *Presentation) baselineFailed(rel, copied, done, command string) *cli.Problem {
+	if copied == "" {
+		return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", rel+": its tests fail before any mutant, so none was "+done,
+			"Make its tests pass, then run "+command+" again.").With("file", rel)
+	}
+	name := p.UI.Rel(copied)
+	if name == "." {
+		name = filepath.Base(copied)
+	}
+	return cli.NewProblem(cli.CodeNo, "mutation.baseline-failed",
+		rel+": its tests pass in the project but fail in the worker's copy of "+name+", so none was "+done,
+		"The copy holds "+name+" alone: its tests read something outside it.").With("file", rel)
+}
 
 func (p *Presentation) Failed(rel, function string, items []mutants.Mutant, failUncovered func(line int) bool) {
 	for _, m := range items {

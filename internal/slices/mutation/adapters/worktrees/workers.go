@@ -23,6 +23,10 @@ type Workers struct {
 	// Hold marks the owned process groups of the pool's commands being
 	// killed and joined, as OwnedExecutor's does; with Owner, Owner's.
 	Hold func() (release func())
+	// Dir is the working directory, whose project root bounds the
+	// workspace a worker's copy of a TypeScript package may hold; "", each
+	// package's own project root, as a counted run's frozen export has.
+	Dir string
 }
 
 var _ mutants.Workers = Workers{}
@@ -50,7 +54,7 @@ func (f Workers) Open(ctx context.Context, purpose mutants.WorkPurpose, count in
 	}
 	p := &pool{scratch: scratch, budget: budget, closing: make(chan struct{}), done: make(chan struct{})}
 	for i := 0; i < max(1, count); i++ {
-		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]*workerCopy{}, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
+		p.workers = append(p.workers, &boundWorker{pool: p, worker: &worker{dir: filepath.Join(scratch.dir, fmt.Sprintf("w%d", i)), copies: map[string]*workerCopy{}, project: f.Dir, runner: processes.Runner{Budget: budget, Platform: processes.PlatformAtBoundary(f.Platform), Hold: hold}, prepare: f.Prepare}})
 	}
 	return p, nil
 }
@@ -91,18 +95,43 @@ type boundWorker struct {
 	worker *worker
 }
 
-func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
+// enter admits one command to the pool, which Close then waits for: a
+// cancelled caller or a closed pool admits none. Its done ends it.
+func (p *pool) enter(ctx context.Context) (done func(), failure mutants.WorkerFailure) {
 	if ctx.Err() != nil {
-		return result{}, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
+		return nil, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
 	}
-	w.pool.mu.Lock()
-	if w.pool.closed {
-		w.pool.mu.Unlock()
-		return result{}, mutants.WorkerFailed{Cause: errors.New("worker pool is closed")}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.closed {
+		return nil, mutants.WorkerFailed{Cause: errors.New("worker pool is closed")}
 	}
-	w.pool.active.Add(1)
-	w.pool.mu.Unlock()
-	defer w.pool.active.Done()
+	p.active.Add(1)
+	return p.active.Done, nil
+}
+
+// InProject runs c in c.Dir itself, through the first worker's runner and
+// preparation, with no copy, Ready or timeout.
+func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.ProjectRun, mutants.WorkerFailure) {
+	w := p.workers[0].worker
+	tree, _ := w.tree(c)
+	run := mutants.ProjectRun{Copied: tree}
+	done, failure := p.enter(ctx)
+	if failure != nil {
+		return run, failure
+	}
+	defer done()
+	r, err := w.runIn(ctx, c, c.Root, 0)
+	run.Result = r
+	return run, failed(ctx, err)
+}
+
+func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
+	done, failure := w.pool.enter(ctx)
+	if failure != nil {
+		return result{}, failure
+	}
+	defer done()
 	var r result
 	// The copy is put back as made before the mutant is written, never
 	// between, and before the command's timeout starts.
@@ -114,17 +143,23 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 	default:
 		r, err = w.worker.withMutant(ctx, c, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
 	}
-	if err != nil {
-		var cleanup *processes.CleanupFailed
-		if errors.As(err, &cleanup) {
-			return r, mutants.WorkerCleanupFailed{ProcessGroup: cleanup.ProcessGroup, Command: cleanup.Command, Cause: err}
-		}
-		if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
-			return r, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
-		}
-		return r, mutants.WorkerFailed{Cause: err}
+	return r, failed(ctx, err)
+}
+
+// failed is err, a command's under ctx, as the port's failure: nil for
+// none.
+func failed(ctx context.Context, err error) mutants.WorkerFailure {
+	if err == nil {
+		return nil
 	}
-	return r, nil
+	var cleanup *processes.CleanupFailed
+	if errors.As(err, &cleanup) {
+		return mutants.WorkerCleanupFailed{ProcessGroup: cleanup.ProcessGroup, Command: cleanup.Command, Cause: err}
+	}
+	if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
+		return mutants.WorkerCancelled{Cause: context.Cause(ctx)}
+	}
+	return mutants.WorkerFailed{Cause: err}
 }
 
 // inputLifetime keeps the adapter's actual join/release boundary explicit.

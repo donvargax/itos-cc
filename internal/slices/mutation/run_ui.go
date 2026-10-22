@@ -271,8 +271,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 				}
 			}
 			if r.BaselineFailed {
-				p.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
-					"Make its tests pass, then run mutation run again.").With("file", r.Rel))
+				p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run"))
 			}
 			p.FailedSelections(r.FailedSelections, reported, "mutation run")
 			for _, m := range r.Mutants {
@@ -298,8 +297,7 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 			if !c.JSON {
 				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, Tail(r.BaselineOutput, 20))
 			}
-			p.report(cli.NewProblem(cli.CodeNo, "mutation.baseline-failed", r.Rel+": its tests fail before any mutant, so none was judged",
-				"Make its tests pass, then run mutation run again.").With("file", r.Rel))
+			p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run"))
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
 			continue
 		}

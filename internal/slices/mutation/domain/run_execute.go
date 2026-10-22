@@ -56,6 +56,9 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 	// proves the copy is a working tree, and its time sets the timeout.
 	timeouts := map[string]time.Duration{}
 	failed := map[string]string{}
+	// copies is the tree a worker's copy holds for each command whose
+	// baseline failed there but passes in the project's own folder.
+	copies := map[string]string{}
 	var jobs []job
 	for _, s := range states {
 		for i, o := range s.outcomes {
@@ -89,12 +92,15 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				}
 				if !r.Passed {
 					failed[key] = r.Output
+					if copies[key], err = copyOnly(ctx, pool, s.command, opt.Progress); err != nil {
+						return nil, err
+					}
 				} else {
 					timeouts[key] = TimeoutOf(r.Elapsed, opt.TimeoutFactor)
 				}
 			}
 			if out, bad := failed[key]; bad {
-				s.result.BaselineFailed, s.result.BaselineOutput = true, out
+				s.result.BaselineFailed, s.result.BaselineOutput, s.result.BaselineCopy = true, out, copies[key]
 				if st != nil {
 					st.trigger(&Stop{Rule: "mutation.baseline-failed", File: s.rel})
 				}
@@ -299,4 +305,23 @@ func Judged(r CommandResult) string {
 // command runs the listed tests ids.
 func (l *Listed) Command(ids []string) Command {
 	return Command{Root: l.Root, Dir: l.Root, Shell: l.Select(ids)}
+}
+
+// copyOnly runs c, whose baseline failed in a worker's copy, once in the
+// project's own folder, as coverage runs there: the tree the copy holds
+// when it passes there, and "" when it fails there too. A run the caller
+// stopped decides nothing, so the failure stays the tests'.
+func copyOnly(ctx context.Context, pool WorkerPool, c Command, progress Progress) (string, WorkerFailure) {
+	report(progress, RunEvent{Kind: "baseline-project", Command: c})
+	there, err := pool.InProject(ctx, c)
+	if cancelledBy(ctx, err) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if !there.Result.Passed || there.Result.Cancelled {
+		return "", nil
+	}
+	return there.Copied, nil
 }

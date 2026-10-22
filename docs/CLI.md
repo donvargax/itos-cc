@@ -284,6 +284,25 @@ distinct set of them. The tests under `integration_test/` and
 with `flutter pub get --offline` before its first run. A Dart mutant that
 does not compile fails its tests and is `killed`, as a Go or Kotlin one is.
 
+A worker copies a TypeScript package's own folder, or, when the package
+belongs to a workspace, the workspace's whole root: a `pnpm-workspace.yaml`
+with a `packages` key, or a `package.json` with a `workspaces` field, as npm
+and yarn read it, in a folder above the package and within the project
+root, whose globs match the package's folder. The copy leaves out what every
+copy leaves out, links the dependency folders, and runs the package in its
+place there, so what the package reads from the workspace's root, such as a
+`tsconfig.base.json` its `tsconfig.json` extends, is there. Members of one
+workspace share one copy per worker. A workspace root above the project root
+is not copied, and nothing outside a workspace is followed.
+
+When a file's baseline fails in a worker's copy, `mutation run` and
+`mutation sample` run the same command once more, unmutated, in the project's
+own folder, as coverage runs there. When it passes there, the problem is
+still `mutation.baseline-failed`, exit 1, its message saying the tests pass
+in the project but fail in the worker's copy of the tree it held, and its
+fix that the copy holds that tree alone and its tests read something outside
+it. When they fail there too, the message is the usual one.
+
 A TypeScript file whose project is run by neither Vitest nor Jest runs its
 project's test script. Vitest runs a project whose `package.json` declares
 vitest, or one where a vitest resolves from its `node_modules/.bin` and its

@@ -244,12 +244,17 @@ func (q *mutationExecution) baselineStages() error {
 	if err != nil {
 		return err
 	}
-	var record map[string]string
-	if err = json.Unmarshal([]byte(strings.TrimSpace(string(trace))), &record); err != nil {
-		return fmt.Errorf("baseline command inventory: %w: %s", err, trace)
-	}
-	if record["source_sha256"] != fmt.Sprintf("%x", sha256.Sum256(source)) || record["cwd"] == "" || record["original_root"] == "" {
-		return fmt.Errorf("baseline command inventory: %s", trace)
+	// The failing baseline ran in a worker's copy, and once more in the
+	// project's own folder (slice-19): each run recorded the source as it
+	// is, unmutated.
+	for _, line := range strings.Split(strings.TrimSpace(string(trace)), "\n") {
+		var record map[string]string
+		if err = json.Unmarshal([]byte(line), &record); err != nil {
+			return fmt.Errorf("baseline command inventory: %w: %s", err, trace)
+		}
+		if record["source_sha256"] != fmt.Sprintf("%x", sha256.Sum256(source)) || record["cwd"] == "" || record["original_root"] == "" {
+			return fmt.Errorf("baseline command inventory: %s", trace)
+		}
 	}
 	return nil
 }

@@ -20,9 +20,25 @@ type WorkerPool interface {
 	// Close joins entered work and removes the copies, even on a done context.
 	// Cleanup must not abandon owned commands because their caller cancelled.
 	Close(ctx context.Context) WorkerFailure
+	// InProject runs command once, unmutated and with no timeout, in the
+	// project's own folder, command.Dir, never a copy, under the pool's
+	// process ownership: whether tests whose baseline failed in a worker's
+	// copy pass in the project. Ready never runs there. It fails as Run
+	// does, and names the tree a worker's copy of command.Root holds.
+	InProject(ctx context.Context, command Command) (ProjectRun, WorkerFailure)
 }
 
-// Worker executes a command in its private copy of Command.Root. Each run
+// ProjectRun is a command's run in the project's own folder (InProject):
+// its result, and Copied, the tree a worker's copy holds for the command,
+// which may hold more than its Root, such as the workspace it belongs to.
+type ProjectRun struct {
+	Result CommandResult
+	Copied string
+}
+
+// Worker executes a command in its private copy of Command.Root, or of the
+// tree around it the command needs, such as the workspace it belongs to,
+// running it in Root's place there. Each run
 // starts from the copy as it was made: what an earlier run wrote, changed or
 // removed there is put back first, outside the run's timeout and Elapsed,
 // while the build output, caches and linked dependencies the copy leaves to

@@ -457,7 +457,7 @@ Feature: Mutation testing
     # are the real Workers' and the real Vitest's, and the fake Workers
     # hold no copy (as MUT-267). Before slice-19 every baseline fails in
     # the copy with TSCONFIG_ERROR, failing at the first Then.
-    @slice-19 @ID-MUT-283 @binary-only @wip
+    @slice-19 @ID-MUT-283 @binary-only
     Scenario Outline: A member of a <workspace> whose tsconfig extends one at the workspace root is mutated in a copy of its workspace
       Given a <workspace> whose root holds tsconfig.base.json, with the member packages/shapes, tested with Vitest, whose tsconfig.json extends ../../tsconfig.base.json and whose tests pass in the project
       When I run "itos-cc mutation run --workers 1 --json packages/shapes/src/area.ts"
@@ -485,7 +485,7 @@ Feature: Mutation testing
     # above it, which slice-19 still does not copy. Binary-only for good,
     # as MUT-283. Before slice-19 the message says only that its tests
     # fail, failing at the Then; the But holds today.
-    @slice-19 @ID-MUT-284 @binary-only @wip
+    @slice-19 @ID-MUT-284 @binary-only
     Scenario: A baseline that fails only in the worker's copy says so
       Given a TypeScript package in no workspace, tested with Vitest, whose tsconfig.json extends ../tsconfig.base.json in the folder above it, and whose tests pass in the project
       When I run "itos-cc mutation run --json" for its source

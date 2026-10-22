@@ -62,6 +62,36 @@ func WorkersContract(t *testing.T, open func(t *testing.T, baseline string) (mut
 		}
 	})
 
+	t.Run("a run in the project gives its result there and names the tree a copy holds", func(t *testing.T) {
+		for _, baseline := range []string{"", "baseline-failed"} {
+			factory, c := open(t, baseline)
+			p, f := factory.Open(t.Context(), mutants.MutationRun, 1)
+			if f != nil {
+				t.Fatal(f)
+			}
+			run, f := p.InProject(t.Context(), c)
+			if f != nil || run.Result.Passed != (baseline == "") || (baseline != "" && run.Result.Output != baseline) || run.Copied != filepath.Clean(c.Root) {
+				t.Errorf("in the project, baseline %q: %+v %v", baseline, run, f)
+			}
+			ctx, cancel := context.WithCancelCause(t.Context())
+			cause := errors.New("caller stopped the run in the project")
+			cancel(cause)
+			_, f = p.InProject(ctx, c)
+			var cancelled mutants.WorkerCancelled
+			if !errors.As(f, &cancelled) || !errors.Is(f, cause) {
+				t.Errorf("InProject cancelled: %v", f)
+			}
+			if f := p.Close(t.Context()); f != nil {
+				t.Fatal(f)
+			}
+			_, f = p.InProject(t.Context(), c)
+			var failed mutants.WorkerFailed
+			if !errors.As(f, &failed) {
+				t.Errorf("InProject on a closed pool: %v", f)
+			}
+		}
+	})
+
 	t.Run("unavailable command is a typed setup failure", func(t *testing.T) {
 		factory, c := open(t, "")
 		p, f := factory.Open(t.Context(), mutants.MutationRun, 1)

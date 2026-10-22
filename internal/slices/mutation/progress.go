@@ -47,6 +47,8 @@ func (p Progress) Report(e mutants.RunEvent) {
 		_, _ = fmt.Fprintf(log, "itos-cc: no coverage for %s; running every mutant\n", e.File)
 	case "baseline":
 		_, _ = fmt.Fprintf(log, "itos-cc: baseline %s$ %s\n", p.rel(e.Command.Dir), e.Command)
+	case "baseline-project":
+		_, _ = fmt.Fprintf(log, "itos-cc: its baseline failed in the worker's copy; again in the project %s$ %s\n", p.rel(e.Command.Dir), e.Command)
 	case "listing":
 		_, _ = fmt.Fprintf(log, "itos-cc: tests %s$ %s\n", p.rel(e.Command.Dir), e.Command)
 	case "coverage-failed":

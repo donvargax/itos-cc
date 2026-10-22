@@ -40,7 +40,11 @@ var skipDirs = map[string]bool{
 type worker struct {
 	dir    string
 	copies map[string]*workerCopy // real root → copy
-	runner processes.Runner
+	// project is the working directory, whose project root bounds the
+	// workspace a copy may hold (nodeWorkspace); "", each package's own
+	// project root, as a counted run's frozen export has.
+	project string
+	runner  processes.Runner
 	// prepare, when set, adjusts each command before it runs, such as its
 	// environment; complete runs leave it unset.
 	prepare func(*exec.Cmd)
@@ -49,12 +53,27 @@ type worker struct {
 	restored func()
 }
 
+// tree is the tree a worker copies for c, and the members it copies of
+// it: those of the pub workspace c.Root belongs to (pubWorkspace), else
+// the whole root of the TypeScript workspace it belongs to within the
+// project (nodeWorkspace), else c.Root's own.
+func (w *worker) tree(c Command) (string, []string) {
+	if tree, members := pubWorkspace(c.Root); members != nil {
+		return tree, members
+	}
+	dir := w.project
+	if dir == "" {
+		dir = c.Root
+	}
+	return nodeWorkspace(c.Root, project.RootOf(dir)), nil
+}
+
 // copyOf returns the worker's copy of c.Root, creating it on first use:
-// the tree pubWorkspace says a pub workspace's member needs, or c.Root's
-// own, then c.Ready run once in it, before any command runs there, and
-// the record of it as made.
+// the tree tree says c needs, then c.Ready run once in it, before any
+// command runs there, and the record of it as made. c runs in c.Root's
+// place in it.
 func (w *worker) copyOf(ctx context.Context, c Command) (string, error) {
-	tree, members := pubWorkspace(c.Root)
+	tree, members := w.tree(c)
 	rel, err := filepath.Rel(tree, c.Root)
 	if err != nil {
 		return "", err
@@ -221,6 +240,12 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	if err != nil {
 		return result{}, err
 	}
+	return w.runIn(parent, c, root, timeout)
+}
+
+// runIn executes c in root, c.Root's place where it runs, under parent:
+// the worker's copy of it, or c.Root itself for a run in the project.
+func (w *worker) runIn(parent context.Context, c Command, root string, timeout time.Duration) (result, error) {
 	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc

@@ -52,6 +52,10 @@ type FileResult struct {
 	Ran, Reused    int
 	BaselineFailed bool
 	BaselineOutput string
+	// BaselineCopy, when the baseline failed in a worker's copy but its
+	// command passes in the project's own folder, is the tree the copy
+	// holds, absolute; "" otherwise.
+	BaselineCopy string
 	// FailedSelections is each selection of listed tests that a mutant of
 	// the file needed and that failed without any mutant: such a mutant is
 	// not decided, so the snapshot is not written, as when the baseline
