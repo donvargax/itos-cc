@@ -6456,3 +6456,21 @@
     strictly, no key brings back platform folders or generated Dart while q-80 is open). docs
     commits, after slice-38 and T-181 (the help's wording, which the docs follow). The spot-by-spot
     inventory is in the brief.
+- id: T-183
+  type: test
+  title: TestMutationHelpPreservesOriginalBytes rewrites its golden with -update
+  why: >
+    Every agent that changes mutation's help (T-181, slice-26, slice-39, slice-18) wrote a throwaway
+    renderer to rebuild cmd/itos-cc/testdata/mutation-help.json, and parallel agents meet it as a
+    rebase conflict that only a rerender resolves. Coordinator's calls, 2026-10-21: the test gains a
+    flag, -update-help (not -update, which another test package could also want), that rewrites the
+    golden from the same render the test compares, then passes: the workers default written as
+    @WORKERS@ by replacing only the help's (default N) text for --workers, the existing key order
+    kept (the group page last, as the file has it, never Go's map order), the same indentation and
+    trailing newline, so running it on an unchanged help leaves the file byte for byte. The test's
+    comment and docs/go.md's testing section say: after a help change, or on a rebase conflict in
+    the golden, run go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$'
+    -update-help and read the diff. No product change.
+  done_when:
+    - run: go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -update-help && git diff --exit-code cmd/itos-cc/testdata/mutation-help.json
+    - run: test "$(go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$' -count=1 -v | grep -c -- '--- PASS:.TestMutationHelpPreservesOriginalBytes')" = 1

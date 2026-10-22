@@ -5229,23 +5229,13 @@ items:
       Python and Kotlin record it too (testinputs.SuiteTestHashes, domain.SuiteOf); T-181 added only
       Dart's sentence there. The help should say what every language does.
     refs: [T-181]
-  - id: mutation-help-golden-update
-    title: TestMutationHelpPreservesOriginalBytes says how to regenerate its golden
+  - id: T-183
+    title: TestMutationHelpPreservesOriginalBytes rewrites its golden with -update
     phase: 1
     owner: null
     status: todo
     depends_on: []
-    kind: idea
-    why: >
-      T-181's agent, 2026-10-21: cmd/itos-cc/testdata/mutation-help.json has no update flag and its
-      test does not say how to rebuild it, so T-181 wrote a throwaway test rendering every page with
-      @WORKERS@ put back, then rewrote the JSON by script. A -update flag, or the recipe in the
-      test's comment, makes the next help change one command.
-
-      slice-26's agent, 2026-10-21, met it again: the golden swaps the --workers default for
-      @WORKERS@, and a blanket replace of the default 4 also hits 143 elsewhere, so only the
-      (default N) text can be swapped; the golden's key order (group page last) rules out
-      re-encoding with Go's map order. An update flag removes all three steps.
+    kind: task
     refs: [T-181]
   - id: counted-uncommitted-manifests
     title: A counted run names uncommitted build manifests it leaves unjudged
