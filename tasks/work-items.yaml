@@ -5315,3 +5315,19 @@ items:
       stale only when those tests (their file or fingerprint) or the support files change; own-scope
       outcomes and survivors keep resting on the importing tests. Product behaviour: a slice with
       scenarios beside MUT-130 to 134, sized by T-46's first measured run.
+  - id: mutation-tests-order
+    title: mutation.tests can run the listed tests before a mutant's own tests, or instead of them
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: [T-46]
+    kind: idea
+    why: >
+      From the 2026-10-22 research for T-184 (q-84). A mutant runs its file's own tests first and
+      listed tests only when it survives them (run_execute.go:253-306, decision 12, MUT-124 and
+      MUT-178), and the own baseline runs eagerly for every command. For cmd/itos-cc's own files
+      (147 sites) the own tests are its whole test package, some 217 s, while the in-process
+      scenarios reaching a line take seconds. A listed-first order (own tests only when the listed
+      ones let it survive, own baseline lazy), and possibly listed-only, would cut that. Decide
+      after T-46's measured run shows whether those files dominate the nightly; mutation sample and
+      counted runs would follow the order.
