@@ -142,6 +142,15 @@ type Tests struct {
 	// Elapsed is how long one run of them takes: the baseline's, and each
 	// trial's but a timing-out one's.
 	Elapsed time.Duration
+	// Output is how many bytes one run of them writes, stdout and stderr
+	// together, and Memory the most memory it holds, with nothing mutated.
+	Output, Memory int64
+	// Writing are the sites whose mutants make them pass writing more, by
+	// how many bytes they write then. Flooding are those whose mutants make
+	// them write without end, and Hoarding those whose mutants make them
+	// hold ever more memory, up to 2 GiB, then fail.
+	Writing            map[Site]int64
+	Flooding, Hoarding []Site
 	// Listed describes the configured harness independently of its executable
 	// fixture: IDs and defining files, coverage by source line, whether coverage
 	// is split in one run, and each selection's timing or baseline failure.

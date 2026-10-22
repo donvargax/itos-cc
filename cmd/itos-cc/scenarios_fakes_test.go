@@ -253,7 +253,7 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 			for _, outcome := range []struct {
 				sites   []features.Site
 				outcome string
-			}{{t.Surviving, mutation.Survived}, {t.TimingOut, mutation.Timeout}} {
+			}{{t.Surviving, mutation.Survived}, {t.TimingOut, mutation.Timeout}, {capsWriting(t.Writing), mutation.Survived}, {t.Flooding, mutation.Timeout}} {
 				for _, site := range outcome.sites {
 					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome.outcome})
 				}
@@ -270,6 +270,14 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	}
 	env := runVariables(run.Env)
 	return &mutantstest.Workers{Files: m.files, Tests: declarations, Write: m.Write, Env: env, Without: slices.Clone(run.Without), Platform: m.Platform()}
+}
+
+// capsWriting are the sites of writing, whose mutants make the tests
+// pass writing more: as a run with no output cap judges them, survivors,
+// as one whose tests write without end runs to its timeout and one whose
+// tests hold ever more memory fails them, killed.
+func capsWriting(writing map[features.Site]int64) []features.Site {
+	return slices.Collect(maps.Keys(writing))
 }
 
 // Tools records independently declared tool/probe setup, never Tests.Command.
