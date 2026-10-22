@@ -3508,8 +3508,8 @@ items:
   - id: slice-19
     title: Workers copy enough of a workspace for a tsconfig that extends above the package
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
