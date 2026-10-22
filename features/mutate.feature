@@ -832,14 +832,18 @@ Feature: Mutation testing
   # file's scenarios made. mutation.tests.list may print a third
   # tab-separated column, a fingerprint of the test's own text,
   # <ID>\t<file>\t<fingerprint>; the lister computes it, and itos-cc stays
-  # unaware of Gherkin. With a fingerprint, a listed outcome records the
-  # fingerprint of each covering test in place of its file's hash, and stays
-  # fresh while each covering test is still listed with that fingerprint,
-  # whatever else its file holds and whichever file it moved to. Judging that
-  # runs the list command, in mutation check, run, sample and except alike: a
-  # list that fails is tests.list-failed, exit 1. A test listed without a
-  # fingerprint is dated by its file, as ADR-0011 has it, with no list
-  # command run to judge it (MUT-130 to 133 unchanged). Support files
+  # unaware of Gherkin. With a fingerprint, a listed outcome records each
+  # covering test's fingerprint beside its file's hash, and stays fresh
+  # while each covering test is still listed with that fingerprint, whatever
+  # else its file holds and whichever file it moved to. An unchanged file
+  # means an unchanged fingerprint, so the list command runs only when a
+  # covering test's file changed, once per command, in mutation check, run,
+  # sample and except alike: most checks run no lister, and only one after a
+  # spec commit does (coordinator's call, 2026-10-21, after a side agent
+  # noted the cost). A list that fails then is tests.list-failed, exit 1.
+  # A test listed without a fingerprint is dated by its file, as ADR-0011
+  # has it, with no list command run to judge it (MUT-130 to 133
+  # unchanged). Support files
   # (mutation.tests.support) stale every listed kill, fingerprinted or not.
   # An outcome recorded before slice-39 keeps its file hashes, and is dated by
   # them until a run records it again. Before slice-39 the third column is
@@ -874,11 +878,13 @@ Feature: Mutation testing
       And after features/steps_test.go changes, both kills are "mutation.stale", naming it
 
     @slice-39 @ID-MUT-279 @wip
-    Scenario: Judging a fingerprinted kill runs the list, and only then
-      Given a run recorded a mutant ID-A-02 kills, ID-A-02 listed with a fingerprint
-      When the list command fails and I run "itos-cc mutation check"
+    Scenario: The list runs only when a fingerprinted kill's file changed
+      Given a run recorded a mutant ID-A-02 kills, ID-A-02 listed with a fingerprint in a.feature
+      And a.feature has changed since, and the list command now fails
+      When I run "itos-cc mutation check"
       Then the problem is "tests.list-failed", with its exit code, and the exit code is 1
-      But when every recorded listed kill was listed without a fingerprint, mutation check runs no list command
+      But with a.feature unchanged, mutation check runs no list command and the exit code is 0
+      And when every recorded listed kill was listed without a fingerprint, mutation check runs no list command
 
   # listed-tests timed every run of listed tests from one run of all of
   # them: the coverage run (or the sum of the per-test runs), times the
