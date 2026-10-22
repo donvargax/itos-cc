@@ -5360,7 +5360,7 @@ items:
   - id: T-185
     title: Pin actionlint as a Go tool so push CI can run the nightly's checks
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
