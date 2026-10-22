@@ -524,6 +524,14 @@ with a site is `args.unexpected`, and with `--reason` or `--renew`
 an entry stale as `gone`, `killed` or `excluded` names `mutation except
 --prune`.
 
+`mutation except` refuses a site whose mutant is recorded uncovered as
+`exception.no-survivor`, on purpose: an exception covers survivors only.
+Its message says so, and its fix names a test that runs the site's line, or
+routing the branch through code a test already reaches, such as a helper the
+tests call, then `mutation run` again. A killed site, or a function with
+stale or missing results, keeps the fix that asks for a site `mutation run`
+lists as survived.
+
 A function's results are keyed by its hash, which leaves its comments out,
 in every language, with the space and line breaks only a comment needed, and
 its sites' offsets are taken in that comment-free text. A change to a

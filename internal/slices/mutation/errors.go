@@ -56,8 +56,14 @@ func failureError(failure Failure, rel func(string) string) error {
 			With("file", file)
 	case NoSurvivor:
 		file := rel(failure.Path)
-		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", file, failure.Line, failure.Column, failure.Reason),
-			fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", file)).
+		message := fmt.Sprintf("%s:%d:%d is no survivor to except: %s", file, failure.Line, failure.Column, failure.Reason)
+		fix := fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", file)
+		if failure.Uncovered {
+			// On purpose (q-12): an exception covers survivors only.
+			message += ", and an exception covers survivors only, on purpose: an uncovered line needs a test, not a reason"
+			fix = fmt.Sprintf("Add a test that runs line %d, or route the branch through code a test already reaches, such as a helper the tests call; then run 'itos-cc mutation run %s'.", failure.Line, file)
+		}
+		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", message, fix).
 			With("file", file).With("line", failure.Line).With("column", failure.Column)
 	case ReasonMissing:
 		return reasonMissing()

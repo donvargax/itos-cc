@@ -37,11 +37,13 @@ type SiteExcluded struct {
 }
 
 // NoSurvivor is except's site, at Path, which no fresh snapshot records as
-// a survivor: Reason says why.
+// a survivor: Reason says why, and Uncovered is true when its mutant is
+// recorded uncovered.
 type NoSurvivor struct {
 	Path         string
 	Line, Column int
 	Reason       string
+	Uncovered    bool
 }
 
 // ReasonMissing is except's site given with no --reason, when it re-points

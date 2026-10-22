@@ -1909,7 +1909,7 @@ Feature: Mutation testing
     # as before. Both drivers run it, as it needs no real tool. Before
     # slice-23 the message says only that a survivor is excepted, and the fix
     # asks for a site listed as survived, failing at the second Then.
-    @slice-23 @ID-MUT-299 @wip
+    @slice-23 @ID-MUT-299
     Scenario: Refusing to except an uncovered site says it is on purpose and names the way out
       Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
       When I run "itos-cc mutation except src/board.ts:9:3 --reason 'no test can reach it'"

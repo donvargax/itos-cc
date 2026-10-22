@@ -112,8 +112,13 @@ func Repointed(ctx context.Context, entries []Exception, survivor Exception, pat
 	return found, nil
 }
 
-// NoSurvivorError is a site Survivor cannot except: Reason says why.
-type NoSurvivorError struct{ Reason string }
+// NoSurvivorError is a site Survivor cannot except: Reason says why, and
+// Uncovered is true when its mutant is recorded uncovered, which an
+// exception never covers, on purpose: it needs a test.
+type NoSurvivorError struct {
+	Reason    string
+	Uncovered bool
+}
 
 func (e *NoSurvivorError) Error() string { return e.Reason }
 
@@ -129,7 +134,7 @@ func Survivor(ctx context.Context, path string, line, column int, opt CheckOptio
 	}
 	path = absoluteSource(opt.Dir, path)
 	if lang.Detect(path) == nil {
-		return Exception{}, &NoSurvivorError{"it is no source file itos-cc mutates"}
+		return Exception{}, &NoSurvivorError{Reason: "it is no source file itos-cc mutates"}
 	}
 	if status == nil {
 		return Exception{}, errors.New("mutation source status binding is missing")
@@ -142,7 +147,7 @@ func Survivor(ctx context.Context, path string, line, column int, opt CheckOptio
 		}
 	}
 	if failure != nil || kind != SourceNonDirectory {
-		return Exception{}, &NoSurvivorError{"there is no such file"}
+		return Exception{}, &NoSurvivorError{Reason: "there is no such file"}
 	}
 	f, err := parseExceptionSource(ctx, path, opt)
 	if err != nil {
@@ -164,23 +169,27 @@ func Survivor(ctx context.Context, path string, line, column int, opt CheckOptio
 			}
 			switch {
 			case fn.State == Missing:
-				return Exception{}, &NoSurvivorError{fn.Function + " has no mutation results"}
+				return Exception{}, &NoSurvivorError{Reason: fn.Function + " has no mutation results"}
 			case !fn.Judged():
-				return Exception{}, &NoSurvivorError{fn.Function + " changed since its mutation results, or the tests that import its file did"}
+				return Exception{}, &NoSurvivorError{Reason: fn.Function + " changed since its mutation results, or the tests that import its file did"}
 			}
 			for _, m := range fn.Mutants {
 				if m.Key() != s.Key() {
 					continue
 				}
-				if m.Outcome != Survived {
-					return Exception{}, &NoSurvivorError{fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", m.Outcome)}
+				switch m.Outcome {
+				case Survived:
+				case Uncovered:
+					return Exception{}, &NoSurvivorError{Reason: "its mutant is recorded uncovered", Uncovered: true}
+				default:
+					return Exception{}, &NoSurvivorError{Reason: fmt.Sprintf("its mutant is recorded %s, and only a survivor is excepted", m.Outcome)}
 				}
 				return Exception{File: c.Key, Function: fn.Function, Hash: UnitHash(f, u),
 					LineInFunction: s.Line - u.StartLine + 1, Column: s.Column, Original: s.Original, Replacement: s.Replacement,
 					LineText: LineText(f.Src, s.Line)}, nil
 			}
-			return Exception{}, &NoSurvivorError{"the results of " + fn.Function + " record no mutant there"}
+			return Exception{}, &NoSurvivorError{Reason: "the results of " + fn.Function + " record no mutant there"}
 		}
 	}
-	return Exception{}, &NoSurvivorError{"there is no mutation site there"}
+	return Exception{}, &NoSurvivorError{Reason: "there is no mutation site there"}
 }

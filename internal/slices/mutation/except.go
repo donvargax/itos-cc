@@ -74,7 +74,7 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 		if q.Reason == nil {
 			return ExceptFound{}, ReasonMissing{}
 		}
-		return ExceptFound{}, NoSurvivor{Path: path, Line: q.Line, Column: q.Column, Reason: none.Reason}
+		return ExceptFound{}, NoSurvivor{Path: path, Line: q.Line, Column: q.Column, Reason: none.Reason, Uncovered: none.Uncovered}
 	}
 	if err != nil {
 		return ExceptFound{}, err

@@ -959,7 +959,11 @@ that `changed` or `moved`, for `--renew` or an edit to mend, and changes
 only the removed entries' lines, with the comment lines directly above
 each. The fix of an entry stale as `gone`, `killed` or `excluded` names it.
 Only `mutation except` writes `itos-cc.yaml`. An
-entry never excuses an uncovered mutant: that needs a test, not a reason. An
+entry never excuses an uncovered mutant: that needs a test, not a reason, and
+`mutation except` refuses an uncovered site on purpose, as
+`exception.no-survivor`, its fix naming a test that runs the line, or routing
+the branch through code a test already reaches, such as a helper the tests
+call. An
 `itos-cc.yaml` that cannot be read, or an entry with no reason, is
 `config.invalid`, exit 80.
 

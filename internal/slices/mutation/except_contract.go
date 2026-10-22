@@ -16,9 +16,12 @@ excepted, not survived, and it fails nothing while its entry holds.
 The site must be a survivor that its file's snapshot in .metrics/mutate/
 records, fresh as mutation check judges it: run mutation run first. A site
 recorded killed or uncovered, one whose function's results are stale or
-missing, or no site at all, is refused: an uncovered mutant needs a test,
-not a reason. So is a site in a source that the exclude of itos-cc.yaml
-leaves out, which nothing mutates: exception.excluded.
+missing, or no site at all, is refused, and so is a site in a source that
+the exclude of itos-cc.yaml leaves out, which nothing mutates:
+exception.excluded. An uncovered mutant is refused on purpose, as
+exceptions cover survivors only: it needs a test, not a reason, so add a
+test that runs its line, or route the branch through code a test already
+reaches, such as a helper the tests call.
 
 The entry, under mutation.exceptions, holds the file, the function, the
 function's hash, the site's line counted from the function's first line
