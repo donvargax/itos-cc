@@ -5272,3 +5272,24 @@ items:
       slice-26's warning names uncommitted sources, tests and itos-cc.yaml only. A counted run also
       freezes go.mod, package.json, pyproject.toml, pubspec.yaml, Gradle and Maven files at HEAD,
       and an uncommitted change to one can change what the tests do, yet goes unnamed.
+  - id: scrap-gherkin
+    title: scrap measures Gherkin feature files
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person, 2026-10-21: scrap fits feature files. Mapping proposed by the coordinator: an
+      example is a Scenario (or each row of a Scenario Outline, open), setup the Background steps
+      (open), size its step count, no-assertions a scenario with no Then step (weaker than in code:
+      a Then step's definition may assert nothing), assertion-heavy a long run of Then checks,
+      clusters scenarios repeating the same Given/When steps with the action an Outline or a
+      Background, the table action a Scenario Outline with Examples, split a feature file too big
+      for one rule. No branches or loops (that logic lives in step definitions, which scrap already
+      measures as code) and no mocks. It makes the Gherkin parser, today in go.mod only for this
+      repository's own scenario runner, a product dependency. Not in conflict with mutation's
+      format-agnostic listed tests: scrap already reads each language's test syntax. Users: this
+      repository's and itos's godog suites. Behind the current issue queue unless the person moves
+      it.
+    refs: [scrap-dart-test-wrappers]
