@@ -4704,7 +4704,7 @@ items:
     title: Name Dart in README, docs/CLI.md and the guides, and close docs/dart
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task
   - id: own-baseline-announced
