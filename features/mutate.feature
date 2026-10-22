@@ -3675,6 +3675,27 @@ Feature: Mutation testing
       And the live working tree is not rewritten or mistaken for committed proof
       And unsupported scopes fail rather than silently following live project inputs
 
+    # slice-26, issue #41: a counted run judges HEAD's committed inputs and
+    # names that commit (MUT-174), but a change not yet committed to one of
+    # those inputs goes unjudged without a word: the issue's agent reran
+    # with new tests, saw the same survivors and hunted a bug that was not
+    # there. A counted run now warns on stderr, naming the commit it judged
+    # and each in-scope path whose working tree differs from it (staged,
+    # unstaged, or untracked and not ignored), and its JSON's sampling
+    # object lists those paths as "uncommitted", an empty list when there
+    # are none. In scope are the inputs it freezes: its project's sources,
+    # tests and measurement settings; a change elsewhere in the repository
+    # is not named. The warning changes neither the judgment nor the exit
+    # code. Before slice-26 nothing is warned, failing at the Then.
+    @slice-26 @ID-MUT-275 @wip
+    Scenario: A counted run warns that uncommitted changes in its scope go unjudged
+      Given a committed project whose test has an unstaged change and whose source has a staged change, beside an untracked test file and an unstaged change to a README that is neither source, test nor setting
+      When I run "itos-cc mutation run --count 1 --json"
+      Then stderr warns that the run judged HEAD's commit and that the test, the source and the untracked test file go unjudged, naming each
+      And the JSON's sampling object lists those three paths as "uncommitted", and not the README
+      And the judgment and the exit code are those of the same run with a clean working tree
+      But with no uncommitted change in scope, nothing is warned and "uncommitted" is an empty list
+
     @mutation-counted-run @ID-MUT-175
     Scenario: Fresh selection is reproducible across paths and same-name units
       Given committed functions include same-name units and more eligible sites than the budget
