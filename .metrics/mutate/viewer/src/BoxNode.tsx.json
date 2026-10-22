@@ -125,7 +125,7 @@
     {
       "namespace": "BoxNode",
       "name": "BoxNode",
-      "hash": "7c3d84b1fce75e3f",
+      "hash": "581d915ba171f0ac",
       "start_line": 28,
       "end_line": 75,
       "killed": 0,
@@ -316,7 +316,7 @@
         {
           "line": 55,
           "column": 23,
-          "offset": 1224,
+          "offset": 1068,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -331,7 +331,7 @@
         {
           "line": 58,
           "column": 17,
-          "offset": 1369,
+          "offset": 1213,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -346,7 +346,7 @@
         {
           "line": 58,
           "column": 29,
-          "offset": 1381,
+          "offset": 1225,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -361,7 +361,7 @@
         {
           "line": 58,
           "column": 32,
-          "offset": 1384,
+          "offset": 1228,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -376,7 +376,7 @@
         {
           "line": 59,
           "column": 47,
-          "offset": 1443,
+          "offset": 1287,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -391,7 +391,7 @@
         {
           "line": 59,
           "column": 58,
-          "offset": 1454,
+          "offset": 1298,
           "original": "!==",
           "replacement": "===",
           "outcome": "uncovered",
@@ -406,7 +406,7 @@
         {
           "line": 59,
           "column": 93,
-          "offset": 1489,
+          "offset": 1333,
           "original": "1",
           "replacement": "0",
           "outcome": "uncovered",
@@ -421,7 +421,7 @@
         {
           "line": 61,
           "column": 25,
-          "offset": 1629,
+          "offset": 1473,
           "original": "!==",
           "replacement": "===",
           "outcome": "uncovered",
@@ -436,7 +436,7 @@
         {
           "line": 62,
           "column": 14,
-          "offset": 1677,
+          "offset": 1521,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -451,7 +451,7 @@
         {
           "line": 62,
           "column": 27,
-          "offset": 1690,
+          "offset": 1534,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -466,7 +466,7 @@
         {
           "line": 62,
           "column": 29,
-          "offset": 1692,
+          "offset": 1536,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -481,7 +481,7 @@
         {
           "line": 62,
           "column": 31,
-          "offset": 1694,
+          "offset": 1538,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -496,7 +496,7 @@
         {
           "line": 62,
           "column": 44,
-          "offset": 1707,
+          "offset": 1551,
           "original": "<",
           "replacement": "<=",
           "outcome": "uncovered",
@@ -511,7 +511,7 @@
         {
           "line": 62,
           "column": 58,
-          "offset": 1721,
+          "offset": 1565,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -526,7 +526,7 @@
         {
           "line": 65,
           "column": 10,
-          "offset": 1797,
+          "offset": 1641,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -541,7 +541,7 @@
         {
           "line": 65,
           "column": 25,
-          "offset": 1812,
+          "offset": 1656,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -556,7 +556,7 @@
         {
           "line": 65,
           "column": 27,
-          "offset": 1814,
+          "offset": 1658,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -571,7 +571,7 @@
         {
           "line": 65,
           "column": 29,
-          "offset": 1816,
+          "offset": 1660,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -586,7 +586,7 @@
         {
           "line": 67,
           "column": 12,
-          "offset": 1899,
+          "offset": 1743,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -601,7 +601,7 @@
         {
           "line": 67,
           "column": 26,
-          "offset": 1913,
+          "offset": 1757,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -616,7 +616,7 @@
         {
           "line": 67,
           "column": 28,
-          "offset": 1915,
+          "offset": 1759,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -631,7 +631,7 @@
         {
           "line": 67,
           "column": 30,
-          "offset": 1917,
+          "offset": 1761,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -646,7 +646,7 @@
         {
           "line": 68,
           "column": 12,
-          "offset": 1990,
+          "offset": 1834,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -661,7 +661,7 @@
         {
           "line": 68,
           "column": 23,
-          "offset": 2001,
+          "offset": 1845,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -676,7 +676,7 @@
         {
           "line": 68,
           "column": 25,
-          "offset": 2003,
+          "offset": 1847,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -691,7 +691,7 @@
         {
           "line": 68,
           "column": 27,
-          "offset": 2005,
+          "offset": 1849,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -706,7 +706,7 @@
         {
           "line": 69,
           "column": 12,
-          "offset": 2137,
+          "offset": 1981,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -721,7 +721,7 @@
         {
           "line": 69,
           "column": 28,
-          "offset": 2153,
+          "offset": 1997,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -736,7 +736,7 @@
         {
           "line": 69,
           "column": 30,
-          "offset": 2155,
+          "offset": 1999,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -751,7 +751,7 @@
         {
           "line": 69,
           "column": 32,
-          "offset": 2157,
+          "offset": 2001,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -766,7 +766,7 @@
         {
           "line": 70,
           "column": 25,
-          "offset": 2241,
+          "offset": 2085,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",

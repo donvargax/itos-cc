@@ -50,7 +50,7 @@
     {
       "namespace": "App",
       "name": "Canvas",
-      "hash": "27e6807df80bbcc8",
+      "hash": "fb97ba6cf0a9e322",
       "start_line": 29,
       "end_line": 209,
       "killed": 0,
@@ -76,7 +76,7 @@
         {
           "line": 49,
           "column": 21,
-          "offset": 917,
+          "offset": 844,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -91,7 +91,7 @@
         {
           "line": 49,
           "column": 23,
-          "offset": 919,
+          "offset": 846,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -106,7 +106,7 @@
         {
           "line": 61,
           "column": 11,
-          "offset": 1147,
+          "offset": 1074,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -121,7 +121,7 @@
         {
           "line": 61,
           "column": 29,
-          "offset": 1165,
+          "offset": 1092,
           "original": "||",
           "replacement": "&&",
           "outcome": "uncovered",
@@ -136,7 +136,7 @@
         {
           "line": 61,
           "column": 34,
-          "offset": 1170,
+          "offset": 1097,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -151,7 +151,7 @@
         {
           "line": 66,
           "column": 21,
-          "offset": 1332,
+          "offset": 1259,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -166,7 +166,7 @@
         {
           "line": 66,
           "column": 34,
-          "offset": 1345,
+          "offset": 1272,
           "original": "!==",
           "replacement": "===",
           "outcome": "uncovered",
@@ -181,7 +181,7 @@
         {
           "line": 68,
           "column": 13,
-          "offset": 1428,
+          "offset": 1355,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -196,7 +196,7 @@
         {
           "line": 68,
           "column": 26,
-          "offset": 1441,
+          "offset": 1368,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -211,7 +211,7 @@
         {
           "line": 70,
           "column": 38,
-          "offset": 1546,
+          "offset": 1473,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -226,7 +226,7 @@
         {
           "line": 70,
           "column": 47,
-          "offset": 1555,
+          "offset": 1482,
           "original": "!==",
           "replacement": "===",
           "outcome": "uncovered",
@@ -241,7 +241,7 @@
         {
           "line": 73,
           "column": 9,
-          "offset": 1636,
+          "offset": 1563,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -256,7 +256,7 @@
         {
           "line": 74,
           "column": 21,
-          "offset": 1674,
+          "offset": 1601,
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered",
@@ -271,7 +271,7 @@
         {
           "line": 75,
           "column": 33,
-          "offset": 1713,
+          "offset": 1640,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -286,7 +286,7 @@
         {
           "line": 75,
           "column": 44,
-          "offset": 1724,
+          "offset": 1651,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -301,7 +301,7 @@
         {
           "line": 77,
           "column": 19,
-          "offset": 1779,
+          "offset": 1706,
           "original": "true",
           "replacement": "false",
           "outcome": "uncovered",
@@ -316,7 +316,7 @@
         {
           "line": 89,
           "column": 15,
-          "offset": 2102,
+          "offset": 1961,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -331,7 +331,7 @@
         {
           "line": 89,
           "column": 23,
-          "offset": 2110,
+          "offset": 1969,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -346,7 +346,7 @@
         {
           "line": 90,
           "column": 42,
-          "offset": 2171,
+          "offset": 2030,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -361,7 +361,7 @@
         {
           "line": 90,
           "column": 50,
-          "offset": 2179,
+          "offset": 2038,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -376,7 +376,7 @@
         {
           "line": 90,
           "column": 56,
-          "offset": 2185,
+          "offset": 2044,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -391,7 +391,7 @@
         {
           "line": 98,
           "column": 30,
-          "offset": 2489,
+          "offset": 2348,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -406,7 +406,7 @@
         {
           "line": 98,
           "column": 37,
-          "offset": 2496,
+          "offset": 2355,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -421,7 +421,7 @@
         {
           "line": 98,
           "column": 48,
-          "offset": 2507,
+          "offset": 2366,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -436,7 +436,7 @@
         {
           "line": 98,
           "column": 69,
-          "offset": 2528,
+          "offset": 2387,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -451,7 +451,7 @@
         {
           "line": 106,
           "column": 15,
-          "offset": 2675,
+          "offset": 2534,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -466,7 +466,7 @@
         {
           "line": 106,
           "column": 23,
-          "offset": 2683,
+          "offset": 2542,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -481,7 +481,7 @@
         {
           "line": 112,
           "column": 28,
-          "offset": 2896,
+          "offset": 2755,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -496,7 +496,7 @@
         {
           "line": 112,
           "column": 35,
-          "offset": 2903,
+          "offset": 2762,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -511,7 +511,7 @@
         {
           "line": 112,
           "column": 46,
-          "offset": 2914,
+          "offset": 2773,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -526,7 +526,7 @@
         {
           "line": 112,
           "column": 67,
-          "offset": 2935,
+          "offset": 2794,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -541,7 +541,7 @@
         {
           "line": 114,
           "column": 35,
-          "offset": 3055,
+          "offset": 2914,
           "original": "+",
           "replacement": "-",
           "outcome": "uncovered",
@@ -556,7 +556,7 @@
         {
           "line": 122,
           "column": 11,
-          "offset": 3250,
+          "offset": 3109,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -571,7 +571,7 @@
         {
           "line": 123,
           "column": 48,
-          "offset": 3315,
+          "offset": 3174,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -586,7 +586,7 @@
         {
           "line": 124,
           "column": 12,
-          "offset": 3335,
+          "offset": 3194,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -601,7 +601,7 @@
         {
           "line": 135,
           "column": 9,
-          "offset": 3514,
+          "offset": 3373,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -616,7 +616,7 @@
         {
           "line": 135,
           "column": 14,
-          "offset": 3519,
+          "offset": 3378,
           "original": "||",
           "replacement": "&&",
           "outcome": "uncovered",
@@ -631,7 +631,7 @@
         {
           "line": 135,
           "column": 23,
-          "offset": 3528,
+          "offset": 3387,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -646,7 +646,7 @@
         {
           "line": 135,
           "column": 32,
-          "offset": 3537,
+          "offset": 3396,
           "original": "||",
           "replacement": "&&",
           "outcome": "uncovered",
@@ -661,7 +661,7 @@
         {
           "line": 135,
           "column": 41,
-          "offset": 3546,
+          "offset": 3405,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -676,7 +676,7 @@
         {
           "line": 136,
           "column": 40,
-          "offset": 3605,
+          "offset": 3464,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -691,7 +691,7 @@
         {
           "line": 136,
           "column": 49,
-          "offset": 3614,
+          "offset": 3473,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -706,7 +706,7 @@
         {
           "line": 137,
           "column": 16,
-          "offset": 3640,
+          "offset": 3499,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -721,7 +721,7 @@
         {
           "line": 137,
           "column": 27,
-          "offset": 3651,
+          "offset": 3510,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -736,7 +736,7 @@
         {
           "line": 137,
           "column": 49,
-          "offset": 3673,
+          "offset": 3532,
           "original": "!==",
           "replacement": "===",
           "outcome": "uncovered",
@@ -751,7 +751,7 @@
         {
           "line": 144,
           "column": 17,
-          "offset": 3842,
+          "offset": 3701,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -766,7 +766,7 @@
         {
           "line": 145,
           "column": 17,
-          "offset": 3878,
+          "offset": 3737,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -781,7 +781,7 @@
         {
           "line": 145,
           "column": 29,
-          "offset": 3890,
+          "offset": 3749,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -796,7 +796,7 @@
         {
           "line": 145,
           "column": 41,
-          "offset": 3902,
+          "offset": 3761,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -811,7 +811,7 @@
         {
           "line": 145,
           "column": 48,
-          "offset": 3909,
+          "offset": 3768,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -826,7 +826,7 @@
         {
           "line": 151,
           "column": 13,
-          "offset": 4105,
+          "offset": 3964,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -841,7 +841,7 @@
         {
           "line": 151,
           "column": 16,
-          "offset": 4108,
+          "offset": 3967,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -856,7 +856,7 @@
         {
           "line": 152,
           "column": 7,
-          "offset": 4218,
+          "offset": 4077,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -871,7 +871,7 @@
         {
           "line": 152,
           "column": 12,
-          "offset": 4223,
+          "offset": 4082,
           "original": "||",
           "replacement": "&&",
           "outcome": "uncovered",
@@ -886,7 +886,7 @@
         {
           "line": 152,
           "column": 15,
-          "offset": 4226,
+          "offset": 4085,
           "original": "!",
           "replacement": "",
           "outcome": "uncovered",
@@ -901,7 +901,7 @@
         {
           "line": 152,
           "column": 24,
-          "offset": 4235,
+          "offset": 4094,
           "original": "||",
           "replacement": "&&",
           "outcome": "uncovered",
@@ -916,7 +916,7 @@
         {
           "line": 152,
           "column": 33,
-          "offset": 4244,
+          "offset": 4103,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -931,7 +931,7 @@
         {
           "line": 155,
           "column": 41,
-          "offset": 4379,
+          "offset": 4238,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -946,7 +946,7 @@
         {
           "line": 155,
           "column": 50,
-          "offset": 4388,
+          "offset": 4247,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -961,7 +961,7 @@
         {
           "line": 155,
           "column": 53,
-          "offset": 4391,
+          "offset": 4250,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -976,7 +976,7 @@
         {
           "line": 160,
           "column": 18,
-          "offset": 4496,
+          "offset": 4355,
           "original": ">",
           "replacement": ">=",
           "outcome": "uncovered",
@@ -991,7 +991,7 @@
         {
           "line": 160,
           "column": 20,
-          "offset": 4498,
+          "offset": 4357,
           "original": "1",
           "replacement": "0",
           "outcome": "uncovered",
@@ -1006,7 +1006,7 @@
         {
           "line": 160,
           "column": 22,
-          "offset": 4500,
+          "offset": 4359,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",
@@ -1021,7 +1021,7 @@
         {
           "line": 161,
           "column": 75,
-          "offset": 4579,
+          "offset": 4438,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -1036,7 +1036,7 @@
         {
           "line": 166,
           "column": 83,
-          "offset": 4775,
+          "offset": 4634,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -1051,7 +1051,7 @@
         {
           "line": 173,
           "column": 54,
-          "offset": 5024,
+          "offset": 4883,
           "original": "?.",
           "replacement": ".",
           "outcome": "uncovered",
@@ -1066,7 +1066,7 @@
         {
           "line": 176,
           "column": 54,
-          "offset": 5136,
+          "offset": 4995,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -1081,7 +1081,7 @@
         {
           "line": 191,
           "column": 32,
-          "offset": 5764,
+          "offset": 5623,
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered",
@@ -1096,7 +1096,7 @@
         {
           "line": 194,
           "column": 31,
-          "offset": 5951,
+          "offset": 5810,
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered",
@@ -1111,7 +1111,7 @@
         {
           "line": 195,
           "column": 29,
-          "offset": 5986,
+          "offset": 5845,
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered",
@@ -1126,7 +1126,7 @@
         {
           "line": 197,
           "column": 44,
-          "offset": 6062,
+          "offset": 5921,
           "original": "true",
           "replacement": "false",
           "outcome": "uncovered",
@@ -1141,7 +1141,7 @@
         {
           "line": 200,
           "column": 40,
-          "offset": 6157,
+          "offset": 6016,
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered",
@@ -1156,7 +1156,7 @@
         {
           "line": 203,
           "column": 33,
-          "offset": 6311,
+          "offset": 6170,
           "original": "===",
           "replacement": "!==",
           "outcome": "uncovered",
@@ -1171,7 +1171,7 @@
         {
           "line": 203,
           "column": 37,
-          "offset": 6315,
+          "offset": 6174,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -1186,7 +1186,7 @@
         {
           "line": 203,
           "column": 39,
-          "offset": 6317,
+          "offset": 6176,
           "original": "&&",
           "replacement": "||",
           "outcome": "uncovered",

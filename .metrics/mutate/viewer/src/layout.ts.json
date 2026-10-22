@@ -52,7 +52,7 @@
     {
       "namespace": "layout",
       "name": "layout",
-      "hash": "8c22e427c07e449f",
+      "hash": "da5e066381a7cd16",
       "start_line": 33,
       "end_line": 62,
       "killed": 0,
@@ -153,7 +153,7 @@
         {
           "line": 57,
           "column": 33,
-          "offset": 1072,
+          "offset": 1017,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
@@ -168,7 +168,7 @@
         {
           "line": 58,
           "column": 25,
-          "offset": 1127,
+          "offset": 1072,
           "original": "?.",
           "replacement": "",
           "outcome": "uncovered",
@@ -183,7 +183,7 @@
         {
           "line": 58,
           "column": 28,
-          "offset": 1130,
+          "offset": 1075,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered",
@@ -198,7 +198,7 @@
         {
           "line": 59,
           "column": 61,
-          "offset": 1194,
+          "offset": 1139,
           "original": "??",
           "replacement": "||",
           "outcome": "uncovered",
