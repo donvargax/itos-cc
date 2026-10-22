@@ -3648,17 +3648,9 @@ items:
     title: A listed kill is dated by its own test's fingerprint, not its whole file
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was listed-test-fingerprint.
-      Issue #30. The person (2026-10-18): supersede ADR-0011 with an optional third column from the
-      list command, <ID><tab><file><tab><fingerprint>; lists without it keep per-file dating;
-      mutation.tests.support still stales every listed kill; itos-cc stays unaware of Gherkin, the
-      lister computes the fingerprint. ADR-0049 counts on it (inprocess-mutation-tests), so it may
-      move ahead of the other wave-3 features once the nightly and mutation proof are back.
-      kill-by-test-graph (#56) builds on it.
     refs: ["#30"]
   - id: kill-by-test-graph
     title: A Go kill is dated by its killing test and what that test reaches
