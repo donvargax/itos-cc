@@ -1912,7 +1912,7 @@ Feature: Mutation testing
     @slice-23 @ID-MUT-299 @wip
     Scenario: Refusing to except an uncovered site says it is on purpose and names the way out
       Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
-      When I run "itos-cc mutation except src/board.ts:9:3 --reason 'no test can reach it' --json"
+      When I run "itos-cc mutation except src/board.ts:9:3 --reason 'no test can reach it'"
       Then the problem is "exception.no-survivor", with file "src/board.ts"
       And its message says an exception covers survivors only, on purpose
       And its fix names a test that runs line 9, or routing the branch through code a test already reaches
