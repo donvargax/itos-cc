@@ -2,7 +2,9 @@ package porttest
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"maps"
 	"path"
 	"path/filepath"
 	"slices"
@@ -290,6 +292,59 @@ func (s *Inputs) goEnv() []string {
 func tsConfig(name string) bool {
 	return slices.Contains([]string{"package.json", "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "yarn.lock", "bun.lock", "bun.lockb", ".babelrc", ".swcrc", "jest.config.json", "vitest.workspace.json"}, name) || strings.HasPrefix(name, "tsconfig") && strings.HasSuffix(name, ".json")
 }
+
+// pnpmInputs records what pnpm reads of the folder of the nearest
+// pnpm-workspace.yaml from root up within project, as the adapter does
+// (slice-18): its config files as a package root's are named, its .npmrc
+// and .pnpmfile.cjs, and the patch files its patchedDependencies name.
+func (s *Inputs) pnpmInputs(ctx context.Context, out map[string]string, root, project string) mutants.InputFailure {
+	workspace := ""
+	for dir := root; inside(project, dir); dir = filepath.Dir(dir) {
+		if s.regular(ctx, filepath.Join(dir, "pnpm-workspace.yaml")) {
+			workspace = dir
+			break
+		}
+		if filepath.Dir(dir) == dir {
+			break
+		}
+	}
+	if workspace == "" {
+		return nil
+	}
+	var files []string
+	for _, path := range s.paths(workspace) {
+		if name := filepath.Base(path); filepath.Dir(path) == workspace && (tsConfig(name) || name == ".npmrc" || name == ".pnpmfile.cjs") {
+			files = append(files, path)
+		}
+	}
+	settings, _ := readPnpmSettings(s.read(ctx, filepath.Join(workspace, "pnpm-workspace.yaml")))
+	patches := slices.Collect(maps.Values(settings.PatchedDependencies))
+	var manifest struct {
+		Pnpm struct {
+			PatchedDependencies map[string]string `json:"patchedDependencies"`
+		} `json:"pnpm"`
+	}
+	if json.Unmarshal([]byte(s.read(ctx, filepath.Join(workspace, "package.json"))), &manifest) == nil {
+		patches = slices.AppendSeq(patches, maps.Values(manifest.Pnpm.PatchedDependencies))
+	}
+	for _, patch := range patches {
+		if path := filepath.Join(workspace, filepath.FromSlash(patch)); inside(project, path) && s.regular(ctx, path) {
+			files = append(files, path)
+		}
+	}
+	for _, path := range files {
+		text, failure := s.required(ctx, path)
+		if failure != nil {
+			return failure
+		}
+		if f := lang.Detect(path); f != nil {
+			text = mutants.StripAnnotation(text, f.Comment)
+		}
+		name, _ := filepath.Rel(project, path)
+		out[filepath.ToSlash(name)] = inputHash(text)
+	}
+	return nil
+}
 func kotlinInput(name string) bool {
 	return slices.Contains([]string{".kt", ".kts", ".java", ".gradle"}, filepath.Ext(name)) || slices.Contains([]string{"pom.xml", "gradle.properties", "gradle-wrapper.properties", "maven.config", "jvm.config", "extensions.xml"}, name) || strings.HasSuffix(name, ".versions.toml")
 }
@@ -402,6 +457,11 @@ func (s *Inputs) Coverage(ctx context.Context, source, project, producer string,
 			}
 			name, _ := filepath.Rel(project, path)
 			out[filepath.ToSlash(name)] = inputHash(text)
+		}
+	}
+	if language == "typescript" {
+		if failure := s.pnpmInputs(ctx, out, root, project); failure != nil {
+			return nil, failure
 		}
 	}
 	if language == "dart" {

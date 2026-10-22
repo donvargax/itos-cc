@@ -636,11 +636,21 @@ of its Maven reactor. Dart evidence rests on its package, the nearest
 replacement outside the inventoried module is refused; set `GOWORK=off` to
 disable workspace use. Refused likewise, as `mutation.coverage-unsupported`
 for every judged function of its root even when older evidence looks
-fresh, are an npm, yarn or pnpm workspace (a `workspaces` field in a `package.json` from
-the package root up to the project root, or a `pnpm-workspace.yaml`), a
-`workspace:` dependency, and a `file:` or `link:` dependency outside the
-package root; a Python path or editable dependency outside the build root,
-as `pyproject.toml` (a `path = "…"` key, as `[tool.uv.sources]` and Poetry
+fresh, are an npm or yarn workspace (a `workspaces` field in a `package.json` from
+the package root up to the project root), a `workspace:` dependency, and a
+`file:` or `link:` dependency outside the package root, or a pnpm override
+(`overrides` in a `pnpm-workspace.yaml` there) whose value is one; under a
+`pnpm-workspace.yaml` whose `packages` list members, the workspace's own
+root package, and a member that depends on another member by its package
+name with a plain or `catalog:` version, which pnpm links as it links a
+`workspace:` one. A `pnpm-workspace.yaml` with no `packages` key, or a null
+or empty one, holds settings and is no workspace, and a pnpm workspace
+member with no such dependency is proven as a package of its own: its
+evidence holds what pnpm reads of its workspace root beside it, the root's
+config files as a package root's are named, its `.npmrc` and
+`.pnpmfile.cjs` and the patch files `patchedDependencies` names, and not
+the other members. Refused too are a Python path or editable dependency
+outside the build root, as `pyproject.toml` (a `path = "…"` key, as `[tool.uv.sources]` and Poetry
 write one, or a `file:` URL), a `requirements*.txt` there (`-e` or
 `--editable`, a path, a `file:` URL), or the root's `.venv` or `venv`
 editable installs (`.pth` paths, setuptools' `__editable__` finders) name
@@ -809,7 +819,11 @@ tests and Vitest, Jest or Vite configuration alike, its `package.json`,
 lockfile, `tsconfig*.json` and JSON Babel, SWC, Vitest and Jest
 configuration, project config, configured support files, the producer and
 the Node environment; `node_modules`, hidden directories, nested packages
-and the root's `dist`, `build`, `out` and `coverage` are left out. Kotlin
+and the root's `dist`, `build`, `out` and `coverage` are left out. Under a
+`pnpm-workspace.yaml`, the nearest from the package root up within the
+project root, it fingerprints too the config files of that file's folder as
+a package root's are named, its `.npmrc` and `.pnpmfile.cjs`, and the patch
+files its `patchedDependencies` name. Kotlin
 evidence fingerprints its whole build root, the nearest directory with a
 `settings.gradle(.kts)`, else the module's, or the top of its Maven reactor:
 every module's `.kt`, `.kts` and `.java` sources and tests, Gradle scripts

@@ -3035,7 +3035,7 @@ Feature: Mutation testing
       # names the dependency rather than the workspace file, since the file
       # alone no longer refuses anything. Before slice-18 it names
       # pnpm-workspace.yaml, failing at the Then.
-      @slice-18 @wip
+      @slice-18
       Examples:
         | language   | scope                                                |
         | typescript | a pnpm workspace member with a workspace: dependency |
@@ -3057,7 +3057,7 @@ Feature: Mutation testing
     # ones. Before slice-18 every function is
     # "mutation.coverage-unsupported", naming pnpm-workspace.yaml, and the
     # run exits 1, failing at the first Then.
-    @slice-18 @ID-MUT-281 @wip
+    @slice-18 @ID-MUT-281
     Scenario: A pnpm-workspace.yaml with no packages key is the package's settings, not a workspace
       Given a TypeScript package tested with Vitest whose own pnpm-workspace.yaml holds "minimumReleaseAge: 1440" and no packages key
       When I run "itos-cc mutation run --fail-uncovered --json" for its source
@@ -3090,7 +3090,7 @@ Feature: Mutation testing
     # worker's copy cannot reach it until slice-19. Before slice-18 every
     # function is "mutation.coverage-unsupported", naming
     # pnpm-workspace.yaml, failing at the first Then.
-    @slice-18 @ID-MUT-282 @wip
+    @slice-18 @ID-MUT-282
     Scenario Outline: A pnpm workspace member with no local dependency is proven as a package of its own, beside its workspace root's settings
       Given a pnpm workspace whose root lists packages/* and holds pnpm-lock.yaml and tsconfig.base.json, with the members packages/label, tested with Vitest and depending on no workspace:, file: or link: package, and packages/other
       When I run "itos-cc mutation run --fail-uncovered --json" for packages/label/src/label.ts, from <folder>

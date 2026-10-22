@@ -148,31 +148,33 @@ func (p *strictPnpmState) declare(files map[string]string) error {
 // project, for the judged source, named from there.
 func (p *strictPnpmState) run(folder, args string) error {
 	p.folder = folder
-	rel, err := filepath.Rel(filepath.FromSlash(folder), filepath.FromSlash(p.q.file))
-	if err != nil {
-		return err
-	}
 	words, err := commandWords(args)
 	if err != nil {
 		return err
 	}
 	w := p.q.m.w
-	return w.runEnv(filepath.Join(w.dir, filepath.FromSlash(folder)), w.env(), append(words, filepath.ToSlash(rel))...)
+	return w.runEnv(filepath.Join(w.dir, filepath.FromSlash(folder)), w.env(), append(words, p.source())...)
 }
 
-// check runs a strict mutation check of the judged source from the folder
-// the run ran in.
-func (p *strictPnpmState) check() (map[string]any, string, int, error) {
-	w := p.q.m.w
+// source is the judged source as itos-cc names it from the folder the run
+// ran in, slash-separated.
+func (p *strictPnpmState) source() string {
 	folder := p.folder
 	if folder == "" {
 		folder = "."
 	}
 	rel, err := filepath.Rel(filepath.FromSlash(folder), filepath.FromSlash(p.q.file))
 	if err != nil {
-		return nil, "", 0, err
+		return p.q.file
 	}
-	code, out, log, err := w.capture(filepath.Join(w.dir, filepath.FromSlash(folder)), w.env(), "mutation", "check", "--fail-uncovered", "--json", filepath.ToSlash(rel))
+	return filepath.ToSlash(rel)
+}
+
+// check runs a strict mutation check of the judged source from the folder
+// the run ran in.
+func (p *strictPnpmState) check() (map[string]any, string, int, error) {
+	w := p.q.m.w
+	code, out, log, err := w.capture(filepath.Join(w.dir, filepath.FromSlash(p.folder)), w.env(), "mutation", "check", "--fail-uncovered", "--json", p.source())
 	if err != nil {
 		return nil, log, code, err
 	}
@@ -249,7 +251,7 @@ func (p *strictPnpmState) stale(file string) error {
 		return err
 	}
 	ps := q.findings(a, "mutation.coverage-stale", "")
-	if code != 1 || len(ps) != 1 || len(strictLineFacts(a)) != 1 || filepath.ToSlash(fmt.Sprint(ps[0]["file"])) != q.file || !strictNamed(fmt.Sprint(ps[0]["function"]), "label") {
+	if code != 1 || len(ps) != 1 || len(strictLineFacts(a)) != 1 || filepath.ToSlash(fmt.Sprint(ps[0]["file"])) != p.source() || !strictNamed(fmt.Sprint(ps[0]["function"]), "label") {
 		return fmt.Errorf("stale strict evidence exit%d: %v\n%s", code, a, log)
 	}
 	_, changed, _ := strings.Cut(fmt.Sprint(ps[0]["message"]), "inputs changed: ")

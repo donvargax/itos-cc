@@ -37,8 +37,10 @@ func TestLineCoverageRefusesOnlyScopesOutsideItsInventory(t *testing.T) {
 			"package.json": `{"workspaces": ["packages/*"]}`, "packages/a/package.json": `{"name": "a"}`, "packages/a/src/f.ts": ts}, "workspace"},
 		{"yarn workspaces object", "typescript", "src/f.ts", map[string]string{
 			"package.json": `{"workspaces": {"packages": ["x"]}}`, "src/f.ts": ts}, "workspace"},
-		{"pnpm workspace", "typescript", "src/f.ts", map[string]string{
-			"package.json": `{}`, "pnpm-workspace.yaml": "packages: []\n", "src/f.ts": ts}, "pnpm-workspace.yaml"},
+		{"pnpm workspace root package", "typescript", "src/f.ts", map[string]string{
+			"package.json": `{}`, "pnpm-workspace.yaml": "packages:\n  - packages/*\n", "src/f.ts": ts}, "pnpm-workspace.yaml"},
+		{"pnpm settings with empty packages", "typescript", "src/f.ts", map[string]string{
+			"package.json": `{}`, "pnpm-workspace.yaml": "packages: []\n", "src/f.ts": ts}, ""},
 		{"workspace: dependency", "typescript", "src/f.ts", map[string]string{
 			"package.json": `{"dependencies": {"b": "workspace:*"}}`, "src/f.ts": ts}, "workspace:*"},
 		{"file: dependency outside", "typescript", "src/f.ts", map[string]string{

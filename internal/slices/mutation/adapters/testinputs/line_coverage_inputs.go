@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -176,9 +178,14 @@ func typescriptConfig(name string) bool {
 // files, the producer and the Node environment. node_modules, hidden
 // directories, nested packages and the root's dist, build, out and coverage
 // outputs are left out. A package root above the project root is not
-// followed: the project root stands for it.
+// followed: the project root stands for it. Under a pnpm-workspace.yaml, the
+// nearest from the package root up within the project root, what pnpm reads
+// of its folder counts too (slice-18): its config files as a package root's
+// are named, its .npmrc and .pnpmfile.cjs, and the patch files its
+// patchedDependencies name, there or in its package.json's pnpm field. The
+// workspace's other members are no input.
 func TypeScriptCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs, source, projectRoot, producer string, support map[string]string) (map[string]string, error) {
-	out, _, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
+	out, root, err := rootCoverageInputs(ctx, source, projectRoot, rootInventory{
 		markers: []string{"package.json"},
 		source:  func(name string) bool { return slices.Contains(typescriptSources, filepath.Ext(name)) },
 		config:  typescriptConfig,
@@ -189,11 +196,83 @@ func TypeScriptCoverageInputs(ctx context.Context, runtime mutants.RuntimeInputs
 	if err != nil {
 		return nil, err
 	}
+	if err := addPnpmCoverageInputs(out, root, projectRoot); err != nil {
+		return nil, err
+	}
 	out["@node-env"] = envInput(runtime, "", "NODE_OPTIONS", "NODE_ENV", "NODE_PATH", "TS_NODE_PROJECT")
 	if err := addProjectCoverageInputs(out, projectRoot, producer, support); err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+// pnpmConfig says whether a file directly in the folder of a
+// pnpm-workspace.yaml configures how pnpm installs a package beneath it.
+func pnpmConfig(name string) bool {
+	return typescriptConfig(name) || name == ".npmrc" || name == ".pnpmfile.cjs"
+}
+
+// addPnpmCoverageInputs records what pnpm reads of the folder of the
+// nearest pnpm-workspace.yaml from root up within projectRoot, if any: its
+// pnpmConfig files and the patch files patchedDependencies names beneath
+// projectRoot.
+func addPnpmCoverageInputs(inputs map[string]string, root, projectRoot string) error {
+	workspace := ""
+	for dir := root; beneathRoot(projectRoot, dir); dir = filepath.Dir(dir) {
+		if coverageFileExists(filepath.Join(dir, "pnpm-workspace.yaml")) {
+			workspace = dir
+			break
+		}
+		if filepath.Dir(dir) == dir {
+			break
+		}
+	}
+	if workspace == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(workspace)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if path := filepath.Join(workspace, entry.Name()); pnpmConfig(entry.Name()) && coverageFileExists(path) {
+			if err := addCoverageInput(inputs, projectRoot, path); err != nil {
+				return err
+			}
+		}
+	}
+	for _, patch := range pnpmPatches(workspace) {
+		path := filepath.Join(workspace, filepath.FromSlash(patch))
+		if beneathRoot(projectRoot, path) && coverageFileExists(path) {
+			if err := addCoverageInput(inputs, projectRoot, path); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// pnpmPatches are the patch files the pnpm settings in dir name, as its
+// folder's paths: patchedDependencies in its pnpm-workspace.yaml or in its
+// package.json's pnpm field.
+func pnpmPatches(dir string) []string {
+	var patches []string
+	if data, err := os.ReadFile(filepath.Join(dir, "pnpm-workspace.yaml")); err == nil { //nolint:gosec // the pnpm settings above the package a strict file belongs to, within the project root
+		settings, _ := readPnpmSettings(string(data))
+		patches = slices.AppendSeq(patches, maps.Values(settings.PatchedDependencies))
+	}
+	if data, err := os.ReadFile(filepath.Join(dir, "package.json")); err == nil { //nolint:gosec // the package.json beside those pnpm settings
+		var manifest struct {
+			Pnpm struct {
+				PatchedDependencies map[string]string `json:"patchedDependencies"`
+			} `json:"pnpm"`
+		}
+		if json.Unmarshal(data, &manifest) == nil {
+			patches = slices.AppendSeq(patches, maps.Values(manifest.Pnpm.PatchedDependencies))
+		}
+	}
+	slices.Sort(patches)
+	return slices.Compact(patches)
 }
 
 // kotlinModuleMarkers mark a Kotlin build module, as coverage plans find

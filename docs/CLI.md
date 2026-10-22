@@ -432,8 +432,14 @@ which only says how the version was chosen, and to the project toolchain's
 CI's included. Strict run and check refuse active Go
 workspaces and local replacements outside the inventoried nearest module,
 including excluded nested modules; `GOWORK=off` remains supported. They
-refuse, likewise, npm, yarn and pnpm workspaces, `workspace:` dependencies
-and `file:` or `link:` dependencies outside the package root; Python path
+refuse, likewise, npm and yarn workspaces, `workspace:` dependencies,
+`file:` or `link:` dependencies and pnpm overrides to one outside the package
+root, a pnpm workspace's own root package and a pnpm member that depends on
+another member by its name (a plain or `catalog:` version); a
+`pnpm-workspace.yaml` with no `packages`, or null or empty ones, is
+settings, and a pnpm member with no local dependency is admitted, its
+evidence bound too to its workspace root's config files, `.npmrc`,
+`.pnpmfile.cjs` and `patchedDependencies` patch files; Python path
 or editable dependencies outside the build root (`pyproject.toml` path
 keys and `file:` URLs, `requirements*.txt` editable or path lines, `.pth`
 paths and `__editable__` finder mappings in the root's `.venv` or `venv`);

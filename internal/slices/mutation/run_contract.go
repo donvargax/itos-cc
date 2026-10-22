@@ -279,14 +279,18 @@ measured (--all-tests with one), has no evidence, which is
 mutation.coverage-missing. A scope the fingerprints cannot prove is
 mutation.coverage-unsupported for every judged function of its root, even
 with fresh evidence: an active Go workspace or a local replacement outside
-the module; an npm, yarn or pnpm workspace, a workspace: dependency, or a
-file: or link: dependency outside the package root; a Python path or
-editable dependency outside the build root (pyproject.toml, requirements
-files, the root's virtualenv); a Gradle includeBuild, or a Maven module,
-subproject or parent relativePath, outside the build root; a pub path
-dependency or override, in a pubspec.yaml or pubspec_overrides.yaml, outside
-the package root, or a pub workspace's root for a member. They are found
-in the root's own files, and nothing outside the project root is read.
+the module; an npm or yarn workspace, a workspace: dependency, a file: or
+link: dependency or pnpm override outside the package root, a pnpm
+workspace's own root package, or a member depending on another by name;
+a pnpm-workspace.yaml with no packages is settings, and a member's
+evidence holds its workspace root's config, .npmrc, .pnpmfile.cjs and
+patches; a Python path or editable dependency outside the build root
+(pyproject.toml, requirements files, the root's virtualenv); a Gradle
+includeBuild, or a Maven module, subproject or parent relativePath, outside
+the build root; a pub path dependency or override, in a pubspec.yaml or
+pubspec_overrides.yaml, outside the package root, or a pub workspace's root
+for a member. They are found in the root's own files, and nothing outside
+the project root is read.
 Strict runs reject --no-coverage,
 --coverage-report, --use-existing-coverage, and --coverage-command. A
 matching independent cache can avoid remeasurement; otherwise built-in or
@@ -432,7 +436,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"mutation.uncovered        with --fail-uncovered, no test executes a mutant: file, line, column, function, original, replacement",
 			"mutation.uncovered-statement with --fail-uncovered, a measured executable Go coverage block or Python, TypeScript, Kotlin or Dart line is uncovered: file, function, line",
 			"mutation.coverage-missing  with --fail-uncovered, a Go, Python, TypeScript, Kotlin or Dart function lacks complete measured coverage evidence: file, function, line",
-			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
+			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm or yarn workspace, a pnpm workspace root package or a member depending on another, or a local dependency, pnpm override, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
 			"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 			"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",

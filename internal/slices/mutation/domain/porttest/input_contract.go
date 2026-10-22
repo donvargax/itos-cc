@@ -179,6 +179,72 @@ func FingerprintsContract(t *testing.T, makeInput InputFactory) {
 			})
 		}
 	})
+	// slice-18: a pnpm-workspace.yaml is a workspace only when its packages
+	// list members; a member is refused only for a local dependency.
+	t.Run("pnpm settings and workspace members", func(t *testing.T) {
+		workspace := func(settings, deps string) map[string]string {
+			return map[string]string{"package.json": `{"name":"repro"}`, "pnpm-workspace.yaml": settings,
+				"packages/label/package.json": `{"name":"label","dependencies":{` + deps + `}}`, "packages/label/a.ts": "actual source\n",
+				"packages/other/package.json": `{"name":"other"}`, "tools/deep/x/package.json": `{"name":"deep"}`, "../outside/never-read.txt": "owned external marker"}
+		}
+		single := func(settings string, more map[string]string) map[string]string {
+			files := map[string]string{"package.json": `{"name":"single"}`, "pnpm-workspace.yaml": settings, "a.ts": "actual source\n", "../outside/never-read.txt": "owned external marker"}
+			maps.Copy(files, more)
+			return files
+		}
+		const members = "packages:\n  - packages/*\n"
+		for _, c := range []struct {
+			name, source string
+			files        map[string]string
+			token        string // a word of the refusal, "" for none
+		}{
+			{"settings alone", "a.ts", single("minimumReleaseAge: 1440\n", nil), ""},
+			{"null packages", "a.ts", single("packages:\nminimumReleaseAge: 1440\n", nil), ""},
+			{"empty packages", "a.ts", single("packages: []\n", nil), ""},
+			{"settings above the package", "app/a.ts", map[string]string{"pnpm-workspace.yaml": "minimumReleaseAge: 1440\n", "app/package.json": "{}", "app/a.ts": "actual source\n"}, ""},
+			{"packages that are no list", "a.ts", single("packages: packages/*\n", nil), "does not parse"},
+			{"the workspace's own root package", "a.ts", single(members, nil), "pnpm workspace root"},
+			{"a member with registry and alias dependencies", "packages/label/a.ts", workspace(members, `"left-pad":"^1.3.0","o":"npm:other@1"`), ""},
+			{"a member naming a member by a plain version", "packages/label/a.ts", workspace(members, `"other":"^1.0.0"`), `other "^1.0.0"`},
+			{"a member naming a member through a catalog", "packages/label/a.ts", workspace(members, `"other":"catalog:"`), `other "catalog:"`},
+			{"a member naming a member a ** pattern lists", "packages/label/a.ts", workspace(members+"  - tools/**\n", `"deep":"1"`), `deep "1"`},
+			{"a member with a workspace: dependency", "packages/label/a.ts", workspace(members, `"other":"workspace:*"`), "workspace:*"},
+			{"an override outside the package root", "a.ts", single("overrides:\n  lib: link:../outside\n", nil), "override lib"},
+			{"a workspace override into a sibling", "packages/label/a.ts", workspace(members+"overrides:\n  lib: link:./packages/other\n", ""), "override lib"},
+			{"an override inside the package root", "a.ts", single("overrides:\n  lib: link:./vendor/lib\n", map[string]string{"vendor/lib/index.js": ""}), ""},
+		} {
+			t.Run(c.name, func(t *testing.T) {
+				b := makeInput(t, c.files, nil, nil)
+				reason, failure := b.Fingerprints.Unsupported(t.Context(), "typescript", filepath.Join(b.Root, filepath.FromSlash(c.source)), b.Root)
+				switch {
+				case failure != nil:
+					t.Fatal(failure)
+				case c.token == "" && reason != "":
+					t.Fatalf("refused %q, want it admitted", reason)
+				case c.token != "" && !strings.Contains(reason, c.token):
+					t.Fatalf("refusal %q, want one naming %q", reason, c.token)
+				}
+			})
+		}
+	})
+	t.Run("a pnpm member's inputs hold what pnpm reads of its workspace root", func(t *testing.T) {
+		files := map[string]string{"package.json": `{"name":"repro","pnpm":{"patchedDependencies":{"b@1.0.0":"patches/b.patch"}}}`,
+			"pnpm-workspace.yaml": "packages:\n  - packages/*\npatchedDependencies:\n  a@1.0.0: patches/a.patch\n",
+			"pnpm-lock.yaml":      "lockfileVersion: '9.0'\n", "tsconfig.base.json": "{}", ".npmrc": "auto-install-peers=true\n", ".pnpmfile.cjs": "module.exports = {};\n",
+			"patches/a.patch": "a patch\n", "patches/b.patch": "b patch\n", "patches/unnamed.patch": "not named\n", "README.md": "not read\n", "vitest.config.ts": "export default {};\n",
+			"packages/label/package.json": `{"name":"label"}`, "packages/label/src/a.ts": "actual source\n",
+			"packages/other/package.json": `{"name":"other"}`, "packages/other/src/o.ts": "a sibling\n"}
+		b := makeInput(t, files, nil, nil)
+		got, failure := b.Fingerprints.Coverage(t.Context(), filepath.Join(b.Root, "packages", "label", "src", "a.ts"), b.Root, "producer", nil)
+		want := []string{".npmrc", ".pnpmfile.cjs", "@node-env", "@producer", "itos-cc.yaml", "package.json", "packages/label/package.json", "packages/label/src/a.ts",
+			"patches/a.patch", "patches/b.patch", "pnpm-lock.yaml", "pnpm-workspace.yaml", "tsconfig.base.json"}
+		if failure != nil || !slices.Equal(slices.Sorted(maps.Keys(got)), want) {
+			t.Fatalf("pnpm member inputs: %v %v, want %v", slices.Sorted(maps.Keys(got)), failure, want)
+		}
+		if got[".npmrc"] != contractHash(files[".npmrc"]) || got["patches/a.patch"] != contractHash(files["patches/a.patch"]) {
+			t.Fatalf("pnpm member input hashes: %v", got)
+		}
+	})
 	t.Run("caller cancellation precedes reads", func(t *testing.T) {
 		b := makeInput(t, map[string]string{}, nil, nil)
 		ctx, cancel := context.WithCancelCause(t.Context())

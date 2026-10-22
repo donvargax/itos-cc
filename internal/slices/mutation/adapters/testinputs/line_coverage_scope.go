@@ -20,10 +20,18 @@ import (
 // LineCoverageUnsupported names the scope of source, a file of a
 // line-precision language, that its strict coverage fingerprints cannot
 // prove, or "" when there is none (q-40, as ADR-0019 refuses Go's):
-//   - TypeScript: an npm, yarn or pnpm workspace its package belongs to (a
+//   - TypeScript: an npm or yarn workspace its package belongs to (a
 //     "workspaces" field in a package.json from its package root up to the
-//     project root, or a pnpm-workspace.yaml there), a workspace: dependency,
-//     or a file: or link: dependency outside its package root's inventory.
+//     project root), a workspace: dependency, or a file: or link: dependency
+//     outside its package root's inventory. pnpm's (slice-18): a
+//     pnpm-workspace.yaml there with no packages, or null or empty ones, is
+//     settings, and an override in one whose value is a link: or file:
+//     outside the package root is refused. Under one whose packages list
+//     members, the workspace's own root package is refused, and a member
+//     that depends on another by its package name with a plain or catalog:
+//     version, which pnpm links, as by workspace:. A member with no local
+//     dependency is admitted: what it reads of its workspace root is
+//     fingerprinted beside it (TypeScriptCoverageInputs).
 //   - Python: a path or editable dependency outside its build root's
 //     inventory, as pyproject.toml names one (a path = "…" key, such as
 //     [tool.uv.sources] or Poetry's, or a file: URL), as a requirements file
@@ -160,9 +168,29 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 	if pkg == "" {
 		return ""
 	}
+	nestedPackage := func(dir string) bool { return coverageFileExists(filepath.Join(dir, "package.json")) }
+	// localTarget says whether a link: or file: target, as a file in base
+	// declares it, leaves the package root's inventory.
+	localTarget := func(base, target string) bool {
+		return s.outside(pkg, base, target, nestedPackage) || !isDir(filepath.Join(base, filepath.FromSlash(target)))
+	}
+	workspace := ""
 	for dir := pkg; ; dir = filepath.Dir(dir) {
-		if workspace := filepath.Join(dir, "pnpm-workspace.yaml"); coverageFileExists(workspace) {
-			return "pnpm workspace (" + s.rel(workspace) + ")"
+		if file := filepath.Join(dir, "pnpm-workspace.yaml"); coverageFileExists(file) {
+			settings, ok := readPnpmSettings(s.read(file))
+			switch {
+			case !ok:
+				return "pnpm workspace (" + s.rel(file) + ", which does not parse)"
+			case len(settings.Packages) > 0 && dir == pkg:
+				return "pnpm workspace root (" + s.rel(file) + " packages)"
+			case len(settings.Packages) > 0 && workspace == "":
+				workspace = dir
+			}
+			for _, name := range slices.Sorted(maps.Keys(settings.Overrides)) {
+				if target, local := localSpec(settings.Overrides[name]); local && localTarget(dir, target) {
+					return fmt.Sprintf("override %s %q in %s, outside the package root", name, settings.Overrides[name], s.rel(file))
+				}
+			}
 		}
 		if text := s.read(filepath.Join(dir, "package.json")); text != "" {
 			var manifest map[string]json.RawMessage
@@ -177,41 +205,177 @@ func (s scopeReader) typescript(ctx context.Context, source string) string {
 		}
 	}
 	manifest := filepath.Join(pkg, "package.json")
-	var deps map[string]map[string]string
-	if json.Unmarshal([]byte(s.read(manifest)), &deps) != nil {
-		// A field that is not a map of strings fails the whole decode: read
-		// each field alone.
-		deps = map[string]map[string]string{}
-		var fields map[string]json.RawMessage
-		_ = json.Unmarshal([]byte(s.read(manifest)), &fields)
-		for _, field := range typescriptDependencyFields {
-			var m map[string]string
-			if json.Unmarshal(fields[field], &m) == nil {
-				deps[field] = m
-			}
-		}
-	}
-	nestedPackage := func(dir string) bool { return coverageFileExists(filepath.Join(dir, "package.json")) }
+	deps := typescriptDependencies(s.read(manifest))
+	var members map[string]bool
 	for _, field := range typescriptDependencyFields {
-		names := make([]string, 0, len(deps[field]))
-		for name := range deps[field] {
-			names = append(names, name)
-		}
-		slices.Sort(names)
-		for _, name := range names {
+		for _, name := range slices.Sorted(maps.Keys(deps[field])) {
 			spec := deps[field][name]
-			switch {
-			case strings.HasPrefix(spec, "workspace:"):
+			if strings.HasPrefix(spec, "workspace:") {
 				return fmt.Sprintf("workspace dependency %s %q in %s", name, spec, s.rel(manifest))
-			case strings.HasPrefix(spec, "file:"), strings.HasPrefix(spec, "link:"):
-				target := strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(spec, "file:"), "link:"), "//")
-				if s.outside(pkg, pkg, target, nestedPackage) || !isDir(filepath.Join(pkg, filepath.FromSlash(target))) {
+			}
+			if target, local := localSpec(spec); local {
+				if localTarget(pkg, target) {
 					return fmt.Sprintf("local dependency %s %q in %s, outside the package root", name, spec, s.rel(manifest))
 				}
+				continue
+			}
+			if workspace == "" || !pnpmLinkable(spec) {
+				continue
+			}
+			if members == nil {
+				members = s.pnpmMembers(workspace, pkg)
+			}
+			if members[name] {
+				return fmt.Sprintf("workspace dependency %s %q in %s, a member of the pnpm workspace", name, spec, s.rel(manifest))
 			}
 		}
 	}
 	return ""
+}
+
+// typescriptDependencies are the dependencies a package.json's text names,
+// by field. A field that is not a map of strings is read as none.
+func typescriptDependencies(text string) map[string]map[string]string {
+	deps := map[string]map[string]string{}
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal([]byte(text), &fields)
+	for _, field := range typescriptDependencyFields {
+		var m map[string]string
+		if json.Unmarshal(fields[field], &m) == nil {
+			deps[field] = m
+		}
+	}
+	return deps
+}
+
+// localSpec is the path a link: or file: specifier names, and whether it is
+// one.
+func localSpec(spec string) (string, bool) {
+	for _, protocol := range []string{"file:", "link:"} {
+		if rest, ok := strings.CutPrefix(spec, protocol); ok {
+			return strings.TrimPrefix(rest, "//"), true
+		}
+	}
+	return "", false
+}
+
+// pnpmLinkable says whether pnpm may link a dependency with this specifier
+// to a workspace member of its name, as link-workspace-packages does: a
+// plain version, range or tag, or a catalog: one, which the catalog makes a
+// range. An alias, a URL, a git or a path specifier is not linked.
+func pnpmLinkable(spec string) bool {
+	return strings.HasPrefix(spec, "catalog:") || !strings.ContainsAny(spec, ":/")
+}
+
+// pnpmSettings is what a pnpm-workspace.yaml says that strict coverage
+// reads: the members it lists, its overrides and its patch files.
+type pnpmSettings struct {
+	Packages            []string
+	Overrides           map[string]string
+	PatchedDependencies map[string]string
+}
+
+// readPnpmSettings reads a pnpm-workspace.yaml's text, false when it does
+// not parse as a mapping or its packages are not a list. A packages key that
+// is absent, null or empty lists no member; overrides and patches that are
+// not strings are left out.
+func readPnpmSettings(text string) (pnpmSettings, bool) {
+	var raw map[string]any
+	if err := yaml.Unmarshal([]byte(text), &raw); err != nil {
+		return pnpmSettings{}, false
+	}
+	settings := pnpmSettings{Overrides: stringValues(raw["overrides"]), PatchedDependencies: stringValues(raw["patchedDependencies"])}
+	switch packages := raw["packages"].(type) {
+	case nil:
+	case []any:
+		for _, p := range packages {
+			text, ok := p.(string)
+			if !ok {
+				return pnpmSettings{}, false
+			}
+			settings.Packages = append(settings.Packages, text)
+		}
+	default:
+		return pnpmSettings{}, false
+	}
+	return settings, true
+}
+
+// stringValues are the string values of a YAML mapping, by key.
+func stringValues(v any) map[string]string {
+	out := map[string]string{}
+	m, _ := v.(map[string]any)
+	for key, value := range m {
+		if text, ok := value.(string); ok {
+			out[key] = text
+		}
+	}
+	return out
+}
+
+// pnpmMembers are the package names of the packages the pnpm workspace at
+// root lists, but the one at pkg: each folder a packages pattern matches,
+// every package beneath the fixed folders before a pattern's ** (more than
+// pnpm lists, as negated patterns are not read), node_modules and hidden
+// folders left out.
+func (s scopeReader) pnpmMembers(root, pkg string) map[string]bool {
+	settings, _ := readPnpmSettings(s.read(filepath.Join(root, "pnpm-workspace.yaml")))
+	names := map[string]bool{}
+	add := func(dir string) {
+		if dir == pkg || !beneathRoot(root, dir) {
+			return
+		}
+		var manifest struct {
+			Name string `json:"name"`
+		}
+		if json.Unmarshal([]byte(s.read(filepath.Join(dir, "package.json"))), &manifest) == nil && manifest.Name != "" {
+			names[manifest.Name] = true
+		}
+	}
+	for _, pattern := range settings.Packages {
+		if strings.HasPrefix(pattern, "!") {
+			continue
+		}
+		pattern = path.Clean(pattern)
+		if base, deep := pnpmDeepBase(pattern); deep {
+			top := filepath.Join(root, filepath.FromSlash(base))
+			// A folder that cannot be read lists no member.
+			_ = filepath.WalkDir(top, func(p string, entry os.DirEntry, err error) error {
+				if err == nil && entry.IsDir() {
+					if name := entry.Name(); p != top && (name == "node_modules" || strings.HasPrefix(name, ".")) {
+						return filepath.SkipDir
+					}
+					add(p)
+				}
+				return nil
+			})
+			continue
+		}
+		matches, _ := filepath.Glob(filepath.Join(root, filepath.FromSlash(pattern)))
+		for _, dir := range matches {
+			add(dir)
+		}
+	}
+	return names
+}
+
+// pnpmDeepBase is the fixed folders of a pnpm packages pattern before its
+// first segment holding **, and whether it holds one.
+func pnpmDeepBase(pattern string) (string, bool) {
+	segments := strings.Split(pattern, "/")
+	for i, segment := range segments {
+		if strings.Contains(segment, "**") {
+			base := "."
+			for _, fixed := range segments[:i] {
+				if strings.ContainsAny(fixed, "*?[{") {
+					break
+				}
+				base = path.Join(base, fixed)
+			}
+			return base, true
+		}
+	}
+	return "", false
 }
 
 var (
