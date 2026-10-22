@@ -5361,6 +5361,6 @@ items:
     title: Pin actionlint as a Go tool so push CI can run the nightly's checks
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: task

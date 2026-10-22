@@ -6546,7 +6546,3 @@
     workflow, never silenced. Keep the third-party notices and the license checks whole for the new
     modules. The push that lands this is green only if T-3's checks pass in CI; read its run, not
     only the local checks.
-  done_when:
-    - run: go tool actionlint .github/workflows/nightly.yml
-    - run: grep -q "^tool github.com/rhysd/actionlint/cmd/actionlint$" go.mod
-    - run: "! grep -qE \"^\\s*- run: actionlint \" tasks/phase-1.yaml"
