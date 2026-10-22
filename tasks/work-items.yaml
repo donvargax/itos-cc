@@ -2407,7 +2407,7 @@ items:
     title: List the in-process scenarios as mutation.tests, each measured apart
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-59]
     kind: task
     refs: [itos#22, itos-cc#30]

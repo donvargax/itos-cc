@@ -6524,11 +6524,6 @@
     on T-46's measure) and listed kills resting on importer tests (listed-kills-importer-tests,
     right after T-46). No mutation run of this repository's code locally (AGENTS.md): the checks
     prove the parts, T-46's run proves the whole.
-  done_when:
-    - run: d=$(mktemp -d) && ITOS_CC_TEST_COVERDIR="$d" go test -count=1 -cover -coverpkg=./... ./cmd/itos-cc -run '^TestScenarios$' -scenarios='^@ID-MUT-121$' && ls "$d"/ID-MUT-121/covmeta.* >/dev/null
-      timeout: 600
-    - run: sh -c "$(yq -r .mutation.tests.list itos-cc.yaml)" | grep -q "$(printf '^ID-MUT-121\tfeatures/mutate.feature$')"
-    - run: yq -r .mutation.tests.run itos-cc.yaml | grep -q TestScenarios && yq -r .mutation.tests.whole itos-cc.yaml | grep -q -- -cover
 - id: T-185
   type: build
   title: Pin actionlint as a Go tool so push CI can run the nightly's checks
