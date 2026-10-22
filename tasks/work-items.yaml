@@ -5296,3 +5296,16 @@ items:
       repository's and itos's godog suites. Behind the current issue queue unless the person moves
       it.
     refs: [scrap-dart-test-wrappers]
+  - id: graph-listed-fingerprint
+    title: The graph dates a fingerprinted listed kill by its fingerprint, as mutation check does
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-39 dates a kill by a test listed with a fingerprint by that fingerprint, running the
+      list only when the test's file changed. graph/build.go (legacy serve, a shared path) still
+      calls ListedChangedWithInputs, which has no list, so such a kill whose file changed reads
+      stale in the graph while mutation check calls it fresh: MUT-134's 'the graph agrees' no longer
+      holds for fingerprinted tests.
