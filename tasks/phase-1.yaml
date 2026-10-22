@@ -853,6 +853,19 @@
     reach each line rather than the whole suite, so a test edit no longer stales every nightly
     result, and each mutant costs seconds rather than cmd/itos-cc's suite. Measure the run before
     re-scoping the nightly.
+
+    Where it stands (2026-10-22). 1790a5c stops mutation run with SIGINT at 330 minutes and commits
+    what it judged in an always() step, "chore: record partial nightly mutation results" unless
+    itos-cc exited 0 or 1; scheduled run 39754245329 saved 144 of 8563 mutants that way. A whole
+    run cannot fit: dispatched run 39719212234 judged 216 of 8283 mutants in 5 h 44 min under
+    --all-tests (kills 142 s on average, survivors 550 s), some 220 runner-hours for all. So T-46
+    waits on T-184 (q-84). Two corrections to the paragraph above: without --all-tests a Go
+    mutant's own tests are its package alone (command_policy.go:24-31), so only cmd/itos-cc's own
+    files pay for its suite; and a test edit still stales listed kills through the importing
+    tests' hashes until listed-kills-importer-tests, queued after this task. What is left: drop
+    --all-tests from nightly.yml, put itos and jq on its runner (T-184's list command needs both),
+    dispatch a run and measure it, then renew internal/release#extract's exception once a run
+    reaches it.
   done_when:
     - run: "test \"$(gh api repos/donvargax/itos-cc/actions/workflows/nightly.yml --jq .state)\" = active"
       after: push
