@@ -88,10 +88,13 @@ scope of the tests that decided it: "own" (the file's own tests, left out of
 the file), "all-tests", or the --test-command line; a reused outcome keeps
 the scope it was decided with, and mutation sample re-runs it there. A
 TypeScript file whose project runs its test script without Vitest or Jest
-installed has no narrower own tests than that script, the whole suite, so
+has no narrower own tests than that script, the whole suite, so
 its outcomes are recorded as "all-tests", with the whole suite's evidence,
 and any test change makes them stale; one recorded before as "own" reads
-stale once. A summary comment is kept at
+stale once. Vitest runs a project whose package.json declares vitest, or
+where a vitest resolves from its node_modules/.bin and its test script
+names vitest, vp or vite or a vite.config.* or vitest.config.* sits beside
+its package.json; Jest runs one that declares jest. A summary comment is kept at
 the end of each source file; it lists each survivor, and each one itos-cc.yaml
 excepts apart, with its reason.
 

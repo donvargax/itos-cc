@@ -9,6 +9,7 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/lang"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
@@ -57,6 +58,23 @@ func (s *Inputs) nodeBin(ctx context.Context, root, name string) string {
 		}
 	}
 }
+
+// usesVitest is coverage.UsesVitest over the package p at root, as the
+// fake files hold it.
+func (s *Inputs) usesVitest(ctx context.Context, root string, p nodePackage) bool {
+	pkg := coverage.TypeScriptPackage{
+		Vitest: p.measured("vitest"), Jest: p.measured("jest"),
+		VitestBin: s.nodeBin(ctx, root, "vitest") != "", TestScript: p.Scripts["test"],
+	}
+	for _, name := range coverage.ViteConfigs {
+		if s.Exists(ctx, filepath.Join(root, name)) {
+			pkg.Config = true
+			break
+		}
+	}
+	return pkg.UsesVitest()
+}
+
 func (s *Inputs) manager(ctx context.Context, root string) string {
 	for dir := root; ; dir = filepath.Dir(dir) {
 		if name, _, _ := strings.Cut(s.node(ctx, dir).PackageManager, "@"); name != "" {
@@ -188,7 +206,7 @@ func (s *Inputs) Observe(ctx context.Context, r mutants.CommandRequest) (mutants
 	case "typescript":
 		f.Root = s.base(ctx, r.Path, "package.json")
 		p := s.node(ctx, f.Root)
-		if p.has("vitest") {
+		if p.has("vitest") || s.usesVitest(ctx, f.Root, p) {
 			f.Vitest = s.nodeBin(ctx, f.Root, "vitest")
 		}
 		if p.has("jest") {
@@ -254,11 +272,13 @@ func (s *Inputs) CoverageRunner(ctx context.Context, path string, related bool) 
 	}
 	switch spec.Name {
 	case "typescript":
-		p := s.node(ctx, s.base(ctx, path, "package.json"))
-		if p.Scripts["coverage"] != "" && (!related || !p.measured("vitest") && !p.measured("jest")) {
+		root := s.base(ctx, path, "package.json")
+		p := s.node(ctx, root)
+		vitest := s.usesVitest(ctx, root, p)
+		if p.Scripts["coverage"] != "" && (!related || !vitest && !p.measured("jest")) {
 			return "script", nil
 		}
-		if p.measured("vitest") {
+		if vitest {
 			return "vitest", nil
 		}
 		if p.measured("jest") {

@@ -179,6 +179,15 @@ manager it declares, coverage.py from its virtualenv, the JaCoCo its
 beside the nearest `.fvmrc`, else the `flutter` on `PATH`. One that is
 missing is reported, with what to install, and never downloaded.
 
+A TypeScript package's tests are run by Vitest when its `package.json`
+declares vitest, or when a vitest resolves from its `node_modules/.bin` and
+its test script names `vitest`, `vp` or `vite`, or a `vite.config.*` or
+`vitest.config.*` sits beside its `package.json`: Vitest that comes in
+through another package, such as a toolchain's, is never named there, and
+npm and yarn put every transitive dependency's bin in `node_modules/.bin`,
+so the bin alone does not count. A package that declares jest is run by
+Jest; one run by neither is measured by c8 over its test script.
+
 Dart is measured in a Flutter app or package, one whose `pubspec.yaml`
 depends on the flutter SDK, once pub has resolved it
 (`.dart_tool/package_config.json`, or its workspace root's for a pub
@@ -263,7 +272,7 @@ such as closing braces, than Vitest's v8 provider does. A project without
 c8 logs that integration coverage needs it and goes on, and is
 `coverage.tool-missing` under `mutation run --fail-uncovered` where
 TypeScript has mutants to judge. A project measured by c8 over its test
-script, with neither Vitest nor Jest, already measures the processes its
+script, run by neither Vitest nor Jest, already measures the processes its
 tests start, as its own.
 
 Kotlin code that tests reach by starting another JVM (`ProcessBuilder`
@@ -344,7 +353,7 @@ A function with branches in the report is scored by the share of branches it
 took (LCOV `BRDA` blocks with two or more arms, JaCoCo branch counters,
 coverage.py with `--branch`); one without is scored by its lines. Go
 profiles have no branches, so Go is scored by statements. c8's LCOV lists V8
-blocks rather than branches, so a project with neither Vitest nor Jest falls
+blocks rather than branches, so a project run by neither Vitest nor Jest falls
 back to lines. Dart is scored by its lines: `flutter test` runs without
 `--branch-coverage`, whose blocks are not decisions. Only the current Vitest major (5) is supported; older ones
 are reported and left unmeasured. Python and TypeScript coverage is measured from the first line
@@ -393,8 +402,8 @@ test. What keeps `mutation run` fast:
   Coverage comes from the same tests, so a line only integration or
   end-to-end tests reach is uncovered, not a survivor; a Vitest or Jest
   project's `coverage` script measures mutation run only with `--all-tests`.
-  A TypeScript project with neither Vitest nor Jest installed runs its test
-  script, which cannot be narrowed: its outcomes are the whole suite's,
+  A TypeScript project run by neither Vitest nor Jest (as [crap](#crap)
+  decides) runs its test script, which cannot be narrowed: its outcomes are the whole suite's,
   recorded with scope `all-tests` and the whole suite's evidence, so any
   test change makes them stale, as a `--test-command` outcome. A Python,
   Kotlin or Dart file no such test reaches runs no test, and its

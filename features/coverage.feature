@@ -76,7 +76,7 @@ Feature: Coverage
       # mutation does. Binary-only, as COV-05 is. Before slice-17 the
       # command is the installed c8 around <pm> run test, failing at the
       # Then.
-      @slice-17 @wip
+      @slice-17
       Examples:
         | language   | marker       | setup                                                                                                                              | command                                                    |
         | TypeScript | package.json | vitest 5 or later installed through another package, named in neither its dependencies nor its devDependencies, its test script "vitest run" | the installed vitest run with the v8 provider writing LCOV |

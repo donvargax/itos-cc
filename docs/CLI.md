@@ -284,9 +284,15 @@ distinct set of them. The tests under `integration_test/` and
 with `flutter pub get --offline` before its first run. A Dart mutant that
 does not compile fails its tests and is `killed`, as a Go or Kotlin one is.
 
-A TypeScript file whose project has neither Vitest nor Jest installed runs
-its project's test script, `<pm> run test`, which nothing can narrow to the
-tests that reach the file: its own tests are the whole suite. `mutation run`
+A TypeScript file whose project is run by neither Vitest nor Jest runs its
+project's test script. Vitest runs a project whose `package.json` declares
+vitest, or one where a vitest resolves from its `node_modules/.bin` and its
+test script names `vitest`, `vp` or `vite`, or a `vite.config.*` or
+`vitest.config.*` sits beside its `package.json`, so Vitest that comes in
+through a toolchain package counts and a bin hoisted from another
+dependency does not; Jest runs one that declares jest. Nothing can narrow
+that script, `<pm> run test`, to the tests that reach the file: its own
+tests are the whole suite. `mutation run`
 records their outcomes with scope `all-tests` and the whole suite's evidence
 (`suite_evidence`), as a `--test-command` outcome is recorded, so a change to
 any test beneath its `package.json` makes them stale in `mutation check`,

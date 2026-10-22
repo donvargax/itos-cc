@@ -2548,7 +2548,7 @@ Feature: Mutation testing
     # the fixture's node_modules/.bin, and the binary driver links the
     # pinned Vitest. Before slice-17 the baseline is <pm> run test, failing
     # at the first Then in both drivers.
-    @slice-17 @ID-MUT-280 @wip
+    @slice-17 @ID-MUT-280
     Scenario: A package whose Vitest comes through another package is measured and mutated with Vitest
       Given a TypeScript package whose package.json names neither vitest nor jest, whose node_modules/.bin holds vitest and @vitest/coverage-v8 installed through a toolchain package it depends on, whose test script is "vitest run", and no c8
       When I run "itos-cc mutation run src/area.ts"

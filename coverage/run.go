@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/donvargax/itos-cc/internal/coverage"
 	"github.com/donvargax/itos-cc/internal/coverage/port"
 	"github.com/donvargax/itos-cc/internal/lang"
 	"github.com/donvargax/itos-cc/project"
@@ -260,20 +261,41 @@ func buildPlans(ctx context.Context, sources []string, outDir string, scope Scop
 // TypeScriptRunner is what measures the coverage of the TypeScript
 // package at dir, its sources measured by their related tests with own, or
 // by the whole suite: "script", the project's own coverage script, where
-// it has one and no related tests are run; "vitest" or "jest" where the
-// project uses it; "c8" over its test script otherwise.
+// it has one and no related tests are run; "vitest" where Vitest runs its
+// tests (UsesVitest), "jest" where it declares Jest; "c8" over its test
+// script otherwise.
 func TypeScriptRunner(dir string, own bool) string {
 	pkg := readPackageJSON(dir)
-	related := own && (pkg.has("vitest") || pkg.has("jest"))
+	vitest := UsesVitest(dir)
+	related := own && (vitest || pkg.has("jest"))
 	switch {
 	case pkg.Scripts["coverage"] != "" && !related:
 		return "script"
-	case pkg.has("vitest"):
+	case vitest:
 		return "vitest"
 	case pkg.has("jest"):
 		return "jest"
 	}
 	return "c8"
+}
+
+// UsesVitest is whether Vitest runs the tests of the TypeScript package at
+// dir: it declares vitest, or a vitest resolves from its node_modules/.bin
+// and its test script or a config beside its package.json says Vitest runs
+// them (coverage.TypeScriptPackage), as mutation's test command decides.
+func UsesVitest(dir string) bool {
+	pkg := readPackageJSON(dir)
+	p := coverage.TypeScriptPackage{
+		Vitest: pkg.has("vitest"), Jest: pkg.has("jest"),
+		VitestBin: project.NodeBin(dir, "vitest") != "", TestScript: pkg.Scripts["test"],
+	}
+	for _, name := range coverage.ViteConfigs {
+		if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+			p.Config = true
+			break
+		}
+	}
+	return p.UsesVitest()
 }
 
 // goPlan measures sources with the tests of every package whose test binary
@@ -518,8 +540,8 @@ func typescriptPlan(dir, out string, sources []string, own bool) Plan {
 		plan.Reports = []string{filepath.Join(dir, "coverage", "lcov.info")}
 		plan.Unattested = true
 	case "vitest":
-		version := installedVersion(dir, "vitest")
 		vitest := project.NodeBin(dir, "vitest")
+		version := vitestVersion(dir, vitest)
 		switch {
 		case vitest == "":
 			plan.Unsupported = missing("Vitest")
@@ -659,6 +681,33 @@ func vitestTooOld(version string) bool {
 	major, _, _ := strings.Cut(version, ".")
 	n, err := strconv.Atoi(major)
 	return err == nil && n < minVitest
+}
+
+// vitestVersion is the version of the package the installed vitest bin
+// resolves into, its link followed to the nearest package.json above it,
+// or where that cannot be read, of the vitest installed in the nearest
+// node_modules; "" when neither can be read, any version admitted.
+func vitestVersion(dir, bin string) string {
+	if bin != "" {
+		if target, err := filepath.EvalSymlinks(bin); err == nil {
+			for d := filepath.Dir(target); filepath.Base(d) != "node_modules"; d = filepath.Dir(d) {
+				var pkg struct {
+					Name    string `json:"name"`
+					Version string `json:"version"`
+				}
+				if data, err := os.ReadFile(filepath.Join(d, "package.json")); err == nil { //nolint:gosec // the package.json of the package the installed vitest bin resolves into
+					if json.Unmarshal(data, &pkg) == nil && pkg.Name == "vitest" && pkg.Version != "" {
+						return pkg.Version
+					}
+					break
+				}
+				if filepath.Dir(d) == d {
+					break
+				}
+			}
+		}
+	}
+	return installedVersion(dir, "vitest")
 }
 
 func installedVersion(dir, dep string) string {

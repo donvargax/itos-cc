@@ -105,6 +105,39 @@ func TestCurrentVitestRunsFromNodeModules(t *testing.T) {
 	}
 }
 
+// A vitest the package does not declare is versioned by the package its
+// bin links into (slice-17). The scenarios' pinned tools install vitest
+// where its bin links, so no scenario can tell this from reading
+// node_modules/vitest.
+func TestAVitestComingThroughAnotherPackageIsVersionedByItsBin(t *testing.T) {
+	dir := t.TempDir()
+	store := "node_modules/.pnpm/vitest@4.1.11/node_modules/vitest/"
+	writeFiles(t, dir, map[string]string{
+		"package.json":         `{"scripts": {"test": "vp test"}, "devDependencies": {"toolchain": "1.0.0"}}`,
+		store + "package.json": `{"name": "vitest", "version": "4.1.11"}`,
+		store + "vitest.mjs":   "",
+		"node_modules/@vitest/coverage-v8/package.json": `{"version": "4.1.11"}`,
+		"src/board.ts": "export const f = () => 1;\n",
+	})
+	if err := os.MkdirAll(filepath.Join(dir, "node_modules", ".bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.FromSlash("../.pnpm/vitest@4.1.11/node_modules/vitest/vitest.mjs"), filepath.Join(dir, filepath.FromSlash(bin("vitest")))); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	if got := TypeScriptRunner(dir, true); got != "vitest" {
+		t.Fatalf("runner %q, want vitest", got)
+	}
+	plan := onePlan(t, dir, filepath.Join(dir, "src", "board.ts"))
+	if len(plan.Commands) != 0 || !strings.Contains(plan.Unsupported, "Vitest 4.1.11 is not supported") {
+		t.Errorf("plan %+v, want the bin's Vitest 4.1.11 refused", plan)
+	}
+	writeFiles(t, dir, map[string]string{"package.json": `{"scripts": {"test": "node --test"}}`})
+	if got := TypeScriptRunner(dir, true); got != "c8" {
+		t.Errorf("runner %q for a hoisted vitest its test script does not name, want c8", got)
+	}
+}
+
 func TestMissingNodeToolsAreNeverFetched(t *testing.T) {
 	for name, remove := range map[string]string{
 		"vitest":   bin("vitest"),

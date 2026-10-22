@@ -52,7 +52,9 @@ func (t Toolchain) Observe(ctx context.Context, r mutants.CommandRequest) (mutan
 	case "typescript":
 		f.Root = Base(ctx, r.Path, "package.json")
 		deps := packageDeps(f.Root)
-		if deps["vitest"] {
+		// Vitest that comes in through another package counts as
+		// coverage's choice of runner counts it (UsesVitest).
+		if deps["vitest"] || coverage.UsesVitest(f.Root) {
 			f.Vitest = project.NodeBin(f.Root, "vitest")
 		}
 		if deps["jest"] {
