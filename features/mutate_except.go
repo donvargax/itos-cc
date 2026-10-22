@@ -25,6 +25,8 @@ type exceptionMutation struct {
 	renewBefore        map[string]map[string]any
 	renewFiles         map[string]string
 	renewObject        map[string]any
+	layoutPrefix       string
+	layoutSuffix       string
 }
 
 func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMutation) {
@@ -36,12 +38,12 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 				e.id = strings.TrimPrefix(tag.Name, "@ID-MUT-")
 			}
 		}
-		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242"}, e.id) {
+		if !slices.Contains([]string{"85", "86", "87", "88", "89", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "138", "139", "140", "141", "142", "143", "144", "146", "227", "242", "290", "291", "292"}, e.id) {
 			return ctx, nil
 		}
 		e.r.annotate = slices.Contains([]string{"138", "139", "140"}, e.id)
 		e.r.options()
-		if e.id == "227" {
+		if e.id == "227" || e.id == "292" {
 			return ctx, e.renewProject()
 		}
 		if err := e.project(); err != nil {
@@ -140,6 +142,7 @@ func exceptionMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceM
 	sc.Step(`^the "mutation\.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --renew" before "--reason"$`, e.renewFix)
 	sc.Step(`^"itos-cc mutation check src/board\.ts --json" gives it the same fix$`, e.sameFix)
 	e.renewSteps(sc)
+	e.layoutSteps(sc)
 }
 
 func (e *exceptionMutation) run(args string) error { return e.s.m.w.runWith(e.s.m.w.env(), args) }
