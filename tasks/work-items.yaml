@@ -5260,3 +5260,14 @@ items:
       @WORKERS@ put back, then rewrote the JSON by script. A -update flag, or the recipe in the
       test's comment, makes the next help change one command.
     refs: [T-181]
+  - id: counted-uncommitted-manifests
+    title: A counted run names uncommitted build manifests it leaves unjudged
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-26's warning names uncommitted sources, tests and itos-cc.yaml only. A counted run also
+      freezes go.mod, package.json, pyproject.toml, pubspec.yaml, Gradle and Maven files at HEAD,
+      and an uncommitted change to one can change what the tests do, yet goes unnamed.
