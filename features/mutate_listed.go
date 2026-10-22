@@ -19,6 +19,10 @@ type listedMutation struct {
 	fresh          bool
 	original, held string
 	graph          []byte
+	// slice39List is the list command's output a slice-39 scenario set, ""
+	// for the fixture's own; slice39B renames ID-A-01 to ID-B-01.
+	slice39List string
+	slice39B    bool
 }
 
 func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
@@ -95,6 +99,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^the problem is "tests\.coverage-failed", with the command that ran every listed test and its exit code$`, func() error { return l.coverageProblem("ID-A-01", "ID-A-02") })
 	sc.Step(`^the problem is "tests\.coverage-failed", with the command that ran ID-A-02 alone and its exit code$`, func() error { return l.coverageProblem("ID-A-02") })
 	sc.Step(`^no problem is "([^"]+)"$`, l.noProblem)
+	slice39FingerprintSteps(sc, l)
 }
 
 func (l *listedMutation) project() error {
@@ -204,6 +209,12 @@ func (l *listedMutation) declare() error {
 	}
 	if l.fresh {
 		t.Listed.Files = map[string]string{"ID-A-01": "c.feature", "ID-A-02": "a.feature", "ID-A-03": "b.feature"}
+	}
+	if l.slice39List != "" {
+		t.Listed.ListOutput = l.slice39List
+	}
+	if l.slice39B {
+		slice39Rename(t.Listed, "ID-A-01", "ID-B-01")
 	}
 	if strings.Contains(main, "for n > 1 {") {
 		t.Listed.Elapsed["ID-A-02"] = 10 * time.Second
