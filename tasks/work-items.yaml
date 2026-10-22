@@ -3517,14 +3517,9 @@ items:
     title: mutation except --prune removes stale exception entries
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was except-prune.
-      Issue #51. No command removes an entry whose why is gone, killed or excluded
-      (internal/mutation/mutation.go about 91-96). --prune reports each removed entry and keeps
-      other keys and comments. After except-byte-exact.
     refs: ["#51"]
   - id: slice-22
     title: Excepting the same change in the same function re-points a stale entry
