@@ -5356,3 +5356,10 @@ items:
       Until this lands, T-184's list command must keep the features/ prefix its jq adds; switching
       to itos's own list format (itos#22, itos#112) without project-root paths would make every
       listed kill read fresh forever. Noted on itos#22 (2026-10-22).
+  - id: T-185
+    title: Pin actionlint as a Go tool so push CI can run the nightly's checks
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: task

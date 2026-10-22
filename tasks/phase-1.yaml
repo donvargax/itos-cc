@@ -6529,3 +6529,24 @@
       timeout: 600
     - run: sh -c "$(yq -r .mutation.tests.list itos-cc.yaml)" | grep -q "$(printf '^ID-MUT-121\tfeatures/mutate.feature$')"
     - run: yq -r .mutation.tests.run itos-cc.yaml | grep -q TestScenarios && yq -r .mutation.tests.whole itos-cc.yaml | grep -q -- -cover
+- id: T-185
+  type: build
+  title: Pin actionlint as a Go tool so push CI can run the nightly's checks
+  why: >
+    Main went red on 2026-10-22 (runs 39829234051, 39836871865): the nightly's results commit
+    7ab9009 carries Task: T-3, as nightly.yml writes it, so the next push's itos ci run runs T-3's
+    done_when, and its first check, actionlint .github/workflows/nightly.yml, fails with actionlint:
+    not found on the CI runner. Every nightly that commits does it again, and the range stays red
+    until a run is green. The person's call (2026-10-22): keep the check and make it runnable, not
+    move it after the push or change the footer. Add actionlint to go.mod as a tool (go get -tool
+    github.com/rhysd/actionlint/cmd/actionlint at its newest release), as govulncheck is pinned, in
+    a build commit; change the actionlint checks of T-3 and T-5 in tasks/phase-1.yaml to go tool
+    actionlint, same arguments. actionlint runs shellcheck over run: scripts when shellcheck is on
+    the PATH, as it is on ubuntu-latest and here: a valid finding in nightly.yml is fixed in the
+    workflow, never silenced. Keep the third-party notices and the license checks whole for the new
+    modules. The push that lands this is green only if T-3's checks pass in CI; read its run, not
+    only the local checks.
+  done_when:
+    - run: go tool actionlint .github/workflows/nightly.yml
+    - run: grep -q "^tool github.com/rhysd/actionlint/cmd/actionlint$" go.mod
+    - run: "! grep -qE \"^\\s*- run: actionlint \" tasks/phase-1.yaml"
