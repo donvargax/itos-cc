@@ -13,6 +13,7 @@ phases:
 queue:
   - slice-39
   - slice-17
+  - slice-18
   - worker-copies-skip-ignored
   - T-46
   - p1-itos-proof-code
