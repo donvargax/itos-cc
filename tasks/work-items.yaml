@@ -3480,8 +3480,8 @@ items:
   - id: slice-17
     title: A package whose Vitest comes through a toolchain package is measured with Vitest
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: slice
     why: >
