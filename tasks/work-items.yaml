@@ -5309,3 +5309,14 @@ items:
       calls ListedChangedWithInputs, which has no list, so such a kill whose file changed reads
       stale in the graph while mutation check calls it fresh: MUT-134's 'the graph agrees' no longer
       holds for fingerprinted tests.
+  - id: adr-0011-superseded
+    title: Record the decision that supersedes ADR-0011 with the list's fingerprint column
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      The person decided on 2026-10-18 (issue #30) to supersede ADR-0011 with an optional third
+      column, <ID><tab><file><tab><fingerprint>, which slice-39 builds; docs/decisions still has
+      only ADR-0011's per-file rule, and decisions are written only through itos decision record.
