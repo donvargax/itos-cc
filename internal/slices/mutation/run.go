@@ -31,6 +31,8 @@ type RunQuery struct {
 	TestCommand              *string
 	Workers                  int
 	TimeoutFactor            float64
+	OutputFactor             float64
+	MemoryFactor             float64
 	MutateAll                bool
 	Annotate                 bool
 	Progress                 SelectionProgress
@@ -166,6 +168,8 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		Workers:       q.Workers,
 		MutateAll:     q.MutateAll,
 		TimeoutFactor: q.TimeoutFactor,
+		OutputFactor:  q.OutputFactor,
+		MemoryFactor:  q.MemoryFactor,
 		TestCommand:   given(q.TestCommand),
 		AllTests:      q.AllTests,
 		Annotate:      q.Annotate,

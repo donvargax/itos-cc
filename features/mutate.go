@@ -182,7 +182,7 @@ func mutateSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^a mutant times out after ([\d.]+) seconds(?:: (\w+) times the baseline, plus (\d+) seconds)?$`, m.timesOutAfter)
 	sc.Step(`^a timed-out mutant counts as killed$`, m.timeoutCountsKilled)
 	sc.Step(`^the tests of (\S+) fail without any mutation$`, m.failingBaseline)
-	sc.Step(`^the last (\d+) lines of the test output follow$`, m.lastLinesFollow)
+	sc.Step(`^the test output follows whole, as it is under 40 lines$`, m.wholeOutputFollows)
 	sc.Step(`^the snapshot of (\S+) is not changed$`, m.snapshotUnchanged)
 	sc.Step(`^up to (\d+) mutants run at the same time$`, m.upToAtOnce)
 	sc.Step(`^the default is half the CPUs, at least 1$`, m.defaultWorkers)

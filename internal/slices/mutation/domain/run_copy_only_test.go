@@ -34,8 +34,8 @@ func TestABaselineFailingOnlyInTheCopySaysWhichTree(t *testing.T) {
 			if tc.copyOnly {
 				want = filepath.Clean(root)
 			}
-			if !r.BaselineFailed || r.BaselineOutput != "TSCONFIG_ERROR" || r.BaselineCopy != want {
-				t.Fatalf("result: failed %v, output %q, copy %q, want copy %q", r.BaselineFailed, r.BaselineOutput, r.BaselineCopy, want)
+			if !r.BaselineFailed || r.BaselineOutput.Text != "TSCONFIG_ERROR" || r.BaselineCopy != want {
+				t.Fatalf("result: failed %v, output %q, copy %q, want copy %q", r.BaselineFailed, r.BaselineOutput.Text, r.BaselineCopy, want)
 			}
 		})
 	}

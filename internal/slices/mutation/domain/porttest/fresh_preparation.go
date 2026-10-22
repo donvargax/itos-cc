@@ -276,7 +276,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 					return stop("baseline", err)
 				}
 			}
-			actual, failed := declaredResult(c, facts, nil, 0)
+			actual, failed := declaredResult(c, facts, nil, mutants.Limits{}, f.Commands.Platform)
 			var err error = failed
 			if failed == nil && !actual.Passed {
 				err = fmt.Errorf("command exited %d: %s", actual.ExitCode, actual.Output)
@@ -285,7 +285,7 @@ func (f *Fresh) prepare(ctx context.Context, p *mutants.FreshPlan, scope covport
 			if err != nil {
 				return stop("baseline", fmt.Errorf("baseline of %s fails without any mutant: %w", strings.Join(b.Paths, ", "), err))
 			}
-			b.Elapsed = actual.Elapsed
+			b.Elapsed, b.Output, b.Memory, b.MemoryMeasured = actual.Elapsed, actual.OutputBytes, actual.PeakMemory, actual.MemoryMeasured
 			prep.Baselines = append(prep.Baselines, b)
 		}
 		stage("baseline", "complete", nil)

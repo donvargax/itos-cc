@@ -23,9 +23,11 @@ func (p Progress) Report(e mutants.RunEvent) {
 		return
 	}
 	switch e.Kind {
+	case mutants.MemoryUnmeasured:
+		_, _ = fmt.Fprintln(log, "itos-cc: no memory cap holds on this system, as itos-cc cannot measure a test run's memory here")
 	case "fresh-trial":
 		r := e.FreshTrial
-		said := r.Outcome
+		said := overLimit(r.Outcome, r.Limit, r.Limits)
 		own := "no own test reaches its file"
 		if r.RanOwn() {
 			own = "survived its own tests"
@@ -36,7 +38,7 @@ func (p Progress) Report(e mutants.RunEvent) {
 		case r.FailedSelection != nil:
 			said = fmt.Sprintf("%s, then not judged: %s fail without any mutant", own, strings.Join(r.FailedSelection.IDs, " "))
 		case r.Scope == mutants.ScopeListed:
-			said = fmt.Sprintf("%s, then %s with %s", own, r.Outcome, strings.Join(r.Tests, " "))
+			said = fmt.Sprintf("%s, then %s with %s", own, overLimit(r.Outcome, r.Limit, r.Limits), strings.Join(r.Tests, " "))
 		}
 		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%.1fs)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, r.Elapsed.Seconds())
 	case "nothing":
@@ -64,15 +66,33 @@ func (p Progress) Report(e mutants.RunEvent) {
 	case "cancelled":
 		_, _ = fmt.Fprintf(log, "itos-cc: %s:%d %s → %s cancelled: %v (%.1fs)\n", e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), e.Failure, e.Elapsed.Seconds())
 	case "judged", "selection-blocked":
-		said, took := e.Outcome, fmt.Sprintf("%.1fs", e.Elapsed.Seconds())
+		said, took := overLimit(e.Outcome, e.Limit, e.Limits), fmt.Sprintf("%.1fs", e.Elapsed.Seconds())
 		if e.Kind == "selection-blocked" {
 			said = fmt.Sprintf("survived its own tests, then not judged: %s fail without any mutant", strings.Join(e.IDs, " "))
 		} else if e.IDs != nil {
-			said = fmt.Sprintf("survived its own tests, then %s with %s", e.Outcome, strings.Join(e.IDs, " "))
+			said = fmt.Sprintf("survived its own tests, then %s with %s", overLimit(e.Outcome, e.Limit, e.Limits), strings.Join(e.IDs, " "))
 			took += fmt.Sprintf(", the listed tests %.1fs", e.Listed.Seconds())
 		}
 		_, _ = fmt.Fprintf(log, "itos-cc: [%d/%d] %s:%d %s → %s %s (%s)\n", e.Done, e.Total, e.File, e.Site.Line, mutants.Show(e.Site.Original), mutants.Show(e.Site.Replacement), said, took)
 	}
+}
+
+// overLimit is outcome as a progress line says it: an OverLimit one names
+// the cap, limit, its run went over, and its size, of limits.
+func overLimit(outcome, limit string, limits mutants.Limits) string {
+	if outcome != mutants.OverLimit {
+		return outcome
+	}
+	size := limits.Output
+	if limit == mutants.LimitMemory {
+		size = limits.Memory
+	}
+	return fmt.Sprintf("%s: its %s went over its cap of %s", outcome, limit, mebibytes(size))
+}
+
+// mebibytes is size, in bytes, as a person reads it.
+func mebibytes(size int64) string {
+	return fmt.Sprintf("%.1f MiB", float64(size)/(1<<20))
 }
 
 func (p Progress) rel(path string) string {

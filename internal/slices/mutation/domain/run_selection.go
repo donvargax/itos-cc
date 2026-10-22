@@ -12,8 +12,8 @@ import (
 // survive it: those whose coverage reaches its line. The first time a
 // mutant needs a selection, the selection runs once without any mutant, in
 // that mutant's worker's copy, through the same command. Passing proves the
-// tests hold alone, and its time sets the timeout of every mutant run of the
-// selection, as a file's baseline does for its own tests. A selection that
+// tests hold alone, and its time, output and memory set the limits of every
+// mutant run of the selection, as a file's baseline does for its own tests. A selection that
 // fails decides none of the mutants that would run it.
 
 // selections holds the baseline of each selection a run needed, by its set
@@ -21,25 +21,25 @@ import (
 // need it wait for it.
 type SelectionBaselines struct {
 	listed   *Listed
-	factor   float64
+	factors  Factors
 	progress Progress
 	mu       sync.Mutex
 	byKey    map[string]*selection
 }
 
-// selection is the baseline of one selection: the timeout of its mutant
+// selection is the baseline of one selection: the limits of its mutant
 // runs, or how it failed. ran says whether it ran, which mu guards, so it
 // runs once while the other workers that need it wait.
 type selection struct {
-	mu      sync.Mutex
-	ran     bool
-	timeout time.Duration
-	failed  *FailedSelection
-	err     error
+	mu     sync.Mutex
+	ran    bool
+	limits Limits
+	failed *FailedSelection
+	err    error
 }
 
-func NewSelectionBaselines(listed *Listed, factor float64, progress Progress) *SelectionBaselines {
-	return &SelectionBaselines{listed: listed, factor: factor, progress: progress, byKey: map[string]*selection{}}
+func NewSelectionBaselines(listed *Listed, factors Factors, progress Progress) *SelectionBaselines {
+	return &SelectionBaselines{listed: listed, factors: factors, progress: progress, byKey: map[string]*selection{}}
 }
 
 // baseline is the baseline of the selection ids, run in w's copy under ctx,
@@ -64,11 +64,11 @@ func (s *SelectionBaselines) baseline(ctx context.Context, w Worker, ids []strin
 }
 
 // run runs sel, the selection ids, in w's copy under ctx, with no mutant,
-// and records its timeout, or how it failed.
+// and records its limits, or how it failed.
 func (s *SelectionBaselines) run(ctx context.Context, sel *selection, w Worker, ids []string) {
 	c := s.listed.Command(ids)
 	report(s.progress, RunEvent{Kind: "baseline", Command: c})
-	r, err := w.Run(ctx, c, nil, 0)
+	r, err := w.Run(ctx, c, nil, Limits{})
 	if err != nil {
 		sel.err = err
 		return
@@ -79,11 +79,15 @@ func (s *SelectionBaselines) run(ctx context.Context, sel *selection, w Worker, 
 	}
 	if !r.Passed {
 		sel.failed = &FailedSelection{IDs: slices.Clone(ids), Command: c.Shell, ExitCode: r.ExitCode, Output: r.Output}
+		if kept := r.Kept(); kept.Cut {
+			// As before, its report shows the end of what it wrote.
+			sel.failed.Output = r.Output[kept.At:]
+		}
 		report(s.progress, RunEvent{Kind: "selection-failed", IDs: ids})
 		return
 	}
-	sel.timeout = TimeoutOf(r.Elapsed, s.factor)
-	report(s.progress, RunEvent{Kind: "selection-passed", IDs: ids, Elapsed: r.Elapsed, Timeout: sel.timeout})
+	sel.limits = s.factors.LimitsOf(r.Usage())
+	report(s.progress, RunEvent{Kind: "selection-passed", IDs: ids, Elapsed: r.Elapsed, Timeout: sel.limits.Timeout, Limits: sel.limits})
 }
 
 // timeoutAllowance is added to every mutant's timeout. A mutant's run
@@ -99,8 +103,9 @@ func TimeoutOf(elapsed time.Duration, factor float64) time.Duration {
 	return time.Duration(float64(elapsed)*factor) + timeoutAllowance
 }
 
-// Baseline returns the actual once-per-ID-set baseline observation.
-func (s *SelectionBaselines) Baseline(ctx context.Context, w Worker, ids []string) (time.Duration, *FailedSelection, error) {
+// Baseline returns the actual once-per-ID-set baseline observation: the
+// limits of the selection's mutant runs, or how it failed.
+func (s *SelectionBaselines) Baseline(ctx context.Context, w Worker, ids []string) (Limits, *FailedSelection, error) {
 	result := s.baseline(ctx, w, ids)
-	return result.timeout, result.failed, result.err
+	return result.limits, result.failed, result.err
 }

@@ -440,9 +440,24 @@ test. What keeps `mutation run` fast:
   worker. When a file's baseline fails in a copy, itos-cc runs it once
   more, unmutated, in the project's own folder: when it passes there,
   `mutation.baseline-failed` says the tests pass in the project but fail
-  in the worker's copy, which holds that tree alone. A mutant times out after
-  the baseline's time times `--timeout-factor` (10 by default), plus 5
-  seconds for building the mutated code, and a timeout counts as killed.
+  in the worker's copy, which holds that tree alone. A failing baseline's
+  report gives what its tests printed, whole up to 40 lines, else the first
+  20 and the last 20 with a line saying how many were left out between, so
+  a cause printed first shows as well as the end (`output` in `--json`). A
+  mutant times out after the baseline's time times `--timeout-factor` (10
+  by default), plus 5 seconds for building the mutated code, and a timeout
+  counts as killed. Its output and memory are capped from the baseline's
+  too: a mutant whose tests write more than the baseline's output, stdout
+  and stderr together, times `--output-factor` (10 by default), plus 16
+  MiB, or hold more than the baseline's peak memory times
+  `--memory-factor` (4 by default), plus 256 MiB, is killed then, its
+  process group joined as at its timeout. Its outcome is `over-limit`, with
+  `limit` `output` or `memory` in `--json` and the snapshot, and it counts
+  as killed wherever a timeout does, so a test looping on output or memory
+  never takes the machine down. Memory is the summed resident memory of
+  the tests' process group, sampled every 50 ms on Linux; macOS and
+  Windows measure none, so no memory cap holds there, which the run says
+  once on stderr.
   The copies live in an `itos-cc-mutate-` directory of the temporary
   directory (`itos-cc-fresh-` for a counted run's trials), removed when the
   run ends. A run killed before then leaves it, and the next run removes
@@ -523,7 +538,8 @@ and, only if it survives them, the listed tests that reach its line, in one
 run. The first time a mutant needs a selection of listed tests, that
 selection runs once without any mutant in the mutant's worker's copy: its
 time, times `--timeout-factor`, plus 5 seconds, is the timeout of
-every mutant run of it, so a mutant that hangs one quick scenario waits for
+every mutant run of it, and its output and memory cap them as a file's
+baseline does, so a mutant that hangs one quick scenario waits for
 that scenario's time, not the whole suite's. A selection that fails without
 a mutant is `tests.selection-failed`, exit 1, with its `ids`: no mutant that
 would run it is judged, and the files holding them keep their snapshots, as
@@ -866,9 +882,10 @@ left out. Raw profiles and reports cannot be stamped with current
 hashes. `mutation sample` runs a few cached mutants
 again, in CI say, and fails with `mutation.mismatch` when an outcome differs
 from the one recorded, whichever way: a kill that now survives, or a
-survivor now killed. Killed and timeout agree. It draws `--count` mutants (20
-by default) from the fresh entries of its selection, only those that ran
-(killed, timeout, or survived), so no coverage runs; stale and missing
+survivor now killed. Killed, timeout and over-limit agree. It draws
+`--count` mutants (20 by default) from the fresh entries of its selection,
+only those that ran (killed, timeout, over-limit, or survived), so no
+coverage runs; stale and missing
 results are `mutation check`'s. The draw is seeded with the HEAD commit's
 id, so a rerun of one commit samples the same mutants; `--seed` reproduces
 another run's. It writes nothing, and takes `mutation check`'s paths,
@@ -1038,7 +1055,8 @@ with its reason, whichever functions the run judged. A surviving
 mutant, an uncovered one with `--fail-uncovered`, or tests that fail before
 any mutant, exits 1. `--json` lists each file's `mutants` in site order,
 each with the keys `mutation list` gives a site, its `outcome` (`killed`,
-`survived`, `timeout`, which counts as killed, or `uncovered`), and `reused`,
+`survived`, `timeout` or `over-limit`, which count as killed, the latter
+with its `limit`, or `uncovered`), and `reused`,
 true when the outcome came from the snapshot without running; with
 `--since`, only the judged functions' mutants, and none for a file whose
 baseline failed. Each file's `baseline` says whether this run ran its own

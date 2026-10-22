@@ -85,6 +85,16 @@ type FreshBaseline struct {
 	Command Command
 	Paths   []string
 	Elapsed time.Duration
+	// Output is the bytes its run wrote and Memory the most memory its
+	// process group held, where MemoryMeasured says the system measured
+	// it: with Elapsed, what sizes its mutants' limits (Usage).
+	Output, Memory int64
+	MemoryMeasured bool
+}
+
+// Usage is what the baseline's run used.
+func (b FreshBaseline) Usage() Usage {
+	return Usage{Elapsed: b.Elapsed, Output: b.Output, Memory: b.Memory, MemoryMeasured: b.MemoryMeasured}
 }
 
 // FreshPreparation is actual ordered evidence, including work completed before

@@ -73,6 +73,7 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 	found, err := h.Sample(ctx, SampleQuery{
 		SelectionQuery: SelectionQuery{Paths: c.Paths, Changed: c.Changed, Since: c.Since},
 		Count:          c.Count, Seed: c.Seed, Workers: c.Workers, TimeoutFactor: c.TimeoutFactor,
+		OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor,
 		TestCommand: c.TestCommand, AllTests: c.AllTests,
 		Progress: selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
 	})
@@ -109,9 +110,9 @@ func (c Sample) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Writte
 		if f.BaselineFailed {
 			result.Files = append(result.Files, sampleFile{File: f.Rel, Baseline: "failed", Mutants: []sampledMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; no sampled mutant ran\n%s\n", f.Rel, Tail(f.BaselineOutput, 20))
+				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; no sampled mutant ran\n%s\n", f.Rel, HeadAndTail(f.BaselineOutput, reportedLines))
 			}
-			p.report(p.baselineFailed(f.Rel, f.BaselineCopy, "run", "mutation sample"))
+			p.report(p.baselineFailed(f.Rel, f.BaselineCopy, "run", "mutation sample").With("output", HeadAndTail(f.BaselineOutput, reportedLines)))
 			continue
 		}
 		out := sampleFile{File: f.Rel, Baseline: "passed", Mutants: []sampledMutant{}}

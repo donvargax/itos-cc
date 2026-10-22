@@ -50,7 +50,7 @@ func TestPoolJoinsEnteredWaiterBeforeRemovingInputs(t *testing.T) {
 	var failed mutants.WorkerFailure
 	go func() {
 		defer close(runDone)
-		result, failed = w.Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, &mutants.Mutation{Path: path, Source: []byte("original\n"), Site: mutants.Site{Start: 0, End: 8, Original: "original", Replacement: "mutated"}}, 0)
+		result, failed = w.Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, &mutants.Mutation{Path: path, Source: []byte("original\n"), Site: mutants.Site{Start: 0, End: 8, Original: "original", Replacement: "mutated"}}, mutants.Limits{})
 	}()
 	t.Cleanup(func() {
 		once.Do(func() { close(release) })
@@ -163,7 +163,7 @@ func checkBoundWorkerBudgets(t *testing.T, purpose mutants.WorkPurpose, abort, s
 		}
 		w.worker.runner.Lifecycle.Cleanup = func(deadline time.Time) { deadlines <- deadline }
 		go func(w mutants.Worker) {
-			r, f := w.Run(ctx, mutants.Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, nil, 0)
+			r, f := w.Run(ctx, mutants.Command{Root: root, Dir: root, Args: commandRunnerHelperArgs()}, nil, mutants.Limits{})
 			results <- r
 			failures <- f
 		}(w)

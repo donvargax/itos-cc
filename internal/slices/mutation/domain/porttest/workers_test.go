@@ -40,7 +40,7 @@ func TestDeclaredCommandsUseActualMutatedCopyAndSelectors(t *testing.T) {
 	defer closePool(t.Context(), t, p)
 	w := p.Worker(0)
 	change := &mutants.Mutation{Path: source, Source: src, Site: site}
-	result, err := w.Run(t.Context(), own, change, 0)
+	result, err := w.Run(t.Context(), own, change, mutants.Limits{})
 	if err != nil || !result.Passed || result.Elapsed != 23*time.Millisecond {
 		t.Fatalf("actual command: %+v %v", result, err)
 	}
@@ -56,7 +56,7 @@ func TestDeclaredCommandsUseActualMutatedCopyAndSelectors(t *testing.T) {
 	if first["test"] != "ATest" || first["source_sha256"] != hex.EncodeToString(sum[:]) || first["original_root"] != root || first["cwd"] == root {
 		t.Fatalf("trace did not observe actual copy/selector: %v", first)
 	}
-	if _, err = w.Run(t.Context(), all, nil, 0); err != nil {
+	if _, err = w.Run(t.Context(), all, nil, mutants.Limits{}); err != nil {
 		t.Fatal(err)
 	}
 	lines = strings.Split(strings.TrimSpace(f.Files[trace]), "\n")
@@ -81,11 +81,11 @@ func TestDeclaredCommandsUseActualMutatedCopyAndSelectors(t *testing.T) {
 	// Counterfactual: another requested command cannot borrow own's declaration.
 	wrong := own
 	wrong.Args = []string{"python3", "-m", "pytest", "missing.py"}
-	if _, err = w.Run(t.Context(), wrong, nil, 0); err == nil {
+	if _, err = w.Run(t.Context(), wrong, nil, mutants.Limits{}); err == nil {
 		t.Fatal("missing binding passed")
 	}
 	delete(f.Tests[root], own.String())
-	if _, err = w.Run(t.Context(), own, nil, 0); err == nil {
+	if _, err = w.Run(t.Context(), own, nil, mutants.Limits{}); err == nil {
 		t.Fatal("omitted command binding passed")
 	}
 	if f.Files[source] != string(src) {
@@ -126,14 +126,14 @@ func TestBoundTraceValidatesEverySelectorAndGradleWrapperSuite(t *testing.T) {
 	defer closePool(t.Context(), t, pool)
 	worker := pool.Worker(0)
 	for _, c := range []mutants.Command{python, filtered} {
-		if _, err := worker.Run(t.Context(), c, nil, 0); err == nil {
+		if _, err := worker.Run(t.Context(), c, nil, mutants.Limits{}); err == nil {
 			t.Fatalf("unsupported actual request emitted a partial trace: %s", c)
 		}
 		if f.Files[trace] != "" {
 			t.Fatalf("rejected selectors emitted invented executions: %s", f.Files[trace])
 		}
 	}
-	if _, err := worker.Run(t.Context(), wrapper, nil, 0); err != nil {
+	if _, err := worker.Run(t.Context(), wrapper, nil, mutants.Limits{}); err != nil {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(f.Files[trace]), "\n")
@@ -173,7 +173,7 @@ func TestBoundUnittestFailFastRequestsSelectActualInventory(t *testing.T) {
 	}
 	defer closePool(t.Context(), t, p)
 	for _, c := range []mutants.Command{own, all} {
-		if _, err := p.Worker(0).Run(t.Context(), c, nil, 0); err != nil {
+		if _, err := p.Worker(0).Run(t.Context(), c, nil, mutants.Limits{}); err != nil {
 			t.Fatalf("actual unittest request %s: %v", c, err)
 		}
 	}
@@ -193,7 +193,7 @@ func TestBoundUnittestFailFastRequestsSelectActualInventory(t *testing.T) {
 		t.Fatalf("unittest own/discovery selection: %v", names)
 	}
 	before := f.Files[trace]
-	if _, err := p.Worker(0).Run(t.Context(), filtered, nil, 0); err == nil || f.Files[trace] != before {
+	if _, err := p.Worker(0).Run(t.Context(), filtered, nil, mutants.Limits{}); err == nil || f.Files[trace] != before {
 		t.Fatal("unsupported -k changed trace or was accepted")
 	}
 }

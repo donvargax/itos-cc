@@ -57,7 +57,7 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 	}
 	baseExecute := execute
 	gitConfig := ""
-	execute = func(ctx context.Context, cmd *exec.Cmd) error {
+	frozen := func(cmd *exec.Cmd) {
 		cmd.Env = project.NoBytecodeEnv(withoutGitOverrides(cmd.Env))
 		if gitConfig != "" {
 			cmd.Env = withGitConfigEnv(cmd.Env, gitConfig)
@@ -67,7 +67,19 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 				"GOTOOLCHAIN": "local", "GOPROXY": "off", "GOSUMDB": "off",
 			})
 		}
+	}
+	execute = func(ctx context.Context, cmd *exec.Cmd) error {
+		frozen(cmd)
 		return baseExecute(ctx, cmd)
+	}
+	// measured runs a baseline as execute does, through Measure, giving
+	// what it used, which sizes its mutants' limits; nil without Measure.
+	var measured func(context.Context, *exec.Cmd) (mutants.CommandResult, error)
+	if e.Measure != nil {
+		measured = func(ctx context.Context, cmd *exec.Cmd) (mutants.CommandResult, error) {
+			frozen(cmd)
+			return e.Measure(ctx, cmd)
+		}
 	}
 	var err error
 	gitConfig, err = installFrozenRuntimeGit(ctx, plan, execute, &prep.Commands)
@@ -267,7 +279,7 @@ func (e Environment) prepare(ctx context.Context, plan *mutants.FreshPlan, scope
 			stage("preparation", "aborted", err)
 			return prep, err
 		}
-		ran, executions, baselineErr := RunFreshBaselines(ctx, baselines, log, execute)
+		ran, executions, baselineErr := runFreshBaselines(ctx, baselines, log, execute, measured)
 		prep.Commands = append(prep.Commands, executions...)
 		prep.Baselines = ran
 		if baselineErr != nil {

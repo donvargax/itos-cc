@@ -14,9 +14,12 @@ import (
 
 // Outcomes of a mutant.
 const (
-	Killed    = "killed"
-	Survived  = "survived"
-	Timeout   = "timeout" // counts as killed: the tests noticed
+	Killed   = "killed"
+	Survived = "survived"
+	Timeout  = "timeout" // counts as killed: the tests noticed
+	// OverLimit is a mutant whose run went over a cap of its limits, its
+	// Limit naming which: killed, as at a timeout.
+	OverLimit = "over-limit"
 	Uncovered = "uncovered"
 )
 
@@ -165,6 +168,10 @@ type Mutant struct {
 	Original    string
 	Replacement string
 	Outcome     string
+	// Limit names the cap an OverLimit outcome's run went over,
+	// LimitOutput or LimitMemory; "" for every other outcome, and left out
+	// of the snapshot then, so one written before reads as it did.
+	Limit string
 	// Scope is the scope of the tests that decided Outcome: ScopeAllTests,
 	// a --test-command line, or "" for ScopeOwn, which is also how an
 	// outcome recorded before scopes reads. See TestScope.
@@ -293,6 +300,8 @@ type DecidedBy struct {
 	Scope    string
 	Tests    []string
 	Evidence *SuiteEvidence
+	// Limit is the cap an OverLimit outcome went over.
+	Limit string
 }
 
 func UnitID(namespace, name string) string { return namespace + "#" + name }
@@ -396,7 +405,7 @@ func RememberedWithScopes(s *Snapshot, f *lang.File) (Previous, PreviousScopes) 
 		outcomes, decided := map[string]string{}, map[string]DecidedBy{}
 		for _, m := range u.Mutants {
 			outcomes[m.Key()] = m.Outcome
-			decided[m.Key()] = DecidedBy{Scope: m.TestScope(), Tests: m.Tests, Evidence: m.SuiteEvidence}
+			decided[m.Key()] = DecidedBy{Scope: m.TestScope(), Tests: m.Tests, Evidence: m.SuiteEvidence, Limit: m.Limit}
 		}
 		prev[i], scopes[i] = outcomes, decided
 	}
@@ -414,12 +423,13 @@ func Usable(s *Snapshot, tests map[string]string) *Snapshot {
 }
 
 // kept reports the previous outcome of site when it can be reused without
-// running: a killed or timed-out mutant in an unchanged unit, or a survivor
+// running: a mutant killed, timed out or over a limit in an unchanged
+// unit (Noticed), or a survivor
 // there that excepted says itos-cc.yaml excepts. Other survivors are always
 // retried, since new tests may kill them.
 func (p Previous) Kept(f *lang.File, s Site, excepted bool) (string, bool) {
 	outcome := p[s.Unit][s.Key()]
-	return outcome, outcome == Killed || outcome == Timeout || excepted && outcome == Survived
+	return outcome, Noticed(outcome) || excepted && outcome == Survived
 }
 
 // markExcepted sets Excepted on each mutant of units that mutants, the
@@ -450,6 +460,27 @@ func Build(f *lang.File, rel string, tests map[string]string, sites []Site, outc
 	return BuildScoped(f, rel, tests, sites, outcomes, nil, nil)
 }
 
+// BuildLimited is BuildScoped with the cap each OverLimit outcome went
+// over, by site, when limits is not nil.
+func BuildLimited(f *lang.File, rel string, tests map[string]string, sites []Site, outcomes, scopes, limits []string, ran [][]string) Snapshot {
+	snap := BuildScoped(f, rel, tests, sites, outcomes, scopes, ran)
+	if limits == nil {
+		return snap
+	}
+	for i, s := range sites {
+		if outcomes[i] != OverLimit {
+			continue
+		}
+		u := &snap.Units[s.Unit]
+		for j := range u.Mutants {
+			if u.Mutants[j].Key() == s.Key() {
+				u.Mutants[j].Limit = limits[i]
+			}
+		}
+	}
+	return snap
+}
+
 // buildScoped is build with the scope each outcome was decided with, by
 // site, or ScopeOwn for every one when scopes is nil, and the listed tests
 // that decided it, by site, when ran is not nil.
@@ -471,7 +502,7 @@ func BuildScoped(f *lang.File, rel string, tests map[string]string, sites []Site
 		r := &snap.Units[s.Unit]
 		r.Sites++
 		switch outcomes[i] {
-		case Killed, Timeout:
+		case Killed, Timeout, OverLimit:
 			r.Killed++
 		case Survived:
 			r.Survived++

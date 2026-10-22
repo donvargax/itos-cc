@@ -9,7 +9,8 @@ import (
 )
 
 // Sample runs again count mutants drawn by seed from those the fresh
-// entries of files' snapshots record as killed, timeout, or survived, all
+// entries of files' snapshots record as killed, timeout, over-limit, or
+// survived, all
 // of them when there are fewer, after each test command's baseline, in a
 // worker's copy as Run does. Freshness is as Check judges it, save that an
 // entry Stale only for sites it never recorded offers the mutants it
@@ -78,7 +79,7 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 			}
 			for _, m := range fn.Mutants {
 				i, ok := at[fn.Unit][m.Key()]
-				if !ok || (m.Outcome != Killed && m.Outcome != Timeout && m.Outcome != Survived) {
+				if !ok || (!Noticed(m.Outcome) && m.Outcome != Survived) {
 					continue
 				}
 				scope, tests := m.TestScope(), m.Tests
@@ -132,7 +133,8 @@ func Sample(ctx context.Context, files []string, count int, seed string, opt Sam
 		r.Pending(c.site, ids)
 		drawn[c.state] = append(drawn[c.state], c)
 	}
-	if _, err := Execute(ctx, order, Options{WorkerFactory: opt.WorkerFactory, Workers: opt.Workers, TimeoutFactor: opt.TimeoutFactor, Listed: opt.Listed, Progress: opt.Progress}, nil); err != nil {
+	if _, err := Execute(ctx, order, Options{WorkerFactory: opt.WorkerFactory, Workers: opt.Workers, TimeoutFactor: opt.TimeoutFactor,
+		OutputFactor: opt.OutputFactor, MemoryFactor: opt.MemoryFactor, Listed: opt.Listed, Progress: opt.Progress}, nil); err != nil {
 		return result, stopped(ctx, err)
 	}
 	if err := stopped(ctx, nil); err != nil {
@@ -184,10 +186,13 @@ type SampleOptions struct {
 	WorkerFactory Workers
 	Workers       int
 	TimeoutFactor float64
-	TestCommand   string
-	AllTests      bool
-	Listed        *Listed
-	Progress      Progress
+	// OutputFactor and MemoryFactor size each mutant's output and memory
+	// caps from its baseline's, as TimeoutFactor its timeout (Factors).
+	OutputFactor, MemoryFactor float64
+	TestCommand                string
+	AllTests                   bool
+	Listed                     *Listed
+	Progress                   Progress
 }
 
 // scopeCommand preserves the scope that actually decided a recorded outcome.

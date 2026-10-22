@@ -235,7 +235,7 @@ func diskAdapters(log io.Writer, hold func() (release func())) adapters {
 	measurer := coveragetools.Measurer{Log: log, Execute: coverageCommand(coverageRun)}
 	tools := testtools.Toolchain{Dir: dir, Env: os.Environ()}
 	fingerprints := testinputs.Fingerprints{Runtime: testinputs.CurrentRuntime()}
-	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
+	fresh := freshenv.Environment{Platform: runtime.GOOS, Log: log, Execute: owner.Run, Command: ownedCommand(owner), Measure: ownedCommand(owner), Toolchain: tools, Fingerprints: fingerprints, Reach: importgraph.Reach{}, Tree: workdir.Tree{}, Surroundings: workdir.Surroundings{}}
 	settings := config.Reader{Source: diskConfig{}}
 	return adapters{Settings: settings, SnapshotReaders: func(root string) mutation.MutationSnapshotReader {
 		return snapshots.Mutations{Store: metricsdir.Store{RootDir: root}}

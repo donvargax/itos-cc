@@ -69,6 +69,7 @@ type countedSite struct {
 	Replacement string         `json:"replacement"`
 	State       string         `json:"state"`
 	Outcome     string         `json:"outcome,omitempty"`
+	Limit       string         `json:"limit,omitempty"`
 	Scope       string         `json:"scope,omitempty"`
 	Tests       []string       `json:"tests,omitempty"`
 	Excepted    string         `json:"excepted,omitempty"`
@@ -148,7 +149,7 @@ func (c Run) counted(ctx context.Context, ui *cli.UI, h Handler, written Written
 	progress := &countedProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, p: &Presentation{UI: ui, JSON: c.JSON, Tree: h.Tree}}
 	err := h.Counted(ctx, CountedQuery{Paths: c.Paths, Since: c.Since, Seed: c.Seed, Count: c.Count, AllTests: c.AllTests,
 		FailUncovered: c.FailUncovered != nil, LinesOnly: c.FailUncovered != nil && *c.FailUncovered == "lines",
-		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, Progress: progress})
+		Workers: c.Workers, TimeoutFactor: c.TimeoutFactor, OutputFactor: c.OutputFactor, MemoryFactor: c.MemoryFactor, Progress: progress})
 	if err != nil {
 		return ui.Emit(c.JSON, nil, ui.Problems(countedError(err, ui.Rel)))
 	}

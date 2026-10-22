@@ -214,7 +214,12 @@ a `context.Context` first (decision 30); pure logic takes none.
   second interrupt waits for it (decision 38). `Run` words a command's end as an error and
   `Command` returns its `Result`, which a caller converts into its own terms, as cmd does into
   mutation's `CommandResult` for freshenv; `Budget` is the shared run-abort `CleanupBudget` a
-  worker pool it owns shares from its creation. `Runner` is the command runner mutation's
+  worker pool it owns shares from its creation. `Runner.RunLimited` runs a command under
+  `Limits` (slice-24): an output cap counted on every system, and a memory cap on the owned
+  group's resident memory, summed and read from `/proc` every 50 ms where `MemoryMeasured` says
+  the platform value measures it, Linux alone; a command over a cap is killed, its group joined
+  as at its own timeout, and its `Result` names the cap. A run keeps the first and last 64 KiB
+  of a command's output, counting the lines between. `Runner` is the command runner mutation's
   workers run through, `ErrCommandTimeout` the cause of a command's own timeout, judged
   `TimedOut` rather than cancelled, and `PlatformAtBoundary` the host only for a zero
   platform: the OS is a value, and the build tags of `proc_unix.go` and `proc_windows.go` hold

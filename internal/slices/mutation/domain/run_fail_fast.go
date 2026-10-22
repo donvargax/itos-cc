@@ -173,7 +173,7 @@ func (s *Execution) actionable(i int) *Stop {
 		if !excepted {
 			return &Stop{Rule: "mutation.survived", File: s.rel, Function: UnitID(u.Namespace, u.Name), Site: &site}
 		}
-	case Killed, Timeout:
+	case Killed, Timeout, OverLimit:
 		if excepted {
 			return &Stop{Rule: "mutation.exception-stale", File: s.rel, Exception: &StaleException{Exception: e, Why: ExceptionKilled, Line: site.Line}}
 		}
@@ -212,21 +212,21 @@ func (s *Execution) incomplete() bool {
 	return false
 }
 
-// preserved is the outcomes, scopes and listed tests a fail-fast run
+// preserved is the outcomes, scopes, caps and listed tests a fail-fast run
 // records of a file it left with undecided sites: this run's outcome of
 // each site, run, measured or reused, and for a site it left undecided the
 // outcome the snapshot before records that still holds, if any, with what
 // decided it, so a stop never overwrites a valid CommandResult with nothing, a
 // cancelled --mutate-all rerun's included. A site with neither stays
 // undecided, which leaves it out of the snapshot.
-func (s *Execution) preserved() (outcomes, scopes []string, ran [][]string) {
-	outcomes, scopes, ran = slices.Clone(s.outcomes), slices.Clone(s.scopes), slices.Clone(s.ran)
+func (s *Execution) preserved() (outcomes, scopes, limits []string, ran [][]string) {
+	outcomes, scopes, limits, ran = slices.Clone(s.outcomes), slices.Clone(s.scopes), slices.Clone(s.limits), slices.Clone(s.ran)
 	for i, o := range outcomes {
 		if f := s.fresh[i]; o == "" && f.outcome != "" {
-			outcomes[i], scopes[i], ran[i] = f.outcome, f.scope, f.tests
+			outcomes[i], scopes[i], limits[i], ran[i] = f.outcome, f.scope, f.limit, f.tests
 		}
 	}
-	return outcomes, scopes, ran
+	return outcomes, scopes, limits, ran
 }
 
 // judgedAnew says whether the run decided a site of a function judged

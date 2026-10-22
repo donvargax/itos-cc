@@ -297,7 +297,7 @@ const failingTest = "from board import place\n\n\ndef test_place():\n    for i i
 
 // failingBaseline writes a Python project whose tests pass, records a
 // run's results of the file, then makes its tests fail without any
-// mutation.
+// mutation, printing 30 lines and nothing else.
 func (m *mutateState) failingBaseline(file string) error {
 	if file == "src/board.ts" && m.failingSample != nil {
 		return m.failingSample()
@@ -326,20 +326,27 @@ func (m *mutateState) failingBaseline(file string) error {
 	if m.recorded = m.read(m.snapshot); m.recorded == "" {
 		return fmt.Errorf("the run recorded no %s", m.snapshot)
 	}
-	if err := m.w.write("tests/test_board.py", failingTest); err != nil {
+	// pytest's own report off, and its capture with it, so the failing
+	// test's lines are all the tests print.
+	if err := m.writeAll(map[string]string{"tests/test_board.py": failingTest, "pyproject.toml": capsPrinting}); err != nil {
 		return err
 	}
+	return m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: command, Baseline: failingLines()})
+}
+
+// failingLines is what failingTest prints.
+func failingLines() string {
 	var printed strings.Builder
 	for i := 1; i <= 30; i++ {
 		fmt.Fprintf(&printed, "line %02d\n", i)
 	}
-	return m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: command, Baseline: printed.String()})
+	return printed.String()
 }
 
-// lastLinesFollow is whether n lines follow stdout's line saying the
-// baseline fails, before the next file's summary, the end of what the
-// failing test printed: its last line, and not its first.
-func (m *mutateState) lastLinesFollow(n int) error {
+// wholeOutputFollows is whether all the failing test printed follows
+// stdout's line saying the baseline fails, before the next file's summary:
+// its 30 lines, under the 40 a report keeps whole, with no line left out.
+func (m *mutateState) wholeOutputFollows() error {
 	lines := outputLines(strings.ReplaceAll(m.w.stdout, "\r\n", "\n"))
 	at := slices.IndexFunc(lines, func(l string) bool { return strings.Contains(l, "baseline tests fail") })
 	if at < 0 {
@@ -349,8 +356,8 @@ func (m *mutateState) lastLinesFollow(n int) error {
 	if end := slices.IndexFunc(follow, func(l string) bool { return summaryLine.MatchString(l) }); end >= 0 {
 		follow = follow[:end]
 	}
-	if len(follow) != n || !slices.Contains(follow, "line 30") || slices.Contains(follow, "line 01") {
-		return fmt.Errorf("%d lines follow, not the last %d of the test output\n%s", len(follow), n, m.w.report())
+	if want := strings.Split(strings.TrimSuffix(failingLines(), "\n"), "\n"); !slices.Equal(follow, want) {
+		return fmt.Errorf("%d lines follow, not the test's whole output of %d\n%s", len(follow), len(want), m.w.report())
 	}
 	return nil
 }

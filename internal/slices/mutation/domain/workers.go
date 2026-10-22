@@ -43,10 +43,13 @@ type ProjectRun struct {
 // removed there is put back first, outside the run's timeout and Elapsed,
 // while the build output, caches and linked dependencies the copy leaves to
 // the tools stay as the runs leave them. A nil change runs a clean baseline;
-// otherwise the changed source is restored after return. A worker is used
-// serially; separate workers may execute concurrently.
+// otherwise the changed source is restored after return. Limits bound the
+// run: its timeout, and the caps of its output and memory, a run over one
+// killed and judged OverLimit; a zero limit bounds nothing, as a
+// baseline's do. A worker is used serially; separate workers may execute
+// concurrently.
 type Worker interface {
-	Run(ctx context.Context, command Command, change *Mutation, timeout time.Duration) (CommandResult, WorkerFailure)
+	Run(ctx context.Context, command Command, change *Mutation, limits Limits) (CommandResult, WorkerFailure)
 }
 
 // WorkPurpose distinguishes ordinary judgments from trials of frozen inputs.
@@ -70,12 +73,53 @@ type Mutation struct {
 
 // CommandResult preserves the actual test command's outcome and combined
 // stdout/stderr. ExitCode is -1 when it gave none; a parent cancellation is
-// distinct from a mutant's own deadline and from a completed nonzero exit.
+// distinct from a mutant's own deadline, from a cap its run went over and
+// from a completed nonzero exit.
 type CommandResult struct {
 	Passed, TimedOut, Cancelled bool
 	Elapsed                     time.Duration
-	Output                      string
-	ExitCode                    int
+	// Output is its combined output as kept: all of it, or its first and
+	// last bytes, those between left out at OutputCut, with OutputLeftOut
+	// the lines they held; OutputBytes is all it wrote, which exceeds
+	// Output's length only when bytes were left out (Kept).
+	Output        string
+	OutputBytes   int64
+	OutputCut     int
+	OutputLeftOut int
+	ExitCode      int
+	// OverLimit names the cap of its Limits the run went over, LimitOutput
+	// or LimitMemory, which killed it; "" for none.
+	OverLimit string
+	// PeakMemory is the most resident memory its process group held, in
+	// bytes, where MemoryMeasured says the system measures it.
+	PeakMemory     int64
+	MemoryMeasured bool
+}
+
+// Kept is r's output as its run kept it.
+func (r CommandResult) Kept() Output {
+	o := Output{Text: r.Output}
+	if r.OutputBytes > int64(len(r.Output)) && r.OutputCut >= 0 && r.OutputCut <= len(r.Output) {
+		o.Cut, o.At, o.LeftOut = true, r.OutputCut, r.OutputLeftOut
+	}
+	return o
+}
+
+// Usage is what r's run used, which sizes the limits of the mutant runs
+// it is the baseline of.
+func (r CommandResult) Usage() Usage {
+	return Usage{Elapsed: r.Elapsed, Output: r.OutputBytes, Memory: r.PeakMemory, MemoryMeasured: r.MemoryMeasured}
+}
+
+// Output is a command's output, stdout and stderr together, as a run
+// keeps it: Text, all of it, or, when Cut, its first bytes up to At and
+// its last bytes after, with LeftOut the lines it did not keep between
+// them.
+type Output struct {
+	Text    string
+	Cut     bool
+	At      int
+	LeftOut int
 }
 
 // WorkerFailure is a command/copy/lifetime failure, never a test judgment.

@@ -311,7 +311,7 @@ Feature: Mutation testing
       Given the tests of src/board.py fail without any mutation
       When I run "itos-cc mutation run src/board.py"
       Then stdout says "src/board.py: baseline tests fail; snapshot not updated"
-      And the last 20 lines of the test output follow
+      And the test output follows whole, as it is under 40 lines
       And the snapshot of src/board.py is not changed
       And the problem is "mutation.baseline-failed", with file
       And the exit code is 1
@@ -333,7 +333,7 @@ Feature: Mutation testing
     # whole, as it is under 40 lines" in the feat, its step with it. Both
     # drivers run it, as it needs no real tool. Before slice-24 only the
     # last 20 lines follow, failing at the Then.
-    @slice-24 @ID-MUT-303 @wip
+    @slice-24 @ID-MUT-303
     Scenario: A failing baseline's report keeps the head and the tail of its output
       Given the tests of src/board.py fail without any mutation, printing 100 numbered lines, the first naming the cause
       When I run "itos-cc mutation run src/board.py"
@@ -581,10 +581,12 @@ Feature: Mutation testing
     # pause, about 64 MB a second, so today's product, which buffers it
     # all until the timeout, stays under half a gigabyte on CI.
     # --timeout-factor 1 keeps that red run short; every judged mutant's
-    # tests end in under a second.
+    # tests end in under a second. The fixture sets GOFLAGS=-v: without
+    # -v, go test holds a package's test output until its test ends, so
+    # there the memory cap, not the output cap, stops such a test.
     # Before slice-24 the endless printer runs to its timeout, outcome
     # "timeout", failing at the first Then.
-    @slice-24 @ID-MUT-300 @wip
+    @slice-24 @ID-MUT-300
     Scenario: A mutant whose tests write output without end is killed over its output cap
       Given a Go package whose test prints 2 MiB with nothing mutated, where one mutant makes it print 30 MiB and pass, and another makes it print without end
       When I run "itos-cc mutation run --no-coverage --workers 2 --timeout-factor 1 --json" for its file
@@ -602,7 +604,7 @@ Feature: Mutation testing
     # Before slice-24, on Linux the mutant is "killed", failing at the
     # Then; on macOS and Windows it is killed too and nothing is said,
     # failing at the But's stderr.
-    @slice-24 @ID-MUT-301 @wip
+    @slice-24 @ID-MUT-301
     Scenario: A mutant whose tests hold ever more memory is killed over its memory cap where memory is measured
       Given a Go package whose test holds little memory with nothing mutated, where one mutant makes it hold ever more, up to 2 GiB, before it fails
       When I run "itos-cc mutation run --no-coverage --workers 1 --memory-factor 1 --json" for its file
@@ -615,7 +617,7 @@ Feature: Mutation testing
     # its outcome into "over-limit" with "limit" "output".
     # Before slice-24 run does not reuse an outcome it does not know, so
     # it runs the mutant again and records "timeout", failing at the Then.
-    @slice-24 @ID-MUT-302 @wip
+    @slice-24 @ID-MUT-302
     Scenario: A recorded over-limit kill is a kill to run, check and sample
       Given the snapshot of src/board.go records the mutant at line 7 as "over-limit", with "limit" "output", in a function unchanged since
       When I run "itos-cc mutation run --json" for its file

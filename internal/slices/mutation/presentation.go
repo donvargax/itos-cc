@@ -177,6 +177,42 @@ func (p *Presentation) FailedSelections(failed []mutants.FailedSelection, report
 	}
 }
 
+// reportedLines is how many lines of each end of a failing baseline's
+// output its report gives.
+const reportedLines = 20
+
+// HeadAndTail is o, a failing baseline's output, as its report gives it
+// (issue #47): whole, its trailing newlines dropped, when it holds no more
+// than twice n lines, else its first n lines and its last n, with one
+// line between them saying how many lines were left out, those its run
+// did not keep among them. A cause printed first, as Vitest prints it,
+// and the bulk after both show.
+func HeadAndTail(o mutants.Output, n int) string {
+	if !o.Cut {
+		lines := strings.Split(strings.TrimRight(o.Text, "\n"), "\n")
+		if len(lines) <= 2*n {
+			return strings.Join(lines, "\n")
+		}
+		return leftOutBetween(lines[:n], len(lines)-2*n, lines[len(lines)-n:])
+	}
+	head := strings.Split(o.Text[:o.At], "\n")
+	rest := strings.TrimRight(o.Text[o.At:], "\n")
+	tail := strings.Split(rest, "\n")
+	total := strings.Count(o.Text[:o.At], "\n") + o.LeftOut + strings.Count(rest, "\n") + 1
+	head, tail = head[:min(n, len(head))], tail[max(0, len(tail)-n):]
+	return leftOutBetween(head, max(0, total-len(head)-len(tail)), tail)
+}
+
+// leftOutBetween is head, a line saying left lines were left out, then
+// tail.
+func leftOutBetween(head []string, left int, tail []string) string {
+	said := fmt.Sprintf("… %d lines left out …", left)
+	if left == 1 {
+		said = "… 1 line left out …"
+	}
+	return strings.Join(slices.Concat(head, []string{said}, tail), "\n")
+}
+
 // Tail is the last lines of s, its trailing newlines dropped.
 func Tail(s string, lines int) string {
 	parts := strings.Split(strings.TrimRight(s, "\n"), "\n")

@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/donvargax/itos-cc/internal/processes"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -233,23 +232,26 @@ func copyFile(src, dst string) error {
 
 type result = mutants.CommandResult
 
-// run executes c inside the worker's copy of c.Root, under parent. A zero
-// timeout waits as long as the tests take.
-func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (result, error) {
+// run executes c inside the worker's copy of c.Root, under parent, within
+// limits. A zero limit bounds nothing: a zero timeout waits as long as the
+// tests take.
+func (w *worker) run(parent context.Context, c Command, limits mutants.Limits) (result, error) {
 	root, err := w.copyOf(parent, c)
 	if err != nil {
 		return result{}, err
 	}
-	return w.runIn(parent, c, root, timeout)
+	return w.runIn(parent, c, root, limits)
 }
 
-// runIn executes c in root, c.Root's place where it runs, under parent:
-// the worker's copy of it, or c.Root itself for a run in the project.
-func (w *worker) runIn(parent context.Context, c Command, root string, timeout time.Duration) (result, error) {
+// runIn executes c in root, c.Root's place where it runs, under parent,
+// within limits: the worker's copy of it, or c.Root itself for a run in
+// the project. The runner keeps the output bounded, and kills a run over a
+// cap.
+func (w *worker) runIn(parent context.Context, c Command, root string, limits mutants.Limits) (result, error) {
 	ctx := parent
-	if timeout > 0 {
+	if limits.Timeout > 0 {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeoutCause(parent, timeout, processes.ErrCommandTimeout)
+		ctx, cancel = context.WithTimeoutCause(parent, limits.Timeout, processes.ErrCommandTimeout)
 		defer cancel()
 	}
 	var cmd *exec.Cmd
@@ -262,7 +264,7 @@ func (w *worker) runIn(parent context.Context, c Command, root string, timeout t
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
-	r, err := w.runner.Run(ctx, cmd, &out)
+	r, err := w.runner.RunLimited(ctx, cmd, &out, processes.Limits{Output: limits.Output, Memory: limits.Memory})
 	return result(r), err
 }
 

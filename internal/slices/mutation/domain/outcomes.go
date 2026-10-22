@@ -4,7 +4,10 @@ package domain
 type MutantResult struct {
 	Site
 	Function string // namespace#name
-	Outcome  string // Killed, Survived, Timeout, or Uncovered
+	Outcome  string // Killed, Survived, Timeout, OverLimit, or Uncovered
+	// Limit names the cap an OverLimit outcome went over, LimitOutput or
+	// LimitMemory; "" for every other outcome.
+	Limit string
 	// Reused is true when the outcome came from the snapshot without
 	// running.
 	Reused bool
@@ -51,7 +54,7 @@ type FileResult struct {
 	// neither, nor does a result only kept from before (Preserved).
 	Ran, Reused    int
 	BaselineFailed bool
-	BaselineOutput string
+	BaselineOutput Output
 	// BaselineCopy, when the baseline failed in a worker's copy but its
 	// command passes in the project's own folder, is the tree the copy
 	// holds, absolute; "" otherwise.

@@ -75,7 +75,10 @@ type runMutant struct {
 	// Outcome and Scope are there for every mutant but one a --fail-fast
 	// stop left undecided.
 	Outcome string `json:"outcome,omitempty"`
-	Reused  bool   `json:"reused"`
+	// Limit names the cap an "over-limit" outcome's run went over,
+	// "output" or "memory"; left out for every other outcome.
+	Limit  string `json:"limit,omitempty"`
+	Reused bool   `json:"reused"`
 	// Scope is the scope of the tests that decided the outcome: "own",
 	// "all-tests", or the --test-command line.
 	Scope string `json:"scope,omitempty"`
@@ -147,6 +150,8 @@ func (c Run) Run(ctx context.Context, ui *cli.UI, h Handler, given cli.Written) 
 		TestCommand:         written.value("test-command", c.TestCommand),
 		Workers:             c.Workers,
 		TimeoutFactor:       c.TimeoutFactor,
+		OutputFactor:        c.OutputFactor,
+		MemoryFactor:        c.MemoryFactor,
 		MutateAll:           c.MutateAll,
 		Annotate:            !c.NoAnnotate,
 		Progress:            selectionProgress{Progress: Progress{Log: ui.Stderr, Rel: ui.Rel}, ui: ui},
@@ -267,11 +272,11 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 				_, _ = fmt.Fprintf(ui.Stdout, "%s: blocked, %s: its tests, or the listed tests its mutants run, fail without any mutant (ran %d, reused %d; %d completed, %d cancelled, %d unattempted, %d blocked); cache %s\n",
 					r.Rel, snapshotKept(r), f.Ran, f.Reused, work.Completed, work.Cancelled, work.Unattempted, work.Blocked, cache)
 				if r.BaselineFailed {
-					_, _ = fmt.Fprintln(ui.Stdout, Tail(r.BaselineOutput, 20))
+					_, _ = fmt.Fprintln(ui.Stdout, HeadAndTail(r.BaselineOutput, reportedLines))
 				}
 			}
 			if r.BaselineFailed {
-				p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run"))
+				p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run").With("output", HeadAndTail(r.BaselineOutput, reportedLines)))
 			}
 			p.FailedSelections(r.FailedSelections, reported, "mutation run")
 			for _, m := range r.Mutants {
@@ -295,9 +300,9 @@ func (c Run) present(ctx context.Context, p *Presentation, found RunFound, resul
 		if r.BaselineFailed {
 			result.Files = append(result.Files, runFile{File: r.Rel, Baseline: "failed", Judged: r.Judged, Mutants: []runMutant{}})
 			if !c.JSON {
-				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, Tail(r.BaselineOutput, 20))
+				_, _ = fmt.Fprintf(ui.Stdout, "%s: baseline tests fail; snapshot not updated\n%s\n", r.Rel, HeadAndTail(r.BaselineOutput, reportedLines))
 			}
-			p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run"))
+			p.report(p.baselineFailed(r.Rel, r.BaselineCopy, "judged", "mutation run").With("output", HeadAndTail(r.BaselineOutput, reportedLines)))
 			p.StaleExceptions(ctx, r.Rel, r.StaleExceptions)
 			continue
 		}
@@ -440,18 +445,19 @@ func jsonMutants(items []mutants.MutantResult) []runMutant {
 	out := []runMutant{}
 	for _, m := range items {
 		out = append(out, runMutant{Line: m.Line, Column: m.Column, Function: m.Function,
-			Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
+			Original: m.Original, Replacement: m.Replacement, Outcome: m.Outcome, Limit: m.Limit, Reused: m.Reused, Scope: m.Scope, Excepted: m.Excepted,
 			Coverage: m.Coverage, Tests: m.Tests, State: m.State})
 	}
 	return out
 }
 
 // countMutants counts the outcomes of items in f, as a file's units count
-// them: a timed-out mutant is killed, and an excepted survivor excepted.
+// them: a mutant timed out or over a limit is killed, and an excepted
+// survivor excepted.
 func countMutants(f *runFile, items []mutants.MutantResult) {
 	for _, m := range items {
 		switch {
-		case m.Outcome == mutants.Killed || m.Outcome == mutants.Timeout:
+		case mutants.Noticed(m.Outcome):
 			f.Killed++
 		case m.Outcome == mutants.Survived && m.Excepted != "":
 			f.Excepted++

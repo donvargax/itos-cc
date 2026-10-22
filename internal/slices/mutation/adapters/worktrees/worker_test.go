@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
 )
 
 const runnerFixtureMode = "ITOS_COMMAND_RUNNER_FIXTURE_MODE"
@@ -34,7 +36,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 		PathEnv:  "ITOS_COMMAND_RUNNER_PATH",
 		PathDirs: []string{"bin"},
 	}
-	r, err := w.run(t.Context(), c, 0)
+	r, err := w.run(t.Context(), c, mutants.Limits{})
 	if err != nil {
 		t.Fatalf("worker.run: %v", err)
 	}
@@ -69,7 +71,7 @@ func TestWorkerRunPreservesCommandSetup(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		shell = "echo shell-output"
 	}
-	r, err = w.run(t.Context(), Command{Root: root, Dir: root, Shell: shell}, 0)
+	r, err = w.run(t.Context(), Command{Root: root, Dir: root, Shell: shell}, mutants.Limits{})
 	if err != nil || !r.Passed || !strings.Contains(r.Output, "shell-output") {
 		t.Errorf("shell command result = %+v, err = %v; want captured shell output", r, err)
 	}

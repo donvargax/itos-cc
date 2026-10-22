@@ -28,6 +28,8 @@ type CountedQuery struct {
 	FailUncovered, LinesOnly bool
 	Workers                  int
 	TimeoutFactor            float64
+	OutputFactor             float64
+	MemoryFactor             float64
 	Progress                 CountedProgress
 }
 
@@ -252,7 +254,8 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 	}
 	results, err := mutants.RunFreshTrials(ctx, plan, trials, mutants.FreshTrialOptions{
 		WorkerFactory: factory,
-		Workers:       q.Workers, TimeoutFactor: q.TimeoutFactor, Scope: mutants.RunScope("", q.AllTests),
+		Workers:       q.Workers, TimeoutFactor: q.TimeoutFactor, OutputFactor: q.OutputFactor, MemoryFactor: q.MemoryFactor,
+		Scope:  mutants.RunScope("", q.AllTests),
 		Listed: listed, Tree: h.Tree, Toolchain: h.Toolchain, Progress: progress})
 	if err != nil {
 		return err
@@ -302,7 +305,7 @@ func (h Handler) trials(ctx context.Context, q CountedQuery, plan *mutants.Fresh
 			site.Reason = fmt.Sprintf("%s, and its listed tests %s fail without any mutant, so they could not judge it",
 				own, strings.Join(r.FailedSelection.IDs, " "))
 		default:
-			site.State, site.Outcome, site.Scope, site.Tests = "judged", r.Outcome, r.Scope, r.Tests
+			site.State, site.Outcome, site.Limit, site.Scope, site.Tests = "judged", r.Outcome, r.Limit, r.Scope, r.Tests
 			reason, gone := exceptions.Judge(r.Trial.Candidate, r.Outcome)
 			site.Excepted = reason
 			if gone != nil {

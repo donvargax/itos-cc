@@ -163,7 +163,7 @@ output of the commands it runs passes as it is.
 | `mutation.missing`           | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
-| `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
+| `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`, `output` (the first 20 and last 20 lines of what the tests printed, whole up to 40) |
 | `tests.list-failed`          | 1    | mutation run; mutation check, sample and except when they date a kill by a fingerprint | `command`, `exit_code` |
 | `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |

@@ -21,10 +21,15 @@ import (
 // Environment retains bindings and physical policy, never a caller context.
 // Execute is the counted invocation's owned executor shared with its trial Workers.
 type Environment struct {
-	Platform     string
-	Log          io.Writer
-	Execute      covrun.CommandExecutor
-	Command      func(context.Context, *exec.Cmd) (mutants.CommandResult, error)
+	Platform string
+	Log      io.Writer
+	Execute  covrun.CommandExecutor
+	Command  func(context.Context, *exec.Cmd) (mutants.CommandResult, error)
+	// Measure, when set, runs each baseline in Execute's place, through the
+	// same owned executor, and gives what it used: the bytes it wrote and
+	// its peak memory, which, with its time, size its mutants' limits.
+	// Without it a baseline's time alone is known.
+	Measure      func(context.Context, *exec.Cmd) (mutants.CommandResult, error)
 	Toolchain    mutants.Toolchain
 	Fingerprints mutants.Fingerprints
 	Reach        mutants.Reach

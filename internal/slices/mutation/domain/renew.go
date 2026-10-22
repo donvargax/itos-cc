@@ -154,7 +154,7 @@ func Renew(ctx context.Context, exceptions []Exception, sources []string, opt Ch
 		if snapshot.Key(opt.Root, f.file.Path) == e.File && f.holds(e) {
 			// It holds: only a fresh kill makes it stale, and nothing
 			// renews that.
-			if m, ok := f.recorded(unit, e.LineInFunction+u.StartLine-1, e.Column, e.Original, e.Replacement); ok && (m.Outcome == Killed || m.Outcome == Timeout) {
+			if m, ok := f.recorded(unit, e.LineInFunction+u.StartLine-1, e.Column, e.Original, e.Replacement); ok && Noticed(m.Outcome) {
 				left = append(left, Unrenewed{Exception: e, Why: ExceptionKilled, Line: m.Line})
 			}
 			continue
@@ -303,12 +303,13 @@ func matchMutant(e Exception, start int, mutants []Mutant, src []byte) (m Mutant
 
 // survivedWhy is "" for a mutant recorded survived, the one outcome that
 // renews its exception, and why it does not otherwise: ExceptionKilled for
-// a kill or a timeout, RenewUncovered, or RenewNoResults with no outcome.
+// a kill, a timeout or a run over a limit, RenewUncovered, or
+// RenewNoResults with no outcome.
 func survivedWhy(m Mutant) string {
 	switch m.Outcome {
 	case Survived:
 		return ""
-	case Killed, Timeout:
+	case Killed, Timeout, OverLimit:
 		return ExceptionKilled
 	case Uncovered:
 		return RenewUncovered

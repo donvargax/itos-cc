@@ -64,6 +64,8 @@ type Run struct {
 	Workers             int         `placeholder:"N" default:"${mutation_workers}" help:"mutants run at the same time"`
 	MutateAll           bool        `help:"rerun killed mutants of unchanged functions too"`
 	TimeoutFactor       float64     `placeholder:"N" default:"10" help:"a mutant times out after N times the baseline duration, plus 5s"`
+	OutputFactor        float64     `placeholder:"N" default:"10" help:"a mutant is killed once its tests write more than N times the baseline's output, plus 16 MiB"`
+	MemoryFactor        float64     `placeholder:"N" default:"4" help:"a mutant is killed once its tests hold more than N times the baseline's peak memory, plus 256 MiB; Linux"`
 	TestCommand         string      `placeholder:"CMD" help:"shell command that runs the tests, instead of the per-language default"`
 	NoAnnotate          bool        `name:"no-annotate" help:"do not write the summary comment into source files"`
 	Since               string      `placeholder:"REF" help:"judge only the functions the commits since REF changed (git diff REF...HEAD)"`
@@ -97,6 +99,8 @@ type Sample struct {
 	Seed          *string `placeholder:"TEXT" help:"seed the draw with TEXT instead of the HEAD commit's id"`
 	Workers       int     `placeholder:"N" default:"${mutation_workers}" help:"mutants run at the same time"`
 	TimeoutFactor float64 `placeholder:"N" default:"10" help:"a mutant times out after N times the baseline duration, plus 5s"`
+	OutputFactor  float64 `placeholder:"N" default:"10" help:"a mutant is killed once its tests write more than N times the baseline's output, plus 16 MiB"`
+	MemoryFactor  float64 `placeholder:"N" default:"4" help:"a mutant is killed once its tests hold more than N times the baseline's peak memory, plus 256 MiB; Linux"`
 	TestCommand   string  `placeholder:"CMD" help:"shell command that runs the tests for every mutant, instead of its recorded scope"`
 	AllTests      bool    `help:"run the whole test suite for every mutant, instead of its recorded scope"`
 	JSON          bool    `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`

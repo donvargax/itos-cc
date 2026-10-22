@@ -127,7 +127,7 @@ func (x FileExceptions) Judge(site int, s Site, outcome string) (reason string, 
 	switch outcome {
 	case Survived:
 		return e.Reason, nil
-	case Killed, Timeout:
+	case Killed, Timeout, OverLimit:
 		return "", &StaleException{Exception: e, Why: ExceptionKilled, Line: s.Line}
 	}
 	return "", nil

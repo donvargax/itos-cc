@@ -28,9 +28,12 @@ type Options struct {
 	Workers       int
 	MutateAll     bool    // rerun killed mutants of unchanged functions too
 	TimeoutFactor float64 // a mutant may run this many times the baseline
-	TestCommand   string  // shell command that replaces the per-language default
-	AllTests      bool    // kill mutants with the whole suite, integration and end-to-end tests included
-	Annotate      bool    // write a summary comment at the end of each file
+	// OutputFactor and MemoryFactor size a mutant's output and memory caps
+	// from its baseline's, as TimeoutFactor its timeout (Factors).
+	OutputFactor, MemoryFactor float64
+	TestCommand                string // shell command that replaces the per-language default
+	AllTests                   bool   // kill mutants with the whole suite, integration and end-to-end tests included
+	Annotate                   bool   // write a summary comment at the end of each file
 	// Coverage is an already admitted report; Measurement requests lazy collection
 	// only when pending work requires it. Neither carries a live I/O closure.
 	Coverage    *coverage.Report
@@ -101,6 +104,7 @@ type Execution struct {
 	outcomes []string   // "" while pending
 	reused   []bool     // the outcome came from the previous snapshot
 	scopes   []string   // the scope that decided each outcome, or decides it in this run
+	limits   []string   // the cap each OverLimit outcome went over
 	coverage [][]string // the sources of coverage that executed each site's line, or nil
 	reach    [][]string // the listed tests that execute each site's line, or nil
 	ran      [][]string // the listed tests that decided each outcome of ScopeListed
@@ -134,8 +138,8 @@ type Execution struct {
 // function's hash, the tests that import its file and the files its listed
 // or broad evidence rests on are as they were.
 type freshOutcome struct {
-	outcome, scope string
-	tests          []string
+	outcome, scope, limit string
+	tests                 []string
 }
 
 // Run mutates files and writes their snapshots. It returns one FileResult per
@@ -258,11 +262,11 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		// and what still holds of the snapshot before (ADR-0022), and
 		// without its summary comment.
 		incomplete := s.failFast && s.incomplete()
-		outcomes, scopes, ran := s.outcomes, s.scopes, s.ran
+		outcomes, scopes, limits, ran := s.outcomes, s.scopes, s.limits, s.ran
 		if incomplete {
-			outcomes, scopes, ran = s.preserved()
+			outcomes, scopes, limits, ran = s.preserved()
 		}
-		s.result.Snapshot = BuildScoped(s.file, s.key, s.tests, s.sites, outcomes, scopes, ran)
+		s.result.Snapshot = BuildLimited(s.file, s.key, s.tests, s.sites, outcomes, scopes, limits, ran)
 		if (opt.StatementCoverage != nil || opt.CachedCoverage != nil) && StrictCoverage(s.file.Spec.Name) {
 			evidence, err := s.coverageEvidence(ctx, opt)
 			if err != nil {

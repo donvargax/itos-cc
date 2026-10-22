@@ -27,7 +27,11 @@ type Tests struct {
 	// project's own folder (InProject), the tests pass.
 	CopyOnly bool
 	Elapsed  time.Duration
-	Verdicts []Verdict
+	// Output is how many bytes a run of the tests writes, stdout and
+	// stderr together, and Memory the most memory it holds, with nothing
+	// mutated, or with a mutant no verdict says more of.
+	Output, Memory int64
+	Verdicts       []Verdict
 	// Reached, when not nil, are the lines the tests execute, by file
 	// relative to the root: a mutant on any other line passes them, as
 	// tests that never run it cannot notice it.
@@ -39,12 +43,31 @@ type Tests struct {
 	Hold     *WorkGate
 }
 
-// Verdict is a declared exception to the default killed mutant.
+// Verdict is a declared exception to the default killed mutant: Survived,
+// Timeout, Writing, Flooding or Hoarding.
 type Verdict struct {
 	Path    string
 	Site    mutants.Site
 	Outcome string
+	// Output is how many bytes the tests write under a Writing mutant.
+	Output int64
 }
+
+// The verdicts of mutants that make the tests use more than their
+// baseline: Writing passes them writing a Verdict's Output, unless that is
+// over the output cap; Flooding makes them write without end, to the
+// output cap or the timeout; Hoarding makes them hold ever more memory, to
+// the memory cap where the platform measures memory (MemoryMeasured), or
+// to 2 GiB, where they fail.
+const (
+	Writing  = "writing"
+	Flooding = "flooding"
+	Hoarding = "hoarding"
+)
+
+// MemoryMeasured says whether the fake measures a run's memory on
+// platform, as the real supervisor does: on Linux alone.
+func MemoryMeasured(platform string) bool { return platform == "linux" }
 
 // Trace identifies actual execution observations. Tests is the complete runnable
 // selector inventory, including tests unrelated to the selected source.
@@ -202,7 +225,7 @@ func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.Projec
 	if tests.CopyOnly {
 		tests.Baseline = ""
 	}
-	r, failure := declaredResult(c, tests, nil, 0)
+	r, failure := declaredResult(c, tests, nil, mutants.Limits{}, f.Platform)
 	run.Result = r
 	return run, failure
 }
@@ -213,7 +236,7 @@ type worker struct {
 	copies map[string]map[string]string
 }
 
-func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
+func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, limits mutants.Limits) (mutants.CommandResult, mutants.WorkerFailure) {
 	if ctx.Err() != nil {
 		return mutants.CommandResult{}, mutants.WorkerCancelled{Cause: context.Cause(ctx)}
 	}
@@ -313,11 +336,16 @@ func (w *worker) Run(ctx context.Context, c mutants.Command, change *mutants.Mut
 			return mutants.CommandResult{Cancelled: true, ExitCode: -1}, nil
 		}
 	}
-	return declaredResult(c, tests, change, timeout)
+	return declaredResult(c, tests, change, limits, f.Platform)
 }
 
-func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
-	r := mutants.CommandResult{Passed: true, ExitCode: 0, Elapsed: tests.Elapsed}
+// declaredResult is the declared result of c's run, of change under
+// limits, as the platform measures it.
+func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, limits mutants.Limits, platform string) (mutants.CommandResult, mutants.WorkerFailure) {
+	r := mutants.CommandResult{Passed: true, ExitCode: 0, Elapsed: tests.Elapsed, OutputBytes: tests.Output, MemoryMeasured: MemoryMeasured(platform)}
+	if r.MemoryMeasured {
+		r.PeakMemory = tests.Memory
+	}
 	if change == nil {
 		if tests.Baseline != "" {
 			r.Passed = false
@@ -345,7 +373,25 @@ func declaredResult(c mutants.Command, tests Tests, change *mutants.Mutation, ti
 			case mutants.Timeout:
 				r.TimedOut = true
 				r.ExitCode = -1
-				r.Elapsed = timeout
+				r.Elapsed = limits.Timeout
+			case Writing:
+				r.OutputBytes = v.Output
+				if limits.Output > 0 && v.Output > limits.Output {
+					r.OverLimit, r.ExitCode, r.OutputBytes = mutants.LimitOutput, -1, limits.Output+1
+				} else {
+					r.Passed, r.ExitCode = true, 0
+				}
+			case Flooding:
+				if limits.Output > 0 {
+					r.OverLimit, r.ExitCode, r.OutputBytes = mutants.LimitOutput, -1, limits.Output+1
+				} else {
+					r.TimedOut, r.ExitCode, r.Elapsed = true, -1, limits.Timeout
+				}
+			case Hoarding:
+				// Killed by its own test at 2 GiB where no cap holds.
+				if r.MemoryMeasured && limits.Memory > 0 {
+					r.OverLimit, r.ExitCode, r.PeakMemory = mutants.LimitMemory, -1, limits.Memory+1
+				}
 			default:
 				return r, failed("unsupported declared mutant outcome: " + v.Outcome)
 			}

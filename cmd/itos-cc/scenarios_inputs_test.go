@@ -196,7 +196,7 @@ func TestMemoryWorkersReceiveActualRunEnvironmentAndWithout(t *testing.T) {
 		}
 	}()
 	command := mutation.Command{Root: root, Dir: root, Args: []string{"python3", "-m", "pytest", "-q"}, PathEnv: "PYTHONPATH", PathDirs: []string{".", "src"}}
-	if _, failure := pool.Worker(0).Run(t.Context(), command, nil, 0); failure != nil {
+	if _, failure := pool.Worker(0).Run(t.Context(), command, nil, mutation.Limits{}); failure != nil {
 		t.Fatal(failure)
 	}
 	if len(workers.Environments) != 1 {
@@ -216,7 +216,7 @@ func TestMemoryWorkersReceiveActualRunEnvironmentAndWithout(t *testing.T) {
 			t.Error(failure)
 		}
 	}()
-	if _, failure := absent.Worker(0).Run(t.Context(), command, nil, 0); failure == nil || !strings.Contains(failure.Error(), "Run.Without") {
+	if _, failure := absent.Worker(0).Run(t.Context(), command, nil, mutation.Limits{}); failure == nil || !strings.Contains(failure.Error(), "Run.Without") {
 		t.Fatalf("missing executable silently ran declared outcome: %v", failure)
 	}
 }

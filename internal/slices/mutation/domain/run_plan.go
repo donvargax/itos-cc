@@ -77,6 +77,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		s.outcomes = make([]string, len(s.sites))
 		s.reused = make([]bool, len(s.sites))
 		s.scopes = make([]string, len(s.sites))
+		s.limits = make([]string, len(s.sites))
 		s.ran = make([][]string, len(s.sites))
 		s.fresh = make([]freshOutcome, len(s.sites))
 		scope := ScopeForCommand(opt.TestCommand, opt.AllTests, s.command)
@@ -89,7 +90,7 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 				s.outcomes[i] = Skipped
 				if outcome := prev[site.Unit][site.Key()]; outcome != "" {
 					d := prevScopes[site.Unit][site.Key()]
-					s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.Scope, d.Tests
+					s.outcomes[i], s.scopes[i], s.limits[i], s.ran[i] = outcome, d.Scope, d.Limit, d.Tests
 				}
 				continue
 			}
@@ -100,10 +101,10 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 			broad := Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}
 			broadStale := len(BroadChanges(broad, s.suite.Of(broad.TestScope()), opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {
-				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, tests: d.Tests}
+				s.fresh[i] = freshOutcome{outcome: outcome, scope: d.Scope, limit: d.Limit, tests: d.Tests}
 			}
 			if outcome, ok := prev.Kept(f, site, excepted); ok && !opt.MutateAll && !restsOnChange && !broadStale {
-				s.outcomes[i], s.scopes[i], s.ran[i] = outcome, d.Scope, d.Tests
+				s.outcomes[i], s.scopes[i], s.limits[i], s.ran[i] = outcome, d.Scope, d.Limit, d.Tests
 				s.reused[i] = true
 				s.result.Reused++
 			}
@@ -178,7 +179,11 @@ func (s *Execution) decided() []MutantResult {
 				scope, ran = "", nil
 			}
 		}
-		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Reused: s.reused[i], Scope: scope,
+		limit := ""
+		if s.outcomes[i] == OverLimit {
+			limit = s.limits[i]
+		}
+		out = append(out, MutantResult{Site: site, Function: id, Outcome: s.outcomes[i], Limit: limit, Reused: s.reused[i], Scope: scope,
 			Excepted: reason, Coverage: covered, Tests: ran, State: state})
 	}
 	slices.SortStableFunc(out, func(a, b MutantResult) int { return LineOrder(a.Site, b.Site) })

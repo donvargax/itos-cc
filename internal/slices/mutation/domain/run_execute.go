@@ -53,9 +53,12 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 	}
 
 	// One baseline per distinct command, run inside a worker's copy: passing
-	// proves the copy is a working tree, and its time sets the timeout.
-	timeouts := map[string]time.Duration{}
-	failed := map[string]string{}
+	// proves the copy is a working tree, and what it used sets the limits
+	// of its mutants' runs.
+	factors := Factors{Timeout: opt.TimeoutFactor, Output: opt.OutputFactor, Memory: opt.MemoryFactor}
+	limits := map[string]Limits{}
+	failed := map[string]*Output{}
+	unmeasured := false
 	// copies is the tree a worker's copy holds for each command whose
 	// baseline failed there but passes in the project's own folder.
 	copies := map[string]string{}
@@ -79,9 +82,9 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				continue
 			}
 			key := s.command.Key()
-			if _, done := timeouts[key]; !done && failed[key] == "" && !st.stopped() {
+			if _, done := limits[key]; !done && failed[key] == nil && !st.stopped() {
 				report(opt.Progress, RunEvent{Kind: "baseline", Command: s.command})
-				r, err := workers[0].Run(ctx, s.command, nil, 0)
+				r, err := workers[0].Run(ctx, s.command, nil, Limits{})
 				if cancelledBy(ctx, err) {
 					// The run stopped during the baseline: nothing of
 					// the file is admitted.
@@ -91,22 +94,28 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 					return nil, err
 				}
 				if !r.Passed {
-					failed[key] = r.Output
+					kept := r.Kept()
+					failed[key] = &kept
 					if copies[key], err = copyOnly(ctx, pool, s.command, opt.Progress); err != nil {
 						return nil, err
 					}
 				} else {
-					timeouts[key] = TimeoutOf(r.Elapsed, opt.TimeoutFactor)
+					limits[key] = factors.LimitsOf(r.Usage())
+					if !r.MemoryMeasured && !unmeasured {
+						// No memory cap holds on this system: said once.
+						unmeasured = true
+						report(opt.Progress, RunEvent{Kind: MemoryUnmeasured})
+					}
 				}
 			}
 			if out, bad := failed[key]; bad {
-				s.result.BaselineFailed, s.result.BaselineOutput, s.result.BaselineCopy = true, out, copies[key]
+				s.result.BaselineFailed, s.result.BaselineOutput, s.result.BaselineCopy = true, *out, copies[key]
 				if st != nil {
 					st.trigger(&Stop{Rule: "mutation.baseline-failed", File: s.rel})
 				}
 				continue
 			}
-			if _, ran := timeouts[key]; !ran {
+			if _, ran := limits[key]; !ran {
 				// The run stopped before this baseline: nothing of the
 				// file is admitted.
 				continue
@@ -122,7 +131,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 			// run, and run says BaselineNotRun.
 			continue
 		}
-		if _, ran := timeouts[s.command.Key()]; ran {
+		if _, ran := limits[s.command.Key()]; ran {
 			s.result.Baseline = "passed"
 		} else if s.result.BaselineFailed {
 			s.result.Baseline = "failed"
@@ -133,7 +142,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 	// a mutant needs it, in that mutant's worker.
 	var sels *SelectionBaselines
 	if opt.Listed != nil {
-		sels = NewSelectionBaselines(opt.Listed, opt.TimeoutFactor, opt.Progress)
+		sels = NewSelectionBaselines(opt.Listed, factors, opt.Progress)
 	}
 
 	queue := make(chan job)
@@ -146,7 +155,7 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 		go func(ctx context.Context, w Worker) {
 			defer wg.Done()
 			for j := range queue {
-				r, err := runMutant(ctx, w, j, timeouts[j.state.command.Key()], sels)
+				r, err := runMutant(ctx, w, j, limits[j.state.command.Key()], sels)
 				mu.Lock()
 				if err != nil && firstErr == nil {
 					firstErr = err
@@ -176,10 +185,10 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 						j.state.leave(j.site, StateBlocked)
 					}
 				case r.ids != nil:
-					j.state.outcomes[j.site] = r.outcome
+					j.state.outcomes[j.site], j.state.limits[j.site] = r.outcome, r.limit
 					j.state.scopes[j.site], j.state.ran[j.site] = ScopeListed, r.ids
 				default:
-					j.state.outcomes[j.site] = r.outcome
+					j.state.outcomes[j.site], j.state.limits[j.site] = r.outcome, r.limit
 				}
 				if r.failed == nil {
 					j.state.result.Ran++
@@ -189,7 +198,8 @@ func execute(ctx context.Context, states []*Execution, opt Options, ff *FailFast
 				if r.failed != nil {
 					kind = "selection-blocked"
 				}
-				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: len(jobs), File: j.state.rel, Site: site, Outcome: r.outcome, IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
+				report(opt.Progress, RunEvent{Kind: kind, Done: done, Total: len(jobs), File: j.state.rel, Site: site, Outcome: r.outcome, Limit: r.limit, Limits: r.limits,
+					IDs: r.ids, Elapsed: r.elapsed, Listed: r.listed})
 				if st != nil && err == nil {
 					if r.failed != nil {
 						st.trigger(&Stop{Rule: "tests.selection-failed", File: j.state.rel, Selection: r.failed})
@@ -219,6 +229,10 @@ dispatch:
 // mutantRun is how a mutant's runs went.
 type mutantRun struct {
 	outcome string
+	// limit names the cap an OverLimit outcome went over, of limits, those
+	// of the run that decided it.
+	limit   string
+	limits  Limits
 	elapsed time.Duration // its runs' time in all
 	listed  time.Duration // the listed tests' time
 	// ids is the listed tests it ran once its own tests survived it, or
@@ -241,7 +255,7 @@ type mutantRun struct {
 // baseline the first time any mutant needs it. Every command runs under
 // ctx: once a fail-fast stop cancels it, none starts, and a judgment it cut
 // short is cancelled, never killed or timed out.
-func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels *SelectionBaselines) (mutantRun, error) {
+func runMutant(ctx context.Context, w Worker, j job, limits Limits, sels *SelectionBaselines) (mutantRun, error) {
 	if ctx.Err() != nil {
 		return mutantRun{cancelled: true}, nil
 	}
@@ -251,8 +265,8 @@ func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels
 	run, err := mutantRun{outcome: Survived, started: true}, error(nil)
 	if !s.command.RunsNothing() {
 		var r CommandResult
-		r, err = w.Run(ctx, s.command, &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, timeout)
-		run = mutantRun{outcome: Judged(r), elapsed: r.Elapsed, started: true}
+		r, err = w.Run(ctx, s.command, &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, limits)
+		run = mutantRun{outcome: Judged(r), limit: r.OverLimit, limits: limits, elapsed: r.Elapsed, started: true}
 		if c, ok := cleanupFailed(err); ok {
 			return mutantRun{cancelled: true, started: true, elapsed: r.Elapsed, cleanup: &c}, nil
 		}
@@ -276,7 +290,7 @@ func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels
 		run.failed = sel.failed
 		return run, sel.err
 	}
-	listed, err := w.Run(ctx, sels.listed.Command(run.ids), &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, sel.timeout)
+	listed, err := w.Run(ctx, sels.listed.Command(run.ids), &Mutation{Path: s.file.Path, Source: s.file.Src, Site: site}, sel.limits)
 	if c, ok := cleanupFailed(err); ok {
 		cut.elapsed += listed.Elapsed
 		cut.cleanup = &c
@@ -286,14 +300,17 @@ func runMutant(ctx context.Context, w Worker, j job, timeout time.Duration, sels
 		cut.elapsed += listed.Elapsed
 		return cut, nil
 	}
-	run.outcome, run.listed = Judged(listed), listed.Elapsed
+	run.outcome, run.limit, run.limits, run.listed = Judged(listed), listed.OverLimit, sel.limits, listed.Elapsed
 	run.elapsed += listed.Elapsed
 	return run, err
 }
 
-// judged is the outcome of a test run on a mutant.
+// judged is the outcome of a test run on a mutant: OverLimit when it went
+// over a cap of its limits, whose name r.OverLimit gives.
 func Judged(r CommandResult) string {
 	switch {
+	case r.OverLimit != "":
+		return OverLimit
 	case r.TimedOut:
 		return Timeout
 	case r.Passed:

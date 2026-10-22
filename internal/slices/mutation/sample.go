@@ -17,6 +17,8 @@ type SampleQuery struct {
 	Seed          *string
 	Workers       int
 	TimeoutFactor float64
+	OutputFactor  float64
+	MemoryFactor  float64
 	TestCommand   string
 	AllTests      bool
 	Progress      SelectionProgress
@@ -95,6 +97,8 @@ func (h Handler) Sample(ctx context.Context, q SampleQuery) (SampleFound, error)
 		WorkerFactory: h.Workers,
 		Workers:       q.Workers,
 		TimeoutFactor: q.TimeoutFactor,
+		OutputFactor:  q.OutputFactor,
+		MemoryFactor:  q.MemoryFactor,
 		TestCommand:   q.TestCommand,
 		AllTests:      q.AllTests,
 		Progress:      q.Progress,

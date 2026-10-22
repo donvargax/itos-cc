@@ -57,22 +57,22 @@ func TestWorkersPathHidingPreservesExplicitExecutablesAndShellOutcomes(t *testin
 			t.Error(failure)
 		}
 	}()
-	if result, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: []string{explicit, "run"}}, nil, 0); failure != nil || !result.Passed {
+	if result, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: []string{explicit, "run"}}, nil, mutants.Limits{}); failure != nil || !result.Passed {
 		t.Fatalf("explicit installed entry hidden: %+v %v", result, failure)
 	}
-	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: []string{"go", "version"}}, nil, 0); failure == nil {
+	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Args: []string{"go", "version"}}, nil, mutants.Limits{}); failure == nil {
 		t.Fatal("bare PATH lookup silently executed")
 	}
-	if result, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version"}, nil, 0); failure != nil || result.Passed || result.ExitCode != 127 {
+	if result, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version"}, nil, mutants.Limits{}); failure != nil || result.Passed || result.ExitCode != 127 {
 		t.Fatalf("shell absence became direct-start failure: %+v %v", result, failure)
 	}
 
 	workers.Platform = "windows"
-	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version"}, nil, 0); failure == nil || !strings.Contains(failure.Error(), "unsupported Windows shell") {
+	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version"}, nil, mutants.Limits{}); failure == nil || !strings.Contains(failure.Error(), "unsupported Windows shell") {
 		t.Fatalf("POSIX shell exit invented on Windows: %v", failure)
 	}
 	workers.Platform = "linux"
-	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version && true"}, nil, 0); failure == nil {
+	if _, failure := pool.Worker(0).Run(t.Context(), mutants.Command{Root: root, Dir: root, Shell: "go version && true"}, nil, mutants.Limits{}); failure == nil {
 		t.Fatal("unsupported compound shell hiding silently executed")
 	}
 	if !hiddenProgram("Go.EXE", []string{"go"}, "windows") || hiddenProgram("./Go.EXE", []string{"go"}, "windows") || !hiddenProgram("itos-example", []string{"itos-*"}, "linux") {

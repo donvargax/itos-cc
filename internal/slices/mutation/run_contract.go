@@ -16,12 +16,28 @@ run with gradle test --fail-fast --tests <class> per module, or mvn test
 reach it (named *_test.dart), run with flutter test --no-pub <files>, or
 the whole suite where nothing narrower exists. A Dart file's tests under
 integration_test/ or test_driver/ never run: they need a device. A
-mutant is killed when the tests fail or time out and survives when they
-pass. Mutants on lines those tests never execute are uncovered and are not
-run, and every mutant of a Python, Kotlin or Dart file no such test reaches
-is uncovered, with no test run for it. A Python or Kotlin test that runs code
-only through a subprocess, the CLI or reflection reaches nothing: run
---all-tests or --test-command for such code.
+mutant is killed when the tests fail, time out or go over a cap, and
+survives when they pass. Mutants on lines those tests never execute are
+uncovered and are not run, and every mutant of a Python, Kotlin or Dart
+file no such test reaches is uncovered, with no test run for it. A Python
+or Kotlin test that runs code only through a subprocess, the CLI or
+reflection reaches nothing: run --all-tests or --test-command for such
+code.
+
+Each command's tests first run once without any mutant, its baseline, in
+a worker's copy. A baseline that fails is mutation.baseline-failed: none
+of its files' mutants is judged, and the report gives its output, whole up
+to 40 lines, else its first 20 lines and its last 20 with a line saying
+how many were left out between ("output" in --json). What the baseline
+used bounds each mutant's run: it times out after the baseline's time
+times --timeout-factor, plus 5s, and is killed once its tests write more
+than the baseline's output, stdout and stderr together, times
+--output-factor, plus 16 MiB, or hold more than the baseline's peak
+memory, its process group's resident memory summed, times
+--memory-factor, plus 256 MiB. Memory is measured on Linux alone: on
+macOS and Windows no memory cap holds, which the run says once on stderr.
+A mutant killed over a cap is "over-limit", with "limit" "output" or
+"memory", and counts as killed, as a timeout does.
 
 --all-tests runs the whole suite for coverage and for every mutant, so
 integration and end-to-end tests can kill mutants too. It is slow: run it
@@ -375,8 +391,8 @@ listed tests that reach its line, in one run: its outcome then has scope
 "listed" and records their IDs. A line a listed test reaches is never
 uncovered. The first time a mutant needs a selection of listed tests,
 that selection runs once without any mutant, in the mutant's worker's
-copy: its time, times --timeout-factor, plus 5s, is the timeout of
-every mutant run of it. A selection that fails without a mutant is
+copy: its time, output and memory bound every mutant run of it, as a
+file's baseline bounds its mutants'. A selection that fails without a mutant is
 tests.selection-failed: no mutant that would run it is judged, and the
 files holding them keep their snapshots, as with a failing baseline
 ("baseline": "failed" in --json). Such
@@ -401,7 +417,8 @@ judged and no snapshot is written. Listed tests are not run with
    Python, Kotlin or Dart file no test reaches (a script that checked for
    "passed" should accept "not-run", or check for "failed"), "mutants": [{"line", "column",
    "function", "original", "replacement",
-   "outcome": "killed"|"survived"|"timeout"|"uncovered", "reused",
+   "outcome": "killed"|"survived"|"timeout"|"over-limit"|"uncovered",
+   with "over-limit" "limit": "output"|"memory", "reused",
    "scope": "own"|"all-tests"|"listed"|"<test command>", for an
    excepted survivor "excepted": "its reason", where this run's coverage
    executed its line "coverage": ["in-process", "integration"], either or
@@ -427,7 +444,8 @@ judged and no snapshot is written. Listed tests are not run with
    "selected": [{"identity", "file", "line", "column", "function",
    "original", "replacement",
    "state": "judged"|"uncovered"|"blocked"|"failed"|"cancelled"|"unattempted",
-   "outcome" (judged and uncovered sites only), "scope", with scope
+   "outcome" (judged and uncovered sites only), with "over-limit"
+   "limit": "output"|"memory", "scope", with scope
    "listed" "tests": ["<test ID>"], for an excepted survivor "excepted":
    "its reason", "reason", and the stages its trial ran, "stages":
    [{"name": "own"|"listed-baseline"|"listed",
@@ -443,7 +461,7 @@ judged and no snapshot is written. Listed tests are not run with
 			"coverage.tool-missing     with --fail-uncovered, a language's coverage tool, or its collector of the processes tests start (a coverage.py that does not start in them, no c8, no jacococli for the .exec files a JVM wrote), is missing where it has mutants to judge: language, dir",
 			"coverage.measured-nothing with --fail-uncovered, a language's coverage command failed or wrote no report where it has mutants to judge: language, dir",
 			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
-			"mutation.baseline-failed  the tests fail before any mutant: file",
+			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"tests.list-failed         the list command of mutation.tests failed: command, exit_code",
 			"tests.coverage-failed     the listed tests' coverage run failed without any mutant: command, exit_code",

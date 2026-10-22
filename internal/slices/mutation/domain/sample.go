@@ -9,8 +9,8 @@ import (
 // Sampled is a sample of cached mutants run again.
 type Sampled struct {
 	// Cached is how many mutants the sample was drawn from: those the fresh
-	// entries of the files' snapshots record as killed, timeout, or
-	// survived.
+	// entries of the files' snapshots record as killed, timeout,
+	// over-limit, or survived.
 	Cached int
 	// Files holds each file with a sampled mutant, in the order given.
 	Files []SampledFile
@@ -22,7 +22,7 @@ type SampledFile struct {
 	// BaselineFailed is true when the baseline of a scope its sampled
 	// mutants run in failed, with that baseline's output.
 	BaselineFailed bool
-	BaselineOutput string
+	BaselineOutput Output
 	// BaselineCopy is that baseline's tree a worker's copy holds when its
 	// command passes in the project's own folder (FileResult).
 	BaselineCopy string
@@ -50,11 +50,10 @@ type SampledMutant struct {
 }
 
 // Agrees reports whether the mutant's outcome now is the one recorded.
-// Killed and timeout agree: both mean the tests noticed, and a slower
-// machine turns one into the other.
+// Killed, timeout and over-limit agree: each means the tests noticed, and
+// a slower machine turns one into another.
 func (m SampledMutant) Agrees() bool {
-	noticed := func(o string) bool { return o == Killed || o == Timeout }
-	return m.Recorded == m.Outcome || noticed(m.Recorded) && noticed(m.Outcome)
+	return m.Recorded == m.Outcome || Noticed(m.Recorded) && Noticed(m.Outcome)
 }
 
 // rank orders a candidate in the draw of seed: the SHA-256 of the seed, the

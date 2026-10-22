@@ -151,7 +151,7 @@ func TestEveryRunStartsFromTheCopyAsMade(t *testing.T) {
 	mutant := &mutants.Mutation{Path: filepath.Join(root, "mutant.txt"), Source: []byte("a\n"), Site: mutants.Site{Start: 0, End: 1, Original: "a", Replacement: "b"}}
 	for i, change := range []*mutants.Mutation{nil, mutant, mutant} {
 		began := time.Now()
-		r, failure := w.Run(t.Context(), c, change, 0)
+		r, failure := w.Run(t.Context(), c, change, mutants.Limits{})
 		took := time.Since(began)
 		if failure != nil || !r.Passed {
 			t.Fatalf("run %d: %+v %v", i+1, r, failure)
@@ -187,13 +187,13 @@ func TestEveryRunStartsFromTheCopyAsMade(t *testing.T) {
 func TestACopyItCannotRestoreIsCopiedAfresh(t *testing.T) {
 	root, c, readies := pristineProject(t)
 	w := pristineWorker(t)
-	if r, failure := w.Run(t.Context(), c, nil, 0); failure != nil || !r.Passed {
+	if r, failure := w.Run(t.Context(), c, nil, mutants.Limits{}); failure != nil || !r.Passed {
 		t.Fatalf("baseline: %+v %v", r, failure)
 	}
 	if err := os.Remove(filepath.Join(root, "gone.txt")); err != nil {
 		t.Fatal(err)
 	}
-	if r, failure := w.Run(t.Context(), c, nil, 0); failure != nil || !r.Passed {
+	if r, failure := w.Run(t.Context(), c, nil, mutants.Limits{}); failure != nil || !r.Passed {
 		t.Fatalf("the run after a failed restore: %+v %v", r, failure)
 	}
 	if n := lines(t, readies); n != 2 {
@@ -208,7 +208,7 @@ func TestACopyItCannotRestoreIsCopiedAfresh(t *testing.T) {
 	if err := os.Remove(filepath.Join(root, "source.txt")); err != nil {
 		t.Fatal(err)
 	}
-	r, failure := w.Run(t.Context(), c, nil, 0)
+	r, failure := w.Run(t.Context(), c, nil, mutants.Limits{})
 	var failed mutants.WorkerFailed
 	if !errors.As(failure, &failed) || r.Passed {
 		t.Fatalf("a restore and a fresh copy that both fail: %+v %v, not WorkerFailed", r, failure)

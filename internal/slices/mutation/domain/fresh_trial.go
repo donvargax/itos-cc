@@ -26,14 +26,18 @@ type FreshTrial struct {
 	Reach []string
 }
 
-// FreshTrialResult is how one fresh trial went. Outcome is Killed, Survived
-// or Timeout when its tests ran to an end; it is empty when they could not:
+// FreshTrialResult is how one fresh trial went. Outcome is Killed,
+// Survived, Timeout or OverLimit, with Limit the cap it went over, when its
+// tests ran to an end; it is empty when they could not:
 // with Err set, a parent cancellation included, or with FailedSelection set
 // when the listed tests it needed fail without any mutant. Such a mutant has
 // no outcome. Stages is each stage of the trial that ran, in order.
 type FreshTrialResult struct {
 	Trial   FreshTrial
 	Outcome string
+	Limit   string
+	// Limits are those of the run that decided Outcome.
+	Limits Limits
 	// Scope is the scope of the tests that decided Outcome: the own-test
 	// scope of the options, or ScopeListed, with Tests the listed IDs.
 	Scope           string
@@ -62,6 +66,9 @@ type FreshTrialOptions struct {
 	Workers       int
 	WorkerFactory Workers
 	TimeoutFactor float64
+	// OutputFactor and MemoryFactor size each mutant's output and memory
+	// caps from its baseline's, as TimeoutFactor its timeout (Factors).
+	OutputFactor, MemoryFactor float64
 	// Scope is the scope of the own-test command, RunScope's; a file whose
 	// own tests run the whole suite judges in OwnScope's.
 	Scope string
@@ -80,7 +87,8 @@ type FreshTrialOptions struct {
 // tests reach then runs them, as complete runs do, after their selection's
 // clean baseline the first time any mutant needs it. Both stages are one
 // trial. A mutant times out after its baseline's time times the factor,
-// plus the usual allowance. Results are in the order of trials. Nothing is
+// plus the usual allowance, and its output and memory are capped from its
+// baseline's (Factors). Results are in the order of trials. Nothing is
 // written outside the worker copies, which are removed before it returns.
 func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, opt FreshTrialOptions) (results []FreshTrialResult, resultErr error) {
 	if plan == nil || plan.FrozenRoot == "" {
@@ -115,7 +123,14 @@ func RunFreshTrials(ctx context.Context, plan *FreshPlan, trials []FreshTrial, o
 
 	var sels *SelectionBaselines
 	if opt.Listed != nil {
-		sels = NewSelectionBaselines(opt.Listed, opt.TimeoutFactor, opt.Progress)
+		sels = NewSelectionBaselines(opt.Listed, opt.factors(), opt.Progress)
+	}
+	for _, trial := range trials {
+		if !trial.Baseline.Command.RunsNothing() && !trial.Baseline.MemoryMeasured {
+			// No memory cap holds on this system: said once.
+			report(opt.Progress, RunEvent{Kind: MemoryUnmeasured})
+			break
+		}
 	}
 	queue := make(chan int)
 	var mu sync.Mutex
@@ -185,14 +200,15 @@ func runFreshTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 	// tests that reach its line judge it.
 	own := Survived
 	if !c.RunsNothing() {
-		timeout := TimeoutOf(trial.Baseline.Elapsed, opt.TimeoutFactor)
-		r, err := w.Run(ctx, c, &Mutation{Path: path, Source: src, Site: site}, timeout)
+		limits := opt.factors().LimitsOf(trial.Baseline.Usage())
+		r, err := w.Run(ctx, c, &Mutation{Path: path, Source: src, Site: site}, limits)
 		out.Elapsed = r.Elapsed
 		if out.Err = stageError(ctx, r, err); out.Err != nil {
 			out.Stages = append(out.Stages, FreshStage{Name: "own", State: failedState(ctx), Error: out.Err.Error()})
 			return out
 		}
 		own = Judged(r)
+		out.Limit, out.Limits = r.OverLimit, limits
 		out.Stages = append(out.Stages, FreshStage{Name: "own", State: "complete", Outcome: own})
 	}
 	if own != Survived || len(trial.Reach) == 0 {
@@ -212,7 +228,7 @@ func runFreshTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 		return out
 	}
 	ids := slices.Clone(trial.Reach)
-	timeout, failed, selectionErr := sels.Baseline(ctx, w, ids)
+	limits, failed, selectionErr := sels.Baseline(ctx, w, ids)
 	switch {
 	case selectionErr != nil:
 		out.Err = selectionErr
@@ -225,15 +241,20 @@ func runFreshTrial(ctx context.Context, w Worker, plan *FreshPlan, trial FreshTr
 		return out
 	}
 	out.Stages = append(out.Stages, FreshStage{Name: "listed-baseline", State: "complete", Tests: ids})
-	listed, err := w.Run(ctx, opt.Listed.Command(ids), &Mutation{Path: path, Source: src, Site: site}, timeout)
+	listed, err := w.Run(ctx, opt.Listed.Command(ids), &Mutation{Path: path, Source: src, Site: site}, limits)
 	out.Elapsed += listed.Elapsed
 	if out.Err = stageError(ctx, listed, err); out.Err != nil {
 		out.Stages = append(out.Stages, FreshStage{Name: "listed", State: failedState(ctx), Tests: ids, Error: out.Err.Error()})
 		return out
 	}
-	out.Outcome, out.Scope, out.Tests = Judged(listed), ScopeListed, ids
+	out.Outcome, out.Limit, out.Limits, out.Scope, out.Tests = Judged(listed), listed.OverLimit, limits, ScopeListed, ids
 	out.Stages = append(out.Stages, FreshStage{Name: "listed", State: "complete", Outcome: out.Outcome, Tests: ids})
 	return out
+}
+
+// factors size the trials' limits from their baselines'.
+func (opt FreshTrialOptions) factors() Factors {
+	return Factors{Timeout: opt.TimeoutFactor, Output: opt.OutputFactor, Memory: opt.MemoryFactor}
 }
 
 // RanOwn says whether the trial ran the mutant under its own tests: not

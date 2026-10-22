@@ -14,10 +14,13 @@ comment.
 
 It draws from the fresh entries of the functions chosen, fresh as mutation
 check judges them, and among them only from the mutants that ran: killed,
-timeout, or survived, never uncovered, so no coverage command runs. Stale
-and missing results are mutation check's to report. Each test command's
+timeout, over-limit, or survived, never uncovered, so no coverage command
+runs. Stale and missing results are mutation check's to report. Each test command's
 baseline runs first, then each sampled mutant, in a worker's copy of the
-project, as in mutation run.
+project, as in mutation run, its time, output and memory bounded from the
+baseline's by --timeout-factor, --output-factor and --memory-factor. A
+baseline that fails is mutation.baseline-failed, reported with its output
+as mutation run reports it.
 
 --count N draws N mutants from the whole selection, all of them when there
 are fewer. The draw is seeded with the HEAD commit's id, so a rerun at one
@@ -26,9 +29,10 @@ replaces it, to reproduce a run from the seed it printed. Outside a git
 repository, --seed is needed.
 
 An outcome that differs from the recorded one fails, whichever way it went:
-a kill that now survives, or a survivor now killed. Killed and timeout
-agree, since both mean the tests noticed. A recorded survivor that still
-survives is no failure here: failing on survivors is mutation check's.
+a kill that now survives, or a survivor now killed. Killed, timeout and
+over-limit agree, since each means the tests noticed. A recorded survivor
+that still survives is no failure here: failing on survivors is mutation
+check's.
 
 It chooses as mutation check does: paths, --changed, and --since REF, which
 samples only the functions the commits since REF changed (git diff
@@ -40,7 +44,7 @@ line, or "listed", the file's own tests then, if the mutant survives them,
 the listed tests its outcome records (see mutation run), one baseline per
 scope's command and per selection of listed tests, so a kill only the
 whole suite makes is not read as a survivor. A selection's baseline sets
-the timeout of its runs, and one that fails without a mutant is
+the limits of its runs, and one that fails without a mutant is
 tests.selection-failed: none of its file's sampled mutants is judged. An
 outcome recorded before scopes were is the file's own tests'.
 --all-tests or --test-command given to mutation sample runs every sampled
@@ -54,11 +58,11 @@ it is empty, and "baseline" is "failed", when the file's baseline or a
 selection of listed tests failed.`,
 		JSON: `"seed", "files": [{"file", "baseline": "passed"|"failed",
    "mutants": [{"line", "column", "function", "original", "replacement",
-   "recorded", "outcome": "killed"|"survived"|"timeout",
+   "recorded", "outcome": "killed"|"survived"|"timeout"|"over-limit",
    "scope": "own"|"all-tests"|"listed"|"<test command>"}]}]`,
 		Rules: []string{
 			"mutation.mismatch         a sampled mutant's outcome differs from the one recorded: file, line, column, function, original, replacement, recorded, outcome, scope",
-			"mutation.baseline-failed  the tests fail before any mutant: file",
+			"mutation.baseline-failed  the tests fail before any mutant: file, output, the head and tail of what they printed",
 			"tests.selection-failed    a selection of listed tests fails without any mutant: ids, command, exit_code",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"sample.no-git             no --seed outside a git repository",

@@ -137,20 +137,21 @@ func (h *holdOwned) end() {
 	}
 }
 
-func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, budget *CleanupBudget, platform string, observe func(time.Time), hold func() func()) error {
+// runOwnedCommand runs cmd as s holds it: under its output cap
+// everywhere, and, where the platform owns process groups, in a group it
+// owns, killed and joined when the command ends, its memory sampled where
+// the platform measures it, under its memory cap.
+func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, s *supervision, budget *CleanupBudget, observe func(time.Time), hold func() func()) error {
+	platform := s.platform
 	if !ownedOutcomePrecedence(platform) {
-		killGroup(cmd, platform)
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-		return cmd.Wait()
+		return runUnownedCommand(cmd, s)
 	}
 	if budget == nil {
 		budget = &CleanupBudget{}
 	}
 	originalStdout, originalStderr := cmd.Stdout, cmd.Stderr
 	defer func() { cmd.Stdout, cmd.Stderr = originalStdout, originalStderr }()
-	sharedOutput := cmd.Stdout == output && cmd.Stderr == output
+	sharedOutput := cmd.Stdout == io.Writer(s.kept) && cmd.Stderr == io.Writer(s.kept)
 	captures := make([]ownedOutputCapture, 0, 2)
 	setup := func(target io.Writer, assign func(*os.File)) error {
 		if target == nil {
@@ -168,7 +169,7 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		return nil
 	}
 	if sharedOutput {
-		if err := setup(output, func(pipe *os.File) { cmd.Stdout, cmd.Stderr = pipe, pipe }); err != nil {
+		if err := setup(s.kept, func(pipe *os.File) { cmd.Stdout, cmd.Stderr = pipe, pipe }); err != nil {
 			return err
 		}
 	} else {
@@ -189,12 +190,18 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 
 	stopReader := &cleanupSignal{done: make(chan struct{})}
 	for i := range captures {
-		captures[i].done = make(chan outputResult, 1)
+		captures[i].done = make(chan error, 1)
 		stopReader.readers = append(stopReader.readers, captures[i].reader)
-		go func(capture *ownedOutputCapture) {
-			data, err := readOwnedCommandOutput(capture.reader)
-			capture.done <- outputResult{data: data, err: err}
-		}(&captures[i])
+		// The kept output takes the command's bytes as they come, bounded;
+		// a caller's own writer gets them once the group is joined, as
+		// before, each counted against the cap as it is read.
+		var into io.Writer = s.kept
+		if captures[i].target != io.Writer(s.kept) {
+			into = &countedWriter{to: &captures[i].buffer, kept: s.kept}
+		}
+		go func(capture *ownedOutputCapture, into io.Writer) {
+			capture.done <- readOwnedCommandOutput(capture.reader, into)
+		}(&captures[i], into)
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -203,10 +210,10 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 		}
 		stopReader.activate((&CleanupBudget{}).until())
 		for _, capture := range captures {
-			read := <-capture.done
+			readErr := <-capture.done
 			_ = capture.reader.Close()
-			if read.err != nil {
-				err = errors.Join(err, fmt.Errorf("join command output reader: %w", read.err))
+			if readErr != nil {
+				err = errors.Join(err, fmt.Errorf("join command output reader: %w", readErr))
 			}
 		}
 		return err
@@ -214,34 +221,88 @@ func runOwnedCommand(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, b
 	for _, capture := range captures {
 		_ = capture.writer.Close()
 	}
+	pgid := cmd.Process.Pid
+	// Over a cap the group is killed here, then joined below as at the
+	// command's own timeout, within a local budget: its context is not
+	// done, so the shared one is never taken.
+	overCap := func(name string) func() {
+		return func() {
+			if s.over.hit(name) {
+				_ = killOwnedProcessGroup(platform, pgid)
+			}
+		}
+	}
+	s.kept.arm(overCap(OverOutput))
+	var memory *memoryWatch
+	if s.measured = MemoryMeasured(platform); s.measured {
+		memory = watchMemory(pgid, s.limits.Memory, overCap(OverMemory))
+	}
 	held := startHold(ctx, hold)
 	defer held.end()
 	waitErr := cmd.Wait()
+	s.over.end()
+	if memory != nil {
+		s.peak = memory.stopped()
+	}
 	held.begin()
 
 	deadline := cleanupBudgetForScope(ctx, budget).until()
 	if observe != nil {
 		observe(deadline)
 	}
-	cleanupErr := killOwnedProcessGroup(platform, cmd.Process.Pid)
+	cleanupErr := killOwnedProcessGroup(platform, pgid)
 	stopReader.activate(deadline)
-	if err := waitOwnedProcessGroup(cmd.Process.Pid, deadline, platform); err != nil {
+	if err := waitOwnedProcessGroup(pgid, deadline, platform); err != nil {
 		cleanupErr = errors.Join(cleanupErr, err)
 	}
-	for _, capture := range captures {
-		read := <-capture.done
+	for i := range captures {
+		capture := &captures[i]
+		readErr := <-capture.done
 		_ = capture.reader.Close()
-		if _, err := io.Copy(capture.target, bytes.NewReader(read.data)); err != nil {
-			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("preserve command output: %w", err))
+		if capture.target != io.Writer(s.kept) {
+			if _, err := io.Copy(capture.target, &capture.buffer); err != nil {
+				cleanupErr = errors.Join(cleanupErr, fmt.Errorf("preserve command output: %w", err))
+			}
 		}
-		if read.err != nil {
-			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("join command output reader: %w", read.err))
+		if readErr != nil {
+			cleanupErr = errors.Join(cleanupErr, fmt.Errorf("join command output reader: %w", readErr))
 		}
 	}
 	if cleanupErr != nil {
-		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: cmd.Process.Pid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
+		return errors.Join(waitErr, &CleanupFailed{ProcessGroup: pgid, Command: strings.Join(cmd.Args, " "), Cause: cleanupErr})
 	}
 	return waitErr
+}
+
+// runUnownedCommand runs cmd where the platform owns no process group, as
+// on Windows: over its output cap, the command's own process is killed.
+// What it writes to a caller's own writer is counted against the cap as
+// it passes.
+func runUnownedCommand(cmd *exec.Cmd, s *supervision) error {
+	counted := func(w io.Writer) io.Writer {
+		if _, file := w.(*os.File); w == nil || file || w == io.Writer(s.kept) {
+			return w
+		}
+		return &countedWriter{to: w, kept: s.kept}
+	}
+	if cmd.Stdout == cmd.Stderr {
+		cmd.Stdout = counted(cmd.Stdout)
+		cmd.Stderr = cmd.Stdout
+	} else {
+		cmd.Stdout, cmd.Stderr = counted(cmd.Stdout), counted(cmd.Stderr)
+	}
+	killGroup(cmd, s.platform)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	s.kept.arm(func() {
+		if s.over.hit(OverOutput) {
+			_ = cmd.Process.Kill()
+		}
+	})
+	err := cmd.Wait()
+	s.over.end()
+	return err
 }
 
 func waitOwnedProcessGroup(pgid int, deadline time.Time, platform string) error {
@@ -258,11 +319,6 @@ func waitOwnedProcessGroup(pgid int, deadline time.Time, platform string) error 
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-}
-
-type outputResult struct {
-	data []byte
-	err  error
 }
 
 // cleanupSignal ends the reads of an owned command's output at the cleanup
@@ -282,11 +338,14 @@ func (signal *cleanupSignal) activate(deadline time.Time) {
 	close(signal.done)
 }
 
+// ownedOutputCapture is one pipe of a command's output: read into the
+// kept output, or into buffer for a caller's own target.
 type ownedOutputCapture struct {
 	reader *os.File
 	writer *os.File
 	target io.Writer
-	done   chan outputResult
+	buffer bytes.Buffer
+	done   chan error
 }
 
 func killOwnedProcessGroup(platform string, pgid int) error {
@@ -305,24 +364,24 @@ func killOwnedProcessGroup(platform string, pgid int) error {
 	return nil
 }
 
-// readOwnedCommandOutput reads reader to its end, or to the read deadline
-// the cleanup sets, past which the output not closed is a cleanup failure.
-func readOwnedCommandOutput(reader *os.File) ([]byte, error) {
-	var output bytes.Buffer
+// readOwnedCommandOutput reads reader into into, to its end, or to the
+// read deadline the cleanup sets, past which the output not closed is a
+// cleanup failure.
+func readOwnedCommandOutput(reader *os.File, into io.Writer) error {
 	buffer := make([]byte, 32*1024)
 	for {
 		count, err := reader.Read(buffer)
 		if count > 0 {
-			_, _ = output.Write(buffer[:count])
+			_, _ = into.Write(buffer[:count])
 		}
 		switch {
 		case err == nil:
 		case errors.Is(err, io.EOF):
-			return output.Bytes(), nil
+			return nil
 		case errors.Is(err, os.ErrDeadlineExceeded):
-			return output.Bytes(), errors.New("owned command output did not close before cleanup deadline")
+			return errors.New("owned command output did not close before cleanup deadline")
 		default:
-			return output.Bytes(), err
+			return err
 		}
 	}
 }

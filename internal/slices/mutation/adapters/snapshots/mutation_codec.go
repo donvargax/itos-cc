@@ -129,6 +129,10 @@ type mutantWire struct {
 	Original    string `json:"original"`
 	Replacement string `json:"replacement"`
 	Outcome     string `json:"outcome"`
+	// Limit names the cap an "over-limit" outcome's run went over, "output"
+	// or "memory"; left out for every other outcome, so a snapshot written
+	// before over-limit outcomes reads and is written as before.
+	Limit string `json:"limit,omitempty"`
 	// Scope is the scope of the tests that decided Outcome: ScopeAllTests,
 	// a --test-command line, or "" for ScopeOwn, which is also how an
 	// outcome recorded before scopes reads. See TestScope.
@@ -256,6 +260,7 @@ func mutantWireOf(v mutants.Mutant) mutantWire {
 	out.Original = v.Original
 	out.Replacement = v.Replacement
 	out.Outcome = v.Outcome
+	out.Limit = v.Limit
 	out.Scope = v.Scope
 	out.Tests = v.Tests
 	out.SuiteEvidence = v.SuiteEvidence
@@ -271,6 +276,7 @@ func (v mutantWire) domain() mutants.Mutant {
 	out.Original = v.Original
 	out.Replacement = v.Replacement
 	out.Outcome = v.Outcome
+	out.Limit = v.Limit
 	out.Scope = v.Scope
 	out.Tests = v.Tests
 	out.SuiteEvidence = v.SuiteEvidence

@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/donvargax/itos-cc/internal/processes"
 	mutants "github.com/donvargax/itos-cc/internal/slices/mutation/domain"
@@ -121,12 +120,12 @@ func (p *pool) InProject(ctx context.Context, c mutants.Command) (mutants.Projec
 		return run, failure
 	}
 	defer done()
-	r, err := w.runIn(ctx, c, c.Root, 0)
+	r, err := w.runIn(ctx, c, c.Root, mutants.Limits{})
 	run.Result = r
 	return run, failed(ctx, err)
 }
 
-func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, timeout time.Duration) (mutants.CommandResult, mutants.WorkerFailure) {
+func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutants.Mutation, limits mutants.Limits) (mutants.CommandResult, mutants.WorkerFailure) {
 	done, failure := w.pool.enter(ctx)
 	if failure != nil {
 		return result{}, failure
@@ -139,9 +138,9 @@ func (w *boundWorker) Run(ctx context.Context, c mutants.Command, change *mutant
 	switch {
 	case err != nil:
 	case change == nil:
-		r, err = w.worker.run(ctx, c, timeout)
+		r, err = w.worker.run(ctx, c, limits)
 	default:
-		r, err = w.worker.withMutant(ctx, c, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, timeout) })
+		r, err = w.worker.withMutant(ctx, c, change.Path, change.Source, change.Site.Apply(change.Source), func(ctx context.Context) (result, error) { return w.worker.run(ctx, c, limits) })
 	}
 	return r, failed(ctx, err)
 }

@@ -39,15 +39,32 @@ type Lifecycle struct {
 }
 
 // Run executes cmd under ctx, its output captured, and judges how it ended:
-// an error only for a start, wait or cleanup that failed.
+// an error only for a start, wait or cleanup that failed. It caps nothing.
 func (runner *Runner) Run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer) (Result, error) {
+	return runner.RunLimited(ctx, cmd, output, Limits{})
+}
+
+// RunLimited is Run under limits: a command over a cap is killed, its
+// owned group joined as at its own timeout, within a cleanup budget of its
+// own, and judged OverLimit, unless its parent cancelled it. What cmd
+// writes to output is kept bounded (Result.Output) and written to output
+// as kept once the command has ended.
+func (runner *Runner) RunLimited(ctx context.Context, cmd *exec.Cmd, output *bytes.Buffer, limits Limits) (Result, error) {
 	platform := PlatformAtBoundary(runner.Platform)
+	kept := &keptOutput{limit: limits.Output}
+	if output != nil && cmd.Stdout == output {
+		cmd.Stdout = kept
+	}
+	if output != nil && cmd.Stderr == output {
+		cmd.Stderr = kept
+	}
+	s := &supervision{kept: kept, limits: limits, platform: platform}
 	var started time.Time
 	var err error
 	waited := false
 	if runner.Lifecycle.start == nil && runner.Lifecycle.wait == nil {
 		started = time.Now()
-		err = runOwnedCommand(ctx, cmd, output, runner.Budget, platform, runner.Lifecycle.Cleanup, runner.Hold)
+		err = runOwnedCommand(ctx, cmd, s, runner.Budget, runner.Lifecycle.Cleanup, runner.Hold)
 		waited = true
 	} else if runner.Lifecycle.start != nil {
 		started = time.Now()
@@ -64,13 +81,30 @@ func (runner *Runner) Run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 			err = cmd.Wait()
 		}
 	}
-	elapsed, captured := time.Since(started), output.String()
+	elapsed := time.Since(started)
+	text, written, cut, leftOut := kept.kept()
+	if output != nil {
+		output.Reset()
+		output.WriteString(text)
+	}
 	if runner.Lifecycle.Complete != nil {
 		runner.Lifecycle.Complete(ctx, cmd, err)
 	}
-	r := Result{Elapsed: elapsed, Output: captured, ExitCode: -1}
+	r := Result{Elapsed: elapsed, Output: text, OutputBytes: written, OutputCut: cut, OutputLeftOut: leftOut, ExitCode: -1,
+		PeakMemory: s.peak, MemoryMeasured: s.measured}
 	if ownedOutcomePrecedence(platform) && err != nil && !isExit(err) {
 		return r, err
+	}
+	// A cap the command went over killed it, whatever it then exited
+	// with, unless its parent cancelled it: a judgment cut short is never
+	// a kill.
+	parentCancelled := ctx.Err() != nil && !errors.Is(context.Cause(ctx), ErrCommandTimeout)
+	if over := s.over.which(); over != "" && !parentCancelled {
+		r.OverLimit = over
+		if cmd.ProcessState != nil {
+			r.ExitCode = cmd.ProcessState.ExitCode()
+		}
+		return r, nil
 	}
 	if ownedOutcomePrecedence(platform) && cmd.ProcessState != nil && cmd.ProcessState.ExitCode() >= 0 {
 		r.ExitCode = cmd.ProcessState.ExitCode()
@@ -92,4 +126,16 @@ func (runner *Runner) Run(ctx context.Context, cmd *exec.Cmd, output *bytes.Buff
 		return r, err
 	}
 	return r, nil
+}
+
+// supervision is what one command's run is held to and what it used: its
+// kept output, the caps of its limits and the one it went over, and, where
+// the system measures it, its owned group's peak memory.
+type supervision struct {
+	kept     *keptOutput
+	limits   Limits
+	platform string
+	over     overLimit
+	peak     int64
+	measured bool
 }

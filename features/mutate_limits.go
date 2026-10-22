@@ -317,20 +317,29 @@ func (c *capsState) othersJudged() error {
 	return nil
 }
 
-// endedEarly is whether the endless printer ended in under 5 seconds, the
-// allowance alone, which every timeout exceeds, and the others are
-// judged as their tests decide.
+// endedEarly is whether the endless printer ended before its timeout,
+// the baseline's time, times the factor 1, plus the allowance, and the
+// others are judged as their tests decide. The baseline's time is at least
+// about the quickest other mutant's, whose tests build as the baseline's
+// do and fail at once: the printer ends before that plus the allowance.
 func (c *capsState) endedEarly() error {
-	for _, t := range trialsOf(c.m.w.stderr, c.m.file) {
-		if t.line != c.subject.Line || t.original != c.subject.Original || t.replacement != c.subject.Replacement {
-			continue
+	var printer *trial
+	quickest := -1.0
+	trials := trialsOf(c.m.w.stderr, c.m.file)
+	for i, t := range trials {
+		if t.line == c.subject.Line && t.original == c.subject.Original && t.replacement == c.subject.Replacement {
+			printer = &trials[i]
+		} else if quickest < 0 || t.elapsed < quickest {
+			quickest = t.elapsed
 		}
-		if t.elapsed >= timeoutAllowance {
-			return fmt.Errorf("the endless printer took %.1fs, not under its timeout's allowance of %.0fs\n%s", t.elapsed, timeoutAllowance, c.m.w.report())
-		}
-		return c.othersJudged()
 	}
-	return fmt.Errorf("stderr says nothing of the endless printer\n%s", c.m.w.report())
+	if printer == nil || quickest < 0 {
+		return fmt.Errorf("stderr says nothing of the endless printer, or of no other mutant\n%s", c.m.w.report())
+	}
+	if printer.elapsed >= quickest+timeoutAllowance {
+		return fmt.Errorf("the endless printer took %.1fs, not under the %.1fs its timeout is at least\n%s", printer.elapsed, quickest+timeoutAllowance, c.m.w.report())
+	}
+	return c.othersJudged()
 }
 
 // printerSurvived is whether the 30 MiB printer survived.
@@ -443,7 +452,22 @@ func (c *capsState) recordedOverLimit() error {
 	if err != nil {
 		return err
 	}
-	return m.w.write(m.snapshot, string(data)+"\n")
+	if err := m.w.write(m.snapshot, string(data)+"\n"); err != nil {
+		return err
+	}
+	return c.committed()
+}
+
+// committed commits the scratch folder in a repository of its own, as
+// mutation sample seeds its draw with the HEAD commit's id.
+func (c *capsState) committed() error {
+	for _, args := range [][]string{{"init", "-q"}, {"add", "-A"},
+		{"commit", "-qm", "fixture"}} {
+		if err := c.m.w.git(args...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // reusedOverLimit is whether the run reused the mutant over its limit and
@@ -488,10 +512,12 @@ func (c *capsState) checkCountsKilled() error {
 }
 
 // sampleAgrees is whether a sample of every mutant runs the one recorded
-// over its limit to its timeout, now, and reports no problem.
+// over its limit to its timeout, now, and reports no problem: read with
+// --json, and with --timeout-factor 1, as the Given's run, so the timeout
+// comes in seconds.
 func (c *capsState) sampleAgrees() error {
 	w := c.m.w
-	if err := w.runEnv(w.dir, w.env(), "mutation", "sample", "--json", "--count", "20", filepath.FromSlash(c.m.file)); err != nil {
+	if err := w.runEnv(w.dir, w.env(), "mutation", "sample", "--json", "--timeout-factor", "1", "--count", "20", filepath.FromSlash(c.m.file)); err != nil {
 		return err
 	}
 	var object struct {
@@ -535,26 +561,62 @@ func capsHundred() []string {
 	return lines
 }
 
-// capsPrinting is the project's pytest settings once its test prints the
-// 100 lines: pytest's own report off and the test's output not captured,
-// so the tests print those lines alone, then fail.
+// capsPrinting is the project's pytest settings: pytest's own report off,
+// and the test's output not captured, so the tests print what the test
+// prints alone.
 const capsPrinting = pyproject + "\n[tool.pytest.ini_options]\naddopts = \"-p no:terminal -s\"\n"
 
-// capsHundredTest prints the 100 lines, then fails.
-const capsHundredTest = "from board import place\n\nLINES = %q\n\n\ndef test_place():\n    print(LINES, end=\"\")\n    assert not place(1, 2)\n"
+// capsPrintingTest kills one mutant of src/board.py and lets its "> →
+// >=" survive, so a run retries that one, after a baseline, unless
+// failing.txt is beside it: then it prints that file, and fails. The file
+// is no test, so the snapshot's results of src/board.py still hold with it
+// there, as mutation sample needs.
+const capsPrintingTest = `import os
 
-// hundredLines is failingBaseline's project, whose tests then print the
-// 100 lines and fail.
+from board import place
+
+FAILING = os.path.join(os.path.dirname(__file__), "failing.txt")
+
+
+def test_place():
+    if os.path.exists(FAILING):
+        with open(FAILING) as printed:
+            print(printed.read(), end="")
+        assert not place(1, 2)
+    assert place(1, 2)
+`
+
+// hundredLines writes a Python project whose tests pass, records a run's
+// results of src/board.py, a survivor among them, then makes its tests
+// print the 100 lines and fail, and commits it all.
 func (c *capsState) hundredLines() error {
 	m := c.m
-	if err := m.failingBaseline("src/board.py"); err != nil {
+	m.file = "src/board.py"
+	if err := m.writeProject(map[string][]string{"tests/test_board.py": {m.file}}, map[string]string{"pyproject.toml": capsPrinting, m.file: pyBoard, "tests/test_board.py": capsPrintingTest}); err != nil {
 		return err
+	}
+	if err := m.w.d.Coverage(m.w.dir, Coverage{Language: "python", Report: "SF:src/board.py\nDA:2,1\nend_of_record\n"}); err != nil {
+		return err
+	}
+	command := "python3 -m pytest -q -x -p no:cacheprovider tests/test_board.py"
+	if err := m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: command, Surviving: []Site{{m.file, 2, ">", ">="}}}); err != nil {
+		return err
+	}
+	if err := m.pythonProbe(true); err != nil {
+		return err
+	}
+	code, stdout, stderr, err := m.w.capture(m.w.dir, m.w.env(), "mutation", "run", filepath.FromSlash(m.file))
+	if s, ok := summaryOf(stdout, m.file); err != nil || code != 1 || !ok || s.killed != 1 || s.survived != 1 {
+		return fmt.Errorf("the run that records %s did not kill one mutant and leave one surviving: exit %d, %v\n%s%s", m.file, code, err, stdout, stderr)
 	}
 	printed := strings.Join(capsHundred(), "\n") + "\n"
-	if err := m.writeAll(map[string]string{"pyproject.toml": capsPrinting, "tests/test_board.py": fmt.Sprintf(capsHundredTest, printed)}); err != nil {
+	if err := m.w.write("tests/failing.txt", printed); err != nil {
 		return err
 	}
-	return m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: "python3 -m pytest -q -x -p no:cacheprovider tests/test_board.py", Baseline: printed})
+	if err := m.w.d.Tests(m.w.dir, Tests{Language: "python", Command: command, Baseline: printed}); err != nil {
+		return err
+	}
+	return c.committed()
 }
 
 // capsReport is the head and the tail of the 100 lines, as a report gives

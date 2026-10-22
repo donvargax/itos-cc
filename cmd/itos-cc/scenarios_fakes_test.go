@@ -249,13 +249,15 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 	for dir, commands := range m.tests {
 		declarations[dir] = map[string]mutantstest.Tests{}
 		for command, t := range commands {
-			d := mutantstest.Tests{Baseline: t.Baseline, Elapsed: t.Elapsed}
+			d := mutantstest.Tests{Baseline: t.Baseline, Elapsed: t.Elapsed, Output: t.Output, Memory: t.Memory}
 			for _, outcome := range []struct {
 				sites   []features.Site
 				outcome string
-			}{{t.Surviving, mutation.Survived}, {t.TimingOut, mutation.Timeout}, {capsWriting(t.Writing), mutation.Survived}, {t.Flooding, mutation.Timeout}} {
+			}{{t.Surviving, mutation.Survived}, {t.TimingOut, mutation.Timeout}, {capsWriting(t.Writing), mutantstest.Writing},
+				{t.Flooding, mutantstest.Flooding}, {t.Hoarding, mutantstest.Hoarding}} {
 				for _, site := range outcome.sites {
-					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement}, Outcome: outcome.outcome})
+					d.Verdicts = append(d.Verdicts, mutantstest.Verdict{Path: site.File, Site: mutation.Site{Line: site.Line, Original: site.Original, Replacement: site.Replacement},
+						Outcome: outcome.outcome, Output: t.Writing[site]})
 				}
 			}
 			if t.Trace != nil {
@@ -273,9 +275,8 @@ func (m *memory) workers(runs ...features.Run) *mutantstest.Workers {
 }
 
 // capsWriting are the sites of writing, whose mutants make the tests
-// pass writing more: as a run with no output cap judges them, survivors,
-// as one whose tests write without end runs to its timeout and one whose
-// tests hold ever more memory fails them, killed.
+// pass writing more, which the Workers fake judges against the limits it
+// is given, as it does a flooding and a hoarding mutant.
 func capsWriting(writing map[features.Site]int64) []features.Site {
 	return slices.Collect(maps.Keys(writing))
 }

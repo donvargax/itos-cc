@@ -13,13 +13,18 @@ import (
 type Progress interface{ Report(RunEvent) }
 
 type RunEvent struct {
-	FreshTrial               *FreshTrialResult
-	Kind                     string
-	Command                  Command
-	File                     string
-	Site                     Site
-	IDs                      []string
-	Outcome                  string
+	FreshTrial *FreshTrialResult
+	Kind       string
+	Command    Command
+	File       string
+	Site       Site
+	IDs        []string
+	Outcome    string
+	// Limit names the cap an OverLimit outcome went over, and Limits are
+	// the limits of the run it went over; for "selection-passed", Limits
+	// are those of the selection's mutant runs.
+	Limit                    string
+	Limits                   Limits
 	Elapsed, Listed, Timeout time.Duration
 	Done, Total              int
 	Failure                  error
@@ -38,7 +43,7 @@ func NewExecution(file *lang.File, rel, key string, command Command) *Execution 
 	sites := Sites(file)
 	return &Execution{file: file, rel: rel, key: key, command: command, sites: sites,
 		result: &FileResult{Rel: rel}, outcomes: slices.Repeat([]string{Skipped}, len(sites)),
-		scopes: make([]string, len(sites)), ran: make([][]string, len(sites))}
+		scopes: make([]string, len(sites)), limits: make([]string, len(sites)), ran: make([][]string, len(sites))}
 }
 
 func (s *Execution) Pending(site int, ids []string) {

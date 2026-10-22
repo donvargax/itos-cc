@@ -153,6 +153,30 @@ func TestCommandRunnerFixtureHelper(t *testing.T) {
 		for {
 			time.Sleep(time.Second)
 		}
+	case "flood":
+		// 64 KiB a millisecond, until its output is closed or a minute
+		// passed: a cap ends it long before.
+		piece := []byte(strings.Repeat(strings.Repeat("x", 1023)+"\n", 64))
+		for deadline := time.Now().Add(time.Minute); time.Now().Before(deadline); {
+			if _, err := os.Stdout.Write(piece); err != nil {
+				os.Exit(2)
+			}
+			time.Sleep(time.Millisecond)
+		}
+		os.Exit(4)
+	case "hoard":
+		// 16 MiB every 10 ms, each page touched, up to 256 MiB, then exit 3:
+		// a memory cap ends it before.
+		var held [][]byte
+		for len(held) < 16 {
+			block := make([]byte, 16<<20)
+			for i := 0; i < len(block); i += 4096 {
+				block[i] = 1
+			}
+			held = append(held, block)
+			time.Sleep(10 * time.Millisecond)
+		}
+		os.Exit(3)
 	case "barrier":
 		started := os.Getenv("ITOS_COMMAND_RUNNER_STARTED")
 		release := os.Getenv("ITOS_COMMAND_RUNNER_RELEASE")
@@ -190,6 +214,11 @@ type Command struct {
 type worker struct{ runner Runner }
 
 func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (Result, error) {
+	return w.runLimited(parent, c, timeout, Limits{})
+}
+
+// runLimited is run within limits.
+func (w *worker) runLimited(parent context.Context, c Command, timeout time.Duration, limits Limits) (Result, error) {
 	ctx := parent
 	if timeout > 0 {
 		var cancel context.CancelFunc
@@ -202,7 +231,7 @@ func (w *worker) run(parent context.Context, c Command, timeout time.Duration) (
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
-	return w.runner.Run(ctx, cmd, &out)
+	return w.runner.RunLimited(ctx, cmd, &out, limits)
 }
 
 func newCommandRunnerWorker(t *testing.T) *worker {

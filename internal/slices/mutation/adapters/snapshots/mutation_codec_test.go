@@ -52,3 +52,27 @@ func TestUnitCoverageEvidenceKeepsGoKeyAndWritesLinesBesideIt(t *testing.T) {
 		}
 	}
 }
+
+// An over-limit outcome records the cap it went over under "limit", which
+// reads back; every other outcome writes no such key, so a snapshot
+// written before over-limit outcomes reads and is written as before.
+func TestAnOverLimitOutcomeRecordsItsCap(t *testing.T) {
+	over, err := json.Marshal(mutantWireOf(mutants.Mutant{Line: 7, Original: "1", Replacement: "0", Outcome: mutants.OverLimit, Limit: mutants.LimitOutput}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(over), `"outcome":"over-limit","limit":"output"`) {
+		t.Errorf("an over-limit mutant written as %s", over)
+	}
+	var read mutantWire
+	if err := json.Unmarshal(over, &read); err != nil || read.domain().Limit != mutants.LimitOutput {
+		t.Errorf("an over-limit mutant read as %+v, %v", read.domain(), err)
+	}
+	killed, err := json.Marshal(mutantWireOf(mutants.Mutant{Line: 7, Original: "1", Replacement: "0", Outcome: mutants.Timeout}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(killed), "limit") {
+		t.Errorf("a timed-out mutant written as %s", killed)
+	}
+}

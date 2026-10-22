@@ -104,6 +104,13 @@ func freshPythonCommand(ctx context.Context, path string, all bool, tests []stri
 // fails the whole preparation: no selected site of a failing command could
 // be judged.
 func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute coverage.CommandExecutor) ([]FreshBaseline, []coverage.CommandExecution, error) {
+	return runFreshBaselines(ctx, baselines, log, execute, nil)
+}
+
+// runFreshBaselines is RunFreshBaselines, each baseline run through
+// measured, when it is set, which also gives what it used, the bytes it
+// wrote and its peak memory, that size its mutants' limits.
+func runFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Writer, execute coverage.CommandExecutor, measured func(context.Context, *exec.Cmd) (mutants.CommandResult, error)) ([]FreshBaseline, []coverage.CommandExecution, error) {
 	if execute == nil {
 		return nil, nil, errors.New("fresh baselines need a command executor")
 	}
@@ -136,7 +143,15 @@ func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		cmd.Stdout, cmd.Stderr = log, log
 		_, _ = fmt.Fprintf(log, "itos-cc: baseline %s$ %s\n", c.Dir, c)
 		started := time.Now()
-		err := execute(ctx, cmd)
+		var err error
+		if measured != nil {
+			var r mutants.CommandResult
+			r, err = measured(ctx, cmd)
+			err = ownedError(ctx, cmd, r, err)
+			b.Output, b.Memory, b.MemoryMeasured = r.OutputBytes, r.PeakMemory, r.MemoryMeasured
+		} else {
+			err = execute(ctx, cmd)
+		}
 		b.Elapsed = time.Since(started)
 		executions = append(executions, coverage.CommandExecution{Args: append([]string{}, cmd.Args...), Dir: c.Dir, Err: err})
 		if err != nil {
@@ -145,6 +160,22 @@ func RunFreshBaselines(ctx context.Context, baselines []FreshBaseline, log io.Wr
 		out = append(out, b)
 	}
 	return out, executions, nil
+}
+
+// ownedError is how cmd's run, r and err, fails, as the owned executor's
+// Run words it: nil when it passed.
+func ownedError(ctx context.Context, cmd *exec.Cmd, r mutants.CommandResult, err error) error {
+	switch {
+	case err != nil:
+		return fmt.Errorf("execute %s: %w", cmd.Path, err)
+	case r.Cancelled:
+		return fmt.Errorf("execute %s cancelled: %w", cmd.Path, context.Cause(ctx))
+	case r.TimedOut:
+		return fmt.Errorf("execute %s timed out", cmd.Path)
+	case !r.Passed:
+		return fmt.Errorf("execute %s exited %d", cmd.Path, r.ExitCode)
+	}
+	return nil
 }
 
 func pythonBase(ctx context.Context, path string) Command {
