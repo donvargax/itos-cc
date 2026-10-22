@@ -62,7 +62,7 @@
     retrying a few times if main moved. Its success never turns the job
     green. Update README's nightly paragraph to point at the workflow.
   done_when:
-    - run: actionlint .github/workflows/nightly.yml
+    - run: go tool actionlint .github/workflows/nightly.yml
     - run: grep -q -- '--all-tests --no-annotate' .github/workflows/nightly.yml
     - run: "grep -q 'Task: T-3' .github/workflows/nightly.yml"
     - run: grep -q 'workflow_dispatch' .github/workflows/nightly.yml
@@ -104,7 +104,7 @@
     instead of a failing baseline; the coordinator starts that run, not the
     agent. Nothing about the Go half changes.
   done_when:
-    - run: actionlint .github/workflows/nightly.yml
+    - run: go tool actionlint .github/workflows/nightly.yml
     - run: grep -q 'actions/setup-node@[0-9a-f]\{40\}' .github/workflows/nightly.yml
     - run: grep -q 'npm ci' .github/workflows/nightly.yml
     - run: cd viewer && npm ci --ignore-scripts >/dev/null && npx vitest run

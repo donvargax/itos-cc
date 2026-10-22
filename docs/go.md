@@ -1195,7 +1195,10 @@ Each check runs where its cost fits:
 
 Tools are pinned:
 
-- The Go toolchain is pinned in `go.mod`, and govulncheck is a `tool` dependency there.
+- The Go toolchain is pinned in `go.mod`, and govulncheck and actionlint are `tool` dependencies
+  there, run with `go tool`. actionlint checks the workflows in the ledger's checks (T-3, T-5),
+  which a push's `itos ci run` runs when its range names their task, as the nightly's results
+  commit does (T-185).
 - `tools/bin/pinned` fetches golangci-lint, itos-cc, gitleaks, GoReleaser and git-cliff at
   fixed versions and checks each against a pinned SHA-256, copied from its release's own
   checksums or, for git-cliff, taken once the archive matched its release's `.sha512`.
