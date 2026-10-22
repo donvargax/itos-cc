@@ -287,6 +287,7 @@ func coverageSteps(sc *godog.ScenarioContext, w *world) {
 	sc.Step(`^nothing else$`, c.nothingElse)
 	sc.Step(`^a "coverage" script$`, c.coverageScript)
 	sc.Step(`^vitest (\d+) or later as a dependency$`, c.vitestDependency)
+	sc.Step(`^vitest (\d+) or later installed through another package, named in neither its dependencies nor its devDependencies, its test script "([^"]*)"$`, c.vitestThroughAnotherPackage)
 	sc.Step(`^jest as a dependency$`, c.jestDependency)
 	sc.Step(`^neither vitest nor jest$`, c.neitherVitestNorJest)
 	sc.Step(`^pytest (importable|not importable)$`, c.pytest)

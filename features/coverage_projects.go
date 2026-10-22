@@ -282,6 +282,30 @@ func (c *coverageState) vitestDependency(major int) error {
 	return c.vitestProject(".", true)
 }
 
+// vitestThroughAnotherPackage makes Vitest of the pinned version, major
+// or later, the project's through another package (slice-17): its
+// package.json, its test script script, names @vitest/coverage-v8 and a
+// package named toolchain, which nothing installs, and never vitest, and
+// the pinned tools, Vitest and c8 among them, are installed.
+func (c *coverageState) vitestThroughAnotherPackage(major int, script string) error {
+	const pinned = "5.0.2"
+	if n, _ := strconv.Atoi(strings.Split(pinned, ".")[0]); n < major {
+		return fmt.Errorf("the pinned Vitest %s is older than %d", pinned, major)
+	}
+	manifest, err := vitestThroughManifest(script)
+	if err != nil {
+		return err
+	}
+	if err := c.writeIn(".", map[string]string{
+		"package.json": manifest,
+		"src/board.test.ts": "import { expect, test } from \"vitest\";\nimport { place } from \"./board\";\n\n" +
+			"test(\"place\", () => {\n  expect(place(5)).toBe(3);\n});\n",
+	}); err != nil {
+		return err
+	}
+	return c.declare(".", Coverage{Language: "typescript"})
+}
+
 // placeholder writes an installed package name of version at dir's
 // node_modules, its executable a file that cannot run: what itos-cc finds
 // installed, where no pinned tool set has it.
