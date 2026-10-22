@@ -76,6 +76,7 @@ func strictMutationSteps(sc *godog.ScenarioContext, m *mutateState, s *sinceMuta
 	q.changedSteps(sc)
 	q.lineSteps(sc)
 	q.strictDartSteps(sc)
+	q.strictPnpmSteps(sc)
 	q.goSteps(sc)
 }
 func (q *strictMutation) run(args string) error {

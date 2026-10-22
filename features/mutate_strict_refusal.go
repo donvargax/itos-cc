@@ -112,12 +112,13 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 	inputSource := ""
 	marker := "package.json"
 	switch scope {
-	case "an npm workspace", "a file: dependency outside the root":
+	case "an npm workspace", "a file: dependency outside the root", "a pnpm workspace member with a workspace: dependency":
 		pkg := `{"name":"app","private":true,"type":"module","devDependencies":{"vitest":"5.0.2","@vitest/coverage-v8":"5.0.2"}}` + "\n"
 		q.file = "src/label.ts"
 		q.testFile = "src/label.test.ts"
 		prefix := ""
-		if scope == "an npm workspace" {
+		switch scope {
+		case "an npm workspace":
 			prefix = "packages/a/"
 			measureDir = filepath.Join(w.dir, "packages", "a")
 			q.file = prefix + q.file
@@ -126,7 +127,21 @@ func (q *strictMutation) refusalProject(language, scope string) error {
 			plain["package.json"] = `{"name":"ws","private":true}` + "\n"
 			scoped["package.json"] = `{"name":"ws","private":true,"workspaces":["packages/a","../outside/lib"]}` + "\n"
 			q.scopeNames = []string{"workspace", "package.json"}
-		} else {
+		case "a pnpm workspace member with a workspace: dependency":
+			// slice-18: the plain member stands under a root that is no
+			// workspace; the scoped one is a member of a pnpm workspace
+			// that depends on its sibling packages/lib.
+			prefix = "packages/a/"
+			measureDir = filepath.Join(w.dir, "packages", "a")
+			q.file = prefix + q.file
+			q.testFile = prefix + q.testFile
+			plain[prefix+"package.json"] = pkg
+			plain["package.json"] = `{"name":"ws","private":true}` + "\n"
+			scoped["pnpm-workspace.yaml"] = "packages:\n  - packages/*\n"
+			scoped["packages/lib/package.json"] = `{"name":"lib","private":true}` + "\n"
+			scoped[prefix+"package.json"] = strings.Replace(pkg, `"devDependencies"`, `"dependencies":{"lib":"workspace:*"},"devDependencies"`, 1)
+			q.scopeNames = []string{"lib", "workspace:*", prefix + "package.json"}
+		default:
 			plain["package.json"] = pkg
 			var obj map[string]any
 			if err := json.Unmarshal([]byte(pkg), &obj); err != nil {
