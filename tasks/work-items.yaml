@@ -2116,7 +2116,7 @@ items:
     phase: 1
     owner: donvargax
     status: todo
-    depends_on: [T-43, slice-7, inprocess-mutation-tests]
+    depends_on: [T-43, slice-7, T-184]
     kind: task
     why: >
       The person's call (2026-10-11): the nightly has committed no mutation results since
@@ -2401,53 +2401,13 @@ items:
     status: done
     depends_on: [T-58]
     kind: task
-  - id: inprocess-mutation-tests
-    title: Mutation kills slice and domain mutants through the in-process scenarios
+  - id: T-184
+    title: List the in-process scenarios as mutation.tests, each measured apart
     phase: 1
     owner: null
     status: todo
     depends_on: [T-59]
-    kind: idea
-    why: >
-      After T-59 (decision 44): itos-cc.yaml's mutation.tests lists the in-process scenarios (go
-      test ./cmd/itos-cc -run '^TestScenarios$' -scenarios={pattern}, support features/**), each
-      scenario's coverage written apart inside one process (runtime/coverage ClearCounters and
-      WriteCountersDir, covermode atomic, unverified), so a mutant in a slice or domain is killed in
-      seconds instead of through cmd/itos-cc's 217-second suite and a rebuilt binary. The
-      coordinator answered yes for the person's intent (2026-10-12: the same tests as fast tests
-      with fakes); specify after measuring T-59's run. It changes Go evidence and freshness, so the
-      next full run re-judges everything: land it before T-46 re-scopes the nightly.
-
-      Push CI leaves mutate.feature out (T-83, the person's call 2026-10-13) until S7 runs it in
-      process; the S7 task moving the last mutation handler in process removes ITOS_CC_SKIP_FEATURES
-      from ci.yml.
-
-      Decision 49 (the person, 2026-10-17) makes this the way mutants are killed: the in-memory
-      scenarios that reach a mutant's line, never unit tests written for mutation's sake. Two gaps
-      to close in the spec: listed tests run today only after the own tests let a mutant survive,
-      and Go's own tests of a domain package include cmd/itos-cc's whole package one hop away (it
-      imports internal/mutants directly), so this needs a mode that runs listed tests first or
-      alone; and itos tests list has no form mutation.tests.list reads (itos#22). itos-cc#30 makes a
-      listed kill go stale only when its own scenario changes.
-
-      The second paragraph above is done. T-125 runs the mutation scenarios in process (6224c9e),
-      and 91c46d9 took ITOS_CC_SKIP_FEATURES out of the workflows, so push CI runs mutate.feature
-      again; the variable stays only as the harness's own option (features/README.md). The rest is
-      not done, and the refactor ended without it. itos-cc.yaml has no mutation.tests, so mutants
-      are still killed by Go's own tests of a package and one hop away (cmd/itos-cc still imports
-      internal/mutants), and the mode that runs listed tests first or alone, itos#22 and itos-cc#30
-      are all still open. It is a change of its own now, not a step of the refactor, and the
-      listed-first mode is product behaviour that needs its scenarios. Listing the scenarios in
-      itos-cc.yaml still changes Go evidence and freshness, so it still lands before T-46 re-scopes
-      the nightly.
-
-      T-46's measure (nightly 39719212234, 2026-10-22, the refactored code under --all-tests): 8283
-      mutants of 9320 sites; coverage 6 minutes, baseline 5; then 216 mutants in 5 hours 44 minutes
-      on 4 workers, about 95 seconds each of wall time, before the 6-hour limit cut it off with
-      nothing saved. Kills took 142 s on average (median 70), survivors 550 (each a whole go test
-      ./... with the binary driver's TestFeatures, about 240 s alone, under 4 workers' contention).
-      A whole run needs about 220 runner-hours, some 40 six-hour shards a night, and any _test.go
-      edit stales every broad outcome (ADR-0016), so only this idea makes the nightly finish.
+    kind: task
     refs: [itos#22, itos-cc#30]
   - id: T-60
     title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
@@ -3266,7 +3226,7 @@ items:
     phase: 1
     owner: null
     status: todo
-    depends_on: [inprocess-mutation-tests, T-132]
+    depends_on: [T-184, T-132]
     kind: idea
     why: >
       The person, 2026-10-17: fast mutation feedback on the changes about to be pushed, in the

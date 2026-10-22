@@ -6473,3 +6473,46 @@
     comment and docs/go.md's testing section say: after a help change, or on a rebase conflict in
     the golden, run go test ./cmd/itos-cc -run '^TestMutationHelpPreservesOriginalBytes$'
     -update-help and read the diff. No product change.
+- id: T-184
+  type: test
+  title: List the in-process scenarios as mutation.tests, each measured apart
+  why: >
+    Was inprocess-mutation-tests. q-84 (the person, 2026-10-22) cut it to configuration first.
+    Decision 49: mutants are killed by the in-memory scenarios reaching their line, as listed tests,
+    never by unit tests written for mutation's sake. Research on 2026-10-22 corrected the idea's
+    premises. A Go mutant's own tests are its package alone (ChooseCommand,
+    internal/slices/mutation/domain/command_policy.go:24-31): a slice or domain mutant runs
+    cmd/itos-cc's suite only under --all-tests, and only cmd/itos-cc's own files (147 sites) pay for
+    it otherwise. itos-cc#30 is done (slice-39, MUT-276 to 279). runtime/coverage's ClearCounters
+    and WriteCountersDir fail inside a go test -cover binary (go1.27.3), and a cover test binary
+    writes only to -test.gocoverdir, never GOCOVERDIR, so the product's fallback of running each
+    listed test alone measures nothing of an in-process run. Three parts. First, TestScenarios
+    (cmd/itos-cc/scenarios_test.go): when ITOS_CC_TEST_COVERDIR is set and testing.CoverMode() is
+    not empty, it runs each selected scenario in a re-execution of its own test binary with
+    -test.gocoverdir=<dir>/<ID>, the ID being the scenario's ID tag without its @, so the product's
+    split path (internal/coverage pertest.go, decision 10) reads one coverage per scenario; a
+    scratch experiment showed the re-execution works. Without the variable it runs as today. Second,
+    itos-cc.yaml's mutation.tests. list: itos tests list scenario --json | jq -r
+    '.tests[]|select(.live)|"\(.id)\tfeatures/\(.file)"', with no fingerprint column until itos#22
+    and itos#112 give one; itos prints paths relative to features/, so the jq adds the folder (a
+    listed file that is not there reads fresh forever today, run_listed.go:30-36). run: go test
+    -count=1 ./cmd/itos-cc -run '^TestScenarios$' -scenarios='{pattern}', {pattern} single-quoted
+    because Select substitutes it into a shell line unquoted. ids_pattern "^@(?:{ids})$"; join each
+    "(?:{id})", sep "|". whole: go test -count=1 -cover -coverpkg=./... ./cmd/itos-cc -run
+    '^TestScenarios$'. support: explicit single-star globs, since support goes through filepath.Glob
+    and ** matches as * (listed-support-doublestar): the step files (features/*.go), the in-process
+    driver and its fakes (cmd/itos-cc/scenarios*_test.go, cmd/itos-cc/run_fakes_test.go) and each
+    porttest folder under internal/; never features/*.feature, which would stale every listed kill
+    on any spec edit and undo per-file dating. Check that each glob matches what it is meant to.
+    Third, the docs that describe how this repository's mutants are killed (docs/go.md, README) say
+    so. A listed scenario the in-process driver leaves out (binary-only, deferred) runs nothing and
+    kills nothing; that is accepted, not worked around. Out of scope: the nightly (T-46 drops
+    --all-tests, puts itos and jq on its runner and measures), a listed-first order (an idea waiting
+    on T-46's measure) and listed kills resting on importer tests (listed-kills-importer-tests,
+    right after T-46). No mutation run of this repository's code locally (AGENTS.md): the checks
+    prove the parts, T-46's run proves the whole.
+  done_when:
+    - run: d=$(mktemp -d) && ITOS_CC_TEST_COVERDIR="$d" go test -count=1 -cover -coverpkg=./... ./cmd/itos-cc -run '^TestScenarios$' -scenarios='^@ID-MUT-121$' && ls "$d"/ID-MUT-121/covmeta.* >/dev/null
+      timeout: 600
+    - run: sh -c "$(yq -r .mutation.tests.list itos-cc.yaml)" | grep -q "$(printf '^ID-MUT-121\tfeatures/mutate.feature$')"
+    - run: yq -r .mutation.tests.run itos-cc.yaml | grep -q TestScenarios && yq -r .mutation.tests.whole itos-cc.yaml | grep -q -- -cover
