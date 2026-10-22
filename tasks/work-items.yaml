@@ -5323,3 +5323,17 @@ items:
       as before, since listed tests may build it with -tags; whether such files deserve their own
       report is open.
     refs: [slice-25]
+  - id: go-test-streamed-output
+    title: A Go package's test output reaches the output cap while its test runs
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-24 found that go test in package list mode, as itos-cc runs it, holds a package's test
+      output in the go command's own memory until the test ends, unless -v (or -json) is set: the
+      output cap never sees a Go test that loops writing output, and only the memory cap, Linux
+      alone, stops it before its timeout. MUT-300's fixture sets GOFLAGS=-v to make its output flow.
+      Running Go's tests with -v or -json would let the output cap hold for Go on every system.
+    refs: [slice-24, "#54"]
