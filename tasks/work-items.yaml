@@ -2440,6 +2440,14 @@ items:
       listed-first mode is product behaviour that needs its scenarios. Listing the scenarios in
       itos-cc.yaml still changes Go evidence and freshness, so it still lands before T-46 re-scopes
       the nightly.
+
+      T-46's measure (nightly 39719212234, 2026-10-22, the refactored code under --all-tests): 8283
+      mutants of 9320 sites; coverage 6 minutes, baseline 5; then 216 mutants in 5 hours 44 minutes
+      on 4 workers, about 95 seconds each of wall time, before the 6-hour limit cut it off with
+      nothing saved. Kills took 142 s on average (median 70), survivors 550 (each a whole go test
+      ./... with the binary driver's TestFeatures, about 240 s alone, under 4 workers' contention).
+      A whole run needs about 220 runner-hours, some 40 six-hour shards a night, and any _test.go
+      edit stales every broad outcome (ADR-0016), so only this idea makes the nightly finish.
     refs: [itos#22, itos-cc#30]
   - id: T-60
     title: crap.feature and complexity.feature run through godog, and the in-process driver runs only the files of moved commands
