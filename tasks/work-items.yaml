@@ -3671,14 +3671,9 @@ items:
     title: A counted run warns when uncommitted changes in its scope go unjudged
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was count-uncommitted-warning.
-      Issue #41, partly done: --count judges HEAD and says so
-      (internal/mutation/run_contract.go:131-135, counted_ui.go:209). Missing: a stderr warning
-      naming uncommitted in-scope changes. Wave 1.
     refs: ["#41"]
   - id: mutation-tests-command
     title: A command prints what mutation.tests.list resolves to
