@@ -5221,8 +5221,8 @@ items:
   - id: T-183
     title: TestMutationHelpPreservesOriginalBytes rewrites its golden with -update
     phase: 1
-    owner: null
-    status: todo
+    owner: donvargax
+    status: doing
     depends_on: []
     kind: task
     refs: [T-181]
