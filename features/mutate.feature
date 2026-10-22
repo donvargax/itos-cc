@@ -3240,7 +3240,7 @@ Feature: Mutation testing
     # column 19, failing at the second Then of MUT-297; given --reason, a
     # second entry is added. run and check call the entry gone, failing at
     # the Then of MUT-298.
-    @slice-22 @ID-MUT-297 @wip
+    @slice-22 @ID-MUT-297
     Scenario: Excepting the same change in the same function re-points its stale entry, keeping its reason
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving
@@ -3251,7 +3251,7 @@ Feature: Mutation testing
       And "itos-cc mutation check src/board.ts --json" exits 0
       But given "--reason 'reworded'", the entry is re-pointed the same way, its reason "reworded"
 
-    @slice-22 @ID-MUT-298 @wip
+    @slice-22 @ID-MUT-298
     Scenario: run, check and --renew give the same why for an entry whose change moved along its line
       Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving

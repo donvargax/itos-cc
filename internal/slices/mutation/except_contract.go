@@ -25,14 +25,25 @@ function's hash, the site's line counted from the function's first line
 (line_in_function, 1 for the first), its column, the original, the
 replacement, the reason, and the text of the site's line less the space
 around it (line_text), so a function that only moves keeps it.
-Excepting a site again replaces its entry. Only the lines of the entry
-written change: a new one is added in block style after the list's last
-entry, a replaced one is written in its place, keeping the comment above
-it and the one after its first line, and every other byte of the file is
-kept. A list written in flow style is rewritten whole in block style. An entry stops holding, and mutation run and mutation
-check fail it as mutation.exception-stale, when its function changes, when
-its function or site is gone, when its file is deleted or renamed, or when
-the tests now kill its mutant. Only mutation except writes itos-cc.yaml.
+Excepting a site again replaces its entry. So does excepting the same
+change in the same function when one stale entry names them: the entry
+names its file, its function by namespace#name, its original and
+replacement, it no longer holds, and no other entry does, so a site that
+moved along its line, or whose function changed, is re-pointed. Such an
+entry keeps its reason unless --reason gives another, so --reason may be
+left out then; it is required otherwise. An entry that holds, one stale
+as killed and one whose file moved are never re-pointed.
+
+Only the lines of the entry written change: a new one is added in block
+style after the list's last entry, a replaced one is written in its
+place, keeping the comment above it and the one after its first line,
+and every other byte of the file is kept. A list written in flow style is
+rewritten whole in block style. An entry stops holding, and mutation run
+and mutation check fail it as mutation.exception-stale, when its function
+changes (changed, while the function, by namespace#name, still has a site
+of its change), when its function or every site of its change is gone
+(gone), when its file is deleted or renamed, or when the tests now kill
+its mutant. Only mutation except writes itos-cc.yaml.
 
 --renew, run after mutation run, carries each entry that no longer holds
 across a change that leaves its mutant the same, such as a rename, a
@@ -89,7 +100,7 @@ and with --prune a line per entry removed:
 			"mutation.exception-stale  with --renew, an entry that no longer holds was not renewed: file, function, line (when its site is found), column, original, replacement, why: killed|changed|gone|ambiguous|no-results|uncovered",
 			"flags.conflict            --renew with --reason, or --prune with --reason or --renew: flag",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
-			"flags.value-missing       no --reason: flag",
+			"flags.value-missing       no --reason, and the site re-points no stale entry: flag",
 			"flags.value-invalid       an empty --reason: flag, value",
 			"args.missing              no site given",
 			"args.invalid              the site is not <file>:<line>:<column>: argument",
@@ -98,7 +109,7 @@ and with --prune a line per entry removed:
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "the survivor is excepted in itos-cc.yaml; with --renew, no entry is left stale; with --prune, the entries nothing can mend are removed"},
 			{Code: 1, Meaning: "with --renew, an entry that no longer holds could not be renewed"},
-			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site or no --reason, a site that is no recorded survivor or is in an excluded source, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
+			{Code: cli.CodeUsage, Meaning: "a usage or config error: no site, or no --reason for a site that re-points no stale entry, a site that is no recorded survivor or is in an excluded source, --renew or --prune with a site or --reason, --prune with --renew, or an itos-cc.yaml that cannot be read"},
 		},
 		Examples: []string{
 			"itos-cc mutation except src/board.ts:3:13 --reason 'c is set again before it is read'",

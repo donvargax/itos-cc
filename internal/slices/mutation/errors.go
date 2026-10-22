@@ -59,6 +59,8 @@ func failureError(failure Failure, rel func(string) string) error {
 		return cli.NewProblem(cli.CodeUsage, "exception.no-survivor", fmt.Sprintf("%s:%d:%d is no survivor to except: %s", file, failure.Line, failure.Column, failure.Reason),
 			fmt.Sprintf("Except a site that mutation run lists as survived; run 'itos-cc mutation run %s' first when its results are stale or missing.", file)).
 			With("file", file).With("line", failure.Line).With("column", failure.Column)
+	case ReasonMissing:
+		return reasonMissing()
 	case StrictCoverageFlag:
 		return flagConflict(failure.Flag, failure.Flag+" is not admitted with strict "+LanguageName(failure.Language)+" coverage; use a fresh built-in or listed measurement")
 	case CountedNoGit:
@@ -70,6 +72,13 @@ func failureError(failure Failure, rel func(string) string) error {
 		return countedPlanError(failure.Failure, failure.Since)
 	}
 	return failure
+}
+
+// reasonMissing is mutation except's site given with no --reason, which
+// re-points no stale entry whose reason it would keep.
+func reasonMissing() *cli.Problem {
+	return cli.NewProblem(cli.CodeUsage, "flags.value-missing", "--reason is required: an exception says why no test can kill its mutant",
+		"Give it, such as --reason 'the loop only counts up'.").With("flag", "--reason")
 }
 
 // flagConflict is flag given beside another it cannot be, as message says.

@@ -68,30 +68,33 @@ func (c Except) Run(ctx context.Context, ui *cli.UI, h Handler) int {
 		return c.renew(ctx, ui, h)
 	}
 	var result exceptResult
-	if c.Reason == nil {
-		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "flags.value-missing", "--reason is required: an exception says why no test can kill its mutant",
-			"Give it, such as --reason 'the loop only counts up'.").With("flag", "--reason")))
+	// With no --reason only a site that re-points a stale entry is
+	// excepted: every refusal is the missing --reason.
+	refuse := func(p *cli.Problem) int {
+		if c.Reason == nil {
+			p = reasonMissing()
+		}
+		return ui.Emit(c.JSON, result, ui.Problems(p))
 	}
-	reason := *c.Reason
-	if strings.TrimSpace(reason) == "" {
-		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--reason needs a reason, and was given %q", reason),
-			"Say why no test can kill the mutant.").With("flag", "--reason").With("value", reason)))
+	if c.Reason != nil && strings.TrimSpace(*c.Reason) == "" {
+		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "flags.value-invalid", fmt.Sprintf("--reason needs a reason, and was given %q", *c.Reason),
+			"Say why no test can kill the mutant.").With("flag", "--reason").With("value", *c.Reason)))
 	}
 	switch len(c.Site) {
 	case 0:
-		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "args.missing", "mutation except needs the site to except, as <file>:<line>:<column>",
-			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.")))
+		return refuse(cli.NewProblem(cli.CodeUsage, "args.missing", "mutation except needs the site to except, as <file>:<line>:<column>",
+			"Name a survivor as mutation run lists it, such as src/board.ts:7:19."))
 	case 1:
 	default:
-		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("mutation except takes one site, and was also given %q", c.Site[1]),
-			"Except one site at a time.").With("argument", c.Site[1])))
+		return refuse(cli.NewProblem(cli.CodeUsage, "args.unexpected", fmt.Sprintf("mutation except takes one site, and was also given %q", c.Site[1]),
+			"Except one site at a time.").With("argument", c.Site[1]))
 	}
 	path, line, column, ok := parseSite(c.Site[0])
 	if !ok {
-		return ui.Emit(c.JSON, result, ui.Problems(cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", c.Site[0]),
-			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", c.Site[0])))
+		return refuse(cli.NewProblem(cli.CodeUsage, "args.invalid", fmt.Sprintf("%q is not a site, <file>:<line>:<column>", c.Site[0]),
+			"Name a survivor as mutation run lists it, such as src/board.ts:7:19.").With("argument", c.Site[0]))
 	}
-	found, err := h.Except(ctx, ExceptQuery{Path: path, Line: line, Column: column, Reason: reason})
+	found, err := h.Except(ctx, ExceptQuery{Path: path, Line: line, Column: column, Reason: c.Reason})
 	if err != nil {
 		return ui.Emit(c.JSON, result, ui.Problems(exceptError(err, ui.Rel, "Fix it, then except the site again.")))
 	}
@@ -259,5 +262,6 @@ func notRenewedFix(why string) string {
 	case mutants.RenewUncovered:
 		return "Add a test that executes its line, run mutation run, then renew again, or remove its entry."
 	}
-	return "Review the mutant again: except it with 'itos-cc mutation except <file>:<line>:<column> --reason …' if it still survives and changes no behaviour, and remove the old entry from " + "itos-cc.yaml" + "."
+	return "Review the mutant again: if it still survives and changes no behaviour, except it at its site now with 'itos-cc mutation except <file>:<line>:<column>', " +
+		"which replaces this entry and keeps its reason; once its function or every site of its change is gone, 'itos-cc mutation except --prune' removes the entry."
 }

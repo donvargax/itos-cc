@@ -498,6 +498,18 @@ its `reason` and comments; only the renewed entries' lines change. `--json` list
 `place` or `only`), and `not_renewed`, each entry left stale with `why`,
 also reported as `mutation.exception-stale`, exit 1. `--renew` with a site
 is `args.unexpected`, and with `--reason` `flags.conflict`, exit 80.
+`mutation run` and `mutation check` call an entry `changed` when its
+function, by `namespace#name`, still has a site of its change, and `gone`
+when the function or every such site is gone, as `--renew` does.
+
+`mutation except <file>:<line>:<column>` re-points the one stale entry that
+names the site's file, its function by `namespace#name`, and its `original`
+and `replacement`, when no entry is for the site itself: the entry is
+replaced, `"replaced": true`, and keeps its `reason` unless `--reason`
+gives another. Without `--reason` and nothing to re-point, it is
+`flags.value-missing`, exit 80. An entry that holds, one stale as `killed`,
+and one whose file moved are never re-pointed; with several, the site is
+excepted as a new entry.
 
 `mutation except --prune`, run after `mutation run`, removes each entry of
 `itos-cc.yaml` that nothing can mend, judging every entry as `mutation

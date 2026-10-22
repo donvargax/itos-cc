@@ -39,12 +39,14 @@ func ExceptionsOf(exceptions []Exception, rel string) []Exception {
 }
 
 // locate finds the site e excepts among sites, f's sites. It returns the
-// site's index when e holds for f as it is now. Otherwise the index is -1
-// and why says why it no longer holds, with the line it names: a function
-// whose hash differs but that still has the site at its place has changed,
-// and its mutant is judged as if it had no entry; one with no such site, or
-// no function of e's name, is gone. A function that only moved keeps its
-// hash and the site's place within it.
+// site's index when e holds for f as it is now: its function, by
+// namespace#name, has e's hash and a site of e's change at e's place.
+// Otherwise the index is -1 and why says why it no longer holds, with the
+// line of e's place in its function: a function that still has a site of
+// e's original and replacement, anywhere in it, has changed, as mutation
+// except --renew calls it, and its mutant is judged as if it had no entry;
+// one with no such site, or no function of e's name, is gone. A function
+// that only moved keeps its hash and the site's place within it.
 func Locate(e Exception, f *lang.File, sites []Site) (site int, why string, line int) {
 	why, site = ExceptionGone, -1
 	for i, u := range f.Units {
@@ -57,13 +59,13 @@ func Locate(e Exception, f *lang.File, sites []Site) (site int, why string, line
 			line = at
 		}
 		for j, s := range sites {
-			if s.Unit != i || s.Line != at || s.Column != e.Column || s.Original != e.Original || s.Replacement != e.Replacement {
+			if s.Unit != i || s.Original != e.Original || s.Replacement != e.Replacement {
 				continue
 			}
-			if hash == e.Hash {
+			if s.Line == at && s.Column == e.Column && hash == e.Hash {
 				return j, "", s.Line
 			}
-			why, line = ExceptionChanged, s.Line
+			why = ExceptionChanged
 		}
 	}
 	return site, why, line

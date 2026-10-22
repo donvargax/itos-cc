@@ -73,6 +73,45 @@ func Elsewhere(ctx context.Context, exceptions []Exception, sources []string, ju
 	return stale, moved, stopped(ctx, nil)
 }
 
+// Repointed is the index of the entry of entries that excepting survivor,
+// the exception Survivor gives for a site of the file at path, re-points:
+// the one entry that names survivor's file, its function by namespace#name,
+// and its original and replacement, and that no longer holds for the file
+// as it is now (Locate), its function changed or its site moved. An entry
+// that holds, as one stale as killed does, and one whose file moved name no
+// such entry. -1 when there is none, or more than one.
+func Repointed(ctx context.Context, entries []Exception, survivor Exception, path string, opt CheckOptions) (int, error) {
+	if ctx.Err() != nil {
+		return -1, context.Cause(ctx)
+	}
+	var candidates []int
+	for i, e := range entries {
+		if e.File == survivor.File && e.Function == survivor.Function && e.Original == survivor.Original && e.Replacement == survivor.Replacement {
+			candidates = append(candidates, i)
+		}
+	}
+	if len(candidates) == 0 {
+		return -1, nil
+	}
+	f, err := parseExceptionSource(ctx, absoluteSource(opt.Dir, path), opt)
+	if err != nil {
+		return -1, err
+	}
+	defer f.Close()
+	sites := Sites(f)
+	found := -1
+	for _, i := range candidates {
+		if _, why, _ := Locate(entries[i], f, sites); why == "" {
+			continue
+		}
+		if found >= 0 {
+			return -1, nil
+		}
+		found = i
+	}
+	return found, nil
+}
+
 // NoSurvivorError is a site Survivor cannot except: Reason says why.
 type NoSurvivorError struct{ Reason string }
 

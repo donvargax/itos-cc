@@ -44,6 +44,10 @@ type NoSurvivor struct {
 	Reason       string
 }
 
+// ReasonMissing is except's site given with no --reason, when it re-points
+// no stale entry whose reason it would keep.
+type ReasonMissing struct{}
+
 // StrictCoverageFlag is run's coverage Flag, which reads reports instead of
 // measuring, beside strict coverage of Language, the first strict language
 // of the selection.
@@ -76,6 +80,7 @@ func (SinceUnavailable) failure()   {}
 func (SeedUnavailable) failure()    {}
 func (SiteExcluded) failure()       {}
 func (NoSurvivor) failure()         {}
+func (ReasonMissing) failure()      {}
 func (StrictCoverageFlag) failure() {}
 func (CountedNoGit) failure()       {}
 func (OutsideRepository) failure()  {}
@@ -89,6 +94,7 @@ func (f SinceUnavailable) Error() string {
 func (f SeedUnavailable) Error() string { return "HEAD for the seed: " + f.Failure.Error() }
 func (f SiteExcluded) Error() string    { return f.Path + " is excluded" }
 func (f NoSurvivor) Error() string      { return f.Path + " holds no survivor: " + f.Reason }
+func (ReasonMissing) Error() string     { return "no --reason" }
 func (f StrictCoverageFlag) Error() string {
 	return f.Flag + " beside strict " + f.Language + " coverage"
 }

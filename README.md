@@ -940,9 +940,10 @@ reason, its `outcome` still `survived`). It is reused without running, as a
 kill is, while its function and the tests that import its file are
 unchanged; `--mutate-all` runs it too. The entry no longer holds, and fails
 as `mutation.exception-stale` (exit 1) with its `why`, when the mutant, run
-again after its tests changed, is now `killed`; when its function `changed`,
-and the mutant is judged as if it had no entry; or when its function or its
-site is `gone`. With `--since`, only the judged functions' entries count. A
+again after its tests changed, is now `killed`; when its function `changed`
+and still has a site of the entry's change, anywhere in it, and the mutant
+is judged as if it had no entry; or when its function, or every site of its
+change in it, is `gone`, as `--renew` calls them. With `--since`, only the judged functions' entries count. A
 run or check of the whole project (no paths, no `--changed`, no `--since`),
 and a `--since` run whose range deleted or renamed an entry's file, judge
 the entries of files they do not select: when exactly one source they
@@ -981,7 +982,10 @@ function) or `uncovered`, exit 1. A setup step can so re-prove a project a
 template rendered: `mutation run`, then `mutation except --renew`. The fix
 `mutation run` and `mutation check` give an entry stale because its function
 `changed` names `mutation except --renew` first, before excepting the mutant
-again by hand.
+again by hand. Excepting it at its site now re-points the entry when it is
+the one stale entry of that file, function, `original` and `replacement`:
+the entry is replaced, reported as `excepted again`, and keeps its reason
+unless `--reason` gives another, so `--reason` may be left out then.
 
 Killed mutants are kept per function in `.metrics/mutate/`, so the day's
 runs reuse the night's kills for code that has not changed. Each file's

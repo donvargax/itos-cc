@@ -34,7 +34,10 @@ func TestAnExceptionIsFoundByItsFunctionAndPlace(t *testing.T) {
 		{"moved", "import os\n\ndef a(x):\n    return x > 0\n\ndef b(x):\n    return x < 1\n", "", 7},
 		{"changed", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x < 2\n", ExceptionChanged, 5},
 		{"site gone", "def a(x):\n    return x > 0\n\ndef b(x):\n    return x == 1\n", ExceptionGone, 5},
-		{"site moved within", "def a(x):\n    return x > 0\n\ndef b(x):\n    y = 1\n    return x < 1\n", ExceptionGone, 5},
+		// slice-22: a function that still has a site of the change has
+		// changed, as --renew calls it, wherever the site went.
+		{"site moved within", "def a(x):\n    return x > 0\n\ndef b(x):\n    y = 1\n    return x < 1\n", ExceptionChanged, 5},
+		{"site moved along its line", "def a(x):\n    return x > 0\n\ndef b(x):\n    return 0 + x < 1\n", ExceptionChanged, 5},
 		{"function gone", "def a(x):\n    return x > 0\n", ExceptionGone, 0},
 	} {
 		f := parse(t, "x.py", c.src)

@@ -30,15 +30,6 @@ func (e *exceptionMutation) repointSteps(sc *godog.ScenarioContext) {
 		}
 		return nil
 	})
-	step(`"itos-cc mutation check src/board.ts --json" exits 0`, func() error {
-		if err := e.run("mutation check src/board.ts --json"); err != nil {
-			return err
-		}
-		if e.s.m.w.exit != 0 {
-			return fmt.Errorf("check exit %d\n%s", e.s.m.w.exit, e.s.m.w.report())
-		}
-		return nil
-	})
 	step(`given "--reason 'reworded'", the entry is re-pointed the same way, its reason "reworded"`, func() error {
 		if err := e.s.m.w.write("itos-cc.yaml", e.written); err != nil {
 			return err

@@ -10,11 +10,12 @@ import (
 )
 
 // ExceptQuery carries except's domain values once: the survivor's site, as
-// the person named it, and the reason no test can kill it.
+// the person named it, and the reason no test can kill it, nil when none
+// was given.
 type ExceptQuery struct {
 	Path         string
 	Line, Column int
-	Reason       string
+	Reason       *string
 }
 
 // ExceptFound is the entry except wrote, and whether it replaced one.
@@ -45,7 +46,11 @@ var errNoExceptions = errors.New("mutation Exceptions binding is missing")
 // exclusion, then the bindings, the listed tests' support files and the
 // tests that reach each source, then the domain's survivor at the site,
 // whose entry, with the reason, goes through the Exceptions writer made for
-// the settings' root. A refusal is a Failure the UI words.
+// the settings' root. When no entry is for the site and one stale entry
+// names its file, function and change (Repointed), the survivor's entry
+// replaces it, keeping its reason when none is given. Given no reason and
+// re-pointing none, every refusal is ReasonMissing. A refusal is a Failure
+// the UI words.
 func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error) {
 	root, cfg, err := h.settings(ctx)
 	if err != nil {
@@ -53,24 +58,51 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 	}
 	path := sourcePath(h.Dir, q.Path)
 	if selection.Exclusion(cfg.Selection).Excludes(path) {
+		if q.Reason == nil {
+			return ExceptFound{}, ReasonMissing{}
+		}
 		return ExceptFound{}, SiteExcluded{Path: path, Line: q.Line, Column: q.Column}
 	}
 	support, tests, err := h.judging(ctx, root, cfg)
 	if err != nil {
 		return ExceptFound{}, err
 	}
-	e, err := mutants.Survivor(ctx, q.Path, q.Line, q.Column, h.options(root, nil, tests, support, nil, h.listing(root, cfg)), h.Status)
+	opt := h.options(root, nil, tests, support, nil, h.listing(root, cfg))
+	e, err := mutants.Survivor(ctx, q.Path, q.Line, q.Column, opt, h.Status)
 	var none *mutants.NoSurvivorError
 	if errors.As(err, &none) {
+		if q.Reason == nil {
+			return ExceptFound{}, ReasonMissing{}
+		}
 		return ExceptFound{}, NoSurvivor{Path: path, Line: q.Line, Column: q.Column, Reason: none.Reason}
 	}
 	if err != nil {
 		return ExceptFound{}, err
 	}
-	e.Reason = q.Reason
+	stale := -1
+	if !slices.ContainsFunc(cfg.Exceptions, e.SameSite) {
+		if stale, err = mutants.Repointed(ctx, cfg.Exceptions, e, q.Path, opt); err != nil {
+			return ExceptFound{}, err
+		}
+	}
+	switch {
+	case q.Reason != nil:
+		e.Reason = *q.Reason
+	case stale >= 0:
+		e.Reason = cfg.Exceptions[stale].Reason
+	default:
+		return ExceptFound{}, ReasonMissing{}
+	}
 	writer, err := h.exceptions(root)
 	if err != nil {
 		return ExceptFound{}, err
+	}
+	if stale >= 0 {
+		// The stale entry is replaced whole, as --renew replaces one.
+		if failure := writer.Renew(ctx, []mutants.Renewal{{Old: cfg.Exceptions[stale], New: e}}); failure != nil {
+			return ExceptFound{}, failure
+		}
+		return ExceptFound{Exception: e, Replaced: true}, nil
 	}
 	replaced, failure := writer.Except(ctx, e)
 	if failure != nil {

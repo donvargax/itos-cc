@@ -111,8 +111,9 @@ func (p *Presentation) StaleExceptions(ctx context.Context, rel string, stale []
 			fix = pruneKilledFix
 		case mutants.ExceptionChanged:
 			message = fmt.Sprintf("%s: the entry in %s for %s was written for another version of the function", at, "itos-cc.yaml", change)
-			fix = fmt.Sprintf("Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. "+
-				"If it is not renewed and the mutant still survives and changes no behaviour, except it again with 'itos-cc mutation except %s --reason …'; otherwise remove its entry from %s.", at, "itos-cc.yaml")
+			fix = "Run 'itos-cc mutation except --renew' after mutation run: it carries the entry over, keeping its reason, when its mutant is unchanged. " +
+				"If it is not renewed and the mutant still survives and changes no behaviour, except it at its site now with 'itos-cc mutation except " + rel + ":<line>:<column>', " +
+				"which replaces this entry and keeps its reason unless --reason gives another; otherwise remove its entry from " + "itos-cc.yaml" + "."
 		case mutants.ExceptionGone:
 			message = fmt.Sprintf("%s: the entry in %s for %s names a site the function no longer has", at, "itos-cc.yaml", change)
 			if e.Line == 0 {

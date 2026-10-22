@@ -105,7 +105,7 @@ type Sample struct {
 // Except accepts a site or renews the current exception entries. Reason is
 // nil when omitted, so an explicit empty one stays distinct.
 type Except struct {
-	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but with --renew or --prune"`
+	Reason *string  `placeholder:"TEXT" help:"why no test can kill the mutant; required, but for a site that re-points a stale entry, which keeps its reason, and with --renew or --prune"`
 	Renew  bool     `help:"renew each stale entry whose mutant is unchanged, after mutation run, keeping its reason"`
 	Prune  bool     `help:"remove each entry stale as gone, killed or excluded, after mutation run"`
 	JSON   bool     `name:"json" help:"print one JSON object on stdout instead of text (shape below)"`
