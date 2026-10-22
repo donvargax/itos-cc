@@ -5285,3 +5285,15 @@ items:
       (selection, docs/CONFIG.md) before it starts; the docs that say itos-cc.yaml can bring these
       back (T-182 said no key does while q-80 was open) change with it.
     refs: [dart-support, q-80]
+  - id: mutation-memory-cap-windows
+    title: A mutant's memory is capped on Windows through its Job Object
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-24 (person, 2026-10-21) caps memory on Linux only, from the owned group's summed RSS. On
+      Windows a Job Object can measure and cap a group's memory (JOB_OBJECT_LIMIT_JOB_MEMORY,
+      PeakJobMemoryUsed) once mutation-windows-ownership gives each mutant its own job.
+    refs: [slice-24, mutation-windows-ownership]
