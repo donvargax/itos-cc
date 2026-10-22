@@ -31,3 +31,33 @@ mutation:
       original: '>'
       replacement: '>='
       reason: compareTags returns 0 only for two identical spellings, because equal numbers give equal lengths and two strings of one length never compare equal otherwise, so taking the later of a pair it calls equal sets newest to the string it already holds.
+
+  # The listed tests are the scenarios, run in process (decision 49, T-184):
+  # a mutant that survives its file's own tests runs the scenarios whose
+  # coverage reaches its line. list prints each live scenario's ID and its
+  # feature file, which itos names from features/, so the folder is added:
+  # a listed file that is not there would keep a kill fresh forever. No
+  # fingerprint column until itos#22 and itos#112 give one. {pattern} is
+  # single-quoted, since it reaches the shell line unquoted. whole runs every
+  # scenario with -cover; with ITOS_CC_TEST_COVERDIR set, as itos-cc sets it,
+  # TestScenarios runs each in a test binary of its own writing its coverage
+  # under <dir>/<ID> (decision 10). support is what every listed kill rests
+  # on besides its feature file (decision 13): the step code, the in-process
+  # driver and its fakes, and the ports' fakes. The globs go through
+  # filepath.Glob, where ** is *, so each folder is named; never
+  # features/*.feature, which would stale every listed kill on any spec edit.
+  # A scenario the in-process driver leaves out (@binary-only,
+  # features.Deferred) runs nothing there and kills nothing.
+  tests:
+    list: itos tests list scenario --json | jq -r '.tests[]|select(.live)|"\(.id)\tfeatures/\(.file)"'
+    run: go test -count=1 ./cmd/itos-cc -run '^TestScenarios$' -scenarios='{pattern}'
+    ids_pattern: "^@(?:{ids})$"
+    join: {each: "(?:{id})", sep: "|"}
+    whole: go test -count=1 -cover -coverpkg=./... ./cmd/itos-cc -run '^TestScenarios$'
+    support:
+      - features/*.go
+      - cmd/itos-cc/scenarios*_test.go
+      - cmd/itos-cc/run_fakes_test.go
+      - internal/*/porttest/*.go
+      - internal/*/port/porttest/*.go
+      - internal/slices/*/domain/porttest/*.go
