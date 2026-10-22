@@ -5270,3 +5270,18 @@ items:
       pnpm-workspace.yaml (as settled); pnpm also reads overrides and patchedDependencies from the
       workspace root package.json pnpm field, and resolutions, so such an override there is still
       admitted unread.
+  - id: dart-include-key
+    title: "itos-cc.yaml's include: brings back Dart files left out by default"
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      q-80 answered (a) by the person on 2026-10-21: a new itos-cc.yaml key, include:, globs checked
+      as exclude's are, bringing back only what itos-cc leaves out by default for Dart (a Flutter
+      app's platform folders, q-75, and generated Dart, q-77); exclude still wins; node_modules and
+      the other default-skipped dependency and cache folders (ID-SEL-10) stay out. Needs scenarios
+      (selection, docs/CONFIG.md) before it starts; the docs that say itos-cc.yaml can bring these
+      back (T-182 said no key does while q-80 was open) change with it.
+    refs: [dart-support, q-80]
