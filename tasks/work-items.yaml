@@ -4138,6 +4138,14 @@ items:
       package comment and features/README.md do not say so. Decide whether itos-cc drops an
       inherited GOCOVERDIR from the commands it runs without coverage, or the harness keeps its own
       out of them, and document the module-wide recipe.
+
+      T-46's measuring nightly 39719212234 (2026-10-22) hit the same leak in mutation run
+      --all-tests's own whole-suite coverage run, whose -exec itos-cc __exec-with-gocoverdir wrapper
+      sets GOCOVERDIR for TestFeatures: nine binary-driver scenarios failed there (listed-test
+      coverage runs refusing a folder with atomic and set metadata, among them 'Without the
+      harness's help, coverage takes one run per test'), and covdata textfmt over the run's own
+      gocoverdir failed with the counter mode clash, so every nightly measures coverage with a red
+      suite and loses itos-cc's integration coverage. The run went on with what it had.
   - id: T-157
     title: Move internal/mutation into internal/slices/mutation, assembled from its declaration
     phase: 1
