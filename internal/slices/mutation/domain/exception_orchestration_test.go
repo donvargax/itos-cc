@@ -221,3 +221,43 @@ func TestDomainElsewhereUsesLexicalRootsAndLazyParse(t *testing.T) {
 		t.Fatalf("raw outside identity: %+v %+v %v", stale, moved, err)
 	}
 }
+
+// slice-22: excepting a survivor re-points the one stale entry of its
+// file, function and change; an entry that holds, another function's, and
+// one of several are not re-pointed.
+func TestDomainRepointedIsTheOneStaleEntryOfTheSurvivorsChange(t *testing.T) {
+	f, site := survivingFixture(t)
+	opt := exceptionOptions(f)
+	survivor, err := mutants.Survivor(t.Context(), f.path, site.Line, site.Column, opt, f.edits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	moved := survivor
+	moved.Hash, moved.Column, moved.Reason = "old hash", survivor.Column+3, "kept"
+	other := moved
+	other.Column++
+	elsewhere := moved
+	elsewhere.Function = "other#Function"
+	for _, c := range []struct {
+		name    string
+		entries []mutants.Exception
+		want    int
+	}{
+		{"none", nil, -1},
+		{"one that holds", []mutants.Exception{survivor}, -1},
+		{"another function's", []mutants.Exception{elsewhere}, -1},
+		{"the one stale", []mutants.Exception{elsewhere, survivor, moved}, 2},
+		{"one of two stale", []mutants.Exception{moved, other}, -1},
+	} {
+		got, err := mutants.Repointed(t.Context(), c.entries, survivor, f.path, opt)
+		if err != nil || got != c.want {
+			t.Errorf("%s: %d, %v, want %d", c.name, got, err, c.want)
+		}
+	}
+	ctx, cancel := context.WithCancelCause(t.Context())
+	cause := errors.New("stopped")
+	cancel(cause)
+	if _, err := mutants.Repointed(ctx, []mutants.Exception{moved}, survivor, f.path, opt); !errors.Is(err, cause) {
+		t.Errorf("cancelled: %v", err)
+	}
+}
