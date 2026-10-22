@@ -2,6 +2,7 @@ package features
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -241,6 +242,14 @@ func (l *listedMutation) slice39MixedCheck() error {
 // slice39Listed is how many times the list command ran since the records
 // were last cleared.
 func (l *listedMutation) slice39Listed() (int, error) {
+	data, err := l.m.w.d.Read(filepath.Join(l.m.records, "listed.log"))
+	if err != nil {
+		return 0, err
+	}
+	if strings.TrimSpace(string(data)) == "" {
+		// Nothing ran that records itself, the list command included.
+		return 0, nil
+	}
 	records, err := l.records()
 	if err != nil {
 		return 0, err

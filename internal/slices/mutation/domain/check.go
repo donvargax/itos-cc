@@ -45,6 +45,11 @@ type Freshness struct {
 	// Stale: a file that defines one of its tests, or a support file; nil
 	// otherwise.
 	Listed []string
+	// ListedTests is each test recorded with a fingerprint that a listed
+	// outcome of the function rests on and that the list no longer prints
+	// with that fingerprint, when that makes the function Stale; nil
+	// otherwise.
+	ListedTests []string
 	// Broad is each module test or configured support input changed for a
 	// Go all-tests or test-command outcome.
 	Broad []string
@@ -59,13 +64,13 @@ type Freshness struct {
 // function by name and hash (PairByHash), nil for none, against the
 // function as it is now: its hash, its sites, and tests, how the tests that
 // import its file changed since the snapshot (Snapshot.TestsChanged), and
-// listed, how the files its listed outcomes rest on did
-// (Snapshot.ListedChanged). It is
+// listed, how the tests and files its listed outcomes rest on did
+// (ListedChangedListing). It is
 // mutation check's verdict, which the architecture graph shows too, so the
 // two cannot drift. The entry holds while it has the function's hash, so a
 // function that only moved is fresh, the tests are those it recorded, no
-// run kept it marked stale, the files its listed outcomes rest on are
-// unchanged, and it records every site the function has.
+// run kept it marked stale, the tests and files its listed outcomes rest on
+// are unchanged, and it records every site the function has.
 func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *ListedChange, broad []string, sites []Site) Freshness {
 	switch {
 	case entry == nil:
@@ -77,8 +82,8 @@ func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *List
 	case entry.Stale:
 		return Freshness{State: Stale, Marked: true}
 	}
-	if files := listed.Files(entry.Mutants); len(files) > 0 {
-		return Freshness{State: Stale, Listed: files}
+	if files, tests := listed.Files(entry.Mutants), listed.Tests(entry.Mutants); len(files) > 0 || len(tests) > 0 {
+		return Freshness{State: Stale, Listed: files, ListedTests: tests}
 	}
 	if len(broad) > 0 {
 		return Freshness{State: Stale, Broad: broad}

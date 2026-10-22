@@ -175,6 +175,9 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 		// An entry whose function moved to another file still excepts
 		// its mutant there.
 		Exceptions: append(slices.Clone(cfg.Exceptions), moved...),
+		// One listing for the command: the freshness of kills by tests
+		// listed with a fingerprint and the coverage of the listed tests.
+		Listing: h.listing(root, cfg),
 	}
 	suite := listedSuite(q, cfg)
 	if suite != nil {
@@ -195,7 +198,7 @@ func (h Handler) Run(ctx context.Context, q RunQuery) (RunFound, error) {
 			// Strict: a language the per-language commands measured
 			// nothing of fails closed, as Go does, instead of running
 			// every mutant, and stops the run before any mutant runs.
-			checks, err := mutants.Check(ctx, sources, h.options(root, judge, tests, support, exceptions))
+			checks, err := mutants.Check(ctx, sources, h.options(root, judge, tests, support, exceptions, opt.Listing))
 			if err != nil {
 				return found, ranInto(err)
 			}
@@ -287,7 +290,7 @@ type strictCoverage struct {
 // holds, else a fresh measurement of the languages that need one. It
 // returns the gaps that stop the run before any mutant.
 func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s strictCoverage) (*CoverageGaps, error) {
-	mutationChecks, err := mutants.Check(ctx, s.sources, h.options(s.root, s.judge, s.tests, s.support, s.exceptions))
+	mutationChecks, err := mutants.Check(ctx, s.sources, h.options(s.root, s.judge, s.tests, s.support, s.exceptions, opt.Listing))
 	if err != nil {
 		return nil, ranInto(err)
 	}
@@ -295,7 +298,7 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 	for _, language := range s.languages {
 		enabled[language] = true
 	}
-	cached, err := mutants.CheckCoverage(ctx, s.sources, h.options(s.root, s.judge, nil, s.support, nil), enabled, false, false)
+	cached, err := mutants.CheckCoverage(ctx, s.sources, h.options(s.root, s.judge, nil, s.support, nil, nil), enabled, false, false)
 	if err != nil {
 		return nil, ranInto(err)
 	}
@@ -354,7 +357,7 @@ func (h Handler) strict(ctx context.Context, q RunQuery, opt *mutants.Options, s
 			return kept[relTo(dir, path)+"\x00"+function]
 		}
 	}
-	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s.root, measured, s.languages, s.suite, s.reach)
+	report, measuredProducer, listedFiles, err := h.strictCoverage(ctx, q, s.root, measured, s.languages, s.suite, opt.Listing, s.reach)
 	if err != nil {
 		return nil, err
 	}

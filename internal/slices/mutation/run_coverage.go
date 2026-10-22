@@ -20,13 +20,17 @@ import (
 // strictCoverage measures sources for strict coverage, with the built-in
 // commands of each language, the listed tests' coverage beside it, and
 // lists the executable lines of each file of a line-precision language no
-// test loaded without running a test (coverage.Report.Inventory). It
-// returns the report, Go's producer and the file of each listed test.
-func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, sources, languages []string, suite *mutants.Tests, reach covport.Reach) (*coverage.Report, string, map[string]string, error) {
+// test loaded without running a test (coverage.Report.Inventory). The
+// listed tests are listing's, the run's listing of suite. It returns the
+// report, Go's producer and the file of each listed test.
+func (h Handler) strictCoverage(ctx context.Context, q RunQuery, root string, sources, languages []string, suite *mutants.Tests, listing *mutants.ListOnce, reach covport.Reach) (*coverage.Report, string, map[string]string, error) {
 	perTest := (*coverage.PerTest)(nil)
 	listedFiles := map[string]string{}
 	if suite != nil {
-		listed, err := h.listTests(ctx, q, root, suite)
+		if listing == nil {
+			listing = mutants.NewListOnce(h.TestLister, root, suite.List)
+		}
+		listed, err := h.listTests(ctx, q, listing)
 		if err != nil {
 			return nil, "", nil, err
 		}
@@ -98,17 +102,14 @@ func (h Handler) loadCoverage(ctx context.Context, q RunQuery, sources []string,
 	return report, nil
 }
 
-// listTests runs the list command of tests at the project root, through the
-// TestLister, and reads the tests it prints: one a line, its ID, then,
-// after a tab, optionally its file. A command that fails is
+// listTests is the tests listing reads, running the list command of
+// mutation.tests at the project root through the TestLister unless the run
+// already did: one a line, its ID, then, after a tab, optionally its file,
+// and after another, optionally its fingerprint. A command that fails is
 // tests.list-failed.
-func (h Handler) listTests(ctx context.Context, q RunQuery, root string, tests *mutants.Tests) ([]coverage.Test, error) {
-	command := mutants.Command{Root: root, Dir: root, Shell: tests.List}
-	if q.Progress != nil {
-		q.Progress.Report(mutants.RunEvent{Kind: "listing", Command: command})
-	}
-	listed, err := mutants.ListedTests(ctx, h.TestLister, command)
-	return listed, ranInto(err)
+func (h Handler) listTests(ctx context.Context, q RunQuery, listing *mutants.ListOnce) ([]coverage.Test, error) {
+	listed, err := listing.List(ctx, q.Progress)
+	return listed.Tests, ranInto(err)
 }
 
 // unmeasuredToJudge is, under --fail-uncovered, each build root of a

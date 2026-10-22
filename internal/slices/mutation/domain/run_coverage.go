@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/donvargax/itos-cc/internal/coverage"
 	covport "github.com/donvargax/itos-cc/internal/coverage/port"
@@ -60,35 +61,111 @@ func MeasureFailure(failure covport.Failure) error {
 
 // ParseListing retains first-ID-wins, optional filenames and CRLF trimming.
 func ParseListing(stdout string) []coverage.Test {
-	var listed []coverage.Test
+	return ParseInventory(stdout).Tests
+}
+
+// ListedInventory is what the list command printed: each test, by its ID,
+// with its file, "" for none, and the fingerprint of each test listed with
+// one, by its ID.
+type ListedInventory struct {
+	Tests []coverage.Test
+	// Fingerprints is the third column of a test's line, opaque text the
+	// lister computes from the test's own text, by the test's ID; a test
+	// listed without one has none.
+	Fingerprints map[string]string
+}
+
+// fingerprint is the fingerprint the inventory lists id with, "" when it
+// lists id without one or does not list it.
+func (inv ListedInventory) fingerprint(id string) string {
+	return inv.Fingerprints[id]
+}
+
+// ParseInventory reads the list command's output: a test a line, its ID,
+// then, after a tab, optionally its file, and after another tab, optionally
+// its fingerprint. The first line of an ID wins, and CR line ends are
+// trimmed.
+func ParseInventory(stdout string) ListedInventory {
+	var inv ListedInventory
 	seen := map[string]bool{}
 	for _, line := range strings.Split(stdout, "\n") {
-		id, file, _ := strings.Cut(strings.TrimRight(line, "\r"), "\t")
-		id, file = strings.TrimSpace(id), filepath.ToSlash(strings.TrimSpace(file))
+		id, rest, _ := strings.Cut(strings.TrimRight(line, "\r"), "\t")
+		file, fingerprint, _ := strings.Cut(rest, "\t")
+		id, file, fingerprint = strings.TrimSpace(id), filepath.ToSlash(strings.TrimSpace(file)), strings.TrimSpace(fingerprint)
 		if id == "" || seen[id] {
 			continue
 		}
 		seen[id] = true
-		listed = append(listed, coverage.Test{ID: id, File: file})
+		inv.Tests = append(inv.Tests, coverage.Test{ID: id, File: file})
+		if fingerprint != "" {
+			if inv.Fingerprints == nil {
+				inv.Fingerprints = map[string]string{}
+			}
+			inv.Fingerprints[id] = fingerprint
+		}
 	}
-	return listed
+	return inv
 }
 
-func ListedTests(ctx context.Context, lister TestLister, command Command) ([]coverage.Test, error) {
+// ListedTests runs command through lister and reads the tests it prints
+// (ParseInventory). A command that fails is ListingFailed.
+func ListedTests(ctx context.Context, lister TestLister, command Command) (ListedInventory, error) {
 	if ctx.Err() != nil {
-		return nil, context.Cause(ctx)
+		return ListedInventory{}, context.Cause(ctx)
 	}
 	if lister == nil {
-		return nil, errors.New("mutation TestLister binding is missing")
+		return ListedInventory{}, errors.New("mutation TestLister binding is missing")
 	}
 	listed, failure := lister.List(ctx, command)
 	if failure != nil {
-		return nil, failure
+		return ListedInventory{}, failure
 	}
 	if listed.Reason != "" || listed.ExitCode != 0 {
-		return nil, ListingFailed{Command: command.String(), Reason: listed.Reason, ExitCode: listed.ExitCode}
+		return ListedInventory{}, ListingFailed{Command: command.String(), Reason: listed.Reason, ExitCode: listed.ExitCode}
 	}
-	return ParseListing(listed.Stdout), nil
+	return ParseInventory(listed.Stdout), nil
+}
+
+// ListOnce runs one command's list command at most once, when first asked,
+// so a run's coverage and the freshness of kills by tests listed with a
+// fingerprint read the same listing. A failure is kept as the listing. It
+// is safe for concurrent use.
+type ListOnce struct {
+	Lister  TestLister
+	Command Command
+	mu      sync.Mutex
+	ran     bool
+	value   ListedInventory
+	err     error
+}
+
+// NewListOnce lists by running the shell line list at root through lister.
+func NewListOnce(lister TestLister, root, list string) *ListOnce {
+	return &ListOnce{Lister: lister, Command: Command{Root: root, Dir: root, Shell: list}}
+}
+
+// List is the listing, running the list command, and reporting it to
+// progress, the first time it is asked for.
+func (l *ListOnce) List(ctx context.Context, progress Progress) (ListedInventory, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if !l.ran {
+		report(progress, RunEvent{Kind: "listing", Command: l.Command})
+		l.value, l.err = ListedTests(ctx, l.Lister, l.Command)
+		l.ran = true
+	}
+	return l.value, l.err
+}
+
+// Listed is the listing when the list command ran and succeeded, and
+// whether it did.
+func (l *ListOnce) Listed() (ListedInventory, bool) {
+	if l == nil {
+		return ListedInventory{}, false
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.value, l.ran && l.err == nil
 }
 
 // Measure performs the bound request. Strict callers keep actual errors;
@@ -104,16 +181,18 @@ func (opt Options) Measure(ctx context.Context, sources []string, strict bool) (
 	}
 	var perTest *coverage.PerTest
 	if opt.Listed != nil && opt.Listed.List != "" {
-		c := Command{Root: opt.Listed.Root, Dir: opt.Listed.Root, Shell: opt.Listed.List}
-		report(opt.Progress, RunEvent{Kind: "listing", Command: c})
-		tests, err := ListedTests(ctx, m.Lister, c)
+		listing := opt.Listing
+		if listing == nil {
+			listing = NewListOnce(m.Lister, opt.Listed.Root, opt.Listed.List)
+		}
+		inv, err := listing.List(ctx, opt.Progress)
 		if err != nil {
 			return nil, err
 		}
-		perTest = &coverage.PerTest{Root: opt.Listed.Root, Tests: tests, Select: opt.Listed.Select}
+		perTest = &coverage.PerTest{Root: opt.Listed.Root, Tests: inv.Tests, Select: opt.Listed.Select}
 		var ids []string
 		opt.Listed.Files = map[string]string{}
-		for _, test := range tests {
+		for _, test := range inv.Tests {
 			ids = append(ids, test.ID)
 			opt.Listed.Files[test.ID] = test.File
 		}

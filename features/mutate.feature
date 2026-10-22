@@ -915,7 +915,7 @@ Feature: Mutation testing
   # column as part of the file's name.
   Rule: A listed kill is dated by its test's fingerprint when the list prints one
 
-    @slice-39 @ID-MUT-276 @wip
+    @slice-39 @ID-MUT-276
     Scenario: A fingerprinted listed kill stays fresh when the rest of its file changes
       Given mutation.tests.list prints "ID-A-02", "a.feature" and the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
       And a.feature has changed since, in a comment and in another scenario, and the list still prints "f1" for ID-A-02
@@ -924,7 +924,7 @@ Feature: Mutation testing
       And "itos-cc mutation run" reuses that kill
       And after ID-A-02 moves to b.feature, still listed with "f1", the kill is still fresh
 
-    @slice-39 @ID-MUT-277 @wip
+    @slice-39 @ID-MUT-277
     Scenario: A changed or missing fingerprint makes the listed kill stale
       Given mutation.tests.list prints the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
       And the list now prints "f2" for ID-A-02
@@ -933,7 +933,7 @@ Feature: Mutation testing
       And "itos-cc mutation run" runs that mutant again, its own tests first
       And when the list no longer prints ID-A-02 at all, the kill is stale the same way
 
-    @slice-39 @ID-MUT-278 @wip
+    @slice-39 @ID-MUT-278
     Scenario: Unfingerprinted tests and support files keep their rules
       Given itos-cc.yaml lists features/*_test.go under mutation.tests.support
       And mutation.tests.list prints a fingerprint for ID-A-02 in a.feature and none for ID-B-01 in b.feature
@@ -942,7 +942,7 @@ Feature: Mutation testing
       Then "itos-cc mutation check" reports ID-B-01's kill "mutation.stale", naming b.feature, and ID-A-02's fresh
       And after features/steps_test.go changes, both kills are "mutation.stale", naming it
 
-    @slice-39 @ID-MUT-279 @wip
+    @slice-39 @ID-MUT-279
     Scenario: The list runs only when a fingerprinted kill's file changed
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 listed with a fingerprint in a.feature
       And a.feature has changed since, and the list command now fails

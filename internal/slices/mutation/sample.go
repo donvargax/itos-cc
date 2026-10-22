@@ -91,7 +91,7 @@ func (h Handler) Sample(ctx context.Context, q SampleQuery) (SampleFound, error)
 		return found, errNoWorkers
 	}
 	opt := mutants.SampleOptions{
-		CheckOptions:  h.options(root, judge, tests, support, nil),
+		CheckOptions:  h.options(root, judge, tests, support, nil, h.listing(root, cfg)),
 		WorkerFactory: h.Workers,
 		Workers:       q.Workers,
 		TimeoutFactor: q.TimeoutFactor,

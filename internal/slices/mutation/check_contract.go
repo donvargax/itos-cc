@@ -38,6 +38,15 @@ it is when the snapshot predates recording tests. A run with --since that finds 
 entries of the functions it does not judge marked stale, until a run judges
 them again.
 
+A kill by tests itos-cc.yaml lists (mutation.tests) holds while the files
+those tests are defined in, and the support files, are unchanged, with no
+command run. A test the list command printed with a fingerprint, a third
+column, is dated by it instead: its kill holds while the list prints it
+with that fingerprint, whatever else its file holds and whichever file
+names it, and its kill is stale, naming the test, when the fingerprint
+changed or the test is no longer listed. The list command runs, once, only
+when the file of such a test changed; one that fails is tests.list-failed.
+
 A survivor that itos-cc.yaml excepts (see mutation except) fails nothing.
 An exception that no longer holds fails as mutation.exception-stale, as in
 mutation run: its function changed, its function or site is gone, or a fresh
@@ -111,6 +120,7 @@ mutants at sites gone, when it has any.`,
 			"mutation.coverage-stale    with --fail-uncovered, Go, Python, TypeScript, Kotlin or Dart coverage inputs changed since measurement: file, function, line",
 			"mutation.coverage-unsupported with --fail-uncovered, strict coverage reaches beyond the inventoried root: a Go workspace or outside replacement, an npm, yarn or pnpm workspace, or a local dependency, includeBuild, Maven module or pub path dependency or override outside it: file, function, line",
 			"mutation.exception-stale  an exception in itos-cc.yaml no longer holds: file, function, line (none when the function or its file is gone, or its file excluded), column, original, replacement, why: killed|changed|gone|moved|excluded, and with moved new_file",
+			"tests.list-failed         the list command of mutation.tests, run to date a kill by a test listed with a fingerprint, failed: command, exit_code",
 			"config.invalid            itos-cc.yaml cannot be read: file, and key for an exclude glob",
 			"since.bad-ref             --since names no commit: ref",
 			"since.no-git              --since outside a git repository",
@@ -118,7 +128,7 @@ mutants at sites gone, when it has any.`,
 		},
 		Exits: []cli.Exit{
 			{Code: 0, Meaning: "every function checked has fresh results, and none records a survivor"},
-			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript, Kotlin or Dart line, or missing/stale Go, Python, TypeScript, Kotlin or Dart coverage evidence with --fail-uncovered; or an exception is stale"},
+			{Code: 1, Meaning: "a function's results are missing or stale, or record a survivor itos-cc.yaml does not except, or an uncovered mutant, Go executable block or Python, TypeScript, Kotlin or Dart line, or missing/stale Go, Python, TypeScript, Kotlin or Dart coverage evidence with --fail-uncovered; or an exception is stale; or the list command of mutation.tests failed"},
 			{Code: cli.CodeUsage, Meaning: "a usage or config error: a bad flag or path, a --since ref that is no commit, --since with --changed, --fail-uncovered=lines without --since, or an itos-cc.yaml that cannot be read"},
 			{Code: cli.CodeEnvironment, Meaning: "--changed or --since outside a git repository"},
 		},

@@ -84,7 +84,7 @@ func (h Handler) Check(ctx context.Context, q CheckQuery) (CheckFound, error) {
 	if err != nil {
 		return found, err
 	}
-	checks, err := mutants.Check(ctx, sources, h.options(root, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...)))
+	checks, err := mutants.Check(ctx, sources, h.options(root, judge, tests, support, append(slices.Clone(cfg.Exceptions), moved...), h.listing(root, cfg)))
 	if err != nil {
 		return found, err
 	}
@@ -93,7 +93,7 @@ func (h Handler) Check(ctx context.Context, q CheckQuery) (CheckFound, error) {
 		for _, language := range languages {
 			enabled[language] = true
 		}
-		found.Coverage, err = mutants.CheckCoverage(ctx, sources, h.options(root, judge, nil, support, nil), enabled, false, false)
+		found.Coverage, err = mutants.CheckCoverage(ctx, sources, h.options(root, judge, nil, support, nil, nil), enabled, false, false)
 		if err != nil {
 			return found, err
 		}

@@ -164,7 +164,7 @@ output of the commands it runs passes as it is.
 | `mutation.stale`             | 1    | mutation check | `file`, `line`, `function`                                  |
 | `mutation.mismatch`          | 1    | mutation sample | `file`, `line`, `column`, `function`, `original`, `replacement`, `recorded`, `outcome`, `scope` |
 | `mutation.baseline-failed`   | 1    | mutation run, mutation sample | `file`                                       |
-| `tests.list-failed`          | 1    | mutation run   | `command`, `exit_code`                                      |
+| `tests.list-failed`          | 1    | mutation run; mutation check, sample and except when they date a kill by a fingerprint | `command`, `exit_code` |
 | `tests.coverage-failed`      | 1    | mutation run   | `command`, `exit_code`                                      |
 | `tests.selection-failed`     | 1    | mutation run, mutation sample | `ids`, `command`, `exit_code`                 |
 | `serve.repo-unreadable`      | 80   | serve          | none                                                        |
@@ -354,6 +354,19 @@ A Dart outcome recorded with `--all-tests` depends on the test files under
 its package's `test/` alone, those `flutter test` runs with no path, and
 one recorded with `--test-command` on every Dart test file beneath its
 nearest `pubspec.yaml`.
+
+A kill by listed tests (`mutation.tests`) is dated by the files its tests are
+defined in and the `support` files, with no command run. The list command may
+print a third tab-separated column, `<ID>\t<file>\t<fingerprint>`, opaque text
+the lister computes from the test's own text; itos-cc never reads a test's
+format. A kill by a test listed with one is dated by it instead: it holds while
+the list prints the test with that fingerprint, whatever else its file holds and
+whichever file names it, and is `mutation.stale`, naming the test, once the
+fingerprint changed or the test is no longer listed. Check, run, sample and
+except run the list command only when the file of such a test changed, at most
+once a command; one that fails is `tests.list-failed`, exit 1. A test listed
+without a fingerprint, and an outcome recorded before itos-cc read them, is
+dated by its file; `support` files stale every listed kill either way.
 
 Strict Go, Python, TypeScript, Kotlin and Dart coverage is independent of mutant
 outcomes. `--fail-uncovered` requires a complete per-function executable

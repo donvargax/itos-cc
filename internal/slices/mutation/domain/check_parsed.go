@@ -46,7 +46,10 @@ func CheckParsed(ctx context.Context, f *lang.File, path string, opt CheckOption
 	if snap != nil {
 		changed = snap.TestsChanged(now)
 	}
-	listed := ListedChangedWithInputs(ctx, snap, opt.Root, opt.Support, opt.Fingerprints)
+	listed, err := ListedChangedListing(ctx, snap, opt.Root, opt.Support, opt.Fingerprints, opt.Listing, nil)
+	if err != nil {
+		return result, err
+	}
 	var entries []UnitResult
 	if snap != nil {
 		entries = snap.Units

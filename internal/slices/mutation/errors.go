@@ -273,6 +273,14 @@ func readError(err error, rel func(string) string) error {
 	if errors.As(err, &read) {
 		return snapshotReadError(read)
 	}
+	var listing mutants.ListingFailed
+	if errors.As(err, &listing) {
+		// check runs the list only to date a kill by a test listed with a
+		// fingerprint whose file changed.
+		return cli.NewProblem(cli.CodeNo, "tests.list-failed",
+			fmt.Sprintf("the list command of mutation.tests in %s failed (%s), so the kills of tests listed with a fingerprint could not be dated: %s", "itos-cc.yaml", listing.Reason, listing.Command),
+			"Make the command print the tests, one a line, and exit 0, then run again.").With("command", listing.Command).With("exit_code", listing.ExitCode)
+	}
 	var settings mutants.SettingsFailure
 	if errors.As(err, &settings) {
 		return settingsError(settings)

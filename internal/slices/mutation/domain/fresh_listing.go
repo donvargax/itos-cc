@@ -10,12 +10,15 @@ import (
 )
 
 // ParseFreshTests preserves counted preparation's strict unique-ID/file syntax,
-// separately from ordinary listing's first-ID-wins admission.
+// separately from ordinary listing's first-ID-wins admission. A third column,
+// a test's fingerprint, is no part of its file; a counted run judges every
+// mutant afresh, so it needs none.
 func ParseFreshTests(output string) ([]coverage.Test, error) {
 	var tests []coverage.Test
 	seen := map[string]bool{}
 	for _, raw := range strings.Split(output, "\n") {
-		id, file, _ := strings.Cut(strings.TrimRight(raw, "\r"), "\t")
+		id, rest, _ := strings.Cut(strings.TrimRight(raw, "\r"), "\t")
+		file, _, _ := strings.Cut(rest, "\t")
 		id, file = strings.TrimSpace(id), filepath.ToSlash(strings.TrimSpace(file))
 		if id == "" {
 			continue

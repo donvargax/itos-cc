@@ -51,5 +51,5 @@ func (h Handler) elsewhere(ctx context.Context, q SelectionQuery, root string, e
 	if err != nil {
 		return nil, nil, err
 	}
-	return mutants.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, h.options(root, nil, nil, nil, nil))
+	return mutants.Elsewhere(ctx, exceptions, sources, judge, func(file string) bool { return exclude.Excludes(sourcePath(root, file)) }, h.options(root, nil, nil, nil, nil, nil))
 }

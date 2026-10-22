@@ -30,6 +30,10 @@ type snapshotWire struct {
 	// no outcome is listed.
 	ListedFiles map[string]string `json:"listed_files,omitempty"`
 	Support     map[string]string `json:"support,omitempty"`
+	// ListedFingerprints is the fingerprint the list command printed for
+	// each test of Listed listed with one, by its ID: such a test's outcomes
+	// hold while it is listed with it. Left out when none has one.
+	ListedFingerprints map[string]string `json:"listed_fingerprints,omitempty"`
 }
 
 // unitResultWire is one function's mutants. Hash is the function's source hash:
@@ -177,6 +181,7 @@ func snapshotWireOf(v mutants.Snapshot) snapshotWire {
 	out.Listed = v.Listed
 	out.ListedFiles = v.ListedFiles
 	out.Support = v.Support
+	out.ListedFingerprints = v.ListedFingerprints
 	return out
 }
 
@@ -195,6 +200,7 @@ func (v snapshotWire) domain() mutants.Snapshot {
 	out.Listed = v.Listed
 	out.ListedFiles = v.ListedFiles
 	out.Support = v.Support
+	out.ListedFingerprints = v.ListedFingerprints
 	return out
 }
 

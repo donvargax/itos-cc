@@ -19,7 +19,7 @@ func (s *Execution) markListedStale() {
 	}
 	units := s.result.Snapshot.Units
 	for i := range units {
-		if !judged[UnitID(units[i].Namespace, units[i].Name)] && len(s.listedChange.Files(units[i].Mutants)) > 0 {
+		if !judged[UnitID(units[i].Namespace, units[i].Name)] && s.listedChange.Changed(units[i].Mutants) {
 			units[i].Stale = true
 		}
 	}
@@ -34,9 +34,23 @@ func listedHash(ctx context.Context, root, file string, fp Fingerprints) string 
 	}
 	return hashes[file]
 }
+
+// ListedChangedWithInputs is ListedChangedListing without the list: a test
+// recorded with a fingerprint whose file changed counts as changed.
 func ListedChangedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints) *ListedChange {
+	c, _ := ListedChangedListing(ctx, s, root, support, fp, nil, nil)
+	return c
+}
+
+// ListedChangedListing is how the tests and files the listed outcomes of s
+// rest on changed since it recorded them, the files hashed through fp under
+// root, support the support files' hashes now. A test recorded with a
+// fingerprint is judged by listing, run, and reported to progress, only when
+// its file changed, at most once (ListOnce); a list that fails is its
+// error. Without listing such a test counts as changed.
+func ListedChangedListing(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints, listing *ListOnce, progress Progress) (*ListedChange, error) {
 	if s == nil || !HasListed(s.Units) {
-		return nil
+		return nil, nil
 	}
 	now := map[string]string{}
 	for _, file := range s.Listed {
@@ -44,15 +58,66 @@ func ListedChangedWithInputs(ctx context.Context, s *Snapshot, root string, supp
 			now[file] = listedHash(ctx, root, file, fp)
 		}
 	}
-	return s.ListedChanged(now, support)
+	var current *ListedInventory
+	if listing != nil && s.needsListing(now) {
+		inv, err := listing.List(ctx, progress)
+		if err != nil {
+			return nil, err
+		}
+		current = &inv
+	}
+	return s.listedChanged(now, support, current), nil
 }
-func recordListedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints) {
+
+// ListedFingerprintsOf is the fingerprint of each test listed names, by its
+// ID, that has one: as inv, the listing, prints it when the list ran
+// (ran) and lists the test, else as previous recorded it. nil when none
+// has one.
+func ListedFingerprintsOf(listed map[string]string, inv ListedInventory, ran bool, previous *Snapshot) map[string]string {
+	now := map[string]bool{}
+	for _, test := range inv.Tests {
+		now[test.ID] = true
+	}
+	var out map[string]string
+	for id := range listed {
+		var fingerprint string
+		switch {
+		case ran && now[id]:
+			fingerprint = inv.fingerprint(id)
+		case previous != nil:
+			fingerprint = previous.ListedFingerprints[id]
+		}
+		if fingerprint == "" {
+			continue
+		}
+		if out == nil {
+			out = map[string]string{}
+		}
+		out[id] = fingerprint
+	}
+	return out
+}
+
+// files is the file of each test inv lists, by its ID.
+func (inv ListedInventory) files() map[string]string {
+	out := map[string]string{}
+	for _, test := range inv.Tests {
+		out[test.ID] = test.File
+	}
+	return out
+}
+
+// recordListedWithInputs records in s, once its Listed is set, the hash of
+// each file a listed outcome rests on, the support files' and fingerprints,
+// that of each test listed with one.
+func recordListedWithInputs(ctx context.Context, s *Snapshot, root string, support map[string]string, fp Fingerprints, fingerprints map[string]string) {
 	// Ordinary observations use the caller context; a failed optional read keeps
 	// its empty hash. A cancelled caller cannot publish the resulting snapshot.
-	s.ListedFiles, s.Support = nil, nil
+	s.ListedFiles, s.Support, s.ListedFingerprints = nil, nil, nil
 	if !HasListed(s.Units) {
 		return
 	}
+	s.ListedFingerprints = fingerprints
 	for _, file := range s.Listed {
 		if file == "" {
 			continue

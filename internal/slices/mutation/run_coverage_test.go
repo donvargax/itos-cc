@@ -30,7 +30,7 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 	if err != nil || !r.Has(hit) || r.Has(miss) {
 		t.Fatalf("bound measurement: %v %v", r, err)
 	}
-	r, _, _, err = h.strictCoverage(t.Context(), q, root, sources, []string{"python"}, nil, nil)
+	r, _, _, err = h.strictCoverage(t.Context(), q, root, sources, []string{"python"}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestMutationCoverageConsumersUseActualBindings(t *testing.T) {
 	wrong := *m
 	wrong.Declarations = map[coverage.Unloaded]covtest.Measurement{{Language: "python", Dir: root}: {Language: "python", Report: d.Report}}
 	h.Coverage = &wrong
-	r, _, _, err = h.strictCoverage(t.Context(), q, root, sources, []string{"python"}, nil, nil)
+	r, _, _, err = h.strictCoverage(t.Context(), q, root, sources, []string{"python"}, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

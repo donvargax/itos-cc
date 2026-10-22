@@ -51,7 +51,7 @@ func (h Handler) Except(ctx context.Context, q ExceptQuery) (ExceptFound, error)
 	if err != nil {
 		return ExceptFound{}, err
 	}
-	e, err := mutants.Survivor(ctx, q.Path, q.Line, q.Column, h.options(root, nil, tests, support, nil), h.Status)
+	e, err := mutants.Survivor(ctx, q.Path, q.Line, q.Column, h.options(root, nil, tests, support, nil, h.listing(root, cfg)), h.Status)
 	var none *mutants.NoSurvivorError
 	if errors.As(err, &none) {
 		return ExceptFound{}, NoSurvivor{Path: path, Line: q.Line, Column: q.Column, Reason: none.Reason}
@@ -92,7 +92,7 @@ func (h Handler) Renew(ctx context.Context) (RenewFound, error) {
 	if failure != nil {
 		return RenewFound{}, failure
 	}
-	renewed, left, err := mutants.Renew(ctx, cfg.Exceptions, sources, h.options(root, nil, tests, support, nil), h.Status)
+	renewed, left, err := mutants.Renew(ctx, cfg.Exceptions, sources, h.options(root, nil, tests, support, nil, h.listing(root, cfg)), h.Status)
 	if err != nil {
 		return RenewFound{}, err
 	}

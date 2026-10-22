@@ -153,8 +153,18 @@ func sourcePath(dir, path string) string {
 	}
 	return filepath.Join(dir, path)
 }
-func (h Handler) options(root string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []mutants.Exception) mutants.CheckOptions {
-	return mutants.CheckOptions{Store: h.Store, Tree: h.Tree, Surroundings: h.Surroundings, Toolchain: h.Toolchain, Fingerprints: h.Fingerprints, Root: root, Dir: h.Dir, Judge: judge, Tests: tests, Support: support, Exceptions: exceptions}
+func (h Handler) options(root string, judge func(string, string, string) bool, tests func(string) []string, support map[string]string, exceptions []mutants.Exception, listing *mutants.ListOnce) mutants.CheckOptions {
+	return mutants.CheckOptions{Store: h.Store, Tree: h.Tree, Surroundings: h.Surroundings, Toolchain: h.Toolchain, Fingerprints: h.Fingerprints, Root: root, Dir: h.Dir, Judge: judge, Tests: tests, Support: support, Exceptions: exceptions, Listing: listing}
+}
+
+// listing is a command's listing of the tests cfg lists (mutation.tests),
+// run at the project root at most once, when a kill by a test listed with a
+// fingerprint or the run's coverage needs it; nil when cfg lists none.
+func (h Handler) listing(root string, cfg *mutants.Config) *mutants.ListOnce {
+	if cfg == nil || cfg.Tests == nil || cfg.Tests.List == "" {
+		return nil
+	}
+	return mutants.NewListOnce(h.TestLister, root, cfg.Tests.List)
 }
 func beneath(dir, path string) bool {
 	rel, err := filepath.Rel(dir, path)

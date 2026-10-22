@@ -470,7 +470,7 @@ only the tests that reach its line rather than the whole suite:
 ```yaml
 mutation:
   tests:
-    list: go run ./features/list   # a test a line: its ID, then a tab and its file, or not
+    list: go run ./features/list   # a test a line: its ID, a tab and its file, a tab and its fingerprint; each optional
     run: go test ./features -args -tests={pattern}
     ids_pattern: "{ids}"
     join: {each: "{id}", sep: ","}
@@ -523,7 +523,17 @@ match, such as the step code the tests run, and the kill holds while they
 are unchanged. `mutation check`, `run`, `sample` and the graph call a
 function stale when one changed, naming it; a run then reruns its listed
 mutants, own tests first. No list command runs to judge it: deleting a
-test changes its file. Only Go programs
+test changes its file. A list command may print a third column, a
+fingerprint of the test's own text that it computes (for a Gherkin
+scenario, its steps, tables, `Examples`, `Background` and tags, not its
+comments or the scenarios beside it). A kill by a test listed with one is
+dated by it, not its file: it holds while the list prints the test with
+that fingerprint, wherever the test moved, and is stale, naming the test,
+once it changed or the test left the list. Check, run, sample and except
+then run the list command only when such a test's file changed, once a
+command, and one that fails is `tests.list-failed`. Kills recorded before
+itos-cc read fingerprints keep their files' dates until a run records
+them again, and the graph dates every listed kill by its file. Only Go programs
 report coverage per test so far, and listed tests are not run with
 `--no-coverage`, `--all-tests`, `--test-command`, or coverage read from
 reports.

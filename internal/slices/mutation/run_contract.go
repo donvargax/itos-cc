@@ -340,7 +340,7 @@ single test function runs, can be listed in itos-cc.yaml under
 mutation.tests, so each mutant runs only those that reach its line:
   mutation:
     tests:
-      list: <command printing a test a line: its ID, then a tab and its file, or not>
+      list: <command printing a test a line: its ID, then a tab and its file, or not, then a tab and its fingerprint, or not>
       run: <command running the tests {pattern} selects>
       ids_pattern: <the pattern, with {ids}>
       join: {each: <each ID, with {id}>, sep: <between them>}
@@ -375,7 +375,12 @@ files holding them keep their snapshots, as with a failing baseline
 ("baseline": "failed" in --json). Such
 an outcome holds while the files its tests are defined
 in, and the support files, are as it recorded them; mutation check calls
-its function stale when one changed. A list command that fails is
+its function stale when one changed. A test listed with a fingerprint, a
+third column the list command computes from the test's own text, dates
+the outcomes resting on it by that fingerprint instead of its file: they
+hold while the list prints the test with it, whatever else its file holds
+and whichever file names it. The list command then runs, once a command,
+only when such a test's file changed. A list command that fails is
 tests.list-failed: nothing is
 judged and no snapshot is written. Listed tests are not run with
 --no-coverage, --all-tests, --test-command, --use-existing-coverage,

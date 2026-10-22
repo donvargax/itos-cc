@@ -87,6 +87,7 @@ func cloneSnapshot(value mutants.Snapshot) mutants.Snapshot {
 	value.Tests = maps.Clone(value.Tests)
 	value.Listed = maps.Clone(value.Listed)
 	value.ListedFiles = maps.Clone(value.ListedFiles)
+	value.ListedFingerprints = maps.Clone(value.ListedFingerprints)
 	value.Support = maps.Clone(value.Support)
 	value.Units = slices.Clone(value.Units)
 	for i := range value.Units {

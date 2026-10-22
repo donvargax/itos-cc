@@ -51,6 +51,12 @@ type Options struct {
 	// mutant's line (coverage.Report.LineTests) once the file's own tests
 	// survived it.
 	Listed *Listed
+	// Listing, when set, is this command's listing of mutation.tests:
+	// Measure reads it for coverage, and the freshness of kills by tests
+	// listed with a fingerprint whose file changed, so the list command runs
+	// at most once. Unset, no fingerprinted kill can be judged by its
+	// fingerprint, and Measure lists through Measurement's Lister.
+	Listing *ListOnce
 	// Judge, when set, says which functions of the file at path to judge,
 	// by namespace#name and, to tell apart functions sharing a name, hash
 	// (UnitHash). The others never run: they keep what their snapshot
@@ -278,9 +284,14 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		if opt.Listed != nil {
 			files = opt.Listed.Files
 		}
+		inv, listed := opt.Listing.Listed()
+		if listed {
+			files = inv.files()
+		}
 		s.result.Snapshot.Listed = ListedOf(s.result.Snapshot.Units, files, s.stored)
 		s.markListedStale()
-		recordListedWithInputs(ctx, &s.result.Snapshot, opt.Root, opt.Support, opt.Fingerprints)
+		recordListedWithInputs(ctx, &s.result.Snapshot, opt.Root, opt.Support, opt.Fingerprints,
+			ListedFingerprintsOf(s.result.Snapshot.Listed, inv, listed, s.stored))
 		MarkExcepted(s.result.Snapshot.Units, s.result.Mutants)
 		if incomplete {
 			s.result.Incomplete = true

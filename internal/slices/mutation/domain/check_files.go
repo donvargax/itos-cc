@@ -22,6 +22,10 @@ type CheckOptions struct {
 	Tests        func(path string) []string
 	Support      map[string]string
 	Exceptions   []Exception
+	// Listing, when set, is this command's listing of mutation.tests,
+	// which judges a kill by a test listed with a fingerprint whose file
+	// changed; unset, such a kill is stale.
+	Listing *ListOnce
 }
 
 func (opt CheckOptions) bound() error {

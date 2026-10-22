@@ -53,7 +53,10 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 		}
 		s.stored, s.previous = snap, Usable(snap, s.tests)
 		prev, prevScopes := RememberedWithScopes(s.previous, f)
-		s.listedChange = ListedChangedWithInputs(ctx, s.stored, opt.Root, opt.Support, opt.Fingerprints)
+		s.listedChange, err = ListedChangedListing(ctx, s.stored, opt.Root, opt.Support, opt.Fingerprints, opt.Listing, opt.Progress)
+		if err != nil {
+			return states, err
+		}
 		s.result.Functions = len(f.Units)
 		var judge func(function string) bool
 		if opt.Judge != nil {
@@ -92,8 +95,8 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 			}
 			_, excepted := s.excepted.Held[i]
 			d := prevScopes[site.Unit][site.Key()]
-			// A listed outcome holds while the files it rests on do.
-			restsOnChange := len(s.listedChange.Files([]Mutant{{Scope: d.Scope, Tests: d.Tests}})) > 0
+			// A listed outcome holds while the tests and files it rests on do.
+			restsOnChange := s.listedChange.Changed([]Mutant{{Scope: d.Scope, Tests: d.Tests}})
 			broad := Mutant{Scope: d.Scope, SuiteEvidence: d.Evidence}
 			broadStale := len(BroadChanges(broad, s.suite.Of(broad.TestScope()), opt.Support)) > 0
 			if outcome := prev[site.Unit][site.Key()]; outcome != "" && !restsOnChange && !broadStale {

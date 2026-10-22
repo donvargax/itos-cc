@@ -148,3 +148,45 @@ func TestCoveragePlanningNeedsOnlyUncachedOrActionableWork(t *testing.T) {
 		t.Fatal("missing function must run")
 	}
 }
+
+func TestAFingerprintedListedKillIsDatedByItsFingerprint(t *testing.T) {
+	inv := ParseInventory("a\ta.feature\tf1\r\nb\tb.feature\na\tother.feature\tf9\n\n")
+	if !reflect.DeepEqual(inv.Fingerprints, map[string]string{"a": "f1"}) || len(inv.Tests) != 2 || inv.Tests[0].File != "a.feature" {
+		t.Fatal(inv)
+	}
+	a := Mutant{Outcome: Killed, Scope: ScopeListed, Tests: []string{"a"}}
+	b := Mutant{Outcome: Killed, Scope: ScopeListed, Tests: []string{"b"}}
+	s := Snapshot{Listed: map[string]string{"a": "a.feature", "b": "a.feature"}, ListedFiles: map[string]string{"a.feature": "old"},
+		ListedFingerprints: map[string]string{"a": "f1"}, Units: []UnitResult{{Mutants: []Mutant{a, b}}}}
+	unchanged := map[string]string{"a.feature": "old"}
+	if s.needsListing(unchanged) || s.listedChanged(unchanged, nil, nil) != nil {
+		t.Fatal("an unchanged file needs no listing")
+	}
+	changed := map[string]string{"a.feature": "new"}
+	if !s.needsListing(changed) {
+		t.Fatal("a fingerprinted test's changed file needs the list")
+	}
+	moved := ParseInventory("a\tb.feature\tf1\n")
+	c := s.listedChanged(changed, nil, &moved)
+	if got := c.Tests([]Mutant{a}); len(got) != 0 || c.Changed([]Mutant{a}) {
+		t.Fatal("a test listed with its fingerprint holds wherever it moved", got)
+	}
+	if got := c.Files([]Mutant{b}); !slices.Equal(got, []string{"a.feature"}) {
+		t.Fatal("a test without a fingerprint is dated by its file", got)
+	}
+	for _, listing := range []*ListedInventory{nil, {}, new(ParseInventory("a\ta.feature\tf2\n"))} {
+		if got := s.listedChanged(changed, nil, listing).Tests([]Mutant{a}); !slices.Equal(got, []string{"a"}) {
+			t.Fatal("unlisted, changed or unjudged fingerprint holds", listing, got)
+		}
+	}
+	listed := map[string]string{"a": "b.feature", "b": "a.feature"}
+	if got := ListedFingerprintsOf(listed, moved, true, &s); !reflect.DeepEqual(got, map[string]string{"a": "f1"}) {
+		t.Fatal(got)
+	}
+	if got := ListedFingerprintsOf(listed, ListedInventory{}, false, &s); !reflect.DeepEqual(got, map[string]string{"a": "f1"}) {
+		t.Fatal("without a listing the recorded fingerprint stays", got)
+	}
+	if got := ListedFingerprintsOf(listed, ParseInventory("a\ta.feature\n"), true, &s); got != nil {
+		t.Fatal("a test listed without a fingerprint has none", got)
+	}
+}

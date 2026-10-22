@@ -93,6 +93,11 @@ func staleBecause(fn mutants.FunctionCheck) string {
 	switch {
 	case fn.Marked:
 		return "has mutation results from before the tests that import its file changed, kept by a mutation run that did not judge it"
+	case len(fn.ListedTests) > 0 && len(fn.Listed) > 0:
+		return "has kills by listed tests made before tests they rest on changed or left the list: " + strings.Join(fn.ListedTests, ", ") +
+			"; and before files they rest on changed: " + strings.Join(fn.Listed, ", ")
+	case len(fn.ListedTests) > 0:
+		return "has kills by listed tests made before tests they rest on changed or left the list: " + strings.Join(fn.ListedTests, ", ")
 	case len(fn.Listed) > 0:
 		return "has kills by listed tests made before files they rest on changed: " + strings.Join(fn.Listed, ", ")
 	case len(fn.Broad) > 0:

@@ -43,6 +43,13 @@ type Snapshot struct {
 	// no outcome is listed.
 	ListedFiles map[string]string
 	Support     map[string]string
+	// ListedFingerprints is the fingerprint of each test Listed names that
+	// the list command printed with one, by its ID: a listed outcome resting
+	// on such a test holds while the list prints the test with it, whatever
+	// its file holds, and its file's hash unchanged means it does. A test
+	// without one is dated by its file. Left out when none has one, as in a
+	// snapshot written before itos-cc read fingerprints.
+	ListedFingerprints map[string]string
 }
 
 // UnitResult is one function's mutants. Hash is the function's source hash:
