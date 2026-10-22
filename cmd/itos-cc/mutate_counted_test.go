@@ -31,6 +31,7 @@ type countedJSON struct {
 	Stages   []map[string]any            `json:"stages"`
 	Files    []map[string]any            `json:"files"`
 	Problems []map[string]any            `json:"problems"`
+	NotBuilt []map[string]any            `json:"not_built"`
 }
 
 func (o outcome) counted(t *testing.T) countedJSON {
@@ -313,9 +314,9 @@ func TestCountedModeLeavesCompleteAndCachedSampleContractsIntact(t *testing.T) {
 	}
 }
 
-// @ID-MUT-180. Kept: a function only Windows builds is
-// mutation.coverage-missing in a strict counted run, which no scenario
-// asserts. ID-MUT-173, 175, 176 and 184 to 186's holders went, every
+// @ID-MUT-180. Kept: a function only Windows builds is no
+// mutation.coverage-missing in a strict counted run, its file listed in
+// "not_built" instead (slice-25), which no scenario asserts. ID-MUT-173, 175, 176 and 184 to 186's holders went, every
 // assertion theirs or another scenario's, ID-MUT-173's platform guard to
 // mutation_platform_test.go (T-130).
 func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
@@ -360,8 +361,11 @@ func TestMeasuredUncoveredSelectionIsExplicitAndIsNeverRedrawn(t *testing.T) {
 	if functions["mutation.uncovered-statement"]["example.com/untested#Empty"] || functions["mutation.coverage-missing"]["example.com/untested#Empty"] {
 		t.Errorf("empty-bodied Empty has an obligation: %+v", strict.Problems)
 	}
-	if !functions["mutation.coverage-missing"]["example.com/untested#Win"] {
-		t.Errorf("Win, built only on Windows, is not coverage-missing: %+v", strict.Problems)
+	if functions["mutation.coverage-missing"]["example.com/untested#Win"] {
+		t.Errorf("Win, built only on Windows, is coverage-missing: %+v", strict.Problems)
+	}
+	if len(strict.NotBuilt) != 1 || strict.NotBuilt[0]["file"] != "other_windows.go" {
+		t.Errorf("not_built = %+v, want other_windows.go, which only Windows builds", strict.NotBuilt)
 	}
 	if strict.stage("strict-go-inventory") == nil || strict.stage("strict-go-inventory")["state"] != "complete" {
 		t.Errorf("a missing-evidence finding did not leave the strict inventory complete: %+v", strict.Stages)
