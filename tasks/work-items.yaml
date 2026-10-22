@@ -5331,3 +5331,18 @@ items:
       ones let it survive, own baseline lazy), and possibly listed-only, would cut that. Decide
       after T-46's measured run shows whether those files dominate the nightly; mutation sample and
       counted runs would follow the order.
+  - id: listed-file-missing-fresh
+    title: A listed kill whose test file is not there reads fresh forever
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found 2026-10-22. listedHash returns an empty hash when the listed file cannot be read
+      (internal/slices/mutation/domain/run_listed.go:30-36), both when the kill is recorded and when
+      checked, and fileHolds compares them equal (listed.go:62-65), so the kill never goes stale and
+      its fingerprint is never consulted. itos tests list prints paths relative to features/, which
+      would trigger it without T-184's jq. The base listed fixture lists a.feature without writing
+      it (MUT-121 to 129), so the fix must check those scenarios. A bug fix with a scenario: stale,
+      naming the file as not there.
