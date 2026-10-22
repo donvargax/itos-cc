@@ -5308,3 +5308,16 @@ items:
       slice-24 (person, 2026-10-21) caps memory on Linux only. macOS needs a reader of an owned
       process group's resident memory (proc_pidinfo, or ps) to size and enforce the same cap.
     refs: [slice-24]
+  - id: go-tag-only-files
+    title: Go files left out only by a project tag or //go:build ignore are measured as their own class
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      slice-25 (person, 2026-10-21) leaves out only files whose constraints rule out this GOOS and
+      GOARCH. A file left out only by a project tag (integration) or by //go:build ignore is judged
+      as before, since listed tests may build it with -tags; whether such files deserve their own
+      report is open.
+    refs: [slice-25]
