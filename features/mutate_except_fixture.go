@@ -141,7 +141,7 @@ func (e *exceptionMutation) declare(file string, survive bool) error {
 	t := Tests{Language: "typescript"}
 	for _, site := range sites {
 		hit := 1
-		if e.id == "86" || e.id == "95" {
+		if e.id == "86" || e.id == "95" || e.id == "299" {
 			if site.function == "board.Board#clear" {
 				hit = 0
 			}
