@@ -3517,15 +3517,9 @@ items:
     title: Excepting the same change in the same function re-points a stale entry
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: []
     kind: slice
-    why: >
-      Was except-repoint.
-      Issue #50. The person (2026-10-18): keep --renew's line-text guard (mutate.feature:2225,
-      internal/mutants/renew.go:274-288); excepting the same change in the same function replaces
-      the stale entry and keeps its reason. Also run and check say gone where --renew says changed:
-      make them agree. After except-prune.
     refs: ["#50"]
   - id: slice-23
     title: The refusal to except an uncovered site says why and names the way out
