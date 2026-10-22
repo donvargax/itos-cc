@@ -1894,6 +1894,31 @@ Feature: Mutation testing
       And the exit code is 80
       And excepting src/board.ts:9:3 is refused the same way
 
+    # slice-23, issue #58: a changed line that no test can reach fails
+    # --fail-uncovered=lines, and mutation except refuses its site, so the
+    # refusal read as a gap in the tool. Decided by the person on
+    # 2026-10-18: keep q-12, an exception covers survivors only; the
+    # refusal, still exception.no-survivor, says that this is on purpose and
+    # suggests routing the branch through code a test already reaches.
+    # Coordinator's call on the wording, 2026-10-21: the message ends "and an
+    # exception covers survivors only, on purpose: an uncovered line needs a
+    # test, not a reason"; the fix reads "Add a test that runs line 9, or
+    # route the branch through code a test already reaches, such as a
+    # helper the tests call; then run 'itos-cc mutation run src/board.ts'."
+    # A killed site, or a function with stale or missing results, is worded
+    # as before. Both drivers run it, as it needs no real tool. Before
+    # slice-23 the message says only that a survivor is excepted, and the fix
+    # asks for a site listed as survived, failing at the second Then.
+    @slice-23 @ID-MUT-299 @wip
+    Scenario: Refusing to except an uncovered site says it is on purpose and names the way out
+      Given the snapshot records the mutant at src/board.ts:5:9 as killed, and the one at src/board.ts:9:3 as uncovered
+      When I run "itos-cc mutation except src/board.ts:9:3 --reason 'no test can reach it' --json"
+      Then the problem is "exception.no-survivor", with file "src/board.ts"
+      And its message says an exception covers survivors only, on purpose
+      And its fix names a test that runs line 9, or routing the branch through code a test already reaches
+      And the exit code is 80
+      But refusing the killed site at src/board.ts:5:9 says neither
+
     @mutation-exceptions @ID-MUT-87
     Scenario: A reason is required
       When I run "itos-cc mutation except src/board.ts:7:19"
@@ -1907,6 +1932,52 @@ Feature: Mutation testing
       When I run "itos-cc mutation except src/board.ts:7:19 --reason 'reworded'"
       Then the entry's reason is "reworded", and it is still the only one for that site
       And the comment and the other key are unchanged
+
+    # slice-20, issue #55: mutation except decoded itos-cc.yaml and wrote the
+    # whole document back through yaml.v3, so lines it never meant to touch
+    # changed: a flow mapping such as mutation.tests' join lost the spaces
+    # inside its braces, blank lines and a leading "---" were dropped, a list
+    # at its key's indentation moved two spaces in, a block four spaces deep
+    # came back two, the spaces before a trailing comment became one, and a
+    # folded reason was joined onto one line. The commit that records an
+    # exception should show only the exception: a restyled line elsewhere has
+    # to be found and put back by hand, and is easy to miss in review.
+    # Decided in the issue: every line outside the edited exceptions list
+    # comes back byte for byte. Coordinator's calls, 2026-10-21, no
+    # library keeping a YAML file's bytes (yaml.v3, goccy/go-yaml and kyaml
+    # all re-render), the entry's text is spliced into the file at the
+    # line and column yaml.v3 gives the list and the entry:
+    # - mutation except changes only the lines of the entry it adds or
+    #   replaces, so the list's other entries are byte for byte too.
+    # - A new entry is written in block style, its keys in today's order,
+    #   its dash at the indentation of the list's other entries, or two
+    #   spaces under its key when it has none, after the list's last entry.
+    #   A flow-style entry is replaced by a block one; a flow-style list is
+    #   rewritten whole, as splicing into it is fragile.
+    #   A replaced entry is written the same way, in its place, keeping the
+    #   comment above it and the one after its first line.
+    # - A file with no list gains the keys it needs at the end of the
+    #   mutation mapping, or of the document; nothing before them changes.
+    # - --renew (MUT-292) and --prune (slice-21) write the same way.
+    # The fixture's "other" key stands for mutation.tests' join, which would
+    # make the run use listed tests. Both drivers run it, as it needs no real
+    # tool. Before slice-20 the whole document is re-encoded, failing at the
+    # Then.
+    @slice-20 @ID-MUT-290 @wip
+    Scenario: Excepting a survivor changes no byte of itos-cc.yaml outside its new entry
+      Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
+      And itos-cc.yaml is laid out by hand: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded
+      When I run "itos-cc mutation except src/board.ts:7:19 --reason 'the loop only counts up'"
+      Then itos-cc.yaml is the text it was, with the new entry's lines after the last entry and no other byte changed
+      And the exit code is 0
+
+    @slice-20 @ID-MUT-291 @wip
+    Scenario: Excepting a site again changes only the lines of its entry
+      Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
+      And itos-cc.yaml is laid out by hand, its entry for src/board.ts:7:19 with reason "first" between two entries for other functions, a comment above it
+      When I run "itos-cc mutation except src/board.ts:7:19 --reason 'reworded'"
+      Then only the lines of that entry changed in itos-cc.yaml, its reason now "reworded" and the comment above it kept
+      And the exit code is 0
 
     @mutation-exceptions @ID-MUT-89
     Scenario: An excepted survivor fails nothing
@@ -3124,6 +3195,140 @@ Feature: Mutation testing
       When I run "itos-cc mutation run src/board.ts --json"
       Then the "mutation.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --renew" before "--reason"
       And "itos-cc mutation check src/board.ts --json" gives it the same fix
+
+    # slice-20, issue #55: --renew writes through the same codec as mutation
+    # except (RenewDocument), so it restyled the same lines. It now changes
+    # only the lines of the entries it renews. Both drivers run it. Before
+    # slice-20 the whole document is re-encoded, failing at the Then.
+    @slice-20 @ID-MUT-292 @wip
+    Scenario: Renewing an exception changes only the lines of its entry
+      Given a Go project with a reviewed exception for an equivalent mutant in a function
+      And itos-cc.yaml is laid out by hand around that entry: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, and a comment two spaces after a value
+      And a commit that renames a string literal on another line of that function
+      And "itos-cc mutation run" has judged the function again and the mutant still survives
+      When I run "itos-cc mutation except --renew --json"
+      Then only the lines of the renewed entry changed in itos-cc.yaml
+
+    # slice-22, issue #50: an exception whose own line changed is never
+    # renewed, by design (MUT-227), and the only way on was to except the
+    # mutant at its new site, typing the reason again, which added a second
+    # entry and left the old one stale. run and check also called that entry
+    # gone, at its old column, while --renew called it changed, and their
+    # fix sent the person to edit itos-cc.yaml. Decided by the person on
+    # 2026-10-18: keep --renew's line-text guard; excepting the same change
+    # in the same function replaces the stale entry and keeps its reason;
+    # run and check give the same why as --renew. Coordinator's calls,
+    # 2026-10-21:
+    # - An entry is re-pointed when it is stale and names the site's file,
+    #   its function by namespace#name, and its original and replacement,
+    #   and it is the only such entry. An entry that holds, one stale as
+    #   killed, and one whose file moved are never re-pointed. With several,
+    #   the site is excepted as a new entry, as today.
+    # - --reason may be left out when the site re-points an entry, which
+    #   then keeps its reason; given, it replaces it. Without --reason and
+    #   nothing to re-point, the refusal is flags.value-missing, as now
+    #   (MUT-87), even when the site is no survivor.
+    # - The command reports "excepted again" and "replaced": true, as for
+    #   the same site.
+    # - run and check call an entry changed when its function, by
+    #   namespace#name, still has a site of its change, and gone when the
+    #   function or every such site is gone, as --renew does. The changed
+    #   fix (MUT-242) applies, and --renew's fix for an entry it left says
+    #   that excepting the new site replaces the entry.
+    # Both drivers run it, as it needs no real tool. Before slice-22 the
+    # command without --reason is flags.value-missing and the entry keeps
+    # column 19, failing at the second Then of MUT-297; given --reason, a
+    # second entry is added. run and check call the entry gone, failing at
+    # the Then of MUT-298.
+    @slice-22 @ID-MUT-297 @wip
+    Scenario: Excepting the same change in the same function re-points its stale entry, keeping its reason
+      Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
+      And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving
+      When I run "itos-cc mutation except src/board.ts:7:30 --json"
+      Then itos-cc.yaml has one entry under mutation.exceptions
+      And it names "Board#count"'s current hash, line_in_function 1, column 30 and its line text, and keeps the reason "the loop only counts up"
+      And the JSON says "replaced": true
+      And "itos-cc mutation check src/board.ts --json" exits 0
+      But given "--reason 'reworded'", the entry is re-pointed the same way, its reason "reworded"
+
+    @slice-22 @ID-MUT-298 @wip
+    Scenario: run, check and --renew give the same why for an entry whose change moved along its line
+      Given itos-cc.yaml excepts the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
+      And "Board#count" became "count(x){ const n=x; return n<5; }", and "itos-cc mutation run src/board.ts" recorded its `<` → `<=` at src/board.ts:7:30 surviving
+      When I run "itos-cc mutation check src/board.ts --json"
+      Then the problem is "mutation.exception-stale", with why "changed"
+      And the "mutation.exception-stale" problem, with why "changed", has a fix naming "itos-cc mutation except --renew" before "--reason"
+      And "itos-cc mutation run src/board.ts --json" and "itos-cc mutation except --renew --json" name it "changed" too
+      But once "Board#count" has no `<` left and mutation run has judged it, all three name it "gone"
+
+  # slice-21, issue #51: an entry of itos-cc.yaml that is stale as gone,
+  # killed or excluded fails every mutation run and check, and its fix said
+  # to delete it by hand: mutation except can only add or replace an entry,
+  # and --renew carries over only entries whose mutant is unchanged. Decided
+  # in the item's why: mutation except --prune removes each entry whose why
+  # is gone, killed or excluded, reports each removal, and keeps the file's
+  # other keys and comments. Coordinator's calls, 2026-10-21:
+  # - --prune, run after mutation run, judges every entry of itos-cc.yaml
+  #   as a check of the whole project does. Gone and excluded need no
+  #   results; killed needs fresh results that record its mutant killed,
+  #   and an entry whose function has none is kept.
+  # - It keeps an entry that is changed or moved: --renew or an edit of its
+  #   file mends those, and mutation check still reports them.
+  # - It writes as slice-20 does: only the removed entries' lines change,
+  #   with the comment lines directly above each.
+  # - Plain output is a line per removal, "pruned <file>[:<line>:<column>]
+  #   `original` → `replacement` in <function> (<why>) from itos-cc.yaml";
+  #   --json gives "pruned", a list of the entries with "why" and, when its
+  #   site is found, "line". It exits 0 once it has written, even when
+  #   entries it keeps are stale.
+  # - It takes no site and no --reason, as --renew does, and is not given
+  #   beside --renew.
+  # - The fixes that said "Remove its entry from itos-cc.yaml." name
+  #   'itos-cc mutation except --prune' instead.
+  # Both drivers run it, as it needs no real tool. Before slice-21 --prune
+  # is flags.unknown, exit 80, and itos-cc.yaml is left as it was, failing
+  # at the first Then of each scenario.
+  Rule: Stale exceptions that nothing can mend are pruned
+
+    @slice-21 @ID-MUT-293 @wip
+    Scenario Outline: --prune removes an entry that is <why>, and reports it
+      Given itos-cc.yaml excepts the survivor of "Board#count", and every other mutant of src/board.ts is killed
+      And <how>
+      And "itos-cc mutation run src/board.ts" has run since
+      When I run "itos-cc mutation except --prune --json"
+      Then itos-cc.yaml holds no entry for "Board#count", and no other byte of it changed
+      And the removal is reported with the entry's file, function, column, original, replacement, reason and why "<why>"
+      And the exit code is 0
+      And "itos-cc mutation check src/board.ts --json" reports no "mutation.exception-stale" problem
+      And before it, "itos-cc mutation check src/board.ts --json" gave the entry a fix naming "itos-cc mutation except --prune"
+
+      Examples:
+        | why    | how                                                   |
+        | gone   | "Board#count" was deleted, or no longer has that site |
+        | killed | src/board.test.ts changed since, and now kills it     |
+
+    @slice-21 @ID-MUT-294 @wip
+    Scenario: --prune removes an entry naming a source the exclude leaves out
+      Given itos-cc.yaml excepts a survivor in src/port/porttest/fake.go and excludes "**/porttest/**"
+      When I run "itos-cc mutation except --prune --json"
+      Then itos-cc.yaml holds no entry for src/port/porttest/fake.go, still excludes "**/porttest/**", and no other byte of it changed
+      And the removal is reported with why "excluded"
+      And "itos-cc mutation check --json" reports no "mutation.exception-stale" problem
+
+    @slice-21 @ID-MUT-295 @wip
+    Scenario: --prune keeps an entry that --renew or an edit can mend
+      Given itos-cc.yaml excepts a survivor of "Board#count", and "Board#count" changed since the entry was written
+      When I run "itos-cc mutation except --prune --json"
+      Then it reports nothing pruned, and the exit code is 0
+      And itos-cc.yaml is byte for byte as it was
+
+    @slice-21 @ID-MUT-296 @wip
+    Scenario: --prune takes no site and no reason
+      When I run "itos-cc mutation except --prune src/board.ts:7:19"
+      Then the problem is "args.unexpected", with argument "src/board.ts:7:19"
+      And the exit code is 80
+      And "itos-cc mutation except --prune --reason x" is "flags.conflict", with flag "--reason", exit 80
+      And "itos-cc mutation except --prune --renew" is "flags.conflict", exit 80
 
   # integration-coverage-python, integration-coverage-typescript and
   # integration-coverage-kotlin, q-41 (answered 2026-10-10): issue #14's
