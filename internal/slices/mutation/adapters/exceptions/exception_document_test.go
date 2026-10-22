@@ -132,3 +132,91 @@ func TestExceptDocumentRefusesAnInvalidDocument(t *testing.T) {
 		}
 	}
 }
+
+// slice-20: the writer changes only the lines of the entry it adds or
+// replaces; every other byte of the document comes back as it was.
+func TestExceptDocumentChangesOnlyTheLinesOfItsEntry(t *testing.T) {
+	other := "{file: src/b.go, function: m/src#g, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: other}"
+	old := "{file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: old}"
+	block := func(pad string) string {
+		return pad + "- file: src/a.go\n" + pad + "  function: m/src#f\n" + pad + "  hash: 0123456789abcdef\n" + pad + "  line_in_function: 2\n" +
+			pad + "  column: 9\n" + pad + "  original: <\n" + pad + "  replacement: '!='\n" + pad + "  reason: the loop only counts up\n"
+	}
+	for _, c := range []struct{ name, text, want string }{
+		{"empty", "", "mutation:\n  exceptions:\n" + block("    ")},
+		{"a comment alone", "# Nothing yet.\n", "# Nothing yet.\nmutation:\n  exceptions:\n" + block("    ")},
+		{"no line break at the end", "x: 1", "x: 1\nmutation:\n  exceptions:\n" + block("    ")},
+		{"a null mutation", "---\nmutation: ~  # none yet\n\nnext: 1\n", "---\nmutation:  # none yet\n  exceptions:\n" + block("    ") + "\nnext: 1\n"},
+		{"a null list", "mutation:\n    exceptions:\n    tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}', sep: ' '}}\n",
+			"mutation:\n    exceptions:\n" + block("      ") + "    tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}', sep: ' '}}\n"},
+		{"no list", "mutation:\n  tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}',   sep: ' '}}\n\n# the end\n",
+			"mutation:\n  tests: {list: l, run: 'r {pattern}', ids_pattern: '{ids}', join: {each: '{id}',   sep: ' '}}\n  exceptions:\n" + block("    ") + "\n# the end\n"},
+		{"after the last entry", "mutation:\n  exceptions:\n  - " + other + "\n\n  # trailing\nexclude:   [a/**]\n",
+			"mutation:\n  exceptions:\n  - " + other + "\n" + block("  ") + "\n  # trailing\nexclude:   [a/**]\n"},
+		{"a replaced flow entry", "mutation:\n  exceptions:\n    # first\n    - " + old + "   # its line\n\n    - " + other + "\n",
+			"mutation:\n  exceptions:\n    # first\n" + strings.Replace(block("    "), "src/a.go\n", "src/a.go   # its line\n", 1) + "\n    - " + other + "\n"},
+		{"a flow list", "mutation:\n  exceptions: [" + other + ",\n     ]  # rewritten\n\nnext: 1\n", "mutation:\n  exceptions:\n    - file: src/b.go\n      function: m/src#g\n" +
+			"      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 9\n      original: <\n      replacement: '!='\n      reason: other\n" + block("    ") + "\nnext: 1\n"},
+		{"line breaks of Windows", "a: 1\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n", "a: 1\r\nmutation:\r\n  exceptions:\r\n  - " + other + "\r\n" + strings.ReplaceAll(block("  "), "\n", "\r\n")},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			data, _, err := exceptions.ExceptDocument([]byte(c.text), entry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(data) != c.want {
+				t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, c.want)
+			}
+		})
+	}
+}
+
+// A replaced entry whose reason is a block scalar is replaced whole, and
+// the comment-like lines of its reason go with it.
+func TestExceptDocumentReplacesABlockScalarWhole(t *testing.T) {
+	text := "mutation:\n  exceptions:\n  - file: src/a.go\n    function: m/src#f\n    hash: 0123456789abcdef\n    line_in_function: 2\n    column: 9\n" +
+		"    original: '<'\n    replacement: '!='\n    reason: |+\n      old\n      # still the reason\n\n  # above nothing\n"
+	data, replaced, err := exceptions.ExceptDocument([]byte(text), entry)
+	if err != nil || !replaced {
+		t.Fatalf("replaced %v, error %v", replaced, err)
+	}
+	want := "mutation:\n  exceptions:\n  - file: src/a.go\n    function: m/src#f\n    hash: 0123456789abcdef\n    line_in_function: 2\n    column: 9\n" +
+		"    original: <\n    replacement: '!='\n    reason: the loop only counts up\n  # above nothing\n"
+	if string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+}
+
+// A layout the writer does not splice, a flow-style mutation mapping, is
+// written by re-encoding the document, which still reads as the edit.
+func TestExceptDocumentReencodesAFlowMapping(t *testing.T) {
+	data, _, err := exceptions.ExceptDocument([]byte("mutation: {}\n"), entry)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c, err := config.Parse(data); err != nil || !slices.Equal(c.Exceptions, []mutants.Exception{entry}) {
+		t.Errorf("exceptions %+v, error %v, want the entry", c, err)
+	}
+}
+
+func TestRenewDocumentChangesOnlyTheLinesOfItsEntries(t *testing.T) {
+	text := "---\n# Settings.\n\nother: { each: \"{id}\", sep: \"|\" }\nlimit: 30  # kept\n\nmutation:\n  exceptions:\n" +
+		"    - {file: src/a.go, function: m/src#f, hash: 0123456789abcdef, line_in_function: 2, column: 9, original: '<', replacement: '!=', reason: kept}\n\n" +
+		"    - file: src/a.go\n      function: m/src#g\n      hash: 0123456789abcdef\n      line_in_function: 2\n      column: 20\n      original: '<'\n      replacement: '!='\n      reason: >-\n        folded\n        reason\n"
+	before, err := config.Parse([]byte(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	renewed := before.Exceptions[1]
+	renewed.Hash, renewed.LineText = "fedcba9876543210", "for i < n {"
+	data, err := exceptions.RenewDocument([]byte(text), []mutants.Renewal{{Old: before.Exceptions[1], New: renewed}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	head, _, _ := strings.Cut(text, "    - file: src/a.go\n      function: m/src#g")
+	want := head + "    - file: src/a.go\n      function: m/src#g\n      hash: fedcba9876543210\n      line_in_function: 2\n      column: 20\n      original: <\n      replacement: '!='\n" +
+		"      reason: folded reason\n      line_text: for i < n {\n"
+	if string(data) != want {
+		t.Errorf("itos-cc.yaml\n%s\nwant\n%s", data, want)
+	}
+}

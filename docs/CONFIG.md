@@ -35,7 +35,7 @@ adapter writes it (`mutation except` and `mutation except --renew`), reading it 
 | 13 | Holds no secrets. |
 | 14 | Its keys are documented in `docs/CLI.md` and README, without a typed reference of every default. |
 | 15–16 | No command prints the file with its defaults, and no JSON Schema is published. |
-| 17 | `mutation except` rewrites the document in place, keeping its other keys, comments and permissions, and adds or renews only the entries it writes. |
+| 17 | `mutation except` and `--renew` change only the lines of the entries they write, in block style with the codec's key order, keeping every other byte of the document, its other entries included, and its permissions; a list written in flow style is rewritten whole in block style, and a flow-style `mutation` mapping, which they cannot splice into, has the whole document re-encoded. |
 
 A file that is not there is an empty configuration. One whose text the loader refuses is
 `config.invalid`, exit 80; one the disk cannot read is an internal failure, exit 100.

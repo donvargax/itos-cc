@@ -25,8 +25,11 @@ function's hash, the site's line counted from the function's first line
 (line_in_function, 1 for the first), its column, the original, the
 replacement, the reason, and the text of the site's line less the space
 around it (line_text), so a function that only moves keeps it.
-Excepting a site again replaces its entry; the file's other keys and its
-comments are kept. An entry stops holding, and mutation run and mutation
+Excepting a site again replaces its entry. Only the lines of the entry
+written change: a new one is added in block style after the list's last
+entry, a replaced one is written in its place, keeping the comment above
+it and the one after its first line, and every other byte of the file is
+kept. A list written in flow style is rewritten whole in block style. An entry stops holding, and mutation run and mutation
 check fail it as mutation.exception-stale, when its function changes, when
 its function or site is gone, when its file is deleted or renamed, or when
 the tests now kill its mutant. Only mutation except writes itos-cc.yaml.
@@ -45,8 +48,8 @@ written before entries had one, matches the site at its line_in_function
 and column, else the function's only site of its change. That mutant must
 be recorded survived. The renewed entry names the function's current
 hash, name, line_in_function, column and line text, and keeps its reason
-and comments; nothing else is written, and an entry that holds is left
-alone. Each renewal is reported with its old and new hash and the site.
+and comments; only the renewed entries' lines change, and an entry that
+holds is left alone. Each renewal is reported with its old and new hash and the site.
 Each entry left stale is mutation.exception-stale with why: killed (its
 fresh results record its mutant killed), changed (no site of its change
 is on a line of its text), gone (its file, function or change is gone),

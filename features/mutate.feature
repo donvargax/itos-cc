@@ -1963,7 +1963,7 @@ Feature: Mutation testing
     # make the run use listed tests. Both drivers run it, as it needs no real
     # tool. Before slice-20 the whole document is re-encoded, failing at the
     # Then.
-    @slice-20 @ID-MUT-290 @wip
+    @slice-20 @ID-MUT-290
     Scenario: Excepting a survivor changes no byte of itos-cc.yaml outside its new entry
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And itos-cc.yaml is laid out by hand: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, a block four spaces deep, a comment two spaces after a value, and an exceptions list at its key's indentation with one entry for another function, whose reason is folded
@@ -1971,7 +1971,7 @@ Feature: Mutation testing
       Then itos-cc.yaml is the text it was, with the new entry's lines after the last entry and no other byte changed
       And the exit code is 0
 
-    @slice-20 @ID-MUT-291 @wip
+    @slice-20 @ID-MUT-291
     Scenario: Excepting a site again changes only the lines of its entry
       Given a fresh run recorded the survivor `<` → `<=` at src/board.ts:7:19 in "Board#count"
       And itos-cc.yaml is laid out by hand, its entry for src/board.ts:7:19 with reason "first" between two entries for other functions, a comment above it
@@ -3200,7 +3200,7 @@ Feature: Mutation testing
     # except (RenewDocument), so it restyled the same lines. It now changes
     # only the lines of the entries it renews. Both drivers run it. Before
     # slice-20 the whole document is re-encoded, failing at the Then.
-    @slice-20 @ID-MUT-292 @wip
+    @slice-20 @ID-MUT-292
     Scenario: Renewing an exception changes only the lines of its entry
       Given a Go project with a reviewed exception for an equivalent mutant in a function
       And itos-cc.yaml is laid out by hand around that entry: a "---" line, blank lines between keys, `other: { each: "{id}", sep: "|" }`, and a comment two spaces after a value
