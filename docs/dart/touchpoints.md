@@ -1,6 +1,6 @@
 # Dart (Flutter) in itos-cc: touch points, ownership after the slices refactor, and a split
 
-> Research for the idea dart-support, kept as found (2026-10-20/21), not a spec: the items and their scenarios are the spec once written. The person's answers to q-74..q-78 settle scope; T-168 rechecked its paths and line numbers after the slice moves (see the header below).
+> **Status (2026-10-21, T-182):** D0-D11 are done but D8 (the idea dart-cd-other-os: `cd.yml`'s `dart` job runs on Linux alone). The decisions taken are q-74..q-83's Dart ones (q-74 to q-78 and q-83; q-80, how a project brings back what Dart leaves out, is still open) and the slices' scenarios, slice-28 to slice-38, which are the spec. This file is the research as found (2026-10-20/21): a line the work settled otherwise is ~~struck~~ or carries a **[now]** note saying what the code does, and its line numbers are those of `23adc19`, read as places, not addresses.
 
 Read-only survey of this repository at `3efc0d9` (2026-10-20). T-168 moved its paths to where the
 slices refactor (ADR-0051) put the files and read every line number it names in a moved or changed
@@ -10,7 +10,7 @@ survey's. When it was made the slices refactor was still open, its `slices-versi
 `todo`; they became T-155 to T-172, and `docs/vertical-slices-inventory.md` ends with where each
 move put each package. T-165 rewrote the coverage runner's markers rows (2.3): the in-process
 driver's copy is gone. The ledger's own entry is `dart-support`
-(`tasks/work-items.yaml:2316-2351`, kind idea, `depends_on: [slice-7]`). Per that entry the person's order
+(`tasks/work-items.yaml`, kind idea, `depends_on: [slice-7]`). Per that entry the person's order
 is: the refactor first, then the open GitHub issues, then Dart. It also says the spec must decide which
 commands come first, the coverage tool, and the parsing library.
 
@@ -96,36 +96,49 @@ Flutter apps rarely need them, takes out ~15%.
 
 - Build root: `pubspec.yaml`. A Flutter app's pubspec has `dependencies: flutter: sdk: flutter` and
   `dev_dependencies: flutter_test: sdk: flutter`. Runner: `flutter test`; a pure Dart package would use
-  `dart test` [guess: out of first scope per the person's note].
+  `dart test` [guess: out of first scope per the person's note]. **[now]** q-74: Flutter apps and packages only; a
+  pure Dart package is left unmeasured, its coverage asking `--coverage-command` (idea dart-pure-packages).
 - `flutter test --coverage [--coverage-path <file>]` writes LCOV, by default `coverage/lcov.info`, with
   `SF:` paths relative to the package (`lib/...`). The LCOV parser exists (`internal/coverage/formats.go:36`
   `ParseLCOV`; `Parse` at `:16` sniffs Go/XML and otherwise reads LCOV). Relative `SF:` paths go
   through the existing matcher (`internal/coverage/coverage.go:513-575`). [guess] The LCOV lists only libraries a
   test loaded. It writes no BRDA unless `--branch-coverage` is passed [guess]. So strict lines need either an
   inventory (a generated test importing every `lib/` file and running no test [guess], as Vitest's
-  "run no test" inventory does) or fail closed as Jest/c8 do (README.md:535-540).
+  "run no test" inventory does) or fail closed as Jest/c8 do (README.md:535-540). **[now]** itos-cc runs
+  without `--branch-coverage`, by line; strict Dart fails closed (slice-36): a library no test loads
+  is `mutation.coverage-missing`, and the inventory is the idea dart-strict-inventory.
 - `flutter test` runs `pub get` implicitly unless `--no-pub`. Worker copies and frozen exports must run
   with `--no-pub` (offline, as counted runs require: MUT-209).
 - `.dart_tool/package_config.json` (gitignored) is what resolves `package:` imports. A worker copy copies it today,
   since `.dart_tool` is not in worker `skipDirs` (`internal/slices/mutation/adapters/worktrees/worker.go:27-30`), and copies
-  `.dart_tool/flutter_build` caches with it. A frozen export from git has none of it (see freshenv). The pub cache
+  `.dart_tool/flutter_build` caches with it. A frozen export from git has none of it (see freshenv).
+  **[now]** A worker's copy neither copies nor links `.dart_tool`: it runs `flutter pub get --offline` once
+  before its first run (slice-35); a counted run readies its export with `flutter pub get --offline --enforce-lockfile` (slice-37). The pub cache
   (`~/.pub-cache`, `PUB_CACHE`) is outside the project, like Gradle's cache.
 - **[Flutter]** App folders `android/`, `ios/`, `macos/`, `linux/`, `windows/`, `web/`:
   - `android/app/src/main/kotlin/.../MainActivity.kt` plus `android/app/build.gradle(.kts)` makes discovery see
     **a Kotlin build root inside every Flutter app** (`coverage/run.go:104` markers). crap and mutation would
     plan Gradle/JaCoCo for it (needs the Android SDK), and strict runs "fail closed when another language
-    measured nothing" (MUT-204, `internal/slices/mutation/run.go:367-376`). This needs a decision: an automatic
-    exclusion of a Flutter app's platform folders, or documented `exclude:` globs (decision 45).
-  - `ios/Pods`, `ios/.symlinks` (links into the pub cache) and `macos/Pods` are copied into every worker
-    (symlinks as links, `worker.go:73-78`). `android/.gradle` is already skipped, and `android/app/build` is already
+    measured nothing" (MUT-204, `internal/slices/mutation/run.go:367-376`). ~~This needs a decision: an automatic
+    exclusion of a Flutter app's platform folders, or documented `exclude:` globs (decision 45).~~ **[now]** q-75
+    (slice-30): discovery never walks them beside a pubspec.yaml that depends on the flutter SDK, and no
+    key brings them back while q-80 is open.
+  - ~~`ios/Pods`, `ios/.symlinks` (links into the pub cache) and `macos/Pods` are copied into every worker
+    (symlinks as links, `worker.go:73-78`).~~ **[now]** A worker's copy leaves out the platform folders, these
+    with them (slice-35, `worktrees/dart.go`). `android/.gradle` is already skipped, and `android/app/build` is already
     build output (beside `build.gradle`).
-  - `build/` beside `pubspec.yaml` is skipped only through `git check-ignore` today
-    (`project/project.go:60-69`), because `pubspec.yaml` is not in `buildManifests` (`:33-36`).
+  - ~~`build/` beside `pubspec.yaml` is skipped only through `git check-ignore` today
+    (`project/project.go:60-69`), because `pubspec.yaml` is not in `buildManifests` (`:33-36`).~~
+    **[now]** `pubspec.yaml` is a build manifest (slice-30), so `build/` and `coverage/` beside it are build output.
 - Generated Dart (`*.g.dart`, `*.freezed.dart`, `*.mocks.dart`, `*.gr.dart`, `*.config.dart`,
   `lib/generated_plugin_registrant.dart`, `firebase_options.dart`, l10n output) would be measured and mutated
   unless excluded. `lang.Detect` already hard-codes `.d.ts`/`.min.js` (`internal/lang/lang.go:275-281`).
+  **[now]** q-77 (slice-30): discovery takes none of build_runner's and protoc's suffixes, the plugin registrant,
+  a file carrying source_gen's marker or gen-l10n's output (`project/flutter.go`); `firebase_options.dart`
+  is not among them. Worker copies keep generated Dart, and no key brings it back while q-80 is open.
 - Tests: `test/**/*_test.dart` (widget and unit tests), `integration_test/` (needs a device or desktop
-  embedder: never a mutation's own tests, [guess]), `test_driver/`. `flutter_test_config.dart` in a test
+  embedder: never a mutation's own tests, [guess]), `test_driver/`. **[now]** q-76: neither ever runs
+  (slice-35), nor counts among an outcome's tests (slice-38); running them is the idea dart-integration-tests. `flutter_test_config.dart` in a test
   directory wraps every test file below it, like `conftest.py`, so it is an implicit support file for reach and
   fingerprints. `dart_test.yaml` configures tags and timeouts. Golden tests (`matchesGoldenFile`) depend on platform fonts:
   a baseline may fail off its recording OS [guess: note for CI fixtures].
@@ -133,7 +146,8 @@ Flutter apps rarely need them, takes out ~15%.
   and dominates mutant trials, as Gradle did for Kotlin.
 - Toolchain location: `flutter` on PATH, or FVM (`.fvmrc`, `.fvm/flutter_sdk/bin/flutter`) [guess: as
   common in Flutter apps as `gradlew` is in Gradle builds; prefer it as `gradlew` is preferred,
-  `testtools/toolchain.go:87-89`].
+  `testtools/toolchain.go:87-89`]. **[now]** `coverage.FlutterFor` prefers the SDK FVM links beside the
+  nearest `.fvmrc`, else the PATH's (slice-32).
 - **Grammar shape [verified]:**
   - A Dart function or method is **two sibling nodes**: `function_signature` / `method_signature` /
     `getter_signature` / `setter_signature`, followed by `function_body` (`grammar.js:217-249` top level,
@@ -141,22 +155,26 @@ Flutter apps rarely need them, takes out ~15%.
     `walker.unit` takes StartLine/EndLine from it (`lang.go:435-468`). Its users: complexity (`lang.go:470`),
     `mutants.Sites`/`UnitHash` byte ranges (`internal/slices/mutation/domain/sites.go:51-150`), coverage evidence
     (`internal/slices/mutation/domain/coverage.go:184-214`), fingerprints, and scrap. **This is an engine change in `internal/lang`**
-    (e.g. a Spec hook for a unit's body or end node, or a span), not just a new `dart.go`.
+    (e.g. a Spec hook for a unit's body or end node, or a span), not just a new `dart.go`. **[now]** `Spec.Body`
+    (slice-28).
   - There is **no call node**. Calls are `selector`/`argument_part` chains after a primary (`selector`,
     `argument_part`, `unconditional_assignable_selector`, `conditional_assignable_selector`, `cascade_section`). `Syntax.Calls`/`Members`
     with `IsCallee`/`Callee` (`lang.go:181-230`) assume a call node holding its callee. dry fingerprints (`fingerprint.go:118`),
     scrap (`measure.go:184`) and http (`http.go:83..248`) depend on them. Expect an engine-level adaptation, like
-    Kotlin's `navigation_suffix` look-through at `lang.go:178-195`.
+    Kotlin's `navigation_suffix` look-through at `lang.go:178-195`. **[now]** `Syntax.Links` (slice-29).
   - Operators are named leaf nodes (`additive_operator`, `relational_operator`, `equality_operator`,
     `logical_and_operator`, `logical_or_operator`, `negation_operator`, `minus_operator`), and `true`/`false` are
     named leaves, so `Mutations` can likely be declared with the existing tables [guess: the leaf text is the token].
     `if_null_expression` (`??`) and `conditional_assignable_selector` (`?.`) suit `Mutations.Other` and `Decision`.
+    **[now]** `a ?? b` becomes `b` through `LeftDeletions`; `?.` is a decision but never a mutation site, nor are
+    `*` and `/` (slice-29).
   - Decisions: `if_statement`, `conditional_expression`, `for_statement`, `while_statement`, `do_statement`
     [guess name], `catch_clause`, `switch_statement_case`, `switch_expression_case`, `logical_and/or`, `??`, `?.`,
     and, **[Flutter]**, collection `if_element` and `for_element`, used throughout widget trees.
   - Imports: `library_import`, `library_export`, `part_directive`, `part_of_directive` with `uri`. There is no package
     declaration, so the namespace comes from the path (`modulePath` with the `pubspec.yaml` marker, `lang.go:582`,
-    which already strips a leading `lib/`).
+    which already strips a leading `lib/`). **[now]** `dartLibrary`: the pubspec.yaml's name, then the path under
+    `lib/`, dotted.
 
 ---
 
@@ -167,6 +185,8 @@ is behind a stable API (ADR-0051: lang, selection, coverage, snapshot, project/g
 processes, UI, import engine). "slices/mutation" means the mutation slice, `internal/slices/mutation`: its
 domain and the domain's fakes in `domain/` and `domain/porttest/`, its adapters in `adapters/<name>/`
 (T-157 to T-161).
+
+**[now]** Slices 28-38 built every row below; a note on a row says where the work went otherwise.
 
 ### 2.1 Grammar, language detection, units, complexity (lang engine)
 
@@ -192,9 +212,9 @@ and a **[Flutter]** `StatelessWidget.build`/`State.build` class; `features/compl
 
 | where | what | owner after |
 |---|---|---|
-| `project/project.go:19-24` `skipDirs` | `.dart_tool` is already skipped by the dot rule in discovery (`:108`). Decide on `android`/`ios`/... (§1) | project engine |
+| `project/project.go:19-24` `skipDirs` | `.dart_tool` is already skipped by the dot rule in discovery (`:108`). Decide on `android`/`ios`/... (§1). **[now]** q-75: `project/flutter.go`'s platform rule, not `skipDirs` | project engine |
 | `project/project.go:33-36` `buildManifests` | add `pubspec.yaml`, so `build/` and `coverage/` beside it are build output | project engine |
-| `internal/selection/port/porttest/tree.go:75-90` | the fake's copy of the same lists, which `TreeContract` keeps honest. **It must change in the same commit** as project.go | selection engine |
+| `internal/selection/port/porttest/tree.go:75-90` | the fake's copy of the same lists, which `TreeContract` keeps honest. **It must change in the same commit** as project.go. **[now]** the Flutter rules' copy is `porttest/flutter.go` | selection engine |
 | `IsTest` in `dart.go` | `test/`, `integration_test/`, `test_driver/` dirs and the `_test.dart` suffix | lang engine |
 
 Scenarios: `features/file_selection.feature:139-147` `@ID-SEL-15` Examples rows (`test/widget_test.dart`
@@ -208,16 +228,16 @@ feed most SEL/CRAP scenarios, so a new language there ripples [guess: avoid].
 |---|---|---|
 | `coverage/run.go` `markers` | `"dart": {"pubspec.yaml"}`; the one table, which the in-process driver reads too through `Markers` (T-165), so nothing in cmd changes | coverage engine (top-level `coverage`, ADR-0037 may move it under internal later) |
 | `coverage/run.go:149-227` `buildPlans` | `case "dart"` → `dartPlan`; with `narrow` (OwnTests+reach) group by reaching test files as Python does (`:166-167`, `PythonTests`) | coverage engine |
-| `coverage/dart.go` (new) | `dartPlan(dir,out,tests)`: `flutter test --no-pub --coverage --coverage-path <out>/lcov.info [tests]`, `Reports`, `Existing` (`coverage/lcov.info`), `Unsupported` when no `flutter` (never downloaded, decision 26), FVM preference; `DartTests` (test files among reach, excluding `integration_test/`); `DartRunner` if `dart test` is ever supported | coverage engine |
-| `coverage/inventory.go:26-29` `inventories` | optional Dart inventory for unreached files (§1), or none, leaving strict to fail closed | coverage engine |
-| `coverage/pertest.go:73-130` `testCollectors` | listed tests' per-test collectors. Dart: none (fallback one run per test, decision 10) [decision] | coverage engine |
-| `coverage/jacoco.go`/`collector.go` integration coverage | processes a test starts: recommend "Dart does not measure child processes", recorded beside decisions 26/27 [decision] | coverage engine |
+| `coverage/dart.go` (new) | `dartPlan(dir,out,tests)`: `flutter test --no-pub --coverage --coverage-path <out>/lcov.info [tests]`, `Reports`, `Existing` (`coverage/lcov.info`), `Unsupported` when no `flutter` (never downloaded, decision 26), FVM preference; `DartTests` (test files among reach, excluding `integration_test/`); `DartRunner` if `dart test` is ever supported. **[now]** the command is `flutter --suppress-analytics --no-version-check test --no-pub --no-dds --coverage --coverage-path=…`; `Unsupported` also for a pure Dart package and one pub has not resolved; `DartTests` keeps only `test/`, so `test_driver/` is out too; no `DartRunner` (idea dart-pure-packages) | coverage engine |
+| `coverage/inventory.go:26-29` `inventories` | optional Dart inventory for unreached files (§1), or none, leaving strict to fail closed. **[now]** none: strict fails closed (slice-36; idea dart-strict-inventory) | coverage engine |
+| `coverage/pertest.go:73-130` `testCollectors` | listed tests' per-test collectors. Dart: none (fallback one run per test, decision 10) [decision]. **[now]** none (q-76), so no listed test reaches a Dart line; per-test-name coverage is the idea dart-per-test-coverage | coverage engine |
+| `coverage/jacoco.go`/`collector.go` integration coverage | processes a test starts: recommend "Dart does not measure child processes", recorded beside decisions 26/27 [decision]. **[now]** q-76 phase 1: none, recorded there, not beside decisions 26/27 | coverage engine |
 | `internal/coverage/formats.go:16-75` | LCOV already parsed; DA only unless branch coverage; nothing to add [guess] | coverage engine |
 | `internal/coverage/porttest/measurer.go:64,175,208` | the fake's per-language reach/report rules (`group.Language != "python" && != "kotlin"` at :208) | coverage engine (fake) |
 | `cmd/itos-cc/scenarios_coverage_trace_test.go:273-275` | Kotlin selector special case; Dart likely none | cmd |
-| `features/binary.go:108-176` `Coverage` switch | `case "dart"`: check `flutter` (and `dart`) on PATH, skip or fail under `ITOS_CC_LANGUAGE_TOOLS`; `languageJob` (`:206-211`) already skips non-Go in CI jobs without the tools | features harness |
+| `features/binary.go:108-176` `Coverage` switch | `case "dart"`: check `flutter` (and `dart`) on PATH, skip or fail under `ITOS_CC_LANGUAGE_TOOLS`; `languageJob` (`:206-211`) already skips non-Go in CI jobs without the tools. **[now]** `flutter` alone; the fixture is resolved with `flutter pub get` and FVM's link made; a Dart scenario skips in every CI job but `cd.yml`'s `dart` job, which sets `ITOS_CC_FLUTTER_TOOLS` | features harness |
 | `features/steps.go:127-130,259-262` | doc comments listing `Tests.Language`/`Coverage.Language` values | features harness |
-| `internal/slices/crap/crap.go:79,315` | help text "Go and TypeScript coverage runs only the tests that load..."; changes if Dart narrows | slices/crap |
+| `internal/slices/crap/crap.go:79,315` | help text "Go and TypeScript coverage runs only the tests that load..."; changes if Dart narrows. **[now]** Dart does not narrow: the help says Python, Kotlin and Dart run their whole suite (T-181) | slices/crap |
 | `internal/slices/crap/domain/crap.go` | language-agnostic (uses `measured[u.Language]`, `:89`) | slices/crap |
 
 Scenarios: `features/coverage.feature` `@ID-COV-04` (whole suite), `@ID-COV-05` Examples (`:56-60`, choosing the
@@ -251,8 +271,8 @@ Scenarios: `features/scrap.feature` `@ID-SCRAP-01` Examples (`:15-20`, `flutter_
 
 | where | what | owner after |
 |---|---|---|
-| `internal/imports/languages.go` table line, new `internal/imports/dart.go` resolver (`index`, `resolve`, `module`; T-163) | Dart: `package:<own name>/x.dart` → `lib/x.dart` (needs the pubspec `name:`), relative URIs, `dart:`/other packages external, conditional imports (both targets), **`export`** (barrels re-export; transitive reach must follow them), **`part`/`part of`** (a part file is its library's module: dart.go's `module`; `part of <name>` may need it to see the index, which `Resolution.Module` absorbs) | **import engine** (`internal/imports`, T-162) |
-| `internal/imports/dart.go` `facts` (what `Of` keeps; Kotlin's are kotlin.go's) | per-language extras (Kotlin's top-level and refs); Dart's part-of library | import engine |
+| `internal/imports/languages.go` table line, new `internal/imports/dart.go` resolver (`index`, `resolve`, `module`; T-163) | Dart: `package:<own name>/x.dart` → `lib/x.dart` (needs the pubspec `name:`), relative URIs, `dart:`/other packages external, conditional imports (both targets), **`export`** (barrels re-export; transitive reach must follow them), **`part`/`part of`** (a part file is its library's module: dart.go's `module`; `part of <name>` may need it to see the index, which `Resolution.Module` absorbs). **[now]** each file is its own module, and a library depends on its parts, as on what it exports | **import engine** (`internal/imports`, T-162) |
+| `internal/imports/dart.go` `facts` (what `Of` keeps; Kotlin's are kotlin.go's) | per-language extras (Kotlin's top-level and refs); Dart's part-of library. **[now]** none: a part's `part of` names its library back and is no import | import engine |
 | `internal/imports/dart.go` `support` (Python's conftest.py is python.go's); `reach.go` names no language | transitive closure already applies to every language not `oneHop`. Add `flutter_test_config.dart` (applies to test files at and below its directory, up to the package root) as `support`, as python.go applies conftest.py | import engine |
 | `internal/slices/mutation/adapters/importgraph/reach.go` | adapter; no language code | slices/mutation adapter |
 | `internal/slices/mutation/domain/porttest/reach.go:39,66,86` | the Reach fake's per-language rules (Go one hop, Python conftest) | slices/mutation porttest |
@@ -270,18 +290,18 @@ Scenarios: `features/mutate.feature` `@ID-MUT-215` Examples (`:2076-2081`, trans
 | `dart.go` `Mutations` (2.1) | swaps, deletions (`!` prefix only, never the postfix null-assert `!`), literals, `Other` for `??`/`?.` | lang engine |
 | `internal/slices/mutation/domain/sites.go:51-150` | language-agnostic over `Unit.Node`; affected by the sibling-body engine change | slices/mutation domain |
 | `internal/slices/mutation/domain/inputs.go:16-24` `ToolFacts` | new fields (Flutter binary path, test files), as Python's `PythonFiles` | slices/mutation domain |
-| `internal/slices/mutation/domain/command_policy.go:22-70` `ChooseCommand` | `case "dart"`: `flutter test --no-pub [--fail-fast? guess] <reaching test files>`, `request.All` → whole `test/` | slices/mutation domain |
+| `internal/slices/mutation/domain/command_policy.go:22-70` `ChooseCommand` | `case "dart"`: `flutter test --no-pub [--fail-fast? guess] <reaching test files>`, `request.All` → whole `test/`. **[now]** `DartArgs`: flutter test has no fail-fast flag, so none; `Ready` is `flutter pub get --offline` | slices/mutation domain |
 | `internal/slices/mutation/domain/fresh_commands.go:31` `AddFreshBaseline` | add `dart` to the reach-based "runs nothing" languages (Python/Kotlin) | slices/mutation domain |
 | `internal/slices/mutation/domain/fresh_admission.go:100-110` `stableFunction` | `case "dart"`: `stableModuleNamespace(rel, committed, "pubspec.yaml")` | slices/mutation domain |
 | `internal/slices/mutation/domain/load_snapshot.go:26` | TypeScript-only scope probe; none for Dart [guess] | slices/mutation domain |
 | `internal/slices/mutation/wording.go:21-32` `LanguageName` | the generic capitaliser already gives "Dart"; no edit | slices/mutation |
-| `internal/slices/mutation/mutation.go:70,87`, `run_contract.go` (13-408), `check_contract.go:31,108-120` | help and contract text listing languages ("Python, TypeScript or Kotlin line") | slices/mutation |
+| `internal/slices/mutation/mutation.go:70,87`, `run_contract.go` (13-408), `check_contract.go:31,108-120` | help and contract text listing languages ("Python, TypeScript or Kotlin line"). **[now]** done in T-181 | slices/mutation |
 | `cmd/itos-cc/testdata/mutation-help.json` | help snapshot (`mutation_parser_test.go`); every help-text change rewrites it | cmd (owned by mutation by path) |
 | `internal/slices/mutation/adapters/testtools/toolchain.go:26-99` `Observe`, `:139-156` `CoverageRunner` | `case "dart"`: Root = nearest `pubspec.yaml`, Flutter vs Dart from pubspec, FVM, test files from `coverage.DartTests` | slices/mutation adapter |
 | `internal/slices/mutation/domain/porttest/tools.go:121-259` | the Toolchain fake's per-language cases (`:164-246`) | slices/mutation porttest |
-| `internal/slices/mutation/domain/porttest/workers.go:394-399` | fake's list of known runner basenames (`python`, `gradle`, `mvn`, `go`); add `flutter`, `dart` | slices/mutation porttest |
+| `internal/slices/mutation/domain/porttest/workers.go:394-399` | fake's list of known runner basenames (`python`, `gradle`, `mvn`, `go`); add `flutter`, `dart`. **[now]** left as it was: neither name was added | slices/mutation porttest |
 | `internal/slices/mutation/adapters/freshenv/preparation.go:522-531` | own baselines; `:524` `hasReachedUnit` (python, kotlin) gains dart | slices/mutation adapter |
-| `internal/slices/mutation/adapters/worktrees/worker.go:21-30` `linkDirs`/`skipDirs` | `.dart_tool`: copy, skip and re-create `package_config.json`, or link (**not** link: `flutter test` writes into it, so parallel workers would race) [decision]; **[Flutter]** skip `ios/Pods`, `macos/Pods`, platform folders | slices/mutation adapter |
+| `internal/slices/mutation/adapters/worktrees/worker.go:21-30` `linkDirs`/`skipDirs` | `.dart_tool`: copy, skip and re-create `package_config.json`, or link (**not** link: `flutter test` writes into it, so parallel workers would race) [decision]; **[Flutter]** skip `ios/Pods`, `macos/Pods`, platform folders. **[now]** slice-35: `.dart_tool` neither copied nor linked (`worker.go`'s `skipDirs`), `flutter pub get --offline` making the copy's own once per worker; in `worktrees/dart.go`, `build/` and `coverage/` beside a pubspec.yaml and the platform folders left out; a workspace member's copy holds the workspace root and its members | slices/mutation adapter |
 
 Scenarios: `features/mutate.feature` "Dart sites" like `@ID-MUT-05` (`:111-130`); `@ID-MUT-07`
 Examples (`:170-176`, narrowest test command); an own-tests outline like `@ID-MUT-217` (`:2120-2140`, "A Dart
@@ -293,14 +313,14 @@ and **the hand list `features/mutate_language.go:23` `languageMutationSteps`** i
 
 | where | what | owner after |
 |---|---|---|
-| `internal/slices/mutation/domain/coverage.go:24` `StrictLanguages` | add `"dart"` (only if decided, since it needs proven executable lines, see inventory) | slices/mutation domain |
-| `coverage.go:44-56` `CoverageProducer`, `:65-121` per-runner producers, `:125-145` `ValidCoverageProducer` | Dart producer strings ("flutter test --no-pub --coverage <reaching tests>; scope=own" / all-tests) | slices/mutation domain |
-| `coverage.go:184-214` `LineCoverageEvidence` | Dart first-line rule like `KotlinBodyLine` (the signature line, field initialisers, constructor initialiser lists) [guess: needs measurement on real LCOV] | slices/mutation domain |
+| `internal/slices/mutation/domain/coverage.go:24` `StrictLanguages` | add `"dart"` (only if decided, since it needs proven executable lines, see inventory). **[now]** added (slice-36), failing closed on a library no test loads | slices/mutation domain |
+| `coverage.go:44-56` `CoverageProducer`, `:65-121` per-runner producers, `:125-145` `ValidCoverageProducer` | Dart producer strings ("flutter test --no-pub --coverage <reaching tests>; scope=own" / all-tests). **[now]** `flutter test --no-pub --no-dds --coverage --coverage-path=<report> <reaching test files>; scope=own`, and `…; scope=all-tests` with no files | slices/mutation domain |
+| `coverage.go:184-214` `LineCoverageEvidence` | ~~Dart first-line rule like `KotlinBodyLine` (the signature line, field initialisers, constructor initialiser lists) [guess: needs measurement on real LCOV]~~ **[now]** no body-line hook: a Dart function's lines run from its signature line, which the VM counts at each call, and a line any of whose code ran is covered | slices/mutation domain |
 | `internal/slices/mutation/domain/run_coverage.go:124-154` `CoverageInputsFor` | runner-specific producer branch (TypeScript/Kotlin), if Dart has more than one runner | slices/mutation domain |
 | `internal/slices/mutation/adapters/testinputs/inputs.go:59-78` `Coverage` switch | `case "dart"` → `DartCoverageInputs` | slices/mutation adapter |
-| `internal/slices/mutation/adapters/testinputs/line_coverage_inputs.go` (`KotlinCoverageInputs` `:257-315` as the model) | fingerprint the package root: every `.dart` under it (lib, test, integration_test), `pubspec.yaml`, `pubspec.lock`, `dart_test.yaml`, `build.yaml`, `l10n.yaml`, **[Flutter]** declared assets and fonts (golden tests read them), `flutter_test_config.dart`, Flutter/Dart SDK version (`flutter --version --machine`), `FLUTTER_ROOT`, FVM's `.fvmrc`; leave out `.dart_tool`, `build`, `coverage`, platform folders | slices/mutation adapter |
-| `internal/slices/mutation/adapters/testinputs/line_coverage_scope.go:39-58` `LineCoverageUnsupported` + new `(s scopeReader) dart` (Kotlin's at `:335-379`) | refuse scopes the fingerprints cannot prove: `path:` dependencies outside the root, pub workspaces (`workspace:` / `resolution: workspace`), `dependency_overrides` with paths | slices/mutation adapter |
-| `internal/slices/mutation/adapters/testinputs/suite.go:56-69` `suiteRoot` | `case "dart"`: nearest `pubspec.yaml` (workspace root if a pub workspace is ever supported) | slices/mutation adapter |
+| `internal/slices/mutation/adapters/testinputs/line_coverage_inputs.go` (`KotlinCoverageInputs` `:257-315` as the model) | fingerprint the package root: every `.dart` under it (lib, test, integration_test), `pubspec.yaml`, `pubspec.lock`, `dart_test.yaml`, `build.yaml`, `l10n.yaml`, **[Flutter]** declared assets and fonts (golden tests read them), `flutter_test_config.dart`, Flutter/Dart SDK version (`flutter --version --machine`), `FLUTTER_ROOT`, FVM's `.fvmrc`; leave out `.dart_tool`, `build`, `coverage`, platform folders. **[now]** `DartCoverageInputs` (slice-36): every `.dart` of the package, or of a member's whole pub workspace, generated Dart included, each `pubspec.yaml`, `pubspec_overrides.yaml` and `dart_test.yaml`, the root's `pubspec.lock`, the nearest `.fvmrc`, the `flutter` used, `FLUTTER_ROOT` and `PUB_CACHE`; not `build.yaml`, `l10n.yaml`, assets, fonts or `flutter --version`; `integration_test/` and `test_driver/` are left out too | slices/mutation adapter |
+| `internal/slices/mutation/adapters/testinputs/line_coverage_scope.go:39-58` `LineCoverageUnsupported` + new `(s scopeReader) dart` (Kotlin's at `:335-379`) | refuse scopes the fingerprints cannot prove: `path:` dependencies outside the root, ~~pub workspaces (`workspace:` / `resolution: workspace`)~~, `dependency_overrides` with paths. **[now]** a pub workspace is admitted, its whole workspace the root for a member; refused is a path dependency or override, in a `pubspec.yaml` or `pubspec_overrides.yaml`, outside that root; git and hosted dependencies are admitted | slices/mutation adapter |
+| `internal/slices/mutation/adapters/testinputs/suite.go:56-69` `suiteRoot` | `case "dart"`: nearest `pubspec.yaml` (workspace root if a pub workspace is ever supported). **[now]** the nearest `pubspec.yaml`, a member's own too; an `--all-tests` outcome rests on `test/` alone (slice-38) | slices/mutation adapter |
 | `internal/slices/mutation/domain/porttest/fingerprints.go:57-327` (switches at `:59-65,209-226,275-284,309-315`), `scope.go:405-416`, `input_contract.go:105-170` | the Fingerprints fake and its contract rows per language (`{"kotlin","src/main/kotlin/A.kt","build.gradle.kts","@jvm-env"}` at `:107`) | slices/mutation porttest |
 | `internal/slices/mutation/run.go:118,367-376,402,423`, `counted_ui.go:299-305` | Go-specific strict paths; Dart follows the line-precision path with no edit [guess] | slices/mutation |
 
@@ -315,8 +335,8 @@ regex). Steps: `features/mutate_strict_lines.go:33`, `mutate_strict_refusal.go:1
 
 | where | what | owner after |
 |---|---|---|
-| `internal/slices/mutation/adapters/freshenv/dependencies.go:26-87` `linkInstalledDependencies` | today it links `node_modules` and the venv into the frozen export. Dart: the export lacks the gitignored `.dart_tool/package_config.json`, so copy it in (or run `flutter pub get --offline` there); the pub cache needs no link (like Gradle's) | slices/mutation adapter |
-| `internal/slices/mutation/adapters/freshenv/preparation.go:533-541` `CommandEnvironment` | offline env for Flutter (`PUB_OFFLINE`? `--no-pub` in argv) [guess] | slices/mutation adapter |
+| `internal/slices/mutation/adapters/freshenv/dependencies.go:26-87` `linkInstalledDependencies` | today it links `node_modules` and the venv into the frozen export. Dart: the export lacks the gitignored `.dart_tool/package_config.json`, so copy it in (or run `flutter pub get --offline` there); the pub cache needs no link (like Gradle's). **[now]** slice-37: it links FVM's `.fvm/flutter_sdk`, and `freshenv/dart.go` readies each package with `flutter pub get --offline --enforce-lockfile` | slices/mutation adapter |
+| `internal/slices/mutation/adapters/freshenv/preparation.go:533-541` `CommandEnvironment` | offline env for Flutter (`PUB_OFFLINE`? `--no-pub` in argv) [guess]. **[now]** no variable: `--no-pub` and `--offline` in argv | slices/mutation adapter |
 | `internal/slices/mutation/adapters/freshenv/baseline.go:54,160` | Python-only baseline details; none for Dart [guess] | slices/mutation adapter |
 
 Scenario: `@ID-MUT-209` Examples (`:1972-1976`, "the pub cache, run with --no-pub"); steps
@@ -336,13 +356,21 @@ if a Dart-specific setting is added.
 | `README.md:3-4` | language list (one line every item would want to touch: give it to the closing docs item) |
 | `README.md:154-164` crap, `:234-294` integration coverage, `:334-354` own tests, `:504-549` strict, `:709-764` evidence and suite roots, `:840-855` reach, `:885-894` scrap, `:911-916` graph modules | per-feature paragraphs naming each language |
 | `docs/CLI.md:32` exit table, `:158-168`, `:213-239`, `:263-330`, `:389`, `:505` (rules 34-35 variables) | contract prose naming languages |
-| `docs/go.md:908` | Kotlin runner wrapper note. No "adding a language" section exists (gap: worth one) |
+| `docs/go.md:908` | Kotlin runner wrapper note. No "adding a language" section exists (gap: worth one). **[now]** `docs/architecture.md` has it |
 | `features/README.md:81-90` | tools each language's binary-driver scenarios need |
 | `cmd/itos-cc/main.go:1` | package doc "measures code quality in TypeScript, Python, Kotlin, and Go" |
 | `IDEAS.md:148-150` | grammar pin note |
-| new decisions | amend or extend decisions 23 (own tests by import), 24 (transitive reach), 25 (strict lines), 26/27 (collectors, child processes) to name Dart; q-numbers through `itos decision` |
+| ~~new decisions~~ | ~~amend or extend decisions 23 (own tests by import), 24 (transitive reach), 25 (strict lines), 26/27 (collectors, child processes) to name Dart; q-numbers through `itos decision`~~ **[now]** no decision was amended: q-74..q-83 and the slices' scenarios hold Dart's |
+| **[now]** | T-181 named Dart in the help and `main.go:1`, and T-182 in every other row above |
 
 ### 2.12 Real tools, CI, pinned installs
+
+**[now]** `cd.yml` gained a `dart` job of its own on ubuntu-latest, not a languages shard:
+`kuhnroyal/flutter-fvm-config-action` reads the root `.fvmrc` (Flutter 3.47.7) into
+`subosito/flutter-action` with `cache: true`, both pinned by SHA, and it runs the slices' Dart
+scenarios by their tags with `ITOS_CC_FLUTTER_TOOLS`. No Dart case was added to
+`language_tools_test.go` and no Dart smoke test or `testdata/smoke/dart/` exists: the scenarios run
+the real tool. macOS and Windows are the idea dart-cd-other-os.
 
 | where | what |
 |---|---|
@@ -380,13 +408,17 @@ collisions).
 | `features/binary.go` `Coverage` switch | tool checks | the coverage item |
 | `cmd/itos-cc/testdata/mutation-help.json`, `internal/slices/mutation/mutation.go:70,87`, `run_contract.go`, `check_contract.go` | help text naming languages | one item (the strict item, or a closing docs item) |
 | `README.md`, `docs/CLI.md`, `features/README.md` | prose naming languages | each item edits only its own section; `README.md:3` and `main.go:1` go to the closing item |
-| `.github/workflows/cd.yml` | language shards and selectors | the CI item; later items append their scenario IDs to its selector (conflict-prone single lines `:314,320`) — better: a Dart shard with its own selector lines |
+| `.github/workflows/cd.yml` | language shards and selectors | the CI item; later items append their scenario IDs to its selector (conflict-prone single lines `:314,320`) — better: a Dart shard with its own selector lines. **[now]** a `dart` job selecting by slice tags |
 | `tasks/*.yaml`, `docs/decisions/` | ledger and ADRs | coordinator only (`itos work`, `itos decision`) |
 | generated `cmd/itos-cc/commands_gen.go` | assembly | untouched: no new command |
 
 ---
 
 ## 4. Proposed split and order
+
+**[now]** The split held: D0 became q-74..q-78 and q-83, D1 to D10 the slices slice-28 to slice-38 (slice-38
+closing a freshness gap slice-36 left), and D11 T-181 (the help) and T-182 (the docs). All are done
+but D8, whose Linux job runs and whose macOS and Windows runs are the idea dart-cd-other-os.
 
 All items land after `slices-close` (ADR-0051 says the parallel-agents trial comes after T-86), on the
 refactored paths. Each item puts its scenarios red first (AGENTS.md; Lessons: red tests compile against
@@ -398,7 +430,8 @@ the old product and fail at the behaviour).
 (Detect, discovery default, or `exclude` docs); `integration_test/` never own tests; `.dart_tool` in
 workers and exports; no child-process or per-test collectors (decisions 26/27 analogue); strict lines for
 Dart now or later (inventory or fail closed); which commands first (the ledger asks: units, dry, scrap,
-crap, mutation). New ADRs or amendments for decisions 23-27.
+crap, mutation). ~~New ADRs or amendments for decisions 23-27.~~ **[now]** no ADR was written or amended; the
+q-numbers and scenarios hold the decisions.
 
 **Wave 1 (one agent):**
 - **D1 lang**: `go.mod`/`go.sum`, `internal/lang/dart.go`, `lang.go` engine changes, lang tests;
@@ -424,6 +457,7 @@ crap, mutation). New ADRs or amendments for decisions 23-27.
   `domain/porttest/{tools,workers}.go`, `adapters/worktrees/worker.go` (`.dart_tool`, Pods), MUT-07 row, a Dart own-tests outline, `features/mutate_language.go:23`.
 - **D8 CI real tools** (needs D5; extend after D7): `cd.yml` Dart shard, `language_tools_test.go`,
   `language_smoke_test.go`, `testdata/smoke/dart/`. Run it early, because Flutter's start-up cost sets shard sizes.
+  **[now]** a `dart` job on Linux alone, with no smoke test (2.12); macOS and Windows are the idea dart-cd-other-os.
 
 **Wave 4 (parallel after D7):**
 - **D9 strict evidence**: `internal/slices/mutation/domain/coverage.go`, `run_coverage.go`, `adapters/testinputs/*` (inputs,
@@ -435,6 +469,7 @@ crap, mutation). New ADRs or amendments for decisions 23-27.
 
 **Wave 5:** **D11 docs close**: `README.md:3`, `cmd/itos-cc/main.go:1`, any cross-cutting README/CLI prose
 the items left, `IDEAS.md:148`, and a new "adding a language" section in `docs/go.md` (a gap this survey hit).
+**[now]** The section is `docs/architecture.md`'s "Adding a language".
 
 Dependency graph:
 
@@ -458,13 +493,15 @@ Run D9 and D10 one after the other if the coordinator wants zero rebase work.
 ## 5. Things to note for the coordinator
 
 - The memory note "one implementing agent in this repo at a time; no worktrees unless asked" is the
-  current rule. This split assumes the parallel-worktree trial that `slices-close` sets up.
+  current rule. This split assumes the parallel-worktree trial that `slices-close` sets up. **[now]** q-78 allowed
+  it after T-86.
 - `coverage/run.go` imported `mutants.MavenTests`/`GradleTests` when this was surveyed; T-156 gave the
   runner its own copies, `gradleTests` and `mavenTests` (`coverage/run.go:582-606`), so it imports no
   mutation package. D5 must add no coverage→slice import.
 - Kotlin-in-Flutter (the `android/` Gradle root) is the most likely first-run surprise. Settle it in D0 before
-  any crap scenario, or every strict Flutter run fails closed on an unmeasured Kotlin root.
+  any crap scenario, or every strict Flutter run fails closed on an unmeasured Kotlin root. **[now]** Settled by
+  q-75 (slice-30).
 - Grammar maturity: the Dart grammar was revised as recently as 2026-10-18 (record-return members, primary
   constructors per its comments). Pin a commit and keep regression scenarios, as UNIT-11 does for Kotlin.
-- Gap worth an idea in this repo's registry (feedback rule, own tool): docs/go.md has no "Adding a language" checklist.
-  This file is a first draft of one.
+- ~~Gap worth an idea in this repo's registry (feedback rule, own tool): docs/go.md has no "Adding a language" checklist.
+  This file is a first draft of one.~~ **[now]** `docs/architecture.md` has the checklist.

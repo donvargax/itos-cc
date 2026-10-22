@@ -1,6 +1,6 @@
 # Dart and Flutter support in itos-cc: tooling research
 
-> Research for the idea dart-support, kept as found (2026-10-20/21), not a spec: the items and their scenarios are the spec once written. The person's answers to q-74..q-78 settle scope; paths here predate the end of the slices refactor and are rechecked before Dart starts.
+> **Status (2026-10-21, T-182):** D0-D11 are done but D8 (the idea dart-cd-other-os: `cd.yml`'s `dart` job runs on Linux alone). The decisions taken are q-74..q-83's Dart ones (q-74 to q-78 and q-83; q-80, how a project brings back what Dart leaves out, is still open) and the slices' scenarios, slice-28 to slice-38, which are the spec. This file is the research as found (2026-10-20/21): a recommendation the work settled otherwise is ~~struck~~ or carries a **[now]** note saying what the code does, and its paths predate the end of the slices refactor.
 
 Date: 2026-10-20. Scope weighting from the person: **Flutter apps are the use case to support; pure
 Dart packages come second.** Flutter material leads each section, and the pure Dart notes are kept short.
@@ -15,7 +15,8 @@ Evidence tags:
 
 Flutter is not installed here, and nothing was downloaded to install it (see the user rule on
 toolchains). So every `flutter test` claim rests on the flutter_tools source, Flutter's docs, or
-third-party measurements. None of it was run.
+third-party measurements. None of it was run. **[now]** The slices' scenarios now run the real `flutter test` in
+`cd.yml`'s `dart` job, with the Flutter 3.47.7 the root `.fvmrc` pins.
 
 ---
 
@@ -382,7 +383,7 @@ The other itos-cc specs for comparison (`internal/lang/typescript.go`, `kotlin.g
 | switch expression arm | `switch_expression_case`, except an arm whose pattern is the bare wildcard `_` (`constant_pattern` → `identifier "_"`), the analogue of Kotlin `else` |
 | `&&` / `||` (expressions and patterns) | `logical_and_operator`, `logical_or_operator` |
 | `??`, `??=` | `if_null_expression`, `"??="` token |
-| null-aware access | `conditional_assignable_selector` (`?.` and `?[`), `"?.."` in `cascade_section`, `"?"` in `spread_element` and `pair` |
+| null-aware access | `conditional_assignable_selector` (`?.` and `?[`), `"?.."` in `cascade_section`, `"?"` in `spread_element` and `pair` (**[now]** not in `pair`: `{?k: v}` counts nothing) |
 | `when` guard | optional; DCM does not count it. Recommendation: do not count it (the case already counts) |
 
 DCM excludes the *last* case of every switch, but itos-cc's TypeScript and Kotlin specs exclude
@@ -487,8 +488,11 @@ languages, and record the difference from DCM.
   - Its install step took **5–14 s** on ubuntu, macos and windows in its CI
     ([run 39083659082](https://github.com/dart-lang/setup-dart/actions/runs/39083659082)) [verified via API].
 - **For itos-cc's own CI:** the test fixtures need Flutter only for `flutter test` scenarios.
-  - Gate them behind an opt-in like the other binary drivers (T-153), on ubuntu.
-  - Keep pure Dart and parse-only scenarios on setup-dart, which is about 10× faster.
+  - Gate them behind an opt-in like the other binary drivers (T-153), on ubuntu. **[now]** `ITOS_CC_FLUTTER_TOOLS`,
+    set by `cd.yml`'s `dart` job alone, with the Flutter version read from the root `.fvmrc` by
+    `kuhnroyal/flutter-fvm-config-action`.
+  - ~~Keep pure Dart and parse-only scenarios on setup-dart, which is about 10× faster.~~ **[now]** No
+    setup-dart: parse-only scenarios need no tool, and pure Dart is not measured.
   - Windows and macOS Flutter jobs add about 2.5 min of install each before caching.
 
 ## 8. Generated code
@@ -539,19 +543,23 @@ languages, and record the difference from DCM.
    hook so the unit's start line is the signature's. Also count `local_function_declaration` and
    closures inside the enclosing unit. Abstract members are not units.
 3. **Unit naming and namespace.** Recommendation: namespace `package:<pubspec name>/<path under lib>`
-   (or the relative path outside `lib/`), with class, mixin, extension, enum and extension type as
+   (or the relative path outside `lib/`) (**[now]** the pubspec name, then the path under `lib/`, dotted, as
+   `demo.game.board`; a setter is `s=`, an operator `operator+`), with class, mixin, extension, enum and extension type as
    containers. `Separator: "."`. Name constructors `C.named` and unnamed ones `C`; getters and
    setters by name (setter `s=`?), operators `operator +`. Private means a leading `_`.
 4. **Decision set.** Recommendation: the table in section 5. Count collection-if/for, `??`, `??=`
    and the null-aware forms. Skip `default` and the bare `_` arm. Do not count `when`.
 5. **Which runner.** Recommendation: `flutter test` when `pubspec.yaml` depends on the `flutter`
    SDK, else `dart test`. Flutter apps first. Exclude `integration_test/` (it needs a device).
+   **[now]** q-74: `flutter test` alone; a pure Dart package is left unmeasured (idea dart-pure-packages), and
+   `test_driver/` is left out too.
 6. **Coverage format and path base.** Recommendation:
    - Flutter: `flutter test --coverage --coverage-path=<tmp>/lcov.info --no-pub`. `SF` paths are
      relative to the package dir.
-   - Dart: `dart test --coverage-path=<tmp>`, with absolute `SF` paths; requires test ≥ 1.27.
-     Otherwise `--coverage=<dir>` + `format_coverage`.
-   - Normalize both.
+   - ~~Dart: `dart test --coverage-path=<tmp>`, with absolute `SF` paths; requires test ≥ 1.27.
+     Otherwise `--coverage=<dir>` + `format_coverage`.~~
+   - ~~Normalize both.~~ **[now]** Flutter's alone, as `flutter test --no-pub --no-dds --coverage
+     --coverage-path=<report>`, FVM's SDK preferred.
    - Line coverage only; ignore BRDA.
    - Treat `lib/` files missing from LCOV as 0 %.
 7. **Coverage attribution granularity.** Recommendation: per test file (one `flutter test <file>`
@@ -560,20 +568,31 @@ languages, and record the difference from DCM.
 8. **Integration/subprocess coverage.** Recommendation: unsupported in v1. There is no `GOCOVERDIR`
    analogue, and VM-service collection is out of scope.
 9. **Mutation run strategy for Flutter.** Recommendation:
-   - v1 runs one `flutter test --no-pub --fail-fast -r json --file-reporter json:<f> --timeout 10s <mapped test files>`
-     per mutant in a worker copy that keeps `build/test_cache`.
-   - Classify compile errors from the JSON `error` on the `loading …` test, not from the exit code
-     (a compile error gives 1, the same as a failure).
-   - Enforce an itos-side deadline: the widget-test default is 10 min.
+   - ~~v1 runs one `flutter test --no-pub --fail-fast -r json --file-reporter json:<f> --timeout 10s <mapped test files>`
+     per mutant in a worker copy that keeps `build/test_cache`.~~ **[now]** `flutter test --no-pub <files>` per
+     mutant, with no `--fail-fast` (flutter test has none), reporter or `--timeout`, in a worker copy that
+     keeps `build/test_cache`.
+   - ~~Classify compile errors from the JSON `error` on the `loading …` test, not from the exit code
+     (a compile error gives 1, the same as a failure).~~ **[now]** q-83: a mutant that does not compile is
+     killed, as in Go and Kotlin (idea mutant-not-compiled).
+   - Enforce an itos-side deadline: the widget-test default is 10 min. **[now]** The deadline every language has:
+     the baseline's time times `--timeout-factor`, plus 5 seconds.
    - Consider dart_mutant's many-mutants-per-start batching later.
 10. **Test selection per mutant.** Recommendation: coverage-routed test files (from decision 7).
     Fall back to the path mirror (`lib/a/b.dart` → `test/a/b_test.dart`), then the whole `test/`.
+    **[now]** The test files under `test/` whose imports reach the file (slice-34, slice-35), coverage deciding
+    which mutants run; no path mirror, and a file no such test reaches runs nothing, its mutants
+    uncovered. The whole `test/` runs only with `--all-tests`.
 11. **Worker copy contents.**
     - Recommendation: copy the package minus `android ios macos linux windows web build coverage integration_test test_driver .idea`.
+      **[now]** slice-35 leaves out `build/` and `coverage/` beside a `pubspec.yaml` and a Flutter app's
+      platform folders; `integration_test/` and `test_driver/` are copied.
     - Keep `.dart_tool/` or run `flutter pub get --offline` once per worker, then use `--no-pub`.
+      **[now]** The second: `.dart_tool/` is never copied, and `flutter pub get --offline` runs once per worker.
     - For a pub-workspace member, copy the workspace root files and the members it depends on at
       the same relative paths.
-    - Out-of-tree `path:` dependencies: copy them or re-resolve.
+    - Out-of-tree `path:` dependencies: copy them or re-resolve. **[now]** Neither: strict coverage refuses
+      them as `mutation.coverage-unsupported`.
 12. **Mutation operators.** Recommendation: start with the AST-safe subset that maps to existing
     `Mutations` fields:
     - arithmetic, equality and relational swaps
@@ -584,12 +603,18 @@ languages, and record the difference from DCM.
     
     Leave out `?.`→`.` (mostly non-compiling). Expect more than 10 % compile errors, and report
     them as their own status. An analyzer pre-check is a later option.
-13. **Generated code.** Recommendation:
+    **[now]** slice-29 kept only the changes that compile whatever the operands' types: `+`/`-` but not `*`/`/`,
+    the equality and relational swaps, `&&`/`||`, `??` to its right operand, `!` and unary `-`
+    deletion, `true`/`false` and `0`/`1`; no collection-if condition mutant. q-83: a mutant that
+    does not compile counts as killed, not as a status of its own.
+13. **Generated code.** Recommendation (**[now]** done, q-77 and slice-30; no key brings a file back while
+    q-80 is open):
     - Default-exclude files by header marker or glob from all metrics and mutation.
     - Honor `// coverage:ignore-line/start/end/file` as not coverable.
     - Keep them in worker copies.
 14. **Project detection and monorepos.** Recommendation:
-    - A package is any `pubspec.yaml` with `lib/` or `test/`.
+    - A package is any `pubspec.yaml` with `lib/` or `test/`. **[now]** A Dart file's package is its nearest
+      `pubspec.yaml`, whatever it holds.
     - A workspace root is a pubspec with `workspace:`.
     - Melos 8 needs nothing extra, since it is pub workspaces.
     - Ignore `.dart_tool/` and `build/` when walking.
@@ -602,5 +627,8 @@ languages, and record the difference from DCM.
 17. **CI for itos-cc's own Dart scenarios.** Recommendation: setup-dart for parse and pure-Dart
     scenarios (about 10 s). subosito/flutter-action pinned by SHA with `flutter-version: 3.47.7` and
     `cache: true`, on ubuntu only and behind the binary-driver opt-in (T-153). Note the 1.6–2.3 GB
-    SDK archives against the 10 GB cache.
+    SDK archives against the 10 GB cache. **[now]** No setup-dart: parse scenarios need no tool. `cd.yml`'s
+    `dart` job, on ubuntu alone, reads the version from the root `.fvmrc` with
+    `kuhnroyal/flutter-fvm-config-action`, both actions pinned by SHA, and sets
+    `ITOS_CC_FLUTTER_TOOLS`, which every other job lacks, so their Dart scenarios skip.
 
