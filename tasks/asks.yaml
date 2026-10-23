@@ -392,3 +392,4 @@ questions:
   - id: q-85
     item: "p1-itos-proof-code"
     question: "How does p1-itos-proof-code's code proof judge a push, given no one records mutation results for a push's changed functions (AGENTS.md bars agents from mutating locally and the nightly records once a day), so a check proof reading recorded results (mutation check --since {base}) would fail every Go push?"
+    answer: "A fresh site in CI (the person, 2026-10-23), as itos's own proof does: proof.code.check runs itos-cc mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines --json, judging one fresh site of the range's changed code in every push's ci run, and cd.yml runs itos-cc mutation sample --count 10 on every source push. AGENTS.md's note is amended: mutation runs in a push's CI this way, still never locally. Amends the 2026-10-18 plan, whose check proof read recorded results."
