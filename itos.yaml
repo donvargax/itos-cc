@@ -6,8 +6,8 @@ version: 1
 # The itos release this repository runs: a global itos fetches it, checks it
 # against these checksums and runs it. itos pin moves it to the newest.
 pin:
-  version: "8.5.2"
-  checksums: "f94dd3522cf9ffd6b83c8571524f9f1872bfbe71525fff2ae1b5c6e554c6d2a0" # the SHA-256 of the release's checksums.txt
+  version: "8.7.5"
+  checksums: "edc151a404b3469625b7b531f4034e4dc5a49dcc289ee2c5e42a9242ae16fae6" # the SHA-256 of the release's checksums.txt
 
 # The tasks: every commit but a feat, a fix or a docs names one in its Task
 # footer (itos commit --task T-1), and itos task T-1 runs its checks.

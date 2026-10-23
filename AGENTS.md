@@ -43,8 +43,6 @@ with `itos work`; never edit owners or statuses by hand.
 
 ## itos
 
-Start with `itos go` unless your brief names another guide.
-
 Stage only your own files, by explicit path: untracked files you did not make are someone else's work in progress.
 
 <!-- itos:end -->
