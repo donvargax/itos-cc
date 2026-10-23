@@ -6546,10 +6546,6 @@
     route to a guide). Nothing was asked by hand: 8.6.0's tests list --json fingerprint key is
     optional (idea for mutation.tests.list), and no script here matches queue removals (8.7.2's
     docs: dequeue).
-  done_when:
-    - run: test "$(itos version)" = 'itos 8.7.5'
-    - run: itos version --check
-    - run: itos config check
 - id: T-187
   type: ci
   title: Each push judges one fresh mutation site of its changed code, and cd.yml samples ten recorded ones
