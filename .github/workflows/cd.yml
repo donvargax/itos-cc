@@ -9,11 +9,12 @@ name: CD
 # default branch's context. It runs everything ci.yml ran before the split:
 # the ci job, every Go test on Linux, macOS and Windows, every scenario
 # through both drivers, the native T-80 and T-82 runs, and the languages
-# shards; and since slice-32 the Dart scenarios with the real Flutter; the
-# test, languages and dart jobs skipped when the scope job finds the range
-# prose-only (T-122).
-# On a push to main, once the ci, test, languages and dart jobs pass, or the
-# latter three were skipped as prose-only, the release job cuts the release in
+# shards; and since slice-32 the Dart scenarios with the real Flutter; and
+# since T-187 the sample job's re-run of ten recorded mutation results; the
+# test, languages, dart and sample jobs skipped when the scope job finds the
+# range prose-only (T-122).
+# On a push to main, once the ci, test, languages, dart and sample jobs pass,
+# or the latter four were skipped as prose-only, the release job cuts the release in
 # the same run (release.yml, T-28): the version from the commits since the
 # last tag (tools/bin/release-version), each platform built on its own
 # runner, the archives attested and published with their notes, or nothing
@@ -47,8 +48,11 @@ jobs:
   # rules and itos.yaml's plan (T-26, T-29), as it did when both were one
   # workflow: itos verify over the range from ci.yml's last green run, then
   # itos ci run over it, the static and late steps, the checks of the tasks
-  # the range names and its merged scenario run. Its range is ci.yml's, as
-  # itos.yaml's ci.range says, so it judges what ci.yml's ci job judges.
+  # the range names and its merged scenario run, and the proof step of a
+  # range touching itos.yaml's proof.code paths, one fresh mutation site of
+  # its changed code (T-187), for which it has Node and the viewer's
+  # packages as ci.yml's ci job has. Its range is ci.yml's, as itos.yaml's
+  # ci.range says, so it judges what ci.yml's ci job judges.
   ci:
     runs-on: ubuntu-latest
     env:
@@ -61,6 +65,18 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+      # The viewer's packages, as nightly.yml installs them, for the proof
+      # step of the plan (itos.yaml's proof.code, T-187): a viewer site it
+      # draws runs its Vitest tests, and without node_modules every
+      # viewer/src file reports a failing baseline.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        working-directory: viewer
+        run: npm ci
       # The itos launcher, which runs the release itos.yaml pins.
       - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
       - name: Range
@@ -383,11 +399,54 @@ jobs:
           ITOS_CC_FLUTTER_TOOLS: "1"
         run: go test ./features -run '^TestFeatures$' -count=1 -v -scenarios='^@(slice-32|slice-34|slice-35|slice-36|slice-37)$'
 
+  # Ten recorded mutation results re-run on every source push (q-85, T-187),
+  # beside the ci job's proof of one fresh site: itos-cc mutation sample
+  # draws ten of .metrics/mutate/'s fresh kills and survivors, each re-run in
+  # the scope of the tests that decided it, and fails with mutation.mismatch
+  # when an outcome differs from the one recorded. A kill whose function is
+  # unchanged stays fresh even when a function it calls changes (the cache
+  # keys no kill on its callees, decision 48), so a kill gone stale is
+  # caught within a push rather than never. Sample's default seed, the HEAD
+  # commit, fixed per push, so a rerun of the run draws the same ten. The
+  # itos-cc built from the pushed tree, outside the work tree as nightly.yml
+  # builds it, with what any recorded mutant needs as there: Node and the
+  # viewer's packages for a viewer mutant's Vitest tests, and itos and jq for
+  # mutation.tests' list command, which ubuntu-latest has. On Linux alone, as
+  # the nightly that records the results runs; ci.yml stays fast, with no
+  # sample. Skipped when the scope job finds the range prose-only, and a
+  # newer push's run cancels an older one's, as for test (T-123).
+  sample:
+    needs: scope
+    if: needs.scope.outputs.docs_only != 'true'
+    concurrency:
+      group: cd-sample-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+      - name: Build itos-cc
+        run: go build -o "$RUNNER_TEMP/itos-cc" ./cmd/itos-cc
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: viewer/package-lock.json
+      - name: Install the viewer's packages
+        working-directory: viewer
+        run: npm ci
+      - uses: donvargax/itos@d02a769a8ea00030f5b385c06428485c23063318 # v7.4.0
+      - name: Sample
+        run: '"$RUNNER_TEMP/itos-cc" mutation sample --count 10'
+
   # The release, after everything above passed on this push: release.yml
   # releases this commit when its commits call for one, else ends green.
-  # A prose-only range skips the test, languages and dart jobs, and a job
-  # needing a skipped one is skipped too, so the condition says what passing
-  # is: ci passed, and test, languages and dart passed or were skipped
+  # A prose-only range skips the test, languages, dart and sample jobs, and a
+  # job needing a skipped one is skipped too, so the condition says what
+  # passing is: ci passed, and test, languages, dart and sample passed or were skipped
   # because scope found the range prose-only. Its release then cuts
   # nothing, as before.
   release:
@@ -397,7 +456,8 @@ jobs:
       && (needs.test.result == 'success' || needs.test.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
       && (needs.languages.result == 'success' || needs.languages.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
       && (needs.dart.result == 'success' || needs.dart.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
-    needs: [scope, ci, test, languages, dart]
+      && (needs.sample.result == 'success' || needs.sample.result == 'skipped' && needs.scope.outputs.docs_only == 'true')
+    needs: [scope, ci, test, languages, dart, sample]
     # What release.yml's jobs ask for: the release and its assets, the OIDC
     # token Sigstore signs with, and the attestations.
     permissions:

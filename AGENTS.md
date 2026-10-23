@@ -49,10 +49,12 @@ Stage only your own files, by explicit path: untracked files you did not make ar
 
 ## Notes for agents
 
-- Do not run mutation testing on this repository's own code while you work:
-  no `itos-cc mutation run` over its sources, locally or in a push's CI. The
-  nightly workflow is where it runs, committing `.metrics/mutate/` back. The Go tests of the mutation packages are fine:
-  they mutate fixtures, not this code.
+- Do not run mutation testing on this repository's own code on your machine:
+  no `itos-cc mutation run` or `mutation sample` over its sources while you
+  work. A push's CI runs the code proof's one fresh site (`itos.yaml`'s
+  `proof.code`) and `cd.yml`'s sample of ten recorded results; the nightly
+  judges the rest, committing `.metrics/mutate/` back. The Go tests of the
+  mutation packages are fine: they mutate fixtures, not this code.
 
 ## Lessons
 

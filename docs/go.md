@@ -1185,17 +1185,29 @@ these checks in cost order, the first failure stopping the run:
   coverage from its own tests.
 - The scenarios, run once: the smoke set and those the push's range names, through both
   drivers.
+- For a range touching any Go file or `viewer/src`'s TypeScript, the code proof
+  (`proof.code`), among the static steps: one fresh mutation site of the range's changed code.
 
 The Go tests of every package are not a plan step: `ci.yml`'s test job runs them on Linux and
 `cd.yml`'s platform jobs on Linux, macOS and Windows (decision 48).
 
-Mutation proof is off, and nothing here claims a mutation result for a push. The plan has no
-`proof.code` step and no `itos-cc mutation sample` (q-53): whether itos-cc sets itos's
-`proof.code` is the idea p1-itos-proof-code, waiting on T-46 alone now that the refactor's
-final proof (T-132) is done. The nightly mutation workflow, `nightly.yml`, runs again since
-2026-10-21, but no run finishes over the whole repository within a job's time limit yet (T-46):
-it interrupts the run at 330 minutes and commits what it judged as "chore: record partial nightly
-mutation results", keeping "chore: record the nightly mutation results" for a run that finished.
+Mutation testing runs in three places, never on an agent's machine (AGENTS.md, q-85, T-187):
+
+- The code proof, `itos.yaml`'s `proof.code`, in the ci jobs of `ci.yml` and `cd.yml` on every
+  push whose range touches a Go file or `viewer/src`'s TypeScript: the itos-cc built from the
+  pushed tree runs `mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines
+  --json`, one site of the range's changed functions judged freshly with no cache, seeded by
+  the range's start so a repair push re-judges what failed, and strict coverage of the lines the
+  range adds or changes. A range with no site passes. A survivor is killed by a test or, when
+  truly equivalent, excepted in `itos-cc.yaml` with its reason for the person to review.
+- `cd.yml`'s sample job on every push that is not prose alone, on Linux: `mutation sample
+  --count 10` re-runs ten recorded kills or survivors of `.metrics/mutate/`, seeded by the HEAD
+  commit, and fails when an outcome differs from the one recorded, so a kill gone stale while its
+  function stayed unchanged is caught. `ci.yml` runs no sample, to stay fast.
+- The nightly mutation workflow, `nightly.yml`, over the whole repository, committing
+  `.metrics/mutate/` back: a run interrupted at 330 minutes commits what it judged as "chore:
+  record partial nightly mutation results", one that finished "chore: record the nightly mutation
+  results" (T-46's run 39930716718 judged all 8378 mutants in 4 h 22 min).
 
 Each check runs where its cost fits:
 
