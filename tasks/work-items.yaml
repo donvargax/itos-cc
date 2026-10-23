@@ -11,9 +11,9 @@
 phases:
   1: null # the ledger's phase 1, owned by nobody: a handle, or null
 queue:
+  - slice-40
   - T-187
   - worker-copies-skip-ignored
-  - slice-40
   - T-102
   - T-103
   - T-104
