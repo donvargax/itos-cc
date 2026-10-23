@@ -36,6 +36,7 @@ var Deferred = map[string]string{
 	"@ID-MUT-154": serveDeferred,
 	"@ID-MUT-163": serveDeferred,
 	"@ID-MUT-207": serveDeferred,
+	"@ID-MUT-316": serveDeferred,
 	"@T-112":      servePortDeferred,
 }
 

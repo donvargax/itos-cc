@@ -100,6 +100,7 @@ func listedMutationSteps(sc *godog.ScenarioContext, m *mutateState) {
 	sc.Step(`^the problem is "tests\.coverage-failed", with the command that ran ID-A-02 alone and its exit code$`, func() error { return l.coverageProblem("ID-A-02") })
 	sc.Step(`^no problem is "([^"]+)"$`, l.noProblem)
 	slice39FingerprintSteps(sc, l)
+	listedImporterSteps(sc, l)
 }
 
 func (l *listedMutation) project() error {
