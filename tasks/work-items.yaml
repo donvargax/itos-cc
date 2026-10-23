@@ -5372,3 +5372,19 @@ items:
     status: done
     depends_on: []
     kind: task
+  - id: sample-mismatch-repair-path
+    title: A sample mismatch has a repair path that keeps mutation off agents' machines
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Found by T-187's agent (2026-10-23). cd.yml's sample job fails with mutation.mismatch when a
+      recorded kill or survivor no longer holds, and itos-cc's fix is a mutation run --mutate-all of
+      the file in its recorded scope. No agent may run that on its machine (AGENTS.md), and the
+      nightly reuses the kills of unchanged functions, so a stale kill behind an unchanged function
+      stays recorded and fails every push whose sample draws it until someone re-judges it. A
+      workflow_dispatch input to nightly.yml naming the files to re-judge with --mutate-all, or the
+      nightly re-judging the files a failed sample named, would give the repair agent a path, its
+      result committed to .metrics/mutate/ as the nightly's are.
