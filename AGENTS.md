@@ -55,6 +55,13 @@ Stage only your own files, by explicit path: untracked files you did not make ar
   `proof.code`) and `cd.yml`'s sample of ten recorded results; the nightly
   judges the rest, committing `.metrics/mutate/` back. The Go tests of the
   mutation packages are fine: they mutate fixtures, not this code.
+- A survivor the code proof finds in a function your push changed, even one
+  older than the push, is yours: kill it with a test before the push lands.
+  A repair push re-judges the same site, since `--seed {base}` keeps the
+  draw while the range stands. Only a truly equivalent mutant stops you:
+  report it, as an exception in `itos-cc.yaml` is the person's to review.
+  About 22% of the mutants a test reaches survive (nightly 39930716718: 1871
+  of 8317), so about one Go push in five may meet one.
 
 ## Lessons
 
