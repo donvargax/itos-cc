@@ -5375,3 +5375,16 @@ items:
       in-process run of the same 631 scenarios. Each run is isolated in memory, so they could run as
       many at once as the CPUs, as the binary driver does (T-128). T-46's measure says whether the
       listed tests' coverage step matters beside the mutants' own runs.
+  - id: mutation-run-worn-runner-warned
+    title: mutation run warns when a pool's timeouts jump or its test processes outlive their mutants
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Nightly 39844317241 ran three hours on a worn-down runner unnoticed: from one mutant on, every
+      mutant timed out at 18-34 s against a 1-2 s baseline, and 871 orphaned worktrees.test
+      processes were left. The log said nothing. A warning when the timeout rate jumps, or when test
+      processes survive their mutant's kill, would have flagged it at once.
+    refs: [T-46]
