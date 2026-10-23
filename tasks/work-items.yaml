@@ -2116,30 +2116,9 @@ items:
     title: The nightly mutation run survives every mutant and commits its results
     phase: 1
     owner: donvargax
-    status: doing
+    status: done
     depends_on: [T-43, slice-7, T-184]
     kind: task
-    why: >
-      The person's call (2026-10-11): the nightly has committed no mutation results since
-      2026-10-07, every run dying with a runner shutdown at about mutant 161 of 2213, right after
-      cmd/itos-cc/main.go:133 (runs 37600315790, 37627544105, then 37756389520, 37911085058,
-      38041015669 failed and 38127972870 was cancelled), so the commit step never runs (was the idea
-      nightly-runner-kill). The refactor relies on the nightly to refresh the records of every
-      package it moves (decision 40: T-36, T-39, T-42), and mutation proof turns back on after its
-      last stage, so this lands after S3 and well before that. The hold on investigating was about
-      the person's machine; a GitHub runner is a disposable VM, so the work is done in CI alone: no
-      mutation run of this repository locally (AGENTS.md), each experiment a workflow_dispatch of
-      nightly.yml or a branch workflow, its logs the evidence. Three parts: cap each mutant's
-      resources in the runner (memory, processes, wall time; through the job's environment, ulimit
-      or systemd-run, whichever the runner allows), so one mutant cannot take the machine down; make
-      a killed or timed-out run keep what it finished, committing .metrics/mutate/ in an always()
-      step even when the Mutate step is cut off (a step timeout under the job's), so each night
-      makes progress; and find the mutant that kills the runner from the logs, fixing its cause in
-      the product or the test it runs (a test that forks without end, eats memory or signals every
-      process) and never by excluding code to get green. If keeping partial results needs itos-cc
-      itself to save as it goes, that is product behaviour with a scenario: stop and report so it is
-      specified as a slice. Done once a scheduled or dispatched nightly on main completes its Mutate
-      step over the whole repository and commits its results.
   - id: T-132
     title: Prove the refactored binary matches the pre-refactor one but for its listed changes
     phase: 1
