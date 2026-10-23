@@ -61,11 +61,76 @@
       "hash": "4f6693ee7bf8d5c3",
       "start_line": 57,
       "end_line": 90,
-      "killed": 0,
-      "survived": 0,
+      "killed": 7,
+      "survived": 1,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 8,
+      "mutants": [
+        {
+          "line": 59,
+          "column": 56,
+          "offset": 135,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 65,
+          "column": 20,
+          "offset": 256,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 66,
+          "column": 31,
+          "offset": 293,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 69,
+          "column": 67,
+          "offset": 384,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 9,
+          "offset": 403,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 76,
+          "column": 43,
+          "offset": 516,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 80,
+          "column": 29,
+          "offset": 587,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 83,
+          "column": 45,
+          "offset": 656,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/metrics",
@@ -215,11 +280,27 @@
       "hash": "f55ce0933fce9346",
       "start_line": 154,
       "end_line": 172,
-      "killed": 0,
+      "killed": 3,
       "survived": 0,
       "uncovered": 1,
-      "sites": 1,
+      "sites": 4,
       "mutants": [
+        {
+          "line": 166,
+          "column": 10,
+          "offset": 272,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 168,
+          "column": 9,
+          "offset": 294,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
         {
           "line": 169,
           "column": 10,
@@ -227,6 +308,14 @@
           "original": "false",
           "replacement": "true",
           "outcome": "uncovered"
+        },
+        {
+          "line": 171,
+          "column": 9,
+          "offset": 334,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
         }
       ]
     }

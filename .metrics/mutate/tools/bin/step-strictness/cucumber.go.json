@@ -27,11 +27,180 @@
       "hash": "0ade4aec97ddcd16",
       "start_line": 45,
       "end_line": 93,
-      "killed": 0,
-      "survived": 0,
+      "killed": 11,
+      "survived": 10,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 21,
+      "mutants": [
+        {
+          "line": 47,
+          "column": 9,
+          "offset": 91,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 50,
+          "column": 29,
+          "offset": 149,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 45,
+          "offset": 294,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 13,
+          "offset": 495,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 19,
+          "offset": 501,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 27,
+          "offset": 509,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 33,
+          "offset": 515,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 43,
+          "offset": 525,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 45,
+          "offset": 527,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 47,
+          "offset": 529,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 61,
+          "column": 63,
+          "offset": 545,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 61,
+          "column": 66,
+          "offset": 548,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 67,
+          "column": 12,
+          "offset": 755,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 73,
+          "column": 10,
+          "offset": 900,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 80,
+          "column": 20,
+          "offset": 1188,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 82,
+          "column": 15,
+          "offset": 1238,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 82,
+          "column": 21,
+          "offset": 1244,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 82,
+          "column": 31,
+          "offset": 1254,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 82,
+          "column": 33,
+          "offset": 1256,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 89,
+          "column": 16,
+          "offset": 1386,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 89,
+          "column": 19,
+          "offset": 1389,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/tools/bin/step-strictness",
@@ -51,11 +220,60 @@
       "hash": "a16ca36507a0fbd3",
       "start_line": 106,
       "end_line": 125,
-      "killed": 0,
+      "killed": 6,
       "survived": 0,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 6,
+      "mutants": [
+        {
+          "line": 109,
+          "column": 6,
+          "offset": 128,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 112,
+          "column": 24,
+          "offset": 245,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 114,
+          "column": 23,
+          "offset": 302,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 114,
+          "column": 35,
+          "offset": 314,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 114,
+          "column": 53,
+          "offset": 332,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 120,
+          "column": 6,
+          "offset": 481,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        }
+      ]
     },
     {
       "namespace": "github.com/donvargax/itos-cc/tools/bin/step-strictness",
@@ -63,11 +281,123 @@
       "hash": "a1c9f9f6ee5da0c9",
       "start_line": 127,
       "end_line": 146,
-      "killed": 0,
-      "survived": 0,
+      "killed": 9,
+      "survived": 9,
       "uncovered": 2,
-      "sites": 2,
+      "sites": 20,
       "mutants": [
+        {
+          "line": 129,
+          "column": 11,
+          "offset": 100,
+          "original": "-",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 129,
+          "column": 12,
+          "offset": 101,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 12,
+          "offset": 181,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 21,
+          "offset": 190,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 31,
+          "offset": 200,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 41,
+          "offset": 210,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 45,
+          "offset": 214,
+          "original": "!",
+          "replacement": "",
+          "outcome": "survived"
+        },
+        {
+          "line": 132,
+          "column": 53,
+          "offset": 222,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 132,
+          "column": 63,
+          "offset": 232,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 133,
+          "column": 15,
+          "offset": 259,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 134,
+          "column": 12,
+          "offset": 282,
+          "original": "-",
+          "replacement": "",
+          "outcome": "survived"
+        },
+        {
+          "line": 134,
+          "column": 13,
+          "offset": 283,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
+        },
+        {
+          "line": 136,
+          "column": 13,
+          "offset": 370,
+          "original": ">=",
+          "replacement": ">",
+          "outcome": "survived"
+        },
+        {
+          "line": 136,
+          "column": 16,
+          "offset": 373,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
         {
           "line": 137,
           "column": 12,
@@ -83,6 +413,38 @@
           "original": "1",
           "replacement": "0",
           "outcome": "uncovered"
+        },
+        {
+          "line": 142,
+          "column": 11,
+          "offset": 470,
+          "original": "<",
+          "replacement": "<=",
+          "outcome": "survived"
+        },
+        {
+          "line": 142,
+          "column": 13,
+          "offset": 472,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 143,
+          "column": 10,
+          "offset": 485,
+          "original": "-",
+          "replacement": "",
+          "outcome": "survived"
+        },
+        {
+          "line": 143,
+          "column": 11,
+          "offset": 486,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "survived"
         }
       ]
     },
@@ -92,11 +454,35 @@
       "hash": "71b51ae4fa76f20d",
       "start_line": 151,
       "end_line": 215,
-      "killed": 0,
-      "survived": 0,
+      "killed": 44,
+      "survived": 15,
       "uncovered": 4,
-      "sites": 4,
+      "sites": 63,
       "mutants": [
+        {
+          "line": 154,
+          "column": 19,
+          "offset": 172,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 158,
+          "column": 15,
+          "offset": 232,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 158,
+          "column": 18,
+          "offset": 235,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
         {
           "line": 159,
           "column": 54,
@@ -104,6 +490,86 @@
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered"
+        },
+        {
+          "line": 161,
+          "column": 16,
+          "offset": 312,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 162,
+          "column": 66,
+          "offset": 392,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 164,
+          "column": 22,
+          "offset": 418,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 164,
+          "column": 25,
+          "offset": 421,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 167,
+          "column": 6,
+          "offset": 480,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 167,
+          "column": 10,
+          "offset": 484,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 167,
+          "column": 26,
+          "offset": 500,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 168,
+          "column": 50,
+          "offset": 567,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 171,
+          "column": 46,
+          "offset": 642,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "survived"
+        },
+        {
+          "line": 172,
+          "column": 10,
+          "offset": 658,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
         },
         {
           "line": 173,
@@ -114,6 +580,54 @@
           "outcome": "uncovered"
         },
         {
+          "line": 175,
+          "column": 47,
+          "offset": 753,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "survived"
+        },
+        {
+          "line": 176,
+          "column": 10,
+          "offset": 768,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 176,
+          "column": 17,
+          "offset": 775,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 176,
+          "column": 27,
+          "offset": 785,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 177,
+          "column": 76,
+          "offset": 871,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 179,
+          "column": 19,
+          "offset": 895,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
           "line": 180,
           "column": 67,
           "offset": 979,
@@ -122,12 +636,332 @@
           "outcome": "uncovered"
         },
         {
+          "line": 182,
+          "column": 13,
+          "offset": 997,
+          "original": "false",
+          "replacement": "true",
+          "outcome": "killed"
+        },
+        {
+          "line": 186,
+          "column": 14,
+          "offset": 1046,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 186,
+          "column": 33,
+          "offset": 1065,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 186,
+          "column": 39,
+          "offset": 1071,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "survived"
+        },
+        {
+          "line": 186,
+          "column": 48,
+          "offset": 1080,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 186,
+          "column": 58,
+          "offset": 1090,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 186,
+          "column": 78,
+          "offset": 1110,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 186,
+          "column": 110,
+          "offset": 1142,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
           "line": 187,
           "column": 51,
           "offset": 1235,
           "original": "0",
           "replacement": "1",
           "outcome": "uncovered"
+        },
+        {
+          "line": 189,
+          "column": 9,
+          "offset": 1250,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 189,
+          "column": 18,
+          "offset": 1259,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 189,
+          "column": 37,
+          "offset": 1278,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 189,
+          "column": 49,
+          "offset": 1290,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 190,
+          "column": 14,
+          "offset": 1365,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 194,
+          "column": 14,
+          "offset": 1416,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 194,
+          "column": 19,
+          "offset": 1421,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "survived"
+        },
+        {
+          "line": 194,
+          "column": 27,
+          "offset": 1429,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "survived"
+        },
+        {
+          "line": 194,
+          "column": 46,
+          "offset": 1448,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 194,
+          "column": 59,
+          "offset": 1461,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 194,
+          "column": 77,
+          "offset": 1479,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 197,
+          "column": 23,
+          "offset": 1527,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 197,
+          "column": 35,
+          "offset": 1539,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 197,
+          "column": 53,
+          "offset": 1557,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 198,
+          "column": 114,
+          "offset": 1678,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
+        },
+        {
+          "line": 201,
+          "column": 6,
+          "offset": 1694,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 205,
+          "column": 14,
+          "offset": 1736,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "killed"
+        },
+        {
+          "line": 205,
+          "column": 16,
+          "offset": 1738,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 205,
+          "column": 18,
+          "offset": 1740,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 205,
+          "column": 28,
+          "offset": 1750,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "killed"
+        },
+        {
+          "line": 205,
+          "column": 30,
+          "offset": 1752,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 208,
+          "column": 14,
+          "offset": 1854,
+          "original": ">",
+          "replacement": ">=",
+          "outcome": "killed"
+        },
+        {
+          "line": 208,
+          "column": 16,
+          "offset": 1856,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 208,
+          "column": 18,
+          "offset": 1858,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 208,
+          "column": 26,
+          "offset": 1866,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 208,
+          "column": 29,
+          "offset": 1869,
+          "original": "1",
+          "replacement": "0",
+          "outcome": "killed"
+        },
+        {
+          "line": 211,
+          "column": 14,
+          "offset": 1985,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 211,
+          "column": 17,
+          "offset": 1988,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 211,
+          "column": 19,
+          "offset": 1990,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 211,
+          "column": 27,
+          "offset": 1998,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 211,
+          "column": 30,
+          "offset": 2001,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 212,
+          "column": 57,
+          "offset": 2061,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "survived"
         }
       ]
     }

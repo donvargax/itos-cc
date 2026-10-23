@@ -93,10 +93,19 @@
       "start_line": 38,
       "end_line": 43,
       "killed": 0,
-      "survived": 0,
+      "survived": 1,
       "uncovered": 0,
-      "sites": 0,
-      "mutants": []
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 41,
+          "column": 20,
+          "offset": 170,
+          "original": "*",
+          "replacement": "/",
+          "outcome": "survived"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "file": "tools/bin/assemble/features.go",
+  "language": "go",
+  "tests": {
+    "tools/bin/assemble/features_test.go": "70553222e03bfd7bb09f46e44eec7171a35cdb1a345e28910815530842ce45d8",
+    "tools/bin/assemble/main_test.go": "8fc1669fab7fd31f9139b028acaef6cd87499b18eadd7122a72e3f1e14740368"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/assemble",
+      "name": "registration",
+      "hash": "4d599a88e41777ed",
+      "start_line": 33,
+      "end_line": 39,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 35,
+          "column": 9,
+          "offset": 90,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/assemble",
+      "name": "declarations",
+      "hash": "af69e257bf06517e",
+      "start_line": 44,
+      "end_line": 81,
+      "killed": 18,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 18,
+      "mutants": [
+        {
+          "line": 46,
+          "column": 9,
+          "offset": 106,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 53,
+          "column": 23,
+          "offset": 255,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 53,
+          "column": 29,
+          "offset": 261,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 16,
+          "offset": 283,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 19,
+          "offset": 286,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 51,
+          "offset": 318,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 90,
+          "offset": 357,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 54,
+          "column": 98,
+          "offset": 365,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 58,
+          "column": 10,
+          "offset": 447,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 62,
+          "column": 10,
+          "offset": 563,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 66,
+          "column": 10,
+          "offset": 641,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 73,
+          "offset": 772,
+          "original": "==",
+          "replacement": "!=",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 89,
+          "offset": 788,
+          "original": ">=",
+          "replacement": ">",
+          "outcome": "killed"
+        },
+        {
+          "line": 70,
+          "column": 92,
+          "offset": 791,
+          "original": "0",
+          "replacement": "1",
+          "outcome": "killed"
+        },
+        {
+          "line": 73,
+          "column": 42,
+          "offset": 987,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 73,
+          "column": 46,
+          "offset": 991,
+          "original": "+",
+          "replacement": "-",
+          "outcome": "killed"
+        },
+        {
+          "line": 73,
+          "column": 60,
+          "offset": 1005,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 73,
+          "column": 67,
+          "offset": 1012,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/assemble",
+      "name": "featureFiles",
+      "hash": "77155aafee8cec33",
+      "start_line": 86,
+      "end_line": 115,
+      "killed": 8,
+      "survived": 1,
+      "uncovered": 0,
+      "sites": 9,
+      "mutants": [
+        {
+          "line": 90,
+          "column": 6,
+          "offset": 151,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 90,
+          "column": 13,
+          "offset": 158,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "killed"
+        },
+        {
+          "line": 90,
+          "column": 22,
+          "offset": 167,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 95,
+          "column": 20,
+          "offset": 280,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 100,
+          "column": 8,
+          "offset": 404,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 103,
+          "column": 45,
+          "offset": 477,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 103,
+          "column": 54,
+          "offset": 486,
+          "original": "||",
+          "replacement": "&&",
+          "outcome": "survived"
+        },
+        {
+          "line": 103,
+          "column": 64,
+          "offset": 496,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 107,
+          "column": 12,
+          "offset": 602,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/assemble",
+      "name": "featureFileOf",
+      "hash": "144d0bdb1497cd99",
+      "start_line": 119,
+      "end_line": 146,
+      "killed": 7,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 7,
+      "mutants": [
+        {
+          "line": 124,
+          "column": 6,
+          "offset": 226,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 128,
+          "column": 6,
+          "offset": 293,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 134,
+          "column": 18,
+          "offset": 410,
+          "original": "&&",
+          "replacement": "||",
+          "outcome": "killed"
+        },
+        {
+          "line": 134,
+          "column": 28,
+          "offset": 420,
+          "original": "!=",
+          "replacement": "==",
+          "outcome": "killed"
+        },
+        {
+          "line": 136,
+          "column": 12,
+          "offset": 453,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        },
+        {
+          "line": 140,
+          "column": 7,
+          "offset": 481,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        },
+        {
+          "line": 142,
+          "column": 7,
+          "offset": 673,
+          "original": "!",
+          "replacement": "",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/assemble",
+      "name": "renderStepped",
+      "hash": "14aecb8e87972740",
+      "start_line": 165,
+      "end_line": 173,
+      "killed": 0,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 0,
+      "mutants": []
+    }
+  ]
+}

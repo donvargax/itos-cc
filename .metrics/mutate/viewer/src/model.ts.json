@@ -23,14 +23,7 @@
           "offset": 201,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 21,
@@ -38,14 +31,7 @@
           "offset": 233,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 22,
@@ -53,14 +39,7 @@
           "offset": 283,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         }
       ]
     },
@@ -81,14 +60,7 @@
           "offset": 56,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         }
       ]
     },
@@ -109,14 +81,7 @@
           "offset": 126,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 68,
@@ -124,14 +89,7 @@
           "offset": 136,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 68,
@@ -139,14 +97,7 @@
           "offset": 162,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 68,
@@ -154,14 +105,7 @@
           "offset": 166,
           "original": "1",
           "replacement": "0",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 69,
@@ -169,21 +113,14 @@
           "offset": 195,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         }
       ]
     },
     {
       "namespace": "model",
       "name": "view",
-      "hash": "443482c231de03e9",
+      "hash": "e99aa9ea96d4684e",
       "start_line": 75,
       "end_line": 130,
       "killed": 16,
@@ -197,14 +134,7 @@
           "offset": 296,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 84,
@@ -212,14 +142,7 @@
           "offset": 302,
           "original": "&&",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 84,
@@ -227,14 +150,7 @@
           "offset": 331,
           "original": ">",
           "replacement": ">=",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 84,
@@ -242,14 +158,7 @@
           "offset": 333,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 85,
@@ -257,14 +166,7 @@
           "offset": 349,
           "original": "false",
           "replacement": "true",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 86,
@@ -272,14 +174,7 @@
           "offset": 377,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 87,
@@ -287,14 +182,7 @@
           "offset": 401,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 90,
@@ -302,14 +190,7 @@
           "offset": 461,
           "original": "?.",
           "replacement": ".",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 90,
@@ -317,14 +198,7 @@
           "offset": 468,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 90,
@@ -332,14 +206,7 @@
           "offset": 481,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 90,
@@ -347,14 +214,7 @@
           "offset": 495,
           "original": "?.",
           "replacement": ".",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 90,
@@ -362,14 +222,7 @@
           "offset": 504,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 90,
@@ -377,14 +230,7 @@
           "offset": 507,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 90,
@@ -392,14 +238,7 @@
           "offset": 510,
           "original": ">",
           "replacement": ">=",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 90,
@@ -407,14 +246,7 @@
           "offset": 512,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 91,
@@ -422,14 +254,7 @@
           "offset": 555,
           "original": "true",
           "replacement": "false",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 95,
@@ -437,194 +262,103 @@
           "offset": 696,
           "original": "false",
           "replacement": "true",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 114,
           "column": 11,
-          "offset": 1254,
+          "offset": 1188,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 114,
           "column": 16,
-          "offset": 1259,
+          "offset": 1193,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 114,
           "column": 21,
-          "offset": 1264,
+          "offset": 1198,
           "original": "!==",
           "replacement": "===",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 116,
           "column": 35,
-          "offset": 1349,
+          "offset": 1283,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 116,
           "column": 92,
-          "offset": 1406,
+          "offset": 1340,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 116,
           "column": 122,
-          "offset": 1436,
+          "offset": 1370,
           "original": "false",
           "replacement": "true",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 119,
           "column": 29,
-          "offset": 1541,
+          "offset": 1475,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 119,
           "column": 40,
-          "offset": 1552,
+          "offset": 1486,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 121,
           "column": 18,
-          "offset": 1638,
+          "offset": 1572,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 121,
           "column": 21,
-          "offset": 1641,
+          "offset": 1575,
           "original": "!",
           "replacement": "",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 123,
           "column": 18,
-          "offset": 1711,
+          "offset": 1645,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 123,
           "column": 21,
-          "offset": 1714,
+          "offset": 1648,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         }
       ]
     },
@@ -645,14 +379,7 @@
           "offset": 145,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 137,
@@ -660,14 +387,7 @@
           "offset": 200,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 143,
@@ -675,14 +395,7 @@
           "offset": 434,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 144,
@@ -690,14 +403,7 @@
           "offset": 456,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 153,
@@ -705,14 +411,7 @@
           "offset": 660,
           "original": "??",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 154,
@@ -720,14 +419,7 @@
           "offset": 679,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 161,
@@ -735,14 +427,7 @@
           "offset": 896,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 162,
@@ -750,14 +435,7 @@
           "offset": 933,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 169,
@@ -765,14 +443,7 @@
           "offset": 1092,
           "original": "!==",
           "replacement": "===",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 174,
@@ -780,14 +451,7 @@
           "offset": 1184,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 176,
@@ -795,14 +459,7 @@
           "offset": 1275,
           "original": ">",
           "replacement": ">=",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 176,
@@ -810,14 +467,7 @@
           "offset": 1277,
           "original": "1",
           "replacement": "0",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 179,
@@ -825,14 +475,7 @@
           "offset": 1379,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 179,
@@ -840,14 +483,7 @@
           "offset": 1392,
           "original": "&&",
           "replacement": "||",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 179,
@@ -855,14 +491,7 @@
           "offset": 1419,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 179,
@@ -870,14 +499,7 @@
           "offset": 1447,
           "original": "&&",
           "replacement": "||",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         }
       ]
     },
@@ -910,14 +532,7 @@
           "offset": 100,
           "original": "!==",
           "replacement": "===",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 196,
@@ -925,14 +540,7 @@
           "offset": 111,
           "original": "&&",
           "replacement": "||",
-          "outcome": "timeout",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "timeout"
         },
         {
           "line": 196,
@@ -940,14 +548,7 @@
           "offset": 114,
           "original": "!",
           "replacement": "",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 198,
@@ -955,14 +556,7 @@
           "offset": 186,
           "original": "<",
           "replacement": "<=",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 198,
@@ -970,14 +564,7 @@
           "offset": 188,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 198,
@@ -985,14 +572,7 @@
           "offset": 210,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         }
       ]
     },
@@ -1013,14 +593,7 @@
           "offset": 102,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 207,
@@ -1028,14 +601,7 @@
           "offset": 106,
           "original": "1",
           "replacement": "0",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 207,
@@ -1043,14 +609,7 @@
           "offset": 116,
           "original": "0",
           "replacement": "1",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         }
       ]
     },
@@ -1071,14 +630,7 @@
           "offset": 74,
           "original": "===",
           "replacement": "!==",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 213,
@@ -1086,14 +638,7 @@
           "offset": 146,
           "original": "1",
           "replacement": "0",
-          "outcome": "survived",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "survived"
         },
         {
           "line": 213,
@@ -1101,14 +646,7 @@
           "offset": 157,
           "original": "-",
           "replacement": "+",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 213,
@@ -1116,14 +654,7 @@
           "offset": 159,
           "original": "1",
           "replacement": "0",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 213,
@@ -1131,14 +662,7 @@
           "offset": 162,
           "original": "/",
           "replacement": "*",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         },
         {
           "line": 213,
@@ -1146,14 +670,7 @@
           "offset": 167,
           "original": "*",
           "replacement": "/",
-          "outcome": "killed",
-          "scope": "all-tests",
-          "suite_evidence": {
-            "tests": {
-              "viewer/src/model.test.ts": "4471452ef797dc998a6e4a210359de60208df73aad205dd3786bd95bd1f61e67"
-            },
-            "support": {}
-          }
+          "outcome": "killed"
         }
       ]
     }

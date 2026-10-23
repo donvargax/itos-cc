@@ -56,8 +56,8 @@
       "hash": "b822498b56091b10",
       "start_line": 45,
       "end_line": 135,
-      "killed": 17,
-      "survived": 4,
+      "killed": 18,
+      "survived": 3,
       "uncovered": 2,
       "sites": 23,
       "mutants": [
@@ -131,7 +131,7 @@
           "offset": 849,
           "original": "0",
           "replacement": "1",
-          "outcome": "survived"
+          "outcome": "killed"
         },
         {
           "line": 77,

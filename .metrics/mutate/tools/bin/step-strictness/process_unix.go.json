@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "file": "tools/bin/step-strictness/process_unix.go",
+  "language": "go",
+  "tests": {
+    "tools/bin/step-strictness/cucumber_test.go": "0f486ba4d928ad86d4e38f2bd511e5b978b88102377678ad8d5bba885d4a8532",
+    "tools/bin/step-strictness/exec_test.go": "be0ced2bfba62e7413918dcb765b701807895f1a17acf773c6c0608e63f1a727",
+    "tools/bin/step-strictness/plan_test.go": "8236662efe4b8b9ea3e6e9eaa2e4b3dc8a4b0518d7db3bea035e779965a4b1ba",
+    "tools/bin/step-strictness/run_test.go": "3b371e80c8736dd7a98799620ea392acd724f3e9fcf902ec0e8860139446b859"
+  },
+  "units": [
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/step-strictness",
+      "name": "groupAttributes",
+      "hash": "c77ffeb66f581abc",
+      "start_line": 9,
+      "end_line": 9,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 9,
+          "column": 84,
+          "offset": 83,
+          "original": "true",
+          "replacement": "false",
+          "outcome": "killed"
+        }
+      ]
+    },
+    {
+      "namespace": "github.com/donvargax/itos-cc/tools/bin/step-strictness",
+      "name": "killCommandGroup",
+      "hash": "56a58debee32ace6",
+      "start_line": 10,
+      "end_line": 10,
+      "killed": 1,
+      "survived": 0,
+      "uncovered": 0,
+      "sites": 1,
+      "mutants": [
+        {
+          "line": 10,
+          "column": 67,
+          "offset": 66,
+          "original": "-",
+          "replacement": "",
+          "outcome": "killed"
+        }
+      ]
+    }
+  ]
+}
