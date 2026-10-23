@@ -5388,3 +5388,15 @@ items:
       processes were left. The log said nothing. A warning when the timeout rate jumps, or when test
       processes survive their mutant's kill, would have flagged it at once.
     refs: [T-46]
+  - id: processes-mutant-orphans
+    title: Find why internal/processes' mutants leave orphaned test processes
+    phase: 1
+    owner: null
+    status: todo
+    depends_on: []
+    kind: idea
+    why: >
+      Nightly 39844317241 left 2 orphaned internal/processes test processes. That package starts its
+      binary through -exec, not the env-var argv pattern fixed in worktrees (fc50634a), so the cause
+      is still unknown; it may need the same kind of guard.
+    refs: [T-46]
