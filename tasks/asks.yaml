@@ -389,3 +389,6 @@ questions:
     item: "T-184"
     question: "How should inprocess-mutation-tests be cut, now that a Go mutant's own tests are its package alone (ChooseCommand, command_policy.go:24-31) and the 217-second suite runs on every mutant only under --all-tests? (a, recommended) Configuration first: one task makes TestScenarios split coverage per scenario, lists the scenarios and sets itos-cc.yaml's mutation.tests; T-46 then drops --all-tests and measures; listed kills resting on importer tests is a slice right after T-46, and a listed-first order waits for that measure. (b) One slice adding the order mode, the freshness change and the missing-file fix before T-46 measures."
     answer: "(a), the person, 2026-10-22: configuration first; listed kills resting on importer tests right after T-46. The list comes from itos tests list scenario --json through jq until itos#22 and itos#112 give a form with fingerprints."
+  - id: q-85
+    item: "p1-itos-proof-code"
+    question: "How does p1-itos-proof-code's code proof judge a push, given no one records mutation results for a push's changed functions (AGENTS.md bars agents from mutating locally and the nightly records once a day), so a check proof reading recorded results (mutation check --since {base}) would fail every Go push?"
