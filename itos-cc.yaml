@@ -17,12 +17,13 @@ mutation:
   exceptions:
     - file: internal/release/build.go
       function: github.com/donvargax/itos-cc/internal/release#extract
-      hash: 6e51bcbcdcf402f5
+      hash: eb830c4ae00e4903
       line_in_function: 13
       column: 14
       original: '!='
       replacement: ==
       reason: untar reads a tar git archive wrote, whose entries are all relative names, each written once, each a folder, a regular file or a symlink, so it cannot refuse a name and the only way it returns is a write failing on the temporary folder BuiltAt made; it returns nil there, and draining a pipe afterwards cannot change the error extract returns.
+      line_text: if unpacked != nil {
     - file: internal/release/release.go
       function: github.com/donvargax/itos-cc/internal/release#Newest
       hash: 169323ab8c351ad2
