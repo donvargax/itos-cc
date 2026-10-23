@@ -976,7 +976,10 @@ Feature: Mutation testing
   # mutate.FreshnessOf, and run no list command to do it. Deleting a test
   # from its file changes that file, so its kills go stale too. One
   # support edit stales every listed kill, and each then reruns only its
-  # covering tests. Own-scope outcomes keep today's rule.
+  # covering tests. Own-scope outcomes keep today's rule. Since slice-40
+  # (q-84), a listed kill whose tests are each dated, by a file or a
+  # fingerprint, no longer rests on the tests that import its file as well
+  # (ID-MUT-308 to ID-MUT-317).
   Rule: A kill made by listed tests goes stale when its tests change
 
     @listed-kill-freshness @ID-MUT-130
@@ -1117,7 +1120,7 @@ Feature: Mutation testing
   # they do.
   Rule: A listed kill does not rest on the tests that import its file
 
-    @slice-40 @ID-MUT-308 @wip
+    @slice-40 @ID-MUT-308
     Scenario: A listed kill stays fresh when only a test importing its file changed
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And main_test.go, a test of main.go's own package, has changed since
@@ -1126,7 +1129,7 @@ Feature: Mutation testing
       And "itos-cc mutation run" reuses that kill
       And that run judges the mutant of "half" again
 
-    @slice-40 @ID-MUT-309 @wip
+    @slice-40 @ID-MUT-309
     Scenario: mutation sample still samples a listed kill after a test importing its file changed
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And main_test.go, a test of main.go's own package, has changed since
@@ -1134,7 +1137,7 @@ Feature: Mutation testing
       Then that mutant runs the run command selecting ID-A-02, after its own tests survive it
       And no "mutation.mismatch" is reported
 
-    @slice-40 @ID-MUT-310 @wip
+    @slice-40 @ID-MUT-310
     Scenario: The file of a covering test still stales its kill, named, when an importing test changed too
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And main_test.go, a test of main.go's own package, has changed since
@@ -1143,7 +1146,7 @@ Feature: Mutation testing
       Then the problem is "mutation.stale" for that mutant's function, and its message names a.feature
       And "itos-cc mutation run" runs that mutant again, its own tests first
 
-    @slice-40 @ID-MUT-311 @wip
+    @slice-40 @ID-MUT-311
     Scenario: A support file still stales every listed kill, named, when an importing test changed too
       Given itos-cc.yaml lists features/*_test.go under mutation.tests.support
       And a run recorded listed kills and kills by own tests
@@ -1153,7 +1156,7 @@ Feature: Mutation testing
       Then each function holding a listed kill is "mutation.stale", its message naming features/steps_test.go
       And "half", killed by its own test, is "mutation.stale", its message naming main_test.go
 
-    @slice-40 @ID-MUT-312 @wip
+    @slice-40 @ID-MUT-312
     Scenario: A fingerprinted listed kill stays fresh when its file and an importing test changed elsewhere
       Given mutation.tests.list prints "ID-A-02", "a.feature" and the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
       And a.feature has changed since, in a comment and in another scenario, and the list still prints "f1" for ID-A-02
@@ -1162,7 +1165,7 @@ Feature: Mutation testing
       Then "greet", whose kills were all by listed tests, is fresh
       And "itos-cc mutation run" reuses that kill
 
-    @slice-40 @ID-MUT-313 @wip
+    @slice-40 @ID-MUT-313
     Scenario: A changed fingerprint still stales its kill, named, when an importing test changed too
       Given mutation.tests.list prints the fingerprint "f1" for ID-A-02, and a run recorded a mutant ID-A-02 kills
       And main_test.go, a test of main.go's own package, has changed since
@@ -1171,7 +1174,7 @@ Feature: Mutation testing
       Then the problem is "mutation.stale" for that mutant's function, and its message names ID-A-02
 
     # A guardrail: it passes before the change and must still pass after.
-    @slice-40 @ID-MUT-314 @wip
+    @slice-40 @ID-MUT-314
     Scenario: Survivors, uncovered mutants and own kills still rest on the tests that import their file
       Given a fresh outcome recorded with scope "listed" and tests ["ID-A-02"]
       And main_test.go, a test of main.go's own package, has changed since
@@ -1179,14 +1182,14 @@ Feature: Mutation testing
       Then "main", holding a survivor of the listed tests, "half", killed by its own test, and "twice", uncovered, are each "mutation.stale", naming main_test.go
       And "itos-cc mutation run" judges the survivor of "main" and the mutant of "half" again
 
-    @slice-40 @ID-MUT-315 @wip
+    @slice-40 @ID-MUT-315
     Scenario: --since keeps a function it does not judge fresh when its kills were all by listed tests
       Given a run recorded a mutant ID-A-02 kills, ID-A-02 defined in a.feature
       And a commit after "base" changed main_test.go and "twice", and nothing else of main.go
       When I run "itos-cc mutation run --since base"
       Then "itos-cc mutation check" calls "greet" and "main" fresh, and "half" "mutation.stale", kept by a mutation run that did not judge it
 
-    @slice-40 @ID-MUT-316 @wip
+    @slice-40 @ID-MUT-316
     Scenario: The graph agrees
       Given main_test.go has changed since a run recorded a kill by ID-A-02
       When the graph is built
@@ -1196,7 +1199,7 @@ Feature: Mutation testing
     # this fixture and no fingerprint, so its kill of "greet" is not dated by
     # anything but the support files, and keeps resting on the importing
     # tests. It passes before the change and must still pass after.
-    @slice-40 @ID-MUT-317 @wip
+    @slice-40 @ID-MUT-317
     Scenario: A listed kill whose test has no recorded file still rests on the tests that import its file
       Given a fresh outcome recorded with scope "listed" and tests ["ID-A-02"]
       And main_test.go, a test of main.go's own package, has changed since
@@ -1797,8 +1800,10 @@ Feature: Mutation testing
   # every test file the graph finds importing it (for Go, its package's test
   # files and the test files of packages that import it). A kill is reused,
   # and a function is fresh for mutation check, only while both its own
-  # hash and those tests' hashes match. A snapshot written before this
-  # records no tests and is stale. These are the baseline dependencies;
+  # hash and those tests' hashes match; since slice-40 (q-84), a kill by
+  # listed tests each dated by a file or a fingerprint rests on those tests
+  # and the support files instead (ID-MUT-308 to ID-MUT-317). A snapshot
+  # written before this records no tests and is stale. These are the baseline dependencies;
   # listed outcomes also follow ADR-0013, and Go all-tests and test-command
   # outcomes also follow ADR-0016 and the all-tests-freshness scenarios.
   # A test that does not import the file leaves an own-scope outcome fresh.

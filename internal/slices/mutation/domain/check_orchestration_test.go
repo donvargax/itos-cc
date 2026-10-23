@@ -213,3 +213,44 @@ func TestListKeepsOrderedPrefixWhenALaterSourceCannotBeRead(t *testing.T) {
 }
 
 var _ mutants.MutationSnapshotReader = (*porttest.Snapshots)(nil)
+
+func TestListedKillsHoldWhenOnlyAnImportingTestChanged(t *testing.T) {
+	f := newRunFixture(t)
+	first := f.run(t)
+	feature := filepath.Join(f.root, "board.feature")
+	f.files[feature] = "Feature: board\n"
+	hashes, failure := f.inputs.Tests(t.Context(), f.root, []string{feature})
+	if failure != nil {
+		t.Fatal(failure)
+	}
+	value := f.snapshots.Values["board.go"]
+	if len(value.Units[0].Mutants) < 2 {
+		t.Fatal("fixture needs multiple actual sites")
+	}
+	value.Listed, value.ListedFiles = map[string]string{"actual-id": "board.feature"}, hashes
+	for i := range value.Units[0].Mutants {
+		value.Units[0].Mutants[i].Scope, value.Units[0].Mutants[i].Tests = mutants.ScopeListed, []string{"actual-id"}
+	}
+	f.snapshots.Values["board.go"] = value
+	f.files[filepath.Join(f.root, "board_test.go")] += "// edited importing test\n"
+	checks, err := mutants.Check(t.Context(), []string{f.path}, checkOptions(f))
+	if err != nil || checks[0].Functions[0].State != mutants.SnapshotFresh {
+		t.Fatalf("listed kills after an importing test changed: %+v %v", checks, err)
+	}
+	if again := f.run(t); again[0].Ran != 0 || again[0].Reused != first[0].Ran {
+		t.Fatalf("listed kills: want each reused, got %+v", again)
+	}
+	// An own kill beside them rests on the importing tests: the function is
+	// stale, and a run judges that mutant alone again.
+	value = f.snapshots.Values["board.go"]
+	value.Units[0].Mutants[0].Scope, value.Units[0].Mutants[0].Tests = "", nil
+	f.snapshots.Values["board.go"] = value
+	f.files[filepath.Join(f.root, "board_test.go")] += "// edited again\n"
+	checks, err = mutants.Check(t.Context(), []string{f.path}, checkOptions(f))
+	if err != nil || checks[0].Functions[0].State != mutants.Stale || checks[0].Functions[0].Tests == nil {
+		t.Fatalf("an own kill beside listed ones: %+v %v", checks, err)
+	}
+	if mixed := f.run(t); mixed[0].Ran != 1 || mixed[0].Reused != first[0].Ran-1 {
+		t.Fatalf("an own kill beside listed ones: want it alone judged again, got %+v", mixed)
+	}
+}

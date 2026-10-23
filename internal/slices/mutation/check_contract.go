@@ -34,13 +34,16 @@ above it, in Dart only the files under its package's test/ that its own
 tests run, never those under integration_test/ or test_driver/; in Go its
 package's tests and those of the packages that import it. When one was
 added, changed, or removed since, every function of the file is stale, as
-it is when the snapshot predates recording tests. A run with --since that finds them changed keeps the
-entries of the functions it does not judge marked stale, until a run judges
-them again.
+it is when the snapshot predates recording tests, but one whose results
+are all kills by listed tests (below). A run with --since that finds them
+changed keeps the entries of the functions it does not judge, each holding
+any other result marked stale until a run judges it again.
 
 A kill by tests itos-cc.yaml lists (mutation.tests) holds while the files
 those tests are defined in, and the support files, are unchanged, with no
-command run. A test the list command printed with a fingerprint, a third
+command run, whatever the tests that import its file do; a timeout or an
+over-limit counts as a kill. A listed kill whose test has no recorded file
+and no fingerprint rests on the tests that import its file too. A test the list command printed with a fingerprint, a third
 column, is dated by it instead: its kill holds while the list prints it
 with that fingerprint, whatever else its file holds and whichever file
 names it, and its kill is stale, naming the test, when the fingerprint

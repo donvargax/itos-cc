@@ -113,7 +113,7 @@ type Execution struct {
 	listedChange   *ListedChange
 	command        Command
 	result         *FileResult
-	previous       *Snapshot         // the snapshot before this run, or nil when there is none or its tests differ
+	testsHold      bool              // whether stored records the tests that import the file as they are now
 	stored         *Snapshot         // the snapshot before this run, whatever tests it records, or nil when there is none
 	tests          map[string]string // the tests that import the file, as the snapshot records them
 	suite          Suite             // the whole-suite tests of the source's build root (SuiteTestHashes), by scope
@@ -281,7 +281,7 @@ func run(ctx context.Context, files []string, opt Options, ff *FailFast) ([]File
 		}
 		RecordSuiteEvidence(&s.result.Snapshot, s.suite, opt.Support)
 		if s.judged != nil {
-			s.result.Snapshot.Units = KeepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.previous != nil)
+			s.result.Snapshot.Units = KeepUnjudged(s.result.Snapshot.Units, s.judged, s.stored, s.testsHold)
 			s.markBroadStale()
 		}
 		var files map[string]string

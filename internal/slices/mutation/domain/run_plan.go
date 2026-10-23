@@ -51,8 +51,11 @@ func plan(ctx context.Context, files []string, opt Options) ([]*Execution, error
 			}
 			s.suite = SuiteOf(ctx, opt.Surroundings, opt.Root, path, whole)
 		}
-		s.stored, s.previous = snap, Usable(snap, s.tests)
-		prev, prevScopes := RememberedWithScopes(s.previous, f)
+		// Whether the importing tests hold and what of the snapshot still
+		// holds differ: a listed kill holds after they change
+		// (RestsOnImporters).
+		s.stored, s.testsHold = snap, snap != nil && TestsMatch(snap, s.tests)
+		prev, prevScopes := RememberedWithScopes(Usable(snap, s.tests), f)
 		s.listedChange, err = ListedChangedListing(ctx, s.stored, opt.Root, opt.Support, opt.Fingerprints, opt.Listing, opt.Progress)
 		if err != nil {
 			return states, err

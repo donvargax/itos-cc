@@ -178,8 +178,8 @@ func TestResultsHoldOnlyWhileTheirTestsDo(t *testing.T) {
 		t.Error("the same tests: want the snapshot usable")
 	}
 	now := map[string]string{"test_x.py": "1b", "test_z.py": "3"}
-	if Usable(&snap, now) != nil {
-		t.Error("other tests: want the snapshot unusable")
+	if prev := Remembered(Usable(&snap, now), f); len(prev[0]) != 0 {
+		t.Errorf("other tests: want no outcome of the snapshot usable, got %v", prev)
 	}
 	want := &TestChange{Added: []string{"test_z.py"}, Removed: []string{"test_y.py"}, Changed: []string{"test_x.py"}}
 	if got := CompareTests(snap.Tests, now); !reflect.DeepEqual(got, want) {
@@ -187,8 +187,8 @@ func TestResultsHoldOnlyWhileTheirTestsDo(t *testing.T) {
 	}
 
 	snap.Tests = nil
-	if Usable(&snap, map[string]string{}) != nil {
-		t.Error("a snapshot that records no tests: want it unusable, even for a file no test imports")
+	if prev := Remembered(Usable(&snap, map[string]string{}), f); len(prev[0]) != 0 {
+		t.Errorf("a snapshot that records no tests: want no outcome of it usable, even for a file no test imports, got %v", prev)
 	}
 	if c := CompareTests(nil, map[string]string{}); !c.Unrecorded {
 		t.Errorf("changes %+v, want unrecorded", c)

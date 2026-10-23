@@ -8,7 +8,7 @@ import (
 // States of a function's cached results against its source now.
 const (
 	SnapshotFresh = "fresh"   // the snapshot records the function as it is
-	Stale         = "stale"   // the function, or the tests that import its file, changed since the snapshot recorded it, or it has a site the snapshot never recorded
+	Stale         = "stale"   // the function, or the tests or files its outcomes rest on, changed since the snapshot recorded it, or it has a site the snapshot never recorded
 	Missing       = "missing" // the snapshot does not record the function
 )
 
@@ -34,7 +34,8 @@ type GoCoverageCheck = CoverageCheck
 type Freshness struct {
 	State string // SnapshotFresh, Stale, or Missing
 	// Tests is how the tests that import the file changed since the
-	// snapshot, when that alone makes the function Stale; nil otherwise.
+	// snapshot, when that alone makes the function Stale, an outcome of it
+	// resting on them (TestChange.Bears); nil otherwise.
 	Tests *TestChange
 	// Marked is true when the function is Stale because its entry is marked
 	// Stale: a run that did not judge it kept it after the tests that
@@ -68,7 +69,9 @@ type Freshness struct {
 // (ListedChangedListing). It is
 // mutation check's verdict, which the architecture graph shows too, so the
 // two cannot drift. The entry holds while it has the function's hash, so a
-// function that only moved is fresh, the tests are those it recorded, no
+// function that only moved is fresh, the tests that import its file are
+// those it recorded or none of its outcomes rests on them
+// (TestChange.Bears), as a kill of listed tests each dated does not, no
 // run kept it marked stale, the tests and files its listed outcomes rest on
 // are unchanged, and it records every site the function has.
 func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *ListedChange, broad []string, sites []Site) Freshness {
@@ -77,7 +80,7 @@ func FreshnessOf(entry *UnitResult, hash string, tests *TestChange, listed *List
 		return Freshness{State: Missing}
 	case entry.Hash != hash:
 		return Freshness{State: Stale}
-	case tests != nil:
+	case tests.Bears(entry.Mutants):
 		return Freshness{State: Stale, Tests: tests}
 	case entry.Stale:
 		return Freshness{State: Stale, Marked: true}

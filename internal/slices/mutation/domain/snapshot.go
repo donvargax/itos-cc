@@ -78,7 +78,7 @@ type UnitResult struct {
 	// Stale marks an entry decided under tests other than those the
 	// snapshot records: a run that did not judge the function kept it,
 	// outcomes and survivors included, after the tests that import the file
-	// changed. It is never reused, and mutation check calls it stale, until
+	// changed, while it held an outcome resting on them (RestsOnImporters). It is never reused, and mutation check calls it stale, until
 	// a run judges the function again. Left out of the file when false, so
 	// every snapshot without such an entry reads and is written as before.
 	Stale bool
@@ -251,12 +251,15 @@ func TestsMatch(s *Snapshot, tests map[string]string) bool {
 // TestsChanged is how now, the hashes of the test files that import the
 // snapshot's file as they are, differ from those it recorded, or nil while
 // they are the same: only then do the results of a function whose hash is
-// unchanged hold. A snapshot that records no tests has changed tests.
+// unchanged hold, but for those that rest elsewhere (Bears). A snapshot
+// that records no tests has changed tests.
 func (s *Snapshot) TestsChanged(now map[string]string) *TestChange {
 	if TestsMatch(s, now) {
 		return nil
 	}
-	return CompareTests(s.Tests, now)
+	c := CompareTests(s.Tests, now)
+	c.of = s
+	return c
 }
 
 // TestChange is how the tests that import a file differ from those its
@@ -265,6 +268,23 @@ func (s *Snapshot) TestsChanged(now map[string]string) *TestChange {
 type TestChange struct {
 	Unrecorded              bool
 	Added, Removed, Changed []string
+	// of is the snapshot TestsChanged compared, whose records say which
+	// outcomes rest on these tests; nil for CompareTests's own.
+	of *Snapshot
+}
+
+// Bears reports whether the change makes an entry recording mutants stale:
+// whether one of them rests on the tests that import the file
+// (Snapshot.RestsOnImporters). A change of no snapshot, CompareTests's,
+// bears on every entry, and no change, nil, on none.
+func (c *TestChange) Bears(mutants []Mutant) bool {
+	switch {
+	case c == nil:
+		return false
+	case c.of == nil:
+		return true
+	}
+	return c.of.AnyRestsOnImporters(mutants)
 }
 
 func CompareTests(recorded, now map[string]string) *TestChange {
@@ -379,8 +399,8 @@ func EntriesOf(ids, hashes []string, entries []UnitResult) []int {
 }
 
 // remembered returns the outcomes a run may keep: those of units whose hash
-// is unchanged and whose entry is not marked Stale. s holds only while the
-// tests that import f are those it recorded; see usable.
+// is unchanged and whose entry is not marked Stale. s is what of the
+// snapshot holds for the tests that import f now; see Usable.
 func Remembered(s *Snapshot, f *lang.File) Previous {
 	prev, _ := RememberedWithScopes(s, f)
 	return prev
@@ -412,14 +432,17 @@ func RememberedWithScopes(s *Snapshot, f *lang.File) (Previous, PreviousScopes) 
 	return prev, scopes
 }
 
-// usable is s when its results still hold for the tests that import its
-// file now, tests, and nil otherwise: results the tests may no longer earn
-// count for nothing, neither reused nor kept for a function not judged.
+// Usable is what of s still holds for the tests that import its file now,
+// tests: s itself while they are those it recorded, else s with only the
+// outcomes that do not rest on them (RestsOnImporters), such as the kills
+// of listed tests; nil for no snapshot. Results the tests may no longer
+// earn count for nothing, neither reused nor kept for a function not
+// judged.
 func Usable(s *Snapshot, tests map[string]string) *Snapshot {
-	if s == nil || !TestsMatch(s, tests) {
-		return nil
+	if s == nil || TestsMatch(s, tests) {
+		return s
 	}
-	return s
+	return s.apartFromImporters()
 }
 
 // kept reports the previous outcome of site when it can be reused without
@@ -562,8 +585,10 @@ func ListedOf(units []UnitResult, files map[string]string, Previous *Snapshot) m
 // hash included, so a later run still sees the change; and one previous
 // does not record gets no entry. testsHold says whether previous recorded
 // the tests that import the file as they are now: when not, the snapshot
-// written records the new ones, so each entry kept is marked Stale, as one
-// already marked stays.
+// written records the new ones, so each entry kept that holds an outcome
+// resting on them (RestsOnImporters) is marked Stale, as one already
+// marked stays; one whose outcomes all rest elsewhere, such as kills of
+// listed tests, is kept as it would be while they held.
 func KeepUnjudged(units []UnitResult, judged map[int]bool, Previous *Snapshot, testsHold bool) []UnitResult {
 	var entries []UnitResult
 	if Previous != nil {
@@ -585,7 +610,7 @@ func KeepUnjudged(units []UnitResult, judged map[int]bool, Previous *Snapshot, t
 		case judged[i]:
 			out = append(out, u)
 		case !ok:
-		case !testsHold || was.Stale:
+		case was.Stale || !testsHold && Previous.AnyRestsOnImporters(was.Mutants):
 			was.Stale = true
 			out = append(out, was)
 		case was.Hash == u.Hash:

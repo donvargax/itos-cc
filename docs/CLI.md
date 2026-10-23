@@ -381,7 +381,13 @@ one recorded with `--test-command` on every Dart test file beneath its
 nearest `pubspec.yaml`.
 
 A kill by listed tests (`mutation.tests`) is dated by the files its tests are
-defined in and the `support` files, with no command run. The list command may
+defined in and the `support` files, with no command run, and not by the tests
+that import its file: a change among those stales the function only when it
+also holds an own-scope outcome, a survivor or an uncovered mutant, and
+`mutation run` then judges only those again, reusing the listed kills (a
+timeout or an over-limit counts as a kill). A listed kill whose test has no
+recorded file hash and no fingerprint keeps resting on the importing tests
+too, so the `support` files are never its only date. The list command may
 print a third tab-separated column, `<ID>\t<file>\t<fingerprint>`, opaque text
 the lister computes from the test's own text; itos-cc never reads a test's
 format. A kill by a test listed with one is dated by it instead: it holds while
