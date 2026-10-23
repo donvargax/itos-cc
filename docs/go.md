@@ -1198,8 +1198,10 @@ Mutation testing runs in three places, never on an agent's machine (AGENTS.md, q
   pushed tree runs `mutation run --count 1 --since {base} --seed {base} --fail-uncovered=lines
   --json`, one site of the range's changed functions judged freshly with no cache, seeded by
   the range's start so a repair push re-judges what failed, and strict coverage of the lines the
-  range adds or changes. A range with no site passes. A survivor is killed by a test or, when
-  truly equivalent, excepted in `itos-cc.yaml` with its reason for the person to review.
+  range adds or changes. A range with no site passes. A survivor in a function the push changed
+  is killed by a test in that push. One the agent judges truly equivalent is reported with its
+  reasoning, and the coordinator approves it, or sends it back for a test, before its exception
+  lands in `itos-cc.yaml` with its reason; the person reviews the exceptions weekly.
 - `cd.yml`'s sample job on every push that is not prose alone, on Linux: `mutation sample
   --count 10` re-runs ten recorded kills or survivors of `.metrics/mutate/`, seeded by the HEAD
   commit, and fails when an outcome differs from the one recorded, so a kill gone stale while its

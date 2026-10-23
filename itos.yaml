@@ -203,9 +203,12 @@ ci:
 # failed instead of drawing another. A range with no site passes. Both
 # jobs set up what any drawn site needs, as nightly.yml does: Go, Node and
 # npm ci in viewer/, without which a viewer site fails its baseline, and
-# itos and jq for mutation.tests' list command. A survivor is killed by a
-# test or, when truly equivalent, excepted in itos-cc.yaml with its reason
-# for the person to review; never by weakening this step.
+# itos and jq for mutation.tests' list command. A survivor in a function
+# the push changed is killed by a test in that push; one its agent judges
+# truly equivalent is reported with the reasoning, and the coordinator
+# approves it, or sends it back for a test, before its exception lands in
+# itos-cc.yaml with its reason (the person reviews the exceptions weekly);
+# never by weakening this step.
 proof:
   code:
     paths: ["**/*.go", "viewer/src/**/*.ts"]
